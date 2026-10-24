@@ -93,7 +93,8 @@ try{
   assert.deepEqual(await page.locator('#crm-form select[name=f1] option').allTextContents(),['Not set','Starter','Pro']);
   await page.locator('#crm-form [name=f2]').fill('many');await click('#crm-form button.primary');
   await page.waitForFunction(()=>!document.querySelector('#crm-form [data-crm-error]')?.hidden);assert.equal(await page.locator('#crm-form [data-crm-error]').textContent(),'Seats: a number, like 12000');
-  await page.locator('#crm-form [name=f2]').fill('40');
+  await page.locator('#crm-form [name=f2]').fill('40');assert.ok(await page.locator('#crm-form [data-crm-error]').isHidden(),'fixing the value takes its error away');
+  assert.equal(await page.locator('#crm-form .crm-newfield summary').textContent(),'New field for organizations');
   await click('#crm-form .crm-newfield summary');await page.locator('#crm-form [name=nf_name]').fill('Renewal');await page.locator('#crm-form [name=nf_type]').selectOption('date');
   assert.ok(await page.locator('#crm-form [data-nf-choices]').isHidden());await page.locator('#crm-form [name=nf_type]').selectOption('choice');assert.ok(await page.locator('#crm-form [data-nf-choices]').isVisible());
   await page.locator('#crm-form [name=nf_type]').selectOption('date');await click('#crm-form [data-nf-add]');

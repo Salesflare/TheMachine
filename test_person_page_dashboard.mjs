@@ -105,6 +105,8 @@ try{
   await card.locator('[data-org-save]').click();
   assert.equal(await form.locator('#pe-err-emails').textContent(),'not an address is not an email address');assert.equal(calls.length,0);
   await form.locator('.w-email .pf-item').last().locator('[data-pf-remove]').click();
+  // Taking the wrong one off takes its error away, from the whole list
+  assert.equal(await form.locator('#pe-err-emails').textContent(),'');assert.equal(await form.locator('.w-email [aria-invalid]').count(),0);
   // Save: only what changed.
   await form.locator('[name=title]').fill('Academy lead');
   await form.locator('[data-pf-add="phones"]').click();await form.locator('.w-phone .pf-item input').last().fill('+32 9 000 00 72');

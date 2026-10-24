@@ -68,7 +68,9 @@ try{
   assert.deepEqual(calls,[]);
   if(shot)await page.screenshot({path:`${shot}/error-${width}.png`});
   // The server refusing a field puts its words under that field too.
-  await form.locator('[name=founded]').fill('2021');await form.locator('[name=location]').fill('server says no');await save.click();
+  // Editing the field takes its error away at once
+  await form.locator('[name=founded]').fill('2021');assert.equal(await form.locator('#org-err-founded').textContent(),'');assert.equal(await form.locator('[name=founded]').getAttribute('aria-invalid'),null);
+  await form.locator('[name=location]').fill('server says no');await save.click();
   await page.waitForFunction(()=>document.querySelector('#org-err-location').textContent);
   assert.equal(await form.locator('#org-err-location').textContent(),'Location is up to 120 characters');
   assert.equal(await form.locator('#org-err-founded').textContent(),'');
