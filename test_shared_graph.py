@@ -5,6 +5,7 @@ import copy
 import datetime as dt
 import importlib.util
 import json
+import time
 import tempfile
 import unittest
 import unittest.mock
@@ -961,6 +962,7 @@ class SharedGraph(unittest.TestCase):
         self.boxes.remove(self.mem)  # away
         self.new_thread(40, 'Late order', 'One more order, sent while Mo was away.')
         self.rounds()  # waits in the mailbox for Mo's Machine
+        time.sleep(1.1)  # statements and blobs carry whole seconds: the removal comes after the late blob
         with self.assertRaisesRegex(ValueError, 'confirmed admin'):
             self.mem.graph_pause(FLEET, True, remove=True)
         self.adm.graph_pause(FLEET, True, remove=True)
@@ -1198,7 +1200,7 @@ class SharedGraph(unittest.TestCase):
         self.own.config['accounts'].append({'id': 'named', 'email': 'olive@othercorp.example', 'boundary': 'work:Acme', 'service': 'gmail'})
         self.own.config['accounts'].append({'id': 'code', 'email': 'olive-codes', 'boundary': 'work:Acme', 'service': 'github'})
         conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
-        self.assertEqual((conns['side']['work'], conns['side']['company'], conns['side']['on'], conns['side']['personal']), (True, False, False, False))
+        self.assertEqual((conns['side']['work'], conns['side']['company'], conns['side']['on'], conns['side']['personal']), (False, False, False, False))  # never in the Fleet's briefs either
         self.assertEqual((conns['named']['company'], conns['named']['on']), (False, False))
         self.assertEqual((conns['code']['company'], conns['code']['on']), (True, True))  # no address: named for the Fleet
         self.assertEqual((conns['work']['company'], conns['work']['on']), (True, True))

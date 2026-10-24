@@ -115,6 +115,17 @@ def now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 
 
+def after(previous):
+    """now(), or one second past previous when that is not earlier: an admin's next statement always replaces their
+    last one, also when they flip a switch twice within a second (statements carry whole seconds)."""
+    stamp = now()
+    try:
+        last = dt.datetime.fromisoformat(str(previous))
+    except ValueError:
+        return stamp
+    return stamp if stamp > str(previous) else (last + dt.timedelta(seconds=1)).isoformat(timespec='seconds')
+
+
 def canon(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode()
 
@@ -1096,7 +1107,8 @@ class SharedGraph:
     def graph_set_policy(self, fleet, require):
         """An admin requires (or no longer requires) the members' Work email and Work calendar. Signed by this Machine."""
         group, me, trusted = self._admin_group(fleet)
-        statement = ft.policy(fleet, me['member_id'], trusted[me['member_id']], [r for r in require or [] if r in ft.REQUIRABLE], now())
+        at = after((ft.policy_of(group, trusted, self.meta('graph_policy:' + fleet)) or {}).get('at'))
+        statement = ft.policy(fleet, me['member_id'], trusted[me['member_id']], [r for r in require or [] if r in ft.REQUIRABLE], at)
         self.relay.call('POST', '/trust', {'fleet': fleet, 'item': ft.sign(self._private(), statement)}, timeout=30)
         self.set_meta('graph_policy:' + fleet, statement)
         self.directory(refresh=True)
@@ -1198,7 +1210,7 @@ class SharedGraph:
         trusted, _ = self.trust(group)
         if me['member_id'] not in trusted:
             raise ValueError('Only a confirmed admin can pause sharing for everyone')
-        at = now()
+        at = after((ft.paused(group, trusted, self.meta('graph_pause:' + fleet)) or {}).get('at'))
         before = ft.purged(group, trusted, self.meta('graph_purged:' + fleet))
         statement = ft.pause(fleet, me['member_id'], trusted[me['member_id']], on, at, at if on and remove else before)
         self.relay.call('POST', '/trust', {'fleet': fleet, 'item': ft.sign(self._private(), statement)}, timeout=30)
@@ -1633,8 +1645,7 @@ class SharedGraph:
             if header.get('kind') in ('mail', 'file'):
                 self._caught_up(group['id'], sender, int(header['seq']))
         header, body, dk = opened
-        purged = str(self.meta('graph_purge_done:' + group['id']) or '')
-        if header['kind'] in RELAYED and purged and str(header.get('at') or '') <= purged:  # the same second counts as before: a removal wins
+        if header['kind'] in RELAYED and str(header.get('at') or '') < str(self.meta('graph_purge_done:' + group['id']) or ''):
             raise ValueError('from before an admin removed what the Fleet shared')
         if header['kind'] == 'key' and sender not in trusted:
             raise ValueError('a graph key from someone who is not a confirmed admin')

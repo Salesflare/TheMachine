@@ -199,7 +199,7 @@ try{
   await shot(consent,(process.env.SHOTS||'/tmp')+'/shared-require-consent-'+width+'.png');
   await consent.locator('button[value="cancel"]').click();
   await consent.waitFor({state:'hidden'});
-  assert.equal(await pane.locator('[data-graph-require="calendar"]').isChecked(),false);
+  await page.waitForFunction(()=>!document.querySelector('[data-graph-require="calendar"]').checked);
   assert.equal(calls.filter(c=>c.action==='graph_policy').length,0);
   await pane.locator('[data-graph-require="calendar"]').check();
   await consent.locator('#share-consent-ok').click();
