@@ -62,7 +62,13 @@ const open=async(width,height,scheme='dark')=>{const mobile=width<600;
  await page.goto(base);await page.locator('#task-'+cards[1].id).waitFor();return {context,page}};
 const showCal=async page=>{await page.evaluate(()=>showTab('calendar'));await page.locator('#calendar-view .cal-item,#calendar-view .cal-chip').first().waitFor();await page.waitForFunction(()=>!document.querySelector('#calendar-view').textContent.includes('Loading'))};
 const blocks=page=>page.locator('#calendar-view .cal-block').evaluateAll(b=>b.map(x=>({day:x.querySelector('.cal-day span').textContent,rows:[...x.querySelectorAll('.cal-item')].map(r=>r.querySelector('.cal-time').textContent+' | '+r.querySelector('.cal-title').textContent+' | '+(r.querySelector('.cal-sub')?.textContent||''))})));
-const fits=(page,where)=>page.evaluate(()=>({page:document.documentElement.scrollWidth,vw:innerWidth,wide:[...document.querySelectorAll('#calendar-view *')].filter(e=>e.getBoundingClientRect().right>innerWidth+.5).map(e=>e.className).slice(0,3)})).then(s=>{assert.ok(s.page<=s.vw&&!s.wide.length,`${where}: wider than the screen ${JSON.stringify(s)}`)});
+const fits=(page,where)=>page.evaluate(()=>({page:document.documentElement.scrollWidth,vw:innerWidth,wide:[...document.querySelectorAll('#calendar-view *')].filter(e=>{
+ // A long label inside an ellipsis chip has a wider inline box, but its excess text is not painted. Measure
+ // the visible right edge after ancestor clipping; document width still catches real horizontal overflow.
+ let right=e.getBoundingClientRect().right;
+ for(let p=e.parentElement;p&&right>innerWidth+.5;p=p.parentElement)if(['hidden','clip','auto','scroll'].includes(getComputedStyle(p).overflowX))right=Math.min(right,p.getBoundingClientRect().right);
+ return right>innerWidth+.5;
+}).map(e=>e.className).slice(0,3)})).then(s=>{assert.ok(s.page<=s.vw&&!s.wide.length,`${where}: wider than the screen ${JSON.stringify(s)}`)});
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  {const {context,page}=await open(1440,900);
