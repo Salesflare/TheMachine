@@ -160,7 +160,7 @@ try{
   await page.locator('#cal-f-invite').fill('kim@example.org');await page.keyboard.press('Enter');
   await page.locator('#cal-f-invite').pressSequentially('samira',{delay:30});await page.locator('#cal-f-invite-sug button').first().waitFor();
   await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');
-  assert.deepEqual(await page.locator('#cal-f-guests .cal-chip > span').allTextContents(),['Sam Lee','kim@example.org','Samira Long-Surname-For-Wrapping']);
+  assert.deepEqual(await page.locator('#cal-f-guests .cal-guest > span').allTextContents(),['Sam Lee','kim@example.org','Samira Long-Surname-For-Wrapping']);
   assert.equal(await page.locator('#cal-f-save').textContent(),'Add and invite 3');
   assert.equal(await page.locator('#cal-f-fine').textContent(),'Invites go to sam@acme.example, kim@example.org, samira.long@example.net.');
   await fits(page);
@@ -176,7 +176,7 @@ try{
   await page.locator('#cal-dialog [type="submit"]').click();await wait(page,()=>writes().length);await page.locator('#cal-dialog').waitFor({state:'hidden'});
   const invited=writes()[0].args;assert.deepEqual([invited.calendar,invited.location,invited.guests,invited.invite],['cal','At the office',['sam@acme.example','kim@example.org'],2]);
   // A fresh form starts with nobody invited
-  await newEvent(page);assert.equal(await page.locator('#cal-f-guests .cal-chip').count(),0);assert.equal(await page.locator('#cal-f-save').textContent(),'Add');
+  await newEvent(page);assert.equal(await page.locator('#cal-f-guests .cal-guest').count(),0);assert.equal(await page.locator('#cal-f-save').textContent(),'Add');
   await page.locator('#cal-dialog [data-cal-close]').first().click();
   // Editing an event on the owner's calendar can invite people; one on a shared calendar can't
   calls=[];await page.locator('#calendar-view [data-cal-edit="205"]').first().click();await page.locator('#cal-dialog').waitFor({state:'visible'});

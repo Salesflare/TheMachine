@@ -87,6 +87,8 @@ try{
  // One column for every tab.
  const widths=[];
  for(const t of ['inbox','events','people','feedback','health']){await page.locator(`nav [data-tab="${t}"]`).click();await page.waitForTimeout(100);widths.push(await page.locator('#'+t).evaluate(e=>Math.round(e.getBoundingClientRect().width)))}
+ // Events opens with the latest signals (here none), never an empty page
+ await page.locator('nav [data-tab="events"]').click();await page.waitForFunction(()=>/No matching signals/.test(document.querySelector('#results').textContent));
  assert.equal(new Set(widths).size,1,widths.join());
  // A phone: the sub-tab row scrolls sideways inside itself, with a fade on the side that has more.
  await page.setViewportSize({width:390,height:844});await page.goto(base+'/#connections=mail');await page.locator('#health-tabs [role=tab]').first().waitFor();

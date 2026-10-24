@@ -84,7 +84,7 @@ try{
  assert.deepEqual(await page.locator('.ge-soon .graph-event:visible h4').allTextContents(),['Lunch','Call','Weekend away','Later dinner']);
  assert.equal(await page.locator('[data-ge-soon]').count(),0);
  const past=await page.locator('.graph-events time').evaluateAll(ts=>ts.map(t=>Date.parse(t.getAttribute('datetime'))));
- assert.ok(past.every((t,i)=>!i||t<=past[i-1])&&past[0]<=Date.now(),'the timeline runs newest first, nothing to come');
+ assert.ok(past.every((t,i)=>!i||t<=past[i-1])&&past[0]<=+now,'the timeline runs newest first, nothing to come');
  assert.equal(days[1],'Today');assert.equal(days[2],'Yesterday');
  const shownDays=days.slice(1).filter(d=>!['Today','Yesterday'].includes(d));
  assert.deepEqual(shownDays,[...new Set(shownDays)],'each day once');

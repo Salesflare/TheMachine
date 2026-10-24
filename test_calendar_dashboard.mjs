@@ -50,6 +50,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(req.method!=='GET')calls.push(url.pathname+' '+body);
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/calendar'){calendarAsks.push(Object.fromEntries(url.searchParams));if(calendarDown||failFrom&&new Date(url.searchParams.get('from'))>=failFrom){res.statusCode=500;res.end('{"error":"down"}');return}res.end(JSON.stringify({meetings:empty?[]:meetings}));return}
+ if(url.pathname==='/api/promise'){const p=promises.find(p=>String(p.id)===url.searchParams.get('id'));res.end(JSON.stringify({...p,links:[],history:[]}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');res.end(JSON.stringify(r.action==='card_chat'?{session:true,status:'ok',active:false,items:[]}:{}));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
