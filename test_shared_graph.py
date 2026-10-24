@@ -5,8 +5,10 @@ import copy
 import datetime as dt
 import importlib.util
 import json
+import time
 import tempfile
 import unittest
+import unittest.mock
 from unittest.mock import patch
 from pathlib import Path
 
@@ -115,8 +117,8 @@ def mail(account, n, sender, to, title, body, days, thread, cc=''):
 
 
 class SharedGraph(unittest.TestCase):
-    def machine(self, me):
-        root = Path(self.temp.name) / me
+    def machine(self, me, device=''):
+        root = Path(self.temp.name) / (me + device)
         root.mkdir(parents=True, exist_ok=True)
         email = me + '@acme.example'
         config = {'database': str(root / 'events.sqlite'), 'network_keys': str(root / 'network-keys.json'), 'credentials': {},
@@ -137,6 +139,12 @@ class SharedGraph(unittest.TestCase):
         self.ok(self.own, 'admin', 'Ada')  # the owner's OK: Ada is an admin
         self.rounds()
         self.ok(self.adm, 'member', 'Mo')  # an admin's OK: Mo's Machine gets the team's Graph
+        hold = sg.HOLD; sg.HOLD = 0; self.addCleanup(setattr, sg, 'HOLD', hold)  # its own test below
+        if not self._testMethodName.startswith('test_sharing_is_off_until'):
+            self.own.graph_pause(FLEET, False)  # an admin turned the team's Graph on (off by default: experimental)
+        for box in self.boxes:
+            if not self._testMethodName.startswith('test_the_first_share'):
+                box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})  # the owners looked it over
         self.rounds()
 
     def rounds(self, n=2):
@@ -208,12 +216,24 @@ class SharedGraph(unittest.TestCase):
             labels = self.own.thread_labels(db, [dict(r) for r in db.execute('SELECT * FROM events')])
             self.assertNotIn(self.event_id(self.own, 'home-5'), labels)  # no label at all on a personal account
 
-    def test_a_personal_thread_in_a_work_account_stays_out_until_the_owner_says_team(self):
+    def test_a_personal_thread_in_a_work_account_never_goes_not_by_hand_nor_a_later_review(self):
         self.add(self.own, mail('work', 6, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Your daughter', 'Congrats on the graduation!', 1, 't-p'))
         self.judge(self.own, ('work-6', 'personal', 'Lee wrote'))
         self.rounds()
-        self.assertNotIn('graduation', json.dumps(self.team(self.mem, 'team_mail')))
         self.assertEqual(self.team(self.mem, 'team_mail'), [])
+        with self.own.store.connect() as db:
+            with self.assertRaisesRegex(ValueError, 'Personal'):
+                sg.set_hand(db, self.event_id(self.own, 'work-6'), 'team')
+            label = self.own.thread_labels(db, [dict(db.execute("SELECT * FROM events WHERE source_id='work-6'").fetchone())])
+        self.assertEqual((label[self.event_id(self.own, 'work-6')]['fixed'], label[self.event_id(self.own, 'work-6')]['view']), (True, 'personal'))
+        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        with self.assertRaisesRegex(ValueError, 'Personal threads are never shared'):
+            app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-6'), 'share': 'team'})
+        self.judge(self.own, ('work-6', 'client', 'Lee asked for a quote'), ('work-6', 'other', 'A note'), ('work-6', 'client', 'Lee wrote'))
+        self.rounds()
+        received = json.dumps(self.team(self.mem) + self.team(self.mem, 'team_mail'))
+        for text in ('graduation', 'Your daughter', 'Lee asked for a quote', 'Lee wrote'):
+            self.assertNotIn(text, received)  # not the thread, not a line about it
 
     def test_a_thread_later_sorted_personal_is_taken_back_and_stays_personal(self):
         self.add(self.own, mail('work', 7, 'Lee Park <lee@client.example>', 'own1@acme.example', 'New phone', 'Your new phone ships Friday.', 1, 't-phone'))
@@ -267,13 +287,12 @@ class SharedGraph(unittest.TestCase):
             label = self.own.thread_labels(db, [dict(db.execute('SELECT * FROM events WHERE source_id=?', ('work-4',)).fetchone())])
         self.assertEqual(list(label.values())[0]['fixed'], True)
 
-    def test_sensitive_client_thread_shows_only_that_it_exists(self):
+    def test_a_sensitive_thread_goes_nowhere_not_even_that_it_exists(self):
         self.olive_mail()
         self.rounds()
         held = [json.loads(r['body']) for r in self.team(self.mem, 'team_mail') if json.loads(r['body']).get('private')]
-        self.assertEqual(len(held), 1)
-        self.assertRegex(held[0]['line'], r'^Private thread with Lee, \d{1,2} [A-Z][a-z]{2}$')
-        self.assertEqual(set(held[0]), {'tag', 'private', 'at', 'line'})
+        self.assertEqual(held, [])  # not even that it exists
+        self.assertNotIn('Private thread', json.dumps(self.team(self.mem)))
         received = json.dumps(self.team(self.mem) + self.team(self.mem, 'team_mail'))
         self.assertNotIn(HEALTH, received)
         self.assertNotIn('A personal note', received)
@@ -361,12 +380,42 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual((project['board'], project['stage'], project['timeline'], project['threads']), ('Hiring', 'Screening', [], []))
         self.assertNotIn('Standup', [json.loads(r['body']).get('subject') for r in self.team(self.mem, 'team_mail')])
 
-    def test_sharing_starts_as_soon_as_the_machine_is_confirmed(self):
+    def test_the_first_share_waits_for_start_now_and_reminds_within_work_hours(self):
+        told = []
+        self.own.tell = lambda text, anchor: told.append((text, anchor))
+        for box in (self.adm, self.mem):
+            box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
         self.olive_mail()
-        self.rounds(1)
-        self.assertTrue(self.team(self.mem))
-        self.assertIsNone(self.own.meta('graph_start:' + FLEET))
-        self.assertGreaterEqual(self.own.sharing()[0]['teammates'], 1)  # the Team page says Work is shared only now
+        self.own.hours = {'work_day': lambda _: True, 'in_hours': lambda _: False}  # outside work hours: no reminder yet
+        self.rounds()
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])  # nothing goes, however long it waits
+        self.assertEqual(told, [])
+        self.own.hours = {'work_day': lambda _: True, 'in_hours': lambda _: True}
+        self.rounds()
+        self.assertEqual(told, [('Your Work is ready to share with Acme. Look it over and start when you are ready.', 'shared-' + FLEET)])
+        self.rounds()
+        self.assertEqual(len(told), 1)  # gently: again only after a few days
+        start = self.own.meta('graph_start:' + FLEET)
+        start['reminded'] = ago(4)
+        self.own.set_meta('graph_start:' + FLEET, start)
+        self.rounds()
+        self.assertEqual(len(told), 2)
+        me = self.own.sharing()[0]
+        self.assertFalse(me['started'])
+        people = {p['name']: p['state'] for p in self.adm.sharing()[0]['people']}  # an admin sees who hasn't started
+        self.assertEqual(people['Olive'], 'not_started')
+        with self.own.store.connect() as db:
+            sg.ensure(db)
+        view = self.own.graph_overview(FLEET)
+        self.assertEqual(view['preview']['threads'], 1)
+        self.assertEqual(view['preview']['orgs'][0]['key'], '@client.example')
+        self.assertTrue(all(x['why'].startswith('Goes when you start') for x in view['threads']))
+        self.own.graph_start(FLEET)
+        self.rounds()
+        self.assertIn(BODY, json.dumps(self.team(self.mem, 'team_mail')))
+        self.assertEqual({p['name']: p['state'] for p in self.adm.sharing()[0]['people']}['Olive'], 'sharing')
+        self.rounds()
+        self.assertEqual(len(told), 2)  # started: no more reminders
 
     # -- all the Work history, a batch at a time
     def client_threads(self, box, n, days):
@@ -751,7 +800,7 @@ class SharedGraph(unittest.TestCase):
         self.rounds()
         lines = a.recap_share_lines(self.own.store, {'dashboard_host': 'box.example', 'dashboard_path': '/'})
         self.assertEqual(len(lines), 1)
-        self.assertRegex(lines[0], r'^• Shared with Acme: 1 thread, 1 person, \d+ projects?\. 1 held back\. \[Review\]\(https://box\.example/#graph=held\)$')
+        self.assertEqual(lines[0], f"• Shared 1 thread with Acme this week, 1 held back. [What's shared](https://box.example/#shared={FLEET})")
 
 
     def test_empty_removal_blobs_remove_threads_files_and_catchup_requests(self):
@@ -821,6 +870,421 @@ class SharedGraph(unittest.TestCase):
         self.own.mail_files = fetch
         self.rounds()
         self.assertTrue(self.team(self.mem, 'team_files'))
+
+    # -- seamless, and still safe: removal, new devices, pause
+    def new_thread(self, n, subject, body, days=0):
+        self.add(self.own, mail('work', n, 'Lee Park <lee@client.example>', 'own1@acme.example', subject, body, days, f't-new-{n}'))
+        self.judge(self.own, (f'work-{n}', 'client', 'Lee wrote'))
+
+    def received(self, box):
+        return json.dumps(self.team(box, 'team_mail'))
+
+    def test_someone_taken_out_gets_nothing_new_even_if_the_network_keeps_them_in(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        self.adm.graph_remove(FLEET, 'mem3')
+        self.assertTrue(any(i['s']['t'] == 'remove' and i['s']['member'] == 'mem3' for i in self.net.trust))
+        self.rounds(1)
+        self.net.trust = [i for i in self.net.trust if i['s']['t'] != 'remove']  # a Network that hides the remove later
+        self.new_thread(20, 'Second order', 'Forty more seats, please.')
+        self.rounds()
+        self.assertNotIn('Forty more seats', self.received(self.mem))
+        self.assertIn(BODY, self.received(self.mem))  # what they had stays with them
+        self.assertFalse([p for p in self.adm._prompts() if p['kind'] == 'member' and p['member'] == 'mem3'])  # no new OK asked
+        self.assertEqual({p['name']: p['state'] for p in self.adm.sharing()[0]['people']}['Mo'], 'removed')
+        self.adm.graph_remove(FLEET, 'mem3', back=True)
+        self.rounds(6)
+        self.assertIn('Forty more seats', self.received(self.mem))
+
+    def test_someone_who_left_is_signed_out_so_the_network_cant_bring_them_back(self):
+        self.rounds()
+        person = self.net.people.pop('mem3')  # they left the Fleet
+        self.rounds()
+        self.assertTrue(any(i['s']['t'] == 'remove' and i['s']['member'] == 'mem3' for i in self.net.trust))
+        self.net.people['mem3'] = person  # a Network that puts them back, with the same keys
+        self.new_thread(21, 'After they left', 'Nothing of this goes to them.')
+        self.rounds()
+        self.assertNotIn('Nothing of this', self.received(self.mem))
+
+    def test_a_new_machine_of_someone_admitted_needs_no_ok_but_waits_for_the_hold(self):
+        self.olive_mail()
+        self.rounds()
+        phone = self.machine('mem3', '-new')  # Mo's new Machine: new keys, same person
+        phone.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+        self.boxes = [self.own, self.adm, phone]
+        self.rounds()
+        self.assertFalse([p for p in self.adm._prompts() if p['kind'] == 'member'])  # no tap for a known person
+        devices = self.adm.sharing()[0]['new_devices']
+        self.assertEqual([d['name'] for d in devices], ['Mo'])
+        self.assertEqual([d['name'] for d in self.own.sharing()[0]['new_devices']], ['Mo'])  # every admin sees it
+        self.assertEqual(phone.sharing()[0]['new_devices'], [])
+        self.assertNotIn(BODY, self.received(phone))  # not during the hold
+        for box in (self.own, self.adm):
+            rekey = box.meta('graph_rekey:' + FLEET) or {}
+            for r in rekey.values():
+                r['since'] = ago(2)
+            box.set_meta('graph_rekey:' + FLEET, rekey)
+        self.rounds(3)
+        self.assertTrue(any(i['s']['t'] == 'member' and i['s'].get('device') and i['s']['member'] == 'mem3' for i in self.net.trust))
+        self.assertIn(BODY, self.received(phone))
+
+    def test_not_theirs_keeps_a_new_key_out(self):
+        self.rounds()
+        stranger = self.machine('mem3', '-forged')  # keys the Network made up for Mo
+        self.boxes = [self.own, self.adm, stranger]
+        self.rounds()
+        for box in (self.own, self.adm):
+            box.graph_rekey_no(FLEET, 'mem3')
+            rekey = box.meta('graph_rekey:' + FLEET) or {}
+            self.assertNotIn('mem3', rekey)
+        self.olive_mail()
+        self.rounds(3)
+        self.assertFalse(any(i['s']['t'] == 'member' and i['s'].get('device') for i in self.net.trust))
+        self.assertEqual(self.received(stranger), '[]')
+
+    def test_an_admin_pauses_sharing_for_everyone(self):
+        self.olive_mail()
+        self.adm.graph_pause(FLEET, True)
+        self.rounds()
+        self.assertNotIn(BODY, self.received(self.mem))
+        self.assertEqual(self.own.sharing()[0]['paused']['by'], 'Ada')
+        with self.assertRaisesRegex(ValueError, 'confirmed admin'):
+            self.mem.graph_pause(FLEET, False)
+        self.adm.graph_pause(FLEET, False)
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+
+    def test_sharing_off_with_remove_deletes_it_everywhere_also_on_a_machine_that_was_away(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        self.boxes.remove(self.mem)  # away
+        self.new_thread(40, 'Late order', 'One more order, sent while Mo was away.')
+        self.rounds()  # waits in the mailbox for Mo's Machine
+        time.sleep(1.1)  # statements and blobs carry whole seconds: the removal comes after the late blob
+        with self.assertRaisesRegex(ValueError, 'confirmed admin'):
+            self.mem.graph_pause(FLEET, True, remove=True)
+        self.adm.graph_pause(FLEET, True, remove=True)
+        self.rounds()
+        self.assertTrue(self.own.sharing()[0]['paused']['removed'])
+        for box in (self.own, self.adm):
+            self.assertEqual(self.team(box, 'team_mail') + self.team(box) + self.team(box, 'team_blobs'), [])
+        self.assertFalse(self.own.sharing()[0]['started'])  # each owner looks it over again
+        self.adm.graph_pause(FLEET, False)  # back on before Mo's Machine is: the removal still reaches it
+        self.rounds()
+        self.boxes.append(self.mem)
+        self.rounds()
+        self.assertEqual(self.team(self.mem, 'team_mail') + self.team(self.mem) + self.team(self.mem, 'team_blobs'), [])
+        self.assertNotIn('One more order', json.dumps(self.team(self.mem, 'team_mail')))  # the late blob from before is dropped
+        self.own.graph_start(FLEET)
+        self.rounds(3)
+        self.assertIn(BODY, self.received(self.mem))  # Olive started again: it goes again, from the start
+        self.assertIn('One more order', self.received(self.mem))
+
+    def test_an_unshared_thread_is_never_passed_on_from_an_old_copy(self):
+        self.olive_mail()
+        self.rounds()
+        with self.adm.store.connect() as db:
+            sg.ensure(db)
+            old = dict(db.execute("SELECT * FROM team_blobs WHERE member='own1' AND kind='mail'").fetchone())
+        with self.own.store.connect() as db:
+            sg.set_hand(db, self.event_id(self.own, 'work-1'), 'private')
+        self.rounds()
+        self.assertNotIn(BODY, self.received(self.mem))
+        self.assertNotIn(BODY, self.received(self.adm))
+        header = json.loads(old['header'])  # a teammate's Machine that kept an old copy passes it on anyway
+        wrap = nc.seal({'dk': old['dk'], 'h': old['sha'], 'from_key': self.net.keys['own1']['sign']}, self.adm._private(), self.net.keys['mem3'],
+                       sg.wrap_context(header, 'adm2', 'mem3'))
+        with self.assertRaisesRegex(ValueError, 'no longer shared|older'):  # its tombstone or the newer list stops it
+            self.mem.graph_take({'header': header, 'ct': old['ct'], 'sig': old['sig'], 'wrap': wrap, 'by': 'adm2'})
+        with self.mem.store.connect() as db:  # a Machine that never got the tombstone: the newer thread list still stops it
+            db.execute("DELETE FROM team_blobs WHERE member='own1' AND kind='mail'")
+        with self.assertRaisesRegex(ValueError, 'no longer shared'):
+            self.mem.graph_take({'header': header, 'ct': old['ct'], 'sig': old['sig'], 'wrap': wrap, 'by': 'adm2'})
+        self.assertNotIn(BODY, self.received(self.mem))
+
+    def test_sharing_is_off_until_an_admin_turns_it_on(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])
+        self.assertEqual(self.own.sharing()[0]['paused'], {'default': True})
+        with self.assertRaisesRegex(ValueError, 'confirmed admin'):
+            self.mem.graph_pause(FLEET, False)
+        self.adm.graph_pause(FLEET, False)
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        self.assertIsNone(self.own.sharing()[0]['paused'])
+
+    def test_each_connection_is_shared_or_not_work_on_and_personal_never(self):
+        self.olive_mail()
+        self.add(self.own, mail('home', 20, 'Kim Wu <kim@globex.example>', 'own1@home.example', 'Pilot from home', 'Pilot price, from my own address.', 1, 't-home-pilot'))
+        self.judge(self.own, ('home-20', 'client', 'Kim asked about the pilot'), ('home-5', 'personal', 'Sam wrote'))
+        conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
+        self.assertEqual((conns['work']['on'], conns['home']['on'], conns['home']['personal']), (True, False, True))
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        with self.assertRaisesRegex(ValueError, 'Personal connections are never shared'):
+            self.own.graph_connection(FLEET, 'home', True)
+        self.own.set_meta('graph_conn:' + FLEET, {'home': True})  # an old choice from before can't turn a personal one on
+        self.rounds()
+        self.assertNotIn('Pilot price', self.received(self.mem))
+        self.assertNotIn(PERSONAL, self.received(self.mem))
+        self.own.graph_connection(FLEET, 'work', False)  # off: what it shared is taken back
+        self.rounds()
+        self.assertNotIn(BODY, self.received(self.mem))
+
+    def test_an_admin_can_require_work_email_and_threads_kept_private_still_stay(self):
+        self.olive_mail()
+        with self.assertRaisesRegex(ValueError, 'confirmed admin'):
+            self.mem.graph_set_policy(FLEET, ['mail'])
+        self.adm.graph_set_policy(FLEET, ['mail', 'calendar', 'everything'])
+        self.rounds()
+        self.assertEqual(self.own.sharing()[0]['require'], ['mail', 'calendar'])
+        work = next(c for c in self.own.sharing()[0]['connections'] if c['id'] == 'work')
+        self.assertEqual((work['required'], work['on']), (True, True))
+        self.assertFalse(next(c for c in self.own.sharing()[0]['connections'] if c['id'] == 'home')['required'])  # personal: never required
+        with self.assertRaisesRegex(ValueError, 'Required'):
+            self.own.graph_connection(FLEET, 'work', False)
+        self.own.set_meta('graph_conn:' + FLEET, {'work': False})  # an old choice can't beat what the Fleet requires
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        with self.own.store.connect() as db:
+            sg.set_hand(db, self.event_id(self.own, 'work-1'), 'private')  # Keep private on one thread still holds
+        self.rounds()
+        self.assertNotIn(BODY, self.received(self.mem))
+        forged = ft.sign(self.mem._private(), {'t': 'policy', 'fleet': FLEET, 'member': 'mem3', 'key': self.net.keys['mem3']['sign'], 'by': 'mem3',
+                                               'require': [], 'at': '2099-01-01T00:00:00+00:00'})
+        self.net.trust.append(forged)  # a Network that makes one up, or a member who isn't an admin: ignored
+        self.rounds()
+        self.assertEqual(self.own.sharing()[0]['require'], ['mail', 'calendar'])
+
+    def test_an_only_you_board_shares_nothing_and_switching_to_it_takes_back_what_went(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        with self.own.store.connect() as db:  # this project is Only you
+            db.execute("INSERT INTO projects(id,name,created_at,visibility) VALUES(77,'Quiet deal',?,'only_you')", (a.now(),))
+            db.execute("INSERT INTO event_projects(event_id,project_id,source,created_at) VALUES(?,77,'test',?)", (self.event_id(self.own, 'work-2'), a.now()))
+        self.rounds()
+        self.assertNotIn(BODY, self.received(self.mem))  # the whole thread, also its other messages
+        self.assertNotIn('Quiet deal', json.dumps(self.team(self.mem)))
+
+    # -- what goes, judged per thread: when unsure, not
+    def test_a_new_client_thread_waits_an_hour_first(self):
+        sg.HOLD = 3600
+        self.olive_mail()
+        self.rounds()
+        self.assertNotIn(BODY, self.received(self.mem))
+        with self.own.store.connect() as db:
+            db.execute('UPDATE share_threads SET sorted_at=?', (ago(0, 2),))
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+
+    def test_unsure_waits_in_share_these_and_other_never_goes(self):
+        self.add(self.own, mail('work', 30, 'Pat Peer <pat@peer.example>', 'own1@acme.example', 'Swap listings?', 'Shall we list each other?', 1, 't-peer'),
+                 mail('work', 31, 'Ads Team <team@ads.example>', 'own1@acme.example', 'Grow your reach', 'Our new ad formats are here.', 1, 't-ads'))
+        self.judge(self.own, ('work-30', 'unsure', 'Pat asked about listings'), ('work-31', 'other', ''))
+        self.rounds()
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])
+        view = self.own.graph_overview(FLEET)
+        self.assertEqual([x['title'] for x in view['unsure']], ['Swap listings?'])
+        self.assertEqual(view['sorted']['other'], 1)
+        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        app.graph_share_action('graph_share_many', {'event_ids': [self.event_id(self.own, 'work-30')], 'share': 'team'})
+        self.rounds()
+        self.assertIn('Shall we list each other?', self.received(self.mem))
+        self.assertNotIn('ad formats', self.received(self.mem))
+
+    def test_sensitive_sticks_whatever_a_later_review_says(self):
+        self.olive_mail()
+        for later in ('client', 'unsure', 'other'):
+            self.judge(self.own, ('work-3', later, 'Lee wrote'))
+            with self.own.store.connect() as db:
+                self.assertEqual(db.execute('SELECT verdict FROM share_threads WHERE event_id=?', (self.event_id(self.own, 'work-3'),)).fetchone()[0], 'sensitive')
+        self.rounds()
+        self.assertNotIn(HEALTH, self.received(self.mem))
+
+    def test_a_shared_thread_a_later_review_calls_sensitive_is_taken_back(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        self.judge(self.own, ('work-1', 'sensitive', 'Lee wrote about the deal'))
+        self.rounds()
+        self.assertNotIn(BODY, self.received(self.mem))
+        self.assertNotIn(BODY, self.received(self.adm))
+
+    def test_automated_senders_are_never_a_client(self):
+        self.add(self.own, mail('work', 40, 'Site Audit <no-reply@audit.example>', 'own1@acme.example', 'Weekly audit', '12 broken links found.', 1, 't-audit'))
+        self.judge(self.own, ('work-40', 'client', 'An audit'))
+        self.rounds()
+        self.assertNotIn('broken links', self.received(self.mem))
+
+    def test_choosing_twice_for_one_company_asks_once_to_make_it_a_rule(self):
+        self.add(self.own, *[mail('work', 50 + i, 'Lee Park <lee@client.example>', 'own1@acme.example', f'Note {i}', f'Note body {i}', 1, f't-note-{i}') for i in range(3)])
+        self.judge(self.own, *[(f'work-{50 + i}', 'client', 'Lee wrote') for i in range(3)])
+        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        first = app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-50'), 'share': 'only_you'})
+        self.assertIsNone(first['suggest'])
+        second = app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-51'), 'share': 'only_you'})
+        self.assertEqual(second['suggest'], {'key': '@client.example', 'name': 'Client', 'choice': 'private'})
+        again = app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-52'), 'share': 'only_you'})
+        self.assertIsNone(again['suggest'])  # asked once
+        app.graph_share_action('graph_rule', {'key': '@client.example', 'choice': 'private', 'name': 'Client'})
+        self.add(self.own, mail('work', 60, 'Kai <kai@client.example>', 'own1@acme.example', 'Later', 'A later note.', 0, 't-later'))
+        self.judge(self.own, ('work-60', 'client', 'Kai wrote'))
+        self.rounds()
+        self.assertNotIn('A later note.', self.received(self.mem))
+
+    def test_the_review_sorts_every_thread_again_once_hand_choices_stay(self):
+        self.olive_mail()
+        with self.own.store.connect() as db:
+            sg.set_hand(db, self.event_id(self.own, 'work-4'), 'private')
+            db.execute("DELETE FROM share_meta WHERE key='sorter'")
+            sg.ensure(db)
+            calls = dict(db.execute('SELECT event_id,coalesce(verdict,hand) FROM share_threads').fetchall())
+        self.assertEqual(calls, {self.event_id(self.own, 'work-1'): None, self.event_id(self.own, 'work-3'): None, self.event_id(self.own, 'work-4'): 'internal'})  # a thread with a hand choice keeps its call
+        with self.own.store.connect() as db:
+            pending = sg.unjudged(db, self.own.scopes(db)[FLEET], 10)
+        thread = next(x for x in pending if x['subject'] == 'Re: Renewal quote')
+        self.assertEqual([x['text'] for x in thread['earlier']], [BODY])  # what an earlier message says counts too
+
+    # -- what went wrong in a live Fleet: these are its cases, with made-up names
+    def side_company(self, box=None):
+        """A second company of Olive's, connected as Work too: its own mailbox, at its own domain."""
+        box = box or self.own
+        box.config['accounts'].append({'id': 'side', 'email': 'olive@sidecorp.example', 'boundary': 'work:Sidecorp', 'client': 'x', 'transport': 'gog'})
+        self.add(box, mail('side', 1, 'Pat Moss <pat@buyer.example>', 'olive@sidecorp.example', 'Clinic pilot', 'Sidecorp pilot for three clinics.', 1, 't-side'),
+                 mail('side', 2, 'Olive <olive@sidecorp.example>', 'pat@buyer.example', 'Re: Clinic pilot', 'Happy to start in May.', 0, 't-side'))
+        self.judge(box, ('side-1', 'client', 'Pat asked about a pilot'))
+
+    def test_automated_billing_security_and_recruiting_mail_never_goes(self):
+        def categorised(m, *labels):
+            m['metadata']['labels'] = list(labels)
+            return m
+        self.add(self.own,
+                 mail('work', 70, 'Tool Co <invoice+statements@pay.example>', 'own1@acme.example', 'Your receipt from Tool Co', 'Receipt 2543, paid by card.', 1, 't-receipt'),
+                 mail('work', 71, 'Cloud <payments-noreply@cloud.example>', 'own1@acme.example', 'Invoices due soon', 'Two invoices are due.', 1, 't-due'),
+                 categorised(mail('work', 72, 'AI Lab <team@mail.ailab.example>', 'own1@acme.example', 'Out of usage credits', 'Your organisation is out of credits.', 1, 't-credits'), 'CATEGORY_UPDATES', 'INBOX'),
+                 categorised(mail('work', 73, 'Ann Fox <ann@agency.example>', 'own1@acme.example', 'The part they leave out', 'A newsletter about success.', 1, 't-news'), 'CATEGORY_PROMOTIONS'),
+                 mail('work', 74, 'Code Host <noreply@codehost.example>', 'own1@acme.example', 'A token was added', 'A new access token was added to your account.', 1, 't-token'),
+                 mail('work', 75, 'Jo Hart <jo@recruit.example>', 'own1@acme.example', 'Interview opportunity', 'A role I think fits you, Olive.', 1, 't-recruit'),
+                 categorised(mail('work', 76, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Billing question', 'Can we move to yearly billing?', 2, 't-bill'), 'CATEGORY_UPDATES'),
+                 mail('work', 77, 'Olive <own1@acme.example>', 'lee@client.example', 'Re: Billing question', 'Yes, from next month.', 1, 't-bill'))
+        # the review got some wrong; the rules hold anyway, and its own calls for security and recruiting say sensitive
+        self.judge(self.own, ('work-70', 'client', 'A receipt'), ('work-71', 'client', 'Invoices'), ('work-72', 'client', 'Credits'),
+                   ('work-73', 'client', 'A newsletter'), ('work-74', 'sensitive', 'A security alert'), ('work-75', 'sensitive', 'A recruiter wrote'),
+                   ('work-76', 'client', 'Lee asked about yearly billing'))
+        self.rounds()
+        received = json.dumps(self.team(self.mem) + self.team(self.mem, 'team_mail'))
+        for text in ('Receipt 2543', 'Two invoices', 'out of credits', 'newsletter about success', 'access token', 'A token was added',
+                     'A security alert', 'role I think fits', 'Interview', 'A recruiter wrote', 'Jo'):
+            self.assertNotIn(text, received)
+        self.assertIn('yearly billing', received)  # a customer asking about their bill, and Olive answered: a client thread
+        with self.own.store.connect() as db:
+            scope = self.own.scopes(db)[FLEET]
+            views = {s: sg.visibility(db, scope, dict(db.execute('SELECT * FROM events WHERE source_id=?', (s,)).fetchone()))
+                     for s in ('work-70', 'work-71', 'work-72', 'work-73', 'work-74', 'work-76')}
+            self.assertEqual(views, {'work-70': 'other', 'work-71': 'other', 'work-72': 'other', 'work-73': 'other', 'work-74': 'other', 'work-76': 'team'})
+            self.assertEqual([x['subject'] for x in sg.unjudged(db, scope, 50) if x['subject'] in ('Your receipt from Tool Co', 'Out of usage credits')], [])
+        self.assertGreaterEqual(self.own.graph_overview(FLEET)['sorted']['other'], 4)
+
+    def test_the_review_is_told_billing_security_and_recruiting_are_never_client(self):
+        for words in ('own bills', 'support tickets with the tools and suppliers', 'security', 'recruiting', 'never choose client'):
+            self.assertIn(words, a.SHARE_VERDICTS)
+
+    def test_a_second_companys_mailbox_starts_off_and_its_owner_decides(self):
+        self.olive_mail()
+        self.side_company()
+        # the domain decides, not the name: a mailbox named for this Fleet at another company's domain is another company's
+        self.own.config['accounts'].append({'id': 'named', 'email': 'olive@othercorp.example', 'boundary': 'work:Acme', 'service': 'gmail'})
+        self.own.config['accounts'].append({'id': 'code', 'email': 'olive-codes', 'boundary': 'work:Acme', 'service': 'github'})
+        conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
+        self.assertEqual((conns['side']['work'], conns['side']['company'], conns['side']['on'], conns['side']['personal']), (False, False, False, False))  # never in the Fleet's briefs either
+        self.assertEqual((conns['named']['company'], conns['named']['on']), (False, False))
+        self.assertEqual((conns['code']['company'], conns['code']['on']), (True, True))  # no address: named for the Fleet
+        self.assertEqual((conns['work']['company'], conns['work']['on']), (True, True))
+        self.adm.graph_set_policy(FLEET, ['mail'])  # what the Fleet requires is its own company's mail, never another's
+        self.rounds()
+        conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
+        self.assertEqual((conns['side']['required'], conns['side']['on'], conns['side']['kind']), (False, False, 'mail'))
+        self.assertEqual((conns['named']['required'], conns['named']['on']), (False, False))
+        self.assertEqual(self.own.fleet_domains(FLEET), {'acme.example'})  # Olive's other addresses aren't the Fleet's
+        self.assertIn(BODY, self.received(self.mem))
+        self.assertNotIn('Sidecorp pilot', self.received(self.mem))
+        self.own.graph_connection(FLEET, 'side', True)
+        self.rounds()
+        self.assertIn('Sidecorp pilot', self.received(self.mem))
+        self.own.graph_connection(FLEET, 'side', False)  # taken back from the teammates' Machines
+        self.rounds()
+        self.assertNotIn('Sidecorp pilot', self.received(self.mem))
+        self.assertIn(BODY, self.received(self.mem))
+
+    def test_a_gmail_account_without_a_service_is_work_email_the_fleet_can_require(self):
+        for acc in self.own.config['accounts']:
+            acc.pop('service', None)
+        self.adm.graph_set_policy(FLEET, ['mail'])
+        self.rounds()
+        work = next(c for c in self.own.sharing()[0]['connections'] if c['id'] == 'work')
+        self.assertEqual((work['kind'], work['service'], work['required'], work['on']), ('mail', 'gmail', True, True))
+
+    def test_an_update_keeps_a_fleet_that_was_sharing_on_and_sorts_everything_again(self):
+        """The version before shared without a Fleet switch, without per-connection choices and with an older sorting: a
+        receipt, a second company's mailbox and a deal went as client. After the update the Fleet stays on, those are
+        taken back at once or once sorted again, and a real client thread stays with the team throughout."""
+        self.olive_mail()
+        self.side_company()
+        receipt = mail('work', 80, 'Tool Co <hello@toolco.example>', 'own1@acme.example', 'Your receipt', 'Receipt 99, paid.', 1, 't-r')
+        receipt['metadata']['labels'] = ['CATEGORY_UPDATES', 'INBOX']  # an ordinary sender address, filed as an update by the mailbox
+        self.add(self.own, receipt,
+                 mail('work', 81, 'Max Rue <max@buyer.example>', 'own1@acme.example', 'Acquisition', 'Our offer to buy your company.', 1, 't-deal'))
+        self.judge(self.own, ('work-80', 'client', 'A receipt'), ('work-81', 'client', 'Max wrote'))
+        self.own.set_meta('graph_conn:' + FLEET, {'side': True})
+        with patch.object(sg.Scope, 'automated', new_callable=unittest.mock.PropertyMock, return_value=set()):  # the old sorting
+            self.rounds()
+        for text in (BODY, 'Receipt 99', 'Sidecorp pilot', 'offer to buy'):
+            self.assertIn(text, self.received(self.mem))
+        # the update: no switch statement yet (the version before had none), no connection choices, every call sorted again
+        self.net.trust = [t for t in self.net.trust if t['s'].get('t') != 'pause']
+        for box in self.boxes:
+            box.set_meta('graph_pause:' + FLEET, None)
+        self.own.set_meta('graph_conn:' + FLEET, None)
+        with self.own.store.connect() as db:
+            db.execute("DELETE FROM share_meta WHERE key='sorter'")
+            sg.ensure(db)
+        group = self.mem.directory()['fleets'][0]
+        self.assertIsNone(self.mem.graph_paused(group))  # a member's Machine that shared before: still on, before any admin says so
+        self.rounds()
+        self.assertIsNone(self.own.sharing()[0]['paused'])  # stays on, for everyone
+        said = [t['s'] for t in self.net.trust if t['s'].get('t') == 'pause']
+        self.assertEqual([(s['by'], s['on']) for s in said], [('own1', False)])  # signed once by an admin's Machine that was sharing
+        received = self.received(self.mem)
+        self.assertNotIn('Receipt 99', received)  # a rule says no: taken back at once
+        self.assertNotIn('Sidecorp pilot', received)  # another company's mailbox: off unless its owner turns it on
+        self.assertIn(BODY, received)  # waits to be sorted again: stays with the team meanwhile
+        self.assertIn('offer to buy', received)
+        waiting = self.own.graph_unjudged(1)
+        self.assertEqual(len(waiting), 1)
+        self.assertIn(waiting[0]['subject'], ('Re: Renewal quote', 'Acquisition'))  # what went before is sorted first
+        tombstones = len([b for b in self.net.blobs.values() if b['header']['kind'] == 'mail'])
+        self.judge(self.own, ('work-1', 'client', 'Lee asked for the renewal quote'), ('work-81', 'sensitive', 'Max wrote'))
+        self.rounds()
+        received = self.received(self.mem)
+        self.assertIn(BODY, received)
+        self.assertNotIn('offer to buy', received)  # sorted again as sensitive: taken back
+        self.assertNotIn('Max wrote', json.dumps(self.team(self.mem)))
+        self.assertTrue(self.own.sharing()[0]['started'])  # it shared before: no new Start now
+        self.assertLessEqual(len([b for b in self.net.blobs.values() if b['header']['kind'] == 'mail']) - tombstones, 1)  # no take back and send again
+
+    def test_a_fleet_that_never_shared_stays_off_after_the_update(self):
+        self.olive_mail()
+        self.net.trust = [t for t in self.net.trust if t['s'].get('t') != 'pause']
+        for box in self.boxes:
+            box.set_meta('graph_pause:' + FLEET, None)
+        self.rounds()
+        self.assertEqual(self.own.sharing()[0]['paused'], {'default': True})
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])
+        self.assertEqual([t for t in self.net.trust if t['s'].get('t') == 'pause'], [])
 
 if __name__ == '__main__':
     unittest.main()
