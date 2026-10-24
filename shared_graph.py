@@ -41,7 +41,14 @@ RELAYED = ('snapshot', 'delta', 'mail', 'file')  # what a teammate's Machine pas
 KEEP_DAYS = 30              # the Network keeps a blob nobody took this long, then drops it
 WANT_DAYS = 7               # a Machine asks its teammates for what it missed this long
 SERVE_BATCH = 40            # blobs this Machine passes on per round, for one teammate who asked
-VERDICTS = ('client', 'sensitive', 'internal', 'personal')
+VERDICTS = ('client', 'sensitive', 'internal', 'personal', 'unsure', 'other')
+# unsure: the review can't confidently call it client Work, so it stays with the owner and, when someone outside is on it,
+# waits in "Share these?" for their own Share or Keep private. other: not a conversation with a client (notifications,
+# receipts, newsletters, spam, cold pitches): nothing of it goes.
+HOLD = 3600                 # a thread the review just called client waits this long before it goes, so a mistake can be caught
+REMIND_EVERY = 3 * 86400    # until its owner starts the first share: a gentle reminder this often, within work hours
+REKEY_HOLD = 86400          # a new key for someone admitted: an admin's Machine vouches for it after this, unless told it isn't theirs
+SUGGEST_AFTER = 2           # this many hand choices the same way on threads with one company: ask once to make it a rule
 HANDS = ('team', 'private')
 ROUND_EVERY = 300           # publish and fetch, at most this often
 SNAPSHOT_EVERY = 86400      # a full snapshot at least daily
@@ -59,6 +66,8 @@ SCHEMA = '''
 CREATE TABLE IF NOT EXISTS share_threads(thread TEXT PRIMARY KEY,verdict TEXT,hand TEXT,hand_at TEXT,event_id INTEGER,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS share_lines(event_id INTEGER PRIMARY KEY,thread TEXT,line TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS share_private(node_id TEXT PRIMARY KEY,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS share_rules(key TEXT PRIMARY KEY,choice TEXT NOT NULL,name TEXT,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS share_meta(key TEXT PRIMARY KEY,value TEXT);
 CREATE TABLE IF NOT EXISTS share_out(fleet TEXT NOT NULL,kind TEXT NOT NULL,key TEXT NOT NULL,hash TEXT NOT NULL,at TEXT NOT NULL,
   PRIMARY KEY(fleet,kind,key));
 CREATE TABLE IF NOT EXISTS team_records(fleet TEXT NOT NULL,member TEXT NOT NULL,rid TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,
@@ -89,6 +98,14 @@ class Later(ValueError):
 
 def ensure(db):
     db.executescript(SCHEMA)
+    if 'sorted_at' not in {r[1] for r in db.execute('PRAGMA table_info(share_threads)')}:
+        db.execute('ALTER TABLE share_threads ADD COLUMN sorted_at TEXT')  # when the review first called it client: the hold
+    if not db.execute("SELECT 1 FROM share_meta WHERE key='sorter' AND value='2'").fetchone():
+        # Sorted again with the tuned review (deals, peers, notifications), before anything goes: every call the review
+        # made before. A hand choice stays; until the review looks again, the thread stays with the owner.
+        db.execute("UPDATE share_threads SET verdict=NULL,sorted_at=NULL WHERE hand IS NULL")
+        db.execute("DELETE FROM share_lines")
+        db.execute("INSERT OR REPLACE INTO share_meta(key,value) VALUES('sorter','2')")
     import message_seal
     if message_seal.is_protected(db):  # teammates' mail, records, files and the review's lines: sealed at rest like the owner's own
         message_seal.ensure_triggers(db)
@@ -232,13 +249,12 @@ def judge(db, team, at=None):
         if verdict not in VERDICTS:
             raise ValueError('share: ' + ', '.join(VERDICTS))
         thread = thread_of(row['kind'], json.loads(row['metadata'] or '{}'), row['id'])
-        # Personal stays personal: a later review never turns it into a client or sensitive call (not even a "Private
-        # thread" line); only the owner's hand can. Sensitive never becomes client.
-        db.execute('INSERT INTO share_threads(thread,verdict,event_id,at) VALUES(?,?,?,?) ON CONFLICT(thread) DO UPDATE SET '
-                   'verdict=CASE WHEN share_threads.verdict=\'personal\' THEN \'personal\' '
-                   'WHEN share_threads.verdict=\'sensitive\' AND excluded.verdict=\'client\' THEN share_threads.verdict '
-                   'ELSE excluded.verdict END,event_id=excluded.event_id,at=excluded.at', (thread, verdict, row['id'], stamp))
-        verdict = db.execute('SELECT verdict FROM share_threads WHERE thread=?', (thread,)).fetchone()[0]
+        db.execute('INSERT INTO share_threads(thread,verdict,event_id,at,sorted_at) VALUES(?,?,?,?,?) ON CONFLICT(thread) DO UPDATE SET '
+                   'verdict=CASE WHEN share_threads.verdict=\'sensitive\' THEN \'sensitive\' '
+                   'WHEN share_threads.verdict=\'personal\' AND excluded.verdict IN (\'client\',\'unsure\') THEN share_threads.verdict '
+                   'ELSE excluded.verdict END,event_id=excluded.event_id,at=excluded.at,'
+                   'sorted_at=coalesce(share_threads.sorted_at,excluded.sorted_at)',
+                   (thread, verdict, row['id'], stamp, stamp if verdict == 'client' else None))
         line = graph.one_line(item.get('line'), 160)
         if line and verdict == 'client':
             db.execute('INSERT OR REPLACE INTO share_lines(event_id,thread,line,at) VALUES(?,?,?,?)', (row['id'], thread, line, stamp))
@@ -299,10 +315,19 @@ class Scope:
         self.private |= {'project:' + str(i) for i in graph.hidden_project_ids(db)}
         self.hidden_events = graph.hidden_event_ids(db)
         self.calls = {r[0]: (r[1], r[2]) for r in db.execute('SELECT thread,verdict,hand FROM share_threads')}  # the review's and the owner's
+        self.hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=HOLD)).isoformat(timespec='seconds')
+        self.fresh = {r[0] for r in db.execute('SELECT thread FROM share_threads WHERE hand IS NULL AND sorted_at>?', (self.hold,))}
         self.private_ids = set()
-        self.org_of = {}
-        for row in db.execute("SELECT id,kind,info FROM graph_nodes WHERE kind IN ('person','org')"):
+        self.team_ids = set()  # rules the owner said yes to: "always share client threads with X" (for threads the review was unsure of)
+        for key, choice in db.execute('SELECT key,choice FROM share_rules'):
+            (self.private_ids if choice == 'private' else self.team_ids).add(key)
+        self.org_of, self.org_names = {}, {}
+        for row in db.execute("SELECT id,kind,name,info FROM graph_nodes WHERE kind IN ('person','org')"):
             info = json.loads(row['info'] or '{}')
+            if row['kind'] == 'org':
+                self.org_names[row['id']] = row['name']
+                if info.get('domain'):
+                    self.org_names['@' + info['domain']] = row['name']
             ids = {row['id'], *info.get('identifiers', [])}
             if row['kind'] == 'person':
                 if info.get('side_by') == 'owner' and info.get('side') == 'personal' or row['id'] in personal and info.get('side_by') != 'owner':
@@ -318,18 +343,33 @@ class Scope:
     def private_address(self, address):
         return address in self.private_ids or '@' + address.rsplit('@', 1)[-1] in self.private_ids
 
+    def company(self, metadata):
+        """Who a thread is with, for its one line: the organisation of the first client on it, else their domain."""
+        for a in addresses(metadata):
+            if self.client_address(a):
+                domain = a.rsplit('@', 1)[-1]
+                return (self.org_names.get(self.org_of.get(a)) or self.org_names.get('@' + domain)
+                        or (a if domain in graph.FREEMAIL else domain))
+        return ''
+
+    def team_address(self, address):
+        return address in self.team_ids or '@' + address.rsplit('@', 1)[-1] in self.team_ids
+
     def client_address(self, address):
-        """Someone outside the company, with a work domain or at an organisation on the Graph."""
-        if address in self.mine or not outside(address, self.internal):
+        """Someone outside the company, with a work domain or at an organisation on the Graph. Never an automated sender
+        (no-reply, notifications, relays): that is not a conversation with a client."""
+        if address in self.mine or not outside(address, self.internal) or graph.bulk(address) or graph.RELAY.search(address):
             return False
         return address.rsplit('@', 1)[-1] not in graph.FREEMAIL or bool(self.org_of.get(address))
 
 
 def visibility(db, scope, event):
     """A thread's visibility for one Fleet: None (not shared at all, no label: another account or personal), 'internal'
-    (colleagues only, never re-shared), 'team' (the whole thread), 'line' (sensitive: that it exists), 'private'
+    (colleagues only, never re-shared), 'team' (the whole thread), 'sensitive' (deals, HR, legal, health, money: nothing of it goes), 'private'
     (Only you: by hand, or nobody outside who is a client), 'pending' (Only you until the review judged it), 'personal'
-    (the review found it is the owner's own life: nothing of it goes, not even that it exists)."""
+    (the review found it is the owner's own life: nothing of it goes, not even that it exists), 'ask' (the review was
+    unsure: Only you, offered in "Share these?"), 'other' (not a conversation with a client), 'wait' (client, going
+    after HOLD)."""
     if event['account_id'] not in scope.accounts:
         return None
     if event['id'] in getattr(scope, 'hidden_events', ()):
@@ -349,12 +389,31 @@ def visibility(db, scope, event):
         return 'team'
     if not any(scope.client_address(a) for a in people) and event['kind'] != 'intercom.conversation':
         return 'private'
-    return {'client': 'team', 'sensitive': 'line', 'internal': 'internal'}.get(verdict, 'pending')
+    if verdict == 'unsure':
+        return 'team' if any(scope.team_address(a) for a in people) else 'ask'
+    view = {'client': 'team', 'sensitive': 'sensitive', 'internal': 'internal', 'other': 'other'}.get(verdict, 'pending')
+    if view == 'team' and thread_of(event['kind'], metadata, event['id']) in scope.fresh:
+        return 'wait'  # just called client: it goes after HOLD, so a mistake can be caught first
+    return view
 
 
 def label(view):
     """The dashboard's label for a thread: Team, Only you, or none."""
-    return None if view in (None, 'internal') else 'team' if view == 'team' else 'only_you'
+    return None if view in (None, 'internal') else 'team' if view in ('team', 'wait') else 'only_you'
+
+
+def why(view, hand=None, company='', kept=False):
+    """One line: why a thread is shared or not. Short, for the label and the What's shared list."""
+    with_ = f' with {company}' if company else ''
+    if view == 'team':
+        return 'Shared: you chose Team' if hand == 'team' else f'Shared: client thread{with_}'
+    if view == 'wait':
+        return f'Shares within the hour: client thread{with_}'
+    if view == 'private':
+        return 'Only you: you chose this' if hand == 'private' else 'Only you: kept private' if kept else 'Only you: nobody outside the company'
+    return {'sensitive': 'Only you: sensitive', 'ask': "Only you: not sure it's client work",
+            'other': 'Only you: not a client conversation', 'pending': 'Only you: not sorted yet', 'personal': 'Only you: personal',
+            'internal': 'Only colleagues: stays with the people on it'}.get(view, 'Only you')
 
 
 # ---------------------------------------------------------------- what this Machine shares
@@ -370,12 +429,6 @@ def _who(metadata, scope):
                 return _first_name(raw.split('<', 1)[0].strip().strip('"')) or a.split('@')[0]
             return a.split('@')[0].split('.')[0].capitalize()
     return ''
-
-
-def private_line(who, at):
-    when = graph.parse_time(at)
-    day = f'{when.day} {when:%b}' if when else ''
-    return ('Private thread with ' + who if who else 'Private thread') + (', ' + day if day else '')
 
 
 def _events(db, accounts, since):
@@ -395,13 +448,16 @@ def collect(db, scope, key, secret, today=None):
     keys = key if isinstance(key, list) else [key]
     key = keys[0]
     every = lambda value: [keyed(k, value) for k in keys]  # with every graph key held: teammates on another one still match
-    views, threads, by_thread = {}, collections.defaultdict(list), {}
+    views, threads, by_thread, this_week = {}, collections.defaultdict(list), {}, {}
+    week = (today - dt.timedelta(days=7)).isoformat()
     for e in _events(db, sorted(scope.accounts), ''):
         e = dict(e)
         e['metadata'] = json.loads(e['metadata'] or '{}')
         view = visibility(db, scope, e)
         views[e['id']] = view
-        if view in ('team', 'line'):
+        if e['occurred_at'] >= week and view:
+            this_week[thread_of(e['kind'], e['metadata'], e['id'])] = view
+        if view == 'team':
             thread = thread_of(e['kind'], e['metadata'], e['id'])
             threads[thread].append(e)
             by_thread[e['id']] = thread
@@ -411,9 +467,6 @@ def collect(db, scope, key, secret, today=None):
     for thread, items in newest:
         tag = keyed(secret, 'thread|' + thread)
         last = items[-1]
-        if views[last['id']] == 'line':
-            out_threads[tag] = {'tag': tag, 'private': True, 'at': last['occurred_at'], 'line': private_line(_who(last['metadata'], scope), last['occurred_at'])}
-            continue
         if last['kind'] not in MAIL_KINDS:
             continue
         messages = [{'at': e['occurred_at'], 'from': str(e['metadata'].get('from') or '')[:200], 'to': str(e['metadata'].get('to') or '')[:500],
@@ -437,19 +490,15 @@ def collect(db, scope, key, secret, today=None):
             view = views.get(event_id)
             if view == 'team' and lines.get(event_id):
                 found.append({'at': at, 'line': lines[event_id]})
-            elif view == 'line' and event_id in by_thread:
-                tag = keyed(secret, 'thread|' + by_thread[event_id])
-                if not any(x.get('tag') == tag for x in found):
-                    found.append({'at': at, 'line': out_threads.get(tag, {}).get('line') or 'Private thread', 'tag': tag, 'private': True})
             if len(found) >= TIMELINE:
                 break
         return found
 
     def work(node_id):
-        """(shared, last): a record goes when one of its threads is shared, or it is a client the review hasn't judged
-        every thread of yet; not when its threads are only sensitive, internal or kept to the owner by hand."""
+        """(shared, last): a record goes when one of its threads is shared; not when its threads are only sensitive,
+        internal, not looked at yet, unsure or kept to the owner by hand."""
         seen = [(views.get(r[0]), r[1]) for r in db.execute('SELECT event_id,at FROM graph_events WHERE node_id=? AND probable=0', (node_id,))]
-        seen = [(v, at) for v, at in seen if v in ('team', 'pending')]
+        seen = [(v, at) for v, at in seen if v == 'team']  # when unsure, nothing: not before the review called a thread client
         return bool(seen), max((at for _, at in seen), default=None)
 
     records = {}
@@ -513,13 +562,9 @@ def collect(db, scope, key, secret, today=None):
                       'why': row['stage_reason'], 'next': row['next_step'],
                       'org': {'name': org['name'], 'd': keyed(key, 'domain:' + domain)} if org else None,
                       'people': sorted({h for p in linked for h in people.get(p, [])}), 'timeline': timeline(row['id']), 'threads': thread_tags(row['id'])}
-    week = (today - dt.timedelta(days=7)).isoformat()
-    recent = {}
-    for thread, items in threads.items():
-        if items[-1]['occurred_at'] >= week:
-            recent[thread] = views[items[-1]['id']]
     held_private = {r['thread'] for r in db.execute("SELECT thread FROM share_threads WHERE hand='private' AND hand_at>=?", (week,))}
-    stats = {'threads': sum(1 for v in recent.values() if v == 'team'), 'held': sum(1 for v in recent.values() if v == 'line') + len(held_private),
+    held = {t for t, v in this_week.items() if v in ('sensitive', 'ask')} | held_private  # sensitive, unsure, and Only you by hand
+    stats = {'threads': sum(1 for v in this_week.values() if v == 'team'), 'held': len(held),
              'people': sum(1 for r in records.values() if r['t'] == 'person'), 'orgs': sum(1 for r in records.values() if r['t'] == 'org'),
              'projects': sum(1 for r in records.values() if r['t'] == 'project')}
     return records, out_threads, stats, files
@@ -527,8 +572,9 @@ def collect(db, scope, key, secret, today=None):
 
 def unjudged(db, scope, limit, skip=()):
     """Work client threads the review hasn't judged yet, the newest first: for the history pass (one run judges a batch,
-    the next one goes on), so all the Work history the Machine has goes through the same review labels."""
-    found, seen = [], set(skip)
+    the next one goes on), so all the Work history the Machine has goes through the same review labels. Each with its
+    latest message and the start of earlier ones, since what a thread is about can sit in any of them."""
+    found, seen, earlier = [], set(skip), {}
     if not scope.accounts:
         return found
     rows = db.execute(f"SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE deleted=0 "
@@ -539,17 +585,137 @@ def unjudged(db, scope, limit, skip=()):
         e = dict(e)
         e['metadata'] = json.loads(e['metadata'] or '{}')
         thread = thread_of(e['kind'], e['metadata'], e['id'])
-        if thread in seen:
+        if thread in earlier:
+            if len(earlier[thread]) < 4:
+                earlier[thread].append({'from': str(e['metadata'].get('from') or '')[:120], 'at': e['occurred_at'],
+                                        'text': ' '.join(str(e['body'] or '').split())[:300]})
+            continue
+        if thread in seen or len(found) >= limit:
+            seen.add(thread)
             continue
         seen.add(thread)
         if visibility(db, scope, e) != 'pending':
             continue
+        earlier[thread] = []
         found.append({'event_id': e['id'], 'subject': str(e['title'] or '')[:200], 'with': _who(e['metadata'], scope), 'at': e['occurred_at'],
                       'from': str(e['metadata'].get('from') or '')[:200], 'to': str(e['metadata'].get('to') or '')[:300],
-                      'text': ' '.join(str(e['body'] or '').split())[:700]})
-        if len(found) >= limit:
-            break
+                      'text': ' '.join(str(e['body'] or '').split())[:1500], 'earlier': earlier[thread]})
     return found
+
+
+# ---------------------------------------------------------------- what is shared, in one place, and learning from the owner
+def rule_key(metadata, scope):
+    """(key, name) of who a thread is with, for a rule: '@domain' for a work domain, else the address; or (None, '')."""
+    for a in addresses(metadata):
+        if outside(a, scope.internal) and a not in scope.mine and not graph.bulk(a) and not graph.RELAY.search(a):
+            domain = a.rsplit('@', 1)[-1]
+            return (a if domain in graph.FREEMAIL else '@' + domain), scope.company(metadata) or domain
+    return None, ''
+
+
+def _meets(key, metadata):
+    return any(a == key or '@' + a.rsplit('@', 1)[-1] == key for a in addresses(metadata))
+
+
+def suggest_rule(db, scope, event_id, choice):
+    """After a hand choice (team or private): when the owner chose the same way on SUGGEST_AFTER threads with one
+    company and there is no rule yet, the rule to ask about, once: {key, name, choice}. Else None."""
+    if choice not in HANDS:
+        return None
+    row = db.execute('SELECT metadata FROM events WHERE id=?', (int(event_id),)).fetchone()
+    if not row:
+        return None
+    key, name = rule_key(json.loads(row['metadata'] or '{}'), scope)
+    asked = f'asked:{choice}:{key}'
+    if not key or db.execute('SELECT 1 FROM share_rules WHERE key=?', (key,)).fetchone() or \
+            db.execute('SELECT 1 FROM share_meta WHERE key=?', (asked,)).fetchone():
+        return None
+    same = 0
+    for r in db.execute('SELECT e.metadata FROM share_threads s JOIN events e ON e.id=s.event_id WHERE s.hand=?', (choice,)):
+        if _meets(key, json.loads(r['metadata'] or '{}')):
+            same += 1
+    if same < SUGGEST_AFTER:
+        return None
+    db.execute('INSERT OR REPLACE INTO share_meta(key,value) VALUES(?,?)', (asked, now()))
+    return {'key': key, 'name': name, 'choice': choice}
+
+
+def set_rule(db, key, choice, name=''):
+    """Always keep threads with someone private, or always share their client threads (the ones the review was unsure
+    of; a sensitive or personal call still holds). None removes the rule."""
+    key = str(key or '').lower().strip()
+    if not (ADDRESS.fullmatch(key) or re.fullmatch(r'@[a-z0-9.-]+\.[a-z]{2,}', key)):
+        raise ValueError('A rule is about an address or a domain')
+    if choice is None:
+        db.execute('DELETE FROM share_rules WHERE key=?', (key,))
+        return None
+    if choice not in HANDS:
+        raise ValueError('Choose team or private')
+    db.execute('INSERT OR REPLACE INTO share_rules(key,choice,name,at) VALUES(?,?,?,?)', (key, choice, str(name or '')[:120], now()))
+    return choice
+
+
+def threads_by_view(db, scope):
+    """{thread: (view, newest event row, hand)} for every thread in the scope's accounts."""
+    out = {}
+    hands = {r[0]: r[1] for r in db.execute('SELECT thread,hand FROM share_threads')}
+    for e in _events(db, sorted(scope.accounts), ''):
+        e = dict(e)
+        e['metadata'] = json.loads(e['metadata'] or '{}')
+        view = visibility(db, scope, e)
+        if view is None:
+            continue
+        thread = thread_of(e['kind'], e['metadata'], e['id'])
+        out[thread] = (view, e, hands.get(thread))
+    return out
+
+
+COUNTED = ('client', 'sensitive', 'personal', 'internal', 'unsure', 'other')
+LISTED = 300  # threads per list in What's shared, newest first
+
+
+def overview(db, scope, sent=0):
+    """What's shared, in one place, for one Work Fleet: counts by how the review sorted the threads and what went, and
+    the lists: shared (and going within the hour), Share these? (the review was unsure, someone outside is on it),
+    and what the owner keeps private (threads by hand, records, rules)."""
+    found = threads_by_view(db, scope)
+    sorted_ = dict.fromkeys(COUNTED, 0)
+    for verdict, n in db.execute('SELECT verdict,count(*) FROM share_threads WHERE verdict IS NOT NULL GROUP BY verdict'):
+        if verdict in sorted_:
+            sorted_[verdict] = n
+    views = collections.Counter(v for v, _, _ in found.values())
+
+    def item(view, e, hand):
+        kept = view == 'private' and any(scope.private_address(a) for a in addresses(e['metadata']))
+        return {'event_id': e['id'], 'title': str(e['title'] or '')[:200], 'with': _who(e['metadata'], scope), 'company': scope.company(e['metadata']),
+                'at': e['occurred_at'], 'view': view, 'share': label(view) or 'only_you', 'why': why(view, hand, scope.company(e['metadata']), kept)}
+    newest = sorted(found.values(), key=lambda x: x[1]['occurred_at'], reverse=True)
+    shared = [item(*x) for x in newest if x[0] in ('team', 'wait')]
+    unsure = [item(*x) for x in newest if x[0] == 'ask' and any(scope.client_address(a) for a in addresses(x[1]['metadata']))]
+    by_hand = [item(*x) for x in newest if x[0] == 'private' and x[2] == 'private']
+    records = [{'node_id': r['id'], 'name': r['name'], 'kind': r['kind']} for r in
+               db.execute('SELECT n.id,n.name,n.kind FROM share_private p JOIN graph_nodes n ON n.id=p.node_id ORDER BY p.at DESC LIMIT 200')]
+    rules = [dict(r) for r in db.execute('SELECT key,choice,name,at FROM share_rules ORDER BY at DESC')]
+    return {'sorted': sorted_, 'unsorted': views.get('pending', 0), 'shared': views.get('team', 0), 'waiting': views.get('wait', 0),
+            'held': views.get('sensitive', 0), 'sent': sent, 'threads': shared[:LISTED], 'more': max(0, len(shared) - LISTED),
+            'unsure': unsure[:LISTED], 'unsure_more': max(0, len(unsure) - LISTED), 'by_hand': by_hand[:LISTED], 'records': records, 'rules': rules}
+
+
+def preview(db, scope, limit=12):
+    """Before a Machine's first share: how many client threads go and with which organisations, to look over first."""
+    found = threads_by_view(db, scope)
+    orgs = collections.Counter()
+    keys = {}
+    for view, e, _ in found.values():
+        if view not in ('team', 'wait'):
+            continue
+        key, name = rule_key(e['metadata'], scope)
+        if not key:
+            continue
+        orgs[key] += 1
+        keys.setdefault(key, name)
+    return {'threads': sum(orgs.values()), 'orgs': [{'name': keys[k], 'key': k, 'threads': c} for k, c in orgs.most_common(limit)],
+            'more': max(0, len(orgs) - limit)}
 
 
 # ---------------------------------------------------------------- the team's view: Mine plus what teammates shared
@@ -601,9 +767,51 @@ class SharedGraph:
     def confirmed(self, group):
         """(confirmed members {id: sign key}, trusted admins {id: key}, waiting [ids]) for a Work Fleet entry."""
         trusted, _ = self.trust(group)
-        found, waiting, pins = ft.members(group, trusted, self.meta('graph_members:' + group['id']))
+        found, waiting, pins = ft.members(group, trusted, self.meta('graph_members:' + group['id']), self.graph_gone(group, trusted))
         self.set_meta('graph_members:' + group['id'], pins)
         return found, trusted, waiting
+
+    def graph_gone(self, group, trusted):
+        """{member: at} removed from the team's Graph by a trusted admin, kept here so the Network can't take it back."""
+        gone = ft.removed(group, trusted, self.meta('graph_removed:' + group['id']) or {})
+        self.set_meta('graph_removed:' + group['id'], gone)
+        return gone
+
+    def _sign_remove(self, group, me, mid):
+        statement = ft.remove(group['id'], mid, me['member_id'], now())
+        self.relay.call('POST', '/trust', {'fleet': group['id'], 'item': ft.sign(self._private(), statement)}, timeout=30)
+        self.set_meta('graph_removed:' + group['id'], {**(self.meta('graph_removed:' + group['id']) or {}), mid: statement['at']})
+        LOG.info('shared graph removed fleet=%s member=%s', group['id'], mid)
+
+    def graph_remove(self, fleet, member, back=False):
+        """An admin takes someone out of the team's Graph (signed, so the Network can't keep them in), or lets them back in
+        (back): a member statement for their keys now, newer than the remove."""
+        group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
+        me = group and self._me_in(group)
+        if not me:
+            raise ValueError('Not a Work Fleet of yours')
+        trusted, _ = self.trust(group)
+        if me['member_id'] not in trusted:
+            raise ValueError('Only a confirmed admin can do that')
+        if member == me['member_id']:
+            raise ValueError('Use Stop sharing my Work for yourself')
+        m = next((x for x in group.get('members', []) if x.get('member_id') == member), None)
+        if back:
+            keys = ft.keys_of(m) if m else None
+            if not keys:
+                raise ValueError('Their Machine is not in the Fleet now')
+            item = ft.sign(self._private(), ft.statement('member', fleet, member, keys['sign'], me['member_id'], at=now()))
+            self.relay.call('POST', '/trust', {'fleet': fleet, 'item': item}, timeout=30)
+            self.set_meta('graph_admitted:' + fleet, sorted(set(self.meta('graph_admitted:' + fleet) or []) | {member}))
+        else:
+            self._sign_remove(group, me, member)
+            self.set_meta('graph_admitted:' + fleet, sorted(set(self.meta('graph_admitted:' + fleet) or []) - {member}))
+        self.directory(refresh=True)
+        try:
+            self.graph_round(force=True)
+        except (ValueError, OSError, KeyError, TypeError) as error:
+            LOG.info('shared graph after remove error=%s', type(error).__name__)
+        return {'ok': True, 'removed': not back}
 
     def _public(self, group, mid):
         m = next((x for x in group.get('members', []) if x.get('member_id') == mid), None)
@@ -671,25 +879,178 @@ class SharedGraph:
         found, trusted, waiting = self.confirmed(group)
         members = {m['member_id']: m for m in group.get('members', []) if m.get('member_id')}
         if me['member_id'] in trusted:
-            for mid in waiting:
-                if mid != me['member_id'] and ft.keys_of(members[mid]):
-                    self._prompt('member', group, '', members[mid])
-            self._drop_prompts(lambda p: p['kind'] == 'member' and p['fleet'] == group['id'] and (p['member'] in found or p['member'] not in members))
+            self._admit_round(group, me, found, trusted, waiting, members)
             self._graph_keys_round(group, me, found)
             self._optout_prompts(group, me, found, trusted, members)
         if me['member_id'] not in found:
+            if me['member_id'] in (self.meta('graph_removed:' + group['id']) or {}):
+                self.set_meta('graph_confirmed:' + group['id'], None)  # if let back in: it asks again for what it missed
+                self.set_meta('graph_want:' + group['id'], None)
             return
+        if self.graph_paused(group, trusted):
+            return  # an admin paused sharing for the whole Fleet: nothing new goes, from any Machine
         self._graph_ask_round(group, me, found)
         if self.graph_off(group, trusted) == 'off':
             self.set_meta('graph_off_ok:' + group['id'], (self.meta('graph_off:' + group['id']) or {}).get('at'))
             # an admin agreed: nothing new goes; what was shared before stays with the Fleet
         else:
+            if set(found) - {me['member_id']} and not self._started(group['id']):
+                self._start_reminder(group)
             self.graph_publish(group, me, found)
         self._graph_want_round(group, me, found)  # catching up: with what is left of this hour's budget
         try:
             self._graph_serve(group, me, found, trusted)
         except Exception as error:  # noqa: BLE001 - the Network's own limit, or away: the rest next round
             LOG.info('shared graph catch-up paused fleet=%s error=%s', group['id'], type(error).__name__)
+
+    def _admit_round(self, group, me, found, trusted, waiting, members):
+        """A confirmed admin's Machine: someone new in the Fleet is one OK for its owner, once per person. Someone already
+        admitted whose Machine has new keys (a new device) needs no OK: after REKEY_HOLD this Machine vouches for the new
+        key by itself, unless its owner said it isn't theirs; until then the admins see it. Leaving ends the admission."""
+        fleet = group['id']
+        gone = self.graph_gone(group, trusted)
+        before = set(self.meta('graph_admitted:' + fleet) or [])
+        for mid in sorted(before - set(members) - set(gone)):  # left the Fleet: signed, so no Network can bring them back
+            self._sign_remove(group, me, mid)
+        gone = self.meta('graph_removed:' + fleet) or {}
+        admitted = (before & set(members)) | set(found)
+        rekey = self.meta('graph_rekey:' + fleet) or {}
+        declined = self.meta('trust_declined', []) or []
+        hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=REKEY_HOLD)).isoformat(timespec='seconds')
+        pending = set()
+        for mid in waiting:
+            keys = ft.keys_of(members[mid])
+            if mid == me['member_id'] or not keys:
+                continue
+            if mid in gone and mid not in found:
+                continue  # removed: only an admin's Share again lets them back in
+            if mid not in admitted and not ft.vouched_before(group, trusted, mid, gone):
+                self._prompt('member', group, '', members[mid])
+                continue
+            if [fleet, mid, keys['fp']] in declined:
+                continue
+            pending.add(mid)
+            seen = rekey.get(mid)
+            if not seen or seen.get('fp') != keys['fp']:
+                rekey[mid] = {'fp': keys['fp'], 'since': now(), 'name': str(members[mid].get('label') or members[mid].get('name') or '')[:80]}
+            elif seen['since'] <= hold:
+                item = ft.sign(self._private(), {**ft.statement('member', fleet, mid, keys['sign'], me['member_id'], at=now()), 'device': True})
+                self.relay.call('POST', '/trust', {'fleet': fleet, 'item': item}, timeout=30)
+                LOG.info('shared graph new device vouched fleet=%s member=%s', fleet, mid)
+                rekey.pop(mid)
+                pending.discard(mid)
+        self.set_meta('graph_rekey:' + fleet, {m: r for m, r in rekey.items() if m in pending})
+        self.set_meta('graph_admitted:' + fleet, sorted(admitted))
+        self._drop_prompts(lambda p: p['kind'] == 'member' and p['fleet'] == fleet and (p['member'] in found or p['member'] not in members or p['member'] in pending or p['member'] in gone))
+
+    def graph_rekey_no(self, fleet, member):
+        """An admin's owner: that new Machine isn't theirs. Its key is never vouched for."""
+        seen = (self.meta('graph_rekey:' + fleet) or {}).get(member)
+        if not seen:
+            raise ValueError('That was answered already')
+        self.set_meta('trust_declined', (self.meta('trust_declined', []) or [])[-200:] + [[fleet, member, seen['fp']]])
+        self.set_meta('graph_rekey:' + fleet, {m: r for m, r in (self.meta('graph_rekey:' + fleet) or {}).items() if m != member})
+        return {'ok': True}
+
+    def graph_share_all(self, fleet):
+        """An admin's owner: share the team's Graph with everyone waiting for it in this Fleet, in one OK."""
+        done = 0
+        for p in [p for p in self._prompts() if p['kind'] == 'member' and p['fleet'] == fleet]:
+            try:
+                done += bool(self.share_ok(p['id'], 'yes').get('done'))
+            except ValueError as error:
+                LOG.info('shared graph share with all skipped one error=%s', error)
+        return {'ok': True, 'done': done}
+
+    def graph_paused(self, group, trusted=None):
+        """The admin's pause for the whole Fleet, when on: {by, at}; else None. The newest one seen is kept."""
+        if trusted is None:
+            trusted, _ = self.trust(group)
+        found = ft.paused(group, trusted, self.meta('graph_pause:' + group['id']))
+        if found:
+            self.set_meta('graph_pause:' + group['id'], found)
+        return found if found and found.get('on') else None
+
+    def graph_pause(self, fleet, on=True):
+        """An admin pauses sharing the team's Graph for everyone in the Fleet, or resumes it. Signed by this Machine."""
+        group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
+        me = group and self._me_in(group)
+        if not me:
+            raise ValueError('Not a Work Fleet of yours')
+        trusted, _ = self.trust(group)
+        if me['member_id'] not in trusted:
+            raise ValueError('Only a confirmed admin can pause sharing for everyone')
+        statement = ft.pause(fleet, me['member_id'], trusted[me['member_id']], on, now())
+        self.relay.call('POST', '/trust', {'fleet': fleet, 'item': ft.sign(self._private(), statement)}, timeout=30)
+        self.set_meta('graph_pause:' + fleet, statement)
+        self.directory(refresh=True)
+        return {'ok': True, 'paused': bool(on)}
+
+    def graph_start(self, fleet):
+        """The owner looked over what goes first: it goes now."""
+        start = self.meta('graph_start:' + fleet) or {}
+        start.update(started=now(), shown=start.get('shown') or now())
+        self.set_meta('graph_start:' + fleet, start)
+        try:
+            self.graph_round(force=True)
+        except (ValueError, OSError, KeyError, TypeError) as error:
+            LOG.info('shared graph after start error=%s', type(error).__name__)
+        return {'ok': True}
+
+    def _started(self, fleet):
+        """Whether this Machine shares with the Fleet yet. Its first share waits for its owner's Start now, after they
+        looked over what goes (graph_overview's preview); until then it reminds them (_start_reminder). A Machine that
+        shared before this version goes on."""
+        start = self.meta('graph_start:' + fleet) or {}
+        if start.get('started'):
+            return True
+        with self.connect() as db:
+            before = db.execute('SELECT 1 FROM share_out WHERE fleet=? LIMIT 1', (fleet,)).fetchone()
+        if before:
+            start.update(started=now(), shown=start.get('shown') or now())
+        else:
+            start.setdefault('shown', now())
+        self.set_meta('graph_start:' + fleet, start)
+        return bool(start.get('started'))
+
+    def _start_reminder(self, group):
+        """Not started yet, with teammates to share with: a phone or Telegram line within the owner's work hours, at
+        first and then every REMIND_EVERY until they decide. The card itself is on the dashboard (Suggestions)."""
+        fleet = group['id']
+        start = self.meta('graph_start:' + fleet) or {}
+        if start.get('started') or not getattr(self, 'tell', None) or not self.working():
+            return
+        if start.get('reminded') and start['reminded'] > (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=REMIND_EVERY)).isoformat(timespec='seconds'):
+            return
+        start.update(reminded=now(), reminders=int(start.get('reminders') or 0) + 1)
+        self.set_meta('graph_start:' + fleet, start)
+        name = str(group.get('name') or 'your team')[:80]
+        try:
+            self.tell(f'Your Work is ready to share with {name}. Look it over and start when you are ready.', 'shared-' + fleet)
+        except Exception as error:  # noqa: BLE001 - a reminder never stops the round
+            LOG.warning('shared graph reminder error=%s', type(error).__name__)
+
+    def graph_overview(self, fleet):
+        """What's shared with one Work Fleet, in one place (overview), with the first share's look-over when it waits."""
+        group = next((g for g in self._kept_groups() if g.get('id') == fleet and g.get('kind') == 'work'), None)
+        if not group or not self._me_in(group):
+            raise ValueError('Not a Work Fleet of yours')
+        with self.connect() as db:
+            ensure(db)
+            scope = Scope(db, self.fleet_accounts(fleet), self.internal(fleet), self.my_emails())
+            sent = db.execute("SELECT count(*) FROM share_out WHERE fleet=? AND kind='thread'", (fleet,)).fetchone()[0]
+            out = overview(db, scope, sent)
+            start = self.meta('graph_start:' + fleet) or {}
+            if not start.get('started'):
+                out['preview'] = preview(db, scope)
+                for x in out['threads']:  # nothing went yet: say what goes, not what went
+                    x['why'] = re.sub(r'^(Shared|Shares within the hour): ', 'Goes when you start: ', x['why'])
+        return out
+
+    def graph_rule(self, key, choice, name=''):
+        with self.connect() as db:
+            ensure(db)
+            return {'ok': True, 'rule': set_rule(db, key, choice, name)}
 
     # -- catching up, Machine to Machine
     def _graph_want_round(self, group, me, found):
@@ -818,8 +1179,8 @@ class SharedGraph:
         if not kv:
             return
         to = sorted(set(found) - {me['member_id']})
-        if not to:
-            return
+        if not to or not self._started(fleet):
+            return  # nobody to share with yet, or the owner's first look-over (it waits for Start now)
         with self.connect() as db:
             ensure(db)
             scope = Scope(db, self.fleet_accounts(fleet), self.internal(fleet), self.my_emails(), self._personal_people(db))
@@ -1357,17 +1718,23 @@ class SharedGraph:
                 view = visibility(db, scope, {'id': r['id'], 'account_id': r['account_id'], 'kind': r['kind'], 'metadata': r['metadata']})
                 if view is None:
                     continue
-                hand = db.execute('SELECT hand FROM share_threads WHERE thread=?', (thread_of(r['kind'], r['metadata'] if isinstance(r['metadata'], dict)
-                                                                                                else json.loads(r['metadata'] or '{}'), r['id']),)).fetchone()
-                out[r['id']] = {'share': label(view) or 'only_you', 'fixed': view == 'internal',
-                                'why': {'personal': 'Personal', 'internal': 'Only colleagues', 'line': 'Private: the team sees only that it exists', 'pending': 'Not looked at yet',
-                                        'private': 'By hand' if hand and hand['hand'] == 'private' else 'Nobody outside', 'team': 'By hand' if hand and hand['hand'] == 'team' else 'Client'}[view]}
+                metadata = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+                hand = db.execute('SELECT hand FROM share_threads WHERE thread=?', (thread_of(r['kind'], metadata, r['id']),)).fetchone()
+                hand = hand and hand['hand']
+                kept = view == 'private' and any(scope.private_address(a) for a in addresses(metadata))
+                out[r['id']] = {'share': label(view) or 'only_you', 'fixed': view == 'internal', 'view': view,
+                                'why': why(view, hand, scope.company(metadata), kept)}
                 break
         return out
 
     def is_private(self, db, node_id):
         ensure(db)
         return bool(db.execute('SELECT 1 FROM share_private WHERE node_id=?', (node_id,)).fetchone())
+
+    def record_shared(self, db, node_id):
+        """Whether this record went to a Work Fleet (published, not taken back): the record's honest marker."""
+        ensure(db)
+        return bool(db.execute("SELECT 1 FROM share_out WHERE kind='record' AND key=? LIMIT 1", (keyed(self.graph_secret(), 'record|' + node_id),)).fetchone())
 
     def sharing(self):
         """Per Work Fleet: confirmed or waiting, whether this Machine's sharing is on, asked off or off, and this week's
@@ -1379,11 +1746,41 @@ class SharedGraph:
                 continue
             found, trusted, waiting = self.confirmed(group)
             prompts = [{k: p.get(k) for k in ('id', 'name', 'email', 'fp')} for p in self._prompts() if p['kind'] == 'member' and p['fleet'] == group['id']]
+            names = {m.get('member_id'): str(m.get('label') or m.get('name') or '')[:80] for m in group.get('members', [])}
+            paused = self.graph_paused(group, trusted)
+            start = self.meta('graph_start:' + group['id']) or {}
+            until = lambda at, seconds: (dt.datetime.fromisoformat(at) + dt.timedelta(seconds=seconds)).isoformat(timespec='seconds')
+            admin = me['member_id'] in trusted
             out.append({'fleet': group['id'], 'name': str(group.get('name') or '')[:80], 'confirmed': me['member_id'] in found,
                         'off': self.graph_off(group, trusted), 'week': self.meta('graph_week:' + group['id']),
-                        'waiting': len([m for m in waiting if m != me['member_id']]), 'admin': me['member_id'] in trusted, 'prompts': prompts,
-                        'teammates': len(set(found) - {me['member_id']})})  # 0: nothing goes until an admin OKs a teammate's Machine
+                        'waiting': len([m for m in waiting if m != me['member_id']]), 'admin': admin, 'prompts': prompts,
+                        'paused': {'by': names.get(paused['by'], 'An admin'), 'at': paused['at']} if paused else None,
+                        'started': bool(start.get('started')),
+                        'new_devices': [{'member': m, 'name': r.get('name'), 'fp': r.get('fp'), 'from': until(r['since'], REKEY_HOLD)}
+                                        for m, r in (self.meta('graph_rekey:' + group['id']) or {}).items()] if admin else [],
+                        'people': self._sharing_people(group, me, found, trusted) if admin else [],
+                        'teammates': len(set(found) - {me['member_id']})})  # 0: nothing goes until an admin OKs a teammate
         return out
+
+    def _sharing_people(self, group, me, found, trusted):
+        """For an admin: each teammate and where their sharing stands. sharing (their Machine sent its Work), not_started
+        (confirmed, its owner hasn't started yet), off (an admin agreed they stop), removed (still in the Fleet, taken out of
+        the team's Graph). From what reached this Machine: nothing extra is asked of anyone."""
+        fleet = group['id']
+        gone = self.meta('graph_removed:' + fleet) or {}
+        offs = ft.optouts(group, trusted)
+        with self.connect() as db:
+            ensure(db)
+            sent = {r[0] for r in db.execute('SELECT member FROM team_sources WHERE fleet=? AND snapshot>0', (fleet,))}
+        out = []
+        for m in group.get('members', []):
+            mid = m.get('member_id')
+            if not mid or mid == me['member_id']:
+                continue
+            state = ('off' if mid in offs else 'sharing' if mid in sent else 'not_started') if mid in found else 'removed' if mid in gone else None
+            if state:
+                out.append({'member': mid, 'name': str(m.get('label') or m.get('name') or '')[:80], 'state': state})
+        return sorted(out, key=lambda x: (x['state'] != 'not_started', x['name'].lower()))
 
     def _mine_shared(self, db):
         """Local node ids this Machine shares with a Fleet now (published), {node id: fleet}."""
@@ -1552,14 +1949,14 @@ class SharedGraph:
                 e = dict(e)
                 e['metadata'] = json.loads(e['metadata'] or '{}')
                 view = visibility(db, scope, e)
-                if view not in ('line', 'private'):
+                if view not in ('sensitive', 'private'):
                     continue
                 hand = db.execute('SELECT hand FROM share_threads WHERE thread=?', (thread_of(e['kind'], e['metadata'], e['id']),)).fetchone()
                 if view == 'private' and not (hand and hand['hand'] == 'private'):
                     continue
                 found[thread_of(e['kind'], e['metadata'], e['id'])] = {'event_id': e['id'], 'title': str(e['title'] or '')[:200], 'at': e['occurred_at'],
                                                                         'with': _who(e['metadata'], scope), 'share': 'only_you',
-                                                                        'why': 'By hand' if view == 'private' else 'Private: the team sees only that it exists'}
+                                                                        'why': 'By hand' if view == 'private' else 'Sensitive: nothing of it goes'}
         return sorted(found.values(), key=lambda x: x['at'], reverse=True)[:100]
 
     def graph_ask(self, fleet_ref, member_id, about, note):

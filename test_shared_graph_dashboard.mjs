@@ -11,7 +11,16 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // thread with its attachments (one to open, one too large to share). No sideways scroll at 390 and 1440.
 const dashboard=await readFile(new URL('./dashboard.html',import.meta.url),'utf8');
 const FL='fl_'+'c'.repeat(16),day=new Date().toISOString().slice(0,10),at=new Date().toISOString();
-const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:1}];
+const later=new Date(Date.now()+20*3600e3).toISOString();
+const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:1,started:false,paused:null,
+ people:[{member:'m_kim',name:'Kim Lee',state:'not_started'},{member:'m_tom',name:'Tom Ray',state:'sharing'},{member:'m_old',name:'Pat Old',state:'removed'}],
+ new_devices:[{member:'m_kim2',name:'Kim Lee',fp:'ef56 ab12 cd34 ef56 ab12 cd34',from:later}]}];
+const T=(id,title,company,why,view='team')=>({event_id:id,title,with:company,company,at,view,share:'team',why});
+const overview={sorted:{client:1113,sensitive:265,internal:41,personal:262,unsure:12,other:138},unsorted:4,shared:1100,waiting:3,held:265,sent:0,more:0,
+ threads:[T(51,'Renewal quote for 40 seats','Northwind','Goes when you start: client thread with Northwind'),T(52,'Onboarding call notes','Globex','Goes when you start: client thread with Globex','wait')],
+ unsure:[T(61,'Quick question about invoices','Umbrella','Only you: not sure it\'s client work','ask'),T(62,'Intro via a mutual friend','Hooli','Only you: not sure it\'s client work','ask')],unsure_more:0,
+ by_hand:[{...T(71,'Board pack draft','Vandelay','Only you: you chose this','private'),share:'only_you'}],records:[{node_id:'org:initech',name:'Initech',kind:'org'}],
+ rules:[{key:'@stark.example',choice:'private',name:'Stark',at}],preview:{threads:1113,orgs:[{name:'Northwind',key:'@northwind.example',threads:84},{name:'Globex',key:'@globex.example',threads:61},{name:'Umbrella',key:'@umbrella.example',threads:12}],more:212}};
 let noTeam=false;  // nobody OK'd yet: nothing from the team, and nothing goes
 const TID=FL+':m_ada:'+'e'.repeat(32),FILE='f'.repeat(32);
 const thread={subject:'Rollout timeline',at,via:'Ada',messages:[{at,from:'Ada <ada@acme.example>',body:'Here is the plan.',attachments:[{name:'rollout-plan.pdf',size:182000,file:FILE},{name:'all-hands.mp4',size:48000000,too_large:true}]}]};
@@ -33,11 +42,13 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(url.pathname==='/api/graph'){
   if(url.searchParams.get('node'))return res.end(JSON.stringify(detail()));
   if(url.searchParams.get('thread')===TID)return res.end(JSON.stringify(thread));
+  if(url.searchParams.get('view')==='shared'){assert.equal(url.searchParams.get('fleet'),FL);return res.end(JSON.stringify(overview))}
   const team=url.searchParams.get('view')==='team';
   return res.end(JSON.stringify({projects:[],quiet:[],new:[],orgs:[],boards:[],sharing,people:team?(noTeam?[]:[lee,robin]):[{...lee,via:undefined}],...(team?{team:true,held:[]}:{})}))}
  if(url.pathname==='/api/fleet')return res.end(JSON.stringify(fleet));
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
-  if(call.action==='graph_share')share={share:call.args.share,fixed:false,why:'By hand'};
+  if(call.action==='graph_share'){share={share:call.args.share,fixed:false,why:'By hand'};if(call.args.event_id===41&&call.args.share==='only_you')return res.end(JSON.stringify({ok:true,suggest:{key:'@client.example',name:'Client Co',choice:'private'}}))}
+  if(call.action==='graph_start')sharing[0].started=true;
   if(call.action==='graph_optout')sharing[0].off=call.args.off?'asked':null;
   return res.end(JSON.stringify({ok:true}))}
  res.statusCode=404;res.end('{}')});
@@ -53,7 +64,7 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=people');
   await page.locator('[data-graph-team="team"]').click();
   await page.locator('.empty',{hasText:'Nothing from the team yet.'}).waitFor();
-  assert.match(await page.locator('.share-note').innerText(),/^Sharing starts once you OK a teammate's Machine\. Personal never\.$/);
+  assert.match(await page.locator('.share-note').innerText(),/^Sharing starts once you OK a teammate's Machine\. Personal never\. See what's shared$/);
   await page.goto('http://127.0.0.1:'+server.address().port+'/#fleet');
   await page.locator('.graph-own').waitFor({state:'attached'});
   assert.match(await page.locator('.graph-own').textContent(),/Your Work goes to the team once you OK a teammate's Machine\./);
@@ -74,16 +85,27 @@ try{
   await page.locator('[data-graph-team="team"]').click();
   await page.locator('article[data-node]',{hasText:'Robin Shore'}).waitFor();
   assert.match(await page.locator('article[data-node]',{hasText:'Robin Shore'}).innerText(),/via Ada/);
-  assert.match(await page.locator('.share-note').innerText(),/^Work is shared with Acme\. Personal never\.$/);
+  assert.match(await page.locator('.share-note').innerText(),/^Not shared with Acme yet\. Nothing goes until you start\. See what's shared$/);
   assert.equal(await page.locator('[data-share-now]').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   // A record: the thread's label changes with one tap, Keep private, the team's line and Ask Ada
   await page.locator('article[data-node]',{hasText:'Lee Client'}).click();
   const chip=page.locator('[data-share-event="41"]');await chip.waitFor();
   assert.equal((await chip.innerText()).trim(),'Team');
+  // the marker says why, and switches in its own small panel; a pattern asks once to make it a rule
   await chip.click();
+  await page.locator('#share-pop').waitFor();
+  assert.match(await page.locator('#share-pop').innerText(),/^Client\s+Keep private\s+See what's shared$/);  // before the first share nothing went, so nothing to unshare
+  if(width===390)await page.screenshot({path:(process.env.SHOTS||'/tmp')+'/shared-pop-390.png'});
+  await page.locator('#share-pop [data-pop-set]').click();
   await page.waitForFunction(()=>document.querySelector('[data-share-event="41"]')?.textContent.trim()==='Only you');
   assert.deepEqual(calls.find(c=>c.action==='graph_share'),{action:'graph_share',args:{event_id:41,share:'only_you'}});
+  await page.locator('#share-pop',{hasText:'Always keep threads with Client Co private?'}).waitFor();
+  await page.locator('#share-pop [data-pop-rule]').click();
+  await new Promise(r=>setTimeout(r,300));
+  assert.deepEqual(calls.find(c=>c.action==='graph_rule'),{action:'graph_rule',args:{key:'@client.example',choice:'private',name:'Client Co'}});
+  assert.equal(await page.locator('#share-pop').count(),0);
+  assert.match(await page.locator('.keep-private').innerText(),/Not shared with your team yet\./);
   assert.match(await page.locator('.team-block').innerText(),/Lee asked for the renewal quote/);
   await page.locator('[data-keep-private]').first().click();
   await new Promise(r=>setTimeout(r,300));
@@ -104,7 +126,9 @@ try{
   await navClick(page.locator('nav [data-tab="fleet"]'));
   await page.locator('.fleet-box h3',{hasText:'Team Graph'}).waitFor();
   const box=page.locator('.fleet-box',{hasText:'Team Graph'});
-  assert.match(await box.innerText(),/Kim Lee/);
+  assert.match(await box.innerText(),/Kim Lee joined Acme\. Share the team's Graph with them\?/);
+  assert.match(await box.innerText(),/Kim Lee has a new Machine\. It gets the team's Graph from /);
+  if(width===1440)await box.screenshot({path:(process.env.SHOTS||'/tmp')+'/shared-teamgraph-1440.png'});
   assert.match(await box.innerText(),/Tom Ray asks to stop sharing their Work with the team\./);
   await box.locator('[data-share-ok="p2"][data-choice="yes"]').click();
   await new Promise(r=>setTimeout(r,300));
@@ -113,6 +137,38 @@ try{
   await page.locator('[data-graph-optout]',{hasText:'Keep sharing'}).waitFor();
   assert.deepEqual(calls.find(c=>c.action==='graph_optout'),{action:'graph_optout',args:{fleet:FL,off:true}});
   assert.match(await page.locator('.graph-own').innerText(),/Asked an admin to stop sharing your Work\. It stays on until they approve\./);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  // What's shared: one place with counts, the first share's look-over, Share these?, what went with why and Unshare, and what stays
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#shared='+FL);
+  const pane=page.locator('[data-shared-fleet="'+FL+'"]');
+  await pane.locator('.shared-tile').first().waitFor();
+  assert.match(await pane.locator('.shared-status .sub').innerText(),/^Not started\. Nothing goes until you look it over and tap Start now\.$/);
+  assert.deepEqual(await pane.locator('.shared-tile span').allInnerTexts(),['Client','Sensitive','Not sure','Personal','Only colleagues','Not client','Not sorted yet','Sent']);
+  assert.match(await pane.locator('.shared-tile').first().innerText(),/1,113|1\.113|1113/);
+  assert.match(await pane.locator('.shared-first').innerText(),/1,?113 client threads with these organisations go to the team\. Keep any private first\./);
+  assert.equal(await pane.locator('.shared-how').getAttribute('open'),'');
+  if(width===1440)await page.screenshot({path:(process.env.SHOTS||'/tmp')+'/shared-pane-1440.png',fullPage:true});
+  if(width===390)await page.screenshot({path:(process.env.SHOTS||'/tmp')+'/shared-pane-390.png',fullPage:true});
+  await pane.locator('.shared-first [data-shared-rule]').first().click();
+  await new Promise(r=>setTimeout(r,300));
+  assert.deepEqual(calls.filter(c=>c.action==='graph_rule').at(-1),{action:'graph_rule',args:{key:'@northwind.example',choice:'private',name:'Northwind'}});
+  assert.equal(await pane.locator('[data-shared-many="team"]').isDisabled(),true);
+  await pane.locator('[data-shared-pick]').first().check();
+  await pane.locator('[data-shared-many="team"]').click();
+  await new Promise(r=>setTimeout(r,300));
+  assert.deepEqual(calls.find(c=>c.action==='graph_share_many'),{action:'graph_share_many',args:{event_ids:[61],share:'team'}});
+  await pane.locator('.shared-out [data-shared-set="51"]').click();
+  await page.locator('#toast',{hasText:"Kept private. It won't go."}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='graph_share').at(-1),{action:'graph_share',args:{event_id:51,share:'only_you'}});
+  assert.match(await pane.locator('.shared-kept').innerText(),/Stark\s+Always only you/);
+  await pane.locator('[data-graph-start]').click();
+  await new Promise(r=>setTimeout(r,500));
+  assert.deepEqual(calls.find(c=>c.action==='graph_start'),{action:'graph_start',args:{fleet:FL}});
+  // once started, what went can be unshared, and the toast says honestly what that does
+  await pane.locator('.shared-out h3',{hasText:'Shared'}).waitFor();
+  await pane.locator('.shared-out [data-shared-set="51"]',{hasText:'Unshare'}).click();
+  await page.locator('#toast',{hasText:"Unshared. Teammates' Machines delete their copy. Someone may have read it already."}).waitFor();
+  sharing[0].started=false;
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.deepEqual(errors,[]);
   await context.close();
