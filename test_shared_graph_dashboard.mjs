@@ -12,7 +12,12 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 const dashboard=await readFile(new URL('./dashboard.html',import.meta.url),'utf8');
 const FL='fl_'+'c'.repeat(16),day=new Date().toISOString().slice(0,10),at=new Date().toISOString();
 const later=new Date(Date.now()+20*3600e3).toISOString();
-const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:1,started:false,paused:null,
+// an element screenshot that waits out a re-render of the pane
+const fleetPaneReload=async page=>{await page.evaluate(async()=>{await fleetView(true);const p=document.querySelector('[data-shared-fleet]');if(p)await sharedLoad(p.dataset.sharedFleet,true)})};
+const shot=async(loc,path)=>{for(let i=0;;i++){try{return await loc.screenshot({path})}catch(err){if(i>4)throw err;await new Promise(r=>setTimeout(r,400))}}};
+const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:1,started:false,paused:null,require:['mail'],
+ connections:[{id:'work',service:'gmail',email:'olive@acme.example',kind:'mail',work:true,required:true,on:true},{id:'cal',service:'calendar',email:'olive@acme.example',kind:'calendar',work:true,required:false,on:true},
+  {id:'home',service:'gmail',email:'olive@home.example',kind:'mail',work:false,required:false,on:false}],
  people:[{member:'m_kim',name:'Kim Lee',state:'not_started'},{member:'m_tom',name:'Tom Ray',state:'sharing'},{member:'m_old',name:'Pat Old',state:'removed'}],
  new_devices:[{member:'m_kim2',name:'Kim Lee',fp:'ef56 ab12 cd34 ef56 ab12 cd34',from:later}]}];
 const T=(id,title,company,why,view='team')=>({event_id:id,title,with:company,company,at,view,share:'team',why});
@@ -49,6 +54,9 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   if(call.action==='graph_share'){share={share:call.args.share,fixed:false,why:'By hand'};if(call.args.event_id===41&&call.args.share==='only_you')return res.end(JSON.stringify({ok:true,suggest:{key:'@client.example',name:'Client Co',choice:'private'}}))}
   if(call.action==='graph_start')sharing[0].started=true;
+  if(call.action==='graph_connection')sharing[0].connections.find(c=>c.id===call.args.account).on=call.args.on;
+  if(call.action==='graph_policy')sharing[0].require=call.args.require;
+  if(call.action==='graph_pause')sharing[0].paused=call.args.on?{by:'Ada',at:'2026-10-24T09:00:00+00:00',removed:!!call.args.remove}:null;
   if(call.action==='graph_optout')sharing[0].off=call.args.off?'asked':null;
   return res.end(JSON.stringify({ok:true}))}
  res.statusCode=404;res.end('{}')});
@@ -102,9 +110,9 @@ try{
   assert.deepEqual(calls.find(c=>c.action==='graph_share'),{action:'graph_share',args:{event_id:41,share:'only_you'}});
   await page.locator('#share-pop',{hasText:'Always keep threads with Client Co private?'}).waitFor();
   await page.locator('#share-pop [data-pop-rule]').click();
-  await new Promise(r=>setTimeout(r,300));
+  for(let i=0;i<30&&!calls.find(c=>c.action==='graph_rule');i++)await new Promise(r=>setTimeout(r,100));
   assert.deepEqual(calls.find(c=>c.action==='graph_rule'),{action:'graph_rule',args:{key:'@client.example',choice:'private',name:'Client Co'}});
-  assert.equal(await page.locator('#share-pop').count(),0);
+  await page.locator('#share-pop').waitFor({state:'detached'});
   assert.match(await page.locator('.keep-private').innerText(),/Not shared with your team yet\./);
   assert.match(await page.locator('.team-block').innerText(),/Lee asked for the renewal quote/);
   await page.locator('[data-keep-private]').first().click();
@@ -133,10 +141,10 @@ try{
   await box.locator('[data-share-ok="p2"][data-choice="yes"]').click();
   await new Promise(r=>setTimeout(r,300));
   assert.deepEqual(calls.find(c=>c.action==='fleet_share_ok'),{action:'fleet_share_ok',args:{id:'p2',choice:'yes'}});
-  await box.locator('[data-graph-optout]',{hasText:'Stop sharing my Work'}).click();
-  await page.locator('[data-graph-optout]',{hasText:'Keep sharing'}).waitFor();
-  assert.deepEqual(calls.find(c=>c.action==='graph_optout'),{action:'graph_optout',args:{fleet:FL,off:true}});
-  assert.match(await page.locator('.graph-own').innerText(),/Asked an admin to stop sharing your Work\. It stays on until they approve\./);
+  // no more asking an admin to stop: each person picks their connections, except what the Fleet requires
+  assert.equal(await box.locator('[data-graph-optout]').count(),0);
+  assert.equal(await box.locator('[data-shared-open]',{hasText:'Choose connections'}).count(),1);
+  assert.match(await page.locator('.graph-own').innerText(),/Acme requires your Work email\./);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   // What's shared: one place with counts, the first share's look-over, Share these?, what went with why and Unshare, and what stays
   await page.goto('http://127.0.0.1:'+server.address().port+'/#shared='+FL);
@@ -161,6 +169,44 @@ try{
   await page.locator('#toast',{hasText:"Kept private. It won't go."}).waitFor();
   assert.deepEqual(calls.filter(c=>c.action==='graph_share').at(-1),{action:'graph_share',args:{event_id:51,share:'only_you'}});
   assert.match(await pane.locator('.shared-kept').innerText(),/Stark\s+Always only you/);
+  // the admin's switch for the whole Fleet: Off asks once whether what went stays or is removed everywhere
+  await new Promise(r=>setTimeout(r,800));  // the pane reloads after the actions above
+  // each connection: Work on, personal off, the required one can't be turned off
+  const conns=pane.locator('.shared-conns');
+  assert.match(await conns.innerText(),/^Your connections\s+What feeds Acme's Graph\. Work starts on, personal off\. Personal and sensitive threads never go\.\s+Gmail · olive@acme\.example\s+Required by Acme\s+Google Calendar · olive@acme\.example\s+Work\s+Gmail · olive@home\.example\s+Personal$/);
+  assert.equal(await conns.locator('[data-graph-conn="work"]').isDisabled(),true);
+  if(width===1440)await shot(conns,(process.env.SHOTS||'/tmp')+'/shared-connections-1440.png');
+  await conns.locator('[data-graph-conn="home"]').click();
+  await page.locator('#toast',{hasText:'Shared with the team.'}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='graph_connection').at(-1),{action:'graph_connection',args:{fleet:FL,account:'home',on:true}});
+  // an admin requires the Work calendar too
+  await new Promise(r=>setTimeout(r,800));
+  await pane.locator('[data-graph-require="calendar"]').check();
+  await page.locator('#toast',{hasText:'Required for everyone in the Fleet.'}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='graph_policy').at(-1),{action:'graph_policy',args:{fleet:FL,require:['mail','calendar']}});
+  await new Promise(r=>setTimeout(r,800));
+  const sw=pane.locator('[data-graph-switch]');
+  assert.equal(await sw.getAttribute('aria-checked'),'true');
+  assert.match(await pane.locator('.shared-switch').innerText(),/^Share the Graph in this Fleet\s*Experimental\s+On for everyone\. New and still changing\.$/);
+  const offAsk=pane.locator('.shared-off-ask');
+  const openOff=async()=>{for(let i=0;i<4;i++){await pane.locator('[data-graph-switch]').click();try{await offAsk.waitFor({state:'visible',timeout:1500});await new Promise(r=>setTimeout(r,300));if(await offAsk.isVisible())return}catch{}}throw new Error('the Off question did not open')};
+  await openOff();
+  assert.match(await offAsk.innerText(),/^Turn off sharing for everyone\?\s+Nothing new goes\. What went stays on teammates' Machines, unless you remove it\. Someone may have read it already\.\s+Turn off\s+Turn off and remove shared data\s+Cancel$/);
+  if(width===1440)await shot(pane.locator('.shared-status'),(process.env.SHOTS||'/tmp')+'/shared-switch-1440.png');
+  await offAsk.locator('[data-off-cancel]').click();
+  assert.equal(await offAsk.isHidden(),true);
+  await openOff();
+  await offAsk.locator('[data-remove]').click();
+  await page.locator('#toast',{hasText:"Sharing is off. Teammates' Machines delete what they got."}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='graph_pause').at(-1),{action:'graph_pause',args:{fleet:FL,on:true,remove:true}});
+  await pane.locator('[data-graph-switch][aria-checked="false"]').waitFor();
+  await new Promise(r=>setTimeout(r,800));
+  assert.match(await pane.locator('.shared-status .sub').innerText(),/^Off for everyone, turned off by Ada\. Nothing new goes\. What went was removed from the team's Machines\.$/);
+  if(width===1440)await shot(pane.locator('.shared-status'),(process.env.SHOTS||'/tmp')+'/shared-switch-off-1440.png');
+  await pane.locator('[data-graph-switch]').click();
+  await page.locator('#toast',{hasText:'Sharing is on for everyone.'}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='graph_pause').at(-1),{action:'graph_pause',args:{fleet:FL,on:false}});
+  await pane.locator('[data-graph-switch][aria-checked="true"]').waitFor();
   await pane.locator('[data-graph-start]').click();
   await new Promise(r=>setTimeout(r,500));
   assert.deepEqual(calls.find(c=>c.action==='graph_start'),{action:'graph_start',args:{fleet:FL}});
@@ -168,7 +214,14 @@ try{
   await pane.locator('.shared-out h3',{hasText:'Shared'}).waitFor();
   await pane.locator('.shared-out [data-shared-set="51"]',{hasText:'Unshare'}).click();
   await page.locator('#toast',{hasText:"Unshared. Teammates' Machines delete their copy. Someone may have read it already."}).waitFor();
-  sharing[0].started=false;
+  // a member, in a Fleet where nobody turned it on yet: off by default, experimental, only an admin switches it
+  if(width===1440){Object.assign(sharing[0],{paused:{default:true},admin:false,people:[]});await fleetPaneReload(page);
+   const st=pane.locator('.shared-status');await st.locator('.sub',{hasText:'experimental'}).waitFor();
+   assert.match(await st.innerText(),/^What's shared with Acme\s+Off\. It's experimental, so it starts off until an admin turns it on\.\s+Share the Graph in this Fleet\s*Experimental\s+Off for everyone\. New and still changing\. Only an admin can change this\.\s+Acme requires your Work email and Work calendar\. They belong to the company\. Threads you keep private stay private\./);
+   assert.equal(await pane.locator('[data-graph-switch]').isDisabled(),true);
+   await shot(st,(process.env.SHOTS||'/tmp')+'/shared-member-off-1440.png');
+   Object.assign(sharing[0],{paused:null,admin:true,people:[{member:'m_kim',name:'Kim Lee',state:'not_started'}]})}
+  sharing[0].started=false;sharing[0].require=['mail'];sharing[0].connections.find(c=>c.id==='home').on=false;
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.deepEqual(errors,[]);
   await context.close();

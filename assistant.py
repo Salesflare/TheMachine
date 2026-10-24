@@ -514,7 +514,7 @@ OWNER_ACTIONS |= SHARE_ACTIONS
 # The Shared Graph (shared_graph.py): a thread's Team or Only you, Keep private, asking an admin to stop sharing, and
 # Ask <name>, the owner's own.
 GRAPH_SHARE_ACTIONS = {'graph_share', 'graph_remove', 'graph_private', 'graph_optout', 'graph_ask', 'graph_share_many', 'graph_rule', 'graph_start',
-                       'graph_pause', 'graph_share_all', 'graph_rekey_no'}
+                       'graph_pause', 'graph_share_all', 'graph_rekey_no', 'graph_policy', 'graph_connection'}
 OWNER_ACTIONS |= GRAPH_SHARE_ACTIONS
 FRIEND_ACTIONS = {'fleet_friend', 'fleet_availability', 'fleet_network'}  # fleet_network: finding people on the Network (discovery.py)
 OWNER_ACTIONS |= FRIEND_ACTIONS
@@ -14938,14 +14938,18 @@ class App:
                 return {'ok': True, 'private': shared_graph.keep_private(db, str(args.get('node_id') or ''), args.get('private') is not False)}
         if name == 'graph_start':  # the owner looked over their first share: it goes now
             return self.fleet.graph_start(str(args.get('fleet') or ''))
-        if name == 'graph_pause':  # an admin: pause (or resume) sharing for everyone in the Fleet
-            return self.fleet.graph_pause(str(args.get('fleet') or ''), args.get('on') is not False)
+        if name == 'graph_pause':  # an admin: sharing off (on: paused; remove: also delete what went) or back on, for everyone
+            return self.fleet.graph_pause(str(args.get('fleet') or ''), args.get('on') is not False, args.get('remove') is True)
         if name == 'graph_share_all':  # an admin: everyone new in the Fleet gets the team's Graph, in one OK
             return self.fleet.graph_share_all(str(args.get('fleet') or ''))
         if name == 'graph_remove':  # an admin: take someone out of the team's Graph, or let them back in (back)
             return self.fleet.graph_remove(str(args.get('fleet') or ''), str(args.get('member') or ''), args.get('back') is True)
         if name == 'graph_rekey_no':  # an admin: a teammate's new Machine isn't theirs
             return self.fleet.graph_rekey_no(str(args.get('fleet') or ''), str(args.get('member') or ''))
+        if name == 'graph_policy':  # an admin: the Work connections every member shares (some of mail, calendar)
+            return self.fleet.graph_set_policy(str(args.get('fleet') or ''), [str(x) for x in args.get('require') or []])
+        if name == 'graph_connection':  # the owner: one connection feeds the team's Graph, or not (unless required)
+            return self.fleet.graph_connection(str(args.get('fleet') or ''), str(args.get('account') or ''), args.get('on') is True)
         if name == 'graph_optout':  # off: ask an admin to stop sharing this Machine's Work; on again at once
             return self.fleet.graph_optout(str(args.get('fleet') or ''), args.get('off') is not False)
         if name == 'graph_ask':
@@ -14953,11 +14957,11 @@ class App:
         raise ValueError('Unknown action')
 
     def team_accounts(self):
-        """The accounts whose messages a Work Fleet's Shared Graph may carry (fleet.fleet_accounts per Work Fleet)."""
+        """The accounts whose messages a Work Fleet's Shared Graph may carry (the connections each owner shares, graph_accounts)."""
         if not getattr(self, 'fleet', None):
             return []
         try:
-            return sorted({a for ref in self.fleet.work_fleets() for a in self.fleet.fleet_accounts(ref)})
+            return sorted({a for ref in self.fleet.work_fleets() for a in self.fleet.graph_accounts(ref)})
         except (ValueError, KeyError, TypeError, sqlite3.Error):
             return []
 

@@ -44,7 +44,7 @@ import network_crypto as nc
 
 TAG = b'tm-fleet-trust/1\n'
 ADMIN_ROLES = ('owner', 'admin')
-KINDS = ('root', 'admin', 'successor', 'member', 'grant', 'optout', 'pause', 'remove')
+KINDS = ('root', 'admin', 'successor', 'member', 'grant', 'optout', 'pause', 'remove', 'policy')
 GRANT_ID = re.compile(r'[a-f0-9]{32}')
 
 
@@ -191,9 +191,14 @@ def optouts(group, trusted):
     return found
 
 
-def pause(fleet, member, key, on, at):
-    """An admin pauses (on) or resumes the team's Graph for the whole Fleet; signed about themselves."""
-    return {'t': 'pause', 'fleet': fleet, 'member': member, 'key': key, 'by': member, 'on': bool(on), 'at': str(at)}
+def pause(fleet, member, key, on, at, purged=None):
+    """An admin turns the team's Graph off (on: paused) or back on for the whole Fleet; signed about themselves. purged:
+    when an admin last removed everything shared (Off with Remove shared data). Every later statement carries it on, so
+    turning sharing back on can't hide a removal from a Machine that was away."""
+    s = {'t': 'pause', 'fleet': fleet, 'member': member, 'key': key, 'by': member, 'on': bool(on), 'at': str(at)}
+    if purged:
+        s['purged'] = str(purged)
+    return s
 
 
 def paused(group, trusted, seen=None):
@@ -210,6 +215,43 @@ def paused(group, trusted, seen=None):
             if not best or s['at'] > str(best.get('at') or ''):
                 best = s
     return best
+
+
+REQUIRABLE = ('mail', 'calendar')  # what an admin may require: the members' Work email and Work calendar
+
+
+def policy(fleet, member, key, require, at):
+    """An admin sets which Work connections every member shares with the team's Graph (require: some of REQUIRABLE);
+    signed about themselves. The newest from any admin wins."""
+    return {'t': 'policy', 'fleet': fleet, 'member': member, 'key': key, 'by': member,
+            'require': [r for r in REQUIRABLE if r in (require or [])], 'at': str(at)}
+
+
+def policy_of(group, trusted, seen=None):
+    """The newest policy statement a trusted admin signed (with the key they have now) for this Fleet, or seen (kept from
+    before) when that is newer: a control plane can't put an old one back or make one up. None when there is none."""
+    fleet = group.get('id')
+    best = seen if isinstance(seen, dict) and seen.get('fleet') == fleet and seen.get('t') == 'policy' else None
+    for item in group.get('trust') or []:
+        s = item.get('s') if isinstance(item, dict) else None
+        if (isinstance(s, dict) and s.get('t') == 'policy' and s.get('fleet') == fleet and s.get('by') in trusted and s.get('member') == s.get('by')
+                and s.get('key') == trusted[s['by']] and isinstance(s.get('require'), list) and set(s['require']) <= set(REQUIRABLE)
+                and isinstance(s.get('at'), str) and verified(item, trusted[s['by']])):
+            if not best or s['at'] > str(best.get('at') or ''):
+                best = s
+    return best
+
+def purged(group, trusted, seen=None):
+    """When an admin last removed everything the Fleet shared: the newest `purged` of any pause statement a trusted
+    admin signed, or seen (kept from before) when that is newer. None when nobody ever did."""
+    fleet, best = group.get('id'), str(seen or '')
+    for item in group.get('trust') or []:
+        s = item.get('s') if isinstance(item, dict) else None
+        if (isinstance(s, dict) and s.get('t') == 'pause' and s.get('fleet') == fleet and s.get('by') in trusted and s.get('member') == s.get('by')
+                and s.get('key') == trusted[s['by']] and isinstance(s.get('purged'), str) and s['purged'] <= str(s.get('at') or '')
+                and verified(item, trusted[s['by']])):
+            best = max(best, s['purged'])
+    return best or None
 
 
 def vouched_before(group, trusted, member, gone=None):

@@ -1,12 +1,26 @@
 ---
 title: Team Graph
 area: fleet
-summary: In a Work Fleet, client work is shared with your team. What goes, what never does, and how to keep something private.
+summary: Experimental. Share client work with your Work Fleet, like a CRM. What goes, what never does, and how to keep something private.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 ---
-In a Work Fleet, your Machine shares your client work with your teammates' Machines, like a shared CRM. Nothing goes until you look it over and tap **Start now**.
+In a Work Fleet, your Machine can share your client work with your teammates' Machines, like a shared CRM. It's **Experimental**: new and still changing, so it starts off.
+
+## Turn it on
+
+An admin turns on **Share the Graph in this Fleet** on **What's shared**. Everyone sees whether it's on. Then each person looks over what would go and taps **Start now**. Nothing goes before that.
+
+## Your connections
+
+**Your connections** on **What's shared** lists each one with a switch. Work ones start on, personal ones off. Turn any of them on or off. Turning one off takes back what it shared.
+
+Inside a connection that's on, each thread is still sorted: personal and sensitive threads never go, whichever connection they come from.
+
+## Required by the Fleet
+
+An admin can require everyone's **Work email** and **Work calendar**, under **Required by the Fleet**. Work mail belongs to the company, like in any CRM. Those then show "Required by" your Fleet and can't be turned off. Threads you keep private stay private.
 
 ## What goes to the team
 
@@ -17,7 +31,7 @@ In a Work Fleet, your Machine shares your client work with your teammates' Machi
 
 - Sensitive threads: buying or selling a company, investments, valuations, deal talks, HR about one person, legal, health, money. Not even that they exist.
 - Threads with only colleagues, personal mail and anything from a personal account.
-- Anything you marked **Keep private**.
+- Anything you marked **Keep private**, and boards and projects set to Only you.
 
 Each thread is judged on its own, by what it is about. Once a thread is sensitive, it stays sensitive.
 
@@ -39,7 +53,9 @@ A new client thread waits an hour before it goes, so there's time to change your
 
 ## Unshare
 
-Tap the **Team** label on a thread, then **Unshare**. Your teammates' Machines delete their copy. Someone may have read it already.
+Tap the **Team** label on a thread, then **Unshare**. Your Machine tells every teammate's Machine, and each deletes the thread, its attachments and its lines in the timeline. A Machine that was off does it when it's back. Someone may have read it already.
+
+**Keep private** on a person, organisation or project unshares all of it the same way.
 
 Keep two threads with the same company private and your Machine asks once: always keep that company's threads private?
 
@@ -57,8 +73,14 @@ A new Machine of someone already in gets the team's Graph after 24 hours. Admins
 
 They get nothing new from that moment. What they shared stays with the team. An admin can also **Take out** someone, and **Share again** later.
 
-## Pause or stop
+## Turn it off for everyone
 
-An admin can **Pause sharing for everyone**. To stop sharing your own work, tap **Stop sharing my Work**: an admin approves it, like in any CRM. What went before stays with the team.
+An admin can turn **Share the Graph in this Fleet** off on **What's shared**. Everyone sees whether it's on. When it's off, nothing new goes.
+
+**Turn off** keeps what went on teammates' Machines. **Turn off and remove shared data** makes every Machine delete what it got. When sharing is back on, each person looks it over again first.
+
+## Stop sharing your own work
+
+Turn your connections off under **Your connections**, unless the Fleet requires them. What they shared is taken back.
 
 See also [Fleets](fleet.md) and [Security and privacy](security-and-privacy.md).

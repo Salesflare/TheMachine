@@ -4,7 +4,24 @@ A Work Fleet shares its Graph. People, organisations, projects, boards and clien
 up on every teammate's Machine, sealed Machine to Machine. The Network (the control plane, "CP") carries and keeps
 sealed blobs it can't read. Nothing syncs with an outside CRM: everything lives in The Machine.
 
-This page is the design, and it is built (code: `shared_graph.py`, `fleet_trust.py`; CP: `cloud/fleet_graph.py`).
+This page is the design, and it is built (code: `shared_graph.py`, `fleet_trust.py`; CP: `cloud/fleet_graph.py`). It is
+**experimental** and off by default: nothing goes until an admin turns on **Share the Graph in this Fleet** (a signed
+`pause` statement with `on: false`; with no statement at all, sharing is off).
+
+## What feeds it
+
+Each owner picks per connection (**Your connections**): their Work connections of this Fleet start on, personal ones
+and another company's off, and any can be flipped (`graph_connections`, kept in `graph_conn:<fleet>`). Turning one off
+takes back what it shared, like an unshare. An admin can require every member's **Work email** and **Work calendar**
+(a signed `policy` statement, `{t: policy, fleet, member, key, by, require: [mail, calendar], at}`; the newest from a
+confirmed admin wins, so a CP can't make one up). A required connection is on whatever the owner chose before, and
+shows "Required by <Fleet>". Inside any connection that is on, each thread is still sorted: personal, sensitive and
+colleague-only threads never go, and **Keep private** on a thread or record still wins. A member who wants to stop
+turns their connections off; the old ask to an admin (`optout`) is still honoured but no longer offered.
+
+Boards and projects set to Only you (`only_you_projects`, the boards' own visibility) share nothing: not the project,
+its timeline, any thread that touches it, nor people known only through it. Each record passes one check before it
+is sealed (`Scope.shareable`); switching a board from Team to Only you takes back what went.
 
 ## What is shared
 
@@ -126,8 +143,10 @@ The Shared Graph adds one statement kind to `fleet_trust.py`:
 - `remove`: `{t: remove, fleet, member, by, at}`, signed by a confirmed admin's Machine when someone leaves the
   directory or an admin taps **Take out**. Each Machine keeps the newest per member. A removed member counts again only
   with a `member` statement dated at or after the removal (**Share again**).
-- `pause`: `{t: pause, fleet, member, key, by, on, at}`, an admin pauses or resumes sharing for the whole Fleet. The
-  newest wins.
+- `pause`: `{t: pause, fleet, member, key, by, on, at, purged?}`, an admin turns sharing off (`on`: paused) or back
+  on for the whole Fleet, the **Share the Graph in this Fleet** switch. The newest wins. `purged` is when an admin last
+  picked **Turn off and remove shared data**; every later statement carries it on, so turning sharing back on can't
+  hide a removal from a Machine that was away.
 
 The trust decision is made once per person: an admin's OK when they join ("<name> joined <Fleet>. Share the team's
 Graph with them?", or **Share with all** for several). After that there is no OK per device. A new key of a person
@@ -278,18 +297,42 @@ it. **Ask <name>** on a tile, person or organisation starts a handoff to that te
   **Share with the team**, and a link to **What's shared**. **Keep private** on a record.
 - **What's shared**, a pane per Work Fleet on the Fleet tab (also in Settings): counts per kind, the first-share review
   with **Start now**, **Share these?**, every shared thread with its why-line and **Unshare**, and what is kept private.
-  For admins also **Teammates** (who shares, who hasn't started, **Take out**, **Share again**) and **Pause sharing
-  for everyone**.
+  For admins also **Teammates** (who shares, who hasn't started, **Take out**, **Share again**) and the switch
+  **Share the Graph in this Fleet**, which everyone sees.
 - The Fleet tab, in the Team Graph box: "<name> joined <Fleet>. Share the team's Graph with them?" and "<name> asks to
   stop sharing their Work with the team." (Approve / Not now) for admins, new devices with **Not theirs**, and for
   everyone their own sharing: on, asked an admin, or off, with one button (Stop sharing my Work, Keep sharing, Share
   again).
 - On a teammate's client thread, its attachments open from the dashboard (served as downloads, never run).
 
+## Unsharing and removal
+
+Nothing a teammate holds is copied anywhere else: records, threads and files stay in `team_records`, `team_mail` and
+`team_files` and are read from there when shown, never into the owner's events, search index or cards. Deleting
+those rows deletes all of it. Retraction works three ways:
+
+- **Unshare a thread** (by hand, a rule, Keep private on a record, or a later review that makes it sensitive): the
+  owner's Machine sends, sealed and signed per recipient, an empty `mail` blob for its tag and one per file, plus a
+  delta whose `threads` list no longer has it. Each receiver deletes the thread, its files and the copies it keeps
+  to pass on. The records' timelines are rebuilt without its lines and go in the same delta.
+- **A Machine that was away**: the mailbox keeps blobs 30 days. Each Machine also sends a snapshot of what it shares
+  daily, so a Machine back after longer gets the newest list (from the mailbox or a teammate's catch-up) and drops
+  every thread not on it. A copy passed on late by a teammate is dropped when it is older than the publisher's newest
+  list and not on it, so new devices and late joiners never get what was unshared.
+- **Turn off and remove shared data**: an admin's signed `pause` with `purged`. Every Machine deletes all it got from
+  the Fleet, forgets what it sent and drops any blob from before then that still arrives. It is a trust statement,
+  not a mailbox blob, so it reaches Machines that come back after any time. Once back on, each owner taps Start now
+  again and everything goes again from the start.
+
+What isn't retracted: **Stop sharing my Work** (an admin's `optout`) and someone leaving only stop what's new; what went
+stays with the Fleet, as decided. Someone may already have read what was retracted. A Machine no longer in the Fleet
+deletes everything it got from it (`_graph_forget`); someone taken out but still in it keeps what they got before and
+gets no retractions after, since nothing is sealed to them any more.
+
 ## Stopping
 
-Like in any CRM, nobody switches sharing off on their own. A member taps **Stop sharing my Work**; their Machine tells
-the admins (an `ask` blob) and keeps sharing. An admin's owner sees the ask on the Fleet tab and approves it on their
+This section is the earlier flow, kept for Machines that asked before per-connection choices. A member taps Stop
+sharing my Work; their Machine tells the admins (an `ask` blob) and keeps sharing. An admin's owner sees the ask on the Fleet tab and approves it on their
 own Machine, which signs an `optout` statement. Once the member's Machine sees it, it publishes nothing new. What it
 shared before stays with the Fleet. **Share again** turns it back on at once, with no OK needed. A Network that
 forges, drops or replays these can at most delay a stop: it can't make one, because only a confirmed admin's key

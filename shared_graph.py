@@ -310,10 +310,15 @@ class Scope:
         Work is not."""
         self.accounts, self.internal, self.mine = set(accounts), set(internal), {m.lower() for m in mine}
         self.private = {r[0] for r in db.execute('SELECT node_id FROM share_private')}
-        personal = set(personal)
-        # Only-you projects (their own visibility or their board's): never shared, and neither are their threads
-        self.private |= {'project:' + str(i) for i in graph.hidden_project_ids(db)}
-        self.hidden_events = graph.hidden_event_ids(db)
+        # Only-you boards and projects (graph.hidden_project_ids: a project's own visibility, else its board's): nothing of
+        # them goes, and neither does any thread one of their messages is in (graph.hidden_event_ids)
+        self.only_you = {'project:' + str(i) for i in graph.hidden_project_ids(db)}
+        self.private |= self.only_you
+        self.hidden_events = graph.hidden_event_ids(db) if self.only_you else set()
+        self.hidden_threads = set()
+        if self.hidden_events:
+            for e in db.execute('SELECT id,kind,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(self.hidden_events)),)):
+                self.hidden_threads.add(thread_of(e['kind'], json.loads(e['metadata'] or '{}'), e['id']))
         self.calls = {r[0]: (r[1], r[2]) for r in db.execute('SELECT thread,verdict,hand FROM share_threads')}  # the review's and the owner's
         self.hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=HOLD)).isoformat(timespec='seconds')
         self.fresh = {r[0] for r in db.execute('SELECT thread FROM share_threads WHERE hand IS NULL AND sorted_at>?', (self.hold,))}
@@ -339,6 +344,10 @@ class Scope:
                     self.private_ids |= {i[6:].lower() for i in ids if str(i).startswith('email:')}
             elif row['id'] in self.private and info.get('domain'):
                 self.private_ids.add('@' + info['domain'])
+
+    def shareable(self, node_id):
+        """The one check per record before it is sealed: not kept private, not an Only you board's project."""
+        return node_id not in self.private and node_id not in self.only_you
 
     def private_address(self, address):
         return address in self.private_ids or '@' + address.rsplit('@', 1)[-1] in self.private_ids
@@ -378,6 +387,8 @@ def visibility(db, scope, event):
     people = addresses(metadata)
     if any(scope.private_address(a) for a in people):
         return 'private'
+    if thread_of(event['kind'], metadata, event['id']) in scope.hidden_threads:
+        return 'private'  # part of an Only you board or project
     verdict, hand = scope.calls.get(thread_of(event['kind'], metadata, event['id']), (None, None))
     if verdict == 'personal' and not hand:
         return 'personal'
@@ -506,7 +517,7 @@ def collect(db, scope, key, secret, today=None):
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' ORDER BY strength DESC LIMIT ?", (MAX_RECORDS,)):
         info = json.loads(row['info'] or '{}')
         emails = sorted({i[6:].lower() for i in [row['id'], *info.get('identifiers', [])] if str(i).startswith('email:')})
-        if (row['id'] in scope.private or not emails or info.get('colleague') or any(not outside(e, scope.internal) or e in scope.mine for e in emails)
+        if (not scope.shareable(row['id']) or not emails or info.get('colleague') or any(not outside(e, scope.internal) or e in scope.mine for e in emails)
                 or str(info.get('role') or '').lower() == 'automated sender' or any(graph.bulk(e) for e in emails)
                 or (info.get('org') and info['org'] in scope.private)):
             continue
@@ -528,7 +539,7 @@ def collect(db, scope, key, secret, today=None):
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='org'"):
         info = json.loads(row['info'] or '{}')
         domain = info.get('domain')
-        if row['id'] not in shared_orgs or row['id'] in scope.private or not domain or domain in graph.FREEMAIL or not outside('x@' + domain, scope.internal):
+        if row['id'] not in shared_orgs or not scope.shareable(row['id']) or not domain or domain in graph.FREEMAIL or not outside('x@' + domain, scope.internal):
             continue
         r = rid(row['id'])
         records[r] = {'r': r, 't': 'org', 'name': row['name'], 'name_hand': 'name' in (info.get('edited') or []), 'role': info.get('role'),
@@ -539,7 +550,7 @@ def collect(db, scope, key, secret, today=None):
     for row in db.execute("SELECT n.*,p.id pid,b.id bid,p.stage,p.stage_by,p.stage_at,p.stage_reason,p.next_step,p.org porg,b.name board,b.stages stages,b.side side "
                           "FROM graph_nodes n JOIN projects p ON 'project:'||p.id=n.id LEFT JOIN boards b ON b.id=p.board_id "
                           "WHERE n.kind='project' AND p.closed_at IS NULL"):
-        if row['id'] in scope.private:
+        if not scope.shareable(row['id']):
             continue
         ok, last = work(row['id'])
         # A project on a board the team sees goes with its board record (stage, why, next, organisation) even before a
@@ -878,6 +889,8 @@ class SharedGraph:
     def _graph_fleet(self, group, me):
         found, trusted, waiting = self.confirmed(group)
         members = {m['member_id']: m for m in group.get('members', []) if m.get('member_id')}
+        self.graph_purge(group, trusted)
+        self.graph_policy(group, trusted)  # what the Fleet requires, checked and kept for graph_connections
         if me['member_id'] in trusted:
             self._admit_round(group, me, found, trusted, waiting, members)
             self._graph_keys_round(group, me, found)
@@ -963,16 +976,95 @@ class SharedGraph:
         return {'ok': True, 'done': done}
 
     def graph_paused(self, group, trusted=None):
-        """The admin's pause for the whole Fleet, when on: {by, at}; else None. The newest one seen is kept."""
+        """Whether sharing is off for the whole Fleet: the newest admin statement (the switch, ft.paused), or None when an
+        admin turned it on. Off by default (an experimental feature): with no statement at all it is off, {'default':
+        True}. The newest one seen is kept."""
         if trusted is None:
             trusted, _ = self.trust(group)
         found = ft.paused(group, trusted, self.meta('graph_pause:' + group['id']))
         if found:
             self.set_meta('graph_pause:' + group['id'], found)
-        return found if found and found.get('on') else None
+        if not found:
+            return {'default': True}
+        return found if found.get('on') else None
 
-    def graph_pause(self, fleet, on=True):
-        """An admin pauses sharing the team's Graph for everyone in the Fleet, or resumes it. Signed by this Machine."""
+    # -- what feeds the team's Graph: per connection, and what the Fleet requires
+    MAIL_SERVICES = ('gmail', 'outlook', 'microsoft', 'ms_graph', 'salesflare', 'intercom')
+    CALENDAR_SERVICES = ('calendar', 'outlook_calendar', 'google_calendar', 'microsoft_calendar')
+
+    def graph_policy(self, group, trusted=None):
+        """What this Fleet's admins require every member to share: a list, some of ft.REQUIRABLE."""
+        if trusted is None:
+            trusted, _ = self.trust(group)
+        found = ft.policy_of(group, trusted, self.meta('graph_policy:' + group['id']))
+        if found:
+            self.set_meta('graph_policy:' + group['id'], found)
+        return list((found or {}).get('require') or [])
+
+    def graph_set_policy(self, fleet, require):
+        """An admin requires (or no longer requires) the members' Work email and Work calendar. Signed by this Machine."""
+        group, me, trusted = self._admin_group(fleet)
+        statement = ft.policy(fleet, me['member_id'], trusted[me['member_id']], [r for r in require or [] if r in ft.REQUIRABLE], now())
+        self.relay.call('POST', '/trust', {'fleet': fleet, 'item': ft.sign(self._private(), statement)}, timeout=30)
+        self.set_meta('graph_policy:' + fleet, statement)
+        self.directory(refresh=True)
+        return {'ok': True, 'require': statement['require']}
+
+    def _admin_group(self, fleet):
+        group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
+        me = group and self._me_in(group)
+        if not me:
+            raise ValueError('Not a Work Fleet of yours')
+        trusted, _ = self.trust(group)
+        if me['member_id'] not in trusted:
+            raise ValueError('Only a confirmed admin can do that')
+        return group, me, trusted
+
+    def _account_kind(self, account):
+        service = str(account.get('service') or '').lower()
+        return 'mail' if service in self.MAIL_SERVICES else 'calendar' if service in self.CALENDAR_SERVICES else service or 'other'
+
+    def graph_connections(self, fleet, group=None, trusted=None):
+        """The owner's connections for one Work Fleet, each with whether it feeds the team's Graph: Work ones of this
+        Fleet start on, the rest (personal, another company's) off; the owner flips any, except what the Fleet requires
+        (its Work email and calendar, when an admin said so). Inside a connection that is on, each thread is still
+        sorted: personal, sensitive and colleague-only threads never go."""
+        # the policy as the last round checked it (graph_policy): reading it here never writes, since a caller may be
+        # inside its own write to the database
+        require = self.graph_policy(group, trusted) if group and trusted is not None else list((self.meta('graph_policy:' + fleet) or {}).get('require') or [])
+        work = set(self.fleet_accounts(fleet))
+        chosen = self.meta('graph_conn:' + fleet) or {}
+        out = []
+        for a in self.config.get('accounts', []):
+            if not a.get('id'):
+                continue
+            kind = self._account_kind(a)
+            required = a['id'] in work and kind in require
+            out.append({'id': a['id'], 'service': str(a.get('service') or ''), 'email': str(a.get('email') or ''), 'kind': kind,
+                        'work': a['id'] in work, 'required': required,
+                        'on': True if required else bool(chosen.get(a['id'], a['id'] in work))})
+        return out
+
+    def graph_accounts(self, fleet):
+        """The accounts whose threads and meetings may go to this Fleet's Graph (graph_connections that are on)."""
+        return [c['id'] for c in self.graph_connections(fleet) if c['on']]
+
+    def graph_connection(self, fleet, account, on):
+        """The owner turns one connection's sharing on or off. What it shared before is taken back when it goes off."""
+        found = next((c for c in self.graph_connections(fleet) if c['id'] == account), None)
+        if not found:
+            raise ValueError('Unknown connection')
+        if found['required'] and not on:
+            raise ValueError('Required by your Fleet: an admin decides this one')
+        chosen = self.meta('graph_conn:' + fleet) or {}
+        chosen[account] = bool(on)
+        self.set_meta('graph_conn:' + fleet, chosen)
+        return {'ok': True, 'on': bool(on)}
+
+    def graph_pause(self, fleet, on=True, remove=False):
+        """An admin turns sharing the team's Graph off for everyone in the Fleet, or back on. Signed by this Machine.
+        Off keeps what was shared on the team's Machines; with remove, every Machine deletes what it got from the Fleet
+        (graph_purge) and each owner looks it over again before anything goes once it is back on."""
         group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
         me = group and self._me_in(group)
         if not me:
@@ -980,11 +1072,36 @@ class SharedGraph:
         trusted, _ = self.trust(group)
         if me['member_id'] not in trusted:
             raise ValueError('Only a confirmed admin can pause sharing for everyone')
-        statement = ft.pause(fleet, me['member_id'], trusted[me['member_id']], on, now())
+        at = now()
+        before = ft.purged(group, trusted, self.meta('graph_purged:' + fleet))
+        statement = ft.pause(fleet, me['member_id'], trusted[me['member_id']], on, at, at if on and remove else before)
         self.relay.call('POST', '/trust', {'fleet': fleet, 'item': ft.sign(self._private(), statement)}, timeout=30)
         self.set_meta('graph_pause:' + fleet, statement)
-        self.directory(refresh=True)
-        return {'ok': True, 'paused': bool(on)}
+        group = next((g for g in (self.directory(refresh=True).get('fleets') or []) if g.get('id') == fleet), group)
+        if on and remove:
+            self.set_meta('graph_purged:' + fleet, at)
+            self.graph_purge(group, trusted)
+        return {'ok': True, 'paused': bool(on), 'removed': bool(on and remove)}
+
+    def graph_purge(self, group, trusted):
+        """An admin removed everything the Fleet shared (signed, ft.purged): this Machine deletes all it got from the
+        Fleet before then (records, threads, files, the copies it keeps to pass on), forgets what it sent, so that once
+        sharing is back on it goes again from the start, and waits for its owner's Start now. Once per removal."""
+        fleet = group['id']
+        when = ft.purged(group, trusted, self.meta('graph_purged:' + fleet))
+        if not when or when <= str(self.meta('graph_purge_done:' + fleet) or ''):
+            return False
+        with self.connect() as db:
+            ensure(db)
+            for table in ('team_records', 'team_mail', 'team_files', 'team_blobs', 'team_sources', 'team_wants', 'share_out'):
+                db.execute(f'DELETE FROM {table} WHERE fleet=?', (fleet,))
+            db.execute('DELETE FROM fleet_meta WHERE key LIKE ?', ('graph_served:' + fleet + ':%',))
+        for key in ('graph_out:', 'graph_want:', 'graph_start:', 'graph_week:'):
+            self.set_meta(key + fleet, None)
+        self.set_meta('graph_purged:' + fleet, when)
+        self.set_meta('graph_purge_done:' + fleet, when)
+        LOG.info('shared graph removed by an admin fleet=%s', fleet)
+        return True
 
     def graph_start(self, fleet):
         """The owner looked over what goes first: it goes now."""
@@ -1037,7 +1154,7 @@ class SharedGraph:
             raise ValueError('Not a Work Fleet of yours')
         with self.connect() as db:
             ensure(db)
-            scope = Scope(db, self.fleet_accounts(fleet), self.internal(fleet), self.my_emails())
+            scope = Scope(db, self.graph_accounts(fleet), self.internal(fleet), self.my_emails())
             sent = db.execute("SELECT count(*) FROM share_out WHERE fleet=? AND kind='thread'", (fleet,)).fetchone()[0]
             out = overview(db, scope, sent)
             start = self.meta('graph_start:' + fleet) or {}
@@ -1183,7 +1300,7 @@ class SharedGraph:
             return  # nobody to share with yet, or the owner's first look-over (it waits for Start now)
         with self.connect() as db:
             ensure(db)
-            scope = Scope(db, self.fleet_accounts(fleet), self.internal(fleet), self.my_emails(), self._personal_people(db))
+            scope = Scope(db, self.graph_accounts(fleet), self.internal(fleet), self.my_emails())
             others = [k['key'] for kv_, k in sorted(self.graph_keys(fleet).items(), key=lambda x: x[1]['at'], reverse=True) if kv_ != kv][:3]
             records, threads, stats, files = collect(db, scope, [key, *others], self.graph_secret())
             before = {(r['kind'], r['key']): r['hash'] for r in db.execute('SELECT kind,key,hash FROM share_out WHERE fleet=?', (fleet,))}
@@ -1384,6 +1501,8 @@ class SharedGraph:
             if header.get('kind') in ('mail', 'file'):
                 self._caught_up(group['id'], sender, int(header['seq']))
         header, body, dk = opened
+        if header['kind'] in RELAYED and str(header.get('at') or '') < str(self.meta('graph_purge_done:' + group['id']) or ''):
+            raise ValueError('from before an admin removed what the Fleet shared')
         if header['kind'] == 'key' and sender not in trusted:
             raise ValueError('a graph key from someone who is not a confirmed admin')
         if header['kind'] == 'want' and sender not in found:
@@ -1467,6 +1586,8 @@ class SharedGraph:
                 old = db.execute('SELECT seq FROM team_mail WHERE fleet=? AND member=? AND tag=?', (fleet, sender, tag)).fetchone()
                 if old and old['seq'] >= seq:
                     raise ValueError('older mail')
+                if body and row['seq'] and seq < row['seq'] and tag not in json.loads(row['threads'] or '[]'):
+                    raise ValueError('no longer shared')  # an old copy, passed on after its publisher unshared it
                 if not body:
                     db.execute('DELETE FROM team_mail WHERE fleet=? AND member=? AND tag=?', (fleet, sender, tag))
                 else:
@@ -1479,6 +1600,10 @@ class SharedGraph:
                 old = db.execute('SELECT seq FROM team_files WHERE fleet=? AND member=? AND tag=?', (fleet, sender, tag)).fetchone()
                 if old and old['seq'] >= seq:
                     raise ValueError('an older file')
+                listed = {a.get('file') for r in db.execute('SELECT body FROM team_mail WHERE fleet=? AND member=?', (fleet, sender))
+                          for m in json.loads(r['body']).get('messages') or [] for a in m.get('attachments') or []}
+                if body and row['seq'] and seq < row['seq'] and tag not in listed:
+                    raise ValueError('no longer shared')  # a file of a thread its publisher unshared, passed on late
                 if not body:
                     db.execute('DELETE FROM team_files WHERE fleet=? AND member=? AND tag=?', (fleet, sender, tag))
                 else:
@@ -1557,7 +1682,7 @@ class SharedGraph:
         with self.connect() as db:
             ensure(db)
             for group in groups:
-                for item in unjudged(db, Scope(db, self.fleet_accounts(group['id']), self.internal(group['id']), self.my_emails()), limit - len(out)):
+                for item in unjudged(db, Scope(db, self.graph_accounts(group['id']), self.internal(group['id']), self.my_emails()), limit - len(out)):
                     if item['event_id'] not in skip:
                         skip.add(item['event_id'])
                         out.append(item)
@@ -1695,8 +1820,7 @@ class SharedGraph:
         found = {}
         for group in self._kept_groups():
             if group.get('kind') == 'work' and group.get('id') and self._me_in(group):
-                found[group['id']] = Scope(db, self.fleet_accounts(group['id']), self.internal(group['id']), self.my_emails(),
-                                           self._personal_people(db))
+                found[group['id']] = Scope(db, self.graph_accounts(group['id']), self.internal(group['id']), self.my_emails())
         return found
 
     def _personal_people(self, db):
@@ -1754,7 +1878,10 @@ class SharedGraph:
             out.append({'fleet': group['id'], 'name': str(group.get('name') or '')[:80], 'confirmed': me['member_id'] in found,
                         'off': self.graph_off(group, trusted), 'week': self.meta('graph_week:' + group['id']),
                         'waiting': len([m for m in waiting if m != me['member_id']]), 'admin': admin, 'prompts': prompts,
-                        'paused': {'by': names.get(paused['by'], 'An admin'), 'at': paused['at']} if paused else None,
+                        'paused': ({'default': True} if paused.get('default') else
+                                   {'by': names.get(paused['by'], 'An admin'), 'at': paused['at'], 'removed': bool(paused.get('purged') and paused['purged'] == paused['at'])}) if paused else None,
+                        'require': self.graph_policy(group, trusted),
+                        'connections': self.graph_connections(group['id'], group, trusted),
                         'started': bool(start.get('started')),
                         'new_devices': [{'member': m, 'name': r.get('name'), 'fp': r.get('fp'), 'from': until(r['since'], REKEY_HOLD)}
                                         for m, r in (self.meta('graph_rekey:' + group['id']) or {}).items()] if admin else [],
