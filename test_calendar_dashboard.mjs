@@ -49,7 +49,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(brand[url.pathname]){res.setHeader('Content-Type',url.pathname.endsWith('.png')?'image/png':'font/woff2');res.end(await readFile(new URL('./'+brand[url.pathname],import.meta.url)));return}
  if(req.method!=='GET')calls.push(url.pathname+' '+body);
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
- if(url.pathname==='/api/calendar'){calendarAsks.push(Object.fromEntries(url.searchParams));if(calendarDown||failFrom&&new Date(url.searchParams.get('from'))>=failFrom){res.statusCode=500;res.end('{"error":"down"}');return}res.end(JSON.stringify({meetings:empty?[]:meetings}));return}
+ if(url.pathname==='/api/calendar'){await new Promise(r=>setTimeout(r,150));calendarAsks.push(Object.fromEntries(url.searchParams));if(calendarDown||failFrom&&new Date(url.searchParams.get('from'))>=failFrom){res.statusCode=500;res.end('{"error":"down"}');return}res.end(JSON.stringify({meetings:empty?[]:meetings}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');res.end(JSON.stringify(r.action==='card_chat'?{session:true,status:'ok',active:false,items:[]}:{}));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -60,7 +60,7 @@ const open=async(width,height,scheme='dark')=>{const mobile=width<600;
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+cards[1].id).waitFor();return {context,page}};
-const showCal=async page=>{await page.evaluate(()=>showTab('calendar'));await page.locator('#calendar-view .cal-item,#calendar-view .cal-chip').first().waitFor();await page.waitForFunction(()=>!document.querySelector('#calendar-view').textContent.includes('Loading'))};
+const showCal=async page=>{await page.evaluate(()=>showTab('calendar'));await page.locator('#calendar-view .cal-item,#calendar-view .cal-chip').first().waitFor();await page.waitForFunction(()=>calMeetings!==null&&![...calWeeks.values()].some(w=>w.loading))};
 const blocks=page=>page.locator('#calendar-view .cal-block').evaluateAll(b=>b.map(x=>({day:x.querySelector('.cal-day span').textContent,rows:[...x.querySelectorAll('.cal-item')].map(r=>r.querySelector('.cal-time').textContent+' | '+r.querySelector('.cal-title').textContent+' | '+(r.querySelector('.cal-sub')?.textContent||''))})));
 const fits=(page,where)=>page.evaluate(()=>({page:document.documentElement.scrollWidth,vw:innerWidth,wide:[...document.querySelectorAll('#calendar-view *')].filter(e=>{
  // A long label inside an ellipsis chip has a wider inline box, but its excess text is not painted. Measure
