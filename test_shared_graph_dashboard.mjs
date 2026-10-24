@@ -16,8 +16,9 @@ const later=new Date(Date.now()+20*3600e3).toISOString();
 const fleetPaneReload=async page=>{await page.evaluate(async()=>{await fleetView(true);const p=document.querySelector('[data-shared-fleet]');if(p)await sharedLoad(p.dataset.sharedFleet,true)})};
 const shot=async(loc,path)=>{for(let i=0;;i++){try{return await loc.screenshot({path})}catch(err){if(i>4)throw err;await new Promise(r=>setTimeout(r,400))}}};
 const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:1,started:false,paused:null,require:['mail'],
- connections:[{id:'work',service:'gmail',email:'olive@acme.example',kind:'mail',work:true,required:true,on:true},{id:'cal',service:'calendar',email:'olive@acme.example',kind:'calendar',work:true,required:false,on:true},
-  {id:'home',service:'gmail',email:'olive@home.example',kind:'mail',work:false,required:false,on:false}],
+ connections:[{id:'work',service:'gmail',email:'olive@acme.example',kind:'mail',work:true,company:true,personal:false,required:true,on:true},{id:'cal',service:'calendar',email:'olive@acme.example',kind:'calendar',work:true,company:true,personal:false,required:false,on:true},
+  {id:'side',service:'gmail',email:'olive@sideco.example',kind:'mail',work:true,company:false,personal:false,required:false,on:false},
+  {id:'home',service:'gmail',email:'olive@home.example',kind:'mail',work:false,company:false,personal:true,required:false,on:false}],
  people:[{member:'m_kim',name:'Kim Lee',state:'not_started'},{member:'m_tom',name:'Tom Ray',state:'sharing'},{member:'m_old',name:'Pat Old',state:'removed'}],
  new_devices:[{member:'m_kim2',name:'Kim Lee',fp:'ef56 ab12 cd34 ef56 ab12 cd34',from:later}]}];
 const T=(id,title,company,why,view='team')=>({event_id:id,title,with:company,company,at,view,share:'team',why});
@@ -86,6 +87,12 @@ try{
   const context=await browser.newContext({viewport:{width,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+  // the card that asks each person to start: what goes, what never does, what the Fleet requires
+  await page.goto('http://127.0.0.1:'+server.address().port+'/');
+  const startCard=page.locator('#fleet-start-'+FL);
+  await startCard.waitFor();
+  assert.match(await startCard.innerText(),/Share your Work with Acme\?\s+Acme shares a team Graph\. Your Work contacts and client threads go to your teammates' Machines\. Personal, sensitive and automated mail never does\.\s+Acme requires your Work email\. You can still keep any thread private\.\s+Look over what goes first\. Nothing goes until you start\.\s+Start now\s+Look it over/);
+  await shot(startCard,(process.env.SHOTS||'/tmp')+'/shared-start-card-'+width+'.png');
   await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=people');
   await page.locator('[data-graph-team="team"]').waitFor();
   // Mine has no via; Team has the teammates' people with a quiet "via Ada"
@@ -173,15 +180,29 @@ try{
   await new Promise(r=>setTimeout(r,800));  // the pane reloads after the actions above
   // each connection: Work on, personal off, the required one can't be turned off
   const conns=pane.locator('.shared-conns');
-  assert.match(await conns.innerText(),/^Your connections\s+What feeds Acme's Graph\. Work starts on, personal off\. Personal and sensitive threads never go\.\s+Gmail · olive@acme\.example\s+Required by Acme\s+Google Calendar · olive@acme\.example\s+Work\s+Gmail · olive@home\.example\s+Personal$/);
+  assert.match(await conns.innerText(),/^Your connections\s+What feeds Acme's Graph\. Acme's Work starts on\. Other companies' start off\. Personal never goes\.\s+Gmail · olive@acme\.example\s+Required by Acme\s+Google Calendar · olive@acme\.example\s+Work\s+Gmail · olive@sideco\.example\s+Other company, not shared\s+Gmail · olive@home\.example\s+Personal, never shared$/);
   assert.equal(await conns.locator('[data-graph-conn="work"]').isDisabled(),true);
   if(width===1440)await shot(conns,(process.env.SHOTS||'/tmp')+'/shared-connections-1440.png');
-  await conns.locator('[data-graph-conn="home"]').click();
+  if(width===390)await shot(conns,(process.env.SHOTS||'/tmp')+'/shared-connections-390.png');
+  // personal has no switch at all; another company's mailbox is off until its owner turns it on
+  assert.equal(await conns.locator('[data-graph-conn="home"]').count(),0);
+  await conns.locator('[data-graph-conn="side"]').click();
   await page.locator('#toast',{hasText:'Shared with the team.'}).waitFor();
-  assert.deepEqual(calls.filter(c=>c.action==='graph_connection').at(-1),{action:'graph_connection',args:{fleet:FL,account:'home',on:true}});
+  assert.deepEqual(calls.filter(c=>c.action==='graph_connection').at(-1),{action:'graph_connection',args:{fleet:FL,account:'side',on:true}});
   // an admin requires the Work calendar too
   await new Promise(r=>setTimeout(r,800));
+  // requiring something asks the admin to confirm first; Cancel leaves it as it was
+  const consent=page.locator('#share-consent');
   await pane.locator('[data-graph-require="calendar"]').check();
+  await consent.waitFor({state:'visible'});
+  assert.match(await consent.innerText(),/^Require everyone's Work calendar\?[\s\S]*As an admin, you confirm Acme has told its people\.\s+Require it\s+Cancel$/);
+  await shot(consent,(process.env.SHOTS||'/tmp')+'/shared-require-consent-'+width+'.png');
+  await consent.locator('button[value="cancel"]').click();
+  await consent.waitFor({state:'hidden'});
+  assert.equal(await pane.locator('[data-graph-require="calendar"]').isChecked(),false);
+  assert.equal(calls.filter(c=>c.action==='graph_policy').length,0);
+  await pane.locator('[data-graph-require="calendar"]').check();
+  await consent.locator('#share-consent-ok').click();
   await page.locator('#toast',{hasText:'Required for everyone in the Fleet.'}).waitFor();
   assert.deepEqual(calls.filter(c=>c.action==='graph_policy').at(-1),{action:'graph_policy',args:{fleet:FL,require:['mail','calendar']}});
   await new Promise(r=>setTimeout(r,800));
@@ -203,7 +224,12 @@ try{
   await new Promise(r=>setTimeout(r,800));
   assert.match(await pane.locator('.shared-status .sub').innerText(),/^Off for everyone, turned off by Ada\. Nothing new goes\. What went was removed from the team's Machines\.$/);
   if(width===1440)await shot(pane.locator('.shared-status'),(process.env.SHOTS||'/tmp')+'/shared-switch-off-1440.png');
+  // turning it on asks the admin to confirm what goes and that the people were told
   await pane.locator('[data-graph-switch]').click();
+  await consent.waitFor({state:'visible'});
+  assert.match(await consent.innerText(),/^Share the Graph in Acme\?[\s\S]*client email threads, with attachments[\s\S]*As an admin, you confirm Acme may share this Work mail and has told its people\.[\s\S]*Turn on\s+Cancel$/);
+  await shot(consent,(process.env.SHOTS||'/tmp')+'/shared-switch-consent-'+width+'.png');
+  await consent.locator('#share-consent-ok').click();
   await page.locator('#toast',{hasText:'Sharing is on for everyone.'}).waitFor();
   assert.deepEqual(calls.filter(c=>c.action==='graph_pause').at(-1),{action:'graph_pause',args:{fleet:FL,on:false}});
   await pane.locator('[data-graph-switch][aria-checked="true"]').waitFor();
@@ -221,7 +247,7 @@ try{
    assert.equal(await pane.locator('[data-graph-switch]').isDisabled(),true);
    await shot(st,(process.env.SHOTS||'/tmp')+'/shared-member-off-1440.png');
    Object.assign(sharing[0],{paused:null,admin:true,people:[{member:'m_kim',name:'Kim Lee',state:'not_started'}]})}
-  sharing[0].started=false;sharing[0].require=['mail'];sharing[0].connections.find(c=>c.id==='home').on=false;
+  sharing[0].started=false;sharing[0].require=['mail'];sharing[0].connections.find(c=>c.id==='side').on=false;
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.deepEqual(errors,[]);
   await context.close();

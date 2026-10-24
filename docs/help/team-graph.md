@@ -10,17 +10,17 @@ In a Work Fleet, your Machine can share your client work with your teammates' Ma
 
 ## Turn it on
 
-An admin turns on **Share the Graph in this Fleet** on **What's shared**. Everyone sees whether it's on. Then each person looks over what would go and taps **Start now**. Nothing goes before that.
+An admin turns on **Share the Graph in this Fleet** on **What's shared**, and confirms the company may share this mail and has told its people. Everyone sees whether it's on. A Fleet that already shared before stays on. Then each person looks over what would go and taps **Start now**. Nothing goes before that.
 
 ## Your connections
 
-**Your connections** on **What's shared** lists each one with a switch. Work ones start on, personal ones off. Turn any of them on or off. Turning one off takes back what it shared.
+**Your connections** on **What's shared** lists each one with a switch. Work ones at your Fleet's own domain start on. One at another company's domain starts off, even when it's a Work account: it says "Other company, not shared". You can turn it on. Personal ones never go. Turning one off takes back what it shared.
 
-Inside a connection that's on, each thread is still sorted: personal and sensitive threads never go, whichever connection they come from.
+Inside a connection that's on, each thread is still sorted: personal, sensitive and automated mail never goes, whichever connection it comes from.
 
 ## Required by the Fleet
 
-An admin can require everyone's **Work email** and **Work calendar**, under **Required by the Fleet**. Work mail belongs to the company, like in any CRM. Those then show "Required by" your Fleet and can't be turned off. Threads you keep private stay private.
+An admin can require everyone's **Work email** and **Work calendar** at the Fleet's own domain, under **Required by the Fleet**, after confirming the company has told its people. Work mail belongs to the company, like in any CRM. Those then show "Required by" your Fleet and can't be turned off. Threads you keep private stay private.
 
 ## What goes to the team
 
@@ -29,8 +29,9 @@ An admin can require everyone's **Work email** and **Work calendar**, under **Re
 
 ## What never goes
 
-- Sensitive threads: buying or selling a company, investments, valuations, deal talks, HR about one person, legal, health, money. Not even that they exist.
-- Threads with only colleagues, personal mail and anything from a personal account.
+- Sensitive threads: buying or selling a company, investments, valuations, deal talks, HR, hiring and recruiters, legal, health, money, security. Not even that they exist.
+- Automated mail: receipts, invoices, alerts, newsletters, and your company's own bills with its suppliers.
+- Threads with only colleagues, personal mail and anything from a personal account. Personal never goes, not even when you tap Team.
 - Anything you marked **Keep private**, and boards and projects set to Only you.
 
 Each thread is judged on its own, by what it is about. Once a thread is sensitive, it stays sensitive.

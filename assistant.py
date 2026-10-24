@@ -10541,16 +10541,20 @@ ORG_STEP = ('Where someone works, for a person with no organisation: set it only
 
 
 # How the review sorts a Work thread for the Shared Graph (shared_graph.VERDICTS). Sensitive is rare; when unsure, unsure.
-SHARE_VERDICTS = ('client (a real conversation with a customer, prospect, partner or vendor about work with them: sales, support, '
-                  'onboarding, billing; the whole thread goes to the teammates), sensitive (what the thread is about, anywhere in '
-                  'it, also in quoted earlier messages: buying or selling a company, a merger, an investment or fundraising, a '
-                  'valuation, a term sheet, a letter of intent, an NDA for a deal; HR or hiring about one person; legal disputes; '
-                  'health; someone\'s own money. Nothing of it goes), internal (only colleagues), personal (the owner\'s own life, '
-                  'not work; never shared), other (not a conversation with a client: notifications, alerts, receipts, invoices from '
-                  'a system, newsletters, event invitations, spam, mass cold pitches; never shared) or unsure (it may be client '
-                  'Work but you can\'t tell, or it is with a company in the same market (a peer or competitor) with no clear '
-                  'customer relationship; it stays with the owner, who is asked). Ordinary sales, support and vendor threads are '
-                  'client. Judge each thread on its own, never a whole company at once.')
+SHARE_VERDICTS = ('client (a real conversation with a customer, prospect or partner about work with them: sales, support, '
+                  'onboarding, their account or their bill with the company; the whole thread goes to the teammates), sensitive '
+                  '(what the thread is about, anywhere in it, also in quoted earlier messages: buying or selling a company, a '
+                  'merger, an investment or fundraising, a valuation, a term sheet, a letter of intent, an NDA for a deal; HR, '
+                  'hiring, recruiting or a job for one person, the owner included; legal disputes; health; someone\'s own money; '
+                  'security: access, passwords, keys, tokens, vulnerabilities, incidents. Nothing of it goes), internal (only '
+                  'colleagues), personal (the owner\'s own life, not work, also when it reached a work mailbox; never shared), '
+                  'other (not a conversation with a client: notifications, alerts, receipts, invoices and payments, the company\'s '
+                  'own bills, subscriptions, credits and support tickets with the tools and suppliers it buys from, newsletters, '
+                  'event invitations, spam, mass cold pitches; never shared) or unsure (it may be client Work but you can\'t tell, '
+                  'or it is with a company in the same market (a peer or competitor) with no clear customer relationship; it '
+                  'stays with the owner, who is asked). Ordinary sales and support threads with customers are client. When '
+                  'torn between client and anything else, never choose client. Judge each thread on its own, never a whole '
+                  'company at once.')
 
 
 def share_history_prompt(run_id, pages):
@@ -14910,7 +14914,8 @@ class App:
                 if not label:
                     raise ValueError('Only messages in a Work account are shared with your team')
                 if label['fixed'] and choice == 'team':
-                    raise ValueError('Only colleagues are on this thread, so it stays with the people on it')
+                    raise ValueError('Personal threads are never shared' if label.get('view') == 'personal'
+                                     else 'Only colleagues are on this thread, so it stays with the people on it')
                 shared_graph.set_hand(db, row['id'], choice)
                 scope = next(iter(self.fleet.scopes(db).values()), None)
                 suggest = shared_graph.suggest_rule(db, scope, row['id'], choice) if scope and choice else None

@@ -7,6 +7,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+import unittest.mock
 from unittest.mock import patch
 from pathlib import Path
 
@@ -214,12 +215,24 @@ class SharedGraph(unittest.TestCase):
             labels = self.own.thread_labels(db, [dict(r) for r in db.execute('SELECT * FROM events')])
             self.assertNotIn(self.event_id(self.own, 'home-5'), labels)  # no label at all on a personal account
 
-    def test_a_personal_thread_in_a_work_account_stays_out_until_the_owner_says_team(self):
+    def test_a_personal_thread_in_a_work_account_never_goes_not_by_hand_nor_a_later_review(self):
         self.add(self.own, mail('work', 6, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Your daughter', 'Congrats on the graduation!', 1, 't-p'))
         self.judge(self.own, ('work-6', 'personal', 'Lee wrote'))
         self.rounds()
-        self.assertNotIn('graduation', json.dumps(self.team(self.mem, 'team_mail')))
         self.assertEqual(self.team(self.mem, 'team_mail'), [])
+        with self.own.store.connect() as db:
+            with self.assertRaisesRegex(ValueError, 'Personal'):
+                sg.set_hand(db, self.event_id(self.own, 'work-6'), 'team')
+            label = self.own.thread_labels(db, [dict(db.execute("SELECT * FROM events WHERE source_id='work-6'").fetchone())])
+        self.assertEqual((label[self.event_id(self.own, 'work-6')]['fixed'], label[self.event_id(self.own, 'work-6')]['view']), (True, 'personal'))
+        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        with self.assertRaisesRegex(ValueError, 'Personal threads are never shared'):
+            app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-6'), 'share': 'team'})
+        self.judge(self.own, ('work-6', 'client', 'Lee asked for a quote'), ('work-6', 'other', 'A note'), ('work-6', 'client', 'Lee wrote'))
+        self.rounds()
+        received = json.dumps(self.team(self.mem) + self.team(self.mem, 'team_mail'))
+        for text in ('graduation', 'Your daughter', 'Lee asked for a quote', 'Lee wrote'):
+            self.assertNotIn(text, received)  # not the thread, not a line about it
 
     def test_a_thread_later_sorted_personal_is_taken_back_and_stays_personal(self):
         self.add(self.own, mail('work', 7, 'Lee Park <lee@client.example>', 'own1@acme.example', 'New phone', 'Your new phone ships Friday.', 1, 't-phone'))
@@ -1001,23 +1014,23 @@ class SharedGraph(unittest.TestCase):
         self.assertIn(BODY, self.received(self.mem))
         self.assertIsNone(self.own.sharing()[0]['paused'])
 
-    def test_each_connection_is_shared_or_not_work_on_and_personal_off_by_default(self):
+    def test_each_connection_is_shared_or_not_work_on_and_personal_never(self):
         self.olive_mail()
         self.add(self.own, mail('home', 20, 'Kim Wu <kim@globex.example>', 'own1@home.example', 'Pilot from home', 'Pilot price, from my own address.', 1, 't-home-pilot'))
         self.judge(self.own, ('home-20', 'client', 'Kim asked about the pilot'), ('home-5', 'personal', 'Sam wrote'))
         conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
-        self.assertEqual((conns['work']['on'], conns['home']['on']), (True, False))
+        self.assertEqual((conns['work']['on'], conns['home']['on'], conns['home']['personal']), (True, False, True))
         self.rounds()
         self.assertIn(BODY, self.received(self.mem))
-        self.assertNotIn('Pilot price', self.received(self.mem))
-        self.own.graph_connection(FLEET, 'home', True)  # the owner's own choice: a client thread from home goes, personal never
+        with self.assertRaisesRegex(ValueError, 'Personal connections are never shared'):
+            self.own.graph_connection(FLEET, 'home', True)
+        self.own.set_meta('graph_conn:' + FLEET, {'home': True})  # an old choice from before can't turn a personal one on
         self.rounds()
-        self.assertIn('Pilot price', self.received(self.mem))
+        self.assertNotIn('Pilot price', self.received(self.mem))
         self.assertNotIn(PERSONAL, self.received(self.mem))
         self.own.graph_connection(FLEET, 'work', False)  # off: what it shared is taken back
         self.rounds()
         self.assertNotIn(BODY, self.received(self.mem))
-        self.assertIn('Pilot price', self.received(self.mem))
 
     def test_an_admin_can_require_work_email_and_threads_kept_private_still_stay(self):
         self.olive_mail()
@@ -1133,6 +1146,143 @@ class SharedGraph(unittest.TestCase):
             pending = sg.unjudged(db, self.own.scopes(db)[FLEET], 10)
         thread = next(x for x in pending if x['subject'] == 'Re: Renewal quote')
         self.assertEqual([x['text'] for x in thread['earlier']], [BODY])  # what an earlier message says counts too
+
+    # -- what went wrong in a live Fleet: these are its cases, with made-up names
+    def side_company(self, box=None):
+        """A second company of Olive's, connected as Work too: its own mailbox, at its own domain."""
+        box = box or self.own
+        box.config['accounts'].append({'id': 'side', 'email': 'olive@sidecorp.example', 'boundary': 'work:Sidecorp', 'client': 'x', 'transport': 'gog'})
+        self.add(box, mail('side', 1, 'Pat Moss <pat@buyer.example>', 'olive@sidecorp.example', 'Clinic pilot', 'Sidecorp pilot for three clinics.', 1, 't-side'),
+                 mail('side', 2, 'Olive <olive@sidecorp.example>', 'pat@buyer.example', 'Re: Clinic pilot', 'Happy to start in May.', 0, 't-side'))
+        self.judge(box, ('side-1', 'client', 'Pat asked about a pilot'))
+
+    def test_automated_billing_security_and_recruiting_mail_never_goes(self):
+        def categorised(m, *labels):
+            m['metadata']['labels'] = list(labels)
+            return m
+        self.add(self.own,
+                 mail('work', 70, 'Tool Co <invoice+statements@pay.example>', 'own1@acme.example', 'Your receipt from Tool Co', 'Receipt 2543, paid by card.', 1, 't-receipt'),
+                 mail('work', 71, 'Cloud <payments-noreply@cloud.example>', 'own1@acme.example', 'Invoices due soon', 'Two invoices are due.', 1, 't-due'),
+                 categorised(mail('work', 72, 'AI Lab <team@mail.ailab.example>', 'own1@acme.example', 'Out of usage credits', 'Your organisation is out of credits.', 1, 't-credits'), 'CATEGORY_UPDATES', 'INBOX'),
+                 categorised(mail('work', 73, 'Ann Fox <ann@agency.example>', 'own1@acme.example', 'The part they leave out', 'A newsletter about success.', 1, 't-news'), 'CATEGORY_PROMOTIONS'),
+                 mail('work', 74, 'Code Host <noreply@codehost.example>', 'own1@acme.example', 'A token was added', 'A new access token was added to your account.', 1, 't-token'),
+                 mail('work', 75, 'Jo Hart <jo@recruit.example>', 'own1@acme.example', 'Interview opportunity', 'A role I think fits you, Olive.', 1, 't-recruit'),
+                 categorised(mail('work', 76, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Billing question', 'Can we move to yearly billing?', 2, 't-bill'), 'CATEGORY_UPDATES'),
+                 mail('work', 77, 'Olive <own1@acme.example>', 'lee@client.example', 'Re: Billing question', 'Yes, from next month.', 1, 't-bill'))
+        # the review got some wrong; the rules hold anyway, and its own calls for security and recruiting say sensitive
+        self.judge(self.own, ('work-70', 'client', 'A receipt'), ('work-71', 'client', 'Invoices'), ('work-72', 'client', 'Credits'),
+                   ('work-73', 'client', 'A newsletter'), ('work-74', 'sensitive', 'A security alert'), ('work-75', 'sensitive', 'A recruiter wrote'),
+                   ('work-76', 'client', 'Lee asked about yearly billing'))
+        self.rounds()
+        received = json.dumps(self.team(self.mem) + self.team(self.mem, 'team_mail'))
+        for text in ('Receipt 2543', 'Two invoices', 'out of credits', 'newsletter about success', 'access token', 'A token was added',
+                     'A security alert', 'role I think fits', 'Interview', 'A recruiter wrote', 'Jo'):
+            self.assertNotIn(text, received)
+        self.assertIn('yearly billing', received)  # a customer asking about their bill, and Olive answered: a client thread
+        with self.own.store.connect() as db:
+            scope = self.own.scopes(db)[FLEET]
+            views = {s: sg.visibility(db, scope, dict(db.execute('SELECT * FROM events WHERE source_id=?', (s,)).fetchone()))
+                     for s in ('work-70', 'work-71', 'work-72', 'work-73', 'work-74', 'work-76')}
+            self.assertEqual(views, {'work-70': 'other', 'work-71': 'other', 'work-72': 'other', 'work-73': 'other', 'work-74': 'other', 'work-76': 'team'})
+            self.assertEqual([x['subject'] for x in sg.unjudged(db, scope, 50) if x['subject'] in ('Your receipt from Tool Co', 'Out of usage credits')], [])
+        self.assertGreaterEqual(self.own.graph_overview(FLEET)['sorted']['other'], 4)
+
+    def test_the_review_is_told_billing_security_and_recruiting_are_never_client(self):
+        for words in ('own bills', 'support tickets with the tools and suppliers', 'security', 'recruiting', 'never choose client'):
+            self.assertIn(words, a.SHARE_VERDICTS)
+
+    def test_a_second_companys_mailbox_starts_off_and_its_owner_decides(self):
+        self.olive_mail()
+        self.side_company()
+        # the domain decides, not the name: a mailbox named for this Fleet at another company's domain is another company's
+        self.own.config['accounts'].append({'id': 'named', 'email': 'olive@othercorp.example', 'boundary': 'work:Acme', 'service': 'gmail'})
+        self.own.config['accounts'].append({'id': 'code', 'email': 'olive-codes', 'boundary': 'work:Acme', 'service': 'github'})
+        conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
+        self.assertEqual((conns['side']['work'], conns['side']['company'], conns['side']['on'], conns['side']['personal']), (True, False, False, False))
+        self.assertEqual((conns['named']['company'], conns['named']['on']), (False, False))
+        self.assertEqual((conns['code']['company'], conns['code']['on']), (True, True))  # no address: named for the Fleet
+        self.assertEqual((conns['work']['company'], conns['work']['on']), (True, True))
+        self.adm.graph_set_policy(FLEET, ['mail'])  # what the Fleet requires is its own company's mail, never another's
+        self.rounds()
+        conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
+        self.assertEqual((conns['side']['required'], conns['side']['on'], conns['side']['kind']), (False, False, 'mail'))
+        self.assertEqual((conns['named']['required'], conns['named']['on']), (False, False))
+        self.assertEqual(self.own.fleet_domains(FLEET), {'acme.example'})  # Olive's other addresses aren't the Fleet's
+        self.assertIn(BODY, self.received(self.mem))
+        self.assertNotIn('Sidecorp pilot', self.received(self.mem))
+        self.own.graph_connection(FLEET, 'side', True)
+        self.rounds()
+        self.assertIn('Sidecorp pilot', self.received(self.mem))
+        self.own.graph_connection(FLEET, 'side', False)  # taken back from the teammates' Machines
+        self.rounds()
+        self.assertNotIn('Sidecorp pilot', self.received(self.mem))
+        self.assertIn(BODY, self.received(self.mem))
+
+    def test_a_gmail_account_without_a_service_is_work_email_the_fleet_can_require(self):
+        for acc in self.own.config['accounts']:
+            acc.pop('service', None)
+        self.adm.graph_set_policy(FLEET, ['mail'])
+        self.rounds()
+        work = next(c for c in self.own.sharing()[0]['connections'] if c['id'] == 'work')
+        self.assertEqual((work['kind'], work['service'], work['required'], work['on']), ('mail', 'gmail', True, True))
+
+    def test_an_update_keeps_a_fleet_that_was_sharing_on_and_sorts_everything_again(self):
+        """The version before shared without a Fleet switch, without per-connection choices and with an older sorting: a
+        receipt, a second company's mailbox and a deal went as client. After the update the Fleet stays on, those are
+        taken back at once or once sorted again, and a real client thread stays with the team throughout."""
+        self.olive_mail()
+        self.side_company()
+        receipt = mail('work', 80, 'Tool Co <hello@toolco.example>', 'own1@acme.example', 'Your receipt', 'Receipt 99, paid.', 1, 't-r')
+        receipt['metadata']['labels'] = ['CATEGORY_UPDATES', 'INBOX']  # an ordinary sender address, filed as an update by the mailbox
+        self.add(self.own, receipt,
+                 mail('work', 81, 'Max Rue <max@buyer.example>', 'own1@acme.example', 'Acquisition', 'Our offer to buy your company.', 1, 't-deal'))
+        self.judge(self.own, ('work-80', 'client', 'A receipt'), ('work-81', 'client', 'Max wrote'))
+        self.own.set_meta('graph_conn:' + FLEET, {'side': True})
+        with patch.object(sg.Scope, 'automated', new_callable=unittest.mock.PropertyMock, return_value=set()):  # the old sorting
+            self.rounds()
+        for text in (BODY, 'Receipt 99', 'Sidecorp pilot', 'offer to buy'):
+            self.assertIn(text, self.received(self.mem))
+        # the update: no switch statement yet (the version before had none), no connection choices, every call sorted again
+        self.net.trust = [t for t in self.net.trust if t['s'].get('t') != 'pause']
+        for box in self.boxes:
+            box.set_meta('graph_pause:' + FLEET, None)
+        self.own.set_meta('graph_conn:' + FLEET, None)
+        with self.own.store.connect() as db:
+            db.execute("DELETE FROM share_meta WHERE key='sorter'")
+            sg.ensure(db)
+        group = self.mem.directory()['fleets'][0]
+        self.assertIsNone(self.mem.graph_paused(group))  # a member's Machine that shared before: still on, before any admin says so
+        self.rounds()
+        self.assertIsNone(self.own.sharing()[0]['paused'])  # stays on, for everyone
+        said = [t['s'] for t in self.net.trust if t['s'].get('t') == 'pause']
+        self.assertEqual([(s['by'], s['on']) for s in said], [('own1', False)])  # signed once by an admin's Machine that was sharing
+        received = self.received(self.mem)
+        self.assertNotIn('Receipt 99', received)  # a rule says no: taken back at once
+        self.assertNotIn('Sidecorp pilot', received)  # another company's mailbox: off unless its owner turns it on
+        self.assertIn(BODY, received)  # waits to be sorted again: stays with the team meanwhile
+        self.assertIn('offer to buy', received)
+        waiting = self.own.graph_unjudged(1)
+        self.assertEqual(len(waiting), 1)
+        self.assertIn(waiting[0]['subject'], ('Re: Renewal quote', 'Acquisition'))  # what went before is sorted first
+        tombstones = len([b for b in self.net.blobs.values() if b['header']['kind'] == 'mail'])
+        self.judge(self.own, ('work-1', 'client', 'Lee asked for the renewal quote'), ('work-81', 'sensitive', 'Max wrote'))
+        self.rounds()
+        received = self.received(self.mem)
+        self.assertIn(BODY, received)
+        self.assertNotIn('offer to buy', received)  # sorted again as sensitive: taken back
+        self.assertNotIn('Max wrote', json.dumps(self.team(self.mem)))
+        self.assertTrue(self.own.sharing()[0]['started'])  # it shared before: no new Start now
+        self.assertLessEqual(len([b for b in self.net.blobs.values() if b['header']['kind'] == 'mail']) - tombstones, 1)  # no take back and send again
+
+    def test_a_fleet_that_never_shared_stays_off_after_the_update(self):
+        self.olive_mail()
+        self.net.trust = [t for t in self.net.trust if t['s'].get('t') != 'pause']
+        for box in self.boxes:
+            box.set_meta('graph_pause:' + FLEET, None)
+        self.rounds()
+        self.assertEqual(self.own.sharing()[0]['paused'], {'default': True})
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])
+        self.assertEqual([t for t in self.net.trust if t['s'].get('t') == 'pause'], [])
 
 if __name__ == '__main__':
     unittest.main()

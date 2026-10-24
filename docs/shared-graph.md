@@ -6,17 +6,24 @@ sealed blobs it can't read. Nothing syncs with an outside CRM: everything lives 
 
 This page is the design, and it is built (code: `shared_graph.py`, `fleet_trust.py`; CP: `cloud/fleet_graph.py`). It is
 **experimental** and off by default: nothing goes until an admin turns on **Share the Graph in this Fleet** (a signed
-`pause` statement with `on: false`; with no statement at all, sharing is off).
+`pause` statement with `on: false`; with no statement at all, sharing is off). Turning it on asks the admin to
+confirm that the company may share this mail and has told its people. A Fleet that shared before the switch existed
+stays on after the update (below).
 
 ## What feeds it
 
-Each owner picks per connection (**Your connections**): their Work connections of this Fleet start on, personal ones
-and another company's off, and any can be flipped (`graph_connections`, kept in `graph_conn:<fleet>`). Turning one off
-takes back what it shared, like an unshare. An admin can require every member's **Work email** and **Work calendar**
+Each owner picks per connection (**Your connections**, `graph_connections`, kept in `graph_conn:<fleet>`). The domain
+decides: a Work connection whose address is on one of the Fleet's domains (the members' account and work addresses,
+`fleet_domains`) starts on; one at another company's domain starts off and says "Other company, not shared", whatever it
+is named (a second company of the owner's, connected as Work too). A connection without an address (a code host, a
+social account) starts on only when it is named for the Fleet (`work:<Fleet name>`). The owner can turn another
+company's on. Personal connections never go and have no switch. Turning one off takes back what it shared, like an
+unshare. An admin can require every member's **Work email** and **Work calendar**
 (a signed `policy` statement, `{t: policy, fleet, member, key, by, require: [mail, calendar], at}`; the newest from a
-confirmed admin wins, so a CP can't make one up). A required connection is on whatever the owner chose before, and
-shows "Required by <Fleet>". Inside any connection that is on, each thread is still sorted: personal, sensitive and
-colleague-only threads never go, and **Keep private** on a thread or record still wins. A member who wants to stop
+confirmed admin wins, so a CP can't make one up). Only connections on the Fleet's own domains can be required, and
+the admin confirms first that the company has told its people. A required connection is on whatever the owner chose before, and
+shows "Required by <Fleet>". Inside any connection that is on, each thread is still sorted: personal, sensitive,
+automated and colleague-only threads never go, and **Keep private** on a thread or record still wins. A member who wants to stop
 turns their connections off; the old ask to an admin (`optout`) is still honoured but no longer offered.
 
 Boards and projects set to Only you (`only_you_projects`, the boards' own visibility) share nothing: not the project,
@@ -32,10 +39,11 @@ hand always wins. When unsure, nothing goes.
 | Thread | Who reads it | What the team sees |
 |---|---|---|
 | **Client**: at least one person outside the company, at an organisation on the Graph or with a work domain | The Fleet | The full email: body, from, to, date, and its attachments (up to 2.5 MB each; bigger ones show as "too large to share") |
-| **Sensitive**: buying or selling a company, a merger, an investment or fundraising, a valuation, a term sheet or LOI, a deal NDA, HR about one person, legal, health, own money | Only the people on it | Nothing, not even that it exists. Sticky: a later review never makes it shareable again |
+| **Sensitive**: buying or selling a company, a merger, an investment or fundraising, a valuation, a term sheet or LOI, a deal NDA, HR, hiring or recruiting about one person (the owner too), legal, health, own money, security (access, keys, tokens, vulnerabilities, incidents) | Only the people on it | Nothing, not even that it exists. Sticky: a later review never makes it shareable again |
 | **Unsure**: probably client work, but not clear; a peer or competitor with no clear customer relationship | The owner first | Nothing until the owner picks Share in **Share these?** |
 | **Internal**: colleagues only | Only the people on it | Nothing. Never re-shared, also not by hand |
-| **Personal**: a personal account, or the review says it is personal | The owner | Nothing, not even that it exists |
+| **Other**: notifications, receipts, invoices, the company's own bills and support tickets with its suppliers, newsletters, cold pitches | The owner | Nothing |
+| **Personal**: a personal account, or the review says it is personal | The owner | Nothing, not even that it exists. Sticky, and never by hand either |
 
 - Every thread on the dashboard has a small label, **Team** or **Only you**. One tap changes it. In chat the owner can
   say "keep the Globex thread private" and the assistant sets the same thing. A review can never set it by hand.
@@ -45,12 +53,13 @@ hand always wins. When unsure, nothing goes.
 - **Unshare** on a shared thread sends an empty blob for its tag: teammates' Machines delete their copy and its files.
   The copy says honestly that someone may have read it already.
 - Two hand choices for the same organisation ask once: "Always keep threads with X private?" (a rule).
-- Automated senders (bulk mail, no-reply, relays) never make a thread client.
+- Automated mail is never client, whatever the review said: a thread where nobody on the owner's side wrote and
+  every message comes from a system sender (bulk, no-reply, notifications, receipts, invoices, billing, relays) or was
+  filed by the mailbox as an update, promotion, social, forum or spam message is **Other** by rule
+  (`automated_message`, `Scope.automated`), and is not sent to the review either. Once the owner or a colleague
+  replies, it is a conversation and the review judges it.
 - Hard limits come before the review's call and before a hand choice: only accounts with a Work boundary for this
-  Fleet; a thread with nobody outside the company is internal; a personal account is never read for this; an
-  account at a domain none of the Fleet's members work at (another company of the owner's) never goes to it.
-- Personal stays personal: once the review sorts a thread personal, a later review can't make it client or
-  sensitive (not even the neutral line). Only the owner can, by hand. A thread already shared is taken back.
+  Fleet; a thread with nobody outside the company is internal; a personal account is never read for this.
 - People of the owner's own life never go: someone only in their Family or Friends, or someone they marked Personal.
   No record of them, and a thread with them on it stays Only you, like Keep private.
 
@@ -344,7 +353,13 @@ signs it.
 2. An admin's Machine asks once per person: "<name> joined <Fleet>. Share the team's Graph with them?". Until then
    nothing goes to them. Their later devices need no new OK (above).
 3. Every thread no hand choice covers is sorted again with the current rules (sorter v2), sensitive stays sensitive.
-4. Each owner looks over the first share and taps **Start now** (above).
+   The threads that went before are sorted first. Until it is sorted again, a thread that went before stays with the
+   team as it is (no take back and send again); then it stays or is taken back (owner-signed empty blobs). Anything a
+   rule already says no to (another company's connection, automated mail, personal, kept private) is taken back at once.
+4. A Fleet that shared before the switch existed stays on: a Machine that sent to it before treats it as on until an
+   admin says otherwise, and the first admin Machine on this version signs the switch on once (`_was_sharing`), so the
+   members' Machines that never sent anything follow. A Machine that shared before needs no new **Start now**; one
+   that never did looks it over first (above).
 5. Past threads: all the Work history the Machine has, judged by the history pass, in batches (above).
 6. Machines that haven't updated publish nothing and get nothing; "who knows someone" keeps working.
 7. Nothing is imported from or written to another CRM.
