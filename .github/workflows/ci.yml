@@ -111,6 +111,8 @@ jobs:
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
           THE_MACHINE_TEST_TIMEOUT: '240'
+          # Native Windows fixtures derive message keys repeatedly; avoid four competing crypto-heavy suites.
+          THE_MACHINE_TEST_JOBS: ${{ runner.os == 'Windows' && '2' || '' }}
         run: python scripts/test.py
       - name: Installer dry run
         run: python installer.py --dry-run

@@ -71,10 +71,30 @@ try{
   assert.equal(await page.evaluate(()=>sideStore.get('board-shown')),'Customer onboarding');assert.match(await page.locator('.board-sub').textContent(),/^Only you · 1 project/);
   await page.locator('[data-board="Partner listings"]').click();await page.locator('.board-title',{hasText:'Partner listings'}).waitFor();
   // The ⋯ menu moves a tile: one graph_stage post, nothing else
+  await page.evaluate(()=>{const original=boardMove;boardMove=(...args)=>window.lastBoardMove=original(...args)});
   calls=[];const menu=page.locator('.tile[data-node="project:20"] .tile-menu');await menu.locator('summary').click();
   await menu.locator('[data-stage-to="In review"]').click();
   await page.locator('.lane[data-lane="In review"] .tile[data-node="project:20"]').waitFor();
   assert.deepEqual(calls.map(c=>c.action),['graph_stage']);assert.deepEqual(calls[0].args,{node_id:'project:20',stage:'In review'});
+  await page.evaluate(()=>window.lastBoardMove);  // settle the preceding menu action before the explicit refresh tests
+  // The refresh must also respect a tile that was pressed before native dragstart fires.
+  const pressed=await page.locator('.tile[data-node="project:20"]').elementHandle();
+  const box=await pressed.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
+  await page.evaluate(()=>people('',true));
+  assert.equal(await pressed.evaluate(el=>el.isConnected),true,'quiet refresh removed the pressed tile before dragstart');
+  await page.mouse.move(5,5,{steps:2});await page.mouse.up();await pressed.dispose();
+  // A quiet refresh during a drag must preserve the held tile and its eventual drop.
+  calls=[];const held=await page.locator('.tile[data-node="project:20"]').elementHandle();
+  const transfer=await page.evaluateHandle(()=>new DataTransfer());
+  await held.dispatchEvent('dragstart',{dataTransfer:transfer});
+  await page.evaluate(()=>people('',true));
+  assert.equal(await held.evaluate(el=>el.isConnected),true,'quiet refresh removed the tile while it was being dragged');
+  await page.locator('.lane[data-lane="Agreed"]').dispatchEvent('dragover',{dataTransfer:transfer});
+  await page.locator('.lane[data-lane="Agreed"]').dispatchEvent('drop',{dataTransfer:transfer});
+  await held.dispatchEvent('dragend',{dataTransfer:transfer});
+  await page.locator('.lane[data-lane="Agreed"] .tile[data-node="project:20"]').waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.stage]),[['graph_stage','Agreed']]);
+  await transfer.dispose();await held.dispose();
   // A drag moves it too
   calls=[];await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
   await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
