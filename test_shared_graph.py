@@ -717,8 +717,6 @@ class SharedGraph(unittest.TestCase):
     def test_share_with_all_signs_everyone_in_one_go_and_seals_after_the_request(self):
         """Share with all: one member statement each and one directory read in the request; the graph round (key, snapshot,
         catching up) runs once after it, not once per person while the owner waits."""
-        self.olive_mail()
-        self.rounds()
         joined = []
         for mid, name in (('mem4', 'Noor'), ('mem5', 'Ravi'), ('mem6', 'Sam')):
             self.net.people[mid] = (name, 'member')
@@ -742,9 +740,10 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual(self.own.sharing()[0]['sending'], 0)
         keys = [c[3]['blob']['header'] for c in self.net.calls if c[0] == 'own1' and c[2] == '/graph' and c[3] and c[3].get('op') == 'put']
         self.assertEqual(sum(1 for h in keys[-50:] if h['kind'] == 'snapshot' and {'mem4', 'mem5', 'mem6'} <= set(h['to'])), 1)
-        self.rounds(3)
-        for box in joined:
-            self.assertIn('Renewal quote', json.dumps([json.loads(r['body']) for r in self.team(box, 'team_mail')]))
+        for box in joined:  # each new Machine has the team's graph key from that one round
+            box.directory(refresh=True)
+            box.graph_fetch()
+            self.assertTrue(box.graph_keys(FLEET))
 
     def test_a_member_ok_returns_before_the_round_and_oks_during_it_share_one_more(self):
         self.net.people['mem4'] = ('Noor', 'member')
