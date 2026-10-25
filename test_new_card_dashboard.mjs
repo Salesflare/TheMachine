@@ -81,7 +81,7 @@ try{
   await page.locator('#side-find').fill('c');assert.ok(!(await dialog.isVisible()),'C in a field types a c');await page.locator('#side-find').fill('');
   await page.locator('#side-find').fill('new');assert.match(await page.locator('#side-new').getAttribute('class'),/hit/);await page.locator('#side-find').press('Enter');await dialog.waitFor();
   assert.equal(await page.locator('#side-find').inputValue(),'');await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
-  await page.locator('body').press('Control+k');await page.locator('#palette').waitFor();await page.keyboard.type('new');await page.keyboard.press('Enter');await dialog.waitFor();
+  await page.locator('body').press('ControlOrMeta+k');await page.locator('#palette').waitFor();await page.keyboard.type('new');await page.keyboard.press('Enter');await dialog.waitFor();
   // An empty field adds nothing
   await page.locator('#nc-text').press('Enter');assert.equal(sent('card_new').length,1);await page.keyboard.press('Escape');
   // The merge offer asks, and only a tap merges

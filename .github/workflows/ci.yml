@@ -110,7 +110,7 @@ jobs:
           node --input-type=module -e 'import {pathToFileURL} from "node:url"; const {chromium}=await import(pathToFileURL(process.env.OPENCLAW_PACKAGE_DIR+"/node_modules/playwright-core/index.mjs").href); console.log("CHROMIUM_PATH="+chromium.executablePath())' >> "$GITHUB_ENV"
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
-          THE_MACHINE_TEST_TIMEOUT: '240'
+          THE_MACHINE_TEST_TIMEOUT: ${{ runner.os == 'Windows' && '240' || '' }}
           # Native Windows fixtures derive message keys repeatedly; avoid four competing crypto-heavy suites.
           THE_MACHINE_TEST_JOBS: ${{ runner.os == 'Windows' && '2' || '' }}
         run: python scripts/test.py

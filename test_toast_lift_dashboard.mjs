@@ -22,6 +22,12 @@ try{
   const phone=width<600,context=await browser.newContext({viewport:{width,height:844},isMobile:phone,hasTouch:phone}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>typeof toast==='function');
+  // Placement must not wait for a frame: a throttled frame can otherwise leave the visible toast over buttons.
+  if(phone){await page.evaluate(()=>toast('Initial.'));await shown(page);const fit=await page.evaluate(()=>{const native=requestAnimationFrame;window.requestAnimationFrame=()=>0;
+   const d=document.createElement('div');d.id='instant-bar';d.style.cssText='position:fixed;left:0;right:0;bottom:10px;display:flex;padding:0 16px';
+   d.innerHTML='<button style="flex:1;height:44px">Do it</button>';document.body.append(d);
+   try{toast('Saved.');const t=document.querySelector('#toast').getBoundingClientRect(),b=d.getBoundingClientRect();return t.bottom<=b.top}
+   finally{window.requestAnimationFrame=native;d.remove()}});assert.equal(fit,true,'toast placement does not depend on the next animation frame')}
   // A row of buttons where the toast would go, like an open card's actions
   await page.evaluate(()=>{const d=document.createElement('div');d.id='bar';d.style.cssText='position:fixed;left:0;right:0;bottom:10px;display:flex;gap:8px;padding:0 16px;z-index:1';
    d.innerHTML='<button style="flex:1;height:44px">Do it</button><button style="flex:1;height:44px">Snooze</button>';document.body.append(d);toast('Handed off. The card shows how it goes.')});
