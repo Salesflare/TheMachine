@@ -102,7 +102,9 @@ class DashboardSnoozedLine(unittest.TestCase):
     def test_dashboard_says_until_when(self):
         html = Path(__file__).with_name('dashboard.html').read_text()
         self.assertIn("return line('Snoozed until '+snoozedUntil(s.snoozed_until))", html)
-        script = ("const DL='en-US';const snoozedUntil=" + html.split('const snoozedUntil=', 1)[1].split('\n', 1)[0]
+        start = html.index("let DL='en-US'")  # the date and time helpers (locale_prefs.py): a Machine without a region
+        helpers = html[start:html.index('\n', html.index('const fmtDHM=', start))]
+        script = (helpers + "\nconst snoozedUntil=" + html.split('const snoozedUntil=', 1)[1].split('\n', 1)[0]
                   + "\nconsole.log(snoozedUntil('2026-10-27T08:00:00+00:00'))")
         node = shutil.which('node')
         if not node:

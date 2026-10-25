@@ -49,6 +49,7 @@ import crm
 import crm_fields
 import crm_fixes
 import crm_import
+import locale_prefs
 import mail_attachments
 import message_seal
 import enrichment
@@ -361,7 +362,8 @@ def thread_return_time(days):
 def thread_snooze_note(state):
     until = state.get('snooze_until')
     if state.get('snooze_status') in ('queued', 'snoozed') and until:
-        return ' Thread out of your inbox until ' + dt.datetime.fromisoformat(until).astimezone(local_tz()).strftime('%a, %b %-d · %H:%M') + '.'
+        moment = dt.datetime.fromisoformat(until).astimezone(local_tz())
+        return ' Thread out of your inbox until ' + locale_prefs.day_text(moment) + ' · ' + locale_prefs.clock_text(moment) + '.'
     if state.get('snooze_status') == 'failed':
         return ' ' + (state.get('snooze_error') or 'I couldn’t snooze the thread in your mailbox.')
     return ''
@@ -432,7 +434,7 @@ def snooze_choices(work=False):
             continue
         seen.add(due)
         moved = work and due.date() != (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days={'tomorrow': 1, '3d': 3, '1w': 7}[option])
-        name = 'Tomorrow' if due.date() == tomorrow else due.strftime('%A') if moved and (due.date() - tomorrow).days < 6 else due.strftime('%a, %b %-d') if moved else plain
+        name = 'Tomorrow' if due.date() == tomorrow else due.strftime('%A') if moved and (due.date() - tomorrow).days < 6 else locale_prefs.day_text(due) if moved else plain
         choices.append([option, name + ' · ' + morning_label()])
     return choices
 
@@ -580,12 +582,12 @@ def send_lock(db, suggestion_id, revision, kind):
     for job in db.execute('SELECT * FROM action_jobs WHERE suggestion_id=? ORDER BY updated_at DESC', (suggestion_id,)).fetchall():
         if job['revision'] == revision:
             if job['status'] == 'sent':
-                at = dt.datetime.fromisoformat(job['updated_at']).astimezone(local_tz()).strftime('%H:%M')
+                at = locale_prefs.clock_text(dt.datetime.fromisoformat(job['updated_at']).astimezone(local_tz()))
                 return f'Sent at {at}. This draft already went out.'
             if job['status'] == 'sending':
                 return 'Sending… This draft is going out now.'
             if job['status'] == 'uncertain' and not send_retry_ok(job, kind):
-                at = (dt.datetime.fromisoformat(job['updated_at']) + SEND_RETRY_AFTER).astimezone(local_tz()).strftime('%H:%M')
+                at = locale_prefs.clock_text((dt.datetime.fromisoformat(job['updated_at']) + SEND_RETRY_AFTER).astimezone(local_tz()))
                 return f'I’m still checking whether the last attempt went out, so I won’t send it twice. If it isn’t there by {at}, you can try again.'
         elif job['status'] == 'sending' and (job['retry_at'] or '') > now():
             return 'Another draft on this card is sending right now. Try again in a minute.'
@@ -7465,7 +7467,7 @@ def fault_event(account, row, config):
     lines = [fault_plain(row['location'], count, config, origin), '',
              f"Error: {row['kind']}" + (f': {message}' if message else ''),
              f"{(row['location'] or 'The service').capitalize()} failed {count} time{'s' if count > 1 else ''} on {row['day']} "
-             f"(last {dt.datetime.fromisoformat(row['last_at']).astimezone(local_tz()).strftime('%H:%M')})."]
+             f"(last {locale_prefs.clock_text(dt.datetime.fromisoformat(row['last_at']).astimezone(local_tz()))})."]
     lines += ['', FAULT_WHERE] + [f"  {f['file']}:{f['line']} in {f['function']}" for f in frames]
     if row.get('version'):
         lines += ['', 'Code version: ' + row['version']]
@@ -8738,7 +8740,7 @@ def source_line(rows):
     who = (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')
            or (('#' + m['channel_name']) if m.get('channel_name') else '') or (m.get('crm_account') or {}).get('name') or '')
     who = re.sub(r'\s*<[^>]+>', '', str(who)).strip().strip('"') or None
-    when = dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()).strftime('%a, %b %-d')
+    when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()))
     line = 'Source: ' + source_kind(first['kind']) + (f' from {who}' if who else '') + f' · {when}'
     more = [r for r in rows[1:] if r['kind'] != 'fleet.request']  # a Fleet request's own event is the card's text, not another source
     return line + (f' (+{len(more)} more)' if more else '')
@@ -8832,7 +8834,7 @@ def merge_state(row, state):
 def card(row):
     title = row['title'].replace('*', '').replace('_', '')
     status = {'accepted': 'On it.', 'rejected': 'Not needed.',
-              'snoozed': 'Snoozed until '+dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()).strftime('%a, %b %-d at %H:%M')+'.' if row.get('snoozed_until') else 'Snoozed.',
+              'snoozed': 'Snoozed until '+locale_prefs.at_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()))+'.' if row.get('snoozed_until') else 'Snoozed.',
               'instructions': 'Got your feedback. I’ll update this.',
               'prepared': 'Ready for you.', 'completed': 'Done.'}.get(row['status'], '')
     # One status line: where it stands and what's left for the owner. A later sign that it's
@@ -8870,7 +8872,7 @@ def card(row):
         merging=merge_state(row,action_state)
         sent=next((a for a in row.get('next_actions') or [] if a.get('state') is action_state),{})
         who=', '.join(sent.get('to') or []) if sent.get('kind')=='email' and not sent.get('to_options') else sent.get('to_name') or ''
-        at=dt.datetime.fromisoformat(action_state['sent_at']).astimezone(local_tz()).strftime('%H:%M') if action_state.get('sent_at') else ''
+        at=locale_prefs.clock_text(dt.datetime.fromisoformat(action_state['sent_at']).astimezone(local_tz())) if action_state.get('sent_at') else ''
         to_at=(' to '+who if who and sent.get('kind')!='intercom' else '')+(' at '+at if at else '')
         auto=merging and action_state.get('auto')
         status={'queued':'Testing the fix. It merges by itself if every check passes.' if auto else 'Testing and merging the fix…' if merging else 'Sending your approved draft…','sending':'Testing and merging the fix…' if merging else 'Sending your approved draft…',
@@ -8886,7 +8888,7 @@ def card(row):
         status = checkin_line(row) + '.'
     if handed.get('delegated'):
         if row['status'] == 'snoozed' and row.get('snoozed_until'):
-            status = f"Sent to {handed['name']}. Waiting for their reply until " + dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()).strftime('%a, %b %-d') + '; it closes when they answer.'
+            status = f"Sent to {handed['name']}. Waiting for their reply until " + locale_prefs.day_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz())) + '; it closes when they answer.'
         elif row['status'] == 'completed' and handed.get('answered'):
             status = f"{handed['name']} replied, so I closed this."
         elif row['status'] == 'prepared':
@@ -8898,7 +8900,7 @@ def card(row):
     due = ''
     if row.get('due') and row.get('status') not in ('completed', 'rejected'):
         try:
-            due = 'Due ' + dt.date.fromisoformat(row['due']).strftime('%a, %b %-d')
+            due = 'Due ' + locale_prefs.day_text(dt.date.fromisoformat(row['due']))
         except ValueError:
             pass
     source = ' · '.join(x for x in (due, row.get('source_line'), tag) if x)
@@ -8961,7 +8963,7 @@ def stopped_step(db, suggestion):
     if suggestion.get('status') == 'snoozed' and suggestion.get('snoozed_until'):
         back = dt.datetime.fromisoformat(suggestion['snoozed_until']).astimezone(local_tz())
         today = dt.datetime.now(local_tz()).date()
-        at = back.strftime('%H:%M') if back.date() == today else back.strftime('%H:%M tomorrow') if (back.date() - today).days == 1 else back.strftime('%a, %b %-d at %H:%M')
+        at = locale_prefs.clock_text(back) if back.date() == today else locale_prefs.clock_text(back) + ' tomorrow' if (back.date() - today).days == 1 else locale_prefs.at_text(back)
         line += f' It carries on when the card comes back, {at}.'
     elif prep and prep['status'] == 'blocked':
         line += ' Try again carries it on.'
@@ -9200,8 +9202,8 @@ def checkin_line(row):
         return ''
     local, today = dt.datetime.fromisoformat(until).astimezone(local_tz()), dt.datetime.fromisoformat(now()).astimezone(local_tz()).date()
     days = (local.date() - today).days
-    when = 'today' if days == 0 else 'tomorrow' if days == 1 else local.strftime('%a') if 1 < days < 7 else local.strftime('%a, %b %-d')
-    return f"Check in with {wait['name']} {when} {local:%H:%M} if no answer"
+    when = 'today' if days == 0 else 'tomorrow' if days == 1 else local.strftime('%a') if 1 < days < 7 else locale_prefs.day_text(local)
+    return f"Check in with {wait['name']} {when} {locale_prefs.clock_text(local)} if no answer"
 
 
 def answered_only(row):
@@ -10228,12 +10230,11 @@ def recap_clip(text, limit=70):
 
 
 def recap_day(value, with_time=False):
-    """Fri, Oct 23 (and 09:30) in the owner's time zone, from a date or a time."""
+    """Fri, Oct 23 (and 09:30, or 9:30 AM) in the owner's time zone and format (locale_prefs), from a date or a time."""
     if len(str(value)) <= 10:
-        d = dt.date.fromisoformat(str(value)[:10])
-        return f'{d:%a, %b} {d.day}'
+        return locale_prefs.day_text(dt.date.fromisoformat(str(value)[:10]))
     t = dt.datetime.fromisoformat(str(value).replace('Z', '+00:00')).astimezone(local_tz())
-    return f'{t:%a, %b} {t.day}' + (f' {t:%H:%M}' if with_time else '')
+    return locale_prefs.day_text(t) + (' ' + locale_prefs.clock_text(t) if with_time else '')
 
 
 def recap_noise(db, since):
@@ -10449,7 +10450,7 @@ def weekly_recap_message(store, config, current=None, usage=None):
     kept_rules = [json.loads(k['data']).get('rule') for k in kept if k['kind'] == 'noise']
     kept_cards = {k['ref']: k['decided_at'] for k in kept if k['kind'] == 'snoozed'}
     start_local, end_local = dt.datetime.fromisoformat(since).astimezone(tz), current.astimezone(tz)
-    span = f"{end_local:%b} {start_local.day}–{end_local.day}" if (start_local.month, start_local.year) == (end_local.month, end_local.year) else f"{start_local:%b} {start_local.day} – {end_local:%b} {end_local.day}"
+    span = locale_prefs.span_text(start_local, end_local)
     lines = [f'**Your week with The Machine** · {span}']
 
     # 1. What needs the owner: promises made to them that are late, then their own open ones with a date.
@@ -10760,10 +10761,10 @@ def promise_text(p):
     """A promise card's title and body. The title says what was promised; the body adds only who and when, in one
     short line, so the card never says the same thing twice."""
     made = dt.datetime.fromisoformat(p['made_at']).astimezone(local_tz())
-    said = f"{made:%a, %b} {made.day}"
+    said = locale_prefs.day_text(made)
     due = dt.date.fromisoformat(p['due']) if p.get('due') else None
     # The due chip says when it is due; the line adds it only when it isn't the day it was said
-    by = f" for {due:%a, %b} {due.day}" if due and due != made.date() else ''
+    by = f" for {locale_prefs.day_text(due)}" if due and due != made.date() else ''
     if p['direction'] == 'mine':
         title = p['what'][:1].upper() + p['what'][1:]
         title = title if p['who'].lower() in title.lower() or len(title) + len(p['who']) > 84 else f"{title} for {p['who']}"
@@ -10948,6 +10949,7 @@ class App:
 
     def __init__(self, config, config_path=None):
         set_timezone(config.get('timezone'))
+        locale_prefs.configure(config)
         try:
             set_work_hours(config.get('work_hours'))
         except ValueError as error:
@@ -11390,6 +11392,20 @@ class App:
         set_work_hours(values['work_hours'])
         return self.hours()
 
+    def locale_view(self):
+        """Language and region as Settings shows them and the dashboard formats dates and times (locale_prefs)."""
+        return {**locale_prefs.view(), 'saveable': bool(getattr(self, 'config_path', None))}
+
+    def set_locale(self, args):
+        """The owner's region and time format from the dashboard: checked, saved in config.json and in use at once."""
+        if not getattr(self, 'config_path', None):
+            raise ValueError('Region can only be changed in config.json here')
+        values = locale_prefs.settings(args)
+        save_hours(self.config_path, values)
+        self.config.update(values)
+        locale_prefs.configure(self.config)
+        return self.locale_view()
+
     def agents_view(self):
         """Hand to Claude Code / Codex where no local CLI of the owner's runs (agent_remote.py): the paired Claude Code
         session, the Codex cloud environment, and the claude.ai connector that brings Claude's results back."""
@@ -11501,6 +11517,7 @@ class App:
             result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
             result['started_at'] = self.started_at()
             result['hours'] = self.hours()
+            result['locale'] = self.locale_view()
             result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
             result['agents_settings'] = self.agents_view()
             result['signatures'] = self.signature_view()
@@ -12124,6 +12141,10 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner changes this, on the dashboard (Settings)')
             return self.set_agents(args)
+        if name == 'set_locale':
+            if not owner_dashboard:
+                raise ValueError('Only the owner changes region and time format, on the dashboard (Settings, General)')
+            return self.set_locale(args)
         if name == 'set_work_hours':
             if not owner_dashboard:
                 raise ValueError('Only the owner changes work hours, on the dashboard or with: assistant hours')

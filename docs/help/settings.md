@@ -9,7 +9,7 @@ order: 1
 Open **Settings** with the gear at the top. Its tabs:
 
 - **Account**: **Your addresses**, the ones that count as you, with where each came from. Your plan in short, buttons to your account pages, and **Sign out**. See [Plans and billing](plans-and-billing.md).
-- **General**: this device, coding agents, your Machine's browser, your Fleet and your account.
+- **General**: language and region, this device, coding agents, your Machine's browser, your Fleet and your account.
 - **Security**: Standard or Careful, and the settings they set. See [Security levels](security-levels.md).
 - **Work hours**: when your Machine may message you. See [Work hours](work-hours.md).
 - **Writing**: signatures and how you write. See [Writing](writing.md).
@@ -20,6 +20,7 @@ A tab with nothing to show is hidden.
 
 ## General
 
+- **Language and region**: your **Region** sets how dates read (Oct 24 or 24 Oct) and the usual clock. **Time format** picks 12-hour (2:05 PM) or 24-hour (14:05) instead. Cards, Telegram, the digest and Fleet messages follow it. A hosted Machine starts from the country of the time zone you picked at signup. English is the only language for now.
 - **This device**: the app (**Install app**), **Notifications** with **Send a test**, and **Light mode**, only for this browser or phone. See [Install the app and turn on notifications](phone-app.md).
 - **Coding agents**: see [Hand to Claude Code or Codex](hand-to-agent.md).
 - **Open the Machine’s browser ↗**: the browser your Machine uses for sites like LinkedIn.

@@ -21,6 +21,8 @@ import subprocess
 import tempfile
 import time
 
+import locale_prefs
+
 WRITE_SCOPES = {'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'}
 SCOPE = 'https://www.googleapis.com/auth/calendar.events'
 READ_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
@@ -100,14 +102,15 @@ def _moment(value):
 
 
 def when(start, end, all_day):
-    """"Mon, Oct 27, 2026, 16:00 to 16:30", "Mon, Oct 27, 2026, all day", in the event's own clock."""
+    """"Mon, Oct 27, 2026, 16:00 to 16:30", "Mon, Oct 27, 2026, all day", in the event's own clock and the owner's
+    date and time format (locale_prefs: "Mon 27 Oct 2026, 4:00 PM to 4:30 PM")."""
+    day = lambda d: locale_prefs.day_text(d, year=True)
     if all_day:
         a, b = _day(start), _day(end)
-        day = lambda d: d.strftime('%a, %b ') + str(d.day) + d.strftime(', %Y')
         return day(a) + (', all day' if a == b else ' to ' + day(b))
     a, b = _moment(start), _moment(end)
-    first = a.strftime('%a, %b ') + str(a.day) + a.strftime(', %Y, %H:%M')
-    return first + ' to ' + (b.strftime('%H:%M') if a.date() == b.date() else b.strftime('%a, %b ') + str(b.day) + b.strftime(', %H:%M'))
+    first = day(a) + ', ' + locale_prefs.clock_text(a)
+    return first + ' to ' + (locale_prefs.clock_text(b) if a.date() == b.date() else locale_prefs.day_text(b) + ', ' + locale_prefs.clock_text(b))
 
 
 def _times(start, end, all_day):

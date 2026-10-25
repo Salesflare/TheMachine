@@ -25,6 +25,8 @@ import re
 import secrets
 import urllib.parse
 
+import locale_prefs
+
 KIND = 'family'
 KINDS = ('availability', 'todo', 'event')
 REQUESTS = ('todo', 'event')
@@ -98,8 +100,9 @@ def clean_answer(kind, answer):
 def _shown(value):
     try:
         if len(value) == 10:
-            return dt.date.fromisoformat(value).strftime('%a, %b %-d')
-        return dt.datetime.fromisoformat(value.replace('Z', '+00:00')).strftime('%a, %b %-d %H:%M')
+            return locale_prefs.day_text(dt.date.fromisoformat(value))
+        moment = dt.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        return locale_prefs.day_text(moment) + ' ' + locale_prefs.clock_text(moment)
     except (TypeError, ValueError):
         return str(value or '')
 
@@ -173,7 +176,7 @@ def common_free(busy_lists, start, days, tz, hours=(FREE_FROM, FREE_UNTIL), minu
 
 def free_text(slot):
     a, b = (dt.datetime.fromisoformat(x) for x in slot)
-    return f"{a:%a, %b} {a.day} {a:%H:%M}–{b:%H:%M}"
+    return locale_prefs.day_text(a) + ' ' + locale_prefs.range_text(a, b)
 
 
 class Family:

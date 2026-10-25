@@ -41,6 +41,7 @@ import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import locale_prefs
 import message_seal
 import onboarding
 import openclaw_pin
@@ -68,6 +69,7 @@ ENV = {
     'tailscale_owner': 'ASSISTANT_TAILSCALE_OWNER',
     'dashboard_host': 'ASSISTANT_DASHBOARD_HOST',
     'timezone': 'ASSISTANT_TIMEZONE',
+    'locale': 'ASSISTANT_LOCALE',               # language-region for dates and times, e.g. en-GB (hosted: from signup)
     'connectors': 'ASSISTANT_CONNECTORS',       # comma list: gmail,calendar,gateway,android,whatsapp,slack,crm (or none)
     'email': 'ASSISTANT_EMAIL',                 # Google account for gmail/calendar
     'gog_client': 'ASSISTANT_GOG_CLIENT',
@@ -404,7 +406,7 @@ def answers(interactive, facts):
     google = onboarding.gog_accounts(facts.get('gog'))
     defaults = {'owner_name': onboarding.owner_name(), 'telegram_owner': owners[0] if owners else '',
                 'tailscale_owner': detected.get('tailscale_owner', ''),
-                'dashboard_host': detected.get('dashboard_host', ''), 'timezone': local_timezone(),
+                'dashboard_host': detected.get('dashboard_host', ''), 'timezone': local_timezone(), 'locale': '',
                 'connectors': onboarding.suggested_sources(facts), 'email': google[0][0] if google else '',
                 'gog_client': google[0][1] if google else 'default', 'boundary': '',
                 'android_node_id': '', 'whatsapp_store': str(Path.home() / '.local/share/wacli')}
@@ -483,6 +485,8 @@ def new_config(values, facts, paths):
     config.update(owner_name=values['owner_name'], timezone=values['timezone'], telegram_owner=values['telegram_owner'],
                   tailscale_owner=values['tailscale_owner'], dashboard_host=values['dashboard_host'], heartbeat_job_id='',
                   booking_links={})
+    if locale_prefs.normalize(values.get('locale')):
+        config['locale'] = locale_prefs.normalize(values['locale'])  # else US dates and 24-hour times until Settings
     bot = onboarding.telegram_account(values['telegram_owner'])
     if bot != 'default':
         config['telegram_account'] = bot  # the OpenClaw Telegram account (bot) you talk to

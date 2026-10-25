@@ -29,6 +29,7 @@ import re
 
 import family
 import graph
+import locale_prefs
 import meeting_notes
 import next_actions
 
@@ -207,7 +208,7 @@ def how_text(where, who, at=None, tz=None):
             (f'talked to {who} on {where}' if who else f'wrote on {where}'))
     if at:
         when = dt.datetime.fromisoformat(at).astimezone(tz)
-        what += ', ' + when.strftime('%a\u00a0%H:%M')
+        what += ', ' + locale_prefs.short_text(when)
     return what
 
 
@@ -558,7 +559,7 @@ class Requests:
             out.append({'kind': CARRIED[r['kind']], 'account_id': r['account_id'], 'from': who or 'Unknown sender', 'when': when.isoformat(),
                         'subject': fleet.clean(r['title'], 200), 'body': body,
                         **({'clipped': True} if len(text) > len(body) or meta.get('truncated') else {}),
-                        'label': f"{CARRIED[r['kind']].capitalize()} from {name or who or 'someone'} · {when.astimezone(self.local_now().tzinfo).strftime('%a, %b %-d')}"})
+                        'label': f"{CARRIED[r['kind']].capitalize()} from {name or who or 'someone'} · {locale_prefs.day_text(when.astimezone(self.local_now().tzinfo))}"})
         return out
 
     @staticmethod

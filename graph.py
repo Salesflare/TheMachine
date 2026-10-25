@@ -44,6 +44,8 @@ import struct
 import unicodedata
 from zoneinfo import ZoneInfo
 
+import locale_prefs
+
 import enrichment
 
 SCHEMA = '''
@@ -1387,8 +1389,7 @@ def for_events(db, event_ids):
 def short_date(value):
     if not value:
         return 'never'
-    day = dt.date.fromisoformat(str(value)[:10])
-    return f'{day:%a, %b} {day.day}'
+    return locale_prefs.day_text(dt.date.fromisoformat(str(value)[:10]))
 
 
 def context_lines(db, event_ids, limit_chars=1500, skip_card=None):

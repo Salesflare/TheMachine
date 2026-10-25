@@ -52,6 +52,7 @@ import urllib.parse
 import urllib.request
 
 import graph
+import locale_prefs
 import ms_graph
 import fleet_requests
 import family
@@ -1417,13 +1418,13 @@ def _on_day(value, today):
         return 'yesterday'
     if -6 <= gap <= 6:
         return WEEKDAYS[d.weekday()]
-    return f"{d.strftime('%b')} {d.day}"
+    return locale_prefs.day_text(d, weekday=False)
 
 
 def _waited(value, today):
     d = _brief_date(value)
     days = (today - d).days if d else 0
-    return days, ('since yesterday' if days == 1 else f'{days} days' if days < 7 else f"since {d.strftime('%b')} {d.day}")
+    return days, ('since yesterday' if days == 1 else f'{days} days' if days < 7 else 'since ' + locale_prefs.day_text(d, weekday=False))
 
 
 def _plain_name(label):

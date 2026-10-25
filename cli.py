@@ -56,6 +56,7 @@ def load_config(path):
         config = json.loads(Path(path).read_text())
         if config.get('timezone'):
             TZ = ZoneInfo(config['timezone'])
+        assistant.locale_prefs.configure(config)
         return config
     except OSError as error:
         raise CliError(f'Cannot read config {path}: {error.strerror}') from None
@@ -82,12 +83,13 @@ def call(config, action, args=None, upload=False):
         raise CliError('The assistant service is not reachable. Check: assistant service status') from None
 
 
-def local(value, fmt='%a, %b {day} %H:%M'):
+def local(value):
+    """Sat, Oct 24 14:05 (or Sat 24 Oct 2:05 PM: the owner's region and time format, locale_prefs)."""
     if not value:
         return '-'
     try:
         t = dt.datetime.fromisoformat(str(value).replace('Z', '+00:00')).astimezone(TZ)
-        return t.strftime(fmt.replace('{day}', str(t.day)))
+        return assistant.locale_prefs.day_text(t) + ' ' + assistant.locale_prefs.clock_text(t)
     except ValueError:
         return str(value)
 
@@ -178,7 +180,7 @@ def cmd_promises(config, args):
             continue
         print(f'{heading} ({len(rows)})')
         for p in rows:
-            due = f" · due {dt.date.fromisoformat(p['due']):%a, %b} {dt.date.fromisoformat(p['due']).day}" if p['due'] else ''
+            due = f" · due {assistant.locale_prefs.day_text(dt.date.fromisoformat(p['due']))}" if p['due'] else ''
             state = {'card': ' · card out', 'kept': ' · kept', 'dropped': ' · dropped', 'answered': ' · they wrote again'}.get(p['state'], '')
             print(f"  #{p['id']}  {p['who']}: {p['what']}{due}{state}")
             print(f"    said {local(p['made_at'])}" + (f" · {p['note']}" if p.get('note') and p['state'] != 'open' else ''))

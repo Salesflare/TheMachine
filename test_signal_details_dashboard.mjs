@@ -4,7 +4,8 @@ import {readFile} from 'node:fs/promises';
 const html=await readFile(new URL('./dashboard.html',import.meta.url),'utf8');
 const block=html.slice(html.indexOf('function messageHTML('),html.indexOf('async function fillMessage('));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`),sender=s=>s,safeURL=()=>true,fileSize=n=>n+' B';
-const messageHTML=new Function('esc','sender','safeURL','fileSize','DL',block+';return messageHTML')(esc,sender,safeURL,fileSize,'en-US');
+const fmt=html.slice(html.indexOf("let DL='en-US'"),html.indexOf('\n',html.indexOf('const fmtDHM=')));  // dates and times (locale_prefs.py)
+const messageHTML=new Function('esc','sender','safeURL','fileSize',fmt+'\n'+block+';return messageHTML')(esc,sender,safeURL,fileSize);
 const at='2026-10-20T20:04:00Z';
 const bare=messageHTML({kind:'signal',from:'',occurred_at:at,title:'A signal',body:'Something happened'},'s1',1);
 assert.ok(!bare.includes('<summary>Details</summary>'),'no empty toggle');

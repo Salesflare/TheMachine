@@ -48,6 +48,8 @@
 | `digest_at` | `08:30` | Morning digest time; also when work held over a day off goes out |
 | `currency` | `EUR` | The currency of project values on boards and lists (an ISO code, like USD or GBP) |
 | `country` | from `timezone` | Two-letter country a CSV import puts local phone numbers in (+32…) and reads dates like 03/04 by |
+| `locale` | none: US dates, 24-hour times | Language and region, like `en-US` or `en-GB` (Settings, General; hosted: from signup, `ASSISTANT_LOCALE` at install). The region sets the date order and the usual clock; English is the only language for now |
+| `clock` | `auto` | `12h` (2:05 PM) or `24h` (14:05) instead of the region's usual clock |
 | `import_check` | `true` | Let your model check a CSV import's columns and unclear cells; `false` keeps the guess from the headers |
 | `work_hours` | Mon–Fri, `08:00`–`23:00`, mornings `09:00` | [Work hours](../README.md#work-hours): `days` (1 = Monday … 7, or `"mon-fri"`), `start`/`end` (nothing is sent outside them; may wrap past midnight), `morning` (when Tomorrow, 3 days and 1 week snoozes and returning threads land) |
 | `bootstrap_days` | `7` | History collected on first import |
