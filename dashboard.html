@@ -2148,8 +2148,10 @@ function placeKeep(){const m=place.mark;if(!m||m.y<1||Date.now()<place.glide)ret
   if(want>document.documentElement.scrollHeight-innerHeight){document.body.style.minHeight=Math.ceil(want+innerHeight)+'px';place.holdEnd=Date.now()+8000;placeLetGo()}
   placeScroll(scrollX,want)}
  placeNote()}
-// The held height goes once the page has been still a moment (the rows came back), and after a few seconds at most
-function placeLetGo(){clearTimeout(place.hold);place.hold=setTimeout(()=>{document.body.style.minHeight=''},Math.max(0,Math.min(1500,place.holdEnd-Date.now())))}
+// The held height goes once the page has been still a moment (the rows came back), and after a few seconds at most. Where the
+// shorter page then lands is the new place: noted at once, or the next change (a blink, a refresh) would take the browser's
+// clamp for a list that shrank and hold the height again, the page jumping up and back every few seconds.
+function placeLetGo(){clearTimeout(place.hold);place.hold=setTimeout(()=>{document.body.style.minHeight='';placeNote()},Math.max(0,Math.min(1500,place.holdEnd-Date.now())))}
 let placeQueued=false;
 addEventListener('scroll',()=>{if(placeQueued)return;placeQueued=true;requestAnimationFrame(()=>{placeQueued=false;placeNote()})},{passive:true});
 addEventListener('resize',()=>requestAnimationFrame(placeNote));
