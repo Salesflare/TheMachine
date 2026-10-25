@@ -392,6 +392,8 @@ class Skills:
     def sync(self):
         try:
             with self.connect() as db:
+                # A delayed filesystem snapshot must not replace a newer owner's edit.
+                db.execute('BEGIN IMMEDIATE')
                 written = sync(db, self.workspace)
         except OSError as error:
             LOG.error('skills sync error=%s', type(error).__name__)

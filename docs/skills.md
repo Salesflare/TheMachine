@@ -75,7 +75,9 @@ It runs the same check as a suggestion from your notes (below): the agent has to
 does that job (`--update <skill>`), is related but separate (`--related <skill> --relation "..."`), or neither (`--new`).
 An update first returns the skill's instructions; the agent sends the whole skill back rewritten with `--base`, and
 Settings > Skills shows it with **Update** and **Dismiss**. **Update** opens the before and after; only **Update skill**
-there changes it. The review check and application commit together, so an owner edit made at the same time is not overwritten.
+there changes it. The review check and application commit together, so an owner edit made at the same time is not
+overwritten. The workspace copy is kept in step too: a delayed sync cannot put older instructions back into the agent's
+`SKILL.md`.
 
 ## From your notes
 

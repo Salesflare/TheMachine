@@ -42,5 +42,36 @@ class SkillUpdateAtomic(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(self.keeper.get(skill['id'])['body'], latest)
 
+    def test_sync_cannot_put_back_instructions_older_than_an_owner_edit(self):
+        original = 'Read the source and check the facts before drafting.'
+        latest = 'Use my corrected procedure and keep the verified receipt.'
+        skill = self.mine('Source checks', 'When the source needs checking', original)
+        done, errors = threading.Event(), []
+        real_render = skills.render
+        def edit():
+            try:
+                self.keeper.save(skill['id'], skill['name'], skill['description'], latest)
+            except Exception as error:
+                errors.append(error)
+            finally:
+                done.set()
+        writer = threading.Thread(target=edit)
+        def during_render(row):
+            if writer.ident is None:
+                writer.start()
+                done.wait(.25)  # old sync could publish its snapshot after the newer edit and its sync finished
+            return real_render(row)
+        with patch.object(skills, 'render', side_effect=during_render):
+            try:
+                self.keeper.sync()
+            finally:
+                writer.join(5)
+        self.assertFalse(writer.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(self.keeper.get(skill['id'])['body'], latest)
+        text = (self.root / 'source-checks' / 'SKILL.md').read_text()
+        self.assertIn(latest, text)
+        self.assertNotIn(original, text)
+
 if __name__ == '__main__':
     unittest.main()
