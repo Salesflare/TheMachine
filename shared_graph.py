@@ -591,14 +591,18 @@ def visibility(db, scope, event):
     if internal:
         return 'internal'
     if item:  # a meeting, its notes, an Intercom conversation or a chat of a project on a board the team sees, or one
-        # shared with these teammates by name: it goes by being on it, without waiting for the review to call it client
+        # shared with these teammates by name: it goes by being on it, whatever the review called it but sensitive
         if hand == 'private':
             return 'private'
         if automated_message(metadata):
             return 'other'
         if event['id'] in scope.board_items or hand == 'team':
             return 'team'  # chosen by name or by hand: sensitive ones too
-        return 'sensitive' if verdict == 'sensitive' else 'team'  # the whole team never gets deals, HR, legal, health or money
+        if verdict is None:
+            return 'pending'  # a team board's: once the review looked, so nothing sensitive ever goes, not even for a while
+        if verdict == 'sensitive':
+            return 'sensitive'  # the whole team never gets deals, HR, legal, health or money
+        return 'wait' if thread in scope.fresh else 'team'  # client, other, internal or unsure: it is on the board
     if thread in scope.board_threads:  # on a board shared with these teammates by name: sensitive ones too
         if hand == 'private':
             return 'private'
@@ -897,10 +901,7 @@ def unjudged(db, scope, limit, skip=(), first=None):
                 seen.add(thread)
                 continue
             seen.add(thread)
-            view = visibility(db, scope, e)
-            # A team board's meeting or chat goes before it is judged; it is still sorted, so a sensitive one is taken back
-            sort_anyway = view == 'team' and e['id'] in scope.team_items and e['id'] not in scope.board_items and thread not in scope.calls
-            if view != 'pending' and not sort_anyway:
+            if visibility(db, scope, e) != 'pending':
                 continue
             taken.add(thread)
             earlier[thread] = []
@@ -2200,7 +2201,7 @@ class SharedGraph:
                 if granted:
                     scope = scope.granted(set().union(*(p for p, _ in granted)), set().union(*(t for _, t in granted)))
                     named = (lambda t, mine=scope.board_threads | scope.hand_threads: t in mine)
-                # then mail in a thread with the team's boards' meetings and chats (those go by being on the board)
+                # then the meetings and chats of the team's boards: they wait for this call before they go
                 on_board = _threads_of(db, scope.team_items)
                 boards = (lambda t, on=on_board: t in on) if on_board else None
                 for item in unjudged(db, scope, limit - len(out), first=[named, boards, went]):
