@@ -66,7 +66,7 @@ try{
   assert.equal(await page.locator('.promise-page a[target="_blank"]').getAttribute('href'),page7.source[0].source_url);
   assert.deepEqual(await page.locator('.promise-about button.node').evaluateAll(b=>b.map(x=>x.dataset.node)),['email:wren@harborline.example','org:harborline','project:harborline-pilot']);
   assert.ok(!(await page.locator('.promise-history li').allInnerTexts()).some(t=>/^You\b/.test(t)),'no event line starts with You');
-  assert.equal(await page.locator('#page-head .page-title').textContent(),'Promise');
+  assert.equal(await page.locator('.graph-crumbs [aria-current]').textContent(),'Promise');assert.ok(await page.locator('#page-head').isHidden(),'one head: the breadcrumb');
   if(process.env.PROMISE_SHOT)for(const scheme of ['dark','light']){await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);await page.screenshot({path:`${process.env.PROMISE_SHOT}/promise-1440-${scheme}.png`,fullPage:true})}
   await fits(page,'1440');
   // Change date, then Done: quiet actions, each one call

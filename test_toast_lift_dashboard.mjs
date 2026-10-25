@@ -32,8 +32,14 @@ try{
   // Buttons filling the bottom of the screen (a card with its Why chips, note and Decline): the toast goes to the top
   if(width<1024){await page.evaluate(()=>{const d=document.querySelector('#bar');d.style.cssText+=';flex-direction:column;height:360px;gap:4px';d.innerHTML=Array.from({length:7},(_,i)=>`<button style="height:44px">B${i}</button>`).join('');toast('Declined. They see your note.')});
    await shown(page);await page.waitForTimeout(250);const t2=await rect(page,'#toast'),bar2=await rect(page,'#bar'),top=await rect(page,'#topbar');
-   assert.ok(t2.bottom<=bar2.top&&t2.top>=top.bottom-1&&t2.top<top.bottom+40,`${width}: at the top under the bar ${JSON.stringify({t2,bar2,top})}`);
-   if(shots)await page.screenshot({path:`${shots}/toast-top-${width}.png`})}
+   assert.ok(t2.bottom<=bar2.top&&t2.top>=top.bottom-1&&t2.top<844*.5,`${width}: near the top, under the bar ${JSON.stringify({t2,bar2,top})}`);
+   if(shots)await page.screenshot({path:`${shots}/toast-top-${width}.png`});
+   // A card right under the top bar: the toast covers neither its header line, its title nor its buttons
+   await page.evaluate(()=>{const a=document.createElement('article');a.className='card';a.id='topcard';a.style.cssText=`position:fixed;left:16px;right:16px;top:${document.querySelector('#topbar').getBoundingClientRect().bottom+4}px;z-index:1;margin:0`;
+    a.innerHTML='<div class="meta"><div class="card-badges"><span class="chip scope">Work</span></div><span>3 hours ago</span></div><h3>Rotate the shared webhook secret</h3><p>A short body line.</p><button>Do it</button>';document.body.append(a);toast('Declined. They see your note.')});
+   await shown(page);await page.waitForTimeout(250);const t3=await rect(page,'#toast'),over=await page.evaluate(t=>[...document.querySelectorAll('#topcard>.meta,#topcard>h3,#topcard>p,#topcard button,#bar button')].filter(e=>{const r=e.getBoundingClientRect();return r.bottom>t.top&&r.top<t.bottom}).map(e=>e.textContent),t3);
+   assert.deepEqual(over,[],`${width}: the toast covers no header line, title or button`);
+   if(shots)await page.screenshot({path:`${shots}/toast-card-${width}.png`});await page.evaluate(()=>document.querySelector('#topcard').remove())}
   // Nothing in the way: back at its usual place
   await page.evaluate(()=>{document.querySelector('#bar').remove();toast('Saved.')});await shown(page);await page.waitForTimeout(250);
   const again=await rect(page,'#toast');assert.ok(844-again.bottom<40,`${width}: back near the bottom (${844-again.bottom})`);

@@ -61,10 +61,12 @@ try{
   assert.deepEqual(calls.find(c=>c.action==='graph_import_ai').args,{kind:'project',text:'Klant,Bedrag,Fase,Datum\nTEAL ROBOTICS,€12k,voorstel,25/12/2026\number bv,ongeveer vijf,Lead,03/01/2027\nTeal Robotics,,,\n'});
   assert.deepEqual(previews()[0].args.fixes,{types:'all',off:[]});
   await fits(page,'checking '+tag);await shot(page,`import-check-${tag}`);
+  const box=()=>page.locator('#crm-dialog').evaluate(d=>{const r=d.getBoundingClientRect();return [Math.round(r.top),Math.round(r.height),Math.round(r.width)]}),before=await box();
   // the model's mapping, with its reasons, and the fixes
   await until(()=>page.locator('#crm-form .crm-count').count(),'checked',200);
   assert.equal(previews().at(-1).args.ai_run,'r1');assert.equal(previews().at(-1).args.mapping,undefined);
   assert.equal(await page.locator('#crm-form .crm-ai').textContent(),'Checked by your model. Change anything below.');
+  assert.deepEqual(await box(),before,'the sheet keeps its size and place when the check comes in (its space is kept)');
   assert.equal(await page.locator('#crm-form [data-crm-col="0"]').inputValue(),'name');
   assert.equal(await page.locator('#crm-form .crm-col .crm-why').first().textContent(),'Klant is Dutch for client: the deal is named after them');
   assert.equal(await page.locator('#crm-form .crm-fixline').textContent(),'7 fixes suggested·Review');

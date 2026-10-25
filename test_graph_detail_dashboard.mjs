@@ -63,8 +63,8 @@ try{
  await navClick(page.locator('nav [data-tab="people"]'));
  await page.locator('#people-view article[data-node="wa:3247000001"] button.node').click();
  await page.locator('.graph-crumbs').waitFor();
- // The page's title stays (the pane, under a quiet Graph), Graph current (in the drawer on a phone); the breadcrumb says where this is.
- assert.ok(await page.locator('#page-head .page-title',{hasText:'People'}).isVisible()&&await page.locator('#page-head .page-crumb',{hasText:'Graph'}).isVisible()&&await page.locator('nav [data-tab="people"].active').count()===1);
+ // One head: the breadcrumb (Graph › People › name) says where this is, no second Graph / People title above it; Graph current (in the drawer on a phone)
+ assert.ok(await page.locator('#page-head').isHidden()&&await page.locator('.graph-crumbs [data-crumb="people"]').isVisible()&&await page.locator('nav [data-tab="people"].active').count()===1);
  assert.equal(await page.evaluate(()=>scrollY),0);
  assert.equal((await page.locator('.graph-crumbs').textContent()).replace(/\s+/g,' '),'Graph›People›Ann Example');
  assert.equal(await page.locator('.graph-back').count(),0);
@@ -176,7 +176,7 @@ try{
  const fresh=await context.newPage();fresh.on('pageerror',e=>errors.push(e.message));
  await fresh.goto(base+'#graph/wa%3A3247000001');
  await fresh.locator('.graph-crumbs').waitFor();
- assert.ok(await fresh.locator('nav [data-tab="people"].active').count()===1&&await fresh.locator('#page-head .page-title',{hasText:'People'}).isVisible(),'a link to a person opens under People, as its breadcrumb says');
+ assert.ok(await fresh.locator('nav [data-tab="people"].active').count()===1&&await fresh.locator('.graph-crumbs [data-crumb="people"]').isVisible(),'a link to a person opens under People, as its breadcrumb says');
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({days,dialogs:dialogs.length,actions:calls.length,page_errors:errors}));
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
