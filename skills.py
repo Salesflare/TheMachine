@@ -705,6 +705,8 @@ class Skills:
         """The owner's Install / Decline on a shared skill, or Approve / Dismiss on a proposed one. A proposed update
         goes through only with reviewed naming the before and after the owner saw (update_view), and changes that skill only."""
         with self.connect() as db:
+            # Keep the review and update together; a concurrent owner edit must not be overwritten.
+            db.execute('BEGIN IMMEDIATE')
             row = self.row(db, skill_id)
             if row['status'] not in ('incoming', 'proposed'):
                 raise ValueError('Already decided')
