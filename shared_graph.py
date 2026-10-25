@@ -596,7 +596,9 @@ def visibility(db, scope, event):
             return 'private'
         if automated_message(metadata):
             return 'other'
-        return 'team'
+        if event['id'] in scope.board_items or hand == 'team':
+            return 'team'  # chosen by name or by hand: sensitive ones too
+        return 'sensitive' if verdict == 'sensitive' else 'team'  # the whole team never gets deals, HR, legal, health or money
     if thread in scope.board_threads:  # on a board shared with these teammates by name: sensitive ones too
         if hand == 'private':
             return 'private'
@@ -895,7 +897,10 @@ def unjudged(db, scope, limit, skip=(), first=None):
                 seen.add(thread)
                 continue
             seen.add(thread)
-            if visibility(db, scope, e) != 'pending':
+            view = visibility(db, scope, e)
+            # A team board's meeting or chat goes before it is judged; it is still sorted, so a sensitive one is taken back
+            sort_anyway = view == 'team' and e['id'] in scope.team_items and e['id'] not in scope.board_items and thread not in scope.calls
+            if view != 'pending' and not sort_anyway:
                 continue
             taken.add(thread)
             earlier[thread] = []

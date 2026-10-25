@@ -1510,7 +1510,7 @@ class SharedGraph(unittest.TestCase):
         self.assertNotIn('Sidecorp board', subjects)
         self.assertNotIn('Dinner with Bo', subjects)
 
-    def test_meetings_and_chats_of_a_team_board_go_by_being_on_it_without_waiting_for_a_client_call(self):
+    def test_meetings_and_chats_of_a_team_board_go_by_being_on_it_and_a_sensitive_one_never_goes_to_the_team(self):
         self.olive_mail()
         self.own.config['accounts'] += [{'id': 'cal', 'email': 'own1@acme.example', 'service': 'calendar', 'boundary': 'work:Acme'},
                                         {'id': 'li', 'service': 'linkedin', 'boundary': 'work:Acme'},
@@ -1527,17 +1527,25 @@ class SharedGraph(unittest.TestCase):
         self.board(self.own, 'Renewals', 'team', {'Renewal: Client': ['work-1', 'cal-1', 'li-1', 'cal-2', 'cal-4', 'li-2', 'cal-5', 'homecal-1']})
         with self.own.store.connect() as db:
             sg.set_hand(db, self.event_id(self.own, 'li-2'), 'private')
+        self.add(self.own, meet('cal', 6, 'Lee raise', 'Lee asked about a raise for his team.'))
+        with self.own.store.connect() as db:
+            graph.label(db, [self.event_id(self.own, 'cal-6')], 'Renewal: Client', 'review', a.now())
         self.judge(self.own, ('cal-2', 'unsure', 'Lee and seats'), ('cal-5', 'personal', 'Family talk'))
         waiting = [w['subject'] for w in self.own.graph_unjudged()]
-        for subject in ('Renewal call', 'Lee check-in', 'LinkedIn conversation', 'Unrelated call'):
-            self.assertNotIn(subject, waiting)  # nothing on the board waits to be sorted; a meeting on no board isn't sorted either
+        self.assertIn('Renewal call', waiting)  # still sorted, so a sensitive one is caught
+        self.assertNotIn('Lee check-in', waiting)  # judged already (unsure): it goes, nothing to sort
+        self.assertNotIn('Unrelated call', waiting)  # a meeting on no board isn't sorted or shared, as before
+        self.rounds()
+        self.assertIn('a raise for his team', self.received(self.mem))  # not judged yet: it goes by being on the board
+        self.judge(self.own, ('cal-6', 'sensitive', 'Lee and a raise'))
+        self.assertNotIn('Lee raise', [w['subject'] for w in self.own.graph_unjudged()])
         self.rounds()
         for box in (self.adm, self.mem):
             everything = self.received(box) + json.dumps(self.team(box))
             for text in ('Walk Lee through', 'renewal looks good', 'about the seats'):
                 self.assertIn(text, everything)  # by being on the team's board, also before or without a client call
-            for text in ('Not on any board', 'Only colleagues here', 'a note to keep to me', 'his kids', 'Dinner at home'):
-                self.assertNotIn(text, everything)  # no board, colleagues only, Keep private, personal, a personal account
+            for text in ('Not on any board', 'Only colleagues here', 'a note to keep to me', 'his kids', 'Dinner at home', 'a raise for his team'):
+                self.assertNotIn(text, everything)  # no board, colleagues only, Keep private, personal, a personal account, sensitive
         self.assertIn('Meeting: Renewal call', json.dumps(self.projects_of(self.mem)['Renewal: Client']['timeline']))
 
     def test_a_project_added_to_a_shared_board_goes_and_one_moved_off_is_taken_back(self):

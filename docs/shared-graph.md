@@ -110,7 +110,9 @@ more gets the usual empty blob.
 **A project on a Team board** shares its record (name, board, stage, why, next step, organization, people) even before
 a review has judged one of its threads, so the team pipeline shows every project on it. Its threads still go only as
 they are judged. Its meetings, Zoom notes, Intercom conversations and chats (`Scope.team_items`) go by being on the
-board, as on a board shared by name, without waiting for the review to call them client. Never one of a personal
+board, as on a board shared by name, without waiting for the review to call them client. The history review still
+sorts them, and one it calls sensitive (deals, HR, legal, health, money) never goes to the whole team, or is taken
+back: only a board shared by name takes those. Never one of a personal
 account or another company's, with someone of the owner's own life, the review called personal, automated, kept
 private, of an Only you project, or with only colleagues on it. A why or next step that came from a signal that never
 goes (another company's or a personal account, kept private) doesn't go either.
