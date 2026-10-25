@@ -38,7 +38,7 @@ try {
  for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(10);
  assert.deepEqual(calls,[{action:'fleet_free',args:{text:'Anyone know a good notary?',fleet:FL}}]);
  const connected=view;view={on:false};await page.evaluate(()=>fleetView());
- await page.getByText('This Machine is not in a Fleet.',{exact:true}).waitFor();
+ await page.getByText(/^This Machine is not in a Fleet\./).waitFor();
  view=connected;await page.evaluate(()=>fleetView());await page.locator('.fleet-free-form').waitFor();
  assert.deepEqual(errors,[]);console.log('Fleet refresh: unchanged form, draft preservation, latest response, reconnect and exact submit passed.');
 }finally{await browser.close();server.close()}

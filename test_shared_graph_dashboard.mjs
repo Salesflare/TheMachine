@@ -17,6 +17,7 @@ const fleetPaneReload=async page=>{await page.evaluate(async()=>{await fleetView
 const shot=async(loc,path)=>{for(let i=0;;i++){try{return await loc.screenshot({path})}catch(err){if(i>4)throw err;await new Promise(r=>setTimeout(r,400))}}};
 const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:1,started:false,paused:null,require:['mail'],
  connections:[{id:'work',service:'gmail',email:'olive@acme.example',kind:'mail',work:true,company:true,personal:false,required:true,on:true},{id:'cal',service:'calendar',email:'olive@acme.example',kind:'calendar',work:true,company:true,personal:false,required:false,on:true},
+  {id:'gh',service:'github',email:'olive@acme.example',kind:'other',work:true,company:true,personal:false,required:false,on:true},
   {id:'side',service:'gmail',email:'olive@sideco.example',kind:'mail',work:true,company:false,personal:false,required:false,on:false},
   {id:'home',service:'gmail',email:'olive@home.example',kind:'mail',work:false,company:false,personal:true,required:false,on:false}],
  people:[{member:'m_kim',name:'Kim Lee',state:'not_started'},{member:'m_tom',name:'Tom Ray',state:'sharing'},{member:'m_old',name:'Pat Old',state:'removed'}],
@@ -184,9 +185,9 @@ try{
   assert.match(await pane.locator('.shared-kept').innerText(),/Stark\s+Always only you/);
   // the admin's switch for the whole Fleet: Off asks once whether what went stays or is removed everywhere
   await new Promise(r=>setTimeout(r,800));  // the pane reloads after the actions above
-  // each connection: Work on, personal off, the required one can't be turned off
+  // each connection by its proper name (GitHub, not github): Work on, personal off, the required one can't be turned off
   const conns=pane.locator('.shared-conns');
-  assert.match(await conns.innerText(),/^Your connections\s+What feeds Acme's Graph\. Acme's Work starts on\. Other companies' start off\. Personal never goes\.\s+Gmail · olive@acme\.example\s+Required by Acme\s+Google Calendar · olive@acme\.example\s+Work\s+Gmail · olive@sideco\.example\s+Other company, not shared\s+Gmail · olive@home\.example\s+Personal, never shared$/);
+  assert.match(await conns.innerText(),/^Your connections\s+What feeds Acme's Graph\. Acme's Work starts on\. Other companies' start off\. Personal never goes\.\s+Gmail · olive@acme\.example\s+Required by Acme\s+Google Calendar · olive@acme\.example\s+Work\s+GitHub · olive@acme\.example\s+Work\s+Gmail · olive@sideco\.example\s+Other company, not shared\s+Gmail · olive@home\.example\s+Personal, never shared$/);
   assert.equal(await conns.locator('[data-graph-conn="work"]').isDisabled(),true);
   if(width===1440)await shot(conns,(process.env.SHOTS||'/tmp')+'/shared-connections-1440.png');
   if(width===390)await shot(conns,(process.env.SHOTS||'/tmp')+'/shared-connections-390.png');
