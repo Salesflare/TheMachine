@@ -26,7 +26,7 @@ An admin can require everyone's **Work email** and **Work calendar** at the Flee
 
 - Client threads: email with people outside your company about work, with their attachments.
 - Work people, organizations and projects, with a short timeline.
-- On a Team board, a project's meetings, Zoom notes and chats too, once they're sorted as client work.
+- On a Team board, a project's meetings, Zoom notes, Intercom conversations and chats too, by being on the board.
 
 ## Kept out of automatic sharing
 

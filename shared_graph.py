@@ -65,7 +65,7 @@ TIMELINE = 12               # lines per record
 TIMELINE_PROJECT = 40       # lines per project: its full timeline (messages, meetings, chats, cards and moves)
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'intercom.conversation')
 # A project's timeline beyond its email threads: meetings and their notes, Intercom conversations and chats. On a board
-# shared with chosen teammates they count as shared by being on it; on a team board the review sorts them like mail.
+# the team sees, or one shared with chosen teammates, they count as shared by being on it (visibility).
 ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'intercom.conversation', 'whatsapp.message', 'slack.message',
               'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')
 ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'email': 'Email'}
@@ -481,7 +481,7 @@ class Scope:
 
     @property
     def team_items(self):
-        """Meetings, Intercom and chats of the projects on a board the team sees: the review sorts them like mail."""
+        """Meetings, Intercom and chats of the projects on a board the team sees: they go by being on it."""
         if self._team_items is None:
             hidden = graph.hidden_project_ids(self._db)
             ids = {r[0] for r in self._db.execute("SELECT p.id FROM projects p JOIN boards b ON b.id=p.board_id "
@@ -590,17 +590,13 @@ def visibility(db, scope, event):
         return 'private'  # with someone of the owner's own life (Family, Friends, marked Personal)
     if internal:
         return 'internal'
-    if item:  # a meeting, its notes, an Intercom conversation or a chat of a project on a board
+    if item:  # a meeting, its notes, an Intercom conversation or a chat of a project on a board the team sees, or one
+        # shared with these teammates by name: it goes by being on it, without waiting for the review to call it client
         if hand == 'private':
             return 'private'
         if automated_message(metadata):
             return 'other'
-        if event['id'] in scope.board_items:
-            return 'team'  # on a board shared with these teammates by name: it goes by being on it
-        if hand == 'team':
-            return 'team'
-        view = {'client': 'team', 'sensitive': 'sensitive', 'internal': 'internal', 'other': 'other', 'unsure': 'ask'}.get(verdict, 'pending')
-        return 'wait' if view == 'team' and thread in scope.fresh else view
+        return 'team'
     if thread in scope.board_threads:  # on a board shared with these teammates by name: sensitive ones too
         if hand == 'private':
             return 'private'
@@ -699,14 +695,14 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     if held is not None:
         held.update(keyed(secret, 'thread|' + t) for t, seen in thread_views.items() if seen and seen <= {'pending', 'wait'})
     lines = {r['event_id']: r['line'] for r in db.execute('SELECT event_id,line FROM share_lines')}
-    titles = {}
-    if scope.granted_projects:
+    titles = {}  # a line for what has none from the review: all of a board shared by name, and boards' meetings and chats
+    on_boards = scope.item_events
+    if scope.granted_projects or on_boards:
         for e in _events(db, sorted(scope.accounts), ''):
-            if views.get(e['id']) == 'team':
+            if views.get(e['id']) == 'team' and (scope.granted_projects or e['id'] in on_boards):
                 word = 'Meeting notes' if e['kind'] == 'zoom.summary' else ITEM_WORDS.get(_source(e['kind']), 'Note')
                 titles[e['id']] = _line(word + ': ' + str(e['title'] or '(no subject)'))
     out_threads, files = {}, {}
-    on_boards = scope.item_events
     newest = sorted(threads.items(), key=lambda t: t[1][-1]['occurred_at'], reverse=True)[:MAX_THREADS]
     for thread, items in newest:
         tag = keyed(secret, 'thread|' + thread)
@@ -735,8 +731,8 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
             view = views.get(event_id)
             if view == 'team' and lines.get(event_id):
                 found.append({'at': at, 'line': lines[event_id]})
-            elif view == 'team' and scope.granted_projects and event_id in titles:
-                found.append({'at': at, 'line': titles[event_id]})  # shared by name: its whole timeline, also what has no line
+            elif view == 'team' and event_id in titles:
+                found.append({'at': at, 'line': titles[event_id]})  # its whole timeline, also what has no line
             if len(found) >= limit:
                 break
         return found
@@ -2199,7 +2195,7 @@ class SharedGraph:
                 if granted:
                     scope = scope.granted(set().union(*(p for p, _ in granted)), set().union(*(t for _, t in granted)))
                     named = (lambda t, mine=scope.board_threads | scope.hand_threads: t in mine)
-                # then the meetings and chats of the team's boards, so a board's whole timeline gets sorted
+                # then mail in a thread with the team's boards' meetings and chats (those go by being on the board)
                 on_board = _threads_of(db, scope.team_items)
                 boards = (lambda t, on=on_board: t in on) if on_board else None
                 for item in unjudged(db, scope, limit - len(out), first=[named, boards, went]):
