@@ -993,6 +993,8 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 #send-dialog #send-editor label{color:var(--faint)}#send-dialog #send-editor :is(input,textarea){background:var(--sunken);border-color:var(--border);border-radius:10px;font-size:.98rem;line-height:1.55;color:var(--text)}
 #send-dialog .fine{margin:0 0 6px;font-size:.85rem;line-height:1.45;color:var(--faint)}
 #send-dialog #send-files{margin:0 0 10px}
+/* On a phone it is a bottom sheet like the other editors */
+@media(max-width:560px){#send-dialog{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}}
 #send-dialog .send-act{display:flex;gap:6px;margin-top:12px}
 #send-dialog .send-act button{flex:1 1 0;min-height:46px;padding:8px 6px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
 #send-dialog .send-act button:hover{background:var(--tile-hover)}
@@ -6274,7 +6276,18 @@ const taglinePool=(list,connectors,now=new Date())=>{const on=new Set(Array.isAr
 window.newTagline=()=>{const now=$('#tagline').textContent,rest=[...taglinePool(TAGLINES,state.connectors),...since()].filter(x=>x!==now);$('#tagline').textContent=rest[Math.floor(Math.random()*rest.length)]}}
 let toastTimer,manualBusy=false;
 function toastUnmerge(text,batch){toast(text);if(batch){$('#toast').insertAdjacentHTML('beforeend',` <button data-unmerge="${esc(batch)}">Undo</button>`);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}}  // one Undo for Merge all
-function toast(text,error=false,undoId=null){const t=$('#toast');t.innerHTML=esc(text)+(undoId?` <button data-undo="${undoId}">Undo</button>`:'');t.classList.toggle('error',error);t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:2500)}
+/* On a phone or tablet the toast never covers buttons (a card's actions, the chat box): when its usual place at the
+   bottom has some, it goes just above them if that is near the bottom, else to the top under the bar. The page
+   footer's links don't count; under an open sheet nothing is in reach, so it stays put. */
+let toastLiftTimer;
+function toastLift(t){t.style.bottom='';t.style.top='';if(!matchMedia('(max-width:1023px)').matches||document.querySelector('dialog[open]:modal'))return;
+ const vh=innerHeight,vw=innerWidth,h=t.offsetHeight,w=t.offsetWidth,x0=(vw-w)/2,x1=x0+w,base=parseFloat(getComputedStyle(t).bottom)||24;
+ const hits=Array.from(document.querySelectorAll('button,a[href],input,textarea,select,[role=button],summary')).filter(el=>!t.contains(el)&&el.offsetParent!==null&&!el.closest('.site-footer,#topbar,[hidden]')&&getComputedStyle(el).visibility!=='hidden')
+  .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height&&r.right>x0&&r.left<x1&&r.bottom>0&&r.top<vh);
+ const under=b=>hits.filter(r=>r.bottom>vh-b-h-6&&r.top<vh-b+6);let u=under(base);if(!u.length)return;
+ const up=vh-Math.min(...u.map(r=>r.top))+8;if(up<vh*.3&&!under(up).length){t.style.bottom=up+'px';return}
+ const bar=$('#topbar')?.getBoundingClientRect();t.style.top=((bar&&bar.bottom>0?bar.bottom:0)+8)+'px';t.style.bottom='auto'}
+function toast(text,error=false,undoId=null){const t=$('#toast');t.innerHTML=esc(text)+(undoId?` <button data-undo="${undoId}">Undo</button>`:'');t.classList.toggle('error',error);t.classList.add('show');requestAnimationFrame(()=>toastLift(t));clearTimeout(toastLiftTimer);toastLiftTimer=setTimeout(()=>{if(t.classList.contains('show'))toastLift(t)},700);  /* again once what the action changed has drawn */clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:2500)}
 async function manualRefresh(){if(manualBusy)return;manualBusy=true;newTagline();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.add('busy'));const ok=await refresh();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.remove('busy'));manualBusy=false;toast(ok?'Up to date':'Couldn’t refresh. Try again in a moment.',!ok)}
 document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click',manualRefresh);e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();manualRefresh()}})});
 // The mascot blinks now and then: its closed-eyes frame (data-blink) for 150ms every 4 to 9 seconds, sometimes twice.

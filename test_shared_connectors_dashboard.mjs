@@ -50,9 +50,13 @@ try{
   if(shots)await page.screenshot({path:`${shots}/oss-share-form-${width}.png`,fullPage:true});
   await page.locator('.share-form button.primary').click();
   await page.locator('.fleet-box article',{hasText:'Shared by Sam Doe'}).waitFor();
-  // The toast sits at the bottom and never takes a click meant for a button under it
+  // The toast never takes a click meant for a button under it; on a phone it isn't over one at all (it moves above
+  // them or to the top), on a desktop it sits at the bottom
   assert.equal(await page.locator('#toast').evaluate(t=>getComputedStyle(t).pointerEvents),'none');
-  assert.ok(await page.locator('#toast').evaluate(t=>innerHeight-t.getBoundingClientRect().bottom<60));
+  await page.waitForTimeout(900);
+  if(width<1024)assert.deepEqual(await page.locator('#toast').evaluate(t=>{const r=t.getBoundingClientRect();return [...document.querySelectorAll('button,a[href],input')].filter(b=>!t.contains(b)&&b.offsetParent&&!b.closest('.site-footer,#topbar')).map(b=>b.getBoundingClientRect())
+   .filter(b=>b.width&&b.right>r.left&&b.left<r.right&&b.bottom>r.top&&b.top<r.bottom).length}),0);
+  else assert.ok(await page.locator('#toast').evaluate(t=>innerHeight-t.getBoundingClientRect().bottom<60));
   assert.doesNotMatch(await page.locator('.fleet-box').filter({hasText:'People'}).first().innerText(),/Nobody else yet/);
   assert.equal(await page.locator('.topbar img, .app-side img.avatar').first().evaluate(i=>i.complete&&i.naturalWidth>0),true);
   assert.deepEqual(calls.at(-1),{action:'fleet_share',args:{fleet:FL,account:'intercom',members:['k']}});
