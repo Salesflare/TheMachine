@@ -290,7 +290,7 @@ effect at once, and how often a Machine can ask is limited.
 ## In your Graph
 
 Members of your Fleets, your Family and your Friends are marked in the Graph tab ("Has a Machine · Work Fleet"), with
-**See in Fleet** and **Ask your Fleet** on their page; the Fleet tab links each member to them with a small **In Graph** link.
+**See in Fleet** and **Ask your Fleet** on their page; the Fleet tab links each member to them with a small **Profile** link.
 When the messages only give part of a name ("kim"), the Graph shows the name they chose to share in the Fleet, and
 **Keep** makes it yours.
 

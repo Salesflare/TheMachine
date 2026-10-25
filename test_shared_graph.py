@@ -714,6 +714,67 @@ class SharedGraph(unittest.TestCase):
         later = [c[3]['blob']['header'] for c in self.net.calls[before:] if c[2] == '/graph' and c[3] and c[3].get('op') == 'put']
         self.assertFalse([h for h in later if h['kind'] == 'mail'])  # nobody published their threads again for Noor
 
+    def test_share_with_all_signs_everyone_in_one_go_and_seals_after_the_request(self):
+        """Share with all: one member statement each and one directory read in the request; the graph round (key, snapshot,
+        catching up) runs once after it, not once per person while the owner waits."""
+        self.olive_mail()
+        self.rounds()
+        joined = []
+        for mid, name in (('mem4', 'Noor'), ('mem5', 'Ravi'), ('mem6', 'Sam')):
+            self.net.people[mid] = (name, 'member')
+            box = self.machine(mid); self.boxes.append(box); joined.append(box)
+        self.rounds()
+        self.assertEqual(sorted(p['name'] for p in self.own._prompts() if p['kind'] == 'member'), ['Noor', 'Ravi', 'Sam'])
+        later = []
+        self.own.soon = later.append  # the app runs it on its own thread, after the request
+        before = len(self.net.calls)
+        result = self.own.graph_share_all(FLEET)
+        calls = self.net.calls[before:]
+        self.assertEqual(result['done'], 3)
+        self.assertEqual(sorted(result['names']), ['Noor', 'Ravi', 'Sam'])
+        self.assertEqual(sorted(c[3]['item']['s']['member'] for c in calls if c[2] == '/trust'), ['mem4', 'mem5', 'mem6'])
+        self.assertEqual([c for c in calls if c[2] == '/graph'], [])  # nothing sealed in the request
+        self.assertEqual(sum(1 for c in calls if c[2] == '/directory'), 1)
+        self.assertEqual([p for p in self.own._prompts() if p['kind'] == 'member'], [])  # every ask gone at once
+        self.assertEqual(len(later), 1)  # one round for all of them
+        self.assertEqual(self.own.sharing()[0]['sending'], 3)  # "Sharing with 3…"
+        later[0]()
+        self.assertEqual(self.own.sharing()[0]['sending'], 0)
+        keys = [c[3]['blob']['header'] for c in self.net.calls if c[0] == 'own1' and c[2] == '/graph' and c[3] and c[3].get('op') == 'put']
+        self.assertEqual(sum(1 for h in keys[-50:] if h['kind'] == 'snapshot' and {'mem4', 'mem5', 'mem6'} <= set(h['to'])), 1)
+        self.rounds(3)
+        for box in joined:
+            self.assertIn('Renewal quote', json.dumps([json.loads(r['body']) for r in self.team(box, 'team_mail')]))
+
+    def test_a_member_ok_returns_before_the_round_and_oks_during_it_share_one_more(self):
+        self.net.people['mem4'] = ('Noor', 'member')
+        noor = self.machine('mem4'); self.boxes.append(noor)
+        self.rounds()
+        later = []
+        self.own.soon = later.append
+        before = len(self.net.calls)
+        self.assertTrue(self.ok(self.own, 'member', 'Noor')['done'])
+        self.assertEqual([c for c in self.net.calls[before:] if c[2] == '/graph'], [])
+        self.assertEqual(self.own.sharing()[0]['sending'], 1)
+        rounds = []
+        real = self.own.graph_round
+
+        def graph_round(force=False):  # another OK lands while this round runs: it is shared right after, by this thread
+            rounds.append(force)
+            if len(rounds) == 1:
+                self.own.graph_soon(FLEET, ['Noor'])
+                self.assertEqual(len(later), 2)
+                later[1]()  # finds the round busy: asks for one more instead of a second round alongside
+            return real(force=force)
+        with patch.object(self.own, 'graph_round', graph_round):
+            later[0]()
+        self.assertEqual(rounds, [True, True])
+        self.assertEqual(self.own.sharing()[0]['sending'], 0)
+
+    def test_a_round_that_never_ended_stops_saying_it_is_sharing(self):
+        self.own.set_meta('graph_sending:' + FLEET, {'names': ['Noor'], 'at': ago(1)})
+        self.assertEqual(self.own.sharing()[0]['sending'], 0)
+
     def test_only_an_admin_passes_on_what_someone_who_left_shared(self):
         self.add(self.mem, mail('work', 8, 'Kim Wu <kim@globex.example>', 'mem3@acme.example', 'Pilot', 'Pilot starts Monday.', 2, 't-pilot'))
         self.judge(self.mem, ('work-8', 'client', 'Kim confirmed the pilot'))

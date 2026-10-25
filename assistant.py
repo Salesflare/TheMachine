@@ -10969,6 +10969,7 @@ class App:
         self.fleet = fleet.Fleet(self.store.connect, config, lambda: credential(config, 'fleet')) if fleet.settings(config) and config.get('credentials', {}).get('fleet') else None
         if self.fleet:
             self.fleet.notify = self.fleet_notify
+            self.fleet.soon = lambda fn: threading.Thread(target=fn, name='graph-after-ok', daemon=True).start()  # Share: the heavy round after the tap
             self.fleet.retell = lambda message_id: threading.Thread(target=self.fleet_retell, args=(message_id,), daemon=True).start()
             self.fleet.notify_notice = self.fleet_notify_notice
             self.fleet.make_card, self.fleet.tell = self.fleet_card, self.fleet_tell  # Fleet requests (fleet_requests.py)

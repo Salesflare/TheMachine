@@ -26,6 +26,7 @@ import json
 import logging
 import re
 import secrets
+import threading
 from pathlib import Path
 
 import fleet_trust as ft
@@ -35,6 +36,7 @@ LOG = logging.getLogger('personal-assistant')
 SHAREABLE = {'intercom': {'label': 'Intercom', 'fields': ('workspace_id', 'workspace_name', 'region', 'admin_id'), 'identity': 'workspace_id'}}
 RESEND_SECONDS = 6 * 3600  # an unanswered send goes again after this (questions expire on the Network after 3 days)
 MAX_PROMPTS = 50
+SENDING_FOR = 900  # a round after a member OK that ran longer than this stopped (a restart): the next round sends it
 TOKEN = re.compile(r'[A-Za-z0-9_=:.+/-]{8,512}')
 
 
@@ -58,6 +60,8 @@ class SharedConnectors:
     # the service when change returns True; connector_profile(service, account, token) reads the token's own profile
     # once (Intercom: GET /me) and fills the account's identity fields, raising ValueError when it doesn't work.
     save_config = None
+    # soon(fn): runs fn after the request returns. The app runs it on its own thread; by itself (and in tests) at once.
+    soon = staticmethod(lambda fn: fn())
     connector_profile = None
 
     # -- state
@@ -238,11 +242,8 @@ class SharedConnectors:
                                                          at=_now() if prompt['kind'] == 'member' else None))
             self.relay.call('POST', '/trust', {'fleet': group['id'], 'item': item}, timeout=30)
             self.directory(refresh=True)
-            if prompt['kind'] == 'member':  # their Machine gets the graph key and what this one shares, now
-                try:
-                    self.graph_round(force=True)
-                except (ValueError, OSError, KeyError, TypeError) as error:
-                    LOG.info('shared graph after a member OK error=%s', type(error).__name__)
+            if prompt['kind'] == 'member':  # their Machine gets the graph key and what this one shares, right after
+                self.graph_soon(group['id'], [prompt['name']])
             return {'ok': True, 'done': True}
         state = self._state(prompt['fleet'], prompt['service'])
         state.setdefault('approved', {})[member['member_id']] = {'fp': keys['fp'], 'at': _now(), 'name': prompt['name']}
@@ -252,6 +253,69 @@ class SharedConnectors:
         self.directory(refresh=True)
         self.shared_round()
         return {'ok': True, 'done': True}
+
+    def member_oks(self, fleet):
+        """An admin's owner, Share with all: a signed member statement for everyone waiting in this Fleet, one directory
+        read, and one graph round after the request (graph_soon), not a round per person."""
+        group = self._group(fleet)
+        me = group and self._me_in(group)
+        asks = [p for p in self._prompts() if p['kind'] == 'member' and p['fleet'] == fleet]
+        if not asks:
+            return {'ok': True, 'done': 0, 'names': []}
+        if not me or me['member_id'] not in self.trust(group)[0]:
+            raise ValueError('Only a confirmed admin can do that')
+        members = {m.get('member_id'): m for m in group.get('members', [])}
+        names, gone = [], set()
+        for prompt in asks:
+            keys = ft.keys_of(members.get(prompt['member']) or {})
+            if not keys or keys['fp'] != prompt.get('fp'):
+                gone.add(prompt['id'])  # left, or new keys since: a later round asks again for those
+                continue
+            item = ft.sign(self._private(), ft.statement('member', fleet, prompt['member'], keys['sign'], me['member_id'], at=_now()))
+            self.relay.call('POST', '/trust', {'fleet': fleet, 'item': item}, timeout=30)
+            gone.add(prompt['id'])
+            names.append(prompt['name'])
+        self._drop_prompts(lambda p: p['id'] in gone)
+        self.directory(refresh=True)
+        if names:
+            self.graph_soon(fleet, names)
+        LOG.info('shared graph shared with all fleet=%s members=%d', fleet, len(names))
+        return {'ok': True, 'done': len(names), 'names': names}
+
+    def graph_soon(self, fleet, names):
+        """After a member OK: their Machine gets the graph key and what this one shares in one graph round, run after the
+        request (soon). Until it ends the dashboard says it is sending (graph_sending). OKs while it runs share one more."""
+        sending = self.meta('graph_sending:' + fleet) or {}
+        self.set_meta('graph_sending:' + fleet, {'names': list(dict.fromkeys([*(sending.get('names') or []), *names])), 'at': _now()})
+        run = self.__dict__.setdefault('_graph_run', {'lock': threading.Lock(), 'again': False})
+
+        def round_():
+            if not run['lock'].acquire(blocking=False):
+                run['again'] = True  # the round running now may have missed it: one more right after
+                return
+            try:
+                while True:
+                    run['again'] = False
+                    began = {g['id']: (self.meta('graph_sending:' + g['id']) or {}).get('at') for g in self._work_groups()}
+                    try:
+                        self.graph_round(force=True)
+                    except Exception as error:  # noqa: BLE001 - away: the next round sends it
+                        LOG.info('shared graph after a member OK error=%s', type(error).__name__)
+                    for fid, at in began.items():
+                        if at and (self.meta('graph_sending:' + fid) or {}).get('at') == at:
+                            self.set_meta('graph_sending:' + fid, None)
+                    if not run['again']:
+                        break
+            finally:
+                run['lock'].release()
+            if run['again']:
+                round_()
+        self.soon(round_)
+
+    def graph_sending(self, fleet):
+        """How many teammates the round after a member OK is sending the team's Graph to now (0: none, or it stopped)."""
+        sending = self.meta('graph_sending:' + fleet) or {}
+        return len(sending.get('names') or []) if _age(sending.get('at')) < SENDING_FOR else 0
 
     def share_replace(self, fleet, service, token):
         """A new token for a Fleet's shared connector (someone who held it left, say): checked against the same

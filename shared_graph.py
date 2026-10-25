@@ -1263,14 +1263,8 @@ class SharedGraph:
         return {'ok': True}
 
     def graph_share_all(self, fleet):
-        """An admin's owner: share the team's Graph with everyone waiting for it in this Fleet, in one OK."""
-        done = 0
-        for p in [p for p in self._prompts() if p['kind'] == 'member' and p['fleet'] == fleet]:
-            try:
-                done += bool(self.share_ok(p['id'], 'yes').get('done'))
-            except ValueError as error:
-                LOG.info('shared graph share with all skipped one error=%s', error)
-        return {'ok': True, 'done': done}
+        """An admin's owner: share the team's Graph with everyone waiting for it in this Fleet, in one OK (member_oks)."""
+        return self.member_oks(fleet)
 
     def graph_paused(self, group, trusted=None, say=False):
         """Whether sharing is off for the whole Fleet: the newest admin statement (the switch, ft.paused), or None when an
@@ -2412,6 +2406,7 @@ class SharedGraph:
                         'new_devices': [{'member': m, 'name': r.get('name'), 'fp': r.get('fp'), 'from': until(r['since'], REKEY_HOLD)}
                                         for m, r in (self.meta('graph_rekey:' + group['id']) or {}).items()] if admin else [],
                         'people': self._sharing_people(group, me, found, trusted) if admin else [],
+                        'sending': self.graph_sending(group['id']) if admin else 0,
                         'teammates': len(set(found) - {me['member_id']})})  # 0: nothing goes until an admin OKs a teammate
         return out
 

@@ -189,6 +189,10 @@ Graph with them?", or **Share with all** for several). After that there is no OK
 already admitted is vouched for by an admin's Machine by itself after 24 hours (`REKEY_HOLD`); during that time admins
 see "<name> has a new Machine" with its safety number and can tap **Not theirs**, which keeps the key out.
 
+An OK returns as soon as its statements are signed and sent: **Share with all** signs one statement per person and reads
+the directory once. Sealing the team's Graph for them (the graph key, a snapshot, catching up) is one graph round after
+the request, for everyone OK'd at once; until it ends the Team Graph box says "Sharing with <n>…" (`sending`).
+
 A member is confirmed while they are in the directory now, with a key a confirmed admin vouched for, and not removed
 since. Pins are kept between rounds, so a member vouched for by an admin who later left stays confirmed. A Machine
 seals only to confirmed members and opens only blobs from confirmed members.
