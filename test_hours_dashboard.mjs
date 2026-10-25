@@ -36,11 +36,11 @@ try{
  assert.equal(await page.locator('#open-settings .lbl').isHidden(),true);  // just the gear on a phone
  assert.equal(await page.locator('#settings #theme-toggle').isVisible(),true);
  assert.equal(await page.locator('#settings-fleet').isHidden(),true);  // no Fleet here
- assert.match(await page.locator('#settings-more').textContent(),/assistant telegram/);
+ assert.match(await page.locator('#settings-more').textContent(),/More settings live on this Machine\. Learn more/);
  // self-hosted, not paired: a way onto The Machine Network (Friends, free) or a Fleet, marked Beta
  assert.match(await page.locator('#settings-more').textContent(),/The Machine Network/);
  assert.equal(await page.locator('#settings-more .alpha').textContent(),'Beta');
- assert.equal(await page.locator('#settings-more a').count(),0);  // a button, not an inline link
+ assert.equal(await page.locator('#settings-more a:not([href*="/help/"])').count(),0);  // a button, not an inline link (only Learn more)
  assert.equal(await page.locator('#settings-cloud').textContent(),'Join the Network');
  assert.equal(await page.locator('#settings-cloud').getAttribute('href'),'https://app.themachine.computer/start');  // the Network or a Fleet, kept through sign-in
  assert.equal(await page.locator('#settings-cloud').getAttribute('target'),'_blank');

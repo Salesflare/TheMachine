@@ -26,6 +26,15 @@ A tab with nothing to show is hidden.
 - **Fleet rules**: see [Sharing rules](sharing-rules.md).
 - **Account**: **Open account** and **Sign out**, on a hosted Machine.
 
+## On this Machine
+
+A few settings live on the computer your Machine runs on, not in the app:
+
+- `config.json`: every setting, in one file. Restart the Machine after a change.
+- `assistant connect`: add a source, like `assistant connect gmail` or `assistant connect outlook`.
+- `assistant telegram on` or `off`: messages on Telegram. See [Telegram](telegram.md).
+- `assistant doctor`: checks everything and prints a fix for each problem.
+
 ## Your addresses
 
 Every address of yours the Machine found: your accounts, Gmail or Outlook aliases, your calendar, your Slack and Intercom profile. Mail and meetings from any of them show as you. **Remove** one that isn't yours.
