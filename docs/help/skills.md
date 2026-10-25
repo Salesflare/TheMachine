@@ -29,10 +29,10 @@ Skills other people publish. They're third-party: read one before you install it
 
 When many notes are about one kind of task, a card suggests a skill. It checks your skills first:
 
-- One already does that job: **Update <skill>** shows the before and after. Only **Update skill** there changes it, and only that skill.
+- One already does that job: **Update <skill>** shows the skill rewritten with what the notes teach, before and after, changes highlighted. Only **Update skill** there changes it, and only that skill.
 - One is related but separate: the card says how in one line and still offers **Create skill**.
 
-**Not now** keeps the notes as they are.
+**Not now** keeps the notes as they are. Skills your Machine proposes in Settings > Skills get the same check.
 
 ## Share one
 

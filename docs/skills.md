@@ -71,6 +71,12 @@ When your agent notices the same kind of work coming back, it can propose a skil
 (`assistant skills-propose --name ... --description ... --file -`). A proposal stays off and waits in Settings > Skills
 with **Approve** and **Dismiss**; at most three wait at a time. Only your tap on the dashboard turns it on.
 
+It runs the same check as a suggestion from your notes (below): the agent has to say whether one of your skills already
+does that job (`--update <skill>`), is related but separate (`--related <skill> --relation "..."`), or neither (`--new`).
+An update first returns the skill's instructions; the agent sends the whole skill back rewritten with `--base`, and
+Settings > Skills shows it with **Update** and **Dismiss**. **Update** opens the before and after; only **Update skill**
+there changes it.
+
 ## From your notes
 
 What you teach on cards (facts and draft rules, under Feedback > What I've learned) can pile up around one kind of task:
@@ -80,9 +86,10 @@ and **Create skill**, plus **Not now**. Before it suggests one it checks the ski
 (judged by meaning, not shared words; it has to say which it found):
 
 - **Same job** as one of your own skills (made here, approved or imported): the card offers **Update <skill>** instead, with
-  only what the notes add. **Read the change** on the card shows the skill's instructions before and after, and **Update
-  <skill>** opens them again with **Update skill** and **Cancel**. Only that tap changes it, and only that skill: its name
-  and when to use it stay, and what the notes add goes under its instructions. If the skill changed after you looked, you
+  the skill rewritten so what the notes teach is merged into its sections: one coherent skill, no repeated headings or
+  steps. **Read the change** on the card shows the skill's instructions before and after with the changed lines
+  highlighted, and **Update <skill>** opens them again with **Update skill** and **Cancel**. Only that tap changes it, and
+  only that skill: its name and when to use it stay. If the skill changed after you looked, you
   see the new before and after first. On Telegram the card links to it (**Review update**); there's no one-tap Update.
   A teammate's skill is never changed.
 - **Related but separate** (say the other direction of the same exchange): the card names that skill and how they relate

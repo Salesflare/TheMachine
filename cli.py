@@ -717,10 +717,16 @@ def cmd_skills(config, args):
 
 def cmd_skills_propose(config, args):
     body = sys.stdin.read() if args.file == '-' else Path(args.file).read_text()
-    out = call(config, 'skill_propose', {'name': args.name, 'description': args.description, 'body': body, 'why': args.why or ''})
+    out = call(config, 'skill_propose', {'name': args.name or '', 'description': args.description or '', 'body': body, 'why': args.why or '',
+                                         'update': args.update, 'related': args.related, 'relation': args.relation, 'new': args.new, 'base': args.base})
     if args.json:
         return out_json(out)
-    print('Already proposed or on.' if out.get('duplicate') else 'Proposed: it waits for the owner\'s Approve on the dashboard (Settings, Skills).')
+    if out.get('rewrite'):  # an update: the skill as it is now, to rewrite as one and send again with --base
+        print(f"{out['skill']} now says:\n\n{out['instructions']}\n\n{out['next']} (--base {out['base']}).")
+        return
+    print('Already proposed or on.' if out.get('duplicate') else
+          f"Proposed an update to {out['update']}: the owner sees the before and after on the dashboard (Settings, Skills)." if out.get('update') else
+          'Proposed: it waits for the owner\'s Approve on the dashboard (Settings, Skills).')
 
 
 def cmd_skills_found(config, args):
@@ -910,9 +916,17 @@ def parser():
     c.add_argument('--label', help='a name for this Machine there (default: this computer\'s name)')
     c.add_argument('--network', '--relay', help=argparse.SUPPRESS)  # ignored: commands copied from before the Network was built in
     add('skills', 'Skills your agent follows: yours, proposed and shared ones (edit them on the dashboard: Settings, Skills)', cmd_skills)
-    c = add('skills-propose', 'Propose a skill from repeated work; it stays off until the owner approves it on the dashboard', cmd_skills_propose)
-    c.add_argument('--name', required=True, help='short name, like "Answer pricing questions"')
-    c.add_argument('--description', required=True, help='one line: when to use it')
+    c = add('skills-propose', 'Propose a skill from repeated work; it stays off until the owner approves it on the dashboard. Check '
+                              '`assistant skills` first: --update when one of theirs does the same job, --related when one is a separate job next to it, else --new',
+            cmd_skills_propose)
+    c.add_argument('--name', help='short name, like "Answer pricing questions" (not with --update: it keeps its name)')
+    c.add_argument('--description', help='one line: when to use it (not with --update)')
+    c.add_argument('--update', help='one of the owner\'s own skills that already does this job: the first call shows its instructions, '
+                                    'then send the whole skill rewritten as one with --base')
+    c.add_argument('--base', help='with --update: the version the first call gave')
+    c.add_argument('--related', help='a skill next to this one (a separate job, like the other direction of an exchange)')
+    c.add_argument('--relation', help='with --related: how they relate, one short line')
+    c.add_argument('--new', action='store_true', help='none of the skills here does this job')
     c.add_argument('--file', required=True, help='markdown file with the instructions, or - for stdin')
     c.add_argument('--why', help='one line for the owner: what repeated work this comes from')
     c = add('skills-found', 'Report from the Find my skills turn: the owner\'s account skills and the ones worth importing', cmd_skills_found)

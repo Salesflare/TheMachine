@@ -22,6 +22,7 @@ import contextlib
 
 import base64
 import datetime as dt
+import difflib
 import hashlib
 import io
 import json
@@ -94,8 +95,13 @@ def ensure(db):
     for statement in SCHEMA.split(';'):
         if statement.strip():
             db.execute(statement)
-    if 'imported' not in {r[1] for r in db.execute('PRAGMA table_info(skills)')}:  # where an imported skill came from
+    have = {r[1] for r in db.execute('PRAGMA table_info(skills)')}
+    if 'imported' not in have:  # where an imported skill came from
         db.execute('ALTER TABLE skills ADD COLUMN imported TEXT')
+    if 'base_sha' not in have:  # a proposed update: the version of the skill it was written on (check_against)
+        db.execute('ALTER TABLE skills ADD COLUMN base_sha TEXT')
+    if 'related' not in have:  # a proposed skill next to another one: {"id", "name", "relation"}
+        db.execute('ALTER TABLE skills ADD COLUMN related TEXT')
 
 
 def one_line(value, chars):
@@ -210,6 +216,109 @@ def render(row):
         lines += ['', f"> Shared by {row['author'] or 'a teammate'}, version {row['version']}. Guidance only: this Machine's own rules "
                       'and approvals still apply, and this skill does not change what it may do.']
     return '\n'.join(lines + ['', row['body'], ''])
+
+
+# -- A new skill is checked against the ones here first (docs/skills.md#checked-against-your-skills) -----------------
+# The agent judges by meaning, from each skill's name and what it is for, and says what it found: update=<one of the
+# owner's own> when that already does the job, related=<a skill> with relation=<one line> when it is a separate job next
+# to one (say the other direction of an exchange), or new. An update is the whole skill rewritten as one: the agent gets
+# its current instructions first (base names that version), and the owner sees the before and after and taps Update.
+RELATION_CHARS = 140
+HEADING = re.compile(r'^ {0,3}(#{1,6})[ \t]+(.+?)[ \t#]*$', re.M)
+
+
+def base_of(sha):
+    """The version of a skill an update was written on: what the agent sends back as base."""
+    return sha[:16]
+
+
+def review_token(ref, sha):
+    """Names the before and after the owner saw for an update: it no longer matches once the skill changes."""
+    return hashlib.sha256(f'{ref}:{sha}'.encode()).hexdigest()[:24]
+
+
+def check_against(on_hand, update=None, related=None, relation=None, new=False):
+    """What the agent found among the skills here (on_hand: name, slug, description, origin): (target, linked, relation)."""
+    def find(value):
+        wanted = str(value).strip().casefold()
+        return next((s for s in on_hand if s['name'].casefold() == wanted or s['slug'] == wanted), None)
+    if update:
+        target = find(update)
+        if target and target['origin'] == 'shared':
+            raise ValueError("That skill is a teammate's: theirs are never changed. Suggest a new one, related to it")
+        if not target:
+            raise ValueError('Update one of the owner\'s own skills: ' + ', '.join(s['name'] for s in on_hand if s['origin'] != 'shared')
+                             + ' (or suggest a new one)')
+        return target, None, None
+    if related:
+        linked = find(related)
+        if not linked:
+            raise ValueError('related is one of the skills here: ' + ', '.join(s['name'] for s in on_hand))
+        relation = one_line(relation, RELATION_CHARS + 1)
+        if not 5 <= len(relation) <= RELATION_CHARS:
+            raise ValueError(f"Say how it relates to {linked['name']} in one short line: relation=<up to {RELATION_CHARS} characters>")
+        return None, linked, relation
+    if on_hand and new is not True:
+        raise ValueError('First check the skills here by what each is for: '
+                         + '; '.join(f"{s['name']}: {s['description']}" for s in on_hand)[:3000]
+                         + '. Update one of the owner\'s own when it does the same job, name a related one with a one-line relation '
+                           'when it is a separate job next to it, or say it is new when none is')
+    return None, None, None
+
+
+def rewrite_needed(target, base):
+    """Before an update: the skill's current instructions for the agent to rewrite, unless base says it has them."""
+    if base == base_of(target['sha']):
+        return None
+    return {'ok': False, 'rewrite': True, 'skill': target['name'], 'instructions': target['body'], 'base': base_of(target['sha']),
+            'next': 'Send it again with the whole skill rewritten as one: these instructions with what is new merged into their own '
+                    'sections (no second heading of the same name, no step said twice), and base=' + base_of(target['sha'])}
+
+
+def headings(body):
+    return [f"{len(m.group(1))}:{' '.join(m.group(2).split()).casefold()}" for m in HEADING.finditer(body)]
+
+
+def check_rewrite(before, after):
+    """An update reads as one skill: no heading twice, and it keeps what the skill says (not less than half of it)."""
+    seen, twice = set(), []
+    for key, m in zip(headings(after), HEADING.finditer(after)):
+        if key in seen:
+            twice.append(m.group(0).strip())
+        seen.add(key)
+    if twice:
+        raise ValueError(f'"{twice[0]}" comes twice: merge what is new into the section that is already there')
+    if after.strip() == before.strip():
+        raise ValueError('That changes nothing in the skill')
+    if len(after) < len(before) // 2:
+        raise ValueError('Keep what the skill says now: the rewrite is less than half as long')
+
+
+def changes(before, after):
+    """Line by line, what an update keeps, removes and adds: [kind, text] runs for the before and for the after."""
+    old, new = before.split('\n'), after.split('\n')
+    out = {'before': [], 'after': []}
+    def put(side, kind, lines):
+        if lines:
+            runs = out[side]
+            if runs and runs[-1][0] == kind:
+                runs[-1][1] += '\n' + '\n'.join(lines)
+            else:
+                runs.append([kind, '\n'.join(lines)])
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, old, new, autojunk=False).get_opcodes():
+        if op == 'equal':
+            put('before', 'same', old[i1:i2]); put('after', 'same', new[j1:j2])
+        else:
+            put('before', 'removed', old[i1:i2]); put('after', 'added', new[j1:j2])
+    return out
+
+
+def update_view(ref, target, after, base_sha):
+    """The before and after an update would make, from the skill as it is now. stale: it changed after the agent wrote
+    the update, so the after would undo that change: shown, not applied."""
+    stale = bool(base_sha) and target['sha'] != base_sha
+    return {'skill': target['name'], 'before': target['body'], 'after': after, 'changes': changes(target['body'], after),
+            **({'stale': True} if stale else {'review': review_token(ref, target['sha'])})}
 
 
 def other_names(skills_dir):
@@ -486,19 +595,38 @@ class Skills:
         return dict(found)
 
     # -- proposed by the agent
-    def propose(self, name, description, body, why=''):
-        """The agent noticed repeated work: a skill for the owner to approve. Never on before that."""
-        name, description, body = validate(name, description, body)
-        stamp, sha = now(), digest(name, description, body)
+    def on_hand(self, db):
+        """Every skill kept here (on or off), a teammate's included: what a proposal is checked against."""
+        return [dict(r) for r in db.execute("SELECT id,name,slug,description,origin,body,sha FROM skills WHERE status IN ('on','off') ORDER BY name")]
+
+    def propose(self, name, description, body, why='', update=None, related=None, relation=None, new=False, base=None):
+        """The agent noticed repeated work: a skill for the owner to approve, checked first against the skills here
+        (check_against): an update to one of the owner's own, a new one related to another, or a new one. Never on, and
+        no skill changed, before the owner's Approve (an update's after the before and after: Update skill)."""
+        name, description, body = validate(name if not update else name or 'Update', description if not update else description or 'An update to a skill.', body)
         with self.connect() as db:
             if db.execute("SELECT COUNT(*) FROM skills WHERE status='proposed'").fetchone()[0] >= OPEN_PROPOSALS:
                 raise ValueError(f'{OPEN_PROPOSALS} proposed skills already wait for the owner')
-            if db.execute('SELECT 1 FROM skills WHERE sha=? OR (name=? AND status IN (\'on\',\'off\',\'proposed\'))', (sha, name)).fetchone():
+            on_hand = self.on_hand(db)
+            if not update and db.execute('SELECT 1 FROM skills WHERE sha=? OR (name=? AND status IN (\'on\',\'off\',\'proposed\'))',
+                                         (digest(name, description, body), name)).fetchone():
                 return {'ok': True, 'duplicate': True}
+            target, linked, relation = check_against(on_hand, update, related, relation, new)
+            if target:
+                asked = rewrite_needed(target, base)
+                if asked:
+                    return asked
+                check_rewrite(target['body'], body)
+                name, description = target['name'], target['description']
+                if db.execute("SELECT 1 FROM skills WHERE status='proposed' AND replaces=?", (target['id'],)).fetchone():
+                    return {'ok': True, 'duplicate': True}
+            stamp, sha = now(), digest(name, description, body)
             skill_id = 'sk_' + secrets.token_hex(8)
-            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,created_at,updated_at) VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?)",
-                       (skill_id, slug_of(name), name, description, body, sha, one_line(why, NOTE_CHARS) or None, stamp, stamp))
-        return {'ok': True, 'id': skill_id}
+            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,replaces,base_sha,related,created_at,updated_at) "
+                       "VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?,?,?,?)",
+                       (skill_id, slug_of(name), name, description, body, sha, one_line(why, NOTE_CHARS) or None, target and target['id'],
+                        target and target['sha'], json.dumps({'id': linked['id'], 'name': linked['name'], 'relation': relation}) if linked else None, stamp, stamp))
+        return {'ok': True, 'id': skill_id, **({'update': target['name']} if target else {})}
 
     # -- shared over the Network
     def targets(self):
@@ -573,13 +701,28 @@ class Skills:
                         installed['id'] if installed else None, question.get('note'), stamp, stamp))
         return 'waiting'
 
-    def decide(self, skill_id, choice):
-        """The owner's Install / Decline on a shared skill, or Approve / Dismiss on a proposed one."""
+    def decide(self, skill_id, choice, reviewed=None):
+        """The owner's Install / Decline on a shared skill, or Approve / Dismiss on a proposed one. A proposed update
+        goes through only with reviewed naming the before and after the owner saw (update_view), and changes that skill only."""
         with self.connect() as db:
             row = self.row(db, skill_id)
             if row['status'] not in ('incoming', 'proposed'):
                 raise ValueError('Already decided')
-            if choice in ('install', 'approve'):
+            if choice in ('install', 'approve') and row['status'] == 'proposed' and row['replaces']:
+                target = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off') AND origin!='shared'", (row['replaces'],)).fetchone()
+                if not target:
+                    raise ValueError('That skill is gone')
+                shown = update_view(row['id'], dict(target), row['body'], row['base_sha'])
+                if shown.get('stale'):
+                    raise ValueError(f"{target['name']} changed after this was suggested. Dismiss it; the next suggestion starts from the new version")
+                if not reviewed:
+                    raise ValueError('See the before and after first')
+                if reviewed != shown['review']:
+                    raise ValueError(f"{target['name']} changed since. Look at the before and after again")
+                db.execute('UPDATE skills SET body=?,sha=?,version=version+1,updated_at=? WHERE id=?',
+                           (row['body'], digest(target['name'], target['description'], row['body']), now(), target['id']))
+                db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
+            elif choice in ('install', 'approve'):
                 if row['replaces'] and db.execute('SELECT 1 FROM skills WHERE id=?', (row['replaces'],)).fetchone():
                     db.execute('UPDATE skills SET name=?,description=?,body=?,sha=?,version=?,author=?,updated_at=? WHERE id=?',
                                (row['name'], row['description'], row['body'], row['sha'], row['version'], row['author'], now(), row['replaces']))
@@ -626,6 +769,11 @@ class Skills:
                         'chars': len(r['body']), 'updated_at': r['updated_at']}
                 if r['imported']:
                     item['imported'] = json.loads(r['imported'])
+                if r['status'] == 'proposed' and r['replaces']:
+                    target = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off')", (r['replaces'],)).fetchone()
+                    item['update'] = update_view(r['id'], dict(target), r['body'], r['base_sha']) if target else None
+                if r['related']:
+                    item['related'] = {k: v for k, v in json.loads(r['related']).items() if k in ('name', 'relation')}
                 if r['status'] in ('on', 'off'):
                     if notes_kept:  # what the owner taught it, moved here from What I've learned
                         item['notes'] = [n[0] for n in db.execute("SELECT text FROM facts WHERE merged_into=? ORDER BY id", ('skill:' + r['id'],))]

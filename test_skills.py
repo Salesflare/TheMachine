@@ -112,6 +112,65 @@ class Skills(unittest.TestCase):
         self.assertEqual(self.relay.sent('/answer'), [])  # nobody to tell
         self.assertTrue(self.keeper.propose(first['name'], 'When something keeps coming back', BODY + 'x')['duplicate'])
 
+    def test_a_proposal_is_checked_against_the_skills_here_first(self):
+        self.mine('Inclusion writer', 'When we write our product into a third-party article', '## Steps\n1. Read the article.\n2. Draft our part.')
+        with self.assertRaisesRegex(ValueError, 'Inclusion writer: When we write our product'):  # no silent new skill next to it
+            self.keeper.propose('Listing requests', 'When a partner asks to be listed in our article', BODY)
+        with self.assertRaisesRegex(ValueError, 'one short line'):
+            self.keeper.propose('Listing requests', 'When a partner asks to be listed in our article', BODY, related='Inclusion writer')
+        out = self.keeper.propose('Listing requests', 'When a partner asks to be listed in our article', BODY, related='inclusion writer',
+                                  relation='That one is the other direction: our product in their articles.')
+        item = next(s for s in self.keeper.view()['skills'] if s['id'] == out['id'])
+        self.assertEqual(item['related'], {'name': 'Inclusion writer', 'relation': 'That one is the other direction: our product in their articles.'})
+        self.keeper.decide(out['id'], 'approve')
+        self.assertEqual(sorted(s['name'] for s in self.keeper.view()['skills']), ['Inclusion writer', 'Listing requests'])
+        self.assertTrue(self.keeper.propose('Something else', 'When something unrelated keeps coming back', BODY + 'x', new=True)['id'])
+
+    def test_a_proposed_update_is_the_skill_rewritten_as_one_and_changes_it_only_on_update_skill(self):
+        old = '## When to use\nA partner agrees to swap listings.\n\n## Steps\n1. Check their site first.\n2. Write our entry.'
+        self.mine('Listing swaps', 'When a partner agrees to swap listings', old)
+        self.mine('Other skill', 'When something else entirely happens', BODY)
+        asked = self.keeper.propose('', '', BODY, update='Listing swaps')
+        self.assertEqual((asked['rewrite'], asked['instructions']), (True, old))
+        self.assertEqual(self.keeper.view()['waiting'], 0)
+        with self.assertRaisesRegex(ValueError, 'comes twice'):
+            self.keeper.propose('', '', old + '\n\n## Steps\n1. Ask for their link first.', update='Listing swaps', base=asked['base'])
+        with self.assertRaisesRegex(ValueError, "teammate's"):
+            with self.store.connect() as db:
+                db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,author,created_at,updated_at) VALUES"
+                           "('sk_t','team','Team listings','When the team lists.','Theirs.','on','shared','x','Sam','t','t')")
+            self.keeper.propose('', '', BODY, update='Team listings')
+        merged = old.replace('1. Check their site first.\n2. Write our entry.', '1. Ask for their link first.\n2. Check their site.\n3. Write our entry.')
+        out = self.keeper.propose('', '', merged, 'did it 3 times', update='listing swaps', base=asked['base'])
+        self.assertEqual(out['update'], 'Listing swaps')
+        item = next(s for s in self.keeper.view()['skills'] if s['id'] == out['id'])
+        self.assertEqual((item['status'], item['name'], item['update']['before'], item['update']['after']), ('proposed', 'Listing swaps', old, merged))
+        heads = skills.headings(item['update']['after'])
+        self.assertEqual(len(heads), len(set(heads)))
+        self.assertIn(['added', '1. Ask for their link first.\n2. Check their site.\n3. Write our entry.'], item['update']['changes']['after'])
+        with self.assertRaisesRegex(ValueError, 'before and after first'):
+            self.keeper.decide(out['id'], 'approve')
+        with self.assertRaisesRegex(ValueError, 'changed since'):
+            self.keeper.decide(out['id'], 'approve', 'x' * 24)
+        self.keeper.decide(out['id'], 'approve', item['update']['review'])
+        view = {s['name']: s for s in self.keeper.view()['skills']}
+        self.assertEqual(sorted(view), ['Listing swaps', 'Other skill', 'Team listings'])  # changed in place, nothing new
+        self.assertEqual((self.keeper.get(view['Listing swaps']['id'])['body'], view['Listing swaps']['version'], view['Listing swaps']['status']), (merged, 2, 'on'))
+        self.assertEqual((self.keeper.get(view['Other skill']['id'])['body'], view['Other skill']['version']), (BODY, 1))
+        self.assertIn('3. Write our entry.', (self.workspace / 'skills' / 'the-machine' / 'listing-swaps' / 'SKILL.md').read_text())
+
+    def test_a_proposed_update_on_an_older_version_is_never_applied(self):
+        self.mine('Listing swaps', 'When a partner agrees to swap listings', '## Steps\n1. Check their site first.')
+        asked = self.keeper.propose('', '', BODY, update='Listing swaps')
+        out = self.keeper.propose('', '', '## Steps\n1. Check their site first.\n2. Ask for their link.', update='Listing swaps', base=asked['base'])
+        mine = next(s for s in self.keeper.view()['skills'] if s['name'] == 'Listing swaps' and s['status'] == 'on')
+        self.keeper.save(mine['id'], 'Listing swaps', 'When a partner agrees to swap listings', '## Steps\n1. Check their traffic first.')
+        item = next(s for s in self.keeper.view()['skills'] if s['id'] == out['id'])
+        self.assertEqual(item['update'].get('stale'), True)
+        with self.assertRaisesRegex(ValueError, 'changed after this was suggested'):
+            self.keeper.decide(out['id'], 'approve', 'x' * 24)
+        self.assertEqual(self.keeper.get(mine['id'])['body'], '## Steps\n1. Check their traffic first.')
+
     def test_a_shared_skill_waits_for_the_owner_then_installs_and_tells_the_sender(self):
         question = {**shared(note='Saves us  time'), 'metadata': {'env': 'X'}}
         self.assertEqual(self.fleet.take_ask({'id': 'q1', 'fleet': 'work', 'from': 'pat1', 'kind': 'skill', 'question': question}), 'waiting')

@@ -639,17 +639,12 @@ def sentences(value, chars):
 
 
 def skill_update_after(before, addition):
-    """An update from notes adds what they teach under the skill's instructions: nothing it already says is dropped."""
+    """An older update from notes (no base_sha): what they taught, under the skill's instructions."""
     return before.rstrip() + '\n\n' + addition.strip()
 
 
 def skill_labels(cluster):
     return {'accept': 'Update ' + cluster['target_name'] if cluster['target_id'] else 'Create skill', 'reject': 'Not now'}
-
-
-def skill_review_token(cluster_id, sha):
-    """Names the before and after the owner saw for an Update: it no longer matches once the skill changes."""
-    return hashlib.sha256(f'{cluster_id}:{sha}'.encode()).hexdigest()[:24]
 
 
 def skill_update_view(db, cluster):
@@ -658,8 +653,8 @@ def skill_update_view(db, cluster):
                      (cluster['target_id'],)).fetchone()
     if not row:
         return None
-    return {'skill': row['name'], 'before': row['body'], 'after': skill_update_after(row['body'], cluster['body']),
-            'added': cluster['body'].strip(), 'review': skill_review_token(cluster['id'], row['sha'])}
+    after = cluster['body'] if cluster['base_sha'] else skill_update_after(row['body'], cluster['body'])
+    return skills.update_view(cluster['id'], dict(row), after, cluster['base_sha'])
 
 
 def compact_metadata(metadata, budget=2500):
@@ -2691,9 +2686,10 @@ class Store:
             db.execute('CREATE TABLE IF NOT EXISTS skill_clusters(id TEXT PRIMARY KEY,fact_ids TEXT NOT NULL,name TEXT NOT NULL,description TEXT NOT NULL,'
                        'body TEXT NOT NULL,target_id TEXT,target_name TEXT,suggestion_id TEXT,status TEXT NOT NULL,skill_id TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)')
             # Checked against the owner's skills first (checked=1): related_* names a separate skill it sits next to, with
-            # relation in one line; reviewed_sha is the target skill as the owner saw it in the before/after on Update.
+            # relation in one line; base_sha is the target skill the update's body (the whole skill, rewritten) was written on,
+            # reviewed_sha the target as the owner saw it in the before/after on Update. No base_sha: an older addition.
             have = {r[1] for r in db.execute('PRAGMA table_info(skill_clusters)')}
-            for column in ('related_id TEXT', 'related_name TEXT', 'relation TEXT', 'checked INTEGER', 'reviewed_sha TEXT'):
+            for column in ('related_id TEXT', 'related_name TEXT', 'relation TEXT', 'checked INTEGER', 'reviewed_sha TEXT', 'base_sha TEXT'):
                 if column.split()[0] not in have:
                     db.execute('ALTER TABLE skill_clusters ADD COLUMN ' + column)
             # What a fact means, to pick the ones a task needs (when embeddings are on).
@@ -5783,6 +5779,8 @@ class Store:
         shown = skill_update_view(db, cluster)
         if not shown:
             raise ValueError('That skill is gone')
+        if shown.get('stale'):
+            raise ValueError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next review suggests it on the new version")
         if source != 'dashboard' or not reviewed:
             raise ValueError('Open the card on the dashboard to see the before and after first')
         if reviewed != shown['review']:
@@ -11869,7 +11867,7 @@ class App:
         if name == 'remember_fact':
             if args.get('kind') == 'skill':  # notes about one kind of task: offered as a skill on a card, never made by itself
                 return self.propose_skill_from_notes(args.get('name'), args.get('description'), args.get('text'), args.get('replaces'), args.get('skill'),
-                                                     args.get('related'), args.get('relation'), args.get('new') is True)
+                                                     args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'))
             if args.get('kind') == 'voice':  # how the owner writes on one channel: the whole line, from their note or edit
                 return self.store.save_voice(args.get('channel'), args.get('text'), 'assistant', args.get('decision_id'), args.get('edit_id'), args.get('replaces'))
             if args.get('id') is not None and not args.get('text'):  # who an existing fact is about
@@ -12744,7 +12742,8 @@ class App:
     def skill_action(self, name, args):
         keeper = self.skills
         if name == 'skill_propose':  # from the agent: waits for the owner's Approve
-            return keeper.propose(args.get('name'), args.get('description'), args.get('body'), args.get('why') or '')
+            return keeper.propose(args.get('name'), args.get('description'), args.get('body'), args.get('why') or '', args.get('update'),
+                                  args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'))
         if name == 'skill_save':  # id: an existing skill; body may be a whole pasted SKILL.md
             return keeper.save(str(args.get('id') or ''), args.get('name') or '', args.get('description') or '', args.get('body') or '')
         if name == 'skill_get':
@@ -12759,7 +12758,7 @@ class App:
             to = args.get('to')
             return keeper.share(str(args.get('id') or ''), str(args.get('fleet') or ''), to if isinstance(to, list) else None, str(args.get('note') or ''))
         if name == 'skill_decide':
-            return keeper.decide(str(args.get('id') or ''), str(args.get('choice') or ''))
+            return keeper.decide(str(args.get('id') or ''), str(args.get('choice') or ''), str(args.get('reviewed') or '')[:64] or None)
         if name == 'skill_installed':  # refresh: read OpenClaw's list again now
             return keeper.installed(args.get('refresh') is True)
         if name == 'skill_installed_get':
@@ -13135,7 +13134,7 @@ class App:
         with self.store.connect() as db:
             if not db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone():
                 return []
-            return [dict(r) for r in db.execute("SELECT id,name,slug,description,origin FROM skills WHERE status IN ('on','off') ORDER BY name")]
+            return [dict(r) for r in db.execute("SELECT id,name,slug,description,origin,body,sha FROM skills WHERE status IN ('on','off') ORDER BY name")]
 
     def skills_from_notes_prompt(self):
         """The condense pass's line on turning notes into a skill: the skills here first, by name and what each is for,
@@ -13150,44 +13149,29 @@ class App:
                 "suggest moving them into a skill: remember_fact kind=skill, name, description=<when to use it, one sentence>, "
                 "text=<SKILL.md instructions that keep everything those notes say>, replaces=[their ids]. The owner decides on a card. "
                 + ("First check the skills below by what each is for, judging the meaning, not shared words. When one of the owner's own "
-                   "already does the same job, add skill=<its name> and make text only what the notes add to it, without repeating what it "
-                   "says: the card offers to update that skill. When one is related but a separate job (say the other direction of the "
+                   "already does the same job, add skill=<its name>: you get its instructions back, then send the whole skill rewritten as "
+                   "one in text, with what the notes add merged into its own sections (no heading twice, no step said twice), and base=<what "
+                   "you got>; the card offers to update that skill. When one is related but a separate job (say the other direction of the "
                    "same exchange), add related=<its name> and relation=<how they relate, one short line>: still a new skill. When none "
                    "is, add new=true.\nSkills here:\n" + listed if on_hand else "They have no skills yet."))
 
-    def propose_skill_from_notes(self, name, description, body, replaces, into=None, related=None, relation=None, new=False):
+    def propose_skill_from_notes(self, name, description, body, replaces, into=None, related=None, relation=None, new=False, base=None):
         """Notes that are all about one kind of task become a suggestion card. It is checked against the skills here
         first (the review judges that by meaning, from their names and descriptions): when one of the owner's own already
-        does the same job (into), the card offers Update <skill> with what the notes add; when one is related but a
+        does the same job (into), the card offers Update <skill>: the review gets its instructions first (rewrite_needed)
+        and sends the whole skill rewritten as one with the notes merged in (base names that version); when one is related but a
         separate job (related, e.g. the other direction of an exchange), the card says how in one line (relation) and
         still offers the new skill. Nothing changes until they tap Create skill (or Update, after its before and after);
         Not now isn't asked again until the same notes have grown by SKILL_REGROW."""
         if not getattr(self, 'skills', None):
             raise ValueError('Skills are not set up here')
         name, description, body = skills.validate(name, description, body)
-        on_hand = self.skills_on_hand()
-        def find(value):
-            wanted = str(value).strip().casefold()
-            return next((s for s in on_hand if s['name'].casefold() == wanted or s['slug'] == wanted), None)
-        target = linked = None
-        if into:
-            target = find(into)
-            if target and target['origin'] == 'shared':
-                raise ValueError("That skill is a teammate's: theirs are never changed. Leave skill out to suggest a new one")
-            if not target:
-                raise ValueError('skill is one of the owner\'s own skills: ' + ', '.join(s['name'] for s in self.own_skills()) + ' (or leave it out for a new one)')
-        elif related:
-            linked = find(related)
-            if not linked:
-                raise ValueError('related is one of the skills here: ' + ', '.join(s['name'] for s in on_hand))
-            relation = skills.one_line(relation, 141)
-            if not 5 <= len(relation) <= 140:
-                raise ValueError('Say how it relates to ' + linked['name'] + ' in one short line: relation=<up to 140 characters>')
-        elif on_hand and new is not True:
-            raise ValueError('First check the skills here by what each is for: '
-                             + '; '.join(f"{s['name']}: {s['description']}" for s in on_hand)[:3000]
-                             + '. skill=<name> when one of the owner\'s own does the same job, related=<name> and relation=<one line> when one '
-                               'is related but a separate job, or new=true when none is')
+        target, linked, relation = skills.check_against(self.skills_on_hand(), into, related, relation, new)
+        if target:  # the whole skill rewritten as one, on the version the review was shown
+            asked = skills.rewrite_needed(target, base)
+            if asked:
+                return asked
+            skills.check_rewrite(target['body'], body)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             notes = self.store.replaced_facts(db, replaces)
@@ -13203,12 +13187,15 @@ class App:
                         + f"\n\nI can keep these {len(notes)} notes together in a skill. Read the full instructions and notes before deciding. "
                         'Create skill makes it, on, under Skills. Not now keeps them as they are.')
             fields = {'name': name, 'description': description, 'body': body, 'target_id': target and target['id'], 'target_name': target and target['name'],
+                      'base_sha': target and target['sha'],
                       'related_id': linked and linked['id'], 'related_name': linked and linked['name'], 'relation': relation if linked else None}
-            for old in db.execute("SELECT id,fact_ids,status,checked,suggestion_id FROM skill_clusters WHERE status IN ('pending','accepting','declined')").fetchall():
+            for old in db.execute("SELECT c.id,c.fact_ids,c.status,c.checked,c.suggestion_id,c.base_sha,k.sha target_sha FROM skill_clusters c "
+                                  "LEFT JOIN skills k ON k.id=c.target_id WHERE c.status IN ('pending','accepting','declined')").fetchall():
                 before = set(json.loads(old['fact_ids']))
                 if len(ids & before) * 2 >= len(before):
-                    if old['status'] == 'pending' and not old['checked']:
-                        # Offered before skills were checked first: the same card, brought up to date with the check.
+                    if old['status'] == 'pending' and (not old['checked'] or not old['base_sha'] and old['target_sha'] or old['base_sha'] and old['base_sha'] != old['target_sha']):
+                        # Offered before skills were checked first, as an addition, or on a version of the skill changed since:
+                        # the same card, brought up to date.
                         db.execute('UPDATE skill_clusters SET fact_ids=?,' + ','.join(k + '=?' for k in fields) + ',checked=1,updated_at=? WHERE id=?',
                                    (json.dumps(sorted(ids)), *fields.values(), now(), old['id']))
                         db.execute("UPDATE suggestions SET title=?,body=? WHERE id=? AND status='pending'", (title, text[:700], old['suggestion_id']))
@@ -13249,9 +13236,10 @@ class App:
                         row = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off') AND origin!='shared'", (c['target_id'],)).fetchone()
                         if not row:
                             raise ValueError('That skill is gone')
-                        if c['reviewed_sha'] and row['sha'] != c['reviewed_sha']:
+                        if c['reviewed_sha'] and row['sha'] != c['reviewed_sha'] or c['base_sha'] and row['sha'] != c['base_sha']:
                             raise ValueError('That skill changed after its before and after were shown')
-                        skill_id = self.skills.save(row['id'], row['name'], row['description'], skill_update_after(row['body'], c['body']), _db=db)
+                        after = c['body'] if c['base_sha'] else skill_update_after(row['body'], c['body'])
+                        skill_id = self.skills.save(row['id'], row['name'], row['description'], after, _db=db)
                     else:
                         skill_id = self.skills.save(None, c['name'], c['description'], c['body'], _db=db)
                     ids = json.loads(c['fact_ids'])

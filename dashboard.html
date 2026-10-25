@@ -351,7 +351,7 @@ details.tech{margin:6px 0 0;font-size:.82rem}details.tech>summary{cursor:pointer
 /* A skill from notes next to one you have: how they relate, in one quiet line; an Update shows its before and after. */
 .skill-related{font-size:.85rem;color:var(--muted);margin:6px 0 0;padding-left:10px;border-left:2px solid var(--lavender)}.skill-related strong{color:var(--text);font-weight:600}
 .skill-ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.skill-ba h4{margin:0 0 4px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-.skill-ba .skill-body{margin:0;max-height:46vh;font-family:inherit}.skill-ba .skill-body .kept{color:var(--muted)}.skill-ba ins{text-decoration:none;display:block;margin-top:6px;padding:6px 8px;border-radius:6px;background:color-mix(in srgb,var(--mint) 22%,transparent);color:var(--text)}
+.skill-ba .skill-body{margin:0;max-height:46vh;font-family:inherit}.skill-ba ins,.skill-ba del{text-decoration:none;display:inline-block;width:100%;box-sizing:border-box;margin:2px 0;padding:2px 6px;border-radius:4px;color:var(--text)}.skill-ba ins{background:color-mix(in srgb,var(--mint) 24%,transparent)}.skill-ba del{background:color-mix(in srgb,var(--orange) 18%,transparent);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--orange) 70%,transparent)}
 #skill-update{max-width:min(980px,94vw);width:100%}#skill-update .fine{margin:0 0 4px}
 @media (max-width:640px){.skill-ba{grid-template-columns:1fr}.skill-ba .skill-body{max-height:30vh}}
 #facts .learn-acts{display:flex;gap:4px;margin-left:auto}#facts .fact-edit{display:grid;gap:8px;width:100%}#facts .fact-edit textarea{width:100%;min-height:64px;resize:vertical;font:inherit;line-height:1.45}#facts .fact-edit .learn-acts{margin:0;justify-content:flex-end}#facts .fact-edit .learn-remove{margin-right:auto}
@@ -1066,7 +1066,7 @@ strong.nb{white-space:nowrap}
 
 .skills-list .skill-buttons{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.skills-list .skill-buttons button{min-height:32px;padding:4px 10px;font-size:.82rem}
 .skills-list{grid-template-columns:minmax(0,1fr)}.skills-list>div{min-width:0}.skills-list .grow{min-width:0}
-.skills-list .grow strong,.skills-list .skill-meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.skills-list .grow small{overflow-wrap:anywhere}
+.skills-list .grow strong,.skills-list .skill-meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.skills-list .grow small{overflow-wrap:anywhere}.skills-list .grow .skill-related strong{display:inline;white-space:normal}.skills-list .skill-related,.skills-list .note{font-size:.82rem;margin:4px 0 2px}
 .sig-form{display:grid;gap:8px;max-width:560px;margin:0 0 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:14px 16px;min-width:0}.sig-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;min-width:0}.sig-tools{display:flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:var(--r-sm);background:var(--sunken)}.sig-tools button,.sig-color{min-height:30px;min-width:28px;padding:0 7px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:var(--fw-medium) var(--fs-xs)/1 var(--sans);box-shadow:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}.sig-tools button:hover,.sig-color:hover{background:var(--tile);color:var(--text)}.sig-tools button[aria-pressed="true"]{background:var(--c-accent-tint);color:var(--text)}.sig-tools button:disabled{opacity:.45;cursor:default}.sig-tools [data-sig-tool="html"]{margin-left:auto;font-family:var(--mono)}.sig-color{position:relative;gap:4px}.sig-color span{border-bottom:3px solid currentColor;line-height:1.1}.sig-color input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;padding:0;border:0}.sig-paper{display:block;width:100%;height:72px;border:1px solid var(--border);border-radius:10px;background:#fff;box-sizing:border-box}[data-theme="dark"] .sig-paper,:root:not([data-theme="light"]) .sig-paper{border-color:transparent}.sig-source{width:100%;box-sizing:border-box;resize:vertical;font:.82rem/1.45 var(--mono)}.sig-note{margin:0;font-size:var(--fs-sm)}.sig-note button.link,.sig-note button.link:hover{display:inline;min-height:0;padding:0;border:0;background:none;box-shadow:none;color:var(--muted);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.sig-note button.link:hover{color:var(--text)}.sig-form [role=status]:empty{display:none}
 .voice-form textarea,.voice-form textarea:focus{height:auto;min-height:64px;resize:vertical;line-height:1.45}
 .voice-form .sig-head input{max-width:220px}.sig-form [role=status]{color:var(--orange);margin:0;font-size:var(--fs-sm)}.sig-form .actions{margin:0}@media(max-width:420px){.sig-code{display:none}.sig-tools{gap:0}.sig-tools button,.sig-color{padding:0 6px}}
@@ -2245,25 +2245,31 @@ const cardLinks=(html,s)=>(state.suggestions||[]).filter(o=>o.id!==s.id&&!closed
 // A confirmed step that didn't go through says so in one line instead of the earlier result (step_stopped in assistant.py).
 // Handed off and with them: the card's body is what was asked; the suggestion to hand it off stays in the chat.
 const askedBody=s=>{const h=s.fleet_handoff;return h?.asked&&!h.back&&['asked','waiting for them','accepted','accepted with a change'].includes(h.stage)&&!redirect(s)?`<div class="body clamp handoff-asked" style="--lines:2" title="${esc(h.asked)}"><p>Asked ${esc(firstName(h.name))}: ${esc(h.asked)}</p></div>`:''};
-// A skill from notes (skill_clusters in assistant.py): a new one, maybe related to one you have, or an Update to one of yours.
+// A skill from notes (skill_clusters in assistant.py) or proposed in Settings (skills.py): a new one, maybe related to one
+// you have, or an Update to one of yours: the whole skill rewritten as one, shown before and after with what changed marked.
 const skillNotesList=p=>`<ul>${p.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`;
-const skillBeforeAfter=u=>`<div><h4>Before</h4><pre class="skill-body">${esc(u.before)}</pre></div><div><h4>After</h4><pre class="skill-body"><span class="kept">${esc(u.before)}</span><ins>${esc(u.added)}</ins></pre></div>`;
+const skillRuns=(runs,fallback)=>(runs||[['same',fallback]]).map(([k,t])=>k==='added'?`<ins>${esc(t)}</ins>`:k==='removed'?`<del>${esc(t)}</del>`:`<span>${esc(t)}</span>`).join('\n');
+const skillBeforeAfter=u=>`<div><h4>Before</h4><pre class="skill-body">${skillRuns(u.changes?.before,u.before)}</pre></div><div><h4>After</h4><pre class="skill-body">${skillRuns(u.changes?.after,u.after)}</pre></div>`;
+const skillStale=u=>u?.stale?`<p class="note">${esc(u.skill)} changed after this was suggested, so it can’t be applied. The next suggestion starts from the new version.</p>`:'';
+const skillRelated=r=>r?`<p class="skill-related">Related to <strong>${esc(r.name)}</strong>: ${esc(r.relation)}</p>`:'';
 function skillProposal(s){const p=s.skill_proposal;if(!p)return '';
- const related=p.related?`<p class="skill-related">Related to <strong>${esc(p.related.name)}</strong>: ${esc(p.related.relation)}</p>`:'';
- if(p.update)return `<details class="skill-notes"><summary>Read the change and ${p.notes.length} notes</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div>${skillNotesList(p)}</details>`;
- return `${related}<details class="skill-notes"><summary>Read skill instructions and ${p.notes.length} notes</summary><p><strong>${esc(p.name)}</strong></p><div>${format(p.body).replace(/\n/g,'<br>')}</div>${skillNotesList(p)}</details>`}
+ if(p.update)return `${skillStale(p.update)}<details class="skill-notes"><summary>Read the change and ${p.notes.length} notes</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div>${skillNotesList(p)}</details>`;
+ return `${skillRelated(p.related)}<details class="skill-notes"><summary>Read skill instructions and ${p.notes.length} notes</summary><p><strong>${esc(p.name)}</strong></p><div>${format(p.body).replace(/\n/g,'<br>')}</div>${skillNotesList(p)}</details>`}
 // Update <skill>: its before and after first; only Update skill there changes it (reviewed names what was shown).
 let skillUpdating=null;
-function skillUpdateOpen(id){const s=state.suggestions.find(x=>x.id===id),u=s?.skill_proposal?.update;if(!u){toast('That skill is gone.',true);return}
- skillUpdating={id,review:u.review,skill:u.skill};$('#skill-update-title').textContent='Update '+u.skill+'?';
- $('#skill-update-from').textContent=`Adds what ${s.skill_proposal.notes.length} notes taught. Nothing else changes.`;
+function skillUpdateOpen(u,from,send){if(!u){toast('That skill is gone.',true);return}if(u.stale){toast(`${u.skill} changed after this was suggested.`,true);return}
+ skillUpdating={review:u.review,skill:u.skill,send};$('#skill-update-title').textContent='Update '+u.skill+'?';$('#skill-update-from').textContent=from;
  $('#skill-update-ba').innerHTML=skillBeforeAfter(u);$('#skill-update-error').textContent='';$('#skill-update-ok').disabled=false;
- if(!$('#skill-update').open)$('#skill-update').showModal();const after=$('#skill-update-ba ins');after?.closest('.skill-body')?.scrollTo(0,after.offsetTop)}  // the After opens at what is added
-document.addEventListener('click',e=>{const b=e.target.closest('[data-skill-update]');if(!b)return;e.preventDefault();e.stopPropagation();skillUpdateOpen(b.dataset.skillUpdate)},true);
+ if(!$('#skill-update').open)$('#skill-update').showModal();
+ for(const b of $('#skill-update-ba').querySelectorAll('.skill-body')){const c=b.querySelector('ins,del');b.scrollTop=c?Math.max(0,c.offsetTop-b.offsetTop-24):0}}  // each side opens at its first change
+document.addEventListener('click',e=>{const b=e.target.closest('[data-skill-update]');if(!b)return;e.preventDefault();e.stopPropagation();const id=b.dataset.skillUpdate;
+ if(b.dataset.settings!==undefined){const s=state.skills?.skills.find(x=>x.id===id);skillUpdateOpen(s?.update,'Your Machine rewrote it with what it learned. Nothing else changes.',review=>skillAct('skill_decide',{id,choice:'approve',reviewed:review}));return}
+ const s=state.suggestions.find(x=>x.id===id);
+ skillUpdateOpen(s?.skill_proposal?.update,`Merges what ${s?.skill_proposal?.notes.length} notes taught. Nothing else changes.`,
+  async review=>{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:id,choice:'accept',feedback:'',decision_id:crypto.randomUUID(),reviewed:review}})});await refresh()})},true);
 {$('#skill-update-cancel').onclick=()=>$('#skill-update').close();
  $('#skill-update-ok').onclick=async()=>{const u=skillUpdating;if(!u)return;const ok=$('#skill-update-ok');ok.disabled=true;
-  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:u.id,choice:'accept',feedback:'',decision_id:crypto.randomUUID(),reviewed:u.review}})});
-   $('#skill-update').close();skillUpdating=null;toast('Updated '+u.skill+'.');await refresh()}
+  try{await u.send(u.review);$('#skill-update').close();skillUpdating=null;toast('Updated '+u.skill+'.')}
   catch(err){ok.disabled=false;$('#skill-update-error').textContent=err.message}}}
 function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;let text=s.step_stopped||resultBody(s),lead='';
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
@@ -2817,14 +2823,16 @@ let shownAt=0,shownCached=false;  // when the cards on screen were read, and whe
 let skillsKey='',skillEditing=null,skillSharing=null;
 const skillAct=async(action,args)=>{const v=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});if(v&&v.skills)state.skills=v;skillsKey='';renderSkills();renderNeedsYou();return v};
 function skillMeta(s){if(s.status==='incoming')return `${s.update?'Update':'Shared'} by ${esc(s.author||'a teammate')} · version ${s.version}${s.note?` · “${esc(s.note)}”`:''}`;
- if(s.status==='proposed')return 'Proposed by your Machine'+(s.note?`: ${esc(s.note)}`:'');
+ if(s.status==='proposed')return (s.update?'Update proposed by your Machine':'Proposed by your Machine')+(s.note?`: ${esc(s.note)}`:'');
  const bits=[];if(s.status==='off')bits.push('Off');if(s.imported)bits.push(`Imported from ${{claude:'Claude',chatgpt:'ChatGPT'}[s.imported.from]||'elsewhere'}`);if(s.origin==='shared')bits.push(`From ${esc(s.author||'a teammate')}, version ${s.version}`);
  if(s.shares?.length)bits.push('Shared: '+s.shares.map(x=>`${esc(x.name)} ${esc(x.status)}`).join(', '));if(s.changed)bits.push('Changed since you shared it');return bits.join(' · ')}
 function skillRow(s,targets){const wait=s.status==='incoming'||s.status==='proposed',meta=skillMeta(s);
- const buttons=wait?`<button type="button" class="ghost" data-skill-read="${s.id}">Read</button><button type="button" class="primary" data-skill-decide="${s.status==='incoming'?'install':'approve'}" data-id="${s.id}">${s.status==='incoming'?'Install':'Approve'}</button><button type="button" class="ghost" data-skill-decide="${s.status==='incoming'?'decline':'dismiss'}" data-id="${s.id}">${s.status==='incoming'?'Decline':'Dismiss'}</button>`
+ // A proposed update opens its before and after; Update skill there is the only way it changes the skill.
+ const buttons=s.status==='proposed'&&s.update?`<button type="button" class="primary" data-skill-update="${s.id}" data-settings>Update</button><button type="button" class="ghost" data-skill-decide="dismiss" data-id="${s.id}">Dismiss</button>`
+  :wait?`<button type="button" class="ghost" data-skill-read="${s.id}">Read</button><button type="button" class="primary" data-skill-decide="${s.status==='incoming'?'install':'approve'}" data-id="${s.id}">${s.status==='incoming'?'Install':'Approve'}</button><button type="button" class="ghost" data-skill-decide="${s.status==='incoming'?'decline':'dismiss'}" data-id="${s.id}">${s.status==='incoming'?'Decline':'Dismiss'}</button>`
   :`<button type="button" class="ghost" data-skill-edit="${s.id}">Edit</button>${targets.length?`<button type="button" class="ghost" data-skill-share="${s.id}">${s.changed?'Share again':'Share'}</button>`:''}<button type="button" class="ghost" data-skill-toggle="${s.id}" data-on="${s.status==='off'?1:0}">${s.status==='off'?'Turn on':'Turn off'}</button>`;
  const plain=meta.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
- return `<div class="${wait?'skill-wait':s.status==='off'?'skill-off':''}" data-skill="${s.id}"><span class="grow"><strong title="${esc(s.name)}">${esc(s.name)}</strong><small>${esc(s.description)}</small>${meta?`<small class="skill-meta" title="${esc(plain)}">${meta}</small>`:''}${s.notes?.length?`<details class="skill-notes"><summary>From ${s.notes.length} of your notes</summary><ul>${s.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></details>`:''}</span><span class="skill-buttons">${buttons}</span></div>`}
+ return `<div class="${wait?'skill-wait':s.status==='off'?'skill-off':''}" data-skill="${s.id}"><span class="grow"><strong title="${esc(s.name)}">${esc(s.name)}</strong><small>${esc(s.description)}</small>${meta?`<small class="skill-meta" title="${esc(plain)}">${meta}</small>`:''}${s.status==='proposed'?skillRelated(s.related)+skillStale(s.update):''}${s.notes?.length?`<details class="skill-notes"><summary>From ${s.notes.length} of your notes</summary><ul>${s.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></details>`:''}</span><span class="skill-buttons">${buttons}</span></div>`}
 function renderSkills(){const v=state.skills,box=$('#settings-skills');if(!box)return;box.hidden=!v;if(!v)return;const key=JSON.stringify(v);if(key===skillsKey)return;skillsKey=key;
  $('#skills-list').innerHTML=v.skills.map(s=>skillRow(s,v.targets||[])).join('')||'<div class="muted">No skills yet.</div>';
  $('#skill-example').hidden=v.skills.length>0;
