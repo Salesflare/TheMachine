@@ -53,12 +53,15 @@ try{
  assert.equal(await cli.locator('summary').textContent(),'Set up from the terminal');
  assert.equal(await cli.evaluate(d=>d.open),false);
  assert.match(await cli.textContent(),/assistant connect gmail/);
- // Desktop: seven Fleet tabs (with a badge) fit the column without scrolling.
+ // Desktop: seven Fleet tabs are all in view, none under the fade, whatever the font: wider glyphs (a CI runner's
+ // fonts) take a second row instead of scrolling.
  await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(200);
- const fit=await page.evaluate(()=>{const host=[...document.querySelectorAll('main>section')].find(x=>!x.hidden),t=document.createElement('div');t.className='fleet-tabs';
-  t.innerHTML=["Lumen Labs","What's shared","Morgans",'Friends <span class="badge">1</span>','Network','Sharing','Activity'].map(l=>`<button type="button">${l}</button>`).join('');
-  host.prepend(t);const r=[t.scrollWidth,t.clientWidth];t.remove();return r});
- assert.ok(fit[0]<=fit[1],'Fleet tabs overflow: '+fit);
+ for(const size of ['','1.25rem']){
+  const r=await page.evaluate(size=>{const host=[...document.querySelectorAll('main>section')].find(x=>!x.hidden),t=document.createElement('div');t.className='fleet-tabs';
+   t.innerHTML=["Lumen Labs","What's shared","Morgans",'Friends <span class="badge">1</span>','Network','Sharing','Activity'].map(l=>`<button type="button" style="font-size:${size}">${l}</button>`).join('');
+   host.prepend(t);tabsFade(t);const box=t.getBoundingClientRect(),out=[...t.querySelectorAll('button')].filter(b=>{const q=b.getBoundingClientRect();return q.left<box.left-.5||q.right>box.right+.5}).map(b=>b.textContent);
+   const res={out,fade:t.classList.contains('more-right')||t.classList.contains('more-left'),scroll:t.scrollWidth>t.clientWidth};t.remove();return res},size);
+  assert.deepEqual(r,{out:[],fade:false,scroll:false},'Fleet tabs at font '+(size||'default')+': '+JSON.stringify(r))}
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({page_errors:errors}));
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}

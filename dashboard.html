@@ -1154,6 +1154,8 @@ nav button.active .badge,[data-theme="light"] nav button.active .badge{backgroun
 .scope-filter button[aria-pressed="true"]{background:var(--c-accent-tint);color:var(--text);box-shadow:0 0 0 1px color-mix(in srgb,var(--mint) 18%,transparent)}
 :is(.fleet-tabs,.sub-tabs) button[aria-selected="true"]{background:var(--c-accent-tint);border-color:transparent;color:var(--text)}
 :is(.fleet-tabs,.sub-tabs) button[aria-selected="true"] .badge{background:color-mix(in srgb,var(--mint) 22%,transparent);color:var(--text)}
+/* Desktop: tabs that do not fit take a second row, never hidden under a fade (phones scroll the row) */
+@media(min-width:1024px){:is(.fleet-tabs,.sub-tabs){flex-wrap:wrap;overflow-x:visible}}
 
 /* Needs you: one calm line per item with a small amber dot. A notice card (.notice-card, pageNotice()) is the same quiet
    card for one line at the top of a page: the text, and its button on the right (below it when the line wraps on a phone). */
