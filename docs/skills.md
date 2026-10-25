@@ -76,8 +76,20 @@ with **Approve** and **Dismiss**; at most three wait at a time. Only your tap on
 What you teach on cards (facts and draft rules, under Feedback > What I've learned) can pile up around one kind of task:
 listing exchanges, support handoffs. When a review sees 5 or more notes about one such scenario (judged by meaning, while it
 condenses the list), it suggests a skill on a normal card: the skill's name and when to use it, the notes it would take in,
-and **Create skill**, or **Add to <skill>** when one of your own skills fits (made here, approved or imported; a teammate's
-is never changed), plus **Not now**. Open **Read skill instructions and notes** on the card to review the complete proposal; Telegram links to the same card. Nothing changes before your tap. Not now isn't asked again until 3 more notes joined
+and **Create skill**, plus **Not now**. Before it suggests one it checks the skills you have, by name and what each is for
+(judged by meaning, not shared words; it has to say which it found):
+
+- **Same job** as one of your own skills (made here, approved or imported): the card offers **Update <skill>** instead, with
+  only what the notes add. **Read the change** on the card shows the skill's instructions before and after, and **Update
+  <skill>** opens them again with **Update skill** and **Cancel**. Only that tap changes it, and only that skill: its name
+  and when to use it stay, and what the notes add goes under its instructions. If the skill changed after you looked, you
+  see the new before and after first. On Telegram the card links to it (**Review update**); there's no one-tap Update.
+  A teammate's skill is never changed.
+- **Related but separate** (say the other direction of the same exchange): the card names that skill and how they relate
+  in one line, and still offers **Create skill**.
+
+Open **Read skill instructions and notes** on the card to review the complete proposal; Telegram links to the same card.
+Nothing changes before your tap. A card offered before this check is brought up to date when the review suggests it again. Not now isn't asked again until 3 more notes joined
 the same ones. On yes the skill is written (instructions only, on, like any of yours) and the notes move into it: kept, listed
 under the skill as "From N of your notes", and no longer in the list every task gets, so a task that needs them gets the
 skill instead. The skill change, moved notes and completion receipt commit together; a restart retries the same offer without creating another skill or adding the instructions twice. What I've learned shows **Moved into skills** with **Put back**, which returns the notes (the skill stays).

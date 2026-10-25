@@ -25,6 +25,15 @@ Pick the ones you want and press **Import selected**. Only instructions come in;
 
 Skills other people publish. They're third-party: read one before you install it.
 
+## From your notes
+
+When many notes are about one kind of task, a card suggests a skill. It checks your skills first:
+
+- One already does that job: **Update <skill>** shows the before and after. Only **Update skill** there changes it, and only that skill.
+- One is related but separate: the card says how in one line and still offers **Create skill**.
+
+**Not now** keeps the notes as they are.
+
 ## Share one
 
 Share a skill with a friend or teammate. They read it and choose to install it. Later edits go out only if you share again.
