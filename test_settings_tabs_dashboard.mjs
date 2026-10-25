@@ -53,10 +53,13 @@ try{
    assert.equal(await visible(page,sel),true,sel);assert.equal(await visible(page,'#theme-toggle'),false);
    assert.equal(await page.evaluate(()=>location.hash),'#settings/'+tab);
    assert.equal(await help(page),HELP+({hours:'work-hours'}[tab]||tab))}
-  // The pills are one height and, on a phone, scroll sideways inside the screen.
-  const row=await page.evaluate(()=>{const bar=document.querySelector('#settings-tabs'),r=[...bar.children].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect());
-   return {top:new Set(r.map(x=>Math.round(x.top))).size,height:new Set(r.map(x=>Math.round(x.height))).size,fits:document.documentElement.scrollWidth<=innerWidth,overflow:getComputedStyle(bar).overflowX}});
-  assert.deepEqual(row,{top:1,height:1,fits:true,overflow:'auto'});
+  // The pills are one height. On a phone they are one row that scrolls sideways inside the screen; on a desktop every
+  // pill is in view, on a second row if the fonts are wide.
+  const row=await page.evaluate(()=>{const bar=document.querySelector('#settings-tabs'),box=bar.getBoundingClientRect(),r=[...bar.children].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect());
+   return {top:new Set(r.map(x=>Math.round(x.top))).size,height:new Set(r.map(x=>Math.round(x.height))).size,fits:document.documentElement.scrollWidth<=innerWidth,overflow:getComputedStyle(bar).overflowX,
+    inside:r.every(x=>x.left>=box.left-.5&&x.right<=box.right+.5)}});
+  if(width<1024)assert.deepEqual(row,{top:1,height:1,fits:true,overflow:'auto',inside:row.inside});
+  else{assert.ok(row.top<=2,JSON.stringify(row));assert.deepEqual({...row,top:0},{top:0,height:1,fits:true,overflow:'visible',inside:true})}
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/settings-tabs-${width}.png`});
   // The last tab is kept; a link opens another; leaving Settings drops the link.
   await page.reload();await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
