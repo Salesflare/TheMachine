@@ -271,6 +271,14 @@ def canonical_domain(db, domain):
     return target[4:] if target.startswith('org:') and not target.startswith('org:named:') else domain
 
 
+def canonical_key(db, key):
+    """A project's organization key (a domain, or "named:<slug>") of the organization it is part of now."""
+    if not key:
+        return key
+    target = canonical(db, 'org:' + key)
+    return target[4:] if target.startswith('org:') else key
+
+
 def _org(db, org_id):
     row = db.execute("SELECT id,name,info FROM graph_nodes WHERE id=? AND kind='org'", (org_id,)).fetchone()
     return row
@@ -313,11 +321,10 @@ def merge_orgs(db, node_id, into=None, website=None, now=None):
         name_kept = picked['name'] if picked else None
     undo = {'projects': [], 'edits': None, 'name': None, 'apart': None}
     alias_domain = None if alias.startswith('org:named:') else alias[4:]
-    target_domain = None if target.startswith('org:named:') else target[4:]
-    if alias_domain and target_domain:
-        ids = [r[0] for r in db.execute('SELECT id FROM projects WHERE org=?', (alias_domain,))]
-        db.execute('UPDATE projects SET org=? WHERE org=?', (target_domain, alias_domain))
-        undo['projects'] = ids
+    # Its projects go along, also one known only by name (projects.org is "named:<slug>" then)
+    ids = [r[0] for r in db.execute('SELECT id FROM projects WHERE org=?', (alias[4:],))]
+    db.execute('UPDATE projects SET org=? WHERE org=?', (target[4:], alias[4:]))
+    undo['projects'] = ids
     key = lambda org_id: org_id if org_id.startswith('org:named:') else org_id[4:]
     mine = db.execute('SELECT fields FROM org_edits WHERE domain=?', (key(target),)).fetchone()
     theirs = db.execute('SELECT fields FROM org_edits WHERE domain=?', (key(alias),)).fetchone()
@@ -356,10 +363,8 @@ def split_org(db, alias, now=None):
     undo = json.loads(row['undo'] or '{}')
     alias, target = row['alias'], row['target']
     alias_domain = None if alias.startswith('org:named:') else alias[4:]
-    target_domain = None if target.startswith('org:named:') else target[4:]
-    if alias_domain and target_domain and undo.get('projects'):
-        marks = ','.join('?' * len(undo['projects']))
-        db.execute(f'UPDATE projects SET org=? WHERE org=? AND id IN ({marks})', (alias_domain, target_domain, *undo['projects']))
+    if undo.get('projects'):
+        db.execute('UPDATE projects SET org=? WHERE org=? AND id IN (SELECT value FROM json_each(?))', (alias[4:], target[4:], json.dumps(undo['projects'])))
     key = target if target.startswith('org:named:') else target[4:]
     current = db.execute('SELECT fields FROM org_edits WHERE domain=?', (key,)).fetchone()
     # Splitting remains available, but it must not restore an old snapshot over a later correction. Older merges
@@ -572,10 +577,12 @@ def list_query(db, name, filters, sort):
             where.append(f'id IN ({marks})')
             args += ids
         else:
-            domains = [i[4:] for i in ids if not i.startswith('org:named:')]
-            where.append(f"(id IN (SELECT 'project:'||p.id FROM projects p WHERE p.org IN ({','.join('?' * len(domains)) or chr(39) * 2})) "
-                         f"OR id IN (SELECT l.b FROM graph_links l JOIN graph_nodes m ON m.id=l.a WHERE l.kind='project' AND json_extract(m.info,'$.org') IN ({marks})))")
-            args += domains + ids
+            folded = aliases(db)
+            keys = [x[4:] for i in ids for x in [i, *(a for a, t in folded.items() if t == i)]]  # a domain, or named:<slug>
+            where.append("(id IN (SELECT 'project:'||p.id FROM projects p WHERE p.org IN (SELECT value FROM json_each(?))) "
+                         "OR id IN (SELECT l.b FROM graph_links l JOIN graph_nodes m ON m.id=l.a WHERE l.kind='project' "
+                         "AND json_extract(m.info,'$.org') IN (SELECT value FROM json_each(?))))")
+            args += [json.dumps(keys), json.dumps(ids)]
     if facts or sort in SORTS:
         pw, pargs = _project_where(filters, closed_too=kind == 'project')
         db.execute('CREATE TEMP TABLE IF NOT EXISTS crm_pick(id TEXT PRIMARY KEY,value REAL,close TEXT)')

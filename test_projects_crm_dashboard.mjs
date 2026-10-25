@@ -25,7 +25,7 @@ let calls=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
- if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');res.end(JSON.stringify(n?(n.startsWith('person:')?person:detail):{projects:[{id:'project:1',kind:'project',name:'Paperkite',strength:1,last_at:day(2),signals:3}],people:[],quiet:[],new:[],orgs:[],boards,person_names:people,project_names:[]}));return}
+ if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');if(url.searchParams.get('q')!=null){res.end(JSON.stringify({found:[{id:'org:hazelbrook.example',kind:'org',name:'Hazelbrook',domain:'hazelbrook.example'}]}));return}res.end(JSON.stringify(n?(n.startsWith('person:')?person:detail):{projects:[{id:'project:1',kind:'project',name:'Paperkite',strength:1,last_at:day(2),signals:3}],people:[],quiet:[],new:[],orgs:[],boards,person_names:people,project_names:[]}));return}
  if(req.method!=='GET'&&!url.pathname.startsWith('/brand/'))calls.push(JSON.parse(body||'{}'));
  if(url.pathname==='/api/action'){const c=JSON.parse(body||'{}'),a=c.args||{};
   if(c.action==='project_save'){if(!a.node_id)boards[0].projects.push(proj(50,a.name,a.stage||'Discovery',{by:'owner'}));res.end(JSON.stringify({node_id:a.node_id||'project:50',name:a.name,created:!a.node_id}));return}
@@ -66,10 +66,11 @@ try{
   assert.equal(await page.locator('#project-form [name="board"]').inputValue(),'1');assert.equal(await page.locator('#project-form [name="stage"]').inputValue(),'Discovery');
   await page.locator('#project-form [name="name"]').fill('Hazelbrook');await page.locator('#project-form [name="value"]').fill('8000');
   await page.locator('#project-form [name="person"]').fill('Grace Hopper');await page.locator('#project-form .ed-projects li',{hasText:'Grace Hopper'}).waitFor();
-  await page.locator('#project-form [name="org"]').fill('hazelbrook.example');await shot(page,'crm-new-1440',false);
+  await page.locator('#project-form [name="orgq"]').fill('Hazel');await page.waitForFunction(()=>document.querySelectorAll('#project-dialog-orgs option').length===1);
+  await page.locator('#project-form [name="orgq"]').press('Enter');await page.locator('#project-form .ed-org li',{hasText:'Hazelbrook'}).waitFor();await shot(page,'crm-new-1440',false);
   await page.locator('#project-form button.primary').click();await dialog(page).waitFor({state:'detached'});
   assert.deepEqual(calls.map(c=>c.action),['project_save']);
-  assert.deepEqual(calls[0].args,{name:'Hazelbrook',board_id:1,stage:'Discovery',org:'hazelbrook.example',value:'8000',close_date:'',notes:'',people:['person:b']});
+  assert.deepEqual(calls[0].args,{name:'Hazelbrook',board_id:1,stage:'Discovery',org:'org:hazelbrook.example',value:'8000',close_date:'',notes:'',people:['person:b']});
   await page.locator('.tile[data-node="project:50"]').waitFor();await page.waitForLoadState('networkidle');
   // A lane's + Add picks that stage; switching board picks its first stage; Cancel posts nothing
   calls=[];await page.locator('.lane[data-lane="Trial"] .lane-add').click();await dialog(page).waitFor();
@@ -101,7 +102,7 @@ try{
   await page.keyboard.press('Escape');await dialog(page).waitFor({state:'detached'});
   // The project page: Edit, and the ⋯ with Won, Lost, Archive and Delete; its value, organization and notes
   await page.locator('.tile[data-node="project:1"] .tile-name').click();await page.locator('.proj-facts').waitFor();
-  assert.match(await page.locator('.proj-facts').textContent(),/Value €12,000 · paperkite\.example/);assert.match(await page.locator('.proj-facts').textContent(),/Wants SSO/);
+  assert.match(await page.locator('.proj-facts').textContent(),/Value €12,000/);assert.equal(await page.locator('.proj-org').textContent(),'Ppaperkite.example');assert.match(await page.locator('.proj-facts').textContent(),/Wants SSO/);
   await shot(page,'crm-project-1440',false);
   calls=[];await page.locator('.graph-detail .fact-menu summary').click();await page.locator('.graph-detail [data-proj-delete]').click();await dialog(page).waitFor();
   assert.match(await page.locator('#project-form').textContent(),/goes for good/);await page.locator('#project-form [data-pj-delete]').click();await dialog(page).waitFor({state:'detached'});

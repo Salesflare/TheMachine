@@ -108,6 +108,8 @@ CREATE TABLE IF NOT EXISTS board_fit_undo(token TEXT PRIMARY KEY,board_id INTEGE
 CREATE TABLE IF NOT EXISTS side_rule(id INTEGER PRIMARY KEY CHECK(id=1),rule INTEGER NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS side_changes(node_id TEXT NOT NULL,rule INTEGER NOT NULL,before TEXT,after TEXT,why TEXT,at TEXT NOT NULL,
   PRIMARY KEY(node_id,rule));
+CREATE TABLE IF NOT EXISTS project_org_fills(project_id INTEGER PRIMARY KEY,org TEXT NOT NULL,source TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS project_org_backfill(id INTEGER PRIMARY KEY CHECK(id=1),queued_at TEXT NOT NULL,done_at TEXT,filled INTEGER);
 '''
 RECHECK_DAYS = 90       # a review's role is read again after this, when there was contact since
 HALF_LIFE = {'person': 60, 'pair': 45, 'project_person': 45, 'project': 21}
@@ -136,7 +138,7 @@ OPEN_CARD = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
 # Boards: projects of one kind (partner listings, buyers, onboardings) in stages. Every board ends in this row too.
 STALLED = 'Stalled or declined'
 PROJECT_STAGE_COLUMNS = ('board_id INTEGER', 'stage TEXT', 'stage_reason TEXT', 'stage_event_id INTEGER', 'stage_by TEXT', 'stage_at TEXT',
-                         'next_step TEXT', 'next_step_event_id INTEGER', 'org TEXT')
+                         'next_step TEXT', 'next_step_event_id INTEGER', 'org TEXT', 'org_by TEXT')
 BOARD_COLUMNS = ('about TEXT', 'side INTEGER NOT NULL DEFAULT 1', 'updated_at TEXT', 'visibility TEXT')
 # Who sees a board and its projects (2026-10-24): 'only_you' (never on the Team Graph, also not its timelines), 'people'
 # (only the teammates the owner shared it with, shared_graph share_people) or 'team'. A project's own visibility (NULL:
@@ -212,6 +214,9 @@ def ensure(db):
     for table in ('projects', 'board_suggestions'):  # who sees it (2026-10-24): a project's own (NULL: its board's), a suggestion's default
         if 'visibility' not in {r[1] for r in db.execute(f'PRAGMA table_info({table})')}:
             db.execute(f'ALTER TABLE {table} ADD COLUMN visibility TEXT')
+    # A project's organization (2026-10-25): projects made before it was set on its own get it once, from their people,
+    # on the next graph build (fill_orgs); what that set is kept in project_org_fills, so undo_org_fills takes it back.
+    db.execute('INSERT OR IGNORE INTO project_org_backfill(id,queued_at) VALUES(1,?)', (dt.datetime.now(dt.timezone.utc).isoformat(),))
     import crm  # owners, organizations with several websites (2026-10-24)
     crm.ensure(db)
     import own_addresses  # the owner's own addresses, where each came from, and their word on them (2026-10-24)
@@ -1347,6 +1352,7 @@ def _build(db, config, now, team=()):
                        'ON CONFLICT(node_id,event_id) DO UPDATE SET probable=min(probable,excluded.probable),direct=max(direct,excluded.direct)', event_rows)
         db.executemany('INSERT OR REPLACE INTO graph_unnamed(key,event_ids,people,titles,size,last_at) VALUES(?,?,?,?,?,?)', unnamed_rows)
         db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
+        fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
         db.execute('COMMIT')
     except BaseException:
         db.execute('ROLLBACK')
@@ -1630,7 +1636,9 @@ def page(db, name, sort='', cursor=0, limit=30, filters=None):
                 crm = db.execute('SELECT b.name board,p.stage,p.org,p.value,p.close_date FROM projects p LEFT JOIN boards b ON b.id=p.board_id WHERE p.id=?',
                                  (int(pid) if pid.isdigit() else -1,)).fetchone()
                 if crm:
-                    project.update({k: crm[k] for k in ('board', 'stage', 'value', 'close_date')}, org_domain=crm['org'])
+                    org = project_org(db, crm['org'])
+                    project.update({k: crm[k] for k in ('board', 'stage', 'value', 'close_date')}, org_domain=(org or {}).get('domain') or crm['org'],
+                                   org_node={'id': org['id'], 'name': org['name']} if org and org['id'] else None)
     found = {'items': items, 'sort': sort, 'next': str(offset + limit) if len(rows) > limit else None, 'total': list_counts(db)[name]}
     if name != 'warmup' and filters:
         found.update(total=total, filters=filters)
@@ -1719,6 +1727,7 @@ def detail(db, node_id, events=12):
     view['tags'] = crm_fields.tags_for(db, row)
     if row['kind'] == 'org':
         view['doubles'] = crm.org_doubles(db, 5, node_id)
+        view['projects'] = org_projects(db, node_id)  # its projects, open first, with their stage
     if row['kind'] == 'org':
         view['people_roles'] = [{'id': r['id'], 'name': r['name'], 'role': json.loads(r['info']).get('role')} for r in db.execute(
             "SELECT n.id,n.name,n.info FROM graph_links l JOIN graph_nodes n ON n.id=l.a WHERE l.b=? AND l.kind='member' ORDER BY n.strength DESC LIMIT 12", (node_id,))]
@@ -1851,7 +1860,8 @@ def timeline(db, node_id, source='', cursor=0, limit=40, now=None):
             pids = {r[0] for r in db.execute("SELECT b FROM graph_links WHERE a=? AND kind='project'", (node,))}
             pids |= {'project:' + str(r[0]) for r in db.execute('SELECT project_id FROM project_people WHERE node_id=?', (node,))}
         elif kind == 'org':
-            pids = {'project:' + str(r[0]) for r in db.execute('SELECT id FROM projects WHERE org=? COLLATE NOCASE', (str(info.get('domain') or node),))}
+            pids = {'project:' + str(r[0]) for r in db.execute('SELECT id FROM projects WHERE org IN (SELECT value FROM json_each(?))',
+                                                                (json.dumps(org_keys(db, node)),))}
         else:
             pids = {node}
         nums = [int(p.split(':', 1)[1]) for p in pids if p.split(':', 1)[1].isdigit()]
@@ -2378,6 +2388,8 @@ def create_record(db, kind, args, now):
         domain = website_domain(site)
         if site and not domain:
             raise ValueError(f'{site} is not a website, like acme.com')
+        if domain and personal_mail(db, domain):
+            raise ValueError(f'{domain} is personal email, not an organization')
         identifier = 'org:' + domain if domain else 'org:named:' + '-'.join(folded_words(name).split())[:80]
         if identifier == 'org:named:':
             raise ValueError('Give it a name with letters or digits')
@@ -2405,6 +2417,8 @@ def delete_org(db, node_id):
     db.execute('DELETE FROM graph_names WHERE node_id=?', (node_id,))
     db.execute('DELETE FROM graph_nodes WHERE id=?', (node_id,))
     db.execute('DELETE FROM org_edits WHERE domain=?', (node_id if node_id.startswith('org:named:') else node_id[4:],))
+    if node_id.startswith('org:named:'):  # its projects are with no organization again (one with a website keeps its domain)
+        db.execute('UPDATE projects SET org=NULL,org_by=NULL WHERE org=?', (node_id[4:],))
     return {'deleted': name['name'] if name else node_id}
 
 
@@ -2719,13 +2733,155 @@ def set_stage(db, project, stage, source, now, board=None, stages=None, reason=N
         domain = re.sub(r'^(?:https?://)?(?:www\.)?', '', str(org).strip().lower()).split('/')[0]
         if not ORG_DOMAIN.fullmatch(domain):
             raise ValueError('org: the organization\'s web domain, like "example.com"')
-        db.execute('UPDATE projects SET org=? WHERE id=?', (domain, row['id']))
+        import crm
+        domain = crm.canonical_key(db, domain)
+        # The owner's pick stays; a personal mail domain (gmail.com) or the owner's own company is no counterpart.
+        if row['org_by'] != 'owner' and not personal_mail(db, domain) and not own_domain(db, domain):
+            db.execute("UPDATE projects SET org=?,org_by='review' WHERE id=?", (domain, row['id']))
+        else:
+            org = None
     if not owner and not moved and not kept and (next_step is not None or org):
         # The stage stayed the same, but its next step/details have newer evidence. Keep that watermark too;
         # a message between the last move and this update must not put the older details back.
         db.execute('UPDATE projects SET stage_at=? WHERE id=?', (at, row['id']))
     return {'node_id': 'project:' + str(row['id']), 'project': row['name'], 'board': target['name'],
             'stage': row['stage'] if kept else match, **({'kept': kept} if kept else {})}
+
+
+# ------------------------------------------------------------------ a project's organization
+# projects.org is the key of the organization a project is with: its domain ("acme.com"), or "named:<slug>" for one
+# known only by name; its graph node is "org:" + the key. org_by says who set it: the owner (the picker, a CSV import),
+# a review (finish_analysis stages), or the Machine from the project's people ('auto', and 'backfill' for the one-time
+# pass over projects made before this). The owner's pick, also an empty one, is never changed by the others.
+ORG_SHARE = 0.75  # the share of a project's outside contact one organization needs before the Machine sets it
+
+
+def org_key(org_id):
+    """'org:acme.com' -> 'acme.com', 'org:named:acme' -> 'named:acme'; None for anything else."""
+    org_id = str(org_id or '')
+    return org_id[4:] if org_id.startswith('org:') and len(org_id) > 4 else None
+
+
+def own_domain(db, key):
+    """The owner's own company: their colleagues are at it, so it is never a project's counterpart."""
+    tail = '@' + str(key or '')
+    return bool(db.execute("SELECT 1 FROM graph_nodes WHERE kind='person' AND json_extract(info,'$.colleague') IS 1 "
+                           "AND json_extract(info,'$.org')=? LIMIT 1", ('org:' + str(key or ''),)).fetchone()) or bool(
+        db.execute("SELECT 1 FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' "
+                   "AND json_extract(n.info,'$.colleague') IS 1 AND substr(j.value,-length(?))=? LIMIT 1", (tail, tail)).fetchone())
+
+
+def personal_mail(db, domain):
+    """A personal mail domain (gmail.com, a country's Yahoo, an internet provider's mail) is no organization. Known
+    ones by name; others by how they look in the graph: many people there who never write together is how a mail
+    provider looks, where a company's people meet in the same threads."""
+    domain = str(domain or '').lower()
+    if not domain or domain.startswith('named:'):
+        return False
+    if domain in FREEMAIL or enrichment.FREEMAIL.match(domain):
+        return True
+    members = db.execute("SELECT count(*) FROM graph_links WHERE b=? AND kind='member'", ('org:' + domain,)).fetchone()[0]
+    if members < 6:
+        return False
+    together = db.execute("SELECT count(*) FROM (SELECT a x FROM graph_links WHERE kind='together' AND a IN (SELECT a FROM graph_links WHERE b=:o AND "
+                          "kind='member') AND b IN (SELECT a FROM graph_links WHERE b=:o AND kind='member') UNION SELECT b FROM graph_links WHERE "
+                          "kind='together' AND a IN (SELECT a FROM graph_links WHERE b=:o AND kind='member') AND b IN (SELECT a FROM graph_links "
+                          "WHERE b=:o AND kind='member'))", {'o': 'org:' + domain}).fetchone()[0]
+    return together * 5 < members
+
+
+def infer_org(db, project_id, cache=None):
+    """The organization a project is with, from its people: the people on it and on its messages, leaving out the
+    owner's colleagues. Their organizations weigh by how many of its messages each is on; someone with none (personal
+    mail) counts against all of them. One organization with at least ORG_SHARE of it is the answer; else None (unsure)."""
+    node = 'project:' + str(int(project_id))
+    cache = {} if cache is None else cache
+    weight = collections.Counter()
+    for r in db.execute("SELECT g2.node_id,count(*) n FROM graph_events g JOIN graph_events g2 ON g2.event_id=g.event_id AND g2.probable=0 "
+                        "WHERE g.node_id=? AND g.probable=0 AND g2.node_id<>? GROUP BY g2.node_id", (node, node)):
+        weight[r['node_id']] += r['n']
+    for r in db.execute("SELECT a FROM graph_links WHERE b=? AND kind='project' UNION SELECT node_id FROM project_people WHERE project_id=?",
+                        (node, int(project_id))):
+        weight[r[0]] = max(weight[r[0]], 1)
+    by_org, total = collections.Counter(), 0
+    for person, w in weight.items():
+        row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (person,)).fetchone()
+        if not row:
+            continue
+        info = json.loads(row['info'] or '{}')
+        if info.get('colleague'):
+            continue
+        total += w
+        key = org_key(info.get('org'))
+        if key and key not in cache:
+            org = db.execute("SELECT json_extract(info,'$.domain') domain FROM graph_nodes WHERE id=? AND kind='org'", ('org:' + key,)).fetchone()
+            cache[key] = bool(org) and not personal_mail(db, org['domain'] or key) and not own_domain(db, key)
+        if key and cache[key]:
+            by_org[key] += w
+    if not by_org or not total:
+        return None
+    key, top = by_org.most_common(1)[0]
+    return key if top >= ORG_SHARE * total else None
+
+
+def fill_orgs(db, now):
+    """Sets the organization of each project that has none and that nobody set, where infer_org is sure; the first
+    run after an update is the one-time backfill ('backfill'), later ones 'auto'. Each is kept in project_org_fills."""
+    pending = db.execute('SELECT done_at FROM project_org_backfill WHERE id=1').fetchone()
+    source = 'backfill' if pending and not pending['done_at'] else 'auto'
+    filled, cache = 0, {}
+    for (pid,) in db.execute('SELECT id FROM projects WHERE org IS NULL AND org_by IS NULL ORDER BY id').fetchall():
+        key = infer_org(db, pid, cache)
+        if key:
+            db.execute('UPDATE projects SET org=?,org_by=? WHERE id=? AND org IS NULL AND org_by IS NULL', (key, source, pid))
+            db.execute('INSERT OR REPLACE INTO project_org_fills(project_id,org,source,created_at) VALUES(?,?,?,?)', (pid, key, source, now))
+            filled += 1
+    if source == 'backfill':
+        db.execute('UPDATE project_org_backfill SET done_at=?,filled=? WHERE id=1', (now, filled))
+    return filled
+
+
+def undo_org_fills(db, source='backfill'):
+    """Takes back what fill_orgs set (the one-time backfill by default), where nobody changed it since."""
+    if source not in ('backfill', 'auto'):
+        raise ValueError('source is backfill or auto')
+    undone = db.execute('UPDATE projects SET org=NULL,org_by=NULL WHERE org_by=? AND id IN (SELECT project_id FROM project_org_fills f '
+                        'WHERE f.source=? AND f.org=projects.org)', (source, source)).rowcount
+    db.execute('DELETE FROM project_org_fills WHERE source=?', (source,))
+    return undone
+
+
+def project_org(db, key):
+    """A project's organization for its page, row and tile: {id, name, domain, logo}; None when there is none."""
+    if not key:
+        return None
+    import crm
+    key = crm.canonical_key(db, key)
+    if key.startswith('named:'):
+        row = db.execute("SELECT name FROM graph_nodes WHERE id=? AND kind='org'", ('org:' + key,)).fetchone()
+        return {'id': 'org:' + key, 'name': row['name'], 'domain': None, 'logo': None} if row else None
+    card = org_card(db, key)
+    return {'id': card['node_id'], 'name': card['name'], 'domain': key, 'logo': card['logo']}
+
+
+def org_keys(db, node_id):
+    """The project keys that point at an organization: its own, and those of the websites and organizations folded into it."""
+    import crm
+    node_id = crm.canonical(db, str(node_id or ''))
+    return [k for k in (org_key(i) for i in [node_id, *(a for a, t in crm.aliases(db).items() if t == node_id)]) if k]
+
+
+def org_projects(db, node_id, limit=30):
+    """An organization's projects for its page: open ones first (the latest moved first), each with its board and stage."""
+    keys = org_keys(db, node_id)
+    if not keys:
+        return []
+    rows = db.execute("SELECT p.id,p.name,p.stage,p.outcome,p.closed_at,p.org_by,b.name board FROM projects p LEFT JOIN boards b ON b.id=p.board_id "
+                      "WHERE p.org IN (SELECT value FROM json_each(?)) ORDER BY p.closed_at IS NOT NULL,p.outcome IS NOT NULL,"
+                      "coalesce(p.stage_at,p.created_at) DESC,p.id DESC LIMIT ?", (json.dumps(keys), limit)).fetchall()
+    return [{'id': 'project:' + str(r['id']), 'name': r['name'], 'board': r['board'], 'stage': r['stage'] if r['board'] else None,
+             'open': not r['closed_at'] and not r['outcome'], **({'outcome': r['outcome']} if r['outcome'] else {}),
+             **({'archived': True} if r['closed_at'] else {})} for r in rows]
 
 
 def boards_brief(db, limit=150):
@@ -3084,9 +3240,32 @@ def project_row(db, node_id):
     return row
 
 
+def owner_org(db, said):
+    """The organization the owner picked for a project, as its key: an org:… node id from the picker, a website, or the
+    name of one in the graph. Empty is none. Personal mail (gmail.com) is no organization."""
+    import crm
+    said = ' '.join(str(said or '').split())
+    if not said:
+        return None
+    if said.startswith('org:'):
+        if not db.execute("SELECT 1 FROM graph_nodes WHERE id=? AND kind='org' UNION SELECT 1 FROM manual_nodes WHERE identifier=? AND kind='org'",
+                          (said, said)).fetchone():
+            raise ValueError('That organization is gone; pick another')
+        return crm.canonical_key(db, said[4:])
+    domain = website_domain(said)
+    if domain:
+        if personal_mail(db, domain):
+            raise ValueError(f'{domain} is personal email, not an organization')
+        return crm.canonical_key(db, domain)
+    found = db.execute("SELECT id FROM graph_nodes WHERE kind='org' AND name=? COLLATE NOCASE ORDER BY strength DESC LIMIT 1", (said,)).fetchone()
+    if not found:
+        raise ValueError('Organization: pick one from the list, or add it as new')
+    return crm.canonical_key(db, found['id'][4:])
+
+
 def save_project(db, args, now):
     """The owner's project, new or edited, like a deal in a CRM: its name, board and stage (a move by hand), organization
-    (a web domain, or the name of an organization in the graph that has one), value, expected close date (YYYY-MM-DD),
+    (owner_org: an org:… node id, a website or the name of one in the graph; the owner's pick stays), value, expected close date (YYYY-MM-DD),
     notes and the people on it (person node ids). Fields left out stay as they are."""
     node = args.get('node_id')
     if node:
@@ -3117,16 +3296,10 @@ def save_project(db, args, now):
     elif args.get('stage'):
         set_stage(db, node, args['stage'], 'owner', now)
     if 'org' in args:
-        said = ' '.join(str(args.get('org') or '').split())
-        domain = re.sub(r'^(?:https?://)?(?:www\.)?', '', said.lower()).split('/')[0]
-        if domain and not ORG_DOMAIN.fullmatch(domain):
-            found = db.execute("SELECT json_extract(info,'$.domain') AS domain FROM graph_nodes WHERE kind='org' AND (id=? OR name=? COLLATE NOCASE) "
-                               "AND json_extract(info,'$.domain') IS NOT NULL ORDER BY strength DESC LIMIT 1", (said, said)).fetchone()
-            if not found:
-                raise ValueError('Organization: its website, like "example.com", or the name of one in your Graph')
-            domain = found['domain']
-        import crm
-        db.execute('UPDATE projects SET org=? WHERE id=?', (crm.canonical_domain(db, domain) or None, pid))
+        key = owner_org(db, args.get('org'))
+        if key != row['org'] or (row['org_by'] != 'owner' and not key):
+            db.execute("UPDATE projects SET org=?,org_by='owner' WHERE id=?", (key, pid))
+            db.execute('DELETE FROM project_org_fills WHERE project_id=?', (pid,))
     if 'value' in args:
         raw = str(args.get('value') if args.get('value') is not None else '').replace(',', '').replace(' ', '').lstrip('€$£')
         try:
@@ -3215,7 +3388,9 @@ def project_card(db, node_id):
     people = [{'id': r['id'], 'name': r['name']} for r in db.execute(
         "SELECT n.id,n.name FROM graph_nodes n WHERE n.id IN (SELECT node_id FROM project_people WHERE project_id=? UNION "
         "SELECT a FROM graph_links WHERE b=? AND kind='project') AND n.kind='person' ORDER BY n.strength DESC LIMIT 30", (row['id'], 'project:' + str(row['id'])))]
+    org = project_org(db, row['org'])
     return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'board_id': row['board_id'], 'stage': row['stage'], 'org': row['org'],
+            'org_node': {**org, 'by': row['org_by']} if org else None,
             'value': row['value'], 'close_date': row['close_date'], 'notes': row['notes'], 'people': people, 'archived': bool(row['closed_at']), 'outcome': row['outcome'],
             'outcome_reason': row['outcome_reason']}
 
@@ -3324,7 +3499,7 @@ def board_maybes(db, board_id):
         'ORDER BY a.created_at DESC LIMIT 100', (board_id,))]
 
 
-UNDO_COLUMNS = ('board_id', 'org', 'stage', 'stage_event_id', 'stage_by', 'stage_at', 'sort_run', 'sort_tries', 'closed_at')  # no message text: steps are stored unsealed
+UNDO_COLUMNS = ('board_id', 'org', 'org_by', 'stage', 'stage_event_id', 'stage_by', 'stage_at', 'sort_run', 'sort_tries', 'closed_at')  # no message text: steps are stored unsealed
 
 
 def counterpart_keys(db, event_ids):
@@ -3375,6 +3550,12 @@ def split_plan(db, project_id):
         name = f"{row['name'][:max(10, 58 - len(who))]}: {who}"[:60].strip()
         out.append({'name': name, 'key': key, 'event_ids': events, 'project_id': owners.get(key)})
     return out
+
+
+def counterpart_org(db, key):
+    """The organization key of a look-through-the-history counterpart (an org:… node id), unless it is personal mail."""
+    found = org_key(key)
+    return found if found and not personal_mail(db, found) and not own_domain(db, found) else None
 
 
 def _remember(db, steps, project_id):
@@ -3432,10 +3613,11 @@ def _split(db, board, row, now, steps):
     placed = 0
     for part in plan:
         pid = _attach(db, part['project_id'] or part['name'], part['event_ids'], now, steps)
-        if part['key'].startswith('org:') and not part['key'].startswith('org:named:'):
-            if not db.execute('SELECT org FROM projects WHERE id=?', (pid,)).fetchone()['org']:
+        if counterpart_org(db, part['key']):
+            had = db.execute('SELECT org,org_by FROM projects WHERE id=?', (pid,)).fetchone()
+            if not had['org'] and not had['org_by']:
                 _remember(db, steps, pid)
-                db.execute('UPDATE projects SET org=? WHERE id=?', (part['key'][4:], pid))
+                db.execute("UPDATE projects SET org=?,org_by='auto' WHERE id=?", (counterpart_org(db, part['key']), pid))
         placed += _place(db, board, pid, steps, strict=False) or db.execute('SELECT board_id FROM projects WHERE id=?', (pid,)).fetchone()[0] == board['id']
     if not db.execute('SELECT 1 FROM event_projects WHERE project_id=?', (row['id'],)).fetchone():
         _remember(db, steps, row['id'])
@@ -3457,8 +3639,8 @@ def _decide(db, board, node_id, add, now, steps, strict=True):
                 raise ValueError('A project by that name is on another board already')
             ids = [r[0] for r in db.execute('SELECT e.id FROM events e JOIN json_each(?) j ON j.value=e.id WHERE e.deleted=0', (ask['event_ids'],))]
             pid = _attach(db, ask['name'], ids, now, steps)
-            if ask['key'].startswith('org:') and not ask['key'].startswith('org:named:'):
-                db.execute('UPDATE projects SET org=coalesce(org,?) WHERE id=?', (ask['key'][4:], pid))
+            if counterpart_org(db, ask['key']):
+                db.execute("UPDATE projects SET org=?,org_by='auto' WHERE id=? AND org IS NULL AND org_by IS NULL", (counterpart_org(db, ask['key']), pid))
         db.execute('UPDATE board_backfill_asks SET state=?,decided_at=?,project_id=? WHERE board_id=? AND key=?',
                    ('added' if add else 'dismissed', now, pid, board['id'], ask['key']))
         if not add:
@@ -3751,21 +3933,14 @@ def boards(db, now):
     moved and when (with the message), its next step, its organization (logo from enrichment), how long it has been
     in the stage, how long the other side hasn't answered the owner (no_reply_days, from its messages), and an open
     card about it."""
-    out = []
+    out, org_cache = [], {}
     today = parse_time(now)
     for b in db.execute('SELECT * FROM boards ORDER BY is_default DESC,id').fetchall():
         rows = db.execute('SELECT * FROM projects WHERE board_id=? AND closed_at IS NULL ORDER BY coalesce(stage_at,created_at) DESC', (b['id'],)).fetchall()
         names, items = stage_names(b), []
         for p in rows:
             node = 'project:' + str(p['id'])
-            domain = p['org']
-            if not domain:  # the organization most of its people are at, leaving out the owner's colleagues
-                weight = collections.Counter()
-                for r in db.execute("SELECT json_extract(n.info,'$.org') org,l.strength FROM graph_links l JOIN graph_nodes n ON n.id=l.a "
-                                    "WHERE l.b=? AND l.kind='project' AND n.kind='person' AND json_extract(n.info,'$.colleague') IS NOT 1", (node,)):
-                    if r['org'] and str(r['org']).startswith('org:') and not str(r['org']).startswith('org:named:'):
-                        weight[r['org'][4:]] += r['strength']
-                domain = weight.most_common(1)[0][0] if weight else None
+            org = project_org(db, p['org'] or (infer_org(db, p['id'], org_cache) if not p['org_by'] else None))  # set, or what fill_orgs will set
             mine_since = None  # the first of the owner's messages since the other side last wrote
             for r in db.execute("SELECT e.occurred_at,(json_extract(e.metadata,'$.from_me') IS 1 OR EXISTS(SELECT 1 FROM json_each(e.metadata,'$.labels') "
                                 "WHERE value='SENT')) mine FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? AND g.probable=0 "
@@ -3781,7 +3956,7 @@ def boards(db, now):
                           'first': not db.execute('SELECT 1 FROM project_moves WHERE project_id=? LIMIT 1 OFFSET 1', (p['id'],)).fetchone(),
                           'days': max(0, (today - since).days), 'closed': bool(p['closed_at']), 'visibility': p['visibility'],
                           'no_reply_days': max(0, (today - parse_time(mine_since)).days) if mine_since else None,
-                          'org': org_card(db, domain) if domain else None, 'card': {'id': card['id'], 'title': card['title']} if card else None,
+                          'org': {**org, 'node_id': org['id']} if org else None, 'card': {'id': card['id'], 'title': card['title']} if card else None,
                           **({'last_at': last['occurred_at'], 'last_event_id': last['id']} if last else {}),
                           **({'value': p['value']} if p['value'] is not None else {}), **({'close_date': p['close_date']} if p['close_date'] else {}),
                           **({'outcome': p['outcome']} if p['outcome'] else {}), **owner_of(db, node)})

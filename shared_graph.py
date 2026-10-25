@@ -824,7 +824,12 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
             continue
         r = rid(row['id'])
         tile = tiles.get(row['id']) or {}
-        domain = row['porg'] or (str((tile.get('org') or {}).get('node_id') or '')[4:] or None)
+        domain = row['porg'] or graph.org_key((tile.get('org') or {}).get('node_id'))
+        # Its organization goes by name only when the organization could go itself: one with a website, outside the
+        # owner's team, not personal mail and not kept private. Linking one never adds threads or people.
+        if domain and (domain.startswith('named:') or graph.personal_mail(db, domain) or not outside('x@' + domain, scope.internal)
+                       or 'org:' + domain in scope.private or scope.private_address('x@' + domain) or not scope.shareable('org:' + domain)):
+            domain = None
         org = graph.org_card(db, domain) if domain else None
         records[r] = {'r': r, 't': 'project', 'name': row['name'], 'score': round(row['strength'], 3), 'last': (last or '')[:10],
                       'board': row['board'], 'stages': graph.stage_names(row) if row['board'] else None,

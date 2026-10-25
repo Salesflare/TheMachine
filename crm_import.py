@@ -399,7 +399,7 @@ def preview(db, kind, text, mapping=None, limit=200, fixes=None, ai=None, region
 # ------------------------------------------------------------------ import and undo
 
 # What an import can change, and how each goes back: fixed statements per table (no table or column names from data)
-PROJECT_COLUMNS = ('org', 'value', 'close_date', 'notes', 'board_id', 'stage', 'stage_reason', 'stage_event_id', 'stage_by', 'stage_at',
+PROJECT_COLUMNS = ('org', 'org_by', 'value', 'close_date', 'notes', 'board_id', 'stage', 'stage_reason', 'stage_event_id', 'stage_by', 'stage_at',
                    'outcome', 'outcome_reason', 'sort_run', 'sort_tries', 'sort_note')
 STATEMENTS = {
     'person_edits': ('SELECT * FROM person_edits WHERE identifier=?', 'DELETE FROM person_edits WHERE identifier=?',
@@ -411,9 +411,9 @@ STATEMENTS = {
                     'INSERT INTO graph_names(node_id,name,created_at) VALUES(:node_id,:name,:created_at)'),
     'org_edits': ('SELECT * FROM org_edits WHERE domain=?', 'DELETE FROM org_edits WHERE domain=?',
                   'INSERT INTO org_edits(domain,fields,updated_at) VALUES(:domain,:fields,:updated_at)'),
-    'projects': ('SELECT org,value,close_date,notes,board_id,stage,stage_reason,stage_event_id,stage_by,stage_at,outcome,outcome_reason,'
+    'projects': ('SELECT org,org_by,value,close_date,notes,board_id,stage,stage_reason,stage_event_id,stage_by,stage_at,outcome,outcome_reason,'
                  'sort_run,sort_tries,sort_note FROM projects WHERE id=?', None,
-                 'UPDATE projects SET org=:org,value=:value,close_date=:close_date,notes=:notes,board_id=:board_id,stage=:stage,'
+                 'UPDATE projects SET org=:org,org_by=:org_by,value=:value,close_date=:close_date,notes=:notes,board_id=:board_id,stage=:stage,'
                  'stage_reason=:stage_reason,stage_event_id=:stage_event_id,stage_by=:stage_by,stage_at=:stage_at,outcome=:outcome,'
                  'outcome_reason=:outcome_reason,sort_run=:sort_run,sort_tries=:sort_tries,sort_note=:sort_note WHERE id=:id'),
 }

@@ -114,7 +114,9 @@ Client work is shared with your teammates' Machines, and theirs shows in yours. 
 
 Companies, from the addresses and names in your messages. See [Organization details](organization-data.md).
 
-An organization's page is built like a person's: its logo, name and what it does, one line on how you're in touch, then **Contact** (its website and LinkedIn), **About you** (what it is to you), the people and projects there and its **Timeline**. **Edit** at the top changes its details and what it is to you. **Ask the Fleet who knows** it finds a way in through your Fleet.
+An organization's page is built like a person's: its logo, name and what it does, one line on how you're in touch, then **Contact** (its website and LinkedIn), **About you** (what it is to you), the people there and its **Timeline**.
+
+Its **Projects** list open ones first, each with its stage. Their moves show in its timeline. **Edit** at the top changes its details and what it is to you. **Ask the Fleet who knows** it finds a way in through your Fleet.
 
 Mail from email warm-up tools is kept out, under "Hidden as warm-up", with **Undo** per domain.
 
@@ -124,11 +126,19 @@ Named by your Machine from what your messages are about. Signals that look like 
 
 Or run them by hand, like deals in a CRM:
 
-- **New project**: at the top of a board, **+ Add** under a stage, **New project** at the top of the list, **+** in the top bar on a phone, or from a person's or organization's page. Give it a name, a board and stage, an organization (its website or name), a value, an expected close date, people and notes. Projects already in your Graph with a name like it show first.
+- **New project**: at the top of a board, **+ Add** under a stage, **New project** at the top of the list, **+** in the top bar on a phone, or from a person's or organization's page. Give it a name, a board and stage, an organization (search your Graph, or **Add** a new one), a value, an expected close date, people and notes. Projects already in your Graph with a name like it show first.
 - **Edit** on a project's page, or **Edit** in a card's **⋯** on the board (or press E on a card). It changes all of the above.
 - **Won** or **Lost**, with why. Won moves it to the board's last stage, Lost to Stalled or declined. **Reopen** undoes it.
 - **Archive** takes it off the board and lists; a new message about it brings it back. **Delete** removes it for good; its messages and people stay.
 - Move a card by dragging it, or with **⋯**, **Move to** on a phone. Your move stands until a newer message moves it.
+
+### A project's organization
+
+Each project can be linked to one organization. Its page, its row and its card on the board show it, and it links there.
+
+When nobody picked one, your Machine sets it from the people on the project and its messages, leaving out your colleagues. It only does that when one organization is clearly the other side: personal email like Gmail never counts, and a project with several companies stays without one. The project form then says "From its people".
+
+Your pick in **Edit** always stays, also when you take it off. **Same organization as…** moves an organization's projects along, and **Split off** moves them back.
 
 ### Boards
 

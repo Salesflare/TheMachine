@@ -116,7 +116,10 @@ sorts them right after the threads of boards shared by name), so nothing sensiti
 just called client waits out `HOLD` like mail. Never one of a personal
 account or another company's, with someone of the owner's own life, the review called personal, automated, kept
 private, of an Only you project, or with only colleagues on it. A why or next step that came from a signal that never
-goes (another company's or a personal account, kept private) doesn't go either.
+goes (another company's or a personal account, kept private) doesn't go either. Its organization (`projects.org`)
+goes as a name and hashed domain only when that organization could go itself: one with a website, outside the Fleet's
+domains, not personal mail and not kept private. Linking a project to an organization never adds people, threads or
+timeline lines to what it sends.
 
 The weekly recap says, in one line: "Shared 214 threads with Acme this week, 4 held back." with a link to
 **What's shared**.
