@@ -103,6 +103,9 @@ CREATE TABLE IF NOT EXISTS board_backfill_asks(board_id INTEGER NOT NULL,key TEX
   fit TEXT NOT NULL,why TEXT,run_id TEXT,state TEXT NOT NULL DEFAULT 'open',project_id INTEGER,created_at TEXT NOT NULL,decided_at TEXT,
   PRIMARY KEY(board_id,key));
 CREATE TABLE IF NOT EXISTS board_fit_undo(token TEXT PRIMARY KEY,board_id INTEGER NOT NULL,steps TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS side_rule(id INTEGER PRIMARY KEY CHECK(id=1),rule INTEGER NOT NULL,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS side_changes(node_id TEXT NOT NULL,rule INTEGER NOT NULL,before TEXT,after TEXT,why TEXT,at TEXT NOT NULL,
+  PRIMARY KEY(node_id,rule));
 '''
 RECHECK_DAYS = 90       # a review's role is read again after this, when there was contact since
 HALF_LIFE = {'person': 60, 'pair': 45, 'project_person': 45, 'project': 21}
@@ -163,6 +166,10 @@ BACKFILL_GIVE_UP_DAYS = 7
 BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'whatsapp.message', 'intercom.conversation', 'x.dm',
                   'ms_graph.message', 'outlook.message', 'calendar.event', 'salesflare.meeting', 'outlook.event', 'ms_graph.event')
 STUCK_DAYS = 10         # no reply for this long after the owner wrote: the tile says so
+# A person's automatic side (Work or Personal), from what The Machine knows of them (2026-10-25, see auto_side). Raised
+# when the rule changes: the first build under a new rule records each automatic side it changed (side_changes).
+SIDE_RULE = 2
+WORK_VERDICTS = {'client', 'sensitive', 'internal'}  # the sharing review's calls on a thread that make it work
 
 
 def ensure(db):
@@ -445,6 +452,60 @@ def thread_key(kind, m):
     if kind == 'calendar.event' and m.get('recurring_event_id'):
         return 'cal:' + str(m['recurring_event_id']), True
     return None, False
+
+
+def side_changes(db, nodes, now):
+    """The first build under a new SIDE_RULE: [(node_id, rule, before, after, why, at)] for each person whose automatic
+    side it changes, so the change can be checked and undone (the old rule on the same graph gives back `before`).
+    None when this rule already ran. The owner's own choice is never changed, so it is never in here."""
+    row = db.execute('SELECT rule FROM side_rule WHERE id=1').fetchone()
+    if row and row[0] >= SIDE_RULE:
+        return None
+    before = {}
+    for r in db.execute("SELECT id,info FROM graph_nodes WHERE kind='person'"):
+        info = json.loads(r[1] or '{}')
+        if info.get('side_by') != 'owner':
+            before[r[0]] = info.get('side')
+    out = []
+    for n in nodes:
+        info = json.loads(n[9]) if isinstance(n[9], str) else n[9] or {}
+        if n[1] == 'person' and n[0] in before and info.get('side_by') != 'owner' and before[n[0]] != info.get('side'):
+            out.append((n[0], SIDE_RULE, before[n[0]], info.get('side'), info.get('side_why'), now))
+    return out
+
+
+def account_side(account):
+    """'work' or 'personal' for one connected account, the way its cards are labeled (assistant.suggestion_scope): its
+    own scope when set, else its boundary (work:... or personal:...). None for the server itself and for an account
+    that was never placed."""
+    scope = account.get('scope')
+    if scope in ('work', 'personal'):
+        return scope
+    kind = str(account.get('boundary') or '').partition(':')[0]
+    return kind if kind in ('work', 'personal') else None
+
+
+def auto_side(address, threads, projects, accounts):
+    """A person's automatic side and why, from what The Machine knows of them, strongest first. Having no work address
+    is not evidence of anything: someone known only from LinkedIn is not personal for that.
+    address: a work address (theirs at a company, or a colleague's), or where they said they work: work.
+    threads: {'work': n, 'personal': n}, their threads as the sharing review judged them by meaning (client, sensitive
+      or colleagues only is work) or the owner shared with the team.
+    projects: {'work': n, 'personal': n}, the projects they're on (one on a board is work).
+    accounts: the sides of the accounts their conversations came from (a work LinkedIn is work).
+    What they are about decides before where they came from; when it points both ways, or there is nothing to go on,
+    the side stays unknown (None) rather than a guess."""
+    if address:
+        return 'work', 'address'
+    work, personal = threads.get('work', 0) + projects.get('work', 0), threads.get('personal', 0) + projects.get('personal', 0)
+    if work or personal:
+        if work and personal:
+            return None, 'mixed'
+        return ('work' if work else 'personal'), ('review' if threads.get('work' if work else 'personal') else 'project')
+    sides = set(accounts) - {None}
+    if len(sides) == 1:
+        return sides.pop(), 'account'
+    return None, 'mixed' if sides else None
 
 
 # Same person? Why two identities were joined (strong evidence), as the person page says it.
@@ -994,6 +1055,36 @@ def _build(db, config, now, team=()):
         node = union.find(identifier)
         strength[node] = max(strength[node], FLOOR)
 
+    # What says a person is work or personal (auto_side): the sides of the accounts their conversations came from, the
+    # sharing review's calls on their threads, and the projects they're on.
+    side_of_account = {a.get('id'): account_side(a) for a in config.get('accounts', []) if a.get('id')}
+    calls = {}
+    if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='share_threads'").fetchone():
+        calls = {r[0]: (r[1], r[2]) for r in db.execute('SELECT thread,verdict,hand FROM share_threads')}
+    came_from = collections.defaultdict(set)  # project -> the sides of the accounts its messages came from
+    for event_id, ids in spread.items():
+        if event_id in per_event:
+            for pid in ids:
+                came_from[pid].add(side_of_account.get(per_event[event_id][2]))
+    project_side = {}
+    for pid, p in projects.items():
+        found = came_from[pid] - {None}
+        # a board is a pipeline the owner keeps like a CRM: work; another project is the side its messages came from
+        project_side[pid] = 'work' if p['board_id'] is not None else found.pop() if len(found) == 1 else None
+    thread_sides = collections.defaultdict(dict)  # person node -> thread -> work or personal
+    on_projects = collections.defaultdict(set)
+    for event_id, (kind, _, _, m, _) in per_event.items():
+        thread = thread_key(kind, m)[0] or f'ev:{event_id}'  # shared_graph.thread_of
+        verdict, hand = calls.get(thread, (None, None))
+        side = 'personal' if verdict == 'personal' else 'work' if verdict in WORK_VERDICTS or hand == 'team' else None
+        for node in direct_people.get(event_id, ()):
+            if side:
+                thread_sides[node][thread] = side
+            on_projects[node] |= spread.get(event_id, set())
+    for r in db.execute('SELECT project_id,node_id FROM project_people'):
+        if r['project_id'] in projects:
+            on_projects[r['node_id']].add(r['project_id'])
+
     heat_days = collections.defaultdict(list)
     for (pid, day), weight in heat_day.items():
         heat_days[pid].append((dt.datetime.combine(day, dt.time(12), dt.timezone.utc), min(2.0, weight)))
@@ -1073,13 +1164,19 @@ def _build(db, config, now, team=()):
         if PHONE.fullmatch(stated_phone) and contact_key('phones', stated_phone) not in gone | {contact_key('phones', r['value']) for r in contacts['phones']}:
             contacts['phones'].append({'value': stated_phone, 'by': ((person_profile.get('sources') or {}).get('phone') or {}).get('from') or 'messages'})
         person_profile = person_profile or None
-        side = edited.get('side') or ('work' if colleague or domains or (said_org and said_org['org']) else 'personal')
+        side, side_why = edited.get('side'), 'owner'
+        if not side:
+            called = collections.Counter(thread_sides[node].values())
+            on = collections.Counter(project_side.get(pid) for pid in on_projects[node])
+            side, side_why = auto_side(bool(colleague or domains or (said_org and said_org['org'])), called, on,
+                                       [side_of_account.get(a) for a in accounts[node]])
         info = {'ids': sorted({shown_id(i, x_names) for i in group if not i.startswith('manual:')}), 'org': ('org:' + domains[0]) if domains and not said_org else None,
                 'org_by': 'email' if domains and not said_org else None, 'has_headline': any(i in headlines for i in group),
                 'wrote': len(roles[node]['owner']), 'heard': len(roles[node]['them']), 'met': len(roles[node]['met']),
                 'accounts': sorted(accounts[node]), 'next_meeting': next_meeting[node].isoformat() if node in next_meeting else None,
                 'colleague': colleague, 'role': role, 'role_by': role_by, 'role_id': role_id, 'identifiers': group, 'hints': hints, 'seen_only': not talk,
                 'profile': person_profile, 'edited': sorted(edited), 'side': side, 'side_by': 'owner' if edited.get('side') else None,
+                'side_why': side_why,
                 'manual': any(i in manual_people for i in group), 'notes': edited.get('notes'),
                 **contacts}
         if len(group) > 1:
@@ -1230,7 +1327,11 @@ def _build(db, config, now, team=()):
         unnamed_rows.append((min(group), json.dumps(sorted(group)), json.dumps([names_of[p] for p in people if p in names_of][:4]),
                              json.dumps(titles[:4]), len(group), last.isoformat()))
     took = int((dt.datetime.now(dt.timezone.utc) - started).total_seconds() * 1000)
+    side_rows = side_changes(db, nodes, now)
     try:
+        if side_rows is not None:
+            db.executemany('INSERT OR REPLACE INTO side_changes(node_id,rule,before,after,why,at) VALUES(?,?,?,?,?,?)', side_rows)
+            db.execute('INSERT OR REPLACE INTO side_rule(id,rule,at) VALUES(1,?,?)', (SIDE_RULE, now))
         db.execute('DELETE FROM graph_nodes')
         db.execute('DELETE FROM graph_links')
         db.execute('DELETE FROM graph_events')

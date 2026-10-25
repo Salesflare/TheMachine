@@ -38,7 +38,7 @@ class GraphNew(unittest.TestCase):
         made = self.new('person', name='Lou Marsh')
         self.assertTrue(made['node_id'].startswith('manual:'))
         view = self.node(made['node_id'])
-        self.assertEqual((view['name'], view['ids'], view['side']), ('Lou Marsh', [], 'personal'))
+        self.assertEqual((view['name'], view['ids'], view['side']), ('Lou Marsh', [], None))  # no messages yet: no side to go on
         self.app.delete_person(made['node_id'])
         self.assertIsNone(self.node(made['node_id']))
         self.build()
