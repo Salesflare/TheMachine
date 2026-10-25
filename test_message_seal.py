@@ -558,6 +558,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'voice_merges.merged_text': 'the same learned channel voice, retained only for undo',
             'suggestions.title_source': 'who wrote the title: auto or user',
             'skill_clusters.description': 'a skill suggested from learned notes', 'skill_clusters.body': 'a skill suggested from learned notes',
+            'skill_clusters.reviewed_sha': 'the content hash of the skill the owner saw before and after',
             'board_suggestions.state': 'open, saved or dismissed',
             'board_fits.state': 'open, added or left out',
             'board_backfills.state': 'running or done', 'board_backfill_asks.state': 'open, added or left out',
