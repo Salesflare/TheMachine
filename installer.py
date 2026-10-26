@@ -814,6 +814,52 @@ def install_plugin(facts, reload=True, stamp=None):
     return True
 
 
+# OpenClaw's own background model work that only spends the owner's usage limits here (The Machine runs its own reviews,
+# skills and recaps): the heartbeat turn, Skill Workshop's reviews of finished sessions and the activity recaps after each
+# session. The same values the hosted agent sets (QUIET_OPENCLAW in the control plane's machine_agent.py). Set only
+# where the owner set nothing, and each only once, so a value they choose later (or remove) stays theirs.
+QUIET_OPENCLAW = {
+    'agents.defaults.heartbeat.every': '0m',
+    'skills.workshop.autonomous.mode': 'off',
+    'agents.defaults.utilityModel': '',
+}
+
+
+def quiet_openclaw(facts, stamp):
+    """QUIET_OPENCLAW into openclaw.json where nothing is set yet (OpenClaw reloads these without a restart). The keys
+    set once are kept in `stamp`. Returns the keys set now."""
+    openclaw = facts.get('openclaw')
+    if not openclaw:
+        return []
+    settings = onboarding.openclaw_settings()
+    try:
+        done = set(json.loads(stamp.read_text())) if stamp.exists() else set()
+    except (OSError, ValueError, TypeError):
+        done = set()
+    changed = []
+    for key, value in QUIET_OPENCLAW.items():
+        node = settings
+        for part in key.split('.'):
+            node = node.get(part, None) if isinstance(node, dict) else None
+        if key in done or node is not None:
+            done.add(key)
+            continue
+        result = run([openclaw, 'config', 'set', key, json.dumps(value), '--strict-json'], timeout=120)
+        if result.returncode == 0:
+            changed.append(key)
+            done.add(key)
+        else:
+            say(f'  could not set {key} in OpenClaw: ' + (result.stderr or result.stdout).strip()[:200])
+    try:
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.write_text(json.dumps(sorted(done)) + '\n')
+    except OSError:
+        pass
+    if changed:
+        say('OpenClaw background turns that only use your AI limits are off: ' + ', '.join(changed))
+    return changed
+
+
 def gateway_health(openclaw):
     """The running Gateway's own health (with the plugins it loaded), or None when no Gateway answers."""
     result = run([openclaw, 'gateway', 'health', '--json', '--timeout', '20000'], timeout=60)
@@ -1123,6 +1169,7 @@ def main(argv=None):
     plugin_ok = args.skip_plugin or install_plugin(facts, reload=not args.no_start, stamp=paths.data / 'plugin-installed')
     if not plugin_ok:
         return 1
+    quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
     if args.activate:
         config = activate(paths)
     since = onboarding.now()

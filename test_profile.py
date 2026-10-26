@@ -232,6 +232,11 @@ class Profile(unittest.TestCase):
         started = self.app.first_profile_step()
         self.assertTrue(started['run_id'])
         self.assertIsNone(self.app.first_profile_step())  # one at a time
+        runner = Runner('admitted')
+        self.assertIsNone(self.app.profile_step(runner))  # it waits until the first card was shown: the first look comes first
+        self.assertEqual(runner.requests, [])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (a.now(),))
         self.finish_first_profile(started['run_id'], {'role': 'Developer working on integrations', 'tone': 'Short and direct',
                                                       'leave_alone': ['payment alerts: a colleague handles them']})
         text = path.read_text()

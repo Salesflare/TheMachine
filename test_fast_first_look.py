@@ -80,7 +80,8 @@ class FastFirstLook(unittest.TestCase):
         self.assertEqual(self.state(5), {'state': 'due', 'waiting': 20, 'days': 7})
         self.assertEqual(self.step(Runner('admitted'), 5), 'admitted')
         full = self.runs()[1]
-        self.assertEqual((full['window_hours'], full['budget']), (None, None))
+        # Then the most promising of the week, not all of it at once
+        self.assertEqual((full['window_hours'], full['budget'], full['promising']), (None, a.FIRST_LOOK_NEXT_SIGNALS, 1))
         rest = self.claim(full['run_id'])
         self.assertEqual(len(rest), 20)
         self.assertFalse(set(quick) & set(rest))  # nothing reviewed twice, so no card twice
@@ -187,7 +188,7 @@ class FastFirstLook(unittest.TestCase):
         self.store.commit_page('work', {'mode': 'incremental', 'history_id': '2', 'after': 0, 'backfilled_at': a.now()}, [])
         self.assertEqual(self.step(Runner('admitted'), 4), 'admitted')  # the rest follows right away, as a regular review
         rest = self.runs()[1]
-        self.assertEqual((rest['window_hours'], rest['budget']), (None, None))
+        self.assertEqual((rest['window_hours'], rest['budget'], rest['promising']), (None, a.FIRST_LOOK_NEXT_SIGNALS, 1))
         self.assertFalse(set(quick) & set(self.claim(rest['run_id'])))
         self.assertEqual(self.step(Runner('ok'), 6), 'ok')
         with self.store.connect() as db:

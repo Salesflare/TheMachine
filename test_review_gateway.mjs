@@ -47,6 +47,25 @@ for(const [response,error,phase] of [
   assert.equal(r.result.error,error);assert.equal(r.result.error_phase,phase);
   assert.ok(!JSON.stringify(r.result).includes('private'));assert.ok(!JSON.stringify(r.result).includes('abc'));
 }
+// A sign-in's usage limit is its own category, with only the reset time kept (2026-10-25: retried every few minutes).
+{
+  const t0=Math.round(Date.now()/1000);
+  for(const [text,check] of [
+    ["You've reached your Codex subscription usage limit. Next reset Oct 25, 11:12 PM UTC. private",v=>v>t0&&new Date(v*1000).getUTCHours()===23&&new Date(v*1000).getUTCMinutes()===12],
+    ['Claude AI usage limit reached|'+(t0+3600),v=>v===t0+3600],
+    ['You have hit your limit, try again in 2h 30m',v=>Math.abs(v-(t0+9000))<5],
+    ['Provider openai is in cooldown',v=>v===undefined],
+  ]){
+    r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:text}]);
+    assert.equal(r.result.error,'usage_limited');assert.equal(r.result.error_phase,'model');
+    assert.ok(check(r.result.retry_at),text);assert.ok(!JSON.stringify(r.result).includes('private'));
+  }
+}
+// Background work can name a cheaper model; anything malformed is dropped.
+r=await run({kind:'review',job_id:id,action:'start',message:'Review',provider:'openai',model:'gpt-6.1-sol'},[{runId:id}]);
+assert.equal(r.calls[0].args.provider,'openai');assert.equal(r.calls[0].args.model,'gpt-6.1-sol');
+r=await run({kind:'review',job_id:id,action:'start',message:'Review',provider:'openai',model:'x y; rm'},[{runId:id}]);
+assert.equal(r.calls[0].args.model,undefined);assert.equal(r.calls[0].args.provider,undefined);
 r=await run({kind:'review',job_id:id,action:'status'},[{status:'pending',timeoutPhase:'queue'}]);
 assert.equal(r.result.status,'pending');assert.equal(r.result.error,undefined);
 r=await run({kind:'review',job_id:id,action:'start',message:'Review'},[{runId:id}]);

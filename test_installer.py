@@ -57,6 +57,26 @@ class InstallerTest(unittest.TestCase):
             self.assertTrue(installer.install_plugin(facts, reload=False, stamp=stamp))
             self.assertNotIn(['plugins', 'reload'], calls)
 
+    def test_openclaw_background_turns_that_only_use_the_limits_are_turned_off_once_where_unset(self):
+        # 2026-10-25: Skill Workshop reviews and the heartbeat spent a new owner's 5-hour ChatGPT window in minutes.
+        calls = []
+        def run(command, **kwargs):
+            calls.append(command[1:])
+            return subprocess.CompletedProcess(command, 0, '', '')
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say'):
+            config, stamp = Path(tmp) / 'openclaw.json', Path(tmp) / 'data' / 'openclaw-quiet.json'
+            config.write_text('{agents: {defaults: {utilityModel: "openai/gpt-6.1-sol"}}, // set by the owner\n}')
+            with mock.patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(config)}):
+                self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp),
+                                 ['agents.defaults.heartbeat.every', 'skills.workshop.autonomous.mode'])
+                self.assertIn(['config', 'set', 'skills.workshop.autonomous.mode', '"off"', '--strict-json'], calls)
+                self.assertIn(['config', 'set', 'agents.defaults.heartbeat.every', '"0m"', '--strict-json'], calls)
+                self.assertFalse(any('utilityModel' in c for call in calls for c in call))  # theirs stays
+                calls.clear()
+                # An update later, after the owner turned the heartbeat back on by removing the value: left alone
+                self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp), [])
+                self.assertEqual(calls, [])
+
     def gateway(self, reload_code=1, health=(), unit='openclaw-gateway.service', restart_code=0):
         """install_plugin against a fake OpenClaw whose reload fails and whose Gateway health answers `health` in turn."""
         calls, answers = [], iter(health)

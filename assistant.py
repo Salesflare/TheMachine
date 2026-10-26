@@ -73,6 +73,7 @@ import places
 import browser_login
 import browser_viewer
 import preparation_state
+import model_budget
 import portable
 import service
 
@@ -816,7 +817,7 @@ def first_look_retry_at(runs, current):
         if run['status'] == 'ok':
             break
         failed += 1
-    wait = FIRST_LOOK_RETRY_SECONDS if runs[-1].get('error') == 'rate_limited' else min(
+    wait = FIRST_LOOK_RETRY_SECONDS if runs[-1].get('error') in ('rate_limited', 'usage_limited') else min(
         FIRST_LOOK_RETRY_MIN_SECONDS * 2 ** (failed - 1), FIRST_LOOK_RETRY_SECONDS)
     at = dt.datetime.fromisoformat(runs[-1]['finished_at']) + dt.timedelta(seconds=wait)
     return at.isoformat() if at > current else None
@@ -932,6 +933,25 @@ def model_ready(config=None, run=subprocess.run):
     return ready
 
 
+def background_model(config):
+    """(provider, model) for The Machine's background turns when the main model is one background work never uses
+    (BACKGROUND_SWAP), and the owner's model allowlist (`agents.defaults.models`, empty allows any) allows the other.
+    None: the main model."""
+    main = openclaw_model(config) or ''
+    provider, _, name = main.partition('/')
+    cheaper = BACKGROUND_SWAP.get(name)
+    if not cheaper:
+        return None
+    path = Path(config.get('openclaw_config') or Path.home() / '.openclaw' / 'openclaw.json')
+    try:
+        allowed = json.loads(path.read_text()).get('agents', {}).get('defaults', {}).get('models') or {}
+    except (OSError, ValueError, AttributeError):
+        allowed = {}
+    if isinstance(allowed, dict) and allowed and not ({f'{provider}/{cheaper}', f'{provider}/*'} & set(allowed)):
+        return None
+    return provider, cheaper
+
+
 def has_model(config=None):
     """Whether OpenClaw has a main model to review with that can run (model_ready). When that can't be read,
     a main model set in its config is taken as one."""
@@ -961,6 +981,16 @@ VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
 
 # One heartbeat may claim this many signals, in a single begin_analysis call if it likes.
 RUN_SIGNAL_BUDGET = 120
+# After the quick first look, the next review (the full first look, or the first regular one) takes this many of the
+# most promising signals; the backlog after it goes in the regular reviews, spread out under the usage budget.
+FIRST_LOOK_NEXT_SIGNALS = 60
+# Background turns beyond the first look (profile, voices, roles, organizations, drafts prepared ahead) start at most
+# one per this many seconds, and only once the first card was shown, so the first cards come first and a new
+# install's usage is spread out instead of spent in its first minutes.
+BACKGROUND_GAP_SECONDS = 600
+FIRST_MAGIC_SETTLE_SECONDS = 900  # no card shown yet: a finished review counts as the first look after this long
+# Background work never runs on these models (several times the cost for the same result): the cheaper one instead.
+BACKGROUND_SWAP = {'gpt-6-astra': 'gpt-6.1-sol'}
 
 # `assistant profile`: one read-only turn of the owner's agent drafts USER.md lines (how they write,
 # their role, who and what matters) from their own recent messages; the owner sees it before anything is saved.
@@ -2637,6 +2667,8 @@ class Store:
             if 'window_hours' not in worker_columns:  # a quick first look: only this many hours back, at most `budget` signals
                 db.execute('ALTER TABLE review_runs ADD COLUMN window_hours INTEGER')
                 db.execute('ALTER TABLE review_runs ADD COLUMN budget INTEGER')
+            if 'promising' not in worker_columns:  # the review after the quick look: the most promising signals first
+                db.execute('ALTER TABLE review_runs ADD COLUMN promising INTEGER NOT NULL DEFAULT 0')
             # When setup steps first happened (first import per source, first card shown): timestamps and counts only.
             # `tracking_since` tells a new install from one that had cards before this was recorded.
             db.execute('CREATE TABLE IF NOT EXISTS milestones(name TEXT PRIMARY KEY,at TEXT NOT NULL,detail TEXT)')
@@ -3179,6 +3211,15 @@ class Store:
         if not row or row['detail'] != detail:
             db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('first_look_state',?,?)", (now(), detail))
 
+    def first_magic_done(self, db):
+        """The first look has done its job, so the rest of onboarding (profile, voices, roles, organizations, drafts
+        beyond the first) may start: the first card was shown, or a review finished a while ago (one that found no card,
+        an install from before this was recorded)."""
+        if db.execute("SELECT 1 FROM milestones WHERE name='first_card_shown'").fetchone():
+            return True
+        settled = (dt.datetime.fromisoformat(now()) - dt.timedelta(seconds=FIRST_MAGIC_SETTLE_SECONDS)).isoformat()
+        return bool(db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND finished_at<=? LIMIT 1", (settled,)).fetchone())
+
     def note_card_shown(self):
         """The first card the dashboard showed on a new install (one with cards from before this was recorded keeps none)."""
         if getattr(self, '_card_shown', False):
@@ -3455,7 +3496,7 @@ class Store:
                        (now(), (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).isoformat(), REVIEW_SESSION_PREFIX))
             if db.execute("SELECT 1 FROM analyses WHERE status='retryable'").fetchone():
                 return {'busy': True}
-            scope = db.execute('SELECT preview,window_hours,budget FROM review_runs WHERE run_id=?', (owner_run,)).fetchone() if owner_run else None
+            scope = db.execute('SELECT preview,window_hours,budget,promising FROM review_runs WHERE run_id=?', (owner_run,)).fetchone() if owner_run else None
             budget = (scope and scope['budget']) or RUN_SIGNAL_BUDGET  # a quick first look: fewer
             if owner_run:
                 run_reviews = db.execute('SELECT items,started_at FROM analyses WHERE owner_session=? AND owner_run=?', (owner_session, owner_run)).fetchall()
@@ -3473,7 +3514,7 @@ class Store:
                      if scope and (scope['preview'] or scope['window_hours']) else '')
             # A quick first look takes what most likely needs the owner first (most_promising); other reviews share the
             # budget out over the sources
-            quick = bool(scope and scope['window_hours'])
+            quick = bool(scope and (scope['window_hours'] or scope['promising']))
             rows, recovered_from = (self.most_promising(db, accounts, since, limit), None) if quick else (None, None)
             if not quick:
                 counts = {a: db.execute('SELECT count(*) FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<? AND occurred_at>=?', (a, SET_ASIDE_AFTER, since)).fetchone()[0] for a in accounts}
@@ -4704,7 +4745,7 @@ class Store:
                 return {'run_id': run['run_id'], 'started_at': run['started_at'], 'attached': True}
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,room,evidence,auto) VALUES(?,'starting',?,?,?,?,?)",
                        (run_id, started, started, None if room is None else min(max(int(room), 400), 4000), json.dumps(evidence), int(bool(auto))))
-        roles = self.roles_start(again=again)  # onboarding names the closest people too, right after the draft
+        roles = self.roles_start(again=again, auto=auto)  # onboarding names the closest people too, right after the draft
         return {'run_id': run_id, 'started_at': started, 'counts': dict(counts), 'roles_run_id': roles.get('run_id')}
 
     def no_role_yet(self, event_ids):
@@ -4750,7 +4791,7 @@ class Store:
                                         'ORDER BY strength DESC LIMIT 6')]
         return people, orgs
 
-    def roles_start(self, again=False):
+    def roles_start(self, again=False, auto=False):
         """One turn that says what the closest people are to the owner (also part of onboarding's profile)."""
         recent = (dt.datetime.fromisoformat(now()) - dt.timedelta(minutes=30)).isoformat()
         with self.connect() as db:
@@ -4768,8 +4809,8 @@ class Store:
                              "(status='ok' AND finished_at>? AND NOT ?)) ORDER BY started_at DESC LIMIT 1", (recent, int(bool(again)))).fetchone()
             if run:
                 return {'run_id': run['run_id'], 'started_at': run['started_at'], 'attached': True}
-            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind) VALUES(?,'starting',?,?,?,'roles')",
-                       (run_id, started, started, json.dumps({'people': people, 'organisations': orgs, 'corrections': graph.corrections(db)})))
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'roles',?)",
+                       (run_id, started, started, json.dumps({'people': people, 'organisations': orgs, 'corrections': graph.corrections(db)}), int(bool(auto))))
         return {'run_id': run_id, 'started_at': started, 'people': len(people), 'organisations': len(orgs)}
 
     def org_evidence(self, limit=ORGS_PEOPLE):
@@ -5495,7 +5536,7 @@ class Store:
             voices = [{'channel': v['channel'], 'text': v['text'], 'written_by_owner': v['source'] == 'owner'} for v in self.voices(db)]
         return {'messages': items, 'notes': notes, 'voices': voices}
 
-    def voice_study_start(self, again=False):
+    def voice_study_start(self, again=False, auto=False):
         """One turn that reads a sample of the owner's own messages per channel and writes each channel's voice block
         (greetings and sign-offs per language, length and structure, tone per kind of person, habits), with their style
         notes worked in. Blocks the owner wrote themselves stay as they are."""
@@ -5513,8 +5554,8 @@ class Store:
             db.execute('BEGIN IMMEDIATE')
             if db.execute("SELECT 1 FROM profile_runs WHERE kind='voices' AND status IN ('starting','running')").fetchone():
                 return {'attached': True}
-            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind) VALUES(?,'starting',?,?,?,'voices')",
-                       (run_id, started, started, json.dumps(evidence)))
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'voices',?)",
+                       (run_id, started, started, json.dumps(evidence), int(bool(auto))))
         return {'run_id': run_id, 'started_at': started, 'counts': dict(collections.Counter(m['channel'] for m in evidence['messages']))}
 
     def voice_study_due(self):
@@ -5525,7 +5566,7 @@ class Store:
         if last and (last['status'] in ('starting', 'running') or (last['finished_at'] or last['started_at']) >
                      (stamp - dt.timedelta(days=VOICE_STUDY_DAYS if last['status'] == 'ok' else 1)).isoformat()):
             return None
-        return self.voice_study_start()
+        return self.voice_study_start(auto=True)
 
     def learnings_due(self, current=None):
         """About once a week, when the owner wants to be offered: one turn distils what was learned into a few general
@@ -5537,7 +5578,7 @@ class Store:
                 return None
             evidence = team_learnings.evidence(db, lambda: self.quality(team_learnings.SINCE_DAYS), current)
             run_id, started = uuid.uuid4().hex, now()
-            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind) VALUES(?,'starting',?,?,?,'learnings')",
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'learnings',1)",
                        (run_id, started, started, json.dumps(evidence)))
         return run_id
 
@@ -8873,7 +8914,7 @@ def owner_reports_handled(text):
 
 
 REVIEW_FAILURES = {'runtime_error','runtime_timeout','runtime_aborted','runtime_lost',
-                   'model_idle_timeout','bridge_error','rate_limited','connection_error','prompt_too_long'}
+                   'model_idle_timeout','bridge_error','rate_limited','usage_limited','connection_error','prompt_too_long'}
 REVIEW_FAILURE_PHASES = {'runtime','model','bridge','connection','queue','provider','tool','gateway_draining'}
 
 
@@ -13405,11 +13446,27 @@ class App:
             room=max(0,int(self.config.get('preparation_concurrency',3))-len(active))
             # A replacement waits only for an unfinished old run in its own session or card; checked in
             # this same transaction so a decision on another thread can't slip a second run in.
-            queued=[dict(r) for r in db.execute("""SELECT p.*,s.status suggestion_status FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
+            # A usage limit holds every new run until it resets. Drafts prepared ahead (no owner asked yet) are background
+            # work: one usage check each (model_budget), the first look's first one as the first magic, the others one
+            # per BACKGROUND_GAP_SECONDS once the first card was shown.
+            limited=self.background_pause(owner=True) if room else None
+            queued=[dict(r) for r in db.execute("""SELECT p.*,s.status suggestion_status,s.early FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
                 WHERE p.status='queued' AND s.status IN ('accepted','instructions') AND (p.retry_at IS NULL OR p.retry_at<=?)
                 AND NOT EXISTS(SELECT 1 FROM preparation_runs r WHERE r.finished_at IS NULL AND r.job_id!=p.job_id
                                AND (r.suggestion_id=p.suggestion_id OR r.session_job_id=coalesce(p.session_job_id,p.job_id)))
-                ORDER BY p.created_at LIMIT ?""",(now(),room)).fetchall()] if room else []
+                ORDER BY p.created_at LIMIT ?""",(now(),room+20)).fetchall()] if room and not limited else []
+            ahead_first=not db.execute("SELECT 1 FROM milestones WHERE name='first_ahead_started'").fetchone()
+            admitted=[]
+            for job in queued:
+                if len(admitted)>=room:break
+                if job['early'] and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
+                    first=ahead_first and not any(j['early'] for j in admitted)
+                    if any(j['early'] for j in admitted) or self.background_pause(first=first) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
+                        continue
+                    if first:db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('first_ahead_started',?)",(now(),))
+                    self.background_started()
+                admitted.append(job)
+            queued=admitted
             jobs=[]
             for job in active+queued:
                 if job.get('retry_at') and job['retry_at']>now():continue
@@ -13446,6 +13503,7 @@ class App:
             with self.store.connect() as db:
                 card=db.execute('SELECT early,owner_step FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
                 job['ahead'],job['owner_step']=bool(card['early']),bool(card['owner_step'])
+            if job['ahead']:request['background']=True  # nobody asked yet: background work (background_model)
             # A chat message (dashboard chat, decision chat-…) in a session that already has the card's context: a short
             # follow-up turn instead of the full card context again, so long chats stay cheap.
             if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead']:
@@ -13500,6 +13558,13 @@ class App:
             if not current or current['job_id']!=job['job_id'] or current['status'] not in ('starting','running'):return
             if status=='admitted':
                 db.execute("UPDATE preparations SET status='running',updated_at=?,error=NULL,retry_at=NULL WHERE job_id=?",(now(),job['job_id']))
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
+            elif status=='error' and result.get('error')=='usage_limited':
+                # The sign-in's usage limit: the card waits for the reset (note_usage_limit) and starts again in the same
+                # session then, without using up its retry. The dashboard says which limit and when it resets.
+                until=getattr(self,'usage_limit',None) or {'until':time.time()+model_budget.LIMIT_WAIT}
+                db.execute("UPDATE preparations SET job_id=?,status='queued',error='usage_limited',retry_at=?,updated_at=?,started_at=NULL WHERE job_id=?",
+                           (uuid.uuid4().hex,dt.datetime.fromtimestamp(until['until'],dt.timezone.utc).isoformat(),now(),job['job_id']))
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             elif status in ('ok','error','aborted','timed_out','lost'):  # lost: the Gateway refused this run id for good
                 error={'ok':'run_ended_without_preparation','timed_out':'ai_run_timed_out'}.get(status,'ai_run_failed')
@@ -14045,10 +14110,15 @@ class App:
             return view
 
     def preparation_gateway(self, request):
+        if request.get('action')=='start' and (request.get('kind') in ('review','profile') or request.get('background')):
+            swap=background_model(self.config)  # never the costliest model for background work
+            if swap:request={**request,'provider':swap[0],'model':swap[1]}
         try:
             result=subprocess.run([node_bin(self.config),str(ROOT/'preparation-run.mjs')],env=node_env(self.config),input=encoded(request),capture_output=True,text=True,timeout=30)
-            return json.loads(result.stdout) if result.returncode==0 else {'status':'unavailable'}
+            receipt=json.loads(result.stdout) if result.returncode==0 else {'status':'unavailable'}
         except (ValueError,subprocess.TimeoutExpired):return {'status':'unavailable'}
+        self.note_usage_limit(receipt)
+        return receipt
 
     def preparation_worker(self):
         while not self.stop.wait(5):
@@ -14284,6 +14354,8 @@ class App:
                 due = (look or {}).get('state') == 'due'
                 if not running:
                     self.store.note_first_look(db, look)
+            # One usage check before every background turn (model_budget); the quick look, the first magic, may go further
+            due = due and not self.background_pause(first=bool(look.get('quick')))
             if not running and not due:
                 return None
             if due:
@@ -14336,6 +14408,8 @@ class App:
                 # Reviews just turned on and nothing reviewed yet: first a quick look at the newest mail, at once (no
                 # waiting for a batch or for the rest of the import); the regular reviews take the rest after it.
                 quick = 0 if recovery else self.quick_first_review(db)
+                if self.background_pause(first=bool(quick)):  # one usage check before every background turn (model_budget)
+                    return None
                 if quick:
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
                     db.execute('INSERT INTO review_runs(run_id,status,started_at,updated_at,planned,auto,window_hours,budget) VALUES(?,?,?,?,?,1,?,?)',
@@ -14356,8 +14430,12 @@ class App:
                     if not waiting and not recovery and not sort_due:
                         return None
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
-                    db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,planned) VALUES(?,?,?,?,?)",
-                               (run['run_id'], 'starting', run['started_at'], run['started_at'], min(waiting, RUN_SIGNAL_BUDGET)))
+                    # Right after the quick first look: the most promising FIRST_LOOK_NEXT_SIGNALS next, the rest after it
+                    nxt = not recovery and not db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND window_hours IS NULL LIMIT 1").fetchone() \
+                        and bool(db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND window_hours IS NOT NULL LIMIT 1").fetchone())
+                    budget = FIRST_LOOK_NEXT_SIGNALS if nxt else RUN_SIGNAL_BUDGET
+                    db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,planned,budget,promising) VALUES(?,?,?,?,?,?,?)",
+                               (run['run_id'], 'starting', run['started_at'], run['started_at'], min(waiting, budget), budget if nxt else None, int(nxt)))
             if run['status'] == 'starting':
                 db.execute('UPDATE review_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
         expired = (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds() > (
@@ -14444,6 +14522,7 @@ class App:
         result = receipt.get('status', 'unavailable')
         with self.store.connect() as db:
             if result == 'admitted':
+                self.background_started()
                 db.executemany('INSERT OR IGNORE INTO edits_offered(edit_id,run_id,offered_at) VALUES(?,?,?)',
                                [(value, run['run_id'], now()) for value in offered_edits])
                 db.execute("UPDATE review_runs SET status='running',updated_at=?,error=NULL,error_phase=NULL,retry_at=NULL,unavailable_since=NULL WHERE run_id=?", (now(), run['run_id']))
@@ -14606,7 +14685,9 @@ class App:
             raise ValueError('Reviews are already on: new suggestions arrive by themselves. See assistant tasks or the dashboard.')
         accounts = [a['id'] for a in self.config['accounts']]
         hours = QUICK_LOOK_HOURS if quick else PREVIEW_DAYS * 24
-        budget = QUICK_LOOK_SIGNALS if quick else RUN_SIGNAL_BUDGET
+        # The first look by itself: after the quick one, the most promising FIRST_LOOK_NEXT_SIGNALS of the week
+        nxt = auto and not quick
+        budget = QUICK_LOOK_SIGNALS if quick else FIRST_LOOK_NEXT_SIGNALS if nxt else RUN_SIGNAL_BUDGET
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(hours=hours)).isoformat()
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -14621,8 +14702,8 @@ class App:
             if not waiting:
                 raise ValueError(f'No unreviewed signals from the last {PREVIEW_DAYS} days yet. Check assistant sources; the first import can take a few minutes.')
             run_id, started = uuid.uuid4().hex, now()
-            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,preview,auto,planned,window_hours,budget) VALUES(?,'starting',?,?,1,?,?,?,?)",
-                       (run_id, started, started, int(auto), min(waiting, budget), QUICK_LOOK_HOURS if quick else None, budget if quick else None))
+            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,preview,auto,planned,window_hours,budget,promising) VALUES(?,'starting',?,?,1,?,?,?,?,?)",
+                       (run_id, started, started, int(auto), min(waiting, budget), QUICK_LOOK_HOURS if quick else None, budget if quick or nxt else None, int(nxt)))
         return {'run_id': run_id, 'started_at': started, 'waiting': waiting, 'signals': min(waiting, budget)}
 
     def recap_push(self, message, week):
@@ -14787,10 +14868,17 @@ class App:
         """Start and follow the one profile turn `assistant profile` asked for (reviews may be off)."""
         runner = runner or self.preparation_gateway
         with self.store.connect() as db:
-            run = db.execute("SELECT * FROM profile_runs WHERE status IN ('starting','running') ORDER BY started_at LIMIT 1").fetchone()
+            # The one being followed first, then what the owner asked for, then The Machine's own
+            run = db.execute("SELECT * FROM profile_runs WHERE status IN ('starting','running') ORDER BY status='running' DESC,coalesce(auto,0),started_at LIMIT 1").fetchone()
+            ready = run and run['status'] == 'starting' and (not run['auto'] or self.store.first_magic_done(db))
         if not run:
             return None
         run, stamp = dict(run), dt.datetime.fromisoformat(now())
+        if run['status'] == 'starting':
+            # One usage check before every background turn (model_budget); The Machine's own turns (profile, voices, roles,
+            # organizations) wait for the first card and start one per BACKGROUND_GAP_SECONDS. A usage limit holds all.
+            if self.background_pause(owner=not run['auto']) or (run['auto'] and not (ready and self.background_spaced())):
+                return None
         age = (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds()
         if run['status'] == 'starting' and run['attempts'] and run['updated_at'] > (stamp - dt.timedelta(minutes=1)).isoformat():
             return None
@@ -14824,6 +14912,8 @@ class App:
         result = runner(request).get('status', 'unavailable')
         with self.store.connect() as db:
             if result == 'admitted':
+                if run['auto']:
+                    self.background_started()
                 db.execute("UPDATE profile_runs SET status='running',error=NULL,updated_at=? WHERE run_id=?", (now(), run['run_id']))
             elif result in REVIEW_TERMINAL or (action == 'stop' and age > PROFILE_SECONDS + 900):
                 draft = db.execute('SELECT draft FROM profile_runs WHERE run_id=?', (run['run_id'],)).fetchone()[0]
@@ -15288,6 +15378,53 @@ class App:
                 return own_addresses.view(db, self.config)
         except sqlite3.Error:
             return None
+
+    def note_usage_limit(self, receipt):
+        """A run ended on the sign-in's usage limit: everything the service starts waits until it resets (the time the
+        provider named, else the window's), instead of trying again every few minutes."""
+        if not isinstance(receipt, dict) or receipt.get('error') != 'usage_limited':
+            return None
+        until = model_budget.limit_until(receipt.get('retry_at'), getattr(self, 'model_usage', None))
+        known = getattr(self, 'usage_limit', None)
+        if not known or known['until'] < until:
+            LOG.warning('usage limit reached until=%s', dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(timespec='minutes'))
+        self.usage_limit = {'until': until, 'at': int(time.time())}
+        getattr(self, 'model_usage_wake', threading.Event()).set()
+        return until
+
+    def background_pause(self, first=False, owner=False):
+        """None when a turn the service starts may go now; else why it waits ({'window', 'until', 'limited'...}). A
+        usage limit holds everything; the budget (model_budget.pause) holds background work only, `first` for the
+        first look and its first draft. A sign-in that reports no usage windows (an API key) is never paused here."""
+        now_s, usage = time.time(), getattr(self, 'model_usage', None)
+        limit = getattr(self, 'usage_limit', None)
+        if limit and limit['until'] > now_s:
+            return {'window': 'limit', 'until': limit['until'], 'limited': True}
+        full = [{'window': '5h' if model_budget.window_kind(w['label']) == 'short' else 'week', 'until': w.get('reset'), 'limited': True}
+                for p in usage or [] for w in p.get('windows') or [] if w.get('used', 0) >= 100 and (w.get('reset') or now_s + 1) > now_s]
+        if full:
+            return max(full, key=lambda f: f['until'] or 0)
+        if owner:
+            return None
+        found = model_budget.pause(usage, now_s, first=first)
+        return {**found, 'limited': False} if found else None
+
+    def background_spaced(self):
+        """At most one background turn beyond the first look per BACKGROUND_GAP_SECONDS."""
+        return time.time() - getattr(self, 'background_at', 0) >= BACKGROUND_GAP_SECONDS
+
+    def background_started(self):
+        self.background_at = time.time()
+
+    def model_pause(self):
+        """What the dashboard's limit banner shows: a usage limit reached (which one, when it resets), else None. The
+        budget's own pauses are not shown: nothing is wrong then."""
+        found = self.background_pause(owner=True)
+        if not found:
+            return None
+        model = openclaw_model(self.config) or ''
+        name = 'Claude' if model.startswith(('claude-cli/', 'anthropic/')) or claude_plan_route(self.config) else 'ChatGPT' if model.startswith(('openai', 'codex')) else None
+        return {'window': found['window'], 'until': found.get('until'), 'name': name}
 
     def model_room(self, most=80):
         """The model's limits have room for extra work (a board's look through the history): no window the sign-in reports
