@@ -38,14 +38,14 @@ try{
   const menu=id=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.map(x=>x.textContent.trim()));
   // A decision: Do it, Snooze, Not needed; the rest under More, Hand off among them, never above the buttons
   assert.deepEqual(await shown('p1'),['Do it','Snooze','Not needed','More']);
-  assert.deepEqual(await menu('p1'),['Mark done','Change','Hand off','Rename']);
+  assert.deepEqual(await menu('p1'),['Mark done','Do it differently','Hand off','Rename']);
   assert.equal(await page.getByText('Hand off to a teammate').count(),0);
   // A ready draft: the button says it opens the preview first
   assert.deepEqual(await shown('r1'),['Review and send to Noor','Mark done','Snooze','More']);
-  assert.deepEqual(await menu('r1'),['Change','Not needed','Hand off','Rename']);
+  assert.deepEqual(await menu('r1'),['Ask for changes','Not needed','Hand off','Rename']);
   // A step only the owner can do: Done leads, Plan it is the help around it, Snooze and Not needed stay in sight; never Do it
   assert.deepEqual(await shown('v1'),['Done','Plan it','Snooze','Not needed','More']);
-  assert.deepEqual(await menu('v1'),['Change','Rename']);
+  assert.deepEqual(await menu('v1'),['Do it differently','Rename']);
   assert.equal(await page.locator('#task-v1 .actions>button.primary').innerText(),'Done');
   assert.equal(await page.locator('#task-v1 [data-choice="complete"]').getAttribute('data-choice'),'complete');
   assert.ok(!(await shown('v2')).includes('Do it'));
@@ -57,7 +57,7 @@ try{
   if(width>600){const tops=await page.locator('#task-p1 .actions>*').evaluateAll(n=>n.map(x=>Math.round(x.getBoundingClientRect().top)+':'+Math.round(x.getBoundingClientRect().height)));assert.equal(new Set(tops).size,1,tops.join(' '))}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // More opens a menu; tapping elsewhere closes it
-  await page.locator('#task-r1 .more-actions>summary').click();await page.locator('#task-r1 .more-menu').getByRole('button',{name:'Change'}).waitFor();
+  await page.locator('#task-r1 .more-actions>summary').click();await page.locator('#task-r1 .more-menu').getByRole('button',{name:'Ask for changes'}).waitFor();
   await page.mouse.click(2,2);assert.equal(await page.locator('#task-r1 .more-actions').evaluate(d=>d.open),false);
   // The source line's date never splits over two lines
   {const d=page.locator('#task-p1 .card-foot .src-date');assert.equal(await d.innerText(),'Mon 19 Oct');

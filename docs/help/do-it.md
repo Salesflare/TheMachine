@@ -13,7 +13,7 @@ order: 2
 ## Nothing goes out before your yes
 
 - A reply comes back as a draft. **Review and send** opens a preview; it only goes out when you press **Send now**.
-- **Edit** in the preview changes the text first.
+- **Edit** in the preview changes the text first. It shows plain text: a link reads as its words with the address in brackets, and goes out as a link again.
 - A step that commits something, like submit, pay or book, stops and waits for your confirm.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
 

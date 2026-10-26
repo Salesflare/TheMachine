@@ -14,7 +14,7 @@ The **Suggestions** tab groups them:
 
 - **Ready for you**: prepared and waiting for your approval.
 - **Needs your decision**: something only you can decide.
-- **Preparing**: your Machine is working on it.
+- **Preparing**: your Machine is working on it. A to-do you just said **Do it** to stays where it was while it prepares, then moves to **Ready for you**.
 - **Coming back later**: snoozed.
 - **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll.
 
@@ -22,16 +22,21 @@ The **Suggestions** tab groups them:
 
 ## The buttons
 
-A new to-do has **Do it**, **Mark done**, **Snooze**, **Change** and **Not needed**. Only a few show at once; the rest are under **More**, with **Rename**.
+A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and **Not needed**. Only a few show at once; the rest are under **More**, with **Rename**.
 
 - **Do it**: your Machine prepares it. See [Do it](do-it.md).
 - **Mark done**: it's handled.
 - **Snooze**: bring it back later. See [Snooze](snooze.md).
-- **Change**: tell it what you'd like instead, in a few words.
+- **Do it differently**: tell it what you'd like instead, in a few words. On a prepared to-do it's **Ask for changes**: say what to change in the draft and it redoes it. **Review and send** stays next to it.
 - **Not needed**: it goes away. Pick why, optionally: **Not relevant**, **Wrong facts** or **Already handled**. Your Machine learns from it.
 
-A closed to-do can come back with **Reopen**.
+A closed to-do can come back with **Reopen**. It also comes back by itself when something new happens, like a new message from them. Your own reply doesn't bring it back.
+
+A to-do about a person shows their name at the top. Tap it to open their page in the Graph. **Read message** opens the thread.
 
 ## Make one yourself
 
 **New to-do** (under **Find a to-do** on a computer) adds a to-do for anything. Creating it sends nothing.
+
+- **Due**: type a date, like "tomorrow", "next Fri" or "3 Nov", or pick one from the calendar.
+- **Email**: attach the email it's about. Search by subject or sender.

@@ -93,7 +93,20 @@ class Matter(unittest.TestCase):
         card = self.card(first['id'])
         self.assertEqual(card['status'], 'completed')
         self.assertEqual(json.loads(card['event_ids']), [2, 1])
-        again = self.suggest(dedupe_key='billing:new-ask', event_ids=[4], card_id=first['id'], reopen=True)
+        # An older message the review only reaches now is no news: it stays done
+        stale = self.suggest(dedupe_key='billing:new-ask', event_ids=[4], card_id=first['id'], reopen=True)
+        self.assertTrue(stale['attached']); self.assertNotIn('reopened', stale)
+        self.assertEqual(self.card(first['id'])['status'], 'completed')
+        # Nor is the owner's own reply sent after closing it
+        later = (a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(minutes=5)).isoformat()
+        own = mail('m5', 't1', sender='owner@example.com', when=later)
+        own['metadata']['labels'] = ['SENT']
+        self.store.commit_page('g', {}, [own, mail('m6', 't1', when=later)])
+        mine = self.suggest(dedupe_key='billing:own-reply', event_ids=[5], card_id=first['id'], reopen=True)
+        self.assertTrue(mine['attached'])
+        self.assertEqual(self.card(first['id'])['status'], 'completed')
+        # Their new message after it was closed is: it comes back
+        again = self.suggest(dedupe_key='billing:their-new-ask', event_ids=[6], card_id=first['id'], reopen=True)
         self.assertTrue(again['reopened'])
         self.assertEqual(self.card(first['id'])['status'], 'pending')
 

@@ -4202,7 +4202,8 @@ class Store:
     def update_card(self, db, card, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen):
         """A new signal about a matter that already has a card. An open card gets the new evidence, title and body,
         and one that was snoozed or waiting for a reply comes back. A done or dismissed card only reopens when the
-        reviewer says the matter needs the owner again (reopen); otherwise the signal is kept on it as evidence."""
+        reviewer says the matter needs the owner again (reopen) and a message from someone else arrived after it was
+        closed, or a promise on it came due (reopen='due'); otherwise the signal is kept on it as evidence."""
         stamp, sid = now(), card['id']
         # The review's title; while the owner's own title holds (a rename) it waits in title_suggested for Reset.
         suggested, title = title, current_title(card, title)
@@ -4218,6 +4219,11 @@ class Store:
             # The owner's own signal, or older context the review links to it: it fills in the card they made.
             # Not news, so the card stays where they put it (snoozed, done) and nothing is sent.
             return self.fill_owner_card(db, card, suggested, body, ids, accounts, [evidence[i] for i in ids if i in evidence], due, ahead and not closed, project, event_ids)
+        if closed and reopen is True:
+            # Done stays done unless something new happened after it was closed: a message from someone else that came
+            # in later. Older signals the review only now reaches, and the owner's own sent reply, are kept as evidence.
+            shut = promise_closed_at(db, card) or card['created_at']
+            reopen = any(r['id'] in added and r['occurred_at'] > shut and not own_message(dict(r), self.owner_user_ids) for r in rows)
         if closed and not reopen:
             db.execute('UPDATE suggestions SET event_ids=?,account_ids=? WHERE id=?', (encoded(ids), encoded(accounts), sid))
             if added:
@@ -8936,6 +8942,24 @@ def same_thread_card(db, rows, days=60):
     return None
 
 
+def promise_home(db, promise):
+    """The to-do a promise's matter already has: the latest one holding its message, else the one in its email or
+    Slack thread. Other promises' cards don't count: one message or thread can hold several promises."""
+    cards = [c for c in db.execute("SELECT s.* FROM suggestions s, json_each(s.event_ids) j WHERE j.value=? AND s.status IN ('pending','accepted','prepared','instructions','snoozed','completed','rejected') "
+                                   "ORDER BY CASE WHEN s.status IN ('completed','rejected') THEN 1 ELSE 0 END,s.created_at DESC", (promise['event_id'],))
+             if not c['dedupe_key'].startswith('promise:')]
+    if cards:
+        return cards[0]
+    row = db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id=?', (promise['event_id'],)).fetchone()
+    card = row and same_thread_card(db, [row])
+    return card if card and not card['dedupe_key'].startswith('promise:') else None
+
+
+def promise_closed_at(db, card):
+    """When a closed to-do was last marked done or not needed."""
+    return db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('complete','reject')", (card['id'],)).fetchone()[0]
+
+
 def same_matter_cards(db, event_ids, project=None, limit=4):
     """Open cards that may be about the same matter: they share the people a signal is directly about, or its
     project. Only the reviewer can tell by meaning, so these are asked about, never merged by themselves."""
@@ -13539,9 +13563,24 @@ class App:
                     return None  # closed or rescheduled since the worker selected it
                 return self.promise_card(dict(current), _db=db)
         title, body = promise_text(p)
+        home = promise_home(_db, p)
+        if home is not None and home['status'] in CARD_OPEN:
+            # Its matter already has an open to-do: the promise joins it, no second card.
+            _db.execute('UPDATE suggestions SET due=coalesce(due,?) WHERE id=?', (p['due'], home['id']))
+            if _db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=? AND status='open'", (home['id'], now(), p['id'])).rowcount:
+                promise_logged(_db, p['id'], 'carded')
+            return {'id': home['id'], 'status': home['status'], 'duplicate': True, 'attached': True}
+        if home is not None and p['direction'] == 'mine' and (promise_closed_at(_db, home) or '') >= p['made_at']:
+            # The owner closed that to-do after promising: it goes with it (kept when done), and nothing comes back.
+            _db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=?", (home['id'], now(), p['id']))
+            promise_logged(_db, p['id'], 'carded', 'closed with its to-do')
+            return {'id': home['id'], 'status': home['status'], 'duplicate': True}
         ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)))
+        # A closed to-do on the same matter comes back with the promise (one to-do per matter): theirs came due, or the
+        # owner promised more after closing it.
         saved = self.store.suggest('promise:%d' % p['id'], title[:90], body[:700], [p['event_id']], 'now', self.config.get('digest_at', '08:30'),
-                                   work=self.is_work([p['account_id']]), due=p['due'], ahead=ahead, _db=_db, owner_step=bool(p.get('owner_step')))
+                                   work=self.is_work([p['account_id']]), due=p['due'], ahead=ahead, _db=_db, owner_step=bool(p.get('owner_step')),
+                                   **({'card_id': home['id'], 'match': True, 'reopen': 'due'} if home is not None else {}))
         with contextlib.nullcontext(_db) as db:
             if db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=? AND status='open'", (saved['id'], now(), p['id'])).rowcount:
                 promise_logged(db, p['id'], 'carded')

@@ -48,8 +48,8 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // The read of "Friday", "in 2 weeks", "24 Oct": from a Thursday
  {const {context,page}=await open(1440,900);
-  const due=await page.evaluate(()=>{const t=new Date(2026,9,22),f=x=>{const d=ncDue(x,t);return d?ncISO(d):null};return ['friday','Thursday','in 2 weeks','tomorrow','24 Oct','oct 2','24/10','2026-11-03','next week','in a month','by friday','soonish'].map(f)});
-  assert.deepEqual(due,['2026-10-23','2026-10-29','2026-11-05','2026-10-23','2026-10-24','2027-10-02','2026-10-24','2026-11-03','2026-10-26','2026-11-22','2026-10-23',null]);
+  const due=await page.evaluate(()=>{const t=new Date(2026,9,22),f=x=>{const d=ncDue(x,t);return d?ncISO(d):null};return ['friday','Thursday','in 2 weeks','tomorrow','24 Oct','oct 2','24/10','2026-11-03','next week','in a month','by friday','soonish','next Fri','3 Nov','fri next week','next week monday'].map(f)});
+  assert.deepEqual(due,['2026-10-23','2026-10-29','2026-11-05','2026-10-23','2026-10-24','2027-10-02','2026-10-24','2026-11-03','2026-10-26','2026-11-22','2026-10-23',null,'2026-10-23','2026-11-03','2026-10-30','2026-10-26']);
   await context.close()}
  {const {context,page}=await open(1440,900);
   // The row sits under Find a to-do, above the tabs; the phone's "+" is not shown on a computer
@@ -61,9 +61,16 @@ try{
   // Shift+Enter is a new line; the chips are optional: Work, Due, a person and an email
   await page.locator('#nc-text').type('Send Pat the signed contract');await page.keyboard.press('Shift+Enter');await page.keyboard.type('and the deck');
   await page.locator('[data-nc="work"]').click();assert.equal(await page.locator('[data-nc="work"]').getAttribute('aria-pressed'),'true');
-  await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('friday');assert.match(await page.locator('#nc-read').textContent(),/^Fri, \w{3} \d+$/);
+  await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('friday');assert.match(await page.locator('#nc-read').textContent(),/^Due Fri, \w{3} \d+ Enter sets it$/);
   await page.locator('#nc-find').fill('whenever');assert.equal(await page.locator('#nc-read').textContent(),'I can’t read that date yet');
   await page.locator('#nc-find').fill('friday');await page.locator('#nc-find').press('Enter');assert.match(await page.locator('#nc-chips').textContent(),/Due Fri/);
+  // A tap on the read date sets it too; the calendar button picks one
+  await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('3 Nov');await page.locator('#nc-read [data-nc-set]').click();
+  assert.match(await page.locator('#nc-chips').textContent(),/Due Tue, Nov 3/);
+  await page.locator('[data-nc="due"]').click();assert.equal(await page.locator('#nc-pick input[type="date"]').count(),1,'a date picker');
+  {const d=new Date(Date.now()+10*864e5),iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+   await page.locator('#nc-date').fill(iso);assert.match(await page.locator('#nc-chips').textContent(),new RegExp('Due \\w{3}, \\w{3} '+d.getDate()+'\\b'))}
+  await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('friday');await page.locator('#nc-find').press('Enter');
   await page.locator('[data-nc="about"]').click();await page.locator('#nc-find').fill('Pat');await page.locator('[data-nc-hit="0"]').waitFor();await page.locator('[data-nc-hit="0"]').click();
   await page.locator('[data-nc="attach"]').click();await page.locator('#nc-find').fill('contract');await page.locator('[data-nc-hit="0"]').waitFor();
   assert.equal(await page.locator('[data-nc-hit]').count(),1,'only messages can be attached');await page.locator('#nc-find').press('Enter');

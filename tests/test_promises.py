@@ -193,6 +193,40 @@ class Promises(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 2)
 
+    def test_a_promise_joins_the_to_do_its_matter_already_has(self):
+        """No second to-do for the same thing: a promise in a message or thread that already has a to-do goes with it.
+        Open: it joins that one. Closed by the owner after promising: it closes with it. Theirs, came due after the
+        owner closed it: that same to-do comes back, never a new one."""
+        app = self.app()
+        open_card = self.store.suggest('work:contract', 'Sam sends the contract', 'Body.', [self.theirs], 'now')
+        theirs = self.record(due='2026-10-20')['id']
+        self.at('2026-10-21T07:00:00+00:00')
+        app.promise_step()
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 1)
+        self.assertEqual((self.row(theirs)['status'], self.row(theirs)['suggestion_id']), ('carded', open_card['id']))
+        # The owner promised in the thread, then marked its to-do done: the promise is kept with it
+        mine = app.action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck', 'due': '2026-10-22'})['id']
+        self.store.decide(open_card['id'], 'complete', '', 'done-1', 'dashboard')
+        self.at('2026-10-22T07:00:00+00:00')
+        app.promise_step()
+        self.assertEqual(self.store.promises()[0]['state'], 'kept')
+        self.assertEqual(self.row(mine)['suggestion_id'], open_card['id'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 1)
+            self.assertEqual(db.execute('SELECT status FROM suggestions').fetchone()[0], 'completed')
+
+    def test_their_promise_due_after_its_to_do_is_done_brings_that_one_back(self):
+        card = self.store.suggest('work:contract', 'Sam agreed to send the contract', 'Body.', [self.theirs], 'now')
+        self.store.decide(card['id'], 'complete', '', 'done-1', 'dashboard')
+        promise = self.record(due='2026-10-22')['id']
+        self.at('2026-10-23T07:00:00+00:00')
+        self.app().promise_step()
+        with self.store.connect() as db:
+            rows = db.execute('SELECT id,status,title FROM suggestions').fetchall()
+        self.assertEqual([(r['id'], r['status'], r['title']) for r in rows], [(card['id'], 'accepted', 'Waiting on Sam Lee: send the signed contract')])  # back, prepared ahead
+        self.assertEqual(self.row(promise)['suggestion_id'], card['id'])
+
     def test_a_step_only_the_owner_can_do_leads_with_done_never_do_it(self):
         """Told the paint shop "we'll come by tomorrow afternoon": the review marks it as the owner's own step. The card
         leads with Done and offers Plan it (help around it), never Do it; its run is told it can't do the step itself."""
