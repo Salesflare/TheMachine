@@ -50,6 +50,12 @@ try{
   await page.locator('[data-notify-preview]').click();
   await page.locator('#notify-preview:not([hidden])',{hasText:'Planning with the agency'}).waitFor();
   assert.equal(await page.locator('[data-notify-preview]').innerText(),'Hide preview');
+  // The digest row changes its time and days in Work hours too; the footnote keeps its distance from the card
+  const fine=await page.evaluate(()=>{const f=document.querySelector('#settings-notify .notify-fine'),l=document.querySelector('#notify-more');return f.getBoundingClientRect().top-l.getBoundingClientRect().bottom});
+  assert.ok(fine>=16,'footnote spacing '+fine);
+  await page.locator('[data-notify-digest]').click();
+  assert.equal(await page.evaluate(()=>location.hash),'#settings/hours');
+  await page.locator('#settings-tabs [data-settings-tab="notify"]').click();await page.locator('[data-notify-hours]').waitFor();
   await page.locator('[data-notify-hours]').click();
   assert.equal(await page.evaluate(()=>location.hash),'#settings/hours');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'fits '+width);
