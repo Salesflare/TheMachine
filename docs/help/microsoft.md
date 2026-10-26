@@ -12,7 +12,7 @@ order: 12
 - **Outlook**: all your mail, the last 7 days when you connect, then everything new.
 - **Outlook Calendar**: your meetings, read only.
 
-Newsletters in Other from a system sender are skipped without a model look, and the rest of Other gets a quick look at the sender and subject first. Bills, security alerts and Stripe mail always get a full look.
+Mail in Other and newsletters get a quick look first: sender, subject and a few words, many at once. When one matters, it is read in full and can become a card. Nothing is skipped unseen.
 
 ## What it can send and change
 

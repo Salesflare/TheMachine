@@ -599,16 +599,12 @@ SET_ASIDE_AFTER = 2
 # Mail that comes from a system, not a person: by address (slipped, first-look order) and by Gmail's category labels
 ROBOT_SENDER = re.compile(r'(?i)^(?:no-?reply|do-?not-?reply|notifications?|mailer-daemon|bounce|support|billing|info|hello|team)@')
 AUTOMATED_LABELS = frozenset({'CATEGORY_UPDATES', 'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'})
-# Bulk mail (bulk_kind): promotions and mailing-list mail from a system sender are marked reviewed without a model call;
-# updates, social and forum mail reach the review as a title line. Bills, security alerts and Stripe always get a full look.
+# Bulk mail (bulk_kind): promotions, newsletters, list mail, updates and forums reach the review as a title line (sender,
+# subject, a short snippet), so many fit in one turn and the model still judges each; it can read the whole mail with
+# the events tool. Nothing is skipped on its headers alone. A title line counts as BRIEF_WEIGHT of a signal in a claim.
 BULK_PRECEDENCE = frozenset({'bulk', 'junk'})
-MUST_REACH_SENDER = re.compile(r'(?i)@(?:[\w-]+\.)*stripe\.com$|^(?:security|account-?security|accounts?-?noreply|security-?noreply)@')
-MUST_REACH_SUBJECT = re.compile(
-    r'(?i)\b(?:invoices?|factu(?:ur|re)|your (?:\w+ )?bill\b|bill is (?:ready|due|available)|new bill|payment (?:due|failed|declined|overdue|reminder|unsuccessful)|'
-    r'(?:failed|declined|missed|overdue) payment|past due|amount due|overdue|card (?:declined|expir\w*)|payouts?|disputes?|chargebacks?|'
-    r'new (?:sign[- ]?in|login)|sign[- ]?in attempt|login attempt|security (?:alert|code|notice|warning)|password (?:reset|change[ds]?)|'
-    r'reset your password|verification code|verify your (?:email|account|identity)|2-step|two-(?:step|factor)|2fa|one-time (?:pass)?code|'
-    r'suspicious|unusual (?:activity|sign[- ]?in)|account (?:locked|suspended|compromised|disabled))')
+BRIEF_WEIGHT = 0.25
+BRIEF_SNIPPET_CHARS = 200
 
 
 def list_headers(headers):
@@ -624,45 +620,50 @@ def list_headers(headers):
     return found
 
 
-def must_reach(metadata, title=''):
-    """Mail that always gets a full look, even when it is filed as an update or carries List-Unsubscribe: bills and
-    payments, security alerts, and Stripe."""
-    return bool(MUST_REACH_SENDER.search(_address(metadata.get('from'))) or MUST_REACH_SUBJECT.search(str(title or '')))
-
-
 def bulk_kind(kind, metadata, title='', owner_in_thread=False):
-    """How much of a mail signal a review needs. 'promo' (Gmail's Promotions) and 'bulk' (Precedence bulk or junk, or a
-    list header from a system sender, outside Primary) are marked reviewed without a model call; 'update' (Updates, Social,
-    Outlook's Other) and 'forum' (Forums) reach the review as a title line; None is a full look. A person writing (a
-    reply), the owner's own mail, a thread the owner wrote in, and must_reach mail are never marked; a reply in a filed
-    category becomes a title line, unless the owner wrote in its thread."""
+    """Whether a mail signal reaches the review as a title line, and why: 'promo' (Gmail's Promotions), 'forum'
+    (Forums), 'update' (Updates, Social, Outlook's Other), 'bulk' (a list header from a system sender, or Precedence
+    bulk or junk, outside those); None is a full look. The owner's own mail and a thread they wrote in always get
+    a full look, and so does a person writing in Primary."""
     if kind != 'gmail.message' or not isinstance(metadata, dict):
         return None
     labels = set(metadata.get('labels') or ())
-    if labels & {'SENT', 'DRAFT'} or metadata.get('from_me') or owner_in_thread or must_reach(metadata, title):
+    if labels & {'SENT', 'DRAFT'} or metadata.get('from_me') or owner_in_thread:
         return None
+    category = next((c for c in ('CATEGORY_PROMOTIONS', 'CATEGORY_FORUMS', 'CATEGORY_UPDATES', 'CATEGORY_SOCIAL') if c in labels), None)
+    if category:
+        return {'CATEGORY_PROMOTIONS': 'promo', 'CATEGORY_FORUMS': 'forum'}.get(category, 'update')
+    if metadata.get('in-reply-to'):
+        return None  # someone answering in Primary: a full look
     sender = _address(metadata.get('from'))
     system = bool(sender) and bool(ROBOT_SENDER.match(sender) or graph.bulk(sender))
-    reply = bool(metadata.get('in-reply-to'))  # someone answering: a person, or a helpdesk on the owner's question
-    category = next((c for c in ('CATEGORY_PROMOTIONS', 'CATEGORY_FORUMS', 'CATEGORY_UPDATES', 'CATEGORY_SOCIAL') if c in labels), None)
-    if not reply and category == 'CATEGORY_PROMOTIONS':
-        return 'promo'
-    listed = metadata.get('list_unsubscribe') or metadata.get('list_id') or metadata.get('precedence') == 'list'
-    if not reply and category and (metadata.get('precedence') in BULK_PRECEDENCE or (listed and system)):
+    listed = metadata.get('list_unsubscribe') or metadata.get('list_id')
+    if metadata.get('precedence') in BULK_PRECEDENCE or (listed and system):
         return 'bulk'
-    if category == 'CATEGORY_FORUMS':
-        return 'forum'
-    return 'update' if category else None
+    return None
+
+
+def signal_weight(row):
+    """How much of a review's signal budget a signal takes: BRIEF_WEIGHT for bulk mail (a title line), else 1."""
+    metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+    return BRIEF_WEIGHT if not row.get('deleted') and bulk_kind(row['kind'], metadata, row['title']) else 1
+
+
+def claim_weight(items):
+    """The signal budget a claim's items took (signal_weight, as review_claim noted them)."""
+    return sum(BRIEF_WEIGHT if i.get('brief') else 1 for i in items)
 
 
 def title_view(row, metadata):
-    """A review's title line for update and forum mail: who, what and when, and the ids to read the whole signal with."""
+    """A review's title line for bulk mail: who, what, when and a short snippet, and the ids to read the whole signal with."""
     view = {'id': row['id'], 'account_id': row['account_id'], 'source_id': clamp(row['source_id'], 500), 'kind': row['kind'],
             'occurred_at': row['occurred_at'], 'title': clamp(row['title']), 'from': clamp(str(metadata.get('from') or ''), 200),
-            'title_only': 'update or forum mail: read it with events if it may matter'}
+            'snippet': clamp(re.sub(r'\s+', ' ', row.get('body') or '').strip(), BRIEF_SNIPPET_CHARS),
+            'title_only': 'bulk mail: judge it from this line; read it with events when it may matter'}
     if 'version' in row:
         view['version'] = row['version']
     return view
+
 # OpenClaw cuts a live tool result at 64,000 characters, so review replies are paged below that (with room for the
 # escaping a Code Mode result adds); fuller pages mean fewer model steps, each resending the whole context.
 # Bookkeeping metadata is left out.
@@ -751,9 +752,9 @@ OWNER_CARD_RULE = ('The owner added this card themselves, in their own words. Fi
 
 
 def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False):
-    """What a reviewer needs from a signal, without sync bookkeeping. brief: update and forum mail as a title line."""
+    """What a reviewer needs from a signal, without sync bookkeeping. brief: bulk mail as a title line (bulk_kind)."""
     metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'])
-    if brief and not row.get('deleted') and bulk_kind(row['kind'], metadata, row['title'], owner_in_thread) in ('update', 'forum'):
+    if brief and not row.get('deleted') and bulk_kind(row['kind'], metadata, row['title'], owner_in_thread):
         return title_view(row, metadata)
     compact, metadata_clipped = compact_metadata(metadata)
     text = re.sub(r'\s+', ' ', row['body']).strip()
@@ -2890,10 +2891,6 @@ class Store:
             db.execute('CREATE INDEX IF NOT EXISTS events_pending_account ON events(account_id,ingested_at,id) WHERE analyzed_version<version')
             db.execute('CREATE INDEX IF NOT EXISTS analyses_owner ON analyses(owner_run,owner_session)')
             db.execute(embeddings.SCHEMA)  # after the monotonic-ID migration, which rebuilds events
-            if 'auto_reviewed' not in {r[1] for r in db.execute('PRAGMA table_info(events)')}:
-                # Why a signal was marked reviewed without a model call (mark_bulk): 'promo' or 'bulk'; NULL for the rest.
-                db.execute('ALTER TABLE events ADD COLUMN auto_reviewed TEXT')
-                self.mark_stored_bulk(db)
             graph.ensure(db)
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')
@@ -3366,10 +3363,8 @@ class Store:
                     db.execute('UPDATE events SET kind=?,occurred_at=?,title=?,body=?,metadata=?,deleted=?,content_hash=?,ingested_at=?,version=version+1,deferrals=0 WHERE id=?',
                                (*values, old['id']))
                 else:
-                    old = {'id': db.execute('INSERT INTO events(kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at,account_id,source_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                                            (*values, account, event['source_id'])).lastrowid}
-                if event['kind'] == 'gmail.message' and not event['deleted'] and isinstance(event.get('metadata'), dict):
-                    self.mark_bulk(db, old['id'], event['kind'], event['metadata'], event['title'])
+                    db.execute('INSERT INTO events(kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at,account_id,source_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                               (*values, account, event['source_id']))
             if record_sync:
                 self.record_sync_activity(db, account, 'success', signals=len(changed))
                 self.note_first_import(db, account, state)
@@ -3589,7 +3584,7 @@ class Store:
             budget = (scope and scope['budget']) or RUN_SIGNAL_BUDGET  # a quick first look: fewer
             if owner_run:
                 run_reviews = db.execute('SELECT items,started_at FROM analyses WHERE owner_session=? AND owner_run=?', (owner_session, owner_run)).fetchall()
-                claimed = sum(len(json.loads(r['items'])) for r in run_reviews)
+                claimed = sum(claim_weight(json.loads(r['items'])) for r in run_reviews)
                 started = min((r['started_at'] for r in run_reviews), default=None)
                 elapsed = (dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(started)).total_seconds() if started else 0
                 if claimed >= budget or elapsed >= 900:
@@ -3639,17 +3634,22 @@ class Store:
                         event = dict(row); event.pop('review_id')
                         picked.append(event); selected.add(row['id'])
                         recovered_from = recovered_from or row['review_id']
-                    remaining = quota - len(picked)
+                    remaining = quota - len(picked)  # a title line (bulk mail) counts BRIEF_WEIGHT
                     # Alternate oldest backlog and newest/upcoming signals. New arrivals
                     # cannot indefinitely starve old imports, or vice versa. Signals deferred
                     # once wait behind fresh ones; set-aside signals are not offered again.
-                    oldest = [dict(r) for r in db.execute('SELECT * FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<? AND occurred_at>=? ORDER BY deferrals,ingested_at,id LIMIT ?', (account, SET_ASIDE_AFTER, since, limit))]
-                    newest = self.events([account], limit=limit, pending=True, reviewable=True, since=since)
-                    for i in range(remaining):
-                        queue = oldest if i % 2 == 0 else newest
-                        candidate = next((r for r in queue if r['id'] not in selected), None)
-                        if candidate:
-                            picked.append(candidate); selected.add(candidate['id'])
+                    wide = int(limit / BRIEF_WEIGHT)
+                    oldest = [dict(r) for r in db.execute('SELECT * FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<? AND occurred_at>=? ORDER BY deferrals,ingested_at,id LIMIT ?', (account, SET_ASIDE_AFTER, since, wide))]
+                    newest = self.events([account], limit=wide, pending=True, reviewable=True, since=since)
+                    turn = 0
+                    while remaining > 0:
+                        queue = oldest if turn % 2 == 0 else newest
+                        candidate = next((r for r in queue if r['id'] not in selected), None) or next(
+                            (r for r in oldest + newest if r['id'] not in selected), None)
+                        if not candidate:
+                            break
+                        picked.append(candidate); selected.add(candidate['id'])
+                        remaining -= signal_weight(candidate); turn += 1
                     account_rows.append(picked)
                 while any(account_rows):
                     for queue in account_rows:
@@ -3737,43 +3737,6 @@ class Store:
                 if self.owner_wrote_in(db, row['account_id'], metadata):
                     found.add(row['id'])
         return found
-
-    @staticmethod
-    def mark_bulk(db, event_id, kind, metadata, title):
-        """Promotions and bulk mail (bulk_kind) are reviewed without a model call: analyzed at their current version,
-        as a review leaves a signal with nothing to do, with the reason in auto_reviewed so it shows and can be undone
-        (unmark_bulk). Anything else clears an earlier mark. Replies are never marked (bulk_kind). Returns the reason, or None."""
-        reason = bulk_kind(kind, metadata, title)
-        if reason in ('promo', 'bulk'):
-            db.execute('UPDATE events SET analyzed_version=version,auto_reviewed=? WHERE id=?', (reason, event_id))
-            return reason
-        db.execute('UPDATE events SET auto_reviewed=NULL WHERE id=? AND auto_reviewed IS NOT NULL', (event_id,))
-        return None
-
-    def mark_stored_bulk(self, db):
-        """Once, when the auto_reviewed column arrives: stored mail still waiting for a review gets the same treatment."""
-        marked = 0
-        for row in db.execute("SELECT id,kind,title,metadata FROM events WHERE kind='gmail.message' AND deleted=0 "
-                              'AND analyzed_version<version').fetchall():
-            try:
-                metadata = json.loads(row['metadata'] or '{}')
-            except ValueError:
-                continue
-            marked += bool(self.mark_bulk(db, row['id'], row['kind'], metadata, row['title']))
-        if marked:
-            LOG.info('%s stored promotions and bulk mail marked reviewed without a model call', marked)
-        return marked
-
-    def unmark_bulk(self, event_ids=None):
-        """Undo mark_bulk: the marked signals (all of them, or these ids) wait for the next review again."""
-        with self.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            if event_ids is None:
-                cursor = db.execute('UPDATE events SET analyzed_version=0,auto_reviewed=NULL WHERE auto_reviewed IS NOT NULL')
-            else:
-                cursor = db.execute(f"UPDATE events SET analyzed_version=0,auto_reviewed=NULL WHERE auto_reviewed IS NOT NULL AND id IN ({','.join('?' * len(event_ids))})",
-                                    list(event_ids)) if event_ids else None
-            return cursor.rowcount if cursor else 0
 
     def conversation_context(self, rows, limit=4, hours=48):
         """Up to four earlier messages from the same chat for each Slack/WhatsApp signal, so a
@@ -4008,7 +3971,8 @@ class Store:
         pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned), **({'answers_your_card': replies[r['id']]} if r['id'] in replies else {}),
                                **hints.get(r['id'], {})} for r in rows])
         page_of = {view['id']: n for n, page in enumerate(pages) for view in page}
-        return [{'id': r['id'], 'version': r['version'], 'page': page_of[r['id']]} for r in rows], pages
+        brief = {view['id'] for page in pages for view in page if view.get('title_only')}
+        return [{'id': r['id'], 'version': r['version'], 'page': page_of[r['id']], **({'brief': 1} if r['id'] in brief else {})} for r in rows], pages
 
     @staticmethod
     def review_result(analysis_id, pages, **extra):
@@ -13763,7 +13727,7 @@ class App:
                 WHERE r.finished_at IS NULL AND (p.job_id IS NULL OR p.status NOT IN ('starting','running'))
                 AND (r.retry_at IS NULL OR r.retry_at<=?) ORDER BY r.started_at LIMIT ?""",(now(),limit)).fetchall()
         for run in stale:
-            # Its own result or blocker is saved (not replaced, cancelled or timed out): the run normally ends by itself
+            # Its own result or blocker is saved (not replaced, canceled or timed out): the run normally ends by itself
             # seconds later. Read how it ended; stop it only when it is still going after PREPARATION_SETTLE_SECONDS.
             if run['prep_status'] in ('done','blocked') and run['prep_error']!='completion_unconfirmed':
                 outcome=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})

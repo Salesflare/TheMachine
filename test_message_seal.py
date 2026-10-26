@@ -565,7 +565,6 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'board_fit_undo.token': 'a random undo token', 'board_fit_undo.steps': 'project and message ids to put back',
             'team_learnings.items': 'general learnings for The Machine team, anything personal taken out (team_learnings.strip)',
             'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',
-            'events.auto_reviewed': "promo or bulk, bulk_kind's fixed reasons (mark_bulk)",
         }
         sealed = {f'{t}.{c}' for t, cs in message_seal.DERIVED.items() for c in cs} | {f'{t}.{c}' for t, c, _ in message_seal.DERIVED_JSON}
         sealed |= {'events.title', 'events.body', 'events.metadata'}

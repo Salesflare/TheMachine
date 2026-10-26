@@ -11,7 +11,7 @@ order: 10
 
 All your mail: the last 7 days when you connect, then everything new, in and out. Mail you send counts too, so it learns how you write and what you promised.
 
-Promotions and newsletters from a system sender are skipped without a model look. Updates and Forums mail get a quick look at the sender and subject first. Bills, security alerts and Stripe mail always get a full look.
+Promotions, newsletters, Updates and Forums mail get a quick look first: sender, subject and a few words, many at once. When one matters, it is read in full and can become a card. Nothing is skipped unseen.
 
 ## What it can send
 

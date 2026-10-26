@@ -1,6 +1,7 @@
-"""Bulk mail and the review: promotions and list mail from a system sender are marked reviewed without a model call,
-updates and forum mail reach the review as a title line, and bills, security alerts and Stripe always get a full look.
-A person writing stays out of the bulk rules. Made-up mail only; nothing is sent, no Gateway, no model."""
+"""Bulk mail and the review: promotions, list mail, updates and forums reach the review as a compact title line (sender,
+subject, a short snippet), many per turn, so the model still judges each and any can become a card; nothing is skipped
+on its headers alone. A person writing stays out of the bulk rules. Made-up mail only; nothing is sent, no Gateway, no
+model."""
 import base64, datetime as dt, email.message, importlib.util, json, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -52,82 +53,67 @@ class BulkMail(unittest.TestCase):
         plain = a.message_event(WORK, raw('p', 'Sam <sam@example.org>'))['metadata']
         self.assertFalse({'list_unsubscribe', 'list_id', 'precedence'} & set(plain))
 
-    def test_promotions_and_bulk_are_marked_reviewed_without_a_model_call(self):
-        rows = self.ingest(raw('promo', 'Shop <deals@shop.example>', 'Autumn sale', labels=['CATEGORY_PROMOTIONS', 'INBOX']),
-                           raw('digest', 'Weekly <newsletter@digest.example>', 'This week', labels=['CATEGORY_UPDATES'], headers=[UNSUB]),
-                           raw('junk', 'Someone <someone@list.example>', 'Offer', labels=['CATEGORY_UPDATES'], headers=[('Precedence', 'junk')]),
+    def test_bulk_mail_reaches_the_review_as_a_title_line_with_a_snippet(self):
+        rows = self.ingest(raw('promo', 'Shop <deals@shop.example>', 'Autumn sale', labels=['CATEGORY_PROMOTIONS', 'INBOX'], body='Forty percent off ' * 100),
+                           raw('digest', 'Weekly <newsletter@digest.example>', 'This week', headers=[UNSUB]),
+                           raw('junk', 'Someone <someone@list.example>', 'Offer', headers=[('Precedence', 'junk')]),
+                           raw('update', 'Tracker <updates@tracker.example>', 'Your weekly report', labels=['CATEGORY_UPDATES']),
+                           raw('forum', 'Ann <ann@example.org>', 'Group: meetup notes', labels=['CATEGORY_FORUMS'], headers=[('List-Id', '<group.example>')]),
                            raw('ask', 'Sam <sam@example.org>', 'Can we meet?', labels=['CATEGORY_PERSONAL', 'INBOX']))
-        self.assertEqual({k: (r['auto_reviewed'], r['analyzed_version'] == r['version']) for k, r in rows.items()},
-                         {'promo': ('promo', True), 'digest': ('bulk', True), 'junk': ('bulk', True), 'ask': (None, False)})
-        self.assertEqual(set(self.reviewed()), {'ask'})
-        self.assertEqual(self.store.unmark_bulk([rows['promo']['id']]), 1)  # undone: waits for the next review again
-        with self.store.connect() as db:
-            self.assertEqual(db.execute('SELECT auto_reviewed,analyzed_version<version FROM events WHERE id=?', (rows['promo']['id'],)).fetchone()[:], (None, 1))
-
-    def test_updates_and_forums_reach_the_review_as_a_title_line(self):
-        self.ingest(raw('update', 'Tracker <updates@tracker.example>', 'Your weekly report', labels=['CATEGORY_UPDATES']),
-                    raw('forum', 'Ann <ann@example.org>', 'Group: meetup notes', labels=['CATEGORY_FORUMS'], headers=[('List-Id', '<group.example>')]),
-                    raw('ask', 'Sam <sam@example.org>', 'Can we meet?', labels=['INBOX']))
+        self.assertTrue(all(r['analyzed_version'] < r['version'] for r in rows.values()))  # nothing skipped on headers alone
         views = self.reviewed()
-        for name in ('update', 'forum'):
+        self.assertEqual(set(views), set(rows))
+        for name in ('promo', 'digest', 'junk', 'update', 'forum'):
             view = views[name]
             self.assertTrue(view['title_only'])
             self.assertNotIn('body', view)
             self.assertIn('@', view['from'])
+            self.assertLessEqual(len(view['snippet']), a.BRIEF_SNIPPET_CHARS + 1)  # with the ellipsis
             self.assertEqual({'id', 'account_id', 'source_id', 'version', 'occurred_at', 'title'} - set(view), set())
+        self.assertTrue(views['promo']['snippet'].startswith('Forty percent off'))
         self.assertGreater(len(views['ask']['body']), 1000)
         # The whole signal stays readable through the events tool
         full = a.event_page([r for r in self.store.events(['work'], limit=10) if r['source_id'] == 'update'])
         self.assertGreater(len(full['events'][0]['body']), 1000)
 
-    def test_bills_security_alerts_and_stripe_get_a_full_look(self):
-        cases = [raw('bill', 'Power Co <noreply@power.example>', 'Your October bill is ready', labels=['CATEGORY_UPDATES'], headers=[UNSUB]),
-                 raw('invoice', 'Tools <billing@tools.example>', 'Invoice INV-104 for your plan', labels=['CATEGORY_PROMOTIONS'], headers=[UNSUB]),
-                 raw('due', 'Lease <hello@lease.example>', 'Payment due on Friday', labels=['CATEGORY_UPDATES'], headers=[('Precedence', 'bulk')]),
-                 raw('signin', 'Accounts <no-reply@accounts.example>', 'Security alert: new sign-in on Linux', labels=['CATEGORY_UPDATES'], headers=[UNSUB]),
-                 raw('reset', 'App <noreply@app.example>', 'Reset your password', labels=['CATEGORY_UPDATES']),
-                 raw('payout', 'Stripe <notifications@stripe.com>', 'Your weekly summary', labels=['CATEGORY_UPDATES'], headers=[UNSUB]),
-                 raw('dispute', 'Stripe <support@mail.stripe.com>', 'A dispute was opened', labels=['CATEGORY_PROMOTIONS'])]
-        rows = self.ingest(*cases)
-        self.assertTrue(all(r['auto_reviewed'] is None and r['analyzed_version'] < r['version'] for r in rows.values()))
-        views = self.reviewed()
-        self.assertEqual(set(views), set(rows))
-        self.assertFalse([k for k, v in views.items() if v.get('title_only') or 'body' not in v])
-        self.assertFalse(a.bulk_kind('gmail.message', {'from': 'Shop <deals@shop.example>', 'labels': ['CATEGORY_PROMOTIONS']}, 'Last day: 40% off') is None)
+    def test_a_notice_that_matters_sent_as_bulk_mail_is_judged_and_can_become_a_card(self):
+        app = object.__new__(a.App); app.store = self.store
+        app.config = {'accounts': [WORK], 'review_worker': {'enabled': False}}
+        rows = self.ingest(raw('notice', 'Builder <noreply@pages.example>', 'Important: unusual sign-in to your account',
+                               labels=['CATEGORY_PROMOTIONS'], headers=[UNSUB, ('Precedence', 'bulk')],
+                               body='We noticed a sign-in from a new device. If this was not you, reset your password. ' * 10))
+        view = self.reviewed()['notice']
+        self.assertTrue(view['title_only'])
+        self.assertIn('new device', view['snippet'])
+        card = app.action('suggest', {'dedupe_key': 'notice', 'title': 'Check the new sign-in', 'body': 'Confirm it was you.',
+                                      'event_ids': [rows['notice']['id']], 'when': 'now'})
+        self.assertTrue(card.get('id'))
+
+    def test_many_title_lines_fit_in_one_turn(self):
+        self.ingest(*[raw(f'promo{n}', 'Shop <deals@shop.example>', f'Sale {n}', labels=['CATEGORY_PROMOTIONS']) for n in range(40)],
+                    raw('ask', 'Sam <sam@example.org>', 'Can we meet?', labels=['INBOX']))
+        claim = self.store.begin_analysis(['work'], 20)
+        self.assertEqual(claim['claimed'], 41)  # a title line counts a quarter of a signal: 1 + 40/4 = 11 of 20
+        self.assertEqual(claim['pages'], 1)
+        with self.store.connect() as db:
+            items = json.loads(db.execute('SELECT items FROM analyses').fetchone()[0])
+        self.assertEqual(a.claim_weight(items), 11)
 
     def test_a_person_writing_stays_out_of_the_bulk_rules(self):
         reply = ('In-Reply-To', '<root@group.example>')
-        # A person's reply on a mailing list: never marked; in Forums it is a title line the review can open
+        # A person's reply on a mailing list, filed in Forums: a title line the review can open
         list_reply = raw('list-reply', 'Ann <ann@example.org>', 'Re: meetup', labels=['CATEGORY_FORUMS'], headers=[UNSUB, reply, ('Precedence', 'list')])
-        # A list reply filed as a promotion still reaches the review
-        promo_reply = raw('promo-reply', 'Bo <bo@example.org>', 'Re: your question', labels=['CATEGORY_PROMOTIONS'], headers=[UNSUB, reply])
         # A system sender's reply in a thread the owner wrote in: a full look
         own = raw('own', 'Owner <owner@example.com>', 'Help with my order', labels=['SENT'], thread='t1')
         ticket = raw('ticket', 'Helpdesk <support@vendor.example>', 'Re: Help with my order', labels=['CATEGORY_UPDATES'], headers=[UNSUB, reply], thread='t1')
-        # Newsletter-looking mail in Primary from a person: a full look
+        # Newsletter-looking mail in Primary from a person, and a reply in Primary: a full look
         primary = raw('primary', 'Cy <cy@example.org>', 'My monthly letter', labels=['CATEGORY_PERSONAL', 'INBOX'], headers=[UNSUB])
-        # A helpdesk's reply with a list header, the owner's question not in this mailbox: never marked either
-        helpdesk = raw('helpdesk', 'Desk <support@desk.example>', 'Re: your request', labels=['CATEGORY_UPDATES'], headers=[UNSUB, reply])
-        rows = self.ingest(list_reply, promo_reply, own, ticket, primary, helpdesk)
-        self.assertEqual({k: r['auto_reviewed'] for k, r in rows.items()}, dict.fromkeys(rows))
+        answer = raw('answer', 'Desk <support@desk.example>', 'Re: your request', labels=['INBOX'], headers=[UNSUB, reply])
+        self.ingest(list_reply, own, ticket, primary, answer)
         views = self.reviewed()
         self.assertTrue(views['list-reply'].get('title_only'))
-        self.assertTrue(views['promo-reply'].get('title_only'))
-        self.assertIn('body', views['ticket'])
-        self.assertIn('body', views['primary'])
-        self.assertTrue(views['helpdesk'].get('title_only'))
-
-    def test_stored_mail_waiting_for_a_review_is_marked_once_on_upgrade(self):
-        rows = self.ingest(raw('promo', 'Shop <deals@shop.example>', 'Sale', labels=['CATEGORY_PROMOTIONS']),
-                           raw('ask', 'Sam <sam@example.org>', 'Question', labels=['INBOX']))
-        with self.store.connect() as db:  # as stored before this change: nothing marked, no column
-            db.execute('UPDATE events SET analyzed_version=0')
-            db.execute('ALTER TABLE events DROP COLUMN auto_reviewed')
-        store = a.Store(self.store.path)
-        with store.connect() as db:
-            self.assertEqual({r['source_id']: r['auto_reviewed'] for r in db.execute('SELECT source_id,auto_reviewed FROM events')},
-                             {'promo': 'promo', 'ask': None})
-            self.assertEqual(db.execute('SELECT count(*) FROM events WHERE analyzed_version<version').fetchone()[0], 1)
+        for name in ('ticket', 'primary', 'answer', 'own'):
+            self.assertIn('body', views[name], name)
 
     def test_microsoft_other_and_list_mail(self):
         mime = email.message.EmailMessage()
@@ -143,23 +129,11 @@ class BulkMail(unittest.TestCase):
         event = a.message_event(outlook, message)
         self.assertEqual(event['metadata']['list_unsubscribe'], True)
         self.assertNotIn('brand.example/u/', json.dumps(event))
-        self.assertEqual(a.bulk_kind(event['kind'], event['metadata'], event['title']), 'bulk')  # Other, with a list header, from a system sender
+        self.assertEqual(a.bulk_kind(event['kind'], event['metadata'], event['title']), 'update')  # Other: a title line
         focused = {**event['metadata'], 'labels': ms_graph.labels({**meta, 'inferenceClassification': 'focused'}, known)}
-        self.assertIsNone(a.bulk_kind('gmail.message', focused, event['title']))  # Focused counts as Primary
-        other = {**event['metadata'], 'from': 'Ann <ann@example.org>', 'list_unsubscribe': False}
-        self.assertEqual(a.bulk_kind('gmail.message', other, 'Team lunch'), 'update')  # Other from a person: a title line
-
-    def test_first_look_counts_leave_marked_mail_out(self):
-        app = object.__new__(a.App); app.store = self.store
-        app.config = {'accounts': [{'id': 'gateway', 'service': 'gateway'}, WORK], 'review_worker': {'enabled': False}}
-        self.ingest(*[raw(f'promo{n}', 'Shop <deals@shop.example>', 'Sale', labels=['CATEGORY_PROMOTIONS']) for n in range(30)],
-                    *[raw(f'digest{n}', 'Weekly <newsletter@digest.example>', 'Digest', labels=['CATEGORY_UPDATES'], headers=[UNSUB]) for n in range(10)],
-                    raw('ask', 'Sam <sam@example.org>', 'Can we meet?', labels=['INBOX']))
-        with patch.object(a, 'has_model', return_value=True), self.store.connect() as db:
-            state = app.first_look(db)
-            pending = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version').fetchone()[0]
-        self.assertEqual(pending, 1)
-        self.assertEqual(state['waiting'], 1)
+        person = {**focused, 'from': 'Ann <ann@example.org>'}
+        self.assertIsNone(a.bulk_kind('gmail.message', person, 'Team lunch'))  # Focused counts as Primary: a person gets a full look
+        self.assertEqual(a.bulk_kind('gmail.message', {**focused, 'from': 'News <noreply@brand.example>'}, event['title']), 'bulk')  # list mail from a system sender
 
 
 if __name__ == '__main__':
