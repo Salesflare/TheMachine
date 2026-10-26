@@ -11634,6 +11634,10 @@ class App:
                     connector['sign_in_command'] = 'assistant connect ' + onboarding.connect_name(by_id[connector['id']], self.config)
             result['model_usage'] = getattr(self, 'model_usage', None)
             result['model_status'] = getattr(self, 'model_status', None)
+            try:  # the limit banner: a usage limit reached, which one and when it resets
+                result['model_pause'] = self.model_pause()
+            except Exception as error:  # noqa: BLE001 - the dashboard shows without it
+                LOG.error('model pause error=%s', type(error).__name__); result['model_pause'] = None
             result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
             result['review_live'] = self.review_live()
             result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
