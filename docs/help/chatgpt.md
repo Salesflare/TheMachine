@@ -18,7 +18,7 @@ On your own computer, sign OpenClaw in to ChatGPT with `openclaw models auth log
 
 ## Usage limits
 
-A ChatGPT plan has a 5-hour and a weekly limit. **Settings**, then **Model**, shows how much of each is used and when it resets. When reviews stop on a limit, Connections says so, with when it lifts. See [Model](model.md).
+A ChatGPT plan has a 5-hour and a weekly limit. **Settings**, then **Model**, shows how much of each is used and when it resets. Background work stops well before a limit, to keep room for your own chats. When a limit is reached, the top of the dashboard says which one and when it resets, and work picks up after. See [Model](model.md).
 
 ## Import your ChatGPT skills
 

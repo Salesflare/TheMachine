@@ -10,9 +10,17 @@ In **Settings**, **Model** shows the model in use and how you're signed in, like
 
 ## Limits
 
-If your plan has usage limits, it shows how much of each is used and when it resets, for example the 5-hour and the weekly limit of a ChatGPT plan. Reading this never uses your plan.
+If your plan has usage limits, it shows how much of each is used and when it resets, for example the 5-hour and the weekly limit of a ChatGPT or Claude plan. Reading this never uses your plan.
 
-When a limit is reached, reviews pause until it lifts. Some ChatGPT plans come with resets: **Use a reset** starts the limits over, after a confirm. Otherwise **See resets in ChatGPT** opens ChatGPT's own page.
+## Room for your own chats
+
+Background work (reviews, your profile, drafts prepared ahead) leaves room for your own chats. It pauses at about 65% of the 5-hour limit, and paces the weekly limit at about a seventh a day. A sign-in without usage limits, like an API key, is never paused.
+
+Background work never runs on GPT-6 Astra. It uses GPT-6.1 Sol instead.
+
+## When a limit is reached
+
+The top of the dashboard says which limit was reached and when it resets. Work waits, then picks up where it left off. Nothing is lost. Some ChatGPT plans come with resets: **Use a reset** starts the limits over, after a confirm. Otherwise **See resets in ChatGPT** opens ChatGPT's own page.
 
 ## Change the model
 

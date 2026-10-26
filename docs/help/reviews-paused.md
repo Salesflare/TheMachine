@@ -14,7 +14,7 @@ The top of Suggestions says "Reviews are off, so no suggestions arrive yet." On 
 
 ## Your model's limit
 
-When your AI plan's limit is reached, reviews wait until it lifts. **Connections**, then **Reviews**, shows it next to the run, with when it resets. **Settings**, **Model** shows your limits. See [Model](model.md).
+Reviews pause at about 65% of your plan's 5-hour limit and pace the weekly limit, to keep room for your own chats. When a limit is reached, the top of the dashboard says which one and when it resets. **Connections**, then **Reviews**, shows it next to the run. **Settings**, **Model** shows your limits. See [Model](model.md).
 
 Nothing is lost while it waits: what came in is reviewed once it can.
 
