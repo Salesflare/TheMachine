@@ -60,6 +60,7 @@ import agent_jobs
 import mimetypes
 import work_removal
 import retention
+import chat_files
 import security_levels
 import skills
 import task_invites
@@ -537,6 +538,9 @@ OWNER_ACTIONS |= FAMILY_ACTIONS
 # Cards the owner makes, renames, or merges when the review asks: theirs alone, from the dashboard.
 CARD_ACTIONS = {'card_new', 'card_rename', 'card_merge'}
 OWNER_ACTIONS |= CARD_ACTIONS
+# A card chat's Stop button and the files added to a message (chat_files.py): the owner's own, from the dashboard.
+CHAT_ACTIONS = {'chat_stop', 'chat_upload', 'chat_file_remove'}
+OWNER_ACTIONS |= CHAT_ACTIONS
 # Skills (skills.py): writing, sharing and installing them is the owner's own, from the dashboard. The agent can only
 # propose one (skill_propose), which waits for the owner's Approve.
 SKILL_ACTIONS = {'skill_save', 'skill_get', 'skill_toggle', 'skill_delete', 'skill_share', 'skill_decide', 'skill_example',
@@ -566,7 +570,7 @@ SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send'}
 OWNER_ACTIONS |= SUPPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
-DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *SHARE_ACTIONS, *GRAPH_SHARE_ACTIONS, *FRIEND_ACTIONS, *FAMILY_ACTIONS, *LEARNING_ACTIONS,
+DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACTIONS, *GRAPH_SHARE_ACTIONS, *FRIEND_ACTIONS, *FAMILY_ACTIONS, *LEARNING_ACTIONS,
                                *CARD_ACTIONS, *SKILL_ACTIONS, *CONNECT_ACTIONS, *AGENT_ACTIONS, *CRM_ACTIONS, *SUPPORT_ACTIONS, 'decide', 'confirm_action',
                                'undo_merge', 'card_chat', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role',
                                'graph_fact_unlink', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_save',
@@ -2913,6 +2917,8 @@ class Store:
         with self.connect() as db:
             preparation_state.initialize(db)
             retention.initialize(db)
+            chat_files.initialize(db)
+            db.execute('CREATE TABLE IF NOT EXISTS chat_stops(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,text TEXT NOT NULL,at TEXT NOT NULL)')
         os.chmod(self.path, 0o600)
         self.ensure_monotonic_event_ids()
         with self.connect() as db:
@@ -5956,13 +5962,36 @@ class Store:
             db.execute("UPDATE action_jobs SET status='local_preparation',updated_at=? WHERE id=? AND status='paused'",(now(),action_id))
 
     def decide(self, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False,
-               reviewed=None):
+               reviewed=None, files=None):
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if choice == 'accept':
                 self.skill_update_reviewed(db, suggestion_id, source, reviewed)
-            return self._decide(db, suggestion_id, choice, feedback, decision_id, source,
-                                snooze_hours, snoozed_until, snooze_option, verified_terminal_job, work)
+            # Files added to a chat message go with it, in the same transaction, so its run always has them
+            rows = chat_files.check(db, suggestion_id, files, decision_id) if files and choice == 'other' else []
+            result = self._decide(db, suggestion_id, choice, feedback, decision_id, source,
+                                  snooze_hours, snoozed_until, snooze_option, verified_terminal_job, work)
+            if rows and not result.get('duplicate'):
+                chat_files.bind(db, decision_id, rows)
+            return result
+
+    def stop_chat(self, suggestion_id, job_id, text):
+        """The chat's Stop: the card's current run ends now, kept as it was. Its preparation waits (blocked, error
+        'stopped', so Try again or a new message carries on), any further tool call of the run is refused
+        (preparation_state.tool_intent) and the worker aborts it in its session at once (stop_stale_runs). What it had
+        said so far is kept for the chat. False when nothing was running any more."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            stamp = now()
+            stopped = db.execute("UPDATE preparations SET status='blocked',reason=?,details=NULL,questions=NULL,error='stopped',retry_at=NULL,updated_at=? "
+                                 "WHERE suggestion_id=? AND job_id=? AND status IN ('queued','starting','running')",
+                                 (CHAT_STOPPED, stamp, suggestion_id, job_id)).rowcount
+            if not stopped:
+                return False
+            db.execute('INSERT OR REPLACE INTO chat_stops(job_id,suggestion_id,text,at) VALUES(?,?,?,?)', (job_id, suggestion_id, text or '', stamp))
+            pause_idle_steps(db, suggestion_id)
+            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+            return True
 
     def skill_update_reviewed(self, db, suggestion_id, source, reviewed):
         """Update <skill> on a card from notes changes the owner's skill: only from the dashboard, after its before and
@@ -8388,6 +8417,9 @@ def preparation_steps(job_id, agent_db=None, limit=4):
 # chat-history-run.mjs, shown as a conversation. The owner's side comes from this app's decisions, never from the long
 # service prompts in the transcript; the agent's side is its replies and its steps, in the owner's words.
 CHAT_HISTORY_LIMIT = 200
+# The chat's Stop (Store.stop_chat): what the card says after, and a message that is only files (chat_files.py)
+CHAT_STOPPED = 'Stopped. Write what to do next, or tap Try again.'
+CHAT_FILES_ONLY = ('Take a look at the attached file.', 'Take a look at the attached files.')
 CHAT_OWNER_WORDS = {'accept': 'Do it', 'retry': 'Try again', 'complete': 'Marked done', 'reject': 'Not needed',
                     'snooze': 'Snoozed', 'reopen': 'Reopened', 'undo': 'Reopened', 'rename': 'Renamed',
                     'rename_reset': 'Back to the suggested title', 'merge': 'Merged into the other to-do', 'keep_both': 'Kept both to-dos'}
@@ -9134,6 +9166,7 @@ def card(row):
     if row.get('preparation_status') in ('starting','running'):
         status='Preparing… I’ve been in the browser a while; it may need you there (a sign-in or a check).' if row.get('preparation_browser') else 'Preparing…'
     elif row.get('preparation_status') == 'queued': status='Next up. I’ll start shortly.'
+    elif row.get('preparation_status') == 'blocked' and row.get('preparation_error') == 'stopped': status=CHAT_STOPPED
     elif row.get('preparation_status') == 'blocked' and (row.get('preparation_browser') or {}).get('sign_in'):
         status='Waiting for you to sign in: '+row['preparation_reason'].rstrip('.')+'. Sign in through Sign in and I carry on by myself.'
     elif row.get('preparation_status') == 'blocked' and row['status'] not in ('completed','rejected','snoozed') and not row.get('handled_hint') and ask_blocked(row):
@@ -12615,6 +12648,18 @@ class App:
             return result
         if name == 'card_chat':
             return self.card_chat(args.get('suggestion_id'), args.get('cursor'))
+        if name == 'chat_stop':
+            return self.chat_stop(args.get('suggestion_id'))
+        if name in ('chat_upload', 'chat_file_remove'):
+            sid = str(args.get('suggestion_id') or '')
+            if not re.fullmatch(r'[a-f0-9]{16}', sid):
+                raise ValueError('Unknown suggestion')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if name == 'chat_file_remove':
+                    return chat_files.remove(db, self.config, sid, args.get('id'))
+                chat_files.sweep(db, self.config, now())
+                return chat_files.save(db, self.config, sid, args.get('name'), args.get('data'), now())
         if name == 'decide':
             if args.get('choice') == 'reopen' and not owner_dashboard:
                 raise ValueError('Use the owner dashboard to reopen a completed item')
@@ -12628,10 +12673,14 @@ class App:
                 raise ValueError('Decisions must come from the owner’s Telegram buttons or dashboard')
             args = {**args, 'source': source}
             terminal_job=None
-            result=self.store.decide(args['suggestion_id'], args['choice'], args.get('feedback', ''),
+            files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
+            feedback=args.get('feedback', '')
+            if files and isinstance(feedback,str) and not feedback.strip():
+                feedback=CHAT_FILES_ONLY[len(files)>1]
+            result=self.store.decide(args['suggestion_id'], args['choice'], feedback,
                                      args['decision_id'], source, args.get('snooze_hours', 24),
                                      args.get('snoozed_until'), args.get('snooze_option'),terminal_job,self.is_work_suggestion(args['suggestion_id']),
-                                     reviewed=str(args.get('reviewed') or '')[:64] or None)
+                                     reviewed=str(args.get('reviewed') or '')[:64] or None, files=files)
             if args['choice'] == 'complete' and getattr(self, 'agents', None):
                 self.agents.card_closed(args['suggestion_id'])  # its Claude Code or Codex result did the job
             if args['choice'] == 'complete':
@@ -13833,6 +13882,12 @@ class App:
             except Exception as error:LOG.error('agent work error=%s',type(error).__name__)
             if request['session_job_id'] != job['job_id']:
                 request['message']+='\nThis continues the SAME session, with earlier work in context. Before changing anything in an app, read assistant_signals preparation_history (offset 0, then any next_offset): a compact list of earlier calls. Summaries are shortened: when reconciling a call, request preparation_history with its call_ref, offset 0 and any next_offset for exact saved parameters and receipts. If detail_complete=false, check the retained transcript or original app for the missing suffix. Do not repeat an external step that already happened; check uncertain ones against the app first. If the owner\'s latest note asks for something different (a rewrite, another approach), do that. Saving your result or a blocker is always allowed.'
+            try:  # files the owner added to the message that started this run: images as images, all of them as files
+                with self.store.connect() as db:
+                    images,lines=chat_files.for_run(db,self.config,job.get('decision_id'),job['job_id'],WORKSPACE/'data'/'assistant-attachments')
+                if images:request['attachments']=images
+                request['message']+=lines
+            except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
         result=runner(request)
         with self.store.connect() as db:
             current=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(job['suggestion_id'],)).fetchone()
@@ -13897,7 +13952,7 @@ class App:
         for run in stale:
             # Its own result or blocker is saved (not replaced, canceled or timed out): the run normally ends by itself
             # seconds later. Read how it ended; stop it only when it is still going after PREPARATION_SETTLE_SECONDS.
-            if run['prep_status'] in ('done','blocked') and run['prep_error']!='completion_unconfirmed':
+            if run['prep_status'] in ('done','blocked') and run['prep_error'] not in ('completion_unconfirmed','stopped'):  # stopped: the chat's Stop, at once
                 outcome=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})
                 if outcome.get('status') in preparation_state.TERMINAL:
                     with self.store.connect() as db:
@@ -14111,6 +14166,23 @@ class App:
             return {**result, 'unchanged': True}
         return {**result, 'items': chat_items(found.get('messages'), owner, results), 'more': bool(found.get('hasMore'))}
 
+    def chat_stop(self, suggestion_id):
+        """The chat's Stop button: ends the card's running reply now and keeps what it said so far (its live text,
+        read from the Gateway first). {'stopped': False} when it had already finished."""
+        if not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
+            raise ValueError('Unknown suggestion')
+        with self.store.connect() as db:
+            job = db.execute('SELECT job_id,session_job_id,status FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+        if not job or job['status'] not in ('queued', 'starting', 'running'):
+            return {'stopped': False}
+        text = ''
+        if job['status'] != 'queued':
+            found = self.card_chat_gateway({'session_key': 'agent:main:assistant-review-preparation-' + (job['session_job_id'] or job['job_id']),
+                                            'cursor': None, 'limit': 1})
+            flight = found.get('inFlightRun') if isinstance(found, dict) and isinstance(found.get('inFlightRun'), dict) else None
+            text = chat_reply(chat_text(flight.get('text'), chars=8000))[0] if flight else ''
+        return {'stopped': self.store.stop_chat(suggestion_id, job['job_id'], text)}
+
     def card_chat_service(self, db, suggestion_id):
         """What the service itself knows of a card's chat: the source messages, the owner's notes and taps, what
         went out, and each preparation's saved results (by job ID)."""
@@ -14161,6 +14233,7 @@ class App:
         runs = [r['started_at'] for r in db.execute('SELECT started_at FROM preparation_runs WHERE suggestion_id=?', (suggestion_id,))]
         about = max(((i['at'], i['from']) for i in owner if i['kind'] == 'source' and not i['mine'] and i['from']), default=(0, ''))[1]  # the latest who wrote
         waiting = False  # with a teammate: Later means back to check in, not a snooze of the owner's
+        sent_files = chat_files.listed(db, [r['id'] for r in db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice='other' AND source='dashboard'", (suggestion_id,))])
         for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
@@ -14179,7 +14252,9 @@ class App:
                 owner.append({'kind': 'event', 'text': 'Moved the check-in' + via, 'choice': 'snooze', 'mine': True, 'at': at})
                 continue
             if r['choice'] == 'other':
-                owner.append({'kind': 'you', 'text': clamp(r['feedback'], 5000), 'via': r['source'], 'at': at})
+                attached = sent_files.get(r['id'], [])
+                said = '' if attached and r['feedback'] in CHAT_FILES_ONLY else clamp(r['feedback'], 5000)
+                owner.append({'kind': 'you', 'text': said, 'via': r['source'], 'at': at, **({'files': attached} if attached else {})})
             elif r['choice'] in CHAT_OWNER_WORDS:  # a send shows as what went out, below
                 why = ': ' + clamp(r['feedback'], 300) if r['choice'] == 'reject' and r['feedback'] else ''
                 taps = [i for i in owner if i.get('choice')]
@@ -14241,6 +14316,12 @@ class App:
                 d['to'] = [chat_name(t, names, about) for t in d['to']]
             results.setdefault(r['job_id'], []).append({'kind': 'reply', 'text': text, 'drafts': drafts, 'files': files,
                                                        'at': chat_ms(r['started_at'])})
+        # The chat's Stop: what the run had said so far stays (unless it had saved a result), then "Stopped"
+        for r in db.execute('SELECT job_id,text,at FROM chat_stops WHERE suggestion_id=? ORDER BY at', (suggestion_id,)):
+            at = chat_ms(r['at'])
+            if r['text'] and r['job_id'] not in results:
+                results[r['job_id']] = [{'kind': 'reply', 'text': r['text'], 'drafts': [], 'files': [], 'stopped': True, 'at': at - 1}]
+            owner.append({'kind': 'event', 'text': 'Stopped', 'mine': True, 'at': at})
         # Work handed to a coding agent (Hand to Claude Code / Codex): when it went, each change asked of it, and what came back
         jobs = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_jobs'").fetchone()  # only once agents are set up
         for r in db.execute('SELECT * FROM agent_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)) if jobs else []:
@@ -15421,6 +15502,12 @@ class App:
                     LOG.info('retention %s', json.dumps(report, sort_keys=True))
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.error('retention error=%s', type(error).__name__)
+            try:  # files added to a chat message and never sent, and those of cards that are gone (chat_files.py)
+                with self.store.connect() as db:
+                    db.execute('BEGIN IMMEDIATE')
+                    chat_files.sweep(db, self.config, now())
+            except Exception as error:  # noqa: BLE001 - tried again in ten minutes
+                LOG.error('chat files sweep error=%s', type(error).__name__)
 
     def embedding_worker(self):
         """Small background passes: vectors for new and changed signals, newest first. Never blocks
@@ -16772,6 +16859,25 @@ class App:
                     self.end_headers()
                     try:self.wfile.write(data)
                     except (BrokenPipeError, ConnectionResetError):self.close_connection = True
+                elif path.path == '/api/chat-file':  # a file the owner added to a chat message (chat_files.py)
+                    try:
+                        with app.store.connect() as db:
+                            data, mime, name = chat_files.read(db, app.config, urllib.parse.parse_qs(path.query).get('id', [''])[0])
+                    except (ValueError, OSError):
+                        self.output(404, {'error': 'File not available'})
+                        return
+                    inline = mime in ATTACHMENT_INLINE  # images and PDFs open; anything else downloads
+                    self.send_response(200)
+                    self.send_header('Content-Type', mime if inline else 'application/octet-stream')
+                    self.send_header('Content-Disposition', ('inline' if inline else 'attachment') + "; filename*=UTF-8''" + urllib.parse.quote(name))
+                    self.send_header('Content-Length', str(len(data)))
+                    self.send_header('Cache-Control', 'private, max-age=86400')
+                    self.send_header('X-Content-Type-Options', 'nosniff')
+                    self.send_header('Referrer-Policy', 'no-referrer')
+                    self.send_header('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'" + ('; sandbox' if mime.startswith('image/') else ''))
+                    self.end_headers()
+                    try:self.wfile.write(data)
+                    except (BrokenPipeError, ConnectionResetError):self.close_connection = True
                 elif path.path in ('/api/result','/result-file'):
                     args=urllib.parse.parse_qs(path.query)
                     try:
@@ -16851,14 +16957,18 @@ class App:
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
                     upload = self.headers.get('X-Upload') in ('skill-import', 'graph-import', 'bug-report')
-                    if not 0 < size <= (UPLOAD_REQUEST_BYTES if upload else 65536):
+                    chat_file = self.headers.get('X-Upload') == 'chat-file'  # one file added to a chat message
+                    if not 0 < size <= (UPLOAD_REQUEST_BYTES if upload else chat_files.REQUEST_BYTES if chat_file else 65536):
+                        if chat_file and size > 0:
+                            self.close_connection = True
+                            raise ValueError(f'That file is too big. Files can be up to {chat_files.human(chat_files.FILE_BYTES)}.')
                         raise ValueError('Invalid request size')
                     try:
                         request = json.loads(self.rfile.read(size))
                     except OSError:
                         self.close_connection = True  # stalled or dropped client
                         return
-                    if upload and request.get('action') not in UPLOAD_ACTIONS:
+                    if (upload and request.get('action') not in UPLOAD_ACTIONS) or (chat_file and request.get('action') != 'chat_upload'):
                         raise ValueError('Invalid request size')
                     if self.path != '/api/action' or (not internal and request['action'] not in DASHBOARD_ACTIONS):
                         self.output(403, {'error': 'Operation is not available here'})

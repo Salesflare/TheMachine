@@ -167,7 +167,7 @@ try{
  assert.equal(await page.locator('#chat-input').getAttribute('rows'),'1');
  // The placeholder is the field's own, so the caret, the placeholder and typed text start at the same x, with no overlay
  const field=await page.locator('#chat-input').evaluate(t=>{const c=getComputedStyle(t),p=getComputedStyle(t,'::placeholder'),r=t.getBoundingClientRect(),box=t.closest('.chat-box');
-  return {indent:c.textIndent,phIndent:p.textIndent,phPad:p.paddingLeft,align:c.textAlign,overlays:[...box.children].filter(n=>n!==t&&!n.matches('.chat-tools')).length,mid:Math.abs((r.top+r.bottom)/2-(box.getBoundingClientRect().top+box.getBoundingClientRect().bottom)/2)<2,send:Math.abs(box.querySelector('.chat-send').getBoundingClientRect().height-r.height)<1}});
+  return {indent:c.textIndent,phIndent:p.textIndent,phPad:p.paddingLeft,align:c.textAlign,overlays:[...box.children].filter(n=>n!==t&&!n.matches('.chat-tools,.chat-attach,input[type=file]')).length,mid:Math.abs((r.top+r.bottom)/2-(box.getBoundingClientRect().top+box.getBoundingClientRect().bottom)/2)<2,send:Math.abs(box.querySelector('[data-chat-send]').getBoundingClientRect().height-r.height)<1}});
  assert.deepEqual(field,{indent:'0px',phIndent:'0px',phPad:'0px',align:'left',overlays:0,mid:true,send:true});
  // A refresh while you type keeps the same field with its text and caret, and its focus
  await page.locator('#chat-input').fill('Half a thought');await page.locator('#chat-input').evaluate(t=>{window.__field=t;t.setSelectionRange(4,4)});

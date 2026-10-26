@@ -66,10 +66,18 @@ try {
   let result;
   if (request.action==='start') {
     if (typeof request.message!=='string' || request.message.length>60000) throw new Error('Invalid prompt');  // PROMPT_LIMIT in assistant.py
+    // Images the owner added to their chat message (chat_files.py): sent to the model as images. Other files are in
+    // the run's attachments folder, named in the message.
+    const IMAGE=/^image\/(?:png|jpeg|gif|webp)$/;
+    const attachments=Array.isArray(request.attachments)?request.attachments:[];
+    if (attachments.length>5 || attachments.some(a=>a?.type!=='image' || !IMAGE.test(a.mimeType||'') || typeof a.fileName!=='string' ||
+        a.fileName.length>200 || typeof a.content!=='string' || a.content.length>7*1024*1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(a.content)) ||
+        attachments.reduce((n,a)=>n+a.content.length,0)>20*1024*1024) throw new Error('Invalid attachments');
     result=await callGatewayFromCli('agent',{timeout:'20000'}, {
       agentId:'main', sessionKey:session+sessionId,
       message:request.message, idempotencyKey:request.job_id, timeout:runSeconds,
       deliver:false, disableMessageTool:true,
+      ...(attachments.length?{attachments:attachments.map(a=>({type:'image', mimeType:a.mimeType, fileName:a.fileName, content:a.content}))}:{}),
       // Background work never runs on the costliest model: the service names the one to use instead (assistant.py
       // background_model), only one the owner's model allowlist allows.
       ...(typeof request.provider==='string' && typeof request.model==='string' &&

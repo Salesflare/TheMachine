@@ -65,6 +65,9 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   Do-it run saves are encrypted on disk with the same key; the run reads a private copy that is removed when it
   ends. Files a run makes itself are not. Stores other programs own are not covered: OpenClaw's session
   transcripts and WhatsApp's `wacli` store.
+- Files the owner adds to a to-do chat are kept as they are in `chat-files/` next to the database (mode 600),
+  checked by type and size, and served back only to the owner's dashboard (images and PDFs inline, anything else
+  as a download). Each run that uses one gets a copy in its attachments folder. Unsent ones go after a day.
 - Backups contain private evidence and may include secrets. Protect them like the live data.
 - Keep the operating system patched. On a dedicated Ubuntu server, let `unattended-upgrades` install the
   `-security` pockets daily, and reboot when `/run/reboot-required` appears, at a quiet hour, then check that

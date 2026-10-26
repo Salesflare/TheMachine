@@ -1517,6 +1517,25 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .chat-tools{display:flex;align-items:center;gap:6px}.chat-tools .grow{display:none}
 .chat-send{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:var(--c-accent);color:var(--c-accent-ink,#fff);box-shadow:none;cursor:pointer}.chat-send svg{width:17px;height:17px}
 .chat-send:disabled{background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--chat-quiet);cursor:default}
+/* The chat's Stop (while a reply runs) and the files added to the next message: attach, paste or drop */
+.chat-stop{background:var(--text);color:var(--bg)}.chat-stop svg{width:13px;height:13px}.chat-stop:disabled{opacity:.5}
+.chat-attach{display:grid;place-items:center;flex:none;align-self:flex-end;width:34px;height:34px;min-height:0;margin:0 0 0 2px;padding:0;border:0;border-radius:50%;background:none;color:var(--chat-quiet);box-shadow:none;cursor:pointer}
+.chat-attach:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}.chat-attach svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chat-compose .chat-box textarea{padding-left:4px}
+.chat-tray{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.chat-tray[hidden]{display:none}
+.chat-att{position:relative;display:flex;align-items:center;gap:8px;max-width:240px;height:52px;padding:0 30px 0 6px;border:1px solid var(--c-line-strong);border-radius:14px;background:var(--surface);font-size:.82rem;line-height:1.3}
+.chat-att.img{width:52px;padding:0;overflow:hidden}.chat-att.img img{width:100%;height:100%;object-fit:cover;display:block}.chat-att.img .chat-att-name{display:none}
+.chat-att.up{opacity:.6}.chat-att.up::after{content:'';position:absolute;inset:auto 6px 5px 6px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--c-accent) 40%,transparent 40%);background-size:200% 100%;animation:chat-up 1s linear infinite}
+@keyframes chat-up{to{background-position:-200% 0}}
+.chat-att-ico{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:10px;background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--chat-quiet)}.chat-att-ico svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.chat-att-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-att-name small{display:block;color:var(--chat-quiet);font-size:.74rem}
+.chat-att-x{position:absolute;top:4px;right:4px;display:grid;place-items:center;width:20px;height:20px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--text) 70%,transparent);color:var(--bg);font-size:14px;line-height:1;box-shadow:none;cursor:pointer}
+.chat-att:not(.img) .chat-att-x{top:50%;right:6px;transform:translateY(-50%);background:none;color:var(--chat-quiet);font-size:18px}.chat-att:not(.img) .chat-att-x:hover{color:var(--text)}
+.chat-file-error{margin:0 0 8px;font-size:var(--chat-meta);color:var(--orange);font-weight:600}.chat-file-error[hidden]{display:none}
+.chat-layout.chat-drop .chat-box{border-color:var(--c-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent) 25%,transparent)}
+.chat-drop-hint{display:none}.chat-layout.chat-drop .chat-drop-hint{display:block;margin:0 0 8px;font-size:var(--chat-meta);color:var(--c-accent);font-weight:600;text-align:center}
+.chat-you-files{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin:0 0 6px}.chat-you-files .chat-files{margin:0;justify-content:flex-end}
+.chat-you-img{display:block;max-width:min(240px,100%);border-radius:14px;overflow:hidden;border:1px solid var(--c-line)}.chat-you-img img{display:block;max-width:100%;max-height:240px;object-fit:cover}
 /* On a computer the list and the thread each scroll on their own inside the window; the page itself stays put */
 @media(min-width:861px){
   html:has(body.chat-open #inbox:not([hidden])),body.chat-open:has(#inbox:not([hidden])){height:100dvh;overflow:hidden}
@@ -2461,7 +2480,7 @@ const finalStep=s=>{if(s.status!=='prepared'||s.handled_hint)return '';try{const
 const askBlocked=s=>s.preparation_status==='blocked'&&!s.preparation_error&&!!String(s.preparation_reason||'').trim()&&retryLabel(s.preparation_reason)!=='Continue'&&(!!s.preparation_questions?.length||!s.preparation_no_questions&&!s.preparation_browser);
 // The card's state in a word: its chip, and the chat's status line while it is stuck or preparing (chatStatus), so the two never
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
-const cardState=s=>s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(askBlocked(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
+const cardState=s=>s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
@@ -3970,7 +3989,9 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    if(i.handoff&&n===lastMachine&&options(n,false))push({kind:'event',mine:false},`<div class="chat-msg machine chat-handoff-options">${options(n,false)}</div>`)}
   else if(i.kind==='learned')push(i,chatLearned(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
   else if(i.kind==='you'){const to=i.to||'',show=to&&to!==lastTo;lastTo=to;
-   push(i,`<div class="chat-msg you">${show?`<div class="chat-to">to ${esc(to)}</div>`:''}<div class="bubble">${chatMarkdown(i.text)}</div>${tm(i.at)}</div>`)}
+   const fs=i.files||[],imgs=fs.filter(f=>/^image\//.test(f.type)),docs=fs.filter(f=>!/^image\//.test(f.type)),url=f=>'api/chat-file?id='+encodeURIComponent(f.id);
+   const att=fs.length?`<div class="chat-you-files">${imgs.map(f=>`<a class="chat-you-img" href="${url(f)}" target="_blank" rel="noopener" title="${esc(f.name)}"><img src="${url(f)}" alt="${esc(f.name)}" loading="lazy"></a>`).join('')}${docs.length?`<div class="chat-files">${docs.map(f=>`<a class="agent-file via-file" href="${url(f)}" target="_blank" rel="noopener" download="${esc(f.name)}">${esc(f.name)}</a>`).join('')}</div>`:''}</div>`:'';
+   push(i,`<div class="chat-msg you">${show?`<div class="chat-to">to ${esc(to)}</div>`:''}${att}${i.text?`<div class="bubble">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}
   else if(i.kind==='reply'){const ds=i.drafts||[],h=headline(i.text);
    const tab=n===tabAt?`<a class="agent-file via-browser" href="${esc(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${esc(s.id)}">View in Machine browser</a>`:'';
    const noted=i.noted?'<small class="chat-noted">Noted for next time</small>':'';
@@ -4013,15 +4034,46 @@ const DOTS='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r
 const chatUntil=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return (chatDayOf(v)==='Today'?'today':days<6&&days>-1?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}))+' '+chatHM(v)};
 // One small line over the message box: where the card stands, with its one way back (Unsnooze, Reopen) as a text button
 function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…':s.status==='snoozed'?(s.snoozed_until?(s.handoff_wait?checkinLabel(s):'Snoozed until '+chatUntil(s.snoozed_until)):'Snoozed')
-  :closed(s)?(s.status==='completed'?'Done':'Not needed'):s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||['accepted','instructions'].includes(s.status)?'Preparing':'';
+  :closed(s)?(s.status==='completed'?'Done':'Not needed'):s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||['accepted','instructions'].includes(s.status)?'Preparing':'';
  return text?`<span>${esc(text)}</span>${p.back&&!chat?.active?`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
 function chatView(s,groups){const p=chatParts(s);
  const side=`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>`<a href="#chat=${x.id}" title="${esc(x.title)}"${x.id===s.id?' aria-current="page"':''}>${esc(x.title)}</a>`).join('')}${cut.more?sideMoreRow(key):''}`:''}).join('')}</aside>`;
  return `<div class="chat-layout${chatDrawer?' drawer':''}" data-chat="${s.id}">${side}<div class="chat-main"><header class="chat-head"><a class="chat-back" href="#card=${s.id}" data-chat-back aria-label="Back to the to-do" title="Back to the to-do">${BACK}</a><h2 class="chat-title" title="${esc(s.title)}">${esc(s.title)}</h2>
   <details class="chat-menu" id="chat-menu"><summary aria-label="More actions" title="More actions">${DOTS}</summary><div class="chat-menu-list" role="group" aria-label="More actions">${p.rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button></div></details></header>
  <article id="task-${s.id}" class="chat-panel">${p.panel}</article><div class="chat-log" id="chat-log" aria-live="polite">${chatLog(s)}</div>
- <div class="chat-compose"><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':' hidden'}>${chatPicks(s)}</div><div class="chat-box"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="Ask or change something" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send" disabled>${SEND}</button></div></div></div></div></div>`}
-function chatGrow(t){if(!t)return;t.style.height='34px';t.style.height=Math.min(160,Math.max(34,t.scrollHeight))+'px';const b=$('[data-chat-send]');if(b)b.disabled=!t.value.trim()}
+ <div class="chat-compose"><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':' hidden'}>${chatPicks(s)}</div><p class="chat-drop-hint">Drop to add to your message</p><p class="chat-file-error" id="chat-file-error" role="alert" hidden></p><div class="chat-tray" id="chat-tray"${chatPending.length?'':' hidden'}>${chatTrayHTML()}</div><div class="chat-box"><button type="button" class="chat-attach" data-chat-attach aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="chat-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="Ask or change something" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span><button type="button" class="chat-send chat-stop" data-chat-stop aria-label="Stop" title="Stop"${chat?.active?'':' hidden'}>${STOP}</button><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send"${chat?.active?' hidden':''} disabled>${SEND}</button></div></div></div></div></div>`}
+function chatGrow(t){if(!t)return;t.style.height='34px';t.style.height=Math.min(160,Math.max(34,t.scrollHeight))+'px';chatSendState()}
+// While a reply runs, Stop takes the place of Send until something is typed or added (sending then replaces the run).
+function chatSendState(){const t=$('#chat-input'),b=$('[data-chat-send]'),x=$('[data-chat-stop]');if(!t||!b)return;
+ const has=!!t.value.trim()||chatPending.length>0,ready=chatPending.every(f=>f.state==='ok'),stop=!!chat?.active&&!has;
+ b.disabled=!has||!ready;b.hidden=stop;if(x){x.hidden=!stop;if(!stop)x.disabled=false}}
+// Files added to the next message (chat_files.py): from Add files, a paste or a drop, each uploaded at once and sent
+// with the message. The same limits as the service's: they say so before anything uploads.
+const CHAT_IMAGE=/\.(png|jpe?g|gif|webp)$/i,CHAT_EXT=/\.(png|jpe?g|gif|webp|pdf|txt|md|csv|tsv|json|log|rtf|eml|ics|docx|xlsx|pptx|odt|ods)$/i;
+const CHAT_ACCEPT='image/png,image/jpeg,image/gif,image/webp,.pdf,.txt,.md,.csv,.tsv,.json,.log,.rtf,.eml,.ics,.docx,.xlsx,.pptx,.odt,.ods';
+const CHAT_LIMIT={image:5*1048576,file:10*1048576,count:5};
+const CLIP='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.5l-8.1 8.1a5 5 0 0 1-7.1-7.1l8.4-8.4a3.3 3.3 0 0 1 4.7 4.7l-8.4 8.4a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg>';
+const STOP='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor"/></svg>';
+const FILE_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h8l4.2 4.2V21.2H6z M14 2.8V7h4.2"/></svg>';
+let chatPending=[];
+const chatSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const chatTrayHTML=()=>chatPending.map(f=>{const img=f.type.startsWith('image/')&&f.url;return `<div class="chat-att${img?' img':''}${f.state==='up'?' up':''}" title="${esc(f.name)}">${img?`<img src="${f.url}" alt="${esc(f.name)}">`:`<span class="chat-att-ico">${FILE_ICO}</span>`}<span class="chat-att-name">${esc(f.name)}<small>${f.state==='up'?'Uploading…':chatSize(f.size)}</small></span><button type="button" class="chat-att-x" data-att-remove="${f.key}" aria-label="Remove ${esc(f.name)}" title="Remove">×</button></div>`}).join('');
+function chatTray(){const t=$('#chat-tray');if(t){t.innerHTML=chatTrayHTML();t.hidden=!chatPending.length}chatSendState()}
+function chatFileError(msg){const e=$('#chat-file-error');if(!e){if(msg)toast(msg,true);return}e.textContent=msg||'';e.hidden=!msg}
+const chatDataUrl=f=>new Promise((ok,fail)=>{const r=new FileReader();r.onload=()=>ok(String(r.result));r.onerror=()=>fail(Error('That file couldn’t be read'));r.readAsDataURL(f)});
+function chatAddFiles(list){const s=chatOpen();if(!s)return;chatFileError('');const problems=[];
+ for(const f of list){const name=(f.name&&f.name!=='image.png'?f.name:'Pasted image.'+((f.type||'image/png').split('/')[1]||'png').replace('jpeg','jpg')).slice(0,120),img=CHAT_IMAGE.test(name);
+  if(chatPending.length>=CHAT_LIMIT.count){problems.push(`A message can carry up to ${CHAT_LIMIT.count} files.`);break}
+  if(!CHAT_EXT.test(name)){problems.push(`I can’t read ${name}. Add an image, a PDF, a text or an Office file.`);continue}
+  const limit=img?CHAT_LIMIT.image:CHAT_LIMIT.file;if(f.size>limit){problems.push(`${name} is too big (${chatSize(f.size)}). ${img?'Images':'Files'} can be up to ${chatSize(limit)}.`);continue}
+  if(!f.size){problems.push(`${name} is empty.`);continue}
+  const item={key:crypto.randomUUID(),name,size:f.size,type:img?(f.type||'image/png'):(f.type||'file'),url:'',state:'up',sid:s.id};chatPending.push(item);
+  (async()=>{try{const url=await chatDataUrl(f),data=url.split(',')[1]||'';if(img){item.url=url;chatTray()}const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'X-Upload':'chat-file'},body:JSON.stringify({action:'chat_upload',args:{suggestion_id:s.id,name,data}})});
+    if(!chatPending.includes(item)){request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_file_remove',args:{suggestion_id:s.id,id:r.id}})}).catch(()=>{});return}
+    Object.assign(item,{id:r.id,name:r.name,type:r.type,state:'ok'})}
+   catch(err){chatPending=chatPending.filter(x=>x!==item);chatFileError(`${name}: ${err.message}`)}chatTray()})()}
+ if(problems.length)chatFileError(problems.join(' '));chatTray();$('#chat-input')?.focus()}
+function chatDropFiles(){chatPending=[]}
 // On open: the latest at the bottom, nothing cut off under the header; a short chat just sits under the header.
 // The thread scrolls in its own box (on a phone too, so the message box never moves); a page without that layout scrolls itself.
 const chatScroller=()=>{const l=$('#chat-log');return l&&getComputedStyle(l).overflowY!=='visible'?l:null};
@@ -4085,7 +4137,7 @@ window.visualViewport?.addEventListener('resize',chatKeyboard);window.visualView
 function paintChat(){const log=$('#chat-log'),s=chatOpen();if(!log||!s)return;chatKeepPlace(()=>chatPatch(log,chatLog(s)));
  const st=$('#chat-status'),sh=chatStatus(s);if(st&&st.innerHTML!==sh)st.innerHTML=sh;const menu=$('#chat-menu');if(menu&&!menu.open)menu.querySelector('.chat-menu-list').innerHTML=chatParts(s).rest+`<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button>`;
  const picks=$('#chat-picks');if(picks){const ph=chatPicks(s);if(picks.innerHTML!==ph)picks.innerHTML=ph;picks.hidden=!chatPicksShown()}
- chatFades();chatPreviews()}
+ chatSendState();chatFades();chatPreviews()}
 // The chat this device kept for the card: shown at once while the live one loads (that one replaces it in place)
 async function chatKept(id){const hit=await localCache.read('chat:'+id);if(!hit||id!==chatId||chat)return;chat={...hit.value,cursor:null,active:false};paintChat();requestAnimationFrame(chatScrollStart)}
 async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
@@ -4100,7 +4152,7 @@ async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
 let chatPushed=false;
 function openChatLink(){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
- if(id===chatId)return;const was=chatId;chatId=id;chat=null;chatDrawer=false;chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
+ if(id===chatId)return;const was=chatId;chatId=id;chat=null;chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
  if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatPoll()}else{render();if(was)document.getElementById('task-'+was)?.scrollIntoView({block:'center'})}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;
@@ -4120,6 +4172,15 @@ $('#suggestions').addEventListener('input',e=>{if(e.target.id==='chat-input')cha
 $('#suggestions').addEventListener('focusin',e=>{if(e.target.id!=='chat-input')return;chatAtEnd=chatEndNow();if($('#chat-picks'))$('#chat-picks').hidden=false;chatKeyboard();setTimeout(chatKeyboard,350)});
 $('#suggestions').addEventListener('focusout',e=>{if(e.target.id!=='chat-input')return;setTimeout(chatKeyboard,0);setTimeout(()=>{const p=$('#chat-picks');if(p&&!p.contains(document.activeElement))p.hidden=!chatPicksShown()},150)});
 // Enter sends with a keyboard; on a touch screen Enter is a new line and the button sends.
+$('#suggestions').addEventListener('change',e=>{if(e.target.id!=='chat-file')return;chatAddFiles([...e.target.files]);e.target.value=''});
+// A pasted screenshot or file joins the message; pasted text stays text (an Office copy carries both: the text wins)
+$('#suggestions').addEventListener('paste',e=>{if(e.target.id!=='chat-input')return;const files=[...(e.clipboardData?.files||[])];if(!files.length||e.clipboardData.getData('text/plain'))return;e.preventDefault();chatAddFiles(files)});
+{let depth=0;const dragged=e=>chatId&&[...(e.dataTransfer?.types||[])].includes('Files')&&e.target.closest?.('.chat-layout');
+ const mark=on=>$('#suggestions .chat-layout')?.classList.toggle('chat-drop',on);
+ $('#suggestions').addEventListener('dragenter',e=>{if(!dragged(e))return;e.preventDefault();depth++;mark(true)});
+ $('#suggestions').addEventListener('dragover',e=>{if(!dragged(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy'});
+ $('#suggestions').addEventListener('dragleave',e=>{if(!dragged(e))return;if(--depth<=0){depth=0;mark(false)}});
+ $('#suggestions').addEventListener('drop',e=>{if(!dragged(e))return;e.preventDefault();depth=0;mark(false);chatAddFiles([...e.dataTransfer.files])})}
 $('#suggestions').addEventListener('keydown',e=>{if(e.target.id!=='chat-input'||e.key!=='Enter'||e.shiftKey||e.isComposing||e.ctrlKey||e.metaKey||matchMedia('(pointer: coarse)').matches)return;e.preventDefault();$('[data-chat-send]')?.click()});
 $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const layout=e.target.closest('.chat-layout');if(e.target===layout&&chatDrawer){chatDrawer=false;layout.classList.remove('drawer');return}
@@ -4132,11 +4193,19 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const b=e.target.closest('button');const input=$('#chat-input');
  // A quick pick or a suggestion fills the message box.
  if(b&&(b.dataset.choice==='pick'||b.dataset.chatSay!=null)&&input){e.stopPropagation();input.value=b.dataset.pick??b.dataset.chatSay;chatGrow(input);input.focus();return}
- if(!b?.hasAttribute('data-chat-send'))return;e.stopPropagation();const s=chatOpen(),text=input?.value.trim();if(!s||!text){input?.focus();return}b.disabled=true;
+ if(e.target.closest('[data-chat-attach]')){e.stopPropagation();$('#chat-file')?.click();return}
+ const rm=e.target.closest('[data-att-remove]');if(rm){e.stopPropagation();const f=chatPending.find(x=>x.key===rm.dataset.attRemove);chatPending=chatPending.filter(x=>x!==f);
+  if(f?.id)request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_file_remove',args:{suggestion_id:f.sid,id:f.id}})}).catch(()=>{});chatFileError('');chatTray();input?.focus();return}
+ if(b?.hasAttribute('data-chat-stop')){e.stopPropagation();const s=chatOpen();if(!s)return;b.disabled=true;
+  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_stop',args:{suggestion_id:s.id}})});
+   if(chat)chat={...chat,active:false,live:null,cursor:null};await refresh();paintChat();chatPoll()}catch(err){toast(err.message,true);b.disabled=false}return}
+ if(!b?.hasAttribute('data-chat-send'))return;e.stopPropagation();const s=chatOpen(),text=input?.value.trim(),sending=chatPending.filter(f=>f.state==='ok'&&f.sid===s?.id);
+ if(!s||!text&&!sending.length||chatPending.some(f=>f.state==='up')){input?.focus();return}b.disabled=true;
  const decide=args=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:s.id,...args}})});
  try{if(s.status==='completed')await decide({choice:'reopen',feedback:'',decision_id:crypto.randomUUID()});
-  await decide({choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID()});
-  input.value='';chatGrow(input);chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text,at:Date.now()}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
+  await decide({choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID(),...(sending.length?{files:sending.map(f=>f.id)}:{})});
+  const files=sending.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}));chatDropFiles();chatTray();chatFileError('');
+  input.value='';chatGrow(input);chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text,at:Date.now(),...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
  catch(err){toast(err.message,true);b.disabled=false}},true);
 // Links to a tab or a sub-tab: #events, #graph, #graph=roles, #connections, #connections=chat (and the tabs' own ids).
 const TAB_LINKS={inbox:'inbox',suggestions:'inbox',calendar:'calendar',events:'events',graph:'people',people:'people',feedback:'feedback',connections:'health',health:'health'};
