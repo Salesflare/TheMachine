@@ -10,6 +10,8 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Mor
 
 Your WhatsApp chats, as a linked device of your phone's WhatsApp, like WhatsApp on a computer. When you connect it reads the last 7 days.
 
+A photo, voice message or file without a caption shows as what it is, like "Sent image". WhatsApp's own notices, such as the encryption notice or someone joining a group, have no text and are left out.
+
 ## What it can send
 
 A text into a chat that already exists, only after you approve it on the to-do.

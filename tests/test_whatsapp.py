@@ -29,6 +29,24 @@ class WhatsAppTests(unittest.TestCase):
    raw['Text']='Updated';raw['Edited']=True;a.sync_whatsapp(self.store,{},account,src)
    raw['Revoked']=True;a.sync_whatsapp(self.store,{},account,src)
   with self.store.connect() as db:self.assertEqual(tuple(db.execute('SELECT count(*),version,deleted FROM events').fetchone()),(1,3,1))
+ def test_content_free_rows_are_not_empty_messages(self):
+  # wacli keeps WhatsApp's own notices and unparsed types with a "(message)" placeholder: never an empty message
+  for display in ('(message)','> Earlier text\n(message)',''):
+   raw=message();raw.update(Text='',DisplayText=display);event=a.whatsapp_event(account,raw)
+   self.assertTrue(event['deleted']);self.assertEqual(event['body'],'');self.assertTrue(event['metadata']['no_content'])
+  raw=message();raw.update(Text='',DisplayText='Sent image',MediaType='image');event=a.whatsapp_event(account,raw)
+  self.assertEqual(event['body'],'Sent image');self.assertFalse(event['deleted'])
+  raw=message();raw.update(Text='',DisplayText='',MediaType='live_location');self.assertEqual(a.whatsapp_event(account,raw)['body'],'Sent live location')
+  raw=message();raw.update(Text='',DisplayText='Sent image',MediaType='image',MediaCaption='Our new kitchen');self.assertEqual(a.whatsapp_event(account,raw)['body'],'Sent image\nOur new kitchen')
+  raw=message();raw.update(Text='',DisplayText='Reacted 👍 to Hello',ReactionEmoji='👍');self.assertEqual(a.whatsapp_event(account,raw)['body'],'Reacted 👍 to Hello')
+ def test_placeholder_taken_in_before_goes_and_comes_back_with_content(self):
+  src=a.WhatsApp({},account);raw=message();raw.update(Text='',DisplayText='(message)')
+  with patch.object(src,'profile',return_value={}),patch.object(src,'read',side_effect=lambda _: {'messages':[raw]}):
+   self.store.commit_page(account['id'],{},[{**a.whatsapp_event(account,raw),'deleted':False,'body':'(message)'}])  # as an older app kept it
+   a.sync_whatsapp(self.store,{},account,src)
+   with self.store.connect() as db:self.assertEqual(tuple(db.execute('SELECT count(*),deleted FROM events').fetchone()),(1,1))
+   raw.update(Text='See you at 6',DisplayText='See you at 6');a.sync_whatsapp(self.store,{},account,src)
+  with self.store.connect() as db:self.assertEqual(tuple(db.execute('SELECT count(*),deleted,body FROM events').fetchone()),(1,0,'See you at 6'))
  def test_saturated_or_invalid_window_cannot_advance_checkpoint(self):
   src=a.WhatsApp({},account)
   with patch.object(src,'profile',return_value={}),patch.object(src,'read',return_value={'messages':[message()]*1000}),self.assertRaises(a.SourceError):a.sync_whatsapp(self.store,{},account,src)

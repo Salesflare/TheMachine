@@ -426,14 +426,16 @@ Both switches are off until you turn them on, in the Fleet tab under **Network**
   group); the Network raises those to its own secret and sends them back with the blinded addresses of people who let
   themselves be found. Your Machine learns only which of its own contacts matched, the Network never sees your address
   book, and only matches are then looked up by name. Lookups are rate-limited (at most 3,000 addresses a day). To know
-  when to look again, your Machine asks hourly in which of 256 buckets someone became findable, nothing more.
+  when to look again, your Machine asks every 15 minutes in which of 256 buckets someone became findable, nothing more.
 - **Let people who have my email find me** makes your account email findable that way, and only by people who already
   have it, plus the addresses of the mail and calendar accounts your Machine signed in to. The Fleet tab lists them
   under **Findable by**; untick any you'd rather keep out. The Network stores those only blinded. Someone's sign-in
   email only ever finds them, and an address that two accounts list finds neither. It needs a username.
 
-A match becomes a card in Suggestions only when there is something concrete to do together: an open card that involves
-them, or a meeting with them in the next two weeks; the card says which. Someone at your own work domain is suggested
+A match becomes a card in Suggestions right away when it is new: the contacts already on the Network when you turn
+this on, and someone who joins later, the five strongest contacts at a time, for a week. After that, only when there is
+something concrete to do together: an open card that involves them, or a meeting with them in the next two weeks; the
+card says which. Someone at your own work domain is suggested
 as a colleague, anyone else as a friend or family, for you to pick; nothing is guessed from what you write. **Connect**
 sends an ordinary friend request, which they still accept, and sharing then follows the rules you set for that friend.
 **Not now** hides them for 30 days unless something new comes up; **Never suggest** hides them for good. Someone in a

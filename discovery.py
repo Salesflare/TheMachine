@@ -12,8 +12,10 @@ Two switches, both off until the owner turns them on:
 Someone in a Work or Family Fleet with the owner is connected already: never suggested (nor by the Network, which
 leaves them out of a lookup), until one of them leaves that Fleet. A friendship with them stays as it is.
 
-A match becomes a card under Suggestions only when connecting has a concrete use now: an open card with them, or a
-meeting with them soon. Other matches wait quietly in the Fleet tab's Network block. The card suggests what they are
+A match becomes a card under Suggestions right away when it is new: the contacts found when the owner joins, and
+someone who joins later, the strongest few (FRESH_CARDS) for a week. After that only when connecting has a concrete
+use now: an open card with them, or a meeting with them soon. Other matches wait quietly in the Fleet tab's Network
+block. The card suggests what they are
 to the owner from structure only: the same work email domain as the owner's work accounts reads as a colleague;
 anyone else is "friend or family", the owner picks. Connect sends an ordinary friend request: nothing connects
 until they accept, and what is shared then follows the owner's friend rules (Ask me first by default). Everything
@@ -38,10 +40,12 @@ MAX_CONTACTS = 1000          # the strongest contacts checked in one lookup (the
 RESOLVE_BATCH = 50
 LOOKUP_DAYS = 1              # how often the Machine looks all its contacts up again
 NEW_EVERY = 15 * 60          # seconds between looks for contacts not looked up yet (someone new met, someone new findable)
-JOINED_EVERY = 60 * 60       # seconds between asking the Network in which buckets someone became findable
+JOINED_EVERY = NEW_EVERY     # seconds between asking the Network in which buckets someone became findable
 REFRESH_DAYS = 7             # how often people already found are looked up by address again (name, username)
 LATER_DAYS = 30              # "Not now" hides a person this long, unless something new comes up with them
 MEETING_DAYS = 14
+FRESH_DAYS = 7               # someone just found is suggested right away for this long, with or without a card or meeting
+FRESH_CARDS = 5              # at most this many of them at once: the strongest contacts
 STATUSES = ('new', 'requested', 'connected', 'later', 'never')
 MAILBOXES = ('gog', 'broker', 'graph')  # transports that sign in to the owner's own mailbox or calendar (OAuth)
 ADDRESS_DAYS = 7             # how often the findable addresses are sent again (also right away when they change)
@@ -181,6 +185,18 @@ class Discovery:
             out.append({'kind': 'meeting', 'at': meeting['occurred_at'], 'title': meeting['title'][:120]})
         return out
 
+    def fresh_people(self, db):
+        """{email: reason} for the people just found on the Network (FRESH_DAYS), the strongest FRESH_CARDS of them: suggested
+        right away, not only once there is a card or meeting with them. Found in the owner's first lookup: in their
+        contacts; found later: they joined since."""
+        settings = self.network_settings()
+        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=FRESH_DAYS)).isoformat(timespec='seconds')
+        rows = db.execute("SELECT p.email,p.found_at FROM network_people p LEFT JOIN graph_nodes g ON g.id=p.node_id "
+                          "WHERE p.status='new' AND p.found_at>=? ORDER BY COALESCE(g.strength,0) DESC,p.found_at DESC LIMIT ?",
+                          (since, FRESH_CARDS)).fetchall()
+        first = settings.get('first_done') or ''
+        return {r['email']: {'kind': 'contact' if not first or r['found_at'] <= first else 'joined', 'at': r['found_at']} for r in rows}
+
     # -- the owner's own addresses
     def own_addresses(self):
         """The addresses of the mail and calendar accounts this Machine signed in to: the owner's, verifiably."""
@@ -257,10 +273,13 @@ class Discovery:
             if full:
                 self._set_network(last=now(), new_at=now())
             self._set_network(joined_buckets=[])
+        if full and not found.get('first_done'):
+            self._set_network(first_done=now())  # the lookup when the owner joined: what it found is "in your contacts"
         friends = {m.get('username') for m in self.teammates(self.friends_ref())} if self.friends_ref() else set()
         mates = self.fleet_mates()
         with self.connect() as db:
             ensure(db)
+            fresh = self.fresh_people(db)
             for row in db.execute("SELECT * FROM network_people WHERE status IN ('new','requested','later')").fetchall():
                 if row['status'] != 'requested' and row['username'] not in friends and self.in_my_fleet(mates, row['username'], row['email']):
                     # In a Fleet together: connected already, no friend suggestion. Found again once one of them leaves it
@@ -270,6 +289,8 @@ class Discovery:
                 if status == 'later' and row['decided_at'] and row['decided_at'] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=LATER_DAYS)).isoformat(timespec='seconds'):
                     status = 'new'
                 reasons = self.network_reasons(db, row['node_id'])
+                if not reasons and row['email'] in fresh:  # just found: suggested now, not only once there is a card or meeting
+                    reasons.append(fresh[row['email']])
                 if status == 'later' and reasons and json.dumps(reasons) != row['reasons'] and \
                         {r.get('card') or r.get('at') for r in reasons} - {r.get('card') or r.get('at') for r in json.loads(row['reasons'] or '[]')}:
                     status = 'new'  # something new came up with them

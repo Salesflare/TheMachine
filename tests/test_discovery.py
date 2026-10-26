@@ -150,7 +150,7 @@ class Discovery(unittest.TestCase):
         self.assertEqual(people['lou']['status'], 'connected')
         self.assertEqual((people['nia']['status'], people['nia']['hint']), ('new', 'personal'))
         self.assertEqual([r['kind'] for r in people['nia']['reasons']], ['meeting'])
-        self.assertEqual((people['sam']['hint'], people['sam']['reasons']), ('colleague', []))  # same work domain; no reason, no card
+        self.assertEqual((people['sam']['hint'], [r['kind'] for r in people['sam']['reasons']]), ('colleague', ['contact']))  # same work domain; found on joining: suggested now
         # A day has not passed and nobody new: no second lookup
         self.fleet.discovery_round()
         self.assertEqual(len(self.relay.sent('/discover')), 2)
@@ -230,6 +230,41 @@ class Discovery(unittest.TestCase):
         self.ago(new_at=discovery.NEW_EVERY + 1)
         self.fleet.discovery_round()
         self.assertEqual(len(self.lookups()), 2)  # asked hourly only, and those buckets are done
+
+    def test_joining_suggests_the_contacts_already_on_the_network_right_away(self):
+        result = self.fleet.network_action('find_on')
+        self.assertEqual(result, {'find': True})
+        people = self.people()
+        self.assertEqual([r['kind'] for r in people['sam']['reasons']], ['contact'])  # no card or meeting with Sam: a suggestion anyway
+        self.assertEqual([r['kind'] for r in people['nia']['reasons']], ['meeting'])  # the concrete reason comes first
+        self.assertEqual(people['lou']['status'], 'connected')
+        # Someone who joins later: suggested in the next round, as newly joined
+        self.ago(first_done=60, new_at=discovery.NEW_EVERY + 1, joined_checked=discovery.JOINED_EVERY + 1)
+        ON_NETWORK['zed@zed.example'] = ('zed', 'Zed', False)
+        self.addCleanup(ON_NETWORK.pop, 'zed@zed.example')
+        self.relay.found['zed@zed.example'] = discovery.hexed(pow(discovery.to_group('zed@zed.example'), self.relay.b, discovery.P))
+        self.relay.joined = [discovery.bucket('zed@zed.example')]
+        self.fleet.discovery_round()
+        self.assertEqual([r['kind'] for r in self.people()['zed']['reasons']], ['joined'])
+        # Not now hides it; it doesn't come back for the same find
+        self.fleet.network_action('later', 'zed@zed.example')
+        self.fleet.discovery_round()
+        self.assertEqual(self.people()['zed']['status'], 'later')
+        # A week on, a match without a card or meeting waits quietly in the Network block again
+        with self.store.connect() as db:
+            db.execute("UPDATE network_people SET found_at='2026-01-01T00:00:00+00:00'")
+        self.fleet.discovery_round()
+        self.assertEqual(self.people()['sam']['reasons'], [])
+
+    def test_fresh_suggestions_are_the_strongest_few(self):
+        with self.store.connect() as db:
+            discovery.ensure(db)
+            for i in range(discovery.FRESH_CARDS + 3):
+                db.execute('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,?,?,?)', (f'p-f{i}', 'person', f'F{i}', i, 1, '{}'))
+                db.execute("INSERT INTO network_people(email,node_id,username,name,hint,status,found_at) VALUES(?,?,?,?,?,?,?)",
+                           (f'f{i}@f.example', f'p-f{i}', f'f{i}', f'F{i}', 'personal', 'new', discovery.now()))
+            fresh = self.fleet.fresh_people(db)
+        self.assertEqual(sorted(fresh), sorted(f'f{i}@f.example' for i in range(3, discovery.FRESH_CARDS + 3)))
 
     def test_connect_later_never(self):
         self.fleet.network_action('find_on')

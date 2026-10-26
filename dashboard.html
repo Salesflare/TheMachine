@@ -4805,10 +4805,10 @@ function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=
 // Finding people you know on the Network (discovery.py): a permission card once, then a card per person only with a concrete reason
 const netBtn=(label,d,email='',rel='',cls='ghost',confirmText='')=>`<button type="button" class="${cls}" data-net-do="${d}"${email?` data-net-email="${esc(email)}"`:''}${rel?` data-net-rel="${rel}"`:''}${confirmText?` data-confirm-text="${esc(confirmText)}"`:''}>${esc(label)}</button>`;
 const netDay=at=>{const d=new Date(at);return isNaN(d)?'':d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
-const netReason=r=>r.kind==='card'?`Open: ${esc(r.title)}`:r.kind==='meeting'?`You meet ${esc(netDay(r.at))}${r.title?` · ${esc(r.title)}`:''}`:'';
+const netReason=r=>r.kind==='card'?`Open: ${esc(r.title)}`:r.kind==='meeting'?`You meet ${esc(netDay(r.at))}${r.title?` · ${esc(r.title)}`:''}`:r.kind==='contact'?'In your contacts':r.kind==='joined'?`Joined ${esc(netDay(r.at))}, in your contacts`:'';
 function networkCards(f){const net=f.network;if(!net||!f.friends?.id)return[];const out=[];
  const card=(id,title,body,actions)=>`<article id="net-${esc(id)}" class="card t-amber fleet-card net-card"><div class="meta"><div class="card-badges">${chip('Network','lavender')}</div></div><h3>${title}</h3>${body}${actions}</article>`;
- if(net.find==null&&!net.asked)out.push(card('ask','Which of your contacts have a Machine?',`<p class="muted">Your Machine checks your contacts against people who chose to be findable, and your address book stays private. When you meet or work with a match soon, it suggests connecting. Nothing is shared until they accept.</p>`,
+ if(net.find==null&&!net.asked)out.push(card('ask','Which of your contacts have a Machine?',`<p class="muted">Your Machine checks your contacts against people who chose to be findable, and your address book stays private. It suggests the people you know right away, and others when you meet or work with them. Nothing is shared until they accept.</p>`,
   `<div class="actions">${netBtn('Check my contacts','find_on','','','primary')}${netBtn('Not now','asked')}</div>`));
  for(const p of (net.people||[]).filter(p=>p.status==='new'&&p.reasons.length)){
   const who=p.hint==='colleague'?'Same work domain as you.':'Friend or family? You choose.';

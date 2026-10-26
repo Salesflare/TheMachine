@@ -1780,10 +1780,20 @@ def whatsapp_event(account, raw):
     for key in ('Text','DisplayText','MediaCaption'):
         if key in raw and not isinstance(raw[key], str):
             raise SourceError('whatsapp_invalid_content')
-    body = raw.get('Text') or raw.get('DisplayText') or raw.get('MediaCaption') or ''
+    # wacli stores a row for every message it sees, also those with nothing to read: WhatsApp's own notices from a
+    # history sync (the encryption notice, a member who joined, a changed number), a message still on its way, a type
+    # it doesn't parse. Their DisplayText is a placeholder, "(message)", or a quoted reply above one. Such a row is
+    # kept deleted (so one taken in before goes too); a later copy with content replaces it.
+    display = raw.get('DisplayText') or ''
+    if re.fullmatch(r'(?s)(?:> .*\n)?\(message\)\s*', display):
+        display = ''
+    body = raw.get('Text') or display or raw.get('MediaCaption') or ''
     caption = raw.get('MediaCaption') or ''
     if caption and caption not in body:
         body += '\n' + caption
+    empty = not body.strip()
+    if empty and raw.get('MediaType'):  # a photo or file without a caption: say what it is
+        body, empty = 'Sent ' + str(raw['MediaType']).replace('_', ' '), False
     sensitive = bool(re.search(r'(?i)verification code|security code|one.time (?:code|password)|\bOTP\b|verificatiecode', body))
     if sensitive:
         body = '[One-time security code omitted]'
@@ -1797,7 +1807,7 @@ def whatsapp_event(account, raw):
                 'from': 'You' if raw['FromMe'] else (raw.get('SenderName') or ('Unknown sender' if jid.endswith('@g.us') else raw.get('ChatName') or 'Unknown sender')),
                 'sender_display': 'You' if raw['FromMe'] else (raw.get('SenderName') or ('Unknown sender' if jid.endswith('@g.us') else raw.get('ChatName') or 'Unknown sender')),
                 'sender_display_source': 'authenticated_account_owner' if raw['FromMe'] else 'source_label_unverified',
-                'edited': raw.get('Edited') is True, 'revoked': revoked,
+                'edited': raw.get('Edited') is True, 'revoked': revoked, 'no_content': empty,
                 'forwarded': raw.get('IsForwarded') is True,
                 'media_type': raw.get('MediaType') or '', 'media_collected': False,
                 'security_code_omitted': sensitive, 'truncated': len(body) > 40000,
@@ -1805,7 +1815,7 @@ def whatsapp_event(account, raw):
                 'coverage': 'Available synced messages, not proof of complete or live account sync.'}
     return {'account_id':account['id'], 'source_id':identity, 'kind':'whatsapp.message',
             'occurred_at':stamp.astimezone(dt.timezone.utc).isoformat(),
-            'title':metadata['chat_name'][:1000], 'body':body[:40000], 'metadata':metadata, 'deleted':revoked}
+            'title':metadata['chat_name'][:1000], 'body':body[:40000], 'metadata':metadata, 'deleted':revoked or empty}
 
 
 def sync_whatsapp(store, config, account, source=None):

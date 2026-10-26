@@ -18,7 +18,7 @@ On the Network pane:
 - "Check which of my contacts have a Machine" suggests people you know.
 - "Let people who have my email find me" lets them find you.
 
-A match comes with Connect, Not now or **Never suggest**. **Leave the Network** takes you off it.
+People you know who are on the Network are suggested right away when you turn it on, and when someone joins later. A match comes with Connect, Not now or **Never suggest**. **Leave the Network** takes you off it.
 
 ## A Machine on your own computer
 
