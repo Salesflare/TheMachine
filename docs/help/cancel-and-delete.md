@@ -20,6 +20,6 @@ It's kept for {grace_days} days so you can export it, then deleted, backups incl
 
 ## Delete everything now
 
-On your account page, open Data, type DELETE and press **Wipe everything now**. It ends your subscription, revokes Google and Microsoft access, and deletes your server, its backups and all its data. This can't be undone.
+On your account page, open Data, type DELETE or your email and press **Wipe everything now**. It ends your subscription, revokes Google and Microsoft access, and deletes your server, its backups and all its data. This can't be undone.
 
 Without a hosted server, the button is **Delete my account**. A Machine on your own computer stays as it is.

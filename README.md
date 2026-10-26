@@ -60,6 +60,10 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 - Hands a to-do to [Claude Code or Codex](docs/agents.md) when you ask; the job shows in their apps and never sends anything itself.
 - Follows your [skills](docs/skills.md): plain OpenClaw skills you write, approve or get from your Fleet or a friend; instructions only, never more permissions.
 
+## The Machine and OpenClaw
+
+The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.openclaw.ai) as its agent runtime: OpenClaw's agent does the reading and thinking with the model you pick, and its Gateway carries Telegram and the Android node. The Machine adds the rest: the dashboard, the Graph, to-dos, connections, Fleet and the Network.
+
 ## Requirements
 
 | | Linux | macOS (beta) | Windows (beta) |
