@@ -1852,6 +1852,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .cal-tg-head,.cal-tg-strip,.cal-tg-body{display:grid;grid-template-columns:var(--gut) repeat(var(--n),minmax(0,1fr))}
 .cal-tg-head{border-bottom:1px solid var(--c-line)}
 .cal-tg-head,.cal-tg-strip{overflow:hidden;scrollbar-gutter:stable}
+.cal-tg-head,.cal-tg-strip,.cal-tg-scroll{scrollbar-width:thin;scrollbar-color:var(--c-line-strong) transparent}
 .cal-tg-day{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:10px 4px 9px;border-left:1px solid var(--c-line);color:var(--c-text-3);font:var(--fw-medium) var(--fs-xs)/1 var(--sans)}
 .cal-tg-day b{display:inline-grid;place-items:center;min-width:28px;height:28px;margin:-6px 0 -5px;border-radius:50%;color:var(--text);font:var(--fw-heading) 19px/1 var(--serif);font-variant-numeric:tabular-nums}
 .cal-tg-day.today span{color:var(--text)}.cal-tg-day.today b{background:var(--c-accent);color:var(--c-accent-ink)}
@@ -1866,7 +1867,8 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .cal-tg-col{position:relative;min-width:0;border-left:1px solid var(--c-line)}
 .cal-tg-col.today{background:color-mix(in srgb,var(--c-accent-tint) 45%,transparent)}
 .cal-blk .c{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--lines);overflow:hidden}
-.cal-blk{position:absolute;display:block;box-sizing:border-box;margin:1px 0 0 2px;padding:2px 6px;overflow:hidden;border-radius:var(--r-xs);background:var(--c-sunken);color:var(--text);text-decoration:none;font:var(--fw-medium) var(--fs-xs)/14px var(--sans);white-space:normal;overflow-wrap:break-word;hyphens:auto;box-shadow:inset 3px 0 0 var(--tone),0 0 0 1px var(--c-surface)}
+.cal-blk{position:absolute;display:block;box-sizing:border-box;margin:1px 0 0 2px;padding:2px 6px;overflow:hidden;border-radius:var(--r-xs);background:var(--c-sunken);color:var(--text);text-decoration:none;font:var(--fw-medium) var(--fs-xs)/14px var(--sans);white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:manual;box-shadow:inset 3px 0 0 var(--tone),0 0 0 1px var(--c-surface)}
+.cal-blk.side{padding:2px 4px 2px 7px}
 .cal-blk.k-meeting{box-shadow:inset 3px 0 0 var(--c-line-strong),0 0 0 1px var(--c-surface)}
 .cal-blk .t{color:var(--c-text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cal-tg-more{position:absolute;right:1px;z-index:5;width:24px;min-height:0;margin:1px 0 0;padding:2px 0;border:0;border-radius:999px;background:var(--c-raised);box-shadow:var(--shadow-sm),0 0 0 1px var(--c-line);color:var(--text);font:var(--fw-medium) 11px/16px var(--sans);cursor:pointer}
@@ -4388,24 +4390,27 @@ function calDayBlock(k,list,late,today){const name=calName(k),date=calDate(k);
 const calHourLabel=h=>H12?`${h%12||12} ${h<12?'AM':'PM'}`:String(h).padStart(2,'0')+':00';  // 01:00 or 1 AM, by Settings
 const CAL_HOUR=68,CAL_MIN=30;  // px an hour, so half an hour holds two lines; a block is never shorter than that
 function calMins(v,k){const d=new Date(v),day=localDay(d);return day<k?0:day>k?1440:d.getHours()*60+d.getMinutes()}  // local clock time, so a day with a clock change still lines up
-// Lay a day's timed items out like a paper calendar: ones that really overlap share the width, at most two abreast
-// (one on a phone's narrow days), and the rest become "+N" (which opens the day in the agenda). One that only touches the one before because blocks
+// Lay a day's timed items out like a paper calendar: ones that really overlap share the width, as many abreast as
+// keep a readable width (a third of the column and room for a word, so up to three; one on a phone), and the rest become "+N" (which opens the day in the agenda). One that only touches the one before because blocks
 // have a minimum height sits a little to the right, on top, keeping the full width.
-function calLay(list,k){const ev=list.map(it=>{let s,e;if(it.kind==='meeting'){s=calMins(it.m.start,k);const end=new Date(it.m.end);e=!isNaN(end)&&end>new Date(it.m.start)?calMins(it.m.end,k):s+30}else{s=calMins(it.at,k);e=s+30}
+function calLay(list,k,abreast=1){const ev=list.map(it=>{let s,e;if(it.kind==='meeting'){s=calMins(it.m.start,k);const end=new Date(it.m.end);e=!isNaN(end)&&end>new Date(it.m.start)?calMins(it.m.end,k):s+30}else{s=calMins(it.at,k);e=s+30}
   s=Math.min(s,1440-CAL_MIN);e=Math.min(1440,Math.max(e,s+1));return {it,s,e,ve:Math.min(1440,Math.max(e,s+CAL_MIN)),ind:0}}).sort((a,b)=>a.s-b.s||b.e-a.e);
  const shown=[],more=[];let group=[],end=-1;
  const flush=()=>{if(!group.length)return;const cols=[];for(const x of group){let c=cols.findIndex(e=>e<=x.s);if(c<0){c=cols.length;cols.push(0)}cols[c]=x.e;x.col=c}
-  const max=DESK.matches?2:1,n=Math.min(max,cols.length),hid=group.filter(x=>x.col>=max);for(const x of group)if(x.col<max){x.n=n;x.rail=hid.length>0;shown.push(x)}
+  const max=abreast,n=Math.min(max,cols.length),hid=group.filter(x=>x.col>=max);for(const x of group)if(x.col<max){x.n=n;x.rail=hid.length>0;shown.push(x)}
   if(hid.length)more.push({s:Math.min(...hid.map(x=>x.s)),n:hid.length});group=[]};
  for(const x of ev){if(group.length&&x.s>=end){flush();end=-1}group.push(x);end=Math.max(end,x.e)}flush();
  for(const x of shown)for(const y of shown){if(y===x)break;if(y.s<x.s&&x.s<y.ve&&x.s>=y.e&&(x.n===1||y.n===1||x.col===y.col))x.ind=Math.max(x.ind,y.ind+1)}
  return {shown,more}}
 // A block: its start time, then its title, on as many lines as it has room for (two at least)
 function calBlock(b){const x=calParts(b.it),tag=x.href||x.url||x.edit?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.url?` href="${esc(x.url)}" target="_blank" rel="noopener"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:'',h=(b.ve-b.s)*CAL_HOUR/60-2,off=b.ind*12,rail=b.rail?(DESK.matches?26:20):0;
- return `<${tag} class="cal-blk k-${x.tone}${b.it.past?' past':''}"${attrs} style="top:${b.s*CAL_HOUR/60}px;height:${h}px;left:calc(${b.col} * (100% - ${rail}px) / ${b.n} + ${off}px);width:calc((100% - ${rail}px) / ${b.n} - ${3+off}px);z-index:${1+b.ind};--lines:${Math.max(2,Math.floor((h-4)/14))}" title="${esc([x.time,x.owner,x.title].filter(Boolean).join(' ')+(x.sub?' · '+x.sub:'')+(x.said||[]).map(t=>' · '+t).join(''))}"><span class="c"><span class="t">${esc(x.time)}</span> <span class="n">${x.owner?esc(x.owner)+' ':''}${esc(x.title)}</span></span></${tag}>`}
+ return `<${tag} class="cal-blk k-${x.tone}${b.it.past?' past':''}${b.n>1?' side':''}"${attrs} style="top:${b.s*CAL_HOUR/60}px;height:${h}px;left:calc(${b.col} * (100% - ${rail}px) / ${b.n} + ${off}px);width:calc((100% - ${rail}px) / ${b.n} - ${3+off}px);z-index:${1+b.ind};--lines:${Math.max(2,Math.floor((h-4)/14))}" title="${esc([x.time,x.owner,x.title].filter(Boolean).join(' ')+(x.sub?' · '+x.sub:'')+(x.said||[]).map(t=>' · '+t).join(''))}"><span class="c"><span class="t">${esc(x.time)}</span> <span class="n">${x.owner?esc(x.owner)+' ':''}${esc(x.title)}</span></span></${tag}>`}
 const calMoreBlock=(m,k)=>`<button type="button" class="cal-tg-more" data-cal-open="${k}" style="top:${m.s*CAL_HOUR/60}px" aria-label="${m.n} more, open the day">+${m.n}</button>`;
-function calTimeGrid(days,byDay,today){const n=days.length,nowMin=new Date().getHours()*60+new Date().getMinutes();
- const cols=days.map(k=>{const list=byDay(k);return {k,strip:list.filter(i=>i.allDay||i.at<0),lay:calLay(list.filter(i=>!i.allDay&&i.at>=0),k)}}),strip=cols.some(c=>c.strip.length);
+// How many overlapping items sit side by side in a day's column: each keeps a third of the column and at least 56px
+function calAbreast(n){if(!DESK.matches)return 1;const box=$('#calendar-view');let w=box?.clientWidth||0;if(!w)w=innerWidth-($('#app-side')?.offsetWidth||0)-112;
+ return Math.max(1,Math.min(3,Math.floor((w-48)/n/56)))}
+function calTimeGrid(days,byDay,today){const n=days.length,nowMin=new Date().getHours()*60+new Date().getMinutes(),abreast=calAbreast(n);
+ const cols=days.map(k=>{const list=byDay(k);return {k,strip:list.filter(i=>i.allDay||i.at<0),lay:calLay(list.filter(i=>!i.allDay&&i.at>=0),k,abreast)}}),strip=cols.some(c=>c.strip.length);
  const head=`<div class="cal-tg-head">${'<span></span>'+cols.map(c=>`<div class="cal-tg-day${c.k===today?' today':''}${c.k<today?' gone':''}" data-day="${c.k}"><span>${c.k===today?'Today':esc(calWeekday(c.k))}</span><b>${calOf(c.k).getDate()}</b></div>`).join('')}</div>`;
  const top=strip?`<div class="cal-tg-strip"><span class="cal-tg-label">All day</span>${cols.map(c=>`<div class="cal-tg-cell">${c.strip.map(calChip).join('')}</div>`).join('')}</div>`:'';
  const hours=[...Array(23)].map((_,h)=>`<span style="top:${(h+1)*CAL_HOUR}px">${calHourLabel(h+1)}</span>`).join('');
@@ -4439,11 +4444,12 @@ function calRender(){const box=$('#calendar-view');if(!box||!state)return;const 
 // The time grid opens a little before the range's first timed meeting, or 08:00 when that is earlier; later in
 // the day the now line stays in view. Also on ‹ › and Today
 let calGridShown='';
-// On a desktop the time grid fills the window down to its bottom edge (the footer goes below the fold), so more
-// hours show at once; the phone keeps its own height
+// On a desktop the time grid fills the window down to its bottom edge, with the footer still in view, so more hours
+// show at once and only the grid scrolls (a very short window scrolls the page too); the phone keeps its own height
 function calFill(p){if(!p)return;if(!DESK.matches){p.style.maxHeight='';return}const top=p.getBoundingClientRect().top+scrollY;
- if(!p.clientHeight&&!top)return;p.style.maxHeight=Math.max(320,Math.round(innerHeight-top-16))+'px'}
-addEventListener('resize',()=>{if(!$('#calendar').hidden)calFill($('#calendar-view .cal-tg-scroll'))});
+ if(!p.clientHeight&&!top)return;const h=Math.max(320,Math.round(innerHeight-top-16));p.style.maxHeight=h+'px';
+ const over=document.documentElement.scrollHeight-innerHeight;if(over>0)p.style.maxHeight=Math.max(320,p.clientHeight-over)+'px'}
+let calSized=0;addEventListener('resize',()=>{if($('#calendar').hidden)return;cancelAnimationFrame(calSized);calSized=requestAnimationFrame(()=>{if(calMode!=='month'&&!calList())calRender();calFill($('#calendar-view .cal-tg-scroll'))})});
 function calFirstHour(box,shown=8){const tops=[...box.querySelectorAll('.cal-blk')].map(b=>parseFloat(b.style.top)/CAL_HOUR).filter(t=>t>=0);
  let h=Math.max(0,Math.min(8,...tops)-.5);const now=box.querySelector('.cal-now');
  if(now){const n=parseFloat(now.style.top)/CAL_HOUR;if(n>h+shown-.5)h=Math.max(0,n-Math.min(2,shown/3))}

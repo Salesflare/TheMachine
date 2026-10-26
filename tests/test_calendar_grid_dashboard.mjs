@@ -90,11 +90,12 @@ try{
   // The weekend of the clock change: 07:00 sits at 07:00 on both days
   await go(page,'#calendar?view=week&date=2026-10-19');await page.locator('.cal-tg-col[data-col="2026-10-25"] .cal-blk',{hasText:'Sunday walk'}).waitFor();
   await opensAt(page,'week of 19 October');
-  // On a desktop the grid fills the window: its bottom edge sits at the window's bottom, at any height
+  // On a desktop the grid fills the window down to the footer at any height, so only the grid scrolls, not the page
   for(const h of [900,1300,1870]){await page.setViewportSize({width:1440,height:h});await page.evaluate(()=>scrollTo(0,0));
-   await page.waitForFunction(h=>{const p=document.querySelector('.cal-tg-scroll');return innerHeight===h&&(Math.abs(p.getBoundingClientRect().bottom-(h-16))<=2||p.clientHeight>=24*CAL_HOUR)},h).catch(()=>{});
-   const g=await page.evaluate(()=>{const p=document.querySelector('.cal-tg-scroll'),r=p.getBoundingClientRect();return {bottom:Math.round(r.bottom),top:Math.round(r.top),vh:innerHeight,hours:+(p.clientHeight/CAL_HOUR).toFixed(1)}});
-   assert.ok(Math.abs(g.bottom-(g.vh-16))<=2||g.hours>=24,'the grid reaches the bottom of the window '+JSON.stringify(g))}
+   const fits=()=>{const p=document.querySelector('.cal-tg-scroll'),f=document.querySelector('.site-footer');return document.documentElement.scrollHeight<=innerHeight&&(f.getBoundingClientRect().top-p.getBoundingClientRect().bottom<=80||p.clientHeight>=24*CAL_HOUR)};
+   await page.waitForFunction(h=>innerHeight===h,h);await page.waitForFunction(`(${fits})()`).catch(()=>{});
+   const g=await page.evaluate(()=>{const p=document.querySelector('.cal-tg-scroll'),r=p.getBoundingClientRect();return {bottom:Math.round(r.bottom),foot:Math.round(document.querySelector('.site-footer').getBoundingClientRect().top),page:document.documentElement.scrollHeight,vh:innerHeight,hours:+(p.clientHeight/CAL_HOUR).toFixed(1)}});
+   assert.ok(await page.evaluate(`(${fits})()`),'the grid reaches the footer and the page does not scroll '+JSON.stringify(g))}
   await page.setViewportSize({width:1440,height:900});
   // The rule itself: half an hour before the first meeting or 08:00, whichever is earlier; the now line once it is
   // past the screen; never past the end of the day

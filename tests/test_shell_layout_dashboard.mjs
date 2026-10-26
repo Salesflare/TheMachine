@@ -7,7 +7,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // The dashboard's shell. On a phone the All clear line wraps and nothing is wider than the screen. On a short computer
 // screen the whole sidebar scrolls, so Settings stays reachable. The lit Graph row follows the page on screen (a person
 // lights People) and goes out with Settings. A person's page keeps the section's head above its breadcrumb. The week
-// grid's columns line up under its head also with a scrollbar that takes room. View in browser on a computer shows
+// grid's columns line up under its head also with a scrollbar that takes room, and the grid fills the window so only it scrolls. View in browser on a computer shows
 // the Machine's browser in the pane, never a new window.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const now=new Date().toISOString(),day=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString()};
@@ -63,6 +63,9 @@ try{
  const cols=await page.evaluate(()=>['.cal-tg-head','.cal-tg-body'].map(s=>[...document.querySelector(s).children].map(c=>Math.round(c.getBoundingClientRect().left))));
  assert.deepEqual(cols[1],cols[0],'the hours line up under the days');
  const nums=await page.locator('.cal-tg-day b').evaluateAll(bs=>[...new Set(bs.map(b=>Math.round(b.getBoundingClientRect().top)))]);assert.equal(nums.length,1,'every day number on one line, today too');
+ await page.waitForFunction(()=>document.documentElement.scrollHeight<=innerHeight);  // only the grid scrolls, not the page
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.cal-tg-scroll')).scrollbarWidth),'thin');
+ assert.equal(await page.evaluate(()=>calAbreast(7)+','+calAbreast(1)),'2,3','two abreast in a week column, three in a day');
  await page.context().close();
  // View in browser on a computer: the pane, and the task's page in front there; no new window
  browser_embed='/browser/?autoconnect=1&reconnect=1&resize=remote&path=browser/websockify';

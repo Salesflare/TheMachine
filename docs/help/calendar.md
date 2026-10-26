@@ -25,6 +25,8 @@ A plan made together is one promise, marked "With" and their name. A promise abo
 
 **Agenda** lists each day. On a computer, **Week** shows a grid. Your choice is remembered on that device.
 
+In the grid, events at the same time sit side by side while each stays readable. The rest show as **+N**, which opens that day in the agenda.
+
 ## Open something
 
 Click a row to open its to-do's chat, the promise, or the meeting in its own calendar. Looking changes nothing.
