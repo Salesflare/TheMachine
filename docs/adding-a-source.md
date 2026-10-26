@@ -104,7 +104,7 @@ When an item changes, send it again with the same `source_id`: the service store
 
 ## 6. Tests
 
-Test with saved fixtures, not live accounts. [`test_connectors.py`](../test_connectors.py) shows the pattern for `rss.py`: it fakes the HTTP response and checks
+Test with saved fixtures, not live accounts, in `tests/test_connector_<service>.py`. [`tests/test_connectors.py`](../tests/test_connectors.py) shows the pattern for `rss.py`: it fakes the HTTP response and checks
 
 - the events and their fields,
 - that a second run with the same feed adds nothing,

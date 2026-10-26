@@ -44,7 +44,7 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | `crm.py`, `crm_import.py`, `crm_fixes.py` | The Graph as a CRM: owners, change history, filters and sorts done on the Machine, merged organizations with several websites, and CSV import with undo, easy fixes shown before and after, and a check by the owner's model (an `import` agent run that sees headers, a few values and unclear cells) |
 | `crm_fields.py` | Custom fields per record type (text, number, date, choice; values sealed at rest) and tags, kept through rebuilds and merges |
 | `deploy/` | Example systemd units (the service, an optional local embedding server) and Caddyfile |
-| `test_*.py`, `test_*.mjs` | Offline tests |
+| `tests/` | Offline tests (`test_*.py`, `test_*.mjs`), run by `scripts/test.py` from the repository root |
 
 Python's standard library and SQLite are enough: no database server, queue, web framework or extra scheduler. Runtime data lives in `~/.local/share/personal-assistant/`: `config.json`, `events.sqlite`, tokens and receipts.
 

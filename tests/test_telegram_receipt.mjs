@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {deliveryReceipt} from '../telegram-receipt.mjs';
+assert.deepEqual(deliveryReceipt({details:{messageId:'11'}}),{messageId:'11'});
+assert.deepEqual(deliveryReceipt({details:{action:'send',result:{messageId:'12'}}}),{messageId:'12'});
+assert.deepEqual(deliveryReceipt({content:[{type:'text',text:JSON.stringify({result:{messageId:'13'}})}]}),{messageId:'13'});
+assert.equal(deliveryReceipt({details:{ok:false,result:{messageId:'14'}}}),null);
+assert.equal(deliveryReceipt({details:{deliveryStatus:'partial_failed',messageId:'14'}}),null);
+assert.equal(deliveryReceipt({details:{result:{messageId:'not-an-id'}}}),null);
+assert.equal(deliveryReceipt({details:{unknown:{messageId:'14'}}}),null);
+console.log('Telegram direct/nested receipts and ambiguous/failed result protection passed.');

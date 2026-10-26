@@ -184,7 +184,7 @@ Sources and model judgment are not complete or infallible. Phone notifications c
 python3 scripts/test.py
 ```
 
-The runner isolates HOME/config and uses synthetic providers and disposable databases/browser contexts. Offline tests do not prove real delivery, billing or reboot recovery. [Development prerequisites](CONTRIBUTING.md).
+The suites live in `tests/`. The runner isolates HOME/config and uses synthetic providers and disposable databases/browser contexts. Offline tests do not prove real delivery, billing or reboot recovery. [Development prerequisites](CONTRIBUTING.md).
 
 ## Contributing and security
 

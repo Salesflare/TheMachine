@@ -182,7 +182,7 @@ def own_connectors():
     """Connectors built here that the app's own repository doesn't have."""
     try:
         listed = subprocess.run(['git', '-C', str(APP), 'ls-files', '--others', '--exclude-standard', '--', 'connectors',
-                                 'test_connector_*.py'], capture_output=True, text=True, timeout=30)
+                                 'tests/test_connector_*.py', 'test_connector_*.py'], capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.SubprocessError):
         return []
     return [APP / line for line in listed.stdout.splitlines()

@@ -114,7 +114,7 @@ These are collection/retrieval fixes, not additional approval requirements. Norm
 python3 scripts/test.py
 ```
 
-The runner returns nonzero if any suite fails and isolates HOME/config from your live installation. The tests are offline: they use temporary databases, a temporary OpenClaw workspace (`test-env.mjs`) and stubs for the Gateway, `openclaw` and `systemctl`. `test_installer.py` runs the installer against a temporary `HOME`. `test_ux_dashboard.mjs` drives the dashboard in Chromium through the `playwright-core` that ships with OpenClaw and `/usr/bin/chromium`; point `PLAYWRIGHT_CORE` and `CHROMIUM_PATH` elsewhere if yours differ. The Node tests that load the plugin need the `openclaw` package (`OPENCLAW_PACKAGE_DIR`). `test_openclaw_compat.mjs` also loads the real SDK and installs the plugin into a disposable OpenClaw home, with no Gateway or messages.
+The runner returns nonzero if any suite fails and isolates HOME/config from your live installation. The tests are offline: they use temporary databases, a temporary OpenClaw workspace (`tests/test-env.mjs`) and stubs for the Gateway, `openclaw` and `systemctl`. `test_installer.py` runs the installer against a temporary `HOME`. `test_ux_dashboard.mjs` drives the dashboard in Chromium through the `playwright-core` that ships with OpenClaw and `/usr/bin/chromium`; point `PLAYWRIGHT_CORE` and `CHROMIUM_PATH` elsewhere if yours differ. The Node tests that load the plugin need the `openclaw` package (`OPENCLAW_PACKAGE_DIR`). `test_openclaw_compat.mjs` also loads the real SDK and installs the plugin into a disposable OpenClaw home, with no Gateway or messages.
 
 ## Update and rollback
 

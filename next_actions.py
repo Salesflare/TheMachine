@@ -1523,12 +1523,13 @@ class Result(unittest.TestResult):
         self.failed.append({'test':test.id(),'kind':error[0].__name__,'frames':frames,'collection':isinstance(test,unittest.loader._FailedTest)})
     def addError(self,test,error):super().addError(test,error);self.record(test,error)
     def addFailure(self,test,error):super().addFailure(test,error);self.record(test,error)
-suite=unittest.defaultTestLoader.loadTestsFromNames(sys.argv[1:]);result=Result();suite.run(result)
+# a test in tests/ imports its helpers from beside it and the app from the root (the working folder), as scripts/test.py runs it
+for folder in dict.fromkeys(str(pathlib.Path(t).parent.resolve()) for t in sys.argv[1:]):sys.path.insert(0,folder)
+suite=unittest.defaultTestLoader.loadTestsFromNames([pathlib.Path(t).stem for t in sys.argv[1:]]);result=Result();suite.run(result)
 print('MACHINE_PROOF='+json.dumps({'ran':result.testsRun,'failed':result.failed,'skipped':len(result.skipped)}))
 '''
-        modules=[t[:-3].replace('/', '.') for t in tests]
         def run_tests(root):
-            run=subprocess.run(['python3','-c',runner,*modules],cwd=root,env=env,capture_output=True,text=True,timeout=int(self.config.get('self_test_seconds',1200)))
+            run=subprocess.run(['python3','-c',runner,*tests],cwd=root,env=env,capture_output=True,text=True,timeout=int(self.config.get('self_test_seconds',1200)))
             if run.returncode:raise ValueError('The regression test runner did not finish')
             return json.loads(run.stdout.rsplit('MACHINE_PROOF=',1)[1].splitlines()[0])
         with tempfile.TemporaryDirectory(prefix='machine-proof-') as tmp:

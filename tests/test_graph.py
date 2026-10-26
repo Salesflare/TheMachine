@@ -1,0 +1,1419 @@
+import datetime as dt
+import importlib.util
+import json
+import tempfile
+import unittest
+from unittest.mock import patch
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location('graph_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
+a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
+graph = a.graph
+enrichment = a.enrichment
+NOW = dt.datetime(2026, 10, 16, 12, tzinfo=dt.timezone.utc)
+CONFIG = {'accounts': [{'id': 'work', 'email': 'sam@acme.com'}, {'id': 'chat', 'service': 'whatsapp', 'email': 'Personal WhatsApp'},
+                       {'id': 'slack', 'service': 'slack', 'email': 'sam@acme.com', 'user_id': 'U0OWNER'}]}
+counter = iter(range(1, 10**6))
+
+
+def at(days_ago, hour=0):
+    return (NOW - dt.timedelta(days=days_ago, hours=hour)).isoformat()
+
+
+def mail(days_ago, sender, to, labels=('INBOX',), cc='', thread=None, hour=0, title=None, **extra):
+    n = next(counter)
+    return {'account_id': 'work', 'source_id': f'm{n}', 'kind': 'gmail.message', 'occurred_at': at(days_ago, hour), 'title': title or f'Mail {n}', 'body': 'Hello',
+            'deleted': False, 'metadata': {'from': sender, 'to': to, 'cc': cc, 'labels': list(labels), 'message-id': f'<{n}@x>',
+                                           'thread_id': thread or f't{n}', **extra}}
+
+
+def chat(days_ago, phone, name, mine=False, hour=0):
+    n = next(counter)
+    return {'account_id': 'chat', 'source_id': f'w{n}', 'kind': 'whatsapp.message', 'occurred_at': at(days_ago, hour), 'title': name, 'body': 'Hi',
+            'deleted': False, 'metadata': {'chat_id': phone + '@s.whatsapp.net', 'chat_name': name, 'from_me': mine, 'from': 'You' if mine else name,
+                                           'sender_id': None if mine else phone + '@s.whatsapp.net'}}
+
+
+class Graph(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = CONFIG
+        self.now = a.now
+        a.now = lambda: NOW.isoformat(); self.addCleanup(setattr, a, 'now', self.now)
+
+    def add(self, *events):
+        for e in events:
+            self.store.commit_page(e['account_id'], {}, [e])
+
+    def build(self):
+        with self.store.connect() as db:
+            db.isolation_level = None
+            return graph.build(db, {**CONFIG, 'embeddings': {'model': 'test', 'dims': getattr(self, 'vector_dims', 4)}}, NOW.isoformat())
+
+    def node(self, node_id):
+        with self.store.connect() as db:
+            row = db.execute('SELECT * FROM graph_nodes WHERE id=?', (node_id,)).fetchone()
+            return graph.node_view(row) if row else None
+
+    def ids(self, source_ids):
+        with self.store.connect() as db:
+            return [db.execute('SELECT id FROM events WHERE source_id=?', (s,)).fetchone()[0] for s in source_ids]
+
+    def test_names_are_only_names(self):
+        cases = {'Kim Lee (Initech)': 'Kim Lee', 'Ann Bell | Acme': 'Ann Bell', '(second) Kim Lee': 'Kim Lee',
+                 'Ann Bell - Bell': 'Ann Bell', 'Lee at Example': 'Lee', 'Doe, Jane': 'Jane Doe',
+                 'Doe EXT, Sam': 'Sam Doe', 'Jane Doe, PhD': 'Jane Doe', 'Dr. Ann Lee, DBA, MPA': 'Dr. Ann Lee', 'Pat 🚀 Lee': 'Pat Lee', 'Sam (@sam)': 'Sam',
+                 'Anna von Berg via LinkedIn': 'Anna von Berg', 'Kim Lee-Bell': 'Kim Lee-Bell',
+                 "Mary O'Neil": "Mary O'Neil", 'Dr. Ann Bell': 'Dr. Ann Bell', '(Initech)': '(Initech)'}
+        self.assertEqual({k: graph.person_name(k) for k in cases}, cases)
+        self.add(mail(3, 'Kim Lee (Initech) <kim@initech.example>', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'kim@initech.example', ('SENT',)))
+        self.build()
+        self.assertEqual(self.node('email:kim@initech.example')['name'], 'Kim Lee')
+
+    def test_owner_bulk_and_aliases_never_become_people(self):
+        self.add(mail(1, 'Sam <sam@acme.com>', 'Ann <ann@client.com>', ('SENT',)),
+                 mail(1, 'Sam Owner <sam@home.org>', 'ann@client.com', ('SENT',)),  # an alias the owner sends from
+                 mail(2, 'News <newsletter@shop.com>', 'sam@acme.com', ('CATEGORY_PROMOTIONS', 'INBOX')),
+                 mail(2, 'Robot <noreply@service.com>', 'sam@acme.com'),
+                 mail(2, 'Acme info <info@acme.com>', 'sam@acme.com'),  # a shared role address at the owner's own domain
+                 mail(3, 'Ann <ann@client.com>', 'Sam <sam@acme.com>, Sam Owner <sam@home.org>'),
+                 chat(1, '00000000001', 'Sam Owner'),  # the owner's own name on another channel
+                 {'account_id': 'work', 'source_id': 'crm1', 'kind': 'salesflare.email', 'occurred_at': at(2), 'title': 'Your workspace',
+                  'body': 'Hi', 'deleted': False, 'metadata': {'contacts': [{'email': 'no-reply@email.slackhq.com', 'name': 'Slack'}]}})
+        self.build()
+        with self.store.connect() as db:
+            people = {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person'")}
+        self.assertEqual(people, {'email:ann@client.com'})
+        self.assertEqual(self.node('org:client.com')['name'], 'Client')  # a readable name from the domain until a lookup
+
+    def test_owner_messages_weigh_more_a_burst_is_one_day_and_it_fades(self):
+        self.add(*[chat(1, '00000000001', 'Bea Burst', hour=h) for h in range(10)],
+                 chat(1, '00000000002', 'Cas Owner', mine=True),
+                 chat(120, '00000000003', 'Dee Old'), chat(120, '00000000003', 'Dee Old', mine=True))
+        self.build()
+        bea, cas, dee = (self.node('wa:0000000000' + n)['strength'] for n in '123')
+        self.assertAlmostEqual(bea, 1.0 * 0.5 ** (1 / 60), places=2)  # ten messages, one day, capped
+        self.assertGreater(cas, 0.55)
+        self.assertLess(dee, 0.25)  # two months of fading, twice over
+
+    def test_same_full_name_joins_channels_unless_said_to_differ(self):
+        self.add(mail(1, 'Ann Example <ann@client.com>', 'sam@acme.com'), chat(2, '00000000001', 'Ann Example'),
+                 chat(2, '00000000009', 'Bo Ambiguous'), mail(2, 'Bo Ambiguous <bo@one.com>', 'sam@acme.com'), mail(2, 'Bo Ambiguous <bo@two.com>', 'sam@acme.com'))
+        self.build()
+        self.assertEqual(self.node('email:ann@client.com')['ids'], ['+00000000001', 'ann@client.com'])
+        self.assertIsNone(self.node('wa:00000000001'))
+        self.assertIsNotNone(self.node('wa:00000000009'))  # two addresses carry that name: not joined
+        with self.store.connect() as db:
+            graph.merge(db, 'wa:00000000001', 'email:ann@client.com', False, NOW.isoformat())
+        self.build()
+        self.assertIsNotNone(self.node('wa:00000000001'))
+        with self.store.connect() as db:
+            graph.merge(db, 'wa:00000000009', 'email:bo@one.com', True, NOW.isoformat())
+        self.build()
+        self.assertIn('+00000000009', self.node('email:bo@one.com')['ids'])
+
+    def test_slack_email_joins_the_mail_identity(self):
+        n = next(counter)
+        self.add({'account_id': 'slack', 'source_id': f's{n}', 'kind': 'slack.message', 'occurred_at': at(1), 'title': '#DM U0ANN: hi', 'body': 'hi',
+                  'deleted': False, 'metadata': {'conversation_type': 'dm', 'channel_name': 'DM U0ANN', 'user_id': 'U0ANN', 'channel_id': 'D1'}},
+                 mail(2, 'Ann <ann@client.com>', 'sam@acme.com'))
+        self.store.remember_name('slack:U0ANN', 'Ann Example', 'ann@client.com')
+        self.assertEqual(self.store.names_to_check(['slack:U0ANN', 'slack:U0NEW']), ['slack:U0NEW'])
+        self.build()
+        ann = self.node('email:ann@client.com')
+        self.assertEqual((ann['name'], ann['ids']), ('Ann Example', ['Slack', 'ann@client.com']))
+
+    def test_slack_names_are_looked_up_a_few_at_a_time_once_a_month(self):
+        calls = []
+        slack = object.__new__(a.Slack); slack.account = {'user_id': 'U0OWNER'}
+        slack.get = lambda method, params: calls.append(params['user']) or {'user': {'id': params['user'], 'profile': {
+            'real_name': 'Name ' + params['user'], 'email': params['user'].lower() + '@acme.com',
+            'is_custom_image': params['user'] == 'U0A', 'image_192': f"https://avatars.slack-edge.com/{params['user']}_192.png"}}}
+        channels = [{'name': 'DM U0A'}, {'name': 'DM U0B'}, {'name': 'general'}, {'name': 'My notes'}]
+        events = [{'metadata': {'user_id': 'U0C', 'channel_name': 'general'}}, {'metadata': {'user_id': 'U0OWNER', 'channel_name': 'general'}}]
+        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        self.assertEqual(calls, ['U0A', 'U0B', 'U0C'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT name,email FROM identity_names WHERE identifier='slack:U0A'").fetchone()[:], ('Name U0A', 'u0a@acme.com'))
+            # Their own Slack picture is kept for their photo (Slack's generated one isn't), on this Machine only.
+            self.assertEqual([tuple(r) for r in db.execute('SELECT identifier,url,chosen FROM contact_photo_links')], [('slack:U0A', 'https://avatars.slack-edge.com/U0A_192.png', 1)])
+
+    def test_projects_from_review_and_cards_spread_to_threads_and_people(self):
+        self.add(mail(3, 'Ann <ann@client.com>', 'sam@acme.com', thread='deal'), mail(2, 'Sam <sam@acme.com>', 'ann@client.com, Bob <bob@client.com>', ('SENT',), thread='deal'),
+                 mail(1, 'Zed <zed@else.com>', 'sam@acme.com'))
+        first, _, other = self.thread_ids()
+        claim = self.store.begin_analysis(['work'], 10)
+        with self.assertRaises(ValueError):
+            self.store.finish_analysis(claim['analysis_id'], 'x', projects={'Acme deal': [999999]})
+        self.store.finish_analysis(claim['analysis_id'], 'Reviewed', projects={'Acme deal': [first]})
+        self.build()
+        with self.store.connect() as db:
+            project = db.execute("SELECT * FROM graph_nodes WHERE kind='project'").fetchone()
+            self.assertEqual((project['name'], project['signals']), ('Acme deal', 2))  # the reply in the same thread joined it
+            people = {n['id'] for n in graph.neighbours(db, project['id'])}
+            self.assertEqual(people, {'email:ann@client.com', 'email:bob@client.com'})
+            self.assertEqual(graph.active_projects(db), ['Acme deal'])
+        card = self.store.suggest('zed-1', 'Answer Zed', 'Zed asked a question.', [other], project='acme  DEAL')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT project FROM suggestions WHERE id=?', (card['id'],)).fetchone()[0], 'Acme deal')
+        self.build()
+        with self.store.connect() as db:
+            ids = {n['id'] for n in graph.neighbours(db, project['id'])}
+        self.assertIn('email:zed@else.com', ids)
+
+    def thread_ids(self):
+        with self.store.connect() as db:
+            rows = db.execute("SELECT id,json_extract(metadata,'$.thread_id') t FROM events ORDER BY id").fetchall()
+        deal = [r['id'] for r in rows if r['t'] == 'deal']
+        return deal[0], deal[1], next(r['id'] for r in rows if r['t'] != 'deal')
+
+    def test_card_decisions_strengthen_and_not_relevant_weakens(self):
+        self.add(mail(5, 'Ann <ann@client.com>', 'sam@acme.com'), mail(5, 'Bob <bob@client.com>', 'sam@acme.com'), mail(5, 'Cy <cy@client.com>', 'sam@acme.com'))
+        ann, bob, cy = self.ids(self.sources())
+        self.build()
+        base = self.node('email:ann@client.com')['strength']
+        for key, event_id, choice, feedback in (('a', ann, 'accept', ''), ('a2', ann, 'complete', ''), ('b', bob, 'reject', ''), ('c', cy, 'reject', 'Already handled')):
+            card = self.store.suggest(key, 'T', 'B', [event_id]) if key != 'a2' else card
+            with self.store.connect() as db:
+                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)', (key, card['id'], choice, feedback, 'dashboard', at(1)))
+        self.build()
+        self.assertAlmostEqual(self.node('email:ann@client.com')['strength'] - base, 0.5 ** (1 / 60), places=2)  # one boost per card
+        self.assertIsNone(self.node('email:bob@client.com'))  # faded out entirely
+        self.assertAlmostEqual(self.node('email:cy@client.com')['strength'], base, places=3)
+
+    def sources(self):
+        with self.store.connect() as db:
+            return [r[0] for r in db.execute('SELECT source_id FROM events ORDER BY id')]
+
+    def test_slack_root_and_reply_share_project_not_neighbour_or_other_account(self):
+        channel = {'id': 'C1', 'name': 'projects', 'type': 'channel'}
+        account = {'id': 'slack', 'slack_host': 'example.invalid'}
+        stamp = str(int((NOW - dt.timedelta(days=1)).timestamp())) + '.000001'
+        root = a.slack_event(account, channel, {'ts': stamp, 'text': 'Project root', 'user': 'U1', 'reply_count': 1})
+        reply = a.slack_event(account, channel, {'ts': str(float(stamp) + 60), 'thread_ts': stamp, 'text': 'Project reply', 'user': 'U2'})
+        other = a.slack_event(account, channel, {'ts': str(float(stamp) + 120), 'text': 'Unrelated root', 'user': 'U3'})
+        foreign = {**root, 'account_id': 'other-slack'}
+        self.add(root, reply, other, foreign)
+        with self.store.connect() as db:
+            root_id, reply_id, other_id, foreign_id = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id')]
+            pid = graph.label(db, [root_id], 'Exact thread', 'agent', NOW.isoformat())
+        self.build()
+        with self.store.connect() as db:
+            members = {r[0] for r in db.execute('SELECT event_id FROM graph_events WHERE node_id=?', ('project:' + str(pid),))}
+        self.assertEqual(members, {root_id, reply_id})
+        with self.store.connect() as db:
+            db.execute('DELETE FROM event_projects')
+            graph.label(db, [reply_id], 'Exact thread', 'agent', NOW.isoformat())
+        self.build()
+        with self.store.connect() as db:
+            members = {r[0] for r in db.execute('SELECT event_id FROM graph_events WHERE node_id=?', ('project:' + str(pid),))}
+        self.assertEqual(members, {root_id, reply_id})
+
+    def test_old_task_membership_is_complete_but_display_is_bounded(self):
+        old = mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com')
+        self.add(old, *[mail(1, 'Ann Example <ann@client.com>', 'sam@acme.com', hour=i / 100) for i in range(45)])
+        first = self.ids([old['source_id']])[0]
+        card = self.store.suggest('older', 'Answer Ann', 'Question', [first])
+        self.build()
+        with self.store.connect() as db:
+            self.assertTrue(graph.for_events(db, [first]))
+            self.assertEqual(len(graph.detail(db, 'email:ann@client.com', graph.EVENTS_PER_NODE)['event_ids']), 40)
+        self.assertIn('Ann Example', self.app.graph_lines(card['id']))
+
+    def test_annotated_decisions_do_not_teach_graph(self):
+        self.add(mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com'))
+        first = self.ids(self.sources())[0]
+        self.build()
+        baseline = self.node('email:ann@client.com')['strength']
+        card = self.store.suggest('annotation', 'Answer Ann', 'Question', [first])
+        with self.store.connect() as db:
+            db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)', ('bad', card['id'], 'accept', '', 'telegram', at(1)))
+            db.execute('INSERT INTO decision_annotations(decision_id,status,reason) VALUES(?,?,?)', ('bad', 'misassociated', 'Wrong prompt'))
+        self.build()
+        self.assertEqual(self.node('email:ann@client.com')['strength'], baseline)
+
+    def test_quiet_project_actually_cools(self):
+        self.add(*[mail(15, 'Ann Example <ann@client.com>', 'sam@acme.com', hour=i / 100) for i in range(10)])
+        with self.store.connect() as db:
+            pid = graph.label(db, self.ids(self.sources()), 'Quiet project', 'agent', NOW.isoformat())
+        self.build()
+        self.assertEqual(self.node('project:' + str(pid))['state'], 'cooling')
+        for ratio, expected in ((1.0, 'active'), (1.5, 'heating up')):
+            self.assertEqual(graph.project_state({'strength': 1.0, 'trend': ratio}), expected)
+
+    def test_a_projects_last_signal_is_never_in_the_future_a_coming_one_is_its_next_meeting(self):
+        self.add(mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal'), mail(-9, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal'),
+                 mail(-25, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal'))
+        with self.store.connect() as db:
+            pid = graph.label(db, self.ids(self.sources()), 'Acme deal', 'agent', NOW.isoformat())
+        self.build()
+        project = self.node('project:' + str(pid))
+        self.assertEqual((project['last_at'], project['signals']), ((NOW - dt.timedelta(days=3)).date().isoformat(), 1))
+        self.assertEqual(project['next_meeting'][:10], (NOW + dt.timedelta(days=9)).date().isoformat())
+        with self.store.connect() as db:
+            self.assertFalse(db.execute('SELECT count(*) FROM graph_nodes WHERE last_at>?', (NOW.date().isoformat(),)).fetchone()[0])
+
+    def test_going_quiet_is_measured_against_their_own_rhythm(self):
+        weekly = [chat(d, '00000000001', 'Wes Weekly', mine=d % 2 == 0) for d in range(30, 120, 7)]
+        self.add(*weekly, chat(30, '00000000001', 'Wes Weekly', mine=True),
+                 *[chat(d, '00000000002', 'Rae Recent', mine=True) for d in (2, 9, 16, 23)])
+        self.build()
+        wes, rae = self.node('wa:00000000001'), self.node('wa:00000000002')
+        self.assertEqual((wes['usual_gap_days'], wes['quiet']), (7, True))
+        self.assertFalse(rae['quiet'])
+        with self.store.connect() as db:
+            self.assertEqual([p['id'] for p in graph.overview(db)['quiet']], ['wa:00000000001'])
+        self.assertIn('• Gone quiet: Wes Weekly (usually every 7 days)', a.recap_graph_lines(self.store))
+
+    def test_preparation_context_and_agent_lookup(self):
+        self.add(mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal'), mail(2, 'Sam <sam@acme.com>', 'Ann Example <ann@client.com>, Bob <bob@client.com>', ('SENT',), thread='deal'))
+        first = self.ids(self.sources())[0]
+        card = self.store.suggest('ann-1', 'Answer Ann', 'Ann asked about pricing.', [first], project='Acme deal')
+        self.build()
+        lines = self.app.graph_lines(card['id'])
+        self.assertIn('People and projects', lines)
+        self.assertIn('- Ann Example (ann@client.com): ', lines)
+        self.assertIn('projects: Acme deal', lines)
+        self.assertIn('often with Bob', lines)
+        self.assertIn('- Project Acme deal: ', lines)
+        found = self.app.graph_action({'query': 'ann example'})['found']
+        self.assertEqual([f['id'] for f in found], ['email:ann@client.com'])
+        detail = self.app.graph_action({'node_id': 'email:ann@client.com'})
+        self.assertEqual(len(detail['recent']), 2)
+        self.assertIn('email:bob@client.com', [n['id'] for n in detail['around']])
+        with self.store.connect() as db:
+            before = graph.overview(db)['counts']
+        self.assertEqual((before['person'], before['project']), (2, 1))  # Ann and Bob (not the owner); the Acme deal
+        self.app.graph_build = self.build
+        self.app.graph_action({'close_project': 'acme deal'})
+        with self.store.connect() as db:
+            self.assertEqual(graph.overview(db)['projects'], [])
+            self.assertEqual(graph.overview(db)['counts']['project'], 0)  # a closed project is not counted
+        with self.assertRaises(ValueError):
+            self.app.graph_action({'merge': ['email:ann@client.com']})
+
+    def vectors(self, pairs):
+        self.vector_dims = len(pairs[0][1])
+        import struct
+        with self.store.connect() as db:
+            for source_id, values in pairs:
+                size = sum(v * v for v in values) ** 0.5
+                event_id, version = db.execute('SELECT id,version FROM events WHERE source_id=?', (source_id,)).fetchone()
+                db.execute('INSERT OR REPLACE INTO event_vectors(event_id,version,model,dims,vector) VALUES(?,?,?,?,?)',
+                           (event_id, version, 'test', len(values), struct.pack('<%df' % len(values), *[v / size for v in values])))
+
+    def test_a_signal_that_reads_like_a_project_and_shares_a_person_is_probably_part_of_it(self):
+        labelled = mail(5, 'Ann <ann@client.com>', 'sam@acme.com', title='Pricing')
+        alike = mail(3, 'Ann <ann@client.com>', 'sam@acme.com')
+        stranger = mail(3, 'Zed <zed@else.com>', 'sam@acme.com')
+        other = mail(2, 'Ann <ann@client.com>', 'sam@acme.com')
+        meeting = {'account_id': 'work', 'source_id': 'meet1', 'kind': 'calendar.event', 'occurred_at': at(2), 'title': 'Call', 'body': '', 'deleted': False,
+                   'metadata': {'attendees': [{'email': 'sam@acme.com', 'self': True}, {'email': 'ann@client.com'}]}}
+        self.add(labelled, alike, stranger, other, meeting)
+        self.vectors([(labelled['source_id'], [1, 0.1, 0, 0]), (alike['source_id'], [1, 0.2, 0, 0]), (stranger['source_id'], [1, 0.1, 0, 0]),
+                      (other['source_id'], [0, 0, 1, 0]), ('meet1', [1, 0.1, 0, 0])])
+        first, guess, zed, unrelated, call = self.ids([labelled['source_id'], alike['source_id'], stranger['source_id'], other['source_id'], 'meet1'])
+        with self.store.connect() as db:
+            graph.label(db, [first], 'Acme deal', 'review', NOW.isoformat())
+        self.build()
+        with self.store.connect() as db:
+            rows = dict(db.execute("SELECT event_id,probable FROM graph_events WHERE node_id LIKE 'project:%'").fetchall())
+        self.assertEqual(rows, {first: 0, guess: 1})  # not the stranger, not a different topic, not a bare meeting
+        self.assertEqual(self.store.project_hints([first, guess, zed]), {first: {'projects': ['Acme deal']}, guess: {'probably_project': 'Acme deal'}})
+        detail = self.app.graph_action({'node_id': 'project:1'})
+        self.assertEqual(detail['probable_signals'], 1)
+        self.assertTrue(any(line.startswith(f'{guess} ') and line.endswith('(probably part of it)') for line in detail['recent']))
+        claim = self.store.begin_analysis(['work'], 10)
+        page = self.store.analysis_page(claim['analysis_id'], 1) if claim.get('pages', 1) > 1 else claim
+        shown = {e['id']: e for e in page['events']}
+        self.assertEqual(shown[guess].get('probably_project'), 'Acme deal')
+        with self.store.connect() as db:  # a review confirms it
+            graph.label(db, [guess], 'Acme deal', 'review', NOW.isoformat())
+        self.build()
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT probable FROM graph_events WHERE event_id=? AND node_id=?', (guess, 'project:1')).fetchone()[0], 0)
+
+    def test_threads_that_read_alike_without_a_project_are_offered_once(self):
+        threads = [mail(9 - n, 'Ann <ann@client.com>', 'sam@acme.com', thread=f'x{n}') for n in range(3)]
+        threads.append(mail(5, 'Sam Stone <sam@acme.com>', 'Ann <ann@client.com>', ('SENT',), thread='x0'))
+        chats = [chat(4 - n, '00000000001', 'Bo Chat', mine=n == 0) for n in range(3)]
+        self.add(*threads, *chats)
+        self.vectors([(e['source_id'], [1, 0.05 * i, 0, 0]) for i, e in enumerate(threads + chats)])
+        self.build()
+        first = self.store.unnamed_text('run1')
+        self.assertIn('4 signals with Ann: ', first)
+        self.assertIn('"Mail ', first)
+        self.assertNotIn('Bo Chat', first)  # chats read alike per person, whatever the topic
+        self.assertEqual(self.store.unnamed_text('run2'), '')
+        self.assertIn('Possibly one piece of work nobody named', a.review_prompt('run', ['work'], unnamed=first))
+        self.assertNotIn('Possibly one piece of work', a.review_prompt('run', ['work']))
+
+    def test_the_owner_renames_people_organisations_and_projects(self):
+        self.add(mail(3, 'Sam Stone <sam@acme.com>', 'Lee <lee@globex.com>', ('SENT',), thread='t1'),
+                 mail(2, 'Lee <lee@globex.com>', 'sam@acme.com', thread='t1'), mail(1, 'Lee <lee@globex.com>', 'sam@acme.com', thread='t2'))
+        with self.store.connect() as db:
+            ids = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id')]
+            graph.label(db, ids[:2], 'Globex deal', 'agent', a.now())
+            graph.label(db, ids[2:], 'Globex renewal', 'agent', a.now())
+        self.build()
+        self.app.graph_build = self.build
+        rename = lambda node, name: self.app.action('graph_rename', {'node_id': node, 'name': name}, owner_dashboard=True)
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('graph_rename', {'node_id': 'email:lee@globex.com', 'name': 'Leon'})
+        self.assertEqual(rename('email:lee@globex.com', '  Lee   Parker ')['name'], 'Lee Parker')
+        self.assertEqual(self.node('email:lee@globex.com')['name'], 'Lee Parker')
+        rename('email:lee@globex.com', '')  # back to the name in their messages
+        self.assertEqual(self.node('email:lee@globex.com')['name'], 'Lee')
+        rename('org:globex.com', 'Globex Corp')
+        self.assertEqual(self.node('org:globex.com')['name'], 'Globex Corp')
+        with self.store.connect() as db:
+            deal, renewal = (db.execute('SELECT id FROM projects WHERE name=?', (n,)).fetchone()[0] for n in ('Globex deal', 'Globex renewal'))
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,project,created_at) VALUES('s1','k1','Reply to Lee','','[]','[]','Globex deal',?)", (a.now(),))
+        self.assertEqual(rename(f'project:{deal}', 'Globex expansion'), {'node_id': f'project:{deal}', 'name': 'Globex expansion'})
+        self.assertEqual(self.node(f'project:{deal}')['name'], 'Globex expansion')
+        joined = rename(f'project:{renewal}', 'globex EXPANSION')  # another project's name: they become one
+        self.assertEqual(joined, {'node_id': f'project:{deal}', 'name': 'Globex expansion', 'merged': True})
+        self.assertIsNone(self.node(f'project:{renewal}'))
+        self.assertEqual(self.node(f'project:{deal}')['signals'], 3)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT project FROM suggestions WHERE id='s1'").fetchone()[0], 'Globex expansion')
+        with self.assertRaisesRegex(ValueError, 'short label'):
+            rename(f'project:{deal}', '')
+        self.assertIn('graph_rename', a.OWNER_ACTIONS)
+
+    def test_roles_only_as_said_by_the_owner_or_a_review(self):
+        self.add(mail(3, 'Sam Stone <sam@acme.com>', 'Ann Stone <ann@home.example>, Pat <pat@client.com>, Lee <lee@globex.com>', ('SENT',)),
+                 {'account_id': 'work', 'source_id': 'st1', 'kind': 'stripe.event', 'occurred_at': at(2), 'title': 'Payment failed', 'body': '', 'deleted': False,
+                  'metadata': {'from': 'pat@client.com', 'customer_name': 'Client Ltd', 'type': 'invoice.payment_failed'}},
+                 {'account_id': 'work', 'source_id': 'ic1', 'kind': 'intercom.conversation', 'occurred_at': at(2), 'title': 'Re: login', 'body': '', 'deleted': False,
+                  'metadata': {'from': 'Kai <kai@acme.com>'}},
+                 {'account_id': 'work', 'source_id': 'cr1', 'kind': 'salesflare.email', 'occurred_at': at(2), 'title': 'Hi', 'body': '', 'deleted': False,
+                  'metadata': {'contacts': [{'email': 'lee@globex.com', 'name': 'Lee'}], 'crm_account': {'domain': 'globex.com', 'name': 'Globex'}}},
+                 {'account_id': 'slack', 'source_id': 's1', 'kind': 'slack.message', 'occurred_at': at(1), 'title': 'DM', 'body': 'hey', 'deleted': False,
+                  'metadata': {'channel_id': 'D1', 'channel_name': 'DM U0TEAM1', 'conversation_type': 'dm', 'user_id': 'U0TEAM1'}})
+        self.build()
+        role = lambda node: self.node(node)['role']
+        for node in ('slack:U0TEAM1', 'email:pat@client.com', 'email:ann@home.example', 'email:lee@globex.com'):
+            self.assertIsNone(role(node))  # a source doesn't say what someone is to the owner
+        hints = lambda node: self.node(node)['hints']
+        self.assertEqual(hints('email:pat@client.com'), ['billed through Stripe as Client Ltd'])
+        self.assertEqual(hints('email:lee@globex.com'), ['a Salesflare contact at Globex'])
+        self.assertEqual(hints('email:ann@home.example'), ["shares the owner's surname"])
+        self.assertEqual(hints('slack:U0TEAM1'), ["in the owner's Slack"])
+        self.assertEqual(hints('email:kai@acme.com'), ["an address at the owner's own domain"])  # a teammate answering support
+        # Last contact is contact with the owner: Pat's later Stripe event and Kai's support answer don't count.
+        tz = graph.owner_tz({})
+        self.assertEqual(self.node('email:pat@client.com')['last_at'], dt.datetime.fromisoformat(at(3)).astimezone(tz).date().isoformat())
+        self.assertFalse(self.node('email:pat@client.com')['seen_only'])
+        self.assertTrue(self.node('email:kai@acme.com')['seen_only'])
+        # A review is asked about the strongest people without a role, each once a month, and reads their messages.
+        with self.store.connect() as db:
+            db.execute("UPDATE graph_nodes SET strength=1 WHERE kind='person'")
+        asked = self.store.role_text('run1', limit=10)
+        self.assertIn('node_id email:pat@client.com', asked)
+        self.assertIn('hints: billed through Stripe as Client Ltd', asked)
+        self.assertEqual(self.store.role_text('run2', limit=10), '')
+        prompt = a.review_prompt('run', ['work'], roles=asked)
+        self.assertIn('Hints say where someone appears, not what they are', prompt)
+        self.assertNotIn('Who they are to', a.review_prompt('run', ['work']))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT name FROM graph_nodes WHERE id='org:client.com'").fetchone()[0], 'Client Ltd')
+        self.app.graph_build = self.build
+        self.app.graph_action({'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd'})
+        self.assertEqual(role('email:pat@client.com'), 'CFO at Client Ltd')
+        self.assertEqual(self.node('email:pat@client.com')['role_by'], 'review')
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('graph_role', {'node_id': 'email:pat@client.com', 'role': 'friend'})
+        self.app.action('graph_role', {'node_id': 'email:ann@home.example', 'role': 'sister'}, owner_dashboard=True)
+        self.app.graph_action({'node_id': 'email:ann@home.example', 'role': 'cousin'})  # a review can't overrule the owner
+        self.assertEqual(role('email:ann@home.example'), 'sister')
+        self.assertEqual(self.node('email:ann@home.example')['role_by'], 'owner')
+        self.app.action('graph_role', {'node_id': 'email:ann@home.example', 'role': ''}, owner_dashboard=True)
+        self.assertIsNone(role('email:ann@home.example'))
+        self.assertIn('graph_role', a.OWNER_ACTIONS)
+        with self.store.connect() as db:
+            lines = graph.context_lines(db, self.ids(['st1']))
+        self.assertIn('- Pat (pat@client.com): CFO at Client Ltd; ', lines)
+
+    def test_a_warm_up_tools_traffic_leaves_the_graph_and_the_owner_can_undo_it(self):
+        self.add(mail(3, 'Rotating Name <ana@warmup-pool.example>', 'sam@acme.com', title='Your thoughts on our update, Sam'),
+                 mail(2, 'Sam <sam@acme.com>', 'ana@warmup-pool.example', ('SENT',), title='Re: Your thoughts on our update, Sam'),
+                 mail(2, 'Bo Other <bo@warmup-pool.example>', 'sam@acme.com', title='Seeking your input, Sam'),
+                 mail(1, 'Pat Doe <pat@client.com>', 'sam@acme.com'), mail(1, 'Sam <sam@acme.com>', 'pat@client.com', ('SENT',)))
+        self.build()
+        with self.store.connect() as db:
+            db.execute("UPDATE graph_nodes SET strength=1 WHERE kind='org'")
+        with self.store.connect() as db:
+            warm_id = db.execute("SELECT g.event_id FROM graph_events g WHERE g.node_id='email:ana@warmup-pool.example' LIMIT 1").fetchone()[0]
+        # A roles turn sees the organization's own messages, to judge what the exchanges are.
+        _, orgs = self.store.role_evidence()
+        warm = next(o for o in orgs if o['node_id'] == 'org:warmup-pool.example')
+        self.assertTrue(warm['messages'])
+        with self.assertRaisesRegex(ValueError, 'organization node_id'):
+            self.app.graph_action({'node_id': 'email:ana@warmup-pool.example', 'warmup': True})
+        self.app.graph_action({'node_id': 'org:warmup-pool.example', 'warmup': True, 'event_id': warm_id})
+        self.assertIsNone(self.node('org:warmup-pool.example'))
+        self.assertIsNone(self.node('email:ana@warmup-pool.example'))
+        self.assertIsNotNone(self.node('org:client.com'))
+        seen = self.app.graph_action({})
+        self.assertEqual([(w['domain'], w['source']) for w in seen['warmup']], [('warmup-pool.example', 'agent')])
+        self.assertNotIn('org:warmup-pool.example', [o['id'] for o in seen['orgs']])
+        with self.store.connect() as db:
+            self.assertNotIn('warmup-pool.example', enrichment.due(db, NOW.isoformat(), 10))
+            self.assertIn('client.com', enrichment.due(db, NOW.isoformat(), 10))
+        # Only the owner undoes it here, and the owner's word stays: a later review can't hide it again.
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('graph_warmup', {'domain': 'warmup-pool.example', 'warmup': False})
+        self.app.action('graph_warmup', {'domain': 'warmup-pool.example', 'warmup': False}, owner_dashboard=True)
+        self.assertIsNotNone(self.node('email:ana@warmup-pool.example'))
+        self.assertEqual(self.app.graph_action({})['warmup'], [])
+        kept = self.app.graph_action({'node_id': 'org:warmup-pool.example', 'warmup': True})
+        self.assertIsNotNone(self.node('org:warmup-pool.example'))
+        self.assertEqual(self.app.graph_action({})['warmup'], [])
+
+    def test_roles_keep_their_evidence_the_owner_confirms_and_corrects_and_reviews_learn(self):
+        pat = mail(3, 'Pat Doe <pat@client.com>', 'sam@acme.com', title='Intro')
+        pat['body'] = 'Hi Sam,\nAs the CFO at Client Ltd I look after the renewal.\nPat'
+        kim = mail(4, 'Kim <kim@client.com>', 'sam@acme.com')
+        self.add(pat, mail(2, 'Sam <sam@acme.com>', 'Pat Doe <pat@client.com>', ('SENT',)), kim,
+                 mail(2, 'Sam <sam@acme.com>', 'Kim <kim@client.com>, Ann Assist <ann@client.com>', ('SENT',)),
+                 mail(5, 'Lee <lee@other.example>', 'sam@acme.com'), mail(4, 'Sam <sam@acme.com>', 'Lee <lee@other.example>', ('SENT',)))
+        self.build()
+        self.app.graph_build = self.build
+        pat_id, kim_id = self.ids([pat['source_id'], kim['source_id']])
+        with self.assertRaisesRegex(ValueError, 'words copied from that message'):
+            self.app.graph_action({'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd', 'event_id': pat_id, 'quote': 'I am the CFO'})
+        with self.assertRaisesRegex(ValueError, 'one of their own signals'):
+            self.app.graph_action({'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd', 'event_id': kim_id, 'quote': 'Hello'})
+        self.app.graph_action({'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd', 'event_id': pat_id, 'quote': '"the CFO at  Client Ltd…"'})
+        found = self.app.graph_action({'node_id': 'email:pat@client.com'})
+        self.assertEqual((found['role'], found['role_by'], found['role_event_id']), ('CFO at Client Ltd', 'review', pat_id))
+        self.assertEqual(found['role_quote'], '"the CFO at Client Ltd…"')
+        # Who's who: a review's roles wait for the owner's ✓, with the line they came from.
+        self.assertEqual([(w['name'], w['role'], w['event_id']) for w in self.app.graph_action({})['whos_who']], [('Pat Doe', 'CFO at Client Ltd', pat_id)])
+        self.app.action('graph_role', {'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd'}, owner_dashboard=True)
+        found = self.app.graph_action({'node_id': 'email:pat@client.com'})
+        self.assertEqual((found['role_by'], found['role_event_id']), ('owner', pat_id))  # confirmed: the owner's word, evidence kept
+        self.assertEqual(self.app.graph_action({})['whos_who'], [])
+        # A correction is kept, and later reviews learn from it.
+        self.app.graph_action({'node_id': 'email:lee@other.example', 'role': 'intern'})
+        self.app.action('graph_role', {'node_id': 'email:lee@other.example', 'role': 'head of finance'}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual(graph.corrections_lines(db), '- Lee: a review said "intern", the owner made it "head of finance"')
+            db.execute("UPDATE graph_nodes SET strength=1 WHERE kind IN ('person','org')")
+        asked = self.store.role_text('run1', limit=10)
+        self.assertIn('means by a role:\n- Lee: a review said "intern"', asked)
+        self.assertIn('Organizations with no role yet', asked)
+        self.assertIn('node_id org:client.com', asked)
+        self.assertIn('Pat Doe (CFO at Client Ltd)', asked)  # its people with what they are to the owner
+        self.assertNotIn('org:client.com', self.store.role_text('org-run2', limit=10))
+        # An ask that didn't show its people with their roles yet is made once more.
+        with self.store.connect() as db:
+            db.execute("UPDATE graph_role_asks SET people_shown=0 WHERE identifier='org:client.com'")
+        self.assertIn('node_id org:client.com', self.store.role_text('org-run2b', limit=10))
+        self.assertNotIn('org:client.com', self.store.role_text('org-run2c', limit=10))
+        # One of its people getting a role after the ask makes the organization worth reading again.
+        a.now = lambda: (NOW + dt.timedelta(minutes=5)).isoformat()
+        self.app.action('graph_role', {'node_id': 'email:ann@client.com', 'role': 'office manager'}, owner_dashboard=True)
+        a.now = lambda: NOW.isoformat()
+        self.assertIn('node_id org:client.com', self.store.role_text('org-run3', limit=10))
+        self.app.action('graph_role', {'node_id': 'email:ann@client.com', 'role': ''}, owner_dashboard=True)
+        # Organizations get a role, and their people carry it as context.
+        self.app.graph_action({'node_id': 'org:client.com', 'role': 'customer', 'event_id': pat_id, 'quote': 'look after the renewal'})
+        self.assertEqual(self.node('org:client.com')['role'], 'customer')
+        with self.store.connect() as db:
+            self.assertIn('- Kim (kim@client.com): no role yet; at Client (customer); ', graph.context_lines(db, [kim_id]))
+        # How two people are related, as a link both ways; the owner's word stays and the owner can remove it.
+        self.app.graph_action({'node_id': 'email:ann@client.com', 'related_to': 'email:kim@client.com', 'relation': 'assistant of'})
+        self.assertEqual([(r['a_name'], r['relation'], r['b_name']) for r in self.node('email:kim@client.com')['relations']], [('Ann Assist', 'assistant of', 'Kim')])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT kind FROM graph_links WHERE a='email:ann@client.com' AND b='email:kim@client.com'").fetchone()[0], 'relation')
+            self.assertIn('Ann Assist is assistant of Kim', graph.context_lines(db, [kim_id]))
+        self.app.action('graph_relation', {'node_id': 'email:ann@client.com', 'related_to': 'email:kim@client.com', 'relation': 'manager of'}, owner_dashboard=True)
+        self.app.graph_action({'node_id': 'email:kim@client.com', 'related_to': 'email:ann@client.com', 'relation': 'boss of'})
+        self.assertEqual(self.node('email:kim@client.com')['relations'][0]['relation'], 'manager of')
+        self.app.action('graph_relation', {'node_id': 'email:kim@client.com', 'related_to': 'email:ann@client.com', 'relation': ''}, owner_dashboard=True)
+        self.assertEqual(self.node('email:kim@client.com')['relations'], [])
+        # A review's role is read again when it's old and there was contact since, or when something new shows up.
+        self.app.graph_action({'node_id': 'email:kim@client.com', 'role': 'trial user'})
+        with self.store.connect() as db:
+            self.assertEqual(graph.stale_roles(db, NOW.isoformat())[0]['why'], 'saved without the line it came from')
+        self.app.graph_action({'node_id': 'email:kim@client.com', 'role': 'trial user', 'event_id': kim_id, 'quote': 'Hello'})
+        with self.store.connect() as db:
+            self.assertEqual(graph.stale_roles(db, NOW.isoformat()), [])
+            db.execute("UPDATE person_roles SET checked_at=? WHERE identifier='email:kim@client.com'", (at(120),))
+            self.assertEqual([(r['name'], r['why']) for r in graph.stale_roles(db, NOW.isoformat())], [('Kim', 'read 120 days ago, in touch since')])
+            db.execute("UPDATE person_roles SET checked_at=?,hints='[]' WHERE identifier='email:kim@client.com'", (at(1),))
+            db.execute("UPDATE graph_nodes SET info=json_set(info,'$.hints',json('[\"billed through Stripe as Client Ltd\"]')) WHERE id='email:kim@client.com'")
+            self.assertEqual(graph.stale_roles(db, NOW.isoformat())[0]['why'], 'new since: billed through Stripe as Client Ltd')
+            db.execute('DELETE FROM graph_role_asks')
+        self.assertIn('may be out of date', self.store.role_text('run2'))
+        # Cards: who they're about, ranked closest (and paying customers) first; nobody unnamed for long.
+        with self.store.connect() as db:
+            db.execute("UPDATE graph_nodes SET info=json_set(info,'$.paying',json('true')) WHERE id='org:client.com'")
+            people, weight = graph.card_people(db, [kim_id])
+        self.assertEqual((people[0]['name'], people[0]['role'], people[0]['paying']), ('Kim', 'trial user', True))
+        self.assertGreater(weight, 2)  # closeness, plus a paying customer
+        self.assertEqual(self.store.no_role_yet([kim_id]), [])
+        with self.store.connect() as db:
+            db.execute("DELETE FROM person_roles WHERE identifier='email:kim@client.com'")
+        self.build()
+        self.assertEqual(self.store.no_role_yet([kim_id]), [{'node_id': 'email:kim@client.com', 'name': 'Kim'}])
+        card = self.store.suggest('k', 'Answer Kim', 'Kim asked.', [kim_id])['id']
+        lines = self.app.graph_lines(card)
+        self.assertIn('a cofounder, a sister or a friend reads differently', lines)
+        self.assertIn('No role yet for Kim (email:kim@client.com)', lines)
+        with self.store.connect() as db:
+            db.execute('DELETE FROM graph_role_asks')
+            db.execute("UPDATE graph_nodes SET strength=0.2 WHERE id='email:kim@client.com'")
+        self.assertIn('- Kim (node_id email:kim@client.com; faint; ', self.store.role_text('run3'))  # on an open card: asked though faint
+
+    def test_what_is_open_between_you_shows_on_the_person(self):
+        ask = mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal')
+        reply = mail(2, 'Sam <sam@acme.com>', 'Ann Example <ann@client.com>', ('SENT',), thread='deal')
+        self.add(ask, reply)
+        ask_id, reply_id = self.ids([ask['source_id'], reply['source_id']])
+        self.store.owner_user_ids = set()
+        self.app.action('promise', {'direction': 'mine', 'event_id': reply_id, 'who': 'Ann', 'what': 'send the deck', 'due': '2026-10-20'})
+        self.app.action('promise', {'direction': 'theirs', 'event_id': ask_id, 'who': 'Ann', 'what': 'sign the contract'})
+        task = self.store.suggest('ann-1', 'Answer Ann', 'Ann asked about pricing.', [ask_id])
+        other = self.store.suggest('ann-2', 'Book the call with Ann', 'Ann wants a call.', [reply_id])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at) VALUES('Ann prefers calls before 10','d1',?,?)", (other['id'], NOW.isoformat()))
+        self.build()
+        detail = self.app.graph_action({'node_id': 'email:ann@client.com'})
+        self.assertEqual([p['what'] for p in detail['open']['you_promised']], ['send the deck'])
+        self.assertEqual([p['what'] for p in detail['open']['they_promised']], ['sign the contract'])
+        self.assertEqual({c['title'] for c in detail['open']['cards']}, {'Answer Ann', 'Book the call with Ann'})
+        self.assertNotIn('known', detail['open'])  # a fact on her card is no fact about her: no subject, on nobody's page
+        lines = self.app.graph_lines(task['id'])
+        self.assertIn('open: you promised to send the deck by Tue, Oct 20; they promised to sign the contract; card "Book the call with Ann"', lines)
+        self.assertNotIn('card "Answer Ann"', lines)  # the task itself
+
+    def test_a_fact_shows_on_who_it_is_about_never_on_who_sent_the_message(self):
+        ask = mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal')
+        bob = mail(2, 'Bob Other <bob@other.com>', 'sam@acme.com', thread='bob')
+        self.add(ask, bob)
+        ask_id, bob_id = self.ids([ask['source_id'], bob['source_id']])
+        self.store.owner_user_ids = set()
+        self.build()
+        card = self.store.suggest('ann-1', 'Answer Ann', 'Ann asked about pricing.', [ask_id])['id']
+        self.store.decide(card, 'other', 'i never use capitals in chat, and Ann prefers calls before 10', 'note-1', 'dashboard')
+        mine = self.app.action('remember_fact', {'text': 'The owner does not use capitals in chat.', 'decision_id': 'note-1'})
+        hers = self.app.action('remember_fact', {'text': 'Ann prefers calls before 10.', 'decision_id': 'note-1', 'about': ['email:ann@client.com']})
+        self.assertEqual(hers['about'], ['email:ann@client.com'])
+        with self.assertRaisesRegex(ValueError, 'not a person, organization or project'):
+            self.app.action('remember_fact', {'text': 'Someone else entirely.', 'decision_id': 'note-1', 'about': ['email:nobody@x.com']})
+        known = lambda node: [f['text'] for f in self.app.graph_action({'node_id': node})['open'].get('known', [])]
+        self.assertEqual(known('email:ann@client.com'), ['Ann prefers calls before 10.'])  # the owner's own habit is not on her page
+        self.assertEqual(known('email:bob@other.com'), [])
+        self.assertIn('known: Ann prefers calls before 10.', self.app.graph_lines(card))
+        self.build()  # a rebuild keeps who it is about
+        self.assertEqual(known('email:ann@client.com'), ['Ann prefers calls before 10.'])
+        # A review ties an older fact to who it is about; only kind=fact notes have a subject.
+        self.assertEqual(self.app.action('remember_fact', {'id': mine['id'], 'about': ['email:bob@other.com']})['about'], ['email:bob@other.com'])
+        self.assertEqual(known('email:bob@other.com'), ['The owner does not use capitals in chat.'])
+        # Not about Bob: only that link goes, for good; the fact stays in the owner's memory.
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('graph_fact_unlink', {'fact_id': mine['id'], 'node_id': 'email:bob@other.com'})
+        self.app.action('graph_fact_unlink', {'fact_id': mine['id'], 'node_id': 'email:bob@other.com'}, owner_dashboard=True)
+        self.assertEqual(known('email:bob@other.com'), [])
+        self.assertIn('The owner does not use capitals in chat.', [f['text'] for f in self.store.facts()])
+        self.app.action('remember_fact', {'id': mine['id'], 'about': ['email:bob@other.com']})  # a review can't put it back
+        self.assertEqual(known('email:bob@other.com'), [])
+        # Condensed, the new fact keeps who the originals were about.
+        merged = self.app.action('remember_fact', {'text': 'Ann prefers calls before 10, never after 4.', 'replaces': [hers['id']]})
+        self.assertEqual(known('email:ann@client.com'), ['Ann prefers calls before 10, never after 4.'])
+        # Forget: gone everywhere, her page and the owner's memory.
+        self.app.action('forget_fact', {'id': merged['id']}, owner_dashboard=True)
+        self.assertEqual(known('email:ann@client.com'), [])
+        self.assertNotIn(merged['id'], [f['id'] for f in self.store.facts()])
+
+    def test_an_event_row_says_who_wrote_it_and_how_it_starts(self):
+        accounts = [{'id': 'slack', 'service': 'slack', 'user_id': 'U0OWNER'}]
+        glance = lambda kind, body, **m: a.event_glance({'kind': kind, 'account_id': 'slack', 'body': body, 'metadata': m}, accounts)
+        self.assertEqual(glance('gmail.message', 'Hi Sam,\r\n\r\nthe   form', **{'from': 'Ann Example <ann@client.com>'}),
+                         {'from': 'Ann Example', 'from_me': False, 'preview': 'Hi Sam, the form'})
+        self.assertEqual(glance('gmail.message', 'Sure', **{'from': 'Sam <sam@acme.com>', 'labels': ['SENT']})['from'], 'You')
+        self.assertEqual(glance('salesflare.email', 'From: Ann <ann@client.com>\nTo: Kim <kim@acme.com>\n\nOur internet is down')['preview'], 'Our internet is down')
+        self.assertEqual(glance('slack.message', 'see <https://x.example|the doc>', user_id='U0OWNER', conversation_type='dm'),
+                         {'from': 'You', 'from_me': True, 'preview': 'see the doc', 'dm': True})
+        self.assertEqual(glance('slack.message', 'done', user_id='U0ANN', conversation_type='channel', channel_name='standup')['place'], '#standup')
+        self.assertEqual(glance('whatsapp.message', 'x' * 300, from_me=False, sender_display='Ann')['preview'], 'x' * 240 + '…')
+        # Chat messages carry their conversation, so a run of them is one row; mail does not.
+        self.assertEqual(glance('whatsapp.message', 'hi', chat_id='g1@g.us')['thread'], 'slack:whatsapp.message:g1@g.us')
+        self.assertNotIn('thread', glance('gmail.message', 'Hi', thread_id='t1'))
+
+
+def linkedin(days_ago, conv, name, text, mine=False, headline=None):
+    n = next(counter)
+    return {'account_id': 'li', 'source_id': f'l{n}', 'kind': 'linkedin.message', 'occurred_at': at(days_ago), 'title': name, 'body': text,
+            'deleted': False, 'metadata': {'conversation_id': conv, 'chat_name': name, 'from_me': mine, 'from': 'You' if mine else name,
+                                           'headline': headline, 'group': False}}
+
+
+class StatedOrganisations(unittest.TestCase):
+    """Where someone works: from a work address, or as a source states it, read by a review with the words that say it."""
+    add, build, node, ids = Graph.add, Graph.build, Graph.node, Graph.ids
+
+    def setUp(self):
+        Graph.setUp(self)
+        self.app.graph_build = self.build
+        self.store.accounts = CONFIG['accounts'] + [{'id': 'li', 'service': 'linkedin'}]
+        self.store.owner_user_ids = set()
+
+    def robin(self):
+        first = linkedin(7, 'c-robin', 'Robin Vale', "We're sharing early access to our API with friends of Globex.", headline='Engineering at Globex')
+        mine = linkedin(6, 'c-robin', 'Robin Vale', 'Would Globex be interested?', mine=True, headline='Engineering at Globex')
+        later = linkedin(5, 'c-robin', 'Robin Vale', "I'll have someone on our API team schedule something", headline='Engineering at Globex')
+        self.add(first, mine, later, linkedin(4, 'c-robin', 'Robin Vale', 'Thanks!', mine=True, headline='Engineering at Globex'))
+        return self.ids([first['source_id'], mine['source_id'], later['source_id']])
+
+    def test_a_linkedin_headline_is_kept_and_a_review_links_them_to_the_organisation_it_states(self):
+        first, mine, later = self.robin()
+        self.add(mail(3, 'Gra Ham <graham@globex.ai>', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'Gra Ham <graham@globex.ai>', ('SENT',)))
+        self.build()
+        node = 'li:c-robin'
+        view = self.node(node)
+        self.assertEqual((self.app.graph_action({'node_id': node})['headline'], view['org']), ('Engineering at Globex', None))  # shown as is, never parsed by rule
+        asked = self.store.role_text('run1', limit=10)
+        self.assertIn('Where they work', asked)
+        self.assertIn('LinkedIn headline: "Engineering at Globex"', asked)
+        self.assertNotIn('Where they work', self.store.role_text('run2', limit=10))  # asked once a month at most
+        with self.assertRaisesRegex(ValueError, 'event_id and quote'):
+            self.app.graph_action({'node_id': node, 'org': 'Globex'})
+        with self.assertRaisesRegex(ValueError, 'words copied'):
+            self.app.graph_action({'node_id': node, 'org': 'Globex', 'event_id': later, 'quote': 'Globex employee'})
+        with self.assertRaisesRegex(ValueError, "not the owner's message"):
+            self.app.graph_action({'node_id': node, 'org': 'Globex', 'event_id': mine, 'quote': 'Would Globex be interested'})
+        self.app.graph_action({'node_id': node, 'org': 'Globex', 'event_id': later, 'quote': 'Engineering at Globex'})
+        found = self.app.graph_action({'node_id': node})
+        self.assertEqual((found['org'], found['org_name'], found['org_by'], found['org_via'], found['org_at'], found['org_event_id']),
+                         ('org:globex.ai', 'Globex', 'review', 'LinkedIn headline', at(5), later))
+        self.assertIn(('li:c-robin', 'member'), [(l['id'], l['link']) for l in self.app.graph_action({'node_id': 'org:globex.ai'})['links']])
+        with self.store.connect() as db:
+            self.assertIn('at Globex', graph.context_lines(db, [later]))
+        self.assertNotIn('Where they work', self.store.role_text('run3', limit=10))
+
+    def test_an_organisation_only_a_source_states_stands_on_its_own_and_is_never_looked_up(self):
+        first, _, _ = self.robin()
+        self.build()
+        self.app.graph_action({'node_id': 'li:c-robin', 'org': 'Globex', 'event_id': first, 'quote': 'friends of Globex'})
+        found = self.app.graph_action({'node_id': 'li:c-robin'})
+        self.assertEqual((found['org'], found['org_name'], found['org_via']), ('org:named:globex', 'Globex', 'LinkedIn'))
+        org = self.node('org:named:globex')
+        self.assertEqual((org['name'], org['domain'], org['signals']), ('Globex', None, 1))
+        with self.store.connect() as db:
+            self.assertEqual(enrichment.due(db, NOW.isoformat(), 10), [])
+            with self.assertRaisesRegex(ValueError, 'email domain'):
+                graph.hide_warmup(db, 'org:named:globex', True, 'agent', NOW.isoformat())
+            db.execute('ROLLBACK')
+
+    def test_the_owner_word_stays_and_a_work_address_wins_over_a_review(self):
+        first, _, later = self.robin()
+        sig = mail(3, 'Ann Bell <ann.bell@gmail.com>', 'sam@acme.com', title='Hello')
+        sig['body'] = 'Thanks for the call.\n\nAnn Bell\nHead of Operations, Initech'
+        self.add(sig, mail(2, 'Sam <sam@acme.com>', 'Ann Bell <ann.bell@gmail.com>', ('SENT',)),
+                 kim := mail(3, 'Kim <kim@client.com>', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'Kim <kim@client.com>', ('SENT',)))
+        self.build()
+        sig_id, kim_id = self.ids([sig['source_id'], kim['source_id']])
+        self.app.graph_action({'node_id': 'email:ann.bell@gmail.com', 'org': 'Initech', 'event_id': sig_id, 'quote': 'Head of Operations, Initech'})
+        ann = self.app.graph_action({'node_id': 'email:ann.bell@gmail.com'})
+        self.assertEqual((ann['org_name'], ann['org_via'], ann['org_quote']), ('Initech', 'email', 'Head of Operations, Initech'))
+        self.app.graph_action({'node_id': 'email:kim@client.com', 'org': 'Globex', 'event_id': kim_id, 'quote': 'Hello'})
+        self.assertEqual((self.node('email:kim@client.com')['org'], self.node('email:kim@client.com')['org_by']), ('org:client.com', 'email'))
+        self.app.action('graph_person_org', {'node_id': 'li:c-robin', 'org': 'Initech'}, owner_dashboard=True)
+        said = self.app.graph_action({'node_id': 'li:c-robin', 'org': 'Globex', 'event_id': later, 'quote': 'Engineering at Globex'})
+        self.assertEqual((self.node('li:c-robin')['org'], self.node('li:c-robin')['org_by']), ('org:named:initech', 'owner'))
+        self.assertEqual(self.node('email:ann.bell@gmail.com')['org'], 'org:named:initech')  # one Initech, two people
+        self.app.action('graph_person_org', {'node_id': 'email:ann.bell@gmail.com', 'org': 'Acme'}, owner_dashboard=True)
+        self.assertEqual((self.node('email:ann.bell@gmail.com')['org'], self.node('email:ann.bell@gmail.com')['colleague']), (None, True))
+        self.app.action('graph_person_org', {'node_id': 'li:c-robin', 'org': ''}, owner_dashboard=True)
+        self.assertIsNone(self.node('li:c-robin')['org'])
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('graph_person_org', {'node_id': 'li:c-robin', 'org': 'Globex'})
+
+    def test_one_organisations_turn_backfills_from_what_is_stored(self):
+        self.robin()
+        self.build()
+        self.app.config = {**CONFIG, 'review_worker': {'enabled': True}}
+        started = self.app.orgs_backfill_step()
+        self.assertEqual(started['people'], 1)
+        self.assertIsNone(self.app.orgs_backfill_step())  # one at a time, once
+        page = self.store.profile_evidence(1, a.PROFILE_SESSION_PREFIX + started['run_id'])
+        self.assertEqual(page['people'][0]['linkedin_headline'], 'Engineering at Globex')
+        self.assertTrue(all(m['from'] != 'the owner' for m in page['people'][0]['messages']))
+        with self.store.connect() as db:
+            db.execute("UPDATE profile_runs SET status='ok' WHERE run_id=?", (started['run_id'],))
+        self.assertIsNone(self.app.orgs_backfill_step())
+        prompt = a.orgs_prompt(started['run_id'], page['pages'])
+        self.assertIn('states it plainly', prompt)
+        self.assertNotIn('{', prompt.split('graph args')[0])
+
+
+class Boards(unittest.TestCase):
+    """Projects on a board, moved by what messages mean: each move keeps why and the message, the owner's drag wins
+    until a newer message, an older message never undoes a newer move, and the board never sends anything."""
+    STAGES = [{'name': 'Contacted', 'hint': 'Asked, no yes yet'}, 'Agreed', 'Live']
+
+    def setUp(self):
+        Graph.setUp(self)
+        with self.store.connect() as db:
+            graph.save_board(db, {'name': 'Listings', 'stages': self.STAGES, 'about': 'Partners we list with'}, NOW.isoformat())
+
+    add, build, thread_ids, ids = Graph.add, Graph.build, Graph.thread_ids, Graph.ids
+
+    def mails(self):
+        self.add(mail(9, 'Sam <sam@acme.com>', 'ann@partner.example', ('SENT',), thread='deal'),
+                 mail(3, 'Ann <ann@partner.example>', 'sam@acme.com', thread='deal'),
+                 mail(1, 'Sam <sam@acme.com>', 'ann@partner.example', ('SENT',), thread='other'))
+        with self.store.connect() as db:
+            return [r[0] for r in db.execute('SELECT id FROM events ORDER BY occurred_at')]
+
+    def test_migration_adds_the_stage_columns_to_an_older_projects_table(self):
+        with self.store.connect() as db:
+            cols = {r['name'] for r in db.execute('PRAGMA table_info(projects)')}
+            self.assertTrue({'board_id', 'stage', 'stage_reason', 'stage_event_id', 'stage_by', 'stage_at', 'next_step', 'org'} <= cols)
+            self.assertTrue(db.execute("SELECT 1 FROM sqlite_master WHERE name IN ('boards','project_moves')").fetchone())
+
+    def test_older_same_stage_evidence_cannot_replace_a_newer_next_step(self):
+        asked, agreed, later = self.mails()
+        with self.store.connect() as db:
+            node = graph.set_stage(db, 'Paperkite', 'Agreed', 'review', NOW.isoformat(), board='Listings',
+                                   reason='Ann agreed', event_id=agreed, next_step='Publish their listing', org='partner.example')['node_id']
+            kept = graph.set_stage(db, node, 'Agreed', 'review', NOW.isoformat(),
+                                   reason='An older question', event_id=asked, next_step='Ask if they agree', org='old.example')
+            row = db.execute('SELECT next_step,org FROM projects WHERE id=?', (node.split(':')[1],)).fetchone()
+            self.assertEqual((row['next_step'], row['org']), ('Publish their listing', 'partner.example'))
+            self.assertIn('kept', kept)
+            graph.set_stage(db, node, 'Agreed', 'review', NOW.isoformat(), reason='New next step', event_id=later,
+                            next_step='Check that it is live')
+            self.assertEqual(db.execute('SELECT next_step FROM projects WHERE id=?', (node.split(':')[1],)).fetchone()[0], 'Check that it is live')
+
+    def test_review_moves_keep_reason_and_message_and_the_owner_wins_until_a_newer_message(self):
+        asked, agreed, later = self.mails()
+        with self.store.connect() as db:
+            with self.assertRaises(ValueError):  # only the owner makes a board
+                graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Hiring', stages=self.STAGES, reason='asked', event_id=asked)
+            with self.assertRaises(ValueError):  # a review move gives the message and why
+                graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Listings', stages=self.STAGES)
+            first = graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Listings', stages=self.STAGES,
+                                    reason='asked for a listing', event_id=asked, next_step='Wait for their reply', org='https://www.Partner.example/x')
+            node = first['node_id']
+            row = db.execute('SELECT * FROM projects WHERE id=?', (node.split(':')[1],)).fetchone()
+            self.assertEqual((row['stage'], row['stage_reason'], row['stage_event_id'], row['next_step'], row['org']),
+                             ('Contacted', 'asked for a listing', asked, 'Wait for their reply', 'partner.example'))
+            with self.assertRaises(ValueError):
+                graph.set_stage(db, node, 'Nowhere', 'review', NOW.isoformat(), reason='x', event_id=agreed)
+            graph.set_stage(db, node, 'agreed', 'review', NOW.isoformat(), reason='Ann said yes', event_id=agreed)
+            # An older message never undoes a newer move
+            kept = graph.set_stage(db, node, 'Contacted', 'review', NOW.isoformat(), reason='asked again', event_id=asked)
+            self.assertEqual(kept['kept'], 'A later message moved it already')
+            # The owner's drag wins over a review reading an earlier message
+            graph.set_stage(db, node, 'Live', 'owner', NOW.isoformat())
+            kept = graph.set_stage(db, node, 'Agreed', 'review', NOW.isoformat(), reason='Ann said yes', event_id=later)
+            self.assertEqual(kept['kept'], 'The owner moved it after this message')
+            self.assertEqual(db.execute('SELECT stage,stage_by FROM projects WHERE id=?', (node.split(':')[1],)).fetchone()[:], ('Live', 'owner'))
+            # The owner moves only from the node id
+            with self.assertRaises(ValueError):
+                graph.set_stage(db, 'Paperkite', 'Agreed', 'owner', NOW.isoformat())
+        # Something new after the owner's move moves it again
+        self.add(mail(-1, 'Ann <ann@partner.example>', 'sam@acme.com', thread='deal'))
+        with self.store.connect() as db:
+            newer = db.execute('SELECT max(id) FROM events').fetchone()[0]
+            moved = graph.set_stage(db, node, 'Agreed', 'review', NOW.isoformat(), reason='Ann wants changes first', event_id=newer)
+            self.assertNotIn('kept', moved)
+            moves = graph.project_moves(db, node)
+        self.assertEqual([m['stage'] for m in moves['moves']], ['Agreed', 'Live', 'Agreed', 'Contacted'])
+        self.assertEqual((moves['board'], moves['stage'], moves['moves'][1]['source']), ('Listings', 'Agreed', 'owner'))
+
+    def test_board_shows_no_reply_age_org_and_card(self):
+        asked, answered, mine = self.mails()
+        with self.store.connect() as db:
+            node = graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Listings', stages=self.STAGES,
+                                   reason='asked for a listing', event_id=asked, org='partner.example')['node_id']
+            graph.label(db, [answered, mine], 'Paperkite', 'review', NOW.isoformat())
+        card = self.store.suggest('pk-1', 'Follow up with Ann', 'Made up.', [mine], project='Paperkite')
+        self.build()
+        with self.store.connect() as db:
+            board, = graph.boards(db, NOW.isoformat())
+            self.assertEqual([s['name'] for s in board['stages']], ['Contacted', 'Agreed', 'Live', graph.STALLED])
+            self.assertTrue(board['stages'][-1]['side'])
+            item, = board['projects']
+            self.assertEqual((item['id'], item['stage'], item['first'], item['days']), (node, 'Contacted', True, 9))
+            self.assertEqual(item['no_reply_days'], 1)  # counted from the owner's first message after Ann's answer
+            self.assertEqual(item['org']['name'], 'Partner')
+            self.assertEqual(item['card']['id'], card['id'])
+            self.assertEqual(graph.boards_brief(db)[0]['board'], 'Listings')
+            # A project on a board keeps its node in the graph
+            self.assertTrue(db.execute('SELECT 1 FROM graph_nodes WHERE id=?', (node,)).fetchone())
+
+    def test_finish_analysis_moves_only_from_its_own_batch(self):
+        asked, agreed, _ = self.mails()
+        claim = self.store.begin_analysis(['work'], 10)
+        move = {'project': 'Paperkite', 'board': 'Listings', 'stage': 'Agreed', 'reason': 'Ann said yes', 'event_id': agreed}
+        with self.assertRaises(ValueError):
+            self.store.finish_analysis(claim['analysis_id'], 'x', stages=[{**move, 'event_id': 999999}])
+        with self.assertRaises(ValueError):
+            self.store.finish_analysis(claim['analysis_id'], 'x', stages={'Paperkite': 'Agreed'})
+        done = self.store.finish_analysis(claim['analysis_id'], 'Reviewed', stages=[move])
+        self.assertEqual(done['stages'][0]['stage'], 'Agreed')
+        with self.store.connect() as db:  # the next review sees where it stands
+            self.assertEqual(graph.boards_brief(db)[0]['board'], 'Listings')
+
+    def test_owner_moves_by_hand_only_on_the_dashboard(self):
+        asked, _, _ = self.mails()
+        with self.store.connect() as db:
+            node = graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Listings', stages=self.STAGES,
+                                   reason='asked for a listing', event_id=asked)['node_id']
+        with self.assertRaises(ValueError):
+            self.app.action('graph_stage', {'node_id': node, 'stage': 'Live'})
+        self.app.graph_build = lambda *a, **k: None
+        moved = self.app.action('graph_stage', {'node_id': node, 'stage': 'Live'}, owner_dashboard=True)
+        self.assertEqual(moved['stage'], 'Live')
+        self.assertIn('graph_stage', a.OWNER_ACTIONS)
+
+    def test_a_suggested_board_is_nothing_until_the_owner_saves_it(self):
+        self.mails()
+        with self.store.connect() as db:
+            for name in ('Hire: support lead', 'Hire: designer', 'Hire: backend'):
+                graph.project_id(db, name, NOW.isoformat())
+            args = {'name': 'Hiring', 'stages': ['Sourced', 'Interviews', 'Hired'], 'about': 'Roles we hire for', 'projects': ['Hire: support lead', 'Hire: designer']}
+            with self.assertRaises(ValueError):  # three projects or more
+                graph.suggest_board(db, args, 'review', NOW.isoformat())
+            args['projects'].append('Hire: backend')
+            with self.assertRaises(ValueError):  # a review can't make a board by moving a project onto it
+                graph.set_stage(db, 'Hire: designer', 'Sourced', 'review', NOW.isoformat(), board='Hiring', stages=args['stages'], reason='x', event_id=1)
+        with self.assertRaises(ValueError):  # says who sees it
+            self.app.action('graph', {'suggest_board': args})
+        args['visibility'] = 'team'
+        said = self.app.action('graph', {'suggest_board': args})
+        self.assertEqual((said['projects'], said['visibility']), (3, 'team'))
+        with self.assertRaises(ValueError):  # once per name
+            self.app.action('graph', {'suggest_board': args})
+        with self.store.connect() as db:
+            self.assertEqual([b['name'] for b in graph.boards(db, NOW.isoformat())], ['Listings'])
+            sug, = graph.board_suggestions(db)
+            self.assertEqual(([s['name'] for s in sug['stages']], len(sug['projects'])), (['Sourced', 'Interviews', 'Hired'], 3))
+        self.assertEqual(self.store.boards_text('run1'), '')  # its projects are in the open suggestion: fewer than three left
+        with self.assertRaises(ValueError):
+            self.app.action('board_save', {'name': 'Hiring', 'stages': ['Sourced'], 'about': ''})  # owner only
+        self.app.graph_build = lambda *a, **k: None
+        ids = [p['id'] for p in sug['projects']][:2]  # the owner took one out before saving
+        saved = self.app.action('board_save', {'suggestion_id': sug['id'], 'name': 'Hiring', 'stages': ['Sourced', 'Interviews', 'Hired'], 'side': False,
+                                               'about': 'Roles we hire for', 'projects': ids}, owner_dashboard=True)
+        self.assertEqual(saved['added'], 2)
+        with self.store.connect() as db:
+            self.assertEqual(graph.board_suggestions(db), [])
+            board = next(b for b in graph.boards(db, NOW.isoformat()) if b['name'] == 'Hiring')
+            self.assertEqual([s['name'] for s in board['stages']], ['Sourced', 'Interviews', 'Hired'])  # no Stalled row
+            self.assertTrue(all(p['sorting'] and p['stage'] == 'Sourced' for p in board['projects']))
+            brief = next(b for b in graph.boards_brief(db) if b['board'] == 'Hiring')
+            self.assertEqual(brief['about'], 'Roles we hire for')
+            self.assertEqual(sorted(r['name'] for r in graph.unsorted_projects(db)), sorted(p['name'] for p in board['projects']))
+            # A review places one by its messages, with the reason, even in the stage it waits in
+            event = db.execute('SELECT id FROM events ORDER BY id LIMIT 1').fetchone()[0]
+            placed = graph.set_stage(db, board['projects'][0]['id'], 'Sourced', 'agent', NOW.isoformat(), reason='applied with a CV', event_id=event)
+            self.assertNotIn('kept', placed)
+            self.assertEqual(len(graph.unsorted_projects(db)), 1)
+
+    def test_a_saved_board_is_sorted_by_the_next_review_which_answers_for_each_project_and_a_failure_shows(self):
+        asked, agreed, later = self.mails()
+        with self.store.connect() as db:
+            graph.label(db, [asked, agreed], 'Paperkite', 'review', NOW.isoformat())
+            graph.label(db, [later], 'Bramblebox', 'review', NOW.isoformat())
+            graph.project_id(db, 'Quillfeather', NOW.isoformat())  # no messages at all
+            graph.save_board(db, {'name': 'Partners', 'stages': ['Contacted', 'Agreed', 'Live'], 'about': 'Partners we list with',
+                                  'projects': ['Paperkite', 'Bramblebox', 'Quillfeather']}, NOW.isoformat())
+            ids = {r['name']: 'project:' + str(r['id']) for r in db.execute('SELECT id,name FROM projects')}
+            self.assertEqual(len(graph.unsorted_projects(db)), 3)
+        text = self.store.sort_text('run1')  # what the next review gets, at the top of its prompt
+        self.assertIn(f"Paperkite ({ids['Paperkite']}) on Partners (Contacted > Agreed > Live > Stalled or declined)", text)
+        self.assertIn(f'{agreed} (gmail.message, ', text)
+        self.assertIn('Bramblebox', text)
+        self.assertNotIn('Quillfeather', text)  # nothing to read: its tile says so at once
+        self.assertIn('Boards to sort, before anything else', a.review_prompt('run1', ['work'], sorting=text))
+        self.assertNotIn('Boards to sort, before', a.review_prompt('run1', ['work']))
+        with self.store.connect() as db:
+            tiles = {p['name']: p for p in graph.boards(db, NOW.isoformat())[1]['projects']}
+            self.assertTrue(tiles['Paperkite']['sorting'])
+            self.assertEqual((tiles['Quillfeather']['sorting'], tiles['Quillfeather']['sort_note']), (False, 'No messages about it yet'))
+            self.assertEqual(graph.boards(db, NOW.isoformat())[1]['sorting'], 2)
+            with self.assertRaises(ValueError) as said:  # the review can't finish without answering for each one
+                graph.sort_answer(db, 'run1', None)
+            self.assertIn('Paperkite', str(said.exception)); self.assertIn('Bramblebox', str(said.exception))
+            graph.set_stage(db, ids['Paperkite'], 'Agreed', 'agent', NOW.isoformat(), reason='Ann said yes', event_id=agreed)
+            with self.assertRaises(ValueError):
+                graph.sort_answer(db, 'run1', [{'project': ids['Bramblebox']}])  # says why
+            self.assertEqual(graph.sort_answer(db, 'run1', [{'project': ids['Bramblebox'], 'why': 'only our own note so far'}]), 1)
+            self.assertEqual(graph.sort_answer(db, 'other-run', None), 0)
+            tiles = {p['name']: p for p in graph.boards(db, NOW.isoformat())[1]['projects']}
+            self.assertEqual((tiles['Paperkite']['sorting'], tiles['Paperkite']['stage'], tiles['Paperkite']['reason']), (False, 'Agreed', 'Ann said yes'))
+            self.assertEqual(tiles['Bramblebox']['sort_note'], 'only our own note so far')
+            self.assertEqual(tiles['Bramblebox']['last_event_id'], later)  # its latest message instead of a move
+            self.assertEqual(graph.unsorted_projects(db), [])
+            # A review that got it and failed: the tile says so, and the next review tries again, up to SORT_TRIES
+            graph.label(db, [asked], 'Inkwell', 'review', NOW.isoformat())
+            graph.save_board(db, {'board_id': db.execute("SELECT id FROM boards WHERE name='Partners'").fetchone()[0], 'name': 'Partners',
+                                  'stages': ['Contacted', 'Agreed', 'Live'], 'about': 'Partners we list with',
+                                  'projects': ['Paperkite', 'Bramblebox', 'Quillfeather', 'Inkwell']}, NOW.isoformat())
+            self.assertIsNone(db.execute("SELECT sort_note FROM projects WHERE name='Paperkite'").fetchone()[0])
+        self.assertIn('Inkwell', self.store.sort_text('run2'))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,error) VALUES('run2','lost',?,?,'runtime_lost')", (NOW.isoformat(),) * 2)
+            tile = next(p for p in graph.boards(db, NOW.isoformat())[1]['projects'] if p['name'] == 'Inkwell')
+            self.assertEqual((tile['sorting'], tile['sort_failed']), (False, 'Sorting failed, trying again'))
+            self.assertEqual([r['name'] for r in graph.unsorted_projects(db)], ['Inkwell'])
+        self.store.sort_text('run3'); self.store.sort_text('run4')
+        with self.store.connect() as db:
+            tile = next(p for p in graph.boards(db, NOW.isoformat())[1]['projects'] if p['name'] == 'Inkwell')
+            self.assertEqual(tile['sort_failed'], "Couldn't sort it in 3 reviews")
+            self.assertEqual(graph.unsorted_projects(db), [])
+        self.assertEqual(self.store.sort_text('run5'), '')
+
+    def test_finish_analysis_of_a_review_that_got_boards_to_sort_waits_for_its_answer(self):
+        asked, agreed, later = self.mails()
+        with self.store.connect() as db:
+            graph.label(db, [asked], 'Paperkite', 'review', NOW.isoformat())
+            graph.save_board(db, {'name': 'Partners', 'stages': ['Contacted', 'Agreed'], 'about': 'Partners', 'projects': ['Paperkite']}, NOW.isoformat())
+            node = 'project:' + str(db.execute("SELECT id FROM projects WHERE name='Paperkite'").fetchone()[0])
+        self.store.sort_text('r1')
+        done = []
+        with patch.object(self.store, 'finish_analysis', lambda *x, **k: done.append(x) or {'status': 'complete'}):
+            with self.assertRaises(ValueError):
+                self.app.action('finish_analysis', {'analysis_id': 'x', '_review_run': 'r1'})
+            self.assertEqual(done, [])
+            self.app.action('finish_analysis', {'analysis_id': 'x', '_review_run': 'r1', 'sorted': [{'project': node, 'why': 'just an intro'}]})
+            self.assertEqual(len(done), 1)
+
+    def test_several_boards_are_suggested_at_once_each_with_who_sees_it_and_an_only_you_one_stays_so(self):
+        self.mails()
+        with self.store.connect() as db:
+            for name in ('Buyer: Northwind', 'Buyer: Contoso', 'Buyer: Fabrikam', 'Listing: Paperkite', 'Listing: Bramblebox', 'Listing: Quillfeather',
+                         'Hire: one', 'Hire: two', 'Hire: three', 'Trial: one', 'Trial: two', 'Trial: three'):
+                graph.project_id(db, name, NOW.isoformat())
+        text = self.store.boards_text('run1')
+        self.assertIn('Buyer: Northwind (project:', text)
+        stages = ['Contacted', 'Talks', 'Signed']
+        m_a = self.app.action('graph', {'suggest_board': {'name': 'M&A', 'stages': stages, 'about': 'Possible buyers', 'visibility': 'only_you',
+                                                          'projects': ['Buyer: Northwind', 'Buyer: Contoso', 'Buyer: Fabrikam']}})
+        self.app.action('graph', {'suggest_board': {'name': 'CRM listings', 'stages': stages, 'about': 'Sites that list us', 'visibility': 'team',
+                                                    'projects': ['Listing: Paperkite', 'Listing: Bramblebox', 'Listing: Quillfeather']}})
+        with self.assertRaises(ValueError):  # a project in an open suggestion isn't suggested again
+            self.app.action('graph', {'suggest_board': {'name': 'Deals', 'stages': stages, 'about': 'x', 'visibility': 'team',
+                                                        'projects': ['Buyer: Northwind', 'Hire: one', 'Hire: two']}})
+        with self.assertRaises(ValueError):
+            self.app.action('graph', {'suggest_board': {'name': 'Hiring', 'stages': stages, 'about': 'x', 'visibility': 'everyone',
+                                                        'projects': ['Hire: one', 'Hire: two', 'Hire: three']}})
+        self.app.action('graph', {'suggest_board': {'name': 'Hiring', 'stages': stages, 'about': 'x', 'visibility': 'only_you',
+                                                    'projects': ['Hire: one', 'Hire: two', 'Hire: three']}})
+        with self.assertRaises(ValueError):  # three open at once at most: calm
+            self.app.action('graph', {'suggest_board': {'name': 'Trials', 'stages': stages, 'about': 'x', 'visibility': 'team',
+                                                        'projects': ['Trial: one', 'Trial: two', 'Trial: three']}})
+        with self.store.connect() as db:
+            got = {x['name']: x['visibility'] for x in graph.board_suggestions(db)}
+            self.assertEqual(got, {'M&A': 'only_you', 'CRM listings': 'team', 'Hiring': 'only_you'})
+            # Held back while suggested: the buyers and the hires, not the listings
+            self.assertEqual({db.execute('SELECT name FROM projects WHERE id=?', (i,)).fetchone()[0].split(':')[0] for i in graph.hidden_project_ids(db)}, {'Buyer', 'Hire'})
+            self.assertEqual(len(graph.hidden_project_ids(db)), 6)
+        self.app.graph_build = lambda *a, **k: None
+        self.assertEqual(self.store.boards_text('run2'), '')  # three open: no new check
+        self.app.action('board_dismiss', {'suggestion_id': 3}, owner_dashboard=True)
+        self.app.action('board_save', {'suggestion_id': m_a['suggestion_id'], 'name': 'M&A', 'stages': stages, 'about': 'Possible buyers',
+                                       'projects': ['Buyer: Northwind', 'Buyer: Contoso', 'Buyer: Fabrikam']}, owner_dashboard=True)
+        with self.store.connect() as db:
+            board = next(b for b in graph.boards(db, NOW.isoformat()) if b['name'] == 'M&A')
+            self.assertEqual(board['visibility'], 'only_you')  # as suggested
+            self.assertEqual(len(graph.hidden_project_ids(db)), 3)
+            self.assertFalse(graph.visible_to_team(db, board['projects'][0]['id']))
+            graph.save_board(db, {'board_id': board['id'], 'name': 'M&A', 'stages': stages, 'about': 'Possible buyers'}, NOW.isoformat())
+            self.assertEqual(len(graph.hidden_project_ids(db)), 3)  # an edit without it keeps it
+        moved = self.app.action('project_visibility', {'node_id': board['projects'][0]['id'], 'visibility': 'team'}, owner_dashboard=True)
+        self.assertEqual(moved['visibility'], 'team')
+        with self.assertRaises(ValueError):
+            self.app.action('project_visibility', {'node_id': board['projects'][0]['id'], 'visibility': 'only_you'})  # owner only
+        with self.store.connect() as db:
+            self.assertEqual(graph.project_moves(db, board['projects'][0]['id'])['visibility'], 'team')
+            self.assertEqual(len(graph.hidden_project_ids(db)), 2)
+
+    def test_the_board_check_lists_every_open_project_and_the_organisations_inside_one(self):
+        self.mails()
+        with self.store.connect() as db:
+            for i in range(70):
+                graph.project_id(db, f'Errand {i}', NOW.isoformat())
+            oldest = graph.project_id(db, 'Company sale', (NOW - dt.timedelta(days=30)).isoformat())
+            db.execute('UPDATE projects SET created_at=? WHERE id=?', ((NOW - dt.timedelta(days=30)).isoformat(), oldest))
+            events = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id')]
+            graph.label(db, events, 'Company sale', 'review', NOW.isoformat())
+            for n, (event, org) in enumerate(zip(events, ('org:northwind.example', 'org:contoso.example', 'org:fabrikam.example'))):
+                db.execute("INSERT OR REPLACE INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,?,?,?,?,?,?)",
+                           (f'email:p{n}@x.example', 'person', f'P{n}', 1, NOW.isoformat(), 1, json.dumps({'org': org})))
+                db.execute("INSERT OR REPLACE INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,?,?,?,?,?,?)",
+                           (org, 'org', org[4:].split('.')[0].title(), 1, NOW.isoformat(), 1, '{}'))
+                db.execute('INSERT OR REPLACE INTO graph_events(node_id,event_id,at,probable) VALUES(?,?,?,0)', (f'email:p{n}@x.example', event, NOW.isoformat()))
+        text = self.store.boards_text('run1')
+        self.assertIn(f'Company sale (project:{oldest})', text)  # older than the newest 60 too
+        self.assertIn('its messages are with 3 organizations: ', text)
+        self.assertIn(f'Northwind (messages {events[0]})', text)
+        prompt = a.review_prompt('run1', ['work'], boards=text)
+        self.assertIn('one project per counterpart', prompt)
+        self.assertIn('"only_you" for sensitive work', prompt)
+        self.assertIn('"split": [', prompt)
+        # One call names one project per counterpart, with one graph build: a loop of single calls ran out of time
+        builds = []
+        self.app.graph_build = lambda *a, **k: builds.append(1)
+        done = self.app.action('graph', {'split': [{'project': f'Company sale: {n}', 'event_ids': [e]} for n, e in zip(('Northwind', 'Contoso', 'Fabrikam'), events)]})
+        self.assertEqual(done, {'split': [{'project': f'Company sale: {n}', 'events': 1} for n in ('Northwind', 'Contoso', 'Fabrikam')], 'changed': True})
+        self.assertEqual(len(builds), 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM projects WHERE name LIKE 'Company sale: %'").fetchone()[0], 3)
+        with self.assertRaises(ValueError):  # all or nothing: a missing event names none of them
+            self.app.action('graph', {'split': [{'project': 'Company sale: Litware', 'event_ids': [events[0]]}, {'project': 'Company sale: Tailspin', 'event_ids': [999999]}]})
+        with self.store.connect() as db:
+            self.assertFalse(db.execute("SELECT 1 FROM projects WHERE name='Company sale: Litware'").fetchone())
+
+    def test_the_owner_makes_edits_wins_loses_archives_and_deletes_a_project_like_in_a_crm(self):
+        asked, agreed, later = self.mails()
+        self.app.graph_build = lambda *a, **k: None
+        with self.store.connect() as db:
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+        with self.assertRaises(ValueError):  # owner only
+            self.app.action('project_save', {'name': 'Inkwell listing'})
+        made = self.app.action('project_save', {'name': 'Inkwell listing', 'board_id': board_id, 'stage': 'Agreed', 'org': 'https://www.Inkwell.example/x',
+                                                'value': '12,000', 'notes': 'Met at the fair'}, owner_dashboard=True)
+        node = made['node_id']
+        with self.assertRaises(ValueError):  # one name, one project
+            self.app.action('project_save', {'name': 'inkwell listing'}, owner_dashboard=True)
+        with self.store.connect() as db:
+            card = graph.project_card(db, node)
+            self.assertEqual((card['board_id'], card['stage'], card['org'], card['value'], card['notes']), (board_id, 'Agreed', 'inkwell.example', 12000.0, 'Met at the fair'))
+            tile = next(p for p in graph.boards(db, NOW.isoformat())[0]['projects'] if p['id'] == node)
+            self.assertEqual((tile['by'], tile['value'], tile['sorting']), ('owner', 12000.0, False))
+            person = db.execute("SELECT id FROM graph_nodes WHERE kind='person' LIMIT 1").fetchone()
+        for bad in ({'value': 'lots'}, {'org': 'not a domain'}, {'people': ['email:nobody@nowhere.example']}):
+            with self.assertRaises(ValueError):
+                self.app.action('project_save', {'node_id': node, **bad}, owner_dashboard=True)
+        self.app.action('project_save', {'node_id': node, 'name': 'Inkwell partner listing', 'stage': 'Contacted', 'value': '', 'people': [person['id']] if person else []},
+                        owner_dashboard=True)
+        with self.store.connect() as db:
+            card = graph.project_card(db, node)
+            self.assertEqual((card['name'], card['stage'], card['value']), ('Inkwell partner listing', 'Contacted', None))
+        won = self.app.action('project_outcome', {'node_id': node, 'outcome': 'won', 'reason': 'Signed the listing form'}, owner_dashboard=True)
+        self.assertEqual(won['stage'], 'Live')
+        with self.store.connect() as db:
+            self.assertEqual((graph.project_card(db, node)['outcome'], graph.project_moves(db, node)['moves'][0]['reason']), ('won', 'Signed the listing form'))
+        lost = self.app.action('project_outcome', {'node_id': node, 'outcome': 'lost', 'reason': 'They went with another app'}, owner_dashboard=True)
+        self.assertEqual(lost['stage'], graph.STALLED)
+        self.app.action('graph_stage', {'node_id': node, 'stage': 'Agreed'}, owner_dashboard=True)  # a move by hand reopens it
+        with self.store.connect() as db:
+            self.assertIsNone(graph.project_card(db, node)['outcome'])
+            # The owner's move stands against an older message, and a newer message moves it again
+            kept = graph.set_stage(db, node, 'Contacted', 'review', NOW.isoformat(), reason='asked', event_id=asked)
+            self.assertEqual(kept['kept'], 'The owner moved it after this message')
+        self.app.action('project_archive', {'node_id': node}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertNotIn(node, [p['id'] for p in graph.boards(db, NOW.isoformat())[0]['projects']])
+        self.app.action('project_archive', {'node_id': node, 'archived': False}, owner_dashboard=True)
+        self.assertEqual(self.app.action('project_delete', {'node_id': node}, owner_dashboard=True)['deleted'], 'Inkwell partner listing')
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute('SELECT 1 FROM projects WHERE id=?', (node.split(':')[1],)).fetchone())
+        with self.assertRaises(ValueError):
+            self.app.action('project_delete', {'node_id': node}, owner_dashboard=True)
+
+    def test_the_default_board_comes_first(self):
+        self.app.graph_build = lambda *a, **k: None
+        with self.store.connect() as db:
+            other = graph.save_board(db, {'name': 'Hiring', 'stages': ['Sourced', 'Hired'], 'about': 'Roles'}, NOW.isoformat())['board_id']
+            self.assertEqual([b['name'] for b in graph.boards(db, NOW.isoformat())], ['Listings', 'Hiring'])
+        self.app.action('board_default', {'board_id': other}, owner_dashboard=True)
+        with self.store.connect() as db:
+            found = graph.boards(db, NOW.isoformat())
+            self.assertEqual([(b['name'], b['default']) for b in found], [('Hiring', True), ('Listings', False)])
+
+    def test_reviews_check_every_project_on_no_board_against_the_boards_and_maybes_wait_for_the_owner(self):
+        asked, agreed, later = self.mails()
+        self.app.graph_build = lambda *a, **k: None
+        with self.store.connect() as db:
+            for name, ids in (('Paperkite', [agreed]), ('Bramblebox', [later]), ('Quillfeather', [asked]), ('Home painting', [])):
+                graph.label(db, ids, name, 'review', NOW.isoformat()) if ids else graph.project_id(db, name, NOW.isoformat())
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+            ids = {r['name']: 'project:' + str(r['id']) for r in db.execute('SELECT id,name FROM projects')}
+            self.assertTrue(graph.fit_due(db, NOW.isoformat()))  # a board just saved: its check starts a review now
+        text = self.store.fit_text('run1')
+        self.assertIn('Boards: Listings (Contacted > Agreed > Live > Stalled or declined): Partners we list with', text)
+        for name in ids:
+            self.assertIn(f'{name} ({ids[name]})', text)
+        self.assertIn('Projects that may fit a board', a.review_prompt('run1', ['work'], fitting=text))
+        with self.store.connect() as db:
+            with self.assertRaises(ValueError):
+                graph.fit_answer(db, 'run1', None)
+            graph.set_stage(db, ids['Paperkite'], 'Agreed', 'agent', NOW.isoformat(), board='Listings', reason='Ann said yes', event_id=agreed)
+            with self.assertRaises(ValueError):
+                graph.fit_answer(db, 'run1', [{'project': ids['Bramblebox'], 'fit': 'maybe'}])  # says why
+            done = graph.fit_answer(db, 'run1', [{'project': ids['Bramblebox'], 'board': 'Listings', 'fit': 'maybe', 'why': 'a partner, listing not discussed yet'},
+                                                 {'project': ids['Quillfeather'], 'fit': 'maybe', 'why': 'asked about a listing once'},
+                                                 {'project': ids['Home painting'], 'fit': 'no', 'why': 'a home job'}])
+            self.assertEqual(done, 4)
+            self.assertFalse(graph.fit_due(db, NOW.isoformat()))
+            board = graph.boards(db, NOW.isoformat())[0]
+            self.assertEqual([m['name'] for m in board['maybes']], ['Quillfeather', 'Bramblebox'] if board['maybes'][0]['name'] == 'Quillfeather' else ['Bramblebox', 'Quillfeather'])
+        self.assertEqual(self.store.fit_text('run2'), '')  # each project is checked once per board
+        self.app.action('board_fit', {'board_id': board_id, 'node_id': ids['Bramblebox']}, owner_dashboard=True)
+        self.app.action('board_fit', {'board_id': board_id, 'node_id': ids['Quillfeather'], 'add': False}, owner_dashboard=True)
+        with self.store.connect() as db:
+            board = graph.boards(db, NOW.isoformat())[0]
+            self.assertEqual(board['maybes'], [])
+            tile = next(p for p in board['projects'] if p['id'] == ids['Bramblebox'])
+            self.assertTrue(tile['sorting'])  # added: the next review sorts it from its messages
+            graph.project_id(db, 'Fernwave listing', NOW.isoformat())  # a new project is checked by the next review
+        self.assertIn('Fernwave listing', self.store.fit_text('run3'))
+
+    def test_a_new_board_looks_through_the_whole_history_once_and_makes_one_project_per_organisation(self):
+        deal = [mail(30, 'Sam <sam@acme.com>', 'Ann <ann@partner.example>', ('SENT',), thread='deal', title='Listing Acme on your marketplace'),
+                mail(20, 'Ann <ann@partner.example>', 'sam@acme.com', thread='deal', title='Re: Listing Acme on your marketplace')]
+        maybe = [mail(40, 'Bob <bob@bramble.example>', 'sam@acme.com', thread='bram', title='Partnership idea')]
+        home = [mail(50, 'Kim <kim@gmail.com>', 'sam@acme.com', thread='kim', title='Dinner Saturday?')]
+        fern = [mail(10, 'Fay <fay@fernwave.example>', 'sam@acme.com', thread='fern', title='Fernwave listing')]
+        mate = [mail(5, 'Lee <lee@acme.com>', 'sam@acme.com', thread='mate', title='Lunch')]
+        self.add(*deal, *maybe, *home, *fern, *mate)
+        ids = lambda events: self.ids([e['source_id'] for e in events])
+        self.app.graph_build = lambda *a, **k: None
+        self.app.model_usage = None
+        with self.store.connect() as db:
+            graph.label(db, ids(fern), 'Fernwave', 'review', NOW.isoformat())  # a project already: no second one
+        self.build()
+        with self.store.connect() as db:
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+            self.assertTrue(graph.backfill_due(db))
+            self.assertEqual(graph.boards(db, NOW.isoformat())[0]['backfill'], {'state': 'running'})
+        text = self.app.backfill_text('run1')
+        self.assertIn('Boards: Listings (Contacted > Agreed > Live > Stalled or declined): Partners we list with', text)
+        for key in ('org:partner.example', 'org:bramble.example', 'email:kim@gmail.com'):
+            self.assertIn(f'({key})', text)
+        self.assertNotIn('fernwave', text)  # it has a project
+        self.assertNotIn('lee@acme.com', text)  # a colleague
+        self.assertIn('Listing Acme on your marketplace', text)
+        self.assertIn('Looking through the history for new boards', a.review_prompt('run1', ['work'], backfill=text))
+        with self.store.connect() as db:
+            with self.assertRaises(ValueError):
+                graph.backfill_answer(db, 'run1', None)
+        placed = self.app.graph_action({'project': 'Partner Example', 'event_ids': ids(deal), 'board': 'Listings', 'stage': 'Agreed',
+                                        'event_id': ids(deal)[1], 'reason': 'Ann agreed to list us'})
+        with self.store.connect() as db:
+            done = graph.backfill_answer(db, 'run1', [{'project': 'org:bramble.example', 'board': 'Listings', 'fit': 'maybe', 'why': 'a partner, no listing yet'},
+                                                      {'project': 'email:kim@gmail.com', 'fit': 'no', 'why': 'a friend'}])
+            self.assertEqual(done, 3)
+            board = graph.boards(db, NOW.isoformat())[0]
+            tile = next(p for p in board['projects'] if p['name'] == 'Partner Example')
+            self.assertEqual((tile['stage'], tile['reason'], tile['first']), ('Agreed', 'Ann agreed to list us', True))  # "Added: Ann agreed to list us"
+            self.assertEqual([(m['id'], m['why']) for m in board['maybes']], [('org:bramble.example', 'a partner, no listing yet')])
+            self.assertEqual(board['backfill'], {'state': 'running'})  # Fernwave, on no board, isn't checked against it yet
+        self.assertEqual(self.app.backfill_text('run2'), '')  # each one is asked once
+        fit = self.store.fit_text('run3')
+        self.assertIn('Fernwave', fit)
+        with self.store.connect() as db:
+            graph.fit_answer(db, 'run3', [{'project': 'Fernwave', 'board': 'Listings', 'fit': 'no', 'why': 'a supplier'}])
+        self.assertEqual(self.app.backfill_text('run4'), '')
+        with self.store.connect() as db:
+            self.assertFalse(graph.backfill_due(db))
+            self.assertEqual(graph.boards(db, NOW.isoformat())[0]['backfill'], {'state': 'done', 'added': 1, 'review': 1})
+        added = self.app.action('board_fit', {'board_id': board_id, 'node_id': 'org:bramble.example'}, owner_dashboard=True)
+        with self.store.connect() as db:
+            board = graph.boards(db, NOW.isoformat())[0]
+            tile = next(p for p in board['projects'] if p['id'] == added['node_id'])
+            self.assertEqual((tile['name'], tile['sorting']), ('Bramble', True))  # named after the organization; the next review sorts it
+            self.assertEqual(db.execute('SELECT org FROM projects WHERE id=?', (added['node_id'][8:],)).fetchone()[0], 'bramble.example')
+            self.assertEqual(board['maybes'], [])
+            self.assertEqual(board['backfill'], {'state': 'done', 'added': 2, 'review': 0})
+            graph.save_board(db, {'board_id': board_id, 'name': 'Listings', 'stages': self.STAGES, 'about': 'Partners we list with, any kind'}, NOW.isoformat())
+            self.assertFalse(graph.backfill_due(db))  # once per board: an edit doesn't start it again
+            later = (NOW + dt.timedelta(days=graph.BACKFILL_SHOWN_DAYS + 1)).isoformat()
+            self.assertIsNone(graph.boards(db, later)[0]['backfill'])  # the header says it for a few days
+
+    def test_the_look_through_the_history_keeps_only_you_boards_to_the_owner_and_respects_leave_out(self):
+        buyer = [mail(30, 'Ann <ann@buyer.example>', 'sam@acme.com', thread='buy', title='Acquiring Acme')]
+        other = [mail(20, 'Bob <bob@maybe.example>', 'sam@acme.com', thread='may', title='Coffee about Acme?')]
+        self.add(*buyer, *other)
+        self.build()
+        self.app.graph_build = lambda *a, **k: None
+        self.app.model_usage = [{'provider': 'openai', 'name': 'ChatGPT', 'windows': [{'label': '5h', 'used': 95, 'reset': None}]}]
+        with self.store.connect() as db:
+            db.execute('DELETE FROM board_backfills')  # only the new one looks
+            board_id = graph.save_board(db, {'name': 'Buyers', 'stages': ['Contacted', 'Diligence'], 'about': 'Possible buyers of Acme',
+                                             'visibility': 'only_you'}, NOW.isoformat())['board_id']
+        self.assertFalse(self.app.model_room())
+        self.assertEqual(self.app.backfill_text('run1'), '')  # waits while the model's limits are nearly used
+        self.app.model_usage = None
+        text = self.app.backfill_text('run1')
+        self.assertIn('Buyers (Contacted > Diligence > Stalled or declined, only you)', text)
+        ids = self.ids([buyer[0]['source_id']])
+        node = self.app.graph_action({'project': 'Buyer Example', 'event_ids': ids, 'board': 'Buyers', 'stage': 'Contacted', 'event_id': ids[0],
+                                      'reason': 'Ann asked to talk about buying Acme'})
+        with self.store.connect() as db:
+            graph.backfill_answer(db, 'run1', [{'project': 'org:maybe.example', 'board': 'Buyers', 'fit': 'maybe', 'why': 'asked about Acme once'}])
+            pid = db.execute("SELECT id FROM projects WHERE name='Buyer Example'").fetchone()[0]
+            self.assertFalse(graph.visible_to_team(db, f'project:{pid}'))  # an Only-you board's projects stay Only you
+            self.assertIn(ids[0], graph.hidden_event_ids(db))
+            self.assertEqual(db.execute('SELECT count(*) FROM projects').fetchone()[0], 1)  # a maybe makes no project
+        self.app.action('board_fit', {'board_id': board_id, 'node_id': 'org:maybe.example', 'add': False}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual(graph.boards(db, NOW.isoformat())[-1]['maybes'], [])
+            self.assertEqual(db.execute("SELECT state FROM board_backfill_asks WHERE key='org:maybe.example'").fetchone()[0], 'dismissed')
+            db.execute("UPDATE board_backfills SET state='running',ranked=NULL")
+        self.assertEqual(self.app.backfill_text('run2'), '')  # left out stays left out
+
+    def test_a_fit_names_its_board_so_a_maybe_for_one_board_never_shows_on_another(self):
+        self.add(mail(30, 'Ann <ann@shop.example>', 'sam@acme.com', thread='t', title='Our trial of Acme'))
+        self.build()
+        self.app.graph_build = lambda *a, **k: None
+        self.app.model_usage = None
+        with self.store.connect() as db:
+            graph.save_board(db, {'name': 'Buyers', 'stages': ['Contacted', 'Diligence'], 'about': 'Possible buyers of Acme'}, NOW.isoformat())
+        text = self.app.backfill_text('run1')
+        self.assertIn('(org:shop.example)', text)
+        prompt = a.review_prompt('run1', ['work'], backfill=text)
+        self.assertIn("each board's own purpose", prompt)
+        with self.store.connect() as db:
+            with self.assertRaises(ValueError) as said:  # asked against two boards: one fit per board
+                graph.backfill_answer(db, 'run1', [{'project': 'org:shop.example', 'fit': 'maybe', 'why': 'a trial'}])
+            self.assertIn('each naming its board', str(said.exception))
+            graph.backfill_answer(db, 'run1', [{'project': 'org:shop.example', 'board': 'Listings', 'fit': 'maybe', 'why': 'a trial'},
+                                               {'project': 'org:shop.example', 'board': 'Buyers', 'fit': 'no', 'why': 'a customer trial, not a buyer'}])
+            maybes = {b['name']: [m['id'] for m in b['maybes']] for b in graph.boards(db, NOW.isoformat())}
+            self.assertEqual(maybes, {'Listings': ['org:shop.example'], 'Buyers': []})
+
+    def test_the_look_through_the_history_says_who_wrote_so_cold_outreach_is_never_placed(self):
+        talk = [mail(30, 'Sam <sam@acme.com>', 'Ann <ann@buyer.example>', ('SENT',), thread='b', title='Would you consider buying Acme?'),
+                mail(20, 'Ann <ann@buyer.example>', 'sam@acme.com', thread='b', title='Re: Would you consider buying Acme?')]
+        cold = [mail(40, 'Max <max@brokers.example>', 'sam@acme.com', thread='c', title='Buyer seeking acquisition of Acme')]
+        self.add(*talk, *cold)
+        self.build()
+        self.app.graph_build = lambda *a, **k: None
+        self.app.model_usage = None
+        text = self.app.backfill_text('run1')
+        line = {k: next(x for x in text.splitlines() if f'({k})' in x) for k in ('org:buyer.example', 'org:brokers.example')}
+        self.assertIn('the owner wrote on 1 day', line['org:buyer.example'])
+        self.assertIn('inbound only', line['org:brokers.example'])
+        prompt = a.review_prompt('run1', ['work'], backfill=text)
+        self.assertIn('unsolicited outreach', prompt)
+        self.assertIn('never a label', prompt)
+
+    def bundle(self):
+        """A project with two counterparts a review says the board keeps apart, one of them with a project already."""
+        partner = [mail(30, 'Ann <ann@partner.example>', 'sam@acme.com', thread='p', title='Buying Acme'),
+                   mail(25, 'Sam <sam@acme.com>', 'Ann <ann@partner.example>', ('SENT',), thread='p', title='Re: Buying Acme')]
+        bramble = [mail(20, 'Bob <bob@bramble.example>', 'sam@acme.com', thread='b', title='Acme and Bramble')]
+        self.add(*partner, *bramble)
+        self.app.graph_build = lambda *a, **k: None
+        with self.store.connect() as db:
+            graph.label(db, self.ids([m['source_id'] for m in partner + bramble]), 'Acme sale', 'review', NOW.isoformat())
+            graph.project_id(db, 'Bramble talks', NOW.isoformat())
+            db.execute("UPDATE projects SET org='bramble.example' WHERE name='Bramble talks'")
+        self.build()
+        with self.store.connect() as db:
+            db.execute("UPDATE board_backfills SET state='done'")
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+            pid = db.execute("SELECT id FROM projects WHERE name='Acme sale'").fetchone()[0]
+            bram = db.execute("SELECT id FROM projects WHERE name='Bramble talks'").fetchone()[0]
+            db.execute("INSERT INTO board_fits(board_id,project_id,fit,run_id,created_at) VALUES(?,?,'asked','run1',?)", (board_id, pid, NOW.isoformat()))
+            db.execute("INSERT INTO board_fits(board_id,project_id,fit,run_id,created_at) VALUES(?,?,'asked','run1',?)", (board_id, bram, NOW.isoformat()))
+            graph.fit_answer(db, 'run1', [{'project': f'project:{pid}', 'fit': 'maybe', 'why': 'two buyers in one', 'split': True},
+                                          {'project': f'project:{bram}', 'fit': 'no', 'why': 'not a partner'}])
+        return board_id, pid, bram, self.ids([m['source_id'] for m in partner]), self.ids([m['source_id'] for m in bramble])
+
+    def test_add_on_a_bundle_makes_one_project_per_counterpart_and_undo_puts_it_back(self):
+        board_id, pid, bram, partner, bramble = self.bundle()
+        with self.store.connect() as db:
+            board = graph.boards(db, NOW.isoformat())[0]
+            self.assertEqual([(m['id'], m.get('split')) for m in board['maybes']], [(f'project:{pid}', 2)])  # "Add as 2"
+        done = self.app.action('board_fit', {'board_id': board_id, 'node_id': f'project:{pid}'}, owner_dashboard=True)
+        self.assertEqual(done['projects'], 2)
+        with self.store.connect() as db:
+            on = {r['name']: r for r in db.execute('SELECT * FROM projects WHERE board_id=? AND closed_at IS NULL', (board_id,))}
+            self.assertEqual(len(on), 2)
+            part = next(n for n in on if n.startswith('Acme sale: '))
+            self.assertEqual(sorted(r[0] for r in db.execute('SELECT event_id FROM event_projects WHERE project_id=?', (on[part]['id'],))), sorted(partner))
+            self.assertEqual(on[part]['org'], 'partner.example')
+            self.assertIn('Bramble talks', on)  # the counterpart's own project, no second one
+            self.assertEqual([r[0] for r in db.execute('SELECT event_id FROM event_projects WHERE project_id=?', (bram,))], bramble)
+            self.assertTrue(all(r['stage'] == 'Contacted' and r['sort_run'] is None for r in on.values()))  # the next review sorts each
+            self.assertTrue(db.execute('SELECT closed_at FROM projects WHERE id=?', (pid,)).fetchone()[0])  # the bundle is empty now
+            self.assertEqual(graph.boards(db, NOW.isoformat())[0]['maybes'], [])
+        self.app.action('board_fit', {'board_id': board_id, 'undo': done['undo']}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM projects WHERE board_id IS NOT NULL').fetchone()[0], 0)
+            self.assertFalse(db.execute("SELECT 1 FROM projects WHERE name LIKE 'Acme sale: %'").fetchone())
+            self.assertIsNone(db.execute('SELECT closed_at FROM projects WHERE id=?', (pid,)).fetchone()[0])
+            self.assertEqual(sorted(r[0] for r in db.execute('SELECT event_id FROM event_projects WHERE project_id=?', (pid,))), sorted(partner + bramble))
+            self.assertEqual(db.execute('SELECT count(*) FROM event_projects WHERE project_id=?', (bram,)).fetchone()[0], 0)
+            self.assertEqual([m['id'] for m in graph.boards(db, NOW.isoformat())[0]['maybes']], [f'project:{pid}'])
+            with self.assertRaises(ValueError):
+                graph.undo_fit(db, done['undo'])  # once
+
+    def test_bulk_add_and_leave_out_decide_several_at_once_and_undo_together(self):
+        asked, agreed, later = self.mails()
+        self.app.graph_build = lambda *a, **k: None
+        with self.store.connect() as db:
+            db.execute("UPDATE board_backfills SET state='done'")
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+            for name, e in (('Paperkite', agreed), ('Bramblebox', later), ('Quillfeather', asked)):
+                graph.label(db, [e], name, 'review', NOW.isoformat())
+            ids = {r['name']: 'project:' + str(r['id']) for r in db.execute('SELECT id,name FROM projects')}
+            for node in ids.values():
+                db.execute("INSERT INTO board_fits(board_id,project_id,fit,why,state,created_at) VALUES(?,?,'maybe','a partner','open',?)",
+                           (board_id, int(node[8:]), NOW.isoformat()))
+        done = self.app.action('board_fit', {'board_id': board_id, 'node_ids': [ids['Paperkite'], ids['Bramblebox'], 'org:gone.example']}, owner_dashboard=True)
+        self.assertEqual((done['decided'], done['projects'], done['skipped']), (2, 2, 1))
+        out = self.app.action('board_fit', {'board_id': board_id, 'node_ids': [ids['Quillfeather']], 'add': False}, owner_dashboard=True)
+        with self.store.connect() as db:
+            board = graph.boards(db, NOW.isoformat())[0]
+            self.assertEqual(sorted(p['name'] for p in board['projects']), ['Bramblebox', 'Paperkite'])
+            self.assertEqual(board['maybes'], [])
+        self.app.action('board_fit', {'board_id': board_id, 'undo': out['undo']}, owner_dashboard=True)
+        self.app.action('board_fit', {'board_id': board_id, 'undo': done['undo']}, owner_dashboard=True)
+        with self.store.connect() as db:
+            board = graph.boards(db, NOW.isoformat())[0]
+            self.assertEqual(board['projects'], [])
+            self.assertEqual(len(board['maybes']), 3)
+        with self.assertRaises(ValueError):
+            self.app.action('board_fit', {'board_id': board_id, 'node_ids': 'project:1'}, owner_dashboard=True)
+
+    def test_boards_made_before_get_their_look_through_the_history_once(self):
+        with self.store.connect() as db:
+            db.execute('DELETE FROM board_backfills')
+            db.execute('DROP TABLE board_backfills_queued')
+            graph.ensure(db)
+            self.assertEqual(db.execute("SELECT count(*) FROM board_backfills WHERE state='running'").fetchone()[0], 1)
+            db.execute("UPDATE board_backfills SET state='done'")
+            graph.ensure(db)
+            self.assertEqual(db.execute("SELECT count(*) FROM board_backfills WHERE state='running'").fetchone()[0], 0)
+
+    def test_editing_stages_renames_moves_to_the_nearest_earlier_stage_and_deleting_keeps_projects(self):
+        asked, agreed, later = self.mails()
+        with self.store.connect() as db:
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+            a = graph.set_stage(db, 'Paperkite', 'Agreed', 'review', NOW.isoformat(), board='Listings', reason='said yes', event_id=agreed)['node_id']
+            b = graph.set_stage(db, 'Bramblebox', 'Live', 'review', NOW.isoformat(), board='Listings', reason='live', event_id=later)['node_id']
+            c = graph.set_stage(db, 'Quillfeather', graph.STALLED, 'review', NOW.isoformat(), board='Listings', reason='declined', event_id=asked)['node_id']
+            # Contacted renamed to Asked, Agreed removed, Live renamed to Listed, a new stage added; Stalled row off
+            done = graph.save_board(db, {'board_id': board_id, 'name': 'Partner listings', 'about': 'Partners we list with',
+                                         'stages': [{'name': 'Asked', 'was': 'Contacted'}, {'name': 'Listed', 'was': 'Live'}, 'Renewed'], 'side': False}, NOW.isoformat())
+            self.assertEqual(done['moved'], [{'from': 'Agreed', 'to': 'Asked', 'count': 1}, {'from': graph.STALLED, 'to': None, 'count': 1}])
+            stage = lambda n: db.execute('SELECT board_id,stage,stage_reason FROM projects WHERE id=?', (n.split(':')[1],)).fetchone()[:]
+            self.assertEqual(stage(a), (board_id, 'Asked', 'Agreed was removed'))
+            self.assertEqual(stage(b)[:2], (board_id, 'Listed'))
+            self.assertEqual(stage(c), (None, None, None))  # no Stalled row: it left the board
+            with self.assertRaises(ValueError):
+                graph.save_board(db, {'name': 'Partner listings', 'stages': ['A'], 'about': ''}, NOW.isoformat())  # a second board by that name
+            gone = graph.delete_board(db, board_id, NOW.isoformat())
+            self.assertEqual(gone['projects'], 2)
+            self.assertEqual(stage(a), (None, None, None))
+            self.assertTrue(db.execute('SELECT 1 FROM projects WHERE id=? AND closed_at IS NULL', (a.split(':')[1],)).fetchone())  # the project stays
+            self.assertEqual(graph.boards(db, NOW.isoformat()), [])
+
+
+if __name__ == '__main__':
+    unittest.main()

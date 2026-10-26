@@ -3,7 +3,8 @@
 
 Each test file runs in its own process with its own HOME, several at once (as many as the computer has cores, at
 most 8; THE_MACHINE_TEST_JOBS=1 runs them one by one). A file's output is printed when it's done, in full when it
-failed. Name files to run only those: scripts/test.py test_moving.py test_fleet_dashboard.mjs"""
+failed. The tests live in tests/ and run from the repository root. Name files to run only those (with or without tests/):
+scripts/test.py test_moving.py tests/test_fleet_dashboard.mjs"""
 import concurrent.futures
 import os
 from pathlib import Path
@@ -14,6 +15,7 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
+TESTS = ROOT / 'tests'
 
 
 def openclaw_package(node):
@@ -91,6 +93,8 @@ def main():
         env = {k:v for k,v in os.environ.items() if not k.startswith(('ASSISTANT_','OPENCLAW_','GOG_'))
                and k not in ('DBUS_SESSION_BUS_ADDRESS','XDG_RUNTIME_DIR','XDG_CONFIG_HOME','XDG_DATA_HOME','XDG_CACHE_HOME')}
         env.update(HOME=home,PATH=str(Path(node).parent)+os.pathsep+os.environ.get('PATH',''))
+        # The suites import the app from the root (their working folder) and their shared helpers from tests/.
+        env['PYTHONPATH'] = os.pathsep.join(filter(None, (str(TESTS), os.environ.get('PYTHONPATH'))))
         if os.name == 'nt':
             env['PYTHONUTF8'] = '1'  # the console's code page can't print everything the suites print
         package = os.environ.get('OPENCLAW_PACKAGE_DIR') or openclaw_package(node)
@@ -100,7 +104,7 @@ def main():
         if browser:
             env['CHROMIUM_PATH'] = browser
         chosen = sys.argv[1:]
-        files = [ROOT / name for name in chosen] if chosen else sorted(ROOT.glob('test_*.py')) + sorted(ROOT.glob('test_*.mjs'))
+        files = [TESTS / Path(name).name for name in chosen] if chosen else sorted(TESTS.glob('test_*.py')) + sorted(TESTS.glob('test_*.mjs'))
         jobs = max(1, int(os.environ.get('THE_MACHINE_TEST_JOBS') or min(os.cpu_count() or 2, 8)))
         configured_limit = os.environ.get('THE_MACHINE_TEST_TIMEOUT')
         # The real signed-sharing suite performs hundreds of key wraps; cold CI runs exceed ten minutes.
