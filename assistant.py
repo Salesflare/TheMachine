@@ -559,10 +559,14 @@ OWNER_ACTIONS |= LEARNING_ACTIONS
 CRM_ACTIONS = {'graph_owner', 'graph_org_merge', 'graph_org_split', 'graph_org_apart', 'graph_import_preview', 'graph_import_run', 'graph_import_undo',
                'graph_import_ai', 'graph_import_ai_status', 'graph_field_save', 'graph_field_delete', 'graph_field_set', 'graph_tag'}
 OWNER_ACTIONS |= CRM_ACTIONS
+# Help (help_chat.py) and Report a bug (support.report): the owner's own, from their dashboard only. help_ask answers
+# and changes nothing; bug_send sends only what bug_preview showed, after the owner's tap.
+SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send'}
+OWNER_ACTIONS |= SUPPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
 DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *SHARE_ACTIONS, *GRAPH_SHARE_ACTIONS, *FRIEND_ACTIONS, *FAMILY_ACTIONS, *LEARNING_ACTIONS,
-                               *CARD_ACTIONS, *SKILL_ACTIONS, *CONNECT_ACTIONS, *AGENT_ACTIONS, *CRM_ACTIONS, 'decide', 'confirm_action',
+                               *CARD_ACTIONS, *SKILL_ACTIONS, *CONNECT_ACTIONS, *AGENT_ACTIONS, *CRM_ACTIONS, *SUPPORT_ACTIONS, 'decide', 'confirm_action',
                                'undo_merge', 'card_chat', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role',
                                'graph_fact_unlink', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_save',
                                'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'project_visibility',
@@ -574,7 +578,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *SHARE_ACTIONS, *GRAPH_SH
                                'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
                                'set_work_hours', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'calendar_write', 'set_locale',
                                'browser_show'})
-UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai'}, 9 * 1024 * 1024
+UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send'}, 9 * 1024 * 1024
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
 # its code version records an error within AUTO_UNDO_NEW, or the fault it fixed comes back.
 UNDO_MERGE = dt.timedelta(hours=24)
@@ -12139,6 +12143,10 @@ class App:
             if not getattr(self, 'fleet', None):
                 raise ValueError('This Machine is not on the Network')
             return self.fleet.fill_split(str(args.get('split_id') or ''), args.get('event_id'), args.get('parts') or {})
+        if name in SUPPORT_ACTIONS:
+            if not owner_dashboard:
+                raise ValueError('Help and bug reports come from the dashboard')
+            return self.support_action(name, args)
         if name == 'push_test':  # Settings or the nudge: one test notification to this device's own subscription
             if not owner_dashboard:
                 raise ValueError('Phone notifications are turned on in the dashboard app')
@@ -16057,6 +16065,51 @@ class App:
         found['items'] = items
         return found
 
+    BUG_SHOT_BYTES = 2 * 1024 * 1024
+    BUG_TEXT = 4000
+
+    def support_action(self, name, args):
+        """Help's question (help_chat.ask, on this Machine's own model, a one-shot turn without tools) and Report a
+        bug: the scrubbed support report to show (bug_preview), then that report sent to the control plane on a
+        self-hosted Machine paired with the Network (bug_send). A hosted Machine's dashboard sends it to its control
+        plane itself, with the owner's sign-in there."""
+        import help_chat
+        import onboarding
+        import support
+        if name == 'help_ask':
+            run = getattr(self, 'help_model', None)  # a stand-in in the sandbox and tests
+            if not run and not has_model(self.config):
+                raise ValueError('Help needs a model. Set one up in Settings, Model.')
+            swap = background_model(self.config)
+            try:
+                return help_chat.ask(args.get('question'), args.get('history') or [], run=run,
+                                     config=self.config, model='/'.join(swap) if swap else None)
+            except help_chat.Unavailable as error:
+                raise ValueError(str(error)) from None
+        path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
+        if name == 'bug_preview':
+            return {**support.report(path, doctor=onboarding.doctor), 'paired': bool(getattr(self, 'fleet', None))}
+        text = str(args.get('description') or '').strip()[:self.BUG_TEXT]
+        if not text:
+            raise ValueError('Say what went wrong first.')
+        shot = args.get('screenshot')
+        if shot is not None and not (isinstance(shot, str) and re.fullmatch(r'data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+', shot)
+                                     and len(shot) <= self.BUG_SHOT_BYTES * 4 // 3 + 64):
+            raise ValueError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
+        report = args.get('report')
+        if report is not None and not isinstance(report, dict):
+            raise ValueError('That report can’t be sent.')
+        if not getattr(self, 'fleet', None):
+            raise ValueError('This Machine isn’t linked to an account. Email support@themachine.computer instead.')
+        # What the owner saw, scrubbed once more here: whatever the page sent, nothing else leaves
+        body = {'description': text, 'screenshot': shot,
+                'report': support.scrub_value(report) if report is not None else None}
+        try:
+            return {'sent': True, **(self.fleet.bug_report(body) or {})}
+        except (fleet.Off, OSError, ValueError) as error:
+            LOG.info('bug report not sent error=%s', type(error).__name__)
+            raise ValueError('The report didn’t go out. Try again, or email support@themachine.computer.') from None
+
     def account_view(self):
         """Settings, Account on a self-hosted Machine paired with the Network: its owner's account in short, from the
         control plane (fleet.Fleet.account). A hosted Machine's dashboard asks the control plane itself, with the owner's
@@ -16660,7 +16713,7 @@ class App:
                     return
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
-                    upload = self.headers.get('X-Upload') in ('skill-import', 'graph-import')
+                    upload = self.headers.get('X-Upload') in ('skill-import', 'graph-import', 'bug-report')
                     if not 0 < size <= (UPLOAD_REQUEST_BYTES if upload else 65536):
                         raise ValueError('Invalid request size')
                     try:

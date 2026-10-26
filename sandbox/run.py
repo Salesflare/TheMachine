@@ -96,6 +96,16 @@ def seed_model(app):
     app.mail_read = lambda config, account, *a: {'signature': '<div><b>Alex Morgan</b></div><div style="color:#4e6b34">Lumen Labs</div><div><a href="https://lumenlabs.example">lumenlabs.example</a></div>'}
 
 
+def fake_help(config, prompt, model=None):
+    """Help's stand-in model: the first lines of the help section that matched best, cited as [1]. No model runs."""
+    import re
+    found = re.search(r'^\[1\] Help: [^\n]*\n(.+?)(?:\n\n|$)', prompt, re.M | re.S)
+    if not found:
+        return 'The help pages don’t cover that. Try Report a bug, or write to support@themachine.computer.'
+    text = re.sub(r'[*`]|\[([^\]]+)\]\([^)]+\)', lambda m: m[1] or '', found[1])
+    return ' '.join(re.split(r'(?<=[.!?])\s+', ' '.join(text.split()))[:3]) + ' [1]'
+
+
 def proxy(public_port, app_port, config):
     """Signs each request in as the owner on the dashboard's own host (what Tailscale Serve does for real)."""
     host, owner = config['dashboard_host'], config['tailscale_owner']
@@ -248,6 +258,7 @@ def main():
     app = assistant.App(config, config_path)
     quiet_workers(app, sent)
     seed_model(app)
+    app.help_model = fake_help
     fixture = json.loads((HERE / 'fixture.json').read_text())
     net = None
     if load.groups(states):

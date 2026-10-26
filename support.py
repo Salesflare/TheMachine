@@ -2,7 +2,11 @@
 
 It holds versions, `assistant doctor`, the service status and recent log, the OpenClaw Gateway's status and recent
 log, and config.json with every key, token, password and address taken out. Nothing is sent anywhere: the owner
-looks at the file and passes it on."""
+looks at the file and passes it on.
+
+`report()` is the same report for Help, Report a bug in the dashboard: the parts as lines and fields, scrubbed the
+way the control plane scrubs a support report (cloud/support.py; a control plane test keeps LINE_SCRUB equal), so
+what the owner sees before sending is exactly what arrives."""
 import datetime as dt
 import io
 import json
@@ -53,6 +57,109 @@ def scrub_config(value, key=''):
     if isinstance(value, (int, float)) and SENSITIVE_KEY.search(key) and not isinstance(value, bool):
         return '<redacted>'
     return scrub(value) if isinstance(value, str) else value
+
+
+# The control plane's scrub of a support report (cloud/support.py SCRUB, the same in its agent): keys and tokens,
+# quoted text, links' paths, addresses, phone numbers, what a message says and who it is from or to.
+_CONTENT_KEYS = (r'text|body|content|message|msg|prompt|preview|snippet|subject|caption|title|query|reply|name|first_?name|'
+                 r'last_?name|display_?name|full_?name|from|to|sender|recipient|chat|chat_?title|contact|user|username|author|cc|bcc|'
+                 r'session_?(?:id|key)|peer(?:_?id)?|chat_?id|sender_?id|user_?id|account_?id|thread_?id|conversation_?id')
+_TALK = r'inbound|outbound|incoming|reply|replied|message|messages|msg|dm|email|mail|said|wrote'
+_UNTIL_KEY = r'(?:(?!\s[A-Za-z_]\w*=|\s[A-Z]\w*(?:Error|Exception)\b).)*'
+
+
+def _quoted(found):
+    kind = re.match(r'\s*([A-Z][A-Za-z0-9]*(?:Error|Exception|Failure|Timeout))\b', found[0][1:-1])
+    return f'"{kind[1]}: …"' if kind else '"…"'
+
+
+def _long(found):
+    parts = re.split(r'[-/._=+]', found[0])
+    return '[redacted]' if any(len(p) >= 24 or (len(p) >= 16 and re.search(r'\d', p) and re.search(r'[A-Za-z]', p)) for p in parts) else found[0]
+
+
+LINE_SCRUB = ((re.compile(r'\b(?:sk|pk|rk|ghp|gho|ghs|ghu|github_pat|glpat|xox[abprs]|ya29|AIza)[-_.][A-Za-z0-9_\-.]{8,}'), '[redacted]'),
+              (re.compile(r'(?i)\b(bearer|token|secret|password|passwd|api[_-]?key|authorization|cookie|key)\b(["\']?\s*[:=]\s*|\s+)\S+'), r'\1\2[redacted]'),
+              (re.compile(r'"[^"]*"|\'[^\']*\'|“[^”]*”'), _quoted), (re.compile(r'https?://([^/\s?#]+)\S*'), r'https://\1/…'),
+              (re.compile(r'[\w.+-]+@[\w-]+(\.[\w-]+)+'), '[email]'),
+              (re.compile(rf'(?i)\b({_CONTENT_KEYS})=' + _UNTIL_KEY), r'\1=…'),
+              (re.compile(rf'(?i)\b({_TALK})\b((?:\s+[\w-]+){{0,2}}?)\s+(from|to|by)\b' + _UNTIL_KEY), r'\1\2 \3 …'),
+              (re.compile(r'(?<![\w.-])(?!\d{4}-\d\d-\d\d)\+?\d[\d ()-]{7,}\d(?![\w.:/-])'), '[number]'),
+              (re.compile(r'[A-Za-z0-9_\-+/=.]{24,}'), _long))
+TROUBLE = re.compile(r'warn|error|fail|exception|traceback|critical|fatal|denied|refused|timed? ?out|oom|killed|abort|drain|'
+                     r'restart|reload|sigterm|sigkill|low memory', re.I)
+CONTENT_KEY = re.compile(rf'(?i)^(?:{_CONTENT_KEYS}|signature|voice|notes?|about|bio|address|label)$')
+REPORT_LINES = {'service-log': 200, 'openclaw-log': 120, 'doctor': 80, 'versions': 30}
+REPORT_CHARS = 48000  # all lines together, as the control plane caps a report's logs
+
+
+def scrub_line(line):
+    """One line as the control plane keeps it in a support report."""
+    line = str(line or '')
+    for pattern, replace in LINE_SCRUB:
+        line = pattern.sub(replace, line)
+    return line[:240]
+
+
+def scrub_value(value):
+    """Every string in a structure scrubbed by line (cloud/support.py scrub_value)."""
+    if isinstance(value, str):
+        return scrub_line(value)
+    if isinstance(value, dict):
+        return {scrub_line(k): scrub_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [scrub_value(v) for v in value]
+    return value
+
+
+def _settings(value, key=''):
+    """config.json as a report holds it: scrub_config, and no value under a key that holds what someone wrote."""
+    if isinstance(value, dict):
+        return {k: _settings(v, k) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_settings(v, key) for v in value][:40]
+    if isinstance(value, str) and value and CONTENT_KEY.match(key or ''):
+        return '<redacted>'
+    return value
+
+
+HOME = re.compile(r'(?<![\w.])(/home/|/Users/|[A-Za-z]:\\Users\\)[^/\\\s"\']+')  # a home folder is often a person's name
+
+
+def _unhomed(value):
+    if isinstance(value, str):
+        return HOME.sub(lambda m: m[1] + '…', value)
+    if isinstance(value, dict):
+        return {k: _unhomed(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_unhomed(v) for v in value]
+    return value
+
+
+def report(config_path, doctor=None, lines=1000):
+    """The support report for Report a bug: {'parts': {name: [lines]}, 'settings': {...}}, scrubbed and capped.
+    The same sources as the bundle; only warnings, errors and lifecycle lines of the service's log."""
+    try:
+        config = json.loads(Path(config_path).expanduser().read_text())
+    except (OSError, ValueError):
+        config = {}
+    raw = {'versions': versions(config).splitlines(),
+           'service-status': (service.status_text() if service.available() else f'no service manager ({service.manager()})').splitlines()[:20]}
+    if service.available():
+        raw['service-log'] = [line for line in (service.logs(lines=lines) or '').splitlines() if TROUBLE.search(line)]
+    if doctor:
+        try:
+            raw['doctor'] = [f'{mark} {text}' + (f' (fix: {fix})' if fix else '') for mark, text, fix in doctor(config_path)]
+        except Exception as error:  # the report is most needed when things are broken
+            raw['doctor'] = [f'doctor failed: {type(error).__name__}']
+    openclaw = config.get('openclaw') or shutil.which('openclaw')
+    if openclaw:
+        raw['openclaw-log'] = [line for line in _run([openclaw, 'logs', '--limit', '1500', '--plain'], 60).splitlines()
+                               if re.search(r'\s(warn|error|fatal)\s', line) and '[agent:' not in line]
+    parts = {name: [scrub_line(_unhomed(scrub(line))) for line in items if str(line).strip()][-REPORT_LINES.get(name, 40):] for name, items in raw.items()}
+    while sum(len(line) for items in parts.values() for line in items) > REPORT_CHARS:
+        max(parts.values(), key=lambda items: sum(map(len, items))).pop(0)
+    return {'parts': parts, 'settings': scrub_value(_unhomed(_settings(scrub_config(config))))}
 
 
 def _run(args, timeout=60):

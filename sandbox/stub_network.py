@@ -213,6 +213,9 @@ class Network:
             return {'mine': not body.get('release')}
         if method == 'POST' and path == '/friends':
             return self.friend(body)
+        if method == 'POST' and path == '/bug':  # Help, Report a bug: kept here, never sent on
+            self.__dict__.setdefault('bugs', []).append(body)
+            return {'id': 's_sandbox' + secrets.token_hex(4)}
         return None
 
     def friend(self, body):

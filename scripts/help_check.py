@@ -65,6 +65,8 @@ FEATURES = {
     'keyboard': ('dashboard.html', 'Search and commands'),
     'share-learnings': ('team_learnings.py', 'def '),
     'team-graph': ('shared_graph.py', 'def overview'),
+    'help-chat': ('dashboard.html', "helpBox.id='help-panel'"),
+    'support-access': ('dashboard.html', 'Support access'),
 }
 # Features that exist in the code but have no article yet, each with the reason. Keep this short.
 PENDING = {

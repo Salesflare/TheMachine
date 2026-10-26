@@ -2992,6 +2992,11 @@ class Fleet(fleet_requests.Requests, friends.Friends, discovery.Discovery, famil
     ACCOUNT_KEYS = ('email', 'plan', 'next_invoice', 'server', 'connections', 'fleets', 'actions', 'links')
     ACCOUNT_SECONDS = 60
 
+    def bug_report(self, body):
+        """Help, Report a bug: what the owner saw and confirmed, to the control plane's support (cloud/support.py)."""
+        found = self.relay.call('POST', '/bug', body, timeout=40) or {}
+        return {k: found[k] for k in ('id',) if isinstance(found.get(k), str)}
+
     def account(self):
         """The owner's account in short (Settings, Account): what the control plane says for this Machine's token,
         read at most once a minute. Only the fields the tab shows, and links only to the account's own host. A
