@@ -99,7 +99,7 @@ class CardTitles(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES('https://push.example/1','k','a',?)", (a.now(),))
         row = {**self.card(), 'id': self.sid, 'reminder': 0}
-        with patch.object(a, 'push_send', lambda store, config, subs, payload, label, sender=None: sent.append(payload)):
+        with patch.object(a, 'push_send', lambda store, config, subs, payload, label, sender=None, kind=None: sent.append(payload)):
             a.push_notify(self.store, {'dashboard_host': 'machine.example'}, row)
         self.assertEqual(sent[0]['title'], 'Sam asks for a receipt for the bounty')
 
