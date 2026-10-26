@@ -23,6 +23,8 @@ On Feedback, a short note asks "Share 3 learnings with The Machine team?" Tap **
 
 It's sealed for the team and comes from a made-up name, unless you tick **Add my email so the team can reply**.
 
+Other Machines may vote on a tip you shared, without knowing who sent it. Your email never goes along.
+
 To stop being asked, turn off **Offer to share learnings** in Settings, Security. See [Security levels](security-levels.md). It needs [The Machine Network](/network).
 
 ## Voting

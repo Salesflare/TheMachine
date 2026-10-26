@@ -2825,7 +2825,7 @@ function renderShare(force){const a=state.team_learnings?.ask,box=$('#share-lear
    +`<div class="share-foot">${i.taken?`<small>${esc(i.taken)}</small>`:''}<button type="button" class="quiet" data-share-remove>Remove</button></div></li>`};
  box.innerHTML=head+`<div class="share-panel" role="region" aria-label="What would be sent"><p class="fine">This is exactly what would be sent. Edit or remove anything.</p><ol class="share-items">${a.items.map(item).join('')}</ol>`
   +`<label class="share-named"><input type="checkbox" id="share-named"${shareDraft.named?' checked':''}> Add my email so the team can reply</label>`
-  +'<p class="fine">Sealed for the team. Without your email it comes from a made-up name. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></p>'
+  +'<p class="fine">Sealed for the team. Without your email it comes from a made-up name. Other Machines may vote on a tip, without knowing who sent it. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></p>'
   +(a.error?'<p class="share-error" role="status">Delivery isn’t confirmed yet. Try again to confirm the same items, without duplicates.</p>':'')
   +`<div class="actions"><button type="button" class="primary" data-share="send"${kept?'':' disabled'}>Send ${shareCount(kept)}</button><button type="button" class="ghost" data-share="later">Not now</button><button type="button" class="quiet" data-share="never">Never ask</button></div></div>`}
 $('#share-learnings').addEventListener('input',e=>{const li=e.target.closest('.share-item'),a=state.team_learnings?.ask;if(!li||!a)return;const d=shareDraft.items[li.dataset.n]??={};
