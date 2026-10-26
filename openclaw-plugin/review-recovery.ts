@@ -171,16 +171,22 @@ export function preparationToolPolicy(event: any, ctx: any): undefined | {block:
 const readsSecret = (event: any) => pathParams(event.params || {}).some(secretPath);
 
 // USER.md is not loaded into isolated sessions by default; reviews and preparations need it.
-async function contextFile(path: string, heading: string, limit = 20000) {
+async function contextFile(path: string, heading: string, limit = 20000, only = (text: string) => text) {
   try {
-    const text = (await readFile(path, 'utf8')).trim();
+    const text = only((await readFile(path, 'utf8')).trim()).trim();
     return `\n\n## ${heading}\n${text.length > limit ? text.slice(0, limit) + '\n[…shortened]' : text}`;
   } catch { return ''; }
 }
 export const ownerContext = () => contextFile(`${WORKSPACE}/USER.md`, 'About the owner (USER.md)');
 // Standing Do it rules; prepended here because the runner caps the job message at 20000 characters.
 const preparationRules = () => contextFile(`${APP_DIR}/PREPARATION.md`, 'Preparation rules (tools/personal-assistant/PREPARATION.md)', 30000);  // the whole file: every rule applies to each Do it
-const assistantInstructions = () => contextFile(`${APP_DIR}/AGENTS.md`, 'Assistant instructions (tools/personal-assistant/AGENTS.md)', 50000);  // the whole file: its later sections (lessons, troubleshooting) matter too
+// A review gets AGENTS.md without the sections for other work: Do it turns get theirs from PREPARATION.md, and operations,
+// repository and security maintenance are for people and agents working on The Machine. Each review step resends this
+// context, so what a review never uses costs on every step. Its lessons and everything about reviewing stay.
+export const NOT_FOR_REVIEWS = ['Preparing accepted suggestions', 'Operations', 'Public repository hygiene', 'Security maintenance'];
+export const forReviews = (text: string) => text.split(/^(?=## )/m)
+  .filter(part => !NOT_FOR_REVIEWS.some(title => part.startsWith(`## ${title}\n`) || part.trim() === `## ${title}`)).join('');
+const assistantInstructions = () => contextFile(`${APP_DIR}/AGENTS.md`, 'Assistant instructions (tools/personal-assistant/AGENTS.md, the parts for reviews)', 50000, forReviews);
 
 // The review run that currently owns each session, recorded by the prompt hook. The tool's own
 // execute() reads it to bind ownership. The hook must not rewrite tool parameters: Codex
@@ -199,7 +205,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     !/^agent:main:assistant-review-(?:preparation|profile|skills)-/.test(ctx.sessionKey || '') &&
     /^agent:main:assistant-review[-:]/.test(ctx.sessionKey || '');
   const quietInstruction = 'Keep background processing silent. Save review counts, recovery, skipped/deferred signals, backlog and completion notes only through finish_analysis for the dashboard. A saved suggestion is delivered by the independent service, not by this reply. When there is no separate genuinely useful alert requiring the owner, end with exactly NO_REPLY, even after saving a new suggestion or completing a review. Do not announce starting, resuming, working, finishing or no new suggestions. Genuine actionable alerts and authorized preparation results/reminders remain enabled.';
-  const instruction = 'This turn reviews the personal-assistant signals inbox. Resume an unfinished review through assistant_signals begin_analysis with the same explicit accounts, then finish_analysis after a real conclusion. Do not switch to unrelated old main-chat tasks after a provider retry. Read tools/personal-assistant/AGENTS.md. Claim once with begin_analysis limit 120 and read every page with analysis_page; finish within about fifteen minutes. The service balances accounts, oldest backlog and newer signals. For body_clipped=true read the rest with events, event_ids and body_offset. Defer only what you expect to judge better later; pass the rest as finish_analysis reviewed_ids. Publish only genuinely useful distinct suggestions; no quota or duplicate direct Telegram send. Quiet hours limit delivery, not private review. Do not claim a complete review when only a preview was assessed. ' + quietInstruction;
+  const instruction = 'This turn reviews the personal-assistant signals inbox. Resume an unfinished review through assistant_signals begin_analysis with the same explicit accounts, then finish_analysis after a real conclusion. Do not switch to unrelated old main-chat tasks after a provider retry. Follow the assistant instructions below; they are the parts of tools/personal-assistant/AGENTS.md for reviews, so do not read that file again. Claim once with begin_analysis limit 120 and read every page with analysis_page; finish within about fifteen minutes. The service balances accounts, oldest backlog and newer signals. For body_clipped=true read the rest with events, event_ids and body_offset. Defer only what you expect to judge better later; pass the rest as finish_analysis reviewed_ids. Publish only genuinely useful distinct suggestions; no quota or duplicate direct Telegram send. Quiet hours limit delivery, not private review. Do not claim a complete review when only a preview was assessed. ' + quietInstruction;
   api.on('before_prompt_build', async (_event: any, ctx: any) => {
     if (preparationSession(ctx.sessionKey) && privateReviewContext(ctx)) {
       if (ctx.runId) sessionRuns.set(ctx.sessionKey,ctx.runId);

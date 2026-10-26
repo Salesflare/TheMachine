@@ -151,6 +151,7 @@ class Profile(unittest.TestCase):
                                                    body=f'Initial separate message {i}', from_me=True) for i in range(30)])
         run = self.store.profile_start()
         session = a.PROFILE_SESSION_PREFIX + run['run_id']
+        small = patch.object(a, 'EVIDENCE_PAGE_CHARS', 3000); small.start(); self.addCleanup(small.stop)  # pages by size
         first = self.store.profile_evidence(1, session)
         before = self.store.profile_evidence(2, session)
         self.store.commit_page('work', {}, [signal(f'arrival{i}', i / 1000, kind='whatsapp.message',

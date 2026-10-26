@@ -599,9 +599,10 @@ SET_ASIDE_AFTER = 2
 # Mail that comes from a system, not a person: by address (slipped, first-look order) and by Gmail's category labels
 ROBOT_SENDER = re.compile(r'(?i)^(?:no-?reply|do-?not-?reply|notifications?|mailer-daemon|bounce|support|billing|info|hello|team)@')
 AUTOMATED_LABELS = frozenset({'CATEGORY_UPDATES', 'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'})
-# OpenClaw cuts a live tool result at 64,000 characters, so review replies are paged
-# well below that, with bookkeeping metadata left out.
-REVIEW_PAGE_CHARS = 30000
+# OpenClaw cuts a live tool result at 64,000 characters, so review replies are paged below that (with room for the
+# escaping a Code Mode result adds); fuller pages mean fewer model steps, each resending the whole context.
+# Bookkeeping metadata is left out.
+REVIEW_PAGE_CHARS = 48000
 REVIEW_PREVIEW_CHARS = 1500
 REVIEW_METADATA_SKIP = {
     'coverage', 'transport', 'notification_key_hash', 'last_notification_event_id', 'last_notification_event_ms',
@@ -714,6 +715,20 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None):
     if row['kind'] == 'calendar.event' and not calendar_owned(metadata):
         view['not_owners'] = f"On {calendar_owner_name(metadata)}'s calendar, shared with the owner, who isn't on it: context only, no card, prep or promise for them"
     return view
+
+
+def evidence_pages(items, budget=None, first=0):
+    """Items split into pages of at most `budget` characters (`first`: what page 1 carries besides), at least one item
+    a page, in order. The same evidence always gives the same pages."""
+    budget, pages, size = budget or EVIDENCE_PAGE_CHARS, [[]], first
+    for item in items:
+        length = len(encoded(item)) + 2
+        if pages[-1] and size + length > budget:
+            pages.append([])
+            size = 0
+        pages[-1].append(item)
+        size += length
+    return pages
 
 
 def review_pages(views, budget=REVIEW_PAGE_CHARS - 4000):
@@ -997,7 +1012,6 @@ BACKGROUND_SWAP = {'gpt-6-astra': 'gpt-6.1-sol'}
 PROFILE_SESSION_PREFIX = 'agent:main:assistant-review-profile-'
 SKILLS_SESSION_PREFIX = 'agent:main:assistant-review-skills-'  # the Find my skills turn: the browser, read-only, and its report
 PROFILE_MESSAGES = 120  # the owner's own messages one draft reads, newest first, mixed across sources
-PROFILE_PAGE = 15
 PROFILE_MIN = 5         # fewer says too little about how someone writes
 PROFILE_SECONDS = 900
 PROFILE_LISTS = {'languages': 4, 'examples': 4, 'matters': 8, 'leave_alone': 6}
@@ -1009,9 +1023,11 @@ PROFILE_SKIP = re.compile(r'^(?:Sent (?:an? )?(?:image|photo|video|sticker|audio
                           r'\[(?:image|photo|video|sticker|audio|voice|document|gif|file)[^\]]*\]$|!\[)', re.I)
 PROFILE_TEMPLATE_COPIES = 2  # near-identical sends (outreach templates) kept per template
 ROLES_PEOPLE = 15       # closest people without a role one roles turn names
-ROLES_PAGE = 3
 ORGS_PEOPLE = 60        # people without an organization one organizations turn reads
-ORGS_PAGE = 6
+# A profile, voices, roles or organizations turn reads its evidence in pages of about this many characters, well below
+# OpenClaw's 64,000-character tool result: each page is a model step that resends the whole context, so fewer, fuller
+# pages cost less for the same evidence (2026-10-26: 15 messages, 3 or 6 people a page took 5 to 10 steps).
+EVIDENCE_PAGE_CHARS = 40000
 SHARE_HISTORY_BATCH, SHARE_HISTORY_PAGE = 120, 20  # the Shared Graph's history pass: threads per turn, and per page
 PROFILE_WEIGHTS = {'gmail.message': 2}  # drafts are mostly email, so email gets two turns per round
 OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
@@ -4704,17 +4720,18 @@ class Store:
         if evidence.get('learnings'):  # a learnings run (team_learnings.py)
             return team_learnings.evidence_page(evidence, page)
         if 'people' in evidence:  # a roles or organizations run
-            people, size = evidence['people'], int(evidence.get('page_size') or ROLES_PAGE)
-            pages = max(1, -(-len(people) // size))
-            page = min(max(int(page or 1), 1), pages)
-            result = {'page': page, 'pages': pages, 'people': people[(page - 1) * size:page * size]}
+            extra = {k: evidence[k] for k in ('organisations', 'corrections') if evidence.get(k)}
+            split = evidence_pages(evidence['people'], first=len(encoded(extra)))
+            page = min(max(int(page or 1), 1), len(split))
+            result = {'page': page, 'pages': len(split), 'people': split[page - 1]}
             if page == 1:  # the organizations, and how the owner corrected earlier roles
-                result.update({k: evidence[k] for k in ('organisations', 'corrections') if evidence.get(k)})
+                result.update(extra)
             return result
         items = evidence['messages']
-        pages = max(1, -(-len(items) // PROFILE_PAGE))
-        page = min(max(int(page or 1), 1), pages)
-        result = {'page': page, 'pages': pages, 'messages': items[(page - 1) * PROFILE_PAGE:page * PROFILE_PAGE]}
+        extra = {k: evidence.get(k) for k in ('notes', 'voices', 'frequent_unanswered_senders')}
+        split = evidence_pages(items, first=len(encoded(extra)) + 200)
+        page = min(max(int(page or 1), 1), len(split))
+        result = {'page': page, 'pages': len(split), 'messages': split[page - 1]}
         if page == 1 and 'notes' in evidence:  # a voice study: the owner's style notes and the current blocks
             result.update(counts=dict(collections.Counter(i['channel'] for i in items)), style_notes=evidence['notes'], current_voices=evidence['voices'])
         elif page == 1:
@@ -4842,7 +4859,7 @@ class Store:
         run_id, started = uuid.uuid4().hex, now()
         with self.connect() as db:
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'orgs',?)",
-                       (run_id, started, started, json.dumps({'people': people, 'page_size': ORGS_PAGE}), int(bool(auto))))
+                       (run_id, started, started, json.dumps({'people': people}), int(bool(auto))))
         return {'run_id': run_id, 'started_at': started, 'people': len(people)}
 
     def save_profile(self, profile, session):
