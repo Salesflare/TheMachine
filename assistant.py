@@ -16768,6 +16768,8 @@ class App:
             with self.store.connect() as db:
                 due = team_learnings.votes_due(db)
             if due:
+                with self.store.connect() as db:
+                    team_learnings.set_pref(db, 'votes_fetched_at', now())  # tried today, also when the call fails
                 answer = call('POST', '/learnings', {'action': 'candidates'})
                 with self.store.connect() as db:
                     team_learnings.take_candidates(db, answer)
