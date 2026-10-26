@@ -20,7 +20,7 @@ A tab with nothing to show is hidden.
 
 ## General
 
-- **Language and region**: your **Region** sets how dates read (Oct 24 or 24 Oct) and the usual clock. **Time format** picks 12-hour (2:05 PM) or 24-hour (14:05) instead. To-dos, Telegram, the digest and Fleet messages follow it. A hosted Machine starts from the country of the time zone you picked at signup. English is the only language for now.
+- **Language and region**: your **Region** sets how dates read (Oct 24 or 24 Oct) and the usual clock. **Time format** picks 12-hour (2:05 PM) or 24-hour (14:05) instead. To-dos, Telegram, the digest and Fleet messages follow it. A hosted Machine starts from the country of the time zone you picked at signup. Times like "3 hours ago" and numbers follow it too, not your browser's language. English is the only language for now.
 - **This device**: the app (**Install app**), **Notifications** with **Send a test**, and **Light mode**, only for this browser or phone. See [Install the app and turn on notifications](phone-app.md).
 - **Coding agents**: see [Hand to Claude Code or Codex](hand-to-agent.md).
 - **Open the Machine’s browser ↗**: the browser your Machine uses for sites like LinkedIn.

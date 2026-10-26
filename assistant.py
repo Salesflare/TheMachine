@@ -515,7 +515,7 @@ class SourceError(Exception):
 # authenticated dashboard may record them; never the local CLI the agent can run.
 CONNECT_ACTIONS = ('connect_sources', 'connect_start', 'connect_poll', 'connect_answer', 'connect_cancel', 'connect_remove', 'connect_scope',
                    'connect_signin', 'connect_signin_state')
-OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'card_chat', 'recap_decide'}
+OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'card_chat', 'recap_decide'}
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
                          'fleet_split_adjust', 'task_import', *task_pages.ACTIONS}
@@ -577,7 +577,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *SHARE_ACTIONS, *GRAPH_SH
                                'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
                                'push_test', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
                                'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
-                               'set_work_hours', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'calendar_write', 'set_locale',
+                               'set_work_hours', 'connector_sync', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'calendar_write', 'set_locale',
                                'browser_show'})
 UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send'}, 9 * 1024 * 1024
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
@@ -1568,10 +1568,33 @@ def salesflare_in_pipelines(source, crm_id, pipelines):
     return None
 
 
+SALESFLARE_APP = 'https://app.salesflare.com'
+SALESFLARE_STUCK = dt.timedelta(hours=2)  # a round of accounts still going after this long: the card offers Restart
+
+
+def salesflare_progress(account, state):
+    """The Salesflare card's sync details: the round of accounts being read (how far, since when), what it set aside,
+    whether the owner stopped it (connector_sync), and where its API keys are."""
+    window = state.get('window') or {}
+    total, left = window.get('accounts', len(window.get('pending') or [])), len(window.get('pending') or [])
+    started = window.get('until')
+    try:
+        stuck = bool(started) and dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(started) > SALESFLARE_STUCK
+    except (TypeError, ValueError):
+        stuck = False
+    return {'stopped': state.get('stopped') or None, 'synced_until': state.get('watermark'),
+            'round': {'since': window.get('since'), 'started': started, 'accounts': total, 'done': max(0, total - left), 'stuck': stuck,
+                      'failing': len(window.get('failures') or {})} if window else None,
+            'slow_accounts': len(state.get('skipped_accounts') or []), 'no_access': len(state.get('inaccessible_accounts') or []),
+            'keys_url': (account.get('app_base') or SALESFLARE_APP) + '/#/settings/apikeys'}
+
+
 def sync_salesflare(store, config, account, source=None):
+    state = store.checkpoint(account['id']) or {}
+    if state.get('stopped'):  # the owner pressed Stop on its card: nothing is read until Start or Restart
+        return {'mode': state.get('mode') or 'incremental', 'events': 0, 'stopped': True}
     source = source or Salesflare(config, account)
     source.profile()
-    state = store.checkpoint(account['id']) or {}
     stamp = dt.datetime.now(dt.timezone.utc)
     if not state.get('window'):
         days = config.get('bootstrap_days', 7)
@@ -2336,6 +2359,38 @@ def calendar_write_events(db, ids, owner=()):
             found[row['id']] = {'account_id': row['account_id'], 'source_id': row['source_id'], 'title': row['title'],
                                 'start': start, 'end': end, 'all_day': all_day, 'guests': calendar_guests(m, owner)}
     return found
+
+
+def company_domains(config):
+    """The owner's companies' email domains: those of their Work connections, never a free mail provider's."""
+    return sorted({str(a.get('email') or '').lower().rsplit('@', 1)[1] for a in config.get('accounts', [])
+                   if str(a.get('boundary') or '').startswith('work:') and '@' in str(a.get('email') or '')} - graph.FREEMAIL)
+
+
+def team_people(db, query, owner=(), domains=(), teammates=(), limit=8):
+    """Teammates to pick by email (Hand off, By email): the owner's Work Fleets' members, then people from the Graph
+    on the owner's company domains, then the typed name completed with each domain (bo -> bo@company.com) when no one
+    there has that address yet."""
+    words = ' '.join(str(query or '').split()).casefold()
+    q = words.replace(' ', '')
+    if len(q) < 2:
+        return []
+    mine = {str(e).lower() for e in owner}
+    domains = list(dict.fromkeys([*[d for d in domains if d], *[m['email'].rsplit('@', 1)[1] for m in teammates if '@' in m['email']]]))
+    domains = [d for d in domains if d not in graph.FREEMAIL]
+    found = []
+    for m in teammates:
+        if m['email'] not in mine and m['email'] not in {p['email'] for p in found} and (q in m['email'] or words in m['name'].casefold()):
+            found.append(m)
+    found += [p for p in invite_people(db, query, owner, 60) if p['email'].rsplit('@', 1)[1] in domains and p['email'] not in {f['email'] for f in found}]
+    found = found[:limit]
+    local, at, part = q.partition('@')
+    if ' ' not in words and re.fullmatch(r"[a-z0-9][a-z0-9._+'-]{1,63}", local or ''):
+        for domain in domains:
+            email = local + '@' + domain
+            if domain.startswith(part) and email not in {p['email'] for p in found} and email not in mine:
+                found.append({'name': '', 'email': email})
+    return found[:limit]
 
 
 def invite_people(db, query, owner=(), limit=8):
@@ -6847,6 +6902,8 @@ class Store:
                                       'deferred_threads': sum(bool(c.get('deferred_thread')) for c in channels),
                                       'conversation_errors': sum(bool(c.get('error')) for c in channels),
                                       'first_import': slack_first_import_progress(state)}
+                if account.get('service') == 'salesflare':  # its round of accounts, what it set aside, Stop and Restart
+                    channel_health = {'salesflare': salesflare_progress(account, state)}
                 if account.get('service') == 'intercom':  # who a reply goes out as, after the owner's Send; none: it only reads
                     channel_health = {'replies_as': (account.get('reply_admin_name') or 'you') if next_actions.intercom_replies_on(account) else ''}
                 activity = [dict(r) for r in db.execute('SELECT at,status,signals,error,retry_at FROM sync_activity WHERE account_id=? ORDER BY at DESC,rowid DESC LIMIT 12',(account['id'],))]
@@ -11400,6 +11457,22 @@ class App:
             return False
         return self.store.revise_draft(str(suggestion_id), editable[0]['revision'], 'agent', None, text, agent_job=job).get('status') == 'revised'
 
+    def teammate_addresses(self):
+        """The members of the owner's Work Fleets, each address with their name: who Hand off by email suggests first."""
+        out = []
+        try:
+            for found in (self.fleet.fleets().values() if getattr(self, 'fleet', None) else ()):
+                if found.get('kind') != 'work':
+                    continue
+                for member in found.get('members', []):
+                    if member.get('me'):
+                        continue
+                    for email in dict.fromkeys(str(e).lower() for e in [member.get('account_email'), *(member.get('emails') or [])] if e and '@' in str(e)):
+                        out.append({'name': ' '.join(str(member.get('name') or '').split())[:80], 'email': email})
+        except Exception:  # noqa: BLE001 - suggestions only: the Graph and the domains still help
+            return out
+        return out
+
     def owner_emails(self):
         """The owner's addresses: each account's (its owner_emails, else its own) and the ones found as theirs
         (own_addresses.py: aliases, their calendar, their profiles; never a shared one or one they removed)."""
@@ -11460,6 +11533,39 @@ class App:
         if status == 'done':
             self.sync_soon(action['account_id'])
         return {'status': status, 'error': error, 'op': action['op'], 'calendar': action['calendar_name'], 'invited': len(action.get('guests') or ())}
+
+    def connector_sync(self, args):
+        """Stop, Start or Restart on a Salesflare card. Stop: nothing is read until Start, which goes on where it was.
+        Restart: the round of accounts it was on is dropped, with its errors and wait, and a new one reads the last
+        week again now (a round stuck on slow or failing accounts). What it brought in stays either way."""
+        account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
+        if not account or account.get('service') != 'salesflare':
+            raise ValueError('Only a Salesflare connection can be stopped or restarted here')
+        do = args.get('do')
+        if do not in ('stop', 'start', 'restart'):
+            raise ValueError('Choose stop, start or restart')
+        lock = self.sync_lock(account['id'])
+        if not lock.acquire(timeout=20):
+            raise ValueError('It is reading a batch of accounts. Try again in a minute')
+        try:
+            with self.store.connect() as db:
+                row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
+                state = json.loads(row['state'] or '{}') if row else {}
+                if do == 'stop':
+                    state['stopped'] = now()
+                else:
+                    state.pop('stopped', None)
+                if do == 'restart':
+                    state.pop('window', None)
+                    state['next_full'] = 0
+                db.execute('INSERT INTO checkpoints(account_id,state) VALUES(?,?) ON CONFLICT(account_id) DO UPDATE SET state=excluded.state'
+                           + ('' if do == 'stop' else ',error=NULL,retry_at=NULL,failures=0'), (account['id'], json.dumps(state)))
+        finally:
+            lock.release()
+        LOG.info('connector_sync account=%s do=%s', account['id'], do)
+        if do != 'stop':
+            self.sync_soon(account['id'])
+        return {'ok': True, 'do': do, 'salesflare': salesflare_progress(account, state)}
 
     def sync_soon(self, account_id):
         """Read this calendar again now instead of at its next poll, so a change shows in the Calendar in seconds."""
@@ -12522,6 +12628,10 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner changes region and time format, on the dashboard (Settings, General)')
             return self.set_locale(args)
+        if name == 'connector_sync':
+            if not owner_dashboard:
+                raise ValueError('Only the owner stops or restarts a sync, on the dashboard (Connections)')
+            return self.connector_sync(args)
         if name == 'set_work_hours':
             if not owner_dashboard:
                 raise ValueError('Only the owner changes work hours, on the dashboard or with: assistant hours')
@@ -12707,7 +12817,7 @@ class App:
                         result = sync_slack(self.store, self.config, account, source) if source else sync_source(self.store, self.config, account)
                     LOG.info('sync account=%s mode=%s read=%d filtered=%d', account['id'], result['mode'], result['events'], result.get('filtered', 0))
                     state = self.store.checkpoint(account['id'])
-                    if result.get('more') or state.get('mode', result['mode']) != 'incremental' or state.get('page_token'):  # a plugin's checkpoint may not keep a mode
+                    if not result.get('stopped') and (result.get('more') or state.get('mode', result['mode']) != 'incremental' or state.get('page_token')):  # a plugin's checkpoint may not keep a mode
                         delay = account.get('poll_seconds', 3600) if account.get('service') == 'x' else 30 if account.get('service') == 'linkedin' else 0 if source else 5
                 except SourceError as error:
                     if self.stop.is_set():
@@ -16558,7 +16668,10 @@ class App:
                         self.output(200, {'places': places.suggest(db, app.config, args.get('q', [''])[0][:200])})
                 elif path.path == '/api/invitees':  # the Calendar form's Invite: people from the owner's Graph
                     with app.store.connect() as db:
-                        self.output(200, {'people': invite_people(db, urllib.parse.parse_qs(path.query).get('q', [''])[0][:200], app.owner_emails())})
+                        query = urllib.parse.parse_qs(path.query)
+                        typed = query.get('q', [''])[0][:200]
+                        self.output(200, {'people': team_people(db, typed, app.owner_emails(), company_domains(app.config), app.teammate_addresses()) if query.get('team')
+                                          else invite_people(db, typed, app.owner_emails())})
                 elif path.path == '/api/fleet':
                     if not getattr(app, 'fleet', None):
                         self.output(200, {'on': False})

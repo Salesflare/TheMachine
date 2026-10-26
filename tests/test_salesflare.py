@@ -220,5 +220,63 @@ class SalesflareConnector(unittest.TestCase):
         self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'meeting:7'})
 
 
+class SalesflareStopAndRestart(unittest.TestCase):
+    """The Salesflare card: Stop, Start and Restart (App.connector_sync), and what the card shows of a round."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.soon = []
+        import threading
+        lock = threading.Lock()
+        self.app = type('App', (), {'config': {'accounts': [ACCOUNT, {'id': 'work-mail', 'service': 'gmail'}]}, 'store': self.store,
+                                    'sync_lock': lambda _, account: lock, 'sync_soon': lambda _, account: self.soon.append(account),
+                                    'connector_sync': a.App.connector_sync})()
+
+    def test_the_card_shows_the_round_and_a_round_running_too_long_as_stuck(self):
+        a.sync_salesflare(self.store, {}, ACCOUNT, FakeCRM())
+        view = a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))
+        self.assertEqual((view['round']['accounts'], view['round']['done'], view['round']['stuck'], view['stopped']), (2, 1, False, None))
+        self.assertEqual(view['keys_url'], 'https://app.example/#/settings/apikeys')
+        state = self.store.checkpoint('work-crm')
+        state['window']['until'] = (NOW - a.dt.timedelta(hours=3)).isoformat()
+        self.assertTrue(a.salesflare_progress(ACCOUNT, state)['round']['stuck'])
+        self.assertEqual(a.salesflare_progress({}, {})['keys_url'], 'https://app.salesflare.com/#/settings/apikeys')
+
+    def test_stop_reads_nothing_until_start_which_goes_on_where_it_was(self):
+        crm = FakeCRM()
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        pending = self.store.checkpoint('work-crm')['window']['pending']
+        self.app.connector_sync({'account': 'work-crm', 'do': 'stop'})
+        calls = len(crm.calls)
+        self.assertEqual(a.sync_salesflare(self.store, {}, ACCOUNT, crm), {'mode': 'bootstrap', 'events': 0, 'stopped': True})
+        self.assertEqual(len(crm.calls), calls)  # not even a profile read
+        self.assertEqual(self.soon, [])
+        self.app.connector_sync({'account': 'work-crm', 'do': 'start'})
+        self.assertEqual((self.store.checkpoint('work-crm')['window']['pending'], self.soon), (pending, ['work-crm']))
+        self.assertFalse(a.sync_salesflare(self.store, {}, ACCOUNT, crm).get('stopped'))
+
+    def test_restart_drops_a_stuck_round_its_errors_and_wait_and_rereads_the_week(self):
+        crm = FakeCRM()
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.store.failed('work-crm', a.SourceError('network:TimeoutError:salesflare_read', retry_after=3600))
+        result = self.app.connector_sync({'account': 'work-crm', 'do': 'restart'})
+        self.assertIsNone(result['salesflare']['round'])
+        with self.store.connect() as db:
+            row = db.execute('SELECT error,retry_at,failures FROM checkpoints WHERE account_id=?', ('work-crm',)).fetchone()
+        self.assertEqual(tuple(row), (None, None, 0))
+        self.assertEqual(self.store.checkpoint('work-crm')['next_full'], 0)
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertEqual(len(self.store.checkpoint('work-crm')['window']['pending']), 1)  # a new round of the same accounts
+
+    def test_only_a_salesflare_connection_and_only_these_three(self):
+        for args in ({'account': 'work-mail', 'do': 'stop'}, {'account': 'nope', 'do': 'stop'}, {'account': 'work-crm', 'do': 'wipe'}):
+            with self.assertRaises(ValueError):
+                self.app.connector_sync(args)
+        self.assertIn('connector_sync', a.DASHBOARD_ACTIONS)
+        self.assertIn('connector_sync', a.OWNER_ACTIONS)
+
+
 if __name__ == '__main__':
     unittest.main()

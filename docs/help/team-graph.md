@@ -16,6 +16,8 @@ An admin turns on **Share the Graph in this Fleet** on **What's shared**, and co
 
 **Your connections** on **What's shared** lists each one with a switch. Work ones at your Fleet's own domain start on. One at another company's domain starts off, even when it's a Work account: it says "Other company, not shared". You can turn it on. Personal ones never go. Turning one off takes back what it shared.
 
+Someone else's calendar that you read through your own sign-in shows under its own name, as a personal connection.
+
 Inside a connection that's on, each thread is still sorted. Personal and colleague-only threads stay out. Sensitive and automated mail stays out of automatic sharing; your explicit sharing choices can override those classifications.
 
 ## Required by the Fleet

@@ -446,6 +446,22 @@ class Suggestions(unittest.TestCase):
             self.assertEqual(a.invite_people(db, 's'), [])
             self.assertEqual(a.invite_people(db, 'owner', {'owner@example.com'}), [])
 
+    def test_teammates_by_email_come_from_the_company_domain(self):
+        # Hand off, By email: Fleet teammates first, then Graph people on the company's domains, then what is typed
+        # completed with each domain; never someone at another domain, a free mail domain or the owner
+        mates = [{'name': 'Samuel Ortiz', 'email': 'samuel@acme.example'}, {'name': 'Pat Ray', 'email': 'pat@gmail.com'}]
+        with self.store.connect() as db:
+            self.assertEqual(a.team_people(db, 'sam', {'owner@acme.example'}, ['acme.example'], mates),
+                             [{'name': 'Samuel Ortiz', 'email': 'samuel@acme.example'}, {'name': 'Sam Lee', 'email': 'sam@acme.example'}])
+            self.assertEqual(a.team_people(db, 'bo', set(), ['acme.example'], mates), [{'name': '', 'email': 'bo@acme.example'}])
+            self.assertEqual(a.team_people(db, 'bo@ac', set(), ['acme.example', 'beta.example']), [{'name': '', 'email': 'bo@acme.example'}])
+            self.assertEqual(a.team_people(db, 'pat', set(), [], mates[1:]), [{'name': 'Pat Ray', 'email': 'pat@gmail.com'}])  # gmail.com is never completed
+            self.assertEqual(a.team_people(db, 'owner', {'owner@acme.example'}, ['acme.example']), [])
+            self.assertEqual(a.team_people(db, 'samuel o', set(), ['acme.example'], mates), [{'name': 'Samuel Ortiz', 'email': 'samuel@acme.example'}])
+            self.assertEqual(a.team_people(db, 's', set(), ['acme.example'], mates), [])
+        self.assertEqual(a.company_domains({'accounts': [{'email': 'o@acme.example', 'boundary': 'work:Acme'}, {'email': 'o@gmail.com', 'boundary': 'work:Side'},
+                                                         {'email': 'o@home.example', 'boundary': 'personal'}]}), ['acme.example'])
+
     def test_own_places_first_then_the_map_with_only_the_text(self):
         asked = []
         def fetch(url, timeout):

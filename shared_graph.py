@@ -1444,7 +1444,11 @@ class SharedGraph:
             kind = self._account_kind(a)
             personal = str(a.get('boundary') or '').startswith('personal:') or a['id'] not in any_work
             required = a['id'] in company and kind in require
-            out.append({'id': a['id'], 'service': str(a.get('service') or 'gmail'), 'email': str(a.get('email') or ''), 'kind': kind,
+            # another person's calendar read through the owner's sign-in (calendar_id: theirs) is its own connection,
+            # not a second copy of the owner's calendar on that address: it is named for the calendar it reads
+            other = str(a.get('calendar_id') or 'primary') if kind == 'calendar' else 'primary'
+            name = '' if other in ('primary', str(a.get('email') or '')) else str(a.get('display_name') or other)
+            out.append({'id': a['id'], 'service': str(a.get('service') or 'gmail'), 'email': str(a.get('email') or ''), 'kind': kind, 'name': name,
                         'work': a['id'] in work, 'company': a['id'] in company, 'personal': personal, 'required': required,
                         'on': False if personal else True if required else bool(chosen.get(a['id'], a['id'] in company))})
         return out

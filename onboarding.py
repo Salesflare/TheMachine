@@ -1261,11 +1261,12 @@ def salesflare_preset(config):
 
 
 def step_salesflare(config, account, ui):
-    explain(ui, 'Salesflare: create an API key in Salesflare\'s settings (API keys).')
-    account.setdefault('credential_variable', 'SALESFLARE_API_KEY')
-    store_secret(config, account, ui, 'Salesflare API key', 'SALESFLARE_')
     preset = salesflare_preset(config)
     new = account.get('id') not in {a.get('id') for a in config.get('accounts', [])}
+    app = account.get('app_base') or (preset or {}).get('app_base') or salesflare_app_base(SALESFLARE_API)
+    explain(ui, f'Salesflare: create an API key in Salesflare, under Settings, API keys: {app}/#/settings/apikeys')
+    account.setdefault('credential_variable', 'SALESFLARE_API_KEY')
+    store_secret(config, account, ui, 'Salesflare API key', 'SALESFLARE_')
     if preset and new and account.get('api_base') in (None, SALESFLARE_API):
         account.update(preset)  # a new account starts on the team's server, so its key is only sent there
     account.setdefault('api_base', SALESFLARE_API)

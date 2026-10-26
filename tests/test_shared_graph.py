@@ -1227,6 +1227,22 @@ class SharedGraph(unittest.TestCase):
         self.rounds()
         self.assertNotIn(BODY, self.received(self.mem))
 
+    def test_another_persons_calendar_read_through_the_owners_sign_in_is_named_for_that_calendar(self):
+        # a partner's calendar read through the work sign-in is its own personal connection, not a second copy of the
+        # work calendar: named for the calendar it reads, and the work calendar keeps its own label and switch
+        self.olive_mail()
+        self.own.config['accounts'] += [{'id': 'work-cal', 'service': 'calendar', 'email': 'olive@acme.example', 'boundary': 'work:Acme'},
+                                        {'id': 'partner-cal', 'service': 'calendar', 'email': 'olive@acme.example', 'calendar_id': 'robin@home.example',
+                                         'display_name': 'Robin’s calendar', 'boundary': 'personal:Robin'},
+                                        {'id': 'bare-cal', 'service': 'calendar', 'email': 'olive@acme.example', 'calendar_id': 'sam@home.example', 'boundary': 'personal:Sam'}]
+        self.adm.graph_set_policy(FLEET, ['calendar'])
+        self.rounds()
+        conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
+        self.assertEqual((conns['work-cal']['name'], conns['work-cal']['required'], conns['work-cal']['on']), ('', True, True))
+        self.assertEqual((conns['partner-cal']['name'], conns['partner-cal']['personal'], conns['partner-cal']['on']), ('Robin’s calendar', True, False))
+        self.assertEqual(conns['bare-cal']['name'], 'sam@home.example')
+        self.assertEqual(conns['work']['name'], '')
+
     def test_an_admin_can_require_work_email_and_threads_kept_private_still_stay(self):
         self.olive_mail()
         with self.assertRaisesRegex(ValueError, 'confirmed admin'):

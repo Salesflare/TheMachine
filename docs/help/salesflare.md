@@ -16,9 +16,17 @@ Nothing, unless you set `join_pipelines` in your Machine's settings file. Then i
 
 ## Connect it
 
-1. In Salesflare, open Settings, API keys, and create a key.
+1. In Salesflare, open [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) and create a key.
 2. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources**, open Salesflare CRM, paste the key and press **Connect**.
 3. On your own computer: run `assistant connect crm`, or **Connections**, **+ Add**, Salesflare CRM.
+
+## Sync details
+
+Its card under **Connections**, **Other sources** shows how far it is: how many accounts it has read in this round, and how many it skipped because Salesflare was too slow to answer. A round that runs for hours says it may be stuck.
+
+- **Stop**: nothing new comes in until you press **Start**. It goes on where it was.
+- **Restart sync**: drops the round it is on, with its errors, and reads the last week again now. Nothing it brought in is lost.
+- **API keys**: opens Salesflare's API keys page, to make a new key.
 
 ## Remove it
 

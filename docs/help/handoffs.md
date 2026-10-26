@@ -32,4 +32,4 @@ They can say why: not theirs, already done, or no time this week. Then pick **Do
 
 ## Someone outside the Network
 
-Pick **By email**: your Machine drafts an email for you to send. Add a task page so they can answer in one tap: see [Task pages](task-pages.md).
+Pick **By email**: your Machine drafts an email for you to send. As you type their address, it suggests teammates first: people in your Fleet, then people at your company's domain, then what you typed with that domain. Add a task page so they can answer in one tap: see [Task pages](task-pages.md).
