@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS graph_relations(a TEXT NOT NULL,b TEXT NOT NULL,relat
 CREATE TABLE IF NOT EXISTS org_edits(domain TEXT PRIMARY KEY,fields TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS person_edits(identifier TEXT PRIMARY KEY,fields TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS manual_nodes(identifier TEXT PRIMARY KEY,kind TEXT NOT NULL,name TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS owner_numbers(number TEXT PRIMARY KEY,source TEXT NOT NULL,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS self_record_backups(id INTEGER PRIMARY KEY,identifier TEXT NOT NULL,rows TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS hidden_domains(domain TEXT PRIMARY KEY,hidden INTEGER NOT NULL,source TEXT NOT NULL,event_id INTEGER,
   name TEXT,created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS person_orgs(identifier TEXT PRIMARY KEY,org TEXT NOT NULL,org_id TEXT,source TEXT NOT NULL,via TEXT,event_id INTEGER,
@@ -239,7 +241,26 @@ class Owner:
         self.domains = {e.rsplit('@', 1)[1] for e in self.emails} - FREEMAIL
         self.slack = {a['user_id'] for a in accounts if a.get('service') == 'slack' and a.get('user_id')}
         self.handles = {str(a.get('handle') or a.get('login') or '').lower() for a in accounts if a.get('service') in ('x', 'github')} - {''}
+        # The owner's own numbers: config owner_phones (top level or per account) and the ones kept for About you
+        numbers = [*(config.get('owner_phones') or ()), *(p for a in accounts for p in a.get('owner_phones') or ())]
+        if db is not None and _table(db, 'owner_numbers'):
+            numbers += [r[0] for r in db.execute('SELECT number FROM owner_numbers')]
+        self.phones = {digits for digits in (re.sub(r'\D', '', str(n)) for n in numbers) if len(digits) >= 8}
         self.names = set()
+
+    def has(self, identifier):
+        """Whether a graph identifier is the owner's own: one of their addresses (aliases too), their number, their
+        Slack user or their GitHub login. Those always resolve to About you, never to a person."""
+        space, _, value = str(identifier or '').partition(':')
+        if space == 'email':
+            return value.strip().lower() in self.emails
+        if space == 'wa':
+            return value in self.phones
+        if space == 'slack':
+            return value in self.slack
+        if space == 'gh':
+            return value.lower() in self.handles
+        return False
 
     def learn(self, signals):
         """Addresses the owner sends from (aliases, an older personal address) and the name on them."""
@@ -813,6 +834,7 @@ def _build(db, config, now, team=()):
     own_addresses.refresh(db, config, signals, team, now)  # the owner's own addresses, before anyone is told apart from them
     owner = Owner(config, db)
     owner.learn(signals)
+    fold_self_records(db, owner, now)  # a person made from the owner's own address goes into About you (2026-10-26)
     wrote_to = set()
     for _, _, kind, _, m in signals:
         if kind == 'gmail.message' and ('SENT' in (m.get('labels') or ()) or any(a in owner.emails for _, a in addresses(m.get('from'))[:1])):
@@ -1121,6 +1143,8 @@ def _build(db, config, now, team=()):
         if value < FLOOR:
             continue
         group = sorted(union.members.get(node, {node}))
+        if any(owner.has(i) for i in group):
+            continue  # the owner's own address or number: About you, never a person
         counts = collections.Counter()
         for identifier in group:
             counts.update(names.get(identifier, {}))
@@ -1161,6 +1185,10 @@ def _build(db, config, now, team=()):
         edited = {}
         for identifier in sorted((i for i in group if i in person_edits), key=list(person_edits).index):
             edited.update(person_edits[identifier])  # the owner's word wins over the look-up, a later save over an older one
+        if edited.get('photo') == 'none':
+            person_profile.pop('photo', None)  # the owner took the picture off: none, also not a looked-up one
+        elif PICTURE.fullmatch(str(edited.get('photo') or '')):
+            person_profile['photo'] = edited['photo']  # the owner's own picture wins
         mine = {k: edited[k] for k in ('title', 'location', 'linkedin_url') if edited.get(k)}
         if mine:
             person_profile.update(mine)
@@ -2345,12 +2373,13 @@ def website_domain(text):
     return host if ORG_DOMAIN.fullmatch(host) else None
 
 
-def create_record(db, kind, args, now):
+def create_record(db, kind, args, now, owner=None):
     """A person or organization the owner adds by hand, before (or without) any message from them. A person has a
     name, and optionally an email address and where they work; an organization a name and optionally its website.
     One that is already in the graph (the same address, website or name for an organization) is not made twice:
     {'node_id', 'name', 'existing': True} points to it. Otherwise {'node_id', 'name', 'created': True}; the caller
-    rebuilds the graph, which keeps them from then on (manual_nodes), also with no messages."""
+    rebuilds the graph, which keeps them from then on (manual_nodes), also with no messages. The owner's own address
+    is never a person: {'node_id': 'me', 'yours': True} points to About you."""
     if not db.in_transaction:
         db.execute('BEGIN IMMEDIATE')
     args = args if isinstance(args, dict) else {}
@@ -2367,6 +2396,8 @@ def create_record(db, kind, args, now):
         if len(org) > 100:
             raise ValueError('An organization name is up to 100 characters')
         identifier = 'email:' + email if email else 'manual:' + secrets.token_hex(8)
+        if email and (owner or Owner({}, db)).has(identifier):
+            return {'node_id': ME, 'name': ABOUT_YOU, 'existing': True, 'yours': True}
         found = resolve(db, identifier) if email else None
         if found:
             return {'node_id': found['id'], 'name': found['name'], 'existing': True}
@@ -2402,6 +2433,66 @@ def create_record(db, kind, args, now):
     db.execute('INSERT OR REPLACE INTO manual_nodes(identifier,kind,name,created_at) VALUES(?,?,?,?)', (identifier, kind, name, now))
     db.execute('INSERT OR REPLACE INTO graph_names(node_id,name,created_at) VALUES(?,?,?)', (identifier, name, now))
     return {'node_id': identifier, 'name': name, 'created': True}
+
+
+# The owner's own record, About you: their addresses (aliases too) and numbers, never a person in the graph and never
+# private (it isn't shared as a record). Everything that names one of them opens it.
+ME = 'me'
+ABOUT_YOU = 'About you'
+SELF_TABLES = (('manual_nodes', 'identifier'), ('graph_names', 'node_id'), ('person_orgs', 'identifier'), ('person_edits', 'identifier'),
+               ('person_roles', 'identifier'), ('identity_names', 'identifier'), ('share_private', 'node_id'), ('crm_values', 'node_id'),
+               ('crm_tags', 'node_id'), ('record_owners', 'node_id'), ('fact_about', 'node_id'), ('project_people', 'node_id'),
+               ('graph_merges', 'a'), ('graph_merges', 'b'), ('graph_same', 'a'), ('graph_same', 'b'), ('graph_relations', 'a'), ('graph_relations', 'b'))
+
+
+def fold_self_records(db, owner, now):
+    """A person the owner made from one of their own addresses or numbers (New person, an import) goes into About you:
+    each row about it is backed up first (self_record_backups, kept on this Machine), the numbers the owner gave it
+    become theirs, its facts are about the owner, and the rest goes, Keep private too. Runs with each build; nothing to
+    do is one quick look. Returns how many records were folded in."""
+    if not _table(db, 'self_record_backups'):
+        return 0
+    mine = sorted({r[0] for r in db.execute("SELECT identifier FROM manual_nodes WHERE kind='person'") if owner.has(r[0])})
+    for identifier in mine:
+        backup = {}
+        for table, column in SELF_TABLES:
+            if _table(db, table):
+                rows = [dict(r) for r in db.execute(f'SELECT * FROM {table} WHERE {column}=?', (identifier,))]
+                if rows:
+                    backup.setdefault(table, []).extend(rows)
+        db.execute('INSERT INTO self_record_backups(identifier,rows,at) VALUES(?,?,?)', (identifier, json.dumps(backup, default=str), now))
+        for row in backup.get('person_edits', ()):
+            try:
+                added = (json.loads(row['fields']).get('phones') or {}).get('added') or ()
+            except (TypeError, ValueError, AttributeError):
+                added = ()
+            for number in added:
+                digits = re.sub(r'\D', '', str(number))
+                if len(digits) >= 8:
+                    db.execute('INSERT OR IGNORE INTO owner_numbers(number,source,at) VALUES(?,?,?)', ('+' + digits, 'about_you', now))
+                    owner.phones.add(digits)
+        for table, column in SELF_TABLES:
+            if _table(db, table):
+                db.execute(f'DELETE FROM {table} WHERE {column}=?', (identifier,))
+    return len(mine)
+
+
+def about_you(db, config, addresses=None):
+    """About you: the owner's own record. Their name, their addresses (with where each came from, as Settings lists them)
+    and numbers. addresses: own_addresses.view's 'yours', else read here."""
+    import own_addresses
+    owner = Owner(config or {}, db)
+    if addresses is None:
+        try:
+            addresses = own_addresses.view(db, config or {})['yours']
+        except (sqlite3.Error, KeyError, TypeError):
+            addresses = []
+    listed = {a['address'] for a in addresses}
+    emails = [{'value': a['address'], 'by': ', '.join(a.get('sources') or ())} for a in addresses]
+    emails += [{'value': e, 'by': ''} for e in sorted(owner.emails - listed) if not ROLE.match(e)]
+    phones = [{'value': '+' + p, 'by': ''} for p in sorted(owner.phones)]
+    return {'id': ME, 'kind': ME, 'name': ABOUT_YOU, 'owner_name': ' '.join(str((config or {}).get('owner_name') or '').split()) or None,
+            'emails': emails, 'phones': phones, 'links': []}
 
 
 def delete_org(db, node_id):
@@ -2486,6 +2577,91 @@ def org_wrong(db, node_id, wrong, now):
 # an enrichment service or the messages say and stay through every rebuild. Each field is kept on the identity whose page
 # it was saved on, so it stays through a merge (the joined person carries it) and an Undo (it stays with that identity).
 # Phones and emails are kept as what the owner added and took off, so an address that turns up later still shows.
+# The owner's own picture for a person or organization: uploaded (or picked from the ones found), saved on this Machine
+# like a looked-up photo, or taken off. It wins over every look-up and stays through rebuilds.
+PICTURE = re.compile(r'api/person-photo\?p=[0-9a-f]{32}')
+
+
+def _picture_drop(db, link):
+    found = PICTURE.fullmatch(str(link or ''))
+    if found:
+        db.execute('DELETE FROM person_photos WHERE identifier=?', ('pic:' + link[-32:],))
+
+
+def set_picture(db, node_id, data=None, now=None, reset=False):
+    """Sets the picture of a person or organization: data (the image's bytes: JPEG, PNG or WebP, up to 200 kB), or
+    None to take it off (no picture, also not a looked-up one). reset gives back what was found. Returns
+    {'node_id', 'picture'}: its link, '' for none, None for the found one."""
+    if not db.in_transaction:
+        db.execute('BEGIN IMMEDIATE')
+    node_id = str(node_id or '')
+    row = db.execute("SELECT kind,info FROM graph_nodes WHERE id=? AND kind IN ('person','org')", (node_id,)).fetchone()
+    if not row:
+        raise ValueError('Change a picture from graph results')
+    link = None if reset else ''
+    if data is not None and not reset:
+        kind = enrichment.image_type(bytes(data))
+        if not kind or len(data) > enrichment.PHOTO_BYTES:
+            raise ValueError('A picture is a JPEG, PNG or WebP image, up to 200 kB')
+        key = secrets.token_hex(16)  # a new key each time, so no browser shows the one before
+        db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)', ('pic:' + key, key, kind, bytes(data), now))
+        link = 'api/person-photo?p=' + key
+    if row['kind'] == 'org':
+        domain = org_domain(db, node_id)
+        got = db.execute('SELECT fields FROM org_edits WHERE domain=?', (domain,)).fetchone()
+        kept = json.loads(got['fields']) if got else {}
+        _picture_drop(db, kept.get('logo'))
+        if link is None:
+            kept.pop('logo', None)
+        else:
+            kept['logo'] = link
+        if kept:
+            db.execute('INSERT OR REPLACE INTO org_edits(domain,fields,updated_at) VALUES(?,?,?)', (domain, json.dumps(kept), now))
+        else:
+            db.execute('DELETE FROM org_edits WHERE domain=?', (domain,))
+        return {'node_id': node_id, 'picture': link}
+    group = sorted(set(json.loads(row['info']).get('identifiers') or ()) | {node_id})
+    rows = {r['identifier']: json.loads(r['fields']) for r in db.execute(
+        f"SELECT identifier,fields FROM person_edits WHERE identifier IN ({','.join('?' for _ in group)})", group)}
+    for identifier in group:  # one place: the page it was last set on
+        kept = rows.get(identifier, {})
+        _picture_drop(db, kept.pop('photo', None))
+        if identifier == node_id and link is not None:
+            kept['photo'] = link or 'none'
+        if kept:
+            db.execute('INSERT INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
+                       'fields=excluded.fields,updated_at=CASE WHEN identifier=? THEN excluded.updated_at ELSE person_edits.updated_at END',
+                       (identifier, json.dumps(kept), now, node_id))
+        elif identifier in rows:
+            db.execute('DELETE FROM person_edits WHERE identifier=?', (identifier,))
+    return {'node_id': node_id, 'picture': link}
+
+
+def picture_links(db, node_id):
+    """Where pictures of them were found, for the owner to pick from: the look-up's photo or logo, a contact's photo and
+    their Gravatar. Links only; the caller fetches them on this Machine (enrichment.download_photo)."""
+    row = db.execute("SELECT kind,info FROM graph_nodes WHERE id=? AND kind IN ('person','org')", (str(node_id or ''),)).fetchone()
+    if not row:
+        return []
+    info, links = json.loads(row['info']), []
+    if row['kind'] == 'org':
+        if info.get('domain'):
+            got = db.execute("SELECT profile FROM org_profiles WHERE domain=? AND profile IS NOT NULL AND status!='wrong'", (info['domain'],)).fetchone()
+            logo = (json.loads(got['profile']) or {}).get('logo') if got else None
+            if isinstance(logo, str) and logo.startswith('https://'):
+                links.append(logo)
+        return links
+    group = sorted(set(info.get('identifiers') or ()) | {node_id})
+    marks = ','.join('?' for _ in group)
+    for r in db.execute(f"SELECT json_extract(profile,'$.photo') FROM person_profiles WHERE status='found' AND identifier IN ({marks})", group):
+        if isinstance(r[0], str) and r[0].startswith('https://'):
+            links.append(r[0])
+    if _table(db, 'contact_photo_links'):
+        links += [r[0] for r in db.execute(f'SELECT url FROM contact_photo_links WHERE identifier IN ({marks}) ORDER BY chosen DESC', group) if str(r[0]).startswith('https://')]
+    links += [g for g in (enrichment.gravatar(i) for i in group) if g]
+    return list(dict.fromkeys(links))[:4]
+
+
 PERSON_FIELDS = {'title': 120, 'location': 120, 'linkedin_url': 200, 'side': 8, 'notes': 4000}
 PERSON_LISTS = {'phones': 40, 'emails': 200}
 PHONE = re.compile(r'\+?[\d\s().-]{6,40}')
@@ -3925,7 +4101,7 @@ def org_card(db, domain):
         profile = {}
     logo = (profile or {}).get('logo')
     return {'node_id': 'org:' + domain if found else None, 'name': found['name'] if found else (profile or {}).get('name') or domain,
-            'logo': logo if isinstance(logo, str) and logo.startswith('https://') else None}
+            'logo': logo if isinstance(logo, str) and (logo.startswith('https://') or PICTURE.fullmatch(logo)) else None}
 
 
 def boards(db, now):

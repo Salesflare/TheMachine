@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import binascii
 import collections
 import concurrent.futures
 import contextlib
@@ -514,7 +515,7 @@ class SourceError(Exception):
 # authenticated dashboard may record them; never the local CLI the agent can run.
 CONNECT_ACTIONS = ('connect_sources', 'connect_start', 'connect_poll', 'connect_answer', 'connect_cancel', 'connect_remove', 'connect_scope',
                    'connect_signin', 'connect_signin_state')
-OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'card_chat', 'recap_decide'}
+OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'card_chat', 'recap_decide'}
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
                          'fleet_split_adjust', 'task_import', *task_pages.ACTIONS}
@@ -567,7 +568,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *SHARE_ACTIONS, *GRAPH_SH
                                'graph_fact_unlink', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_save',
                                'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'project_visibility',
                                'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit',
-                               'graph_person_delete', 'graph_new', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup',
+                               'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup',
                                'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule',
                                'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
                                'push_test', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
@@ -12245,9 +12246,37 @@ class App:
                 raise ValueError('Only the owner adds people and organizations by hand, on the dashboard')
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                done = graph.create_record(db, args.get('kind'), args, now()) if name == 'graph_new' else graph.delete_org(db, args.get('node_id'))
+                done = graph.create_record(db, args.get('kind'), args, now(), graph.Owner(self.config, db)) if name == 'graph_new' else graph.delete_org(db, args.get('node_id'))
             if done.get('created') or done.get('deleted'):
                 self.graph_build()
+            return done
+        if name in ('graph_picture', 'graph_pictures_found'):
+            # A person's or organization's picture: the owner's upload (made small on the dashboard), one of the pictures
+            # found for them (fetched here, on this Machine), or none.
+            if not owner_dashboard:
+                raise ValueError("Only the owner changes a picture, on the dashboard")
+            if name == 'graph_pictures_found':
+                with self.store.connect() as db:
+                    links = graph.picture_links(db, args.get('node_id'))
+                found = []
+                for link in links:
+                    got = enrichment.download_photo(link, timeout=5)
+                    if got:
+                        found.append('data:' + got[1] + ';base64,' + base64.b64encode(got[0]).decode())
+                return {'node_id': str(args.get('node_id') or ''), 'found': found}
+            data = None
+            if args.get('data'):
+                raw = str(args['data'])
+                try:
+                    data = base64.b64decode(raw.split(',', 1)[1] if raw.startswith('data:') else raw, validate=True)
+                except (ValueError, binascii.Error):
+                    raise ValueError('A picture is a JPEG, PNG or WebP image, up to 200 kB') from None
+            elif not args.get('remove') and not args.get('reset'):
+                raise ValueError('Upload a picture, pick one, or remove it')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                done = graph.set_picture(db, args.get('node_id'), data, now(), reset=bool(args.get('reset')))
+            self.graph_build()
             return done
         if name in CRM_ACTIONS:
             if not owner_dashboard:
@@ -15685,6 +15714,8 @@ class App:
 
     def graph_share_action(self, name, args, owner_dashboard=False):
         """The owner's Shared Graph controls, from the dashboard (and Telegram's owner chat through graph share)."""
+        if name == 'graph_private' and args.get('private') is not False and self.about_you_node(str(args.get('node_id') or '')):
+            raise ValueError('That’s About you: your own record is never shared, so there’s nothing to keep private')
         if not getattr(self, 'fleet', None):
             raise ValueError('Join a Work Fleet to share with your team')
         with self.store.connect() as db:
@@ -15868,7 +15899,57 @@ class App:
             marks = self.graph_fleet_marks(db)
             hits = graph.find(db, query, offset + limit + 1, also={k: m['name'] for k, m in marks.items() if m['name']})
             found = [graph.node_view(r, graph.neighbours(db, r['id'], 6)) for r in hits[offset:offset + limit]]
+            if not offset and self.about_you_match(db, query):  # the owner's own address or name: About you, first
+                found.insert(0, {'id': graph.ME, 'kind': graph.ME, 'name': graph.ABOUT_YOU, 'links': []})
             return graph.with_fleet(db, {'found': found, 'next': str(offset + limit) if len(hits) > offset + limit else None}, marks)
+
+    def about_you_match(self, db, query):
+        q = ' '.join(str(query or '').split()).lower()
+        if len(q) < 3:
+            return False
+        owner = graph.Owner(self.config, db)
+        name = ' '.join(str(self.config.get('owner_name') or '').split()).lower()
+        digits = re.sub(r'\D', '', q)
+        return (q in ('me', 'myself', 'about you') or (name and (q in name or name in q)) or any(q in e for e in owner.emails if not graph.ROLE.match(e))
+                or (len(digits) >= 6 and any(digits in p for p in owner.phones)))
+
+    def about_you_node(self, node):
+        """Whether a graph page asked for is About you: 'me', or one of the owner's own addresses or numbers."""
+        if node == graph.ME:
+            return True
+        try:
+            with self.store.connect() as db:
+                return graph.Owner(self.config, db).has(node)
+        except sqlite3.Error:
+            return False
+
+    def about_you(self):
+        """About you, the owner's own record: their addresses (as Settings, Account lists them) and numbers."""
+        with self.store.connect() as db:
+            return graph.about_you(db, self.config, self.own_addresses_view().get('yours'))
+
+    def slack_links(self, found):
+        """Where 'Also on Slack' goes: each Slack user of theirs in the workspace it is from (its profile, which opens a
+        message to them), else the newest Slack thread with them."""
+        links, hosts = [], {a['id']: a for a in self.config.get('accounts', []) if a.get('service') == 'slack'}
+        try:
+            with self.store.connect() as db:
+                row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (str(found.get('id') or ''),)).fetchone()
+            info = json.loads(row['info']) if row else {}
+        except (sqlite3.Error, ValueError, TypeError):
+            info = {}
+        users = [str(i).split(':', 1)[1] for i in info.get('identifiers') or () if str(i).startswith('slack:')]
+        for user in users:
+            account = next((hosts[a] for a in info.get('accounts') or () if a in hosts), None) or next(iter(hosts.values()), None)
+            host = str((account or {}).get('slack_host') or '').strip().lower()
+            if re.fullmatch(r'[a-z0-9-]+(?:\.[a-z0-9-]+)*\.slack\.com', host) and re.fullmatch(r'[UW][A-Z0-9]{2,20}', user):
+                links.append({'url': f'https://{host}/team/{user}', 'label': 'Slack'})
+        if users and not links:
+            thread = next((r.get('source_url') for r in found.get('recent') or () if r.get('kind') == 'slack.message'
+                           and re.match(r'https://[a-z0-9.-]+/archives/', str(r.get('source_url') or ''))), None)
+            if thread:
+                links.append({'url': thread, 'label': 'Slack thread'})
+        return links[:3]
 
     def graph_list(self, name, sort='', cursor=0, limit=30, filters=None):
         with self.store.connect() as db:
@@ -15933,7 +16014,7 @@ class App:
         if name == 'graph_import_ai_status':
             return self.import_check_status(args.get('run_id'))
         if name in ('graph_import_preview', 'graph_import_run'):
-            found = {'fixes': args.get('fixes'), 'ai': self.import_check_draft(args.get('ai_run'), kind, args.get('text')),
+            found = {'fixes': args.get('fixes'), 'ai': self.import_check_draft(args.get('ai_run'), kind, args.get('text')), 'owner_emails': self.owner_emails(),
                      'region': crm_fixes.region_of({'country': self.config.get('country'), 'timezone': self.config.get('timezone') or getattr(local_tz(), 'key', '')}),
                      'currency': self.currency()}
         if name == 'graph_import_preview':
@@ -16435,6 +16516,8 @@ class App:
                             self.output(200, found)
                         elif query.strip():
                             self.output(200, app.graph_find(query, urllib.parse.parse_qs(path.query).get('cursor', ['0'])[0] or 0))
+                        elif node and app.about_you_node(node):  # the owner's own record, also by one of their addresses
+                            self.output(200, app.about_you())
                         elif node:
                             found = app.graph_action({'node_id': node, 'limit': 10, 'events': 120})  # a run of chat messages is one row
                             found['owners'] = app.owner_choices()
@@ -16442,6 +16525,7 @@ class App:
                             # The timeline: every source, newest first, a page at a time (/api/graph/timeline for the next)
                             found['timeline'] = app.graph_timeline(found['id'])
                             found['recent'] = found['timeline'].pop('items')
+                            found['slack_links'] = app.slack_links(found)
                             if app.fleet:  # the Shared Graph: Keep private, what teammates know
                                 try:
                                     with app.store.connect() as db:

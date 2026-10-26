@@ -206,6 +206,9 @@ def match(db, kind, rec):
     return ('project:' + str(found['id']), 'Same name') if found else (None, None)
 
 
+YOURS = 'That’s you: kept in About you'
+
+
 def check(kind, rec):
     """Why a row can't be imported, or None."""
     if not rec.get('name') and not (kind == 'person' and rec.get('email')):
@@ -305,7 +308,7 @@ def _named(kind, mapping):
     return 'name' in mapping.values() or (kind == 'person' and bool({'email', 'first_name', 'last_name'} & set(mapping.values())))
 
 
-def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currency=None):
+def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currency=None, owner_emails=None):
     """Each row with what Import would do: new, match (with the record it updates) or skip (with why), and the fixes
     suggested (those the owner kept, `fixes`, applied). `ai` is the owner's model's draft for this file."""
     if kind not in FIELDS:
@@ -334,9 +337,12 @@ def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currenc
     merge = isinstance(fixes, dict) and (fixes.get('types') == 'all' or 'merge' in (fixes.get('types') or ()))
     off = {str(i) for i in (fixes or {}).get('off') or ()} if isinstance(fixes, dict) else set()
     out, seen = [], {}
+    owner = graph.Owner({}, db)  # the owner's own addresses and numbers: About you, never a person
+    owner.emails |= {str(e).lower() for e in owner_emails or ()}
     for n, row in enumerate(rows, start=2):
         rec = record(kind, row, mapping, kept.get(n))
-        why = check(kind, rec)
+        why = check(kind, rec) or (YOURS if kind == 'person' and (owner.has('email:' + (rec.get('email') or '')) or (
+            not rec.get('email') and owner.has('wa:' + re.sub(r'\D', '', rec.get('phone') or '')))) else None)
         if why:
             out.append({'line': n, 'status': 'skip', 'why': why, 'record': rec})
             continue
@@ -365,11 +371,11 @@ def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currenc
     return headers, rows, mapping, out, suggested
 
 
-def preview(db, kind, text, mapping=None, limit=200, fixes=None, ai=None, region=None, currency=None):
+def preview(db, kind, text, mapping=None, limit=200, fixes=None, ai=None, region=None, currency=None, owner_emails=None):
     """What the dashboard shows before Import: the columns with the field each goes to and a few values, the counts,
     the first rows with what happens to each, and the fixes suggested (with the model's reasons when it looked)."""
     try:
-        headers, rows, mapping, planned, suggested = plan(db, kind, text, mapping, fixes, ai, region, currency)
+        headers, rows, mapping, planned, suggested = plan(db, kind, text, mapping, fixes, ai, region, currency, owner_emails)
         problem = None
     except ValueError as error:  # no name column yet: the columns still show, to pick it
         if str(error) != NO_NAME:
@@ -590,12 +596,12 @@ def _undo_state(db, plan):
     return hashlib.sha256(json.dumps(state, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def run(db, kind, text, mapping, now, name=None, fixes=None, ai=None, region=None, currency=None):
+def run(db, kind, text, mapping, now, name=None, fixes=None, ai=None, region=None, currency=None, owner_emails=None):
     """Import the file: new rows made, matching ones updated, with the fixes the owner kept. One transaction; the
     caller rebuilds the graph."""
     if not db.in_transaction:
         db.execute('BEGIN IMMEDIATE')
-    _, _, _, planned, _ = plan(db, kind, text, mapping, fixes, ai, region, currency)
+    _, _, _, planned, _ = plan(db, kind, text, mapping, fixes, ai, region, currency, owner_emails)
     crm_fields.ensure(db)
     tags_before = {tuple(r) for r in db.execute('SELECT node_id,tag FROM crm_tags')}
     undo = {'made': [], 'changed': []}

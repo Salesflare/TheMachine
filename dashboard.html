@@ -415,8 +415,17 @@ dialog input{display:block;width:100%;margin-top:8px}
 .person-pic{position:relative;flex:none;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;overflow:hidden;background:var(--sunken);color:var(--muted);font:600 10.5px/1 var(--sans);letter-spacing:.02em}.person-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.person-pic.big{width:44px;height:44px;font-size:15px}
 .person-facts a{white-space:nowrap}.person-bio{white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.person-item .graph-row .graph-bar{margin-left:auto}.person-item>.graph-sub{padding-left:36px}.person-head{flex:1 1 auto;min-width:0}.person-job{margin:2px 0 0;color:var(--muted);font-size:.95rem;overflow-wrap:anywhere}
 .person-page .name-row{align-items:flex-start}.person-page .name-row>.person-pic{margin-top:1px}.person-page .name-row>button{margin-top:2px}
+.pic-edit{position:relative;flex:none;display:inline-grid;margin:0!important;padding:0;min-height:0;border:0;border-radius:50%;background:none;box-shadow:none;cursor:pointer}.org-page .pic-edit{border-radius:10px}
+.pic-edit::after{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(0,0,0,.35) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='white' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'/%3E%3C/svg%3E") center/16px no-repeat;opacity:0;transition:opacity .15s}
+.pic-edit:hover::after,.pic-edit:focus-visible::after{opacity:1}
+.pic-now{display:flex;justify-content:center;margin:12px 0 4px}.pic-now .person-pic.big,.pic-now .org-pic.big{width:72px;height:72px;font-size:20px}.pic-now img{width:72px;height:72px}
+.pic-pick{display:flex;justify-content:center}.pic-pick .crm-file{justify-content:center;min-width:12em}.pic-pick .crm-file input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.pic-found{margin-top:12px}.pic-grid{display:flex;flex-wrap:wrap;gap:8px}.pic-option{width:60px;height:60px;padding:2px;margin:0;min-height:0;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:none;cursor:pointer}.pic-option:hover{border-color:var(--text)}.pic-option img{display:block;width:54px;height:54px;object-fit:cover;border-radius:8px}
+.ed-actions .danger{color:var(--orange)}
+.field-val{margin:0;padding:2px 6px;margin-left:-6px;min-height:0;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:inherit;font:inherit;text-align:left;cursor:text}.field-val:hover,.field-val:focus-visible{background:var(--tile)}
+.field-inline{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.field-inline input,.field-inline select{flex:1 1 10em;min-width:8em;height:32px;min-height:32px;padding:0 8px;font-size:var(--fs-sm)}.field-inline button{min-height:32px;padding:0 10px;font-size:var(--fs-sm)}
 @media (min-width:700px){.person-page>:not(.name-row){margin-left:52px}}
-/* A person's page: a calm header, then Contact, About you and Related as labeled rows and sections */
+/* A person’s page: a calm header, then Contact, With you and Related as labeled rows and sections */
 .person-page .person-job .node{display:inline;padding:0;margin:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px}.person-page .person-job .node:hover{text-decoration-color:currentColor}
 .person-place{margin:2px 0 0;color:var(--faint);font-size:var(--fs-sm)}
 .person-rel{margin:14px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.5}
@@ -583,7 +592,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .tile-menu .fact-menu-list p{margin:2px 10px 4px;color:var(--c-text-3);font-size:var(--fs-xs)}
 .tile-menu .fact-menu-list button[aria-current="true"]{color:var(--c-text-3)}
 @media(hover:hover) and (pointer:fine){.tile-menu{position:absolute;top:9px;right:8px;margin:0;opacity:0;transition:opacity var(--dur) var(--ease)}.tile-menu>summary{background:var(--c-surface)}
-  .tile:hover .tile-menu,.tile:focus-within .tile-menu,.tile-menu[open]{opacity:1}.tile:is(:hover,:focus-within) .tile-age{visibility:hidden}}
+  .tile:hover .tile-menu,.tile:focus-within .tile-menu,.tile-menu[open]{opacity:1}.tile:is(:hover,:focus-within) .tile-age,.tile:has(.tile-menu[open]) .tile-age{visibility:hidden}}
 .lane-add{display:block;width:100%;min-height:32px;margin:6px 0 0;padding:0 8px;border:1px dashed transparent;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--c-text-3);font:var(--fw-medium) var(--fs-sm)/1 var(--sans);text-align:left;cursor:pointer}
 .lane-add:hover,.lane-add:focus-visible{border-color:var(--c-line);color:var(--text)}
 .lane-total{margin-left:auto}
@@ -688,6 +697,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .org-sites li{display:flex;align-items:center;gap:8px;min-height:34px}.org-sites ul{margin:4px 0 0;padding:0;list-style:none}.org-sites li span{flex:1;min-width:0;overflow-wrap:anywhere}
 .ge-change .ge-dot{flex:none;width:28px;display:grid;place-items:center;color:var(--c-text-3)}
 #crm-form fieldset{margin:0;padding:0;border:0;min-width:0}#crm-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
+.board-mine+.board-filter{margin-left:6px}.board-filter[aria-pressed=true] .badge{background:rgba(255,255,255,.22);color:inherit}.board-filter .crm-funnel{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px}.board-active{flex-basis:100%;margin:8px 0 0}.board-stage-pick{display:grid;gap:8px;margin:12px 0 4px;padding:0;border:0}
 .board-mine{flex:none;height:32px;min-height:32px;margin:0 0 0 auto;padding:0 12px;border:1px solid var(--c-line);border-radius:999px;background:none;box-shadow:none;color:var(--c-text-2);font:600 .85rem/1 var(--sans)}.board-mine[aria-pressed=true]{border-color:var(--text);background:var(--text);color:var(--surface)}.board-mine+.board-new{margin-left:6px}
 @media(max-width:560px){.graph-tabbar{flex-wrap:wrap}.graph-tools{margin-left:0;order:3}.graph-tools .crm-funnel{display:block}.graph-tools .crm-word{display:none}.graph-tools [data-crm-filter]{padding:0 9px}.crm-col{grid-template-columns:1fr}}
 /* Already in your Graph: ones like what is being typed, each a link to open it instead of adding it twice */
@@ -4614,13 +4624,13 @@ function helpLink(tab){const a=$('#help-link'),slug=HELP_FOR[tab==='settings'?se
 const PAGE_TITLES={calendar:'Calendar',events:'Events',people:'Graph',fleet:'Fleet',feedback:'Feedback',health:'Connections',settings:'Settings'};
 // The Graph's title is the pane on screen, with Graph as a quiet crumb and the same count as its row in the sidebar
 // A page's section, as its breadcrumb says: an organization opened from a project is under Organizations
-const graphNodePane=id=>/^org:/.test(id)?'orgs':/^project:/.test(id)?'projects':'people';
+const graphNodePane=id=>id==='me'?'people':/^org:/.test(id)?'orgs':/^project:/.test(id)?'projects':'people';
 function graphHead(){if(/^promise:/.test(graphNode||''))return '<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>';const name=GRAPH_SUBS[graphNode?graphNodePane(graphNode):graphShown];if(!name)return '<h2 class="page-title">Graph</h2>';const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project,roles:rolesWaiting}[graphShown];
  const words={people:['person','people'],orgs:['organization','organizations'],projects:['open project','open projects'],roles:['role to confirm','roles to confirm']}[graphShown];
  const mode=graphShown==='projects'&&!graphNode&&graphBoards.length?`<div class="view-mode" role="group" aria-label="View">${[['list','List'],['board','Board']].map(([v,t])=>`<button type="button" data-proj-view="${v}" aria-pressed="${projView()===v}">${t}</button>`).join('')}</div>`:'';
  const team=!graphNode&&['people','orgs','projects'].includes(graphShown)&&teamOn()?`<div class="view-mode" role="group" aria-label="Whose">${[['mine','Mine'],['team','Team']].map(([v,t])=>`<button type="button" data-graph-team="${v}" aria-pressed="${(v==='team')===graphTeam}">${t}</button>`).join('')}</div>`:'';
  const made={people:['person','New person'],orgs:['org','New organization'],projects:['project','New project']}[graphShown];  /* a board has its own + New project */
- const add=made&&!graphNode&&!(teamOn()&&graphTeam)&&!(graphShown==='projects'&&projView()==='board')?`<button type="button" class="ghost head-new" data-graph-new="${made[0]}">+ ${made[1]}</button>`:'';
+ const add=made&&!graphNode&&!(graphShown==='projects'&&projView()==='board')?`<button type="button" class="ghost head-new" data-graph-new="${made[0]}">+ ${made[1]}</button>`:'';
  return `<div><p class="page-crumb">Graph</p><h2 class="page-title">${esc(name)}</h2>${n&&!graphNode&&words?`<p class="page-sub">${n} ${n===1?words[0]:words[1]}</p>`:''}</div>${team||mode||add?`<div class="head-modes">${team}${mode}${add}</div>`:''}`}
 // The browser tab's title follows the page: the card in a chat, the person or pane on the Graph, else the tab's name
 function docTitle(tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox'){
@@ -5145,7 +5155,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
  // Who is who: each member with the Machine they answer with and their account email, so two people with one name stay apart.
  const who=x=>{const groups=[];for(const p of x.people||[]){const k=p.name+'|'+(p.email||''),g=groups.find(g=>g.k===k);g?g.list.push(p):groups.push({k,list:[p]})}  // one person with several Machines: the name once
   return groups.length?`<ul class="fleet-people">${groups.map(({list})=>{const p=list[0],tag=t=>`<span class="fp-tag">${t}</span>`,many=list.length>1;
-   return `<li id="fleet-m-${esc(p.member_id||'')}"><div class="fp-name"><strong>${esc(p.name)}</strong>${list.some(m=>m.me)?tag('you'):''}${list.some(m=>m.role==='owner')?tag('owner'):''}${inGraph(list.find(m=>m.graph_node))}</div>`+
+   return `<li id="fleet-m-${esc(p.member_id||'')}"><div class="fp-name"><strong>${esc(p.name)}</strong>${list.some(m=>m.me)?tag('you'):''}${list.some(m=>m.role==='owner')?tag('owner'):''}${list.some(m=>m.me)?inGraph({graph_node:'me',label:'About you'}):inGraph(list.find(m=>m.graph_node))}</div>`+
     (many?`<small class="fp-meta">${esc(p.email||'')}</small>${list.map(m=>`<small class="fp-meta fp-machine">${esc(m.answers_with||'')}${m.me?tag('this Machine'):''}</small>`).join('')}`
      :`<small class="fp-meta">${[p.email,p.answers_with].filter(Boolean).map(esc).join(' · ')}</small>`)+'</li>'}).join('')}</ul>`:''};
  const box=(title,sub,body,cls='')=>`<div class="fleet-box${cls?' '+cls:''}"><h3>${title}</h3>${sub?`<p class="sub">${sub}</p>`:''}${body}</div>`;
@@ -5385,18 +5395,21 @@ document.addEventListener('pointerover',e=>{const el=e.target.closest?.('.ct,.el
 const day=v=>v?new Date(String(v).length<=10?v+'T12:00':v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'never';
 // An organization's logo from enrichment (https only, no referrer, lazy, fixed size); its initial shows until it loads and when it can't.
 const LOGO_URL=/^https:\/\/[^\s"'<>\\]+$/;
-const orgPic=(n,big)=>{const u=LOGO_URL.test(n.profile?.logo||'')?n.profile.logo:'',px=big?36:22;return `<span class="org-pic${big?' big':''}" aria-hidden="true">${esc((String(n.name||'').trim()[0]||'?').toUpperCase())}${u?`<img src="${esc(u)}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`};
+const orgPic=(n,big)=>{const l=n.profile?.logo||'',u=LOGO_URL.test(l)||/^api\/person-photo\?p=[0-9a-f]{32}$/.test(l)?l:'',px=big?36:22;return `<span class="org-pic${big?' big':''}" aria-hidden="true">${esc((String(n.name||'').trim()[0]||'?').toUpperCase())}${u?`<img src="${esc(u)}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`};
 // A person's photo from enrichment, the same way: https only, no referrer, lazy; their initials until it loads and when it can't.
 const initials=name=>{const w=String(name||'').trim().split(/\s+/).filter(x=>/^\p{L}/u.test(x));return((w[0]?.[0]||'?')+(w.length>1?w.at(-1)[0]:'')).toUpperCase()};
 const PHOTO_URL=/^api\/person-photo\?p=[0-9a-f]{32}$/;  // only photos saved on this Machine, never the service's own link
 const personPic=(n,big)=>{const u=PHOTO_URL.test(n.profile?.photo||'')?n.profile.photo:'',px=big?44:26;return `<span class="person-pic${big?' big':''}" aria-hidden="true">${esc(initials(n.name))}${u?`<img src="${esc(u)}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`};
 document.addEventListener('error',e=>{const t=e.target;if(t?.tagName==='IMG'&&t.parentElement?.matches('.org-pic,.person-pic'))t.remove()},true);
+// The owner changes a person's or organization's picture from its page; a teammate's record shows theirs as it is.
+const picEdit=(n,pic)=>n.team_only?pic:`<button type="button" class="pic-edit" data-pic-edit="${esc(n.id)}" title="Change picture" aria-label="Change picture">${pic}</button>`;
 const nodeButton=n=>`<button class="node" data-node="${esc(n.id)}" title="${esc(n.name)}">${esc(n.name)}</button>`;
 const PROJECT_COLOR={'heating up':'var(--amber)','active':'var(--mint)','cooling':'var(--lavender)','dormant':'var(--faint)'};
 const bar=n=>`<span class="graph-bar" title="${esc(n.closeness||'')}"><i style="width:${Math.min(100,Math.round(100*Math.log1p(n.strength)/Math.log1p(12)))}%"></i></span>`;
 const cap=t=>t?t[0].toUpperCase()+t.slice(1):t;
 const personSub=p=>[p.profile?.title,cap(p.role||p.closeness),(p.seen_only?'last seen ':'last contact ')+day(p.last_at),p.usual_gap_days?(Math.round(p.usual_gap_days)<=1?'usually daily':'usually every '+Math.round(p.usual_gap_days)+' days'):'',p.next_meeting?'meeting '+day(p.next_meeting):''].filter(Boolean).join(' · ');
-const graphItem=n=>n.kind==='project'?`<article class="tap" data-node="${esc(n.id)}"><div class="graph-row">${nodeButton(n)}${tagMini(n)}${n.state?`<span class="chip" style="--c:${PROJECT_COLOR[n.state]||'var(--muted)'}">${esc(n.state)}</span>`:''}</div><p class="graph-sub" style="white-space:normal">${n.team_only?'':`${n.last_at?`Last signal ${esc(day(n.last_at))} · `:''}${n.signals} signal${n.signals===1?'':'s'}${n.next_meeting?` · next meeting ${esc(day(n.next_meeting))}`:''}`}${n.org_node?' · '+orgLink(n.org_node):''}${n.people?.length?' · '+esc(n.people.join(', ')):''}${n.via?`<span class="via">${n.team_only?'':' · '}${esc(n.via)}</span>`:''}</p></article>`
+const graphItem=n=>n.kind==='me'?`<article class="tap person-item about-you-row" data-node="me"><div class="graph-row one">${personPic({name:'You'})}${nodeButton({id:'me',name:'About you'})}</div><p class="graph-sub">Your own addresses and numbers</p></article>`
+ :n.kind==='project'?`<article class="tap" data-node="${esc(n.id)}"><div class="graph-row">${nodeButton(n)}${tagMini(n)}${n.state?`<span class="chip" style="--c:${PROJECT_COLOR[n.state]||'var(--muted)'}">${esc(n.state)}</span>`:''}</div><p class="graph-sub" style="white-space:normal">${n.team_only?'':`${n.last_at?`Last signal ${esc(day(n.last_at))} · `:''}${n.signals} signal${n.signals===1?'':'s'}${n.next_meeting?` · next meeting ${esc(day(n.next_meeting))}`:''}`}${n.org_node?' · '+orgLink(n.org_node):''}${n.people?.length?' · '+esc(n.people.join(', ')):''}${n.via?`<span class="via">${n.team_only?'':' · '}${esc(n.via)}</span>`:''}</p></article>`
  :n.kind==='org'?`<article class="tap" data-node="${esc(n.id)}"><div class="graph-row">${orgPic(n)}${nodeButton(n)}${tagMini(n)}<small>${n.role?esc(cap(n.role))+' · ':''}${n.profile?.industry?esc(n.profile.industry)+' · ':''}${n.team_only?'':`${n.signals} ${n.signals===1?'person':'people'} · `}last contact ${esc(day(n.last_at))}${n.via?' · <span class="via">'+esc(n.via)+'</span>':''}</small></div></article>`
  :`<article class="tap person-item" data-node="${esc(n.id)}"><div class="graph-row one">${personPic(n)}${nodeButton(n)}${tagMini(n)}${fleetChip(n)}${n.quiet?'<span class="chip" style="--c:var(--orange)">gone quiet</span>':''}${bar(n)}</div><p class="graph-sub" title="${esc(personSub(n)+(n.ids?.length?' · '+n.ids.slice(0,2).join(', '):''))}">${n.via?'<span class="via">'+esc(n.via)+'</span> · ':''}${n.fleet?.machine?'Has a Machine · ':''}${esc(personSub(n))}${n.org_name&&n.team_only?' · '+esc(n.org_name):''}${n.ids?.length?' · <span class="mono">'+esc(n.ids.slice(0,2).join(', '))+'</span>':''}</p></article>`;
 // Each Graph page's lists are tabs that filter (with their counts; an empty one is not shown) and a quiet menu sets the
@@ -5407,6 +5420,7 @@ const GRAPH_TABS={people:{label:'People',tabs:[['people','All'],['quiet','Gone q
   notes:{orgs:'The ones you are most in touch with first.',warmup:'Mail from email warm-up tools, kept out of your graph.'},empty:'No organizations yet.'},
  projects:{label:'Projects',tabs:[['projects','Open'],['projects_done','Done']],sorts:[['last','Last activity'],['name','Name A–Z'],['stage','Stage'],['value','Value'],['close','Close date']],
   notes:{projects:'Named by the reviews and your to-dos. Heat fades over about three weeks.',projects_done:'Closed projects.'},empty:'No projects yet.'}};
+const TEAM_NOTES={people:'Everyone your team shares, the closest first.',orgs:'The ones your team is most in touch with.',projects:'Your team’s open projects.'};
 const graphPick=(pane,what,fallback)=>{try{return localStorage.getItem(`graph-${what}-${pane}`)||fallback}catch{return fallback}};
 const graphKeep=(pane,what,v)=>{try{localStorage.setItem(`graph-${what}-${pane}`,v)}catch{}};
 // While a search shows, the list it covers is kept as it was (tab, sort, pages loaded, scroll): emptying the box brings it back at once.
@@ -5421,23 +5435,23 @@ const graphSorted=(items,sort)=>[...items].sort(sort==='name'?(a,b)=>(a.name||''
 const warmRow=w=>`<div class="graph-sub relation"><span>${esc(w.name||w.domain)}${w.name&&w.name!==w.domain?` <span class="muted">${esc(w.domain)}</span>`:''}</span><button class="ghost" data-warmup-undo="${esc(w.domain)}">Undo</button></div>`;
 // A list's first page comes from the device at first (cachedGet); the live one, when different, redraws the Graph quietly
 const graphFresh=()=>{pagerDrop('graph');if(!$('#people').hidden&&!graphNode)people(graphNode,true)};
-function graphListPager(list,sort){const fq=graphLocal?'':crmQuery(list),p=pager(crmKey(list,sort),cursor=>graphLocal?Promise.resolve({items:graphSorted(graphLocal[list]||[],list==='warmup'?'name':sort),next:null}):(path=>cursor==='0'?cachedGet(path,graphFresh):request(path))(`api/graph/list?list=${list}&sort=${sort}${fq}&cursor=${encodeURIComponent(cursor)}`).then(r=>({items:r.items,next:r.next,total:r.total})),list==='warmup'?warmRow:graphItem);
- if(graphLocal&&!p.items.length&&p.next==='0'){p.items=graphSorted(graphLocal[list]||[],list==='warmup'?'name':sort);p.html=p.items.map(p.row).join('');p.next=null}return p}
+function graphListPager(list,sort){const fq=graphLocal?'':crmQuery(list),p=pager(crmKey(list,sort),cursor=>graphLocal?Promise.resolve({items:graphSorted(teamKept(list),list==='warmup'?'name':sort),next:null}):(path=>cursor==='0'?cachedGet(path,graphFresh):request(path))(`api/graph/list?list=${list}&sort=${sort}${fq}&cursor=${encodeURIComponent(cursor)}`).then(r=>({items:r.items,next:r.next,total:r.total})),list==='warmup'?warmRow:graphItem);
+ if(graphLocal&&!p.items.length&&p.next==='0'){p.items=graphSorted(teamKept(list),list==='warmup'?'name':sort);p.html=p.items.map(p.row).join('');p.next=null}return p}
 // The tabs, the order menu and the list sit in their own box, so a tab or order change repaints only them (a Projects
 // pane also holds the board)
 function graphTabs(pane){const h=graphTabsInner(pane);return h&&`<div data-graph-box="${pane}">${h}</div>`}
-function graphTabsInner(pane){const g=GRAPH_TABS[pane],shown=g.tabs.filter(([id])=>graphLists[id]>0);if(!shown.length)return'';
+function graphTabsInner(pane){const g=GRAPH_TABS[pane],shown=g.tabs.filter(([id])=>graphLists[id]>0&&!(graphListsTeam&&id==='warmup'));if(!shown.length)return'';
  const tab=shown.some(([id])=>id===graphPick(pane,'tab',''))?graphPick(pane,'tab',''):shown[0][0],sort=g.sorts.some(([id])=>id===graphPick(pane,'sort',''))?graphPick(pane,'sort',''):g.sorts[0][0];
  graphListPager(tab,sort);const label=g.sorts.find(([id])=>id===sort)[1];
  const menu=tab==='warmup'?'':`<details class="graph-sort"><summary aria-label="Order: ${esc(label)}">${esc(label)} <span aria-hidden="true">▾</span></summary><div class="graph-sort-list" role="menu">${g.sorts.map(([id,t])=>`<button type="button" role="menuitemradio" aria-checked="${id===sort}" data-graph-sort="${id}">${esc(t)}</button>`).join('')}<hr><button type="button" role="menuitem" data-graph-csv="${tab}" data-sort="${sort}">Download CSV</button>${graphLocal?'':`<button type="button" role="menuitem" data-crm-import="${pane}">Import CSV…</button>${graphLastImport?`<button type="button" role="menuitem" data-crm-undo-import="${graphLastImport.id}">Undo last import</button>`:''}`}</div></details>`;
- return `<div class="graph-tabbar" data-graph-tabs="${pane}">${subTabs(g.label,'data-graph-list',shown.map(([id,t])=>({id,label:t,badge:graphLists[id]})),tab)}${tab==='warmup'||graphLocal?'':crmTools(pane)}${menu}</div>${tab==='warmup'||graphLocal?'':crmActive(pane)}${g.notes[tab]?`<p class="graph-note muted">${esc(g.notes[tab])}</p>`:''}${pagerSlot(crmKey(tab,sort),crmCount(pane)?'Nothing matches these filters.':g.empty,'graph-list')}`}
+ return `<div class="graph-tabbar" data-graph-tabs="${pane}">${subTabs(g.label,'data-graph-list',shown.map(([id,t])=>({id,label:t,badge:graphLists[id]})),tab)}${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmTools(pane)}${menu}</div>${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmActive(pane)}${(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])?`<p class="graph-note muted">${esc(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])}</p>`:''}${pagerSlot(crmKey(tab,sort),crmCount(pane)?'Nothing matches these filters.':g.empty,'graph-list')}`}
 function graphTabsPaint(pane){const box=document.querySelector(`[data-graph-panel="${pane}"] [data-graph-box]`);if(!box)return;box.innerHTML=graphTabsInner(pane);pagerMount(box);tabsShow(box.querySelector('.sub-tabs'))}
 $('#people-view').addEventListener('click',e=>{const c=e.target.closest('[data-graph-csv]');if(c){c.closest('details').open=false;graphCsv(c.dataset.graphCsv,c.dataset.sort).catch(err=>toast(err.message,true));return}});
 // A list as a spreadsheet (CSV): every row of the tab, in its order, a page at a time from the Machine. A cell that
 // starts like a formula gets a ' so a spreadsheet shows it as text.
 const csvCell=v=>{let t=String(v??'');if(/^[=+\-@\t\r]/.test(t))t="'"+t;return /[",\n\r]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t};
 async function graphCsv(list,sort){const rows=[];let cursor='0';toast('Getting the list ready…');
- while(cursor!=null&&rows.length<20000){const r=graphLocal?{items:graphSorted(graphLocal[list]||[],sort),next:null}:await request(`api/graph/list?list=${list}&sort=${sort}${crmQuery(list)}&cursor=${encodeURIComponent(cursor)}`);rows.push(...(r.items||[]));cursor=r.next??null}
+ while(cursor!=null&&rows.length<20000){const r=graphLocal?{items:graphSorted(teamKept(list),sort),next:null}:await request(`api/graph/list?list=${list}&sort=${sort}${crmQuery(list)}&cursor=${encodeURIComponent(cursor)}`);rows.push(...(r.items||[]));cursor=r.next??null}
  const orgOf=n=>n.org_name||String(n.org||'').replace(/^org:(named:)?/,''),list_=v=>(v||[]).map(x=>x.value??x).join('; ');
  const cols=list.startsWith('projects')?[['Name',n=>n.name],['Board',n=>n.board],['Stage',n=>n.stage],['Value',n=>n.value],['Expected close',n=>n.close_date],['Organization',n=>n.org_domain||orgOf(n)],['Owner',n=>n.owner_name],['People',n=>(n.people||[]).join('; ')],['State',n=>n.state],['Last activity',n=>n.last_at]]
   :list==='orgs'?[['Name',n=>n.name],['Website',n=>n.profile?.website||n.domain],['Industry',n=>n.profile?.industry],['Size',n=>n.profile?.size||n.profile?.employees],['Location',n=>n.profile?.location],['To you',n=>n.role],['People',n=>n.signals],['Last contact',n=>n.last_at]]
@@ -5449,8 +5463,10 @@ $('#people-view').addEventListener('click',e=>{const t=e.target.closest('[data-g
  if(t)graphKeep(pane,'tab',t.dataset.graphList);if(o)graphKeep(pane,'sort',o.dataset.graphSort);graphTabsPaint(pane);if(o)document.querySelector(`[data-graph-panel="${pane}"] .graph-sort summary`)?.focus()});
 document.addEventListener('click',e=>{for(const d of document.querySelectorAll('.graph-sort[open]'))if(!d.contains(e.target))d.open=false});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const d=document.querySelector('.graph-sort[open],details.fact-menu[open],details.board-menu[open],details.tile-menu[open]');if(d){d.open=false;d.querySelector('summary').focus()}});
-document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>.fact-menu-list');if(!l)return;l.style.left=l.style.right='';
- let r=l.getBoundingClientRect();if(r.right>innerWidth-8){l.style.left='auto';l.style.right='0';r=l.getBoundingClientRect()}if(r.left<8){l.style.right='auto';l.style.left=(8-d.getBoundingClientRect().left)+'px'}},true);
+document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>.fact-menu-list');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
+ // A menu stays on screen: it moves in from an edge, and opens upward when there's no room under its button but there is above it
+ let r=l.getBoundingClientRect();if(r.right>innerWidth-8){l.style.left='auto';l.style.right='0';r=l.getBoundingClientRect()}if(r.left<8){l.style.right='auto';l.style.left=(8-d.getBoundingClientRect().left)+'px'}
+ const s=d.querySelector(':scope>summary')?.getBoundingClientRect();if(s&&r.bottom>innerHeight-8&&s.top-r.height-8>8){l.style.top='auto';l.style.bottom='calc(100% + 4px)'}},true);
 const graphSection=(title,note,items)=>items?.length?`<div class="section-head"><h2>${title}</h2><span class="count">${items.length}</span>${note?`<p>${note}</p>`:''}</div><div class="graph-list">${items.map(graphItem).join('')}</div>`:'';
 // Projects as a board: projects of one kind in stages (graph.boards), a view of Graph › Projects next to the list. Board by
 // default when there is a board; the choice is remembered on this device. Moves come from what the messages mean; the owner
@@ -5532,15 +5548,25 @@ $('#share-people-form').addEventListener('submit',async e=>{e.preventDefault();i
  try{await graphPost(sp.action,{...sp.args,people:chosen});const msg=sp.done(who);$('#share-people').close();toast(msg);await people(graphNode,true)}catch(x){err.textContent=x.message;err.hidden=false}finally{btn.disabled=false}});
 $('#share-people').addEventListener('close',()=>{sp=null});
 const backfillNote=f=>f.state==='running'?'<span class="backfill-run">Looking through your history…</span>':f.added?`${f.added} added from your history${f.review?` · ${f.review} to review`:''}`:f.review?`${f.review} from your history to review`:'Nothing more in your history';
+// A board's stage filter: the stages it shows, kept per board on this device; none picked shows them all.
+const boardStagesAll=()=>{try{return JSON.parse(sideStore.get('board-stages')||'{}')||{}}catch{return{}}};
+const boardStagesOf=b=>{const p=boardStagesAll()[b.name];return Array.isArray(p)&&p.some(n=>b.stages.some(s=>s.name===n))?p:null};
+function boardStagesSet(name,list){const all=boardStagesAll();if(list?.length)all[name]=list;else delete all[name];sideStore.set('board-stages',JSON.stringify(all));boardRedraw()}
+function boardFilterOpen(){const b=boardNow();if(!b)return;const pick=boardStagesOf(b);crm={mode:'board-stages',board:b.name};
+ $('#crm-form').innerHTML=crmHead('Stages to show')+`<fieldset class="board-stage-pick" aria-label="Stages of ${esc(b.name)}">${b.stages.map(s=>`<label class="ed-check"><input type="checkbox" name="stage" value="${esc(s.name)}"${!pick||pick.includes(s.name)?' checked':''}> ${esc(s.side?'Stalled':s.name)} <span class="muted">${b.projects.filter(p=>p.stage===s.name).length}</span></label>`).join('')}</fieldset>`
+  +crmFoot('Show','<button type="button" class="ghost" data-crm-clear-all>Show all</button>');crmShow()}
+document.addEventListener('click',e=>{if(e.target.closest('[data-board-filter]')){e.preventDefault();return boardFilterOpen()}if(e.target.closest('[data-board-filter-clear]')){e.preventDefault();const b=boardNow();if(b)boardStagesSet(b.name,null)}});
 function boardView(){const b0=boardNow();if(!b0)return '<div class="empty all-clear"><div><strong>No boards yet.</strong>Projects of one kind show here in stages, as your messages move them.</div></div>';
  const mineOn=boardMine&&!b0.team&&graphOwners.length,b=mineOn?{...b0,projects:b0.projects.filter(p=>!p.owner)}:b0;
- const by=s=>b.projects.filter(p=>p.stage===s.name),main=b.stages.filter(s=>!s.side),firstFull=b.stages.find(s=>by(s).length)?.name||b.stages[0].name;
- const on=b.stages.some(s=>s.name===boardStage[b.name])?boardStage[b.name]:firstFull;
+ const pick=boardStagesOf(b),stages=pick?b.stages.filter(s=>pick.includes(s.name)):b.stages;
+ const by=s=>b.projects.filter(p=>p.stage===s.name),main=stages.filter(s=>!s.side),firstFull=stages.find(s=>by(s).length)?.name||stages[0].name;
+ const on=stages.some(s=>s.name===boardStage[b.name])?boardStage[b.name]:firstFull;
  return `<div class="board-head"><div><div class="board-name-row">${graphBoards.length>1?`<select class="board-pick" aria-label="Board">${graphBoards.map(x=>`<option${x.name===b.name?' selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<h3 class="board-title" title="${esc(b.name)}">${esc(b.name)}</h3>${b.team?'':`<details class="board-menu"><summary aria-label="Board options" title="Board options">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-board-edit="${b.id}">Edit board</button>${graphTeammates.length?`<button type="button" role="menuitem" data-board-share="${b.id}">Share board…</button>`:''}${b.default||graphBoards.length<2?'':`<button type="button" role="menuitem" data-board-default="${b.id}">Open on this board</button>`}<button type="button" role="menuitem" data-board-new>New board</button></div></details>`}</div><p class="board-sub">${b.visibility==='only_you'||b.visibility==='people'?seenBy(b.visibility,(b.shared_with||[]).map(x=>x.name))+' · ':''}${b.projects.length} project${b.projects.length===1?'':'s'}${b.stuck?` · ${b.stuck} waiting on a reply`:''}${b.sorting?` · sorting ${b.sorting}`:''} · ${!b.team&&b.backfill?backfillNote(b.backfill):`a review moves them as ${b.team?'the team\'s':'your'} messages come in`}</p></div>`
-  +(graphBoards.length>1?`<div class="board-chips" role="group" aria-label="Boards">${graphBoards.map(x=>`<button type="button" data-board="${esc(x.name)}" aria-pressed="${x.name===b.name}">${esc(x.name)}</button>`).join('')}</div>`:'')+(b.team||!graphOwners.length?'':`<button type="button" class="board-mine" data-board-mine aria-pressed="${!!mineOn}" title="Only the projects you own">Mine</button>`)+(b.team?'':'<button type="button" class="board-new" data-proj-new>+ New project</button>')+'</div>'
+  +(graphBoards.length>1?`<div class="board-chips" role="group" aria-label="Boards">${graphBoards.map(x=>`<button type="button" data-board="${esc(x.name)}" aria-pressed="${x.name===b.name}">${esc(x.name)}</button>`).join('')}</div>`:'')+(b.team||!graphOwners.length?'':`<button type="button" class="board-mine" data-board-mine aria-pressed="${!!mineOn}" title="Only the projects you own">Mine</button>`)+`<button type="button" class="board-mine board-filter" data-board-filter aria-haspopup="dialog" aria-pressed="${!!pick}" title="Show only some stages"><svg class="crm-funnel" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg>Stages${pick?` <span class="badge">${stages.length}</span>`:''}</button>`+(b.team?'':'<button type="button" class="board-new" data-proj-new>+ New project</button>')+'</div>'
   +(!b.team&&b.maybes?.length?fitsReview(b):'')+pipeline(b)
-  +`<div class="sub-tabs stage-tabs" role="tablist" aria-label="Stages">${b.stages.map(s=>`<button type="button" role="tab" data-stage-tab="${esc(s.name)}" aria-selected="${s.name===on}"><span class="ell">${esc(s.side?'Stalled':s.name)}</span> <span class="badge">${by(s).length}</span></button>`).join('')}</div>`
-  +`<div class="pboard-wrap"><div class="pboard" style="--lanes:${main.length}">${b.stages.map(s=>lane(b,s,by(s),s.name===on)).join('')}</div></div>`}
+  +(pick?`<p class="graph-active board-active"><span class="chip">Stages: ${esc(stages.map(s=>s.side?'Stalled':s.name).join(', '))}</span><button type="button" class="link" data-board-filter-clear>Clear</button></p>`:'')
+  +`<div class="sub-tabs stage-tabs" role="tablist" aria-label="Stages">${stages.map(s=>`<button type="button" role="tab" data-stage-tab="${esc(s.name)}" aria-selected="${s.name===on}"><span class="ell">${esc(s.side?'Stalled':s.name)}</span> <span class="badge">${by(s).length}</span></button>`).join('')}</div>`
+  +`<div class="pboard-wrap"><div class="pboard" style="--lanes:${Math.max(1,main.length)}">${stages.map(s=>lane(b,s,by(s),s.name===on)).join('')}</div></div>`}
 const projectsPane=g=>{graphBoards=g.boards||[];graphSuggest=g.board_suggestions||[];graphProjNames=g.project_names||[];if(!g.team){graphMineBoards=graphBoards;graphPeopleNames=g.person_names||graphPeopleNames}const v=projView();
  if(!graphBoards.length){const list=graphTabs('projects');return list||graphSuggest.length?suggestBox()+(graphSuggest.length?'':'<p class="board-start"><button type="button" class="ghost" data-board-new>Start a board</button></p>')+list:''}  /* no projects yet: no Projects pane */
  return suggestBox()+`<div class="proj-list"${v==='list'?'':' hidden'}>${graphTabs('projects')}</div><div class="proj-board"${v==='board'?'':' hidden'}>${boardView()}</div>`};
@@ -5748,10 +5774,10 @@ const DUPE_KIND={person:'person',org:'org',project:'project'};
 function recDupesSoon(f,kind){clearTimeout(recDupesSoon.t);recDupesSoon.t=setTimeout(()=>recDupes(f,kind),250)}
 async function recDupes(f,kind){const box=f.querySelector('[data-rec-dupes]');if(!box||!DUPE_KIND[kind])return;const seq=recDupes.seq=(recDupes.seq||0)+1;
  const asks=[f.elements.email?.value,f.elements.website?.value,f.elements.name?.value].map(v=>String(v||'').trim()).filter(v=>v.length>=3);let hits=[];
- for(const q of asks){try{const r=await request('api/graph?q='+encodeURIComponent(q));hits.push(...(r.found||[]).filter(n=>n.kind===DUPE_KIND[kind]))}catch{}}
+ for(const q of asks){try{const r=await request('api/graph?q='+encodeURIComponent(q));hits.push(...(r.found||[]).filter(n=>n.kind===DUPE_KIND[kind]||kind==='person'&&n.kind==='me'&&q.includes('@')))}catch{}}
  if(seq!==recDupes.seq||!box.isConnected)return;hits=[...new Map(hits.map(n=>[n.id,n])).values()].slice(0,3);
  const sub=n=>n.kind==='person'?((n.ids||[]).find(i=>i.startsWith('email:'))||'').slice(6):n.kind==='org'?n.domain||'':n.state||'';
- box.innerHTML=hits.length?`<p>Already in your Graph?</p>${hits.map(n=>`<button type="button" class="link" data-rec-open="${esc(n.id)}">${esc(n.name)}${sub(n)?`<small>${esc(sub(n))}</small>`:''}</button>`).join('')}`:'';box.hidden=!hits.length}
+ box.innerHTML=hits.some(n=>n.kind==='me')?'<p>That’s your own address.</p><button type="button" class="link" data-rec-open="me">About you</button>':hits.length?`<p>Already in your Graph?</p>${hits.map(n=>`<button type="button" class="link" data-rec-open="${esc(n.id)}">${esc(n.name)}${sub(n)?`<small>${esc(sub(n))}</small>`:''}</button>`).join('')}`:'';box.hidden=!hits.length}
 $('#record-form').addEventListener('input',e=>{const er=e.currentTarget.querySelector('[data-rec-error]');if(er)er.hidden=true;if(rec&&rec.kind!=='same'&&['name','email','website'].includes(e.target.name))recDupesSoon($('#record-form'),rec.kind)});
 for(const id of ['#record-form','#project-form'])$(id).addEventListener('click',e=>{const o=e.target.closest('[data-rec-open]');if(!o)return;e.preventDefault();e.target.closest('dialog').close();recShow(o.dataset.recOpen)});
 $('#record-form').addEventListener('click',e=>{if(e.target.closest('[data-rec-close]'))$('#record-dialog').close()});
@@ -5761,7 +5787,7 @@ $('#record-form').addEventListener('submit',async e=>{e.preventDefault();if(!rec
  try{if(rec.kind==='same'){const other=graphPeopleNames.find(x=>x.name.toLowerCase()===v('name').toLowerCase()&&x.id!==rec.id);if(!other)return say('Pick someone from the list.');
    await graphPost('graph_same',{a:rec.id,b:other.id,same:true});$('#record-dialog').close();toast('Merged.');graphMineBoards=null;return people(graphNode,true)}
   const r=await graphPost('graph_new',{kind:rec.kind,...Object.fromEntries(REC[rec.kind].fields.map(([k])=>[k,v(k)]))});
-  $('#record-dialog').close();graphMineBoards=null;toast(r.existing?`${r.name} is in your Graph already.`:`Added ${r.name}.`);recShow(r.node_id)}
+  $('#record-dialog').close();graphMineBoards=null;toast(r.yours?'That’s your own address. It’s in About you.':r.existing?`${r.name} is in your Graph already.`:`Added ${r.name}.`);recShow(r.node_id)}
  catch(x){say(x.message)}finally{btn.disabled=false}});
 $('#record-dialog').addEventListener('close',e=>{if(!e.currentTarget.open)rec=null});  // a close event comes later: the dialog may be open again by then
 // New person, organization or project from a Graph page's head; New card, Same person as… and Delete on a page
@@ -5810,7 +5836,7 @@ const ORG_GROUPS=[['Profile',['name','industry','size','location','founded','abo
 const ORG_WIDTH={industry:'w-mid',size:'w-mid',location:'w-mid',founded:'w-short'};
 const orgField=(k,t,v)=>`<label class="pf-field ${ORG_WIDTH[k]||''}"><span>${t}</span>${k==='about'||k==='notes'?`<textarea name="${k}" rows="4" aria-describedby="org-err-${k}"${k==='notes'?' aria-label="Notes"':''}>${esc(v||'')}</textarea>`:`<input name="${k}" value="${esc(v??'')}" aria-describedby="org-err-${k}" autocomplete="off"${k==='founded'?' inputmode="numeric"':''}${k==='name'?' placeholder="Leave empty to use the name from their messages"':''}>`}<small class="field-error" id="org-err-${k}"></small></label>`;
 const orgForm=n=>{const p=n.profile||{},v={...p,name:n.name,size:p.size||(p.employees?String(p.employees):'')},label=Object.fromEntries(ORG_FIELDS.map(([k,t])=>[k,t]));
- return `<form class="org-form pf-form" id="org-form" data-node-id="${esc(n.id)}" novalidate hidden>${ORG_GROUPS.map(([g,ks])=>`<fieldset><legend>${g}</legend>${ks.map(k=>orgField(k,label[k],v[k])).join('')}</fieldset>`).join('')}<fieldset><legend>About you</legend><label class="pf-field w-mid"><span>What it is to you</span><input name="role" value="${esc(n.role||'')}" placeholder="e.g. accounting firm, customer" aria-describedby="org-err-role" autocomplete="off"><small class="field-error" id="org-err-role"></small></label></fieldset><p class="graph-sub muted pf-note">Your edits stay. Empty a field to use the looked-up value again.</p>${n.profile&&Object.keys(n.profile).some(k=>k!=='website')&&!n.wrong?'<p class="org-buttons"><button type="button" class="ghost" data-org-wrong>Wrong company, clear details</button></p>':''}</form>`};
+ return `<form class="org-form pf-form" id="org-form" data-node-id="${esc(n.id)}" novalidate hidden>${ORG_GROUPS.map(([g,ks])=>`<fieldset><legend>${g}</legend>${ks.map(k=>orgField(k,label[k],v[k])).join('')}</fieldset>`).join('')}<fieldset><legend>With you</legend><label class="pf-field w-mid"><span>What it is to you</span><input name="role" value="${esc(n.role||'')}" placeholder="e.g. accounting firm, customer" aria-describedby="org-err-role" autocomplete="off"><small class="field-error" id="org-err-role"></small></label></fieldset><p class="graph-sub muted pf-note">Your edits stay. Empty a field to use the looked-up value again.</p>${n.profile&&Object.keys(n.profile).some(k=>k!=='website')&&!n.wrong?'<p class="org-buttons"><button type="button" class="ghost" data-org-wrong>Wrong company, clear details</button></p>':''}</form>`};
 const orgActions=n=>`<span class="org-actions"><button class="ghost" data-proj-new-here>New project</button><button class="ghost" data-org-edit>Edit</button><button type="button" class="ghost" data-org-cancel>Cancel</button><button type="submit" form="org-form" class="primary" data-org-save>Save</button><details class="fact-menu person-menu"><summary aria-label="More for this organization" title="More">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-card-here>New to-do</button><button type="button" role="menuitem" data-org-same>Same organization as…</button><button type="button" role="menuitem" data-org-site>Add a website…</button>${n.manual?'<button type="button" role="menuitem" class="danger" data-org-delete>Delete…</button>':''}</div></details></span>`;
 // What the server would refuse, for the fields the owner changed only: [field, message] pairs.
 const orgCheck=changed=>ORG_FIELDS.flatMap(([k,,max])=>{const t=changed[k];if(!t)return[];
@@ -5827,7 +5853,7 @@ document.addEventListener('input',e=>{const el=e.target;if(el.getAttribute?.('ar
 const orgErrors=(f,errs)=>{for(const k of [...ORG_FIELDS.map(([k])=>k),'role']){const el=f.elements[k];if(!el)continue;const m=errs.find(([x])=>x===k);if(m)el.setAttribute('aria-invalid','true');else el.removeAttribute('aria-invalid');f.querySelector('#org-err-'+k).textContent=m?m[1]:''}
  const first=errs.length&&f.elements[errs[0][0]];if(first){first.focus({preventScroll:true});first.scrollIntoView({block:'center'})}};
 // A person's page. Header: photo, name, title · organization, where they are, and one plain line on how you're in touch.
-// Then Contact, About you and Related as their own sections, and how identities were joined as a quiet disclosure.
+// Then Contact, With you and Related as their own sections, and how identities were joined as a quiet disclosure.
 // Edit (in the header, as on an organization's page) opens one form for everything; the owner's word wins over a
 // look-up and later automatic updates, and stays through merges and Undo (graph.person_edit).
 const COUNTRY=c=>{try{return /^[A-Z]{2}$/.test(c)?new Intl.DisplayNames([],{type:'region'}).of(c):c}catch{return c}};
@@ -5860,7 +5886,7 @@ function personContact(n){const c=personContacts(n),p=n.profile||{};
  if(/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''))rows.push(kv('LinkedIn',`<a href="${esc(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`));
  if(/^[A-Za-z0-9_]{1,15}$/.test(p.x||''))rows.push(kv('X',`<a href="https://x.com/${esc(p.x)}" target="_blank" rel="noreferrer">@${esc(p.x)} ↗</a>`));
  if(/^https?:\/\/[^\s]+$/.test(p.website||''))rows.push(kv('Website',`<a href="${esc(p.website)}" target="_blank" rel="noreferrer">${breakable(liShort(p.website))} ↗</a>`));
- const also=[...new Set((n.ids||[]).filter(i=>!i.includes('@')&&!/^\+\d/.test(i)&&!(p.x&&i==='@'+p.x)))];if(also.length)rows.push(kv('Also on',esc(also.join(' · '))));
+ const also=[...new Set((n.ids||[]).filter(i=>!i.includes('@')&&!/^\+\d/.test(i)&&!(p.x&&i==='@'+p.x)))];const slack=n.slack_links||[];if(also.length)rows.push(kv('Also on',also.map(a=>a==='Slack'&&slack.length?slack.map(l=>`<a href="${esc(l.url)}" target="_blank" rel="noreferrer" title="Open in Slack">${esc(l.label)} ↗</a>`).join(' · '):esc(a)).join(' · ')));
  return rows.length?`<section class="detail-section person-contact"><h4>Contact</h4>${rows.join('')}</section>`:''}
 function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='work');
  rows.push(kv('To you',n.role?`<b>${esc(cap(n.role))}</b>${n.role_by==='review'?`<span class="sub">A review read it in your messages${n.role_quote?`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:'<span class="muted">Not known yet</span>',n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role'));
@@ -5868,7 +5894,7 @@ function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='wo
  if(f?.in?.length)rows.push(kv('Network',`<span class="fleet-mark">${esc([...new Set(f.in.map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)),f.machine?'Has a Machine':''].filter(Boolean).join(' · '))}</span>`,`<button type="button" class="ghost" data-fleet-member="${esc(f.in[0].member_id)}">See in Fleet</button>${work?`<button type="button" class="ghost" data-fleet-free="${esc(work.fleet)}">Ask your Fleet</button>`:''}`));
  if(f?.named)rows.push(kv('Name',`<span class="fleet-named">From your ${work?'Fleet':f.in[0].kind==='family'?'Family':'Friends'}. Your messages say “${esc(n.name_from_messages||'')}”.</span>`,`<button type="button" class="ghost" data-fleet-keep="${esc(n.name)}">Keep</button>`));
  if(graphOwners.length)rows.push(ownerRow(n));
- return `<section class="detail-section person-about"><h4>About you</h4>${rows.join('')}</section>`}
+ return `<section class="detail-section person-about"><h4>With you</h4>${rows.join('')}</section>`}
 // People, Projects and Organizations linked to a page, each its own section (person and organization pages alike).
 const detailGroups=(n,group)=>`${n.relations?.length?`<section class="detail-section"><h4>How they’re related</h4><div class="relations">${n.relations.map(r=>`<div class="graph-sub relation"><span>${esc(r.a_name)} is ${esc(r.relation)} ${esc(r.b_name)}</span><button class="ghost" data-unrelate="${esc(r.a)}" data-related-to="${esc(r.b)}">Remove</button></div>`).join('')}</div></section>`:''}`
  +[['person','People'],['project','Projects'],['org','Organizations']].map(([k,t])=>group(k).length?`<section class="detail-section"><h4>${t}</h4><div class="graph-links">${group(k).map(nodeButton).join('')}</div></section>`:'').join('');
@@ -5884,7 +5910,7 @@ function personForm(n){const p=n.profile||{},c=personContacts(n),said=orgSaid(n)
  return `<form class="org-form pf-form person-form" id="org-form" data-node-id="${esc(n.id)}" novalidate hidden>
  <fieldset><legend>Profile</legend>${pfField('name','Name',n.name,{placeholder:'Leave empty to use the name from their messages'})}${pfField('title','Title',p.title)}${pfField('org','Organization',n.org_name||'',{hint:said?cap(said.replace(/<[^>]+>/g,''))+(n.org_by==='review'&&n.org_quote?`: “${esc(n.org_quote)}”`:''):'',placeholder:'Where do they work? e.g. Acme',cls:'w-mid'})}${pfField('location','Location',p.location||personPlace(n),{placeholder:'e.g. Ghent, Belgium',cls:'w-mid'})}${pfField('linkedin_url','LinkedIn',p.linkedin_url,{placeholder:'linkedin.com/in/…',type:'url'})}</fieldset>
  <fieldset><legend>Contact</legend>${pfList('phones','Phone',c.phones.map(x=>x.value))}${pfList('emails','Email',c.emails.map(x=>x.value))}</fieldset>
- <fieldset><legend>About you</legend>${pfField('role','What they are to you',n.role||'',{placeholder:'e.g. accountant, sister, investor',cls:'w-mid'})}<div class="pf-field"><span id="pf-side-l">Type</span><div class="pf-seg" role="radiogroup" aria-labelledby="pf-side-l" data-was="${esc(side)}">${[['work','Work'],['personal','Personal']].map(([v,t])=>`<label><input type="radio" name="side" value="${v}"${side===v?' checked':''}><span>${t}</span></label>`).join('')}</div><small class="field-error" id="pe-err-side"></small></div><label class="pf-field"><span>Notes</span><textarea name="notes" rows="4" aria-describedby="pe-err-notes">${esc(n.notes||'')}</textarea><small class="field-error" id="pe-err-notes"></small></label></fieldset>
+ <fieldset><legend>With you</legend>${pfField('role','What they are to you',n.role||'',{placeholder:'e.g. accountant, sister, investor',cls:'w-mid'})}<div class="pf-field"><span id="pf-side-l">Type</span><div class="pf-seg" role="radiogroup" aria-labelledby="pf-side-l" data-was="${esc(side)}">${[['work','Work'],['personal','Personal']].map(([v,t])=>`<label><input type="radio" name="side" value="${v}"${side===v?' checked':''}><span>${t}</span></label>`).join('')}</div><small class="field-error" id="pe-err-side"></small></div><label class="pf-field"><span>Notes</span><textarea name="notes" rows="4" aria-describedby="pe-err-notes">${esc(n.notes||'')}</textarea><small class="field-error" id="pe-err-notes"></small></label></fieldset>
  <p class="graph-sub muted pf-note">Your edits stay, also when their details are looked up again. Empty a field to use the looked-up value again.</p></form>`}
 const pfValues=(f,kind)=>[...f.querySelectorAll(`.pf-list[data-kind="${kind}"] input`)].map(i=>i.value.trim()).filter(Boolean);
 // What the owner changed, as the server takes it: {field: value}. Lists are sent whole, as they are now.
@@ -5898,16 +5924,25 @@ function personErrors(f,errs){for(const el of f.querySelectorAll('.field-error')
  const first=errs.length&&f.querySelector(`[name="${errs[0][0]}"][aria-invalid]`);if(first){first.focus({preventScroll:true});first.scrollIntoView({block:'center'})}}
 // Which field a server message is about.
 const personErrField=m=>/^Notes/.test(m)?'notes':/phone/i.test(m)?'phones':/email/i.test(m)?'emails':/Work or Personal/.test(m)?'side':/LinkedIn/.test(m)?'linkedin_url':/^Title/.test(m)?'title':/^Location/.test(m)?'location':/role/i.test(m)?'role':/^org\b|organi[sz]ation/i.test(m)?'org':/name/i.test(m)?'name':'';
-function personPage(n,group,sub){return `<article class="graph-detail person-page"><div class="name-row">${personPic(n,true)}<div class="person-head"><h3 title="${esc(n.name)}">${esc(n.name)}</h3>${personJob(n)}</div>${personActions}</div>${personForm(n)}${deleteRow(n)}<div class="person-view">${n.bio?.text?`<p class="graph-sub person-bio" title="${esc('From '+n.bio.from+', '+n.bio.at)}">${esc(n.bio.text)}</p>`:''}${relLine(n)?`<p class="person-rel detail-sub">${esc(relLine(n))}</p>`:''}${notesSection(n.notes)}${personContact(n)}${personAbout(n)}${crmFieldsSection(n)}${detailGroups(n,group)}${fleetAskRow(n)}${sameAsk(n)}${joinedRow(n)}</div></article>`}
+// About you: the owner's own record. Their addresses (aliases too) and numbers, never a person in the Graph: a search, a
+// New person or an import with one of them comes here. Not shared as a record, so no Keep private.
+function aboutYouPage(n){const rows=[...(n.phones||[]).map(x=>kv('Phone',`<a href="tel:${esc(x.value.replace(/[^\d+]/g,''))}">${esc(phoneShown(x.value))}</a>`)),
+  ...(n.emails||[]).map(x=>kv('Email',`${breakable(x.value)}${x.by?`<span class="sub">${esc(x.by)}</span>`:''}`))];
+ return `<div class="graph-crumbs" role="navigation" aria-label="Breadcrumb"><a href="#graph" data-crumb="">Graph</a><span aria-hidden="true">›</span><span aria-current="page">About you</span></div>`
+ +`<article class="graph-detail person-page about-you"><div class="name-row">${personPic({name:n.owner_name||'You'},true)}<div class="person-head"><h3>About you</h3>${n.owner_name?`<p class="person-job">${esc(n.owner_name)}</p>`:''}</div></div>`
+ +`<div class="person-view"><p class="graph-sub person-bio">Your own addresses and numbers. They’re always you, never someone in your Graph.</p>${rows.length?`<section class="detail-section person-contact"><h4>Yours</h4>${rows.join('')}</section>`:''}`
+ +`<p class="graph-sub"><button type="button" class="link" data-about-addresses>Change them in Settings</button></p></div></article>`}
+document.addEventListener('click',e=>{if(!e.target.closest('[data-about-addresses]'))return;e.preventDefault();showSettings('account');requestAnimationFrame(()=>$('#settings-addresses')?.scrollIntoView({block:'start'}))});
+function personPage(n,group,sub){return `<article class="graph-detail person-page"><div class="name-row">${picEdit(n,personPic(n,true))}<div class="person-head"><h3 title="${esc(n.name)}">${esc(n.name)}</h3>${personJob(n)}</div>${personActions}</div>${personForm(n)}${deleteRow(n)}<div class="person-view">${n.bio?.text?`<p class="graph-sub person-bio" title="${esc('From '+n.bio.from+', '+n.bio.at)}">${esc(n.bio.text)}</p>`:''}${relLine(n)?`<p class="person-rel detail-sub">${esc(relLine(n))}</p>`:''}${notesSection(n.notes)}${personContact(n)}${personAbout(n)}${crmFieldsSection(n)}${detailGroups(n,group)}${fleetAskRow(n)}${sameAsk(n)}${joinedRow(n)}</div></article>`}
 const orgSite=n=>{const w=n.profile?.website;return /^https?:\/\/[^\s]+$/.test(w||'')?w:/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(n.domain||'')?'https://'+n.domain:''};
 const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch{return liShort(u)}};
 function orgContact(n){const p=n.profile||{},site=orgSite(n),rows=[];
  if(site)rows.push(kv('Website',`<a href="${esc(site)}" target="_blank" rel="noreferrer" title="${esc(site)}">${esc(hostOf(site))} ↗</a>`));
  if(/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''))rows.push(kv('LinkedIn',`<a href="${esc(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`));
  return rows.length?`<section class="detail-section person-contact"><h4>Contact</h4>${rows.join('')}</section>`:''}
-const orgAbout=n=>`<section class="detail-section person-about"><h4>About you</h4>${kv('To you',n.role?`<b>${esc(cap(n.role))}</b>${n.role_by==='review'?`<span class="sub">A review read it in your messages${n.role_quote?`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:'<span class="muted">Not known yet</span>',n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role')}${graphOwners.length?ownerRow(n):''}</section>`;
+const orgAbout=n=>`<section class="detail-section person-about"><h4>With you</h4>${kv('To you',n.role?`<b>${esc(cap(n.role))}</b>${n.role_by==='review'?`<span class="sub">A review read it in your messages${n.role_quote?`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:'<span class="muted">Not known yet</span>',n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role')}${graphOwners.length?ownerRow(n):''}</section>`;
 const orgRel=n=>[n.signals?`${n.signals} ${n.signals===1?'person':'people'}`:'',n.last_at?'last contact '+day(n.last_at):''].filter(Boolean).join(' · ');
-function orgPage(n,group){const p=n.profile||{};return `<article class="graph-detail person-page org-page"><div class="name-row">${orgPic(n,true)}<div class="person-head"><h3 title="${esc(n.name)}">${esc(n.name)}</h3>${n.about?`<p class="person-job">${esc(n.about)}</p>`:''}</div>${orgActions(n)}</div>${orgForm(n)}<div class="person-view">${p.about?`<p class="graph-sub person-bio org-about">${esc(p.about)}</p>`:''}${orgRel(n)?`<p class="person-rel detail-sub">${esc(cap(orgRel(n)))}</p>`:''}${orgWrongRow(n)}${orgDoubleAsk(n)}${notesSection(n.profile?.notes)}${orgContact(n)}${orgSites(n)}${orgAbout(n)}${orgProjects(n)}${crmFieldsSection(n)}${detailGroups(n,group)}${fleetAskRow(n)}</div></article>`}
+function orgPage(n,group){const p=n.profile||{};return `<article class="graph-detail person-page org-page"><div class="name-row">${picEdit(n,orgPic(n,true))}<div class="person-head"><h3 title="${esc(n.name)}">${esc(n.name)}</h3>${n.about?`<p class="person-job">${esc(n.about)}</p>`:''}</div>${orgActions(n)}</div>${orgForm(n)}<div class="person-view">${p.about?`<p class="graph-sub person-bio org-about">${esc(p.about)}</p>`:''}${orgRel(n)?`<p class="person-rel detail-sub">${esc(cap(orgRel(n)))}</p>`:''}${orgWrongRow(n)}${orgDoubleAsk(n)}${notesSection(n.profile?.notes)}${orgContact(n)}${orgSites(n)}${orgAbout(n)}${orgProjects(n)}${crmFieldsSection(n)}${detailGroups(n,group)}${fleetAskRow(n)}</div></article>`}
 // An organization's projects, open ones first, each with where it stands
 const orgProjects=n=>n.projects?.length?`<section class="detail-section org-projects"><h4>Projects</h4><ul>${n.projects.map(p=>`<li${p.open?'':' class="done"'}><button type="button" class="inline-node" data-node="${esc(p.id)}" title="${esc(p.name)}">${esc(p.name)}</button><small class="muted">${esc(p.outcome==='won'?'Won':p.outcome==='lost'?'Lost':p.archived?'Archived':p.stage?p.stage+(p.board?' on '+p.board:''):'No board')}</small></li>`).join('')}</ul></section>`:'';
 const deleteRow=n=>n.kind!=='person'?'':`<div class="person-delete"><div class="person-delete-confirm" hidden><p>Delete ${esc(n.name)} and everything The Machine knows about them? This can’t be undone.</p><p class="muted">Won’t be added again.</p><div class="row"><button class="danger-solid" data-person-delete-yes>Delete</button><button class="ghost" data-person-delete-no>Cancel</button></div></div></div>`;
@@ -6079,6 +6114,7 @@ async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=
  if(node&&/^promise:\d+$/.test(node)){const html=await promisePage(node.slice(8));draw(html,'node');if(version!==graphRequest)return;graphKept=null;$('#people').classList.add('graph-on-node');pageHead();if(!quiet)scrollTo({top:0});return}
  if(node){const n=await request('api/graph?node='+encodeURIComponent(node));if(n.owners)graphOwners=n.owners;if(n.timeline){const was=graphTl.page;if(quiet&&was?.id===n.id&&was.timeline?.source){n.recent=was.recent;n.timeline={...n.timeline,...was.timeline}}else n.timeline.shown=GRAPH_ROWS;graphTl.page=n}const group=k=>n.links.filter(l=>l.kind===k&&l.id!==n.org);
   if(n.team_only){draw(teamDetail(n));if(version!==graphRequest)return;$('#people').classList.add('graph-on-node');if(!quiet)scrollTo({top:0});return}
+  if(n.kind==='me'){graphNode='me';draw(aboutYouPage(n),'node');if(version!==graphRequest)return;graphKept=null;docTitle();$('#people').classList.add('graph-on-node');if(location.hash!==graphHash('me')&&!$('#people').hidden)history.replaceState(null,'',graphHash('me'));if(!quiet)scrollTo({top:0});return}
   const sub=n.kind==='person'?personSub({...n,role:null,profile:null})+(n.quiet?' · gone quiet':''):n.kind==='project'?(n.state+' · last signal '+day(n.last_at)+(n.probable_signals?' · '+n.probable_signals+' probably part of it':'')):(n.signals+' people · last contact '+day(n.last_at));
   const [paneId,paneName]=GRAPH_KIND_PANE[n.kind]||GRAPH_KIND_PANE.person;
   draw(`<div class="graph-crumbs" role="navigation" aria-label="Breadcrumb"><a href="#graph" data-crumb="">Graph</a><span aria-hidden="true">›</span><a href="#graph=${paneId}" data-crumb="${paneId}">${paneName}</a><span aria-hidden="true">›</span><span aria-current="page">${esc(n.name)}</span></div>${n.kind==='person'?personPage(n,group,sub):n.kind==='org'?orgPage(n,group):`<article class="graph-detail"><div class="name-row"><h3 title="${esc(n.name)}">${esc(n.name)}</h3>${n.project?projActions(n.project):'<button class="ghost" data-name-edit>Rename</button>'}</div><form class="name-form inline-edit" data-node-id="${esc(n.id)}" hidden><input name="newname" maxlength="60" value="${esc(n.name)}" placeholder="Project name" aria-label="Name"><button>Save</button></form><p class="graph-sub detail-sub">${esc(sub)}</p>${stageBox(n)}${projFacts(n)}${crmFieldsSection(n)}${detailGroups(n,group)}</article>`}`+privateRow(n)+teamBlock(n)+openBetween(n)+knownAbout(n)+graphEvents(n));
@@ -6102,9 +6138,9 @@ async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=
  const back=graphScroll;  /* back from a person: a quiet refresh that wins the race restores it too */const lc=!team&&g.list_counts||Object.fromEntries(['people','quiet','new','orgs','warmup','projects','projects_done'].map(k=>[k,(g[k]||[]).length]));graphLocal=!team&&g.list_counts?null:g;  /* the team's lists come whole */
  const had=quiet&&new Map([...pagers].filter(([k,p])=>k.startsWith('graph:')&&p.items.length).map(([k,p])=>[k,p.items.length]));
  if(team||graphListsTeam||JSON.stringify(lc)!==JSON.stringify(graphLists)||!g.list_counts){pagerDrop('graph');graphLists=lc}graphListsTeam=team;
- const panes=team?[{id:'people',label:'People',html:start+(graphSection('Closest to the team','Everyone your team shares, the closest first.',g.people)||'<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing from the team yet.</strong></div></div>')},
+ const panes=team?[{id:'people',label:'People',html:start+(graphTabs('people')||'<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing from the team yet.</strong></div></div>')},
   {id:'projects',label:'Projects',html:projectsPane(g)},
-  {id:'orgs',label:'Organizations',html:graphSection('Closest','The ones you are most in touch with.',g.orgs)},
+  {id:'orgs',label:'Organizations',html:graphTabs('orgs')},
   {id:'roles',label:'Who’s who',badge:waiting,html:whosWho(g.whos_who,waiting)},
   ...(g.held?.length||graphPane==='held'?[{id:'held',label:'Held back',html:heldPane(g.held)}]:[])].filter(p=>p.html)
  :[{id:'people',label:'People',html:sameList(g.same_person)+graphTabs('people')},
@@ -6125,16 +6161,24 @@ const graphPost=(action,args)=>request('api/action',{method:'POST',headers:{'Con
 // a preview and Undo. Filters are kept per list on this device.
 var graphOwners=[],graphLastImport=null,crmFilters=(()=>{try{return JSON.parse(localStorage.getItem('graph-filters')||'{}')||{}}catch{return{}}})();
 const crmPaneOf=list=>String(list).startsWith('projects')?'projects':list==='orgs'||list==='warmup'?'orgs':'people';
-const crmF=pane=>crmFilters[pane]||{};
+// The Team lists come whole, so their filters (who shared it, organization, state) work here, kept apart from Mine's.
+var teamFilters=(()=>{try{return JSON.parse(localStorage.getItem('graph-team-filters')||'{}')||{}}catch{return{}}})();
+const crmTeam=()=>!!(graphLocal&&graphListsTeam);
+const crmF=pane=>(crmTeam()?teamFilters:crmFilters)[pane]||{};
+const viaNames=n=>String(n.via||'').replace(/^via\s+/i,'').split(/,\s*|\s+and\s+/).map(x=>x.trim()).filter(Boolean);
+const teamSharers=()=>[...new Set(['people','orgs','projects','projects_done'].flatMap(k=>(graphLocal?.[k]||[]).flatMap(viaNames)))].sort((a,b)=>a.localeCompare(b));
+function teamKept(list){const items=graphLocal?.[list]||[];if(!crmTeam()||list==='warmup')return items;const f=crmF(crmPaneOf(list));
+ return items.filter(n=>(!f.by||viaNames(n).includes(f.by))&&(!f.org||String(n.org_name||n.org||'').toLowerCase().includes(f.org.toLowerCase()))&&(!f.state||n.state===f.state))}
 const crmQuery=list=>list==='warmup'?'':Object.entries(crmF(crmPaneOf(list))).filter(([,v])=>v!==''&&v!=null).map(([k,v])=>`&${k}=${encodeURIComponent(v)}`).join('');
 const crmKey=(list,sort)=>`graph:${list}:${sort}${crmQuery(list)?':'+crmQuery(list):''}`;
 const crmCount=pane=>Object.values(crmF(pane)).filter(v=>v!==''&&v!=null).length;
-const crmSet=(pane,f)=>{crmFilters[pane]=Object.fromEntries(Object.entries(f).filter(([,v])=>v!==''&&v!=null));try{localStorage.setItem('graph-filters',JSON.stringify(crmFilters))}catch{}graphTabsPaint(pane)};
+const crmSet=(pane,f)=>{const team=crmTeam(),all=team?teamFilters:crmFilters;all[pane]=Object.fromEntries(Object.entries(f).filter(([,v])=>v!==''&&v!=null));try{localStorage.setItem(team?'graph-team-filters':'graph-filters',JSON.stringify(all))}catch{}graphTabsPaint(pane)};
 const crmBoards=()=>(graphMineBoards||graphBoards||[]).filter(b=>!b.team);
 const ownerName=id=>id==='me'?'you':graphOwners.find(m=>m.id===id)?.name||'a teammate';
-const crmTools=pane=>{const f=crmF(pane),n=crmCount(pane)-(f.owner==='me'&&graphOwners.length?1:0);
- return `<div class="graph-tools">${graphOwners.length?`<button type="button" data-crm-mine="${pane}" aria-pressed="${f.owner==='me'}" title="Only the ones you own">Mine</button>`:''}<button type="button" data-crm-filter="${pane}" aria-haspopup="dialog" aria-label="Filter"><svg class="crm-funnel" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg><span class="crm-word">Filter</span>${n?` <span class="badge">${n}</span>`:''}</button></div>`};
-const CRM_LABEL={owner:v=>'Owner: '+ownerName(v),tag:v=>'Tag: '+v,board:v=>'Board: '+(crmBoards().find(b=>String(b.id)===String(v))?.name||v),stage:v=>'Stage: '+v,org:v=>'Organization: '+v,
+const crmTools=pane=>{const f=crmF(pane),n=crmCount(pane)-(f.owner==='me'&&graphOwners.length&&!crmTeam()?1:0);
+ return `<div class="graph-tools">${graphOwners.length&&!crmTeam()?`<button type="button" data-crm-mine="${pane}" aria-pressed="${f.owner==='me'}" title="Only the ones you own">Mine</button>`:''}<button type="button" data-crm-filter="${pane}" aria-haspopup="dialog" aria-label="Filter"><svg class="crm-funnel" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg><span class="crm-word">Filter</span>${n?` <span class="badge">${n}</span>`:''}</button></div>`};
+const CRM_STATE={active:'Active',cooling:'Cooling',dormant:'Dormant'};
+const CRM_LABEL={by:v=>'Shared by '+v,state:v=>'State: '+(CRM_STATE[v]||v),owner:v=>'Owner: '+ownerName(v),tag:v=>'Tag: '+v,board:v=>'Board: '+(crmBoards().find(b=>String(b.id)===String(v))?.name||v),stage:v=>'Stage: '+v,org:v=>'Organization: '+v,
  value_min:v=>'Value from '+money(+v),value_max:v=>'Value up to '+money(+v),close_from:v=>'Closes from '+closeDay(v),close_to:v=>'Closes by '+closeDay(v)};
 const crmActive=pane=>{const f=crmF(pane),on=Object.entries(f).filter(([k,v])=>CRM_LABEL[k]&&v!==''&&!(k==='owner'&&v==='me'&&graphOwners.length));
  return on.length?`<p class="graph-active">${on.map(([k,v])=>`<span class="chip">${esc(CRM_LABEL[k](v))}</span>`).join('')}<button type="button" class="link" data-crm-clear="${pane}">Clear</button></p>`:''};
@@ -6153,6 +6197,11 @@ const crmSay=t=>{const er=$('#crm-form [data-crm-error]');if(er){er.textContent=
 const opt=(v,t,on)=>`<option value="${esc(v)}"${on?' selected':''}>${esc(t)}</option>`;
 function crmStages(board,current){const bs=crmBoards(),pick=bs.find(b=>String(b.id)===String(board)),names=[...new Set((pick?[pick]:bs).flatMap(b=>(b.stages||[]).map(s=>s.name)))];return opt('','Any stage',!current)+names.map(s=>opt(s,s,s===current)).join('')}
 function crmFilterOpen(pane){const f=crmF(pane);crm={mode:'filter',pane};const by=pane!=='projects';
+ if(crmTeam()){$('#crm-form').innerHTML=crmHead('Filter the team’s '+GRAPH_TABS[pane].label.toLowerCase())
+  +`<label class="ed-field">Shared by<select name="by">${opt('','Anyone',!f.by)}${teamSharers().map(m=>opt(m,m,f.by===m)).join('')}</select></label>`
+  +(pane==='people'?`<label class="ed-field">Organization<input name="org" value="${esc(f.org||'')}" placeholder="Name or website" autocomplete="off"></label>`:'')
+  +(pane==='projects'?`<label class="ed-field">State<select name="state">${opt('','Any state',!f.state)}${Object.entries(CRM_STATE).map(([k,t])=>opt(k,t,f.state===k)).join('')}</select></label>`:'')
+  +crmFoot('Show results','<button type="button" class="ghost" data-crm-clear-all>Clear all</button>');return crmShow()}
  $('#crm-form').innerHTML=crmHead('Filter '+GRAPH_TABS[pane].label.toLowerCase())
   +(graphOwners.length?`<label class="ed-field">Owner<select name="owner">${opt('','Anyone',!f.owner)}${opt('me','You',f.owner==='me')}${graphOwners.map(m=>opt(m.id,m.name,f.owner===m.id)).join('')}</select></label>`:'')
   +(crmBoards().length?`<div class="ed-row3"><label class="ed-field">Board<select name="board">${opt('','Any board',!f.board)}${crmBoards().map(b=>opt(b.id,b.name,String(f.board)===String(b.id))).join('')}</select></label><label class="ed-field">Stage<select name="stage">${crmStages(f.board,f.stage)}</select></label></div>`:'')
@@ -6202,7 +6251,8 @@ const crmAfter=async(id)=>{graphMineBoards=null;pagerDrop('graph');if(id&&graphN
 $('#crm-form').addEventListener('click',e=>{if(e.target.closest('[data-crm-close]'))$('#crm-dialog').close();
  if(e.target.closest('[data-crm-fixes]')&&crm?.mode==='import'){crm.fixOpen=!crm.fixOpen;crmImportDraw()}
  const sum=e.target.closest('.crm-fixtype>summary');if(sum&&crm?.mode==='import'&&!e.target.closest('input')){e.preventDefault();const t=sum.parentElement.dataset.type;crm.fixOpen=crm.fixOpen===t?true:t;crmImportDraw()}
- if(e.target.closest('[data-crm-clear-all]')&&crm?.mode==='filter'){crmSet(crm.pane,{});$('#crm-dialog').close()}});
+ if(e.target.closest('[data-crm-clear-all]')&&crm?.mode==='filter'){crmSet(crm.pane,{});$('#crm-dialog').close()}
+ if(e.target.closest('[data-crm-clear-all]')&&crm?.mode==='board-stages'){const n=crm.board;$('#crm-dialog').close();boardStagesSet(n,null)}});
 $('#crm-form').addEventListener('change',e=>{const c=crm;if(!c)return;
  if(c.mode==='filter'&&e.target.name==='board'){const st=$('#crm-form select[name=stage]');if(st)st.innerHTML=crmStages(e.target.value,'')}
  if(c.mode!=='import')return;
@@ -6216,8 +6266,10 @@ $('#crm-form').addEventListener('change',e=>{const c=crm;if(!c)return;
 $('#crm-form').addEventListener('input',e=>{if(crm&&e.target.type!=='file')crmSay('');  /* an error goes once the owner changes what it was about */
  if(crm?.mode==='org-same'&&e.target.name==='q')crmOrgSearch(e.target.value.trim())});
 $('#crm-form').addEventListener('submit',async e=>{e.preventDefault();const c=crm,f=e.target;if(!c)return;const v=k=>String(f.elements[k]?.value||'').trim(),btn=f.querySelector('button.primary');crmSay('');
+ if(c.mode==='picture')return;
+ if(c.mode==='board-stages'){const on=[...f.querySelectorAll('input[name=stage]:checked')].map(x=>x.value);if(!on.length)return crmSay('Pick at least one stage.');const all=f.querySelectorAll('input[name=stage]').length;$('#crm-dialog').close();return boardStagesSet(c.board,on.length===all?null:on)}
  if(c.mode==='fields'){btn.disabled=true;try{await crmFieldsSave(c)}catch(x){crmSay(x.message)}finally{btn.disabled=false}return}
- if(c.mode==='filter'){const next=Object.fromEntries(['owner','tag','board','stage','org','value_min','value_max','close_from','close_to'].map(k=>[k,v(k)]));
+ if(c.mode==='filter'){const next=Object.fromEntries(['by','state','owner','tag','board','stage','org','value_min','value_max','close_from','close_to'].map(k=>[k,v(k)]));
   for(const k of ['value_min','value_max'])if(next[k]&&!/^\d+([.,]\d+)?$/.test(next[k].replace(/[\s€$£]/g,'')))return crmSay('Value: a number, like 12000.');
   crmSet(c.pane,next);$('#crm-dialog').close();return}
  btn.disabled=true;
@@ -6282,9 +6334,10 @@ const tagChips=(tags,node)=>(tags||[]).map(t=>`<span class="chip tag-chip">${esc
 const tagsPaint=()=>{const l=$('#crm-tag-list');if(l)l.innerHTML=graphTags.map(t=>`<option value="${esc(t.tag)}"></option>`).join('')};
 function crmFieldsSection(n){if(n.team_only)return (n.team_fields?.length||n.tags?.length)?`<section class="detail-section crm-fields"><h4>Fields</h4>${(n.team_fields||[]).map(f=>kv(esc(f.name),fieldShow(f))).join('')}${n.tags?.length?kv('Tags',`<span class="tag-list">${tagChips(n.tags)}</span>`):''}</section>`:'';
  const fs=n.fields||[],mine=new Set(fs.filter(f=>f.value!=null).map(f=>f.name.toLowerCase())),team=(n.team?.fields||[]).filter(f=>!mine.has(String(f.name).toLowerCase()));
- return `<section class="detail-section crm-fields"><h4>Fields</h4>${fs.map(f=>kv(esc(f.name),fieldShow(f))).join('')}${team.map(f=>kv(esc(f.name),fieldShow(f)+'<span class="sub">From your team</span>')).join('')}`
+ fieldsOf.set(n.id,fs);
+ return `<section class="detail-section crm-fields"><h4>Fields</h4>${fs.map(f=>kv(esc(f.name),`<button type="button" class="field-val" data-field-edit="${f.id}" data-field-node="${esc(n.id)}" title="Change ${esc(f.name)}">${fieldShow(f)}</button>`)).join('')}${team.map(f=>kv(esc(f.name),fieldShow(f)+'<span class="sub">From your team</span>')).join('')}`
   +kv('Tags',`<span class="tag-list">${tagChips(n.tags,n.id)}<span class="tag-add" data-tag-node="${esc(n.id)}"><input name="tag" list="crm-tag-list" placeholder="+ Tag" maxlength="40" aria-label="Add a tag" enterkeyhint="done" autocomplete="off"></span></span>`)
-  +`<p class="graph-sub"><button type="button" class="link" data-fields-edit="${esc(n.id)}">${fs.length?'Edit fields':'Add a field'}</button></p></section>`}
+  +`<p class="graph-sub"><button type="button" class="link" data-fields-edit="${esc(n.id)}">${fs.length?'Manage fields':'Add a field'}</button></p></section>`}
 const fieldInput=(f,v)=>f.type==='choice'?`<select name="f${f.id}">${opt('','Not set',v==null||v==='')}${(f.choices||[]).map(c=>opt(c,c,c===v)).join('')}</select>`
  :f.type==='date'?`<input name="f${f.id}" type="date" value="${esc(v||'')}">`
  :f.type==='number'?`<input name="f${f.id}" inputmode="decimal" value="${esc(v??'')}" autocomplete="off">`
@@ -6305,6 +6358,44 @@ $('#crm-form').addEventListener('click',async e=>{const c=crm;if(c?.mode!=='fiel
   graphFieldsStale=true;await crmFieldsOpen(c.node,draft)}catch(x){crmSay(x.message);if(add)add.disabled=false}});
 $('#crm-form').addEventListener('change',e=>{if(crm?.mode==='fields'&&e.target.name==='nf_type')$('#crm-form [data-nf-choices]').hidden=e.target.value!=='choice'});
 var graphFieldsStale=false;
+// A field's value changes in place: click it, change it, Enter or Save keeps it, Escape puts it back, Remove empties it.
+const fieldsOf=new Map();
+function fieldEditOpen(b){const f=(fieldsOf.get(b.dataset.fieldNode)||[]).find(x=>String(x.id)===b.dataset.fieldEdit);if(!f)return;
+ const w=document.createElement('span');w.className='field-inline';w.dataset.fieldNode=b.dataset.fieldNode;w.dataset.fieldId=f.id;
+ w.innerHTML=fieldInput(f,f.value)+'<button type="button" class="primary" data-field-save>Save</button><button type="button" class="ghost" data-field-cancel>Cancel</button>'+(f.value==null||f.value===''?'':'<button type="button" class="link" data-field-clear>Remove</button>');
+ b.replaceWith(w);const i=w.querySelector('input,select');i.setAttribute('aria-label',f.name);i.focus();i.select?.()}
+async function fieldEditSave(w,value){if(w.dataset.busy)return;const f=(fieldsOf.get(w.dataset.fieldNode)||[]).find(x=>String(x.id)===w.dataset.fieldId);const v=String(value??'').trim();
+ if(f&&v===String(f.value??''))return people(graphNode,true);w.dataset.busy='1';w.querySelectorAll('button,input,select').forEach(x=>x.disabled=true);
+ try{await graphPost('graph_field_set',{node_id:w.dataset.fieldNode,field_id:+w.dataset.fieldId,value:v});pagerDrop('graph');await people(graphNode,true)}
+ catch(x){delete w.dataset.busy;w.querySelectorAll('button,input,select').forEach(x=>x.disabled=false);toast(x.message,true)}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-field-edit]');if(b){e.preventDefault();return fieldEditOpen(b)}
+ const w=e.target.closest('.field-inline');if(!w)return;
+ if(e.target.closest('[data-field-save]'))return fieldEditSave(w,w.querySelector('input,select').value);
+ if(e.target.closest('[data-field-clear]'))return fieldEditSave(w,'');
+ if(e.target.closest('[data-field-cancel]'))return people(graphNode,true)});
+document.addEventListener('keydown',e=>{const w=e.target.closest?.('.field-inline');if(!w||e.isComposing)return;
+ if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();fieldEditSave(w,e.target.value)}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();people(graphNode,true)}},true);
+document.addEventListener('change',e=>{const w=e.target.closest?.('.field-inline');if(w&&e.target.matches('select'))fieldEditSave(w,e.target.value)});
+// The picture: upload one (made small here, before it leaves the browser), pick one found for them, or remove it.
+const picSmall=src=>new Promise((ok,no)=>{const im=new Image();im.onload=()=>{const k=Math.min(1,256/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.naturalWidth*k));c.height=Math.max(1,Math.round(im.naturalHeight*k));
+ const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);let q=.85,u=c.toDataURL('image/jpeg',q);while(u.length>60000&&q>.3)u=c.toDataURL('image/jpeg',q-=.15);ok(u)};im.onerror=()=>no(new Error('That isn’t a picture this browser can read.'));im.src=src});
+async function picOpen(node){const org=String(node).startsWith('org:'),pic=$('#people-view .graph-detail>.name-row .pic-edit')?.innerHTML||'';crm={mode:'picture',node,org};
+ $('#crm-form').innerHTML=crmHead('Picture')+`<div class="pic-now">${pic}</div>`
+  +`<div class="pic-pick"><label class="crm-file"><input name="pic" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><span class="crm-file-name">Upload a picture</span></label></div>`
+  +`<fieldset class="pic-found" hidden><legend>Found for ${org?'it':'them'}</legend><div class="pic-grid" data-pic-found></div></fieldset>`
+  +`<p class="ed-note warn" data-crm-error role="alert" hidden></p><div class="ed-actions">${/<img/.test(pic)?'<button type="button" class="ghost danger" data-pic-remove>Remove picture</button>':''}<span class="grow"></span><button type="button" class="ghost" data-crm-close>Close</button></div>`;
+ crmShow();
+ try{const r=await graphPost('graph_pictures_found',{node_id:node});if(crm?.node!==node||!r.found?.length)return;const box=$('#crm-form [data-pic-found]');
+  box.innerHTML=r.found.map((u,i)=>`<button type="button" class="pic-option" data-pic-found-i="${i}" aria-label="Use this picture"><img src="${esc(u)}" alt="" width="56" height="56"></button>`).join('');crm.found=r.found;box.parentElement.hidden=false}catch{}}
+async function picSave(args,done){const c=crm;if(!c)return;crmSay('');$('#crm-form').querySelectorAll('button,input').forEach(x=>x.disabled=true);
+ try{await graphPost('graph_picture',{node_id:c.node,...args});$('#crm-dialog').close();toast(done);pagerDrop('graph');await people(graphNode,true)}
+ catch(x){crmSay(x.message);$('#crm-form').querySelectorAll('button,input').forEach(x=>x.disabled=false)}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pic-edit]');if(!b)return;e.preventDefault();picOpen(b.dataset.picEdit)});
+$('#crm-form').addEventListener('click',async e=>{const c=crm;if(c?.mode!=='picture')return;
+ if(e.target.closest('[data-pic-remove]')){e.preventDefault();return picSave({remove:true},'Removed.')}
+ const o=e.target.closest('[data-pic-found-i]');if(o){e.preventDefault();try{picSave({data:await picSmall(c.found[+o.dataset.picFoundI])},'Saved.')}catch(x){crmSay(x.message)}}});
+$('#crm-form').addEventListener('change',e=>{const c=crm;if(c?.mode!=='picture'||e.target.name!=='pic')return;const file=e.target.files?.[0];if(!file)return;
+ if(file.size>15*1024*1024)return crmSay('That picture is too big: up to 15 MB.');const r=new FileReader();r.onload=async()=>{try{picSave({data:await picSmall(r.result)},'Saved.')}catch(x){crmSay(x.message)}};r.readAsDataURL(file)});
 async function crmFieldsSave(c){for(const f of c.fields){const now=String($('#crm-form').elements['f'+f.id]?.value??'').trim();if(now===String(f.value??''))continue;
   await graphPost('graph_field_set',{node_id:c.node,field_id:f.id,value:now})}
  $('#crm-dialog').close();toast('Saved.');graphFieldsStale=false;await people(graphNode,true)}

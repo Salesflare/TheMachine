@@ -13,7 +13,8 @@ Your Machine builds a map of who you deal with and what's going on, from your me
 Everyone you're in touch with, closest first. A person's page starts with their photo, name, title, organization and place, and one line on how you're in touch ("Talk daily · last Fri, Oct 23 · next meeting Tue, Oct 27"). Below that:
 
 - **Contact**: their phones and emails. Tap one to call or write, or **Copy** it.
-- **About you**: what they are to you, Work or Personal contact, and your Family or Fleet, with **See in Fleet**.
+- **With you**: what they are to you, Work or Personal contact, and your Family or Fleet, with **See in Fleet**.
+- **Also on**: the other places you talk with them. **Slack** opens them in Slack, or your newest Slack thread with them.
 - **People** and **Projects** they're part of, **Open between you** (promises both ways, with **Done** and **Drop**), and their **Timeline**.
 
 Someone's addresses and chats are joined by themselves when it's clear they're one person, like a work email with their own address in CC.
@@ -34,13 +35,17 @@ An organization's timeline has its people's messages and the Intercom conversati
 
 The filters you picked show above the list, with **Clear**. The order menu also sorts by **Value** and **Close date**. Your Machine does the filtering, so long lists stay fast. On a phone the filters open as a sheet.
 
+## Team
+
+**Team**, next to Mine, shows what your teammates share. It has the same tabs, order menu and **New person** or **New organization** as Mine; what you add is yours. **Filter** narrows it by who shared it, an organization (People) or state (Projects).
+
 ## Owner
 
-In a Work Fleet, each person, organization and project has an owner: **Owner** under About you on its page. It's you, unless you pick someone from your Work Fleet. **Mine**, next to Filter and on a board, shows only yours. A board card shows its owner's name. Each change shows in its timeline. A record shared with your team carries its owner with it, under the same sharing rules as the rest.
+In a Work Fleet, each person, organization and project has an owner: **Owner** under With you on its page. It's you, unless you pick someone from your Work Fleet. **Mine**, next to Filter and on a board, shows only yours. A board card shows its owner's name. Each change shows in its timeline. A record shared with your team carries its owner with it, under the same sharing rules as the rest.
 
 ## Fields and tags
 
-**Edit fields** under Fields on a person, organization or project fills in your own fields. **New field** adds one for all of that kind: text, number, date or a choice from a list. **Remove** takes a field away for all of them.
+Under Fields on a person, organization or project, click a value to change it: **Save** or Enter keeps it, **Cancel** or Escape leaves it, **Remove** empties it. **Manage fields** adds or removes fields: **New field** adds one for all of that kind: text, number, date or a choice from a list. **Remove** takes a field away for all of them.
 
 **+ Tag** adds a tag, like VIP or partner; **×** takes it off. Tags show in the lists and **Filter** finds them. A record shared with your team carries its fields and tags with it.
 
@@ -69,6 +74,14 @@ They're listed under **Websites**, each with **Split off** to undo it. Later edi
 **New person** at the top of People, **New organization** at the top of Organizations, or, on a phone, **+** in the top bar. Give a name, and for a person an email and organization if you have them; for an organization, its website. When someone like it is already in your Graph, the form shows them first, so you can open that one instead. **Add** opens the new page.
 
 Someone you add stays, also with no messages yet. Their first message joins them. An organization you added can be deleted from its **⋯** menu while nobody is in it.
+
+## About you
+
+Your own addresses and numbers, aliases too, are always you, never someone in your Graph. Searching for yourself, or adding a person with one of your addresses, opens **About you**, and an import skips your own row. About you lists your addresses with where each came from; change them in **Settings**, under Account. A person made from your own address before goes into About you by itself, with a backup kept on your Machine.
+
+## Picture
+
+Click the picture on a person's or organization's page to change it: **Upload a picture**, pick one found for them, or **Remove picture**. It stays on your Machine.
 
 ## Notes
 
@@ -114,7 +127,7 @@ Client work is shared with your teammates' Machines, and theirs shows in yours. 
 
 Companies, from the addresses and names in your messages. See [Organization details](organization-data.md).
 
-An organization's page is built like a person's: its logo, name and what it does, one line on how you're in touch, then **Contact** (its website and LinkedIn), **About you** (what it is to you), the people there and its **Timeline**.
+An organization's page is built like a person's: its logo, name and what it does, one line on how you're in touch, then **Contact** (its website and LinkedIn), **With you** (what it is to you), the people there and its **Timeline**.
 
 Its **Projects** list open ones first, each with its stage. Their moves show in its timeline. **Edit** at the top changes its details and what it is to you. **Ask the Fleet who knows** it finds a way in through your Fleet.
 
@@ -131,6 +144,7 @@ Or run them by hand, like deals in a CRM:
 - **Won** or **Lost**, with why. Won moves it to the board's last stage, Lost to Stalled or declined. **Reopen** undoes it.
 - **Archive** takes it off the board and lists; a new message about it brings it back. **Delete** removes it for good; its messages and people stay.
 - Move a card by dragging it, or with **⋯**, **Move to** on a phone. Your move stands until a newer message moves it.
+- **Stages**, at the top of a board, shows only the stages you pick, per board. **Clear** shows them all again.
 
 ### A project's organization
 
