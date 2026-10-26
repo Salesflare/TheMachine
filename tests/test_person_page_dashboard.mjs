@@ -6,7 +6,7 @@ import {navClick} from './nav-click.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A person's page reads at a glance: photo, name, title · organization, place and one plain line on how you're in touch;
-// then Contact (labeled rows in the normal font, tap to call or mail, Copy), About you (what they are to you, Work or
+// then Contact (labeled rows in the normal font, tap to call or mail, Copy), With you (what they are to you, Work or
 // Personal, Family or Fleet) and Related (People, Projects) as their own sections, and "Joined from" as a quiet
 // disclosure. Edit in the header opens one form (Cancel and Save where Edit was) with fields as long as what goes in
 // them; Save sends only what changed. At 390 and 1440, light and dark. SHOT_DIR=… saves screenshots.
@@ -64,7 +64,7 @@ try{
   assert.equal(await card.locator('.person-bio').textContent(),'Learning, alloys and long walks.');
   assert.match(await card.locator('.person-rel').textContent(),/^Talk daily · last \w+, \w+ \d+ · next meeting \w+, \w+ \d+$/);
   // Sections with headings, in order; no scattered Edit links.
-  assert.deepEqual(await card.locator('.detail-section>h4').allTextContents(),['Contact','About you','Fields','People','Projects']);
+  assert.deepEqual(await card.locator('.detail-section>h4').allTextContents(),['Contact','With you','Fields','People','Projects']);
   assert.equal(await card.locator('[data-role-edit],[data-person-org-edit],.role-form,.person-org-form,.name-form').count(),0);
   assert.deepEqual(await card.locator('.person-contact .kv .k').allTextContents(),['Phone','Email','Email','LinkedIn','X','Also on']);
   assert.equal(await card.locator('.person-contact a[href="tel:+32470000071"]').textContent(),'+32 470 00 00 71');  // grouped to read; tap and Copy use the number
@@ -88,7 +88,7 @@ try{
   const form=card.locator('.person-form');await form.waitFor();
   assert.ok(await card.locator('[data-org-save]').isVisible()&&await card.locator('[data-org-cancel]').isVisible()&&!(await card.locator('[data-org-edit]').isVisible()));
   assert.ok(!(await card.locator('.person-view').isVisible()),'the read view steps aside while editing');
-  assert.deepEqual(await form.locator('legend').allTextContents(),['Profile','Contact','About you']);
+  assert.deepEqual(await form.locator('legend').allTextContents(),['Profile','Contact','With you']);
   assert.equal(await form.locator('[name=org]+small').textContent(),'From their work email');
   for(const i of await form.locator('input:not([type=radio])').all()){const h=await i.evaluate(e=>e.getBoundingClientRect().height);assert.ok(h>=36&&h<=46,'compact fields at '+tag+': '+h)}
   const w=async sel=>form.locator(sel).first().evaluate(e=>e.getBoundingClientRect().width);

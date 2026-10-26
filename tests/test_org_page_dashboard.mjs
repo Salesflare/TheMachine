@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // An organization's page is built as a person's: logo, name and its fact line in the header with Edit, then one plain
-// line on how you're in touch, Contact (the website as its address, "lumen.example ↗"), About you (what it is to you)
+// line on how you're in touch, Contact (the website as its address, "lumen.example ↗"), With you (what it is to you)
 // and Related (People, Projects) as their own sections. "Ask the Fleet who knows" uses its name. Edit opens one form
 // grouped the same way, What it is to you included, and Save sends only what changed. At 390 and 1440, light and dark.
 // SHOT_DIR=… saves screenshots.
@@ -49,7 +49,7 @@ try{
   assert.equal(await card.locator('.org-about').textContent(),'Lumen keeps the books for small companies and their founders.');
   assert.match(await card.locator('.person-rel').textContent(),/^4 people · last contact \w+, \w+ \d+$/);
   // Sections with headings, in order, as on a person's page.
-  assert.deepEqual(await card.locator('.detail-section>h4').allTextContents(),['Contact','About you','Fields','People','Projects']);
+  assert.deepEqual(await card.locator('.detail-section>h4').allTextContents(),['Contact','With you','Fields','People','Projects']);
   assert.deepEqual(await card.locator('.person-contact .kv .k').allTextContents(),['Website','LinkedIn']);
   assert.equal(await card.locator('.person-contact .kv .v').first().textContent(),'lumen.example ↗');
   assert.equal(await card.locator('.person-contact a[href="https://www.lumen.example/en/home"]').count(),1);
@@ -68,7 +68,7 @@ try{
   const form=card.locator('.org-form');await form.waitFor();
   assert.ok(await card.locator('[data-org-save]').isVisible()&&!(await card.locator('[data-org-edit]').isVisible()));
   assert.ok(!(await card.locator('.person-view').isVisible()),'the read view steps aside while editing');
-  assert.deepEqual(await form.locator('legend').allTextContents(),['Profile','Contact','Notes','About you']);
+  assert.deepEqual(await form.locator('legend').allTextContents(),['Profile','Contact','Notes','With you']);
   for(const i of await form.locator('input').all()){const h=await i.evaluate(e=>e.getBoundingClientRect().height);assert.ok(h>=36&&h<=46,'compact fields at '+tag+': '+h)}
   if(width>=1000)assert.ok(await form.locator('[name=founded]').evaluate(e=>e.getBoundingClientRect().width)<=160,'a year field fits a year');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll while editing at '+tag);

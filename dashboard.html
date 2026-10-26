@@ -5155,7 +5155,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
  // Who is who: each member with the Machine they answer with and their account email, so two people with one name stay apart.
  const who=x=>{const groups=[];for(const p of x.people||[]){const k=p.name+'|'+(p.email||''),g=groups.find(g=>g.k===k);g?g.list.push(p):groups.push({k,list:[p]})}  // one person with several Machines: the name once
   return groups.length?`<ul class="fleet-people">${groups.map(({list})=>{const p=list[0],tag=t=>`<span class="fp-tag">${t}</span>`,many=list.length>1;
-   return `<li id="fleet-m-${esc(p.member_id||'')}"><div class="fp-name"><strong>${esc(p.name)}</strong>${list.some(m=>m.me)?tag('you'):''}${list.some(m=>m.role==='owner')?tag('owner'):''}${list.some(m=>m.me)?inGraph({graph_node:'me',label:'About you'}):inGraph(list.find(m=>m.graph_node))}</div>`+
+   return `<li id="fleet-m-${esc(p.member_id||'')}"><div class="fp-name"><strong>${esc(p.name)}</strong>${list.some(m=>m.me)?tag('you'):''}${list.some(m=>m.role==='owner')?tag('owner'):''}${inGraph(list.find(m=>m.graph_node))}</div>`+
     (many?`<small class="fp-meta">${esc(p.email||'')}</small>${list.map(m=>`<small class="fp-meta fp-machine">${esc(m.answers_with||'')}${m.me?tag('this Machine'):''}</small>`).join('')}`
      :`<small class="fp-meta">${[p.email,p.answers_with].filter(Boolean).map(esc).join(' · ')}</small>`)+'</li>'}).join('')}</ul>`:''};
  const box=(title,sub,body,cls='')=>`<div class="fleet-box${cls?' '+cls:''}"><h3>${title}</h3>${sub?`<p class="sub">${sub}</p>`:''}${body}</div>`;

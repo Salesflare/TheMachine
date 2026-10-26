@@ -77,7 +77,9 @@ Someone you add stays, also with no messages yet. Their first message joins them
 
 ## About you
 
-Your own addresses and numbers, aliases too, are always you, never someone in your Graph. Searching for yourself, or adding a person with one of your addresses, opens **About you**, and an import skips your own row. About you lists your addresses with where each came from; change them in **Settings**, under Account. A person made from your own address before goes into About you by itself, with a backup kept on your Machine.
+Your own addresses and numbers, aliases too, are always you, never someone in your Graph. Searching for yourself, or adding a person with one of your addresses, opens **About you**, and an import skips your own row.
+
+About you lists your addresses with where each came from; change them in **Settings**, under Account. A person made from your own address before goes into About you by itself, with a backup kept on your Machine.
 
 ## Picture
 
