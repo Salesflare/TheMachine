@@ -1,10 +1,10 @@
 # Getting started
 
-From installation to your first cards. Setup time depends on account sign-in, source catch-up and the model; each step says how to check it worked.
+From installation to your first to-dos. Setup time depends on account sign-in, source catch-up and the model; each step says how to check it worked.
 
 ## Before you start
 
-- [ ] **OpenClaw** 2026.10.5 or later, with the Gateway running. Telegram is optional: with a bot, check that it answers you in Telegram; without one, cards reach you through the dashboard app (see Phone notifications below). No OpenClaw yet? Skip this one: the installer offers to install it and walks you through its setup (step 1).
+- [ ] **OpenClaw** 2026.10.5 or later, with the Gateway running. Telegram is optional: with a bot, check that it answers you in Telegram; without one, to-dos reach you through the dashboard app (see Phone notifications below). No OpenClaw yet? Skip this one: the installer offers to install it and walks you through its setup (step 1).
 - [ ] **Node.js** 24.16+ (24.x) or 26.1+, and **Python 3.12+**.
 - [ ] **Tailscale** on this machine and your phone, logged in (`sudo tailscale up`), for the dashboard.
 - [ ] Your own user account, not root. Linux: a systemd user session (a normal login; over SSH that works too). macOS: you are signed in to the desktop. Windows: see [Windows](#windows-beta).
@@ -105,13 +105,13 @@ The installer offers to publish the dashboard on your tailnet (`tailscale serve`
 
 ### Phone notifications (no Telegram needed)
 
-The dashboard installs as a phone app and notifies you of each card, result, reminder and the weekly recap. With it, Telegram is optional.
+The dashboard installs as a phone app and notifies you of each to-do, result, reminder and the weekly recap. With it, Telegram is optional.
 
-- **Android (Chrome):** open the dashboard and tap **Install** on the card at the top of Suggestions (or ⋮ → **Install app**). Open The Machine from your home screen and tap **Turn on** on the next card, then allow notifications.
+- **Android (Chrome):** open the dashboard and tap **Install** on the note at the top of Suggestions (or ⋮ → **Install app**). Open The Machine from your home screen and tap **Turn on** on the next note, then allow notifications.
 - **iPhone/iPad (iOS 16.4 or newer):** open the dashboard in Safari, tap **Share** → **Add to Home Screen**. Open The Machine from your Home Screen (not a Safari tab: iOS only allows notifications there) and tap **Turn on**.
 - **A computer (Chrome, Edge):** **Install** puts The Machine in its own window, to pin to the taskbar or dock. Safari on a Mac: **File** → **Add to Dock**. Firefox can't install it, but notifications work in the tab.
 
-The cards show up after the first minute, one at a time, and **Not now** waits 14 days (a second one stops it on that device). The same controls stay in **Settings** → **General** → **This device**: install the app, notifications on or off with **Send a test**, and light mode. If notifications are blocked, it says where to allow them again in the browser's site settings.
+These notes show up after the first minute, one at a time, and **Not now** waits 14 days (a second one stops it on that device). The same controls stay in **Settings** → **General** → **This device**: install the app, notifications on or off with **Send a test**, and light mode. If notifications are blocked, it says where to allow them again in the browser's site settings.
 
 Turn Telegram off or on later with `assistant telegram off` / `assistant telegram on <your Telegram user ID>`.
 
@@ -123,9 +123,9 @@ Then it offers to fill in the rest from what you actually write: your agent read
 
 ## 5. Preview, then turn it on
 
-The installer offers a **preview**: your agent reviews the last 7 days once and shows the cards in the terminal and on the dashboard. Nothing is sent and nothing is done in your accounts. Skip it and the service starts that same preview by itself (the *first look*) once a source is connected and your main model can run (signed in or with a key): a quick pass over your newest mail as soon as it starts coming in (people waiting on you first), then the full week once the first import has settled. The dashboard shows how far it is, and each card as soon as it is ready.
+The installer offers a **preview**: your agent reviews the last 7 days once and shows the to-dos in the terminal and on the dashboard. Nothing is sent and nothing is done in your accounts. Skip it and the service starts that same preview by itself (the *first look*) once a source is connected and your main model can run (signed in or with a key): a quick pass over your newest mail as soon as it starts coming in (people waiting on you first), then the full week once the first import has settled. The dashboard shows how far it is, and each to-do as soon as it is ready.
 
-If the cards look useful, say yes to **turning on reviews and card delivery** (Telegram and/or the dashboard app). Read [Security model](../README.md#security-model) first: **Do it** authorizes the offered task; prepare-ahead may start read-only preparation before a tap, but stops before its consequential final step. You can also do both later with `./install.sh --preview` and `./install.sh --activate`.
+If the to-dos look useful, say yes to **turning on reviews and to-do delivery** (Telegram and/or the dashboard app). Read [Security model](../README.md#security-model) first: **Do it** authorizes the offered task; prepare-ahead may start read-only preparation before a tap, but stops before its consequential final step. You can also do both later with `./install.sh --preview` and `./install.sh --activate`.
 
 On a server without a screen, `./install.sh --browser-viewer` gives the assistant a browser you can watch and use from your own (sign in to LinkedIn or X there, or help when a task waits on a sign-in). On a desktop you are not always at, the dashboard can show its screen live instead (`browser_vnc`), so you can take over from your phone. A short note in the viewer says what the browser is for, which task is using it, and when one waits there for you to sign in. See [README](../README.md#sources).
 

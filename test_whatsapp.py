@@ -131,7 +131,7 @@ class WhatsAppSend(unittest.TestCase):
  def test_edit_waits_while_another_draft_of_the_card_is_sending(self):
   self.sent_then_reopened()
   with self.store.connect() as db:db.execute("UPDATE action_jobs SET status='sending',retry_at=?",('2999-01-01T00:00:00+00:00',))
-  with self.assertRaisesRegex(ValueError,'Another draft on this card is sending right now'):self.revise('Edit')
+  with self.assertRaisesRegex(ValueError,'Another draft on this to-do is sending right now'):self.revise('Edit')
   with self.store.connect() as db:db.execute("UPDATE action_jobs SET retry_at=?",('2000-01-01T00:00:00+00:00',))
   self.assertEqual(self.revise('Edit')['status'],'revised')  # a stale lock expires
  def test_this_drafts_own_attempt_says_what_happened(self):

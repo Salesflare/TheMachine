@@ -10,7 +10,7 @@ order: 1
 ## Your Machine
 
 - On your own computer: free. Everything The Machine does, with your own model.
-- Hosted: {price.standard} a month for a Standard server, or {price.big} for a Bigger one, excl. VAT. The first {trial_days} days are free, once per person. Your card is needed to start, and nothing is charged before the free days end.
+- Hosted: {price.standard} a month for a Standard server, or {price.big} for a Bigger one, excl. VAT. The first {trial_days} days are free, once per person. Your payment card is needed to start, and nothing is charged before the free days end.
 
 Your AI plan is billed by your provider, like OpenAI. We add nothing to it.
 

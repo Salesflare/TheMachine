@@ -6,7 +6,7 @@ covers:
 code: onboarding.py, dashboard.html
 order: 1
 ---
-## Check its card
+## Check its status
 
 Open **Connections**. Each source says how it's doing:
 

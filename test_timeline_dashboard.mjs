@@ -47,7 +47,7 @@ try{
  await page.locator('.graph-timeline').waitFor();
  assert.equal(await page.locator('.graph-timeline .section-head h2').textContent(),'Timeline');
  assert.equal(await page.locator('.graph-timeline .section-head .count').textContent(),'56');
- assert.deepEqual(await page.locator('.graph-timeline [data-tl-source]').allTextContents(),['All','Email','Meetings','Intercom','Cards','Projects']);
+ assert.deepEqual(await page.locator('.graph-timeline [data-tl-source]').allTextContents(),['All','Email','Meetings','Intercom','To-dos','Projects']);
  // Intercom: subject, Open or Closed, a link to the conversation
  const open=page.locator('.graph-event[data-event="1"]');
  assert.equal(await open.locator('h4').textContent(),'Export fails');

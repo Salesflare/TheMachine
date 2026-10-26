@@ -118,7 +118,7 @@ class Levels(unittest.TestCase):
         sender = lambda request: sent.append(request['payload']) or {'results': []}
         row = {'id': 's1', 'title': 'Reply to Lee about the 40k deal', 'body': 'Lee asks for a discount.', 'account_ids': json.dumps(['work'])}
         a.push_notify(self.store, CONFIG, row, sender)
-        self.assertEqual((sent[-1]['title'], sent[-1]['body']), ('New card', ''))
+        self.assertEqual((sent[-1]['title'], sent[-1]['body']), ('New to-do', ''))
         a.push_notify(self.store, CONFIG, {**row, 'account_ids': json.dumps(['home'])}, sender)
         self.assertEqual(sent[-1]['title'], row['title'])  # a personal card: the owner's own setting, on
         with self.store.connect() as db:

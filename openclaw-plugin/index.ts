@@ -101,7 +101,7 @@ function sendReview(item:any,draft:any,dashboardBase=''){
  const edit=dashboardBase?[{text:'Edit',url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}&edit=1`}]:[];
  const demo=draft.kind==='email_demo';
  // Handing it to someone: say the card waits for their reply.
- const waits=draft.delegate?[`After sending, this card waits ${draft.wait_days} day${draft.wait_days>1?'s':''} for ${draft.to_name?draft.to_name+'’s':'a'} reply; it closes when they answer.`]:[];
+ const waits=draft.delegate?[`After sending, this to-do waits ${draft.wait_days} day${draft.wait_days>1?'s':''} for ${draft.to_name?draft.to_name+'’s':'a'} reply; it closes when they answer.`]:[];
  // A fix to The Machine itself: what it changes and which files; the full diff is on the dashboard.
  if(draft.kind==='merge')return {text:['Merge this fix into The Machine?','',draft.summary,'',draft.stat,
      ...(draft.plugin?['','The OpenClaw plugin changes too: it takes effect after openclaw plugins reload personal-assistant-bridge.']:[]),
@@ -285,7 +285,7 @@ export default definePluginEntry({
         const delivery = state.deliveries.find((d: any) => d.suggestion_id === id);
         const recorded = delivery ? [String(delivery.message_id), ...JSON.parse(delivery.previous_message_ids || '[]').map(String)] : [];
         if (!delivery || !recorded.includes(String(ctx.callback.messageId))) {
-          await ctx.respond.reply({ text: 'This suggestion card is not the current recorded delivery. Please use the dashboard.' });
+          await ctx.respond.reply({ text: 'This to-do is not the current recorded delivery. Please use the dashboard.' });
           return { handled: true };
         }
         const item = state.suggestions.find((s: any) => s.id === id);
@@ -299,7 +299,7 @@ export default definePluginEntry({
           if(item.status!=='prepared'||!draft||!['email','email_demo','linkedin','slack','x','whatsapp','merge','prepare','finish'].includes(draft.kind)||['queued','sending','sent','uncertain','local_preparation','undoing','undone'].includes((draft.state||item.action_status)?.status)){
             await ctx.respond.editButtons({buttons:cardButtons(item)});
             // A Send on an older version of the card: nothing goes out, and the tap says why.
-            if(choice.startsWith('confirm_'))await ctx.respond.reply({text:['sending','sent','queued'].includes((draft?.state||item.action_status)?.status)?'Already sent. Nothing was sent twice.':'That draft changed or is no longer ready, so nothing was sent. Check the updated card.'});
+            if(choice.startsWith('confirm_'))await ctx.respond.reply({text:['sending','sent','queued'].includes((draft?.state||item.action_status)?.status)?'Already sent. Nothing was sent twice.':'That draft changed or is no longer ready, so nothing was sent. Check the updated to-do.'});
             return {handled:true};
           }
           if((choice.startsWith('next_')&&draft.kind!=='prepare')||(choice.startsWith('confirm_')&&!['email','linkedin','slack','x','whatsapp','merge','finish'].includes(draft.kind))||(choice.startsWith('send_')&&!['email','email_demo','linkedin','slack','x','whatsapp','merge','finish'].includes(draft.kind)))return {handled:true};

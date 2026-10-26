@@ -12,7 +12,7 @@ Your LinkedIn messages. It reads them in a tab of your Machine's own browser, si
 
 ## What it can send
 
-A reply to a message, and only after you approve it on the card. Until then it only drafts.
+A reply to a message, and only after you approve it on the to-do. Until then it only drafts.
 
 ## Connect it
 

@@ -19,7 +19,7 @@ About once a week, it turns what it learned from you into a few general tips tha
 
 ## Nothing without your OK
 
-On Feedback a card asks "Share 3 learnings with The Machine team?" Tap **Review** to see exactly what would be sent. Edit or remove any tip, then **Send**. Or pick **Not now** or **Never ask**.
+On Feedback, a short note asks "Share 3 learnings with The Machine team?" Tap **Review** to see exactly what would be sent. Edit or remove any tip, then **Send**. Or pick **Not now** or **Never ask**.
 
 It's sealed for the team and comes from a made-up name, unless you tick **Add my email so the team can reply**.
 

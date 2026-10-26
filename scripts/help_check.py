@@ -36,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 HELP = ROOT / 'docs' / 'help'
 # The areas of the help, in the order the site shows them.
-AREAS = {'getting-started': 'Getting started', 'cards': 'Cards and chat', 'calendar': 'Calendar', 'graph': 'Graph',
+AREAS = {'getting-started': 'Getting started', 'cards': 'To-dos and chat', 'calendar': 'Calendar', 'graph': 'Graph',
          'connections': 'Connections', 'fleet': 'Fleet and The Machine Network', 'weekly': 'Weekly recap',
          'settings': 'Settings', 'account': 'Account and billing', 'security': 'Security and privacy',
          'troubleshooting': 'Troubleshooting'}

@@ -77,7 +77,7 @@ try{
   await page.waitForFunction(()=>document.querySelector('#side-cards a')?.classList.contains('fade'));assert.match(await a.getAttribute('class')||'',/fade/);assert.match(await a.getAttribute('title'),/does not fit the sidebar/);
   // The filter narrows the list; Work/Personal switches it
   await page.locator('#side-find').fill('number 2');assert.ok((await page.locator('#side-cards a').allTextContents()).every(t=>t.includes('number 2')));
-  await page.locator('#side-find').fill('nothing like this');assert.equal(await page.locator('.side-empty').textContent(),'No cards match.');
+  await page.locator('#side-find').fill('nothing like this');assert.equal(await page.locator('.side-empty').textContent(),'No to-dos match.');
   await page.locator('#side-find').fill('');
   await page.locator('#side-cards [data-scope="personal"]').click();assert.equal(await page.locator('#side-cards [data-scope="personal"]').getAttribute('aria-pressed'),'true');
   await page.locator('#side-cards [data-scope="all"]').click();
@@ -229,7 +229,7 @@ try{
   await page.keyboard.type('number 7');await page.waitForFunction(t=>[...document.querySelectorAll('#pal-list .pal-label')].some(e=>e.textContent===t),cards[7].title);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'search fits at '+w);
   await page.keyboard.press('Escape');assert.ok(!(await page.locator('#palette[open]').count())&&await page.evaluate(()=>document.activeElement.id)==='find-open','Esc closes it');
-  await page.locator('#find-open').click();await page.keyboard.type('new');assert.ok((await palItems()).includes('New card'),'commands in the same field');
+  await page.locator('#find-open').click();await page.keyboard.type('new');assert.ok((await palItems()).includes('New to-do'),'commands in the same field');
   await page.locator('#pal-q').fill('number 4');await page.waitForFunction(t=>[...document.querySelectorAll('#pal-list .pal-label')].some(e=>e.textContent===t),cards[4].title);
   await page.locator('#pal-list .pal-item',{hasText:cards[4].title}).first().click();await page.locator('#chat-log').waitFor();
   assert.equal(new URL(page.url()).hash,'#chat='+cards[4].id,'a pick opens its chat');assert.ok(!(await page.locator('#palette[open]').count()));

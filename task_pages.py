@@ -91,7 +91,7 @@ class TaskPages:
     def dismiss(self, card_id):
         state, record = self.load(card_id)
         if state != 'offered':
-            raise ValueError('There is no task page to skip on this card.')
+            raise ValueError('There is no task page to skip on this to-do.')
         self.save(card_id, 'dismissed', {'task': {'title': record['task']['title']}})
         return {'state': 'dismissed'}
 
@@ -117,7 +117,7 @@ class TaskPages:
     def share(self, card_id, leave_out=(), days=DEFAULT_DAYS):
         state, record = self.load(card_id)
         if state != 'offered':
-            raise ValueError('This card has no task page to add.' if state not in LIVE else 'This card already has a task page.')
+            raise ValueError('This to-do has no task page to add.' if state not in LIVE else 'This to-do already has a task page.')
         if days not in DAYS:
             raise ValueError('A task page works for 7, 14 or 30 days.')
         leave_out = sorted({p for p in (leave_out or ()) if p in task_invites.PAGE_PARTS})
@@ -164,7 +164,7 @@ class TaskPages:
         """Stop sharing: deleted from the Network now; the key goes too; an unsent draft loses its link line."""
         state, record = self.load(card_id)
         if state not in LIVE:
-            raise ValueError('This card has no task page to stop.')
+            raise ValueError('This to-do has no task page to stop.')
         self.relay().call('POST', '/task-invite', {'action': 'revoke', 'id': record['invite_id']})
         revision, action = self.draft_action(card_id)
         if action and 'Status and replies: ' in next_actions.draft_text(action):
@@ -175,7 +175,7 @@ class TaskPages:
     def done(self, card_id):
         state, record = self.load(card_id)
         if state != 'shared':
-            raise ValueError('This card has no open task page.')
+            raise ValueError('This to-do has no open task page.')
         record['status'] = 'done'
         record['updates'].append({'who': 'owner', 'what': 'closed', 'at': today()})
         self.save(card_id, 'done', self.push(card_id, record, done=True))

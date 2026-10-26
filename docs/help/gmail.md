@@ -11,11 +11,11 @@ order: 10
 
 All your mail: the last 7 days when you connect, then everything new, in and out. Mail you send counts too, so it learns how you write and what you promised.
 
-Promotions, newsletters, Updates and Forums mail get a quick look first: sender, subject and a few words, many at once. When one matters, it is read in full and can become a card. Nothing is skipped unseen.
+Promotions, newsletters, Updates and Forums mail get a quick look first: sender, subject and a few words, many at once. When one matters, it is read in full and can become a to-do. Nothing is skipped unseen.
 
 ## What it can send
 
-An email from a card, and only after you approve it. **Do it** prepares a draft; **Review and send** opens a preview, and nothing goes out until you press **Send now**. **Sign in with Google** asks Google for sending too. With your own app on your own computer, the sign-in is read-only until you add sending yourself.
+An email from a to-do, and only after you approve it. **Do it** prepares a draft; **Review and send** opens a preview, and nothing goes out until you press **Send now**. **Sign in with Google** asks Google for sending too. With your own app on your own computer, the sign-in is read-only until you add sending yourself.
 
 ## Connect it
 
@@ -36,7 +36,7 @@ A Google Workspace admin may have to allow the app first, in the Admin console.
 
 ## Remove it
 
-- On a hosted Machine: press **Disconnect** next to the address on your setup page. That removes Gmail and Calendar for that address and revokes the sign-in at Google. In the dashboard, **Reconnect or disconnect ↗** on its card takes you there.
+- On a hosted Machine: press **Disconnect** next to the address on your setup page. That removes Gmail and Calendar for that address and revokes the sign-in at Google. In the dashboard, **Reconnect or disconnect ↗** on Connections takes you there.
 - On your own computer: **Connections**, open Gmail, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. When nothing else uses that Google sign-in, it is revoked at Google.
 
 ## Uninstall it on Google

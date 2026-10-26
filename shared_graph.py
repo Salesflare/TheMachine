@@ -758,7 +758,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                                 (json.dumps(events), json.dumps(graph.TIMELINE_CARDS))):
                 ids = [int(i) for i in json.loads(c['event_ids'] or '[]') if str(i).isdigit()]
                 if ids and ok(ids):
-                    found.append({'at': c['created_at'], 'line': _line(('Card done: ' if c['status'] == 'completed' else 'Card: ') + str(c['title'] or ''))})
+                    found.append({'at': c['created_at'], 'line': _line(('To-do done: ' if c['status'] == 'completed' else 'To-do: ') + str(c['title'] or ''))})
         found.sort(key=lambda x: str(x['at'] or ''), reverse=True)
         return found[:limit]
 

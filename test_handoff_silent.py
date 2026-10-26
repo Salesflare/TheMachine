@@ -68,7 +68,7 @@ class Silent(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("UPDATE fleet_in SET telegram_message_id='77' WHERE id=?", (ask,))
         text = self.fleet.telegram_view('77')['text']
-        self.assertIn('→ Marked as yours, since you emailed Sam about it. Not mine on the card undoes it.', text)
+        self.assertIn('→ Marked as yours, since you emailed Sam about it. Not mine on the to-do undoes it.', text)
         self.fleet.handoff_not_mine(done['card_id'])
         self.assertEqual(sent, ['77'])
         self.assertIn('→ Declined', self.fleet.telegram_view('77')['text'])

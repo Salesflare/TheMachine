@@ -8,7 +8,7 @@ order: 4
 ---
 ## Add one
 
-When you hand off a card **By email**, press **Add a task page** (or **No thanks**).
+When you hand off a to-do **By email**, press **Add a task page** (or **No thanks**).
 
 1. Check the preview. **Leave out** any part they shouldn't see; **Put back** brings it back.
 2. Pick how long the link works: 7, 14 or 30 days.
@@ -16,10 +16,10 @@ When you hand off a card **By email**, press **Add a task page** (or **No thanks
 
 ## What they see
 
-The task and what you chose to show, with three answers: I'm on it, Done, or Can't do this. Their answer comes back on your card.
+The task and what you chose to show, with three answers: I'm on it, Done, or Can't do this. Their answer comes back on your to-do.
 
 The page is sealed with a key that is only in the link. Our servers only learn which step it's at.
 
 ## Stop sharing
 
-Press **Stop sharing** on the card. The page is deleted at once and the link no longer works.
+Press **Stop sharing** on the to-do. The page is deleted at once and the link no longer works.

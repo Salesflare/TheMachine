@@ -21,4 +21,4 @@ Rules change only on the dashboard, never from a message.
 
 ## The first time someone asks
 
-A question that needs you comes as a card, with **Share once**, **Always share**, **Decline** or **Never share**.
+A question that needs you comes as a to-do, with **Share once**, **Always share**, **Decline** or **Never share**.

@@ -113,7 +113,7 @@ class Faults(unittest.TestCase):
         [view] = self.store.event_views([e['id'] for e in self.store.events([gateway['id']])])
         self.assertEqual(view['from'], 'The Machine')
         self.assertEqual(view['body'].splitlines()[0], 'Talking with your Fleet on The Machine Network failed. Teammates’ questions and answers may come late; '
-                         'your own cards are fine. The Machine can fix this itself: it tests a fix in a copy, and a small one merges by itself (undo for a day).')
+                         'your own to-dos are fine. The Machine can fix this itself: it tests a fix in a copy, and a small one merges by itself (undo for a day).')
         self.assertIn('Error: ValueError: The Network said 500', view['body'])
         self.assertNotIn('test_self_fix.py', view['body'])
         self.assertTrue(view['details'].startswith('Where (innermost last):\n  test_self_fix.py:'))
@@ -171,7 +171,7 @@ class Faults(unittest.TestCase):
         a.sync_gateway(self.store, {'accounts': [gateway]}, gateway, FakeJournal())
         [event] = self.store.events([gateway['id']])
         self.assertTrue(event['body'].startswith('Talking with your Fleet on The Machine Network failed because The Machine Network had a problem '
-                                                 '(it answered 503), not The Machine. Teammates’ questions and answers may come late; your own cards '
+                                                 '(it answered 503), not The Machine. Teammates’ questions and answers may come late; your own to-dos '
                                                  'are fine. The Machine tries again by itself; nothing is needed from you.'), event['body'])
         self.assertNotIn('fix this itself', event['body'])
         metadata = event['metadata'] if isinstance(event['metadata'], dict) else json.loads(event['metadata'])

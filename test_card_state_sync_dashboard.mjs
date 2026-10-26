@@ -26,7 +26,7 @@ const cards=[
   preparation_browser:{since:now,page:'https://shop.example.com/checkout',sign_in:false}},
  // A snoozed card whose confirmed order didn't go through: one true line, never the earlier "ready at checkout"
  {id:'e5e5e5e5e5e5e5e5',title:'Buy the cable',body:'Your cable is ready at checkout for €60.',status:'snoozed',snoozed_until:new Date(Date.now()+7*3600e3).toISOString(),scope:'personal',created_at:now,event_ids:[5],
-  step_stopped:'Not done yet: Order the cable (browser access is still failing). It carries on when the card comes back, 09:00.'}];
+  step_stopped:'Not done yet: Order the cable (browser access is still failing). It carries on when the to-do comes back, 09:00.'}];
 const email={kind:'email',to:['sam@example.com'],subject:'Ceiling speakers',body:'Hi Sam, when can you do the speakers?',reply:false};
 const whatsapp={kind:'whatsapp',to:['Sam'],subject:'',body:'Hi Sam! We’d like ceiling speakers put in. Could you help?',reply:false};
 const items={

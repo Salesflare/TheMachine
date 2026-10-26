@@ -657,7 +657,7 @@ elif args[:2] == ["api", "call"]:
         self.assertIn('✓ work-gmail (Gmail): synced just now, 1 signals', text)
         self.assertIn('✗ personal-whatsapp (WhatsApp): not set up (identity_sha256 is still the example value) | assistant connect whatsapp', text)
         self.assertIn('! credential owner-token is readable by others | chmod 600', text)
-        self.assertIn('! reviews and Telegram cards are off | try one: assistant preview', text)
+        self.assertIn('! reviews and to-dos in Telegram are off | try one: assistant preview', text)
         self.assertIn('USER.md missing', text)
         ui = FakeUI()
         self.assertEqual(onboarding.print_doctor(results, ui), 1)
@@ -674,7 +674,7 @@ elif args[:2] == ["api", "call"]:
         self.stub('systemctl', 'print("openclaw-gateway.service enabled enabled" if "list-unit-files" in args else "inactive")')
         self.config(dict(EXAMPLE['openclaw-gateway'], unit='openclaw-gateway.service'), telegram_account='family', openclaw=str(self.bin / 'missing'))
         text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
-        self.assertIn('! you are approved on the Telegram account work, but cards go out through family', text)
+        self.assertIn('! you are approved on the Telegram account work, but to-dos go out through family', text)
         self.assertNotIn('no systemd unit', text)
 
     def test_doctor_notices_when_openclaw_skips_the_review_hooks(self):

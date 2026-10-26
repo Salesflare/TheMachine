@@ -59,7 +59,7 @@ try{
   await page.locator('#promises-list a.promise-link[href="#promise/7"]').click();await onPage(page);
   assert.equal(await page.evaluate(()=>location.hash),'#promise/7');
   const text=await page.locator('.promise-page').innerText();
-  for(const want of ['Send the written recap','Promised to Wren Fairhaven · due','Open','Came from','Pilot call Tuesday','About','Harborline pilot','Card','Send Wren the pilot recap','History','Promised to Wren Fairhaven in an email','Noted by a review','Date moved to'])
+  for(const want of ['Send the written recap','Promised to Wren Fairhaven · due','Open','Came from','Pilot call Tuesday','About','Harborline pilot','To-do','Send Wren the pilot recap','History','Promised to Wren Fairhaven in an email','Noted by a review','Date moved to'])
    assert.ok(text.includes(want),'the page shows '+want);
   // Its card is a link, never the page itself; the message opens in its app; people and the project open their pages
   assert.equal(await page.locator('.promise-card a').getAttribute('href'),'#card='+'a'.repeat(16));

@@ -376,7 +376,7 @@ class Requests:
             db.execute('UPDATE fleet_in SET status=?,decided_at=?,choice=? WHERE id=?', (status, fleet.now(), choice, row['id']))
             db.execute('UPDATE fleet_requests SET stage=?,card_id=?,updated_at=? WHERE id=?', (stage, card_id, fleet.now(), row['id']))
             self.log(db, 'in', row['fleet'], row['member_id'], row['name'], row['kind'], fleet.question_text(row['kind'], question),
-                     ((ACCEPTED[choice] + (' by your rule' if by_rule else '') + ': card made') if card_id else ('declined' + (': ' + why if why else '')))
+                     ((ACCEPTED[choice] + (' by your rule' if by_rule else '') + ': added to your to-dos') if card_id else ('declined' + (': ' + why if why else '')))
                      + (f' (your note: “{note}”)' if note else ''))
         if retell and row['telegram_message_id'] and self.retell:
             self.retell(row['telegram_message_id'])
@@ -385,7 +385,7 @@ class Requests:
     def request_card(self, row, question, text=None):
         """The card for an accepted request, made from this Machine's own data. The teammate's words are shown quoted."""
         if not self.make_card:
-            raise ValueError('This Machine makes no cards')
+            raise ValueError('This Machine makes no to-dos')
         sender = fleet.clean((self.member(row['fleet'], row['member_id']) or {}).get('name') or row['name'], 80)
         if row['kind'] in family.REQUESTS:  # a Family's to-do or plan: never the work accounts
             return self.family_card(row, question, sender)
@@ -458,7 +458,7 @@ class Requests:
         with self.connect() as db:
             card = db.execute('SELECT * FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
             if not card:
-                raise ValueError('No such card')
+                raise ValueError('No such to-do')
             ids = json.loads(card['event_ids'] or '[]')
             mails = db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND id IN (SELECT value FROM json_each(?)) "
                                'ORDER BY occurred_at DESC', (json.dumps(ids),)).fetchall()
@@ -653,7 +653,7 @@ class Requests:
         if not question:
             raise ValueError('Give it a title and a short summary')
         if contact and contact != draft['contact']:
-            raise ValueError('Only the contact on this card can go along')
+            raise ValueError('Only the contact on this to-do can go along')
         if not any(m['member_id'] == member_id for f in draft['fleets'] if f['id'] == fleet_ref for m in f['members']):
             raise ValueError('Not someone to hand this to')
         keys = self.message_keys(card_id, fleet_ref)
@@ -690,7 +690,7 @@ class Requests:
             told = self.withdraw(r)
             with self.connect() as db:
                 self.log(db, 'out', r['fleet'], r['member_id'], r['name'], 'handoff', title,
-                         'taken back' if told else "taken back on your card; their Machine couldn't be told")
+                         'taken back' if told else "taken back on your to-do; their Machine couldn't be told")
         if self.wait_card:  # it's with them now: the card leaves Ready and waits under Later until their Machine answers
             try:
                 self.wait_card(str(card_id), f"Handed off to {fleet.label(self.member(fleet_ref, member_id))}",
@@ -735,7 +735,7 @@ class Requests:
         try:
             if card and card['status'] in OPEN:
                 if not self.drop_card:
-                    raise ValueError('Card cleanup is not ready')
+                    raise ValueError('To-do cleanup is not ready')
                 self.drop_card(card_id, line, 'fleet-withdrawn-' + ask_id)
             if row['telegram_message_id'] and self.retell:
                 self.retell(row['telegram_message_id'])
@@ -859,7 +859,7 @@ class Requests:
         with self.connect() as db:
             row = db.execute("SELECT id FROM fleet_out WHERE context=? ORDER BY at DESC LIMIT 1", ('handoff:' + str(card_id),)).fetchone()
         if not row:
-            raise ValueError('That card was not handed off')
+            raise ValueError('That to-do was not handed off')
         self.set_meta('handoff_mine:' + row['id'], fleet.now())
         return {'ok': True}
 
@@ -967,7 +967,7 @@ class Requests:
         """Not mine on a card that became the owner's silently: undone, and the teammate is told, so it comes back to them."""
         note = self.silent_note(card_id)
         if not note:
-            raise ValueError('That card did not become yours by itself')
+            raise ValueError('That to-do did not become yours by itself')
         with self.connect() as db:
             row = db.execute('SELECT * FROM fleet_requests WHERE id=?', (note['ask_id'],)).fetchone()
         self.relay.call('POST', '/answer', {'id': row['id'], 'status': 'answered', 'answer': {'stage': 'declined', 'note': 'Not mine'}})

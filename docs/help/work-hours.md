@@ -8,7 +8,7 @@ order: 2
 ---
 In **Settings**, **Work hours**:
 
-- **Work days**: work cards and snoozed work wait for a work day.
+- **Work days**: work to-dos and snoozed work wait for a work day.
 - **Messages from** and **Until**: nothing is sent to you outside these hours.
 - **Snoozes land at**: when a snooze of a day or more comes back.
 - **Morning digest**: when the morning summary comes.

@@ -4,8 +4,8 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from './openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// New card and Rename on the dashboard. New card: a row under Find a card on a computer, "+" in the top bar on a
-// phone, C, "new" in Find a card, and the palette (Ctrl/⌘K) then "new"; one field, optional Work/Personal, due date, person and email; Enter adds it
+// New card and Rename on the dashboard. New card: a row under Find a to-do on a computer, "+" in the top bar on a
+// phone, C, "new" in Find a to-do, and the palette (Ctrl/⌘K) then "new"; one field, optional Work/Personal, due date, person and email; Enter adds it
 // with card_new and nothing else (no send). Rename: the sidebar row (⋯, double click, right click, long press on a
 // phone), the chat's title and header menu, and the card (More, and a click on its title on a computer only).
 // Optimistic, Esc cancels, empty keeps the old title, markup stays text, a failure puts the old title back.
@@ -52,10 +52,10 @@ try{
   assert.deepEqual(due,['2026-10-23','2026-10-29','2026-11-05','2026-10-23','2026-10-24','2027-10-02','2026-10-24','2026-11-03','2026-10-26','2026-11-22','2026-10-23',null]);
   await context.close()}
  {const {context,page}=await open(1440,900);
-  // The row sits under Find a card, above the tabs; the phone's "+" is not shown on a computer
+  // The row sits under Find a to-do, above the tabs; the phone's "+" is not shown on a computer
   const y=s=>page.locator(s).evaluate(n=>n.getBoundingClientRect().top);
   assert.ok(await page.locator('#side-new').isVisible());assert.ok(!(await page.locator('#new-card-top').isVisible()));
-  assert.ok(await y('#side-search')<await y('#side-new')&&await y('#side-new')<await y('nav'),'New card is between Find a card and the tabs');
+  assert.ok(await y('#side-search')<await y('#side-new')&&await y('#side-new')<await y('nav'),'New card is between Find a to-do and the tabs');
   await page.locator('#side-new').click();const dialog=page.locator('#new-card');await dialog.waitFor();
   assert.equal(await page.evaluate(()=>document.activeElement.id),'nc-text');assert.equal(await page.locator('#nc-text').getAttribute('placeholder'),'What needs doing?');
   // Shift+Enter is a new line; the chips are optional: Work, Due, a person and an email
@@ -76,7 +76,7 @@ try{
   // The fresh card shows like any other, with Added by you in quiet text
   const fresh=page.locator('#task-'+'ab'.repeat(8));await fresh.waitFor();assert.match(await fresh.locator('.meta-side').textContent(),/^Added by you/);
   assert.match(await fresh.locator('.actions').textContent(),/Do it/);
-  // C opens it, not while typing; Esc closes; "new" in Find a card or the palette opens it too
+  // C opens it, not while typing; Esc closes; "new" in Find a to-do or the palette opens it too
   await page.locator('body').press('c');await dialog.waitFor();await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
   await page.locator('#side-find').fill('c');assert.ok(!(await dialog.isVisible()),'C in a field types a c');await page.locator('#side-find').fill('');
   await page.locator('#side-find').fill('new');assert.match(await page.locator('#side-new').getAttribute('class'),/hit/);await page.locator('#side-find').press('Enter');await dialog.waitFor();

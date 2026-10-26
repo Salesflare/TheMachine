@@ -167,7 +167,7 @@ try{
   assert.match(await pane.locator('.shared-tile').first().innerText(),/1,113|1\.113|1113/);
   assert.match(await pane.locator('.shared-first').innerText(),/1,?113 client threads with these organizations go to the team\. Keep any private first\./);
   assert.equal(await pane.locator('.shared-how').getAttribute('open'),'');
-  assert.match(await pane.locator('.shared-how').innerText(),/Shared boards\s+The people you pick get each project's full timeline: email, meetings, Intercom, chats, cards and moves\./);
+  assert.match(await pane.locator('.shared-how').innerText(),/Shared boards\s+The people you pick get each project's full timeline: email, meetings, Intercom, chats, to-dos and moves\./);
   await shot(pane.locator('.shared-how'),(process.env.SHOTS||'/tmp')+'/shared-how-'+width+'.png');
   if(width===1440)await page.screenshot({path:(process.env.SHOTS||'/tmp')+'/shared-pane-1440.png',fullPage:true});
   if(width===390)await page.screenshot({path:(process.env.SHOTS||'/tmp')+'/shared-pane-390.png',fullPage:true});

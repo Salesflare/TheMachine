@@ -234,7 +234,7 @@ def load_job(db, fixture, base):
     at = stamp(40, base)
     db.execute('INSERT INTO agent_jobs(id,suggestion_id,tool,place,status,brief,session_id,summary,files,turns,created_at,updated_at,started_at,finished_at) '
                'VALUES(?,?,?,?,?,?,?,?,?,1,?,?,?,?)',
-               ('sandbox-job-1', card_id, job['tool'], 'local', 'result', 'Answer the question on the card.', 'sandbox-session', job['summary'],
+               ('sandbox-job-1', card_id, job['tool'], 'local', 'result', 'Answer the question on the to-do.', 'sandbox-session', job['summary'],
                 json.dumps([{'path': f} for f in job['files']]), stamp(55, base), at, stamp(54, base), at))
 
 

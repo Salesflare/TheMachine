@@ -1157,7 +1157,7 @@ def telegram_message(rows, root):
                    if row['status'] != 'waiting' else '')
         if row['choice'] == 'silent':  # marked as theirs by what they did (silent acceptance); Not mine is on the card
             how = json.loads(_get(row, 'silent') or '{}').get('how')
-            outcome = (fleet_requests.Requests.marked_line(how) if how else 'Marked as yours') + '. Not mine on the card undoes it.'
+            outcome = (fleet_requests.Requests.marked_line(how) if how else 'Marked as yours') + '. Not mine on the to-do undoes it.'
         if row['status'] == 'withdrawn':  # their Machine took it back (fleet_requests.take_withdrawn)
             outcome = fleet_requests.taken_line(row['name'])
         prefix = f'{n}. ' if many else ''

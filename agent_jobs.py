@@ -169,20 +169,20 @@ def brief_for(card, drafts=(), links=(), files=(), messages=(), task=None, note=
     done looks like and the limits. They edit it before it goes. `inline`: the job runs away from this Machine, where
     the folder isn't, so the source messages (`sources`) go into the text itself, newest first, under a cap."""
     title = ' '.join(str(card.get('title') or '').split())
-    task = ' '.join(str(task or '').split()) or (title.rstrip('.') + '.' if title else 'Do the next step on this card.')
+    task = ' '.join(str(task or '').split()) or (title.rstrip('.') + '.' if title else 'Do the next step on this to-do.')
     lines = ['Task: ' + task, '']
     note = str(note or '').strip()
     if note:
-        lines += ['My note on the card, as I wrote it:', note[:2000], '']
-    lines += ['About:', f'- The card in The Machine: {title or "a task"}', *[f'- {a}' for a in list(about)[:6]], '']
+        lines += ['My note on the to-do, as I wrote it:', note[:2000], '']
+    lines += ['About:', f'- The to-do in The Machine: {title or "a task"}', *[f'- {a}' for a in list(about)[:6]], '']
     history = [h for h in history if str(h).strip()][-6:]
     body = plain(card.get('body')).strip()
     if history or body:
         lines.append('So far (background only; the task above is what to do):')
-        lines += [f'- {h}' for h in history] if history else [f'- The card says: {gist(body, 800)}']
+        lines += [f'- {h}' for h in history] if history else [f'- The to-do says: {gist(body, 800)}']
         lines.append('')
     if drafts:
-        lines.append('Prepared on the card:')
+        lines.append('Prepared on the to-do:')
         for d in list(drafts)[:5]:
             to = d.get('to_name') or d.get('to_email') or ', '.join(d.get('to') or [])
             head = (d.get('label') or d.get('kind') or 'Draft') + (f' (to {to})' if to else '')
@@ -194,7 +194,7 @@ def brief_for(card, drafts=(), links=(), files=(), messages=(), task=None, note=
     at = len(lines)  # where the source messages go when they travel in the text itself
     names = [f'card/{Path(f).name}' for f in files]
     if names:
-        lines += ['Other files from the card, in your folder: ' + ', '.join(names), '']
+        lines += ['Other files from the to-do, in your folder: ' + ', '.join(names), '']
     if links:
         lines += ['Links, only if you need more than what is here:', *[f'- {u}' for u in list(dict.fromkeys(links))[:10]], '']
     lines += ['Done looks like: the task above done, or taken as far as it can go from here with what is left for me said plainly. '
@@ -203,7 +203,7 @@ def brief_for(card, drafts=(), links=(), files=(), messages=(), task=None, note=
               'Limits:', '- You may read what you need and make or change files in this folder.']
     if drafts:
         lines.append(f'- If you rewrite the message prepared above, save only its new text (no To or Subject lines) in {DRAFT_FILE}: '
-                     'it replaces the draft on the card, which I check and send myself.')
+                     'it replaces the draft on the to-do, which I check and send myself.')
     lines.append('- Leave anything that sends, publishes, pays or submits for me: prepare it and say what is left.')
     if inline and sources:
         # Within what the brief may hold, so the limits at its end are never cut off.
@@ -1341,7 +1341,7 @@ class AgentJobs:
     def draft(self, suggestion_id):
         parts = self.card(str(suggestion_id)) if self.card else None
         if not parts:
-            raise ValueError('No such card')
+            raise ValueError('No such to-do')
         title = str(parts['card'].get('title') or 'this task').strip().rstrip('.')
         return {'suggestion_id': str(suggestion_id), 'tools': self.tools(), 'gets': gets_for(parts),
                 'line': f'Picks up “{title[:160]}” and reports back here. Sends nothing itself.',
@@ -1360,13 +1360,13 @@ class AgentJobs:
             raise ValueError('The brief is too long')
         parts = self.card(str(suggestion_id)) if self.card else None
         if not parts:
-            raise ValueError('No such card')
+            raise ValueError('No such to-do')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             busy = db.execute(f"SELECT tool FROM agent_jobs WHERE suggestion_id=? AND status IN ({','.join('?' * len(ACTIVE))})",
                               (str(suggestion_id), *ACTIVE)).fetchone()
             if busy:
-                raise ValueError(f'{TOOLS.get(busy["tool"])} is already on this card')
+                raise ValueError(f'{TOOLS.get(busy["tool"])} is already on this to-do')
             job_id = 'aj_' + secrets.token_hex(8)
             at = now()
             # Anything earlier on this card that the owner didn't close was handed off again.

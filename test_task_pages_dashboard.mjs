@@ -39,7 +39,7 @@ try{
  // The approve step: exactly what the page shows, the never-shared line, the days, Add to email / Cancel
  const a=c.locator('.tp-approve');await a.waitFor();
  assert.match(await a.locator('.tp-mini').innerText(),/Sam shared a task with you[\s\S]*Send the signed venue contract[\s\S]*Due Sat, Oct 31[\s\S]*back by Friday/);
- assert.match(await a.innerText(),/Never shared: the email thread, your notes or other cards\./);
+ assert.match(await a.innerText(),/Never shared: the email thread, your notes or other to-dos\./);
  assert.equal(await a.locator('[role=radio][aria-checked=true]').innerText(),'14');
  assert.equal(await c.locator('[data-choice="send"],.actions>button.primary:not([data-tp-share])').count(),0);  // no Send while approving
  await a.locator('.tp-part:has-text("Due") button').click();

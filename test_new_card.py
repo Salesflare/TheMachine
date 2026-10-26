@@ -171,7 +171,7 @@ class NewCard(unittest.TestCase):
         # The owner's signal now fills in the card it went into
         self.assertEqual(self.review(event_ids=[made['event_id']], dedupe_key='again')['id'], other['id'])
         chat = self.app.card_chat(made['id'])['items']
-        self.assertIn('Merged into the other card', [i['text'] for i in chat if i['kind'] == 'event'])
+        self.assertIn('Merged into the other to-do', [i['text'] for i in chat if i['kind'] == 'event'])
 
     def test_creating_a_card_sends_nothing(self):
         self.store.commit_page('w', {}, [mail('m1')])

@@ -330,7 +330,7 @@ def offer_openclaw(ui):
         ui.say('\nOpenClaw is not set up yet. Its own guided setup comes next; this is what The Machine needs from it:\n'
                '  1. Model: pick the provider you use and sign in or paste its key. Reviews and Do it run on it.\n'
                '  2. Gateway: say yes to running it as a service, so it keeps running in the background.\n'
-               '  3. Channels (optional): choose Telegram to get cards there too. Make a bot first: in Telegram, message\n'
+               '  3. Channels (optional): choose Telegram to get to-dos there too. Make a bot first: in Telegram, message\n'
                '     @BotFather, send /newbot, pick a name and a free username ending in "bot", and paste the token. Skip it to use the dashboard app\'s notifications.\n'
                '  The rest is up to you. When it finishes, you come back here.')
         if ui.yes('Start OpenClaw\'s setup now?', True):
@@ -341,7 +341,7 @@ def offer_openclaw(ui):
             ui.say('  OpenClaw is still not set up; run `openclaw onboard --install-daemon`, then rerun ./install.sh')
             return
     if not has_telegram(settings):
-        ui.say('\nOpenClaw has no Telegram bot. That is optional: cards also reach you through the dashboard app\n'
+        ui.say('\nOpenClaw has no Telegram bot. That is optional: to-dos also reach you through the dashboard app\n'
                '(add it to your phone\'s home screen, turn on notifications). For Telegram too: in Telegram, message\n'
                '@BotFather, send /newbot, pick a name and a free username ending in "bot", and copy the token it gives you.')
         if ui.yes('Connect a Telegram bot to OpenClaw now? (runs: openclaw channels add --channel telegram)', False):
@@ -350,7 +350,7 @@ def offer_openclaw(ui):
         if not has_telegram(onboarding.openclaw_settings()):
             ui.say('  No Telegram bot yet; add one later with `openclaw channels add --channel telegram`.')
     if acted and run([openclaw, 'health'], timeout=60).returncode != 0:
-        ui.say('  note  the OpenClaw Gateway is not answering yet; `openclaw doctor --fix` says why (reviews and cards need it)')
+        ui.say('  note  the OpenClaw Gateway is not answering yet; `openclaw doctor --fix` says why (reviews and to-dos need it)')
 
 
 # ---------------------------------------------------------------- config
@@ -420,7 +420,7 @@ def answers(interactive, facts):
         values['telegram_owner'] = ask_until('Your Telegram user ID (the private chat with your OpenClaw bot'
                                              + (', found in OpenClaw)' if values['telegram_owner'] else
                                                 '; your bot\'s pairing reply shows it. Optional: Enter skips Telegram,'
-                                                ' then cards reach you through the dashboard app)'), values['telegram_owner'],
+                                                ' then to-dos reach you through the dashboard app)'), values['telegram_owner'],
                                              lambda a: telegram_off(a) or onboarding.telegram_id(a),
                                              lambda a: f'{a!r} is not a Telegram user ID: that is a number like 123456789')
         values['telegram_owner'] = onboarding.telegram_id(values['telegram_owner']) or ''
@@ -449,7 +449,7 @@ def answers(interactive, facts):
     if missing:
         raise SystemExit('Missing answers: ' + ', '.join(missing) + ' (set ' + ', '.join(ENV[k] for k in missing) + ')')
     if not values['telegram_owner']:
-        say('No Telegram: cards reach you through the dashboard app (add it to your home screen, turn on notifications).'
+        say('No Telegram: to-dos reach you through the dashboard app (add it to your home screen, turn on notifications).'
             ' Add Telegram later with assistant telegram on <your Telegram user ID>.')
     elif not re.fullmatch(r'-?\d{3,20}', values['telegram_owner']):
         raise SystemExit('The Telegram owner must be a numeric chat ID, got ' + repr(values['telegram_owner']))
@@ -740,7 +740,7 @@ def install_node_packages(node, root=ROOT):
     npm = npm_beside(node)
     result = run([npm, 'ci', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], cwd=str(root)) if npm else None
     if not result or result.returncode or not node_packages_current(root):
-        say('  warn  could not install the Node packages (npm ci); card chat stays unavailable until the next install')
+        say('  warn  could not install the Node packages (npm ci); to-do chat stays unavailable until the next install')
         return False
     say('Node packages: installed (package-lock.json)')
     return True
@@ -968,16 +968,16 @@ def guided(paths, since, ui=None):
         subprocess.call([sys.executable, str(ROOT / 'cli.py'), '--config', str(paths.config), 'profile', '--workspace', str(paths.workspace)])
     if config.get('delivery_enabled') and config.get('review_worker', {}).get('enabled'):
         return config
-    if ready and ui.yes('Run a preview now? Your agent reviews the last 7 days and shows the cards here and on the dashboard;'
+    if ready and ui.yes('Run a preview now? Your agent reviews the last 7 days and shows the to-dos here and on the dashboard;'
                         ' nothing is sent and nothing is done in your accounts', True):
         previewed = subprocess.call([sys.executable, str(ROOT / 'cli.py'), '--config', str(paths.config), 'preview']) == 0
         if not previewed:
             say('  The preview did not finish; turn reviews on once it works (./install.sh --preview, then --activate).')
-        if ui.yes('Turn on daily reviews and Telegram cards now? (Do it acts with your accounts only when you tap it;'
+        if ui.yes('Turn on daily reviews and to-dos in Telegram now? (Do it acts with your accounts only when you tap it;'
                   ' see README "Security model")', previewed):
             config = activate(paths)
             restarted = service.restart(UNIT_NAME, run=run).returncode == 0
-            say('  Reviews and Telegram cards are on.' if restarted else
+            say('  Reviews and to-dos in Telegram are on.' if restarted else
                 f'  Saved; restart to apply: {service.hint("restart")}')
     return config
 
@@ -1013,7 +1013,7 @@ def next_steps(config, healthy, started, paths=None):
               '  - After editing config.json: ' + service.hint('restart')]
     if not config.get('delivery_enabled') or not config.get('review_worker', {}).get('enabled'):
         lines += ['  - See what it would suggest: ./install.sh --preview (one review of the last 7 days by your agent;',
-                  '    the cards show here and on the dashboard; nothing is sent and nothing is done in your accounts)',
+                  '    the to-dos show here and on the dashboard; nothing is sent and nothing is done in your accounts)',
                   '  - Once sources are connected and Security model is understood: ./install.sh --activate']
     lines.append('  - Check everything any time: assistant doctor (each problem comes with its fix)')
     say('\n'.join(lines))
@@ -1081,7 +1081,7 @@ def browser_viewer_setup(paths, install=None):
     config.update(browser_url=url, browser_cdp_url=browser_viewer.CDP_URL)
     onboarding.save(paths.config, config)
     restarted = service.try_restart(UNIT_NAME, run=run).returncode == 0
-    say('  Cards that wait on the browser now link to it.' if restarted else f'  Saved; restart to apply: {service.hint("restart")}')
+    say('  To-dos that wait on the browser now link to it.' if restarted else f'  Saved; restart to apply: {service.hint("restart")}')
     return 0
 
 

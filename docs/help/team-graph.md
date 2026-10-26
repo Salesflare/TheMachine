@@ -39,7 +39,7 @@ Each thread is judged on its own, by what it is about. Classification can be wro
 
 ## Share a board with chosen people
 
-On a board's **⋯** menu, tap **Share board…** and pick teammates. Only they get its projects with their full timelines: email threads, meetings and their Zoom notes, Intercom conversations, chats, cards and moves. Sensitive ones go too, such as deals.
+On a board's **⋯** menu, tap **Share board…** and pick teammates. Only they get its projects with their full timelines: email threads, meetings and their Zoom notes, Intercom conversations, chats, to-dos and moves. Sensitive ones go too, such as deals.
 
 Personal and colleague-only threads stay out, and so do people in your Family or Friends and automated mail when only its board is shared. Connections you have not selected stay out too.
 

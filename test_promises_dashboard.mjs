@@ -38,7 +38,7 @@ try{
  assert.deepEqual(await list.locator('.promise-head').allTextContents(),['You promised1','Promised to you2']);
  const text=await list.textContent();
  assert.ok(text.includes('To Alex Morgan: send the Q3 deck')&&text.includes('Due today'));
- assert.ok(text.includes('From Sam Lee: send the signed contract')&&text.includes('on a card now')&&text.includes('Overdue'));
+ assert.ok(text.includes('From Sam Lee: send the signed contract')&&text.includes('a to-do now')&&text.includes('Overdue'));
  assert.ok(text.includes('no date, checked'));
  assert.equal(await list.locator('[data-promise="2"]').count(),0);  // its card handles it
  const widths=[];

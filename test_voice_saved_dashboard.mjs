@@ -46,7 +46,7 @@ try{
   assert.equal(new URL(page.url()).hash,'#settings/writing');
   assert.equal(await page.locator('#settings-tabs [data-settings-tab="writing"]').getAttribute('aria-selected'),'true');
   assert.ok(await slack.isVisible());
-  assert.match(await page.locator('#settings-voices .section-head p').textContent(),/Edit it here, or tell any card/);
+  assert.match(await page.locator('#settings-voices .section-head p').textContent(),/Edit it here, or say so in any to-do’s chat/);
   await page.waitForTimeout(1700);await shot('settings');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // Back goes to the chat

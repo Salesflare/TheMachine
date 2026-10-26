@@ -155,9 +155,9 @@ class RecapAndPreferences(unittest.TestCase):
 
     def test_recap_content(self):
         text=a.weekly_recap(self.store,{},None,{'input':1e6,'cacheRead':9e6,'output':4e4,'runs':3,'usd':3.3})
-        self.assertTrue(text.startswith('**Your week with The Machine** · '));self.assertIn('0% of cards worth it (0 of 1).',text)
+        self.assertTrue(text.startswith('**Your week with The Machine** · '));self.assertIn('0% of to-dos worth it (0 of 1).',text)
         self.assertTrue(text.split('\n')[-1].startswith('_Behind the scenes: ') and '$3.30' in text)
-        self.assertIn('1. #leads (work): 24 this week, no cards',text)
+        self.assertIn('1. #leads (work): 24 this week, no to-dos',text)
 
     def test_recap_goes_out_once_on_friday_afternoon(self):
         sent=[]

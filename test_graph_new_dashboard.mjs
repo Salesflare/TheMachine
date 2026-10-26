@@ -70,7 +70,7 @@ try{
   // The "+" in the top bar: New card, person, organization, project and event; New organization opens its form
   // (a desktop has New card in the sidebar and these in the page heads and the command palette)
   if(mobile){await click('#new-card-top');await page.locator('#new-menu:not([hidden])').waitFor();
-   assert.deepEqual(await page.locator('#new-menu button').allTextContents(),['New card','New person','New organization','New project','New event']);
+   assert.deepEqual(await page.locator('#new-menu button').allTextContents(),['New to-do','New person','New organization','New project','New event']);
    {const r=await page.locator('#new-menu').boundingBox();assert.ok(r.x>=0&&r.x+r.width<=width,'the + menu fits')}await shot(page,`plus-menu-${tag}`);
    await click('#new-menu [data-new-what="org"]')}
   else{await page.evaluate(()=>graphBack('orgs'));await click('#page-head [data-graph-new="org"]')}await page.locator('#record-dialog[open]').waitFor();assert.equal(await page.locator('#record-dialog-title').textContent(),'New organization');

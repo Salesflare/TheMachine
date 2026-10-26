@@ -12,9 +12,9 @@ Your WhatsApp chats, as a linked device of your phone's WhatsApp, like WhatsApp 
 
 ## What it can send
 
-A text into a chat that already exists, only after you approve it on the card.
+A text into a chat that already exists, only after you approve it on the to-do.
 
-If a card came in by email but you talk to that person on WhatsApp, say so in the card's chat. The Machine finds your existing chat with them and switches the draft to WhatsApp, for you to review and send. It never starts a new chat.
+If a to-do came in by email but you talk to that person on WhatsApp, say so in the to-do's chat. The Machine finds your existing chat with them and switches the draft to WhatsApp, for you to review and send. It never starts a new chat.
 
 ## Connect it
 

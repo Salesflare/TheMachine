@@ -41,7 +41,7 @@ try{
  const text=await page.locator('#people-view').textContent();
  assert.ok(text.includes('To youCustomerA review read it in your messages'),text);
  assert.ok(text.includes('You promised: send the renewal quote')&&text.includes('They promised: sign the order form'));
- assert.ok(text.includes('Card: Answer Ann about pricing')&&!text.includes('Fact:'));
+ assert.ok(text.includes('To-do: Answer Ann about pricing')&&!text.includes('Fact:'));
  // What the owner told about her is no open item: its own quiet section.
  assert.equal(await page.locator('.graph-open',{hasText:'Ann prefers calls'}).count(),0);
  assert.ok((await page.locator('.graph-known').textContent()).includes('Ann prefers calls before 10')&&text.includes('Known about Ann'));

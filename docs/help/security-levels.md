@@ -17,7 +17,7 @@ A level is a starting point. Change any setting after, and the level shows **Cus
 
 ## What Careful changes for you
 
-- **Text in notifications** off: a notification says "New card" or "Ready", not what the card says.
+- **Text in notifications** off: a notification says "New to-do" or "Ready", not what the to-do says.
 - **Offer to save sign-ins** off. Signed-in sites you saved stay until you tap **Forget all saved sign-ins**.
 - **Look up work contacts** and **Offer to share learnings** off.
 - **Keep Do it details 90 days** off: they're kept 30 days.
@@ -30,7 +30,7 @@ The Fleet's owner or an admin picks it on the account page, under Fleet settings
 - Answers to teammates wait for your OK, without names, and only about people from your work accounts.
 - Intros and handoffs wait for you too.
 - The team Graph shares client emails without their attachments.
-- Notifications for work cards show no text.
+- Notifications for work to-dos show no text.
 - Work contacts aren't looked up.
 - Everyone signs in again every 7 days.
 - An invite link only works for the email it was sent to.

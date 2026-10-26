@@ -12,7 +12,7 @@ Your mentions, replies and direct messages on X. It reads them in your Machine's
 
 ## What it can send
 
-A reply or a direct message, and only after you approve it on the card.
+A reply or a direct message, and only after you approve it on the to-do.
 
 ## Connect it
 

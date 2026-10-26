@@ -30,7 +30,7 @@ try{
    finally{window.requestAnimationFrame=native;d.remove()}});assert.equal(fit,true,'toast placement does not depend on the next animation frame')}
   // A row of buttons where the toast would go, like an open card's actions
   await page.evaluate(()=>{const d=document.createElement('div');d.id='bar';d.style.cssText='position:fixed;left:0;right:0;bottom:10px;display:flex;gap:8px;padding:0 16px;z-index:1';
-   d.innerHTML='<button style="flex:1;height:44px">Do it</button><button style="flex:1;height:44px">Snooze</button>';document.body.append(d);toast('Handed off. The card shows how it goes.')});
+   d.innerHTML='<button style="flex:1;height:44px">Do it</button><button style="flex:1;height:44px">Snooze</button>';document.body.append(d);toast('Handed off. The to-do shows how it goes.')});
   await shown(page);const t=await rect(page,'#toast'),bar=await rect(page,'#bar');
   if(width<1024)assert.ok(t.bottom<=bar.top,`${width}: the toast sits above the buttons ${JSON.stringify({t,bar})}`);
   else assert.ok(t.bottom>bar.top,'desktop: the toast stays put');

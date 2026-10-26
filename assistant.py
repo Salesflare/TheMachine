@@ -591,7 +591,7 @@ def send_lock(db, suggestion_id, revision, kind):
                 at = locale_prefs.clock_text((dt.datetime.fromisoformat(job['updated_at']) + SEND_RETRY_AFTER).astimezone(local_tz()))
                 return f'I’m still checking whether the last attempt went out, so I won’t send it twice. If it isn’t there by {at}, you can try again.'
         elif job['status'] == 'sending' and (job['retry_at'] or '') > now():
-            return 'Another draft on this card is sending right now. Try again in a minute.'
+            return 'Another draft on this to-do is sending right now. Try again in a minute.'
     return None
 # A signal deferred this many times at the same version is set aside: still pending
 # and searchable, but no longer offered in review batches until new content arrives.
@@ -4359,14 +4359,14 @@ class Store:
                 return {'id': suggestion_id, 'title': row['title'] if row else None, 'duplicate': True}
             row = db.execute('SELECT title,title_suggested FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row:
-                raise ValueError('Unknown card')
+                raise ValueError('Unknown to-do')
             suggested = row['title'] if row['title_suggested'] is None else row['title_suggested']
             if reset:
                 new = suggested
             else:
                 new = ' '.join(str(title or '').split())
                 if not new:
-                    raise ValueError('Give the card a title')
+                    raise ValueError('Give the to-do a title')
                 if len(new) > TITLE_OWNER_MAX:
                     raise ValueError(f'Keep the title under {TITLE_OWNER_MAX} characters')
             kept = None if new == suggested else suggested
@@ -4391,7 +4391,7 @@ class Store:
             own = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             offer = json.loads((own['merge_offer'] if own else None) or '{}')
             if not own or not offer.get('card_id') or offer.get('kept'):
-                raise ValueError('There is nothing to merge on this card')
+                raise ValueError('There is nothing to merge on this to-do')
             if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
                 return {'id': suggestion_id, 'duplicate': True}
             other = db.execute('SELECT * FROM suggestions WHERE id=?', (offer['card_id'],)).fetchone()
@@ -5943,7 +5943,7 @@ class Store:
         if shown.get('stale'):
             raise ValueError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next review suggests it on the new version")
         if source != 'dashboard' or not reviewed:
-            raise ValueError('Open the card on the dashboard to see the before and after first')
+            raise ValueError('Open it on the dashboard to see the before and after first')
         if reviewed != shown['review']:
             raise ValueError(f"{shown['skill']} changed since. Look at the before and after again")
         sha = db.execute('SELECT sha FROM skills WHERE id=?', (cluster['target_id'],)).fetchone()['sha']
@@ -7526,15 +7526,15 @@ def fault_message(error, limit=200):
 # What a fault means in plain words, by where it was logged (the first word of the log call): what
 # failed and what the owner may notice.
 FAULT_AREAS = {
-    'fleet': ('Talking with your Fleet on The Machine Network', 'Teammates’ questions and answers may come late; your own cards are fine.'),
+    'fleet': ('Talking with your Fleet on The Machine Network', 'Teammates’ questions and answers may come late; your own to-dos are fine.'),
     'graph': ('Updating who knows whom', 'Who-knows-whom answers may be out of date.'),
     'enrichment': ('Looking up contact details', 'Some people may miss details such as their company.'),
     'embeddings': ('Indexing messages for search', 'Search may miss recent messages.'),
-    'preparation': ('Preparing a card', 'A card may stay unprepared.'),
-    'review': ('Reviewing new messages', 'New cards may come late.'),
+    'preparation': ('Preparing a to-do', 'A to-do may stay unprepared.'),
+    'review': ('Reviewing new messages', 'New to-dos may come late.'),
     'sync': ('Reading a source', 'New messages from that source may come late.'),
     'collector': ('Reading a source', 'New messages from that source may come late.'),
-    'delivery': ('Sending you cards', 'Cards may reach you late.'),
+    'delivery': ('Sending you to-dos', 'To-dos may reach you late.'),
     'promise': ('Tracking promises', 'Promise reminders may come late.'),
     'skill': ('Running a skill', 'A skill may not run.'),
     'skills': ('Running a skill', 'A skill may not run.'),
@@ -8350,7 +8350,7 @@ def preparation_steps(job_id, agent_db=None, limit=4):
 CHAT_HISTORY_LIMIT = 200
 CHAT_OWNER_WORDS = {'accept': 'Do it', 'retry': 'Try again', 'complete': 'Marked done', 'reject': 'Not needed',
                     'snooze': 'Snoozed', 'reopen': 'Reopened', 'undo': 'Reopened', 'rename': 'Renamed',
-                    'rename_reset': 'Back to the suggested title', 'merge': 'Merged into the other card', 'keep_both': 'Kept both cards'}
+                    'rename_reset': 'Back to the suggested title', 'merge': 'Merged into the other to-do', 'keep_both': 'Kept both to-dos'}
 # A tap that the next one takes back within a minute (done then reopened, snoozed then unsnoozed), or that Undo took
 # back, is left out, both.
 CHAT_UNDONE = {('complete', 'reopen'), ('reject', 'reopen'), ('snooze', 'unsnooze')}
@@ -8763,7 +8763,7 @@ def chat_prompt(job, config=None):
 REVIEW_STEPS = {'begin_analysis': 'Taking the next signals to review', 'analysis_page': 'Reading the signals',
                 'events': 'Looking through earlier messages', 'finish_analysis': 'Saving what it found',
                 'promise': 'Noting a promise', 'promise_close': 'Closing a promise that was kept',
-                'remember_fact': 'Remembering something about you', 'status': 'Checking open cards',
+                'remember_fact': 'Remembering something about you', 'status': 'Checking open to-dos',
                 'preferences': 'Checking what you liked before', 'feedback': 'Checking what you liked before'}
 
 
@@ -9178,7 +9178,7 @@ def stopped_step(db, suggestion):
         back = dt.datetime.fromisoformat(suggestion['snoozed_until']).astimezone(local_tz())
         today = dt.datetime.now(local_tz()).date()
         at = locale_prefs.clock_text(back) if back.date() == today else locale_prefs.clock_text(back) + ' tomorrow' if (back.date() - today).days == 1 else locale_prefs.at_text(back)
-        line += f' It carries on when the card comes back, {at}.'
+        line += f' It carries on when the to-do comes back, {at}.'
     elif prep and prep['status'] == 'blocked':
         line += ' Try again carries it on.'
     return line
@@ -9233,7 +9233,7 @@ def card_draft(row):
     if a.get('signature'): tail.append('+ your signature')
     if a.get('attachments'): tail.append('Attachments: ' + ', '.join(x.get('name', '') for x in a['attachments']))
     if a.get('delegate') and a.get('wait_days'):
-        tail.append(f"After sending, this card waits {a['wait_days']} day{'s' if a['wait_days'] > 1 else ''} for {a['to_name'] + '’s' if a.get('to_name') else 'a'} reply.")
+        tail.append(f"After sending, this to-do waits {a['wait_days']} day{'s' if a['wait_days'] > 1 else ''} for {a['to_name'] + '’s' if a.get('to_name') else 'a'} reply.")
     if a.get('snooze_days'):
         tail.append(f"After sending, the thread leaves your inbox for {a['snooze_days']} day{'s' if a['snooze_days'] > 1 else ''}.")
     # Telegram takes 4096 characters; the title, summary, links and status share them.
@@ -9927,7 +9927,7 @@ def push_notify(store, config, row, sender=None):
                    'body': plain(strip_result_links(row['body']) if ready else row.get('preparation_reason') or '') if text else '',
                    'url': signin or root + '#chat=' + row['id']}
     else:
-        payload = {'title': (('Reminder: ' if row.get('reminder') else '') + row['title']) if text else 'Reminder' if row.get('reminder') else 'New card',
+        payload = {'title': (('Reminder: ' if row.get('reminder') else '') + row['title']) if text else 'Reminder' if row.get('reminder') else 'New to-do',
                    'body': plain(row['body']) if text else '', 'url': root + '#chat=' + row['id']}
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
     if row.get('_silent'):
@@ -9977,10 +9977,10 @@ def setup_hints(store, config, now=None):
         snoozed = db.execute("SELECT 1 FROM decisions WHERE choice='snooze' LIMIT 1").fetchone()
     channels = reminder_channels(store, config)
     if snoozed and not channels['telegram'] and not channels['push']:
-        hints.append({'id': 'telegram', 'title': 'Reminders in Telegram?', 'text': 'Snoozed cards come back as a Telegram message too.',
+        hints.append({'id': 'telegram', 'title': 'Reminders in Telegram?', 'text': 'Snoozed to-dos come back as a Telegram message too.',
                       'href': f'{manage}#telegram', 'button': 'Set up'})
     if 'github' in services and not agent_jobs.coding_relevant({'accounts': [], 'agents': config.get('agents')}):
-        hints.append({'id': 'codex', 'title': 'Hand coding cards to Codex?', 'text': 'It works on your ChatGPT plan.',
+        hints.append({'id': 'codex', 'title': 'Hand coding to-dos to Codex?', 'text': 'It works on your ChatGPT plan.',
                       'href': f'{manage}#codex', 'button': 'Connect'})
     return hints
 
@@ -10730,7 +10730,7 @@ def weekly_recap_message(store, config, current=None, usage=None):
     week = []
     for m in meetings[:5]:
         card = m['card']
-        prep = (' · ' + link('prep ready' if card['status'] == 'prepared' else 'card', card['id'])) if card else ''
+        prep = (' · ' + link('prep ready' if card['status'] == 'prepared' else 'to-do', card['id'])) if card else ''
         week.append((m['at'], f"• {recap_day(m['at'], True)} {recap_escape(recap_clip(m['title'], 60))}, {m['guests']} {'person' if m['guests'] == 1 else 'people'}{prep}"))
     listed = {m['card']['id'] for m in meetings[:5] if m['card']}
     for card in open_cards.values():
@@ -10752,7 +10752,7 @@ def weekly_recap_message(store, config, current=None, usage=None):
         was = before['hit_rate']
         trend = '' if was is None else ', same as the week before' if was == q['hit_rate'] else f", up from {was}%" if q['hit_rate'] > was else f", down from {was}%"
         first = f" Do it was right first time in {q['first_time']} of {q['do_it']}." if q['do_it'] else ''
-        changed.append(f"• {q['hit_rate']}% of cards worth it ({q['worth_it']} of {q['worth_it'] + q['dismissed']}){trend}.{first}")
+        changed.append(f"• {q['hit_rate']}% of to-dos worth it ({q['worth_it']} of {q['worth_it'] + q['dismissed']}){trend}.{first}")
     learned = store.behaviour(7)
     rules = sum(1 for c in changes if c['kind'] == 'draft_rule' and not c['text'].startswith('Removed'))
     voices = sum(1 for c in changes if c['kind'] == 'voice')
@@ -10786,7 +10786,7 @@ def weekly_recap_message(store, config, current=None, usage=None):
     busy = [(k, v) for k, v in sorted(noise.items(), key=lambda kv: -kv[1]['n']) if k[0] and v['n'] >= 20 and v['rule'] not in kept_rules][:3]
     for (account, where), v in busy:
         items.append({'kind': 'noise', 'ref': account, 'data': {'account': account, 'rule': v['rule'], 'label': f'{where} ({names.get(account, account)})'},
-                      'line': f"{len(items) + 1}. {recap_escape(where)} ({recap_escape(names.get(account, account))}): {v['n']:,} this week, no cards"})
+                      'line': f"{len(items) + 1}. {recap_escape(where)} ({recap_escape(names.get(account, account))}): {v['n']:,} this week, no to-dos"})
     if items:
         lines += ['', '**Busy without results**', *(i['line'] for i in items)]
     again = [s for s in snoozed if s['id'] in open_cards and not (s['id'] in kept_cards and s['last'] <= kept_cards[s['id']])][:3]
@@ -12125,7 +12125,7 @@ class App:
                 row = db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE endpoint=?', (str(args.get('endpoint') or ''),)).fetchone()
             if not row:
                 raise ValueError('Notifications are off on this device. Turn them on first.')
-            results = push_send(self.store, self.config, [dict(row)], {'title': 'Notifications are on', 'body': 'This is how a new card shows up.', 'url': '.', 'tag': 'push-test'}, 'test')
+            results = push_send(self.store, self.config, [dict(row)], {'title': 'Notifications are on', 'body': 'This is how a new to-do shows up.', 'url': '.', 'tag': 'push-test'}, 'test')
             if not any(200 <= r.get('status', 0) < 300 for r in results):
                 raise ValueError('The test didn’t go through. Turn notifications off and on again.')
             return {'sent': True}
@@ -12804,7 +12804,7 @@ class App:
         gmail = [a for a in self.config.get('accounts', []) if mail_account(a)]
         order = [a for a in gmail if a['id'] in allowed] + [a for a in gmail if a['id'] not in allowed]
         if not any(a['id'] in allowed for a in order):
-            raise ValueError('This card has no Gmail or Outlook account to send from')
+            raise ValueError('This to-do has no Gmail or Outlook account to send from')
         subject, body = task_invites.draft(task, '', me)
         for account in order:
             try:
@@ -12815,7 +12815,7 @@ class App:
                 if 'Outlook account' not in str(error):
                     raise
         else:
-            raise ValueError('This card has no Gmail or Outlook account to send from')
+            raise ValueError('This to-do has no Gmail or Outlook account to send from')
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (found['suggestion_id'],))
         self.store.prepare(found['suggestion_id'], f'An email handing this to {email}. Read it, change it if you like, and send it yourself.',
@@ -15020,7 +15020,7 @@ class App:
                 row = db.execute('SELECT status FROM suggestions WHERE id=?', (card,)).fetchone()
             if not row or row['status'] in ('completed', 'rejected'):
                 status = 'dropped' if row and row['status'] == 'rejected' else 'kept'
-                reason = 'That card is already closed.'
+                reason = 'That to-do is already closed.'
             else:
                 reason = None
                 if choice == 'drop':

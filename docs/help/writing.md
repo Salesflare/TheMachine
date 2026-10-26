@@ -21,7 +21,7 @@ A quick way to teach it: when you edit a draft before sending, it learns from th
 Fix it where you see it:
 
 - In **Settings**, **Writing**, change the words in that channel's box and **Save**. Later rereads of your messages leave your wording alone.
-- Or tell any card, in its chat: "I only lowercase the start of sentences, not names". The card's chat then shows a **Saved to How you write** line for that channel, with **Edit** to open it.
+- Or say so in any to-do's chat: "I only lowercase the start of sentences, not names". That chat then shows a **Saved to How you write** line for that channel, with **Edit** to open it.
 - **Feedback**, **What I've learned** lists every line too, each with **Edit**.
 
 Be exact, since drafts follow the lines as written. "Lowercase" alone also lowercases names; "sentences start lowercase, names keep their capitals" doesn't. One channel's habits stay on that channel, so a chat habit never reaches your emails.

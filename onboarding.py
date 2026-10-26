@@ -2152,7 +2152,7 @@ def doctor(config_path, workspace=None):
     owners = telegram_owners(config)
     owner = str(config.get('telegram_owner') or '')
     if not owner:
-        add('✓', 'Telegram off: cards reach you through the dashboard app (add it to your home screen and turn on notifications)')
+        add('✓', 'Telegram off: to-dos reach you through the dashboard app (add it to your home screen and turn on notifications)')
     elif not owners:
         add('!', 'could not confirm your Telegram ID in OpenClaw', 'message your bot; if it asks for pairing: openclaw pairing approve telegram <code>')
     elif owner in owners:
@@ -2166,7 +2166,7 @@ def doctor(config_path, workspace=None):
         add('✗', f'telegram_account {configured} is not a Telegram account in OpenClaw (there: {", ".join(bots)})',
             f'set "telegram_account": "{telegram_account(owner)}" in config.json, then {service.hint("restart")}')
     elif bots and owner and telegram_account(owner) != configured and len(bots) > 1:
-        add('!', f'you are approved on the Telegram account {telegram_account(owner)}, but cards go out through {configured}',
+        add('!', f'you are approved on the Telegram account {telegram_account(owner)}, but to-dos go out through {configured}',
             f'set "telegram_account": "{telegram_account(owner)}" in config.json, then {service.hint("restart")}')
     # Credentials (a source's own missing credential is reported with that source below)
     for name, path in sorted(config.get('credentials', {}).items()):
@@ -2231,7 +2231,7 @@ def doctor(config_path, workspace=None):
     # Reviews and delivery
     on = config.get('delivery_enabled') and (config.get('review_worker') or {}).get('enabled')
     if not on:
-        add('!', 'reviews and Telegram cards are off', 'try one: assistant preview; turn them on: ./install.sh --activate')
+        add('!', 'reviews and to-dos in Telegram are off', 'try one: assistant preview; turn them on: ./install.sh --activate')
     elif not last_review or last_review < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).isoformat():
         add('!', 'no review in the last 2 days' if last_review else 'no review yet', 'assistant reviews; openclaw logs')
     else:

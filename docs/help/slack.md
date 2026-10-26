@@ -12,7 +12,7 @@ The conversations you're a member of: channels, private channels, direct message
 
 ## What it can send
 
-A direct message to one person, as you, and only after you approve it on the card. It never posts in a channel.
+A direct message to one person, as you, and only after you approve it on the to-do. It never posts in a channel.
 
 ## Connect it
 

@@ -1,12 +1,12 @@
 ---
-title: No new cards
+title: No new to-dos
 area: troubleshooting
 summary: Reviews are off, waiting, or stopped on your model's usage limit. How to tell and what to do.
 covers: 
 code: dashboard.html, assistant.py
 order: 3
 ---
-Cards come from reviews: your Machine reads what came in, in small batches, within about an hour.
+To-dos come from reviews: your Machine reads what came in, in small batches, within about an hour.
 
 ## Reviews are off
 

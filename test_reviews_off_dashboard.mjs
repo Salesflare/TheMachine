@@ -43,7 +43,7 @@ try{
  await page.close();look={state:'waiting',why:'sources',days:7};
  cards=[{id:'s1',title:'Reply to Sam',body:'',status:'pending',scope:'work',created_at:'2026-10-21T10:00:00+00:00',event_ids:[],account_ids:[]}];
  page=await open();  // cards from the first look: the notice says where they came from
- assert.match(await page.locator('#needs-you').textContent(),/Reviews are off: the cards here come from a one-time first look/);
+ assert.match(await page.locator('#needs-you').textContent(),/Reviews are off: the to-dos here come from a one-time first look/);
  await page.close();cards=[];
  manage=null;page=await open();  // self-hosted: the command instead of a link
  assert.match(await page.locator('#needs-you').textContent(),/install\.sh --activate/);

@@ -40,8 +40,8 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - **Do it grants broad account and machine access for the accepted task.** The plugin's
   guards are not a sandbox. Source messages are untrusted and may contain prompt injection.
   Read the README's security model before activating reviews or delivery.
-- Messages use exact owner-approved Send actions; complete Telegram drafts can be sent directly from their card. Explicit owner requests use `send_now` where supported. WhatsApp retains a card confirmation. Unknown sends are reconciled, never blindly repeated. Collectors read by default; configured CRM joins are an opt-in exception.
-- Fresh installs collect configured sources with recurring reviews and delivery disabled. One read-only first-look preview may run after setup; it sends no cards or external actions.
+- Messages use exact owner-approved Send actions; complete Telegram drafts can be sent directly from their to-do. Explicit owner requests use `send_now` where supported. WhatsApp retains a to-do confirmation. Unknown sends are reconciled, never blindly repeated. Collectors read by default; configured CRM joins are an opt-in exception.
+- Fresh installs collect configured sources with recurring reviews and delivery disabled. One read-only first-look preview may run after setup; it sends no to-dos or external actions.
   `./install.sh --activate` explicitly enables both after setup.
 - The dashboard's sign-in dialog fills sites in the assistant's browser on the owner's behalf and can save
   those passwords in the data folder, encrypted with the message key below (on a hosted Machine that key is
@@ -49,7 +49,7 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   an export holds them only with a passphrase. On a self-hosted install the key sits next to them for the service
   user: protect that user's account and disk (full-disk encryption) accordingly. Without message protection they
   keep a key of their own next to them, as before.
-- The dashboard keeps its last cards, the open chat and the Graph's lists on each device so it opens at once:
+- The dashboard keeps its last to-dos, the open chat and the Graph's lists on each device so it opens at once:
   encrypted (AES-GCM, a key the browser can't export), for one owner, at most 7 days, never a token, and wiped on
   Sign out or when the session ends ([On the device](docs/architecture.md#on-the-device)). On a shared computer, sign out.
 - The browser's own cookies and sign-ins (its profile) are the browser's: protected by the account and the disk,

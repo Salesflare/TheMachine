@@ -9,15 +9,15 @@ order: 11
 ---
 ## What it reads
 
-Your events from 7 days back to 30 days ahead, with repeating events filled in. They show in the [Calendar](calendar.md) tab and help cards about a meeting.
+Your events from 7 days back to 30 days ahead, with repeating events filled in. They show in the [Calendar](calendar.md) tab and help to-dos about a meeting.
 
 ## What it can do
 
 Nothing on its own. It never answers an invitation, and it only invites people you list yourself.
 
-If the sign-in may write calendars, you can add, change or delete an event without guests, on your own calendar or a shared one you may edit. Every change is your tap: in the [Calendar](calendar.md), or on a card that offers it. A sign-in from **Connect Google** only reads.
+If the sign-in may write calendars, you can add, change or delete an event without guests, on your own calendar or a shared one you may edit. Every change is your tap: in the [Calendar](calendar.md), or on a to-do that offers it. A sign-in from **Connect Google** only reads.
 
-On your own calendar you can also invite people from the [Calendar](calendar.md) form. The button says how many get an invite, and Google sends the invitations on that tap. A card never invites anyone.
+On your own calendar you can also invite people from the [Calendar](calendar.md) form. The button says how many get an invite, and Google sends the invitations on that tap. A to-do never invites anyone.
 
 ## Connect it
 

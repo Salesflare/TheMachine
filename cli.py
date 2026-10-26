@@ -181,7 +181,7 @@ def cmd_promises(config, args):
         print(f'{heading} ({len(rows)})')
         for p in rows:
             due = f" · due {assistant.locale_prefs.day_text(dt.date.fromisoformat(p['due']))}" if p['due'] else ''
-            state = {'card': ' · card out', 'kept': ' · kept', 'dropped': ' · dropped', 'answered': ' · they wrote again'}.get(p['state'], '')
+            state = {'card': ' · to-do out', 'kept': ' · kept', 'dropped': ' · dropped', 'answered': ' · they wrote again'}.get(p['state'], '')
             print(f"  #{p['id']}  {p['who']}: {p['what']}{due}{state}")
             print(f"    said {local(p['made_at'])}" + (f" · {p['note']}" if p.get('note') and p['state'] != 'open' else ''))
         print()
@@ -307,7 +307,7 @@ def cmd_prepare(config, args):
                                    **({'next_action':json.loads(Path(args.next_action).read_text())} if args.next_action else {})})
     if args.json:
         return out_json(result)
-    print(f"Saved as Ready for you: {task['title']}. The Telegram card is updated and you'll get one notification.")
+    print(f"Saved as Ready for you: {task['title']}. The to-do in Telegram is updated and you'll get one notification.")
 
 
 PREVIEW_POLL = 10
@@ -381,9 +381,9 @@ def cmd_preview(config, args):
               'That happens on a quiet week; regular reviews will keep looking once activated.\n')
     dashboard = dashboard_url(config)
     print('These are real suggestions from your own signals. Nothing was sent and no action was taken in any account.')
-    print('Reviews and Telegram delivery are still off. ' + (f'The cards are on the dashboard: {dashboard} ' if dashboard else '')
+    print('Reviews and Telegram delivery are still off. ' + (f'The to-dos are on the dashboard: {dashboard} ' if dashboard else '')
           + "(assistant tasks lists them too); they won't be sent to Telegram later.")
-    print('When you want this every day, with Telegram cards and Do it: ./install.sh --activate')
+    print('When you want this every day, with to-dos in Telegram and Do it: ./install.sh --activate')
     if failed:
         error = run.get('error') or run.get('last_error') or ('ended without saving its review' if run['status'] == 'ok' else run['status'])
         raise CliError(f"The preview review didn't finish ({error}). See assistant reviews and openclaw logs, then run assistant preview again.")
@@ -586,8 +586,8 @@ def cmd_telegram(config, args):
     if args.state == 'status':
         owner = str(config.get('telegram_owner') or '')
         on = {'telegram': bool(owner), 'owner': owner or None, 'account': config.get('telegram_account') or ('default' if owner else None)}
-        return out_json(on) if args.json else print(f"Telegram on: cards go to {owner} through the {on['account']} bot." if owner else
-                                                    'Telegram off: cards reach you through the dashboard app (add it to your home screen, turn on notifications).')
+        return out_json(on) if args.json else print(f"Telegram on: to-dos go to {owner} through the {on['account']} bot." if owner else
+                                                    'Telegram off: to-dos reach you through the dashboard app (add it to your home screen, turn on notifications).')
     if args.state == 'on' and not args.owner:
         raise CliError('give your Telegram user ID: assistant telegram on 123456789')
     try:
@@ -596,8 +596,8 @@ def cmd_telegram(config, args):
         raise CliError(error.message + (f'\n  fix: {error.fix}' if error.fix else '')) from None
     if args.json:
         return out_json({'telegram': args.state == 'on', 'notes': notes})
-    print('Telegram on: new cards go to Telegram again, next to the dashboard app.' if args.state == 'on' else
-          'Telegram off: cards, reminders and the weekly recap reach you through the dashboard app.'
+    print('Telegram on: new to-dos go to Telegram again, next to the dashboard app.' if args.state == 'on' else
+          'Telegram off: to-dos, reminders and the weekly recap reach you through the dashboard app.'
           ' Add it to your home screen and turn on notifications (Settings, the bell). Back on any time: assistant telegram on <your Telegram user ID>')
     for note in notes:
         print('  ' + note)
@@ -892,7 +892,7 @@ def parser():
     c.add_argument('source', nargs='?', help='gmail, calendar, outlook, outlook_calendar, slack, crm, whatsapp, android, gateway or a connector plugin')
     c.add_argument('--account', help='account id, to redo one of several or add another')
     add('doctor', 'Check the whole setup; every problem comes with its fix', cmd_doctor)
-    c = add('telegram', 'Telegram is optional: turn card delivery there off or back on (the dashboard app works either way)', cmd_telegram)
+    c = add('telegram', 'Telegram is optional: turn to-do delivery there off or back on (the dashboard app works either way)', cmd_telegram)
     c.add_argument('state', choices=('status', 'on', 'off'))
     c.add_argument('owner', nargs='?', help='with on: your Telegram user ID')
     c.add_argument('--remove-bot', action='store_true', help='with off: also delete the Telegram bot and its token from OpenClaw')

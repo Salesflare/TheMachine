@@ -22,7 +22,7 @@ The **Work** and **Personal** tabs list only those contacts. **Download CSV**, u
 
 ### Timeline
 
-Every person and organization page has one, newest first: email, meetings and their Zoom summaries, Intercom conversations (open or closed, with **Open in Intercom**), WhatsApp, Slack, LinkedIn and X chats, cards, promises and project moves. The chips on top show one source at a time. **Show more** loads older ones.
+Every person and organization page has one, newest first: email, meetings and their Zoom summaries, Intercom conversations (open or closed, with **Open in Intercom**), WhatsApp, Slack, LinkedIn and X chats, to-dos, promises and project moves. The chips on top show one source at a time. **Show more** loads older ones.
 
 Meetings still to come sit apart on top under **Coming up**, soonest first; **Show all upcoming** shows the rest. A meeting on more than one of your calendars shows once.
 
@@ -100,7 +100,7 @@ WhatsApp pictures come through your always-on WhatsApp sync, when it allows them
 
 ## Delete someone permanently
 
-On their page, open the ⋯ menu and pick **Delete permanently…**, then **Delete**. It removes them and what your Machine knows about them: their entry, addresses, looked-up details, the messages only between the two of you, and notes about them. Cards that involve them stay, with their name taken out. They won't be added again. It can't be undone.
+On their page, open the ⋯ menu and pick **Delete permanently…**, then **Delete**. It removes them and what your Machine knows about them: their entry, addresses, looked-up details, the messages only between the two of you, and notes about them. To-dos that involve them stay, with their name taken out. They won't be added again. It can't be undone.
 
 ## Who's who
 
@@ -150,9 +150,9 @@ Tick a few, or **Select all**, to do them at once, and **Undo** right after if y
 
 A new board, or a suggested board you save, looks through your whole history once. It finds projects and organizations that fit, makes one project per organization and puts each in a stage. The header says "Looking through your history…" while it works, then how many it added and how many wait for you to review. An Only-you board keeps what it finds to you.
 
-## A card about someone
+## A to-do about someone
 
-**New card** in the **⋯** menu of a person, organization or project starts a card about them.
+**New to-do** in the **⋯** menu of a person, organization or project starts a to-do about them.
 
 ## What it knows about someone
 

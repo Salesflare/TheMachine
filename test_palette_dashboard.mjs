@@ -78,14 +78,14 @@ try{
   await page.keyboard.press('Control+k');await pal(page).waitFor();assert.equal((await groups(page))[0],'Recent');assert.equal((await labels(page))[0],'Connections');
   assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('palette-recent'))),['go-connections']);
   // "new" → New card; it opens the composer and nothing is saved
-  await page.keyboard.type('new');assert.equal((await labels(page))[0],'New card');await page.keyboard.press('Enter');await page.locator('#new-card').waitFor();
+  await page.keyboard.type('new');assert.equal((await labels(page))[0],'New to-do');await page.keyboard.press('Enter');await page.locator('#new-card').waitFor();
   await page.keyboard.press('Escape');await page.locator('#new-card').waitFor({state:'hidden'});
   // Cards from the list, People / Organizations / Projects from the Graph's search; the late "ac" answer is ignored
   await page.keyboard.press('Control+k');await page.keyboard.type('ac');await page.waitForTimeout(250);await page.keyboard.type('me');
   await page.locator('#pal-list .pal-group',{hasText:'Organizations'}).waitFor();await page.waitForTimeout(900);
   assert.deepEqual(await groups(page),['Organizations','Projects'],'no People from the stale answer');
   assert.ok(graphQueries.includes('acme'));
-  await page.locator('#pal-q').fill('contract');await page.locator('#pal-list .pal-group',{hasText:'Cards'}).waitFor();
+  await page.locator('#pal-q').fill('contract');await page.locator('#pal-list .pal-group',{hasText:'To-dos'}).waitFor();
   assert.ok((await labels(page)).includes('Send Sam the signed contract'));
   await page.locator('#pal-q').fill('pat');await page.locator('#pal-list .pal-group',{hasText:'People'}).waitFor();
   await page.locator('#pal-list .pal-item',{hasText:'Pat Doe'}).click();assert.ok(!(await isOpen(page)));
@@ -110,8 +110,8 @@ try{
   await page.evaluate(()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'c',isComposing:true,bubbles:true})));assert.ok(!(await page.locator('#new-card').isVisible()),'not while composing');
   // The ? sheet: grouped, platform-aware
   await page.locator('body').click({position:{x:700,y:5}});await page.keyboard.press('?');const sheet=page.locator('#keys-sheet');await sheet.waitFor();
-  assert.deepEqual(await sheet.locator('h3').allTextContents(),['General','Go to','Calendar','Lists and cards']);
-  const st=await sheet.textContent();assert.match(st,/Search and commandsCtrlKor\//);assert.match(st,/SettingsGthen,/);assert.match(st,/New cardC/);assert.match(st,/SnoozeS/);assert.ok(!st.includes('⌘'));
+  assert.deepEqual(await sheet.locator('h3').allTextContents(),['General','Go to','Calendar','Lists and to-dos']);
+  const st=await sheet.textContent();assert.match(st,/Search and commandsCtrlKor\//);assert.match(st,/SettingsGthen,/);assert.match(st,/New to-doC/);assert.match(st,/SnoozeS/);assert.ok(!st.includes('⌘'));
   await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
   // Hints: tooltips on the sidebar, a quiet key in the card's More menu
   assert.equal(await page.locator('nav [data-tab="calendar"]').getAttribute('title'),'Calendar (G then C)');
@@ -160,7 +160,7 @@ try{
   await page.keyboard.press('Escape');await page.waitForTimeout(400);
   await page.locator('#find-open').tap();await pal(page).waitFor();
   assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or type a command');
-  const all=await labels(page);for(const l of ['New card','Calendar','People','Settings','Keyboard shortcuts'])assert.ok(all.includes(l),'reachable from the palette: '+l);
+  const all=await labels(page);for(const l of ['New to-do','Calendar','People','Settings','Keyboard shortcuts'])assert.ok(all.includes(l),'reachable from the palette: '+l);
   const b=await pal(page).boundingBox();assert.ok(b.x>=0&&b.x+b.width<=390.5,'fits');
   // The sheet sits under the top bar, which stays in sight; with the keyboard open (a shorter window, as Android
   // Chrome makes it) it shrinks to what is left and the field stays at the top, under the bar

@@ -12,12 +12,12 @@ order: 12
 - **Outlook**: all your mail, the last 7 days when you connect, then everything new.
 - **Outlook Calendar**: your meetings, read only.
 
-Mail in Other and newsletters get a quick look first: sender, subject and a few words, many at once. When one matters, it is read in full and can become a card. Nothing is skipped unseen.
+Mail in Other and newsletters get a quick look first: sender, subject and a few words, many at once. When one matters, it is read in full and can become a to-do. Nothing is skipped unseen.
 
 ## What it can send and change
 
-- An email from a card, only after you approve it in the preview.
-- When you snooze a card about an email, the thread's messages move to a Snoozed folder in Outlook and come back when the card does.
+- An email from a to-do, only after you approve it in the preview.
+- When you snooze a to-do about an email, the thread's messages move to a Snoozed folder in Outlook and come back when the to-do does.
 
 The calendar is never changed.
 
@@ -35,7 +35,7 @@ With your own app: open **Use your own app** there, or run `assistant connect ou
 
 ## Remove it
 
-- On a hosted Machine: press **Disconnect** next to the account on your setup page. In the dashboard, **Reconnect or disconnect ↗** on its card takes you there.
+- On a hosted Machine: press **Disconnect** next to the account on your setup page. In the dashboard, **Reconnect or disconnect ↗** on Connections takes you there.
 - On your own computer: **Connections**, open the account, **Details**, then **Disconnect**.
 
 ## Uninstall it on Microsoft

@@ -1,20 +1,20 @@
 ---
 title: Telegram
 area: connections
-summary: Get cards on Telegram, with the same buttons as the dashboard, through a bot of your own. Optional.
+summary: Get your to-dos on Telegram, with the same buttons as the dashboard, through a bot of your own. Optional.
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## What it does
 
-Telegram is a way to get your cards, not something The Machine reads. Your own bot sends each card within your [work hours](work-hours.md), with the same buttons as the dashboard: **Do it**, **Snooze**, **Change**, **Mark done**, **Not needed**, and **Send** for a prepared message.
+Telegram is a way to get your to-dos, not something The Machine reads. Your own bot sends each to-do within your [work hours](work-hours.md), with the same buttons as the dashboard: **Do it**, **Snooze**, **Change**, **Mark done**, **Not needed**, and **Send** for a prepared message.
 
-Telegram is optional. The dashboard as a phone app sends the same cards as notifications.
+Telegram is optional. The dashboard as a phone app sends the same to-dos as notifications.
 
 ## What it can send
 
-Only messages to you, from your own bot. A message to anyone else still needs your approval on the card.
+Only messages to you, from your own bot. A message to anyone else still needs your approval on the to-do.
 
 ## Connect it
 
@@ -23,7 +23,7 @@ On a hosted Machine:
 1. In Telegram, message @BotFather and send /newbot. Copy the token it gives you.
 2. On your setup page, under **Add more any time**, open Telegram, paste the token and press **Add my bot**.
 
-It's not part of setup: add it whenever you like. Your dashboard suggests it once a snoozed card would only come back there.
+It's not part of setup: add it whenever you like. Your dashboard suggests it once a snoozed to-do would only come back there.
 
 On your own computer, the installer asks for it, or run `assistant telegram on` with your Telegram user ID.
 

@@ -654,7 +654,7 @@ class AgentJobs(unittest.TestCase):
     def test_one_job_per_card_at_a_time_and_cancel_stops_it(self):
         jobs = self.jobs()
         job = jobs.start(self.sid, 'claude', 'sleep a while')
-        with self.assertRaisesRegex(ValueError, 'already on this card'):
+        with self.assertRaisesRegex(ValueError, 'already on this to-do'):
             jobs.start(self.sid, 'codex', 'Something else')
         for _ in range(100):
             if self.calls():
@@ -871,7 +871,7 @@ class TaskFirstBrief(unittest.TestCase):
         brief = self.jobs().draft(self.sid)['brief']
         lines = brief.splitlines()
         self.assertEqual(lines[0], 'Task: Add the agreed Listly link to your agency lead-generation article.')
-        self.assertEqual(lines[2:4], ['My note on the card, as I wrote it:', self.NOTE])
+        self.assertEqual(lines[2:4], ['My note on the to-do, as I wrote it:', self.NOTE])
         self.assertNotIn('What this is about', brief)
         # The latest chat reply is background, labeled so, after the task; never the lead.
         self.assertIn('So far (background only; the task above is what to do):', brief)

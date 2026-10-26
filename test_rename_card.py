@@ -71,7 +71,7 @@ class Rename(unittest.TestCase):
         self.assertTrue(self.rename(reset=True)['unchanged'])
 
     def test_empty_and_too_long_are_refused_and_markup_is_kept_as_text(self):
-        with self.assertRaisesRegex(ValueError, 'Give the card a title'):
+        with self.assertRaisesRegex(ValueError, 'Give the to-do a title'):
             self.rename('   ')
         with self.assertRaisesRegex(ValueError, 'under 200'):
             self.rename('x' * 201)

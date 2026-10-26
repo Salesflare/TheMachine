@@ -152,7 +152,7 @@ try{
   await context.close()}}
  // Meetings that can't load: the cards stay, with one quiet line; a week with nothing: the clear state
  {calendarDown=true;const {context,page}=await open(390,844);await page.evaluate(()=>showTab('calendar'));await page.locator('.cal-note').waitFor();
-  assert.equal(await page.locator('.cal-note').textContent(),'Meetings couldn’t load. Cards and promises are here.');assert.ok(await page.locator('.cal-item',{hasText:'Send the revised quote'}).count());
+  assert.equal(await page.locator('.cal-note').textContent(),'Meetings couldn’t load. To-dos and promises are here.');assert.ok(await page.locator('.cal-item',{hasText:'Send the revised quote'}).count());
   calendarDown=false;empty=true;await page.evaluate(()=>{calMeetings=null;return refresh()});await page.evaluate(()=>calendarView(true));await page.locator('.cal-clear').waitFor();
   assert.match(await page.locator('.cal-clear').textContent(),/A clear week/);
   if(process.env.CALENDAR_SHOT)await page.screenshot({path:`${process.env.CALENDAR_SHOT}/calendar-390-dark-empty.png`});

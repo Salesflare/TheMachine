@@ -8,7 +8,7 @@ site: More sources, Remove
 ---
 ## What it reads
 
-The log of your OpenClaw Gateway: failed runs, refused handoffs, Telegram messages that didn't go out, and The Machine's own errors. A card tells you when something needs fixing.
+The log of your OpenClaw Gateway: failed runs, refused handoffs, Telegram messages that didn't go out, and The Machine's own errors. A to-do tells you when something needs fixing.
 
 ## What it can do
 

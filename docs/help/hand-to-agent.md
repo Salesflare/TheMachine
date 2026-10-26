@@ -1,18 +1,18 @@
 ---
 title: Hand to Claude Code or Codex
 area: cards
-summary: Send a coding card to Claude Code or Codex. The result comes back on the card.
+summary: Send a coding to-do to Claude Code or Codex. The result comes back on the to-do.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
 site: Connect Codex, Add more any time
 order: 5
 ---
-## Hand off a card
+## Hand off a to-do
 
-1. On the card, open **More** and pick **Hand to Codex** or **Hand to Claude Code**. It shows when that tool is set up.
+1. On the to-do, open **More** and pick **Hand to Codex** or **Hand to Claude Code**. It shows when that tool is set up.
 2. Check the summary and what it gets, add a note if you like, and press **Hand off**. **See the full job** shows the whole brief.
 
-The card then shows that it's working, and the result when it's done, with **Show changes**. **Change** asks it for changes; **Hand off again** starts over.
+The to-do then shows that it's working, and the result when it's done, with **Show changes**. **Change** asks it for changes; **Hand off again** starts over.
 
 A job never sends anything for you.
 

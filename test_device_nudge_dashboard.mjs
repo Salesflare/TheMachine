@@ -150,7 +150,7 @@ try{
  // Notifications, permission "default": one tap asks, subscribes and sends a test so they see it work.
  for(const [width,height] of [[1440,900],[390,844]])for(const scheme of ['dark','light']){actions.length=0;
   const {context,page}=await open({width,height,scheme,mode:'standalone'});
-  let n=await nudge(page);assert.equal(n.kind,'push');assert.match(n.text,/Turn on notifications/);assert.match(n.text,/A ping when a card needs you, on this device only\./);
+  let n=await nudge(page);assert.equal(n.kind,'push');assert.match(n.text,/Turn on notifications/);assert.match(n.text,/A ping when a to-do needs you, on this device only\./);
   await shot(page,`notifications-${width}-${scheme}`);
   assert.deepEqual(await asked(page),[]);
   if(width===390&&scheme==='light'){
@@ -232,7 +232,7 @@ try{
  // What setup left out (state.setup_hints, hosted): after the device ones, one at a time, linked to its setup step.
  for(const [width,height] of [[1440,900],[390,844]])for(const scheme of ['dark','light']){
   setupHints=[{id:'source-github',title:'Connect GitHub?',text:'GitHub mails you often. Connected, I read it directly.',href:'https://app.example.test/setup#source-github',button:'Connect'},
-   {id:'codex',title:'Hand coding cards to Codex?',text:'It works on your ChatGPT plan.',href:'https://app.example.test/setup#codex',button:'Connect'}];
+   {id:'codex',title:'Hand coding to-dos to Codex?',text:'It works on your ChatGPT plan.',href:'https://app.example.test/setup#codex',button:'Connect'}];
   const {context,page}=await open({width,height,scheme,mode:'standalone',perm:'granted',sub:true});
   await page.evaluate(()=>{window.__opened=[];window.open=(u,...r)=>{window.__opened.push([u,...r]);return null}});
   let n=await nudge(page);assert.equal(n.kind,'hint:source-github');assert.ok(n.shown);

@@ -231,7 +231,7 @@ def x_preview(action):
 def delegate_note(action):
     if not action.get('delegate'):
         return ''
-    return f"\n\nAfter sending, the card waits {action['wait_days']} day{'s' if action['wait_days'] > 1 else ''} for {action['to_name'] + '’s' if action.get('to_name') else 'a'} reply; it closes when they answer."
+    return f"\n\nAfter sending, the to-do waits {action['wait_days']} day{'s' if action['wait_days'] > 1 else ''} for {action['to_name'] + '’s' if action.get('to_name') else 'a'} reply; it closes when they answer."
 
 
 def delegation(value, result, name=None):

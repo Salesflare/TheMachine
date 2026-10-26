@@ -1,6 +1,6 @@
 # The Machine
 
-A private assistant inbox for [OpenClaw](https://docs.openclaw.ai). It collects your email, calendar, chats and phone notifications, and lets your own agent find useful next steps. Cards reach the dashboard app and, optionally, Telegram. Tap **Do it** and the agent carries out the offered task.
+A private assistant inbox for [OpenClaw](https://docs.openclaw.ai). It collects your email, calendar, chats and phone notifications, and lets your own agent find useful next steps. To-dos reach the dashboard app and, optionally, Telegram. Tap **Do it** and the agent carries out the offered task.
 
 Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta); export and import move everything between the two.
 
@@ -35,13 +35,13 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 | Settings and defaults | [Configuration](docs/configuration.md), [example JSON](config.example.json) |
 | Sources, collection windows and limitations | [Sources](docs/sources.md) |
 | Storage, review selection and recovery | [Architecture](docs/architecture.md) |
-| Cards, Change, snooze, work hours, sends and CLI | [Usage](docs/usage.md) |
+| To-dos, Change, snooze, work hours, sends and CLI | [Usage](docs/usage.md) |
 | Facts, people, projects, embeddings and enrichment | [Intelligence](docs/intelligence.md) |
 | Model/provider setup | [Models](docs/models.md) |
 | Work Fleets, Friends and the Network | [Fleet](docs/fleet.md) |
 | Family Fleets: free times, to-dos and plans | [Family](docs/family.md) |
 | Skills: write, approve and share them | [Skills](docs/skills.md) |
-| Hand a card to Claude Code or Codex | [Coding agents](docs/agents.md) |
+| Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |
 | Encryption, reliability and roadmap of the Network | [Network](docs/network.md) |
 | Add a connector | [Adding a source](docs/adding-a-source.md) |
 | Sandbox, screenshots and layout checks | [Development](docs/development.md) |
@@ -57,7 +57,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 - Prepares likely useful work ahead, without committing its consequential last step.
 - Carries out owner-requested work, with useful task-specific Send, Submit or Merge actions where appropriate.
 - Shows health, review history and the same tasks on the dashboard and Telegram.
-- Hands a card to [Claude Code or Codex](docs/agents.md) when you ask; the job shows in their apps and never sends anything itself.
+- Hands a to-do to [Claude Code or Codex](docs/agents.md) when you ask; the job shows in their apps and never sends anything itself.
 - Follows your [skills](docs/skills.md): plain OpenClaw skills you write, approve or get from your Fleet or a friend; instructions only, never more permissions.
 
 ## Requirements
@@ -74,7 +74,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 - Your own user account, not root.
 - **Python 3.12+** (standard library only).
 - **Node.js 24.16+ within the 24.x series, or 26.1+** (`>=24.16.0 <25 || >=26.1.0`, matching OpenClaw's engine range). Node 22 and 25 are unsupported. The installer resolves mise/asdf shims and the installed npm package.
-- **OpenClaw 2026.10.5 or later**, with the Gateway running. Its Telegram channel (your bot) is optional: without it, cards reach you through the dashboard app. Without it, `./install.sh` in a terminal offers to install and set it up (below). CI tests 2026.10.5 and the latest release every week; see [Known limitations](#known-limitations).
+- **OpenClaw 2026.10.5 or later**, with the Gateway running. Its Telegram channel (your bot) is optional: without it, to-dos reach you through the dashboard app. Without it, `./install.sh` in a terminal offers to install and set it up (below). CI tests 2026.10.5 and the latest release every week; see [Known limitations](#known-limitations).
 - Optional, per feature:
   - `gog` (Google Workspace CLI) for Gmail and Calendar (OAuth per account, file keyring on every OS, so the background service never waits on a Keychain prompt; `assistant connect gmail` signs you in).
   - Your own Microsoft Entra app registration for Outlook mail and calendar (`assistant connect outlook` signs you in with a device code).
@@ -119,7 +119,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 
 ## Do it
 
-Do it authorizes the offered task end to end; verified written instructions authorize the exact requested action. Normal app actions do not need extra per-tool approvals. Message drafts use the supported Send route, or `send_now` where supported when explicitly requested. WhatsApp retains a card confirmation. Prepared-ahead work stops before its consequential last step. [Full rules](PREPARATION.md).
+Do it authorizes the offered task end to end; verified written instructions authorize the exact requested action. Normal app actions do not need extra per-tool approvals. Message drafts use the supported Send route, or `send_now` where supported when explicitly requested. WhatsApp retains a to-do confirmation. Prepared-ahead work stops before its consequential last step. [Full rules](PREPARATION.md).
 
 <a id="prepared-ahead"></a>
 [Prepared ahead](docs/usage.md#do-it) is not accepted work; see the different authority above.

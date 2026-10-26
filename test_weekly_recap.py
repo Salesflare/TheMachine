@@ -126,7 +126,7 @@ class WeeklyRecap(unittest.TestCase):
             board = db.execute("SELECT id FROM events WHERE source_id='b'").fetchone()[0]
         prep = self.store.suggest('prep', 'Prep notes for the board', 'Body.', [board])['id']
         text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
-        self.assertIn(f'**Next week**\n• Wed, Oct 28 09:00 Board meeting, 1 person · [card](https://m.example/assistant/#chat={prep})', text)
+        self.assertIn(f'**Next week**\n• Wed, Oct 28 09:00 Board meeting, 1 person · [to-do](https://m.example/assistant/#chat={prep})', text)
         self.assertEqual(text.count('Team offsite'), 1)
         self.assertIn('• Fri, Oct 30 17:00 Parents evening, 2 people', text)  # the partner and the school, not the owner
         for routine in ('Weekly one-on-one', 'Declined lunch', 'Next month', 'Dentist with Robin'):
@@ -152,7 +152,7 @@ class WeeklyRecap(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("INSERT INTO rule_changes(at,kind,text) VALUES(?,'draft_rule','Draft rule: keep it short')", (ago(3),))
         text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1), {'input': 1e6, 'cacheRead': 9e6, 'output': 4e4, 'runs': 3, 'usd': 3.3})
-        self.assertIn('**What changed**\n• 67% of cards worth it (2 of 3). Do it was right first time in 1 of 2.\n• Adjusted: 1 writing rule.\n', text)
+        self.assertIn('**What changed**\n• 67% of to-dos worth it (2 of 3). Do it was right first time in 1 of 2.\n• Adjusted: 1 writing rule.\n', text)
         self.assertNotIn('got it right the first time', text)
         last = text.split('\n')[-1]
         self.assertTrue(last.startswith('_Behind the scenes: ') and '$3.30' in last, last)  # one short line, at the end
@@ -161,7 +161,7 @@ class WeeklyRecap(unittest.TestCase):
     def test_filter_and_keep_are_one_tap_and_only_change_the_owners_filters(self):
         self.edits = []
         sent = self.send()
-        self.assertIn('**Busy without results**\n1. School parents (Phone WhatsApp): 30 this week, no cards\nNothing changes until you tap.', sent['message'])
+        self.assertIn('**Busy without results**\n1. School parents (Phone WhatsApp): 30 this week, no to-dos\nNothing changes until you tap.', sent['message'])
         self.assertNotIn('Ann', sent['message'])  # a person's own chat is never offered as noise
         rows = sent['presentation']['blocks']
         item = self.items()[0]
@@ -177,7 +177,7 @@ class WeeklyRecap(unittest.TestCase):
         self.assertEqual(self.store.exclusions['wa'], [{'chats': ['123@g.us']}])  # new messages from it are skipped from now on
         edit = self.edits.pop()
         self.assertEqual((edit['action'], edit['messageId']), ('edit', '555'))  # the recap itself shows it; nothing new is sent
-        self.assertIn('1. School parents (Phone WhatsApp): 30 this week, no cards · **Filtered**', edit['message'])
+        self.assertIn('1. School parents (Phone WhatsApp): 30 this week, no to-dos · **Filtered**', edit['message'])
         self.assertEqual([[b['label'] for b in r['buttons']] for r in edit['presentation']['blocks']], [['Undo 1']])
         self.assertEqual(self.tap(item['id'], 'keep', decision='telegram:2').get('reason'), 'Already done: filtered.')
         self.assertEqual(self.tap(item['id'], 'filter', decision='telegram:1').get('duplicate'), True)  # a replayed tap
@@ -201,7 +201,7 @@ class WeeklyRecap(unittest.TestCase):
                                + chat('7@g.us', 'Street announcements', 25, 20))  # many people, the owner never writes: a feed
         text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
         busy = text.split('**Busy without results**\n')[1].split('\nNothing changes')[0]
-        self.assertEqual(busy, '1. School parents (Phone WhatsApp): 30 this week, no cards\n2. Street announcements (Phone WhatsApp): 25 this week, no cards')
+        self.assertEqual(busy, '1. School parents (Phone WhatsApp): 30 this week, no to-dos\n2. Street announcements (Phone WhatsApp): 25 this week, no to-dos')
 
     def test_cards_snoozed_again_and_again_drop_do_it_now_or_keep(self):
         self.edits = []
