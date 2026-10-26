@@ -1,9 +1,9 @@
 ---
 title: Set up a hosted Machine
 area: getting-started
-summary: Sign in, start your free days, pick your model and connect your mail. It takes a few minutes.
+summary: Sign in, start your free days, connect your mail and pick your model. It takes a few minutes.
 code: onboarding.py, dashboard.html
-site: Your model, Continue with Google, Continue with Microsoft, Turn on, Mail and Calendar, More sources, Open your dashboard
+site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard
 order: 1
 ---
 A hosted Machine runs on a private server of its own in the EU. We keep it running and updated.
@@ -18,10 +18,11 @@ A hosted Machine runs on a private server of its own in the EU. We keep it runni
 
 Your server starts, then the setup page walks you through the rest. Each step is a card:
 
-1. **Your model**: sign in with ChatGPT or use your own key. See [ChatGPT](chatgpt.md).
-2. **Mail and Calendar**: connect Google or Microsoft. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
+1. **Mail and Calendar**: connect Google or Microsoft. You can do this while your server starts. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
+2. **Your model**: sign in with ChatGPT or use your own key. See [ChatGPT](chatgpt.md).
 3. Reviews turn on by themselves. First cards come from your newest mail, then from your last 7 days.
-4. Optional: [Telegram](telegram.md), and **More sources** such as Slack, WhatsApp or GitHub.
+
+Under **Add more any time** are the optional ones: **More sources** such as Slack, WhatsApp or GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) and your browser's connection. None are needed to start. Your dashboard suggests them when they help, for example GitHub once its mail keeps coming in.
 
 When it's ready, press **Open your dashboard**. Add it to your phone's home screen for notifications: see [Install the app and turn on notifications](phone-app.md).
 

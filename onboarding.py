@@ -830,7 +830,13 @@ def new_account(config, service, account_id=None, ui=None):
     account.pop('exclude', None)  # example noise rules are not yours
     options = boundaries(config, service)
     if service in ('android', 'whatsapp', 'gateway') and not same:
-        pass  # keep the example's device boundary
+        # the example's device boundary, unless the owner picked Work or Personal for it (the setup page asks for
+        # WhatsApp): then their pick, marked as theirs, so it never shows as guessed
+        if service == 'whatsapp' and getattr(ui, 'marks', False):
+            picked = ask_boundary(ui, account['boundary'])
+            if not (picked.startswith('personal:') and str(account.get('boundary', '')).startswith('personal:')):
+                account['boundary'] = picked  # Personal keeps the example's personal:whatsapp
+            mark(account, ui)
     elif setup_of(service).get('boundary') == 'workspace':
         account['boundary'] = 'work'  # its check names the company after the workspace it connects (work:<name>)
     elif same or options:

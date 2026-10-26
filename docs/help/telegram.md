@@ -4,7 +4,7 @@ area: connections
 summary: Get cards on Telegram, with the same buttons as the dashboard, through a bot of your own. Optional.
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
-site: Add my bot, Skip for now, Disconnect Telegram
+site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## What it does
 
@@ -21,9 +21,9 @@ Only messages to you, from your own bot. A message to anyone else still needs yo
 On a hosted Machine:
 
 1. In Telegram, message @BotFather and send /newbot. Copy the token it gives you.
-2. On your setup page, under Telegram, paste the token and press **Add my bot**.
+2. On your setup page, under **Add more any time**, open Telegram, paste the token and press **Add my bot**.
 
-Or press **Skip for now** and add it later.
+It's not part of setup: add it whenever you like. Your dashboard suggests it once a snoozed card would only come back there.
 
 On your own computer, the installer asks for it, or run `assistant telegram on` with your Telegram user ID.
 

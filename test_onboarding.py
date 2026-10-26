@@ -318,6 +318,18 @@ if args[:2] == ["pairing", "list"]:
         self.assertIn('--read-only', self.calls())
         self.assertNotIn('wacli --store ' + str(store) + ' auth\n', self.calls())
 
+    def test_a_first_whatsapp_takes_the_work_or_personal_the_owner_picked(self):
+        # the setup page asks Work or Personal: that pick is the owner's own, never shown as guessed
+        class Picked(FakeUI):
+            marks = True
+        work = onboarding.new_account({'accounts': []}, 'whatsapp', ui=Picked(answers=['Acme']))
+        self.assertEqual((work['boundary'], work['boundary_by']), ('work:Acme', 'owner'))
+        personal = onboarding.new_account({'accounts': []}, 'whatsapp', ui=Picked(answers=['personal']))
+        self.assertEqual((personal['boundary'], personal['boundary_by']), ('personal:whatsapp', 'owner'))
+        unasked = onboarding.new_account({'accounts': []}, 'whatsapp', ui=FakeUI())  # nobody picked: the example's, a guess
+        self.assertEqual(unasked['boundary'], 'personal:whatsapp')
+        self.assertNotIn('boundary_by', unasked)
+
     def test_android_takes_the_only_paired_phone(self):
         nodes = {'pending': [], 'paired': [{'nodeId': 'linux-1', 'platform': 'linux'},
                                            {'nodeId': 'phone-1', 'platform': 'android', 'displayName': 'Pixel', 'connected': True}]}

@@ -4,7 +4,7 @@ area: connections
 summary: Sign in with ChatGPT to run your Machine on your ChatGPT plan, and import your ChatGPT skills.
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
-site: Sign in with ChatGPT
+site: Sign in with ChatGPT, Reconnect ChatGPT
 ---
 ## What it is for
 
@@ -12,7 +12,9 @@ ChatGPT is the model that reads and drafts for you, on your own ChatGPT plan. Th
 
 ## Sign in
 
-On a hosted Machine, on your setup page, press **Sign in with ChatGPT** and type the code it shows at ChatGPT.
+On a hosted Machine, on your setup page, press **Sign in with ChatGPT** and type the code it shows at ChatGPT. Signed out later? Press **Reconnect ChatGPT**.
+
+OpenAI turns the code down? Open your [ChatGPT security settings](https://chatgpt.com/settings/security), scroll to the bottom and turn on device code sign-in for Codex. Then enter the code again.
 
 On your own computer, sign OpenClaw in to ChatGPT with `openclaw models auth login`.
 

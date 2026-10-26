@@ -804,6 +804,13 @@ class AgentSettings(unittest.TestCase):
         app = object.__new__(a.App)
         app.config_path, app.config = path, json.loads(path.read_text())
         self.assertIn('set_agents', a.OWNER_ACTIONS)
+        codex_home = Path(tmp.name) / 'codex'
+        with patch.dict(os.environ, {'CODEX_HOME': str(codex_home)}):
+            self.assertIsNone(app.agents_view())  # hosted, nothing to do with code yet: out of sight
+            codex_home.mkdir()
+            (codex_home / 'auth.json').write_text('{}')
+            self.assertIsNotNone(app.agents_view())  # Codex connected: now it means something
+        app.config['accounts'] = [{'id': 'acme-github', 'service': 'github'}]
         view = app.agents_view()
         self.assertEqual((view['claude_session'], view['connector'], view['saveable']), ('', 'https://app.example.test/mcp', True))
         with self.assertRaises(ValueError):

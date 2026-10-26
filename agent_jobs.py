@@ -82,6 +82,18 @@ def find(name, command=None):
     return shutil.which(name) or shutil.which(name, path=str(Path.home() / '.local/bin'))
 
 
+def coding_relevant(config, codex_home=None):
+    """Whether handing cards to a coding agent means anything to this owner yet: they connected GitHub (where coding
+    work comes from) or Codex (signed in on this Machine), or set an agent up already. Until then a hosted Machine keeps
+    the Coding agents settings out of sight: they only confuse someone who never codes."""
+    found = settings(config) or {}
+    if any(isinstance(found.get(tool), dict) and found[tool].get('place') for tool in TOOLS):
+        return True
+    if any(isinstance(a, dict) and a.get('service') == 'github' for a in config.get('accounts') or []):
+        return True
+    return (Path(codex_home or os.environ.get('CODEX_HOME') or Path.home() / '.codex') / 'auth.json').exists()
+
+
 def tools(config):
     """The tools this Machine can hand jobs to, with where they run: [{id, name, place, device?}]. A hosted Machine
     (one with a manage_url) has no local CLI of the owner's: there Claude needs its paired session and Codex its cloud

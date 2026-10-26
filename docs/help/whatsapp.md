@@ -4,7 +4,7 @@ area: connections
 summary: Your WhatsApp chats, read as a linked device. Replies only after you approve.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py
-site: Link WhatsApp, More sources, Remove
+site: Show the QR code, Get a code, On your phone? Link with a code instead, More sources, Remove
 ---
 ## What it reads
 
@@ -21,8 +21,10 @@ If a card came in by email but you talk to that person on WhatsApp, say so in th
 On a hosted Machine:
 
 1. Open your setup page at app.themachine.computer/setup, go to **More sources** and open WhatsApp.
-2. Press **Link WhatsApp**.
-3. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, and scan the code. A pairing code by phone number works too.
+2. Press **Show the QR code**.
+3. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, and scan the QR code.
+
+Setting up on your phone, with no second screen to scan from? Open **On your phone? Link with a code instead**, enter your number and press **Get a code**. WhatsApp then asks for that code.
 
 On your own computer, run `assistant connect whatsapp` and scan the code it shows in the terminal. Without wacli, it offers to install the pinned build from [Salesflare/wacli](https://github.com/Salesflare/wacli), checked against its checksum.
 

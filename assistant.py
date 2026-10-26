@@ -9945,6 +9945,46 @@ def reminder_channels(store, config):
     return {'telegram': telegram_on(config), 'push': push}
 
 
+# Setup hints: what a hosted owner skipped at setup, suggested in the dashboard once it is relevant (one at a time,
+# at the top of Suggestions, with Not now). A source when its mail keeps coming in, Telegram once a snooze would only
+# come back on the dashboard, Codex once GitHub is connected. Each links to that step on the setup page.
+HINT_SOURCES = (('github', 'GitHub', ('github.com',)), ('slack', 'Slack', ('slack.com',)),
+                ('stripe', 'Stripe', ('stripe.com',)), ('intercom', 'Intercom', ('intercom.io', 'intercom-mail.com', 'intercom.com')),
+                ('zoom', 'Zoom', ('zoom.us',)))
+HINT_MAILS = 3  # this many mails in 30 days from a service before it is worth suggesting
+
+
+def setup_hints(store, config, now=None):
+    """[{id, title, text, href, button}] for a hosted Machine (manage_url), most relevant first; [] elsewhere."""
+    manage = str(config.get('manage_url') or '')
+    if not manage.startswith('https://'):
+        return []
+    services = {a.get('service') for a in config.get('accounts') or [] if isinstance(a, dict)}
+    since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
+    hints = []
+    with store.connect() as db:
+        for service, label, domains in HINT_SOURCES:
+            if service in services:
+                continue
+            like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
+            found = db.execute(f"SELECT count(*) FROM (SELECT 1 FROM events WHERE kind IN ('gmail.message','ms_graph.message') "
+                               f"AND occurred_at>=? AND ({like}) LIMIT {HINT_MAILS})",
+                               (since, *[f'%@%{d}%' for d in domains])).fetchone()[0]
+            if found >= HINT_MAILS:
+                hints.append({'id': 'source-' + service, 'title': f'Connect {label}?',
+                              'text': f'{label} mails you often. Connected, I read it directly.',
+                              'href': f'{manage}#source-{service}', 'button': 'Connect'})
+        snoozed = db.execute("SELECT 1 FROM decisions WHERE choice='snooze' LIMIT 1").fetchone()
+    channels = reminder_channels(store, config)
+    if snoozed and not channels['telegram'] and not channels['push']:
+        hints.append({'id': 'telegram', 'title': 'Reminders in Telegram?', 'text': 'Snoozed cards come back as a Telegram message too.',
+                      'href': f'{manage}#telegram', 'button': 'Set up'})
+    if 'github' in services and not agent_jobs.coding_relevant({'accounts': [], 'agents': config.get('agents')}):
+        hints.append({'id': 'codex', 'title': 'Hand coding cards to Codex?', 'text': 'It works on your ChatGPT plan.',
+                      'href': f'{manage}#codex', 'button': 'Connect'})
+    return hints
+
+
 def reminder_line(channels):
     """The honest promise for a snooze, from reminder_channels. The dashboard says the same (remindLine)."""
     if channels['telegram'] and channels['push']:
@@ -11625,6 +11665,21 @@ class App:
         locale_prefs.configure(self.config)
         return self.locale_view()
 
+    def setup_hints_view(self):
+        """setup_hints, worked out at most every 10 minutes: the dashboard asks for its state every few seconds."""
+        # a source, Telegram or Codex connected just now drops its hint at once
+        key = (tuple(sorted(str(a.get('service')) for a in self.config.get('accounts') or [] if isinstance(a, dict))),
+               telegram_on(self.config), json.dumps(self.config.get('agents'), sort_keys=True, default=str))
+        cached = getattr(self, '_setup_hints', None)
+        if cached and cached[1] == key and time.monotonic() - cached[0] < 600:
+            return cached[2]
+        try:
+            hints = setup_hints(self.store, self.config)
+        except (sqlite3.Error, OSError, ValueError):
+            hints = []
+        self._setup_hints = (time.monotonic(), key, hints)
+        return hints
+
     def agents_view(self):
         """Hand to Claude Code / Codex where no local CLI of the owner's runs (agent_remote.py): the paired Claude Code
         session, the Codex cloud environment, and the claude.ai connector that brings Claude's results back."""
@@ -11632,8 +11687,9 @@ class App:
         if own is None:
             return None
         claude, codex = (own.get('claude') if isinstance(own.get('claude'), dict) else {}), (own.get('codex') if isinstance(own.get('codex'), dict) else {})
-        if not (self.config.get('manage_url') or claude.get('place') == 'remote' or codex.get('place') == 'cloud'):
-            return None
+        if not (self.config.get('manage_url') and agent_jobs.coding_relevant(self.config) or claude.get('place') == 'remote'
+                or codex.get('place') == 'cloud'):
+            return None  # hosted: shown once GitHub or Codex is connected (agent_jobs.coding_relevant)
         origin = urllib.parse.urlsplit(str(self.config.get('manage_url') or ''))
         base = f'{origin.scheme}://{origin.netloc}' if origin.scheme == 'https' and origin.netloc else 'https://app.themachine.computer'
         return {'claude_session': str(claude.get('session') or ''), 'device': str(claude.get('device') or ''),
@@ -11743,6 +11799,7 @@ class App:
             result['locale'] = self.locale_view()
             result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
             result['agents_settings'] = self.agents_view()
+            result['setup_hints'] = self.setup_hints_view()
             result['signatures'] = self.signature_view()
             result['lookups'] = self.lookups_view()
             result['own_addresses'] = self.own_addresses_view()

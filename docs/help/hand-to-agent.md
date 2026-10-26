@@ -4,6 +4,7 @@ area: cards
 summary: Send a coding card to Claude Code or Codex. The result comes back on the card.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
+site: Connect Codex, Add more any time
 order: 5
 ---
 ## Hand off a card
@@ -23,6 +24,6 @@ In **Settings**, **General**, under **Coding agents**:
 - **Codex cloud environment**: its environment id.
 - **Runs on**, and optionally a **Branch**.
 
-Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector, with the address shown there. For Codex on a hosted Machine, sign in under Codex on your setup page first.
+Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector, with the address shown there. For Codex on a hosted Machine, press **Connect Codex** on your setup page first, under **Add more any time**. It uses your ChatGPT plan, and OpenAI asks you to approve it once.
 
-Coding agents shows on a hosted Machine and on setups that run jobs elsewhere. More in the [agents guide](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+On a hosted Machine, Coding agents shows once GitHub or Codex is connected. It also shows on setups that run jobs elsewhere. More in the [agents guide](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
