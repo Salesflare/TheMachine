@@ -1,6 +1,6 @@
 import {H, W} from './test-env.mjs';
 import assert from 'node:assert/strict';
-import {registerReviewRecovery, processingOnlyReviewSummary, currentReviewRun} from './openclaw-plugin/review-recovery.ts';
+import {registerReviewRecovery, processingOnlyReviewSummary, currentReviewRun, contextFile} from './openclaw-plugin/review-recovery.ts';
 const hooks={},calls=[];
 let review=null;
 registerReviewRecovery({on(name,fn){hooks[name]=fn}},async(action,args)=>{
@@ -19,6 +19,9 @@ assert.ok(reviewContext.includes('## About the owner (USER.md)'));assert.ok(revi
 assert.ok(reviewContext.includes('## Reviewing signals'));assert.ok(reviewContext.includes('## Lessons that generalize'));
 for(const title of ['## Preparing accepted suggestions','## Operations','## Public repository hygiene','## Security maintenance'])assert.ok(!reviewContext.includes(title),title);
 assert.ok(!reviewContext.includes('Read tools/personal-assistant/AGENTS.md'));
+// Context files come from a fixed list by name; a path or any other name reads nothing.
+assert.ok((await contextFile('USER','Owner')).includes('The owner prefers short answers.'));
+for(const name of ['/etc/passwd','../USER.md',W+'/USER.md','USER.md','constructor','toString'])assert.equal(await contextFile(name,'x'),'',name);
 // Review turns may only read.
 assert.equal((await hooks.before_tool_call({toolName:'browser',params:{}},ctx)).block,true);
 assert.equal((await hooks.before_tool_call({toolName:'gateway_exec',params:{}},ctx)).block,true);

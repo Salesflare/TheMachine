@@ -171,22 +171,34 @@ export function preparationToolPolicy(event: any, ctx: any): undefined | {block:
 const readsSecret = (event: any) => pathParams(event.params || {}).some(secretPath);
 
 // USER.md is not loaded into isolated sessions by default; reviews and preparations need it.
-async function contextFile(path: string, heading: string, limit = 20000, only = (text: string) => text) {
+// The only files a review or preparation context reads, by name; nothing else can become a path here.
+const USER_MD = resolve(WORKSPACE, 'USER.md');
+const PREPARATION_MD = resolve(APP_DIR, 'PREPARATION.md');
+const AGENTS_MD = resolve(APP_DIR, 'AGENTS.md');
+const readContextFile = (name: string) => {
+  switch (name) {
+    case 'USER': return readFile(USER_MD, 'utf8');
+    case 'PREPARATION': return readFile(PREPARATION_MD, 'utf8');
+    case 'AGENTS': return readFile(AGENTS_MD, 'utf8');
+    default: return Promise.reject(new Error(`not a context file: ${name}`));
+  }
+};
+export async function contextFile(name: string, heading: string, limit = 20000, only = (text: string) => text) {
   try {
-    const text = only((await readFile(path, 'utf8')).trim()).trim();
+    const text = only((await readContextFile(name)).trim()).trim();
     return `\n\n## ${heading}\n${text.length > limit ? text.slice(0, limit) + '\n[…shortened]' : text}`;
   } catch { return ''; }
 }
-export const ownerContext = () => contextFile(`${WORKSPACE}/USER.md`, 'About the owner (USER.md)');
+export const ownerContext = () => contextFile('USER', 'About the owner (USER.md)');
 // Standing Do it rules; prepended here because the runner caps the job message at 20000 characters.
-const preparationRules = () => contextFile(`${APP_DIR}/PREPARATION.md`, 'Preparation rules (tools/personal-assistant/PREPARATION.md)', 30000);  // the whole file: every rule applies to each Do it
+const preparationRules = () => contextFile('PREPARATION', 'Preparation rules (tools/personal-assistant/PREPARATION.md)', 30000);  // the whole file: every rule applies to each Do it
 // A review gets AGENTS.md without the sections for other work: Do it turns get theirs from PREPARATION.md, and operations,
 // repository and security maintenance are for people and agents working on The Machine. Each review step resends this
 // context, so what a review never uses costs on every step. Its lessons and everything about reviewing stay.
 export const NOT_FOR_REVIEWS = ['Preparing accepted suggestions', 'Operations', 'Public repository hygiene', 'Security maintenance'];
 export const forReviews = (text: string) => text.split(/^(?=## )/m)
   .filter(part => !NOT_FOR_REVIEWS.some(title => part.startsWith(`## ${title}\n`) || part.trim() === `## ${title}`)).join('');
-const assistantInstructions = () => contextFile(`${APP_DIR}/AGENTS.md`, 'Assistant instructions (tools/personal-assistant/AGENTS.md, the parts for reviews)', 50000, forReviews);
+const assistantInstructions = () => contextFile('AGENTS', 'Assistant instructions (tools/personal-assistant/AGENTS.md, the parts for reviews)', 50000, forReviews);
 
 // The review run that currently owns each session, recorded by the prompt hook. The tool's own
 // execute() reads it to bind ownership. The hook must not rewrite tool parameters: Codex

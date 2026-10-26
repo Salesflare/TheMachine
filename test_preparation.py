@@ -299,7 +299,7 @@ class Preparation(unittest.TestCase):
         # The plugin's contextFile shortens anything longer, so the rules must fit whole.
         cap=int(__import__('re').search(r"PREPARATION\.md\)', (\d+)\)",(a.ROOT/'openclaw-plugin/review-recovery.ts').read_text())[1])
         self.assertLess(len((a.ROOT/'PREPARATION.md').read_text().strip()),cap)
-        agents_cap=int(__import__('re').search(r"AGENTS\.md`, '[^']*', (\d+)[,)]",(a.ROOT/'openclaw-plugin/review-recovery.ts').read_text())[1])
+        agents_cap=int(__import__('re').search(r"contextFile\('AGENTS', '[^']*', (\d+)[,)]",(a.ROOT/'openclaw-plugin/review-recovery.ts').read_text())[1])
         self.assertLess(len((a.ROOT/'AGENTS.md').read_text().strip()),agents_cap)
 
     def test_accept_starts_one_existing_agent_turn_repeated_click_does_not_duplicate(self):
