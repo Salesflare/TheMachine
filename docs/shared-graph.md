@@ -26,6 +26,11 @@ shows "Required by <Fleet>". Inside any connection that is on, each thread is st
 automated and colleague-only threads stay out of automatic sharing, and **Keep private** on a thread or record still wins until the owner changes the sharing choice. A member who wants to stop
 turns their connections off; the old ask to an admin (`optout`) is still honored but no longer offered.
 
+Each Machine shares only what its own owner took part in. Mail and meeting notes it sees through a shared CRM (a
+teammate's mailbox, a meeting a teammate logged) never go from it (`secondhand`): they go from their owner's Machine,
+under that owner's own choices, and never come back to them as a teammate's. A teammate's thread the owner is on
+themselves is not shown under From the team, and each timeline line shows once.
+
 Boards and projects set to Only you (`only_you_projects`, the boards' own visibility) share nothing: not the project,
 its timeline, any thread that touches it, nor people known only through it. Each record passes one check before it
 is sealed (`Scope.shareable`); switching a board from Team to Only you takes back what went.

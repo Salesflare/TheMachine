@@ -1695,6 +1695,70 @@ class SharedGraph(unittest.TestCase):
             with self.assertRaises(ValueError):
                 graph.save_board(db, {'board_id': board, 'name': 'Acquisition conversations', 'stages': ['Talks'], 'about': 'M&A', 'visibility': 'people'}, a.now())
 
+    # -- whose it is: each Machine shares what its own owner took part in
+    def crm(self, account, n, sender, to, title, body, days, thread, kind='salesflare.email', host=None):
+        """A CRM's copy of someone's email (or a meeting they logged): its From/To in the body, as the CRM keeps it."""
+        meta = {'from': sender.split('<')[-1].rstrip('>'), 'thread_id': thread, 'mailbox_user_id': 7,
+                'contacts': [{'name': 'Lee Park', 'email': 'lee@client.example'}], **({'host': host} if host else {})}
+        return {'account_id': account, 'source_id': f'crm-{n}', 'kind': kind, 'occurred_at': ago(days), 'title': title,
+                'body': f'From: {sender}\nTo: {to}\n\n{body}', 'deleted': False, 'metadata': meta}
+
+    def test_a_teammates_mail_seen_through_the_crm_never_goes_from_this_machine(self):
+        # Olive's mail with Lee, as Ada's Machine sees it in the shared CRM, and a meeting Olive logged there
+        self.add(self.adm, self.crm('work', 1, 'Lee Park <lee@client.example>', 'Olive <own1@acme.example>', 'Rescheduling', BODY, 2, 'sf-1'),
+                 self.crm('work', 2, 'Lee Park <lee@client.example>', '', 'Call with Lee', 'Notes: renewal', 1, None,
+                          kind='salesflare.meeting', host='own1@acme.example'))
+        self.judge(self.adm, ('crm-1', 'client', 'Olive and Lee agreed to reschedule'))
+        self.rounds()
+        for box in (self.own, self.mem):
+            self.assertNotIn(BODY, json.dumps(self.team(box, 'team_mail')))
+            self.assertNotIn('reschedule', json.dumps(self.team(box)))
+            self.assertEqual([r for r in self.team(box) if r['member'] == 'adm2' and r['kind'] == 'person'], [])
+        with self.adm.store.connect() as db:
+            rows = [dict(r) for r in db.execute('SELECT * FROM events')]
+            self.assertEqual(self.adm.thread_labels(db, rows), {})  # no Team or Only you switch: not Ada's to share
+            scope = next(iter(self.adm.scopes(db).values()))
+            self.assertEqual(sg.unjudged(db, scope, 10), [])  # and nothing to sort for it
+
+    def test_a_meeting_the_owner_logged_in_the_crm_is_their_own(self):
+        with self.own.store.connect() as db:
+            scope = next(iter(self.own.scopes(db).values()))
+        own = {'host': 'own1@acme.example'}
+        self.assertFalse(sg.secondhand('salesflare.meeting', own, scope.mine))
+        self.assertTrue(sg.secondhand('salesflare.meeting', {'host': 'adm2@acme.example'}, scope.mine))
+        self.assertTrue(sg.secondhand('salesflare.email', {'from': 'lee@client.example'}, scope.mine))
+        self.assertFalse(sg.secondhand('gmail.message', {'from': 'lee@client.example'}, scope.mine))
+
+    def test_the_owners_own_mail_never_comes_back_from_the_team(self):
+        # Olive has her thread with Lee herself. A teammate's Machine from before (no CRM rule yet) sends its CRM copy.
+        self.add(self.own, mail('work', 1, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Rescheduling', BODY, 2, 't-r'))
+        self.add(self.adm, self.crm('work', 1, 'Lee Park <lee@client.example>', 'Olive <own1@acme.example>', 'Rescheduling', BODY, 2, 'sf-1'))
+        self.judge(self.adm, ('crm-1', 'client', 'Olive and Lee agreed to reschedule'))
+        with patch.object(sg, 'secondhand', return_value=False):
+            self.rounds()
+        self.assertIn(BODY, json.dumps(self.team(self.own, 'team_mail')))  # it reached Olive's Machine as Ada's
+        with self.own.store.connect() as db:
+            entry, section = self.own.team_for(db, 'email:lee@client.example')
+        self.assertIsNotNone(entry)
+        self.assertIsNone(section)  # but no "From the team, via Ada" with Olive's own mail, and no Ask Ada
+        with self.mem.store.connect() as db:
+            _, section = self.mem.team_for(db, next(e['key'] for e in self.mem.team_graph(db) if e['kind'] == 'person'))
+        self.assertEqual(len(section['threads']), 1)  # Mo was not on it: he sees it
+
+    def test_each_fact_shows_once(self):
+        self.add(self.own, mail('work', 1, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Rescheduling', 'Can we move it?', 3, 't-r'),
+                 mail('work', 2, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Re: Rescheduling', 'November 25 works.', 2, 't-r'))
+        self.judge(self.own, ('work-1', 'client', 'Olive and Lee agreed to reschedule'), ('work-2', 'client', 'Olive and Lee agreed to reschedule'))
+        self.rounds()
+        person = next(json.loads(r['body']) for r in self.team(self.mem) if r['kind'] == 'person')
+        self.assertEqual([x['line'] for x in person['timeline']], ['Olive and Lee agreed to reschedule'])
+        entry = {'sources': [{'fleet': FLEET, 'member': m, 'name': n, 'left': False,
+                              'record': {'score': 1, 'timeline': [{'at': ago(1), 'line': 'Lee  signed.'}, {'at': ago(2), 'line': 'lee signed.'}]}}
+                             for m, n in (('own1', 'Olive'), ('adm2', 'Ada'))]}
+        with self.mem.store.connect() as db:
+            section = self.mem.team_section(db, entry)
+        self.assertEqual(len(section['timeline']), 1)  # the same fact from two teammates, once
+
 
 class StaticSql(unittest.TestCase):
     def test_the_shared_graph_builds_no_sql_from_strings(self):

@@ -4,13 +4,17 @@
 `locale` in config.json is a language-REGION tag like en-US, en-GB or en-BE. The language is English for now (the
 only one the app speaks; others come with translations), the region sets the date order (Oct 24 or 24 Oct) and the
 default clock. `clock` is '12h' or '24h' when the owner overrides the region's. A hosted Machine gets its first
-`locale` from signup (ASSISTANT_LOCALE at install). A Machine without one keeps US dates and a 24-hour clock, as
-before this setting existed, until the owner picks a region.
+`locale` from signup (ASSISTANT_LOCALE at install). A Machine without one (self-hosted) gets it the same way from the
+dashboard's first load (guess: the country of the browser's time zone, else its language's region), and keeps US
+dates and a 24-hour clock until then.
 
 The dashboard gets view() and formats with the same rules (dashboard.html, applyLocale)."""
 from __future__ import annotations
 
+import functools
 import re
+import zoneinfo
+from pathlib import Path
 
 LANGUAGES = {'en': 'English'}  # UI languages; a tag in another language keeps its region and reads English for now
 DEFAULT_REGION = 'US'  # dates without a locale
@@ -69,6 +73,39 @@ def view(config=None):
         tag, clock = _current['locale'], _current['clock']
     return {'locale': tag, 'region': region(tag), 'language': (tag or 'en-US').split('-')[0], 'clock': clock,
             'hour12': hour12(tag, clock), 'auto_hour12': hour12(tag), 'date_locale': date_locale(tag), 'languages': LANGUAGES}
+
+
+@functools.lru_cache(maxsize=1)
+def zone_countries():
+    """{'Europe/Brussels': 'BE', ...} from the system's zone.tab (as the control plane does at signup)."""
+    text = ''
+    for folder in zoneinfo.TZPATH:
+        path = Path(folder) / 'zone.tab'
+        if path.exists():
+            text = path.read_text(encoding='utf-8', errors='replace')
+            break
+    else:
+        try:
+            import importlib.resources
+            text = (importlib.resources.files('tzdata') / 'zoneinfo' / 'zone.tab').read_text(encoding='utf-8')
+        except Exception:  # noqa: BLE001 - no tz database: the language's region alone
+            return {}
+    out = {}
+    for line in text.splitlines():
+        parts = line.split('\t')
+        if len(parts) >= 3 and not line.startswith('#') and re.fullmatch(r'[A-Z]{2}', parts[0]):
+            out[parts[2].strip()] = parts[0]
+    return out
+
+
+def guess(zone, language=''):
+    """'en-BE' from a browser's time zone (Europe/Brussels), else the region of its language (en-GB); None when neither
+    says (UTC and a bare 'en')."""
+    country = zone_countries().get(str(zone or '').strip(), '')
+    if not country:
+        found = re.fullmatch(r'[A-Za-z]{2,3}[-_]([A-Za-z]{2})', str(language or '').strip()[:20])
+        country = found.group(1).upper() if found else ''
+    return 'en-' + country if country else None
 
 
 def settings(changes):

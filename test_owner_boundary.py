@@ -2,6 +2,7 @@ import base64
 import http.client
 import importlib.util
 import json
+import re
 import hashlib
 from pathlib import Path
 import socket
@@ -238,6 +239,21 @@ class OwnerBoundary(unittest.TestCase):
             status, body = self.post(port, {'action': action, 'args': {'account_id': 'nobody'}}, owner)
             self.assertNotEqual(status, 403, (action, body))
             self.assertEqual(self.post(port, {'action': action, 'args': {}}, {'Authorization': 'Bearer ' + TOKEN})[0], 403)
+
+    def test_every_action_the_dashboard_posts_gets_through(self):
+        # A save the dashboard makes that the allowlist lacks fails with "Operation is not available here" (Region did).
+        html = (Path(__file__).with_name('dashboard.html')).read_text()
+        posted = set(re.findall(r"action:'([a-z_]+)'", html))
+        posted |= set(re.findall(r"\b(?:sharePost|sigPost|skillCall|fleetPost|agentPost|graphPost|crmUpload|signinPost|modelAction)\('([a-z_]+)'", html))
+        self.assertIn('set_locale', posted)
+        self.assertEqual(sorted(posted - a.DASHBOARD_ACTIONS), [])
+        port = self.serve()
+        csrf = a.hmac.new(self.app.token.encode(), self.app.config['tailscale_owner'].encode(), a.hashlib.sha256).hexdigest()
+        owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com',
+                 'Origin': 'https://machine.example:8443', 'X-CSRF-Token': csrf}
+        status, body = self.post(port, {'action': 'set_locale', 'args': {'locale': 'en-GB'}}, owner)
+        self.assertNotEqual(status, 403, body)  # through the real allowlist (no config file here: it says so instead)
+        self.assertIn(b'config.json', body)
 
     def test_dashboard_page_session_and_etag(self):
         # The page carries the device-cache scope but never the CSRF token (so it may go compressed); a repeat with its

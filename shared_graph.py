@@ -410,6 +410,16 @@ def automated_message(metadata):
     return bool(sender) and (graph.bulk(sender[0].lower()) or graph.relay(sender[0].lower()))
 
 
+def secondhand(kind, metadata, mine):
+    """Mail or meeting notes this Machine only sees through a shared CRM, from a teammate's mailbox or log: never its
+    owner's to share. Each Machine shares what its own owner took part in, so it goes from theirs, under their own
+    choices, and never comes back to them as a teammate's. CRM email is always someone else's (the owner's own comes
+    through their mailbox); a CRM meeting is the owner's own only when they logged it."""
+    if kind == 'salesflare.email':
+        return True
+    return kind == 'salesflare.meeting' and str(metadata.get('host') or '').strip().lower() not in mine
+
+
 def outside(address, internal):
     domain = address.rsplit('@', 1)[-1]
     return not any(domain == d or domain.endswith('.' + d) for d in internal)
@@ -569,6 +579,8 @@ def visibility(db, scope, event):
     if event['account_id'] not in scope.accounts:
         return None  # another company's mailbox, or a personal account: never, also not on a board shared by name
     metadata = event['metadata'] if isinstance(event['metadata'], dict) else json.loads(event['metadata'] or '{}')
+    if secondhand(event['kind'], metadata, scope.mine):
+        return None  # a teammate's mail or notes seen through the CRM: theirs to share, not even on a board shared by name
     item = event['id'] in scope.board_items or (event['kind'] in ITEM_KINDS and event['id'] in scope.team_items)
     people = item_people(metadata) if item else addresses(metadata)
     thread = thread_of(event['kind'], metadata, event['id'])
@@ -739,6 +751,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                 found.append({'at': at, 'line': lines[event_id]})
             elif view == 'team' and event_id in titles:
                 found.append({'at': at, 'line': titles[event_id]})  # its whole timeline, also what has no line
+            found = unique_lines(found)  # one line per fact: the review writes a thread's line on each of its messages
             if len(found) >= limit:
                 break
         return found
@@ -760,7 +773,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                 if ids and ok(ids):
                     found.append({'at': c['created_at'], 'line': _line(('Card done: ' if c['status'] == 'completed' else 'Card: ') + str(c['title'] or ''))})
         found.sort(key=lambda x: str(x['at'] or ''), reverse=True)
-        return found[:limit]
+        return unique_lines(found)[:limit]
 
     def work(node_id):
         """(shared, last): a record goes when one of its threads is shared; not when its threads are only sensitive,
@@ -844,6 +857,38 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
              'people': sum(1 for r in records.values() if r['t'] == 'person'), 'orgs': sum(1 for r in records.values() if r['t'] == 'org'),
              'projects': sum(1 for r in records.values() if r['t'] == 'project')}
     return records, out_threads, stats, files
+
+
+def unique_lines(found):
+    """Timeline lines with each fact once, the newest kept (found: newest first)."""
+    seen, out = set(), []
+    for x in found:
+        key = ' '.join(str(x.get('line') or '').split()).casefold()
+        if key not in seen:
+            seen.add(key)
+            out.append(x)
+    return out
+
+
+def header_addresses(body):
+    """Addresses in the From/To/Cc lines a CRM's copy of an email starts with (its own fields are empty)."""
+    found = []
+    for line in str(body or '').splitlines()[:8]:
+        if not re.match(r'(From|To|Cc|Bcc):', line, re.I):
+            break
+        found += [a.lower() for a in ADDRESS.findall(line)]
+    return found
+
+
+def on_thread(body, mine):
+    """Whether one of the owner's own addresses is on a teammate's thread: then the owner has it themselves."""
+    for m in body.get('messages') or []:
+        if not isinstance(m, dict):
+            continue
+        people = addresses(m) + header_addresses(m.get('body'))
+        if any(p in mine for p in people):
+            return True
+    return False
 
 
 def _why(db, row, views):
@@ -2526,33 +2571,46 @@ class SharedGraph:
         return [b for b in boards.values() if b['projects']]
 
     def team_section(self, db, entry):
-        """What teammates shared about one entity: sources, timeline lines and client threads, each with whose it is."""
-        lines, threads = [], []
+        """What teammates shared about one entity: sources, timeline lines and client threads, each with whose it is.
+        A teammate's thread the owner is on is the owner's own mail echoed back (a teammate's Machine from before it
+        kept CRM copies to itself): left out, and so is a teammate whose every thread here was one. Each fact once."""
+        lines, threads, sources = [], [], []
+        mine = {m.lower() for m in self.my_emails()}
         for s in entry['sources']:
             who = _first_name(s['name']) or 'a teammate'
-            for x in s['record'].get('timeline') or []:
-                lines.append({**x, 'via': who})
-            for tag in s['record'].get('threads') or []:
+            tags, found, echoes = s['record'].get('threads') or [], [], 0
+            for tag in tags:
                 row = db.execute('SELECT body FROM team_mail WHERE fleet=? AND member=? AND tag=?', (s['fleet'], s['member'], tag)).fetchone()
                 if row:
                     body = json.loads(row['body'])
-                    if not body.get('private'):
-                        threads.append({'id': f"{s['fleet']}:{s['member']}:{tag}", 'subject': body.get('subject'), 'at': body.get('at'),
-                                        'messages': len(body.get('messages') or []), 'via': who, 'kind': body.get('kind') or 'email'})
+                    if body.get('private'):
+                        continue
+                    if on_thread(body, mine):
+                        echoes += 1
+                        continue
+                    found.append({'id': f"{s['fleet']}:{s['member']}:{tag}", 'subject': body.get('subject'), 'at': body.get('at'),
+                                  'messages': len(body.get('messages') or []), 'via': who, 'kind': body.get('kind') or 'email'})
+            if echoes and not found:
+                continue  # all this teammate has of it is the owner's own mail
+            sources.append(s)
+            threads += found
+            lines += [{**x, 'via': who} for x in s['record'].get('timeline') or []]
         lines.sort(key=lambda x: str(x.get('at') or ''), reverse=True)
         threads.sort(key=lambda x: str(x.get('at') or ''), reverse=True)
         people = [{'member': s['member'], 'fleet': s['fleet'], 'name': _first_name(s['name']), 'left': s['left'],
-                   'score': s['record'].get('score') or 0} for s in sorted(entry['sources'], key=lambda s: -(s['record'].get('score') or 0))]
-        rec = resolve(entry)
-        return {'via': via(entry['sources']), 'people': people, 'timeline': lines[:TIMELINE_PROJECT], 'threads': threads[:40],
+                   'score': s['record'].get('score') or 0} for s in sorted(sources, key=lambda s: -(s['record'].get('score') or 0))]
+        rec = resolve({**entry, 'sources': sources})
+        return {'via': via(sources), 'people': people, 'timeline': unique_lines(lines)[:TIMELINE_PROJECT], 'threads': threads[:40],
                 'fields': rec.get('fields') or [], 'tags': rec.get('tags') or []}
 
     def team_for(self, db, node_id):
+        """(entry, section) for one entity; section None when nothing of it is the team's own (only echoes)."""
         ensure(db)
         entry = next((e for e in self.team_graph(db) if node_id in (e['local'], e['key'])), None)
         if not entry:
             return None, None
-        return entry, self.team_section(db, entry)
+        section = self.team_section(db, entry)
+        return entry, section if section['people'] else None
 
     def team_detail(self, db, key):
         """A record only teammates have, opened from the Team view."""

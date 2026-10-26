@@ -559,6 +559,21 @@ OWNER_ACTIONS |= LEARNING_ACTIONS
 CRM_ACTIONS = {'graph_owner', 'graph_org_merge', 'graph_org_split', 'graph_org_apart', 'graph_import_preview', 'graph_import_run', 'graph_import_undo',
                'graph_import_ai', 'graph_import_ai_status', 'graph_field_save', 'graph_field_delete', 'graph_field_set', 'graph_tag'}
 OWNER_ACTIONS |= CRM_ACTIONS
+# What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
+# test_dashboard_actions checks that every action dashboard.html posts is here.
+DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *SHARE_ACTIONS, *GRAPH_SHARE_ACTIONS, *FRIEND_ACTIONS, *FAMILY_ACTIONS, *LEARNING_ACTIONS,
+                               *CARD_ACTIONS, *SKILL_ACTIONS, *CONNECT_ACTIONS, *AGENT_ACTIONS, *CRM_ACTIONS, 'decide', 'confirm_action',
+                               'undo_merge', 'card_chat', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role',
+                               'graph_fact_unlink', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_save',
+                               'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'project_visibility',
+                               'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit',
+                               'graph_person_delete', 'graph_new', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup',
+                               'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule',
+                               'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
+                               'push_test', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
+                               'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
+                               'set_work_hours', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'calendar_write', 'set_locale',
+                               'browser_show'})
 UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai'}, 9 * 1024 * 1024
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
 # its code version records an error within AUTO_UNDO_NEW, or the fault it fixed comes back.
@@ -11659,6 +11674,12 @@ class App:
         """The owner's region and time format from the dashboard: checked, saved in config.json and in use at once."""
         if not getattr(self, 'config_path', None):
             raise ValueError('Region can only be changed in config.json here')
+        if 'browser' in args:  # the dashboard's first load on a Machine without a region: the browser's, never over a choice
+            browser = args['browser'] if isinstance(args['browser'], dict) else {}
+            found = locale_prefs.guess(browser.get('zone'), browser.get('language'))
+            if self.config.get('locale') or not found:
+                return self.locale_view()
+            args = {'locale': found}
         values = locale_prefs.settings(args)
         save_hours(self.config_path, values)
         self.config.update(values)
@@ -16649,7 +16670,7 @@ class App:
                         return
                     if upload and request.get('action') not in UPLOAD_ACTIONS:
                         raise ValueError('Invalid request size')
-                    if self.path != '/api/action' or (not internal and request['action'] not in FLEET_REQUEST_ACTIONS and request['action'] not in SHARE_ACTIONS and request['action'] not in GRAPH_SHARE_ACTIONS and request['action'] not in FRIEND_ACTIONS and request['action'] not in FAMILY_ACTIONS and request['action'] not in LEARNING_ACTIONS and request['action'] not in CARD_ACTIONS and request['action'] not in SKILL_ACTIONS and request['action'] not in CONNECT_ACTIONS and request['action'] not in AGENT_ACTIONS and request['action'] not in CRM_ACTIONS and request['action'] not in ('decide','confirm_action','undo_merge','card_chat','revise_draft','forget_fact','edit_fact','promise_close','promise_due','graph_role','graph_fact_unlink','graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit','project_visibility','graph_relation','graph_person_org','graph_warmup','graph_org_edit','graph_org_wrong','graph_person_edit','graph_person_delete','graph_new','graph_org_delete','graph_same','graph_same_all','set_people_lookup','own_address','security_level','security_setting','fleet_ask','fleet_decide','fleet_notice_decide','fleet_rule','fleet_take','fleet_meetings','fleet_free','fleet_brief','fleet_brief_hide','push_subscribe','push_unsubscribe','push_test','browser_focus','browser_login_open','browser_login_pages','browser_login_fill','browser_login_choose','browser_logins','browser_login_forget','model_usage_refresh','model_reset','set_work_hours','set_signature','detect_signature','set_voice','unmerge_fact','calendar_write')):
+                    if self.path != '/api/action' or (not internal and request['action'] not in DASHBOARD_ACTIONS):
                         self.output(403, {'error': 'Operation is not available here'})
                         return
                     owner_key = getattr(app, 'owner_token', '')

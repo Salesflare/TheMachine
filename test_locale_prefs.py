@@ -115,6 +115,18 @@ class SettingTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.app.set_locale({'locale': 'nowhere'})
 
+    def test_a_machine_without_a_region_takes_the_browsers_once_never_over_a_choice(self):
+        self.assertEqual(locale_prefs.guess('Europe/Brussels', 'en-US'), 'en-BE')  # where they are counts first, as at signup
+        self.assertEqual(locale_prefs.guess('UTC', 'en-GB'), 'en-GB')
+        self.assertIsNone(locale_prefs.guess('UTC', 'en'))
+        self.assertIsNone(self.app.set_locale({'browser': {'zone': 'UTC', 'language': 'en'}})['locale'])
+        self.assertNotIn('locale', json.loads(self.path.read_text()))
+        view = self.app.set_locale({'browser': {'zone': 'Europe/Brussels', 'language': 'en-US'}})
+        self.assertEqual(view['region'], 'BE')
+        self.assertEqual(json.loads(self.path.read_text())['locale'], 'en-BE')
+        self.app.set_locale({'locale': 'en-GB'})
+        self.assertEqual(self.app.set_locale({'browser': {'zone': 'America/New_York', 'language': 'en-US'}})['region'], 'GB')
+
     def test_without_a_config_file_it_cannot_be_saved(self):
         self.app.config_path = None
         self.assertFalse(self.app.locale_view()['saveable'])
