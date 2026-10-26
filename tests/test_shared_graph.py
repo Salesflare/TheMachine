@@ -1,10 +1,13 @@
 """The Shared Graph (shared_graph.py, docs/shared-graph.md): a Work Fleet's Machines share their Work records, timelines
 and client threads, sealed Machine to Machine. A fake Network stands in for the control plane, honest or not: it keeps
 the sealed blobs until every Machine they were sealed for took them, and can't read, change, replay or forge them. No network, no model."""
+import contextlib
 import copy
 import datetime as dt
 import importlib.util
 import json
+import shutil
+import sqlite3
 import time
 import tempfile
 import unittest
@@ -16,6 +19,7 @@ spec = importlib.util.spec_from_file_location('graph_share_assistant', Path(__fi
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 fleet, graph = a.fleet, a.graph
 import fleet_trust as ft
+import message_seal
 import network_crypto as nc
 import shared_graph as sg
 
@@ -129,6 +133,34 @@ def mail(account, n, sender, to, title, body, days, thread, cc=''):
             'deleted': False, 'metadata': {'from': sender, 'to': to, 'cc': cc, 'labels': ['INBOX'], 'message-id': f'<{account}{n}@x>', 'thread_id': thread}}
 
 
+def kept_connections(store, cleanup):
+    """store.connect for the Fleet, but a connection goes back for the next call instead of being closed. Opening one
+    reads the whole schema (some 150 tables), and a Graph round asks for hundreds, which was most of this file's time.
+    Each call still has a connection of its own, in a transaction of its own, as with store.connect."""
+    assert store.sealer is None  # store.connect attaches the sealer; these Machines have none
+    free = []
+
+    def close():
+        while free:
+            free.pop().close()
+    cleanup(close)
+
+    @contextlib.contextmanager
+    def connect():
+        db = free.pop() if free else sqlite3.connect(store.path, timeout=20, factory=message_seal.Connection)
+        db.row_factory, db.isolation_level, db.protected = sqlite3.Row, '', store.protected
+        db.execute('PRAGMA foreign_keys=ON')
+        try:
+            with db:
+                yield db
+        finally:
+            if db.in_transaction:
+                db.rollback()
+            free.append(db)
+    connect.close = close
+    return connect
+
+
 class SharedGraph(unittest.TestCase):
     def machine(self, me, device=''):
         root = Path(self.temp.name) / (me + device)
@@ -139,12 +171,40 @@ class SharedGraph(unittest.TestCase):
                   'accounts': [{'id': 'work', 'email': email, 'service': 'gmail', 'boundary': 'work:Acme'},
                                {'id': 'home', 'email': me + '@home.example', 'service': 'gmail', 'boundary': 'personal:Home'}]}
         store = a.Store(root / 'events.sqlite')
-        box = fleet.Fleet(store.connect, config, lambda: 'token', relay=FakeRelay(self.net, me))
+        box = fleet.Fleet(kept_connections(store, self.addCleanup), config, lambda: 'token', relay=FakeRelay(self.net, me))
         box.member_id, box.store, box.email = me, store, email
         return box
 
+    # The three Machines as setUp leaves them, kept once per variant of it and copied for every test: getting there
+    # takes hundreds of key wraps and nine Graph rounds, which made this file take ten minutes.
+    _ready = {}
+
+    @classmethod
+    def setUpClass(cls):
+        cls._kept = tempfile.TemporaryDirectory(); cls.addClassCleanup(cls._kept.cleanup)
+        cls._ready = {}
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        variant = (self._testMethodName.startswith('test_sharing_is_off_until'), self._testMethodName.startswith('test_the_first_share'))
+        if variant in self._ready:
+            folder, net, last = self._ready[variant]
+            shutil.copytree(folder, self.temp.name, dirs_exist_ok=True)
+            self.net = copy.deepcopy(net)
+            self.own, self.adm, self.mem = self.machine('own1'), self.machine('adm2'), self.machine('mem3')
+            self.boxes = [self.own, self.adm, self.mem]
+            for box in self.boxes:
+                box.last = copy.deepcopy(last[box.member_id])
+            hold = sg.HOLD; sg.HOLD = 0; self.addCleanup(setattr, sg, 'HOLD', hold)
+            return
+        self._set_up()
+        for box in self.boxes:
+            box.connect.close()  # all written to the database files before they are copied
+        folder = Path(self._kept.name) / str(len(self._ready))
+        shutil.copytree(self.temp.name, folder)
+        self._ready[variant] = (folder, copy.deepcopy(self.net), {box.member_id: copy.deepcopy(box.last) for box in self.boxes})
+
+    def _set_up(self):
         self.net = FakeNetwork()
         self.own, self.adm, self.mem = self.machine('own1'), self.machine('adm2'), self.machine('mem3')
         self.boxes = [self.own, self.adm, self.mem]

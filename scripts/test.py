@@ -107,9 +107,6 @@ def main():
         files = [TESTS / Path(name).name for name in chosen] if chosen else sorted(TESTS.glob('test_*.py')) + sorted(TESTS.glob('test_*.mjs'))
         jobs = max(1, int(os.environ.get('THE_MACHINE_TEST_JOBS') or min(os.cpu_count() or 2, 8)))
         configured_limit = os.environ.get('THE_MACHINE_TEST_TIMEOUT')
-        # The real signed-sharing suite performs hundreds of key wraps; cold CI runs exceed ten minutes.
-        # Give only that suite twenty minutes; keep the ordinary bound and explicit overrides unchanged.
-        slow_suites = {'test_shared_graph.py': 1200}
         skips = {file.name: reason for file in files if (reason := skipped(file))}
         files = [file for file in files if file.name not in skips]
         for name, reason in sorted(skips.items()):
@@ -119,7 +116,7 @@ def main():
             print(f'skip {wsl2} files: {IN_WSL2}', flush=True)
 
         def run(file):
-            limit = int(configured_limit or slow_suites.get(file.name, 600))
+            limit = int(configured_limit or 600)
             command = [sys.executable, '-m', 'unittest', file.stem] if file.suffix == '.py' else [node, str(file)]
             started = time.monotonic()
             own = Path(home) / file.name

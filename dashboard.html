@@ -4467,10 +4467,14 @@ addEventListener('wheel',e=>{if(e.deltaY<0&&!$('#calendar').hidden&&calList()&&c
 addEventListener('touchstart',e=>{const t=e.touches[0];calTouch=t?{x:t.clientX,y:t.clientY,grid:!!e.target.closest?.('.cal-tg')}:null},{passive:true});
 addEventListener('touchmove',e=>{if(!calTouch||$('#calendar').hidden||!calList())return;if(e.touches[0].clientY-calTouch.y>40&&calUpSeen()){calTouch=null;calUp=true;calMore('up')}},{passive:true});
 addEventListener('touchend',e=>{const t=e.changedTouches[0],s=calTouch;calTouch=null;if(!s?.grid||!t||$('#calendar').hidden||!calThree())return;const dx=t.clientX-s.x,dy=t.clientY-s.y;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5)calGo(dx<0?1:-1)},{passive:true});
-// Bring a day to the top of the agenda, under the header (Today brings Overdue along when there is one)
-function calScrollTo(day){const k=localDay(day),box=$('#calendar-view');let el=box.querySelector(`.cal-block[data-day="${k}"]`);if(!el)return;
- if(k===localDay(new Date())){const prev=el.previousElementSibling;if(prev?.classList.contains('late'))el=prev}
- const h=$('#page-head'),off=h&&!h.hidden?h.offsetHeight+(parseFloat(getComputedStyle(h).top)||0):0;calLastY=Math.max(0,scrollY+el.getBoundingClientRect().top-off-8);calUp=false;scrollTo({top:calLastY})}
+// Bring a day to the top of the agenda, under the header (Today brings Overdue along when there is one). When the
+// days after it are too few to fill the screen, the next week loads first: else the page ends before the day is at
+// the top, and the header and the address go back to the week above.
+async function calScrollTo(day){const k=localDay(day),h=$('#page-head');
+ const find=()=>{let el=$('#calendar-view').querySelector(`.cal-block[data-day="${k}"]`);if(el&&k===localDay(new Date())){const prev=el.previousElementSibling;if(prev?.classList.contains('late'))el=prev}return el};
+ const want=el=>{const off=h&&!h.hidden?h.offsetHeight+(parseFloat(getComputedStyle(h).top)||0):0;return Math.max(0,scrollY+el.getBoundingClientRect().top-off-8)};
+ let el=find();for(let i=0;el&&i<3&&want(el)>document.documentElement.scrollHeight-innerHeight&&!calMoreFailed.down&&calMoreRow('down');i++){await calMore('down');el=find()}
+ if(!el)return;calLastY=want(el);calUp=false;scrollTo({top:calLastY})}
 // The day a view is about: today when it is on show, else the period's first day
 function calFocus(){const t=calDay(0);if(calOnNow())return t;return calMode==='month'?calMonth:calThree()?calStart:calAt}
 const calSetAll=day=>{calAt=calMonday(day);calMonth=calFirst(day);calStart=calMid(day)};
@@ -4478,7 +4482,7 @@ const calSetAll=day=>{calAt=calMonday(day);calMonth=calFirst(day);calStart=calMi
 // brings the day to the top.
 async function calShowNow(day){if(calList()){const mon=calAt,thisWeek=+mon===+calMonday(new Date());day=day||(thisWeek?calDay(0):mon);const end=calAdd(calMonday(day),7);
   if(day<calAdd(calFrom,-7)||day>calTo){calFrom=day;calTo=calAdd(day,7)}else{if(day<calFrom)calFrom=day;if(end>calTo)calTo=end}calMoreFailed={}}
- if(!calList()&&scrollY)scrollTo({top:0});calRender();await calFetch();calRender();if(calList())calScrollTo(day)}
+ if(!calList()&&scrollY)scrollTo({top:0});calRender();await calFetch();calRender();if(calList())await calScrollTo(day)}
 function calGo(n){if(calMode==='month')calMonth=n?new Date(calMonth.getFullYear(),calMonth.getMonth()+n,1):calFirst(new Date());
  else if(calThree())calStart=n?calAdd(calStart,3*n):calDay(0);
  else calAt=n?calAdd(calAt,7*n):calMonday(new Date());

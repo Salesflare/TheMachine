@@ -10,14 +10,17 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // week. t, ← → (k j), a and w do the same from the keyboard. The address holds the view and the week, so back and
 // forward work. A week that can't load leaves a Try again. The ranges hold over the clock change at the end of
 // October. Nothing is wider than the screen at 390 and 1440, and viewing sends nothing.
+// The clock is fixed, in this process and the pages, on a Tuesday: its next week has only four days with a meeting,
+// too few to fill the screen below its Monday, and › still brings that Monday to the top.
 // CALENDAR_SHOT=<dir> also writes screenshots.
 process.env.TZ='Europe/Brussels';
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
-const at=(days,h,m=0)=>{const d=new Date();d.setDate(d.getDate()+days);d.setHours(h,m,0,0);return d};
+const NOW=new Date('2026-10-27T12:00:00+01:00');
+const at=(days,h,m=0)=>{const d=new Date(NOW);d.setDate(d.getDate()+days);d.setHours(h,m,0,0);return d};
 const key=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const monday=n=>{const d=at(0,0);d.setDate(d.getDate()-(d.getDay()+6)%7+7*n);return d};
-const iso=d=>d.toISOString(),now=iso(new Date());
+const iso=d=>d.toISOString(),now=iso(NOW);
 // A made-up meeting on most days, five weeks back to ten weeks on, so every week has something to load
 const meetings=[];for(let n=-35;n<=70;n+=1)if(n%3)meetings.push({id:1000+n+35,account_id:'cal',title:`Sync ${n<0?'before':'after'} ${Math.abs(n)}`,start:iso(at(n,10)),end:iso(at(n,10,30)),all_day:false,location:'',guests:2,url:'https://calendar.example/e/'+n});
 const cards=[{id:'a'.repeat(16),title:'Send the revised quote',body:'Made-up card.',status:'pending',scope:'work',created_at:now,event_ids:[],due:key(at(0,12))}];
@@ -37,6 +40,7 @@ const base='http://127.0.0.1:'+server.address().port+'/';
 let browser;
 const open=async(width,height,scheme='dark',hash='')=>{const mobile=width<600;
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-GB',timezoneId:'Europe/Brussels',colorScheme:scheme});
+ await context.clock.setFixedTime(NOW);
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));await page.goto(base+hash);return {context,page}};
 const toCal=async page=>{await page.locator('#task-'+cards[0].id).waitFor();await page.evaluate(()=>showTab('calendar'));await page.locator('#calendar-view [data-day]').first().waitFor();await page.waitForFunction(()=>document.querySelectorAll('#calendar-view .cal-item').length>2)};
