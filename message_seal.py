@@ -70,7 +70,8 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'draft_edits': ('before_subject', 'before_body', 'after_subject', 'after_body'),
            'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
            'fleet_in': ('question', 'draft'), 'fleet_out': ('question', 'answer'), 'network_replies': ('body',),
-           'task_pages': ('record',), 'recaps': ('text',), 'recap_items': ('line', 'data'),
+           'task_pages': ('record',), 'recaps': ('text',), 'chat_stops': ('text',),  # a stopped chat reply's partial text
+           'recap_items': ('line', 'data'),
            'graph_imports': ('undo',),  # an import's Undo: what it changed, which can hold a project's notes
            'crm_values': ('value',),  # custom field values the owner typed on a record (crm_fields.py)
            'projects': ('stage_reason', 'next_step', 'sort_note', 'notes', 'outcome_reason'), 'board_fits': ('why',), 'board_backfill_asks': ('why',), 'project_moves': ('reason',), 'board_suggestions': ('about', 'reason'), 'board_offers': ('answer',),
