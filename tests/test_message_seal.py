@@ -564,6 +564,8 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'board_backfills.state': 'running or done', 'board_backfill_asks.state': 'open, added or left out',
             'board_fit_undo.token': 'a random undo token', 'board_fit_undo.steps': 'project and message ids to put back',
             'team_learnings.items': 'general learnings for The Machine team, anything personal taken out (team_learnings.strip)',
+            'team_learning_votes.text': "another Machine's general learning, scrubbed by the team and stripped again here",
+            'team_learning_votes.reason': 'the general reason sent with a vote, stripped (team_learnings.save_votes)',
             'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',
         }
         sealed = {f'{t}.{c}' for t, cs in message_seal.DERIVED.items() for c in cs} | {f'{t}.{c}' for t, c, _ in message_seal.DERIVED_JSON}

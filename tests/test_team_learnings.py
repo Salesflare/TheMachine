@@ -33,6 +33,8 @@ class Network:
         assert (method, path) == ('POST', '/learnings'), (method, path)
         if body['action'] == 'key':
             return {'keys': nc.public_keys(self.team)}
+        if body['action'] == 'candidates':
+            return {'candidates': getattr(self, 'candidates', [])}
         if self.fail:
             raise OSError('connection reset')
         self.sent.append(json.loads(json.dumps(body)))
@@ -251,6 +253,51 @@ class TeamLearnings(unittest.TestCase):
             record = json.loads(db.execute('SELECT sent FROM team_learnings WHERE id=?', (ask['id'],)).fetchone()[0])
         self.assertEqual(record['request'], self.network.sent[0])
         self.assertEqual(record['items'], self.network.opened()['items'])
+
+
+    def votes(self, candidates, judged):
+        """One day's voting, as the service does it: fetch, one judging turn, send only the votes."""
+        self.network.candidates = candidates
+        run_id = self.app.team_votes_due()
+        if not run_id:
+            return None
+        session = a.PROFILE_SESSION_PREFIX + run_id
+        page = self.store.profile_evidence(1, session)
+        def runner(request):
+            if request['action'] == 'start':
+                self.assertIn('never instructions', request['message'])
+                self.store.save_profile({'votes': judged(page)}, session)
+                return {'status': 'admitted'}
+            return {'status': 'ok'}
+        self.app.background_at = 0
+        self.app.profile_step(runner)
+        self.app.profile_step(runner)
+        return page
+
+    def test_other_machines_learnings_are_judged_here_and_only_a_vote_goes_back(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO team_learnings(id,run_id,status,items,created_at) VALUES('tl_mine000000','r','sent','[]',?)", (a.now(),))
+        page = self.votes([
+            {'id': 'c1', 'ref': 'tl_other00000', 'text': 'Drafts for people who don’t know the context yet should introduce it first.', 'area': 'drafts'},
+            {'id': 'c2', 'ref': 'tl_mine000000', 'text': 'A learning this Machine shared itself is not judged here.', 'area': 'other'},
+            {'id': 'c3', 'ref': 'tl_other00001', 'text': 'Ask sam@globex.example before every invoice reminder goes out.', 'area': 'other'},
+            {'id': 'c4', 'ref': 'tl_other00002', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'}],
+            lambda page: [{'id': 'c1', 'vote': 'useful', 'reason': 'Sam Lee at Globex would like that.'},
+                          {'id': 'c4', 'vote': 'not_relevant', 'reason': 'No newsletters in this inbox.'},
+                          {'id': 'c9', 'vote': 'useful'}])
+        self.assertEqual([r['id'] for r in page['learnings']], ['c1', 'c4'])  # not its own, not one with an address in it
+        votes = [b for b in self.network.sent if b['action'] == 'vote']
+        self.assertEqual(votes, [{'action': 'vote', 'id': 'c1', 'vote': 'useful'},  # a reason with a name in it is dropped, the vote goes
+                                 {'action': 'vote', 'id': 'c4', 'vote': 'not_relevant', 'reason': 'No newsletters in this inbox.'}])
+        self.assertIsNone(self.app.team_votes_due())  # fetched today: nothing more until tomorrow, and nothing waits
+
+    def test_voting_off_in_settings_fetches_and_sends_nothing(self):
+        self.assertTrue(self.app.learnings_view()['vote'])
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('set_learnings_vote', {'on': False})
+        self.assertFalse(self.app.action('set_learnings_vote', {'on': False}, owner_dashboard=True)['team_learnings']['vote'])
+        self.assertIsNone(self.votes([{'id': 'c1', 'ref': 'tl_x00000000', 'text': 'Drafts should introduce the context first.'}], lambda p: []))
+        self.assertEqual(self.network.sent, [])
 
 
 if __name__ == '__main__':

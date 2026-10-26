@@ -1,7 +1,7 @@
 ---
 title: Share learnings with the team
 area: security
-summary: Now and then it asks to send a few general tips to The Machine team. General tips you review first, nothing without your OK.
+summary: Now and then it asks to send a few general tips to The Machine team, and votes on tips from other Machines. Nothing personal, nothing without your OK.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
@@ -24,3 +24,12 @@ On Feedback, a short note asks "Share 3 learnings with The Machine team?" Tap **
 It's sealed for the team and comes from a made-up name, unless you tick **Add my email so the team can reply**.
 
 To stop being asked, turn off **Offer to share learnings** in Settings, Security. See [Security levels](security-levels.md). It needs [The Machine Network](/network).
+
+## Voting
+
+Tips other Machines shared come to yours too. Now and then a short check judges whether a tip would help you, and sends back only a vote: useful, not useful or not relevant, sometimes with a short general reason. Nothing about you goes along. Your own tips are never sent back to you to vote on.
+
+The team sees the tips ranked by votes and picks what goes into The Machine for everyone. Nothing changes by itself.
+
+To stop voting, turn off **Vote on tips from other Machines** in Settings, Security.
+

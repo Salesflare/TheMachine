@@ -3,7 +3,7 @@ title: Writing
 area: settings
 summary: Your email signatures, and a few lines per channel on how you write. Drafts follow them.
 covers: settings:writing
-code: dashboard.html, signatures.py
+code: dashboard.html, signatures.py, authorship.py, learning_loop.py
 order: 3
 ---
 ## Signatures
@@ -15,6 +15,14 @@ In **Settings**, **Writing**, each mail account has a signature that goes below 
 A few lines per channel, like Email or Slack, and one for everywhere. Drafts follow them. Your messages, notes and edits keep them up to date by themselves, and you can change them any time: **Save**, or **Remove** a line.
 
 A quick way to teach it: when you edit a draft before sending, it learns from the difference.
+
+It learns only from what you wrote yourself. A draft it wrote that you sent as is never counts as your writing, even with your name on it. A draft you changed teaches only through what you changed.
+
+### It keeps learning
+
+About twice a day, when there's enough new, it looks at drafts you changed, to-dos you dismissed or snoozed, and what you corrected in a to-do's chat. Then it makes a few small changes to how you write, your rules and facts. These short checks wait when your plan's limits run low.
+
+**Feedback**, **What I've learned**, **Recent changes** shows each change and why. **Undo** puts it back. Lines you wrote yourself stay as you wrote them.
 
 ### When a line is wrong
 

@@ -7,14 +7,14 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Feedback, Share learnings with The Machine team (team_learnings.py): a quiet card; Review shows exactly what would be
 // sent, item by item, to edit or remove; an error log only when ticked; Send posts only the kept items as they read;
-// Not now and Never ask; the Settings switch. All mocked, nothing leaves the test. SHOTS=dir saves screenshots.
+// Not now and Never ask; the Settings switches (offer, and voting on other Machines' tips). All mocked, nothing leaves the test. SHOTS=dir saves screenshots.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const ask=()=>({id:'tl_1',created_at:'2026-10-23T09:00:00+00:00',error:null,items:[
  {n:1,text:'Drafts for people who don’t know the context yet should introduce it first.',example:'A first email to a new supplier opens with who we are and why we write.',area:'drafts',taken:'Took out 2 names.',log:null},
  {n:2,text:'People often switch a card’s channel to WhatsApp in chat. A button on the card would save a step.',example:'',area:'chat',taken:'',log:null},
  {n:3,text:'Graph updates fail now and then on a busy day, and the card for it shows nothing.',example:'',area:'graph',taken:'',log:'KeyError: missing key "…"\n  at graph.py:120 build (7 times this week)'}]});
 let view,posts;
-const reset=()=>{view={offer:true,network:true,ask:ask(),last_shared:null};posts=[]};
+const reset=()=>{view={offer:true,vote:true,network:true,ask:ask(),last_shared:null};posts=[]};
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  const asset={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'}[url.pathname];
@@ -26,7 +26,8 @@ const server=createServer(async(req,res)=>{
   if(action==='learnings_share'){view={...view,ask:null,last_shared:{at:'2026-10-23T10:00:00+00:00',count:args.items.length}};res.end(JSON.stringify({status:'sent',count:args.items.length,team_learnings:view}));return}
   if(action==='learnings_later'){view={...view,ask:null};res.end(JSON.stringify({status:'later',team_learnings:view}));return}
   if(action==='learnings_never'){view={...view,ask:null,offer:false};res.end(JSON.stringify({offer:false,team_learnings:view}));return}
-  if(action==='set_learnings_offer'){view={...view,offer:args.on};res.end(JSON.stringify({team_learnings:view}));return}}
+  if(action==='set_learnings_offer'){view={...view,offer:args.on};res.end(JSON.stringify({team_learnings:view}));return}
+  if(action==='set_learnings_vote'){view={...view,vote:args.on};res.end(JSON.stringify({team_learnings:view}));return}}
  res.statusCode=404;res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -80,6 +81,10 @@ try{
    assert.equal(await sw.getAttribute('aria-checked'),'false');
    await sw.click();await page.locator('#share-offer[aria-checked="true"]').waitFor();
    assert.deepEqual(posts.at(-1),{action:'set_learnings_offer',args:{on:true}});
+   // Voting on other Machines' tips: on by default, its own switch
+   const vote=page.locator('#share-vote');assert.equal(await vote.getAttribute('aria-checked'),'true');
+   await vote.click();await page.locator('#share-vote[aria-checked="false"]').waitFor();
+   assert.deepEqual(posts.at(-1),{action:'set_learnings_vote',args:{on:false}});
    await shot(page.locator('#settings-share'),`settings-${width}-${scheme}`);
   }else{
    await box.locator('.share-panel [data-share="later"]').click();

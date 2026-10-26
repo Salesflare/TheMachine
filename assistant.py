@@ -67,6 +67,8 @@ import skills
 import task_invites
 import task_pages
 import team_learnings
+import authorship
+import learning_loop
 import google_api
 import ms_graph
 import signatures
@@ -517,7 +519,7 @@ class SourceError(Exception):
 # authenticated dashboard may record them; never the local CLI the agent can run.
 CONNECT_ACTIONS = ('connect_sources', 'connect_start', 'connect_poll', 'connect_answer', 'connect_cancel', 'connect_remove', 'connect_scope',
                    'connect_signin', 'connect_signin_state')
-OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'card_chat', 'recap_decide'}
+OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'card_chat', 'recap_decide'}
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
                          'fleet_split_adjust', 'task_import', *task_pages.ACTIONS}
@@ -562,7 +564,7 @@ AGENT_ACTIONS = {'agent_draft', 'agent_send', 'agent_follow_up', 'agent_retry', 
 OWNER_ACTIONS |= AGENT_ACTIONS
 # Learnings for The Machine team (team_learnings.py): sharing, Not now, Never ask and the Settings switch are the owner's
 # own, from their dashboard only. Nothing is sent without their Send on exactly what they saw.
-LEARNING_ACTIONS = {'learnings_share', 'learnings_later', 'learnings_never', 'set_learnings_offer'}
+LEARNING_ACTIONS = {'learnings_share', 'learnings_later', 'learnings_never', 'set_learnings_offer', 'set_learnings_vote'}
 OWNER_ACTIONS |= LEARNING_ACTIONS
 # The Graph as a CRM (crm.py, crm_import.py): who owns a record, one organization with several websites, and a
 # spreadsheet imported; the owner's own, from their dashboard only.
@@ -586,7 +588,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACT
                                'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
                                'push_test', 'notify_set', 'notify_active', 'notify_preview', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
                                'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
-                               'set_work_hours', 'connector_sync', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'calendar_write', 'set_locale',
+                               'set_work_hours', 'connector_sync', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'calendar_write', 'set_locale',
                                'browser_show'})
 UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send'}, 9 * 1024 * 1024
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
@@ -2937,6 +2939,7 @@ class Store:
             for statement in team_learnings.SCHEMA.split(';'):  # learnings for The Machine team (team_learnings.py)
                 if statement.strip():
                     db.execute(statement)
+            learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             # Promises the owner made and promises made to them, from reviewed messages. Each is
             # checked when due: still open, it becomes a card (status carded, suggestion_id).
             db.execute('CREATE TABLE IF NOT EXISTS promises(id INTEGER PRIMARY KEY,direction TEXT NOT NULL,who TEXT NOT NULL,what TEXT NOT NULL,due TEXT,'
@@ -4842,6 +4845,7 @@ class Store:
         queues = collections.OrderedDict()
         with self.connect() as db:
             db.execute('BEGIN')  # one read snapshot across replenishment and all source queues
+            sent = authorship.MachineSent.load(db)  # drafts sent from a to-do are no example of how the owner writes
             for kind in OWN_KINDS:
                 predicate = ("instr(metadata,'\"SENT\"')>0" if kind == 'gmail.message' else
                              f"json_extract(metadata,'$.user_id') IN ({','.join('?' for _ in ids)})" if kind == 'slack.message' else
@@ -4851,13 +4855,13 @@ class Store:
                 # Per-source candidates, replenished after template/media filtering.
                 # At most 40 * limit rows per source keeps even huge template archives bounded.
                 for offset in range(0, limit * 40, limit * 4):
-                    rows = db.execute("SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events "
+                    rows = db.execute("SELECT id,account_id,source_id,kind,occurred_at,title,body,metadata FROM events "
                                       f"WHERE deleted=0 AND kind=? AND ({predicate}) "
                                       "ORDER BY occurred_at DESC,id DESC LIMIT ? OFFSET ?",
                                       (kind, *params, limit * 4, offset)).fetchall()
                     for row in rows:
                         text = (row['body'] or '').split('[Quoted earlier messages', 1)[0].strip()
-                        if len(text.split()) < 2 or PROFILE_SKIP.match(text):
+                        if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
                             continue
                         gist = ' '.join(re.sub(r'^\W*(?:hey|hi|hello|dear|hoi|dag)\b[^,\n!]{0,40}[,\n!]', '', text[:400], flags=re.I).split()).lower()[:120]
                         if sum(gist == other or (len(gist) > 60 and len(other) > 60 and similar(gist, other))
@@ -4927,8 +4931,12 @@ class Store:
             pages = max(1, -(-len(threads) // size))
             page = min(max(int(page or 1), 1), pages)
             return {'page': page, 'pages': pages, 'threads': threads[(page - 1) * size:page * size]}
+        if evidence.get('team_votes'):  # judging other Machines' learnings (team_learnings.py)
+            return team_learnings.vote_page(evidence)
         if evidence.get('learnings'):  # a learnings run (team_learnings.py)
             return team_learnings.evidence_page(evidence, page)
+        if evidence.get('tune'):  # a learning pass (learning_loop.py): one short page
+            return learning_loop.page(evidence)
         if 'people' in evidence:  # a roles or organizations run
             extra = {k: evidence[k] for k in ('organisations', 'corrections') if evidence.get(k)}
             split = evidence_pages(evidence['people'], first=len(encoded(extra)))
@@ -5088,6 +5096,12 @@ class Store:
         if kind and kind['kind'] == 'learnings':
             with self.connect() as db:
                 return team_learnings.save_draft(db, run_id, profile, {'accounts': self.accounts})
+        if kind and kind['kind'] == 'tune':
+            with self.connect() as db:
+                return learning_loop.save_draft(db, run_id, profile)
+        if kind and kind['kind'] == 'team_votes':
+            with self.connect() as db:
+                return team_learnings.save_votes(db, run_id, profile, {'accounts': self.accounts})
         if kind and kind['kind'] == 'import':
             return self.save_import_check(profile, run_id)
         if kind and kind['kind'] != 'profile':
@@ -5720,13 +5734,14 @@ class Store:
         own = {str(a.get('email', '')).lower() for a in self.accounts}
         with self.connect() as db:
             db.execute('BEGIN')
+            sent = authorship.MachineSent.load(db)  # only what the owner wrote themselves (authorship.py)
             for kind, channel in EVENT_CHANNELS.items():
                 limit, picked, copies, per = VOICE_STUDY.get(kind, VOICE_STUDY_EACH), [], [], collections.Counter()
                 predicate, params = own_predicate(kind, ids)
-                for row in db.execute(f'SELECT id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
+                for row in db.execute(f'SELECT id,source_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
                                       'ORDER BY occurred_at DESC,id DESC LIMIT ?', (kind, *params, limit * VOICE_STUDY_SCAN)):
                     text = own_text(row['body'])
-                    if len(text.split()) < 2 or PROFILE_SKIP.match(text):
+                    if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
                         continue
                     gist = ' '.join(re.sub(r'^\W*(?:hey|hi|hello|dear|hoi|dag)\b[^,\n!]{0,40}[,\n!]', '', text[:400], flags=re.I).split()).lower()[:120]
                     if sum(gist == other or (len(gist) > 60 and len(other) > 60 and similar(gist, other)) for other in copies) >= 1:
@@ -5809,6 +5824,44 @@ class Store:
                        (run_id, started, started, json.dumps(evidence)))
         return run_id
 
+    def tune_due(self, current=None):
+        """About twice a day, with a few new signals (edits, dismissals, snoozes, chat corrections): one small turn
+        brings voices, rules and facts up to date (learning_loop.py). It waits for the usage budget like every
+        background turn."""
+        current = current or dt.datetime.fromisoformat(now())
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone() or not learning_loop.due(db, current):
+                return None
+            evidence = learning_loop.evidence(db, self.voices(db), current)
+            run_id, started = uuid.uuid4().hex, now()
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'tune',1)",
+                       (run_id, started, started, json.dumps(evidence)))
+        return run_id
+
+    def tune_voice(self, channel, text, current):
+        """A learning pass's voice block, checked like a learned update: short, and keeping most of the current one."""
+        channel, text = voice_channel(channel), voice_block(text)
+        if not 2 <= len(channel) <= 30 or not 5 <= len(text) <= VOICE_CHARS or text.count('\n') >= VOICE_LINES:
+            raise ValueError('not a voice block')
+        if current and len(text) < VOICE_KEEP * len(current['text']):
+            raise ValueError('a learned update keeps most of the block')
+        return channel, text
+
+    def apply_tune(self, run_id):
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            return learning_loop.apply(db, run_id, self.tune_voice)
+
+    def undo_learning(self, change_id):
+        try:
+            change_id = int(change_id)
+        except (TypeError, ValueError):
+            raise ValueError('id is the change to undo') from None
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            return learning_loop.undo(db, change_id)
+
     def apply_voice_study(self, run_id):
         """A finished study's blocks become the voices, except blocks the owner wrote themselves."""
         with self.connect() as db:
@@ -5861,13 +5914,14 @@ class Store:
             if not accounts:
                 return []
             predicate, params = own_predicate(kind, ids)
-            rows = db.execute(f'SELECT id,account_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
+            rows = db.execute(f'SELECT id,account_id,source_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
                               f'AND account_id IN ({",".join("?" for _ in accounts)}) '
                               'ORDER BY occurred_at DESC,id DESC LIMIT ?', (kind, *params, *sorted(accounts), scan)).fetchall()
+            sent = authorship.MachineSent.load(db)
         picked = []
         for row in rows:
             text = own_text(row['body'])
-            if len(text.split()) < 2 or PROFILE_SKIP.match(text):
+            if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
                 continue
             m = json.loads(row['metadata'] or '{}')
             to = {a.lower() for _, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a}
@@ -5916,6 +5970,7 @@ class Store:
                               "WHERE p.updated_at>=? AND s.next_action IS NOT NULL AND s.status IN ('prepared','completed') "
                               "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','blocked')) "
                               "AND NOT EXISTS(SELECT 1 FROM draft_edits d WHERE d.suggestion_id=s.id AND d.source='elsewhere')", (since,)).fetchall()
+            sent = authorship.MachineSent.load(db) if rows else None  # another to-do's send in that conversation isn't theirs
             for row in rows:
                 draft = next((a for a in next_actions.actions(row['next_action']) if a.get('kind') in DRAFT_EVENT_KINDS), None)
                 if not draft or not (next_actions.draft_text(draft) or '').strip():
@@ -5928,9 +5983,10 @@ class Store:
                     continue
                 until = (dt.datetime.fromisoformat(row['ready']) + dt.timedelta(days=days)).isoformat()
                 predicate, params = own_predicate(kind, ids)
-                found = next((e for e in db.execute(f'SELECT id,account_id,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
+                found = next((e for e in db.execute(f'SELECT id,account_id,source_id,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
                                                     'AND occurred_at>? AND occurred_at<=? ORDER BY occurred_at,id LIMIT 50', (kind, *params, row['ready'], until))
-                              if (e['account_id'], conversation_of(kind, json.loads(e['metadata'] or '{}'))) in conversations), None)
+                              if (e['account_id'], conversation_of(kind, json.loads(e['metadata'] or '{}'))) in conversations
+                              and not sent.wrote(e, own_text(e['body']))), None)
                 if not found:
                     continue
                 text, before = own_text(found['body']), next_actions.draft_text(draft).strip()
@@ -5948,7 +6004,8 @@ class Store:
         clip = lambda v: (v or '') if len(v or '') <= chars else v[:chars] + '…'
         with self.connect() as db:
             rows = db.execute('SELECT e.id,e.kind,e.source,e.before_body,e.after_body,s.title FROM draft_edits e JOIN suggestions s ON s.id=e.suggestion_id '
-                              'WHERE e.id NOT IN (SELECT edit_id FROM edits_offered) AND e.created_at>=? ORDER BY e.created_at DESC LIMIT ?', (since, limit)).fetchall()
+                              "WHERE e.id NOT IN (SELECT edit_id FROM edits_offered) AND e.created_at>=? AND e.source!='agent' "  # an agent's rewrite is not the owner's
+                              'ORDER BY e.created_at DESC LIMIT ?', (since, limit)).fetchall()
             if run_id:  # offered to this review: it's in the prompt
                 db.executemany('INSERT OR IGNORE INTO edits_offered(edit_id,run_id,offered_at) VALUES(?,?,?)', [(r['id'], run_id, now()) for r in rows])
         return '\n'.join(f"- {EVENT_CHANNELS.get(DRAFT_EVENT_KINDS.get(r['kind']), r['kind'])}, \"{r['title']}\" (edit_id {r['id']})\n  Draft: {clip(r['before_body'])}\n  "
@@ -6912,6 +6969,7 @@ class Store:
             result['facts'] = [{**dict(r), 'merged': merged.get('fact:' + str(r['id']), 0)} for r in
                                db.execute('SELECT id,text,suggestion_id,created_at,kind FROM facts WHERE removed_at IS NULL ORDER BY created_at DESC,id DESC')]
             result['voices'] = [{**v, 'merged': merged.get('voice:' + v['channel'], 0)} for v in self.voices(db)]
+            result['learning_changes'] = learning_loop.recent(db)  # the learning loop's changes, each with Undo
             result['moved'] = [dict(r) for r in db.execute("SELECT substr(f.merged_into,7) skill_id,coalesce(k.name,'a skill') name,count(*) notes FROM facts f "
                                                            "LEFT JOIN skills k ON k.id=substr(f.merged_into,7) WHERE f.merged_into LIKE 'skill:%' GROUP BY 1,2")] \
                 if db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone() else []
@@ -12357,6 +12415,10 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner undoes a condense, on the dashboard')
             return self.store.unmerge_fact(args.get('id'), args.get('channel'), args.get('skill'))
+        if name == 'learning_undo':
+            if not owner_dashboard:
+                raise ValueError('Only the owner undoes a learned change, on the dashboard')
+            return self.store.undo_learning(args.get('id'))
         if name == 'set_voice':
             if not owner_dashboard:
                 raise ValueError('Only the owner edits how they write, in Settings')
@@ -12667,6 +12729,8 @@ class App:
                     team_learnings.later(db, str(args.get('id') or ''))
                 elif name == 'learnings_never':
                     team_learnings.never(db, str(args.get('id') or '') or None)
+                elif name == 'set_learnings_vote':
+                    team_learnings.set_vote(db, args.get('on') is not False)
                 else:
                     team_learnings.set_offer(db, args.get('on') is not False)
             return {'team_learnings': self.learnings_view()}
@@ -13907,8 +13971,10 @@ class App:
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
         if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
             self.store.voice_study_due()
+            self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
                 self.store.learnings_due()
+                self.team_votes_due()  # and other Machines' learnings come to be judged, when voting is on
         self.apply_skill_clusters()  # a Create skill tapped on Telegram
         if seeded or learned:
             LOG.info('style learned voices=%s replies=%s', seeded, learned)
@@ -15551,6 +15617,8 @@ class App:
                                   share_history_prompt(run['run_id'], first['pages']) if run.get('kind') == 'share' else
                                   voices_prompt(run['run_id'], first['counts'], first['pages']) if run.get('kind') == 'voices' else
                                   team_learnings.prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'learnings' else
+                                  learning_loop.prompt(run['run_id']) if run.get('kind') == 'tune' else
+                                  team_learnings.vote_prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'team_votes' else
                                   profile_prompt(run['run_id'], first['counts'], run.get('room') or PROFILE_ROOM))
             with self.store.connect() as db:
                 db.execute('UPDATE profile_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
@@ -15573,6 +15641,12 @@ class App:
             with self.store.connect() as db:
                 if team_learnings.finish(db, run['run_id']):
                     LOG.info('learnings ready to ask about')
+        if run.get('kind') == 'tune':  # applies only once the run is ok; each change can be undone
+            changed = self.store.apply_tune(run['run_id'])
+            if changed:
+                LOG.info('learning pass changes=%s', changed)
+        if run.get('kind') == 'team_votes':  # sends only the votes, once the run is ok
+            self.team_votes_send(run['run_id'])
         if run.get('kind') == 'voices':  # applies only once the run is ok
             written = self.store.apply_voice_study(run['run_id'])
             if written:
@@ -16685,6 +16759,42 @@ class App:
                 return team_learnings.view(db, network=bool(getattr(self, 'fleet', None)))
         except sqlite3.Error:
             return None
+
+    def team_votes_due(self):
+        """Once a day, with voting on: fetch other Machines' learnings, send votes judged earlier, and start one small
+        judging turn when some wait (team_learnings.py). The turn waits for the usage budget like every background turn."""
+        try:
+            call = self.fleet.relay.call
+            with self.store.connect() as db:
+                due = team_learnings.votes_due(db)
+            if due:
+                answer = call('POST', '/learnings', {'action': 'candidates'})
+                with self.store.connect() as db:
+                    team_learnings.take_candidates(db, answer)
+            team_learnings.send_votes(self.store.connect, call)
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if not team_learnings.vote_on(db) or db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone():
+                    return None
+                evidence = team_learnings.vote_evidence(db)
+                if not evidence:
+                    return None
+                run_id, started = uuid.uuid4().hex, now()
+                db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'team_votes',1)",
+                           (run_id, started, started, json.dumps(evidence)))
+            return run_id
+        except Exception as error:  # the Network or the control plane is away: next time
+            LOG.warning('learning votes error=%s', type(error).__name__)
+            return None
+
+    def team_votes_send(self, run_id):
+        with self.store.connect() as db:
+            judged = team_learnings.finish_votes(db, run_id)
+        if judged and getattr(self, 'fleet', None):
+            try:
+                team_learnings.send_votes(self.store.connect, self.fleet.relay.call)
+            except Exception as error:
+                LOG.warning('learning votes error=%s', type(error).__name__)
 
     def learnings_share(self, args):
         if not getattr(self, 'fleet', None):
