@@ -18,9 +18,13 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Pull requests run on our own runner (a Hetzner server, one fresh runner per job; the themachine-cloud repo's
+# docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual runs stay on GitHub's.
+# To fall back to GitHub's runners for pull requests too, set the repository variable CI_PR_RUNNER to "ubuntu-24.04"
+# (with the quotes); unset it to go back.
 jobs:
   tests:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.event_name == 'pull_request' && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -40,7 +44,8 @@ jobs:
       - name: Install OpenClaw and browser
         run: |
           npm install --global openclaw@${{ matrix.openclaw }}
-          npx --yes --package=playwright@1.63.0 playwright install --with-deps chromium
+          # our runner has Chromium's system libraries already, and a job there has no sudo
+          npx --yes --package=playwright@1.63.0 playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
       - name: Install the pinned Node packages
         run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund
@@ -55,7 +60,7 @@ jobs:
   help:
     # The help articles (docs/help/, the help at themachine.computer/help) against the code: every connector, dashboard
     # tab and Settings tab has one, and each names only buttons, routes and commands that still exist.
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.event_name == 'pull_request' && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -114,7 +119,7 @@ jobs:
         run: ./install.ps1 -DryRun
 
   secrets:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.event_name == 'pull_request' && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
