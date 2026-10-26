@@ -16,7 +16,7 @@ A **Change** like "remind me about this next Tuesday" snoozes it too.
 
 ## When it comes back
 
-It comes back on Telegram when that is on, and as a notification on each device where notifications are on. After a snooze, the message says which. With neither, it's back on the dashboard, and **Turn on notifications** is right there. On iPhone and iPad, add The Machine to your Home Screen first.
+It comes back on Telegram when that is on, and as a notification on each device where notifications are on, as **Reminders** in [Notifications](notifications.md) allow. After a snooze, the message says which. With neither, it's back on the dashboard, and **Turn on notifications** is right there. On iPhone and iPad, add The Machine to your Home Screen first.
 
 ## While it's snoozed
 

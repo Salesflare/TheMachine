@@ -51,6 +51,7 @@ import crm_fields
 import crm_fixes
 import crm_import
 import locale_prefs
+import notify
 import mail_attachments
 import message_seal
 import enrichment
@@ -575,7 +576,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *SHARE_ACTIONS, *GRAPH_SH
                                'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup',
                                'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule',
                                'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
-                               'push_test', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
+                               'push_test', 'notify_set', 'notify_active', 'notify_preview', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
                                'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
                                'set_work_hours', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'calendar_write', 'set_locale',
                                'browser_show'})
@@ -9990,17 +9991,18 @@ def push_notify(store, config, row, sender=None):
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
     if row.get('_silent'):
         payload['silent'] = True  # later cards of a batch still reach the phone, without a second buzz
-    return push_send(store, config, subscriptions, payload, 'suggestion=' + row['id'], sender)
+    return push_send(store, config, subscriptions, payload, 'suggestion=' + row['id'], sender, kind=notify.kind_of(row))
 
 
 def reminder_channels(store, config):
     """Where a reminder (a snooze ending, a result) reaches the owner, as deliver_one sends it: Telegram when it is on,
     and a notification on every subscribed device (push_notify needs dashboard_host). `push` is the device count."""
-    push = 0
-    if config.get('dashboard_host'):
-        with store.connect() as db:
+    push, telegram_pref = 0, True
+    with store.connect() as db:
+        if config.get('dashboard_host') and notify.allowed(db, 'reminder', 'push'):  # Settings, Notifications: Reminders
             push = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
-    return {'telegram': telegram_on(config), 'push': push}
+        telegram_pref = notify.allowed(db, 'reminder', 'telegram')
+    return {'telegram': telegram_on(config) and telegram_pref, 'push': push}
 
 
 # Setup hints: what a hosted owner skipped at setup, suggested in the dashboard once it is relevant (one at a time,
@@ -10054,7 +10056,23 @@ def reminder_line(channels):
     return 'It’ll be back on the dashboard then.'
 
 
-def push_send(store, config, subscriptions, payload, label, sender=None):
+def waiting_count(db):
+    """To-dos that need the owner now, for the app icon's badge."""
+    return db.execute("SELECT count(*) FROM suggestions WHERE status IN ('pending','prepared') AND handled_hint IS NULL "
+                      "AND (deliver_after IS NULL OR deliver_after<=?)", (now(),)).fetchone()[0]
+
+
+def push_send(store, config, subscriptions, payload, label, sender=None, kind=None):
+    """kind (notify.KINDS): left out when the owner turned that kind off for push, or while a dashboard is in focus
+    (notify.active); it carries the badge count. Without kind (a test) it always goes."""
+    if kind:
+        with store.connect() as db:
+            if not notify.allowed(db, kind, 'push'):
+                return []
+            payload = {**payload, 'badge': waiting_count(db)}
+        if notify.active():
+            LOG.info('push %s skipped=active', label)
+            return []
     try:
         results = (sender or (lambda request: push_node(config, request)))({'action': 'send', 'subscriptions': subscriptions, 'payload': payload})['results']
     except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
@@ -10076,7 +10094,7 @@ def fleet_push(store, config, rows, sender=None):
         subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
     if not subscriptions or not config.get('dashboard_host'):
         return []
-    return push_send(store, config, subscriptions, fleet.push_payload(rows, fleet.dashboard_root(config)), 'fleet=' + rows[0]['id'], sender)
+    return push_send(store, config, subscriptions, fleet.push_payload(rows, fleet.dashboard_root(config)), 'fleet=' + rows[0]['id'], sender, kind='result')
 
 
 def fleet_notice_push(store, config, view, sender=None):
@@ -10085,7 +10103,7 @@ def fleet_notice_push(store, config, view, sender=None):
         subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
     if not subscriptions or not config.get('dashboard_host'):
         return []
-    return push_send(store, config, subscriptions, fleet.notice_push(view, fleet.dashboard_root(config)), 'fleet=' + view['id'], sender)
+    return push_send(store, config, subscriptions, fleet.notice_push(view, fleet.dashboard_root(config)), 'fleet=' + view['id'], sender, kind='result')
 
 
 def fleet_telegram(config, message, message_id=None, request=None):
@@ -10112,7 +10130,7 @@ def telegram(config, row, action, message_id=None):
         # A sign-in blocker opens the dashboard's sign-in for this task; once in, the task carries on by itself.
         blocks=[{'type':'buttons','buttons':[{'label':'Sign in','action':{'type':'url','url':signin}}]}] if signin else []
         return telegram_request(config,{'action':'send','channel':'telegram','accountId':telegram_account(config),
-            'target':config.get('telegram_owner'),'replyTo':str(row['message_id']),
+            'target':config.get('telegram_owner'),**({} if str(row['message_id']).startswith('web-') else {'replyTo':str(row['message_id'])}),
             'message':message,'presentation':{'blocks':blocks},**({'silent':True} if row.get('_silent') else {})})
     body=dict(row)
     if row['status']=='prepared' and row.get('requested_feedback'):
@@ -10145,6 +10163,8 @@ def telegram_request(config,args):
         # Telegram is off: nothing is sent, and a local receipt lets delivery, edits and
         # result notices proceed, so the dashboard and its push notifications carry the card.
         return {'messageId': 'web-' + uuid.uuid4().hex[:12]}
+    if str(args.get('messageId') or '').startswith('web-'):
+        return {'messageId': args['messageId']}  # a card kept off Telegram (Settings, Notifications): nothing there to edit
     try:
         result = subprocess.run([node_bin(config), str(ROOT/'telegram-message.mjs')],env=node_env(config),
                                 input=encoded(args),capture_output=True,text=True,timeout=60)
@@ -10303,7 +10323,12 @@ def deliver_one(store, config, edit_cards=True):
             if current['status'] != row['status'] or current['snoozed_until']:
                 db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='sending'",(row['id'],))
                 return
-        receipt = telegram(config,row,'send')
+        with store.connect() as db:
+            on_telegram = notify.allowed(db, notify.kind_of(row), 'telegram')
+        if notify.active():
+            row['_silent'] = True  # the owner is at the dashboard: Telegram arrives without a buzz, and no push goes
+        # Off for this kind in Settings, Notifications: a local receipt, as when Telegram is off (the dashboard has it).
+        receipt = telegram(config,row,'send') if on_telegram else {'messageId': 'web-' + uuid.uuid4().hex[:12]}
         message_id = receipt.get('messageId') or receipt.get('message_id')
         if message_id:
             status = 'sent'
@@ -11862,6 +11887,7 @@ class App:
             result['hours'] = self.hours()
             result['locale'] = self.locale_view()
             result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
+            result['notify'] = self.notify_view()
             result['agents_settings'] = self.agents_view()
             result['setup_hints'] = self.setup_hints_view()
             result['signatures'] = self.signature_view()
@@ -12186,6 +12212,18 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Help and bug reports come from the dashboard')
             return self.support_action(name, args)
+        if name in ('notify_set', 'notify_active', 'notify_preview'):  # Settings, Notifications (notify.py)
+            if not owner_dashboard:
+                raise ValueError('Notifications are set in the dashboard')
+            if name == 'notify_active':  # a dashboard in focus: no push while the owner is here
+                notify.mark_active()
+                return {'active': True}
+            if name == 'notify_preview':  # shown on the page only: nothing is sent
+                digest = self.digest()
+                return {'empty': not digest, 'text': digest['text'] if digest else '', 'push': digest['push'] if digest else None}
+            with self.store.connect() as db:
+                notify.set_pref(db, str(args.get('kind') or ''), str(args.get('channel') or ''), bool(args.get('on')))
+            return self.notify_view()
         if name == 'push_test':  # Settings or the nudge: one test notification to this device's own subscription
             if not owner_dashboard:
                 raise ValueError('Phone notifications are turned on in the dashboard app')
@@ -12735,11 +12773,104 @@ class App:
                 delay = 60
             self.stop.wait(delay)
 
+    # -- notifications (notify.py): Settings, Notifications and the morning digest
+    def notify_on(self, kind, channel):
+        with self.store.connect() as db:
+            return notify.allowed(db, kind, channel)
+
+    def notify_mail_target(self):
+        """(url, token) for the digest email through the control plane, or None (not hosted or paired)."""
+        found = fleet.settings(self.config)
+        if not found or not (self.config.get('credentials') or {}).get('fleet'):
+            return None
+        try:
+            return found['url'], credential(self.config, 'fleet')
+        except Exception:  # noqa: BLE001 - no readable token: no email
+            return None
+
+    def notify_view(self):
+        with self.store.connect() as db:
+            prefs = notify.prefs(db)
+            devices = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
+        return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': bool(fleet.settings(self.config) and (self.config.get('credentials') or {}).get('fleet')),
+                'push_devices': devices, 'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30')}
+
+    def digest(self, current=None):
+        """The morning digest as of `current` (notify.compose), or None when there is nothing to say."""
+        current = current or dt.datetime.fromisoformat(now())
+        local = current.astimezone(local_tz())
+        start = local.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + dt.timedelta(days=1)
+        # Overnight: since the end of the last work day's hours (or a day back)
+        hour, minute = clock(WORK_HOURS['end'])
+        since = (local - dt.timedelta(days=1)).replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if since > local:
+            since -= dt.timedelta(days=1)
+        utc = lambda t: t.astimezone(dt.timezone.utc).isoformat()
+        with self.store.connect() as db:
+            meetings = recap_meetings(db, utc(start), utc(end), {})
+            meetings = [m for m in meetings if m['at'] >= utc(local)] or []
+            open_states = "('pending','accepted','prepared','instructions')"
+            due = [dict(r) for r in db.execute(
+                f"SELECT title FROM suggestions WHERE (status IN {open_states} AND due=?) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
+                "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
+            overnight = [dict(r) for r in db.execute(
+                "SELECT title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
+                "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY urgent DESC,created_at DESC LIMIT 20", (utc(since), local.date().isoformat(), utc(current)))]
+            show = security_levels.notify_text(db, False)
+        root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+        when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
+        return notify.compose(meetings, due, overnight, root, show, when)
+
+    def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
+        """Send the morning digest once on a work day, at its time, on the channels the owner picked."""
+        current = current or dt.datetime.fromisoformat(now())
+        local = current.astimezone(local_tz())
+        day = local.date().isoformat()
+        with self.store.connect() as db:
+            notify.ensure(db)
+            prefs = notify.prefs(db)['digest']
+            if not any(prefs.values()):
+                return None
+            sent = db.execute('SELECT 1 FROM notify_digests WHERE day=?', (day,)).fetchone()
+        if not notify.digest_due(local, self.config.get('digest_at', '08:30'), WORK_HOURS['start'], WORK_HOURS['end'], is_work_day, bool(sent)):
+            return None
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM notify_digests WHERE day=?', (day,)).fetchone():
+                return None
+            db.execute("INSERT INTO notify_digests(day,status,created_at) VALUES(?,'sending',?)", (day, now()))
+        digest = self.digest(current)
+        went = []
+        if digest:
+            if prefs.get('push'):
+                with self.store.connect() as db:
+                    subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
+                if subscriptions and self.config.get('dashboard_host'):
+                    payload = {**digest['push'], **({'silent': True} if notify.active() else {})}  # at the dashboard: no buzz
+                    if push_send(self.store, self.config, subscriptions, payload, 'digest', push):
+                        went.append('push')
+            if prefs.get('telegram') and telegram_on(self.config):
+                try:
+                    (telegram_send or (lambda text: telegram_request(self.config, {'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config),
+                                                                                  'target': self.config.get('telegram_owner'), 'message': recap_escape(text),
+                                                                                  'presentation': {'blocks': [{'type': 'buttons', 'buttons': []}]}})))(digest['text'])
+                    went.append('telegram')
+                except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
+                    LOG.warning('digest telegram error=%s', type(error).__name__)
+            target = prefs.get('email') and self.notify_mail_target()
+            if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
+                went.append('email')
+        with self.store.connect() as db:
+            db.execute('UPDATE notify_digests SET status=?,channels=? WHERE day=?', ('sent' if went else 'empty' if not digest else 'not_sent', encoded(went), day))
+        LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
+        return went
+
     def fleet_notify(self, rows):
         """Questions waiting for the owner: a phone notification, and a Telegram message with quick buttons when
         Telegram is on. Returns the Telegram message id, which binds those buttons to these questions."""
         fleet_push(self.store, self.config, rows)
-        if not telegram_on(self.config):
+        if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, fleet.telegram_message(rows, fleet.dashboard_root(self.config)))
         message_id = str(result.get('messageId') or '')
@@ -12749,7 +12880,7 @@ class App:
         """A Fleet notice: a phone notification, and a Telegram message when Telegram is on (Confirm and Decline on a
         seat request, Open on the rest). Returns the Telegram message id, which binds those buttons to this notice."""
         fleet_notice_push(self.store, self.config, view)
-        if not telegram_on(self.config):
+        if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, message)
         message_id = str(result.get('messageId') or '')
@@ -12762,8 +12893,8 @@ class App:
             subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
         if subscriptions and self.config.get('dashboard_host'):
             push_send(self.store, self.config, subscriptions, {'title': 'What your Fleet saw', 'body': text.split('\n', 2)[-1][:200],
-                                                               'url': url, 'tag': 'fleet-brief'}, 'fleet-brief')
-        if not telegram_on(self.config):
+                                                               'url': url, 'tag': 'fleet-brief'}, 'fleet-brief', kind='result')
+        if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': 'Open the brief', 'url': url}]] if url else []})
         message_id = str(result.get('messageId') or '')
@@ -12955,8 +13086,8 @@ class App:
             subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
         if subscriptions and root:
             push_send(self.store, self.config, subscriptions, {'title': 'Your Fleet', 'body': text[:200], 'url': root, 'tag': 'fleet-' + anchor},
-                      'fleet=' + anchor)
-        if telegram_on(self.config):
+                      'fleet=' + anchor, kind='result')
+        if telegram_on(self.config) and self.notify_on('result', 'telegram'):
             fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': 'Open in Suggestions', 'url': root}]] if root else []})
 
     def fleet_retell(self, message_id, message=None):
@@ -13322,6 +13453,7 @@ class App:
             try:
                 self.feedback_prompt_step()
                 deliver(self.store, self.config)
+                self.digest_step()
             except Exception as error:
                 LOG.error('delivery error=%s', type(error).__name__)
 

@@ -82,6 +82,8 @@ self.addEventListener('message', event => {
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = {title: event.data?.text() || ''}; }
+  // The app icon's badge: how many to-dos need the owner, as the Machine counted when it sent this.
+  if (Number.isInteger(data.badge) && self.navigator.setAppBadge) (data.badge ? self.navigator.setAppBadge(data.badge) : self.navigator.clearAppBadge()).catch(() => {});
   event.waitUntil(self.registration.showNotification(data.title || 'The Machine', {
     body: data.body || '', tag: data.tag || undefined, renotify: !!data.tag && !data.silent, silent: !!data.silent,
     icon: 'brand/app-icon-192.png', badge: 'brand/app-icon-badge-96.png',
