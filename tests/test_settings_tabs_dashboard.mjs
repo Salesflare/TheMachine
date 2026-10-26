@@ -39,7 +39,8 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['Account','General','Work hours','Writing','Skills','Model']);
+  // hosted: Security holds Support access
+  assert.deepEqual(await tabs(page),['Account','General','Security','Work hours','Writing','Skills','Model']);
   // Account first, a tab like the others; General has this device, and no account card (it's in Account now).
   assert.equal(await selected(page),'Account');assert.equal(await page.evaluate(()=>location.hash),'#settings/account');
   assert.equal(await visible(page,'#settings-acct'),true);assert.equal(await visible(page,'#theme-toggle'),false);
