@@ -214,7 +214,8 @@ class FastFirstLook(unittest.TestCase):
     def test_the_quick_look_takes_what_most_likely_needs_the_owner_first(self):
         a.Store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'me@example.com'}]
         self.addCleanup(setattr, a.Store, 'accounts', [])
-        newsletters = [self.mail(f'news{n}', 'Shop <news@shop.example>', labels=['CATEGORY_PROMOTIONS'], hours_ago=1) for n in range(25)]
+        # Updates, not promotions: promotions never reach a review (test_bulk_mail)
+        newsletters = [self.mail(f'news{n}', 'Shop <news@shop.example>', labels=['CATEGORY_UPDATES'], hours_ago=1) for n in range(25)]
         robots = [self.mail(f'robot{n}', 'noreply@service.example', hours_ago=1) for n in range(5)]
         crowd = [self.mail('crowd', 'Ann <ann@example.org>', to='a@x.example, b@x.example, c@x.example, me@example.com', hours_ago=1)]
         asked = [self.mail(f'ask{n}', f'Person {n} <p{n}@example.org>', hours_ago=30 + n) for n in range(3)]

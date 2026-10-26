@@ -11,6 +11,8 @@ order: 10
 
 All your mail: the last 7 days when you connect, then everything new, in and out. Mail you send counts too, so it learns how you write and what you promised.
 
+Promotions and newsletters from a system sender are skipped without a model look. Updates and Forums mail get a quick look at the sender and subject first. Bills, security alerts and Stripe mail always get a full look.
+
 ## What it can send
 
 An email from a card, and only after you approve it. **Do it** prepares a draft; **Review and send** opens a preview, and nothing goes out until you press **Send now**. **Sign in with Google** asks Google for sending too. With your own app on your own computer, the sign-in is read-only until you add sending yourself.
