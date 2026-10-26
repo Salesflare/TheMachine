@@ -55,13 +55,27 @@ try {
       outcome=await callGatewayFromCli('agent.wait',{timeout:'15000'}, {runId:request.job_id,timeoutMs:0},scope);
       // Cancellation was admitted, but don't claim the old runtime has finished
       // until its terminal outcome (or the next exact no-active-run receipt).
-      status=outcome?.endedAt && ['ok','error','aborted','timeout'].includes(outcome?.status) ? 'timed_out':'pending';
+      // A preparation is stopped only when it is no longer wanted or ran past its time; recorded as aborted, not as the
+      // model timing out. Reviews keep timed_out: their tries and back-off count it.
+      status=outcome?.endedAt && ['ok','error','aborted','timeout'].includes(outcome?.status) ? (kind==='preparation'?'aborted':'timed_out'):'pending';
     }
     process.stdout.write(JSON.stringify({run_id:request.job_id,status,...failure(outcome,status)}));
   } else {
     result=await callGatewayFromCli('agent.wait',{timeout:'15000'}, {runId:request.job_id,timeoutMs:0},scope);
-    const status=['ok','error','aborted'].includes(result?.status)?result.status:
+    let status=['ok','error','aborted'].includes(result?.status)?result.status:
         result?.status==='timeout' && result?.endedAt ? 'timed_out':'pending';
+    // A Gateway crash or restart ends a run without a terminal state for its id (restart recovery resumes the
+    // session under a new run id). Once the run is past the queue, an exact session row whose complete set of
+    // active runs doesn't hold ours proves it is gone. Omitted or null ids prove nothing: keep waiting.
+    if (status==='pending' && request.probe===true) {
+      try {
+        const row=await callGatewayFromCli('sessions.describe',{timeout:'15000'},{key:session+sessionId,agentId:'main'},scope);
+        const ids=(row?.session ?? row)?.activeRunIds;
+        if (Array.isArray(ids) && !ids.includes(request.job_id)) {
+          status='lost'; result={error:'run not active in its session (Gateway restart?)'};
+        }
+      } catch {}  // unknown: stay pending
+    }
     process.stdout.write(JSON.stringify({run_id:request.job_id,status,...failure(result,status)}));
   }
 } catch (error) {

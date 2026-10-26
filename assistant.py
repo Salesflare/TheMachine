@@ -792,6 +792,12 @@ QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS, FIRST_LOOK_RETRY_MIN_SECONDS = 48, 20, 120
 # The first profile on an install without the interactive installer (hosted): tries, and the wait between them.
 FIRST_PROFILE_TRIES, FIRST_PROFILE_RETRY_SECONDS = 3, 6 * 3600
 PREPARATION_INTERRUPTED_TRIES = 4  # starts of one card's preparation that a Gateway restart may cut off before it counts
+# A run that saved its result or blocker usually still writes its last reply: it gets this long to end by itself
+# before it is stopped, so its record says how it ended (ok) instead of a stop's lost/aborted.
+PREPARATION_SETTLE_SECONDS = 120
+# A run still pending this long after it started is checked against its Gateway session (a crash or restart ends it
+# without a terminal state for its run id); a younger one may still be queued.
+PREPARATION_PROBE_SECONDS = 120
 SYSTEM_SERVICES = {'gateway'}  # The Machine's own logs: not a source of the owner's
 
 
@@ -13423,6 +13429,9 @@ class App:
         """One start or status check for one admitted preparation."""
         action='status' if job['status']=='running' else 'start'
         request={'action':action,'job_id':job['job_id'],'session_job_id':job.get('session_job_id') or job['job_id']}
+        if action=='status' and job.get('started_at'):
+            # Old enough that it can't still be waiting in the queue: the runner also checks the run is still in its session.
+            request['probe']=(dt.datetime.fromisoformat(now())-dt.datetime.fromisoformat(job['started_at'])).total_seconds()>=PREPARATION_PROBE_SECONDS
         if action=='start':
             with self.store.connect() as db:
                 chosen=db.execute("SELECT payload FROM action_jobs WHERE suggestion_id=? AND id=? AND status='local_preparation'",(job['suggestion_id'],job.get('action_id'))).fetchone()
@@ -13530,10 +13539,24 @@ class App:
         """Canceled, replaced or finished runs live on in their Gateway session until stopped. Stop and
         confirm each exact old run; only work in that same session or card waits for it."""
         with self.store.connect() as db:
-            stale=db.execute("""SELECT r.* FROM preparation_runs r LEFT JOIN preparations p ON p.job_id=r.job_id
+            stale=db.execute("""SELECT r.*,p.status prep_status,p.error prep_error,p.updated_at prep_updated
+                FROM preparation_runs r LEFT JOIN preparations p ON p.job_id=r.job_id
                 WHERE r.finished_at IS NULL AND (p.job_id IS NULL OR p.status NOT IN ('starting','running'))
                 AND (r.retry_at IS NULL OR r.retry_at<=?) ORDER BY r.started_at LIMIT ?""",(now(),limit)).fetchall()
         for run in stale:
+            # Its own result or blocker is saved (not replaced, cancelled or timed out): the run normally ends by itself
+            # seconds later. Read how it ended; stop it only when it is still going after PREPARATION_SETTLE_SECONDS.
+            if run['prep_status'] in ('done','blocked') and run['prep_error']!='completion_unconfirmed':
+                outcome=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})
+                if outcome.get('status') in preparation_state.TERMINAL:
+                    with self.store.connect() as db:
+                        db.execute('UPDATE preparation_runs SET status=?,finished_at=? WHERE job_id=? AND finished_at IS NULL',(outcome['status'],now(),run['job_id']))
+                    continue
+                settled=dt.datetime.fromisoformat(run['prep_updated'] or run['started_at'])
+                if (dt.datetime.fromisoformat(now())-settled).total_seconds()<PREPARATION_SETTLE_SECONDS:
+                    with self.store.connect() as db:
+                        db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=10)).isoformat(),run['job_id']))
+                    continue
             outcome=runner({'action':'stop','job_id':run['job_id'],'session_job_id':run['session_job_id']})
             with self.store.connect() as db:
                 if outcome.get('status') not in preparation_state.TERMINAL:

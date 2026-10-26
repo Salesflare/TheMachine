@@ -19,6 +19,15 @@ r=await run({kind:'review',job_id:id,action:'stop'},[{ok:true,status:'aborted',a
 assert.equal(r.result.status,'pending');  // abort admission is not terminal proof
 r=await run({kind:'review',job_id:id,action:'stop'},[{ok:true,status:'aborted',abortedRunId:id},{status:'timeout',endedAt:123}]);
 assert.equal(r.result.status,'timed_out');
+r=await run({kind:'preparation',job_id:id,action:'stop'},[{ok:true,status:'aborted',abortedRunId:id},{status:'aborted',endedAt:123}]);
+assert.equal(r.result.status,'aborted');  // a preparation we stopped did not time out
+// Past the queue, a session whose complete active set lacks the run proves a restart lost it; unknown sets prove nothing.
+r=await run({kind:'preparation',job_id:id,action:'status',probe:true},[{status:'timeout'},{session:{hasActiveRun:true,activeRunIds:['b'.repeat(32)]}}]);
+assert.equal(r.result.status,'lost');assert.equal(r.calls[1].method,'sessions.describe');
+for(const row of [{session:{hasActiveRun:true}},{session:{activeRunIds:null}},{session:{activeRunIds:[id]}},new Error('offline')]){
+  r=await run({kind:'preparation',job_id:id,action:'status',probe:true},[{status:'timeout'},row]);assert.equal(r.result.status,'pending');
+}
+r=await run({kind:'preparation',job_id:id,action:'status'},[{status:'timeout'}]);assert.equal(r.calls.length,1);  // no probe while young
 for(const response of [{ok:true,status:'aborted',abortedRunId:'b'.repeat(32)},{ok:true,status:'no-active-run',warning:'cleanup pending'},new Error('offline')]){
   r=await run({kind:'review',job_id:id,action:'stop'},[response]);assert.equal(r.result.status,'unavailable');
 }

@@ -337,7 +337,7 @@ class Preparation(unittest.TestCase):
         self.assertEqual(self.store.snapshot([])['suggestions'][0]['status'],'prepared')
         delivery=self.store.snapshot([])['deliveries'][0]
         self.assertEqual((delivery['status'],delivery['reminder']),('queued',1))
-        self.app.preparation_step(lambda req: {'status':'lost'} if req['action']=='stop' else self.fail('Completed draft dispatched twice'))
+        self.app.preparation_step(lambda req: {'status':'ok'} if req['action']=='status' else self.fail('Completed draft dispatched twice'))
 
     def test_snooze_and_done_prevent_late_result(self):
         self.accept();job=self.job()['job_id'];self.app.preparation_step(lambda req:{'status':'admitted'})
@@ -483,7 +483,7 @@ class Preparation(unittest.TestCase):
         self.assertEqual([c['action'] for c in calls],['status']*3)
         self.store.prepare(self.sid,'Ready draft',self.job()['job_id'])
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'ok' if r['action']=='stop' else 'admitted' if r['action']=='start' else 'pending'})
-        self.assertEqual(sorted(c['action'] for c in calls),['start','status','status','stop'])
+        self.assertEqual(sorted(c['action'] for c in calls),['start','status','status','status'])  # the finished run is read, not stopped
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM preparations WHERE status='running'").fetchone()[0],3)
 
@@ -496,11 +496,45 @@ class Preparation(unittest.TestCase):
 
     def test_an_old_run_that_wont_stop_only_holds_back_its_own_card(self):
         self.accept();first=self.job()['job_id'];self.app.preparation_step(lambda _: {'status':'admitted'})
-        self.store.prepare(self.sid,'Ready draft',first)  # finished; its Gateway session still has to be stopped
+        self.store.prepare(self.sid,'Ready draft',first)  # finished, but its run is still going past the settle time
+        with self.store.connect() as db:db.execute("UPDATE preparations SET updated_at='2000-01-01T00:00:00+00:00'")
         other=self.store.suggest('other','Another task','I can do this.',[1])['id'];self.store.decide(other,'accept','','click-2','telegram')
-        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'unavailable' if r['action']=='stop' else 'admitted'})
-        self.assertEqual([c['action'] for c in calls],['stop','start'])
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'unavailable' if r['action']=='stop' else 'pending' if r['action']=='status' else 'admitted'})
+        self.assertEqual([c['action'] for c in calls],['status','stop','start'])
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT status FROM preparations WHERE suggestion_id=?',(other,)).fetchone()[0],'running')
+
+    def test_a_finished_run_ends_by_itself_and_is_recorded_ok(self):
+        # 2026-10-26: every saved preparation's run was stopped 3-11 s later, while it wrote its last reply, and
+        # recorded as lost or timed_out (251 of 252 runs on one install).
+        self.accept();job=self.job()['job_id'];self.app.preparation_step(lambda _: {'status':'admitted'})
+        self.store.prepare(self.sid,'Ready draft',job)
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'pending'})
+        self.assertEqual([c['action'] for c in calls],['status'])  # still writing its reply: left alone
+        with self.store.connect() as db:db.execute('UPDATE preparation_runs SET retry_at=NULL')
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'ok' if r['action']=='status' else self.fail('stopped a finished run')})
+        self.assertEqual(self.q('SELECT status FROM preparation_runs WHERE job_id=?',job)['status'],'ok')
+        self.assertEqual(self.job()['status'],'done')
+
+    def test_a_finished_run_still_going_after_the_settle_time_is_stopped(self):
+        self.accept();job=self.job()['job_id'];self.app.preparation_step(lambda _: {'status':'admitted'})
+        self.store.prepare(self.sid,'Ready draft',job)
+        with self.store.connect() as db:db.execute("UPDATE preparations SET updated_at='2000-01-01T00:00:00+00:00'")
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'pending' if r['action']=='status' else 'aborted'})
+        self.assertEqual([c['action'] for c in calls],['status','stop'])
+        self.assertEqual(self.q('SELECT status FROM preparation_runs WHERE job_id=?',job)['status'],'aborted')
+
+    def test_a_run_gone_from_its_session_after_a_restart_is_retried_at_once(self):
+        # 2026-10-26: the Gateway was killed mid-run; recovery resumed the session under a new run id and the
+        # old id stayed pending for 35 minutes, until the completion deadline.
+        self.accept();first=self.job()['job_id'];self.app.preparation_step(lambda _: {'status':'admitted'})
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'pending'})
+        self.assertFalse(calls[0]['probe'])  # just started: may still be queued
+        with self.store.connect() as db:db.execute("UPDATE preparations SET started_at=?",((a.dt.datetime.fromisoformat(a.now())-a.dt.timedelta(minutes=3)).isoformat(),))
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'lost','error':'runtime_lost'})
+        self.assertTrue(calls[0]['probe'])
+        row=self.job()
+        self.assertEqual((row['status'],row['error'],row['auto_retries']),('queued','ai_run_interrupted',0))
+        self.assertNotEqual(row['job_id'],first)
 
     def test_timed_out_run_retries_once_by_itself_after_it_really_stopped(self):
         self.accept();first=self.job()['job_id'];self.app.preparation_step(lambda _: {'status':'admitted'})
