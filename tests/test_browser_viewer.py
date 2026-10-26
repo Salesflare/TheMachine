@@ -70,7 +70,8 @@ class BrowserWaitTest(unittest.TestCase):
             hosted = {'browser_url': 'https://cp.example/open?to=browser', 'dashboard_host': 'm.app.example', 'browser_novnc': folder}
             self.assertIsNone(assistant.browser_embed(hosted))  # a Machine whose viewer files have no short page yet
             (Path(folder) / 'index.html').write_text('<html></html>')
-            self.assertEqual(assistant.browser_embed(hosted), '/browser/')
+            # the pane's own size: the hosted browser fills it (resize=remote), with the websocket noVNC always used
+            self.assertEqual(assistant.browser_embed(hosted), '/browser/?autoconnect=1&reconnect=1&resize=remote&path=browser/websockify')
             self.assertIsNone(assistant.browser_embed({'browser_url': browser_viewer.VIEWER_URL, 'browser_novnc': folder}))  # 127.0.0.1: a tab
             self.assertIsNone(assistant.browser_embed({'browser_url': 'https://elsewhere.example/viewer', 'browser_novnc': folder}))
             self.assertIsNone(assistant.browser_embed({}))

@@ -8287,14 +8287,18 @@ def task_page(db, suggestion_id):
 def browser_embed(config, host=''):
     """The viewer on the dashboard's own address, for the dashboard to show it in its main area on a computer, or
     None: with `browser_vnc` the dashboard's own /browser; on a hosted Machine (its browser_url is the control plane's
-    handoff) the Machine's /browser/, which its proxy serves from the viewer files once they have the short page."""
+    handoff) the Machine's /browser/, which its proxy serves from the viewer files once they have the short page. There
+    the browser takes the pane's own size (resize=remote, as on a phone), so it fills the pane without black bars."""
     if config.get('browser_vnc') and config.get('dashboard_host'):
         return browser_viewer.view_link(dashboard_base(config, host), config.get('browser_novnc') or browser_viewer.WEB)
     url = urllib.parse.urlsplit(str(config.get('browser_url') or ''))
     web = Path(config.get('browser_novnc') or browser_viewer.WEB).expanduser()
     if url.scheme == 'https' and url.path == '/open' and url.query == 'to=browser' and (web / 'index.html').is_file():
-        return '/browser/'
+        return '/browser/?' + PANE_QUERY
     return None
+
+
+PANE_QUERY = 'autoconnect=1&reconnect=1&resize=remote&path=browser/websockify'  # noVNC's own settings, any release
 
 
 def browser_view_link(config, suggestion_id):

@@ -63,8 +63,9 @@ try{
  await navClick(page.locator('nav [data-tab="people"]'));
  await page.locator('#people-view article[data-node="wa:3247000001"] button.node').click();
  await page.locator('.graph-crumbs').waitFor();
- // One head: the breadcrumb (Graph › People › name) says where this is, no second Graph / People title above it; Graph current (in the drawer on a phone)
- assert.ok(await page.locator('#page-head').isHidden()&&await page.locator('.graph-crumbs [data-crumb="people"]').isVisible()&&await page.locator('nav [data-tab="people"].active').count()===1);
+ // The section's head stays (Graph, People) with the breadcrumb (Graph › People › name) under it; Graph current (in the drawer on a phone)
+ assert.ok(await page.locator('#page-head').isVisible()&&await page.locator('.graph-crumbs [data-crumb="people"]').isVisible()&&await page.locator('nav [data-tab="people"].active').count()===1);
+ assert.equal(await page.locator('#page-head .page-title').textContent(),'People');assert.equal(await page.locator('#page-head .head-new').count(),0);
  assert.equal(await page.evaluate(()=>scrollY),0);
  assert.equal((await page.locator('.graph-crumbs').textContent()).replace(/\s+/g,' '),'Graph›People›Ann Example');
  assert.equal(await page.locator('.graph-back').count(),0);

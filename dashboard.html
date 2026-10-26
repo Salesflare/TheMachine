@@ -497,7 +497,7 @@ button.node:hover{text-decoration:underline;background:none}
 .head-modes{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}.head-modes .view-mode{margin-left:0}
 /* A phone or tablet: New person, organization or project is in the top bar's + menu, so a Graph head is the title, its
    count and the switches on one line (the switches drop under the title only when they can't fit) */
-@media(max-width:1023px){.head-modes .head-new{display:none}.page-head:has(.head-modes){flex-wrap:wrap;row-gap:10px}.page-head .page-sub{white-space:nowrap}}
+@media(max-width:1023px){.head-modes .head-new{display:none}.page-head:has(.head-modes){flex-wrap:wrap;row-gap:10px}.page-head:has(.head-modes) .page-sub{white-space:nowrap}}
 @media(max-width:560px){.head-modes{flex-wrap:nowrap;gap:6px}.head-modes .view-mode button{padding:0 10px}}
 .via{color:var(--c-text-3);font-weight:400}
 .share-chip{flex:none;margin:0 0 0 auto;min-height:0;padding:1px 8px;border:1px solid var(--c-line);border-radius:999px;background:none;box-shadow:none;color:var(--c-text-3);font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);white-space:nowrap;cursor:pointer}
@@ -1629,7 +1629,7 @@ body main{padding-top:0}
 /* The tagline is a quiet line, not a headline: about body size, muted, one line where it fits; the count stays readable under it. */
 .page-head.greet{align-items:center;gap:12px;margin-bottom:24px}
 .page-head.greet .page-title{font:400 var(--fs-lg)/1.35 var(--serif);letter-spacing:0;color:var(--c-text-2);text-wrap:pretty}
-.page-head.greet .page-sub{margin-top:2px;color:var(--c-text-2)}
+.page-head.greet .page-sub{margin-top:2px;color:var(--c-text-2);overflow-wrap:anywhere;text-wrap:pretty}.page-head.greet>div{min-width:0}
 .page-head.greet .page-avatar{width:32px;height:32px}
 .page-avatar{width:40px;height:40px;flex:none;object-fit:contain}
 .page-sub{margin:4px 0 0;color:var(--side-quiet);font-size:var(--fs-sm)}
@@ -1666,7 +1666,9 @@ body main{padding-top:0}
 @media(min-width:1024px){
   :root[data-side="collapsed"]{--side-w:60px}
   body{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);grid-template-rows:1fr auto;min-height:100dvh}
-  .app-side{grid-column:1;grid-row:1/3;position:sticky;top:0;align-self:start;z-index:20;display:flex;flex-direction:column;width:auto;max-width:none;height:100dvh;margin:0;padding:12px 10px 10px;border-right:1px solid var(--c-line);background:var(--side-bg);overflow:hidden}
+  .app-side{grid-column:1;grid-row:1/3;position:sticky;top:0;align-self:start;z-index:20;display:flex;flex-direction:column;width:auto;max-width:none;height:100dvh;margin:0;padding:12px 10px 10px;border-right:1px solid var(--c-line);background:var(--side-bg);overflow:hidden auto;overscroll-behavior:contain;scrollbar-width:none}
+  .app-side::-webkit-scrollbar{display:none}
+  .app-side .side-cards{min-height:120px}:root[data-side="collapsed"] .app-side .side-cards{min-height:0}
   body main{grid-column:2;grid-row:1;width:100%;max-width:calc(var(--measure) + 112px);margin:0 auto;padding:44px 56px 64px}
   .site-footer{grid-column:2;grid-row:2;width:100%;max-width:calc(var(--measure) + 112px);padding-left:56px;padding-right:56px;background-size:calc(100% - 112px) 1px}
   /* A chat open: the list is in the sidebar, so the chat gets the whole main area */
@@ -1849,14 +1851,15 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .cal-tg{--gut:48px;border:1px solid var(--c-line);border-radius:var(--r-lg);background:var(--c-surface);overflow:hidden}
 .cal-tg-head,.cal-tg-strip,.cal-tg-body{display:grid;grid-template-columns:var(--gut) repeat(var(--n),minmax(0,1fr))}
 .cal-tg-head{border-bottom:1px solid var(--c-line)}
+.cal-tg-head,.cal-tg-strip{overflow:hidden;scrollbar-gutter:stable}
 .cal-tg-day{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:10px 4px 9px;border-left:1px solid var(--c-line);color:var(--c-text-3);font:var(--fw-medium) var(--fs-xs)/1 var(--sans)}
-.cal-tg-day b{color:var(--text);font:var(--fw-heading) 19px/1 var(--serif);font-variant-numeric:tabular-nums}
-.cal-tg-day.today span{color:var(--text)}.cal-tg-day.today b{display:inline-grid;place-items:center;min-width:28px;height:28px;margin:-6px 0 -5px;border-radius:50%;background:var(--c-accent);color:var(--c-accent-ink)}
+.cal-tg-day b{display:inline-grid;place-items:center;min-width:28px;height:28px;margin:-6px 0 -5px;border-radius:50%;color:var(--text);font:var(--fw-heading) 19px/1 var(--serif);font-variant-numeric:tabular-nums}
+.cal-tg-day.today span{color:var(--text)}.cal-tg-day.today b{background:var(--c-accent);color:var(--c-accent-ink)}
 .cal-tg-day.gone b{color:var(--c-text-3)}
 .cal-tg-strip{border-bottom:1px solid var(--c-line)}
 .cal-tg-label{align-self:center;padding:6px 6px;color:var(--c-text-3);font:var(--fw-medium) 10px/1.1 var(--sans);text-align:right}
 .cal-tg-cell{display:flex;flex-direction:column;gap:3px;min-width:0;padding:4px 3px;border-left:1px solid var(--c-line)}
-.cal-tg-scroll{position:relative;max-height:min(640px,calc(100dvh - 260px));overflow-y:auto;overscroll-behavior:contain}
+.cal-tg-scroll{position:relative;max-height:min(640px,max(240px,calc(100dvh - 260px)));overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 .cal-tg-body{position:relative;height:calc(24 * var(--hour));background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--hour) - 1px),color-mix(in srgb,var(--c-line) 70%,transparent) calc(var(--hour) - 1px) var(--hour))}
 .cal-tg-hours{position:relative}
 .cal-tg-hours span{position:absolute;right:6px;transform:translateY(-50%);color:var(--c-text-3);font:var(--fw-medium) 10px/1 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -1892,7 +1895,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .cal-mg.dots .cal-mday.gone:not(.today) b{color:var(--c-text-3)}
 .cal-dots{display:flex;gap:3px;height:5px}.cal-dots i{width:5px;height:5px;border-radius:50%;background:var(--tone)}
 .cal-dots i.k-meeting,.cal-dots i.k-prep{background:var(--c-text-3)}.cal-dots i.k-prep{background:var(--tone)}.cal-dots i.k-theirs{background:transparent;box-shadow:inset 0 0 0 1px var(--c-line-strong)}
-@media(max-width:1023px){.cal-tg{--gut:38px;margin:0 -6px}.cal-blk{padding:2px 4px 2px 6px}.cal-tg-more{width:19px;font-size:10px}.cal-tg-scroll{max-height:calc(100dvh - 250px)}.cal-tg-day{flex-direction:column;align-items:center;gap:4px}.cal-tg-day.today b{margin:0}.cal-mg.dots{margin-left:-6px;margin-right:-6px}}
+@media(max-width:1023px){.cal-tg{--gut:38px;margin:0 -6px}.cal-blk{padding:2px 4px 2px 6px}.cal-tg-more{width:19px;font-size:10px}.cal-tg-scroll{max-height:max(240px,calc(100dvh - 250px))}.cal-tg-day{flex-direction:column;align-items:center;gap:4px}.cal-tg-day b{margin:0}.cal-mg.dots{margin-left:-6px;margin-right:-6px}}
 /* Saved sign-ins (Connections, Sign-ins): one calm row per site, a letter tile, the username, a faint "Password saved"
    line and a quiet Forget; the explainer sits under the heading. */
 .logins-head{flex-direction:column;align-items:flex-start;gap:3px}.logins-head p{margin:0}.logins-head p span{display:block}
@@ -4260,7 +4263,8 @@ let rolesWaiting=0;
 function rolesRow(on,n){rolesWaiting=on?n||0:0;const a=$('.side-sub a[data-graph-sub="roles"]');a.hidden=!on;$('#count-roles').textContent=on&&n?String(n):'';graphSubLabels();if(!$('#people').hidden)pageHead()}
 function graphSubLabels(){for(const a of document.querySelectorAll('.side-sub a')){const n=a.querySelector('.badge').textContent.trim(),label=GRAPH_SUBS[a.dataset.graphSub]+(n?' · '+n:'');if(a.getAttribute('aria-label')!==label)a.setAttribute('aria-label',label)}}
 function graphSubSync(){pageHead();const on=!$('#people').hidden,graph=$('nav [data-tab="people"]');let lit=false;
- for(const a of document.querySelectorAll('.side-sub a')){const me=on&&a.dataset.graphSub===graphShown;lit||=me;if(me)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}graph.classList.toggle('sub-on',lit)}
+ const shown=graphNode&&!/^promise:/.test(graphNode)?graphNodePane(graphNode):graphShown;
+ for(const a of document.querySelectorAll('.side-sub a')){const me=on&&a.dataset.graphSub===shown;lit||=me;if(me)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}graph.classList.toggle('sub-on',lit)}
 function graphHashSync(){if($('#people').hidden||graphNode||!graphShown)return;const h=location.hash;if(h&&!/^#(graph|people)(=[a-z]+)?$/.test(h))return;const want='#graph='+graphShown;if(h!==want)history.replaceState(null,'',location.pathname+location.search+want)}
 $('#graph-sub').addEventListener('click',e=>{const a=e.target.closest('a[data-graph-sub]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();const url=location.pathname+location.search+'#graph='+a.dataset.graphSub;
  if(history.state?.drawer)history.replaceState(null,'',url);else if(location.hash!=='#graph='+a.dataset.graphSub)history.pushState(null,'',url);openTabLink();graphSubSync();if(!DESK.matches)scrollTo(0,0)});
@@ -4628,14 +4632,13 @@ function docTitle(tab=[...document.querySelectorAll('main>section')].find(x=>!x.
  const t='The Machine · '+(card||node||(tab==='inbox'?'Suggestions':tab==='people'?GRAPH_SUBS[graphShown]||'Graph':PAGE_TITLES[tab]||'Suggestions'));if(document.title!==t)document.title=t}
 function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox';helpLink(tab);docTitle(tab);needsYouPlace();
  if(tab==='inbox'&&chatId){h.hidden=true;return}
- // A Graph page (person, org, project, promise) has its own breadcrumb: no second Graph head above it
- if(tab==='people'&&graphNode){h.hidden=true;return}
+ // A Graph page (person, org, project, promise) keeps the section's head; its breadcrumb under it leads back to the list
  const c=sideCounts,busy=[[c.ready,'ready for you'],[c.needs,'to decide'],[c.preparing,'preparing']].filter(([k])=>k).map(([k,t])=>k+' '+t),known=!!state.suggestions&&!(shownCached&&!busy.length),sub=!known?'':(busy.length?busy:['All clear',c.later&&c.later+' coming back later',c.promises&&c.promises+(c.promises===1?' promise':' promises')+' kept track of'].filter(Boolean)).join(' · ');
  const html=tab==='inbox'?`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${esc($('#tagline').textContent)}</h2>${sub?`<p class="page-sub">${esc(sub)}</p>`:''}</div>`:tab==='people'?(()=>{try{return graphHead()}catch{return '<h2 class="page-title">Graph</h2>'}})():tab==='calendar'?calHead():`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
  h.classList.toggle('greet',tab==='inbox');h.classList.toggle('busy',tab==='inbox'&&busy.length>0);
  // A mascot mid-blink is the same head: comparing it as open keeps it (a rebuild would cut its blink short)
  if(h.innerHTML.replace(/<img class="page-avatar[^"]*" src="[^"]*"/,'<img class="page-avatar" src="brand/avatar.png"')!==html)h.innerHTML=html;h.hidden=false}
-{const o=new MutationObserver(()=>pageHead());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
+{const o=new MutationObserver(()=>graphSubSync());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
 $('#suggestions').oninput=e=>{if(e.target.tagName==='TEXTAREA')e.target.classList.toggle('filled',!!e.target.value)};
 async function saveDecision(id,choice,feedback='',answer=false){
 const saved=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:id,choice,feedback,decision_id:crypto.randomUUID()}})});
@@ -6075,7 +6078,7 @@ new MutationObserver(()=>document.querySelectorAll(':is(.fleet-tabs,.sub-tabs):n
 const GRAPH_PANES=['people','roles','projects','orgs'];
 function showGraphPane(id){graphPane=id;localStorage.setItem('graph-pane',id);graphShown=id;graphHashSync();graphSubSync();const view=$('#people-view');if(!view.querySelector(`[data-graph-panel="${CSS.escape(id)}"]`)){if(!graphNode&&!$('#people-query').value.trim())return;$('#people-query').value='';people('');return}
  for(const b of view.querySelectorAll('[data-graph-pane]'))b.setAttribute('aria-selected',b.dataset.graphPane===id);for(const p of view.querySelectorAll('[data-graph-panel]'))p.hidden=p.dataset.graphPanel!==id;tabsShow(view.querySelector('.sub-tabs'));tabsShow(view.querySelector(`[data-graph-panel="${CSS.escape(id)}"] .sub-tabs`))}
-async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=node;if(was!==node&&!$('#people').hidden)pageHead();  /* the head names the page's section; + New … is for the lists, not a page */const version=++graphRequest,view=$('#people-view'),oldHtml=view.innerHTML;const draw=(html,mode='list')=>{if(version!==graphRequest||quiet&&([...view.querySelectorAll('form:not([hidden])')].some(f=>f.checkVisibility())||view.querySelector('.team-thread[open],.tile-menu[open],.tile.dragging,.tile:active,.lane.drop,.board-menu[open],.graph-sort[open],.tag-add input:focus')))return;  /* a refresh never closes what the owner is typing or reading */const back=quiet&&foldsKeep(view);view.innerHTML=html;view.dataset.mode=mode;pagerMount(view);if(back)back()};  /* the rows a list already loaded come with it, so the page keeps its height and the reader keeps their place (placeKeep) */try{
+async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=node;if(was!==node&&!$('#people').hidden)graphSubSync();  /* the head names the page's section; + New … is for the lists, not a page */const version=++graphRequest,view=$('#people-view'),oldHtml=view.innerHTML;const draw=(html,mode='list')=>{if(version!==graphRequest||quiet&&([...view.querySelectorAll('form:not([hidden])')].some(f=>f.checkVisibility())||view.querySelector('.team-thread[open],.tile-menu[open],.tile.dragging,.tile:active,.lane.drop,.board-menu[open],.graph-sort[open],.tag-add input:focus')))return;  /* a refresh never closes what the owner is typing or reading */const back=quiet&&foldsKeep(view);view.innerHTML=html;view.dataset.mode=mode;pagerMount(view);if(back)back()};  /* the rows a list already loaded come with it, so the page keeps its height and the reader keeps their place (placeKeep) */try{
  if(node&&/^promise:\d+$/.test(node)){const html=await promisePage(node.slice(8));draw(html,'node');if(version!==graphRequest)return;graphKept=null;$('#people').classList.add('graph-on-node');pageHead();if(!quiet)scrollTo({top:0});return}
  if(node){const n=await request('api/graph?node='+encodeURIComponent(node));if(n.owners)graphOwners=n.owners;if(n.timeline){const was=graphTl.page;if(quiet&&was?.id===n.id&&was.timeline?.source){n.recent=was.recent;n.timeline={...n.timeline,...was.timeline}}else n.timeline.shown=GRAPH_ROWS;graphTl.page=n}const group=k=>n.links.filter(l=>l.kind===k&&l.id!==n.org);
   if(n.team_only){draw(teamDetail(n));if(version!==graphRequest)return;$('#people').classList.add('graph-on-node');if(!quiet)scrollTo({top:0});return}
@@ -6545,7 +6548,7 @@ $('#signin-form').onsubmit=e=>{e.preventDefault();const args={save:$('#signin-sa
 if(!$('#signin-user-row').hidden&&$('#signin-user').value)args.username=$('#signin-user').value;if(!$('#signin-pass-row').hidden&&$('#signin-pass').value)args.password=$('#signin-pass').value;if(!$('#signin-code-row').hidden&&$('#signin-code').value.trim())args.code=$('#signin-code').value.trim();
 if(!args.username&&!args.password&&!args.code){$('#signin-error').textContent='Fill in what the site asks for.';return}signinSend(args)};
 $('#signin-use-saved').onclick=()=>signinSend({use_saved:true,...(!$('#signin-code-row').hidden&&$('#signin-code').value.trim()?{code:$('#signin-code').value.trim()}:{})});
-$('#signin-browser').onclick=async()=>{const link=state.browser_link;if(link)window.open(link,'_blank','noopener');try{const r=await signinPost('browser_focus',signinTask?{suggestion_id:signinTask}:{page:signinTab});if(!link||!r.shown)toast(r.shown?'The browser is in front now.':r.unknown?'I don’t know which tab this task uses; find it in the browser.':'I couldn’t reach the browser on this computer.',!r.shown)}catch(err){if(!link)toast(err.message,true)}};
+$('#signin-browser').onclick=async()=>{const link=state.browser_link;if(browserPane())$('#signin-dialog').close();else if(link)window.open(link,'_blank','noopener');try{const r=await signinPost('browser_focus',signinTask?{suggestion_id:signinTask}:{page:signinTab});if(!link||!r.shown)toast(r.shown?'The browser is in front now.':r.unknown?'I don’t know which tab this task uses; find it in the browser.':'I couldn’t reach the browser on this computer.',!r.shown)}catch(err){if(!link)toast(err.message,true)}};
 $('#signin-dialog').addEventListener('close',()=>{signinRun++;signinAfter=null;$('#signin-frame').removeAttribute('src');$('#signin-pass').value='';$('#signin-code').value='';$('#signin-user').value=''});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy-command]');if(!b)return;try{await navigator.clipboard.writeText(b.dataset.copyCommand);toast('Copied.')}catch{toast('Couldn’t copy automatically. Select the command to copy it.',true)}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-signin]');if(b)openSignin(b.dataset.signin||null,!!b.dataset.task,b.dataset.task||null,b.dataset.page||null)});
@@ -6575,8 +6578,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-task
 // opens in a new tab (the link itself). From Telegram the dashboard opens with #browser-for=<task> and goes on to the viewer.
 async function browserShow(id){return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_show',args:{suggestion_id:id}})})}
 const showNote=r=>r.shown?(r.opened?'Opened it again in your Machine’s browser.':'It’s in front in your Machine’s browser.'):r.unknown?'I don’t know which page this task used.':r.error||'I couldn’t reach the browser.';
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-browser-show]');if(!b)return;const link=state.browser_link;if(!link)e.preventDefault();try{const r=await browserShow(b.dataset.browserShow);if(!link||!r.shown)toast(showNote(r),!r.shown)}catch(err){toast(err.message,true)}});
-{const m=/^#browser-for=([a-f0-9]{16})$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname);browserShow(m[1]).then(r=>{if(r.view&&r.shown)location.assign(r.view);else toast(showNote(r),!r.shown)},err=>toast(err.message,true))}}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-browser-show]');if(!b)return;const link=state.browser_link;if(!link||!(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)&&browserPane())e.preventDefault();try{const r=await browserShow(b.dataset.browserShow);if(!link||!r.shown)toast(showNote(r),!r.shown)}catch(err){toast(err.message,true)}});
+{const m=/^#browser-for=([a-f0-9]{16})$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname);browserShow(m[1]).then(r=>{if(r.view&&r.shown){if(!browserPane())location.assign(r.view)}else toast(showNote(r),!r.shown)},err=>toast(err.message,true))}}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-browser-focus]');if(!b)return;b.disabled=true;try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_focus',args:b.dataset.task?{suggestion_id:b.dataset.task}:{page:b.dataset.page||null}})});if(!('quiet' in b.dataset)||!r.shown)toast(r.shown?'The browser is in front now.':r.unknown?'I don’t know which tab this task uses; find it in the browser.':'I couldn’t reach the browser on this computer.',!r.shown)}catch(err){if(!('quiet' in b.dataset))toast(err.message,true)}finally{b.disabled=false}});
 const canRefresh=()=>!document.hidden&&!document.querySelector('textarea:focus')&&!$('#snooze-dialog').open&&!$('#result-dialog').open&&!$('#email-dialog').open&&!$('#send-dialog').open;
 const refreshWhenReady=()=>{if(placeBusy()){clearTimeout(refreshWhenReady.t);refreshWhenReady.t=setTimeout(refreshWhenReady,800);return}if(canRefresh()&&!refreshes)refresh()};  // not under a moving finger
@@ -6594,6 +6597,8 @@ navigator.serviceWorker?.addEventListener('message',e=>{if(e.data?.cache==='sign
 // The Machine's browser in the main area on a computer (from 1024px), next to the sidebar: Browser shows the viewer
 // (state.browser_embed, on the dashboard's own address) there instead of a new tab. The frame stays loaded while
 // another view is open, so the session keeps running. Back and close return to the view before. A phone keeps the tab.
+// browserPane() shows it from anywhere (true), or says to use a tab (false: a phone, or no viewer on this address).
+let browserPane=()=>false;
 {let bpBack='inbox',pushed=false,from='',quiet=false;const pane=$('#browser-pane'),row=$('#open-browser'),wide=()=>matchMedia('(min-width:1024px)').matches;
  const show=()=>{const src=state?.browser_embed;if(!src||!wide())return false;
   if(pane.hidden)bpBack=!$('#settings').hidden?'settings':document.querySelector('nav button.active')?.dataset.tab||'inbox';
@@ -6603,6 +6608,7 @@ navigator.serviceWorker?.addEventListener('message',e=>{if(e.data?.cache==='sign
   const f=$('#bp-frame');if(f.dataset.src!==src){f.dataset.src=src;f.src=src}
   $('#bp-tab').href=row.getAttribute('href')||src;
   if(location.hash!=='#browser'){from=location.hash;history.pushState(null,'',location.pathname+location.search+'#browser');pushed=true}return true};
+ browserPane=show;
  const leave=()=>{if(pane.hidden)return;if(bpBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${bpBack}"]`)?.click()};
  row.addEventListener('click',e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button)return;if(show())e.preventDefault()});
  // Settings from the pane goes on top of it, so Back shows the pane again (Settings itself replaces the address)
