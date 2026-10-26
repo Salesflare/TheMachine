@@ -2112,6 +2112,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .bug-shot{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.bug-shot img,.bug-sent img{display:block;max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:10px}.bug-shot img{order:-1;flex:0 0 100%;height:160px;object-fit:contain;object-position:left;border:0;border-radius:0}
 #bug-form label.bug-check{flex-direction:row;align-items:center;gap:8px}#bug-form label.bug-check input{width:auto;margin:0}
 .bug-sent{display:flex;flex-direction:column;gap:10px;max-height:min(56dvh,520px);overflow:auto}.bug-sent h3{margin:0;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.bug-sent p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.bug-sent img{max-height:140px;width:auto;align-self:flex-start}.bug-parts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}.bug-all summary{cursor:pointer;font-size:.85rem;color:var(--muted);margin:2px 0 6px}
 .bug-sent pre,#support-access pre{margin:0;max-height:260px;overflow:auto;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap;overflow-wrap:anywhere}
 #help-panel .actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}#bug-error:empty{display:none}#bug-error{margin:0;color:var(--red,#e07070)}
 .sa-log{list-style:none;margin:8px 0 0;padding:0;font-size:.85rem;color:var(--muted)}.sa-log li{padding:3px 0}
@@ -7060,6 +7061,11 @@ $('#bug-shot-take').onclick=async()=>{let stream;helpBox.close();
  catch{}finally{stream?.getTracks().forEach(t=>t.stop());helpBox.showModal();bugShotShow()}};
 $('#bug-shot-remove').onclick=()=>{bugShot=null;bugShotShow()};
 const bugHosted=()=>!!state.manage_url;
+const BUG_PARTS={versions:'App and OpenClaw versions','service-status':'Service status',doctor:'Setup checks','service-log':'Recent app errors','openclaw-log':'Recent OpenClaw errors'};
+// The report in short, one line per part; Show everything has the exact text that goes
+function bugSummary(r){const n=k=>(r.parts?.[k]||[]).length,lines=Object.keys(r.parts||{}).filter(k=>n(k)).map(k=>(BUG_PARTS[k]||k)+(/log$/.test(k)?` (${n(k)} line${n(k)===1?'':'s'})`:''));
+ if(r.settings)lines.push('Settings, without keys or what anyone wrote');
+ return `<ul class="bug-parts">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul><p class="fine">No message contents, keys or addresses.</p>`}
 function bugPayload(){return {description:$('#bug-what').value.trim(),screenshot:bugShot,report:bugReport?{parts:bugReport.parts,settings:bugReport.settings}:null}}
 $('#bug-form').onsubmit=async e=>{e.preventDefault();const out=$('#bug-error');out.textContent='';if(!$('#bug-what').value.trim()){out.textContent='Say what went wrong first.';$('#bug-what').focus();return}
  const b=$('#bug-next');b.disabled=true;b.textContent='Getting the report…';
@@ -7067,7 +7073,7 @@ $('#bug-form').onsubmit=async e=>{e.preventDefault();const out=$('#bug-error');o
   if(!bugHosted()&&!found.paired){out.innerHTML='This Machine isn’t linked to an account. Email <a href="mailto:support@themachine.computer">support@themachine.computer</a>, with a file from <code>assistant support-bundle</code> if you like.';return}
   bugReport=$('#bug-diag').checked?found:null;const p=bugPayload();
   $('#bug-sent').innerHTML=`<h3>What went wrong</h3><p>${esc(p.description)}</p>`+(p.screenshot?`<h3>Screenshot</h3><img src="${esc(p.screenshot)}" alt="The screenshot">`:'')
-   +`<h3>Support report</h3>`+(p.report?`<pre>${esc(JSON.stringify(p.report,null,1))}</pre>`:'<p>Not included.</p>')
+   +`<h3>Support report</h3>`+(p.report?bugSummary(p.report)+`<details class="bug-all"><summary>Show everything</summary><pre>${esc(JSON.stringify(p.report,null,1))}</pre></details>`:'<p>Not included.</p>')
    +`<p class="fine">${bugHosted()?'Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.':'Your account adds your email address, so we can answer.'}</p>`;
   $('#bug-form').hidden=true;$('#bug-review').hidden=false;$('#bug-send').focus()}
  catch(err){out.textContent=err.message}finally{b.disabled=false;b.textContent='Review'}};

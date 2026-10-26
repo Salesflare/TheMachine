@@ -37,7 +37,11 @@ try{
   await page.fill('#bug-what','The Calendar shows yesterday.');await page.click('#bug-next');
   await page.waitForSelector('#bug-review:not([hidden])');
   const shown=await page.textContent('#bug-sent');
-  for(const part of ['The Calendar shows yesterday.','token=[redacted]','openai/gpt-5'])assert.ok(shown.includes(part),'the review shows '+part);
+  assert.ok(shown.includes('The Calendar shows yesterday.'));
+  assert.deepEqual(await page.$$eval('.bug-parts li',l=>l.map(x=>x.textContent)),['Recent app errors (1 line)','Settings, without keys or what anyone wrote'],'a short summary');
+  assert.equal(await page.isVisible('.bug-all pre'),false,'the full text waits behind Show everything');
+  await page.click('.bug-all summary');const all=await page.textContent('.bug-all pre');
+  for(const part of ['token=[redacted]','openai/gpt-5'])assert.ok(all.includes(part),'everything shows '+part);
   assert.deepEqual(actions.map(a=>a.action),['help_ask','bug_preview'],'nothing sent before Send');
   await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
   const sent=actions.at(-1);
