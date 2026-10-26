@@ -41,7 +41,7 @@ class SourceNotes(unittest.TestCase):
             first=text.splitlines()[0]
             self.assertNotIn(first,agents)  # each note lives in one place
         self.assertIn('source-notes/<service>.md',agents)
-        cap=int(re.search(r"AGENTS\.md`, '[^']*', (\d+)\)",(a.ROOT/'openclaw-plugin/review-recovery.ts').read_text())[1])
+        cap=int(re.search(r"AGENTS\.md`, '[^']*', (\d+)[,)]",(a.ROOT/'openclaw-plugin/review-recovery.ts').read_text())[1])
         self.assertLess(len(agents.strip()),cap-5000)
 
     def test_account_services(self):

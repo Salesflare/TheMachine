@@ -72,6 +72,7 @@ class TeamLearnings(unittest.TestCase):
                            (f'd{i}', f's{i}', 'other', note, 'dashboard', a.now()))
             db.execute("INSERT INTO faults(fingerprint,day,kind,frames,location,version,first_at,last_at,count,message) "
                        "VALUES('fp1',?,'KeyError','x','graph.py:120 build','abc',?,?,7,'missing key \"…\"')", (a.now()[:10], a.now(), a.now()))
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (a.now(),))  # past the first look (background turns wait for it)
 
     fresh = True
 
@@ -90,6 +91,7 @@ class TeamLearnings(unittest.TestCase):
                 self.store.save_profile({'learnings': learnings}, session)
                 return {'status': 'admitted'}
             return {'status': 'ok'}
+        self.app.background_at = 0  # a week's learnings run: not spaced behind an earlier background turn here
         self.app.profile_step(runner)
         self.app.profile_step(runner)
         return self.app.learnings_view()['ask']
