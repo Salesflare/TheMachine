@@ -1,13 +1,10 @@
 name: Tests and privacy checks
 
 on:
-  # Branches are tested through their pull request, so each push runs once (not once for the push and once for the PR)
-  push:
-    branches: [main]
-    tags: ['release-*']
+  # GitHub Actions minutes cost money (macOS 10x, Windows 2x Linux), and the full suite runs locally before every push.
+  # So a pull request gets one Linux run of the pinned versions. Main, the merge queue and release tags run nothing here
+  # (the required check is Aikido's). The full matrix, Windows and macOS run weekly and on demand.
   pull_request:
-  # The merge queue on main tests each pull request on top of the latest main (and the entries ahead of it) before it lands
-  merge_group:
   workflow_dispatch:
   schedule:
     - cron: '17 5 * * 1'  # weekly, so a new OpenClaw release that breaks something shows up here
@@ -16,7 +13,7 @@ permissions:
   contents: read
 
 # A new push to a pull request cancels its run still going: only the newest commit can be merged anyway.
-# main, tags, merge queue runs and the weekly run are never canceled.
+# The weekly run is never canceled.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -28,13 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - python: '3.12'
-            node: '24.16.0'
-            openclaw: '2026.10.5'
-          - python: '3.14'
-            node: '26'  # current Node 26: latest OpenClaw can raise its patch-level minimum
-            openclaw: 'latest'
+        # A pull request runs the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"python":"3.12","node":"24.16.0","openclaw":"2026.10.5"}]' || '[{"python":"3.12","node":"24.16.0","openclaw":"2026.10.5"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -74,14 +66,14 @@ jobs:
 
   portable:
     # macOS runs natively under launchd; Windows runs The Machine inside WSL2 (Linux), so this checks the portable core.
+    # Weekly and on demand only: these runners cost 2x (Windows) and 10x (macOS) a Linux minute.
+    if: github.event_name != 'pull_request'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        # macOS runners are scarce (a few at once for the whole organization): a macOS job per pull request, merge queue
-        # entry or main push queued for hours. macOS runs on release tags (what Machines install), the weekly run and on demand.
-        os: ${{ fromJSON((startsWith(github.ref, 'refs/tags/release-') || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["macos-latest", "windows-latest"]' || '["windows-latest"]') }}
+        os: [macos-latest, windows-latest]
     defaults:
       run:
         shell: bash
