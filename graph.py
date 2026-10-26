@@ -1748,6 +1748,9 @@ def detail(db, node_id, events=12):
             view['project'] = project_card(db, node_id)
         except ValueError:
             view['project'] = None
+        view['todos'] = project_todos(db, node_id)  # its own To-dos section, so not again under Open between you
+        if view['todos']:
+            view['open'].pop('cards', None)
     import crm
     view['changes'] = crm.changes(db, row)  # owner changes, organizations merged in or split off
     import crm_fields
@@ -4111,6 +4114,9 @@ def boards(db, now):
     card about it."""
     out, org_cache = [], {}
     today = parse_time(now)
+    cards_on = _project_cards_where() if _has_column(db, 'suggestions', 'project_by') else \
+        ("(s.project=? COLLATE NOCASE OR EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN graph_events g ON g.event_id=j.value "
+         "WHERE g.node_id=? AND g.probable=0))")
     for b in db.execute('SELECT * FROM boards ORDER BY is_default DESC,id').fetchall():
         rows = db.execute('SELECT * FROM projects WHERE board_id=? AND closed_at IS NULL ORDER BY coalesce(stage_at,created_at) DESC', (b['id'],)).fetchall()
         names, items = stage_names(b), []
@@ -4124,15 +4130,16 @@ def boards(db, now):
                 mine_since = (mine_since or r['occurred_at']) if r['mine'] else None
             since = parse_time(p['stage_at'] or p['created_at'])
             last = None if p['stage_by'] else next(iter(project_events(db, p['id'], 1, now)), None)  # an unplaced tile: its latest message
-            card = db.execute(f"SELECT s.id,s.title FROM suggestions s WHERE s.status IN ({','.join('?' for _ in OPEN_CARD)}) AND (s.project=? COLLATE NOCASE "
-                              "OR EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN graph_events g ON g.event_id=j.value WHERE g.node_id=? AND g.probable=0)) "
-                              "ORDER BY s.created_at DESC LIMIT 1", (*OPEN_CARD, p['name'], node)).fetchone()
+            todos = db.execute(f"SELECT s.id,s.title FROM suggestions s WHERE s.status IN ({','.join('?' for _ in OPEN_CARD)}) AND {cards_on} "
+                               "ORDER BY s.created_at DESC", (*OPEN_CARD, p['name'], node)).fetchall()
+            card = todos[0] if todos else None
             items.append({'id': node, 'name': p['name'], 'stage': p['stage'] if p['stage'] in names else names[0], 'reason': p['stage_reason'],
                           'by': p['stage_by'], **sort_view(db, p), 'at': p['stage_at'], 'event_id': p['stage_event_id'], 'next': p['next_step'],
                           'first': not db.execute('SELECT 1 FROM project_moves WHERE project_id=? LIMIT 1 OFFSET 1', (p['id'],)).fetchone(),
                           'days': max(0, (today - since).days), 'closed': bool(p['closed_at']), 'visibility': p['visibility'],
                           'no_reply_days': max(0, (today - parse_time(mine_since)).days) if mine_since else None,
                           'org': {**org, 'node_id': org['id']} if org else None, 'card': {'id': card['id'], 'title': card['title']} if card else None,
+                          'todos': len(todos),
                           **({'last_at': last['occurred_at'], 'last_event_id': last['id']} if last else {}),
                           **({'value': p['value']} if p['value'] is not None else {}), **({'close_date': p['close_date']} if p['close_date'] else {}),
                           **({'outcome': p['outcome']} if p['outcome'] else {}), **owner_of(db, node)})
@@ -4375,3 +4382,124 @@ def delete_person(db, node_id, config, now):
             if mentions(pr['who'], needles) or mentions(pr['what'], needles) or mentions(pr['note'], needles):
                 db.execute('UPDATE promises SET who=?,what=?,note=? WHERE id=?', (_scrub(pr['who'], needles), _scrub(pr['what'], needles), _scrub(pr['note'], needles), pr['id']))
     return {'identifiers': len(ids), 'events': len(dropped), 'facts': len(facts), 'cards': cards, 'needles': needles}
+
+
+# To-dos on projects. A to-do (suggestions.project, a project's name) belongs to one project at most: the one its
+# review named, else the one its thread or the people it is about are on (link_cards, when that is a single open
+# project), else none. The owner can change it by hand (set_card_project); project_by='owner' keeps their choice, also
+# "no project", from every automatic pass. This is the owner's own view only: the team's Graph (shared_graph.py) never
+# reads suggestions.project, so a to-do linked to a shared project stays as private as it was.
+def _has_column(db, table, column):
+    return column in {r[1] for r in db.execute(f'PRAGMA table_info({table})')}
+
+
+def card_project_guess(db, event_ids):
+    """The single open project a to-do's signals are on: its thread's messages first, then the people it is directly
+    about. None when there is none, or more than one."""
+    ids = [int(i) for i in event_ids or () if str(i).lstrip('-').isdigit()]
+    if not ids:
+        return None
+    marks = ','.join('?' for _ in ids)
+    on_thread = {r[0] for r in db.execute(
+        f"SELECT p.name FROM projects p WHERE p.closed_at IS NULL AND (p.id IN (SELECT project_id FROM event_projects WHERE event_id IN ({marks})) "
+        f"OR 'project:'||p.id IN (SELECT node_id FROM graph_events WHERE probable=0 AND event_id IN ({marks})))", (*ids, *ids))}
+    if on_thread:
+        return next(iter(on_thread)) if len(on_thread) == 1 else None
+    marks = ','.join('?' for _ in ids)
+    people = [r[0] for r in db.execute(f"SELECT DISTINCT g.node_id FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
+                                       f"WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({marks})", ids)][:10]
+    if not people:
+        return None
+    marks = ','.join('?' for _ in people)
+    on_people = {r[0] for r in db.execute(f"SELECT p.name FROM graph_links l JOIN projects p ON 'project:'||p.id=l.b "
+                                          f"WHERE l.kind='project' AND l.a IN ({marks}) AND p.closed_at IS NULL", people)}
+    return next(iter(on_people)) if len(on_people) == 1 else None
+
+
+def link_cards(db, ids=None, limit=100, days=30):
+    """Open to-dos with no project yet, and none chosen by hand: the project their thread or people are on. Without
+    ids, the ones of the last `days` (it runs after every review, so it stays small). Returns how many it linked."""
+    if not _has_column(db, 'suggestions', 'project') or not _has_column(db, 'suggestions', 'project_by'):
+        return 0
+    marks = ','.join('?' for _ in OPEN_CARD)
+    where = f"status IN ({marks}) AND (project IS NULL OR project='') AND project_by IS NULL"
+    args = list(OPEN_CARD)
+    if ids is not None:
+        ids = [str(i) for i in ids]
+        if not ids:
+            return 0
+        where += f" AND id IN ({','.join('?' for _ in ids)})"
+        args += ids
+    else:
+        where += " AND created_at>=?"
+        args.append((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat())
+    linked = 0
+    for r in db.execute(f'SELECT id,event_ids FROM suggestions WHERE {where} ORDER BY created_at DESC LIMIT ?', (*args, limit)).fetchall():
+        try:
+            name = card_project_guess(db, json.loads(r['event_ids'] or '[]'))
+        except (ValueError, TypeError):
+            continue
+        if name:
+            db.execute("UPDATE suggestions SET project=?,project_by='auto' WHERE id=? AND project_by IS NULL", (name, r['id']))
+            linked += 1
+    return linked
+
+
+def set_card_project(db, card_id, project):
+    """The owner's choice of project for a to-do: a project's node id ("project:<id>") or name, or '' for none. Kept
+    over anything a review or link_cards would pick."""
+    row = db.execute('SELECT id FROM suggestions WHERE id=?', (str(card_id or ''),)).fetchone()
+    if not row:
+        raise ValueError('Unknown to-do')
+    project = str(project or '').strip()
+    name = None
+    if project:
+        m = re.fullmatch(r'project:(\d+)', project)
+        found = db.execute('SELECT name FROM projects WHERE id=?', (int(m.group(1)),)).fetchone() if m else \
+            db.execute('SELECT name FROM projects WHERE name=? COLLATE NOCASE', (project,)).fetchone()
+        if not found:
+            raise ValueError('Unknown project')
+        name = found['name']
+    db.execute("UPDATE suggestions SET project=?,project_by='owner' WHERE id=?", (name, row['id']))
+    return card_project_view(db, name)
+
+
+def card_project_view(db, name):
+    """{'node_id', 'name'} of a to-do's project, or None (a project deleted since shows as none)."""
+    if not name:
+        return None
+    row = db.execute('SELECT id,name FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone()
+    return {'node_id': 'project:' + str(row['id']), 'name': row['name']} if row else None
+
+
+def _project_cards_where(prefix='s.'):
+    """SQL for "this to-do is on project ?name / node ?node": named by its project, or (when none was named or chosen
+    by hand) one of its signals is on the project."""
+    p = prefix
+    return (f"({p}project=? COLLATE NOCASE OR (({p}project IS NULL OR {p}project='') AND {p}project_by IS NULL AND EXISTS(SELECT 1 FROM json_each({p}event_ids) j "
+            f"JOIN graph_events g ON g.event_id=j.value WHERE g.node_id=? AND g.probable=0)))")
+
+
+def project_todos(db, node_id, limit=20):
+    """A project's to-dos for its page: open ones first (by due date), then the latest done ones."""
+    row = db.execute("SELECT name FROM graph_nodes WHERE id=? AND kind='project'", (node_id,)).fetchone()
+    if not row:
+        return []
+    try:
+        if not _has_column(db, 'suggestions', 'project_by'):
+            return []
+        where = _project_cards_where()
+        marks = ','.join('?' for _ in OPEN_CARD)
+        open_ = [dict(r) for r in db.execute(f"SELECT s.id,s.title,s.status,s.due FROM suggestions s WHERE s.status IN ({marks}) AND {where} "
+                                             "ORDER BY coalesce(s.due,s.created_at) LIMIT ?", (*OPEN_CARD, row['name'], node_id, limit))]
+        done = [dict(r) for r in db.execute(f"SELECT s.id,s.title,s.status,s.due FROM suggestions s WHERE s.status='completed' AND {where} "
+                                            "ORDER BY s.created_at DESC LIMIT ?", (row['name'], node_id, max(0, min(5, limit - len(open_)))))]
+    except sqlite3.OperationalError:
+        return []  # a bare graph without the assistant's tables
+    return [{**c, 'done': c['status'] == 'completed'} for c in open_ + done]
+
+
+def project_choices(db, limit=200):
+    """Open projects to put a to-do on, by name: [{'id': 'project:<id>', 'name'}]."""
+    return [{'id': 'project:' + str(r['id']), 'name': r['name']} for r in
+            db.execute('SELECT id,name FROM projects WHERE closed_at IS NULL ORDER BY name COLLATE NOCASE LIMIT ?', (limit,))]

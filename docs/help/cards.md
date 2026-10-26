@@ -20,6 +20,8 @@ The **Suggestions** tab groups them:
 
 **All clear.** means nothing needs you now.
 
+A to-do on a project shows the project's name as a chip; it opens the project. **▾** on the chip changes it. See [a project's to-dos](graph.md#a-projects-to-dos).
+
 ## The buttons
 
 A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and **Not needed**. Only a few show at once; the rest are under **More**, with **Rename**.

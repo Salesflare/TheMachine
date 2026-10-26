@@ -537,7 +537,7 @@ OWNER_ACTIONS |= FRIEND_ACTIONS
 FAMILY_ACTIONS = {'family_free', 'family_todo', 'family_event'}
 OWNER_ACTIONS |= FAMILY_ACTIONS
 # Cards the owner makes, renames, or merges when the review asks: theirs alone, from the dashboard.
-CARD_ACTIONS = {'card_new', 'card_rename', 'card_merge'}
+CARD_ACTIONS = {'card_new', 'card_rename', 'card_merge', 'card_project'}
 OWNER_ACTIONS |= CARD_ACTIONS
 # A card chat's Stop button and the files added to a message (chat_files.py): the owner's own, from the dashboard.
 CHAT_ACTIONS = {'chat_stop', 'chat_upload', 'chat_file_remove'}
@@ -2986,6 +2986,11 @@ class Store:
             graph.ensure(db)
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')
+            # Who set a to-do's project: 'review' (or NULL, from before 2026-10-27), 'auto' (graph.link_cards: its thread or
+            # people are on it) or 'owner' (by hand, also "no project"), which nothing automatic changes again.
+            if 'project_by' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
+                db.execute('ALTER TABLE suggestions ADD COLUMN project_by TEXT')
+                db.execute("UPDATE suggestions SET project_by='review' WHERE project IS NOT NULL AND project<>''")
             # A step only the owner can do themselves, in person or offline (a visit, a pickup, attending): the review's
             # judgment. The card offers Done and help around it (Plan it), never Do it.
             if 'owner_step' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
@@ -4158,6 +4163,10 @@ class Store:
                     continue
                 db.execute('UPDATE events SET analyzed_version=? WHERE id=? AND version=?',
                            (item['version'], item['id'], item['version']))
+            try:  # open to-dos with no project: the one their thread or people are on now (graph.link_cards)
+                graph.link_cards(db)
+            except (sqlite3.Error, ValueError, TypeError) as error:
+                LOG.warning('link cards error=%s', type(error).__name__)
             db.execute("UPDATE analyses SET status='complete',finished_at=?,summary=?,items=? WHERE id=?",
                        (now(), summary[:4000], encoded(items), analysis_id))
         return {'status': 'complete', **({'stages': moved} if moved else {})}
@@ -4262,7 +4271,9 @@ class Store:
                 db.execute('UPDATE suggestions SET awaiting=? WHERE id=?', (encoded(watch), suggestion_id))
             if project:
                 graph.label(db, event_ids, project, 'card', now())
-                db.execute('UPDATE suggestions SET project=(SELECT name FROM projects WHERE name=? COLLATE NOCASE) WHERE id=?', (re.sub(r'\s+', ' ', str(project)).strip(), suggestion_id))
+                db.execute("UPDATE suggestions SET project=(SELECT name FROM projects WHERE name=? COLLATE NOCASE),project_by='review' WHERE id=? AND project_by IS NOT 'owner'",
+                           (re.sub(r'\s+', ' ', str(project)).strip(), suggestion_id))
+            graph.link_cards(db, [suggestion_id])
             if ahead:
                 # Prepared ahead: the work starts now, research and drafting only, and the card
                 # reaches the owner once it's ready. Sending or changing anything still waits for
@@ -4388,7 +4399,7 @@ class Store:
                    ('update:' + uuid.uuid4().hex, sid, 'update', f"Filled in by the review. Before: {card['title'][:150]}", 'assistant', stamp))
         if project:
             graph.label(db, event_ids, project, 'card', stamp)
-            db.execute('UPDATE suggestions SET project=coalesce(project,(SELECT name FROM projects WHERE name=? COLLATE NOCASE)) WHERE id=?',
+            db.execute("UPDATE suggestions SET project=coalesce(project,(SELECT name FROM projects WHERE name=? COLLATE NOCASE)),project_by=coalesce(project_by,'review') WHERE id=? AND project_by IS NOT 'owner'",
                        (re.sub(r'\s+', ' ', str(project)).strip(), sid))
         ahead = bool(ahead) and card['status'] == 'pending' and not active_preview(db)
         if ahead:
@@ -6827,6 +6838,11 @@ class Store:
                     try:
                         suggestion['people'], suggestion['weight'] = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'))
                     except (sqlite3.Error, ValueError, TypeError):
+                        pass
+                if suggestion.get('project'):  # its project's page, for the chip on the to-do
+                    try:
+                        suggestion['project_node'] = graph.card_project_view(db, suggestion['project'])
+                    except sqlite3.Error:
                         pass
                 if suggestion.get('next_action'):
                     suggestion['next_action']=json.loads(suggestion['next_action'])
@@ -12307,6 +12323,9 @@ class App:
                 raise ValueError('Cards are added, renamed and merged by the owner, on the dashboard')
             if name == 'card_new':
                 return self.new_card(args)
+            if name == 'card_project':  # the to-do's project, by hand ('' for none): graph.set_card_project
+                with self.store.connect() as db:
+                    return {'id': str(args.get('suggestion_id') or ''), 'project': graph.set_card_project(db, args.get('suggestion_id'), args.get('project'))}
             if name == 'card_rename':
                 return self.store.rename_card(args.get('suggestion_id'), args.get('title'), args.get('reset') is True, args.get('decision_id'))
             return self.store.merge_answer(args.get('suggestion_id'), args.get('merge') is True, args.get('decision_id'))
@@ -16953,6 +16972,9 @@ class App:
                                 found['held'] = app.fleet.held_back(db)
                             found.update(whos_who=mine.get('whos_who'), waiting=mine.get('waiting'), warmup=[])
                             self.output(200, found)
+                        elif view == 'projects':  # open projects to put a to-do on (the project picker on a to-do)
+                            with app.store.connect() as db:
+                                self.output(200, {'projects': graph.project_choices(db)})
                         elif query.strip():
                             self.output(200, app.graph_find(query, urllib.parse.parse_qs(path.query).get('cursor', ['0'])[0] or 0))
                         elif node and app.about_you_node(node):  # the owner's own record, also by one of their addresses
