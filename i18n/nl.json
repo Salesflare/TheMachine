@@ -1917,6 +1917,12 @@
   "one": "{} vraagt aandacht",
   "other": "{} vragen aandacht"
  },
+ "Last {} syncs: {} failed": "Laatste {} syncs: {} mislukt",
+ "Last sync {}": "Laatste sync {}",
+ "New or changed signals, without duplicates. Last 24h counts when they were collected, not when they were sent.": "Nieuwe of gewijzigde signalen, zonder dubbels. Bij de laatste 24 uur telt wanneer ze binnenkwamen, niet wanneer ze verstuurd zijn.",
+ "Last signal {}": "Laatste signaal {}",
+ "next meeting {}": "volgende afspraak {}",
+ "Last sync: {} failed": "Laatste sync: {} mislukt",
  "It can’t see or change your data.": "Het ziet of wijzigt je gegevens niet.",
  "How do I snooze a to-do?": "Hoe snooze ik een to-do?",
  "Your question": "Je vraag",

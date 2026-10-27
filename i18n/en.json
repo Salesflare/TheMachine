@@ -1917,6 +1917,12 @@
   "one": "{} needs a look",
   "other": "{} need a look"
  },
+ "Last {} syncs: {} failed": "Last {} syncs: {} failed",
+ "Last sync {}": "Last sync {}",
+ "New or changed signals, without duplicates. Last 24h counts when they were collected, not when they were sent.": "New or changed signals, without duplicates. Last 24h counts when they were collected, not when they were sent.",
+ "Last signal {}": "Last signal {}",
+ "next meeting {}": "next meeting {}",
+ "Last sync: {} failed": "Last sync: {} failed",
  "It can’t see or change your data.": "It can’t see or change your data.",
  "How do I snooze a to-do?": "How do I snooze a to-do?",
  "Your question": "Your question",

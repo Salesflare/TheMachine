@@ -1917,6 +1917,12 @@
   "one": "{} necesita revisión",
   "other": "{} necesitan revisión"
  },
+ "Last {} syncs: {} failed": "Últimas {} sincronizaciones: {} con error",
+ "Last sync {}": "Última sincronización {}",
+ "New or changed signals, without duplicates. Last 24h counts when they were collected, not when they were sent.": "Señales nuevas o modificadas, sin duplicados. En las últimas 24 h cuenta cuándo se recogieron, no cuándo se enviaron.",
+ "Last signal {}": "Última señal {}",
+ "next meeting {}": "próxima reunión {}",
+ "Last sync: {} failed": "Última sincronización: {} con error",
  "It can’t see or change your data.": "No ve ni cambia tus datos.",
  "How do I snooze a to-do?": "¿Cómo puedo posponer una tarea?",
  "Your question": "Tu pregunta",

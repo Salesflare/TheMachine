@@ -1916,5 +1916,11 @@
  "{} need a look": {
   "one": "{} precisa de atenção",
   "other": "{} precisam de atenção"
- }
+ },
+ "Last {} syncs: {} failed": "Últimas {} sincronizações: {} com falha",
+ "Last sync {}": "Última sincronização {}",
+ "New or changed signals, without duplicates. Last 24h counts when they were collected, not when they were sent.": "Sinais novos ou alterados, sem duplicados. Nas últimas 24 h conta quando foram coletados, não quando foram enviados.",
+ "Last signal {}": "Último sinal {}",
+ "next meeting {}": "próxima reunião {}",
+ "Last sync: {} failed": "Última sincronização: {} com falha"
 }
