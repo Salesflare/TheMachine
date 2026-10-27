@@ -3030,7 +3030,8 @@ class Store:
             # events_pending index cannot serve; this keeps them off a full scan.
             db.execute('CREATE INDEX IF NOT EXISTS events_pending_account ON events(account_id,ingested_at,id) WHERE analyzed_version<version')
             db.execute('CREATE INDEX IF NOT EXISTS analyses_owner ON analyses(owner_run,owner_session)')
-            db.execute(embeddings.SCHEMA)  # after the monotonic-ID migration, which rebuilds events
+            for schema in embeddings.SCHEMAS:  # after the monotonic-ID migration, which rebuilds events
+                db.execute(schema)
             graph.ensure(db)
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')

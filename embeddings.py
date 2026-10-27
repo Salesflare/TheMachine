@@ -7,7 +7,12 @@ endpoint. `model` is the name the server reports (llama-server's --alias) and is
 vector, so switching models re-embeds. Vectors are Matryoshka-truncated to `dims`, renormalized
 and stored as float32 little-endian per event version; deleting an event deletes its vector.
 Search is brute-force cosine over the caller's explicit accounts only, fused with FTS5
-(reciprocal rank) when there is a query."""
+(reciprocal rank) when there is a query.
+
+Every input is cut to fit the server (`max_input_tokens`, counted conservatively: at most one token
+per UTF-8 byte, `bytes_per_token`) and requests are split to stay under `max_batch_tokens`. An input
+the server still refuses is set aside per event version (`event_vector_skips`, with the error class)
+so it never blocks the others."""
 from __future__ import annotations
 
 import json
@@ -15,13 +20,20 @@ import math
 import re
 import struct
 import time
+import unicodedata
 import urllib.error
+import urllib.parse
 import urllib.request
 
 import message_seal
 
 SCHEMA = '''CREATE TABLE IF NOT EXISTS event_vectors(event_id INTEGER PRIMARY KEY REFERENCES events(id) ON DELETE CASCADE,
   version INTEGER NOT NULL,model TEXT NOT NULL,dims INTEGER NOT NULL,vector BLOB NOT NULL)'''
+# An event version the server refused on its own (error class only); a new version or model tries again.
+SKIP_SCHEMA = '''CREATE TABLE IF NOT EXISTS event_vector_skips(event_id INTEGER PRIMARY KEY REFERENCES events(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,model TEXT NOT NULL,reason TEXT NOT NULL,at REAL NOT NULL)'''
+SCHEMAS = (SCHEMA, SKIP_SCHEMA)
+SKIP_SECONDS = 86400  # a set-aside input is tried once more a day later (a server bug may be fixed by then)
 BODY_CHARS = 2000
 # Cosine at 256 dims. Signal-to-signal matches that were really related scored 0.6-0.87, a query's
 # 0.4-0.5; below these they were mostly unrelated (EmbeddingGemma 300M on a real mailbox, October 2026).
@@ -30,6 +42,11 @@ MAX_LIMIT = 20
 RRF_K = 60
 QUOTED = re.compile(r'\n*\[Quoted earlier messages:.*', re.S)  # the stored marker and the history after it
 QUERY_PREFIX = 'task: search result | query: '
+# Per input and per request, in tokens. llama-server refuses an input longer than its physical batch
+# (-ub, 2048 in deploy/embeddinggemma.service, also EmbeddingGemma's context) with HTTP 500, and
+# OpenAI's /v1/embeddings takes 8,191 tokens per input and 300,000 per request.
+LIMITS = {'local': (2048, 8192, 64), 'openai': (8191, 300000, 2048)}  # input, request, inputs per request
+SPECIAL_TOKENS = 16  # room for BOS/EOS and the like the server adds
 
 
 def settings(config):
@@ -46,11 +63,55 @@ class EmbeddingError(Exception):
 
 def document(title, body):
     """EmbeddingGemma's document prompt: title plus the new text of the message."""
-    body = QUOTED.sub('', body or '')
+    body = invisible(QUOTED.sub('', body or ''))
     body = '\n'.join(line for line in body.splitlines() if not line.lstrip().startswith('>'))
     body = re.sub(r'\s+', ' ', body).strip()[:BODY_CHARS]
-    title = re.sub(r'\s+', ' ', title or '').strip()[:300] or 'none'
+    title = re.sub(r'\s+', ' ', invisible(title or '')).strip()[:300] or 'none'
     return f'title: {title} | text: {body}'
+
+
+def invisible(text):
+    """Without format characters (zero-width spaces, bidi marks, tag characters): they mean nothing to
+    the model but cost tokens, a few per character, and mail can hide thousands of them."""
+    return ''.join(c for c in text if unicodedata.category(c) != 'Cf') if not text.isascii() else text
+
+
+def limits(settings):
+    """(tokens per input, tokens per request, inputs per request, UTF-8 bytes per token): config
+    overrides, else the provider's. One byte per token is the safe bound for byte-level tokenizers
+    (SentencePiece with byte fallback, tiktoken); a provider known to do better can raise it."""
+    host = urllib.parse.urlsplit(settings.get('url', '')).hostname or ''
+    per_input, per_request, inputs = LIMITS['openai' if host == 'api.openai.com' else 'local']
+    per_input = max(int(settings.get('max_input_tokens') or per_input), SPECIAL_TOKENS + 32)
+    per_request = max(int(settings.get('max_batch_tokens') or per_request), per_input)
+    inputs = max(int(settings.get('max_batch_inputs') or inputs), 1)
+    return per_input, per_request, inputs, max(float(settings.get('bytes_per_token') or 1.0), 1.0)
+
+
+def fit(text, per_input, bytes_per_token=1.0):
+    """The text cut (at a character boundary) so its worst-case token count fits one input."""
+    budget = int((per_input - SPECIAL_TOKENS) * bytes_per_token)
+    data = text.encode()
+    return text if len(data) <= budget else data[:budget].decode('utf-8', 'ignore')
+
+
+def tokens(text, bytes_per_token=1.0):
+    """Worst-case tokens for one input."""
+    return math.ceil(len(text.encode()) / bytes_per_token) + SPECIAL_TOKENS
+
+
+def batches(texts, settings):
+    """The (fitted) texts in consecutive groups, each within the request limits."""
+    per_input, per_request, inputs, per_token = limits(settings)
+    group, used = [], 0
+    for text in (fit(t, per_input, per_token) for t in texts):
+        cost = tokens(text, per_token)
+        if group and (used + cost > per_request or len(group) >= inputs):
+            yield group
+            group, used = [], 0
+        group.append(text); used += cost
+    if group:
+        yield group
 
 
 def endpoint(settings):
@@ -89,10 +150,14 @@ def request(settings, texts, timeout=120):
 
 
 def embed(settings, texts, timeout=120):
-    """Normalized vectors at the configured Matryoshka size."""
+    """Normalized vectors at the configured Matryoshka size; long texts are cut to fit the server and
+    big lists go in several requests."""
     dims = int(settings.get('dims', 256))
+    raw = []
+    for group in batches(texts, settings):
+        raw += request(settings, group, timeout)
     result = []
-    for vector in request(settings, texts, timeout):
+    for vector in raw:
         if len(vector) < dims:
             raise EmbeddingError('bad_response')
         vector = vector[:dims]
@@ -113,9 +178,10 @@ def pending(db, settings, limit, newest=True):
     """Live events without a vector for their current version, model and size."""
     return [dict(r) for r in db.execute(
         'SELECT e.id,e.version,e.title,e.body FROM events e LEFT JOIN event_vectors v ON v.event_id=e.id '
-        'WHERE e.deleted=0 AND (v.event_id IS NULL OR v.version<>e.version OR v.model<>? OR v.dims<>?) '
+        'LEFT JOIN event_vector_skips s ON s.event_id=e.id AND s.version=e.version AND s.model=? AND s.at>? '
+        'WHERE e.deleted=0 AND (v.event_id IS NULL OR v.version<>e.version OR v.model<>? OR v.dims<>?) AND s.event_id IS NULL '
         'ORDER BY e.id ' + ('DESC' if newest else 'ASC') + ' LIMIT ?',
-        (settings.get('model', ''), int(settings.get('dims', 256)), limit))]
+        (settings.get('model', ''), time.time() - SKIP_SECONDS, settings.get('model', ''), int(settings.get('dims', 256)), limit))]
 
 
 def save(db, settings, rows, vectors):
@@ -125,15 +191,51 @@ def save(db, settings, rows, vectors):
                    [(r['id'], r['version'], settings.get('model', ''), len(v), pack(v), r['id'], r['version']) for r, v in zip(rows, vectors)])
 
 
+def refused(error):
+    """An HTTP error that may be about one input (llama-server answers 500 to one too long), not
+    about the server or the account (auth, missing route, rate limit)."""
+    code = str(error)[5:] if str(error).startswith('http_') else ''
+    return code.isdigit() and code not in {'401', '403', '404', '405', '408', '429'}
+
+
+def embed_isolating(settings, rows, texts, timeout=120):
+    """([(row, vector)], [(row, error class)]): a refused request is split in halves until each
+    refused input stands alone, so one bad input never holds back the rest."""
+    try:
+        return list(zip(rows, embed(settings, texts, timeout))), []
+    except EmbeddingError as error:
+        if not refused(error):
+            raise
+        if len(rows) == 1:
+            return [], [(rows[0], str(error))]
+    half = len(rows) // 2
+    done, failed = embed_isolating(settings, rows[:half], texts[:half], timeout)
+    more, failed_more = embed_isolating(settings, rows[half:], texts[half:], timeout)
+    return done + more, failed + failed_more
+
+
+def skip(db, settings, failed):
+    db.executemany('INSERT OR REPLACE INTO event_vector_skips(event_id,version,model,reason,at) '
+                   'SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM events WHERE id=? AND version=? AND deleted=0)',
+                   [(r['id'], r['version'], settings.get('model', ''), reason, time.time(), r['id'], r['version']) for r, reason in failed])
+
+
 def embed_pending(connect, settings, limit=16, newest=True):
-    """One small pass: read, embed outside any transaction, write. Returns the number embedded."""
+    """One small pass: read, embed outside any transaction, write. Returns the number of events done
+    (embedded, or set aside because the server refused that one input while it took the others)."""
     with connect() as db:
         rows = pending(db, settings, limit, newest)
     if not rows:
         return 0
-    vectors = embed(settings, [document(r['title'], r['body']) for r in rows])
+    done, failed = embed_isolating(settings, rows, [document(r['title'], r['body']) for r in rows])
+    if failed and not done:  # nothing went through: an input, or the server? A tiny probe tells.
+        try:
+            embed(settings, [document('none', 'ok')])
+        except EmbeddingError:
+            raise EmbeddingError(failed[0][1]) from None
     with connect() as db:
-        save(db, settings, rows, vectors)
+        save(db, settings, [r for r, _ in done], [v for _, v in done])
+        skip(db, settings, failed)
     return len(rows)
 
 

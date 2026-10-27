@@ -4334,7 +4334,7 @@ def delete_person(db, node_id, config, now):
             if isinstance(m, dict) and from_forgotten(e['kind'], m, owner, gone):
                 dropped.append(e['id'])
     marks = ','.join('?' * len(ids))
-    for table, column in (('event_vectors', 'event_id'), ('event_projects', 'event_id'), ('graph_events', 'event_id'), ('events', 'id')):
+    for table, column in (('event_vectors', 'event_id'), ('event_vector_skips', 'event_id'), ('event_projects', 'event_id'), ('graph_events', 'event_id'), ('events', 'id')):
         if _table(db, table):
             db.executemany(f'DELETE FROM {table} WHERE {column}=?', [(i,) for i in dropped])
     if dropped and _table(db, 'analyses'):

@@ -255,5 +255,87 @@ class Embeddings(unittest.TestCase):
         self.assertNotIn(f'- {one} ', related); self.assertNotIn(f"- {self.ids('home', '5')} ", related)
 
 
+    def llama(self, refuse=lambda text: False, up=True):
+        """urlopen like llama-server (-ub 2048): HTTP 500 for the whole request when one input has more tokens
+        than that (tokens counted as UTF-8 bytes, the worst case), or when `refuse` says so."""
+        import io, json
+        sent = []
+        def urlopen(request, timeout=0):
+            url = request if isinstance(request, str) else request.full_url
+            if url.endswith('/models'):
+                return io.BytesIO(json.dumps({'data': [{'id': SETTINGS['model']}]}).encode())
+            texts = json.loads(request.data)['input']
+            sent.append(texts)
+            if not up or any(len(t.encode()) > 2048 or refuse(t) for t in texts):
+                raise emb.urllib.error.HTTPError(url, 500, 'input is too large to process', {}, io.BytesIO())
+            return io.BytesIO(json.dumps({'data': [{'index': i, 'embedding': v} for i, v in enumerate(fake_request(SETTINGS, texts))]}).encode())
+        emb.SERVED.clear(); self.addCleanup(emb.SERVED.clear)
+        for patcher in (patch.object(emb.urllib.request, 'urlopen', side_effect=urlopen), patch.object(emb, 'request', REAL_REQUEST)):
+            patcher.start(); self.addCleanup(patcher.stop)
+        return sent
+
+    def test_one_long_message_no_longer_blocks_the_batch(self):
+        # Seen live: a mail with ~1,600 invisible tag characters and 2,000 characters of non-Latin text came to
+        # 5,374 tokens; llama-server refused the whole batch with HTTP 500, every five minutes, so nothing new got a vector.
+        hidden = '\U000e0041\u200b' * 800 + '漢字のテキスト' * 400
+        self.store.commit_page('work', {}, [event('6', 'Newsletter', hidden), event('7', 'Invoice paid', 'The invoice is paid')])
+        sent = self.llama()
+        self.assertEqual(emb.embed_pending(self.store.connect, SETTINGS, 16), 7)
+        self.assertEqual(len(self.vectors()), 7)
+        self.assertTrue(all(len(t.encode()) <= 2048 - emb.SPECIAL_TOKENS for batch in sent for t in batch))
+        self.assertNotIn('\u200b', ''.join(sent[0]))  # invisible characters are dropped, not embedded
+        self.assertEqual(emb.embed_pending(self.store.connect, SETTINGS, 16), 0)
+
+    def test_an_input_the_server_still_refuses_is_set_aside_and_the_rest_embedded(self):
+        self.store.commit_page('work', {}, [event('6', 'Poison', 'this one breaks the server'), event('7', 'Invoice paid', 'The invoice is paid')])
+        sent = self.llama(refuse=lambda text: 'breaks the server' in text)
+        with self.assertNoLogs(a.LOG, 'ERROR'):
+            self.app.stop = type('Stop', (), {'n': 0, 'wait': lambda s, t: (setattr(s, 'n', s.n + 1), s.n > 1)[1]})()
+            self.app.embedding_worker()
+        poison = self.ids('work', '6')
+        self.assertEqual(set(self.vectors()), {self.ids('work', s) for s in '12347'} | {self.ids('home', '5')})
+        with self.store.connect() as db:
+            self.assertEqual([tuple(r) for r in db.execute('SELECT event_id,version,model,reason FROM event_vector_skips')], [(poison, 1, 'embeddinggemma-300m', 'http_500')])
+        sent.clear()
+        self.assertEqual(emb.embed_pending(self.store.connect, SETTINGS, 16), 0)
+        self.assertEqual(sent, [])  # not sent again every pass
+        with patch.object(emb.time, 'time', return_value=emb.time.time() + emb.SKIP_SECONDS + 1), self.store.connect() as db:
+            self.assertEqual([r['id'] for r in emb.pending(db, SETTINGS, 10)], [poison])  # tried again a day later
+        self.store.commit_page('work', {}, [event('6', 'Poison', 'fixed now')])
+        self.assertEqual(emb.embed_pending(self.store.connect, SETTINGS, 16), 1)  # a new version is tried again
+        self.assertIn(poison, self.vectors())
+
+    def test_a_lone_refused_input_is_set_aside_when_the_server_works(self):
+        self.embed_all()
+        self.store.commit_page('work', {}, [event('6', 'Poison', 'this one breaks the server')])
+        self.llama(refuse=lambda text: 'breaks the server' in text)
+        self.assertEqual(emb.embed_pending(self.store.connect, SETTINGS, 16), 1)
+        self.assertEqual(emb.embed_pending(self.store.connect, SETTINGS, 16), 0)
+
+    def test_a_failing_server_sets_nothing_aside(self):
+        self.llama(up=False)
+        with self.assertRaises(emb.EmbeddingError) as error:
+            emb.embed_pending(self.store.connect, SETTINGS, 16)
+        self.assertEqual(str(error.exception), 'http_500')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM event_vector_skips').fetchone()[0], 0)
+            self.assertEqual(len(emb.pending(db, SETTINGS, 16)), 5)
+        for code in ('unreachable', 'timeout', 'model_mismatch', 'http_401', 'http_429'):
+            self.assertFalse(emb.refused(emb.EmbeddingError(code)))
+
+    def test_requests_stay_within_the_provider_limits(self):
+        self.assertEqual(emb.limits(SETTINGS), (2048, 8192, 64, 1.0))
+        self.assertEqual(emb.limits({**SETTINGS, 'url': 'https://api.openai.com/v1'}), (8191, 300000, 2048, 1.0))
+        custom = {**SETTINGS, 'max_input_tokens': 512, 'max_batch_tokens': 1024, 'bytes_per_token': 2}
+        self.assertEqual(emb.limits(custom), (512, 1024, 64, 2.0))
+        self.assertEqual(len(emb.fit('é' * 2000, 512, 2.0).encode()), (512 - emb.SPECIAL_TOKENS) * 2)  # never half a character
+        groups = list(emb.batches(['x' * 3000] * 10, SETTINGS))
+        self.assertEqual([len(g) for g in groups], [4, 4, 2])  # 2,048 tokens each at most, 8,192 a request
+        self.assertTrue(all(sum(emb.tokens(t) for t in g) <= 8192 for g in groups))
+        self.assertEqual([len(g) for g in emb.batches(['x'] * 100, SETTINGS)], [64, 36])
+        sent = self.llama()
+        self.assertEqual(len(emb.embed(SETTINGS, ['y ' * 3000] * 10)), 10)
+        self.assertEqual([len(batch) for batch in sent], [4, 4, 2])
+
 if __name__ == '__main__':
     unittest.main()
