@@ -515,6 +515,16 @@ def recover_browser(profile, own_cdp=False, config=None):
             pass  # the five-minute lease expires even if its helper is temporarily unavailable
 
 
+# Rate limits in a row before a sync's rate limit goes into the error reports (each waits its Retry-After, a minute or more).
+RATE_LIMIT_REPORT_AFTER = 20
+
+
+def rate_limited(error):
+    """The service asked to slow down (HTTP 429, or its own ratelimited label): expected, and retried after its wait."""
+    category = str(getattr(error, 'category', '') or '')
+    return getattr(error, 'status', None) == 429 or bool(re.match(r'[a-z0-9_]*rate_?limit', category))
+
+
 class SourceError(Exception):
     """Only redacted, structured error labels are allowed in logs/checkpoints."""
     def __init__(self, category, status=None, retry_after=None):
@@ -3559,7 +3569,13 @@ class Store:
             self.record_sync_activity(db, account, 'failed', error=str(error), retry_at=retry_at)
             try:  # the error reports: the source's service and the error type, never the account (error_feed.py)
                 service_name = str(account).split(':')[0]
-                if re.fullmatch(r'[a-z0-9_-]{1,24}', service_name):
+                # A rate limit is the service saying "later": the sync waits its Retry-After and reads on. Only one
+                # that keeps a source from reading for a long run of tries is worth a report.
+                row = db.execute('SELECT failures FROM checkpoints WHERE account_id=?', (account,)).fetchone()
+                streak = (row[0] if row and row[0] else 0) + 1
+                if rate_limited(error) and streak < RATE_LIMIT_REPORT_AFTER:
+                    pass
+                elif re.fullmatch(r'[a-z0-9_-]{1,24}', service_name):
                     error_feed.record(db, 'sync', type(error).__name__, str(error), 'sync', service_name, None, self.code_version)
             except Exception:
                 pass

@@ -268,6 +268,20 @@ class Sources(Base):
             row = db.execute('SELECT source,kind,message,location FROM error_feed').fetchone()
         self.assertEqual(tuple(row), ('sync', 'SourceError', 'Token for <email> expired', 'sync:gmail'))
 
+    def test_a_rate_limited_sync_is_not_an_error_until_it_keeps_failing(self):
+        store = a.Store(self.path)
+        for _ in range(a.RATE_LIMIT_REPORT_AFTER - 1):
+            store.failed('work-slack', a.SourceError('slack:conversations.history', 429, 120))
+            store.failed('work-slack-2', a.SourceError('slack_ratelimited:conversations.history', retry_after=60))
+        with store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
+        store.failed('work-slack', a.SourceError('slack:conversations.history', 429, 120))
+        store.failed('other-slack', a.SourceError('slack:conversations.history', 403))
+        with store.connect() as db:
+            rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
+        self.assertEqual(rows, [('slack: conversations.history: HTTP_ <n>', 'sync:other-slack'),
+                                ('slack: conversations.history: HTTP_ <n>', 'sync:work-slack')])
+
     def test_a_failed_agent_job_names_the_tool_and_kind_only(self):
         store = a.Store(self.path)
         jobs = object.__new__(agent_jobs.AgentJobs)
