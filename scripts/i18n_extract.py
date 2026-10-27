@@ -157,11 +157,63 @@ def translatable(text):
     return not re.search(r'\$\{|:\'|\w\{\}|\{\}\w|^[a-z]|prefers-color-scheme|^\+ ', text)
 
 
+def literals(code):
+    """(text, start) for every string in some JS: '...', "..." and `...`, also the ones inside a template's ${...} (a
+    label picked in a ternary inside a row's markup). A template's own text keeps its ${...} parts."""
+    out, n = [], len(code)
+
+    def expr(i, close):
+        """Scan code from i to the } (or the end) that closes it; returns the index after it."""
+        depth = 0
+        while i < n:
+            c = code[i]
+            if c in '\'"':
+                j = i + 1
+                while j < n and code[j] != c and code[j] != '\n':
+                    j += 2 if code[j] == '\\' else 1
+                out.append((code[i + 1:j], i))
+                i = j + 1
+            elif c == '`':
+                i = template(i)
+            elif c == '/' and code[i + 1:i + 2] == '*':
+                end = code.find('*/', i + 2)
+                i = n if end < 0 else end + 2
+            elif c == '{':
+                depth += 1
+                i += 1
+            elif c == '}':
+                if depth == 0 and close:
+                    return i + 1
+                depth -= 1
+                i += 1
+            else:
+                i += 1
+        return i
+
+    def template(i):
+        start, j, text = i, i + 1, []
+        while j < n and code[j] != '`':
+            if code[j] == '\\':
+                text.append(code[j:j + 2])
+                j += 2
+            elif code.startswith('${', j):
+                end = expr(j + 2, True)
+                text.append(code[j:end])
+                j = end
+            else:
+                text.append(code[j])
+                j += 1
+        out.append((''.join(text), start))
+        return j + 1
+
+    expr(0, False)
+    return sorted(out, key=lambda x: x[1])
+
+
 def script_strings(code):
     found, code = [], _uncomment(code)
-    for m in _LITERAL.finditer(code):
-        literal = next(g for g in m.groups() if g is not None)
-        before = code[max(0, m.start() - 40):m.start()]
+    for literal, start in literals(code):
+        before = code[max(0, start - 40):start]
         # selectors, keys and events: $('#x'), .querySelector('x'), {key:'x'}, addEventListener('click'
         if re.search(r"(?:\$|querySelector(?:All)?|closest|matches|getElementById|addEventListener|getItem|setItem|"
                      r"removeItem|classList\.\w+|getAttribute|setAttribute|dataset\.?\w*|request|fetch|startsWith|"
@@ -174,12 +226,28 @@ def script_strings(code):
     return found
 
 
+def element(html_text, element_id):
+    """The markup of the element with this id, up to its own closing tag (nested ones of the same tag counted), so a
+    stray unclosed tag earlier on can't end it early."""
+    found = re.search(r'<([a-z][a-z0-9-]*)\b[^>]*\bid="' + re.escape(element_id) + '"', html_text)
+    if not found:
+        return ''
+    tag, depth = found.group(1), 0
+    for m in re.compile(r'<(/?)' + tag + r'\b[^>]*>').finditer(html_text, found.start()):
+        depth += -1 if m.group(1) else 1
+        if depth == 0:
+            return html_text[found.start():m.end()]
+    return html_text[found.start():]
+
+
 def area_strings(area, source=None):
     source = source if source is not None else DASHBOARD.read_text(encoding='utf-8')
     ids, names = AREAS[area]
-    parser = _Static(ids)
-    parser.feed(markup(source))
-    out = list(parser.found)
+    static, out = markup(source), []
+    for element_id in ids:
+        parser = _Static([element_id])
+        parser.feed(element(static, element_id))
+        out.extend(parser.found)
     for code in functions(source, names):
         out.extend(script_strings(code))
     seen, unique = set(), []
