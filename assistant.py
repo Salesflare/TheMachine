@@ -534,83 +534,368 @@ class SourceError(Exception):
 
 # Owner decisions/feedback. Only the bridge's verified Telegram handlers and the
 # authenticated dashboard may record them; never the local CLI the agent can run.
-CONNECT_ACTIONS = ('connect_sources', 'connect_start', 'connect_poll', 'connect_answer', 'connect_cancel', 'connect_remove', 'connect_scope',
-                   'connect_signin', 'connect_signin_state')
-OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_learning_remove', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'card_chat', 'recap_decide'}
+CONNECT_ACTIONS = (
+    'connect_answer',
+    'connect_cancel',
+    'connect_poll',
+    'connect_remove',
+    'connect_scope',
+    'connect_signin',
+    'connect_signin_state',
+    'connect_sources',
+    'connect_start',
+)
+OWNER_ACTIONS = {
+    *CONNECT_ACTIONS,
+    'bind_feedback_prompt',
+    'board_default',
+    'board_delete',
+    'board_dismiss',
+    'board_fit',
+    'board_save',
+    'browser_focus',
+    'browser_login_check',
+    'browser_login_choose',
+    'browser_login_fill',
+    'browser_login_forget',
+    'browser_login_open',
+    'browser_login_pages',
+    'browser_logins',
+    'card_chat',
+    'confirm_action',
+    'connector_sync',
+    'decide',
+    'detect_signature',
+    'edit_fact',
+    'feedback_reply',
+    'fleet_ask',
+    'fleet_brief',
+    'fleet_brief_hide',
+    'fleet_decide',
+    'fleet_free',
+    'fleet_learning_remove',
+    'fleet_meetings',
+    'fleet_notice_decide',
+    'fleet_rule',
+    'fleet_take',
+    'forget_fact',
+    'graph_fact_unlink',
+    'graph_new',
+    'graph_org_delete',
+    'graph_org_edit',
+    'graph_org_wrong',
+    'graph_person_delete',
+    'graph_person_edit',
+    'graph_person_org',
+    'graph_picture',
+    'graph_pictures_found',
+    'graph_relation',
+    'graph_rename',
+    'graph_role',
+    'graph_same',
+    'graph_same_all',
+    'graph_stage',
+    'graph_warmup',
+    'learning_undo',
+    'model_reset',
+    'model_usage_refresh',
+    'own_address',
+    'project_archive',
+    'project_delete',
+    'project_outcome',
+    'project_save',
+    'project_visibility',
+    'promise_close',
+    'promise_due',
+    'recap_decide',
+    'request_feedback',
+    'revise_draft',
+    'security_level',
+    'security_setting',
+    'set_people_lookup',
+    'set_signature',
+    'set_voice',
+    'set_work_hours',
+    'undo_merge',
+    'unmerge_fact',
+}
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
-FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_take_back', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
-                         'fleet_split_adjust', 'task_import', *task_pages.ACTIONS}
+FLEET_REQUEST_ACTIONS = {
+    *task_pages.ACTIONS,
+    'fleet_handoff',
+    'fleet_handoff_draft',
+    'fleet_handoff_email',
+    'fleet_handoff_mine',
+    'fleet_handoff_not_mine',
+    'fleet_handoff_take_back',
+    'fleet_intro',
+    'fleet_split',
+    'fleet_split_adjust',
+    'fleet_split_dismiss',
+    'task_import',
+}
 OWNER_ACTIONS |= FLEET_REQUEST_ACTIONS
 # Friends (friends.py): adding, accepting, removing and blocking friends, and asking a friend when they are free.
 # Shared connectors (shared_connectors.py): sharing, OKs, replacing and stopping, from the owner's dashboard only.
-SHARE_ACTIONS = {'fleet_share', 'fleet_share_ok', 'fleet_share_replace', 'fleet_share_stop'}
+SHARE_ACTIONS = {
+    'fleet_share',
+    'fleet_share_ok',
+    'fleet_share_replace',
+    'fleet_share_stop',
+}
 OWNER_ACTIONS |= SHARE_ACTIONS
 # The Shared Graph (shared_graph.py): a thread's Team or Only you, Keep private, asking an admin to stop sharing, and
 # Ask <name>, the owner's own.
-GRAPH_SHARE_ACTIONS = {'graph_share', 'graph_remove', 'graph_private', 'graph_optout', 'graph_ask', 'graph_share_many', 'graph_rule', 'graph_start',
-                       'graph_pause', 'graph_share_all', 'graph_rekey_no', 'graph_policy', 'graph_connection', 'graph_board_share', 'graph_thread_share'}
+GRAPH_SHARE_ACTIONS = {
+    'graph_ask',
+    'graph_board_share',
+    'graph_connection',
+    'graph_optout',
+    'graph_pause',
+    'graph_policy',
+    'graph_private',
+    'graph_rekey_no',
+    'graph_remove',
+    'graph_rule',
+    'graph_share',
+    'graph_share_all',
+    'graph_share_many',
+    'graph_start',
+    'graph_thread_share',
+}
 OWNER_ACTIONS |= GRAPH_SHARE_ACTIONS
-FRIEND_ACTIONS = {'fleet_friend', 'fleet_availability', 'fleet_network'}  # fleet_network: finding people on the Network (discovery.py)
+FRIEND_ACTIONS = {
+    'fleet_availability',
+    'fleet_friend',
+    'fleet_network',
+}  # fleet_network: finding people on the Network (discovery.py)
 OWNER_ACTIONS |= FRIEND_ACTIONS
 # Sharing a contact (contact_share.py): what can go, the exact preview, Send, and Add or Dismiss on one shared here.
 # The owner's own, from their dashboard only.
-CONTACT_ACTIONS = {'fleet_contact_options', 'fleet_contact_preview', 'fleet_contact_send', 'fleet_contact_decide'}
+CONTACT_ACTIONS = {
+    'fleet_contact_decide',
+    'fleet_contact_options',
+    'fleet_contact_preview',
+    'fleet_contact_send',
+}
 OWNER_ACTIONS |= CONTACT_ACTIONS
 # Family (family.py): asking when everyone is free, proposing a to-do or a plan. The owner's own, from their dashboard.
-FAMILY_ACTIONS = {'family_free', 'family_todo', 'family_event'}
+FAMILY_ACTIONS = {
+    'family_event',
+    'family_free',
+    'family_todo',
+}
 OWNER_ACTIONS |= FAMILY_ACTIONS
 # Cards the owner makes, renames, or merges when the review asks: theirs alone, from the dashboard.
-CARD_ACTIONS = {'card_new', 'card_rename', 'card_merge', 'card_project'}
+CARD_ACTIONS = {
+    'card_merge',
+    'card_new',
+    'card_project',
+    'card_rename',
+}
 OWNER_ACTIONS |= CARD_ACTIONS
 # A card chat's Stop button and the files added to a message (chat_files.py): the owner's own, from the dashboard.
 # The model and thinking level for chats (chat_model.py): the default (Settings, Model) and one to-do chat's own.
-CHAT_ACTIONS = {'chat_stop', 'chat_upload', 'chat_file_remove', 'chat_model_default', 'chat_model_set'}
+CHAT_ACTIONS = {
+    'chat_file_remove',
+    'chat_model_default',
+    'chat_model_set',
+    'chat_stop',
+    'chat_upload',
+}
 OWNER_ACTIONS |= CHAT_ACTIONS
 # Skills (skills.py): writing, sharing and installing them is the owner's own, from the dashboard. The agent can only
 # propose one (skill_propose), which waits for the owner's Approve.
-SKILL_ACTIONS = {'skill_save', 'skill_get', 'skill_toggle', 'skill_delete', 'skill_share', 'skill_decide', 'skill_example',
-                 # Everything else OpenClaw has: shown read-only; OpenClaw's own on/off and ClawHub install, on the owner's tap.
-                 'skill_installed', 'skill_installed_get', 'skill_installed_toggle', 'skill_hub_search', 'skill_hub_get', 'skill_hub_install',
-                 'skill_hint_dismiss',
-                 # Importing from Claude and ChatGPT: listed for the owner to tick; a skill with scripts only as OpenClaw's own, after reading.
-                 'skill_import_find', 'skill_import_upload', 'skill_import_paste', 'skill_import_status', 'skill_import_read',
-                 'skill_import_run', 'skill_import_install', 'skill_import_signin'}
+# Everything else OpenClaw has: shown read-only; OpenClaw's own on/off and ClawHub install, on the owner's tap.
+# Importing from Claude and ChatGPT: listed for the owner to tick; a skill with scripts only as OpenClaw's own, after reading.
+SKILL_ACTIONS = {
+    'skill_decide',
+    'skill_delete',
+    'skill_example',
+    'skill_get',
+    'skill_hint_dismiss',
+    'skill_hub_get',
+    'skill_hub_install',
+    'skill_hub_search',
+    'skill_import_find',
+    'skill_import_install',
+    'skill_import_paste',
+    'skill_import_read',
+    'skill_import_run',
+    'skill_import_signin',
+    'skill_import_status',
+    'skill_import_upload',
+    'skill_installed',
+    'skill_installed_get',
+    'skill_installed_toggle',
+    'skill_save',
+    'skill_share',
+    'skill_toggle',
+}
 OWNER_ACTIONS |= SKILL_ACTIONS
 # Bigger requests only for these (an uploaded skill export, the Find my skills turn's report), marked X-Upload: skill-import.
 # Hand to Claude Code / Hand to Codex (agent_jobs.py): the owner's own, from their dashboard only.
-AGENT_ACTIONS = {'agent_draft', 'agent_send', 'agent_follow_up', 'agent_retry', 'agent_cancel', 'agent_outcome', 'set_agents'}
+AGENT_ACTIONS = {
+    'agent_cancel',
+    'agent_draft',
+    'agent_follow_up',
+    'agent_outcome',
+    'agent_retry',
+    'agent_send',
+    'set_agents',
+}
 OWNER_ACTIONS |= AGENT_ACTIONS
 # Learnings for The Machine team (team_learnings.py): sharing, Not now, Never ask and the Settings switch are the owner's
 # own, from their dashboard only. Nothing is sent without their Send on exactly what they saw.
-LEARNING_ACTIONS = {'learnings_share', 'learnings_later', 'learnings_never', 'set_learnings_offer', 'set_learnings_vote', 'learnings_votes_decide', 'set_help_topics', 'set_error_reports'}
+LEARNING_ACTIONS = {
+    'learnings_later',
+    'learnings_never',
+    'learnings_share',
+    'learnings_votes_decide',
+    'set_error_reports',
+    'set_help_topics',
+    'set_learnings_offer',
+    'set_learnings_vote',
+}
 OWNER_ACTIONS |= LEARNING_ACTIONS
 # The Graph as a CRM (crm.py, crm_import.py): who owns a record, one organization with several websites, and a
 # spreadsheet imported; the owner's own, from their dashboard only.
-CRM_ACTIONS = {'graph_owner', 'graph_org_merge', 'graph_org_split', 'graph_org_apart', 'graph_import_preview', 'graph_import_run', 'graph_import_undo',
-               'graph_import_ai', 'graph_import_ai_status', 'graph_field_save', 'graph_field_delete', 'graph_field_set', 'graph_tag'}
+CRM_ACTIONS = {
+    'graph_field_delete',
+    'graph_field_save',
+    'graph_field_set',
+    'graph_import_ai',
+    'graph_import_ai_status',
+    'graph_import_preview',
+    'graph_import_run',
+    'graph_import_undo',
+    'graph_org_apart',
+    'graph_org_merge',
+    'graph_org_split',
+    'graph_owner',
+    'graph_tag',
+}
 OWNER_ACTIONS |= CRM_ACTIONS
 # Help (help_chat.py) and Report a bug (support.report): the owner's own, from their dashboard only. help_ask answers
 # and changes nothing; help_article reads one public help article in the owner's language; bug_send sends only what
 # bug_preview showed, after the owner's tap.
 # support_access: the owner's switch for Support access on a paired self-hosted Machine (fleet.Fleet.support_access).
-SUPPORT_ACTIONS = {'help_ask', 'help_article', 'bug_preview', 'bug_send', 'bug_later', 'bug_queued', 'support_access'}
+SUPPORT_ACTIONS = {
+    'bug_later',
+    'bug_preview',
+    'bug_queued',
+    'bug_send',
+    'help_article',
+    'help_ask',
+    'support_access',
+}
 OWNER_ACTIONS |= SUPPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
-DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACTIONS, *GRAPH_SHARE_ACTIONS, *FRIEND_ACTIONS, *CONTACT_ACTIONS, *FAMILY_ACTIONS, *LEARNING_ACTIONS,
-                               *CARD_ACTIONS, *SKILL_ACTIONS, *CONNECT_ACTIONS, *AGENT_ACTIONS, *CRM_ACTIONS, *SUPPORT_ACTIONS, 'decide', 'confirm_action',
-                               'undo_merge', 'card_chat', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role',
-                               'graph_fact_unlink', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_save',
-                               'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'project_visibility',
-                               'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit',
-                               'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup',
-                               'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_learning_remove',
-                               'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
-                               'push_test', 'notify_set', 'notify_active', 'notify_preview', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
-                               'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
-                               'set_work_hours', 'connector_sync', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'calendar_write', 'set_locale',
-                               'browser_show', 'client_error'})
-UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send', 'bug_later'}, 9 * 1024 * 1024
+DASHBOARD_ACTIONS = frozenset({
+    *AGENT_ACTIONS,
+    *CARD_ACTIONS,
+    *CHAT_ACTIONS,
+    *CONNECT_ACTIONS,
+    *CONTACT_ACTIONS,
+    *CRM_ACTIONS,
+    *FAMILY_ACTIONS,
+    *FLEET_REQUEST_ACTIONS,
+    *FRIEND_ACTIONS,
+    *GRAPH_SHARE_ACTIONS,
+    *LEARNING_ACTIONS,
+    *SHARE_ACTIONS,
+    *SKILL_ACTIONS,
+    *SUPPORT_ACTIONS,
+    'board_default',
+    'board_delete',
+    'board_dismiss',
+    'board_fit',
+    'board_save',
+    'browser_focus',
+    'browser_login_check',
+    'browser_login_choose',
+    'browser_login_fill',
+    'browser_login_forget',
+    'browser_login_open',
+    'browser_login_pages',
+    'browser_logins',
+    'browser_show',
+    'calendar_write',
+    'card_chat',
+    'client_error',
+    'confirm_action',
+    'connector_sync',
+    'decide',
+    'detect_signature',
+    'edit_fact',
+    'fleet_ask',
+    'fleet_brief',
+    'fleet_brief_hide',
+    'fleet_decide',
+    'fleet_free',
+    'fleet_learning_remove',
+    'fleet_meetings',
+    'fleet_notice_decide',
+    'fleet_rule',
+    'fleet_take',
+    'forget_fact',
+    'graph_fact_unlink',
+    'graph_new',
+    'graph_org_delete',
+    'graph_org_edit',
+    'graph_org_wrong',
+    'graph_person_delete',
+    'graph_person_edit',
+    'graph_person_org',
+    'graph_picture',
+    'graph_pictures_found',
+    'graph_relation',
+    'graph_rename',
+    'graph_role',
+    'graph_same',
+    'graph_same_all',
+    'graph_stage',
+    'graph_warmup',
+    'learning_undo',
+    'model_reset',
+    'model_usage_refresh',
+    'notify_active',
+    'notify_preview',
+    'notify_set',
+    'own_address',
+    'project_archive',
+    'project_delete',
+    'project_outcome',
+    'project_save',
+    'project_visibility',
+    'promise_close',
+    'promise_due',
+    'push_subscribe',
+    'push_test',
+    'push_unsubscribe',
+    'revise_draft',
+    'security_level',
+    'security_setting',
+    'set_locale',
+    'set_people_lookup',
+    'set_signature',
+    'set_voice',
+    'set_work_hours',
+    'undo_merge',
+    'unmerge_fact',
+})
+UPLOAD_ACTIONS = {
+    'bug_later',
+    'bug_send',
+    'graph_import_ai',
+    'graph_import_preview',
+    'graph_import_run',
+    'skill_import_report',
+    'skill_import_upload',
+    'skills_found',
+}
+UPLOAD_REQUEST_BYTES = 9 * 1024 * 1024
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
 # its code version records an error within AUTO_UNDO_NEW, or the fault it fixed comes back.
 UNDO_MERGE = dt.timedelta(hours=24)
