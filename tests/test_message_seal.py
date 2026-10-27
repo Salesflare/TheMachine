@@ -554,6 +554,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'fleet_notices.view': 'a Fleet notice', 'fleet_notices.reason': 'a reason code', 'fleet_splits.title': 'a meeting title',
             'graph_nodes.info': 'people and organizations', 'network_people.reasons': 'why someone is suggested',
             'faults.message': "an error's own message with anything private taken out (assistant.fault_message)",
+            'error_feed.message': "an error's message normalized to a strict shape, nothing private (error_feed.normalize)",
             'voices.text': 'how the owner writes on a channel, learned like a fact',
             'voice_merges.merged_text': 'the same learned channel voice, retained only for undo',
             'suggestions.title_source': 'who wrote the title: auto or user',

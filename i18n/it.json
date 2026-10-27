@@ -2321,5 +2321,9 @@
  "Only the topic of each question, like “snooze a to-do”. Never your words.": "Solo l’argomento di ogni domanda, come “posticipare un’attività”. Mai le tue parole.",
  "Help topics go to the team, never your words.": "Gli argomenti dell’aiuto vanno al team, mai le tue parole.",
  "Help topics won’t go to the team.": "Gli argomenti dell’aiuto non andranno al team.",
- "Only the topic of each question goes to The Machine team, never your words.": "Solo l’argomento di ogni domanda va al team di The Machine, mai le tue parole."
+ "Only the topic of each question goes to The Machine team, never your words.": "Solo l’argomento di ogni domanda va al team di The Machine, mai le tue parole.",
+ "Send error reports": "Invia segnalazioni di errore",
+ "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Quando qualcosa si rompe, invio cosa non ha funzionato e dove nel codice. Mai i tuoi messaggi, nomi o indirizzi.",
+ "I’ll send error reports.": "Invierò segnalazioni di errore.",
+ "I won’t send error reports.": "Non invierò segnalazioni di errore."
 }

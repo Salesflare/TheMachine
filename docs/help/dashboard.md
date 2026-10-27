@@ -18,7 +18,9 @@ order: 4
 
 **Settings** is the gear at the top. **Find a to-do** searches your to-dos by title.
 
-**Browser**, at the bottom of the sidebar, shows your Machine's own browser. On a computer it opens beside the sidebar, at the size of the space it has, and so do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. On a phone it opens in a new tab. On a short screen the whole sidebar scrolls.
+**Browser**, at the bottom of the sidebar, shows your Machine's own browser. On a computer it opens beside the sidebar, at the size of the space it has, and so do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. On a phone it opens in a new tab.
+
+The browser's front window shows in the middle and the rest of the screen is dark; a button in the corner shows the whole screen. On a short screen the whole sidebar scrolls as one column, to-dos included, like the menu on a phone.
 
 ## New versions
 

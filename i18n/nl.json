@@ -2321,5 +2321,9 @@
  "Only the topic of each question, like “snooze a to-do”. Never your words.": "Alleen het onderwerp van elke vraag, zoals “een to-do snoozen”. Nooit je eigen woorden.",
  "Help topics go to the team, never your words.": "Help-onderwerpen gaan naar het team, nooit je woorden.",
  "Help topics won’t go to the team.": "Help-onderwerpen gaan niet naar het team.",
- "Only the topic of each question goes to The Machine team, never your words.": "Alleen het onderwerp van elke vraag gaat naar het team van The Machine, nooit je woorden."
+ "Only the topic of each question goes to The Machine team, never your words.": "Alleen het onderwerp van elke vraag gaat naar het team van The Machine, nooit je woorden.",
+ "Send error reports": "Foutrapporten sturen",
+ "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Als er iets misgaat, stuur ik wat er misging en waar in de code. Nooit je berichten, namen of adressen.",
+ "I’ll send error reports.": "Ik stuur foutrapporten.",
+ "I won’t send error reports.": "Ik stuur geen foutrapporten."
 }

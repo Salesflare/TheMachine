@@ -13,9 +13,43 @@ if (framed) {
     const screen = () => rfb._screenSize();
     const fitAll = () => { const s = screen(), d = display(); return Math.min(s.w / d.width, s.h / d.height) || 1; };
 
+    // Only the browser's window shows: the screen around it (other windows, often a dashboard with its own sidebar,
+    // which looked like the pane slipping under the dashboard's nav) is covered, until Whole screen.
+    const mask = ['top', 'right', 'bottom', 'left'].map((side) => {
+        const el = document.createElement('div');
+        el.className = 'machine-view-mask';
+        el.dataset.side = side;
+        el.hidden = true;
+        document.body.append(el);
+        return el;
+    });
+    function placeMask() {
+        const d = display(), on = !!(rfb && region && !whole && d && d.width);
+        for (const el of mask) el.hidden = !on;
+        if (!on) return;
+        const vp = d._viewportLoc, c = rfb._canvas.getBoundingClientRect();
+        const left = c.left + (region.x * d.width - vp.x) * zoom, top = c.top + (region.y * d.height - vp.y) * zoom;
+        const right = left + region.w * d.width * zoom, bottom = top + region.h * d.height * zoom;
+        const box = (el, l, t, w, h) => Object.assign(el.style, {left: l + 'px', top: t + 'px', width: Math.max(0, w) + 'px', height: Math.max(0, h) + 'px'});
+        const W = innerWidth, H = innerHeight;
+        box(mask[0], 0, 0, W, Math.max(0, top));
+        box(mask[2], 0, bottom, W, H - bottom);
+        box(mask[3], 0, Math.max(0, top), Math.max(0, left), Math.min(H, bottom) - Math.max(0, top));
+        box(mask[1], right, Math.max(0, top), W - right, Math.min(H, bottom) - Math.max(0, top));
+    }
+    // The pane changes size (the dashboard's sidebar folds, the window is resized): frame the window again for the new
+    // size, unless the owner zoomed or moved around themselves
+    let moved = false, resizeTimer = 0;
+    addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { if (rfb && !moved) frame(whole); else placeMask(); }, 80);
+    });
+
     function apply(z, focusX, focusY) {  // zoom to z, keeping the screen point under (focusX, focusY) in place
         const d = display(), vp = d._viewportLoc, s = screen();
         z = Math.min(Math.max(z, fitAll()), 4);
+        moved = true;
+        rfb._canvas.style.translate = '';
         const fx = focusX ?? s.w / 2, fy = focusY ?? s.h / 2;
         const px = vp.x + fx / zoom, py = vp.y + fy / zoom;
         zoom = z;
@@ -24,13 +58,16 @@ if (framed) {
         d.viewportChangePos(px - fx / zoom - vp.x, py - fy / zoom - vp.y);
     }
 
-    function frame(whole) {  // the browser's window, or the whole screen
+    function frame(all) {  // the browser's window, or the whole screen
         const d = display(), s = screen();
-        if (whole || !region) {
+        moved = false;
+        rfb._canvas.style.translate = '';
+        if (all || !region) {
             zoom = fitAll();
             rfb._updateClip();
             rfb._updateScale();
             d.viewportChangePos(-d.width, -d.height);
+            placeMask();
             return;
         }
         const x = region.x * d.width, y = region.y * d.height, w = region.w * d.width, h = region.h * d.height;
@@ -39,6 +76,10 @@ if (framed) {
         rfb._updateScale();
         const vp = d._viewportLoc;
         d.viewportChangePos(x - Math.max(0, (vp.w - w) / 2) - vp.x, y - vp.y);
+        // A window at the screen's edge can't be centered by moving the view: move the picture instead (clicks follow it)
+        const c = rfb._canvas, at = c.getBoundingClientRect().left + (x - d._viewportLoc.x) * zoom, want = (c.parentElement || c).getBoundingClientRect().left + Math.max(0, (s.w - w * zoom) / 2);
+        if (Math.abs(want - at) > 1) c.style.translate = Math.round(want - at) + 'px 0';
+        placeMask();
     }
 
     async function frameWindow() {
@@ -64,6 +105,8 @@ if (framed) {
             const d = this._display;  // zoomed in: noVNC's drag button moves around with a mouse
             this._setClippingViewport(d._viewportLoc.w < d.width || d._viewportLoc.h < d.height);
         };
+        const d = rfb._display, move = d.viewportChangePos.bind(d);
+        d.viewportChangePos = (dx, dy) => { move(dx, dy); placeMask(); };  // moving around keeps the cover on the window's edges
         UI.closeControlbar?.();  // noVNC's side bar stays one tap away on its handle
         frameWindow();
     }
@@ -105,6 +148,7 @@ if (framed) {
             } else if (ts.length === 1 && !touch.multi) {
                 const t = ts[0];
                 if (Math.hypot(t.clientX - touch.start.clientX, t.clientY - touch.start.clientY) > 10) touch.moved = true;
+                if (touch.moved && !moved) { moved = true; rfb._canvas.style.translate = ''; }
                 if (touch.moved) display().viewportChangePos((touch.last.clientX - t.clientX) / zoom, (touch.last.clientY - t.clientY) / zoom);
                 touch.last = t;
             }
@@ -128,7 +172,8 @@ if (framed) {
     const style = document.createElement('style');
     style.textContent = '#machine-view-bar{position:fixed;right:8px;bottom:8px;z-index:1000;display:flex;gap:6px}' +
         '#machine-view-bar button{font:600 14px system-ui,sans-serif;min-width:44px;height:40px;padding:0 12px;border:0;' +
-        'border-radius:20px;background:#1d2026e6;color:#fff;box-shadow:0 1px 4px #0006}';
+        'border-radius:20px;background:#1d2026e6;color:#fff;box-shadow:0 1px 4px #0006}' +
+        '.machine-view-mask{position:fixed;z-index:999;background:#111}.machine-view-mask[hidden]{display:none}';
     document.head.append(style);
     function label() { bar.querySelector('[data-v="whole"]').textContent = whole ? 'Browser window' : 'Whole screen'; }
     if (!('ontouchstart' in window)) bar.querySelector('[data-v="keys"]').hidden = true;  // a real keyboard types already
