@@ -1312,6 +1312,7 @@ summary:hover{color:var(--text)}
 .card .draft,.draft{background:color-mix(in srgb,var(--sunken) 45%,var(--surface));border-color:var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4)}
 .draft .db{font:400 16px/1.55 var(--serif);color:var(--text)}
 .draft .dm{font-size:var(--fs-xs);color:var(--faint)}
+.draft .draft-why{margin:0 0 6px;font-size:var(--fs-xs);color:var(--muted);overflow-wrap:anywhere}
 .head-side>.settings-link,.head-side>.live,.head-side .head-link{font:var(--fw-medium) var(--fs-xs)/1 var(--sans);min-height:32px;padding:0 12px;background:transparent;border:1px solid var(--border);color:var(--muted)}
 .head-side>.settings-link:hover{background:var(--tile);color:var(--text)}
 
@@ -2571,6 +2572,8 @@ const draftText=a=>a.kind==='finish'?(a.message||a.preview):a.kind==='calendar'?
 // reaches the teammate as plain text, words (URL), so the draft shows that.
 const MD_LINK=/\[([^\[\]\n]{1,200})\]\((https:\/\/[^\s()<>]{1,2000})\)/g;
 const draftBody=(a,text)=>['email','email_demo','slack'].includes(a.kind)?esc(text).replace(MD_LINK,(m,t,u)=>`<a href="${u}" target="_blank" rel="noreferrer">${t}</a>`):esc(String(text).replace(MD_LINK,'$1 ($2)'));
+// An email that goes instead of a reply in the to-do's Intercom conversation: why (next_actions.INTERCOM_FALLBACK, the same words).
+const INTERCOM_WHY={shared:'Intercom is shared with you to read only, so this goes by email.',off:'Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.',missing:'Intercom isn’t connected on this Machine, so this goes by email.'};
 // The draft as written: To · Subject in small type, the text with its line breaks; long drafts fold behind Show more.
 function draftBox(s,a,label){if(a.kind==='calendar'){const done=(a.state||s.action_status)?.status==='sent';
  return `<div class="draft cal-change${done?' sent':''}" role="group" aria-label="Calendar change"><div class="dm">${esc((done?CAL_DID:CAL_DO)[a.op]+a.calendar_name)}</div><dl class="cal-rows">${calRows(a).map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></div>`}
@@ -2579,7 +2582,7 @@ const to=a.kind==='x'&&!a.to_name&&a.to_screen_name?'@'+a.to_screen_name:a.to_na
 // A final step (Submit, Pay…): its label, and who gets the message when it posts one.
 const head=fin?(sent?'Done: ':'')+a.label+(to?' · To: '+to:''):(label?label+' · ':'')+(sent?'Sent to':'To')+': '+(to||'…')+(mail&&a.subject?' · '+a.subject:'');
 const key='draft-'+s.id+'-'+a.revision,rows=String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/56):1),0),fold=rows>16,open=expandedBodies.has(key);
-return `<div class="draft${sent?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${fin?(a.message?'Message to post':'What goes out'):(sent?'Sent':'Draft')+' '+(mail?'email':'message')}"><div class="dm">${esc(head)}</div><div class="db">${draftBody(a,text)}</div>${(a.attachments||[]).length?`<div class="attachments">${draftFileLinks(s.id,a.attachments)}</div>`:''}</div>${fold?`<button type="button" class="more" data-more="${esc(key)}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
+return `<div class="draft${sent?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${fin?(a.message?'Message to post':'What goes out'):(sent?'Sent':'Draft')+' '+(mail?'email':'message')}"><div class="dm">${esc(head)}</div>${mail&&!sent&&INTERCOM_WHY[a.intercom_fallback]?`<p class="draft-why">${esc(INTERCOM_WHY[a.intercom_fallback])}</p>`:''}<div class="db">${draftBody(a,text)}</div>${(a.attachments||[]).length?`<div class="attachments">${draftFileLinks(s.id,a.attachments)}</div>`:''}</div>${fold?`<button type="button" class="more" data-more="${esc(key)}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
 // The button row: the main action(s) first, then the two most useful others; the rest wait under More, so a card never
 // shows a wall of buttons. Which others come first depends on the card: a decision needs Snooze and Not needed, a ready
 // card Mark done and Snooze.
@@ -3919,14 +3922,14 @@ const waits=draft.delegate?`After sending, this to-do waits ${draft.wait_days} d
 if(['linkedin','slack','x','whatsapp','intercom','doc_reply'].includes(draft.kind)){$('#send-title').textContent=draft.kind==='doc_reply'?'Post this reply in the doc?':draft.kind==='x'?(draft.reply_to?'Reply on X?':'Send this X message?'):draft.kind==='slack'?'Send this Slack message?':draft.kind==='whatsapp'?'Send this WhatsApp message?':draft.kind==='intercom'?'Send this reply in Intercom?':'Send this LinkedIn message?';$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
 sendHeader=()=>sendRows(draft.kind==='doc_reply'?[['To',draft.to_name],['On',draft.doc_title]]:draft.kind==='intercom'?[['To',draft.to_name],['As',draft.as_name+' in Intercom']]:draft.kind==='x'?[['As','@'+draft.handle],draft.reply_to?['Replying to','@'+draft.to_screen_name+(draft.to_text?': “'+draft.to_text+'”':'')]:['To',draft.to_name]]:[['To',draft.to_name+(draft.profile?' (linkedin.com/in/'+draft.profile+')':draft.to_email?' ('+draft.to_email+')':'')]]);
 sendHeader();sendBody(draft.body);sendFine(waits);sendShow();return}
-const demo=draft.kind==='email_demo';$('#send-title').textContent=demo?'Demo email preview':'Send this email?';$('#send-confirm').hidden=demo;$('#send-cancel').textContent=demo?'Back':'Cancel';
+const demo=draft.kind==='email_demo';$('#send-title').textContent=demo?'Demo email preview':INTERCOM_WHY[draft.intercom_fallback]?'Send by email instead?':'Send this email?';$('#send-confirm').hidden=demo;$('#send-cancel').textContent=demo?'Back':'Cancel';
 // No verified recipient: pick from the thread's addresses (the first is preselected); To updates as you tick.
 const options=draft.to_options||[];$('#send-recipients').hidden=!options.length;
 $('#send-recipients div').innerHTML=options.map((x,i)=>`<label><input type="checkbox" value="${esc(x)}" ${i?'':'checked'}>${esc(x)}</label>`).join('');
 // Like the site's send preview: From/To/Subject rows, then the message in its own box.
 const header=(subject=true)=>{const to=options.length?sendRecipients():draft.to;const rows=[['From',draft.from],['To',to.length===1&&draft.to_name&&!options.length?draft.to_name+' <'+to[0]+'>':to.join(', ')||'(choose above)']];for(const key of ['cc','bcc'])if(draft[key]?.length)rows.push([key[0].toUpperCase()+key.slice(1),draft[key].join(', ')]);if(subject)rows.push(['Subject',draft.subject]);$('#send-confirm').disabled=!to.length;sendRows(rows)};
 sendHeader=header;$('#send-recipients').onchange=()=>header($('#send-editor').hidden);
-header();sendBody(draft.body,draft.signature);sendFine([draft.snooze_days?`After sending, the thread leaves your inbox for ${draft.snooze_days} day${draft.snooze_days>1?'s':''} (a weekday morning; a reply brings it back sooner).`:'',waits].filter(Boolean).join(' '));
+header();sendBody(draft.body,draft.signature);sendFine([INTERCOM_WHY[draft.intercom_fallback]||'',draft.snooze_days?`After sending, the thread leaves your inbox for ${draft.snooze_days} day${draft.snooze_days>1?'s':''} (a weekday morning; a reply brings it back sooner).`:'',waits].filter(Boolean).join(' '));
 const files=draft.attachments||[];$('#send-files').hidden=!files.length;
 $('#send-files').innerHTML=draftFileLinks(id,files);
 $('#send-error').textContent=demo?'Demo only. Nothing will be sent.':'';$('#send-confirm').disabled=options.length&&!sendRecipients().length;sendShow();

@@ -320,6 +320,51 @@ class Send(unittest.TestCase):
         self.assertEqual(list(self.store.card_replies(rows).values())[0]['suggestion_id'], self.sid)
 
 
+class Channel(Send):
+    """A to-do whose conversation is in Intercom answers there, not by email, unless the owner asked for email. When
+    Intercom can't reply from this Machine, the email says why on the card and in its preview."""
+    MAIL = {'id': 'mail', 'service': 'gmail', 'transport': 'gog', 'email': 'alex@example.com', 'boundary': 'work:Example Support'}
+
+    def setUp(self):
+        super().setUp()
+        self.accounts.append(dict(self.MAIL))
+
+    def only(self, cid):
+        with self.store.connect() as db:
+            ids = [r[0] for r in db.execute("SELECT id FROM events WHERE source_id=?", (cid,))]
+            db.execute("UPDATE suggestions SET status='completed'")
+        self.sid = self.store.suggest('ic-task-' + cid, 'Answer Casey', 'Casey asks about exporting.', ids)['id']
+
+    def email(self, **extra):
+        self.store.decide(self.sid, 'accept', '', 'accept-' + self.sid, 'dashboard')
+        self.save(kind='email', account_id='mail', to=['casey@example.org'], subject='Re: Export question', label='Send reply',
+                  conversation_id=None, **extra)
+        with self.store.connect() as db:
+            return json.loads(db.execute('SELECT next_action FROM suggestions WHERE id=?', (self.sid,)).fetchone()[0])
+
+    def test_an_email_to_the_customer_is_refused_while_intercom_can_reply(self):
+        with self.assertRaisesRegex(ValueError, 'conversation is in Intercom: reply there'):
+            self.email()
+        action = self.email(by_email=True)  # the owner asked for email
+        self.assertEqual((action['kind'], action['label'], action.get('intercom_fallback')), ('email', 'Send reply', None))
+        with self.assertRaises(ValueError):
+            self.save(kind='email', account_id='mail', to=['casey@example.org'], subject='Hi', conversation_id=None, by_email='yes')
+        other = self.save(kind='email', account_id='mail', to=['finance@example.com'], subject='Refund for Casey', conversation_id=None)
+        self.assertIsNotNone(other)  # someone else: not the conversation's customer
+
+    def test_when_intercom_here_only_reads_the_email_says_why_and_is_labeled_email(self):
+        self.only('8')  # on the Fleet-shared account: it only reads
+        action = self.email()
+        self.assertEqual((action['intercom_fallback'], action['label']), ('shared', 'Send by email'))
+        self.assertTrue(n.preview(action).startswith('Intercom is shared with you to read only, so this goes by email.\n\nFrom: alex@example.com'))
+        self.accounts[0] = {k: v for k, v in ACCOUNT.items() if not k.startswith('reply_')}  # own account, replies not turned on
+        self.only('7')
+        action = self.email()
+        self.assertEqual(action['intercom_fallback'], 'off')
+        self.assertIn('Sign in with Intercom', n.INTERCOM_FALLBACK['off'])
+        self.assertEqual(self.fake.writes(), [])  # nothing went anywhere
+
+
 class ConnectionsRow(unittest.TestCase):
     """The Connections card says who replies go out as, or that it only reads."""
 

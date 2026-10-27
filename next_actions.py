@@ -163,6 +163,39 @@ def intercom_replies_on(account):
             and re.fullmatch(r'[0-9]{1,20}', str(account.get('reply_admin_id') or '')) is not None)
 
 
+# Why an email goes instead of a reply in the task's Intercom conversation (next_actions.validate): the card says so
+# (dashboard.html INTERCOM_WHY, the same words)
+INTERCOM_FALLBACK = {'shared': 'Intercom is shared with you to read only, so this goes by email.',
+                     'off': 'Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.',
+                     'missing': 'Intercom isn’t connected on this Machine, so this goes by email.'}
+
+
+def intercom_channel(value, result, config, allowed_accounts, conversations):
+    """An email to the customer of the task's Intercom conversation: the reply belongs in that conversation. When this
+    Machine can reply there, the email is refused (unless the owner asked for email: by_email); when it can't, the email
+    goes ahead marked with why (INTERCOM_FALLBACK), so the card says so. None when the email isn't to that customer."""
+    if value.get('delegate') or not conversations:
+        return None
+    to = {a.lower() for a in result['to'] + result['cc']}
+    mine = [(cid, c) for cid, c in conversations.items() if c.get('contact') and c['contact'] in to]
+    if not mine:
+        return None
+    if value.get('by_email') is True:
+        return None
+    reasons = []
+    for cid, c in mine:
+        account = next((a for a in config['accounts'] if c.get('account_id') and a['id'] == c['account_id'] and a.get('service') == 'intercom'), None)
+        if not account:
+            reasons.append('missing')
+        elif account['id'] in allowed_accounts and intercom_replies_on(account):
+            raise ValueError(f"This conversation is in Intercom: reply there with {{kind:intercom,account_id:{account['id']},conversation_id:{cid},body}}. "
+                             'Email them only when the owner asked for email; then add by_email:true.')
+        else:
+            shared = account.get('shared')
+            reasons.append('shared' if shared and not (isinstance(shared, dict) and shared.get('origin')) else 'off')
+    return next(r for r in INTERCOM_FALLBACK if r in reasons)
+
+
 def canonical(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
 
@@ -333,7 +366,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                 'to':['alex@example.invalid'],'cc':[],'bcc':[],'subject':value['subject'],'body':value['body']}
     elif value.get('kind') == 'email':
         fields = {'kind', 'label','account_id', 'to', 'cc', 'bcc', 'subject', 'body', 'thread_id', 'in_reply_to', 'references', 'signature', 'snooze_days', 'attachments',
-                  'delegate', 'wait_days', 'to_name'}
+                  'delegate', 'wait_days', 'to_name', 'by_email'}
+        if 'by_email' in value and value['by_email'] is not True:
+            raise ValueError('by_email is true (the owner asked for email), or left out')
         if set(value) - fields:
             raise ValueError('Unsupported email fields')
         if not isinstance(value.get('signature', True), bool):
@@ -358,6 +393,11 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                     for a in addresses):
                 raise ValueError('Recipients must be explicit email addresses')
             result[field] = addresses
+        fallback = intercom_channel(value, result, config, allowed_accounts, intercom_conversations)
+        if fallback:
+            result['intercom_fallback'] = fallback
+            if 'email' not in result.get('label', '').lower():
+                result['label'] = 'Send by email'  # never a plain Send reply: it doesn't go in the Intercom conversation
         if not result['to']:
             # No verified recipient: the owner picks from the thread's own addresses, which the
             # service supplies. The model cannot add options.
@@ -532,7 +572,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             raise ValueError('Use the Intercom account belonging to this task')
         if not intercom_replies_on(account):
             raise ValueError('Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom '
-                             'themselves (a Fleet-shared token only reads). Give the reply text in the body instead.')
+                             'themselves (a Fleet-shared token only reads). Offer an email to the customer instead (kind email, '
+                             'to their address): the card says Intercom can’t reply from here.')
         result = {'kind': 'intercom', 'account_id': account['id'], 'admin_id': str(account['reply_admin_id']),
                   'as_name': account.get('reply_admin_name') or 'your Intercom admin'}
         if value.get('label'):
@@ -740,7 +781,8 @@ def signature_text(signature):
 
 
 def email_preview(action):
-    lines = ['From: ' + action['from'], 'To: ' + (', '.join(action['to']) or 'you choose: ' + ', '.join(action.get('to_options', [])))]
+    why = INTERCOM_FALLBACK.get(action.get('intercom_fallback'))
+    lines = ([why, ''] if why else []) + ['From: ' + action['from'], 'To: ' + (', '.join(action['to']) or 'you choose: ' + ', '.join(action.get('to_options', [])))]
     for field in ('cc', 'bcc'):
         if action.get(field):
             lines.append(field.upper() + ': ' + ', '.join(action[field]))

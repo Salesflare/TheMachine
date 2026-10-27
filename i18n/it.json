@@ -2404,5 +2404,10 @@
  "Companies: {}": "Aziende: {}",
  "Went quiet: {}": "Silenziose: {}",
  "Unanswered emails: {}": "Email senza risposta: {}",
- "Meetings with outside people: {}": "Riunioni con esterni: {}"
+ "Meetings with outside people: {}": "Riunioni con esterni: {}",
+ "Intercom is shared with you to read only, so this goes by email.": "Intercom è condiviso con te in sola lettura, quindi questo va via email.",
+ "Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.": "Le risposte di Intercom sono disattivate qui, quindi questo va via email. Accedi con Intercom per rispondere lì.",
+ "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom non è collegato su questa Machine, quindi questo va via email.",
+ "Send by email instead?": "Inviare via email invece?",
+ "Intercom from {} ·": "Intercom da {} ·"
 }

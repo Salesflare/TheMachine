@@ -59,7 +59,12 @@ SOURCES = 3
 SOURCE_CHARS = 6000
 SOURCES_CHARS = 12000
 CARRIED = {'gmail.message': 'email', 'salesflare.email': 'email', 'fleet.email': 'email',
-           'slack.message': 'message', 'whatsapp.message': 'message', 'fleet.message': 'message'}
+           'slack.message': 'message', 'whatsapp.message': 'message', 'fleet.message': 'message',
+           'intercom.conversation': 'message', 'fleet.intercom': 'message'}
+# An Intercom conversation also goes with where it is (`intercom`: region, workspace, conversation and the customer's
+# address), so the teammate's card links it and, when their Machine reads the same workspace, is that conversation itself:
+# its reply goes back in Intercom. An older Machine reads it as a plain message.
+INTERCOM_REGIONS = ('us', 'eu', 'au')
 # Google Groups and similar lists rewrite From for DMARC: "'Stripe Alerts' via Team <team@acme.example>". The address
 # is then the list's inbox, never the sender; the name before " via " is who wrote.
 VIA = re.compile(r"^\s*['\"]?(.+?)['\"]?\s+via\s+\S.*$", re.I)
@@ -121,6 +126,18 @@ def sentences(*parts):
     return ' '.join(p if n == len(parts) - 1 or p[-1] in '.!?…' else p + '.' for n, p in enumerate(parts))
 
 
+def intercom_ref(value):
+    """Where a carried Intercom conversation is, in its fixed form, else None."""
+    if not isinstance(value, dict):
+        return None
+    region, workspace, cid = value.get('region') or 'us', str(value.get('workspace_id') or ''), str(value.get('conversation_id') or '')
+    if region not in INTERCOM_REGIONS or not re.fullmatch(r'[A-Za-z0-9]{1,40}', workspace) or not re.fullmatch(r'[0-9]{1,20}', cid):
+        return None
+    contact = str(value.get('contact') or '').strip().lower()
+    return {'region': region, 'workspace_id': workspace, 'conversation_id': cid,
+            **({'contact': contact} if len(contact) <= 254 and fleet.EMAIL.fullmatch(contact) else {})}
+
+
 def parse_sources(value):
     """The sources a handoff carries, in their fixed form; anything else in them is dropped."""
     out, budget = [], SOURCES_CHARS
@@ -138,6 +155,7 @@ def parse_sources(value):
         budget -= len(body)
         out.append({'kind': item['kind'], 'from': fleet.clean(item.get('from'), 120) or 'Unknown sender', 'when': when,
                     'subject': fleet.clean(item.get('subject'), 200), 'body': body,
+                    **({'intercom': intercom_ref(item['intercom'])} if item['kind'] == 'message' and intercom_ref(item.get('intercom')) else {}),
                     **({'clipped': True} if item.get('clipped') or len(carried_text(item.get('body'), SOURCE_CHARS + 1)) > len(body) else {})})
         if budget <= 0:
             break
@@ -464,6 +482,8 @@ class Requests:
             ids = json.loads(card['event_ids'] or '[]')
             mails = db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND id IN (SELECT value FROM json_each(?)) "
                                'ORDER BY occurred_at DESC', (json.dumps(ids),)).fetchall()
+            chats = db.execute("SELECT metadata FROM events WHERE kind IN ('intercom.conversation','fleet.intercom') AND id IN "
+                               '(SELECT value FROM json_each(?)) ORDER BY occurred_at DESC', (json.dumps(ids),)).fetchall()
             givers = {(r['fleet'], r['member_id']) for r in db.execute(
                 "SELECT fleet,member_id FROM fleet_requests WHERE card_id=? AND kind='handoff'", (card['id'],))}
             note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND choice='other' AND source IN ('dashboard','telegram') "
@@ -475,8 +495,11 @@ class Requests:
         # The contact is who wrote: their Reply-To when there is one, never a list's rewritten From (its own inbox).
         def writers(meta):
             return [a for _, a in graph.addresses(meta.get('reply-to'))] + ([sender(meta.get('from'))[1]] if sender(meta.get('from'))[1] else [])
-        contact = next((a for m in mails for a in writers(json.loads(m['metadata'] or '{}'))
-                        if a not in mine | team and not graph.bulk(a)), '')
+        # An Intercom conversation's customer too, after the card's emails
+        customers = [str(m.get('contact_email') or (m.get('intercom') or {}).get('contact') or '').lower()
+                     for m in (json.loads(r['metadata'] or '{}') for r in chats)]
+        contact = next((a for a in [*(a for m in mails for a in writers(json.loads(m['metadata'] or '{}'))), *customers]
+                        if a and a not in mine | team and not graph.bulk(a)), '')
         # What goes to them is the message itself: the handoff text the card's preparation wrote for a teammate (or its
         # hand-off message to them), never the card's own account of what The Machine did ("Drafted a handoff...") nor
         # its latest chat reply. Without one, what they are asked to do: the card's next step (its Needs you line), then
@@ -551,7 +574,11 @@ class Requests:
             if not r or r['kind'] not in CARRIED or len(out) >= SOURCES or budget <= 0:
                 continue
             meta = json.loads(r['metadata'] or '{}')
+            ref = self.intercom_where(r, meta)
             name, address = sender(meta.get('from'))
+            if r['kind'] == 'intercom.conversation':  # the customer, by name (the opener may be a bot or a teammate)
+                address = str(meta.get('contact_email') or address or '')
+                name = fleet.clean(meta.get('contact_name') or meta.get('from_name'), 120) or address
             who = fleet.clean(meta.get('sender_display'), 120) if r['kind'].startswith('fleet.') or not meta.get('from') else \
                 (f'{name} <{address}>' if address and name and name != address else name or address)
             text = carried_text(r['body'], SOURCE_CHARS + 1)
@@ -559,10 +586,20 @@ class Requests:
             budget -= len(body)
             when = dt.datetime.fromisoformat(r['occurred_at'])
             out.append({'kind': CARRIED[r['kind']], 'account_id': r['account_id'], 'from': who or 'Unknown sender', 'when': when.isoformat(),
-                        'subject': fleet.clean(r['title'], 200), 'body': body,
+                        'subject': fleet.clean(r['title'], 200), 'body': body, **({'intercom': ref} if ref else {}),
                         **({'clipped': True} if len(text) > len(body) or meta.get('truncated') else {}),
-                        'label': f"{CARRIED[r['kind']].capitalize()} from {name or who or 'someone'} · {locale_prefs.day_text(when.astimezone(self.local_now().tzinfo))}"})
+                        'label': f"{'Intercom' if ref else CARRIED[r['kind']].capitalize()} from {name or who or 'someone'} · {locale_prefs.day_text(when.astimezone(self.local_now().tzinfo))}"})
         return out
+
+    def intercom_where(self, row, meta):
+        """Where an Intercom conversation of this card is (intercom_ref), from this Machine's own account, else None."""
+        if row['kind'] == 'fleet.intercom':  # one a teammate handed on: where it is goes along again
+            return intercom_ref(meta.get('intercom'))
+        if row['kind'] != 'intercom.conversation':
+            return None
+        account = next((a for a in self.config.get('accounts', []) if a.get('id') == row['account_id'] and a.get('service') == 'intercom'), {})
+        return intercom_ref({'region': account.get('region') or 'us', 'workspace_id': account.get('workspace_id'),
+                             'conversation_id': meta.get('conversation_id'), 'contact': meta.get('contact_email')})
 
     @staticmethod
     def is_person(member, action):

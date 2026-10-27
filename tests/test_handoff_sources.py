@@ -148,10 +148,65 @@ class HandoffSources(unittest.TestCase):
             card = self.mixed_card(self.chat_item('work'), private)
             draft = self.fleet.handoff_draft(card)
             self.assertEqual(draft['summary'], 'Confirmed leaks need engineering follow-up', account)  # no reason, no link: the card mixes accounts
-            self.assertEqual(draft['sources'], [], account)  # the private email isn't listed
+            self.assertEqual([x['kind'] for x in draft['sources']], ['message'], account)  # the work conversation; the private email isn't listed
             self.fleet.hand_off(card, self.ref, 'pat1', draft['title'], draft['summary'])
-            self.assertNotIn('sources', self.sent(), account)
+            self.assertEqual([x['body'] for x in self.sent()['sources']], ['Verdict: CONFIRMED'], account)
             self.assertNotIn('40k', json.dumps(self.relay.sent('/ask')[-1]))
+
+    HELP = {'id': 'help', 'service': 'intercom', 'boundary': 'work:Acme', 'workspace_id': 'ws1', 'region': 'eu', 'admin_id': '42'}
+
+    def conversation(self, account='help', cid='77'):
+        return {'account_id': account, 'source_id': cid, 'kind': 'intercom.conversation', 'occurred_at': '2026-10-22T09:00:00+00:00',
+                'title': 'Cancel our plan', 'body': 'Please cancel and confirm by reply.', 'deleted': False,
+                'metadata': {'conversation_id': cid, 'from': 'casey@client.example', 'from_name': 'Casey Customer',
+                             'contact_email': 'casey@client.example', 'contact_name': 'Casey Customer', 'last_author_type': 'user',
+                             'source_url': f'https://app.eu.intercom.com/a/inbox/ws1/inbox/shared/all/conversation/{cid}'}}
+
+    def test_an_intercom_conversation_goes_with_where_it_is_and_lands_on_the_teammates_own_copy(self):
+        self.fleet.config = {**self.fleet.config, 'accounts': [*self.fleet.config['accounts'], self.HELP]}
+        self.app.config = self.fleet.config
+        card = self.mixed_card(self.conversation())
+        draft = self.fleet.handoff_draft(card)
+        self.assertEqual(draft['contact'], 'casey@client.example')  # the customer, so the teammate's card names them
+        self.assertTrue(draft['sources'][0]['label'].startswith('Intercom from Casey Customer · '))
+        self.fleet.hand_off(card, self.ref, 'pat1', 'Answer Casey', 'Confirm the cancellation.', 'casey@client.example')
+        sent = self.sent()['sources'][0]
+        self.assertEqual((sent['kind'], sent['intercom']), ('message', {'region': 'eu', 'workspace_id': 'ws1', 'conversation_id': '77',
+                                                                        'contact': 'casey@client.example'}))
+        # Pat's Machine reads the same workspace: the card is on that conversation itself (its link, people and reply)
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (card,))
+            own = db.execute("SELECT id FROM events WHERE kind='intercom.conversation' AND source_id='77'").fetchone()[0]
+        self.ask('handoff', self.sent(), 'qi1')
+        row = self.card_row(self.fleet.decide('qi1', 'once')['card_id'])
+        self.assertEqual(json.loads(row['event_ids'])[0], own)
+        self.assertTrue(row['source_line'].startswith('Source: Intercom from Casey Customer · '))
+        self.assertEqual(self.store.originals(row['id'])[0]['url'], 'https://app.eu.intercom.com/a/inbox/ws1/inbox/shared/all/conversation/77')
+        self.assertIn('help', json.loads(row['account_ids']))
+
+    def test_without_that_workspace_the_teammate_gets_a_copy_that_links_the_conversation_in_its_region(self):
+        question = {'title': 'Answer Casey', 'summary': 'Confirm the cancellation.', 'contact': 'casey@client.example',
+                    'sources': [{'kind': 'message', 'from': 'Casey Customer <casey@client.example>', 'when': '2026-10-22T09:00:00+00:00',
+                                 'subject': 'Cancel our plan', 'body': 'Please cancel.',
+                                 'intercom': {'region': 'eu', 'workspace_id': 'ws1', 'conversation_id': '77', 'contact': 'casey@client.example',
+                                              'url': 'https://evil.example/'}}]}
+        self.ask('handoff', question, 'qi2')
+        row = self.card_row(self.fleet.decide('qi2', 'once')['card_id'])
+        self.assertTrue(row['source_line'].startswith('Source: Intercom from Casey Customer, via Pat · '), row['source_line'])
+        read = self.store.originals(row['id'])[0]
+        self.assertEqual(read['url'], 'https://app.eu.intercom.com/a/inbox/ws1/inbox/shared/all/conversation/77')  # built here, never their URL
+        with self.store.connect() as db:
+            meta = json.loads(db.execute('SELECT metadata FROM events WHERE id=?', (read['event_id'],)).fetchone()[0])
+        self.assertEqual((meta['conversation_id'], meta['contact_email']), ('77', 'casey@client.example'))
+
+    def test_a_carried_intercom_place_is_kept_in_its_fixed_form(self):
+        base = {'kind': 'message', 'from': 'Casey', 'when': '2026-10-22T09:00:00+00:00', 'subject': 'Hi', 'body': 'Hello'}
+        for bad in ({'region': 'xx', 'workspace_id': 'ws1', 'conversation_id': '77'}, {'workspace_id': 'ws/1', 'conversation_id': '77'},
+                    {'workspace_id': 'ws1', 'conversation_id': '77/reply'}, 'https://app.intercom.com/x'):
+            self.assertNotIn('intercom', fleet_requests.parse_sources([{**base, 'intercom': bad}])[0], bad)
+        kept = fleet_requests.parse_sources([{**base, 'intercom': {'workspace_id': 'ws1', 'conversation_id': '77', 'contact': 'not an address', 'run': 1}}])
+        self.assertEqual(kept[0]['intercom'], {'region': 'us', 'workspace_id': 'ws1', 'conversation_id': '77'})
+        self.assertNotIn('intercom', fleet_requests.parse_sources([{**base, 'kind': 'email', 'intercom': {'workspace_id': 'ws1', 'conversation_id': '7'}}])[0])
 
     def test_a_teammates_sources_are_kept_in_their_fixed_form(self):
         hostile = [{'kind': 'email', 'from': 'Sam', 'when': '2026-10-22T09:00:00+00:00', 'subject': 'Hi', 'body': 'x' * 9000,

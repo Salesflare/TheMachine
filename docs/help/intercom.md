@@ -1,7 +1,7 @@
 ---
 title: Intercom
 area: connections
-summary: Customer conversations in your Intercom workspace. It only reads conversations.
+summary: Customer conversations in your Intercom workspace. It replies only after you send, as you.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, Or paste an access token, Connect, More sources, Remove
@@ -12,7 +12,13 @@ Customer conversations in your Intercom workspace: the last 7 days when you conn
 
 ## What it can do
 
-It only reads conversations. It never replies, assigns, closes or tags. Anything other than reading is refused before the token is even used.
+It reads conversations. With your own **Sign in with Intercom**, it can also reply in a conversation as you, only after you press **Send** on that exact text. It never assigns, closes, tags or writes notes. An Intercom shared with you through your Fleet only reads.
+
+## To-dos from Intercom
+
+A to-do from an Intercom conversation shows where it came from: **Read message** opens the conversation, with a link to it in Intercom, and the customer shows on the to-do. Its reply is an Intercom reply in that conversation, unless you ask for an email.
+
+When Intercom can't reply from your Machine (shared with you to read only, replies not turned on, or not connected), the draft goes by email instead. The to-do says why, and its review asks **Send by email instead?** Nothing goes out before you send it.
 
 ## Connect it
 

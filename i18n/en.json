@@ -2404,5 +2404,10 @@
  "Companies: {}": "Companies: {}",
  "Went quiet: {}": "Went quiet: {}",
  "Unanswered emails: {}": "Unanswered emails: {}",
- "Meetings with outside people: {}": "Meetings with outside people: {}"
+ "Meetings with outside people: {}": "Meetings with outside people: {}",
+ "Intercom is shared with you to read only, so this goes by email.": "Intercom is shared with you to read only, so this goes by email.",
+ "Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.": "Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.",
+ "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom isn’t connected on this Machine, so this goes by email.",
+ "Send by email instead?": "Send by email instead?",
+ "Intercom from {} ·": "Intercom from {} ·"
 }

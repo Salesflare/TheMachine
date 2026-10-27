@@ -106,7 +106,7 @@ Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on
 
 ### WhatsApp message
 
-`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`. If the owner talks to them on WhatsApp, switch from any channel: to_name:<name> instead of chat_id finds their chat. Short plain text in their WhatsApp voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom alike: `{kind:intercom,account_id,conversation_id:<metadata.conversation_id>,body}`; if refused, use the body.
+`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`. If the owner talks to them on WhatsApp, switch from any channel: to_name:<name> instead of chat_id finds their chat. Short plain text in their WhatsApp voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom: reply there `{kind:intercom,account_id,conversation_id,body}`; email only if asked (by_email:true) or refused.
 
 ### Slack message, and handing a task to someone
 

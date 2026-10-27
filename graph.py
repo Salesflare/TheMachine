@@ -441,9 +441,11 @@ def _touches(kind, m, owner, wrote_to):
     if kind == 'github.notification':
         login = str(m.get('from') or '').lower()
         return [] if not login or m.get('from_me') or login in owner.handles or login.endswith('[bot]') else [('gh:' + login, m.get('from'), 0.1, 'seen')]
-    if kind == 'intercom.conversation':
-        found = addresses(m.get('from'))
-        return [('email:' + found[0][1], None, 0.05, 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
+    if kind in ('intercom.conversation', 'fleet.intercom'):  # also one a teammate handed over (fleet_requests)
+        # The customer it is with is who a card on it is about (direct, as a card's own people: 'about'); without one, whoever opened it
+        customer = addresses(m.get('contact_email'))
+        found = customer or addresses(m.get('from'))
+        return [('email:' + found[0][1], (m.get('contact_name') or None) if customer else None, 0.05, 'about' if customer else 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
     if kind in DOC_KINDS:
         # Docs (connectors/docs.py): who commented, @mentioned the owner, suggested edits or shared a doc with them.
         # Drive shows an author's address only when they let it; without one there is nobody to link.

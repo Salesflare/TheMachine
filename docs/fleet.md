@@ -76,8 +76,11 @@ default, Always accept, Never), and nothing happens on your side until you accep
    ..."), then the contact, with
    copies of the sources as its own sources: they read in the card chat and under **Read the thread** like any
    email, from their own Machine, without access to your mailbox. Only that card's own emails and messages go (up to
-   three, about 6,000 characters each: sender, date, subject and text; attachments don't travel). The contact is the
-   person who wrote, by Reply-To if there is one, never a Google Group's own address on a "via" email. If they already
+   three, about 6,000 characters each: sender, date, subject and text; attachments don't travel). An Intercom
+   conversation also says where it is (region, workspace, conversation id and the customer's address): when their
+   Machine reads that workspace, the card is on that conversation itself, so its link, people and reply work as on
+   any Intercom card; otherwise the copy links the conversation in Intercom. The contact is the
+   person who wrote (or the Intercom customer), by Reply-To if there is one, never a Google Group's own address on a "via" email. If they already
    have an open card on it (the same email, recognized by a key of its Message-ID, or else the one open card on email
    from the same contact), your handoff joins that card, sources included, instead of making a second one. Your card says "Handed off to <teammate>" and how it went. The Fleet tab
    lists your handoffs in their own **Handoffs** box, both ways: open ones first (waiting, declined, or one waiting for
@@ -284,7 +287,8 @@ brings the Telegram message up to date.
   teammates' Machines, not instructions.
 - Claims on shared emails, and that you closed one, travel as a hash keyed with the Fleet's secret, never the email.
 - Intros, handoffs and follow-up splits (`fleet_requests.py`) are kept to a fixed form and only shown, quoted. A
-  handoff's sources keep only their kind, sender, date, subject and text; on the receiving Machine they are marked
+  handoff's sources keep only their kind, sender, date, subject and text (an Intercom one also its region, workspace
+  and conversation id, checked to their form; its link is built on the receiving Machine); on the receiving Machine they are marked
   reviewed, so no model reads them by itself. An
   intro draft is built by code from the owner's own graph and waits for their Send; nothing is sent, drafted or
   done before the owner accepts (or set Always accept). Telegram and phone buttons are the same Accept and Decline

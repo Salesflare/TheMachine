@@ -8119,6 +8119,24 @@ def doc_comments(config, db, event_ids):
     return found
 
 
+def intercom_link(where):
+    """The conversation's page in Intercom, in its workspace's region (fleet_requests.intercom_ref)."""
+    plugin = load_connector('intercom')
+    regions = getattr(plugin, 'REGIONS', None) or {'us': ('', 'https://app.intercom.com')}
+    app = (regions.get(where.get('region')) or regions['us'])[1]
+    return f"{app}/a/inbox/{where['workspace_id']}/inbox/shared/all/conversation/{where['conversation_id']}"
+
+
+def intercom_own_event(db, config, where):
+    """This Machine's own copy of an Intercom conversation (an account on the same workspace), else None."""
+    accounts = [a['id'] for a in config.get('accounts', []) if a.get('service') == 'intercom' and a.get('workspace_id') == where.get('workspace_id')]
+    if not accounts:
+        return None
+    row = db.execute(f"SELECT id FROM events WHERE kind='intercom.conversation' AND deleted=0 AND source_id=? AND account_id IN "
+                     f"({','.join('?' * len(accounts))}) ORDER BY occurred_at DESC LIMIT 1", (where['conversation_id'], *accounts)).fetchone()
+    return row[0] if row else None
+
+
 def intercom_transport(config):
     """Intercom replies, when the connector is here (connectors/intercom.py Replier: the one write it allows)."""
     plugin = load_connector('intercom')
@@ -8275,6 +8293,7 @@ SOURCE_KIND['fleet.request'] = 'Fleet'
 SOURCE_KIND['fleet.email'] = 'email'  # a copy a teammate's handoff carried (fleet_requests.handoff_sources)
 SOURCE_KIND['owner.card'] = 'note'  # a card the owner made themselves (New card): their own words
 SOURCE_KIND['fleet.message'] = 'message'
+SOURCE_KIND['fleet.intercom'] = 'Intercom'  # an Intercom conversation a handoff carried, on a Machine that doesn't read it
 # Email, whatever brought it in: what New to-do's Email pill searches (api/events?kind=email)
 EMAIL_KINDS = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'fleet.email'})
 
@@ -9381,6 +9400,8 @@ def source_text(row):
     if row['kind'] == 'owner.card':
         return f'to-do the owner added · {when}'
     m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+    if row['kind'] == 'intercom.conversation':  # the customer by name, as an email shows its sender
+        m = {**m, 'sender_display': m.get('sender_display') or m.get('contact_name') or m.get('from_name')}
     who = (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')
            or (('#' + m['channel_name']) if m.get('channel_name') else '') or (m.get('crm_account') or {}).get('name') or '')
     who = re.sub(r'\s*<[^>]+>', '', str(who)).strip().strip('"') or None
@@ -12582,8 +12603,13 @@ class App:
                 whatsapp_chats={m['chat_id']:{'account_id':r[0],'name':m.get('chat_name') or 'WhatsApp chat'} for r in db.execute(
                     "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='whatsapp.message' ORDER BY e.occurred_at",(row['event_ids'],))
                     for m in (json.loads(r[1]),) if m.get('chat_id')}
-                intercom_conversations={m['conversation_id']:{'account_id':r[0],'name':m.get('from_name') or m.get('from') or 'Intercom conversation'} for r in db.execute(
-                    "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='intercom.conversation' ORDER BY e.occurred_at",(row['event_ids'],))
+                # The task's Intercom conversations, with the customer's address: an email to them is checked against
+                # replying in Intercom (next_actions.validate). One a handoff carried that this Machine doesn't read
+                # (fleet.intercom) can't be replied to here.
+                intercom_conversations={m['conversation_id']:{'account_id':r[0] if r[2]=='intercom.conversation' else None,
+                                                              'name':m.get('from_name') or m.get('from') or 'Intercom conversation',
+                                                              'contact':str(m.get('contact_email') or '').lower()} for r in db.execute(
+                    "SELECT e.account_id,e.metadata,e.kind FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind IN ('intercom.conversation','fleet.intercom') ORDER BY e.kind='intercom.conversation',e.occurred_at",(row['event_ids'],))
                     for m in (json.loads(r[1]),) if m.get('conversation_id')}
                 docs=doc_comments(self.config,db,row['event_ids'])
                 # The owner talks to this person on WhatsApp although the task came in another way: their existing chat.
@@ -13540,11 +13566,20 @@ class App:
             first = name.split()[0] if name else 'a teammate'
             for n, src in enumerate(carried):
                 cid = source_id + ':' + str(n)
+                where = src.get('intercom')
+                own = where and intercom_own_event(db, self.config, where)
+                if own:  # this Machine reads that workspace too: the card is on the conversation itself (its link, reply)
+                    copies.append(own)
+                    continue
                 db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
                            'VALUES(?,?,?,?,?,?,?,0,?,1,1,?)',
-                           (account, cid, 'fleet.email' if src['kind'] == 'email' else 'fleet.message', src['when'], src['subject'] or '(no subject)',
-                            src['body'], json.dumps({'sender_display': f"{src['from']}, via {first}", 'from': src['from'], 'carried_by': name,
-                                                     'fleet_kind': kind, **({'truncated': True} if src.get('clipped') else {})}),
+                           (account, cid, 'fleet.email' if src['kind'] == 'email' else 'fleet.intercom' if where else 'fleet.message', src['when'],
+                            src['subject'] or '(no subject)', src['body'],
+                            json.dumps({'sender_display': f"{src['from']}, via {first}", 'from': src['from'], 'carried_by': name,
+                                        'fleet_kind': kind, **({'truncated': True} if src.get('clipped') else {}),
+                                        **({'intercom': where, 'conversation_id': where['conversation_id'], 'source_url': intercom_link(where),
+                                            **({'contact_email': where['contact'], 'contact_name': re.sub(r'\s*<[^>]*>', '', src['from']).strip()[:100]}
+                                               if where.get('contact') else {})} if where else {})}),
                             hashlib.sha256((src['subject'] + src['body']).encode()).hexdigest(), stamp))
                 copies.append(db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, cid)).fetchone()[0])
         if into:  # a handoff on something the owner already has a card on: it joins that card, with their summary

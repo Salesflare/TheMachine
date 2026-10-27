@@ -8,13 +8,18 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-const sid='1234567890abcdef',done='0011223344556677',revision='1234567890ab';
+const sid='1234567890abcdef',done='0011223344556677',viaMail='8899aabbccddeeff',revision='1234567890ab',mailRevision='abcdefabcdef';
 const body='Hi Casey,\n\nYes: Settings, then Export. You get a CSV by email.\n\nAlex';
 const reply={kind:'intercom',label:'Send reply',revision,account_id:'intercom',conversation_id:'7',to_name:'Casey Customer',as_name:'Alex Example',admin_id:'42',max_length:10000,body};
 const sentReply={...reply,revision:'555555555555',state:{status:'sent',message_id:'intercom:7:p2',sent_at:new Date().toISOString()}};
 const card=(id,title,a,extra={})=>({id,title,body:'Drafted the reply.',status:'prepared',event_ids:[1],next_action:a,next_actions:[a],
   outcome:JSON.stringify({state:'needs_you',needs:'Check the reply and send it'}),scope:'work',created_at:new Date().toISOString(),...extra});
-const state=()=>({suggestions:[card(sid,'Casey asks how to export',reply),card(done,'Casey asked about invoices',sentReply,{status:'completed',outcome:null})],
+// Intercom here only reads (shared through the Fleet): the reply goes by email, and the card and its review say why
+const fallback={kind:'email',label:'Send by email',revision:mailRevision,account_id:'mail',from:'alex@example.com',to:['casey@example.org'],cc:[],bcc:[],
+  subject:'Re: Export question',body,signature:true,intercom_fallback:'shared'};
+const state=()=>({suggestions:[card(sid,'Casey asks how to export',reply),card(done,'Casey asked about invoices',sentReply,{status:'completed',outcome:null}),
+  card(viaMail,'Casey asks to cancel',fallback,{source_line:'Source: Intercom from Casey Customer · Thu, Oct 22',original_urls:['https://app.eu.intercom.com/a/inbox/ws1/inbox/shared/all/conversation/77'],
+    people:[{id:'p1',name:'Casey Customer',org:{id:'o1',name:'Client Co'}}]})],
   connectors:[],suggestion_counts:{prepared:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]});
 const calls=[],errors=[];
 const server=createServer(async(req,res)=>{
@@ -61,6 +66,19 @@ try{
   const text=await sent.evaluate(n=>n.textContent);
   assert.match(text,/Sent as Alex Example in Intercom( at \d\d:\d\d)?\./);
   assert.ok(!/\bYou (sent|replied)/.test(text));
+  // The email fallback: the source links the conversation, the people are on it, and it says why it isn't an Intercom reply
+  const mail=page.locator(`#task-${viaMail}`);
+  assert.equal(await mail.locator('.draft-why').textContent(),'Intercom is shared with you to read only, so this goes by email.');
+  assert.match(await mail.locator('.read-original').textContent(),/Intercom from Casey Customer/);
+  assert.equal(await mail.locator('a.chip.who').first().textContent(),'Casey CustomerCasey');
+  assert.match(await mail.locator(`[data-smart="${mailRevision}"]`).textContent(),/Review and send by email/);
+  if(shots)await mail.screenshot({path:`${shots}/fallback-card-${width}.png`});
+  await mail.locator(`[data-smart="${mailRevision}"]`).click();
+  await page.locator('#send-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('#send-title').textContent(),'Send by email instead?');
+  assert.equal(await page.locator('#send-fine').textContent(),'Intercom is shared with you to read only, so this goes by email.');
+  assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);  // nothing before Send
+  if(shots)await page.locator('#send-dialog').screenshot({path:`${shots}/fallback-dialog-${width}.png`});
   await context.close();
  }
  assert.deepEqual(errors,[]);
