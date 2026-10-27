@@ -1487,5 +1487,19 @@
  "Automatic: {}": "Automatic: {}",
  "Project for this to-do": "Project for this to-do",
  "On {}.": "On {}.",
- "Off its project.": "Off its project."
+ "Off its project.": "Off its project.",
+ "All accounts": "All accounts",
+ "Nothing is sent. I’ll fill in the rest.": "Nothing is sent. I’ll fill in the rest.",
+ "Enter adds it": "Enter adds it",
+ "Person": "Person",
+ "When is it due?": "When is it due?",
+ "Link a person": "Link a person",
+ "A name or a company": "A name or a company",
+ "Attach an email": "Attach an email",
+ "Search by subject or sender": "Search by subject or sender",
+ "Pick a date": "Pick a date",
+ "Enter sets it": "Enter sets it",
+ "I can’t read that date yet": "I can’t read that date yet",
+ "Added": "Added",
+ "Couldn’t add the to-do": "Couldn’t add the to-do"
 }

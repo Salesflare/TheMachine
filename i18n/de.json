@@ -1487,5 +1487,19 @@
  "Automatic: {}": "Automatisch: {}",
  "Project for this to-do": "Projekt für diese Aufgabe",
  "On {}.": "Jetzt in {}.",
- "Off its project.": "Aus dem Projekt genommen."
+ "Off its project.": "Aus dem Projekt genommen.",
+ "All accounts": "Alle Konten",
+ "Nothing is sent. I’ll fill in the rest.": "Es wird nichts gesendet. Den Rest ergänze ich.",
+ "Enter adds it": "Enter fügt hinzu",
+ "Person": "Person",
+ "When is it due?": "Bis wann?",
+ "Link a person": "Person verknüpfen",
+ "A name or a company": "Ein Name oder eine Firma",
+ "Attach an email": "E-Mail anhängen",
+ "Search by subject or sender": "Nach Betreff oder Absender suchen",
+ "Pick a date": "Datum wählen",
+ "Enter sets it": "Enter übernimmt",
+ "I can’t read that date yet": "Dieses Datum kann ich noch nicht lesen",
+ "Added": "Hinzugefügt",
+ "Couldn’t add the to-do": "Aufgabe konnte nicht hinzugefügt werden"
 }

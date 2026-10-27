@@ -1487,5 +1487,19 @@
  "Automatic: {}": "Automatisch: {}",
  "Project for this to-do": "Project voor deze to-do",
  "On {}.": "Nu bij {}.",
- "Off its project.": "Niet meer bij een project."
+ "Off its project.": "Niet meer bij een project.",
+ "All accounts": "Alle accounts",
+ "Nothing is sent. I’ll fill in the rest.": "Er wordt niets verstuurd. De rest vul ik aan.",
+ "Enter adds it": "Enter voegt toe",
+ "Person": "Persoon",
+ "When is it due?": "Wanneer moet het klaar zijn?",
+ "Link a person": "Koppel een persoon",
+ "A name or a company": "Een naam of een bedrijf",
+ "Attach an email": "Voeg een e-mail toe",
+ "Search by subject or sender": "Zoek op onderwerp of afzender",
+ "Pick a date": "Kies een datum",
+ "Enter sets it": "Enter stelt in",
+ "I can’t read that date yet": "Die datum kan ik nog niet lezen",
+ "Added": "Toegevoegd",
+ "Couldn’t add the to-do": "Kon de to-do niet toevoegen"
 }

@@ -38,8 +38,10 @@ AREAS = {
     'calendar': (['calendar', 'cal-dialog'], [('calFetchWeek', 'calSave')]),
     'connections': (['health', 'signin-dialog'], [('connectorHealth', 'connectorCard'), ('signinMode', 'browserShow')]),
     'help': ([], [('helpTab', 'supportAccessRender')]),
+    'events': (['events', 'email-dialog'], [('search', 'openEvent')]),
+    'new': ([], [('ncDue', 'newMenu')]),
 }
-MOVED = ['shell', 'todos', 'settings', 'graph', 'calendar', 'connections', 'help']
+MOVED = ['shell', 'todos', 'settings', 'graph', 'calendar', 'connections', 'help', 'events', 'new']
 
 ATTRS = ('placeholder', 'aria-label', 'title', 'alt', 'label')
 SKIP_TAGS = {'script', 'style', 'svg', 'code', 'pre', 'textarea'}
