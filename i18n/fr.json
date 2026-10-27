@@ -2400,5 +2400,9 @@
  "Weekly brief": "Brief hebdomadaire",
  "Always share": "Toujours partager",
  "Share once": "Partager une fois",
- "Never": "Jamais"
+ "Never": "Jamais",
+ "Companies: {}": "Entreprises : {}",
+ "Went quiet: {}": "Sans nouvelles : {}",
+ "Unanswered emails: {}": "E-mails sans réponse : {}",
+ "Meetings with outside people: {}": "Réunions avec des externes : {}"
 }

@@ -25,7 +25,7 @@ Ask "who knows someone at Acme?" from the Fleet tab, or **Ask the Fleet** on an 
 
 ## Brief requests
 
-A teammate with the team brief on asks your Machine for counts and dates each morning. That never becomes a to-do. It waits in the Fleet tab, in your Work Fleet's pane, under **Brief requests**: **Always share**, **Share once**, **Decline** or **Never**. Only the latest ask per teammate waits, and unanswered ones expire. Nothing is shared until you choose.
+A teammate with the team brief on asks your Machine for counts and dates each morning. That never becomes a to-do. It waits in the Fleet tab, in your Work Fleet's pane, under **Brief requests**: **Share once**, **Always share**, **Decline** or **Never**. Only the latest ask per teammate waits, and unanswered ones expire. Nothing is shared until you choose.
 
 ## Team Graph
 

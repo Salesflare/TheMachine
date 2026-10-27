@@ -5,12 +5,12 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A teammate's ask under Suggestions: Share once, Always share and Decline are visible buttons (Never under More). A brief
-// ask is never a to-do: it waits quietly in its Fleet's pane (Brief requests), the latest per teammate, with Always share first.
+// ask is never a to-do: it waits quietly in its Fleet's pane (Brief requests), the latest per teammate, with Share once first and no nudge toward Always.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const FL='fl_'+'a'.repeat(16),Q=n=>'q_'+String(n).repeat(16);
-const preview='1 company you were in touch with, 0 that went quiet, 1 unanswered email (as hashes), 1 meeting with outside people. Company names, counts and dates only.';
+const preview='1 company you were in touch with, 0 that went quiet, 1 unanswered email, 1 meeting with outside people. Company names, counts and dates only.';
 const brief=n=>({id:Q(n),fleet:FL,member_id:'p',name:'Alexandra Longname-Whitfield (alexandra@acme.example)',kind:'brief',status:'waiting',at:'2026-10-2'+n+'T08:00:00+00:00',
- question:`Your brief facts for the day (since 2026-10-2${n})`,draft:{preview}});
+ question:`Your brief facts for the day (since 2026-10-2${n})`,draft:{preview,counts:{touched:1,quiet:0,unanswered:1,meetings:1}}});
 const view={on:true,kinds:{relationships:'who knows someone',brief:'brief facts'},kind_rules:{relationships:['ask','always','never'],brief:['ask','always','never']},
  no_details:['brief'],brief:{every:'day',tell:false},briefs:{},free:[],
  fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',asks:['relationships','brief'],people:[{member_id:'m',name:'Sam',role:'owner',me:true,email:'sam@acme.example'}],members:[],rules:{},exceptions:{}}],
@@ -47,9 +47,10 @@ try{
   const box=page.locator('#fleet-view .fleet-brief-asks');await box.waitFor();
   assert.match(await box.locator('h3').innerText(),/Brief requests\s*2/);
   const row=box.locator('#fleet-'+Q(1));
-  assert.deepEqual(await row.locator('button').allInnerTexts(),['Always share','Share once','Decline','Never']);
-  assert.equal(await row.locator('button.primary').innerText(),'Always share');
-  assert.match(await row.innerText(),/Daily brief · 1 company you were in touch with, 0 that went quiet, 1 unanswered email \(as hashes\)/);
+  assert.deepEqual(await row.locator('button').allInnerTexts(),['Share once','Always share','Decline','Never']);
+  assert.equal(await row.locator('button.primary').innerText(),'Share once');
+  assert.match(await row.innerText(),/Daily brief · Companies: 1 · Went quiet: 0 · Unanswered emails: 1 · Meetings with outside people: 1/);
+  assert.doesNotMatch(await box.innerText(),/hashes/);
   const fit=await box.evaluate(b=>{const r=b.getBoundingClientRect();return {inside:[...b.querySelectorAll('button')].every(k=>{const x=k.getBoundingClientRect();return x.left>=r.left-1&&x.right<=r.right+1}),clipped:[...b.querySelectorAll('button')].some(k=>k.scrollWidth>k.clientWidth+1),wide:document.documentElement.scrollWidth>innerWidth}});
   assert.ok(fit.inside&&!fit.clipped&&!fit.wide,JSON.stringify(fit));
   if(shots){await box.scrollIntoViewIfNeeded();await box.screenshot({path:`${shots}/fleet-brief-asks-${width}.png`})}

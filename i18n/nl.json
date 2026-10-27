@@ -2400,5 +2400,9 @@
  "Weekly brief": "Wekelijkse brief",
  "Always share": "Altijd delen",
  "Share once": "Eén keer delen",
- "Never": "Nooit"
+ "Never": "Nooit",
+ "Companies: {}": "Bedrijven: {}",
+ "Went quiet: {}": "Stilgevallen: {}",
+ "Unanswered emails: {}": "Onbeantwoorde e-mails: {}",
+ "Meetings with outside people: {}": "Meetings met externen: {}"
 }

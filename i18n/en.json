@@ -2400,5 +2400,9 @@
  "Weekly brief": "Weekly brief",
  "Always share": "Always share",
  "Share once": "Share once",
- "Never": "Never"
+ "Never": "Never",
+ "Companies: {}": "Companies: {}",
+ "Went quiet: {}": "Went quiet: {}",
+ "Unanswered emails: {}": "Unanswered emails: {}",
+ "Meetings with outside people: {}": "Meetings with outside people: {}"
 }

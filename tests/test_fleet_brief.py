@@ -133,7 +133,7 @@ class Brief(unittest.TestCase):
     def test_the_preview_counts_read_right_for_one(self):
         one = {'touched': [{}], 'quiet': [{}], 'unanswered': ['h'], 'meetings': [{}]}
         self.assertTrue(fleet.brief_preview(one).startswith(
-            '1 company you were in touch with, 1 that went quiet, 1 unanswered email (as hashes), 1 meeting with outside people.'))
+            '1 company you were in touch with, 1 that went quiet, 1 unanswered email, 1 meeting with outside people.'))
         self.assertIn('0 companies', fleet.brief_preview({'touched': [], 'quiet': [], 'unanswered': [], 'meetings': [{}, {}]}))
         self.assertIn('2 meetings with', fleet.brief_preview({'touched': [], 'quiet': [], 'unanswered': [], 'meetings': [{}, {}]}))
 
@@ -145,6 +145,7 @@ class Brief(unittest.TestCase):
         self.assertIn('2 companies', waiting['draft']['preview'])
         self.assertIn('5 unanswered', waiting['draft']['preview'])
         self.assertNotIn('note', waiting['question'])
+        self.assertEqual(waiting['draft']['counts'], {'touched': 2, 'quiet': 1, 'unanswered': 5, 'meetings': 1})
         self.fleet.decide('q1', 'always')
         sent = self.relay.sent('/answer')[-1]
         self.assertEqual((sent['status'], sorted(t['domain'] for t in sent['answer']['touched'])), ('answered', ['client.example', 'globex.example']))

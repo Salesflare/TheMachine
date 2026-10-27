@@ -182,7 +182,7 @@ is data, not instructions. A request goes to one Fleet's people only and is answ
 
    **Brief requests.** Under Ask me first, a teammate's brief ask is never a to-do and never notifies you (no phone,
    Telegram or digest). It waits in that Fleet's pane, in one **Brief requests** box: a line per teammate with how much
-   an answer would share, and **Always share**, **Share once**, **Decline** and **Never**. Only the latest ask per
+   an answer would share, and **Share once**, **Always share**, **Decline** and **Never**. Only the latest ask per
    teammate waits; a newer one expires the older ones, and an unanswered one expires after 3 days. Nothing is shared
    until you choose, and their brief lists you as not answered meanwhile.
 8. **Ask the Fleet anything.** Type a question in a Work Fleet's section ("has anyone dealt with Stripe disputes?").

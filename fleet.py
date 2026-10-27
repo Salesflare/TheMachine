@@ -971,7 +971,7 @@ def brief_preview(facts):
     def n(key, one, many):
         return f"{len(facts[key])} {one if len(facts[key]) == 1 else many}"
     return (f"{n('touched', 'company', 'companies')} you were in touch with, {len(facts['quiet'])} that went quiet, "
-            f"{n('unanswered', 'unanswered email', 'unanswered emails')} (as hashes), {n('meetings', 'meeting', 'meetings')} with outside people. "
+            f"{n('unanswered', 'unanswered email', 'unanswered emails')}, {n('meetings', 'meeting', 'meetings')} with outside people. "
             'Company names, counts and dates only.')
 
 
@@ -1913,7 +1913,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 else:
                     draft = None
                     if kind == 'brief':  # what an answer would share, in counts, for the approval card
-                        draft = {'preview': brief_preview(self.compute(db, kind, question, details, fleet))}
+                        facts = self.compute(db, kind, question, details, fleet)
+                        draft = {'preview': brief_preview(facts), 'counts': {k: len(facts.get(k) or []) for k in ('touched', 'quiet', 'unanswered', 'meetings')}}
                     elif kind == 'anything':
                         text, matches = free_draft(db, self.fleet_accounts(fleet), question['text'], self.search, self.internal(fleet))
                         draft = {'text': text, 'matches': matches}
