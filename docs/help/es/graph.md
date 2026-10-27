@@ -33,17 +33,17 @@ Si una página dice **No se pudo cargar esta página.**, toca **Reintentar**. Si
 
 ## Filtra y ordena
 
-**Filtrar**, junto a las pestañas de Personas, Organizaciones y Proyectos, acota la lista por propietario, etiqueta, tablero, etapa, organización, valor y fecha de cierre prevista. Las personas y organizaciones coinciden a través de sus proyectos abiertos.
+**Filtrar**, junto a las pestañas de Personas, Organizaciones y Proyectos, acota la lista por propietario, etiqueta, tablero, etapa, organización, valor, fecha de cierre prevista y **Sin respuesta en más de 10 días**. Las personas y organizaciones coinciden a través de sus proyectos abiertos. En Proyectos, la lista y el tablero comparten un solo filtro.
 
 Los filtros que elegiste aparecen encima de la lista, con **Borrar**. El menú de orden también ordena por **Valor** y **Fecha de cierre**. El filtrado lo hace tu Machine, así que las listas largas siguen siendo rápidas. En un teléfono, los filtros se abren como una hoja.
 
 ## Equipo
 
-**Equipo**, junto a Míos, muestra lo que comparten tus compañeros. Tiene las mismas pestañas, el mismo menú de orden y **Nueva persona** o **Nueva organización** como Míos; lo que añades es tuyo. **Filtrar** lo acota por quién lo compartió, una organización (Personas) o un estado (Proyectos).
+**Equipo**, junto a Míos, muestra lo que comparten tus compañeros. Tiene las mismas pestañas, el mismo menú de orden y **Nueva persona** o **Nueva organización** como Míos; lo que añades es tuyo. **Filtrar** lo acota por quién lo compartió, una organización (Personas) o un estado (Proyectos). En Proyectos, **Míos**, **Me toca** y **Todo** eligen los mismos proyectos que en un tablero compartido.
 
 ## Propietario
 
-En un Work Fleet, cada persona, organización y proyecto tiene un propietario: **Propietario**, en Contigo, en su página. Eres tú, a menos que elijas a alguien de tu Work Fleet. **Míos**, junto a Filtrar y en un tablero, solo muestra los tuyos. Una tarjeta de tablero muestra el nombre de su propietario. Cada cambio aparece en su cronología. Un registro compartido con tu equipo lleva consigo su propietario, con las mismas reglas para compartir que el resto.
+En un Work Fleet, cada persona, organización y proyecto tiene un propietario: **Propietario**, en Contigo, en su página. Eres tú, a menos que elijas a alguien de tu Work Fleet. **Propietario** en Filtrar solo muestra los tuyos, en la lista y en el tablero. Una tarjeta de tablero muestra el nombre de su propietario. Cada cambio aparece en su cronología. Un registro compartido con tu equipo lleva consigo su propietario, con las mismas reglas para compartir que el resto.
 
 ## Campos y etiquetas
 
@@ -151,6 +151,7 @@ O gestiónalos a mano, como las oportunidades en un CRM:
 - **Archivar** lo quita del tablero y de las listas; un mensaje nuevo sobre él lo trae de vuelta. **Eliminar** lo quita para siempre; sus mensajes y personas se quedan.
 - Mueve una tarjeta arrastrándola, o con **⋯**, **Mover a** en un teléfono. Tu movimiento se mantiene hasta que un mensaje más reciente lo mueva.
 - **Etapas**, arriba en un tablero, muestra solo las etapas que elijas, por tablero. **Borrar** las vuelve a mostrar todas.
+- "4 sin respuesta en más de 10 días" bajo una etapa: tócalo para ver solo esos, en el tablero y en la lista. Tócalo otra vez para verlos todos.
 
 ### Las tareas de un proyecto
 
@@ -172,7 +173,7 @@ Proyectos de un mismo tipo por etapas, como un pipeline de evaluación. **⋯** 
 
 Marca unos cuantos, o **Seleccionar todo**, para hacerlos a la vez, y **Deshacer** justo después si cambias de idea. Un proyecto que agrupa varias contrapartes se convierte en un proyecto por contraparte cuando lo añades.
 
-**Pipeline**, arriba en un tablero, suma el valor de sus proyectos abiertos por etapa, y lo que se espera cerrar cada mes según sus fechas de cierre. Los proyectos ganados, perdidos y estancados no están abiertos; lo que ganaste este mes aparece aparte. Los valores están en euros, salvo que tu Machine tenga configurada otra moneda. **Míos** solo cuenta los tuyos.
+**Pipeline**, arriba en un tablero, suma el valor de sus proyectos abiertos por etapa, y lo que se espera cerrar cada mes según sus fechas de cierre. Los proyectos ganados, perdidos y estancados no están abiertos; lo que ganaste este mes aparece aparte. Los valores están en euros, salvo que tu Machine tenga configurada otra moneda. Con **Propietario** en Filtrar, solo cuenta los tuyos.
 
 Un tablero nuevo, o un tablero sugerido que guardas, revisa una vez todo tu historial. Encuentra proyectos y organizaciones que encajan, crea un proyecto por organización y coloca cada uno en una etapa. La cabecera dice "Revisando tu historial…" mientras trabaja, y luego cuántos añadió y cuántos esperan tu revisión. Un tablero de Solo tú guarda solo para ti lo que encuentra.
 
@@ -180,7 +181,7 @@ Un tablero nuevo, o un tablero sugerido que guardas, revisa una vez todo tu hist
 
 En **Equipo**, los tableros que comparten tus compañeros aparecen junto a los tuyos, primero los que tienen más proyectos tuyos. Cada tarjeta dice qué pasó por última vez, con su fecha, como en el tablero de su propietario: la línea más reciente compartida con el equipo, o si no su último movimiento. El nombre del propietario solo aparece cuando una etapa tiene tarjetas de más de un compañero; cuando una persona es dueña de todo el tablero, lo dice la cabecera.
 
-**Míos**, **Me toca** y **Todo** eligen qué muestra un tablero compartido. Míos es en lo que estás: un hilo suyo, un proyecto del que eres propietario o que tienes tú, o una tarea tuya sobre él. Me toca es lo que te espera: una tarea abierta sobre él, o un hilo en el que el mensaje más reciente se te escribió a ti.
+**Míos**, **Me toca** y **Todo** eligen qué muestra un tablero compartido, y también la lista de proyectos del equipo. Míos es en lo que estás: un hilo suyo, un proyecto del que eres propietario o que tienes tú, o una tarea tuya sobre él. Me toca es lo que te espera: una tarea abierta sobre él, o un hilo en el que el mensaje más reciente se te escribió a ti.
 
 El resto de una etapa se pliega en **Mostrar N más**. Los proyectos que se parecen, como una serie de pruebas "… CRM evaluation", se pliegan en una fila con un recuento; tócala para abrirlos. Nada de esto cambia lo que se comparte.
 

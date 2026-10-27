@@ -33,17 +33,17 @@ Se una pagina dice **Impossibile caricare questa pagina.**, tocca **Riprova**. S
 
 ## Filtra e ordina
 
-**Filtra**, accanto alle schede in Persone, Organizzazioni e Progetti, restringe l'elenco per proprietario, tag, bacheca, fase, organizzazione, valore e data di chiusura prevista. Persone e organizzazioni corrispondono tramite i loro progetti aperti.
+**Filtra**, accanto alle schede in Persone, Organizzazioni e Progetti, restringe l'elenco per proprietario, tag, bacheca, fase, organizzazione, valore, data di chiusura prevista e **Senza risposta da oltre 10 giorni**. Persone e organizzazioni corrispondono tramite i loro progetti aperti. In Progetti, l'elenco e la bacheca condividono un solo filtro.
 
 I filtri che hai scelto compaiono sopra l'elenco, con **Cancella**. Il menu di ordinamento ordina anche per **Valore** e **Data di chiusura**. Il filtro lo fa la tua Machine, così anche gli elenchi lunghi restano veloci. Sul telefono i filtri si aprono in un pannello.
 
 ## Team
 
-**Team**, accanto a Miei, mostra cosa condividono i tuoi colleghi. Ha le stesse schede, lo stesso menu di ordinamento e **Nuova persona** o **Nuova organizzazione** come Miei; quello che aggiungi è tuo. **Filtra** lo restringe per chi l'ha condiviso, un'organizzazione (Persone) o uno stato (Progetti).
+**Team**, accanto a Miei, mostra cosa condividono i tuoi colleghi. Ha le stesse schede, lo stesso menu di ordinamento e **Nuova persona** o **Nuova organizzazione** come Miei; quello che aggiungi è tuo. **Filtra** lo restringe per chi l'ha condiviso, un'organizzazione (Persone) o uno stato (Progetti). In Progetti, **Miei**, **Tocca a me** e **Tutti** scelgono gli stessi progetti di una bacheca condivisa.
 
 ## Proprietario
 
-In una Fleet di lavoro, ogni persona, organizzazione e progetto ha un proprietario: **Proprietario** sotto Con te nella sua pagina. Sei tu, a meno che tu non scelga qualcuno della tua Fleet di lavoro. **Miei**, accanto a Filtra e su una bacheca, mostra solo i tuoi. Una scheda sulla bacheca mostra il nome del proprietario. Ogni cambio compare nella sua cronologia. Un record condiviso con il tuo team porta con sé il suo proprietario, con le stesse regole di condivisione del resto.
+In una Fleet di lavoro, ogni persona, organizzazione e progetto ha un proprietario: **Proprietario** sotto Con te nella sua pagina. Sei tu, a meno che tu non scelga qualcuno della tua Fleet di lavoro. **Proprietario** in Filtra mostra solo i tuoi, nell'elenco e sulla bacheca. Una scheda sulla bacheca mostra il nome del proprietario. Ogni cambio compare nella sua cronologia. Un record condiviso con il tuo team porta con sé il suo proprietario, con le stesse regole di condivisione del resto.
 
 ## Campi e tag
 
@@ -151,6 +151,7 @@ Oppure gestiscili a mano, come le trattative in un CRM:
 - **Archivia** lo toglie dalla bacheca e dagli elenchi; un nuovo messaggio su di esso lo riporta indietro. **Elimina** lo rimuove per sempre; i suoi messaggi e le sue persone restano.
 - Sposta una scheda trascinandola, oppure con **⋯**, **Sposta in** sul telefono. Il tuo spostamento resta finché un messaggio più recente non la sposta.
 - **Fasi**, in cima a una bacheca, mostra solo le fasi che scegli, per ogni bacheca. **Cancella** le mostra di nuovo tutte.
+- "4 senza risposta da oltre 10 giorni" sotto una fase: toccalo per vedere solo quelli, sulla bacheca e nell'elenco. Toccalo di nuovo per vederli tutti.
 
 ### Le attività di un progetto
 
@@ -172,7 +173,7 @@ Progetti di un tipo organizzati in fasi, come una pipeline di valutazione. **⋯
 
 Spuntane alcuni, o **Seleziona tutto**, per gestirli in una volta, e **Annulla** subito dopo se cambi idea. Un progetto che raggruppa più controparti diventa un progetto per controparte quando lo aggiungi.
 
-**Pipeline**, in cima a una bacheca, somma il valore dei progetti aperti per fase, e quanto dovrebbe chiudersi ogni mese in base alle date di chiusura. I progetti vinti, persi e fermi non sono aperti; quello che hai vinto questo mese compare a parte. I valori sono in euro, a meno che la tua Machine non usi un'altra valuta. **Miei** conta solo i tuoi.
+**Pipeline**, in cima a una bacheca, somma il valore dei progetti aperti per fase, e quanto dovrebbe chiudersi ogni mese in base alle date di chiusura. I progetti vinti, persi e fermi non sono aperti; quello che hai vinto questo mese compare a parte. I valori sono in euro, a meno che la tua Machine non usi un'altra valuta. Con **Proprietario** in Filtra, conta solo i tuoi.
 
 Una nuova bacheca, o una bacheca suggerita che salvi, guarda una volta in tutta la tua cronologia. Trova progetti e organizzazioni adatti, crea un progetto per organizzazione e mette ciascuno in una fase. L'intestazione dice "Sto guardando nella tua cronologia…" mentre lavora, poi quanti ne ha aggiunti e quanti aspettano la tua revisione. Una bacheca Solo tu tiene per te quello che trova.
 
@@ -180,7 +181,7 @@ Una nuova bacheca, o una bacheca suggerita che salvi, guarda una volta in tutta 
 
 In **Team**, le bacheche condivise dai colleghi compaiono accanto alle tue, prima quelle con più tuoi progetti. Ogni scheda dice l'ultima cosa successa, con la data, come sulla bacheca del suo proprietario: la riga più recente condivisa con il team, altrimenti il suo ultimo spostamento. Il nome del proprietario compare solo quando una fase ha schede di più colleghi; se è tutta di una persona, lo dice l'intestazione.
 
-**Miei**, **Tocca a me** e **Tutti** scelgono cosa mostra una bacheca condivisa. Miei è ciò di cui fai parte: un suo thread, un progetto di cui sei proprietario o che hai tu, o una tua attività che lo riguarda. Tocca a me è ciò che aspetta te: un'attività aperta che lo riguarda, o un thread in cui il messaggio più recente è stato scritto a te.
+**Miei**, **Tocca a me** e **Tutti** scelgono cosa mostra una bacheca condivisa, e anche l'elenco dei progetti del team. Miei è ciò di cui fai parte: un suo thread, un progetto di cui sei proprietario o che hai tu, o una tua attività che lo riguarda. Tocca a me è ciò che aspetta te: un'attività aperta che lo riguarda, o un thread in cui il messaggio più recente è stato scritto a te.
 
 Il resto di una fase si raccoglie in **Mostra altri N**. I progetti che si somigliano, come una serie di prove "… valutazione CRM", si raccolgono in una riga con un conteggio; toccala per aprirli. Niente di tutto questo cambia ciò che viene condiviso.
 

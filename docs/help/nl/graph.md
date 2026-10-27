@@ -33,17 +33,17 @@ Staat er op een pagina **Deze pagina kon niet laden.**, tik dan op **Opnieuw pro
 
 ## Filteren en sorteren
 
-**Filteren**, naast de tabbladen op Personen, Organisaties en Projecten, beperkt de lijst op eigenaar, tag, bord, fase, organisatie, waarde en verwachte sluitdatum. Personen en organisaties komen overeen via hun open projecten.
+**Filteren**, naast de tabbladen op Personen, Organisaties en Projecten, beperkt de lijst op eigenaar, tag, bord, fase, organisatie, waarde, verwachte sluitdatum en **Geen antwoord in 10+ dagen**. Personen en organisaties komen overeen via hun open projecten. Bij Projecten delen de lijst en het bord één filter.
 
 De filters die je koos, staan boven de lijst, met **Wissen**. Het sorteermenu sorteert ook op **Waarde** en **Sluitdatum**. Je Machine doet het filteren, dus lange lijsten blijven snel. Op een telefoon openen de filters als een paneel.
 
 ## Team
 
-**Team**, naast Van mij, toont wat je teamgenoten delen. Het heeft dezelfde tabbladen, hetzelfde sorteermenu en **Nieuwe persoon** of **Nieuwe organisatie** als Van mij; wat je toevoegt, is van jou. **Filteren** beperkt het op wie het deelde, een organisatie (Personen) of een status (Projecten).
+**Team**, naast Van mij, toont wat je teamgenoten delen. Het heeft dezelfde tabbladen, hetzelfde sorteermenu en **Nieuwe persoon** of **Nieuwe organisatie** als Van mij; wat je toevoegt, is van jou. **Filteren** beperkt het op wie het deelde, een organisatie (Personen) of een status (Projecten). Bij Projecten kiezen **Van mij**, **Wacht op mij** en **Alle** dezelfde projecten als op een gedeeld bord.
 
 ## Eigenaar
 
-In een Werk-Fleet heeft elke persoon, organisatie en elk project een eigenaar: **Eigenaar** onder Met jou op de pagina. Dat ben jij, tenzij je iemand uit je Werk-Fleet kiest. **Van mij**, naast Filteren en op een bord, toont alleen de jouwe. Een kaart op een bord toont de naam van de eigenaar. Elke wijziging staat in de tijdlijn. Een record dat met je team gedeeld is, neemt de eigenaar mee, volgens dezelfde deelregels als de rest.
+In een Werk-Fleet heeft elke persoon, organisatie en elk project een eigenaar: **Eigenaar** onder Met jou op de pagina. Dat ben jij, tenzij je iemand uit je Werk-Fleet kiest. **Eigenaar** in Filteren toont alleen de jouwe, in de lijst en op het bord. Een kaart op een bord toont de naam van de eigenaar. Elke wijziging staat in de tijdlijn. Een record dat met je team gedeeld is, neemt de eigenaar mee, volgens dezelfde deelregels als de rest.
 
 ## Velden en tags
 
@@ -151,6 +151,7 @@ Of beheer ze met de hand, zoals deals in een CRM:
 - **Archiveren** haalt het van het bord en uit de lijsten; een nieuw bericht erover brengt het terug. **Verwijderen** verwijdert het voorgoed; de berichten en personen blijven.
 - Verplaats een kaart door ze te slepen, of met **⋯**, **Verplaatsen naar** op een telefoon. Je verplaatsing blijft staan tot een nieuwer bericht ze verplaatst.
 - **Fases**, bovenaan een bord, toont alleen de fases die je kiest, per bord. **Wissen** toont ze weer allemaal.
+- "4 met geen antwoord in 10+ dagen" onder een fase: tik erop om alleen die te tonen, op het bord en in de lijst. Tik nog eens om alles te tonen.
 
 ### De to-do's van een project
 
@@ -172,7 +173,7 @@ Projecten van één soort in fases, zoals een pipeline voor evaluaties. **⋯** 
 
 Vink er een paar aan, of **Alles selecteren**, om ze in één keer te doen, en **Ongedaan maken** meteen erna als je van gedachten verandert. Een project dat meerdere tegenpartijen bundelt, wordt één project per tegenpartij als je het toevoegt.
 
-**Pipeline**, bovenaan een bord, telt de waarde van de open projecten per fase op, en wat er per maand verwacht wordt te sluiten op basis van de sluitdatums. Gewonnen, verloren en vastgelopen projecten zijn niet open; wat je deze maand won, staat apart. Waarden zijn in euro, tenzij je Machine op een andere munt ingesteld is. **Van mij** telt alleen de jouwe.
+**Pipeline**, bovenaan een bord, telt de waarde van de open projecten per fase op, en wat er per maand verwacht wordt te sluiten op basis van de sluitdatums. Gewonnen, verloren en vastgelopen projecten zijn niet open; wat je deze maand won, staat apart. Waarden zijn in euro, tenzij je Machine op een andere munt ingesteld is. Met **Eigenaar** in Filteren telt het alleen de jouwe.
 
 Een nieuw bord, of een voorgesteld bord dat je bewaart, kijkt één keer door je hele geschiedenis. Het vindt projecten en organisaties die passen, maakt één project per organisatie en zet elk in een fase. De kop zegt "Bezig met je geschiedenis doorzoeken…" terwijl het werkt, en daarna hoeveel het toevoegde en hoeveel er wachten tot je ze nakijkt. Een bord voor Alleen jij houdt wat het vindt bij jou.
 
@@ -180,7 +181,7 @@ Een nieuw bord, of een voorgesteld bord dat je bewaart, kijkt één keer door je
 
 In **Team** staan gedeelde borden van teamgenoten naast de jouwe, met de meeste van je projecten eerst. Elke kaart zegt wat er het laatst gebeurde, met datum, zoals op het bord van de eigenaar: de nieuwste regel gedeeld met het team, anders de laatste verplaatsing. De eigenaar staat er alleen bij als een fase kaarten van meerdere teamgenoten heeft; is één persoon eigenaar van het hele bord, dan staat dat in de kop.
 
-**Van mij**, **Wacht op mij** en **Alle** kiezen wat een gedeeld bord toont. Van mij is waar jij bij betrokken bent: een thread ervan, een project waarvan je eigenaar bent of dat je zelf hebt, of een to-do van jou erover. Wacht op mij is wat op jou wacht: een open to-do erover, of een thread waarin het nieuwste bericht aan jou geschreven is.
+**Van mij**, **Wacht op mij** en **Alle** kiezen wat een gedeeld bord toont, en de Team-lijst van projecten mee. Van mij is waar jij bij betrokken bent: een thread ervan, een project waarvan je eigenaar bent of dat je zelf hebt, of een to-do van jou erover. Wacht op mij is wat op jou wacht: een open to-do erover, of een thread waarin het nieuwste bericht aan jou geschreven is.
 
 De rest van een fase klapt in onder **Nog N tonen**. Projecten die op elkaar lijken, zoals een reeks proefperiodes "… CRM-evaluatie", worden één rij met een aantal; tik erop om ze te openen. Niets hiervan verandert wat er gedeeld wordt.
 

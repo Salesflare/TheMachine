@@ -33,17 +33,17 @@ Si une page affiche **Impossible de charger cette page.**, appuyez sur **Réessa
 
 ## Filtrer et trier
 
-**Filtrer**, à côté des onglets dans Personnes, Organisations et Projets, réduit la liste par propriétaire, tag, tableau, étape, organisation, valeur et date de clôture prévue. Les personnes et organisations correspondent à travers leurs projets en cours.
+**Filtrer**, à côté des onglets dans Personnes, Organisations et Projets, réduit la liste par propriétaire, tag, tableau, étape, organisation, valeur, date de clôture prévue et **Sans réponse depuis plus de 10 jours**. Les personnes et organisations correspondent à travers leurs projets en cours. Dans Projets, la liste et le tableau partagent un seul filtre.
 
 Les filtres choisis s’affichent au-dessus de la liste, avec **Effacer**. Le menu de tri trie aussi par **Valeur** et **Date de clôture**. C’est votre Machine qui filtre, donc les longues listes restent rapides. Sur téléphone, les filtres s’ouvrent dans un panneau.
 
 ## Équipe
 
-**Équipe**, à côté de Les miens, montre ce que vos coéquipiers partagent. Il a les mêmes onglets, le même menu de tri et les mêmes boutons **Nouvelle personne** ou **Nouvelle organisation** que Les miens. Ce que vous ajoutez est à vous. **Filtrer** le réduit par la personne qui a partagé, par organisation (Personnes) ou par état (Projets).
+**Équipe**, à côté de Les miens, montre ce que vos coéquipiers partagent. Il a les mêmes onglets, le même menu de tri et les mêmes boutons **Nouvelle personne** ou **Nouvelle organisation** que Les miens. Ce que vous ajoutez est à vous. **Filtrer** le réduit par la personne qui a partagé, par organisation (Personnes) ou par état (Projets). Dans Projets, **Les miens**, **Pour moi** et **Tout** choisissent les mêmes projets que sur un tableau partagé.
 
 ## Propriétaire
 
-Dans une Fleet Travail, chaque personne, organisation et projet a un propriétaire : **Propriétaire** sous Avec vous sur sa page. C’est vous, sauf si vous choisissez quelqu’un de votre Fleet Travail. **Les miens**, à côté de Filtrer et sur un tableau, n’affiche que les vôtres. Une carte du tableau affiche le nom de son propriétaire. Chaque changement apparaît dans sa chronologie. Un élément partagé avec votre équipe emporte son propriétaire, selon les mêmes règles de partage que le reste.
+Dans une Fleet Travail, chaque personne, organisation et projet a un propriétaire : **Propriétaire** sous Avec vous sur sa page. C’est vous, sauf si vous choisissez quelqu’un de votre Fleet Travail. **Propriétaire** dans Filtrer n’affiche que les vôtres, dans la liste et sur le tableau. Une carte du tableau affiche le nom de son propriétaire. Chaque changement apparaît dans sa chronologie. Un élément partagé avec votre équipe emporte son propriétaire, selon les mêmes règles de partage que le reste.
 
 ## Champs et tags
 
@@ -151,6 +151,7 @@ Ou gérez-les à la main, comme des affaires dans un CRM :
 - **Archiver** le retire du tableau et des listes. Un nouveau message à son sujet le fait revenir. **Supprimer** le retire pour de bon. Ses messages et ses personnes restent.
 - Déplacez une carte en la faisant glisser, ou avec **⋯**, **Déplacer vers** sur téléphone. Votre déplacement tient jusqu’à ce qu’un message plus récent la déplace.
 - **Étapes**, en haut d’un tableau, n’affiche que les étapes que vous choisissez, par tableau. **Effacer** les affiche toutes à nouveau.
+- « 4 sans réponse depuis plus de 10 jours » sous une étape : touchez-le pour n’afficher que ceux-là, sur le tableau et dans la liste. Touchez à nouveau pour tout afficher.
 
 ### Les tâches d’un projet
 
@@ -172,7 +173,7 @@ Des projets d’un même type répartis en étapes, comme un pipeline d’évalu
 
 Cochez-en quelques-uns, ou **Tout sélectionner**, pour les traiter d’un coup, et **Annuler** juste après si vous changez d’avis. Un projet qui regroupe plusieurs interlocuteurs devient un projet par interlocuteur quand vous l’ajoutez.
 
-**Pipeline**, en haut d’un tableau, additionne la valeur de ses projets en cours par étape, et ce qui devrait se conclure chaque mois d’après leurs dates de clôture. Les projets gagnés, perdus et bloqués ne sont pas en cours. Ce que vous avez gagné ce mois-ci s’affiche à part. Les valeurs sont en euros, sauf si votre Machine utilise une autre devise. **Les miens** ne compte que les vôtres.
+**Pipeline**, en haut d’un tableau, additionne la valeur de ses projets en cours par étape, et ce qui devrait se conclure chaque mois d’après leurs dates de clôture. Les projets gagnés, perdus et bloqués ne sont pas en cours. Ce que vous avez gagné ce mois-ci s’affiche à part. Les valeurs sont en euros, sauf si votre Machine utilise une autre devise. Avec **Propriétaire** dans Filtrer, il ne compte que les vôtres.
 
 Un nouveau tableau, ou un tableau suggéré que vous enregistrez, parcourt une fois tout votre historique. Il trouve les projets et organisations qui correspondent, crée un projet par organisation et place chacun dans une étape. L’en-tête affiche « Parcours de votre historique… » pendant le travail, puis combien de projets ont été ajoutés et combien attendent votre vérification. Un tableau Vous seul garde ce qu’il trouve pour vous seul.
 
@@ -180,7 +181,7 @@ Un nouveau tableau, ou un tableau suggéré que vous enregistrez, parcourt une f
 
 Dans **Équipe**, les tableaux que vos collègues partagent s’affichent à côté des vôtres, en commençant par ceux qui ont le plus de vos projets. Chaque carte indique ce qui s’est passé en dernier, avec sa date, comme sur le tableau de son propriétaire : la dernière ligne partagée avec l’équipe, sinon son dernier déplacement. Le nom du propriétaire n’apparaît que quand une étape a des cartes de plusieurs collègues ; quand une seule personne possède tout le tableau, l’en-tête le dit.
 
-**Les miens**, **Pour moi** et **Tout** choisissent ce qu’un tableau partagé affiche. Les miens, c’est ce sur quoi vous êtes : un de ses fils, un projet que vous possédez ou avez vous-même, ou une de vos tâches à son sujet. Pour moi, c’est ce qui vous attend : une tâche ouverte à son sujet, ou un fil dont le dernier message vous était adressé.
+**Les miens**, **Pour moi** et **Tout** choisissent ce qu’un tableau partagé affiche, et la liste des projets de l’équipe avec. Les miens, c’est ce sur quoi vous êtes : un de ses fils, un projet que vous possédez ou avez vous-même, ou une de vos tâches à son sujet. Pour moi, c’est ce qui vous attend : une tâche ouverte à son sujet, ou un fil dont le dernier message vous était adressé.
 
 Le reste d’une étape se replie dans **Afficher N de plus**. Les projets qui se ressemblent, comme une série d’essais « … évaluation CRM », se replient en une ligne avec un nombre ; touchez-la pour les ouvrir. Rien de tout cela ne change ce qui est partagé.
 

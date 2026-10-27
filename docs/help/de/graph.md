@@ -33,17 +33,17 @@ Wenn eine Seite **Die Seite konnte nicht geladen werden.** zeigt, tippe auf **Er
 
 ## Filtern und sortieren
 
-**Filtern**, neben den Tabs bei Personen, Organisationen und Projekten, grenzt die Liste ein nach Owner, Tag, Board, Phase, Organisation, Wert und erwartetem Abschlussdatum. Personen und Organisationen passen über ihre offenen Projekte.
+**Filtern**, neben den Tabs bei Personen, Organisationen und Projekten, grenzt die Liste ein nach Owner, Tag, Board, Phase, Organisation, Wert, erwartetem Abschlussdatum und **Keine Antwort seit 10+ Tagen**. Personen und Organisationen passen über ihre offenen Projekte. Bei Projekten teilen sich Liste und Board einen Filter.
 
 Die gewählten Filter stehen über der Liste, mit **Entfernen**. Das Sortiermenü sortiert auch nach **Wert** und **Abschlussdatum**. Deine Machine filtert selbst, damit lange Listen schnell bleiben. Auf dem Handy öffnen sich die Filter als Blatt.
 
 ## Team
 
-**Team**, neben Meine, zeigt, was deine Teammitglieder teilen. Es hat dieselben Tabs, dasselbe Sortiermenü und **Neue Person** oder **Neue Organisation** wie Meine. Was du hinzufügst, gehört dir. **Filtern** grenzt es ein nach der Person, die es geteilt hat, einer Organisation (Personen) oder einem Status (Projekte).
+**Team**, neben Meine, zeigt, was deine Teammitglieder teilen. Es hat dieselben Tabs, dasselbe Sortiermenü und **Neue Person** oder **Neue Organisation** wie Meine. Was du hinzufügst, gehört dir. **Filtern** grenzt es ein nach der Person, die es geteilt hat, einer Organisation (Personen) oder einem Status (Projekte). Bei Projekten wählen **Meine**, **Wartet auf mich** und **Alle** dieselben Projekte wie auf einem geteilten Board.
 
 ## Inhaber
 
-In einer Work Fleet hat jede Person, Organisation und jedes Projekt einen Inhaber: **Inhaber** unter Mit dir auf der jeweiligen Seite. Das bist du, außer du wählst jemanden aus deiner Work Fleet. **Meine**, neben Filtern und auf einem Board, zeigt nur deine. Eine Board-Karte zeigt den Namen ihres Inhabers. Jede Änderung erscheint im Verlauf. Ein Eintrag, der mit deinem Team geteilt wird, nimmt seinen Inhaber mit, nach denselben Freigaberegeln wie der Rest.
+In einer Work Fleet hat jede Person, Organisation und jedes Projekt einen Inhaber: **Inhaber** unter Mit dir auf der jeweiligen Seite. Das bist du, außer du wählst jemanden aus deiner Work Fleet. **Inhaber** in Filtern zeigt nur deine, in der Liste und auf dem Board. Eine Board-Karte zeigt den Namen ihres Inhabers. Jede Änderung erscheint im Verlauf. Ein Eintrag, der mit deinem Team geteilt wird, nimmt seinen Inhaber mit, nach denselben Freigaberegeln wie der Rest.
 
 ## Felder und Tags
 
@@ -151,6 +151,7 @@ Oder führe sie von Hand, wie Deals in einem CRM:
 - **Archivieren** nimmt es vom Board und aus den Listen. Eine neue Nachricht dazu holt es zurück. **Löschen** entfernt es endgültig. Seine Nachrichten und Personen bleiben.
 - Verschieb eine Karte per Ziehen, oder auf dem Handy mit **⋯**, **Verschieben nach**. Deine Verschiebung gilt, bis eine neuere Nachricht sie verschiebt.
 - **Phasen**, oben auf einem Board, zeigt nur die Phasen, die du auswählst, pro Board. **Entfernen** zeigt wieder alle.
+- „4 ohne Antwort seit 10+ Tagen“ unter einer Phase: Tippe darauf, um nur diese zu zeigen, auf dem Board und in der Liste. Tippe noch einmal, um alle zu zeigen.
 
 ### Aufgaben eines Projekts
 
@@ -172,7 +173,7 @@ Projekte einer Art in Phasen, etwa eine Pipeline für Evaluierungen. **⋯** auf
 
 Hake ein paar an, oder **Alle auswählen**, um sie auf einmal zu bearbeiten, und **Rückgängig** direkt danach, wenn du es dir anders überlegst. Ein Projekt, das mehrere Gegenüber bündelt, wird beim Hinzufügen zu einem Projekt pro Gegenüber.
 
-**Pipeline**, oben auf einem Board, rechnet den Wert der offenen Projekte pro Phase zusammen, und was pro Monat laut Abschlussdatum abgeschlossen werden soll. Gewonnene, verlorene und festgefahrene Projekte sind nicht offen. Was du diesen Monat gewonnen hast, steht getrennt. Werte sind in Euro, außer deine Machine ist auf eine andere Währung eingestellt. **Meine** zählt nur deine.
+**Pipeline**, oben auf einem Board, rechnet den Wert der offenen Projekte pro Phase zusammen, und was pro Monat laut Abschlussdatum abgeschlossen werden soll. Gewonnene, verlorene und festgefahrene Projekte sind nicht offen. Was du diesen Monat gewonnen hast, steht getrennt. Werte sind in Euro, außer deine Machine ist auf eine andere Währung eingestellt. Mit **Inhaber** in Filtern zählt sie nur deine.
 
 Ein neues Board, oder ein vorgeschlagenes Board, das du speicherst, durchsucht einmal deinen ganzen Verlauf. Es findet passende Projekte und Organisationen, legt ein Projekt pro Organisation an und setzt jedes in eine Phase. Die Kopfzeile sagt „Durchsuche deinen Verlauf…“, solange es arbeitet, und dann, wie viele es hinzugefügt hat und wie viele auf deine Prüfung warten. Ein Board mit Nur du behält, was es findet, für dich.
 
@@ -180,7 +181,7 @@ Ein neues Board, oder ein vorgeschlagenes Board, das du speicherst, durchsucht e
 
 In **Team** erscheinen Boards, die deine Teammitglieder teilen, neben deinen, die mit den meisten deiner Projekte zuerst. Jede Karte sagt, was zuletzt passiert ist, mit Datum, wie auf dem Board ihres Inhabers: die neueste Zeile, die mit dem Team geteilt ist, sonst ihre letzte Verschiebung. Der Name des Inhabers erscheint nur, wenn eine Phase Karten von mehr als einem Teammitglied hat. Gehört einer Person das ganze Board, sagt das die Kopfzeile.
 
-**Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist oder das du selbst hast, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
+**Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt, und die Team-Liste der Projekte gleich mit. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist oder das du selbst hast, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
 
 Der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Projekte, die sich ähneln, etwa eine Reihe von Tests „… CRM-Evaluierung“, klappen zu einer Zeile mit Anzahl zusammen. Tippe darauf, um sie zu öffnen. Nichts davon ändert, was geteilt wird.
 

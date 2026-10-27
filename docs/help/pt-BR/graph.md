@@ -33,17 +33,17 @@ Se uma página mostrar **Não foi possível carregar esta página.**, toque em *
 
 ## Filtrar e ordenar
 
-**Filtrar**, ao lado das abas em Pessoas, Organizações e Projetos, restringe a lista por dono, tag, quadro, etapa, organização, valor e data prevista de fechamento. Pessoas e organizações entram pelos projetos abertos delas.
+**Filtrar**, ao lado das abas em Pessoas, Organizações e Projetos, restringe a lista por dono, tag, quadro, etapa, organização, valor, data prevista de fechamento e **Sem resposta há mais de 10 dias**. Pessoas e organizações entram pelos projetos abertos delas. Em Projetos, a lista e o quadro usam um só filtro.
 
 Os filtros escolhidos aparecem acima da lista, com **Limpar**. O menu de ordem também ordena por **Valor** e **Data de fechamento**. Sua Machine faz a filtragem, então listas longas continuam rápidas. No celular, os filtros abrem em uma folha.
 
 ## Equipe
 
-**Equipe**, ao lado de Meus, mostra o que seus colegas compartilham. Tem as mesmas abas, o mesmo menu de ordem e **Nova pessoa** ou **Nova organização** como em Meus. O que você adiciona é seu. **Filtrar** restringe por quem compartilhou, por organização (Pessoas) ou por estado (Projetos).
+**Equipe**, ao lado de Meus, mostra o que seus colegas compartilham. Tem as mesmas abas, o mesmo menu de ordem e **Nova pessoa** ou **Nova organização** como em Meus. O que você adiciona é seu. **Filtrar** restringe por quem compartilhou, por organização (Pessoas) ou por estado (Projetos). Em Projetos, **Meus**, **Comigo** e **Todos** escolhem os mesmos projetos que em um quadro compartilhado.
 
 ## Dono
 
-Em um Fleet de Trabalho, cada pessoa, organização e projeto tem um dono: **Proprietário**, em Com você, na página. É você, a menos que escolha alguém do seu Fleet de Trabalho. **Meus**, ao lado de Filtrar e em um quadro, mostra só os seus. Um card no quadro mostra o nome do dono. Cada mudança aparece na linha do tempo. Um registro compartilhado com a sua equipe leva o dono junto, com as mesmas regras do resto.
+Em um Fleet de Trabalho, cada pessoa, organização e projeto tem um dono: **Proprietário**, em Com você, na página. É você, a menos que escolha alguém do seu Fleet de Trabalho. **Proprietário** em Filtrar mostra só os seus, na lista e no quadro. Um card no quadro mostra o nome do dono. Cada mudança aparece na linha do tempo. Um registro compartilhado com a sua equipe leva o dono junto, com as mesmas regras do resto.
 
 ## Campos e tags
 
@@ -151,6 +151,7 @@ Ou gerencie os projetos à mão, como negócios em um CRM:
 - **Arquivar** tira o projeto do quadro e das listas. Uma nova mensagem sobre ele o traz de volta. **Excluir** remove de vez. As mensagens e as pessoas ficam.
 - Mova um card arrastando, ou com **⋯**, **Mover para** no celular. Sua mudança vale até uma mensagem mais nova mover o card.
 - **Etapas**, no topo de um quadro, mostra só as etapas que você escolher, por quadro. **Limpar** mostra todas de novo.
+- "4 sem resposta há mais de 10 dias" em uma etapa: toque para ver só esses, no quadro e na lista. Toque de novo para ver todos.
 
 ### As tarefas de um projeto
 
@@ -172,7 +173,7 @@ Projetos de um tipo em etapas, como um pipeline de avaliação. **⋯** em um qu
 
 Marque alguns, ou **Selecionar tudo**, para fazer de uma vez, e **Desfazer** logo depois se mudar de ideia. Um projeto que junta várias contrapartes vira um projeto por contraparte quando você o adiciona.
 
-**Pipeline**, no topo de um quadro, soma o valor dos projetos abertos por etapa e o que deve fechar por mês, pelas datas de fechamento. Projetos ganhos, perdidos e parados não estão abertos. O que você ganhou neste mês aparece à parte. Os valores são em euros, a menos que sua Machine esteja configurada para outra moeda. **Meus** conta só os seus.
+**Pipeline**, no topo de um quadro, soma o valor dos projetos abertos por etapa e o que deve fechar por mês, pelas datas de fechamento. Projetos ganhos, perdidos e parados não estão abertos. O que você ganhou neste mês aparece à parte. Os valores são em euros, a menos que sua Machine esteja configurada para outra moeda. Com **Proprietário** em Filtrar, conta só os seus.
 
 Um quadro novo, ou um quadro sugerido que você salva, passa uma vez por todo o seu histórico. Ele encontra projetos e organizações que se encaixam, cria um projeto por organização e coloca cada um em uma etapa. O cabeçalho diz "Olhando seu histórico…" enquanto trabalha, e depois quantos adicionou e quantos esperam sua revisão. Um quadro Só você guarda o que encontra só para você.
 
@@ -180,7 +181,7 @@ Um quadro novo, ou um quadro sugerido que você salva, passa uma vez por todo o 
 
 Em **Equipe**, os quadros que seus colegas compartilham aparecem ao lado dos seus, primeiro os que têm mais projetos seus. Cada card diz o que aconteceu por último, com a data, como no quadro do dono: a linha mais nova compartilhada com a equipe, ou então a última mudança de etapa. O nome do dono só aparece quando uma etapa tem cards de mais de um colega; se uma pessoa é dona do quadro todo, o cabeçalho diz.
 
-**Meus**, **Comigo** e **Todos** escolhem o que um quadro compartilhado mostra. Meus é aquilo em que você está: uma conversa dele, um projeto que você é dono ou tem, ou uma tarefa sua sobre ele. Comigo é o que espera por você: uma tarefa aberta sobre ele, ou uma conversa em que a mensagem mais nova foi escrita para você.
+**Meus**, **Comigo** e **Todos** escolhem o que um quadro compartilhado mostra, e também a lista de projetos da equipe. Meus é aquilo em que você está: uma conversa dele, um projeto que você é dono ou tem, ou uma tarefa sua sobre ele. Comigo é o que espera por você: uma tarefa aberta sobre ele, ou uma conversa em que a mensagem mais nova foi escrita para você.
 
 O resto de uma etapa fica em **Mostrar mais N**. Projetos parecidos, como uma série de testes "… avaliação de CRM", ficam juntos em uma linha com uma contagem; toque nela para abri-los. Nada disso muda o que é compartilhado.
 
