@@ -97,7 +97,7 @@ try{
   await page.locator('#addr-not-list>div',{hasText:'sam.lee@acme-labs.example'}).waitFor();
   assert.deepEqual(posted.map(p=>p[1].choice),['confirm','team','remove','remove']);
   // Your company's domains: the found one stays; one the owner adds has Remove (a second domain, never a client)
-  assert.match(await page.locator('#addr-domain-list').innerText(),/^acme\.example\nFrom your addresses$/);
+  assert.equal(await page.locator('#settings-domains').isVisible(),true);assert.match(await page.locator('#addr-domain-list').innerText(),/^acme\.example\nFrom your addresses\nAdd$/);
   await page.locator('#addr-domain-form input').fill('acme-two.example');await page.locator('#addr-domain-form button').click();
   await page.locator('#addr-domain-list [data-domain-remove="acme-two.example"]').click();
   await page.locator('#addr-domain-list [data-domain-remove]').waitFor({state:'detached'});
