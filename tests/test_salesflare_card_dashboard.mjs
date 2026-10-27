@@ -33,16 +33,18 @@ try{
   sf.salesflare.stopped=null;
   const context=await browser.newContext({viewport:{width,height:900},locale:'fr-FR',timezoneId:'Europe/Brussels'}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
-  page.on('pageerror',e=>errors.push(e.message));
+  page.on('pageerror',e=>errors.push(e.message));const logged=[];page.on('console',m=>{if(m.type()==='error'&&!/font|OTS|MIME|Manifest|Failed to load resource/i.test(m.text()))logged.push(m.text())});
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.waitForFunction(()=>typeof DL==='string'&&DL==='en-GB');
   assert.equal(await page.evaluate(h=>ago(new Date(Date.now()-h*3600e3).toISOString()),3),'3 hours ago');
   assert.equal(await page.evaluate(()=>ago(new Date(Date.now()+864e5*2).toISOString())),'in 2 days');
   // The Salesflare card
-  await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article'));
+  // When this times out on CI the first refresh failed to draw; say what the page said, so the next failure names its cause
+  const why=async e=>new Error(`${width}: ${e.message}\npage errors: ${JSON.stringify(errors)}\nconsole errors: ${JSON.stringify(logged)}\npage: ${await page.evaluate(()=>JSON.stringify({notice:document.querySelector('#notice')?.textContent,refreshFailed,tab:document.querySelector('main>section:not([hidden])')?.id,healthPane,connectors:document.querySelectorAll('#connectors article').length})).catch(x=>x.message)}`);
+  await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article')).catch(async e=>{throw await why(e)});
   await page.evaluate(()=>showTab('health','other'));
   const card=page.locator('#connectors article',{hasText:'Salesflare CRM'});
-  await card.waitFor().catch(async e=>{throw new Error(`${width}: ${e.message}\npage errors: ${JSON.stringify(errors)}\nconnectors: ${await page.locator('#health').innerText({timeout:2000}).catch(()=>'?')}`)});
+  await card.waitFor().catch(async e=>{throw await why(e)});
   assert.match(await card.innerText(),/Reads accounts, contacts, emails and meetings\. Changes nothing\./);
   assert.match(await card.locator('.sf-line').innerText(),/^Reading 12 of 42 accounts\. Started 3 hours ago, may be stuck\.$/);
   assert.equal(await card.locator('.sf-aside').innerText(),'2 skipped as too slow');

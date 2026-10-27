@@ -84,7 +84,9 @@ try{
   const rows=await learned.locator('.learn-group .list>div .grow').allTextContents();
   assert.match(rows[rows.indexOf(rows.find(r=>r.startsWith('Newest')))],/Merged from 2 notes/);
   assert.ok(rows.findIndex(r=>r.startsWith('Newest'))<rows.findIndex(r=>r.startsWith('Older')));
-  await learned.locator('[data-unmerge-fact="9"]').click();
+  // The toast from the first Undo merge may still show, so wait on this one's answer, not on the toast.
+  const unmerged=page.waitForResponse(r=>r.url().endsWith('/api/action')&&r.request().postData()?.includes('"id":9'));
+  await learned.locator('[data-unmerge-fact="9"]').click();await unmerged;
   await page.locator('#toast',{hasText:'Notes restored.'}).waitFor({state:'attached'});
   assert.deepEqual(posts.at(-1),{action:'unmerge_fact',args:{id:9}});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

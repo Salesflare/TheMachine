@@ -2855,7 +2855,7 @@ async function voiceSave(f,text){const out=f.querySelector('[role=status]'),chan
   const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_voice',args:{channel,text}})});
   const pending=[...$('#voices').querySelectorAll('.voice-form')].filter(form=>form!==f&&form.dataset.dirty==='1')
    .map(form=>({channel:form.dataset.channel,new:form.dataset.new!==undefined,text:form.querySelector('textarea').value,name:form.querySelector('input')?.value}));
-  state.voices=r.voices;voiceDirty=false;renderVoices();
+  state.voices=r.voices;voiceDirty=false;renderVoices();if(learnEdit==null)$('#facts').innerHTML=learnedList();  // What I've learned shows the new line too
   for(const edit of pending){const form=[...$('#voices').querySelectorAll('.voice-form')].find(form=>edit.new?form.dataset.new!==undefined:form.dataset.channel===edit.channel);
    if(!form)continue;form.querySelector('textarea').value=edit.text;if(edit.new)form.querySelector('input').value=edit.name;
    form.dataset.dirty='1';const button=form.querySelector('.primary');if(button)button.hidden=false;voiceDirty=true}

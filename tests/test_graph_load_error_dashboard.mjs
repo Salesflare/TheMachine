@@ -30,6 +30,8 @@ try{
   page.on('pageerror',e=>errors.push(tag+': '+e.message));
   await page.goto(base+'#graph/person%3Aa');  // straight to a person's page, as a link or the back button opens it
   const box=page.locator('#people-view .graph-load-failed');await box.waitFor();
+  // The page can draw before the owner's language has loaded; it then swaps its text in place
+  await box.locator('strong',{hasText:text}).waitFor().catch(()=>{});
   assert.equal((await box.locator('strong').textContent()).trim(),text,`the error reads in the owner's language ${tag}`);
   assert.equal((await box.locator('[data-graph-retry]').textContent()).trim(),retry,tag);
   assert.ok(!/restarting/i.test(await page.locator('body').innerText()),`a failed page never says the Machine is restarting ${tag}`);
@@ -38,7 +40,8 @@ try{
   await page.locator('#people-view .person-page').waitFor();assert.equal(await page.locator('#people-view .graph-load-failed').count(),0,tag);
   if(shotDir)await page.screenshot({path:`${shotDir}/after-retry-${tag}.png`});
   // A quiet refresh (after a change elsewhere) that fails keeps the page that is shown
-  fail=true;const before=asked;await page.evaluate(()=>people(graphNode,true));await page.waitForTimeout(200);assert.ok(asked>before,tag);
+  fail=true;const before=asked;await page.evaluate(()=>people(graphNode,true));
+  for(const end=Date.now()+20000;asked===before&&Date.now()<end;)await page.waitForTimeout(50);assert.ok(asked>before,tag);await page.waitForTimeout(200);  // and its failed answer is in
   assert.equal(await page.locator('#people-view .person-page').count(),1,`a failed quiet refresh keeps the page ${tag}`);
   await context.close()}
  assert.deepEqual(errors,[]);

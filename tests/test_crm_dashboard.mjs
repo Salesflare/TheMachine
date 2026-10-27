@@ -47,7 +47,8 @@ const shot=async(page,name)=>{if(shotDir)await page.screenshot({path:`${shotDir}
 const fits=async(page,where)=>{const r=await page.evaluate(()=>{const d=document.querySelector('dialog[open]')?.getBoundingClientRect();return {wide:document.documentElement.scrollWidth>innerWidth,d:d&&{l:d.left,r:d.right},w:innerWidth}});
  assert.ok(!r.wide,where+': wider than the screen');if(r.d)assert.ok(r.d.l>=-1&&r.d.r<=r.w+1,where+': the dialog fits')};
 const last=(list)=>lists.filter(l=>l.list===list).at(-1);
-const until=async(test,what)=>{for(let i=0;i<60&&!test();i++)await new Promise(r=>setTimeout(r,50));assert.ok(test(),what)};
+// Waits for what the page asked the Machine for (seen by this server); as long as Playwright's own waits, not 3 s
+const until=async(test,what)=>{for(const end=Date.now()+20000;!test()&&Date.now()<end;)await new Promise(r=>setTimeout(r,50));assert.ok(test(),what)};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [390,1440]){const mobile=width<600,tag=String(width);calls=[];lists=[];uploads=[];
@@ -112,9 +113,9 @@ try{
   assert.deepEqual(calls.find(c=>c.action==='graph_org_merge'&&c.args.into==='org:umber.example').args,{node_id:'org:globex.example',into:'org:umber.example'});
   // Import CSV from the list's menu: a preview (sent as an upload), a column changed, Import, and Undo in the toast
   await page.evaluate(()=>graphBack('people'));await page.locator('#people-view [data-graph-panel="people"] .graph-sort summary').waitFor();
-  for(let i=0;i<10;i++){await page.evaluate(()=>{const d=document.querySelector('[data-graph-panel="people"] .graph-sort');if(d)d.open=true});  /* a quiet refresh may redraw the list */
-   if(await page.locator('#people-view [data-graph-panel="people"] [data-crm-import]').isVisible())break;await new Promise(r=>setTimeout(r,100))}
-  assert.ok(await page.locator('#people-view [data-graph-panel="people"] [data-crm-undo-import="7"]').isVisible());
+  for(const end=Date.now()+20000;Date.now()<end;){await page.evaluate(()=>{const d=document.querySelector('[data-graph-panel="people"] .graph-sort');if(d)d.open=true});  /* a quiet refresh may redraw the list */
+   if(await page.locator('#people-view [data-graph-panel="people"] [data-crm-import]').isVisible()&&await page.locator('#people-view [data-graph-panel="people"] [data-crm-undo-import="7"]').isVisible())break;await new Promise(r=>setTimeout(r,100))}
+  assert.ok(await page.locator('#people-view [data-graph-panel="people"] [data-crm-undo-import="7"]').isVisible(),'the menu has Undo for the last import');
   await page.evaluate(()=>document.querySelector('[data-graph-panel="people"] [data-crm-import]').click());await page.locator('#crm-dialog[open]').waitFor();
   await page.locator('#crm-form [name=file]').setInputFiles({name:'contacts.csv',mimeType:'text/csv',buffer:Buffer.from('Full name,E-mail,Company\nAda Lovelace,ada@globex.example,Globex\nNia Holm,,Newco\n,,\n')});
   await page.locator('#crm-form .crm-count').waitFor();assert.equal(await page.locator('#crm-form .crm-count').textContent(),'1 new · 1 match existing · 1 skipped');

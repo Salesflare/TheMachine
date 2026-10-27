@@ -39,7 +39,8 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
-  // hosted: Security holds Support access
+  // hosted: Security holds Support access; it shows once opening Settings has asked the app for its state, so wait for it
+  await page.locator('#settings-tabs [data-settings-tab="security"]:not([hidden])').waitFor();
   assert.deepEqual(await tabs(page),['Account','General','Security','Notifications','Writing','Skills','Model']);
   // Account first, a tab like the others; General has this device, and no account card (it's in Account now).
   assert.equal(await selected(page),'Account');assert.equal(await page.evaluate(()=>location.hash),'#settings/account');

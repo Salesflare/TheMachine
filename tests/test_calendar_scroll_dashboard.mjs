@@ -70,6 +70,8 @@ try{
   assert.equal(v.now,true);assert.equal(v.days[0],today);assert.equal(v.hash,'#calendar?view=agenda&date='+thisMon);
   // › brings next Monday under the header; Today is no longer quiet; back returns
   await page.locator('[data-cal-go="1"]').click();await page.waitForFunction(k=>location.hash.endsWith(k),nextMon);
+  // The address changes first; the week is fetched (and the one after, to fill the screen) before it scrolls there
+  await page.waitForFunction(k=>{const d=document.querySelector(`#calendar-view [data-day="${k}"]`);return d&&Math.abs(d.getBoundingClientRect().top-document.querySelector('#page-head').getBoundingClientRect().bottom)<16},nextMon).catch(()=>{});
   v=await view(page);assert.equal(v.now,false);assert.ok(Math.abs(await topOf(page,nextMon)-await headBottom(page))<16,'next Monday at the top');
   await page.goBack();await page.waitForFunction(k=>location.hash.endsWith(k),thisMon);
   await page.locator('[data-cal-go="0"]').click();await page.waitForFunction(()=>document.querySelector('.cal-today').classList.contains('now'));
@@ -80,7 +82,7 @@ try{
   // ... and the header follows the week on screen, in the address too
   await page.waitForFunction(k=>!document.querySelector('.cal-range').textContent.startsWith(k),String(at(0,0).getDate()));
   // Scrolling up at the top loads the earlier days above, and the day on screen stays where it was
-  await page.locator('[data-cal-go="0"]').click();await page.waitForTimeout(300);
+  await page.locator('[data-cal-go="0"]').click();await page.waitForFunction(()=>document.querySelector('.cal-today').classList.contains('now'));
   const first=(await view(page)).days[0],seen=await page.evaluate(()=>{scrollTo(0,0);return calAnchor(document.querySelector('#calendar-view'))});
   // (a wheel turn that can't scroll; a real one would also move the page up once the days are in)
   await page.evaluate(()=>dispatchEvent(new WheelEvent('wheel',{deltaY:-400})));await page.waitForFunction(k=>document.querySelector('#calendar-view [data-day]').dataset.day<k,first);await page.waitForTimeout(300);

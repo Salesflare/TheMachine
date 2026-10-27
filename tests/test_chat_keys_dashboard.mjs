@@ -37,18 +37,22 @@ try{
   const context=await browser.newContext({viewport:{width,height},locale:'en-US',timezoneId:'Europe/Brussels',hasTouch:phone,isMobile:phone});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  const doIt=()=>page.locator('.chat-main button.primary',{hasText:'Do it'});
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/${n}-${tag}.png`})};
-  const open=async id=>{await page.goto('http://127.0.0.1:'+server.address().port+'/#chat='+id);await page.locator('#chat-input').waitFor();await page.waitForTimeout(400)};
+  // Ready once the chat has loaded: the card's Do it under the box, or Stop while a reply runs
+  const open=async id=>{await page.goto('http://127.0.0.1:'+server.address().port+'/#chat='+id);await page.locator('#chat-input').waitFor();
+   await (id===BUSY?page.locator('[data-chat-stop]'):doIt()).waitFor({state:'visible'})};
   const bubbles=()=>page.locator('#chat-log .chat-msg.you .bubble').allTextContents();
   // One key combo in the card chat: the text goes out as a message, shows as a bubble, and the box is empty
   const sends=async(combo,text,id=ID)=>{const before=decides().length;await page.locator('#chat-input').fill(text);
    if(combo==='button')await page.locator('[data-chat-send]').click();else await page.locator('#chat-input').press(combo);
-   await page.waitForFunction(t=>[...document.querySelectorAll('#chat-log .chat-msg.you .bubble')].some(b=>b.textContent.includes(t)),text,{timeout:5000}).catch(()=>{});
+   // Wait for what the key posted (a message, or Do it if it fell through), then for its bubble
+   for(const until=Date.now()+20000;decides().length===before&&Date.now()<until;)await page.waitForTimeout(50);
+   if(decides().slice(before).some(a=>a.args.choice==='other'))await page.waitForFunction(t=>[...document.querySelectorAll('#chat-log .chat-msg.you .bubble')].some(b=>b.textContent.includes(t)),text);
    const d=decides().slice(before);
    assert.deepEqual(d.map(a=>[a.args.suggestion_id,a.args.choice,a.args.feedback]),[[id,'other',text]],`${combo} (${tag}) sends the message, nothing else`);
    assert.equal(await page.locator('#chat-input').inputValue(),'',`${combo} (${tag}) empties the box`)};
   // Each combo on a fresh card, with its Do it right there in the chat under the box: the key that sends must never press it
-  const doIt=()=>page.locator('.chat-main button.primary',{hasText:'Do it'});
   const combos=[...(phone?[]:[['Enter','Bring the pricing sheet']]),['Control+Enter','Ask Elif which inboxes they share'],['Meta+Enter','And what time zone they are in'],['button','Keep it short']];
   for(const [combo,text] of combos){reset();await open(ID);assert.ok(await doIt().isVisible(),'the card shows Do it in the chat');await sends(combo,text);
    assert.equal(decides().filter(a=>a.args.choice!=='other').length,0,combo+': Do it was never pressed');assert.equal((await bubbles()).filter(t=>t===text).length,1,combo+': one bubble');
@@ -83,6 +87,8 @@ try{
    // One question at a time: the next goes once the answer before it is in
    await page.waitForFunction(()=>!document.querySelector('#help-log .typing'));await page.fill('#help-q',q);await page.press('#help-q',combo);
    await page.waitForFunction(q=>[...document.querySelectorAll('#help-log .chat-msg.you .bubble')].some(b=>b.textContent===q),q);
+   // the bubble shows before the question reaches the server
+   for(const until=Date.now()+20000;asks().at(-1)!==q&&Date.now()<until;)await page.waitForTimeout(50);
    assert.equal(asks().at(-1),q,combo+' asks Help');assert.equal(await page.inputValue('#help-q'),'',combo+' empties the Help box')}
   assert.equal(asks().length,3);
   await context.close();
