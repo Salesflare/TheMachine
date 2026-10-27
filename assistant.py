@@ -8135,16 +8135,30 @@ def docs_transport(config):
     return next_actions.DocReplyTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Replier') else None
 
 
-def docs_offered(config):
-    """A hosted Machine's account page offers the Docs consent (the control plane sets `docs_consent` once it does).
-    Until then a hosted Machine neither offers Docs under Add nor links to a consent that isn't there."""
-    return not config.get('manage_url') or bool(config.get('docs_consent'))
+def docs_offered(config, provider=None):
+    """A hosted Machine's account page offers the Docs consent (the control plane sets `docs_consent` once it does:
+    true, or the providers it offers it for, like ["microsoft"]). Until then a hosted Machine neither offers Docs under
+    Add nor links to a consent that isn't there; with a list, a Docs connection of another provider links nowhere."""
+    consent = config.get('docs_consent')
+    if not config.get('manage_url'):
+        return True
+    if isinstance(consent, list):
+        return bool(consent) and (provider is None or provider in consent)
+    return bool(consent)
 
 
 def docs_unset(connector):
     """A Docs connection that never read anything for want of its consent: no card, since it isn't set up."""
     return (connector.get('service') == 'docs' and 'docs_not_connected' in str(connector.get('error') or '')
             and not connector.get('last_success'))
+
+
+def docs_provider(config, account):
+    """google or microsoft for a Docs connection (connectors/docs.py provider), else None."""
+    if not account or account.get('service') != 'docs':
+        return None
+    plugin = load_connector('docs')
+    return plugin.provider(config, account) if plugin else None
 
 
 def docs_health(config, account, state):
@@ -12449,7 +12463,11 @@ class App:
             result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
             for connector in result['connectors']:
                 connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))
-                connector.update(reconnect_help(by_id.get(connector['id']), result['manage_url'], docs_offered(self.config)))
+                account = by_id.get(connector['id'])
+                kind = docs_provider(self.config, account)
+                connector.update(reconnect_help(account, result['manage_url'], docs_offered(self.config, kind)))
+                if kind == 'microsoft' and not result['manage_url'] and 'connect_name' in connector:
+                    connector['signin'] = fleet.SIGNIN_OF['docs']  # self-hosted: Connect Microsoft documents signs in through the control plane
                 if result['manage_url']:
                     continue  # a hosted machine: no terminal there, its account page signs in again
                 if 'google_signin_expired' in (connector.get('error') or '') and connector['id'] in by_id:
@@ -16613,11 +16631,12 @@ class App:
         disconnected: once no account on that sign-in is left, its refresh token is forgotten here (Google's revoked) and
         the control plane forgets this Machine had it, so nothing refreshes it again."""
         import mail_grants
-        provider = fleet.SIGNIN_OF.get(account.get('service'))
+        provider = {'microsoft_docs': 'microsoft'}.get(fleet.SIGNIN_OF.get(account.get('service')), fleet.SIGNIN_OF.get(account.get('service')))
         if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom'):
             return
         email = str(account.get('email') or '').lower()
-        services = {s for s, p in fleet.SIGNIN_OF.items() if p == provider}
+        # Docs for a Microsoft address reads with the same sign-in as its Outlook mail and calendar
+        services = {s for s, p in fleet.SIGNIN_OF.items() if p == provider} | ({'docs'} if provider == 'microsoft' else set())
         if any(a.get('id') != account['id'] and a.get('service') in services and str(a.get('email', '')).lower() == email
                for a in self.config.get('accounts', [])):
             return

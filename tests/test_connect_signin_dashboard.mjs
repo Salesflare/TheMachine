@@ -22,8 +22,9 @@ const server=createServer(async(req,res)=>{
    {name:'calendar',service:'calendar',label:'Google Calendar',what:'Your meetings.',connected:0,broker:false,signin:'google'},
    {name:'outlook',service:'outlook',label:'Outlook',what:'Your Outlook email.',connected:0,broker:false,signin:'microsoft'},
    {name:'zoom',service:'zoom',label:'Zoom',what:'Your meetings.',connected:0,broker:false,signin:'zoom'},
+   {name:'docs',service:'docs',label:'Docs',what:'Comments and shares on your docs.',connected:0,broker:true,signin:'microsoft_docs'},
    {name:'github',service:'github',label:'GitHub',connected:0,broker:false}]}));return}
-  if(action==='connect_signin'){assert.ok(['intercom','gmail'].includes(args.name));res.end(JSON.stringify({url:base+'/connect/start/'+'A'.repeat(32),state:'started'}));return}
+  if(action==='connect_signin'){assert.ok(['intercom','gmail','docs'].includes(args.name));res.end(JSON.stringify({url:base+'/connect/start/'+'A'.repeat(32),state:'started'}));return}
   if(action==='connect_signin_state'){res.end(JSON.stringify(state==='done'?{state:'done',name:'Example Support',replies:true}:state==='done-google'?{state:'done',name:'dee@acme.example'}:{state}));return}
   if(action==='connect_start'){res.end(JSON.stringify({session:'s1',state:'running',label:'Intercom',lines:[],question:{id:'q1',kind:'secret',prompt:'Intercom access token'}}));return}
   res.end('{}');return}
@@ -104,6 +105,13 @@ try{
   assert.match(await page.locator('#connect-add').innerText(),/Reads only\./);
   await page.locator('#connect-add details.connect-other summary').click();
   await shot(page,`add-zoom-own-app-${tag}`);
+  // Docs on a Microsoft address: its own consent, signed in with Microsoft through The Machine's app; no own app to fold away
+  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.locator('#connect-add [data-connect-signin="docs"]').click();
+  await page.getByRole('button',{name:'Sign in with Microsoft'}).waitFor();
+  assert.equal(await page.locator('#connect-add h3').innerText(),'Docs');
+  assert.match(await page.locator('#connect-add').innerText(),/Word, OneDrive and SharePoint, for an Outlook address you connected\. Reads only\./);
+  assert.equal(await page.locator('#connect-add details.connect-other').count(),0);
   await page.goto('about:blank');await page.goto(base+'/#connections=add');
   await shot(page,`add-list-${tag}`);
   await context.close();

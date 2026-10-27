@@ -1646,7 +1646,7 @@ def enable_replies(config_path, account_id, token):
 # Google, Microsoft and Zoom signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
 GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',)}
 GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom'}
-DELIVERED = {'intercom', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
+DELIVERED = {'intercom', 'microsoft_docs', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
 
 class AnswersUI(UI):
@@ -1691,6 +1691,8 @@ def connect_delivered(config_path, args):
     source = args.get('source') if isinstance(args, dict) else None
     if source in GRANT_SERVICES and source in DELIVERED:
         return connect_grant(config_path, source, args)
+    if source == 'microsoft_docs':
+        return connect_docs_grant(config_path, args)
     service = SERVICES.get(source, source)
     if source not in DELIVERED or not setup_of(service).get('secret'):
         raise SetupError('That source is not connected this way')
@@ -1774,6 +1776,54 @@ def connect_grant(config_path, provider, args):
             mail_grants.put(config, provider, email, previous)
         else:
             mail_grants.forget(config, provider, email, revoke=False)
+        raise
+    return {'ok': True, 'name': email}
+
+
+def connect_docs_grant(config_path, args):
+    """Docs for a Microsoft account this paired Machine reads already (connect_grant): {source: microsoft_docs, grant:
+    {provider, email, refresh_token, scopes}}, the sign-in from its own consent, which now also reads files
+    (Files.Read.All). It replaces the one kept here (mail_grants.py), then the Docs connection is added and checked with
+    a real read. When that does not check out, the one kept before comes back and nothing is added. Returns {'ok', 'name'}."""
+    import fleet
+    import mail_grants
+    grant = args.get('grant') if isinstance(args.get('grant'), dict) else {}
+    email = str(grant.get('email') or '').strip().lower()
+    refresh = grant.get('refresh_token')
+    if (grant.get('provider') != 'microsoft' or not re.fullmatch(r'[^@\s]{1,200}@[^@\s]{1,200}\.[^@\s]{2,63}', email)
+            or not isinstance(refresh, str) or not 8 <= len(refresh) <= 4096):
+        raise SetupError('No Microsoft sign-in came with it', 'sign in again from Connections, + Add')
+    config = load(config_path)
+    home = fleet.settings(config)
+    if not home or not (config.get('credentials') or {}).get('fleet') or config.get('manage_url'):
+        raise SetupError('Only a paired self-hosted Machine signs in this way', 'pair this Machine first')
+    # its Outlook signed in the same way, so the new sign-in refreshes at the same place
+    paired = (config.get('microsoft_broker') or {}).get('url') == home['url'].rstrip('/') + '/microsoft-token'
+    mail = next((a for a in config.get('accounts', []) if a.get('service') in GRANT_SERVICES['microsoft'] and a.get('transport') == 'broker'
+                 and str(a.get('email', '')).lower() == email), None)
+    if not mail or not paired:
+        raise SetupError(f'Connect Outlook for {email} first', 'then Docs from Connections, + Add')
+    try:
+        previous = mail_grants.get(config, 'microsoft', email)
+    except mail_grants.GrantError:
+        raise SetupError('This Machine cannot keep sign-ins yet', 'try again in a minute') from None
+    mail_grants.put(config, 'microsoft', email, refresh)
+    try:
+        account = next((a for a in config.get('accounts', []) if a.get('service') == 'docs' and str(a.get('email', '')).lower() == email), None)
+        if account is None:
+            account = new_account(config, 'docs', ui=AnswersUI({'part of your life': mail.get('boundary') or '', 'company': mail.get('boundary') or ''}))
+            account['boundary'], account['boundary_by'] = mail.get('boundary') or account.get('boundary'), mail.get('boundary_by') or 'guess'
+        account = {**account, 'email': email, 'transport': 'broker', 'provider': 'microsoft',
+                   'connected_at': dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')}
+        error = check(config, account)
+        if error and not error.startswith(BUSY):
+            raise SetupError(f'Docs for {email} did not check out ({error})', 'sign in again from Connections, + Add')
+        known = any(a.get('id') == account['id'] for a in config.get('accounts', []))
+        config['accounts'] = [account if a.get('id') == account['id'] else a for a in config.get('accounts', [])] + ([] if known else [account])
+        save(config_path, config)
+    except BaseException:
+        if previous:
+            mail_grants.put(config, 'microsoft', email, previous)
         raise
     return {'ok': True, 'name': email}
 

@@ -4,6 +4,7 @@ area: connections
 summary: Comments, mentions, suggested edits and shares on your Google Docs or Word files. It reads, and posts a comment reply only when you OK it.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
+site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## What it reads
 
@@ -34,13 +35,12 @@ If that OK is taken back later, the Docs card says **Waiting for your OK to read
 
 ## Connect it
 
-On a hosted Machine, Docs shows up under **+ Add** once your setup page offers it.
+Connect Outlook for the address first. Then:
 
-On your own computer:
+- Hosted Machine: on your setup page, open **Docs** under **More sources** and press **Connect documents** next to that address. Microsoft asks you to allow reading your files.
+- Your own computer, paired with your account: open **Connections**, **+ Add**, pick **Docs** and press **Sign in with Microsoft**.
 
-1. Connect Gmail or Outlook for the address first.
-2. Open **Connections**, then **+ Add**, pick Docs and enter that address. Or run `assistant connect docs`.
-3. It checks that your sign-in may read docs. Without that OK it isn't added.
+It checks that the sign-in may read docs. Without that OK it isn't added. Google Docs aren't available through The Machine's sign-in yet.
 
 ## Work or personal
 

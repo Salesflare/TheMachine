@@ -397,3 +397,30 @@ class Hosted(unittest.TestCase):
         self.assertNotIn('account_page', a.reconnect_help(ACCOUNT, manage, a.docs_offered(self.hosted)))
         self.assertEqual(a.reconnect_help(ACCOUNT, manage, a.docs_offered({**self.hosted, 'docs_consent': True}))['account_page'],
                          'https://cp.example/account#docs')
+
+    def test_an_account_page_that_offers_microsoft_only_links_microsoft_docs_only(self):
+        microsoft = {**self.hosted, 'docs_consent': ['microsoft']}
+        self.assertTrue(self.offered(microsoft))
+        self.assertTrue(a.docs_offered(microsoft, 'microsoft'))
+        self.assertFalse(a.docs_offered(microsoft, 'google'))
+        self.assertFalse(a.docs_offered({**self.hosted, 'docs_consent': []}))
+        self.assertTrue(a.docs_offered({k: v for k, v in microsoft.items() if k != 'manage_url'}, 'google'))  # self-hosted
+        # + Add on a hosted Machine opens the account page's Docs tile, where the consent is
+        [docs] = [s for s in onboarding.catalog(microsoft) if s['service'] == 'docs']
+        self.assertEqual(docs['account_page'], 'docs')
+
+    def test_a_card_waiting_for_the_consent_links_to_where_it_is_given(self):
+        with self.store.connect() as db:
+            db.execute('INSERT INTO checkpoints(account_id,state,error,failures,last_success) VALUES(?,?,?,?,?)',
+                       ('acme-docs', '{}', 'docs_not_connected', 1, '2026-10-26T08:00:00+00:00'))
+        app = object.__new__(a.App)
+        app.store = self.store
+        def card(config):
+            app.config = config
+            return next(c for c in app.action('status', {'full': True})['connectors'] if c['id'] == 'acme-docs')
+        hosted = {**self.hosted, 'accounts': [OUTLOOK, ACCOUNT], 'docs_consent': ['microsoft']}
+        self.assertEqual(card(hosted)['account_page'], 'https://cp.example/account#docs')  # its account page's Docs tile
+        self.assertNotIn('account_page', card({**hosted, 'accounts': [GMAIL, ACCOUNT]}))  # Google Docs: not offered there
+        own = {k: v for k, v in hosted.items() if k not in ('manage_url', 'docs_consent')}
+        self.assertEqual((card(own)['connect_name'], card(own)['signin']), ('docs', 'microsoft_docs'))  # self-hosted: Sign in with Microsoft
+        self.assertNotIn('signin', card({**own, 'accounts': [GMAIL, ACCOUNT]}))

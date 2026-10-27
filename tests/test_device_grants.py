@@ -102,6 +102,34 @@ class ConnectGrant(unittest.TestCase):
             self.assertEqual(self.path.read_bytes(), before)
             self.assertEqual(mail_grants.get(self.config(), 'google', 'dee@acme.example'), REFRESH if reconnect else None)
 
+    def test_microsoft_docs_keeps_the_new_sign_in_and_adds_docs_with_the_mail_boundary(self):
+        docs = {'source': 'microsoft_docs', 'grant': {'provider': 'microsoft', 'email': 'dee@acme.example',
+                                                      'refresh_token': 'fixture-refresh-token-docs', 'scopes': ['Files.Read.All']}}
+        with self.assertRaisesRegex(onboarding.SetupError, 'Connect Outlook for dee@acme.example first'):
+            onboarding.connect_delivered(self.path, docs)  # paired, but no Outlook here: nothing to read files with
+        self.save({**self.config(), 'microsoft_broker': {'url': fleet.NETWORK + '/api/fleet/microsoft-token'}})
+        with self.assertRaisesRegex(onboarding.SetupError, 'Connect Outlook'):
+            onboarding.connect_delivered(self.path, docs)
+        onboarding.connect_delivered(self.path, self.args('microsoft'))
+        self.checked.clear()
+        self.answer = 'docs_not_connected'  # Microsoft did not let it read files after all: the mail sign-in stays as it was
+        with self.assertRaisesRegex(onboarding.SetupError, 'did not check out'):
+            onboarding.connect_delivered(self.path, docs)
+        self.assertEqual(mail_grants.get(self.config(), 'microsoft', 'dee@acme.example'), REFRESH)
+        self.assertNotIn('docs', [x['service'] for x in self.config()['accounts']])
+        self.answer = None
+        self.assertEqual(onboarding.connect_delivered(self.path, docs), {'ok': True, 'name': 'dee@acme.example'})
+        config = self.config()
+        [outlook] = [x for x in config['accounts'] if x['service'] == 'outlook']
+        [account] = [x for x in config['accounts'] if x['service'] == 'docs']
+        self.assertEqual((account['email'], account['transport'], account['provider'], account['boundary']),
+                         ('dee@acme.example', 'broker', 'microsoft', outlook['boundary']))
+        self.assertEqual(mail_grants.get(config, 'microsoft', 'dee@acme.example'), 'fixture-refresh-token-docs')  # mail reads with it too
+        self.assertNotIn('fixture-refresh-token-docs', self.path.read_text())
+        self.assertEqual(self.checked[-1][1]['service'], 'docs')  # checked with a real read before it is kept
+        onboarding.connect_delivered(self.path, docs)
+        self.assertEqual(len([x for x in self.config()['accounts'] if x['service'] == 'docs']), 1)  # again: the same one
+
     def test_only_a_whole_grant_for_a_paired_self_hosted_machine(self):
         for args in (self.args(provider='microsoft') | {'source': 'google'}, self.args(email='not an address'),
                      self.args(refresh_token='short'), self.args(refresh_token=None), {'source': 'google'}):
@@ -176,6 +204,27 @@ class Dashboard(unittest.TestCase):
         self.assertEqual(app.action('connect_signin_state', {'name': 'gmail'}, owner_dashboard=True), {'state': 'started'})
         with self.assertRaisesRegex(ValueError, 'Pair this Machine first'):
             self.app(paired=False).action('connect_signin', {'name': 'gmail'}, owner_dashboard=True)
+
+    def test_docs_signs_in_with_microsoft_through_the_control_plane(self):
+        app = self.app()
+        found = {x['service']: x.get('signin') for x in app.action('connect_sources', {}, owner_dashboard=True)['sources']}
+        self.assertEqual(found['docs'], 'microsoft_docs')
+        app.action('connect_signin', {'name': 'docs'}, owner_dashboard=True)
+        self.assertEqual((app.fleet.relay.calls[-1][1], app.fleet.relay.calls[-1][2]['source']), ('/connect-start', 'microsoft_docs'))
+        self.assertEqual(app.action('connect_signin_state', {'name': 'docs'}, owner_dashboard=True), {'state': 'started'})
+
+    def test_docs_on_a_microsoft_address_keeps_its_sign_in_until_the_last_of_them_goes(self):
+        outlook = {'id': 'acme-outlook', 'service': 'outlook', 'email': 'dee@acme.example', 'transport': 'broker', 'boundary': 'work:Acme'}
+        docs = {**outlook, 'id': 'acme-docs', 'service': 'docs', 'provider': 'microsoft'}
+        app = self.app([outlook, docs])
+        mail_grants.put(app.config, 'microsoft', 'dee@acme.example', REFRESH)
+        with patch.object(assistant, 'restart_self', return_value=False):
+            app.action('connect_remove', {'account': 'acme-outlook'}, owner_dashboard=True)
+            self.assertEqual(mail_grants.get(app.config, 'microsoft', 'dee@acme.example'), REFRESH)  # Docs still reads with it
+            app.config['accounts'] = [docs]
+            app.action('connect_remove', {'account': 'acme-docs'}, owner_dashboard=True)
+        self.assertIsNone(mail_grants.get(app.config, 'microsoft', 'dee@acme.example'))
+        self.assertIn(('POST', '/grant-forget', {'provider': 'microsoft', 'email': 'dee@acme.example'}), app.fleet.relay.calls)
 
     def test_the_last_account_on_a_sign_in_forgets_it_here_and_there(self):
         gmail = {'id': 'acme-gmail', 'service': 'gmail', 'email': 'dee@acme.example', 'transport': 'broker', 'boundary': 'work:Acme'}

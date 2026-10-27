@@ -38,6 +38,9 @@ SETUP = {
     'note': 'Uses the Google or Microsoft sign-in this Machine already has for that address. Reading docs needs its own '
             'consent: press Connect Google Docs (or Connect Microsoft documents) on your account page.',
     'ask': [('email', 'The Google or Microsoft address that owns the docs')],
+    # a hosted Machine: its account page's Docs tile has the consent (Connect documents); on a paired self-hosted one,
+    # + Add signs in with Microsoft through the control plane (fleet.SIGNIN_OF, onboarding.connect_docs_grant)
+    'account_page': 'docs',
     'hints': {'docs_not_connected': 'Press Connect Google Docs or Connect Microsoft documents to let it read docs',
               'docs_no_signin': 'Connect Gmail or Outlook for this address first',
               'docs_signin_expired': 'Sign in again for this address'}}
