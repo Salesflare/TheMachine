@@ -2,6 +2,7 @@
 few general learnings, the service strips anything personal, and the owner is asked. Nothing goes without their Send
 on exactly what they saw; an error log only when ticked; sealed for the team's key and signed by a key for learnings
 only, never the Machine's Network identity. The Network is a stand-in here: nothing is sent anywhere."""
+import datetime as dt
 import importlib.util
 import json
 import re
@@ -303,6 +304,54 @@ class TeamLearnings(unittest.TestCase):
         self.assertFalse(self.app.action('set_learnings_vote', {'on': False}, owner_dashboard=True)['team_learnings']['vote'])
         self.assertIsNone(self.votes([{'id': 'c1', 'ref': 'tl_x00000000', 'text': 'Drafts should introduce the context first.'}], lambda p: []))
         self.assertEqual(self.network.sent, [])
+
+    def test_ask_first_holds_each_vote_for_the_owner_in_one_place(self):
+        with self.store.connect() as db:
+            cards = db.execute('SELECT count(*) FROM suggestions').fetchone()[0]
+        view = self.app.action('set_learnings_vote', {'mode': 'ask'}, owner_dashboard=True)['team_learnings']
+        self.assertEqual((view['vote_mode'], view['vote']), ('ask', True))
+        self.votes([{'id': 'c1', 'ref': 'tl_other00000', 'text': 'Drafts for people who don’t know the context yet should introduce it first.', 'area': 'drafts'},
+                    {'id': 'c2', 'ref': 'tl_other00001', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'}],
+                   lambda page: [{'id': 'c1', 'vote': 'useful', 'reason': 'Works for short chat replies too.'}, {'id': 'c2', 'vote': 'not_relevant'}])
+        self.assertEqual([b for b in self.network.sent if b['action'] == 'vote'], [], 'judged, but nothing goes before the owner says so')
+        waiting = self.app.learnings_view()['votes_waiting']
+        self.assertEqual(sorted((v['id'], v['vote']) for v in waiting), [('c1', 'useful'), ('c2', 'not_relevant')])
+        with self.store.connect() as db:  # a vote never becomes a to-do of its own
+            self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], cards)
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('learnings_votes_decide', {'ids': ['c1'], 'send': True})
+        self.app.action('learnings_votes_decide', {'ids': ['c1'], 'send': True}, owner_dashboard=True)
+        self.app.action('learnings_votes_decide', {'ids': ['c2'], 'send': False}, owner_dashboard=True)
+        with self.assertRaisesRegex(ValueError, 'no longer waiting'):
+            self.app.action('learnings_votes_decide', {'ids': ['c2'], 'send': True}, owner_dashboard=True)
+        self.assertEqual(self.app.learnings_view()['votes_waiting'], [])
+        self.app.team_votes_due()  # the next send, ten minutes on at most
+        self.assertEqual([b for b in self.network.sent if b['action'] == 'vote'],
+                         [{'action': 'vote', 'id': 'c1', 'vote': 'useful', 'reason': 'Works for short chat replies too.'}])
+
+    def test_a_vote_left_waiting_goes_unsent_and_off_drops_what_waits(self):
+        with self.store.connect() as db:
+            tl.ensure(db)
+            tl.set_vote(db, 'ask')
+            old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=tl.ASK_DAYS + 1)).isoformat(timespec='seconds')
+            for cid, at in (('c1', old), ('c2', a.now())):
+                db.execute("INSERT INTO team_learning_votes(candidate_id,text,status,vote,fetched_at) VALUES(?,'A general tip for drafts.','judged','useful',?)", (cid, at))
+        self.assertEqual(tl.send_votes(self.store.connect, self.network.call), 0)
+        self.assertEqual([v['id'] for v in self.app.learnings_view()['votes_waiting']], ['c2'])
+        self.app.action('set_learnings_vote', {'mode': 'off'}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM team_learning_votes WHERE status!='skipped'").fetchone()[0], 0)
+        with self.assertRaisesRegex(ValueError, 'on, ask or off'):
+            self.app.action('set_learnings_vote', {'mode': 'sometimes'}, owner_dashboard=True)
+
+    def test_the_old_on_and_off_carry_over(self):
+        with self.store.connect() as db:
+            tl.ensure(db)
+            for stored, mode in (('on', 'on'), ('off', 'off'), ('ask', 'ask'), ('garbled', 'on')):
+                tl.set_pref(db, 'vote', stored)
+                self.assertEqual(tl.vote_mode(db), mode)
+        self.assertEqual(self.app.action('set_learnings_vote', {'on': True}, owner_dashboard=True)['team_learnings']['vote_mode'], 'on')  # an older dashboard
+        self.assertEqual(self.app.action('set_learnings_vote', {'on': False}, owner_dashboard=True)['team_learnings']['vote_mode'], 'off')
 
     # ------------------------------------------------------------ use cases
 

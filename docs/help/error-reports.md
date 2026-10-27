@@ -3,7 +3,7 @@ title: Error reports
 area: security
 summary: When something breaks, your Machine tells The Machine team what failed and where in the code. Never your messages, names or addresses.
 covers: error-reports
-code: error_feed.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html
 order: 4
 ---
 ## What it is
@@ -33,8 +33,12 @@ What your messages, to-dos, drafts or chats say. Names, email addresses, phone n
 
 The same error counts once, with a count. At most a batch every 10 minutes. The team keeps them 30 days.
 
+## Pacing
+
+Background work waits when your AI plan's limits run low, to keep room for your own chats (see [Your AI model](model.md)). With error reports on, your Machine also tells the team, once a day, how often that happened: for each time, the hour it started, which limit, how many minutes it lasted and how many jobs waited. Only counts and minutes, nothing about what the jobs were.
+
 ## Turn it off
 
-In Settings, Security, turn off **Send error reports**. Nothing more is recorded or sent, and what was waiting is deleted. Errors still show on your own Machine, which can offer a fix.
+In Settings, Security, turn off **Send error reports**. Nothing more is recorded or sent, pacing counts included, and what was waiting is deleted. Errors still show on your own Machine, which can offer a fix.
 
 See [Security and privacy](security-and-privacy.md).

@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS team_learning_prefs(key TEXT PRIMARY KEY,value TEXT N
 CREATE TABLE IF NOT EXISTS team_learning_votes(candidate_id TEXT PRIMARY KEY,ref TEXT,text TEXT NOT NULL,example TEXT,area TEXT,
   status TEXT NOT NULL,vote TEXT,reason TEXT,fetched_at TEXT NOT NULL,sent_at TEXT,error TEXT);
 '''
-MIGRATE = (('team_learning_votes', 'use_cases', 'TEXT'), ('team_learning_votes', 'use_case', 'TEXT'))
+MIGRATE = (('team_learning_votes', 'use_cases', 'TEXT'), ('team_learning_votes', 'use_case', 'TEXT'), ('team_learning_votes', 'decided_at', 'TEXT'))
 DAYS = 7              # a new distillation at most this often
 SINCE_DAYS = 30       # what it reads: the last month
 MIN_MATERIAL = 3      # notes, facts and rule changes since the last one; less says too little
@@ -88,9 +88,20 @@ def offer_on(db):
     return pref(db, 'offer', 'on') != 'off'
 
 
+VOTE_MODES = ('on', 'ask', 'off')
+ASK_DAYS = 14         # a vote waiting for the owner (Ask first) goes after this long, unsent
+
+
+def vote_mode(db):
+    """Settings, Vote on tips from other Machines: 'on' (the default: it votes by itself), 'ask' (each vote waits for
+    the owner on the Feedback page) or 'off'. The old switch stored 'on' and 'off', so those carry over as they are."""
+    mode = pref(db, 'vote', 'on')
+    return mode if mode in VOTE_MODES else 'on'
+
+
 def vote_on(db):
-    """Settings, Vote on other Machines' learnings: on unless the owner turned it off."""
-    return pref(db, 'vote', 'on') != 'off'
+    """Voting runs (fetch, judge, send what may go): On or Ask first."""
+    return vote_mode(db) != 'off'
 
 
 # ---------------------------------------------------------------- what is stripped
@@ -451,8 +462,10 @@ def view(db, network=True):
     ensure(db)
     row = db.execute("SELECT id,items,created_at,error,status,sent FROM team_learnings WHERE status IN ('ready','sending') ORDER BY created_at DESC LIMIT 1").fetchone()
     last = db.execute("SELECT decided_at,sent FROM team_learnings WHERE status='sent' ORDER BY decided_at DESC LIMIT 1").fetchone()
-    out = {'offer': offer_on(db), 'vote': vote_on(db), 'network': bool(network and TEAM_KEY_FINGERPRINT), 'ask': None,  # off until the key is pinned
-           'last_shared': {'at': last[0], 'count': len(json.loads(last[1] or '{}').get('items') or [])} if last else None}
+    mode = vote_mode(db)
+    out = {'offer': offer_on(db), 'vote': mode != 'off', 'vote_mode': mode, 'network': bool(network and TEAM_KEY_FINGERPRINT), 'ask': None,  # off until the key is pinned
+           'last_shared': {'at': last[0], 'count': len(json.loads(last[1] or '{}').get('items') or [])} if last else None,
+           'votes_waiting': votes_waiting(db) if network and mode == 'ask' else []}
     if row and network and out['offer']:
         out['ask'] = {'id': row[0], 'created_at': row[2], 'error': row[3], 'items': json.loads(row[1])}
         record = json.loads(row[5] or '{}')
@@ -491,12 +504,16 @@ def set_offer(db, on):
     return {'offer': bool(on)}
 
 
-def set_vote(db, on):
+def set_vote(db, mode):
+    """'on', 'ask' or 'off' (True and False, from the old switch, read as on and off)."""
     ensure(db)
-    set_pref(db, 'vote', 'on' if on else 'off')
-    if not on:  # what waits to be judged or sent goes: nothing more leaves for it
-        db.execute("UPDATE team_learning_votes SET status='skipped' WHERE status IN ('pending','judged')")
-    return {'vote': bool(on)}
+    mode = {True: 'on', False: 'off'}.get(mode, mode) if isinstance(mode, bool) else mode
+    if mode not in VOTE_MODES:
+        raise ValueError('Voting is on, ask or off')
+    set_pref(db, 'vote', mode)
+    if mode == 'off':  # what waits to be judged, approved or sent goes: nothing more leaves for it
+        db.execute("UPDATE team_learning_votes SET status='skipped' WHERE status IN ('pending','judged','approved')")
+    return {'vote': mode != 'off', 'vote_mode': mode}
 
 
 def final_items(stored, chosen, names):
@@ -617,7 +634,8 @@ def share(db_connect, config, batch_id, chosen, named, call, version=None):
 # useful, not useful or not relevant, with at most a short general reason. The judging reads what this Machine knows
 # about its owner, privately, in its own turn; nothing of that goes along, and the reason is stripped like a learning
 # (a reason the strip would change is dropped, the vote still goes). The control plane counts the votes to rank the
-# learnings for The Machine team, who decide what goes into the shipped defaults. The owner turns it off in Settings.
+# learnings for The Machine team, who decide what goes into the shipped defaults. Settings has it On (the default),
+# Ask first (each vote waits for the owner, below) or Off.
 # A vote may carry one use case of its own: why the learning helps (or doesn't) for this owner, in the same given/when/
 # then form, checked like a learning's (check_case). One that fails is dropped; the vote still goes.
 
@@ -735,12 +753,18 @@ def finish_votes(db, run_id):
 
 
 def send_votes(db_connect, call):
-    """Send the judged votes, only the vote, its general reason and its use case. One that fails waits for the next try."""
+    """Send the judged votes (under Ask first, only the ones the owner approved): only the vote, its general reason and
+    its use case. One that fails waits for the next try."""
     with db_connect() as db:
         ensure(db)
-        if not vote_on(db):
+        mode = vote_mode(db)
+        if mode == 'off':
             return 0
-        rows = [dict(r) for r in db.execute("SELECT candidate_id,vote,reason,use_case FROM team_learning_votes WHERE status='judged' LIMIT 20")]
+        if mode == 'ask':  # Ask first: only what the owner said may go; what waited too long goes unsent
+            db.execute("UPDATE team_learning_votes SET status='skipped' WHERE status='judged' AND fetched_at<?",
+                       ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=ASK_DAYS)).isoformat(timespec='seconds'),))
+        ready = "('approved')" if mode == 'ask' else "('judged','approved')"
+        rows = [dict(r) for r in db.execute(f"SELECT candidate_id,vote,reason,use_case FROM team_learning_votes WHERE status IN {ready} LIMIT 20")]
     sent = 0
     for r in rows:
         case = json.loads(r['use_case']) if r['use_case'] else None
@@ -760,3 +784,33 @@ def send_votes(db_connect, call):
             else:
                 db.execute("UPDATE team_learning_votes SET error='not_sent' WHERE candidate_id=?", (r['candidate_id'],))
     return sent
+
+
+# Ask first (Settings): a judged vote waits for the owner in one quiet box on the Feedback page, never a to-do of its
+# own and never a notification. They see the tip and the vote as it would go, and Send it or Skip it.
+
+def votes_waiting(db, limit=VOTE_BATCH * 4):
+    """The judged votes waiting for the owner, newest tips first: what each would send."""
+    ensure(db)
+    out = []
+    for r in _rows(db, "SELECT candidate_id id,text,example,vote,reason,use_case FROM team_learning_votes WHERE status='judged' "
+                       "ORDER BY fetched_at DESC LIMIT ?", (limit,)):
+        r['use_case'] = json.loads(r['use_case']) if r['use_case'] else None
+        out.append(r)
+    return out
+
+
+def decide_votes(db, ids, send):
+    """The owner's choice under Ask first: these votes may go (send) or never will (skip). Returns how many changed."""
+    ensure(db)
+    if vote_mode(db) != 'ask':
+        raise ValueError('Votes only wait for you under Ask first')
+    if not isinstance(ids, list) or not ids or not all(isinstance(i, str) for i in ids):
+        raise ValueError('Which votes?')
+    n = 0
+    for cid in ids[:VOTE_BATCH * 4]:
+        n += db.execute("UPDATE team_learning_votes SET status=?,decided_at=? WHERE candidate_id=? AND status='judged'",
+                        ('approved' if send else 'skipped', now(), cid[:80])).rowcount
+    if not n:
+        raise ValueError('These votes are no longer waiting')
+    return n

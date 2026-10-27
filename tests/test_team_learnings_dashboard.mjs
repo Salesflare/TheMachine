@@ -7,7 +7,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Feedback, Share learnings with The Machine team (team_learnings.py): a quiet card; Review shows exactly what would be
 // sent, item by item, to edit or remove; an error log only when ticked; Send posts only the kept items as they read;
-// Not now and Never ask; the Settings switches (offer, and voting on other Machines' tips). All mocked, nothing leaves the test. SHOTS=dir saves screenshots.
+// Not now and Never ask; the Settings switches (offer, and voting on other Machines' tips: On, Ask first, Off, with Ask
+// first's votes waiting in one box on Feedback). All mocked, nothing leaves the test. SHOTS=dir saves screenshots.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const C1={given:'a first reply to a customer who has not heard of the owner yet',when:'the owner opens the draft',then:'the draft says who the owner is before the ask'};
 const C2={given:'a cold intro to a new supplier',when:'the owner asks for a draft in chat',then:'it opens with who the owner is and why they write'};
@@ -16,6 +17,9 @@ const ask=()=>({id:'tl_1',created_at:'2026-10-23T09:00:00+00:00',error:null,item
  {n:1,text:'Drafts for people who don’t know the context yet should introduce it first.',example:'A first email to a new supplier opens with who we are and why we write.',area:'drafts',taken:'Took out 2 names.',log:null,use_cases:[C1,C2]},
  {n:2,text:'People often switch a card’s channel to WhatsApp in chat. A button on the card would save a step.',example:'',area:'chat',taken:'',log:null},
  {n:3,text:'Graph updates fail now and then on a busy day, and the card for it shows nothing.',example:'',area:'graph',taken:'',use_cases:[C3],log:'KeyError: missing key "…"\n  at graph.py:120 build (7 times this week)'}]});
+// Under Ask first: the votes waiting for the owner (team_learnings.votes_waiting)
+const VOTES=[{id:'c1',text:'Drafts for people who don’t know the context yet should introduce it first.',example:'',vote:'useful',reason:'Works for short chat replies too.',use_case:null},
+ {id:'c2',text:'Snoozed newsletters should not come back as to-dos.',example:'',vote:'not_relevant',reason:'',use_case:null}];
 let view,posts;
 const reset=()=>{view={offer:true,vote:true,network:true,ask:ask(),last_shared:null};posts=[]};
 const server=createServer(async(req,res)=>{
@@ -30,7 +34,8 @@ const server=createServer(async(req,res)=>{
   if(action==='learnings_later'){view={...view,ask:null};res.end(JSON.stringify({status:'later',team_learnings:view}));return}
   if(action==='learnings_never'){view={...view,ask:null,offer:false};res.end(JSON.stringify({offer:false,team_learnings:view}));return}
   if(action==='set_learnings_offer'){view={...view,offer:args.on};res.end(JSON.stringify({team_learnings:view}));return}
-  if(action==='set_learnings_vote'){view={...view,vote:args.on};res.end(JSON.stringify({team_learnings:view}));return}}
+  if(action==='set_learnings_vote'){view={...view,vote_mode:args.mode,vote:args.mode!=='off',votes_waiting:args.mode==='ask'?VOTES:[]};res.end(JSON.stringify({team_learnings:view}));return}
+  if(action==='learnings_votes_decide'){view={...view,votes_waiting:view.votes_waiting.filter(v=>!args.ids.includes(v.id))};res.end(JSON.stringify({team_learnings:view}));return}}
  res.statusCode=404;res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -95,11 +100,37 @@ try{
    assert.equal(await sw.getAttribute('aria-checked'),'false');
    await sw.click();await page.locator('#share-offer[aria-checked="true"]').waitFor();
    assert.deepEqual(posts.at(-1),{action:'set_learnings_offer',args:{on:true}});
-   // Voting on other Machines' tips: on by default, its own switch
-   const vote=page.locator('#share-vote');assert.equal(await vote.getAttribute('aria-checked'),'true');
-   await vote.click();await page.locator('#share-vote[aria-checked="false"]').waitFor();
-   assert.deepEqual(posts.at(-1),{action:'set_learnings_vote',args:{on:false}});
+   // Voting on other Machines' tips: On (the default), Ask first or Off
+   const vote=page.locator('#share-vote');assert.equal(await vote.getAttribute('role'),'radiogroup');
+   assert.equal(await vote.locator('input:checked').inputValue(),'on');
+   assert.equal(await page.locator('#share-vote-note').isVisible(),false);
+   await vote.locator('label',{hasText:'Ask first'}).click();await page.locator('#share-vote-note',{hasText:'Each vote waits for you on the Feedback page.'}).waitFor();
+   assert.deepEqual(posts.at(-1),{action:'set_learnings_vote',args:{mode:'ask'}});
    await shot(page.locator('#settings-share'),`settings-${width}-${scheme}`);
+   // Feedback: one quiet box for all the waiting votes, Review shows each as it would go; nothing goes without Send
+   await navClick(page.locator('[data-tab="feedback"]').first());
+   const votes=page.locator('#share-votes'),vcard=votes.locator('.share-ask');
+   assert.equal(await vcard.locator('strong').textContent(),'2 votes wait for you');
+   assert.equal(await votes.locator('.vote-item').count(),0,'quiet until Review');
+   await vcard.locator('[data-votes="open"]').click();
+   assert.equal(await votes.locator('.vote-item').count(),2);
+   assert.equal(await votes.locator('.vote-item').first().locator('.vote-is').textContent(),'My vote Useful · Works for short chat replies too.');
+   assert.equal(await votes.locator('[data-votes="send"]').textContent(),'Send 2 votes');
+   await shot(votes,`votes-${width}-${scheme}`);
+   const n=posts.length;
+   await votes.locator('.vote-item[data-id="c2"] [data-vote-skip]').click();
+   await page.locator('#toast',{hasText:'Skipped. It won’t be sent.'}).waitFor({state:'attached'});
+   assert.deepEqual(posts.slice(n),[{action:'learnings_votes_decide',args:{ids:['c2'],send:false}}]);
+   assert.equal(await votes.locator('[data-votes="send"]').textContent(),'Send 1 vote');
+   await votes.locator('[data-votes="send"]').click();
+   await page.locator('#toast',{hasText:'Sending 1 vote.'}).waitFor({state:'attached'});
+   assert.deepEqual(posts.at(-1),{action:'learnings_votes_decide',args:{ids:['c1'],send:true}});
+   await vcard.waitFor({state:'detached'});
+   // Off from Settings
+   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="security"]').click();
+   await vote.locator('label',{hasText:'Off'}).click();await page.locator('#share-vote input[value="off"]:checked').waitFor();
+   assert.deepEqual(posts.at(-1),{action:'set_learnings_vote',args:{mode:'off'}});
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
   }else{
    await box.locator('.share-panel [data-share="later"]').click();
    await page.locator('#toast',{hasText:'Not now. I’ll ask again another week.'}).waitFor({state:'attached'});

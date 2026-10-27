@@ -85,6 +85,7 @@ import browser_login
 import browser_viewer
 import preparation_state
 import model_budget
+import pacing
 import portable
 import service
 
@@ -571,7 +572,7 @@ AGENT_ACTIONS = {'agent_draft', 'agent_send', 'agent_follow_up', 'agent_retry', 
 OWNER_ACTIONS |= AGENT_ACTIONS
 # Learnings for The Machine team (team_learnings.py): sharing, Not now, Never ask and the Settings switch are the owner's
 # own, from their dashboard only. Nothing is sent without their Send on exactly what they saw.
-LEARNING_ACTIONS = {'learnings_share', 'learnings_later', 'learnings_never', 'set_learnings_offer', 'set_learnings_vote', 'set_help_topics', 'set_error_reports'}
+LEARNING_ACTIONS = {'learnings_share', 'learnings_later', 'learnings_never', 'set_learnings_offer', 'set_learnings_vote', 'learnings_votes_decide', 'set_help_topics', 'set_error_reports'}
 OWNER_ACTIONS |= LEARNING_ACTIONS
 # The Graph as a CRM (crm.py, crm_import.py): who owns a record, one organization with several websites, and a
 # spreadsheet imported; the owner's own, from their dashboard only.
@@ -13121,8 +13122,10 @@ class App:
                     team_learnings.later(db, str(args.get('id') or ''))
                 elif name == 'learnings_never':
                     team_learnings.never(db, str(args.get('id') or '') or None)
-                elif name == 'set_learnings_vote':
-                    team_learnings.set_vote(db, args.get('on') is not False)
+                elif name == 'set_learnings_vote':  # On, Ask first or Off ({mode}); {on} from an older dashboard
+                    team_learnings.set_vote(db, args['mode'] if 'mode' in args else args.get('on') is not False)
+                elif name == 'learnings_votes_decide':  # Ask first: these votes may go, or never will
+                    team_learnings.decide_votes(db, args.get('ids'), args.get('send') is True)
                 elif name == 'set_help_topics':
                     help_topics.set_on(db, args.get('on') is not False)
                 elif name == 'set_error_reports':
@@ -14464,6 +14467,7 @@ class App:
         if self.fleet:
             self.help_topics_send()  # what Help was asked, as topics (help_topics.py)
             self.error_reports_step()
+            self.pacing_send()  # how often background work paced, counts only (pacing.py)
         self.apply_skill_clusters()  # a Create skill tapped on Telegram
         if seeded or learned:
             LOG.info('style learned voices=%s replies=%s', seeded, learned)
@@ -14632,7 +14636,7 @@ class App:
                 if len(admitted)>=room:break
                 if job['early'] and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
                     first=ahead_first and not any(j['early'] for j in admitted)
-                    if any(j['early'] for j in admitted) or self.background_pause(first=first) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
+                    if any(j['early'] for j in admitted) or self.background_pause(first=first, job='ahead:' + job['job_id']) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
                         continue
                     if first:db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('first_ahead_started',?)",(now(),))
                     self.background_started()
@@ -15626,7 +15630,7 @@ class App:
                 if not running:
                     self.store.note_first_look(db, look)
             # One usage check before every background turn (model_budget); the quick look, the first magic, may go further
-            due = due and not self.background_pause(first=bool(look.get('quick')))
+            due = due and not self.background_pause(first=bool(look.get('quick')), job='first_look')
             if not running and not due:
                 return None
             if due:
@@ -15679,7 +15683,7 @@ class App:
                 # Reviews just turned on and nothing reviewed yet: first a quick look at the newest mail, at once (no
                 # waiting for a batch or for the rest of the import); the regular reviews take the rest after it.
                 quick = 0 if recovery else self.quick_first_review(db)
-                if self.background_pause(first=bool(quick)):  # one usage check before every background turn (model_budget)
+                if self.background_pause(first=bool(quick), job='review'):  # one usage check before every background turn (model_budget)
                     return None
                 if quick:
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
@@ -16149,7 +16153,7 @@ class App:
         if run['status'] == 'starting':
             # One usage check before every background turn (model_budget); The Machine's own turns (profile, voices, roles,
             # organizations) wait for the first card and start one per BACKGROUND_GAP_SECONDS. A usage limit holds all.
-            if self.background_pause(owner=not run['auto']) or (run['auto'] and not (ready and self.background_spaced())):
+            if self.background_pause(owner=not run['auto'], job='profile:' + run['run_id']) or (run['auto'] and not (ready and self.background_spaced())):
                 return None
         age = (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds()
         if run['status'] == 'starting' and run['attempts'] and run['updated_at'] > (stamp - dt.timedelta(minutes=1)).isoformat():
@@ -16708,10 +16712,12 @@ class App:
         getattr(self, 'model_usage_wake', threading.Event()).set()
         return until
 
-    def background_pause(self, first=False, owner=False):
+    def background_pause(self, first=False, owner=False, job=None):
         """None when a turn the service starts may go now; else why it waits ({'window', 'until', 'limited'...}). A
         usage limit holds everything; the budget (model_budget.pause) holds background work only, `first` for the
-        first look and its first draft. A sign-in that reports no usage windows (an API key) is never paused here."""
+        first look and its first draft. A sign-in that reports no usage windows (an API key) is never paused here.
+        Each budget check is counted (pacing.py): how often background work paces, how long, how many jobs (`job`,
+        an id that stays here) waited."""
         now_s, usage = time.time(), getattr(self, 'model_usage', None)
         limit = getattr(self, 'usage_limit', None)
         if limit and limit['until'] > now_s:
@@ -16723,6 +16729,11 @@ class App:
         if owner:
             return None
         found = model_budget.pause(usage, now_s, first=first)
+        tracker = getattr(self, 'pacing', None)
+        if tracker is None and getattr(self, 'store', None) is not None:
+            tracker = self.pacing = pacing.Tracker(self.store.connect)
+        if tracker:
+            tracker.note(found, job, first=first, now_s=now_s)
         return {**found, 'limited': False} if found else None
 
     def background_spaced(self):
@@ -17505,6 +17516,14 @@ class App:
             return error_feed.send(self.store.connect, self.fleet.relay.call, names)
         except Exception as error:  # the Network or the control plane is away: next time
             LOG.warning('error reports error=%s', type(error).__name__)
+            return 0
+
+    def pacing_send(self):
+        """Once a day, with error reports on: the finished days' pacing counts and minutes to the control plane."""
+        try:
+            return pacing.send(self.store.connect, self.fleet.relay.call)
+        except Exception as error:  # the Network or the control plane is away: next time
+            LOG.warning('pacing report error=%s', type(error).__name__)
             return 0
 
     def team_votes_send(self, run_id):

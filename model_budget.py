@@ -33,8 +33,8 @@ def window_kind(label):
 
 
 def pause(usage, now_s=None, first=False):
-    """None when a background turn may start now; else why not: {'window': '5h'|'week', 'provider', 'used', 'until'}
-    (`until` an epoch second, None when unknown)."""
+    """None when a background turn may start now; else why not: {'window': '5h'|'week', 'provider', 'used', 'until',
+    'threshold'} (`until` an epoch second, None when unknown; `threshold` the percent it paused at). Counted by pacing.py."""
     now_s = time.time() if now_s is None else now_s
     for entry in usage or []:
         for w in entry.get('windows') or []:
@@ -44,14 +44,15 @@ def pause(usage, now_s=None, first=False):
             found = {'provider': entry.get('provider'), 'name': entry.get('name'), 'label': w.get('label'), 'used': used}
             if window_kind(w.get('label')) == 'short':
                 if used >= (FIRST_PAUSE if first else SHORT_PAUSE):
-                    return {**found, 'window': '5h', 'until': reset}
+                    return {**found, 'window': '5h', 'until': reset, 'threshold': FIRST_PAUSE if first else SHORT_PAUSE}
                 continue
-            if used >= (WEEK_CAP if first else allowed_this_week(reset, now_s)):
+            allowed = WEEK_CAP if first else allowed_this_week(reset, now_s)
+            if used >= allowed:
                 day_end = None
                 if reset and used < WEEK_CAP and not first:
                     start = reset - WEEK
                     day_end = start + math.ceil(max(now_s - start, 1) / DAY) * DAY
-                return {**found, 'window': 'week', 'until': min(day_end or reset, reset) if reset else None}
+                return {**found, 'window': 'week', 'until': min(day_end or reset, reset) if reset else None, 'threshold': int(round(allowed))}
     return None
 
 

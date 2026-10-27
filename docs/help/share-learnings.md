@@ -38,5 +38,9 @@ Tips other Machines shared come to yours too. Now and then a short check judges 
 
 The team sees the tips ranked by votes and picks what goes into The Machine for everyone. Nothing changes by itself.
 
-To stop voting, turn off **Vote on tips from other Machines** in Settings, Security.
+**Vote on tips from other Machines** in Settings, Security has three choices:
+
+- **On**, the default: it votes by itself.
+- **Ask first**: each vote waits for you in one box on the Feedback page, with the tip and the vote as it would go. Send it or Skip it, one at a time or all at once. No to-do and no notification for it. A vote you leave goes unsent after 14 days.
+- **Off**: no voting, and nothing waiting goes.
 
