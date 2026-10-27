@@ -22,7 +22,7 @@ It points to what The Machine already does and what you can set first. A skill o
 
 To make the help better, your Machine counts a few words for what each question is about, like "snooze a to-do". Never your question or the answer, and no names, addresses or numbers: only words from these help pages. Once a day the counts go to The Machine team, without your account.
 
-To stop it, turn off **Share what Help is asked** in **Settings**, **Security**, under **The Machine team**. It needs [The Machine Network](/network). What wasn't sent yet is deleted.
+To stop it, turn off **Share what Help is asked** in **Settings**, **Security**, under **The Machine team**, or pick the **Careful** [security level](security-levels.md). It needs [The Machine Network](/network). What wasn't sent yet is deleted.
 
 ## What it can't do
 

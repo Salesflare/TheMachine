@@ -2946,7 +2946,7 @@ $('#share-learnings').addEventListener('click',async e=>{const a=state.team_lear
  catch(err){b.disabled=false;toast(err.message,true)}});
 function renderShareOffer(){const t=state.team_learnings;$('#settings-share').hidden=!t?.network;$('#share-offer').setAttribute('aria-checked',String(!!t?.offer));$('#share-vote').setAttribute('aria-checked',String(t?.vote!==false));$('#share-help').setAttribute('aria-checked',String(t?.help_topics!==false))}
 $('#share-help').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
- try{const r=await sharePost('set_help_topics',{on});state.team_learnings=r.team_learnings;renderShareOffer();notice(on?'Help topics go to the team, never your words.':'Help topics won’t go to the team.')}catch(err){notice(err.message)}finally{b.disabled=false}};
+ try{const r=await sharePost('set_help_topics',{on});state.team_learnings=r.team_learnings;renderShareOffer();secLocal('help_topics',on?'on':'off');notice(on?'Help topics go to the team, never your words.':'Help topics won’t go to the team.')}catch(err){notice(err.message)}finally{b.disabled=false}};
 $('#share-vote').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_learnings_vote',{on});state.team_learnings=r.team_learnings;renderShareOffer();notice(on?'I’ll vote on tips from other Machines.':'I won’t vote on tips from other Machines.')}catch(err){notice(err.message)}finally{b.disabled=false}};
 $('#share-offer').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;

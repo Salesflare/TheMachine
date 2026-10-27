@@ -24,6 +24,7 @@ OWN = {
     'save_logins': ('on', 'off'),       # "Save for next time" offered when signing in to a site
     'learnings': ('on', 'off'),         # Offer to share learnings (team_learnings.py)
     'people_lookup': ('on', 'off'),     # Look up work contacts (enrichment.py)
+    'help_topics': ('on', 'off'),       # Share what Help is asked (help_topics.py)
     'keep_days': ('90', '30'),          # Do it tool calls and run evidence kept this long (retention.py)
 }
 FAMILY = {'availability': ('always', 'ask')}   # family.DEFAULT_RULES: free/busy times
@@ -53,6 +54,8 @@ def pref(db, key):
         return value if value in OWN[key] else default
     if key == 'learnings':
         return 'off' if _get(db, "SELECT value FROM team_learning_prefs WHERE key='offer'") == 'off' else 'on'
+    if key == 'help_topics':
+        return 'off' if _get(db, "SELECT value FROM team_learning_prefs WHERE key='help_topics'") == 'off' else 'on'
     return 'off' if _get(db, "SELECT value FROM enrich_prefs WHERE key='people'") == 'off' else 'on'
 
 
@@ -65,6 +68,9 @@ def set_pref(db, key, value):
     elif key == 'learnings':
         db.execute('CREATE TABLE IF NOT EXISTS team_learning_prefs(key TEXT PRIMARY KEY,value TEXT NOT NULL)')
         _put(db, "INSERT INTO team_learning_prefs(key,value) VALUES('offer',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (value,))
+    elif key == 'help_topics':
+        import help_topics
+        help_topics.set_on(db, value == 'on')  # off also deletes what waits to be sent
     else:
         db.execute('CREATE TABLE IF NOT EXISTS enrich_prefs(key TEXT PRIMARY KEY,value TEXT NOT NULL)')
         _put(db, "INSERT INTO enrich_prefs(key,value) VALUES('people',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (value,))

@@ -10,8 +10,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // Fleet's rules have no Always and no With names. 390px and desktop, no sideways scroll.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const FL='fl_'+'a'.repeat(16);
-const STANDARD={notify_text:'on',save_logins:'on',learnings:'on',people_lookup:'on',keep_days:'90'};
-const CAREFUL={notify_text:'off',save_logins:'off',learnings:'off',people_lookup:'off',keep_days:'30'};
+const STANDARD={notify_text:'on',save_logins:'on',learnings:'on',people_lookup:'on',help_topics:'on',keep_days:'90'};
+const CAREFUL={notify_text:'off',save_logins:'off',learnings:'off',people_lookup:'off',help_topics:'off',keep_days:'30'};
 let security,calls;
 const reset=()=>{calls=[];security={level:'standard',settings:{...STANDARD},standard:{...STANDARD},careful:{...CAREFUL},fleets:[{id:FL,name:'Acme',level:'careful'}],floor:true}};
 const label=()=>['standard','careful'].find(l=>Object.keys(security.settings).every(k=>security.settings[k]===security[l][k]))||'custom';

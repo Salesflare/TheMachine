@@ -19,7 +19,7 @@ A level is a starting point. Change any setting after, and the level shows **Cus
 
 - **Text in notifications** off: a notification says "New to-do" or "Ready", not what the to-do says.
 - **Offer to save sign-ins** off. Signed-in sites you saved stay until you tap **Forget all saved sign-ins**.
-- **Look up work contacts** and **Offer to share learnings** off.
+- **Look up work contacts**, **Offer to share learnings** and **Share what Help is asked** off.
 - **Keep Do it details 90 days** off: they're kept 30 days.
 - In a Family, free/busy times ask you first. With Friends, meeting context is declined.
 

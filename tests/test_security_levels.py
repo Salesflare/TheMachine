@@ -81,6 +81,22 @@ class Levels(unittest.TestCase):
             with self.store.connect() as db:
                 levels.apply(db, 'paranoid')
 
+    def test_careful_turns_off_help_topics_and_drops_what_waits(self):
+        help_topics = a.help_topics
+        with self.store.connect() as db:
+            self.assertTrue(help_topics.on(db))
+            self.assertEqual(levels.current(db)['help_topics'], 'on')
+            help_topics.record(db, {}, 'snooze a to-do', True, '2026-10-26', vocabulary={'snooze'})
+            levels.apply(db, 'careful')
+            self.assertFalse(help_topics.on(db))
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM help_topics').fetchone()[0], 0)
+            self.assertIsNone(help_topics.record(db, {}, 'snooze a to-do', True, '2026-10-26', vocabulary={'snooze'}))
+            self.assertEqual(levels.label(db), 'careful')
+            help_topics.set_on(db, True)  # the switch in The Machine team after: Custom
+            self.assertEqual(levels.label(db), 'custom')
+            levels.apply(db, 'standard')
+            self.assertTrue(help_topics.on(db))
+
     def test_a_careful_work_fleet_is_a_floor_that_keeps_the_members_own_choice(self):
         f = self.fleet('careful')
         ref = 'fl_' + 'a' * 16
