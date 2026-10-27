@@ -11,6 +11,7 @@ Once a day the finished days go to the control plane, with the error reports and
 recorded or sent, and what waited is deleted. Nothing new is shown to the owner. Kept KEEP_DAYS here."""
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import time
 
@@ -54,25 +55,29 @@ class Tracker:
     def __init__(self, connect):
         self.connect, self.open, self.jobs = connect, None, set()
 
-    def note(self, found, job=None, first=False, now_s=None):
+    def _db(self, db):
+        return contextlib.nullcontext(db) if db is not None else self.connect()
+
+    def note(self, found, job=None, first=False, now_s=None, db=None):
         """One budget check. A stretch is one window pacing (5h or week); its threshold is the highest it reached (85:
-        even the first look waited). A check for the first look that may go doesn't end it: the others still wait."""
+        even the first look waited). A check for the first look that may go doesn't end it: the others still wait.
+        `db`: the caller's connection when it is in a write transaction, which a connection of our own would wait on."""
         now_s = time.time() if now_s is None else now_s
         try:
             if self.open is None:
-                self._resume()
+                self._resume(db)
             if not found:
-                return None if first else self._close(now_s)
+                return None if first else self._close(now_s, db)
             window, limit = found.get('window') or '5h', threshold(found)
             if self.open and (self.open['window'] != window or (self.open.get('until') and now_s > self.open['until'])):
-                self._close(now_s)  # another window, or the same one again after it reset: a new stretch
+                self._close(now_s, db)  # another window, or the same one again after it reset: a new stretch
             if not self.open:
-                with self.connect() as db:
-                    ensure(db)
-                    if not error_feed.on(db):
+                with self._db(db) as conn:
+                    ensure(conn)
+                    if not error_feed.on(conn):
                         return None  # Send error reports off: nothing is counted
                     until = iso(found['until']) if found.get('until') else None
-                    row_id = db.execute('INSERT INTO pacing_starts(started_at,win,threshold,jobs,until) VALUES(?,?,?,0,?)',
+                    row_id = conn.execute('INSERT INTO pacing_starts(started_at,win,threshold,jobs,until) VALUES(?,?,?,0,?)',
                                         (iso(now_s), window, limit, until)).lastrowid
                 self.open, self.jobs = {'id': row_id, 'window': window, 'threshold': limit, 'started': now_s, 'jobs': 0,
                                         'until': found.get('until')}, set()
@@ -84,21 +89,21 @@ class Tracker:
                 self.open['jobs'] += 1
                 changed = True
             if changed:
-                with self.connect() as db:
-                    db.execute('UPDATE pacing_starts SET jobs=?,threshold=? WHERE id=?', (self.open['jobs'], self.open['threshold'], self.open['id']))
+                with self._db(db) as conn:
+                    conn.execute('UPDATE pacing_starts SET jobs=?,threshold=? WHERE id=?', (self.open['jobs'], self.open['threshold'], self.open['id']))
             return self.open['id']
         except Exception:
             return None  # counting never holds up the work itself
 
-    def _resume(self):
+    def _resume(self, db=None):
         """A stretch the service was in when it stopped: carried on (its jobs counted again from here), or ended."""
-        with self.connect() as db:
+        with self._db(db) as db:
             ensure(db)
             row = db.execute('SELECT id,started_at,win,threshold,jobs,until FROM pacing_starts WHERE ended_at IS NULL ORDER BY id DESC LIMIT 1').fetchone()
         self.open = {'id': row[0], 'started': epoch(row[1]), 'window': row[2], 'threshold': row[3], 'jobs': row[4],
                      'until': epoch(row[5]) if row[5] else None} if row else False
 
-    def _close(self, now_s):
+    def _close(self, now_s, db=None):
         if not self.open:
             self.open = False
             return None
@@ -106,7 +111,7 @@ class Tracker:
         if o.get('until'):
             end = min(end, max(o['until'], o['started']))  # it ended when the window reset, at the latest
         end = min(end, o['started'] + LONGEST.get(o['window'], LONGEST['5h']))
-        with self.connect() as db:
+        with self._db(db) as db:
             db.execute('UPDATE pacing_starts SET ended_at=?,jobs=? WHERE id=? AND ended_at IS NULL', (iso(max(end, o['started'])), o['jobs'], o['id']))
         self.open, self.jobs = False, set()
         return None

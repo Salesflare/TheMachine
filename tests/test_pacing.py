@@ -4,6 +4,7 @@ and nothing when Send error reports is off. The Network is a stand-in here."""
 import datetime as dt
 import sqlite3
 import tempfile
+import time
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
@@ -95,6 +96,21 @@ class Pacing(unittest.TestCase):
         self.assertEqual(self.rows(), [])
         self.assertEqual(pacing.send(self.connect, self.call, dt.datetime(2026, 10, 28, tzinfo=dt.timezone.utc)), 0)
         self.assertEqual(self.sent, [])
+
+    def test_a_check_inside_the_callers_write_counts_through_its_connection_without_waiting(self):
+        """preparation_step checks the budget inside its own BEGIN IMMEDIATE: a connection of the tracker's own waited
+        out the busy timeout (20 s a check on a Machine) and lost the count."""
+        with self.connect() as setup:
+            pacing.ensure(setup)
+        held = sqlite3.connect(self.path, timeout=0.2, isolation_level=None)
+        self.addCleanup(held.close)
+        held.execute('BEGIN IMMEDIATE')
+        track, started = pacing.Tracker(lambda: (_ for _ in ()).throw(AssertionError('no connection of its own'))), time.monotonic()
+        self.assertIsNotNone(track.note({'window': '5h', 'threshold': 65}, 'ahead:1', now_s=T0, db=held))
+        track.note(None, now_s=T0 + 600, db=held)
+        held.execute('COMMIT')
+        self.assertLess(time.monotonic() - started, 1)
+        self.assertEqual([r[2:] for r in self.rows()], [('5h', 65, 1)])
 
     def test_counting_never_holds_up_the_work(self):
         def broken():

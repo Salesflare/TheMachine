@@ -3264,6 +3264,7 @@ class Store:
             db.execute(task_pages.SCHEMA)  # task pages offered or shared from handoffs by email (task_pages.py)
             team_learnings.ensure(db)  # learnings for The Machine team (team_learnings.py), with their use cases
             error_feed.ensure(db)  # error reports for The Machine team: signatures only (error_feed.py)
+            pacing.ensure(db)  # how often background work paced (pacing.py): made here, not inside someone's write
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             # Promises the owner made and promises made to them, from reviewed messages. Each is
             # checked when due: still open, it becomes a card (status carded, suggestion_id).
@@ -15036,7 +15037,7 @@ class App:
                 if len(admitted)>=room:break
                 if job['early'] and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
                     first=ahead_first and not any(j['early'] for j in admitted)
-                    if any(j['early'] for j in admitted) or self.background_pause(first=first, job='ahead:' + job['job_id']) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
+                    if any(j['early'] for j in admitted) or self.background_pause(first=first, job='ahead:' + job['job_id'], db=db) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
                         continue
                     if first:db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('first_ahead_started',?)",(now(),))
                     self.background_started()
@@ -16083,7 +16084,7 @@ class App:
                 # Reviews just turned on and nothing reviewed yet: first a quick look at the newest mail, at once (no
                 # waiting for a batch or for the rest of the import); the regular reviews take the rest after it.
                 quick = 0 if recovery else self.quick_first_review(db)
-                if self.background_pause(first=bool(quick), job='review'):  # one usage check before every background turn (model_budget)
+                if self.background_pause(first=bool(quick), job='review', db=db):  # one usage check before every background turn (model_budget)
                     return None
                 if quick:
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
@@ -17125,7 +17126,7 @@ class App:
         getattr(self, 'model_usage_wake', threading.Event()).set()
         return until
 
-    def background_pause(self, first=False, owner=False, job=None):
+    def background_pause(self, first=False, owner=False, job=None, db=None):
         """None when a turn the service starts may go now; else why it waits ({'window', 'until', 'limited'...}). A
         usage limit holds everything; the budget (model_budget.pause) holds background work only, `first` for the
         first look and its first draft. A sign-in that reports no usage windows (an API key) is never paused here.
@@ -17146,7 +17147,7 @@ class App:
         if tracker is None and getattr(self, 'store', None) is not None:
             tracker = self.pacing = pacing.Tracker(self.store.connect)
         if tracker:
-            tracker.note(found, job, first=first, now_s=now_s)
+            tracker.note(found, job, first=first, now_s=now_s, db=db)  # db: a caller's write transaction (preparation_step)
         return {**found, 'limited': False} if found else None
 
     def background_spaced(self):
