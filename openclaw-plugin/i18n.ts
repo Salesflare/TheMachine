@@ -2,17 +2,21 @@
 // and rules as i18n.py. Keys are the English text, so English stays the source and the fallback.
 import { readFileSync, statSync } from 'node:fs';
 
-const LANGUAGES = ['en', 'nl', 'fr', 'de', 'es'];  // locale_prefs.LANGUAGES
+const LANGUAGES = ['en', 'nl', 'fr', 'de', 'es', 'it', 'pt-BR'];  // locale_prefs.LANGUAGES
+const CODES: Record<string, string> = Object.fromEntries(LANGUAGES.map(code => [code.toLowerCase(), code]));
+const NEAREST: Record<string, string> = {pt: 'pt-BR'};  // locale_prefs.NEAREST: Portuguese from Portugal reads Brazilian
 const catalogs: Record<string, {at: number, entries: Record<string, any>}> = {};
 let current = 'en';
 
+const codeOf = (value: any) => CODES[String(value || '').trim().toLowerCase().replace(/_/g, '-')];
+
 // language_of() in locale_prefs.py: the owner's choice, else a language from the locale (signup), else English.
 export function languageOf(config: any): string {
-  const chosen = String(config?.language || '').toLowerCase();
-  if (LANGUAGES.includes(chosen)) return chosen;
-  const tag = /^([A-Za-z]{2,3})[-_][A-Za-z]{2}$/.exec(String(config?.locale || '').trim());
-  const lang = tag ? tag[1].toLowerCase() : 'en';
-  return LANGUAGES.includes(lang) ? lang : 'en';
+  const chosen = codeOf(config?.language);
+  if (chosen) return chosen;
+  const tag = String(config?.locale || '').trim().toLowerCase().replace(/_/g, '-');
+  const base = tag.split('-')[0];
+  return (tag && (CODES[tag] || CODES[base] || NEAREST[base])) || 'en';
 }
 
 // Set from the config on each tap or message, as the dashboard root is.
@@ -21,13 +25,16 @@ export function useLanguage(config: any) { current = languageOf(config); }
 // One fixed file per language, each read by name: no path comes from a config value.
 const EN = new URL('../i18n/en.json', import.meta.url), NL = new URL('../i18n/nl.json', import.meta.url),
   FR = new URL('../i18n/fr.json', import.meta.url), DE = new URL('../i18n/de.json', import.meta.url),
-  ES = new URL('../i18n/es.json', import.meta.url);
+  ES = new URL('../i18n/es.json', import.meta.url), IT = new URL('../i18n/it.json', import.meta.url),
+  PT_BR = new URL('../i18n/pt-BR.json', import.meta.url);
 const FILES: Record<string, () => {at: number, text: () => string}> = {
   en: () => ({at: statSync(EN).mtimeMs, text: () => readFileSync(EN, 'utf8')}),
   nl: () => ({at: statSync(NL).mtimeMs, text: () => readFileSync(NL, 'utf8')}),
   fr: () => ({at: statSync(FR).mtimeMs, text: () => readFileSync(FR, 'utf8')}),
   de: () => ({at: statSync(DE).mtimeMs, text: () => readFileSync(DE, 'utf8')}),
   es: () => ({at: statSync(ES).mtimeMs, text: () => readFileSync(ES, 'utf8')}),
+  it: () => ({at: statSync(IT).mtimeMs, text: () => readFileSync(IT, 'utf8')}),
+  'pt-BR': () => ({at: statSync(PT_BR).mtimeMs, text: () => readFileSync(PT_BR, 'utf8')}),
 };
 
 // Read again when the file changed: an update brings new catalogs without a plugin reload.
@@ -45,7 +52,7 @@ function catalog(lang: string): Record<string, any> {
 const plural = (lang: string, n: any) => {
   const v = Math.abs(Number(n));
   if (Number.isNaN(v)) return 'other';
-  return lang === 'fr' ? (v < 2 ? 'one' : 'other') : (v === 1 ? 'one' : 'other');
+  return lang === 'fr' || lang === 'pt-BR' ? (v < 2 ? 'one' : 'other') : (v === 1 ? 'one' : 'other');
 };
 
 export function t(text: string, ...args: any[]): string {
