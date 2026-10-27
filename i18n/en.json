@@ -2264,5 +2264,6 @@
  },
  "Waiting for you: {}": "Waiting for you: {}",
  "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.",
- "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later."
+ "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.",
+ "Work days at {}": "Work days at {}"
 }

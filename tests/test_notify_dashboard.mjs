@@ -51,6 +51,9 @@ try{
   await page.locator('[data-notify-preview]').click();
   await page.locator('#notify-preview:not([hidden])',{hasText:'Planning with the agency'}).waitFor();
   assert.equal(await page.locator('[data-notify-preview]').innerText(),'Hide preview');
+  // Preview sits in the digest row of the grid; the card below is only This device
+  assert.equal(await page.locator('#notify-grid [data-notify-preview]').count(),1);
+  assert.deepEqual(await page.locator('#notify-more strong').allInnerTexts(),['This device']);
   // Work hours are in this tab now, right under it: no second tab, no Change buttons that jump away
   assert.equal(await page.locator('#settings-tabs [data-settings-tab="hours"]').count(),0);
   assert.equal(await page.locator('#hours').isVisible(),true);

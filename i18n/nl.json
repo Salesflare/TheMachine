@@ -2264,5 +2264,6 @@
   "other": "{} dingen wachten op je"
  },
  "Waiting for you: {}": "Wacht op je: {}",
- "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Je krijgt dit als er iets op je wacht dat je nog niet op het dashboard zag. Wijzig het in Instellingen, Meldingen."
+ "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Je krijgt dit als er iets op je wacht dat je nog niet op het dashboard zag. Wijzig het in Instellingen, Meldingen.",
+ "Work days at {}": "Werkdagen om {}"
 }

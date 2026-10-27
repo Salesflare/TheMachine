@@ -2264,5 +2264,6 @@
   "other": "{} cose ti aspettano"
  },
  "Waiting for you: {}": "Ti aspetta: {}",
- "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Ricevi questa email quando qualcosa ti aspetta e non l’hai visto nella dashboard. Cambialo in Impostazioni, Notifiche."
+ "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Ricevi questa email quando qualcosa ti aspetta e non l’hai visto nella dashboard. Cambialo in Impostazioni, Notifiche.",
+ "Work days at {}": "Giorni lavorativi alle {}"
 }

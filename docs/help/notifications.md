@@ -30,7 +30,7 @@ Only what needs you notifies. Progress and edits don't. A burst buzzes once. The
 
 ## The morning digest
 
-It comes on work days at your **Morning digest** time, and is skipped when there's nothing to say. **Preview** shows it on the page without sending it. By default it's a push and an email.
+It comes on work days at your **Morning digest** time, and is skipped when there's nothing to say. **Preview**, in its row, shows it on the page without sending it. By default it's a push and an email.
 
 ## Privacy
 

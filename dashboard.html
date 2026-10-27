@@ -474,7 +474,7 @@ dialog input{display:block;width:100%;margin-top:8px}
 .notify-grid strong{display:block}.notify-grid small{display:block;color:var(--muted);font-size:var(--fs-sm,.85rem);line-height:1.35;margin-top:2px}
 .notify-grid .notify-na{color:var(--muted)}
 .notify-fine{font-size:var(--fs-sm,.85rem);color:var(--muted);margin:22px 0 0;max-width:70ch}
-.notify-acts{display:flex;align-items:center;gap:12px;flex:0 0 auto}.notify-acts .notify-link{background:none;border:0;box-shadow:none;padding:0;min-height:0;font:inherit;font-size:var(--fs-sm,.85rem);color:var(--muted);cursor:pointer;white-space:nowrap}.notify-acts .notify-link:hover{color:var(--text);text-decoration:underline;text-underline-offset:2px}
+.notify-grid .notify-link{background:none;border:0;box-shadow:none;padding:0;min-height:0;font:inherit;color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}.notify-acts{display:flex;align-items:center;gap:12px;flex:0 0 auto}.notify-acts .notify-link{background:none;border:0;box-shadow:none;padding:0;min-height:0;font:inherit;font-size:var(--fs-sm,.85rem);color:var(--muted);cursor:pointer;white-space:nowrap}.notify-acts .notify-link:hover{color:var(--text);text-decoration:underline;text-underline-offset:2px}
 .notify-preview{white-space:pre-wrap;font:inherit;font-size:var(--fs-sm,.85rem);line-height:1.5;background:var(--sunken);border-radius:10px;padding:12px 14px;margin:10px 0 var(--sp-3,12px);overflow-wrap:anywhere}
 @media (max-width:520px){.notify-grid{grid-template-columns:minmax(0,1fr) repeat(var(--notify-cols,1),58px)}.notify-grid>.notify-row>*{padding:10px 12px}.notify-grid .notify-cell,.notify-grid .notify-col{padding-left:0;padding-right:0}}
 .org-pic{position:relative;flex:none;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;overflow:hidden;background:var(--sunken);color:var(--muted);font:600 11px/1 var(--sans)}.org-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}.org-pic.big{width:36px;height:36px;border-radius:9px;font-size:15px}
@@ -3988,15 +3988,16 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  if(!box||!n){if(box)box.hidden=true;return}box.hidden=false;
  const cols=['push',...(n.telegram?['telegram']:[]),...(n.email?['email']:[])],grid=$('#notify-grid');
  grid.style.setProperty('--notify-cols',cols.length);
+ // the digest row's line: its time (set in Work hours below) and Preview, shown on the page, nothing sent
+ const h=state.hours||{},digest=`<span>Work days at ${esc(notifyHM(h.digest_at||n.digest_at||'08:30'))}</span><span aria-hidden="true"> · </span><button type="button" class="notify-link" data-notify-preview>${$('#notify-preview').hidden?'Preview':'Hide preview'}</button>`;
  const cell=(kind,label,ch)=>{const p=n.prefs[kind]||{};if(!(ch in p))return `<span class="notify-cell" role="cell"><span class="notify-na">–</span></span>`;
   return `<span class="notify-cell" role="cell"><button type="button" class="lookup-switch" role="switch" aria-checked="${!!p[ch]}" aria-label="${esc(label+': '+NOTIFY_COLS[ch])}" data-notify-kind="${kind}" data-notify-channel="${ch}"></button></span>`};
  const html=`<div class="notify-row" role="row"><span role="columnheader"></span>${cols.map(c=>`<span class="notify-col" role="columnheader">${NOTIFY_COLS[c]}</span>`).join('')}</div>`+
-  NOTIFY_KINDS.map(([k,label,hint])=>`<div class="notify-row" role="row"><span role="rowheader"><strong>${label}</strong><small>${hint}</small></span>${cols.map(c=>cell(k,label,c)).join('')}</div>`).join('');
+  NOTIFY_KINDS.map(([k,label,hint])=>`<div class="notify-row" role="row"><span role="rowheader"><strong>${label}</strong><small>${k==='digest'?digest:hint}</small></span>${cols.map(c=>cell(k,label,c)).join('')}</div>`).join('');
  if(grid.dataset.html!==html){grid.innerHTML=html;grid.dataset.html=html}
- const h=state.hours||{},on=pushOn(),can=pushOK&&devicePush.perm!=='denied';
+ const on=pushOn(),can=pushOK&&devicePush.perm!=='denied';
  const device=on?'Push is on here.':!can?'This browser can’t show push here.':n.push_devices?'Push is off here, on for '+n.push_devices+' other device'+(n.push_devices>1?'s':'')+'.':'Push is off here.';
- const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}</div>`+
-  `<div><span class="grow"><strong>Morning digest</strong><small>Work days at ${esc(notifyHM(h.digest_at||n.digest_at||'08:30'))}. Skipped when there’s nothing.</small></span><button type="button" class="notify-link" data-notify-preview>${$('#notify-preview').hidden?'Preview':'Hide preview'}</button></div>`;
+ const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}</div>`;
  const m=$('#notify-more');if(m.dataset.html!==more){m.innerHTML=more;m.dataset.html=more}}
 $('#settings-notify').addEventListener('click',async e=>{const sw=e.target.closest('[data-notify-kind]');
  if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.disabled=true;
