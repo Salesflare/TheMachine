@@ -282,11 +282,13 @@ def prompt(question, history, sections, snippets, audience=None):
     return '\n'.join(parts)
 
 
-def openclaw_model_run(config, text, model=None):
+def openclaw_model_run(config, text, model=None, thinking=None):
     """One raw model turn through the Gateway (its own session, no tools); the reply's text."""
     args = [str((config or {}).get('openclaw') or 'openclaw'), 'infer', 'model', 'run', '--gateway', '--json', '--prompt', text]
     if model:
         args += ['--model', model]
+    if thinking:
+        args += ['--thinking', thinking]
     try:
         result = subprocess.run(args, capture_output=True, text=True, timeout=TIMEOUT)
         data = json.loads(result.stdout or '{}')
@@ -310,9 +312,10 @@ def limited(now=None):
     return False
 
 
-def ask(question, history=(), run=None, config=None, model=None, folder=HELP, root=ROOT, role=''):
-    """{'answer', 'sources', 'topic', 'answered'} for one question. `run(config, prompt, model)` makes the model turn.
-    `role` is the owner's role from USER.md, for level() only."""
+def ask(question, history=(), run=None, config=None, model=None, folder=HELP, root=ROOT, role='', thinking=None):
+    """{'answer', 'sources', 'topic', 'answered'} for one question. `run(config, prompt, model)` makes the model turn
+    (with thinking=... too when a thinking level was picked, chat_model.py). `role` is the owner's role from USER.md, for
+    level() only."""
     question = ' '.join(str(question or '').split())[:QUESTION_CHARS]
     if not question:
         raise ValueError('Type a question first.')
@@ -321,7 +324,8 @@ def ask(question, history=(), run=None, config=None, model=None, folder=HELP, ro
     if limited():
         raise Unavailable('That’s a lot of questions for one hour. Try again a bit later.')
     audience = level(config, role, [question, *[t['text'] for t in history if t['role'] == 'user']])
-    answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets, audience), model)
+    answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets, audience), model,
+                                         **({'thinking': thinking} if thinking else {}))
     answer, topic = split_topic(answer)
     answer, bug = split_bug(answer)
     used = sources(sections, snippets)

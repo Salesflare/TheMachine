@@ -80,8 +80,10 @@ def make_config(directory, fixture, states, port, network_port):
         'booking_links': {'30-minute call': 'https://book.example/alex/30min'},
         'review_worker': {'enabled': 'reviews-off' not in states, 'min_signals': 40, 'max_wait_minutes': 60},
         'weekly_recap': {'enabled': False}, 'embeddings': {'enabled': False}, 'enrichment': {'enabled': False},
-        'accounts': accounts, 'sandbox': True,
+        'accounts': accounts, 'sandbox': True, 'openclaw_config': str(directory / 'openclaw.json'),
     }
+    # OpenClaw's own settings as the dashboard reads them (the main model and its thinking level), made up
+    (directory / 'openclaw.json').write_text(json.dumps({'agents': {'defaults': {'model': {'primary': 'acme/lm-2.5-swift'}, 'thinkingDefault': 'low'}}}))
     if groups(states):
         config['fleet'] = {'url': f'http://127.0.0.1:{network_port}/api/fleet'}
     path = directory / 'config.json'

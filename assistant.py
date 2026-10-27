@@ -60,6 +60,7 @@ import enrichment
 import fleet
 import shared_graph
 import agent_jobs
+import chat_model
 import error_feed
 import mimetypes
 import work_removal
@@ -550,7 +551,8 @@ OWNER_ACTIONS |= FAMILY_ACTIONS
 CARD_ACTIONS = {'card_new', 'card_rename', 'card_merge', 'card_project'}
 OWNER_ACTIONS |= CARD_ACTIONS
 # A card chat's Stop button and the files added to a message (chat_files.py): the owner's own, from the dashboard.
-CHAT_ACTIONS = {'chat_stop', 'chat_upload', 'chat_file_remove'}
+# The model and thinking level for chats (chat_model.py): the default (Settings, Model) and one to-do chat's own.
+CHAT_ACTIONS = {'chat_stop', 'chat_upload', 'chat_file_remove', 'chat_model_default', 'chat_model_set'}
 OWNER_ACTIONS |= CHAT_ACTIONS
 # Skills (skills.py): writing, sharing and installing them is the owner's own, from the dashboard. The agent can only
 # propose one (skill_propose), which waits for the owner's Approve.
@@ -2987,6 +2989,7 @@ class Store:
             preparation_state.initialize(db)
             retention.initialize(db)
             chat_files.initialize(db)
+            chat_model.initialize(db)
             db.execute('CREATE TABLE IF NOT EXISTS chat_stops(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,text TEXT NOT NULL,at TEXT NOT NULL)')
         os.chmod(self.path, 0o600)
         self.ensure_monotonic_event_ids()
@@ -11755,6 +11758,7 @@ class App:
         self.stop = threading.Event()
         self.graph_dirty = threading.Event()
         self.model_usage = None
+        self.chat_catalog = chat_model.Catalog()  # the models a chat can pick, from the Gateway (chat_model.py)
         # The Fleet (fleet.py): only when the control plane put this Machine in one.
         self.fleet = fleet.Fleet(self.store.connect, config, lambda: credential(config, 'fleet')) if fleet.settings(config) and config.get('credentials', {}).get('fleet') else None
         if self.fleet:
@@ -12405,6 +12409,7 @@ class App:
                     connector['sign_in_command'] = 'assistant connect ' + onboarding.connect_name(by_id[connector['id']], self.config)
             result['model_usage'] = getattr(self, 'model_usage', None)
             result['model_status'] = getattr(self, 'model_status', None)
+            result['chat_model'] = self.chat_model_view()
             try:  # the limit banner: a usage limit reached, which one and when it resets
                 result['model_pause'] = self.model_pause()
             except Exception as error:  # noqa: BLE001 - the dashboard shows without it
@@ -13228,6 +13233,10 @@ class App:
             return self.card_chat(args.get('suggestion_id'), args.get('cursor'))
         if name == 'chat_stop':
             return self.chat_stop(args.get('suggestion_id'))
+        if name in ('chat_model_default', 'chat_model_set'):
+            if not owner_dashboard:
+                raise ValueError('Only the owner picks the model, on the dashboard')
+            return self.chat_model_default(args) if name == 'chat_model_default' else self.chat_model_set(args)
         if name in ('chat_upload', 'chat_file_remove'):
             # A New to-do form's files upload before the to-do exists, under the form's own draft key
             sid = 'new:' + str(args['draft']) if args.get('draft') is not None else str(args.get('suggestion_id') or '')
@@ -14613,6 +14622,7 @@ class App:
                 card=db.execute('SELECT early,owner_step FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
                 job['ahead'],job['owner_step']=bool(card['early']),bool(card['owner_step'])
             if job['ahead']:request['background']=True  # nobody asked yet: background work (background_model)
+            else:request.update(self.chat_turn_args(job['suggestion_id']))  # the model and thinking picked for this chat (chat_model.py)
             # A chat message (dashboard chat, decision chat-…) in a session that already has the card's context: a short
             # follow-up turn instead of the full card context again, so long chats stay cheap.
             if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead']:
@@ -14913,6 +14923,7 @@ class App:
                 raise ValueError('Unknown suggestion')
             job = db.execute('SELECT job_id,session_job_id,status FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
             owner, results = self.card_chat_service(db, suggestion_id)
+            own = chat_model.card_choice(db, suggestion_id)  # this chat's own model and thinking level (chat_model.py)
         # The cursor also carries a digest of what the service itself adds (sends, taps, results): when that moved
         # ("Sending to Sam…" became "Sent to Sam"), the whole chat comes back even if the conversation didn't.
         digest = hashlib.sha256(json.dumps([owner, results], sort_keys=True, default=str).encode()).hexdigest()[:16]
@@ -14920,7 +14931,7 @@ class App:
         if seen is not None and seen != digest:
             gateway_cursor = None
         active = bool(job) and job['status'] in ('queued', 'starting', 'running')
-        result = {'session': bool(job), 'active': active, 'status': job['status'] if job else None}
+        result = {'session': bool(job), 'active': active, 'status': job['status'] if job else None, 'model': own}
         if not job:
             return {**result, 'items': chat_items([], owner, results), 'cursor': None}
         found = self.card_chat_gateway({'session_key': 'agent:main:assistant-review-preparation-' + (job['session_job_id'] or job['job_id']),
@@ -14939,6 +14950,64 @@ class App:
         if found.get('kind') == 'delta' and gateway_cursor:
             return {**result, 'unchanged': True}
         return {**result, 'items': chat_items(found.get('messages'), owner, results), 'more': bool(found.get('hasMore'))}
+
+    def chat_models(self, read=True):
+        """The models a chat can pick (chat_model.Catalog), read again when old; read=False: the last reading only.
+        None when there is none."""
+        catalog = getattr(self, 'chat_catalog', None)
+        if catalog is None:
+            catalog = self.chat_catalog = chat_model.Catalog()
+        return catalog.refresh(self.config) if read else catalog.models
+
+    def chat_model_view(self):
+        """Settings, Model and the chat pill: the models the sign-in offers, with their thinking levels, and the default
+        for chats (chat_model.view). The list is the last reading; none yet reads `known: False`."""
+        found = chat_model.view(self.config, self.chat_models(read=False))
+        swap = background_model(self.config)
+        if swap and not chat_model.chosen(self.config):  # Help runs on the lighter model unless a model was picked
+            found['help'] = chat_model.resolve(self.config, self.chat_models(read=False), {'model': '/'.join(swap)})
+        return found
+
+    def chat_model_default(self, args):
+        """The default model and thinking level for chats (Settings, Model): checked against what the sign-in offers and
+        saved in config.json, only what differs from OpenClaw's own, so the rest keeps following OpenClaw. In use from
+        the next turn; OpenClaw's config and its Gateway are left as they are."""
+        if not getattr(self, 'config_path', None):
+            raise ValueError('The model can only be changed in config.json here')
+        models = self.chat_models()
+        picked = chat_model.check(args, models, {**self.config, 'chat_model': None})
+        value = chat_model.minimal({**self.config, 'chat_model': None}, models, picked) or None
+        save_hours(self.config_path, {'chat_model': value})
+        self.config['chat_model'] = value
+        return self.chat_model_view()
+
+    def chat_model_set(self, args):
+        """One to-do chat's own model and thinking level (the pill under its message box), for its next turns. What is
+        the same as the default for chats is not kept, so it keeps following that default."""
+        suggestion_id = str(args.get('suggestion_id') or '')
+        if not re.fullmatch(r'[a-f0-9]{16}', suggestion_id):
+            raise ValueError('Unknown suggestion')
+        models = self.chat_models()
+        picked = chat_model.check(args, models, self.config)
+        keep = chat_model.minimal(self.config, models, picked)
+        with self.store.connect() as db:
+            if not db.execute('SELECT 1 FROM suggestions WHERE id=?', (suggestion_id,)).fetchone():
+                raise ValueError('Unknown suggestion')
+            chat_model.set_card(db, suggestion_id, keep, now())
+        return {'model': keep, 'resolved': chat_model.resolve(self.config, models, keep)}
+
+    def chat_turn_args(self, suggestion_id):
+        """provider, model and thinking for an owner's turn in this to-do's chat (chat_model.turn_args); {} when
+        nothing was picked, so the turn runs as it always did."""
+        try:
+            with self.store.connect() as db:
+                own = chat_model.card_choice(db, suggestion_id)
+            if not chat_model.chosen(self.config, own):
+                return {}
+            return chat_model.turn_args(self.config, self.chat_models(), own)
+        except (sqlite3.Error, OSError, ValueError) as error:
+            LOG.error('chat model error=%s', type(error).__name__)
+            return {}
 
     def chat_stop(self, suggestion_id):
         """The chat's Stop button: ends the card's running reply now and keeps what it said so far (its live text,
@@ -16333,6 +16402,10 @@ class App:
         self.model_usage_wake = getattr(self, 'model_usage_wake', None) or threading.Event()
         while not self.stop.is_set():
             self.refresh_model_usage()
+            try:  # the models a chat can pick (chat_model.py): read again every ten minutes
+                self.chat_models()
+            except Exception as error:  # noqa: BLE001 - never stops the worker
+                LOG.error('model list error=%s', type(error).__name__)
             self.model_usage_wake.clear()
             if self.stop.wait(60):
                 break
@@ -17133,9 +17206,15 @@ class App:
             if not run and not has_model(self.config):
                 raise ValueError('Help needs a model. Set one up in Settings, Model.')
             swap = background_model(self.config)
+            model, thinking = '/'.join(swap) if swap else None, None
+            own = chat_model.clean({'model': args.get('model'), 'thinking': args.get('thinking')})
+            if chat_model.chosen(self.config, own):  # a model picked for Help or for chats (chat_model.py)
+                models = self.chat_models()
+                picked = chat_model.resolve(self.config, models, chat_model.check(own, models, self.config) if own else {})
+                model, thinking = picked['model'] or model, picked['thinking']
             try:
                 found = help_chat.ask(args.get('question'), args.get('history') or [], run=run, config=self.config,
-                                      model='/'.join(swap) if swap else None, role=self.owner_role())
+                                      model=model, thinking=thinking, role=self.owner_role())
             except help_chat.Unavailable as error:
                 raise ValueError(str(error)) from None
             topic, answered = found.pop('topic', ''), found.pop('answered', False)

@@ -80,8 +80,10 @@ try {
       ...(attachments.length?{attachments:attachments.map(a=>({type:'image', mimeType:a.mimeType, fileName:a.fileName, content:a.content}))}:{}),
       // Background work never runs on the costliest model: the service names the one to use instead (assistant.py
       // background_model), only one the owner's model allowlist allows.
+      // An owner's chat turn gets the model and thinking level picked for it (assistant.py chat_turn_args, chat_model.py).
       ...(typeof request.provider==='string' && typeof request.model==='string' &&
-          /^[a-z0-9-]{1,40}$/.test(request.provider) && /^[a-z0-9.:-]{1,80}$/i.test(request.model) ? {provider:request.provider, model:request.model}:{}),
+          /^[a-z0-9-]{1,40}$/.test(request.provider) && /^[a-z0-9._:/-]{1,120}$/i.test(request.model) ? {provider:request.provider, model:request.model}:{}),
+      ...(typeof request.thinking==='string' && /^(off|minimal|low|medium|high|xhigh|adaptive|max|ultra)$/.test(request.thinking) ? {thinking:request.thinking}:{}),
     },scope);
     if (result?.runId!==request.job_id) throw new Error('Unconfirmed admission');
     process.stdout.write(JSON.stringify({run_id:request.job_id,status:'admitted'}));

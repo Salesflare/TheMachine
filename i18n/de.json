@@ -2416,5 +2416,18 @@
  "Still with {} · check in?": "Noch bei {} · nachhaken?",
  "Taken back": "Zurückgenommen",
  "Open the chat to check in": "Chat öffnen, um nachzuhaken",
- "{} already has this to-do": "{} hat diese Aufgabe schon"
+ "{} already has this to-do": "{} hat diese Aufgabe schon",
+ "No thinking": "Kein Nachdenken",
+ "Minimal thinking": "Minimales Nachdenken",
+ "Low thinking": "Wenig Nachdenken",
+ "Medium thinking": "Mittleres Nachdenken",
+ "High thinking": "Viel Nachdenken",
+ "Extra high thinking": "Sehr viel Nachdenken",
+ "Adaptive thinking": "Adaptives Nachdenken",
+ "Max thinking": "Maximales Nachdenken",
+ "Ultra thinking": "Ultra-Nachdenken",
+ "What to-do chats and Help use. Each chat can pick its own under its message box.": "Was Chats zu Aufgaben und die Hilfe nutzen. Jeder Chat kann unter seinem Nachrichtenfeld etwas eigenes wählen.",
+ "Only models your sign-in offers.": "Nur Modelle, die deine Anmeldung bietet.",
+ "Thinking": "Nachdenken",
+ "More thinking is slower and uses more of your plan.": "Mehr Nachdenken ist langsamer und verbraucht mehr von deinem Plan."
 }

@@ -2416,5 +2416,18 @@
  "Still with {} · check in?": "Toujours chez {} · relancer ?",
  "Taken back": "Reprise",
  "Open the chat to check in": "Ouvrir le chat pour relancer",
- "{} already has this to-do": "{} a déjà cette tâche"
+ "{} already has this to-do": "{} a déjà cette tâche",
+ "No thinking": "Sans réflexion",
+ "Minimal thinking": "Réflexion minimale",
+ "Low thinking": "Réflexion faible",
+ "Medium thinking": "Réflexion moyenne",
+ "High thinking": "Réflexion élevée",
+ "Extra high thinking": "Réflexion très élevée",
+ "Adaptive thinking": "Réflexion adaptative",
+ "Max thinking": "Réflexion maximale",
+ "Ultra thinking": "Réflexion ultra",
+ "What to-do chats and Help use. Each chat can pick its own under its message box.": "Ce qu’utilisent les chats des tâches et l’Aide. Chaque chat peut choisir le sien sous sa zone de message.",
+ "Only models your sign-in offers.": "Seulement les modèles de votre connexion.",
+ "Thinking": "Réflexion",
+ "More thinking is slower and uses more of your plan.": "Plus de réflexion est plus lent et utilise davantage votre forfait."
 }

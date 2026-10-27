@@ -2416,5 +2416,18 @@
  "Still with {} · check in?": "Still with {} · check in?",
  "Taken back": "Taken back",
  "Open the chat to check in": "Open the chat to check in",
- "{} already has this to-do": "{} already has this to-do"
+ "{} already has this to-do": "{} already has this to-do",
+ "No thinking": "No thinking",
+ "Minimal thinking": "Minimal thinking",
+ "Low thinking": "Low thinking",
+ "Medium thinking": "Medium thinking",
+ "High thinking": "High thinking",
+ "Extra high thinking": "Extra high thinking",
+ "Adaptive thinking": "Adaptive thinking",
+ "Max thinking": "Max thinking",
+ "Ultra thinking": "Ultra thinking",
+ "What to-do chats and Help use. Each chat can pick its own under its message box.": "What to-do chats and Help use. Each chat can pick its own under its message box.",
+ "Only models your sign-in offers.": "Only models your sign-in offers.",
+ "Thinking": "Thinking",
+ "More thinking is slower and uses more of your plan.": "More thinking is slower and uses more of your plan."
 }

@@ -19,6 +19,10 @@ A question gets an answer and leaves the draft as it is. Approvals stay on the t
 
 On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter starts a new line. On a phone, use the send button.
 
+## Model and thinking
+
+Under the message box, the chat shows its model and thinking level, like "GPT-6.1 Sol · Low thinking". Tap either to pick another for this chat only. New chats use what you set in **Settings**, **Model** (see [Model](model.md)).
+
 ## Stop a reply
 
 While a reply is being written, the send button turns into **Stop**. Stop ends it right away and keeps what it wrote so far, marked **Stopped**. Write a new message to carry on, or tap **Try again**.

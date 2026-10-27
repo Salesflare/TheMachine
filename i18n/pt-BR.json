@@ -2416,5 +2416,18 @@
  "Still with {} · check in?": "Ainda com {} · fazer follow-up?",
  "Taken back": "Pegada de volta",
  "Open the chat to check in": "Abra o chat para fazer follow-up",
- "{} already has this to-do": "{} já tem esta tarefa"
+ "{} already has this to-do": "{} já tem esta tarefa",
+ "No thinking": "Sem raciocínio",
+ "Minimal thinking": "Raciocínio mínimo",
+ "Low thinking": "Raciocínio baixo",
+ "Medium thinking": "Raciocínio médio",
+ "High thinking": "Raciocínio alto",
+ "Extra high thinking": "Raciocínio muito alto",
+ "Adaptive thinking": "Raciocínio adaptável",
+ "Max thinking": "Raciocínio máximo",
+ "Ultra thinking": "Raciocínio ultra",
+ "What to-do chats and Help use. Each chat can pick its own under its message box.": "O que os chats das tarefas e a Ajuda usam. Cada chat pode escolher o seu abaixo da caixa de mensagem.",
+ "Only models your sign-in offers.": "Só os modelos que o seu login oferece.",
+ "Thinking": "Raciocínio",
+ "More thinking is slower and uses more of your plan.": "Mais raciocínio é mais lento e usa mais do seu plano."
 }

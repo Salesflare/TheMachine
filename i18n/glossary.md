@@ -61,6 +61,7 @@ English strings the check skips, with why:
 | Careful / Standard (security) | Voorzichtig / Standaard | Prudent / Standard | Vorsichtig / Standard | Prudente / Estándar | Prudente / Standard | Cuidadoso / Padrão |
 | Fleet rules | Fleet-regels | règles Fleet | Fleet-Regeln | reglas de Fleet | regole Fleet | regras do Fleet |
 | sign in / sign out | inloggen / uitloggen | se connecter / se déconnecter | anmelden / abmelden | iniciar sesión / cerrar sesión | accedi / esci | entrar / sair |
+| thinking (a model's level) | denkwerk | réflexion | Nachdenken | razonamiento | ragionamento | raciocínio |
 
 ## Open questions for Jeroen
 

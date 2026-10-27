@@ -92,11 +92,18 @@ def seed_model(app):
                         'windows': [{'label': '5h', 'used': 46, 'reset': reset}, {'label': 'Week', 'used': 12, 'reset': reset + 5 * 86400}],
                         'limit_reached': False, 'limit_resets_at': None, 'resets': {'available': 0, 'credits': []}, 'can_reset': False,
                         'usage_page': 'https://chatgpt.example/usage', 'checked_at': dt.datetime.now(dt.timezone.utc).isoformat()}
+    # The models a chat can pick (chat_model.py), as the Gateway would list them for a made-up sign-in
+    import chat_model
+    models = [{'ref': 'acme/lm-2.5-swift', 'name': 'LM-2.5 Swift', 'levels': ['low', 'medium', 'high', 'xhigh', 'max'], 'default': 'low'},
+              {'ref': 'acme/lm-2.5-mini', 'name': 'LM-2.5 Mini', 'levels': ['off', 'low', 'medium', 'high'], 'default': 'low'},
+              {'ref': 'acme/lm-3-pro', 'name': 'LM-3 Pro', 'levels': ['low', 'medium', 'high', 'xhigh', 'max'], 'default': 'medium'}]
+    app.chat_catalog = chat_model.Catalog(reader=lambda config: models)
+    app.chat_catalog.refresh(app.config)
     # Settings > Signatures imports the mailbox's own: a made-up Gmail signature, no Google call.
     app.mail_read = lambda config, account, *a: {'signature': '<div><b>Alex Morgan</b></div><div style="color:#4e6b34">Lumen Labs</div><div><a href="https://lumenlabs.example">lumenlabs.example</a></div>'}
 
 
-def fake_help(config, prompt, model=None):
+def fake_help(config, prompt, model=None, thinking=None):
     """Help's stand-in model: the first lines of the help section that matched best, cited as [1]. No model runs."""
     import re
     found = re.search(r'^\[1\] Help: [^\n]*\n(.+?)(?:\n\n|$)', prompt, re.M | re.S)

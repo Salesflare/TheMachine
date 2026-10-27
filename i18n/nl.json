@@ -2416,5 +2416,18 @@
  "Still with {} · check in?": "Nog bij {} · opvolgen?",
  "Taken back": "Teruggenomen",
  "Open the chat to check in": "Open de chat om op te volgen",
- "{} already has this to-do": "{} heeft deze to-do al"
+ "{} already has this to-do": "{} heeft deze to-do al",
+ "No thinking": "Geen denkwerk",
+ "Minimal thinking": "Minimaal denkwerk",
+ "Low thinking": "Weinig denkwerk",
+ "Medium thinking": "Gemiddeld denkwerk",
+ "High thinking": "Veel denkwerk",
+ "Extra high thinking": "Extra veel denkwerk",
+ "Adaptive thinking": "Aanpasbaar denkwerk",
+ "Max thinking": "Maximaal denkwerk",
+ "Ultra thinking": "Ultra denkwerk",
+ "What to-do chats and Help use. Each chat can pick its own under its message box.": "Wat chats van to-do's en Help gebruiken. Elke chat kan onder het berichtvak een eigen keuze maken.",
+ "Only models your sign-in offers.": "Alleen modellen die je login biedt.",
+ "Thinking": "Denkwerk",
+ "More thinking is slower and uses more of your plan.": "Meer denkwerk is trager en gebruikt meer van je abonnement."
 }

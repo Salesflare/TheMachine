@@ -12,7 +12,7 @@ Tap **Help** at the top, beside **Settings**, and ask in your own words, like "H
 
 Help reads the help pages that match your question, and the app's own source code for what they leave open. Each answer links to the pages it used, so you can read more.
 
-It runs on your Machine's own model as a short, separate chat. Only your question and the matching pages go in: none of your messages, people or settings.
+It runs on your Machine's own model as a short, separate chat. Under the message box you can pick another model or thinking level for this Help chat (see [Model](model.md)). Only your question and the matching pages go in: none of your messages, people or settings.
 
 It answers at your level: plain words for most people, more detail when your setup or your questions are technical. It guesses that from how your Machine is set up, your role and how you ask. Only the guess goes in.
 
