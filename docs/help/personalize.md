@@ -28,8 +28,7 @@ About twice a day it makes a few small changes from this. **Feedback**, **What I
 In **Settings**:
 
 - **Writing**: your signatures, and the lines on how you write per channel. Change any line in your own words. See [Writing](writing.md).
-- **Notifications**: what reaches you, and where. See [Notifications](notifications.md).
-- **Work hours**: when it may message you. See [Work hours](work-hours.md).
+- **Notifications**: what reaches you, where, and in which **Work hours**. See [Notifications](notifications.md) and [Work hours](work-hours.md).
 - **Security**: Standard or Careful, for how much shows on your phone and how long things are kept. See [Security levels](security-levels.md).
 - **Language and region**: the language it uses with you, and how dates read. See [Settings](settings.md#general).
 

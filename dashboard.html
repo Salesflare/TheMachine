@@ -7576,13 +7576,18 @@ function helpRender(){const log=$('#help-log'),src=m=>(m.sources||[]).filter(s=>
 let helpDraft='';
 function helpReport(draft){if(!draft)return;const w=$('#bug-what'),cur=w.value.trim();
  helpOpen('bug');w.value=!cur||cur===helpDraft?draft:cur+'\n\n'+draft;helpDraft=draft;$('#bug-diag').checked=true;w.style.height='';w.style.height=Math.min(200,Math.max(104,w.scrollHeight+4))+'px';w.setSelectionRange(0,0);w.scrollTop=0}  // the whole write-up in view
-const helpGrow=()=>{const q=$('#help-q');q.style.height='34px';q.style.height=Math.min(140,Math.max(34,q.scrollHeight))+'px';$('#help-go').disabled=helpBusy||!q.value.trim()};
-$('#help-form').onsubmit=async e=>{e.preventDefault();const q=$('#help-q').value.trim();if(!q||helpBusy)return;helpBusy=true;
- const history=helpChat.filter(m=>!m.busy&&!m.error).slice(-4).map(m=>({role:m.role,text:m.text})),wait={role:'assistant',text:'Looking it up…',busy:true};
- helpChat.push({role:'user',text:q},wait);$('#help-q').value='';helpGrow();helpRender();
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'help_ask',args:{question:q,history}})});Object.assign(wait,{text:r.answer,sources:r.sources||[],bug:typeof r.bug==='string'&&r.bug.trim()?r.bug.trim():null,busy:false})}
+const helpGrow=()=>{const q=$('#help-q');q.style.height='34px';q.style.height=Math.min(140,Math.max(34,q.scrollHeight))+'px';$('#help-go').disabled=!q.value.trim()};
+// A question asked while Help still answers shows as sent and waits its turn: one answer at a time, in order, each
+// with the answers before it as its history.
+const helpQueue=[];
+$('#help-form').onsubmit=e=>{e.preventDefault();const q=$('#help-q').value.trim();if(!q)return;
+ const asked={role:'user',text:q};helpChat.push(asked);helpQueue.push(asked);$('#help-q').value='';helpGrow();helpRender();if(!helpBusy)helpNext()};
+async function helpNext(){const asked=helpQueue.shift();if(!asked)return;helpBusy=true;
+ const at=helpChat.indexOf(asked),history=helpChat.slice(0,at).filter(m=>!m.busy&&!m.error).slice(-4).map(m=>({role:m.role,text:m.text})),wait={role:'assistant',text:'Looking it up…',busy:true};
+ helpChat.splice(at+1,0,wait);helpRender();
+ try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'help_ask',args:{question:asked.text,history}})});Object.assign(wait,{text:r.answer,sources:r.sources||[],bug:typeof r.bug==='string'&&r.bug.trim()?r.bug.trim():null,busy:false})}
  catch(err){Object.assign(wait,{text:err.message||t('Help can’t answer right now.'),busy:false,error:true})}
- finally{helpBusy=false;helpGrow();helpRender();$('#help-q').focus()}};
+ finally{helpBusy=false;helpGrow();helpRender();if(helpQueue.length)helpNext();else if(helpBox.open)$('#help-q').focus()}}
 $('#help-q').addEventListener('input',helpGrow);
 $('#help-q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#help-form').requestSubmit()}});
 function bugReset(about){$('#bug-form').hidden=false;$('#bug-review').hidden=$('#bug-done').hidden=true;$('#bug-error').textContent='';

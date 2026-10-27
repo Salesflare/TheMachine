@@ -47,6 +47,18 @@ try{
   const links=await page.$$eval('.help-log .chat-files a',as=>as.map(a=>[a.href,a.target,a.rel]));
   assert.deepEqual(links,[['https://themachine.computer/help/snooze#snooze-a-to-do','_blank','noopener']],'only help and code links show');
   assert.equal(actions[0].action,'help_ask');
+  // Asked while Help still answers: shows as sent at once, and is answered right after, in order, with the first answer as history
+  actions.length=0;
+  await page.fill('#help-q','How do I snooze a to-do?');await page.press('#help-q','Enter');
+  await page.waitForSelector('#help-log .typing');
+  await page.fill('#help-q','And how do I wake it early?');await page.press('#help-q','Enter');
+  assert.equal(await page.inputValue('#help-q'),'','the second question left the box');
+  assert.deepEqual(await page.$$eval('#help-log .chat-msg.you .bubble',b=>b.slice(-2).map(x=>x.textContent)),['How do I snooze a to-do?','And how do I wake it early?'],'shown as sent');
+  await page.waitForFunction(()=>document.querySelectorAll('#help-log .chat-msg.machine .bubble:not(.typing)').length===3&&!document.querySelector('#help-log .typing'));
+  assert.deepEqual(actions.map(a=>a.args.question),['How do I snooze a to-do?','And how do I wake it early?'],'one at a time, in order');
+  assert.equal(actions[1].args.history.at(-1).role,'assistant','the second gets the first answer as history');
+  assert.deepEqual(await page.$$eval('#help-log .chat-msg',m=>m.slice(-4).map(x=>x.classList.contains('you')?'you':'machine')),['you','machine','you','machine'],'each answer under its question');
+  actions.length=1;
   assert.equal(await page.$('#help-log [data-help-bug]'),null,'a how-to answer offers no bug report');
   // A bug: the answer ends with Report this bug, which prefills Report a bug to edit; nothing goes before Send
   await page.fill('#help-q','My snoozed to-do comes back at once');await page.press('#help-q','Enter');
