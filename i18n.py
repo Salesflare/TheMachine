@@ -70,3 +70,17 @@ def language_name(lang=None):
     """'Dutch' for nl: how a prompt names the owner's language."""
     return {'en': 'English', 'nl': 'Dutch', 'fr': 'French', 'de': 'German', 'es': 'Spanish'}.get(lang or locale_prefs.language(), 'English')
 
+
+def written_in(lang=None):
+    """What the model writes the owner's own text in, for a prompt: 'US English (organization, color, prioritize)' or
+    'Dutch'."""
+    lang = lang or locale_prefs.language()
+    return 'US English (organization, color, prioritize)' if lang == 'en' else language_name(lang)
+
+
+def prompt_rule(lang=None):
+    """The language line in the review, preparation and chat prompts: drafts to other people in the language of their
+    thread, the owner's own text (card titles, summaries, notes, replies to them) in the owner's UI language."""
+    return (f'Languages: a draft or message to someone else is in the language of that thread (or what they write to the '
+            f'owner in). What the owner reads from you (to-do titles, summaries, bodies, notes, steps, chat replies) is in '
+            f'{written_in(lang)}, unless the owner writes to you in another language. Product names stay as they are.')

@@ -50,6 +50,7 @@ import crm
 import crm_fields
 import crm_fixes
 import crm_import
+import i18n
 import locale_prefs
 import notify
 import mail_attachments
@@ -9007,7 +9008,7 @@ def chat_prompt(job, config=None):
     """The next turn of a card's chat, in the session that already has the card's full context: a short message, so
     a long chat doesn't resend that context with every reply. Only the job's own handles change from turn to turn."""
     j, sid = job['job_id'], job['suggestion_id']
-    return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. Preparation job ID: {j}.
+    return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. {i18n.prompt_rule()} This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. Preparation job ID: {j}.
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}
 - Save with assistant_signals prepare args suggestion_id={sid}, job_id={j}, reply=<your answer to their message, short; the chat shows it>, body=<the card's status after this: where the task stands and what is ready, about the task, never a reply to them; leave it out when only answered and the status didn't change>, next_actions=[...] (the current ones again when you only answered), outcome and note_kind as the earlier instructions say (outcome answered when you only answered and no draft is waiting); or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason, details, and questions when only the owner can unblock it. When they say they talk to this person on another channel (WhatsApp), switch the draft to it as PREPARATION.md says; a limit of The Machine is never a question for them. When they say the person doesn't know about it yet, the message first says what it is about.'''
@@ -10679,6 +10680,7 @@ Prepared ahead, so these limits win over the preparation rules: take the task as
 What the owner reviewed and confirmed: {job['finish']['preview']}{(chr(10)+'Page: '+job['finish']['url']) if job['finish'].get('url') else ''}{finish_text(job['finish'])}{finish_files(job['finish'])}
 If what you are about to submit differs from what they reviewed (another amount, date, recipient or text), or the step already happened, do not go ahead: record a blocker that says what changed. Otherwise do it, check that it went through (a confirmation, receipt or the new state) and save outcome:'done' with what happened and any reference. Preparation job ID: {j}.''' if job.get('finish') else
                f'''The owner accepted suggestion {sid}. This is a preparation task, not a signal-review task: the owner tapped Do it, so carry out the task itself. Owner-selected next step: {job.get('next_step') or 'the original offered preparation'}. Preparation job ID: {j}.''')
+    opening += '\n' + i18n.prompt_rule()
     if job.get('owner_step') and not job.get('finish'):
         opening+=OWNER_STEP_PREPARATION
     if job.get('finish'):
@@ -11128,7 +11130,7 @@ Goal: draft the lines of the owner's USER.md that their own messages show, so re
    - examples: up to four short work phrases (under 140 characters) that sound most like them, from different messages, with no amounts, addresses, phone numbers, family or private life, or other people's details.
    - matters: up to eight people, customers or projects they clearly spend time on, with a few words why. Leave out anything confidential: deals, acquisitions or fundraising, investors, legal, health, money, accounting and family matters. leave_alone: senders or kinds of mail that are clearly noise to them (not bills, banks or anything they must act on).
    - Only what the messages show; leave a field out when unsure. Never invent a role or relationship.
-Write what the owner reads in US English (organization, color, prioritize). Do not send messages, change files or do anything else. End with exactly NO_REPLY.'''
+Write what the owner reads in {i18n.written_in()}. Do not send messages, change files or do anything else. End with exactly NO_REPLY.'''
 
 
 def voices_prompt(run_id, counts, pages):
@@ -11240,7 +11242,7 @@ Goal: say what each of the owner's closest people is to them, so reviews, drafts
 4. Organizations: say what each is to the owner ("accounting firm", "customer", "trial customer", "possible acquirer", "supplier") from what its people's messages show, with graph node_id (org:…) and role, and an event_id and quote from one of its people's messages. People at an organization with a role are often in the same part of the owner's life: use that to read them, not to label them. When an organization's mail is an email warm-up tool's traffic (inboxes trading templated messages to keep a sender's reputation up, with no real conversation, request or follow-up behind them), set graph args {{"node_id": "org:…", "warmup": true, "event_id": …}} instead of a role: it and its people leave the graph, and the owner can undo it. Judge it from what the exchanges are, never from a domain's name.
 5. When the messages show how two people are related ("Ann is the assistant of Sam", "introduced by Alex", "Kim's sister"), add it with graph args {{"node_id": "<a>", "related_to": "<b>", "relation": "assistant of"}}, read as "<a> is <relation> <b>".
 6. {ORG_STEP}
-Write what the owner reads in US English (organization, color, prioritize). Do not send messages, change files or do anything else. End with exactly NO_REPLY.'''
+Write what the owner reads in {i18n.written_in()}. Do not send messages, change files or do anything else. End with exactly NO_REPLY.'''
 
 
 ORG_STEP = ('Where someone works, for a person with no organization: set it only when a source states it plainly (their LinkedIn headline, '
@@ -11284,7 +11286,7 @@ Goal: say which field each column is, and fix the cells the rules couldn't read,
 2. Map each column by what its values are, whatever language or spelling its header has: a first and a last name column go to First name and Last name, a full name to Name, "Name <address>" cells to Email (the import splits them), a full address or a city to Location, a web address to Website, a list of labels to Tags. Leave a column out when no field fits. Give a reason of a few words for each column you mapped differently from the guess or aren't sure of.
 3. For each listed cell, give the value only when you are sure: a date as YYYY-MM-DD, a phone number as +<country code><number> (the country from the file, the region given or the number itself), a value as a plain number, a stage as one of the stages exactly. Leave the others out.
 4. Save once with save_profile, args profile {{"mapping": {{"<column index>": "<field id>"}}, "reasons": {{"<column index>": "…"}}, "fixes": [{{"line": <line>, "field": "<field>", "after": "…", "why": "…"}}]}}, why in a few words.
-Write in US English. Do not send messages, change files or do anything else. End with exactly NO_REPLY.'''
+Write in {i18n.written_in()}. Do not send messages, change files or do anything else. End with exactly NO_REPLY.'''
 
 
 def orgs_prompt(run_id, pages):
@@ -11335,6 +11337,7 @@ def promise_text(p):
 
 def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promises='', unnamed='', roles='', notes='', handoffs='', splits='', boards='', sorting='', sources='', fitting='', backfill=''):
     return f'''This is a signal review started by the personal-assistant service (review run {run_id}). It is not a chat with the owner and not a preparation task.
+{i18n.prompt_rule()}
 ''' + (f'''Boards to sort, before anything else (separate from the batch: these projects need no new message). The owner put these projects on a board and their tiles say "Sorting" until you place them. For each, read its messages with events (its event_ids below, all accounts) and judge where it stands now from what they mean between these people, never their wording. Place it with graph {{"project": its node_id, "board", "stage", "event_id": the message that shows it, "reason": one short clause that reads after "Moved to <stage>:" (like "Demo held on Thu, they asked for pricing"), "next": the owner's next step in a few words}}. When nothing has moved it past the first stage, place it in the first stage the same way, with the message and why. Only when none of its messages shows where it stands, add it to finish_analysis sorted ([{{"project": its node_id, "why": a few words}}]). finish_analysis refuses until each one is placed or in sorted.
 {sorting}
 
