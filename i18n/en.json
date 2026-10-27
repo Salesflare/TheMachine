@@ -2410,5 +2410,11 @@
  "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom isn’t connected on this Machine, so this goes by email.",
  "Send by email instead?": "Send by email instead?",
  "Intercom from {} ·": "Intercom from {} ·",
- "Connect your own Intercom": "Connect your own Intercom"
+ "Connect your own Intercom": "Connect your own Intercom",
+ "Still with {}": "Still with {}",
+ "check in?": "check in?",
+ "Still with {} · check in?": "Still with {} · check in?",
+ "Taken back": "Taken back",
+ "Open the chat to check in": "Open the chat to check in",
+ "{} already has this to-do": "{} already has this to-do"
 }

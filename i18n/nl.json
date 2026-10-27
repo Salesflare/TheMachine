@@ -2410,5 +2410,11 @@
  "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom is niet gekoppeld op deze Machine, dus dit gaat per e-mail.",
  "Send by email instead?": "In plaats daarvan per e-mail versturen?",
  "Intercom from {} ·": "Intercom van {} ·",
- "Connect your own Intercom": "Koppel je eigen Intercom"
+ "Connect your own Intercom": "Koppel je eigen Intercom",
+ "Still with {}": "Nog bij {}",
+ "check in?": "opvolgen?",
+ "Still with {} · check in?": "Nog bij {} · opvolgen?",
+ "Taken back": "Teruggenomen",
+ "Open the chat to check in": "Open de chat om op te volgen",
+ "{} already has this to-do": "{} heeft deze to-do al"
 }

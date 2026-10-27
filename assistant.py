@@ -6831,6 +6831,8 @@ class Store:
             extra['scope']=suggestion_scope(suggestion['account_ids'], self.accounts)
         wait=handoff_wait(db,suggestion)
         if wait:extra['handoff_wait']=wait
+        still=handoff_wait(db,suggestion,awake=True)
+        if still:extra['handoff_still']=still  # back on the list, still with them: the card says so, not "Needs you"
         return extra
 
     def browser_view(self, db, suggestion, extra):
@@ -9551,6 +9553,8 @@ def card(row):
         handed = {}
     if row['status'] == 'snoozed' and checkin_line(row):  # with a teammate: when it comes back to check in, not a snooze
         status = checkin_line(row) + '.'
+    elif row.get('handoff_still') and not handoff_redirect(row):  # back to check in: still theirs, not handed back
+        status = t('Still with {} · check in?', row['handoff_still']['name'])
     if handed.get('delegated'):
         if row['status'] == 'snoozed' and row.get('snoozed_until'):
             status = t('Sent to {}. Waiting for their reply until {}; it closes when they answer.', handed['name'], locale_prefs.day_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz())))
@@ -9843,14 +9847,16 @@ def ask_question(row, actions):
         return ''
 
 
-def handoff_wait(db, suggestion):
+def handoff_wait(db, suggestion, awake=False):
     """A card under Later because it is with a teammate who hasn't answered its handoff yet: {'name': their first name}.
-    Its time is when it comes back to check in with them, not a snooze of the owner's."""
-    if suggestion.get('status') != 'snoozed':
+    Its time is when it comes back to check in with them, not a snooze of the owner's. awake: the same for a card that
+    is back on the list (the check-in is due, or the owner brought it back) while the teammate still has it."""
+    if suggestion.get('status') not in (('pending', 'accepted', 'prepared', 'instructions') if awake else ('snoozed',)):
         return None
-    try:
-        row = db.execute("SELECT name,status,answer FROM fleet_out WHERE context=? AND kind='handoff' ORDER BY at DESC,rowid DESC LIMIT 1",
-                         ('handoff:' + str(suggestion['id']),)).fetchone()
+    try:  # the newest handoff not taken back
+        row = db.execute("SELECT name,status,answer FROM fleet_out WHERE context=? AND kind='handoff' "
+                         "AND 'handoff_withdrawn:'||id NOT IN (SELECT key FROM fleet_meta WHERE key LIKE 'handoff_withdrawn:%') "
+                         "ORDER BY at DESC,rowid DESC LIMIT 1", ('handoff:' + str(suggestion['id']),)).fetchone()
     except sqlite3.OperationalError:  # no Fleet on this Machine
         return None
     try:
@@ -9860,6 +9866,17 @@ def handoff_wait(db, suggestion):
     if not row or (stage or row['status']) not in ('asked', 'waiting'):
         return None
     return {'name': (str(row['name'] or '').split() or ['them'])[0]}
+
+
+def handoff_redirect(row):
+    """A new handoff draft to someone other than who has the card now (the owner asked to hand it on)."""
+    acts = row.get('next_actions')
+    if acts is None:
+        one = row.get('next_action') or {}
+        one = json.loads(one) if isinstance(one, str) else one
+        acts = (one.get('actions') or []) if one.get('kind') == 'menu' else [one]
+    who = str((row.get('handoff_still') or {}).get('name') or '')
+    return any(isinstance(a, dict) and a.get('kind') == 'handoff' and str(a.get('to_name') or '').split(' ')[0] != who for a in acts or [])
 
 
 def checkin_line(row):

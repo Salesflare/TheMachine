@@ -2410,5 +2410,11 @@
  "Intercom isn’t connected on this Machine, so this goes by email.": "O Intercom não está conectado nesta Machine, então isto vai por e-mail.",
  "Send by email instead?": "Enviar por e-mail em vez disso?",
  "Intercom from {} ·": "Intercom de {} ·",
- "Connect your own Intercom": "Conecte seu próprio Intercom"
+ "Connect your own Intercom": "Conecte seu próprio Intercom",
+ "Still with {}": "Ainda com {}",
+ "check in?": "fazer follow-up?",
+ "Still with {} · check in?": "Ainda com {} · fazer follow-up?",
+ "Taken back": "Pegada de volta",
+ "Open the chat to check in": "Abra o chat para fazer follow-up",
+ "{} already has this to-do": "{} já tem esta tarefa"
 }

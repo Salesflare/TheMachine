@@ -16,7 +16,9 @@ An Intercom conversation goes along with its place in Intercom. If their Machine
 
 While you wait, the to-do sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** asks how it's going; **Change time** moves the check-in.
 
-It comes back on top only when there is something to decide: Pat answered, declined or marked it done, the handoff failed, or a deadline came. A to-do due today checks in a few hours later, one due soon the work day before, an urgent one without a date the next work morning, and any other in 3 work days. Then it says "No answer from Pat yet · Check in", which opens the chat.
+It comes back on top only when there is something to decide: Pat answered, declined or marked it done, the handoff failed, or a deadline came. A to-do due today checks in a few hours later, one due soon the work day before, an urgent one without a date the next work morning, and any other in 3 work days.
+
+Back for a check-in, it says "Still with Pat · check in?": Pat still has it, nothing came back. **Check in now** opens the chat; **Take it back** and **Hand off to someone else** sit beside it, and Mark done, Snooze and Not needed are under More.
 
 The to-do's chat shows when it went ("Handed off to Pat's Machine · 14:02") and what came back: accepted, declined (with their note) or done. Back for a check-in with no answer yet, "No answer from Pat yet" sits under that line, with **Mark done**, **Snooze** and **Not needed** (no Do it: they have it). To nudge them or take it back, say so in the chat.
 
@@ -27,6 +29,8 @@ If the handoff didn't go out, the to-do and its chat say so, with **Try again**.
 While a teammate has it, the to-do says so in one line ("With Pat · waiting"), with **Take it back** and **Hand off to someone else**. **Take it back** makes it yours again: Pat's Machine is told, and their answer no longer moves it.
 
 **Hand off to someone else** opens the handoff form, on someone who doesn't have it yet. Or say so in the to-do's chat ("this should go to Kim"). The new handoff waits on the to-do for you to read: "Still with Pat until you send it to Kim", with **Review handoff to** Kim. That opens the form with the text, on Kim.
+
+A to-do goes to each teammate once: while Pat has it, handing it to Pat again says "Pat already has this to-do".
 
 **Take it back from** Pat is on by default; turn it off to let both have it. Nothing goes out until you pick **Hand off**. Then the chat says "Taken back from Pat" and "Handed off to Kim's Machine". Pat's Machine is told too, and the to-do it made for them goes.
 

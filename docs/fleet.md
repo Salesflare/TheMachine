@@ -90,8 +90,10 @@ default, Always accept, Never), and nothing happens on your side until you accep
    **Change time** and **Not needed**. Only a real deadline brings it back sooner than three work days, by the card's
    own `due` and `urgent` fields: about 3 hours later (within your hours, else the next morning) when it is due today,
    the morning of the work day before a nearer deadline, and the next work morning for an urgent card without a date
-   (its day has passed). Urgency alone never brings it back the same day. Back on top it says "No answer from
-   <teammate> yet · Check in", which opens its chat. A card that came back early by the older rule goes back to Later
+   (its day has passed). Urgency alone never brings it back the same day. Back on top it says "Still with
+   <teammate> · check in?", with **Check in now** (its chat), **Take it back** and **Hand off to someone else**, never an
+   older "Needs you" from before the handoff; Telegram's card says the same. One open handoff per teammate: a second one
+   to them is refused, and an old duplicate shows once in the Fleet tab (one taken back says "Taken back"). A card that came back early by the older rule goes back to Later
    by itself while they still haven't answered. Once they accept (or mark it done), it is marked done for you, still saying to whom (Undo
    brings it back); if they decline, it is back in Ready, saying "<teammate> declined: <their reason>", with **Do it
    myself**, **Hand off to someone else** and **Mark done**. Decline asks "Why? (optional)" with quick picks (Not mine,

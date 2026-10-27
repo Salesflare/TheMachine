@@ -26,6 +26,9 @@ const redirect=card('f1f1f1f1f1f1f1f1','Lou needs help recovering their account'
 // Sent to Kim instead: taken back from Pat. And one both have.
 const moved=card('a2a2a2a2a2a2a2a2','Reset the shared inbox rules',{status:'snoozed',snoozed_until:iso(Date.now()+40*hour),handoff_wait:{name:'Kim'},fleet_handoff:{name:'Kim Doe',stage:'asked',asked:'Can you reset the shared inbox rules so billing mail goes to finance?'}});
 const both=card('a3a3a3a3a3a3a3a3','Plan the support rota',{status:'snoozed',snoozed_until:iso(Date.now()+40*hour),handoff_wait:{name:'Kim'},fleet_handoff:{name:'Kim Doe',stage:'waiting for them',also:['Pat'],asked:'Can you draft the support rota for next week?'}});
+// Back from its check-in while Pat still has it, as a ready to-do whose old result asked to send the handoff
+const back=card('a5a5a5a5a5a5a5a5','Lock down the tag export',{status:'prepared',body:'Your handoff to Pat through The Machine is ready.',outcome:JSON.stringify({state:'needs_you',needs:'review and send the handoff'}),
+ fleet_handoff:{name:'Pat Lee',stage:'waiting for them',asked:'Can you lock down the tag export today?'}});
 const failed=card('b1b1b1b1b1b1b1b1','Rotate the shared webhook secret',{fleet_handoff_failed:{name:'Pat Lee',at:iso(t0+60e3)}});
 const source={kind:'source',from:'Alex Doe',via:'intercom',title:'Security triage',text:'Security triage\nVerdict: CONFIRMED\nConfidence: 90%',mine:false,at:t0-10*60e3};
 const items={
@@ -39,7 +42,7 @@ const items={
  [taken.id]:[{kind:'source',from:'Pat Lee',via:'fleet',title:'Send Sam the pricing',text:'Pat asks you to take this on: “Sam wants pricing.”',mine:false,at:t0},
   {kind:'event',text:'Taken back by Pat',choice:'reject',handoff:true,at:t0+2*hour}],
  [failed.id]:[source,{kind:'event',text:'Handoff didn’t go out to Pat’s Machine',handoff:true,retry_handoff:failed.id,at:t0+60e3}]};
-const state=()=>({suggestions:[waiting,declined,failed,redirect,later,moved,both,accepted,taken],connectors:[],suggestion_counts:{pending:3,prepared:1,snoozed:3,completed:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}});
+const state=()=>({suggestions:[waiting,back,declined,failed,redirect,later,moved,both,accepted,taken],connectors:[],suggestion_counts:{pending:3,prepared:1,snoozed:3,completed:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}});
 const view={on:true,kinds:{},ask_meetings:false,fleets:[],waiting:[],asked:[],intro_offers:[],splits:[],log:[],notices:[]};
 const calls=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;res.setHeader('Content-Type','application/json');
@@ -100,13 +103,23 @@ try{
   // The card in the list, back on top with no answer: it asks for a check-in, Mark done first, no Do it
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   const w=page.locator('#task-'+waiting.id);await w.waitFor();
-  assert.equal((await w.locator('.note.fleet').textContent()).trim(),'No answer from Pat yet · Check in');
+  assert.equal((await w.locator('.note.fleet').textContent()).trim(),'Still with Pat · check in?');
   assert.equal((await w.locator('.body').textContent()).trim(),'Asked Pat: '+ASKED);  // what was asked, not the old suggestion
   assert.ok((await w.locator('.body p').evaluate(p=>p.getBoundingClientRect().height/parseFloat(getComputedStyle(p).lineHeight)))<=2.1,'two lines at most');
   assert.equal(await w.locator('.more').count(),0);
   assert.equal(await w.locator('.note.fleet a').getAttribute('href'),'#chat='+waiting.id);
   assert.equal(await w.locator('button',{hasText:/^Do it$/}).count(),0);
-  assert.equal((await w.locator('.actions button.primary').first().textContent()).trim(),'Mark done');
+  // Still with Pat, not handed back: Check in now leads, Take it back and Hand off to someone else beside it
+  const visible=async c=>(await c.locator('.actions > button').allTextContents()).map(x=>x.trim());
+  assert.deepEqual(await visible(w),['Check in now','Take it back','Hand off to someone else']);
+  const b=page.locator('#task-'+back.id);
+  assert.equal((await b.locator('.note.fleet').textContent()).trim(),'Still with Pat · check in?');
+  assert.equal(await b.locator('.status-line').count(),0,'no older Needs you line');
+  assert.equal((await b.locator('.body').textContent()).trim(),'Asked Pat: Can you lock down the tag export today?');
+  assert.deepEqual(await visible(b),['Check in now','Take it back','Hand off to someone else']);
+  if(dir){await b.scrollIntoViewIfNeeded();await b.screenshot({path:`${dir}/handoff-still-with-${width}.png`})}
+  await b.locator('[data-handoff-checkin]').click();await page.waitForFunction(id=>location.hash==='#chat='+id,back.id);
+  await page.goto('http://127.0.0.1:'+server.address().port+'/');await w.waitFor();
   if(dir){await w.scrollIntoViewIfNeeded();await w.screenshot({path:`${dir}/handoff-waiting-card-${width}.png`})}
   // Still with Pat: under Coming back later, "With Pat · waiting" and when it checks in
   const lat=page.locator('#later-list');

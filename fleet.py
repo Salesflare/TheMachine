@@ -3161,13 +3161,25 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             waiting = [{**{k: v for k, v in dict(r).items() if k != 'draft'}, 'question': question_text(r['kind'], json.loads(r['question'])),
                         **({'draft': json.loads(r['draft'])} if _get(r, 'draft') else {})}
                        for r in db.execute("SELECT * FROM fleet_in WHERE status='waiting' ORDER BY at DESC LIMIT 50")]
+            # A handoff taken back says so; two open handoffs of one to-do to the same teammate show as one (the newest)
+            withdrawn = {r['key'][18:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_withdrawn:%'")}
+            seen = set()
+            def shown(r):
+                if r['kind'] != 'handoff' or r['status'] not in ('asked', 'waiting') or r['id'] in withdrawn:
+                    return True
+                key = (r['context'], r['fleet'], r['member_id'])
+                if key in seen:
+                    return False
+                seen.add(key)
+                return True
             asked = [{**{k: r[k] for k in ('id', 'fleet', 'member_id', 'name', 'kind', 'context', 'status', 'at', 'answered_at')},
+                      **({'withdrawn': True} if r['id'] in withdrawn else {}),
                       'question': question_text(r['kind'], json.loads(r['question'])),
                       'answer': answer_text(r['kind'], json.loads(r['answer'])) if r['answer'] else None,
                       **({'busy': json.loads(r['answer']).get('busy', [])} if r['kind'] == 'availability' and r['answer'] else {}),
                       **({'delivered': delivered[r['id']]} if r['id'] in delivered and r['status'] in ('asked', 'waiting') else {})}
                      for r in db.execute("SELECT * FROM fleet_out WHERE (context IS NULL OR (context NOT LIKE 'card:%' AND context NOT LIKE 'brief:%' "
-                                         "AND context NOT LIKE 'free:%' AND context NOT LIKE 'family-%')) ORDER BY at DESC LIMIT 60")]
+                                         "AND context NOT LIKE 'free:%' AND context NOT LIKE 'family-%')) ORDER BY at DESC LIMIT 60") if shown(r)]
             free = self.free_asked(db)
             log = [dict(r) for r in db.execute('SELECT at,direction,fleet,name,kind,what,outcome FROM fleet_log ORDER BY id DESC LIMIT 100')]
             notices = [{**json.loads(r['view']), 'reason': r['reason'] or ''}

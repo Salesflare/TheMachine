@@ -81,6 +81,7 @@ class HandoffSources(unittest.TestCase):
         self.assertEqual(len(self.fleet.handoff_draft(card)['sources']), 2)
         self.fleet.hand_off(card, self.ref, 'pat1', 'Send Sam the pricing', 'Send Sam the pricing.', sources=[1])
         self.assertEqual([x['body'] for x in self.sent()['sources']], ['The second email.'])
+        self.fleet.take_back(card)  # one open handoff per teammate: taken back first
         self.fleet.hand_off(card, self.ref, 'pat1', 'Send Sam the pricing', 'Send Sam the pricing.', sources=[])
         self.assertNotIn('sources', self.sent())
 
@@ -152,6 +153,7 @@ class HandoffSources(unittest.TestCase):
             self.fleet.hand_off(card, self.ref, 'pat1', draft['title'], draft['summary'])
             self.assertEqual([x['body'] for x in self.sent()['sources']], ['Verdict: CONFIRMED'], account)
             self.assertNotIn('40k', json.dumps(self.relay.sent('/ask')[-1]))
+            self.fleet.take_back(card)
 
     HELP = {'id': 'help', 'service': 'intercom', 'boundary': 'work:Acme', 'workspace_id': 'ws1', 'region': 'eu', 'admin_id': '42'}
 

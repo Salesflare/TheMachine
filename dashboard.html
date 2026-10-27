@@ -2610,8 +2610,8 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const copy=copyL
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
  const ask=askQuestion(s,smart,hint);
  const mine=ownerStep(s)&&!ask;
- const isPrimary=c=>c==='send'||(c==='complete'&&withTeammate(s))||(c==='retry'&&!ask)||c==='answer'||(c==='complete'&&mine)||(c==='complete'&&!copy&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&!mine);
- const btn=([c,t])=>c==='accept'&&s.status==='pending'&&s.skill_proposal?.update?`<button class="${isPrimary(c)?'primary':'ghost'}" data-skill-update="${esc(s.id)}">${esc(t)}</button>`:c==='change'&&agentAsk(s)?`<button class="ghost" data-agent-ask="${esc(s.id)}">Ask ${esc(s.agent_job.name)} for changes</button>`:c==='handoff'?`<button class="ghost" data-fleet-handoff="${esc(s.id)}">${t}</button>`:c==='takeback'?`<button class="ghost" data-handoff-take-back="${esc(s.id)}">${t}</button>`:c.startsWith('agent:')?`<button class="ghost" data-agent-hand="${esc(c.slice(6))}" data-card="${esc(s.id)}">${esc(t)}</button>`:`<button class="${isPrimary(c)?'primary':c==='reject'?'quiet':'ghost'}" data-id="${s.id}" data-choice="${c}"${c==='change'?` title="${s.status==='pending'?'Tell me how to do it instead':s.status==='prepared'&&smart.some(a=>DRAFT_KINDS.includes(a.kind))?'Tell me what to change in the draft, and I redo it':'Tell me what to change, and I redo it'}"`:''}>${t}</button>`;
+ const isPrimary=c=>c==='send'||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask)||c==='answer'||(c==='complete'&&mine)||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&!mine);
+ const btn=([c,t])=>c==='accept'&&s.status==='pending'&&s.skill_proposal?.update?`<button class="${isPrimary(c)?'primary':'ghost'}" data-skill-update="${esc(s.id)}">${esc(t)}</button>`:c==='change'&&agentAsk(s)?`<button class="ghost" data-agent-ask="${esc(s.id)}">Ask ${esc(s.agent_job.name)} for changes</button>`:c==='handoff'?`<button class="ghost" data-fleet-handoff="${esc(s.id)}">${t}</button>`:c==='takeback'?`<button class="ghost" data-handoff-take-back="${esc(s.id)}">${t}</button>`:c==='checkin'?`<button class="primary" data-handoff-checkin="${esc(s.id)}" title="Open the chat to check in">${t}</button>`:c.startsWith('agent:')?`<button class="ghost" data-agent-hand="${esc(c.slice(6))}" data-card="${esc(s.id)}">${esc(t)}</button>`:`<button class="${isPrimary(c)?'primary':c==='reject'?'quiet':'ghost'}" data-id="${s.id}" data-choice="${c}"${c==='change'?` title="${s.status==='pending'?'Tell me how to do it instead':s.status==='prepared'&&smart.some(a=>DRAFT_KINDS.includes(a.kind))?'Tell me what to change in the draft, and I redo it':'Tell me what to change, and I redo it'}"`:''}>${t}</button>`;
  const all=[...choices,...(canHandoff(s)&&s.status!=='snoozed'&&!smart.some(a=>a.kind==='handoff')?[['handoff',s.fleet_handoff?.back?'Hand off to someone else':'Hand off']]:canReassign(s)?[['takeback','Take it back'],['handoff','Hand off to someone else']]:[]),...(canAgent(s)?agentTools().map(t=>['agent:'+t.id,'Hand to '+t.name]):[]),...(agentAsk(s)&&!choices.some(([c])=>c==='change')?[['change','']]:[])];
  const head=all.filter(([c])=>isPrimary(c)),order=(mine&&s.status==='pending'?['accept','snooze','reject','change','handoff']:ask?['handoff','complete','retry','snooze','reject']:answered?['snooze','change','complete','reject','handoff']:SECONDARY[s.status])||['complete','snooze','change','reject','handoff'];
  const rank=c=>c.startsWith('agent:')?99:c==='change'&&agentAsk(s)?-1:order.indexOf(c),rest=all.filter(([c])=>!isPrimary(c)).sort((a,b)=>rank(a[0])-rank(b[0]));
@@ -2619,7 +2619,8 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const copy=copyL
  const leads=(smartButtons.match(/<(button|a) /g)||[]).length+head.length,room=mine&&s.status==='pending'?3:Math.max(1,3-leads);
  // A teammate has it now: Take it back and Hand off to someone else stay in sight, after the to-do's first button.
  const held=([c])=>canReassign(s)&&(c==='takeback'||c==='handoff');
- let shown=[...rest.filter(x=>!held(x)).slice(0,Math.max(1,room-rest.filter(held).length)),...rest.filter(held)],more=rest.filter(x=>!shown.includes(x));if(more.length===1&&!unmerge&&!(mine&&s.status==='pending')){shown=rest;more=[]}
+ // Back to check in: Check in now, Take it back and Hand off to someone else; the rest in More.
+ let shown=[...rest.filter(x=>!held(x)).slice(0,withTeammate(s)?0:Math.max(1,room-rest.filter(held).length)),...rest.filter(held)],more=rest.filter(x=>!shown.includes(x));if(more.length===1&&!unmerge&&!(mine&&s.status==='pending')){shown=rest;more=[]}
  // Rename sits in More on every card (and so in the chat's menu): the owner's title wins over the generated one.
  const rename=`<button type="button" class="ghost" data-rename="${esc(s.id)}">Rename</button>`;
  const menu=`<details class="more-actions"><summary aria-label="More actions">More</summary><div class="more-menu" role="group" aria-label="More actions">${more.map(btn).join('')}${rename}${unmerge}</div></details>`;
@@ -2670,7 +2671,7 @@ const handled=!closed(s)&&s.handled_hint?(()=>{try{return JSON.parse(s.handled_h
 const ask=askQuestion(s,smart,hint);
 // Try again already ran without anything new and stopped asking again: retrying alone won't help, so it isn't offered.
 const retryPointless=s.preparation_cause==='retry'&&askBlocked(s);
-const asked=ask?[['answer','Answer'],...(s.preparation_status==='blocked'&&!retryPointless?[['retry',retryLabel(s.preparation_reason)]]:[]),['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:withTeammate(s)?[['complete','Mark done'],['snooze','Snooze'],['change','Ask for changes'],['reject','Not needed']]:s.status==='pending'?[['accept',s.labels?.accept||'Do it'],['complete','Mark done'],['snooze','Snooze'],['change','Do it differently'],['reject',s.labels?.reject||'Not needed']]:s.status==='snoozed'?[['accept',s.handoff_wait?'Check in now':'Unsnooze'],['snooze','Change time'],['reject','Not needed']]:[...(s.preparation_status==='blocked'?[['retry',retryLabel(s.preparation_reason)]]:answered?[['accept','Do it']]:[]),['complete','Mark done'],['snooze','Snooze'],['change','Ask for changes'],['reject','Not needed']];
+const asked=ask?[['answer','Answer'],...(s.preparation_status==='blocked'&&!retryPointless?[['retry',retryLabel(s.preparation_reason)]]:[]),['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:withTeammate(s)?[['checkin','Check in now'],['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:s.status==='pending'?[['accept',s.labels?.accept||'Do it'],['complete','Mark done'],['snooze','Snooze'],['change','Do it differently'],['reject',s.labels?.reject||'Not needed']]:s.status==='snoozed'?[['accept',s.handoff_wait?'Check in now':'Unsnooze'],['snooze','Change time'],['reject','Not needed']]:[...(s.preparation_status==='blocked'?[['retry',retryLabel(s.preparation_reason)]]:answered?[['accept','Do it']]:[]),['complete','Mark done'],['snooze','Snooze'],['change','Ask for changes'],['reject','Not needed']];
 const choices=ownerStep(s)&&!ask?ownerStepChoices(asked):asked;
 const notes=smart.map(a=>({action:a,state:a.state||s.action_status})).filter(x=>x.action!==tpSent&&actionNote(x.action.kind==='intercom'?{...x.state,as_name:x.action.as_name}:x.state,x.action.kind));
 const undo=closed(s)&&s.undo_until&&Date.parse(s.undo_until)>Date.now();
@@ -2688,7 +2689,7 @@ const statusLine=(()=>{const line=(text,cls='')=>`<p class="note status-line${cl
  // A send on its way or done has its own line below; the result's needs line no longer holds.
  if(smart.some(a=>sendBusy(a.state||s.action_status)&&!['local_preparation','paused'].includes((a.state||s.action_status)?.status)))return '';
  // With a teammate (and nothing new to send them): their line says where it is, not an older "Needs you".
- if(['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s)&&['needs_you','your_step'].includes(o?.state))return '';
+ if(withTeammate(s)||['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s)&&['needs_you','your_step'].includes(o?.state))return '';
  if(o?.state==='needs_you')return line('Needs you: '+sentence(o.needs),' outcome');
  if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return line('Ready to approve. Nothing goes out until you do.');
  if(o?.state==='answered')return line('Answered. Nothing done yet.');
@@ -4188,13 +4189,13 @@ function chatSendLine(d,x){const st=x.st,who=d.to.length&&!d.to.some(t=>t.includ
  return ''}
 function chatParts(s){const t=document.createElement('template');t.innerHTML=suggestionCard(s,'Chat');const card=t.content.querySelector('article');
  const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelector('.more-menu').children]:[n])
-  .filter(n=>!['change','answer','cancel-change'].includes(n.dataset.choice));
+  .filter(n=>!['change','answer','cancel-change'].includes(n.dataset.choice)&&n.dataset.handoffCheckin==null);  // in the chat already: no Check in now
  // A snoozed card's way back is Unsnooze; a closed one's is Reopen or Undo: a text button on the status line
  const back=s.status==='snoozed'?acts.find(n=>n.dataset.choice==='accept'):closed(s)?acts.find(n=>n.dataset.choice==='reopen')||acts.find(n=>n.dataset.choice==='undo'):null;
  if(back){back.className='link chat-inline';back.textContent=s.status==='snoozed'?(s.handoff_wait?'Check in now':'Unsnooze'):'Reopen'}
  const sends=chatSends(s),going=sends.some(x=>chatGoing(x.st)),went=sends.some(x=>x.st.status==='sent');
  // While a message goes out nothing is the next step yet; once it went out, Mark done is; after a failure, Try again
- let lead=back||going?null:acts.find(n=>n.classList.contains('primary'))||null;
+ let lead=back||going?null:acts.find(n=>n.classList.contains('primary'))||(withTeammate(s)?acts.find(n=>n.dataset.choice==='complete'):null)||null;
  if(went&&!going&&!back&&!lead?.dataset.smart)lead=acts.find(n=>n.dataset.choice==='complete')||lead;
  if(lead?.dataset.smart&&chatFailed(sends.find(x=>String(x.a.revision)===lead.dataset.smart)?.st))lead.textContent='Try again';
  const rest=acts.filter(n=>n!==lead&&n!==back);
@@ -5277,7 +5278,7 @@ const handoffBackActions=s=>`<div class="actions"><button class="primary" data-h
 function handoffLine(h,s){const n=h.note?`: ${esc(h.note)}`:'',first=esc([String(h.name||'your teammate').split(' ')[0],...(h.also||[])].join(' and '));if(h.line)return esc(h.line);
  const next=s&&redirect(s)&&taskActions(s).find(a=>a.kind==='handoff'&&a.to_name&&firstName(a.to_name)!==firstName(h.name));
  if(next)return `Still with ${first} until you send it to ${esc(firstName(next.to_name))}`;
- return ['asked','waiting for them'].includes(h.stage)?(s&&s.status==='pending'?`No answer from ${first} yet · <a class="link" href="#chat=${esc(s.id)}" title="Open the chat">Check in</a>`:`With ${first} · waiting`):h.stage==='declined'?`${esc(h.name)} declined${n||'.'}`:h.stage==='expired'?`${esc(h.name)} didn’t answer in time.`:`Handed off to ${esc(h.name)}: ${esc(h.stage)}${h.note?` (${esc(h.note)})`:''}`}
+ return ['asked','waiting for them'].includes(h.stage)?(s&&withTeammate(s)?`${esc(t('Still with {}',firstName(h.name)))} · <a class="link" href="#chat=${esc(s.id)}" title="Open the chat">${esc(t('check in?'))}</a>`:`With ${first} · waiting`):h.stage==='declined'?`${esc(h.name)} declined${n||'.'}`:h.stage==='expired'?`${esc(h.name)} didn’t answer in time.`:`Handed off to ${esc(h.name)}: ${esc(h.stage)}${h.note?` (${esc(h.note)})`:''}`}
 // Fleet items that need you are cards under Suggestions (tagged Fleet, Work), built from api/fleet: a teammate's
 // question or request (their words, shown quoted, never acted on), a meeting's follow-ups to split, and confirmations
 // the relay asks for. The Fleet tab keeps people, rules, briefs, your own asks and the log.
@@ -5476,6 +5477,7 @@ const HO_Q=/^Can you take this on: ([\s\S]*?)\? Their summary: “([\s\S]*?)”(
 function fleetHandoffs(f,work,inFleet){const cards=new Set((state?.suggestions||[]).map(s=>s.id));
  const what=q=>{const m=HO_Q.exec(q||'');return m?[m[1]+(m[2]?`: “${m[2]}”`:''),m[3].trim()].filter(Boolean).join(' '):String(q||'')};
  const stage=a=>{const [st,...note]=String(a.answer||'').split(': ');const n=note.join(': ');
+  if(a.withdrawn)return['Taken back','muted',true];
   if(['asked','waiting'].includes(a.status))return['Waiting for an answer'+(a.delivered===false?', not delivered yet':''),'amber',false];
   if(a.status==='expired')return['No answer in time','orange',false];
   if(a.status==='declined'||st==='declined')return['Declined','orange',false,n];
@@ -5493,7 +5495,7 @@ function fleetHandoffs(f,work,inFleet){const cards=new Set((state?.suggestions||
 function fleetIntroOffers(f,work,inFleet){const offers=(f.intro_offers||[]).filter(o=>inFleet(o,work));
  return offers.length?`<div class="list">${offers.map(o=>`<article><p><strong>${esc(o.name)}</strong> knows someone at ${esc(o.about)}.</p><form class="fleet-ask fleet-intro-form" data-fleet="${esc(o.fleet)}" data-member="${esc(o.member_id)}" data-about="${esc(o.about)}"><input name="note" maxlength="300" placeholder="Why, in a line (optional; they see it)" aria-label="Why"><button class="primary">Ask ${esc(o.name)} for an intro</button></form></article>`).join('')}</div>`:''}
 // Back from a check-in while a teammate still has it: no Do it (that would prepare it all over again); Mark done leads
-const withTeammate=s=>s.status==='pending'&&['asked','waiting for them'].includes(s.fleet_handoff?.stage);
+const withTeammate=s=>!closed(s)&&s.status!=='snoozed'&&!s.handled_hint&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s);
 // A new handoff text on a card a teammate still has (the owner asked to hand it to someone else): it waits for their review.
 const redirect=s=>!closed(s)&&s.status!=='snoozed'&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&taskActions(s).some(a=>a.kind==='handoff');
 const firstName=n=>String(n||'').split(' ')[0];
@@ -5894,6 +5896,8 @@ $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[
   await refresh()}catch(err){b.disabled=false;toast(err.message,true)}});
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-not-mine]');if(!b)return;b.disabled=true;
  try{await fleetPost('fleet_handoff_not_mine',{suggestion_id:b.dataset.handoffNotMine});toast('Undone. Your teammate is told it isn’t yours.');await refresh()}catch(err){b.disabled=false;toast(err.message,true)}});
+// Check in now: the to-do's chat, to ask the teammate how it goes (nothing is sent from here)
+$('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-handoff-checkin]');if(!b)return;e.preventDefault();location.hash='chat='+b.dataset.handoffCheckin});
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-take-back]');if(!b)return;b.disabled=true;
  try{await fleetPost('fleet_handoff_take_back',{suggestion_id:b.dataset.handoffTakeBack});toast('Taken back. It’s yours again.');await refresh()}catch(err){b.disabled=false;toast(err.message,true)}});
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-mine]');if(!b)return;b.disabled=true;

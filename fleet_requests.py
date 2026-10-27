@@ -709,7 +709,10 @@ class Requests:
         if carried:
             question['sources'] = carried
         with self.connect() as db:
-            earlier = [r for r in self.open_handoffs(db, card_id) if (r['fleet'], r['member_id']) != (fleet_ref, member_id)] if replace else []
+            held = self.open_handoffs(db, card_id)
+            if any((r['fleet'], r['member_id']) == (fleet_ref, member_id) for r in held):  # one open handoff per teammate
+                raise ValueError(t('{} already has this to-do', first_name(fleet.label(self.member(fleet_ref, member_id)))))
+            earlier = [r for r in held if (r['fleet'], r['member_id']) != (fleet_ref, member_id)] if replace else []
         taken_at = fleet.now()
         try:
             sent = self.ask('handoff', question, context='handoff:' + str(card_id), fleet=fleet_ref, to=[member_id])

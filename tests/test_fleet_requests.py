@@ -357,6 +357,37 @@ class Requests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Nobody has this to-do now'):
             self.app.action('fleet_handoff_take_back', {'suggestion_id': card}, owner_dashboard=True)
 
+    def test_back_to_check_in_it_says_who_still_has_it_and_one_handoff_per_teammate(self):
+        """Back on the list while Kim still has it: the card says it is still with Kim (not handed back). A second handoff
+        to Kim while one is open is refused; an old duplicate shows once in the Fleet list, and one taken back says so."""
+        self.with_kim()
+        self.fleet.wait_card = lambda card_id, why, key, expected: self.store.wait_handoff(card_id, why, key, expected)
+        card = self.ready_card([], 'k-still')
+        self.fleet.hand_off(card, self.ref, 'kim1', 'Export leaks rows', self.HANDOFF_TEXT)
+        with self.assertRaisesRegex(ValueError, '^Kim already has this to-do$'):
+            self.fleet.hand_off(card, self.ref, 'kim1', 'Export leaks rows', self.HANDOFF_TEXT)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM fleet_out WHERE kind='handoff'").fetchone()[0], 1)
+            # an older Machine made a second one (as on a real install): the Fleet list shows Kim once
+            db.execute("INSERT INTO fleet_out(id,fleet,member_id,name,kind,question,context,status,answer,at,answered_at) "
+                       "SELECT 'q_'||substr(id,3,15)||'f',fleet,member_id,name,kind,question,context,status,answer,at,answered_at FROM fleet_out WHERE kind='handoff'")
+            # the check-in is due: it is back on the list
+            db.execute("UPDATE suggestions SET snoozed_until='2000-01-01T00:00:00+00:00' WHERE id=?", (card,))
+        self.store.wake_snoozed()
+        row = self.card_row(card)
+        self.assertEqual(row['status'], 'prepared')
+        with self.store.connect() as db:
+            extra = self.store.suggestion_result(row, db)
+        self.assertEqual(extra.get('handoff_still'), {'name': 'Kim'})
+        self.assertNotIn('handoff_wait', extra)
+        self.assertIn('Still with Kim · check in?', a.card({**row, **extra}))
+        open_kim = [x for x in self.fleet.view()['asked'] if x['kind'] == 'handoff' and not x.get('withdrawn')]
+        self.assertEqual(len(open_kim), 1)
+        self.app.action('fleet_handoff_take_back', {'suggestion_id': card}, owner_dashboard=True)
+        self.assertTrue(all(x.get('withdrawn') for x in self.fleet.view()['asked'] if x['kind'] == 'handoff'))
+        with self.store.connect() as db:
+            self.assertNotIn('handoff_still', self.store.suggestion_result(self.card_row(card), db))
+
     def test_a_handoff_taken_back_drops_the_card_it_made_saying_so(self):
         self.fleet.drop_card = lambda card_id, why='Teammate not reached', key=None: self.store.decide(card_id, 'reject', why, key or 'x', 'fleet')
         self.ask('handoff', {'title': 'Send Sam the pricing', 'summary': 'Sam wants pricing.'}, 'q1')
