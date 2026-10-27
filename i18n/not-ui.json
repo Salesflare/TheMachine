@@ -81,6 +81,7 @@
  "acme.io",
  "an email",
  "and {} more like these",
+ "args.profile.learnings is a list of {\"kind\", \"text\", \"confidence\", \"threads\"}, or [] when nothing general holds",
  "asked to slow down",
  "assistant connect",
  "assistant connect gmail",
@@ -204,6 +205,7 @@
  "{} added from your history{}",
  "{} project{} could belong here",
  "{}Only you",
+ "{}Share my brief facts with the team",
  "{}{}${tpSent&&s.task_page.lead?",
  "}{}${hasDraft?",
  "✓ Connected{}.{} Restarting to start reading it…"
