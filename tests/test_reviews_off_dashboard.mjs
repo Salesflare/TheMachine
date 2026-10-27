@@ -32,7 +32,7 @@ try{
  const rows=page.locator('#review-live .review-live');
  assert.equal(await rows.count(),1);
  const text=await rows.textContent();
- assert.ok(text.includes('Reviews are off.')&&text.includes('first look at your last 7 days')&&text.includes('it starts once a source'),text);
+ assert.ok(text.includes('Reviews are off.')&&text.includes('first look at your last 7 days')&&text.includes('It starts once a source'),text);
  assert.ok(!(await page.locator('#analyses').textContent()).includes('No reviews yet'));
  // Suggestions: while the first look is pending it says so, not "All clear"
  const empty=await page.locator('#suggestions').textContent();

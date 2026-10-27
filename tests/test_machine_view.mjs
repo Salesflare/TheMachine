@@ -21,12 +21,14 @@ addEventListener('resize',()=>{rfb._updateClip();rfb._updateScale()});  // as no
 export default {rfb};`;
 const page=`<!doctype html><html><head><style>html,body{margin:0;height:100%;overflow:hidden;background:#000}#noVNC_container{position:fixed;inset:0}canvas{position:absolute;left:0;top:0;background:#fff}</style>
 <script type="module" src="machine-view.js"></script></head><body><div id="noVNC_container"><canvas></canvas></div></body></html>`;
-const region={x:.5,y:0,w:.5,h:.5};  // the browser's window: the screen's top right quarter, 1000x500
+const region={x:.5,y:0,w:.5,h:.5};let lang='en';  // the dashboard's language, from its /api/browser-now  // the browser's window: the screen's top right quarter, 1000x500
 const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');
  const send=(type,body)=>{res.setHeader('Content-Type',type);res.end(body)};
  if(url.pathname==='/browser/')return send('text/html',page);
  if(url.pathname==='/browser/machine-view.js')return send('text/javascript',view);
  if(url.pathname==='/browser/app/ui.js')return send('text/javascript',ui);
+ if(url.pathname==='/api/browser-now')return send('application/json',JSON.stringify({working:[],waiting:[],lang}));
+ if(url.pathname==='/i18n/nl.json')return send('application/json',await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8'));
  if(url.pathname==='/browser/region')return send('application/json',JSON.stringify({region}));
  res.statusCode=404;res.end()});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -54,6 +56,12 @@ try{
  // Whole screen: nothing covered
  await p.locator('#machine-view-bar [data-v="whole"]').click();await p.waitForTimeout(200);
  l=await look(p);assert.deepEqual(l.masks,[],'Whole screen shows everything');
+ // In a Dutch dashboard its own buttons and note read Dutch, from the dashboard's catalog (no English left among them)
+ lang='nl';const q=await context.newPage();q.on('pageerror',e=>errors.push(e.message));
+ await q.goto(base);await q.waitForTimeout(800);
+ const words=await q.evaluate(()=>({whole:document.querySelector('[data-v="whole"]').textContent,in:document.querySelector('[data-v="in"]').getAttribute('aria-label'),
+  out:document.querySelector('[data-v="out"]').title,title:document.querySelector('#machine-note strong').textContent,ok:document.querySelector('#machine-note button').textContent}));
+ assert.deepEqual(words,{whole:'Hele scherm',in:'Inzoomen',out:'Uitzoomen',title:'De eigen browser van je Machine',ok:'Begrepen'});
  assert.deepEqual(errors,[]);
  console.log('machine view ok');
 }finally{await browser?.close();server.close()}

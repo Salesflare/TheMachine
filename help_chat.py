@@ -1,5 +1,7 @@
 """Help in the dashboard: questions about how The Machine works, answered from the help articles (docs/help) first
-and the app's own code second, with links to what the answer used.
+and the app's own code second, with links to what the answer used. The articles are read in the owner's language
+(docs/help/<language>/, the English one where a translation is missing), and the answer comes in that language unless
+the person writes in another one.
 
 Cheap by design: only the few sections that match the question go in (never every article), with a short prompt,
 as a one-shot turn on the Machine's own model through OpenClaw (`openclaw infer model run --gateway`: its own
@@ -20,6 +22,10 @@ import threading
 import time
 from pathlib import Path
 
+import i18n
+import locale_prefs
+from i18n import t
+
 ROOT = Path(__file__).resolve().parent
 HELP = ROOT / 'docs' / 'help'
 SITE = 'https://themachine.computer/help/'
@@ -34,8 +40,15 @@ TOPIC_LINE = re.compile(r'^[ \t]*\**TOPIC:?\**[ \t]*(.*)$', re.M | re.I)  # the 
 TIMEOUT = 120
 CODE_FILES = ('*.py', 'connectors/*.py')  # the app's own modules; never config, data or tests
 STOP = set('a an and are as at be by can do does for from has have how i if in is it its me my of on or so that the this '
-           'to was what when where which who why will with you your'.split())
-WORD = re.compile(r'[a-z0-9]+')
+           'to was what when where which who why will with you your'.split()
+           # the same small words in the other languages of the app, so "hoe" or "comment" finds nothing on its own
+           + 'de het een en van in op is ik je jij mijn hoe wat waar wie waarom met voor naar dat die dit er niet kan '
+             'le la les un une des et du au aux en est je tu vous mon ma mes comment que quoi où qui pourquoi avec pour '
+             'pas ne ce cette il elle der die das ein eine und von zu im ist ich du mein wie was wo wer warum mit für '
+             'nicht kann el los las unos y del al es yo mi cómo qué dónde quién por con para no se lo il lo gli i una '
+             'di da è io mio come cosa dove chi perché per non o os um uma e do da no na eu meu como onde quem por '
+             'com não posso puedo posso kann'.split())
+WORD = re.compile(r'\w+')  # any language's words: "configuración", "Einstellungen"
 _cache = {}
 _lock = threading.Lock()
 _asked = []
@@ -79,19 +92,52 @@ def _front(text):
     return fields, text[m.end():]
 
 
-def help_sections(folder=HELP):
-    """Every help article split at its headings: {slug, anchor, title, heading, text}."""
+def _article(path, lang='en'):
+    """(fields, parts, english parts) of an article in a language: its translation when there is one with the English
+    headings (an anchor is the English heading's id, by position), else the English one."""
+    split = lambda body: re.split(r'^#{2,3} (.+)$', body, flags=re.M)
+    fields, body = _front(path.read_text(encoding='utf-8'))
+    english = split(body)
+    local = path.parent / lang / path.name
+    if lang != 'en' and local.is_file():
+        there, text = _front(local.read_text(encoding='utf-8'))
+        parts = split(text)
+        if len(parts) == len(english):
+            return there, parts, english
+    return fields, english, english
+
+
+def help_sections(folder=HELP, lang='en'):
+    """Every help article split at its headings, in the language: {slug, anchor, title, heading, text, keywords, english}."""
     out = []
     for path in sorted(Path(folder).glob('*.md')):
-        fields, body = _front(path.read_text(encoding='utf-8'))
+        fields, parts, english = _article(path, lang)
+        en_fields = _front(path.read_text(encoding='utf-8'))[0]
         title = fields.get('title') or path.stem
-        parts = re.split(r'^#{2,3} (.+)$', body, flags=re.M)
         intro = (fields.get('summary', '') + '\n' + parts[0]).strip()
+        also = lambda i: '' if parts is english else ' '.join([en_fields.get('title', ''), english[i], english[i + 1] if i else ''])
         # keywords: words people use for it that the article doesn't ("personalize", "tone"), searched, never shown
-        out.append({'slug': path.stem, 'anchor': '', 'title': title, 'heading': '', 'text': intro, 'keywords': fields.get('keywords', '')})
-        for heading, text in zip(parts[1::2], parts[2::2]):
-            out.append({'slug': path.stem, 'anchor': heading_id(heading), 'title': title, 'heading': heading.strip(), 'text': text.strip()})
+        out.append({'slug': path.stem, 'anchor': '', 'title': title, 'heading': '', 'text': intro,
+                    'keywords': en_fields.get('keywords', ''), 'english': also(0)})
+        for i in range(1, len(parts) - 1, 2):
+            out.append({'slug': path.stem, 'anchor': heading_id(english[i]), 'title': title, 'heading': parts[i].strip(),
+                        'text': parts[i + 1].strip(), 'english': also(i)})
     return out
+
+
+def article(slug, lang=None, folder=HELP):
+    """One help article for the dashboard's Help, in the owner's language (the English one if not translated yet):
+    {slug, title, summary, body (markdown), anchors (each heading's id, in order), lang, url}."""
+    lang = lang or locale_prefs.language()
+    path = Path(folder) / f'{slug}.md'
+    if not re.fullmatch(r'[a-z0-9-]{1,80}', str(slug or '')) or not path.is_file():
+        raise ValueError(t('That help page doesn’t exist.'))
+    fields, parts, english = _article(path, lang)
+    local = parts is not english
+    body = _front((path.parent / lang / path.name if local else path).read_text(encoding='utf-8'))[1]
+    return {'slug': slug, 'title': fields.get('title') or slug, 'summary': fields.get('summary', ''), 'body': body.strip(),
+            'anchors': [heading_id(english[i]) for i in range(1, len(english) - 1, 2)], 'lang': lang if local else 'en',
+            'url': SITE + slug}
 
 
 DOCSTRING = re.compile(r'^[ \t]*(?:async[ \t]+)?(?:def|class)[ \t]+(\w+)[^\n]*:[ \t]*\n[ \t]*[rb]?"""(.*?)"""', re.M | re.S)
@@ -152,13 +198,14 @@ class Index:
         return scored[:k]
 
 
-def indexes(folder=HELP, root=ROOT):
-    key = (str(folder), str(root))
+def indexes(folder=HELP, root=ROOT, lang='en'):
+    key = (str(folder), str(root), lang)
     with _lock:
         if key not in _cache:
-            # a heading and the article's title count twice: they say what a section is about
-            _cache[key] = (Index(help_sections(folder), lambda d: f"{d['title']} {d['title']} {d['heading']} {d['heading']} "
-                                                              f"{d.get('keywords', '')} {d.get('keywords', '')} {d['text']}"),
+            # a heading and the article's title count twice: they say what a section is about. A translated section is
+            # found by its English words too, for a question in English.
+            _cache[key] = (Index(help_sections(folder, lang), lambda d: f"{d['title']} {d['title']} {d['heading']} {d['heading']} "
+                                 f"{d.get('keywords', '')} {d.get('keywords', '')} {d['text']} {d.get('english', '')}"),
                            Index(code_snippets(root), lambda d: f"{d['name']} {d['text']}"))
         return _cache[key]
 
@@ -167,9 +214,9 @@ def link(section):
     return SITE + section['slug'] + ('#' + section['anchor'] if section['anchor'] else '')
 
 
-def retrieve(question, history=(), folder=HELP, root=ROOT):
+def retrieve(question, history=(), folder=HELP, root=ROOT, lang='en'):
     """(help sections, code snippets) for a question: help first; code only for what the help leaves open."""
-    docs, code = indexes(folder, root)
+    docs, code = indexes(folder, root, lang)
     query = ' '.join([question, *[t['text'] for t in history if t.get('role') == 'user'][-1:]])
     found = docs.search(query, SECTIONS)
     best = found[0][0] if found else 0
@@ -242,7 +289,7 @@ def level(config=None, role='', said=()):
     return ('technical' if points >= 3 else 'some' if points >= 1 else 'everyday'), why
 
 
-def prompt(question, history, sections, snippets, audience=None):
+def prompt(question, history, sections, snippets, audience=None, lang='en'):
     """The whole turn: a short brief, the matching sections and snippets, the last few turns and the question."""
     name, why = audience or ('everyday', [])
     parts = ["You answer questions about The Machine, an assistant app, in its dashboard's Help panel. Answer only from the "
@@ -264,6 +311,8 @@ def prompt(question, history, sections, snippets, audience=None):
              "whether they describe something in The Machine not working as it should (a bug, not a how-to question). Only then, "
              "after your answer, add a line that is just BUG: and below it a short report for The Machine team, in their "
              "language: what they did, what they expected and what happened, one line each, from what they said only.",
+             f"Reply in {i18n.language_name(lang)}, the language of their app, unless they write to you in another language: "
+             "then reply in that language. Name buttons and screens as the help sections below do.",
              "Last, always end with one line TOPIC: and 2 to 5 lowercase English words for what the question is about, the way "
              "the help pages would say it, like \"snooze a to-do\" or \"writing style\". Never a name, company, address, "
              "number or their own words.", '']
@@ -293,12 +342,12 @@ def openclaw_model_run(config, text, model=None, thinking=None):
         result = subprocess.run(args, capture_output=True, text=True, timeout=TIMEOUT)
         data = json.loads(result.stdout or '{}')
     except subprocess.TimeoutExpired:
-        raise Unavailable('Help took too long to answer. Try again.') from None
+        raise Unavailable(t('Help took too long to answer. Try again.')) from None
     except (OSError, ValueError):
-        raise Unavailable('Help can’t reach your model right now.') from None
+        raise Unavailable(t('Help can’t reach your model right now.')) from None
     texts = [o.get('text') for o in data.get('outputs') or [] if isinstance(o, dict) and isinstance(o.get('text'), str)]
     if result.returncode != 0 or not data.get('ok') or not texts:
-        raise Unavailable('Help can’t reach your model right now.')
+        raise Unavailable(t('Help can’t reach your model right now.'))
     return '\n'.join(texts).strip()
 
 
@@ -312,19 +361,20 @@ def limited(now=None):
     return False
 
 
-def ask(question, history=(), run=None, config=None, model=None, folder=HELP, root=ROOT, role='', thinking=None):
-    """{'answer', 'sources', 'topic', 'answered'} for one question. `run(config, prompt, model)` makes the model turn
-    (with thinking=... too when a thinking level was picked, chat_model.py). `role` is the owner's role from USER.md, for
-    level() only."""
+def ask(question, history=(), run=None, config=None, model=None, folder=HELP, root=ROOT, role='', thinking=None, lang=None):
+    """{'answer', 'sources', 'topic', 'answered'} for one question, in the owner's language (lang). `run(config, prompt,
+    model)` makes the model turn (with thinking=... too when a thinking level was picked, chat_model.py). `role` is the
+    owner's role from USER.md, for level() only."""
+    lang = lang or locale_prefs.language()
     question = ' '.join(str(question or '').split())[:QUESTION_CHARS]
     if not question:
-        raise ValueError('Type a question first.')
+        raise ValueError(t('Type a question first.'))
     history = clean_history(history)
-    sections, snippets = retrieve(question, history, folder, root)
+    sections, snippets = retrieve(question, history, folder, root, lang)
     if limited():
-        raise Unavailable('That’s a lot of questions for one hour. Try again a bit later.')
+        raise Unavailable(t('That’s a lot of questions for one hour. Try again a bit later.'))
     audience = level(config, role, [question, *[t['text'] for t in history if t['role'] == 'user']])
-    answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets, audience), model,
+    answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets, audience, lang), model,
                                          **({'thinking': thinking} if thinking else {}))
     answer, topic = split_topic(answer)
     answer, bug = split_bug(answer)

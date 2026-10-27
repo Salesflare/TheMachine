@@ -4,6 +4,7 @@ import {join} from 'node:path';import {tmpdir} from 'node:os';
 let source=await readFile(new URL('../openclaw-plugin/change-prompt.ts',import.meta.url),'utf8');
 const start=source.indexOf('export async function telegramInternals()'),end=source.indexOf('export function forceReplyPayload');
 source=source.slice(0,start)+'async function telegramInternals(){return globalThis.internals();}\n'+source.slice(end);
+source=source.replace("'./i18n.ts'",JSON.stringify(new URL('../openclaw-plugin/i18n.ts',import.meta.url).href));  // the copy runs from a temp folder
 const dir=await mkdtemp(join(tmpdir(),'assistant-prompt-'));
 try{
  const file=join(dir,'prompt.ts');await writeFile(file,source);const {sendChangePrompt}=await import(file);

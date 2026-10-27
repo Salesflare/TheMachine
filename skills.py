@@ -898,7 +898,7 @@ class Catalog:
             done = self.run([self.binary, *args], capture_output=True, text=True, errors='replace', timeout=timeout,
                             stdin=subprocess.DEVNULL, env=env)
         except (OSError, subprocess.TimeoutExpired) as error:
-            raise ValueError('OpenClaw did not answer' + (' in time' if isinstance(error, subprocess.TimeoutExpired) else '')) from None
+            raise ValueError('OpenClaw did not answer in time' if isinstance(error, subprocess.TimeoutExpired) else 'OpenClaw did not answer') from None
         return done
 
     @staticmethod

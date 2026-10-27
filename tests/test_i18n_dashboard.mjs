@@ -49,7 +49,7 @@ try{
  assert.deepEqual(saved.at(-1),{language:'fr'});
  assert.equal((await settingsLabel(page)).trim(),'Paramètres');
  assert.equal(await page.locator('#settings-locale strong').first().innerText(),'Langue');
- assert.equal(await page.locator('#locale-language-note').innerText(),'Quelques écrans sont encore en anglais.');
+ assert.equal(await page.locator('#locale-language-note').innerText(),'');
  // Text rendered later, with filled-in parts and plurals, and t() for code.
  const later=await page.evaluate(()=>{const p=document.createElement('p');p.textContent='Forgot 1 saved sign-in.';document.body.append(p);
   const q=document.createElement('p');q.textContent='Forgot 3 saved sign-ins.';document.body.append(q);
@@ -59,6 +59,9 @@ try{
  const order=await page.evaluate(()=>{const keys=ps=>ps.map(p=>p.f).join('\n');
   return [keys(i18nPatterns(I18N.cat))===keys(i18nPatterns(Object.fromEntries(Object.entries(I18N.cat).reverse()))),i18nLookup('Sign in to Acme on your Machine')]});
  assert.deepEqual(order,[true,'Se connecter à Acme sur votre Machine']);
+ // A whole string wins over a frame around it; someone's own words never match a frame of the app's
+ assert.deepEqual(await page.evaluate(()=>[i18nLookup('Open in Gmail ↗'),i18nLookup('Open in new tab ↗'),i18nLookup('Sending you the photos from the weekend tonight')]),
+  ['Ouvrir dans Gmail ↗','Ouvrir dans un nouvel onglet ↗',null]);
  await page.locator('#locale-language').selectOption('en');
  await page.waitForFunction(()=>document.documentElement.lang==='en');
  assert.equal((await settingsLabel(page)).trim(),'Settings');

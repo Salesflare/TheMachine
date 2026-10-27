@@ -6,7 +6,7 @@ covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
 ---
-Tap **Help** at the top, beside **Settings**, and ask in your own words, like "How do I snooze a to-do?". Press Enter to ask, or Shift+Enter for a new line. Help answers in the language you write in.
+Tap **Help** at the top, beside **Settings**, and ask in your own words, like "How do I snooze a to-do?". Press Enter to ask, or Shift+Enter for a new line. Help answers in your app’s language, or in the language you write in when that’s another one. In a language other than English, links to help pages open right here, in that language.
 
 ## Where answers come from
 

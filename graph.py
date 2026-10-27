@@ -662,7 +662,7 @@ def likely_same(people, union, together, projects):
                     continue
                 shared = []
                 if pa['domains'] & pb['domains']:
-                    shared.append('both at ' + sorted(pa['domains'] & pb['domains'])[0])
+                    shared.append(f"both at {sorted(pa['domains'] & pb['domains'])[0]}")
                 if pa['role'] and pa['role'] == pb['role']:
                     shared.append('the same role')
                 if together(pair[0]) & together(pair[1]):

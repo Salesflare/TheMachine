@@ -46,14 +46,24 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut.
 English strings the check skips, with why:
 
 - `Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector:` names claude.ai's own menus, which read in English.
+- `Zoom in` is the browser viewer's zoom button, not the Zoom app.
+- `Zoom out` is the browser viewer's zoom button, not the Zoom app.
 
 ## Not checked, but use these
+
+The user-facing name is *to-do* (decided 2026-10-26): Dutch keeps "to-do", the others use their own word, the same one every time.
 
 | English | nl | fr | de | es | it | pt-BR |
 |---|---|---|---|---| --- | --- |
 | Done (a to-do) | Gedaan | Fait | Erledigt | Hecho | Fatto | Feito |
 | Due (a to-do's date) | Deadline (never "Te doen": that means to do) | Échéance | Fällig | Vence | Scadenza | Vence, Prazo |
 | Do it | Doe het | Faire | Ausführen | Hazlo | Fallo | Fazer |
+| task, Tasks (when it means a to-do: "All tasks", "View task") | to-do, To-do's | tâche, Tâches | Aufgabe, Aufgaben | tarea, Tareas | attività, Attività | tarefa, Tarefas |
+| task (an agent's job: "your agent can use it in any task") | taak | tâche | Aufgabe | tarea | compito | tarefa |
+| task page (the shared page for someone outside) | taakpagina | page de tâche | Aufgabenseite | página de tarea | pagina attività | página de tarefa |
+| Close / Regular / Occasional / Faint (closeness) | Hecht / Regelmatig / Af en toe / Zwak | Proche / Régulier / Occasionnel / Faible | Eng / Regelmäßig / Gelegentlich / Schwach | Cercano / Habitual / Ocasional / Débil | Stretto / Regolare / Occasionale / Debole | Próximo / Regular / Ocasional / Fraco |
+| Only about (a sharing limit) | Alleen over | Seulement à propos de | Nur über | Solo sobre | Solo su | Só sobre |
+| Previous / Next (week, month, days) | one whole string per step ("Vorige week"), never "Previous {}": the word agrees with the noun | | | | | |
 | Work / Personal | Werk / Privé | Travail / Perso | Arbeit / Privat | Trabajo / Personal | Lavoro / Personale | Trabalho / Pessoal |
 | People / Organizations / Projects | Personen / Organisaties / Projecten | Personnes / Organisations / Projets | Personen / Organisationen / Projekte | Personas / Organizaciones / Proyectos | Persone / Organizzazioni / Progetti | Pessoas / Organizações / Projetos |
 | board | bord | tableau | Board | tablero | bacheca | quadro |
@@ -65,7 +75,6 @@ English strings the check skips, with why:
 
 ## Open questions for Jeroen
 
-- *to-do*: kept as "to-do" in Dutch (it is what Dutch speakers say), translated elsewhere. Keep it English everywhere?
 - German *du* and French *vous*: right register for the customers?
 - *skill*: kept in Dutch and German, translated in French and Spanish.
 - Italian uses informal *tu*, like Apple, Google and Spotify in Italian. Keeps "skill" in English, like Dutch and German.

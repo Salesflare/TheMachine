@@ -4,6 +4,19 @@
 // the dashboard's defaults.json for its short /browser link.
 import UI from './app/ui.js';
 
+// The viewer's own words in the dashboard's language: its /api/browser-now says which, its /i18n/<lang>.json has
+// them (the same catalogs as the dashboard). The plain local viewer, with no dashboard behind it, stays in English.
+const words = await fetch('../api/browser-now', {cache: 'no-store', credentials: 'same-origin'})
+    .then((r) => (r.ok && /json/.test(r.headers.get('Content-Type') || '') ? r.json() : {}))
+    .then((d) => (/^[a-z]{2}(-[A-Z]{2})?$/.test(d?.lang || '') && d.lang !== 'en'
+        ? fetch(`../i18n/${d.lang}.json`, {cache: 'force-cache'}).then((r) => (r.ok ? r.json() : {})) : {}))
+    .catch(() => ({}));
+function t(text, ...args) {
+    const said = typeof words[text] === 'string' && words[text] ? words[text] : text;
+    let i = 0;
+    return said.replace(/\{\}/g, () => (i < args.length ? String(args[i++]) : ''));
+}
+
 const params = new URLSearchParams(location.search);
 const framed = params.has('frame') ? params.get('frame') === 'window'
     : await fetch('defaults.json', {cache: 'no-store'}).then((r) => (r.ok ? r.json() : {})).then((d) => d?.frame === 'window', () => false);
@@ -168,15 +181,20 @@ if (framed) {
     // ---------------------------------------------------------------- buttons
     const bar = document.createElement('div');
     bar.id = 'machine-view-bar';
-    bar.innerHTML = '<button data-v="whole"></button><button data-v="out" aria-label="Zoom out">−</button>' +
-        '<button data-v="in" aria-label="Zoom in">+</button><button data-v="keys">Keyboard</button>';
+    bar.innerHTML = '<button data-v="whole"></button><button data-v="out">−</button><button data-v="in">+</button><button data-v="keys"></button>';
+    for (const [v, text] of [['out', t('Zoom out')], ['in', t('Zoom in')]]) {
+        const b = bar.querySelector(`[data-v="${v}"]`);
+        b.setAttribute('aria-label', text);
+        b.title = text;
+    }
+    bar.querySelector('[data-v="keys"]').textContent = t('Keyboard');
     const style = document.createElement('style');
     style.textContent = '#machine-view-bar{position:fixed;right:8px;bottom:8px;z-index:1000;display:flex;gap:6px}' +
         '#machine-view-bar button{font:600 14px system-ui,sans-serif;min-width:44px;height:40px;padding:0 12px;border:0;' +
         'border-radius:20px;background:#1d2026e6;color:#fff;box-shadow:0 1px 4px #0006}' +
         '.machine-view-mask{position:fixed;z-index:999;background:#111}.machine-view-mask[hidden]{display:none}';
     document.head.append(style);
-    function label() { bar.querySelector('[data-v="whole"]').textContent = whole ? 'Browser window' : 'Whole screen'; }
+    function label() { bar.querySelector('[data-v="whole"]').textContent = whole ? t('Browser window') : t('Whole screen'); }
     if (!('ontouchstart' in window)) bar.querySelector('[data-v="keys"]').hidden = true;  // a real keyboard types already
     bar.addEventListener('click', e => {
         const b = e.target.closest('button');
@@ -207,8 +225,9 @@ if (window.top === window) {
     const note = document.createElement('div');
     note.id = 'machine-note';
     note.setAttribute('role', 'status');
-    note.innerHTML = '<strong></strong><span></span><small></small><div><a href="../" target="_top" hidden>Open your dashboard</a>' +
-        '<button type="button">Got it</button></div>';
+    note.innerHTML = '<strong></strong><span></span><small></small><div><a href="../" target="_top" hidden></a><button type="button"></button></div>';
+    note.querySelector('a').textContent = t('Open your dashboard');
+    note.querySelector('button').textContent = t('Got it');
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.id = 'machine-note-pill';
@@ -230,18 +249,19 @@ if (window.top === window) {
     function paint() {
         const wait = now.waiting[0], work = now.working[0];
         const [title, text, hint, key] = wait
-            ? ['Your turn', `Sign in to ${wait.site || 'the site'} here for "${wait.title}".`, 'The task carries on by itself once you are in.', 'wait:' + wait.title]
+            ? [t('Your turn'), wait.site ? t('Sign in to {} here for "{}".', wait.site, wait.title) : t('Sign in to the site here for "{}".', wait.title),
+                t('The task carries on by itself once you are in.'), 'wait:' + wait.title]
             : work
-                ? ['Working on a task', work.title, work.step || '', 'work:' + work.title]
-                : ["Your Machine's own browser", 'Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. ' +
-                   'Nothing runs in it until you ask.', "To sign in, type the site's address at the top.", 'idle'];
+                ? [t('Working on a task'), work.title, work.step || '', 'work:' + work.title]
+                : [t("Your Machine's own browser"), t('Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.'),
+                   t("To sign in, type the site's address at the top."), 'idle'];
         if (key !== shown && closed !== key) closed = '';  // something new to say: open again
         shown = key;
-        const [s, t, h] = note.children;
-        s.textContent = title;
-        t.textContent = text;
-        h.textContent = hint;
-        pill.textContent = wait ? 'Your turn: sign in' : work ? 'Working: ' + work.title : 'What is this?';
+        const [head, body, small] = note.children;
+        head.textContent = title;
+        body.textContent = text;
+        small.textContent = hint;
+        pill.textContent = wait ? t('Your turn: sign in') : work ? t('Working: {}', work.title) : t('What is this?');
         note.hidden = closed === key;
         pill.hidden = !note.hidden;
     }

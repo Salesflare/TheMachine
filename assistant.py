@@ -590,9 +590,10 @@ CRM_ACTIONS = {'graph_owner', 'graph_org_merge', 'graph_org_split', 'graph_org_a
                'graph_import_ai', 'graph_import_ai_status', 'graph_field_save', 'graph_field_delete', 'graph_field_set', 'graph_tag'}
 OWNER_ACTIONS |= CRM_ACTIONS
 # Help (help_chat.py) and Report a bug (support.report): the owner's own, from their dashboard only. help_ask answers
-# and changes nothing; bug_send sends only what bug_preview showed, after the owner's tap.
+# and changes nothing; help_article reads one public help article in the owner's language; bug_send sends only what
+# bug_preview showed, after the owner's tap.
 # support_access: the owner's switch for Support access on a paired self-hosted Machine (fleet.Fleet.support_access).
-SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send', 'bug_later', 'bug_queued', 'support_access'}
+SUPPORT_ACTIONS = {'help_ask', 'help_article', 'bug_preview', 'bug_send', 'bug_later', 'bug_queued', 'support_access'}
 OWNER_ACTIONS |= SUPPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
@@ -4759,7 +4760,7 @@ class Store:
             if not row:
                 raise ValueError('Unknown promise id')
             if row['status'] != 'open':
-                raise ValueError('This promise is no longer open' + (': its card is out, use looks_handled on that card' if row['status'] == 'carded' else ''))
+                raise ValueError('This promise is no longer open: its card is out, use looks_handled on that card' if row['status'] == 'carded' else 'This promise is no longer open')
             status, reason = args.get('status'), ' '.join(str(args.get('reason') or '').split())[:200]
             if status in ('kept', 'dropped'):
                 if source == 'assistant' and len(reason) < 3:
@@ -15024,7 +15025,7 @@ class App:
             if again and source != reconnect_help(account, None)['connect_name']:
                 raise ValueError('That account is not a ' + known[source]['label'] + ' account')
             if not getattr(self, 'config_path', None):
-                raise ValueError('This service cannot save its settings' + ('' if hosted else '; run assistant connect ' + source + ' in a terminal'))
+                raise ValueError('This service cannot save its settings' if hosted else f'This service cannot save its settings; run assistant connect {source} in a terminal')
             with lock:
                 if any(v['state'] == 'running' for v in sessions.values()):
                     raise ValueError('Another source is being added; finish or stop that one first')
@@ -15312,7 +15313,7 @@ class App:
                             'ORDER BY id', (suggestion_id, suggestion_id)):
             channel = str(r['text']).split(' voice: ', 1)[0] if ' voice: ' in str(r['text']) else ''
             if channel:
-                owner.append({'kind': 'event', 'text': 'Saved to How you write: ' + ('Everywhere' if channel == 'All' else channel),
+                owner.append({'kind': 'event', 'text': i18n.t('Saved to How you write: {}', i18n.t('Everywhere') if channel == 'All' else channel),
                               'voice': channel, 'at': chat_ms(r['at'])})
         # Each preparation's own saved results: what it said and the drafts it left, in the order it saved them.
         results = {}
@@ -16104,7 +16105,7 @@ class App:
             body = '\n'.join(message.split('\n')[1:])  # the title says it is the week; the first section leads
             try:
                 push_node(self.config, {'action': 'send', 'subscriptions': subscriptions,
-                                        'payload': {'title': 'Your week', 'body': plain(body), 'url': root, 'tag': 'recap-' + week}})
+                                        'payload': {'title': i18n.t('Your week'), 'body': plain(body), 'url': root, 'tag': 'recap-' + week}})
             except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
                 LOG.warning('push recap error=%s', type(error).__name__)
         return {'messageId': 'web-recap-' + week}
@@ -17398,10 +17399,12 @@ class App:
         import help_chat
         import onboarding
         import support
+        if name == 'help_article':
+            return help_chat.article(args.get('slug'))
         if name == 'help_ask':
             run = getattr(self, 'help_model', None)  # a stand-in in the sandbox and tests
             if not run and not has_model(self.config):
-                raise ValueError('Help needs a model. Set one up in Settings, Model.')
+                raise ValueError(i18n.t('Help needs a model. Set one up in Settings, Model.'))
             swap = background_model(self.config)
             model, thinking = '/'.join(swap) if swap else None, None
             own = chat_model.clean({'model': args.get('model'), 'thinking': args.get('thinking')})
@@ -18115,7 +18118,7 @@ class App:
                     except (ValueError, sqlite3.OperationalError):
                         self.output(404, {'error': 'Progress not available'})
                 elif path.path == '/api/browser-now':  # the note in the browser's own viewer: what it is doing now
-                    self.output(200, app.browser_now())
+                    self.output(200, {**app.browser_now(), 'lang': locale_prefs.language()})  # lang: the viewer's own words
                 elif path.path == '/api/peek':  # the live look at a preparing card's browser tab
                     try:
                         self.output(200, app.preparation_peek(urllib.parse.parse_qs(path.query).get('id', [''])[0]))

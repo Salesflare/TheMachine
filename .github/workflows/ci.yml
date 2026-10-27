@@ -71,6 +71,10 @@ jobs:
           persist-credentials: false
       - name: Check the help articles
         run: python3 scripts/help_check.py
+      - name: No English text outside the catalogs
+        # Every string the dashboard, the server's messages and the plugin show is a key in i18n/en.json (and so in
+        # every language): a new hard-coded string fails here. scripts/i18n_extract.py --add adds them.
+        run: python3 scripts/i18n_extract.py --check
 
   portable:
     # macOS runs natively under launchd; Windows runs The Machine inside WSL2 (Linux), so this checks the portable core.

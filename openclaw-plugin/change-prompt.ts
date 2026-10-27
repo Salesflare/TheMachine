@@ -1,6 +1,7 @@
 import {dirname, resolve} from 'node:path';
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
+import { t } from './i18n.ts';
 // ForceReply uses the existing OpenClaw Telegram send/cache/receipt route, with no poller.
 // The public extension API provides account and transport helpers. Three client helpers
 // still need a compatibility bridge: resolve their named exports from the installed build's
@@ -39,7 +40,7 @@ export function forceReplyPayload(method: string, payload: any, cardId: string, 
   if (method !== 'sendMessage') return payload;
   if (!owner || String(payload.chat_id) !== String(owner)) throw new Error('Wrong Change recipient');
   return {...payload, reply_parameters:{message_id:Number(cardId)},
-    reply_markup:{force_reply:true,input_field_placeholder:'Your reply'}};
+    reply_markup:{force_reply:true,input_field_placeholder:t('Your reply')}};
 }
 // `text` is the service's prompt_text(), so a cached copy can be matched exactly on recovery.
 export async function sendChangePrompt(cfg: any, cardId: string, text: string, confirmed?: (id:string)=>Promise<void>, owner = '', accountId = 'default') {

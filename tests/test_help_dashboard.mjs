@@ -18,6 +18,8 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
    if(action==='bug_later'||action==='bug_send'&&limit){queued=[{id:'bq_1',what:args.description,next_at:later}];res.end(JSON.stringify({sent:false,queued:true,at:later}));return}
    if(action==='help_ask'&&/comes back/.test(args.question)){res.end(JSON.stringify({answer:'Try a reload.',bug:'I snoozed a to-do until tomorrow.\nI expected it to stay away.\nIt came back within a minute.',sources:[]}));return}
    if(action==='help_ask'){setTimeout(()=>res.end(JSON.stringify({answer:'Press **Snooze**, then pick a time.\n\n- See [Snooze](https://themachine.computer/help/snooze)\n- Not [this](https://evil.example/y)',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]})),300);return}
+   if(action==='help_article'){res.end(JSON.stringify(args.slug==='gmail'?{slug:'gmail',title:'Gmail',summary:'',body:'## Gmail koppelen\n\nOpen Koppelingen.',anchors:['connect-gmail'],lang:'nl'}
+    :{slug:'snooze',title:'Snoozen',summary:'Zet een to-do weg.',body:'Intro.\n\n## Een to-do snoozen\n\nDruk op **Snoozen**. Zie [Gmail](gmail.md#connect-gmail) of [x](javascript:alert(1)).\n\n## Wanneer hij terugkomt\n\n- Op Telegram\n- Als melding',anchors:['snooze-a-to-do','when-it-comes-back'],lang:'nl'}));return}
    if(action==='bug_preview'){res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true}));return}
    if(action==='bug_send'){res.end(JSON.stringify({sent:true,id:'s_1'}));return}}
   res.end(url.pathname==='/api/events'?'[]':'{}')})});
@@ -106,6 +108,19 @@ try{
    if(hosted)assert.equal(actions.at(-1).args.retry_after,900,'the control plane’s Retry-After goes with it');
    await page.click('[data-help-tab="bug"]');await page.waitForSelector('#bug-queued:not([hidden])');
    assert.equal(await page.textContent('#bug-queued li'),`Fourth report. · Goes out at ${goesAt}`)}
+  // In another language a help link anywhere opens the article here, in that language, at its heading; a link in it to
+  // another article opens that one; Back returns to Ask. Only in English it opens the site.
+  await page.evaluate(()=>{I18N.lang='nl';helpBox.close();const a=document.createElement('a');a.href='https://themachine.computer/help/snooze#when-it-comes-back';a.id='help-link-test';a.textContent='Help';document.body.append(a);a.click()});
+  await page.waitForSelector('#help-panel[open] #help-read h4');
+  assert.equal(await page.isHidden('#help-ask-pane'),true);
+  assert.deepEqual(await page.$$eval('#help-read h4',h=>h.map(x=>x.id+' '+x.textContent)),['help-a-snooze-a-to-do Een to-do snoozen','help-a-when-it-comes-back Wanneer hij terugkomt']);
+  assert.equal(await page.$eval('#help-read b',b=>b.textContent),'Snoozen');
+  assert.equal(await page.$('#help-read a[href^="javascript"]'),null,'only help, https and mailto links');
+  assert.equal(await page.getAttribute('#help-read-site','href'),'https://themachine.computer/help/snooze#when-it-comes-back');
+  await page.click('#help-read a[data-help-slug="gmail"]');await page.waitForFunction(()=>document.querySelector('#help-read h3')?.textContent==='Gmail');
+  assert.deepEqual(actions.filter(a=>a.action==='help_article').map(a=>a.args.slug),['snooze','gmail']);
+  await page.click('[data-help-back]');assert.equal(await page.isVisible('#help-ask-pane'),true);assert.equal(await page.isHidden('#help-read-pane'),true);
+  await page.evaluate(()=>{I18N.lang='en';helpBox.close();document.getElementById('help-link-test').remove()});
   limit=false;queued=[];await page.evaluate(()=>{state.manage_url=null});
   await context.close();
  }

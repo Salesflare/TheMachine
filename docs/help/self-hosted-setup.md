@@ -6,7 +6,7 @@ covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 ---
-The Machine is open source (MIT). On your own computer it is free, and your data stays there.
+The Machine is open source (AGPL). On your own computer it is free, and your data stays there.
 
 ## What it needs
 

@@ -650,11 +650,11 @@ def label(view):
 
 def why(view, hand=None, company='', kept=False):
     """One line: why a thread is shared or not. Short, for the label and the What's shared list."""
-    with_ = f' with {company}' if company else ''
     if view == 'team':
-        return 'Shared: you chose Team' if hand == 'team' else f'Shared: client thread{with_}'
+        return ('Shared: you chose Team' if hand == 'team' else f'Shared: client thread with {company}' if company
+                else 'Shared: client thread')
     if view == 'wait':
-        return f'Shares within the hour: client thread{with_}'
+        return f'Shares within the hour: client thread with {company}' if company else 'Shares within the hour: client thread'
     if view == 'private':
         return 'Only you: you chose this' if hand == 'private' else 'Only you: kept private' if kept else 'Only you: nobody outside the company'
     return {'sensitive': 'Only you: sensitive', 'ask': "Only you: not sure it's client work",

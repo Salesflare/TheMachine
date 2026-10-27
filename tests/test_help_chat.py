@@ -77,6 +77,24 @@ class Retrieval(unittest.TestCase):
         self.assertIn('/help/snooze', json.dumps(help_chat.sources(*help_chat.retrieve('How do I snooze a to-do?'))))
         self.assertLess(len(prompts[0]), (help_chat.SECTIONS * help_chat.SECTION_CHARS + help_chat.SNIPPETS * help_chat.SNIPPET_CHARS) + 2000)
 
+    def test_in_another_language_it_reads_that_articles_translation_and_replies_in_it(self):
+        (self.help / 'nl').mkdir()
+        (self.help / 'nl' / 'snooze.md').write_text(ARTICLE.replace('title: Snooze', 'title: Snoozen').replace(
+            'Put a to-do away until later.', 'Zet een to-do weg tot later.').replace('## Snooze a to-do', '## Een to-do snoozen').replace(
+            'Press **Snooze**, then pick a time.', 'Druk op **Snoozen** en kies een tijd.'))
+        prompts = []
+        out = help_chat.ask('Hoe snooze ik een to-do?', run=lambda c, text, m: prompts.append(text) or 'Druk op Snoozen [1].',
+                            folder=self.help, root=self.code, lang='nl')
+        self.assertIn('Druk op **Snoozen**', prompts[0])
+        self.assertIn('Reply in Dutch', prompts[0])  # unless they write in another language
+        self.assertEqual(out['sources'][0]['url'], 'https://themachine.computer/help/snooze#snooze-a-to-do')  # the site's anchor
+        page = help_chat.article('snooze', 'nl', folder=self.help)
+        self.assertEqual((page['title'], page['lang'], page['anchors']), ('Snoozen', 'nl', ['snooze-a-to-do', 'when-it-comes-back']))
+        self.assertEqual(help_chat.article('gmail', 'nl', folder=self.help)['lang'], 'en')  # not translated yet: the English
+        with self.assertRaises(ValueError):
+            help_chat.article('../secrets', 'nl', folder=self.help)
+        self.assertIn('help_article', a.SUPPORT_ACTIONS)
+
     def test_code_fills_in_only_what_the_help_leaves_open(self):
         sections, snippets = help_chat.retrieve('When does a snooze wake?', folder=self.help, root=self.code)
         self.assertEqual(sections[0]['slug'], 'snooze')

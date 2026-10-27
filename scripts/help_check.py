@@ -24,7 +24,11 @@ It fails when:
 - the copy breaks the house style: an em dash, a line that starts with "You", a paragraph over 420 characters,
   a summary over 160, a placeholder other than TOKENS (like {price.standard}, which the site fills in), or Markdown
   the site does not render (only ## and ### headings, paragraphs, - and 1. lists,
-  **bold**, `code` and links; a link to another article is its file name, like gmail.md).
+  **bold**, `code` and links; a link to another article is its file name, like gmail.md);
+- a translation (docs/help/<language>/<article>.md, shown in the dashboard's Help in that language) no longer matches
+  its English article: an article English doesn't have, other front matter than title and summary, another number of
+  headings (their anchors are the English ones, by position), a link to an article that doesn't exist, or an em dash.
+  An article not translated yet is fine: Help shows the English one.
 
     python3 scripts/help_check.py          # prints what is wrong, exit code 1 if anything is
 """
@@ -230,6 +234,31 @@ def check(folder=HELP):
         problems.append(f'{f} has no help article: add one in docs/help/ with "covers: {f}" (or a reason in PENDING)')
     problems += [f'PENDING: {f} has an article now, so take it out of PENDING' for f in PENDING if f in covered]
     problems += [f'PENDING: {f} no longer exists' for f in PENDING if f not in exist]
+    return problems + check_translations(found, folder)
+
+
+def check_translations(found, folder=HELP):
+    """Each language's articles against their English one."""
+    problems = []
+    for sub in sorted(p for p in folder.iterdir() if p.is_dir()):
+        for path in sorted(sub.glob('*.md')):
+            where, en = f'docs/help/{sub.name}/{path.name}', found.get(path.stem)
+            if not en or en[0] is None:
+                problems.append(f'{where}: docs/help/{path.name} does not exist')
+                continue
+            fields, body = front(path.read_text(encoding='utf-8'))
+            if fields is None:
+                problems.append(f'{where}: no front matter')
+                continue
+            other = {k for k in set(fields) | set(en[0]) if k not in ('title', 'summary') and fields.get(k) != en[0].get(k)}
+            problems += [f'{where}: {k} differs from the English article' for k in sorted(other)]
+            heads = lambda text: re.findall(r'^#{2,3} ', text, re.M)
+            if len(heads(body)) != len(heads(en[1])):
+                problems.append(f'{where}: {len(heads(body))} headings, the English article has {len(heads(en[1]))}')
+            problems += [f'{where}: links to {slug}.md, which docs/help/ does not have'
+                         for slug in re.findall(r'\]\(([a-z0-9-]+)\.md', body) if slug not in found]
+            if '—' in body + str(fields.get('title')) + str(fields.get('summary')):
+                problems.append(f'{where}: an em dash')
     return problems
 
 

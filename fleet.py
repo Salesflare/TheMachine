@@ -1366,15 +1366,15 @@ def answer_text(kind, answer):
     if kind == contact_share.KIND:
         return contact_share.answer_text(answer)
     if not answer:
-        return 'no answer'
+        return t('no answer')
     if kind == 'brief':
         return (f"{len(answer.get('touched', []))} companies, {len(answer.get('quiet', []))} quiet, "
                 f"{len(answer.get('unanswered', []))} unanswered, {len(answer.get('meetings', []))} meetings")
     if kind == 'anything':
-        return answer.get('text') or 'no answer'
+        return answer.get('text') or t('no answer')
     if kind == 'relationships':
         if not answer.get('knows'):
-            return 'doesn’t know anyone there' + (f" ({answer['note']})" if answer.get('note') else '')
+            return t('doesn’t know anyone there ({})', answer['note']) if answer.get('note') else t('doesn’t know anyone there')
         bits = [f"knows {answer.get('people') or 'someone'}" + (' people' if (answer.get('people') or 0) > 1 else ''),
                 answer.get('closeness') and f"closest: {answer['closeness']}", answer.get('last_contact') and f"last contact {answer['last_contact']}"]
         names = '; '.join(f"{n['name']} ({', '.join(x for x in (n.get('closeness'), n.get('last_contact')) if x)})" for n in answer.get('names', []))
