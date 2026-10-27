@@ -14,7 +14,9 @@ ChatGPT is the model that reads and drafts for you, on your own ChatGPT plan. Th
 
 On a hosted Machine, on your setup page, press **Sign in with ChatGPT** and type the code it shows at ChatGPT. Signed out later? Press **Reconnect ChatGPT**.
 
-OpenAI turns the code down? Open your [ChatGPT security settings](https://chatgpt.com/settings/security), scroll to the bottom and turn on device code sign-in for Codex. Then enter the code again.
+OpenAI turns the code down? Open your [ChatGPT security settings](https://chatgpt.com/settings/security), scroll to the bottom and turn on the switch "Enable device code sign-in for Codex, Excel, PowerPoint, and Word". Then enter the code again.
+
+Not there? On a work account (Business, Enterprise or Edu), a workspace admin turns it on in [Permissions & roles](https://chatgpt.com/admin/permissions), under "Codex and Work Local". One switch covers both codes: if your model's code worked, the Codex code works too.
 
 On your own computer, sign OpenClaw in to ChatGPT with `openclaw models auth login`.
 
