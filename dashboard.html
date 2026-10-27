@@ -3879,7 +3879,7 @@ function hostedSigninGo(s){const form=document.createElement('form'),box=$('#con
  if(s.provider==='intercom'&&s.another)add('another','1');
  document.body.append(form);form.submit()}
 function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hosted||s.state!=='connecting'||!s.command)return;
- signinTimer=setTimeout(async()=>{try{const r=await request('/_machine/connect-state?c='+encodeURIComponent(s.command));if(connectSignin!==s)return;
+ signinTimer=setTimeout(async()=>{try{const r=await request('/_machine/connect-state?s='+encodeURIComponent(s.provider)+'&c='+encodeURIComponent(s.command));if(connectSignin!==s)return;
   connectSignin={...s,state:r.state,error:r.error};$('#connect-add').dataset.sig='';renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}hostedPoll()},2500)}
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 async function openConnectLink(){const m=/^#connect=(google|microsoft|zoom|stripe|intercom)(?:\/(c_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
@@ -3889,13 +3889,13 @@ async function openConnectLink(){const m=/^#connect=(google|microsoft|zoom|strip
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
  const back='<button type="button" data-connect-back>Back</button>';let body;
  const copy=SIGNIN_COPY[s.provider]||{};
- if(s.state==='started')body=`<p>Sign in at ${esc(s.label)} in the tab that opened. This updates by itself.</p><div class="actions"><button type="button" data-signin-go>Start again</button>${back}</div>`;
+ if(s.hosted)body=hostedSigninBody(s,copy,back);  // a hosted Machine: its own form, never the pairing one
+ else if(s.state==='started')body=`<p>Sign in at ${esc(s.label)} in the tab that opened. This updates by itself.</p><div class="actions"><button type="button" data-signin-go>Start again</button>${back}</div>`;
  else if(s.state==='connecting')body='<p class="muted">Connecting…</p>';
  else if(s.state==='done')body=`<p class="note sent-ok">✓ Connected${s.name?' to '+esc(s.name):''}.${s.replies?' Replies go as you, after you approve each one.':''} Restarting to start reading it…</p><div class="actions">${back}</div>`;
  else if(s.state==='failed'||s.state==='stopped')body=`<p class="alert">${esc(s.state==='stopped'?'That sign-in didn’t finish.':s.error||'Not connected.')}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>`;
  else body=`<p class="muted">${esc(copy.about||'')}</p>`+(paired?`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${esc(s.label)}</button>${back}</div>`
   :`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><a class="btn-link primary" href="${esc(connectList.pair_url)}" target="_blank" rel="noopener">Pair this Machine first ↗</a>${back}</div>`);
- if(s.hosted)body=hostedSigninBody(s,copy,back);
  const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button" data-connect="${esc(s.source)}">${esc(copy.go||'')}</button></div></details>`;
  const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}</div>`;
  const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
