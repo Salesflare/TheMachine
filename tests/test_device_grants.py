@@ -113,7 +113,7 @@ class ConnectGrant(unittest.TestCase):
         onboarding.connect_delivered(self.path, self.args('microsoft'))
         self.checked.clear()
         self.answer = 'docs_not_connected'  # Microsoft did not let it read files after all: the mail sign-in stays as it was
-        with self.assertRaisesRegex(onboarding.SetupError, 'did not check out'):
+        with self.assertRaisesRegex(onboarding.SetupError, "didn't check out"):
             onboarding.connect_delivered(self.path, docs)
         self.assertEqual(mail_grants.get(self.config(), 'microsoft', 'dee@acme.example'), REFRESH)
         self.assertNotIn('docs', [x['service'] for x in self.config()['accounts']])

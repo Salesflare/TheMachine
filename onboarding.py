@@ -1806,7 +1806,7 @@ def connect_docs_grant(config_path, args):
     try:
         previous = mail_grants.get(config, 'microsoft', email)
     except mail_grants.GrantError:
-        raise SetupError('This Machine cannot keep sign-ins yet', 'try again in a minute') from None
+        raise SetupError("This Machine can't keep sign-ins yet", 'try again in a minute') from None
     mail_grants.put(config, 'microsoft', email, refresh)
     try:
         account = next((a for a in config.get('accounts', []) if a.get('service') == 'docs' and str(a.get('email', '')).lower() == email), None)
@@ -1817,7 +1817,7 @@ def connect_docs_grant(config_path, args):
                    'connected_at': dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')}
         error = check(config, account)
         if error and not error.startswith(BUSY):
-            raise SetupError(f'Docs for {email} did not check out ({error})', 'sign in again from Connections, + Add')
+            raise SetupError(f"Docs for {email} didn't check out ({error})", 'sign in again from Connections, + Add')
         known = any(a.get('id') == account['id'] for a in config.get('accounts', []))
         config['accounts'] = [account if a.get('id') == account['id'] else a for a in config.get('accounts', [])] + ([] if known else [account])
         save(config_path, config)
