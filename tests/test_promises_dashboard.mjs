@@ -39,7 +39,7 @@ try{
  const text=await list.textContent();
  assert.ok(text.includes('To Alex Morgan: send the Q3 deck')&&text.includes('Due today'));
  assert.ok(text.includes('From Sam Lee: send the signed contract')&&text.includes('a to-do now')&&text.includes('Overdue'));
- assert.ok(text.includes('no date, checked'));
+ assert.ok(text.includes('no date, follow-up')&&!text.includes('no date, checked'));  // check_at is tomorrow: the planned follow-up, not a check that happened
  assert.equal(await list.locator('[data-promise="2"]').count(),0);  // its card handles it
  const widths=[];
  for(const width of [320,390,768]){

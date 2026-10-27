@@ -23,8 +23,11 @@ On a hosted Machine:
 
 On your own computer:
 
-1. Sign in to X once in your Machine's browser (Settings, **Open the Machine’s browser ↗**).
-2. In the dashboard, open **Connections**, then **+ Add**, and pick X. Or run `assistant connect x`.
+1. In the dashboard, open **Connections**, then **+ Add**, and pick X.
+2. Pick **Work** with its company, or **Personal**, type your handle without the @, and press **Connect**.
+3. Press **Sign in to X** and sign in in your Machine's browser. It connects by itself once you're in.
+
+Or run `assistant connect x`.
 3. Type your handle, and the handle the browser is normally signed in to.
 
 If X signs your Machine out, see [Signed out of a site](signed-out.md).

@@ -81,6 +81,7 @@ def make_config(directory, fixture, states, port, network_port):
         'review_worker': {'enabled': 'reviews-off' not in states, 'min_signals': 40, 'max_wait_minutes': 60},
         'weekly_recap': {'enabled': False}, 'embeddings': {'enabled': False}, 'enrichment': {'enabled': False},
         'accounts': accounts, 'sandbox': True, 'openclaw_config': str(directory / 'openclaw.json'),
+        'browser_cdp_url': 'http://127.0.0.1:9',  # no browser: never the one on this computer (guard.py refuses it too)
     }
     # OpenClaw's own settings as the dashboard reads them (the main model and its thinking level), made up
     (directory / 'openclaw.json').write_text(json.dumps({'agents': {'defaults': {'model': {'primary': 'acme/lm-2.5-swift'}, 'thinkingDefault': 'low'}}}))

@@ -168,9 +168,29 @@ class WebUI:
     web = True  # steps that need a terminal (a QR code, a browser on this computer) say what to run instead
     reconnect = False  # signing an existing account in again: its address, access and calendar stay as they are
 
+    explains = True  # how to get a key: said in these lines, unless the dashboard's form already says it (prefill)
+    wait_signin = 0  # seconds a LinkedIn or X connect waits for the owner to sign in there (onboarding.connect)
+
     def __init__(self, wait=900):
         self.lines, self.question, self.wait, self.cancelled = [], None, wait, False
         self._answer, self._asked, self._cond = None, 0, threading.Condition()
+        self.answers, self.secrets, self.marks = {}, {}, True
+        self.signing_in = None  # the site the connect waits on the owner to sign in to (wait_signed_in)
+        self.code = None  # a code to show: {'kind': 'device', 'code', 'url'} (GitHub) or {'kind': 'pair', 'code'} (WhatsApp)
+
+    def prefill(self, answers=None, secrets=None):
+        """What the dashboard's form for this source already said, as a setup page's form does (agent ScriptedUI):
+        questions it answers are not asked, and the ones it leaves take their default when they have one. A choice
+        or question it has no answer for, and every confirmation, still waits here for the owner."""
+        self.answers = {_prompt_key(k): v for k, v in (answers or {}).items()}
+        self.secrets = {_prompt_key(k): v for k, v in (secrets or {}).items()}
+        self.explains = False  # the form said how to get each key
+        # Work or personal is the owner's own marking only when the form gave one (new_account)
+        self.marks = bool(self.answers.get('part of your life'))
+
+    def _match(self, table, prompt):
+        prompt = _prompt_key(prompt)
+        return next((v for k, v in table.items() if k in prompt), None)
 
     def say(self, text=''):
         with self._cond:
@@ -179,7 +199,12 @@ class WebUI:
 
     def view(self):
         with self._cond:
-            return {'lines': list(self.lines), 'question': dict(self.question) if self.question else None}
+            return {'lines': list(self.lines), 'question': dict(self.question) if self.question else None,
+                    'signin': self.signing_in, 'code': dict(self.code) if self.code else None}
+
+    def show_code(self, code):
+        with self._cond:
+            self.code = code
 
     def answer(self, question_id, value):
         """The owner's answer to the question showing now; False when that question is no longer asked."""
@@ -212,10 +237,18 @@ class WebUI:
             return self._answer[0]
 
     def ask(self, prompt, default=''):
+        given = self._match(self.answers, prompt)
+        if given not in (None, ''):
+            return str(given).strip()
+        if self.answers and default:
+            return default  # the form left it: its default, as on the setup page
         answer = str(self._ask('ask', prompt, default) or '').strip()
         return answer or default
 
     def secret(self, prompt):
+        given = self._match(self.secrets, prompt)
+        if given:
+            return str(given).strip()
         return str(self._ask('secret', prompt) or '').strip()
 
     def yes(self, prompt, default=True):
@@ -224,10 +257,22 @@ class WebUI:
     def choose(self, prompt, options):
         if len(options) == 1:
             return options[0][0]
+        wanted = self._match(self.answers, prompt)
+        for value, label_ in options:
+            if wanted is not None and (value == wanted or str(label_).lower() == str(wanted).lower()):
+                return value
+        if (wanted is not None or self._match(self.secrets, prompt)) and any(value is None for value, _ in options):
+            return None  # not one offered (another company), or a key typed in the form beats the saved ones
         picked = self._ask('choose', prompt, 0, [str(label) for _, label in options])
         if not isinstance(picked, int) or not 0 <= picked < len(options):
             raise SetupError('Not one of the choices', 'start again')
         return options[picked][0]
+
+
+def _prompt_key(text):
+    """A form's question and the step's, compared loosely: case, spacing, quotes and an ellipsis written as … or ..."""
+    text = unicodedata.normalize('NFKC', str(text)).replace('\u2019', "'").replace('\u2018', "'")
+    return ' '.join(text.lower().split())
 
 
 def catalog(config):
@@ -247,8 +292,46 @@ def catalog(config):
         setup = setup_of(service) or {}
         found.append({'name': name, 'service': service, 'label': label(service), 'note': setup.get('note'), 'what': setup.get('what'),
                       'connected': have.get(service, 0), 'broker': service in brokered or bool(setup.get('broker')),
+                      'form': web_form(config, service),
                       **({'account_page': setup['account_page']} if isinstance(setup.get('account_page'), str) else {})})
     return found
+
+
+# The dashboard's form for a source (Connections, + Add), as the setup page's form: every question at once, the key as a
+# password field, and Work (which company) or Personal as two choices, so nothing is typed as work:<Company>. How to get
+# a key is said for the built-in sources here, and a connector's own note otherwise; a note that tells to run something
+# in a terminal is left out, since the dashboard does that step itself (a sign-in in the Machine's browser, a code).
+WEB_NOTES = {
+    'slack': 'Slack is read through Maton, which holds the Slack sign-in. Sign in at https://www.maton.ai, connect Slack there, '
+             'then paste your Maton API key from Home.',
+    'github': 'Reads with GitHub’s own gh tool on your Machine, GET requests only. Not signed in there yet? '
+              'You get a code to sign in with next.',
+    'linkedin': 'Next, you sign in to LinkedIn on your Machine, right here.',
+    'x': 'Next, you sign in to X on your Machine, right here.',
+    'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
+    'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it',
+}
+WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key'}
+WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']]}
+TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b')
+NO_SCOPE = {'android', 'gateway', 'docs'}  # a device or the server itself; Docs follows the address it reads for
+
+
+def web_form(config, service):
+    """{ask: [[key, prompt]], secret, note, scope, browser, company}: what + Add asks for this source up front. `ask`
+    leaves out a question with its own default (X's usual handle) or one found on the Machine (GitHub's login).
+    `company`: the one to prefill for Work, from the boundaries this source would offer first."""
+    setup = setup_of(service) or {}
+    note = WEB_NOTES.get(service) or setup.get('note') or ''
+    if service == 'salesflare':
+        app = (salesflare_preset(config) or {}).get('app_base') or salesflare_app_base(SALESFLARE_API)
+        note = f'In Salesflare, create an API key under Settings, API keys: {app}/#/settings/apikeys'
+    ask = [[key, prompt] for key, prompt, *rest in setup.get('ask', []) if not rest and key not in (setup.get('detect') or {})] + WEB_ASKS.get(service, [])
+    scope = service not in NO_SCOPE and setup.get('boundary') != 'workspace'
+    works = [b.split(':', 1)[1] for b in boundaries(config, service) if b.startswith('work:')]
+    company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
+    return {'ask': ask, 'secret': WEB_SECRETS.get(service) or setup.get('secret'), 'note': None if TERMINAL_NOTE.search(note) else note or None,
+            'scope': scope, 'personal': service == 'whatsapp', 'browser': setup.get('browser'), 'company': company if scope else ''}
 
 
 def run(args, **kwargs):
@@ -1314,9 +1397,8 @@ def step_whatsapp(config, account, ui):
     config['wacli'] = config.get('wacli') if config.get('wacli') not in (None, 'wacli') else wacli
     account['store'] = ui.ask('wacli store directory', account.get('store') or str(home() / '.local/share/wacli'))
     linked = whatsapp_linked(wacli, account['store'])
-    if not linked and getattr(ui, 'web', False):  # the QR code to scan only shows in a terminal
-        raise SetupError('WhatsApp is not linked yet', f'run this in a terminal on this computer and scan the code: '
-                         f'{wacli} --store {account["store"]} auth; then add it here again')
+    if not linked and getattr(ui, 'web', False):  # the dashboard: a pairing code to enter in WhatsApp, for the QR code a terminal shows
+        linked = whatsapp_pair(wacli, account['store'], ui)
     if not linked and ui.yes('WhatsApp is not linked yet. Link it now? (scan the QR code in WhatsApp > Linked devices)', True):
         Path(account['store']).mkdir(parents=True, exist_ok=True)
         try:
@@ -1329,6 +1411,42 @@ def step_whatsapp(config, account, ui):
     account['identity_sha256'] = hashlib.sha256(linked.encode()).hexdigest()
     ui.say('  WhatsApp: linked')
     whatsapp_sync(wacli, account, ui)
+
+
+PHONE = re.compile(r'[1-9][0-9]{7,14}')
+
+
+def whatsapp_pair(wacli, store, ui):
+    """Link WhatsApp from the dashboard: wacli asks WhatsApp for a pairing code for the owner's number, the dashboard
+    shows it, and they enter it in WhatsApp, Linked devices, Link with phone number instead. Returns the linked id."""
+    phone = re.sub(r'[\s()+.-]', '', ui.ask(WEB_ASKS['whatsapp'][0][1]))
+    if not PHONE.fullmatch(phone):
+        raise SetupError('That is not a phone number with its country code', 'add WhatsApp again and type it like +32 470 12 34 56')
+    Path(store).mkdir(parents=True, exist_ok=True)
+    failed = []
+
+    def seen(line):
+        try:
+            event = json.loads(line)
+        except ValueError:
+            return  # the QR code as text: the pairing code replaces it here
+        data = event.get('data') if isinstance(event, dict) and isinstance(event.get('data'), dict) else {}
+        if event.get('event') == 'pair_code' and isinstance(data.get('code'), str):
+            ui.show_code({'kind': 'pair', 'code': data['code'][:16]})
+        elif event.get('event') == 'connected':
+            ui.show_code(None)
+            ui.say('  WhatsApp: linked, reading your chats')
+        elif event.get('event') == 'error':
+            failed.append(str(data.get('message') or '')[-200:])
+    follow([wacli, '--store', str(store), '--events', 'auth', '--qr-format', 'text', '--idle-exit', '20s', '--history-days', '30',
+            'auth', '--phone', phone], ui, seen)
+    ui.show_code(None)
+    if getattr(ui, 'cancelled', False):
+        raise SetupError('Stopped')
+    linked = whatsapp_linked(wacli, store)
+    if not linked:
+        raise SetupError('WhatsApp was not linked' + (': ' + failed[-1] if failed and failed[-1] else ''), 'add WhatsApp again for a new code')
+    return linked
 
 
 def install_wacli(config, ui):
@@ -1400,7 +1518,7 @@ def step_android(config, account, ui):
     if not nodes:
         raise SetupError('No Android phone is paired with OpenClaw',
                          'install the OpenClaw app on the phone, pair it with this Gateway (https://themachine.computer/help/android#connect-it), '
-                         'allow notification access, then: assistant connect android')
+                         'allow notification access, then ' + ('add it here again' if getattr(ui, 'web', False) else 'run: assistant connect android'))
     account['node_id'] = ui.choose('Which phone', [(n['nodeId'], f'{n.get("displayName") or n["nodeId"]}'
                                                    + ('' if n.get('connected') else ' (offline now)')) for n in nodes])
     name = next(n.get('displayName') for n in nodes if n['nodeId'] == account['node_id'])
@@ -1432,8 +1550,61 @@ def step_gateway(config, account, ui):
     account.setdefault('unit', 'openclaw-gateway.service')
 
 
+GH_DEVICE = 'https://github.com/login/device'
+GH_CODE = re.compile(r'one-time code: ([A-Z0-9]{4}-[A-Z0-9]{4})')
+CODE_WAIT = 900  # seconds a sign-in code shown on the dashboard (GitHub, WhatsApp) waits to be used
+
+
+def follow(command, ui, seen, wait=CODE_WAIT):
+    """Run a sign-in that shows a code (gh auth login, wacli auth) and hand each line to `seen` until it ends, the
+    dashboard's Cancel, or `wait` seconds. Returns the exit code, or None when it was stopped."""
+    try:
+        process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                   env={**os.environ, 'BROWSER': 'true'})  # nothing opens on the server: the code shows on the dashboard
+    except OSError:
+        return None
+    reader = threading.Thread(target=lambda: [seen(line) for line in process.stdout], daemon=True)
+    reader.start()
+    until = time.monotonic() + wait
+    while process.poll() is None:
+        if getattr(ui, 'cancelled', False) or time.monotonic() > until:
+            process.terminate()
+            process.wait(10)
+            process.stdout.close()
+            return None
+        time.sleep(1)
+    reader.join(5)
+    process.stdout.close()
+    return process.returncode
+
+
+def gh_signin(config, ui):
+    """GitHub on the dashboard: gh signed in on this Machine already, or GitHub's own device sign-in, its code shown on
+    the dashboard to enter at github.com/login/device (gh auth login --web, which keeps the token in gh's own store)."""
+    gh = tool(config, 'gh')
+    if not gh:
+        raise SetupError('GitHub’s gh tool is not on this Machine', 'install it from https://cli.github.com, then add GitHub here again')
+    if run([gh, 'auth', 'status', '--hostname', 'github.com'], timeout=20).returncode == 0:
+        return
+    ui.say('  sign in to GitHub with the code below')
+
+    def seen(line):
+        found = GH_CODE.search(line)
+        if found:
+            ui.show_code({'kind': 'device', 'code': found[1], 'url': GH_DEVICE})
+    code = follow([gh, 'auth', 'login', '--hostname', 'github.com', '--web', '--git-protocol', 'https', '--skip-ssh-key'], ui, seen)
+    ui.show_code(None)
+    if getattr(ui, 'cancelled', False):
+        raise SetupError('Stopped')
+    if code != 0:
+        raise SetupError('The GitHub sign-in didn’t finish', 'add GitHub again for a new code')
+    ui.say('  signed in to GitHub')
+
+
 def step_plugin(config, account, ui):
     setup = setup_of(account.get('service', 'gmail'))
+    if account.get('service') == 'github' and getattr(ui, 'web', False):
+        gh_signin(config, ui)  # instead of gh auth login in a terminal
     if setup.get('note') and not setup.get('maton'):
         explain(ui, setup['note'])
     for key, prompt, *rest in setup.get('ask', []):
@@ -1555,6 +1726,8 @@ def wait_signed_in(config, account, name, ui, error):
     until = time.monotonic() + float(ui.wait_signin)
     while error and error.endswith('_signed_out') and time.monotonic() < until:
         time.sleep(SIGNIN_EVERY)
+        if getattr(ui, 'cancelled', False):  # Cancel on the dashboard
+            raise SetupError('Stopped')
         error = check(config, account)
     if not error:
         ui.say(f'  signed in to {name}')
@@ -1582,14 +1755,20 @@ def connect(config_path, name, ui, account_id=None, restart=True):
     ui.say(f'\n{label(service)}' + (f' ({account["id"]})' if existing else ': new account'))
     account = json.loads(json.dumps(account)) if existing else new_account(config, service, account_id, ui)
     if not existing:
-        ui.say(f'  saving it as {account["id"]} in {account.get("boundary")}')
+        ui.say(f'  saving it as {account["id"]}' + (f' ({scope_label(account["boundary"])})' if ':' in str(account.get('boundary') or '') else ''))
     own = {field: os.environ[var] for field, var in (setup_of(service).get('browser_env') or {}).items() if os.environ.get(var)}
     if own and not any(account.get(field) for field in own):
         account.update(own)  # it reads in the browser it was signed in with, also once others are added
     STEPS.get(service, step_plugin)(config, account, ui)
     error = check(config, account)
     if error and error.endswith('_signed_out') and getattr(ui, 'wait_signin', 0):
-        error = wait_signed_in(config, account, label(service), ui, error)
+        if hasattr(ui, 'signing_in'):
+            ui.signing_in = setup_of(service).get('browser') or service  # the dashboard offers that sign-in right there
+        try:
+            error = wait_signed_in(config, account, label(service), ui, error)
+        finally:
+            if hasattr(ui, 'signing_in'):
+                ui.signing_in = None
     if error and error.endswith('_signed_out'):
         # in plain words: the raw code and the browser jargon stay out of what the owner reads
         raise SetupError(f'You are not signed in to {label(service)} on your Machine yet',

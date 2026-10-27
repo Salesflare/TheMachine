@@ -21,7 +21,8 @@ company's on. Personal connections never go and have no switch. Turning one off 
 unshare. An admin can require every member's **Work email** and **Work calendar**
 (a signed `policy` statement, `{t: policy, fleet, member, key, by, require: [mail, calendar], at}`; the newest from a
 confirmed admin wins, so a CP can't make one up). Only connections on the Fleet's own domains can be required, and
-the admin confirms first that the company has told its people. A required connection is on whatever the owner chose before, and
+the admin confirms first that the company has told its people. With no `pause` statement yet (off by default), a
+`policy` that requires something turns sharing on (`graph_paused`); an admin's Off still wins. A required connection is on whatever the owner chose before, and
 shows "Required by <Fleet>". Inside any connection that is on, each thread is still sorted: personal, sensitive,
 automated and colleague-only threads stay out of automatic sharing, and **Keep private** on a thread or record still wins until the owner changes the sharing choice. A member who wants to stop
 turns their connections off; the old ask to an admin (`optout`) is still honored but no longer offered.
@@ -131,11 +132,12 @@ The weekly recap says, in one line: "Shared 214 threads with Acme this week, 4 h
 
 ## The first share
 
-Nothing goes until the owner taps **Start now** on **What's shared** (Fleet tab, also from Settings and every thread's
-label). Before that, every non-hand verdict is sorted again with the current rules, and the pane lists the client
-threads that would go, by organization, each with **Keep private**. Until the owner decides, the Machine shows a card
-and reminds them every 3 days (`REMIND_EVERY`), only within their work hours. Admins see each teammate's state:
-sharing, not started, off, or taken out. A Machine that shared before goes on without a new Start now.
+No Start now: being in a Work Fleet where sharing is on is the choice. A Machine's first share goes `LOOK_OVER` (an
+hour) after it tells its owner once, on their phone or Telegram (`_start_notice`). In that hour every non-hand verdict
+is sorted again with the current rules, and **What's shared** lists the client threads that would go, by organization,
+each with **Keep private**; **Share now** sends it at once. The hour counts from `look`, so a Machine updated from the
+version that waited for Start now gets its hour too. Admins see each teammate's state: sharing, not started, off, or
+taken out. A Machine that shared before goes on.
 
 ## Threat model
 
@@ -361,8 +363,8 @@ Nothing more is shared for any of it (`SharedGraph.team_boards`).
   12 projects with their full timelines, deals too. Personal and other companies never go."), and **Share** or **Stop sharing**. The
   board's header says "Shared with Robin".
 - **What's shared**, a pane per Work Fleet on the Fleet tab (also in Settings): counts per kind, the first-share review
-  with **Start now**, **Share these?**, every shared thread with its why-line and **Unshare**, and what is kept private.
-  For admins also **Teammates** (who shares, who hasn't started, **Take out**, **Share again**) and the switch
+  with **Keep private** and **Share now** (it goes within the hour by itself), **Share these?**, every shared thread with its why-line and **Unshare**, and what is kept private.
+  For admins also **Teammates** (who shares, who hasn't shared yet, **Take out**, **Share again**) and the switch
   **Share the Graph in this Fleet**, which everyone sees.
 - The Fleet tab, in the Team Graph box: "<name> joined <Fleet>. Share the team's Graph with them?" and "<name> asks to
   stop sharing their Work with the team." (Approve / Not now) for admins, new devices with **Not theirs**, and for
@@ -386,8 +388,8 @@ those rows deletes all of it. Retraction works three ways:
   list and not on it, so new devices and late joiners never get what was unshared.
 - **Turn off and remove shared data**: an admin's signed `pause` with `purged`. Every Machine deletes all it got from
   the Fleet, forgets what it sent and drops any blob from before then that still arrives. It is a trust statement,
-  not a mailbox blob, so it reaches Machines that come back after any time. Once back on, each owner taps Start now
-  again and everything goes again from the start.
+  not a mailbox blob, so it reaches Machines that come back after any time. Once back on, each owner gets an hour
+  to look it over again and everything goes again from the start.
 
 What isn't retracted: **Stop sharing my Work** (an admin's `optout`) and someone leaving only stop what's new; what went
 stays with the Fleet, as decided. Someone may already have read what was retracted. A Machine no longer in the Fleet
@@ -414,8 +416,8 @@ signs it.
    rule already says no to (another company's connection, automated mail, personal, kept private) is taken back at once.
 4. A Fleet that shared before the switch existed stays on: a Machine that sent to it before treats it as on until an
    admin says otherwise, and the first admin Machine on this version signs the switch on once (`_was_sharing`), so the
-   members' Machines that never sent anything follow. A Machine that shared before needs no new **Start now**; one
-   that never did looks it over first (above).
+   members' Machines that never sent anything follow. A Machine that shared before goes on; one that never did gets
+   its hour to look it over first (above).
 5. Past threads: all the Work history the Machine has, judged by the history pass, in batches (above).
 6. Machines that haven't updated publish nothing and get nothing; "who knows someone" keeps working.
 7. Nothing is imported from or written to another CRM.
@@ -426,7 +428,7 @@ signs it.
 2. Stopping takes an admin's OK, like in any CRM. Keep private on a record needs none.
 3. Attachments go with a shared client thread, sealed the same way, up to 2.5 MB each. In a Careful Fleet (security level) they don't: the thread lists them as not shared.
 4. History: as far back as the Machine has Work mail, through the same labels, in resumable batches.
-5. A look first: the first share waits for **Start now**, and each new client thread waits an hour.
+5. A look first: the first share goes an hour after the owner is told, and each new client thread waits an hour.
 6. One trust decision per person, when they join; no OK per device. Removal is signed.
 7. Everything stays on the Machines. The CP is a mailbox: a blob goes once every Machine took it, or after 30 days.
    Machines catch each other up.

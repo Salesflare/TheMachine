@@ -10,7 +10,9 @@ In a Work Fleet, your Machine can share your client work with your teammates' Ma
 
 ## Turn it on
 
-An admin turns on **Share the Graph in this Fleet** on **What's shared**, and confirms the company may share this mail and has told its people. Everyone sees whether it's on. A Fleet that already shared before stays on. Then each person looks over what would go and taps **Start now**. Nothing goes before that.
+An admin turns on **Share the Graph in this Fleet** on **What's shared**, and confirms the company may share this mail and has told its people. Everyone sees whether it's on. A Fleet that already shared before stays on.
+
+Requiring everyone's Work email or calendar turns it on too. Then nobody has to start anything: what the Fleet requires goes, and each person picks what else goes under **Your connections**. A new teammate's first share goes within the hour, so they can keep anything private first.
 
 ## Your connections
 
@@ -22,7 +24,7 @@ Inside a connection that's on, each thread is still sorted. Personal and colleag
 
 ## Required by the Fleet
 
-An admin can require everyone's **Work email** and **Work calendar** at the Fleet's own domain, under **Required by the Fleet**, after confirming the company has told its people. Work mail belongs to the company, like in any CRM. Those then show "Required by" your Fleet and can't be turned off. Threads you keep private stay private.
+An admin can require everyone's **Work email** and **Work calendar** at the Fleet's own domain, under **Required by the Fleet**, after confirming the company has told its people. Work mail belongs to the company, like in any CRM. Those then show "Required by" your Fleet and can't be turned off. Threads you keep private stay private. When sharing is still off, requiring something turns it on: no second switch.
 
 ## What goes to the team
 
@@ -58,9 +60,7 @@ When your Machine isn't sure, it doesn't share. Those threads wait under **Share
 
 ## Before the first share
 
-Open **Fleet**, then **What's shared**. It lists the client threads that would go, by organization. Tap **Keep private** on any of them, then **Start now**.
-
-Until you start, your Machine reminds you every few days, during your work hours. Admins see who hasn't started yet.
+Your first share goes by itself within the hour, with nothing to confirm. Your Machine tells you once when that hour starts. In that hour, open **Fleet**, then **What's shared**: it lists the client threads that would go, by organization. Tap **Keep private** on any of them. **Share now** sends it without waiting. Admins see who hasn't shared yet.
 
 ## What's shared
 

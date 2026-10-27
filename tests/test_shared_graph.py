@@ -556,42 +556,59 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual((project['board'], project['stage'], project['timeline'], project['threads']), ('Hiring', 'Screening', [], []))
         self.assertNotIn('Standup', [json.loads(r['body']).get('subject') for r in self.team(self.mem, 'team_mail')])
 
-    def test_the_first_share_waits_for_start_now_and_reminds_within_work_hours(self):
+    def test_the_first_share_goes_an_hour_after_the_owner_is_told_with_no_start_now(self):
         told = []
         self.own.tell = lambda text, anchor: told.append((text, anchor))
         for box in (self.adm, self.mem):
             box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+        self.own.set_meta('graph_start:' + FLEET, None)  # Olive's Machine, about to share with the team for the first time
         self.olive_mail()
-        self.own.hours = {'work_day': lambda _: True, 'in_hours': lambda _: False}  # outside work hours: no reminder yet
         self.rounds()
-        self.assertEqual(self.team(self.mem, 'team_mail'), [])  # nothing goes, however long it waits
-        self.assertEqual(told, [])
-        self.own.hours = {'work_day': lambda _: True, 'in_hours': lambda _: True}
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])  # the hour to look it over first
+        self.assertEqual(told, [('Your Work goes to Acme within the hour. Look it over and keep anything private first.', 'shared-' + FLEET)])
         self.rounds()
-        self.assertEqual(told, [('Your Work is ready to share with Acme. Look it over and start when you are ready.', 'shared-' + FLEET)])
-        self.rounds()
-        self.assertEqual(len(told), 1)  # gently: again only after a few days
-        start = self.own.meta('graph_start:' + FLEET)
-        start['reminded'] = ago(4)
-        self.own.set_meta('graph_start:' + FLEET, start)
-        self.rounds()
-        self.assertEqual(len(told), 2)
-        me = self.own.sharing()[0]
-        self.assertFalse(me['started'])
-        people = {p['name']: p['state'] for p in self.adm.sharing()[0]['people']}  # an admin sees who hasn't started
+        self.assertEqual(len(told), 1)  # told once: nothing to answer
+        self.assertFalse(self.own.sharing()[0]['started'])
+        people = {p['name']: p['state'] for p in self.adm.sharing()[0]['people']}  # an admin sees who hasn't shared yet
         self.assertEqual(people['Olive'], 'not_started')
         with self.own.store.connect() as db:
             sg.ensure(db)
         view = self.own.graph_overview(FLEET)
         self.assertEqual(view['preview']['threads'], 1)
         self.assertEqual(view['preview']['orgs'][0]['key'], '@client.example')
-        self.assertTrue(all(x['why'].startswith('Goes when you start') for x in view['threads']))
+        self.assertTrue(all(x['why'].startswith('Goes within the hour') for x in view['threads']))
+        start = self.own.meta('graph_start:' + FLEET)
+        start['look'] = ago(0, 2)  # the hour went by, nobody tapped anything
+        self.own.set_meta('graph_start:' + FLEET, start)
+        self.rounds()
+        self.assertIn(BODY, json.dumps(self.team(self.mem, 'team_mail')))
+        self.assertTrue(self.own.sharing()[0]['started'])
+        self.assertEqual({p['name']: p['state'] for p in self.adm.sharing()[0]['people']}['Olive'], 'sharing')
+        self.assertEqual(len(told), 1)
+
+    def test_the_first_share_skips_the_hour_on_start_now_and_an_updated_machine_gets_its_hour_too(self):
+        for box in (self.adm, self.mem):
+            box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+        self.own.set_meta('graph_start:' + FLEET, {'shown': ago(9)})  # waited for Start now before this version
+        self.olive_mail()
+        self.rounds()
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])  # an hour from now, not at once
         self.own.graph_start(FLEET)
         self.rounds()
         self.assertIn(BODY, json.dumps(self.team(self.mem, 'team_mail')))
-        self.assertEqual({p['name']: p['state'] for p in self.adm.sharing()[0]['people']}['Olive'], 'sharing')
+
+    def test_the_first_share_keeps_what_its_owner_keeps_private_in_the_hour(self):
+        for box in (self.adm, self.mem):
+            box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+        self.olive_mail()
         self.rounds()
-        self.assertEqual(len(told), 2)  # started: no more reminders
+        self.own.graph_rule('@client.example', 'private', 'Client')
+        start = self.own.meta('graph_start:' + FLEET)
+        start['look'] = ago(0, 2)
+        self.own.set_meta('graph_start:' + FLEET, start)
+        self.rounds()
+        self.assertTrue(self.own.sharing()[0]['started'])
+        self.assertNotIn(BODY, json.dumps(self.team(self.mem, 'team_mail')))
 
     # -- all the Work history, a batch at a time
     def client_threads(self, box, n, days):
@@ -1254,6 +1271,18 @@ class SharedGraph(unittest.TestCase):
             self.mem.graph_take({'header': header, 'ct': old['ct'], 'sig': old['sig'], 'wrap': wrap, 'by': 'adm2'})
         self.assertNotIn(BODY, self.received(self.mem))
 
+    def test_sharing_is_off_until_an_admin_requires_something_which_turns_it_on_and_off_still_wins(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertEqual(self.own.sharing()[0]['paused'], {'default': True})
+        self.adm.graph_set_policy(FLEET, ['mail'])  # requiring the Work email is the admin's turn-on: no second switch
+        self.rounds()
+        self.assertIsNone(self.own.sharing()[0]['paused'])
+        self.assertIn(BODY, self.received(self.mem))
+        self.adm.graph_pause(FLEET, True)  # an admin's Off still wins over what is required
+        self.rounds()
+        self.assertTrue(self.own.sharing()[0]['paused'])
+
     def test_sharing_is_off_until_an_admin_turns_it_on(self):
         self.olive_mail()
         self.rounds()
@@ -1539,7 +1568,7 @@ class SharedGraph(unittest.TestCase):
         self.assertIn(BODY, received)
         self.assertNotIn('offer to buy', received)  # sorted again as sensitive: taken back
         self.assertNotIn('Max wrote', json.dumps(self.team(self.mem)))
-        self.assertTrue(self.own.sharing()[0]['started'])  # it shared before: no new Start now
+        self.assertTrue(self.own.sharing()[0]['started'])  # it shared before: no new hour to look it over
         self.assertLessEqual(len([b for b in self.net.blobs.values() if b['header']['kind'] == 'mail']) - tombstones, 1)  # no take back and send again
 
     def test_a_fleet_that_never_shared_stays_off_after_the_update(self):
@@ -1707,17 +1736,21 @@ class SharedGraph(unittest.TestCase):
         self.olive_mail()
         self.own.config['accounts'] += [{'id': 'cal', 'email': 'own1@acme.example', 'service': 'calendar', 'boundary': 'work:Acme'},
                                         {'id': 'li', 'service': 'linkedin', 'boundary': 'work:Acme'},
+                                        {'id': 'zm', 'service': 'zoom', 'boundary': 'work:Acme'},
                                         {'id': 'homecal', 'email': 'own1@home.example', 'service': 'calendar', 'boundary': 'personal:Home'}]
         meet = lambda acct, n, title, body, who='lee@client.example': {
             'account_id': acct, 'source_id': f'{acct}-{n}', 'kind': 'calendar.event', 'occurred_at': ago(1), 'title': title, 'body': body, 'deleted': False,
             'metadata': {'organizer': {'email': 'own1@acme.example'}, 'attendees': [{'email': who}]}}
+        zoom = lambda n, title, body: {'account_id': 'zm', 'source_id': f'zm-{n}', 'kind': 'zoom.summary', 'occurred_at': ago(1), 'title': title,
+                                       'body': body, 'deleted': False, 'metadata': {'participants': [{'email': 'lee@client.example'}]}}
         chat = lambda n, conv, body: {'account_id': 'li', 'source_id': f'li-{n}', 'kind': 'linkedin.message', 'occurred_at': ago(1), 'title': 'LinkedIn conversation',
                                       'body': body, 'deleted': False, 'metadata': {'conversation_id': conv, 'chat_name': 'Lee Park', 'from_me': False}}
         self.add(self.own, meet('cal', 1, 'Renewal call', 'Walk Lee through the new plan.'), chat(1, 'c-lee', 'Lee: the renewal looks good.'),
                  meet('cal', 2, 'Lee check-in', 'Lee asked about the seats.'), meet('cal', 3, 'Unrelated call', 'Not on any board.'),
                  meet('cal', 4, 'Team sync', 'Only colleagues here.', 'adm2@acme.example'), chat(2, 'c-kept', 'Lee: a note to keep to me.'),
-                 meet('cal', 5, 'Lee and family', 'Lee talked about his kids.'), meet('homecal', 1, 'Dinner with Lee', 'Dinner at home.'))
-        self.board(self.own, 'Renewals', 'team', {'Renewal: Client': ['work-1', 'cal-1', 'li-1', 'cal-2', 'cal-4', 'li-2', 'cal-5', 'homecal-1']})
+                 meet('cal', 5, 'Lee and family', 'Lee talked about his kids.'), meet('homecal', 1, 'Dinner with Lee', 'Dinner at home.'),
+                 zoom(1, 'Renewal pricing', 'Lee agreed the new seat price.'), zoom(2, 'Lee health', 'Lee is off for surgery next month.'))
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Client': ['work-1', 'cal-1', 'li-1', 'cal-2', 'cal-4', 'li-2', 'cal-5', 'homecal-1', 'zm-1', 'zm-2']})
         with self.own.store.connect() as db:
             sg.set_hand(db, self.event_id(self.own, 'li-2'), 'private')
         self.add(self.own, meet('cal', 6, 'Lee raise', 'Lee asked about a raise for his team.'))
@@ -1732,17 +1765,18 @@ class SharedGraph(unittest.TestCase):
             everything = self.received(box) + json.dumps(self.team(box))
             self.assertNotIn('Walk Lee through', everything)  # not judged yet: it waits, not even for a while
             self.assertNotIn('a raise for his team', everything)
+            self.assertNotIn('new seat price', everything)  # a Zoom summary waits to be judged like mail
             self.assertIn('about the seats', everything)  # judged (unsure): on the board, so it goes
         self.judge(self.own, ('cal-1', 'other', 'Renewal call with Lee'), ('li-1', 'internal', 'Lee on the renewal'),
-                   ('cal-6', 'sensitive', 'Lee and a raise'))
+                   ('cal-6', 'sensitive', 'Lee and a raise'), ('zm-1', 'client', 'Lee agreed the price'), ('zm-2', 'sensitive', 'Lee and his health'))
         self.assertEqual([w for w in self.own.graph_unjudged() if w['subject'] in ('Renewal call', 'Lee raise', 'LinkedIn conversation')], [])
         self.rounds()
         for box in (self.adm, self.mem):
             everything = self.received(box) + json.dumps(self.team(box))
-            for text in ('Walk Lee through', 'renewal looks good', 'about the seats'):
+            for text in ('Walk Lee through', 'renewal looks good', 'about the seats', 'new seat price'):
                 self.assertIn(text, everything)  # judged other, internal or unsure: on the team's board, so it goes
-            for text in ('Not on any board', 'Only colleagues here', 'a note to keep to me', 'his kids', 'Dinner at home', 'a raise for his team'):
-                self.assertNotIn(text, everything)  # no board, colleagues only, Keep private, personal, a personal account, sensitive
+            for text in ('Not on any board', 'Only colleagues here', 'a note to keep to me', 'his kids', 'Dinner at home', 'a raise for his team', 'surgery'):
+                self.assertNotIn(text, everything)  # no board, colleagues only, Keep private, personal, a personal account, sensitive (a meeting or a Zoom summary)
         self.assertIn('Meeting: Renewal call', json.dumps(self.projects_of(self.mem)['Renewal: Client']['timeline']))
 
     def test_a_project_added_to_a_shared_board_goes_and_one_moved_off_is_taken_back(self):

@@ -12,7 +12,9 @@ The **Connections** tab groups your sources into **Mail and calendar**, **Chat**
 
 ## Add one
 
-Open **+ Add** and pick a source. It asks what it needs, one question at a time. **Cancel** stops adding it. Once it is connected, your Machine restarts to start reading it, then opens the new card, which shows how its first sync goes. On a hosted Machine, Google and Microsoft link to your setup page. On your own computer, `assistant connect` does the same in a terminal.
+Open **+ Add** and pick a source. It shows one short form, like your setup page: what it needs (a key, an address), and **Work** with its company or **Personal**. Press **Connect**. A source that signs in, like LinkedIn or X, opens its sign-in on your Machine and goes on by itself once you're in. GitHub and WhatsApp show a code to enter.
+
+**Cancel** stops adding it. Once it is connected, your Machine restarts to start reading it, then opens the new card, which shows how its first sync goes. On a hosted Machine, a source that signs in at its own site (Google, Microsoft, Zoom, Stripe, Intercom, GitHub, WhatsApp) opens that source on your setup page. On your own computer, `assistant connect` does the same in a terminal.
 
 ## Work or personal
 

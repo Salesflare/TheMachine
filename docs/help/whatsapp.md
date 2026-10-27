@@ -28,7 +28,9 @@ On a hosted Machine:
 
 Setting up on your phone, with no second screen to scan from? Open **On your phone? Link with a code instead**, enter your number and press **Get a code**. WhatsApp then asks for that code.
 
-On your own computer, run `assistant connect whatsapp` and scan the code it shows in the terminal. Without wacli, it offers to install the pinned build from [Salesflare/wacli](https://github.com/Salesflare/wacli), checked against its checksum.
+On your own computer: open **Connections**, then **+ Add**, pick WhatsApp, enter your phone number with its country code and press **Connect**. It shows a code. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, then **Link with phone number instead**, and enter the code.
+
+Or run `assistant connect whatsapp` and scan the code it shows in the terminal. Without wacli, it offers to install the pinned build from [Salesflare/wacli](https://github.com/Salesflare/wacli), checked against its checksum.
 
 ## Pictures
 

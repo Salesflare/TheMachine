@@ -542,9 +542,46 @@ CONNECT_ACTIONS = (
     'connect_scope',
     'connect_signin',
     'connect_signin_state',
+    'connect_site_signin',
     'connect_sources',
     'connect_start',
 )
+# Connections, + Add: where a hosted Machine's setup page signs in or links a source the dashboard can't (its tile id)
+HOSTED_TILES = {'github': 'source-github', 'whatsapp': 'source-whatsapp', 'android': 'source-android'}
+# LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
+CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
+CONNECT_SIGNIN_WAIT = 600
+
+
+def connect_form(source, args):
+    """(answers, secrets) for onboarding.WebUI.prefill from the + Add form of one source (onboarding.web_form): only its own
+    questions and key, and Work with a company or Personal, as the setup page's form sends them (agent ScriptedUI)."""
+    form, answers, secrets_ = source['form'], {}, {}
+    given = args.get('answers') if isinstance(args.get('answers'), dict) else {}
+    for key, prompt in form['ask']:
+        value = given.get(key)
+        if isinstance(value, str) and value.strip():
+            if len(value) > 500:
+                raise ValueError('That answer is too long')
+            answers[prompt] = value.strip()
+    secret = args.get('secret')
+    if form.get('secret') and isinstance(secret, str) and secret.strip():
+        if len(secret) > 4096:
+            raise ValueError('That key is too long')
+        secrets_[form['secret']] = secret.strip()
+    if form.get('scope'):
+        scope, company = args.get('scope'), ' '.join(str(args.get('company') or '').split())[:60]
+        if scope == 'personal':
+            boundary = 'personal:me'
+        elif scope == 'work' and company and re.fullmatch(r'[^\x00-\x1f<>:]+', company):
+            boundary = 'work:' + company
+        else:
+            raise ValueError('Pick Work with its company, or Personal')
+        answers.update({'part of your life': boundary, 'company': boundary})
+    answers['You already have'] = f"add another {source['label']} account"  # a new one, when there is one; Reconnect signs one in again
+    return answers, secrets_
+
+
 OWNER_ACTIONS = {
     *CONNECT_ACTIONS,
     'bind_feedback_prompt',
@@ -3912,8 +3949,10 @@ class Store:
         args.extend([now(), now()])
         with self.connect() as db:
             rows = [dict(r) for r in db.execute(sql, (*args, limit))]
+            for row in rows:
+                row['metadata'] = json.loads(row['metadata'])
+            rows = slack_named(db, rows)
         for row in rows:
-            row['metadata'] = json.loads(row['metadata'])
             if row.get('kind') == 'android.notification':
                 row['metadata']['app_name'] = android_app_name(row['metadata'].get('package_name', 'Unknown app'))
         return rows
@@ -4249,8 +4288,8 @@ class Store:
                                      "AND occurred_at<? AND occurred_at>=? AND deleted=0 ORDER BY occurred_at DESC LIMIT ?",
                                      (row['account_id'], row['kind'], metadata[key], row['occurred_at'], since, limit)).fetchall()
                 lines = []
-                for e in reversed(earlier):
-                    m = json.loads(e['metadata'])
+                for e in reversed(slack_named(db, [{**dict(e), 'kind': row['kind']} for e in earlier])):
+                    m = e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'])
                     who = 'you' if m.get('from_me') or m.get('user_id') in self.owner_user_ids else \
                         (m.get('sender_display') or m.get('user_id') or '?')
                     when = dt.datetime.fromisoformat(e['occurred_at']).astimezone(local_tz()).strftime('%a %H:%M')
@@ -4459,6 +4498,8 @@ class Store:
 
     def review_claim(self, rows):
         """Page the claim once, so every later page read returns the same signals."""
+        with self.connect() as db:
+            rows = slack_named(db, [dict(r) for r in rows])
         context = self.conversation_context(rows)
         replies = self.card_replies(rows)
         hints = self.project_hints([r['id'] for r in rows])
@@ -4487,7 +4528,7 @@ class Store:
                 raise ValueError('Unknown analysis')
             items = json.loads(row['items'])
             ids = [i['id'] for i in items if not i.get('excluded') and i.get('page', 0) == int(page)]
-            rows = {r['id']: dict(r) for r in db.execute('SELECT * FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)} if ids else {}
+            rows = {r['id']: r for r in slack_named(db, [dict(r) for r in db.execute('SELECT * FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)])} if ids else {}
         pages = max((i.get('page', 0) for i in items), default=0) + 1
         context = self.conversation_context([rows[i] for i in ids if i in rows])
         # A signal may grow after the original page layout was committed.
@@ -5014,6 +5055,7 @@ class Store:
             # them is no sign it was kept; the review closes those, or the check when it's due.
             watch = awaiting_key(dict(event), self.owner_user_ids) if direction == 'theirs' and event['kind'] == 'gmail.message' else None
             check_at = promise_check_at(direction, due, event['occurred_at'], digest_at)
+            who = slack_ids_named(db, who)  # a Slack sender the review only knew by id: their name
             stamp = now()
             # `what` is sealed under message protection (a fresh nonce each time), so the same promise is found by
             # opening this message's promises here, not by the UNIQUE constraint, which then never matches
@@ -5132,6 +5174,8 @@ class Store:
                 'SELECT p.id,p.direction,p.who,p.what,p.due,p.check_at,p.status,p.note,p.suggestion_id,p.account_id,p.event_id,p.created_at,p.updated_at,p.together,'
                 'e.occurred_at made_at,s.status card_status FROM promises p JOIN events e ON e.id=p.event_id LEFT JOIN suggestions s ON s.id=p.suggestion_id '
                 "WHERE p.status IN ('open','carded') OR p.updated_at>=? ORDER BY coalesce(p.due,substr(p.check_at,1,10)),p.id", (since,))]
+            for row in rows:
+                row['who'] = slack_ids_named(db, row['who'])  # one noted before its sender's name was known
         for row in rows:
             row['state'] = promise_state(row)
         return [r for r in rows if r['state'] in ('open', 'card') or r['updated_at'] >= since]
@@ -5145,6 +5189,7 @@ class Store:
             if not row:
                 raise ValueError('Unknown promise')
             p = dict(row)
+            p['who'] = slack_ids_named(db, p['who'])
             try:
                 links = [dict(r) for r in db.execute("SELECT n.id,n.kind,n.name FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
                                                      "WHERE g.event_id=? AND n.kind IN ('person','org','project') ORDER BY n.kind DESC,n.name LIMIT 12", (p['event_id'],))]
@@ -7113,7 +7158,7 @@ class Store:
         """Collected messages, in the given order, for reading on the dashboard."""
         ids = [int(i) for i in ids]
         with self.connect() as db:
-            rows = [dict(r) for r in db.execute('SELECT id,account_id,source_id,kind,occurred_at,title,body,metadata FROM events WHERE id IN (' + ','.join('?' for _ in ids) + ')', ids)] if ids else []
+            rows = slack_named(db, [dict(r) for r in db.execute('SELECT id,account_id,source_id,kind,occurred_at,title,body,metadata FROM events WHERE id IN (' + ','.join('?' for _ in ids) + ')', ids)]) if ids else []
             own = own_addresses.yours(db, self.config) if rows else set()
         own |= {str(a.get('email') or '').lower() for a in self.accounts if a.get('service', 'gmail') in MAIL_SERVICES and '@' in str(a.get('email') or '')}
         rows.sort(key=lambda r: ids.index(r['id']))
@@ -9787,6 +9832,60 @@ def source_line(rows):
     else:
         line = source_text(first)
     return 'Source: ' + line + (f' (+{len(more)} more)' if more else '')
+
+
+# A Slack member as the API names them: a message carries only this id, so a review or the dashboard reading it as is
+# sees "U02AB3CD4", and once it wrote "Slack teammate U02AB3CD4" on a promise. Their names come from users.info, kept
+# in identity_names (remember_slack_names): slack_named and slack_ids_named put the name in its place.
+SLACK_ID = re.compile(r'\b(?:Slack (?:teammate|user|member|colleague|contact) )?([UW][A-Z0-9]{8,11})\b')
+
+
+def slack_name_table(db, ids):
+    """{user id: name} for these Slack member ids, from what users.info said (identity_names). Unknown ones are left out."""
+    ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
+    if not ids:
+        return {}
+    try:
+        return {r[0].split(':', 1)[1]: r[1] for r in db.execute(
+            'SELECT identifier,name FROM identity_names WHERE name IS NOT NULL AND identifier IN (' + ','.join('?' * len(ids)) + ')',
+            ['slack:' + i for i in ids])}
+    except sqlite3.OperationalError:
+        return {}  # no graph tables yet
+
+
+def slack_ids_named(db, text, names=None):
+    """Text with each Slack member id it mentions ("Slack teammate U02AB3CD4", "DM U02AB3CD4") as that person's name."""
+    text = str(text or '')
+    found = [m[1] for m in SLACK_ID.finditer(text)]
+    names = names if names is not None else slack_name_table(db, found)
+    return SLACK_ID.sub(lambda m: names.get(m[1], m[0]), text) if any(i in names for i in found) else text
+
+
+def slack_named(db, rows):
+    """Slack messages with their sender's name (sender_display) and a DM's other person by name, as a WhatsApp message
+    carries its sender: for the review, its earlier-in-conversation lines and the dashboard. Other rows stay as they are."""
+    slack = [r for r in rows if r.get('kind') == 'slack.message']
+    if not slack:
+        return rows
+    meta = {id(r): (r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')) for r in slack}
+    ids = {m.get('user_id') for m in meta.values()} | {i for r in slack for i in SLACK_ID.findall(str(r.get('title') or ''))} | {
+        i for m in meta.values() for i in SLACK_ID.findall(str(m.get('channel_name') or ''))}
+    names = slack_name_table(db, ids)
+    if not names:
+        return rows
+    out = []
+    for r in rows:
+        if r.get('kind') != 'slack.message':
+            out.append(r)
+            continue
+        m = dict(meta[id(r)])
+        if names.get(m.get('user_id')) and not m.get('sender_display'):
+            m['sender_display'] = names[m['user_id']]
+        if m.get('channel_name'):
+            m['channel_name'] = slack_ids_named(db, m['channel_name'], names)
+        out.append({**r, 'title': slack_ids_named(db, r.get('title'), names),
+                    'metadata': m if isinstance(r['metadata'], dict) else json.dumps(m)})
+    return out
 
 
 def source_text(row):
@@ -15234,6 +15333,12 @@ class App:
         if name == 'connect_sources':
             found = {'sources': onboarding.catalog(self.config), 'manage_url': manage if hosted else None,
                      'saveable': bool(getattr(self, 'config_path', None))}
+            if hosted:
+                # signed in or linked by the hosted setup page itself (GitHub's sign-in, WhatsApp's QR code, the phone's
+                # pairing): + Add links to that source's own tile there
+                for source in found['sources']:
+                    if source['service'] in HOSTED_TILES and 'account_page' not in source:
+                        source['account_page'] = HOSTED_TILES[source['service']]
             if not hosted:
                 # Sign in with <provider> through The Machine's own app (fleet.py connect_start), once this Machine is
                 # paired with an account; pasting a token stays as the fallback
@@ -15257,6 +15362,22 @@ class App:
                 raise ValueError('This service cannot save its settings')
             # one already connected is signed in again (onboarding.connect_delivered), as Reconnect does
             return {'url': self.fleet.connect_start(source), 'state': 'started'}
+        if name == 'connect_site_signin':
+            # LinkedIn or X while its connect waits for the owner to sign in there: the site's sign-in page in front
+            # in the Machine's browser, for the dashboard's sign-in dialog. Nothing is typed here.
+            site = args.get('site') if isinstance(args.get('site'), str) else ''
+            if site not in CONNECT_SIGNIN:
+                raise ValueError('That site signs in another way')
+            try:
+                base = browser_login.endpoints(self.config)[0]
+                browser_login.browser_cdp.open_tab(base, CONNECT_SIGNIN[site])
+            except (browser_login.browser_cdp.CdpError, OSError, IndexError):
+                raise ValueError('I couldn’t open the sign-in page in the browser') from None
+            try:
+                browser_viewer.focus(CONNECT_SIGNIN[site], base)
+            except (ValueError, OSError):
+                pass
+            return {'opened': True, 'view': browser_link(self.config)}
         if name in ('connect_start', 'connect_remove') and args.get('account') is not None:
             account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
             if not account:
@@ -15312,12 +15433,18 @@ class App:
                 raise ValueError('That account is not a ' + known[source]['label'] + ' account')
             if not getattr(self, 'config_path', None):
                 raise ValueError('This service cannot save its settings' if hosted else f'This service cannot save its settings; run assistant connect {source} in a terminal')
+            answers, secrets_ = connect_form(known[source], args) if args.get('form') is True and not again else (None, None)
             with lock:
                 if any(v['state'] == 'running' for v in sessions.values()):
                     raise ValueError('Another source is being added; finish or stop that one first')
                 key = secrets.token_hex(12)
                 ui = onboarding.WebUI()
                 ui.reconnect = again
+                if answers is not None:
+                    ui.prefill(answers, secrets_)
+                if known[source]['form'].get('browser'):
+                    # LinkedIn, X: connected before the owner signed in there, it waits, and the dashboard offers that sign-in
+                    ui.wait_signin, ui.explains = CONNECT_SIGNIN_WAIT, False
                 session = sessions[key] = {'ui': ui, 'state': 'running', 'source': source, 'account_id': account['id'] if again else None,
                                            'label': known[source]['label'], 'at': time.monotonic(), 'hosted': hosted}
             threading.Thread(target=self.connect_run, args=(session,), daemon=True).start()
@@ -15353,6 +15480,8 @@ class App:
         view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'error', 'fix', 'account', 'restarting')}}
         if session.get('hosted') and re.search(r'\bterminal\b|\bassistant connect\b', view.get('fix') or ''):
             view['fix'] = 'try again, or get help from your account page'  # a hosted machine has no terminal to run it in
+        elif re.fullmatch(r'rerun(?: this when you have it|: assistant connect [\w-]+)', view.get('fix') or ''):
+            view['fix'] = 'check what you filled in and try again'  # Try again is right there: no command for a terminal
         view['reconnect'] = session.get('account_id')  # the account signing in again, if that is what this is
         return view
 

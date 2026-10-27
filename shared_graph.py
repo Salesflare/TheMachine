@@ -51,7 +51,7 @@ VERDICTS = ('client', 'sensitive', 'internal', 'personal', 'unsure', 'other')
 # waits in "Share these?" for their own Share or Keep private. other: not a conversation with a client (notifications,
 # receipts, newsletters, spam, cold pitches): nothing of it goes.
 HOLD = 3600                 # a thread the review just called client waits this long before it goes, so a mistake can be caught
-REMIND_EVERY = 3 * 86400    # until its owner starts the first share: a gentle reminder this often, within work hours
+LOOK_OVER = 3600            # a Machine's first share with a Fleet goes this long after its owner is told, so they can keep things private first
 REKEY_HOLD = 86400          # a new key for someone admitted: an admin's Machine vouches for it after this, unless told it isn't theirs
 SUGGEST_AFTER = 2           # this many hand choices the same way on threads with one company: ask once to make it a rule
 HANDS = ('team', 'private')
@@ -1273,7 +1273,7 @@ class SharedGraph:
             # an admin agreed: nothing new goes; what was shared before stays with the Fleet
         else:
             if set(found) - {me['member_id']} and not self._started(group['id']):
-                self._start_reminder(group)
+                self._start_notice(group)
             self.graph_publish(group, me, found)
         self._graph_want_round(group, me, found)  # catching up: with what is left of this hour's budget
         try:
@@ -1337,7 +1337,8 @@ class SharedGraph:
     def graph_paused(self, group, trusted=None, say=False):
         """Whether sharing is off for the whole Fleet: the newest admin statement (the switch, ft.paused), or None when an
         admin turned it on. Off by default (an experimental feature): with no statement at all it is off, {'default':
-        True}, unless it shared before the switch existed (_was_sharing). The newest one seen is kept. say: the round, which
+        True}, unless an admin requires something (graph_policy, a signed statement too) or it shared before the switch
+        existed (_was_sharing). An admin's Off always wins. The newest one seen is kept. say: the round, which
         may sign the switch on for such a Fleet."""
         if trusted is None:
             trusted, _ = self.trust(group)
@@ -1345,6 +1346,8 @@ class SharedGraph:
         if found:
             self.set_meta('graph_pause:' + group['id'], found)
         if not found:
+            if self.graph_policy(group, trusted):
+                return None  # an admin requires the members' Work email or calendar: that is turning it on, no second switch
             return None if self._was_sharing(group, trusted, say) else {'default': True}
         return found if found.get('on') else None
 
@@ -1512,7 +1515,7 @@ class SharedGraph:
     def graph_purge(self, group, trusted):
         """An admin removed everything the Fleet shared (signed, ft.purged): this Machine deletes all it got from the
         Fleet before then (records, threads, files, the copies it keeps to pass on), forgets what it sent, so that once
-        sharing is back on it goes again from the start, and waits for its owner's Start now. Once per removal."""
+        sharing is back on it goes again from the start, after its owner's hour to look it over. Once per removal."""
         fleet = group['id']
         when = ft.purged(group, trusted, self.meta('graph_purged:' + fleet))
         if not when or when <= str(self.meta('graph_purge_done:' + fleet) or ''):
@@ -1532,9 +1535,9 @@ class SharedGraph:
         return True
 
     def graph_start(self, fleet):
-        """The owner looked over what goes first: it goes now."""
+        """The owner looked over what goes first: it goes now, not at the end of the hour."""
         start = self.meta('graph_start:' + fleet) or {}
-        start.update(started=now(), shown=start.get('shown') or now())
+        start.update(started=now(), shown=start.get('shown') or now(), look=start.get('look') or now())
         self.set_meta('graph_start:' + fleet, start)
         try:
             self.graph_round(force=True)
@@ -1543,37 +1546,40 @@ class SharedGraph:
         return {'ok': True}
 
     def _started(self, fleet):
-        """Whether this Machine shares with the Fleet yet. Its first share waits for its owner's Start now, after they
-        looked over what goes (graph_overview's preview); until then it reminds them (_start_reminder). A Machine that
-        shared before this version goes on."""
+        """Whether this Machine shares with the Fleet yet. Being in a Work Fleet where sharing is on is the choice: no Start
+        now. Its first share goes LOOK_OVER after its owner is told (_start_notice), so they can look over what goes
+        (graph_overview's preview) and keep any of it private first; Start now sends it at once. A Machine that shared
+        before goes on. The hour counts from 'look', so a Machine updated from the version that waited for Start now
+        gets its hour too."""
         start = self.meta('graph_start:' + fleet) or {}
         if start.get('started'):
             return True
         with self.connect() as db:
             before = db.execute('SELECT 1 FROM share_out WHERE fleet=? LIMIT 1', (fleet,)).fetchone()
-        if before:
+        look = start.get('look')
+        if before or (look and look <= (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=LOOK_OVER)).isoformat(timespec='seconds')):
             start.update(started=now(), shown=start.get('shown') or now())
         else:
             start.setdefault('shown', now())
         self.set_meta('graph_start:' + fleet, start)
         return bool(start.get('started'))
 
-    def _start_reminder(self, group):
-        """Not started yet, with teammates to share with: a phone or Telegram line within the owner's work hours, at
-        first and then every REMIND_EVERY until they decide. The card itself is on the dashboard (Suggestions)."""
+    def _start_notice(self, group):
+        """Not started yet, with teammates to share with: one phone or Telegram line saying it goes within the hour, and
+        the hour starts then (_started). Nothing to answer: Keep private on What's shared is there for what shouldn't go."""
         fleet = group['id']
         start = self.meta('graph_start:' + fleet) or {}
-        if start.get('started') or not getattr(self, 'tell', None) or not self.working():
+        if start.get('started') or start.get('look'):
             return
-        if start.get('reminded') and start['reminded'] > (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=REMIND_EVERY)).isoformat(timespec='seconds'):
-            return
-        start.update(reminded=now(), reminders=int(start.get('reminders') or 0) + 1)
+        start.update(look=now(), shown=start.get('shown') or now())
         self.set_meta('graph_start:' + fleet, start)
+        if not getattr(self, 'tell', None):
+            return
         name = str(group.get('name') or 'your team')[:80]
         try:
-            self.tell(t('Your Work is ready to share with {}. Look it over and start when you are ready.', name), 'shared-' + fleet)
-        except Exception as error:  # noqa: BLE001 - a reminder never stops the round
-            LOG.warning('shared graph reminder error=%s', type(error).__name__)
+            self.tell(t('Your Work goes to {} within the hour. Look it over and keep anything private first.', name), 'shared-' + fleet)
+        except Exception as error:  # noqa: BLE001 - a notice never stops the round
+            LOG.warning('shared graph notice error=%s', type(error).__name__)
 
     def graph_overview(self, fleet):
         """What's shared with one Work Fleet, in one place (overview), with the first share's look-over when it waits."""
@@ -1589,7 +1595,7 @@ class SharedGraph:
             if not start.get('started'):
                 out['preview'] = preview(db, scope)
                 for x in out['threads']:  # nothing went yet: say what goes, not what went
-                    x['why'] = re.sub(r'^(Shared|Shares within the hour): ', 'Goes when you start: ', x['why'])
+                    x['why'] = re.sub(r'^(Shared|Shares within the hour): ', 'Goes within the hour: ', x['why'])
         return out
 
     def graph_rule(self, key, choice, name=''):
@@ -1811,7 +1817,7 @@ class SharedGraph:
             return
         to = sorted(set(found) - {me['member_id']})
         if not to or not self._started(fleet):
-            return  # nobody to share with yet, or the owner's first look-over (it waits for Start now)
+            return  # nobody to share with yet, or the owner's first look-over (the hour after they were told)
         secret = self.graph_secret()
         with self.connect() as db:
             ensure(db)

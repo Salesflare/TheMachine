@@ -23,8 +23,11 @@ On a hosted Machine:
 
 On your own computer:
 
-1. Sign in to LinkedIn once in your Machine's browser (Settings, **Open the Machine’s browser ↗**).
-2. In the dashboard, open **Connections**, then **+ Add**, and pick LinkedIn. Or run `assistant connect linkedin`.
+1. In the dashboard, open **Connections**, then **+ Add**, and pick LinkedIn.
+2. Pick **Work** with its company, or **Personal** and press **Connect**.
+3. Press **Sign in to LinkedIn** and sign in in your Machine's browser. It connects by itself once you're in.
+
+Or run `assistant connect linkedin`.
 
 A second LinkedIn account gets a browser of its own. If LinkedIn signs your Machine out, see [Signed out of a site](signed-out.md).
 

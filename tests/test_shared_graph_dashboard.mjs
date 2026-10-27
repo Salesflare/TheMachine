@@ -24,7 +24,7 @@ const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:nu
  new_devices:[{member:'m_kim2',name:'Kim Lee',fp:'ef56 ab12 cd34 ef56 ab12 cd34',from:later}]}];
 const T=(id,title,company,why,view='team')=>({event_id:id,title,with:company,company,at,view,share:'team',why});
 const overview={sorted:{client:1113,sensitive:265,internal:41,personal:262,unsure:12,other:138},unsorted:4,shared:1100,waiting:3,held:265,sent:0,more:0,
- threads:[T(51,'Renewal quote for 40 seats','Northwind','Goes when you start: client thread with Northwind'),T(52,'Onboarding call notes','Globex','Goes when you start: client thread with Globex','wait')],
+ threads:[T(51,'Renewal quote for 40 seats','Northwind','Goes within the hour: client thread with Northwind'),T(52,'Onboarding call notes','Globex','Goes within the hour: client thread with Globex','wait')],
  unsure:[T(61,'Quick question about invoices','Umbrella','Only you: not sure it\'s client work','ask'),T(62,'Intro via a mutual friend','Hooli','Only you: not sure it\'s client work','ask')],unsure_more:0,
  by_hand:[{...T(71,'Board pack draft','Vandelay','Only you: you chose this','private'),share:'only_you'}],records:[{node_id:'org:initech',name:'Initech',kind:'org'}],
  rules:[{key:'@stark.example',choice:'private',name:'Stark',at}],preview:{threads:1113,orgs:[{name:'Northwind',key:'@northwind.example',threads:84},{name:'Globex',key:'@globex.example',threads:61},{name:'Umbrella',key:'@umbrella.example',threads:12}],more:212}};
@@ -43,6 +43,7 @@ const fleet={on:true,kinds:{},kind_rules:{},no_details:[],scoped:[],scopes:{},wa
  shared:{prompts:[{id:'p1',kind:'member',fleet:FL,fleet_name:'Acme',name:'Kim Lee',email:'kim@acme.example',fp:'ab12 cd34 ef56 ab12 cd34 ef56'},
   {id:'p2',kind:'optout',fleet:FL,fleet_name:'Acme',name:'Tom Ray',email:'tom@acme.example',fp:'cd34 ef56 ab12 cd34 ef56 ab12'}],shares:[],accounts:[],can_share:[],graph:sharing}};
 const calls=[];
+let connWait=0,connFail=false;  // a slow or failing save of a connection's switch
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status')return res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));
@@ -56,7 +57,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   if(call.action==='graph_share'){share={share:call.args.share,fixed:false,why:'By hand'};if(call.args.event_id===41&&call.args.share==='only_you')return res.end(JSON.stringify({ok:true,suggest:{key:'@client.example',name:'Client Co',choice:'private'}}))}
   if(call.action==='graph_start')sharing[0].started=true;
-  if(call.action==='graph_connection')sharing[0].connections.find(c=>c.id===call.args.account).on=call.args.on;
+  if(call.action==='graph_connection'){await new Promise(r=>setTimeout(r,connWait));if(connFail){res.statusCode=400;return res.end(JSON.stringify({error:'Could not save that.'}))}sharing[0].connections.find(c=>c.id===call.args.account).on=call.args.on}
   if(call.action==='graph_policy')sharing[0].require=call.args.require;
   if(call.action==='graph_pause')sharing[0].paused=call.args.on?{by:'Ada',at:'2026-10-24T09:00:00+00:00',removed:!!call.args.remove}:null;
   if(call.action==='graph_optout')sharing[0].off=call.args.off?'asked':null;
@@ -88,12 +89,11 @@ try{
   const context=await browser.newContext({viewport:{width,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
-  // the card that asks each person to start: what goes, what never does, what the Fleet requires
+  // no card that asks each person to start: being in the Work Fleet is the choice, the first share goes within the hour
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
-  const startCard=page.locator('#fleet-start-'+FL);
-  await startCard.waitFor();
-  assert.match(await startCard.innerText(),/Share your Work with Acme\?\s+Acme shares a team Graph\. Your Work contacts and client threads go to your teammates' Machines\. Personal, sensitive and automated mail never does\.\s+Acme requires your Work email\. You can still keep any thread private\.\s+Look over what goes first\. Nothing goes until you start\.\s+Start now\s+Look it over/);
-  await shot(startCard,(process.env.SHOTS||'/tmp')+'/shared-start-card-'+width+'.png');
+  await page.locator('#suggestions').waitFor({state:'attached'});
+  await new Promise(r=>setTimeout(r,300));
+  assert.equal(await page.locator('#fleet-start-'+FL).count(),0);
   await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=people');
   await page.locator('[data-graph-team="team"]').waitFor();
   // Mine has no via; Team has the teammates' people with a quiet "via Ada"
@@ -101,7 +101,7 @@ try{
   await page.locator('[data-graph-team="team"]').click();
   await page.locator('article[data-node]',{hasText:'Robin Shore'}).waitFor();
   assert.match(await page.locator('article[data-node]',{hasText:'Robin Shore'}).innerText(),/via Ada/);
-  assert.match(await page.locator('.share-note').innerText(),/^Not shared with Acme yet\. Nothing goes until you start\. See what's shared$/);
+  assert.match(await page.locator('.share-note').innerText(),/^Work goes to Acme within the hour\. Personal never\. See what's shared$/);
   assert.equal(await page.locator('[data-share-now]').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   // A record: the thread's label changes with one tap, Keep private, the team's line and Ask Ada
@@ -162,10 +162,10 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#shared='+FL);
   const pane=page.locator('[data-shared-fleet="'+FL+'"]');
   await pane.locator('.shared-tile').first().waitFor();
-  assert.match(await pane.locator('.shared-status .sub').innerText(),/^Not started\. Nothing goes until you look it over and tap Start now\.$/);
+  assert.match(await pane.locator('.shared-status .sub').innerText(),/^Starts within the hour\. Keep anything private first\.$/);
   assert.deepEqual(await pane.locator('.shared-tile span').allInnerTexts(),['Client','Sensitive','Not sure','Personal','Only colleagues','Not client','Not sorted yet','Sent']);
   assert.match(await pane.locator('.shared-tile').first().innerText(),/1,113|1\.113|1113/);
-  assert.match(await pane.locator('.shared-first').innerText(),/1,?113 client threads with these organizations go to the team\. Keep any private first\./);
+  assert.match(await pane.locator('.shared-first').innerText(),/1,?113 client threads with these organizations go to the team\. Keep any private first\.[\s\S]*Share now\s+It goes by itself within the hour\. Nothing to confirm\.$/);
   assert.equal(await pane.locator('.shared-how').getAttribute('open'),'');
   assert.match(await pane.locator('.shared-how').innerText(),/Shared boards\s+The people you pick get each project's full timeline: email, meetings, Intercom, chats, to-dos and moves\./);
   await shot(pane.locator('.shared-how'),(process.env.SHOTS||'/tmp')+'/shared-how-'+width+'.png');
@@ -193,9 +193,21 @@ try{
   if(width===390)await shot(conns,(process.env.SHOTS||'/tmp')+'/shared-connections-390.png');
   // personal has no switch at all; another company's mailbox is off until its owner turns it on
   assert.equal(await conns.locator('[data-graph-conn="home"]').count(),0);
+  // the switch moves at once, before the Machine has saved it (a slow save here)
+  connWait=1500;
   await conns.locator('[data-graph-conn="side"]').click();
+  assert.equal(await conns.locator('[data-graph-conn="side"]').getAttribute('aria-checked'),'true');
+  assert.equal(await conns.locator('[data-graph-conn="side"]').isDisabled(),false);
   await page.locator('#toast',{hasText:'Shared with the team.'}).waitFor();
   assert.deepEqual(calls.filter(c=>c.action==='graph_connection').at(-1),{action:'graph_connection',args:{fleet:FL,account:'side',on:true}});
+  assert.equal(await pane.locator('.shared-conns [data-graph-conn="side"]').getAttribute('aria-checked'),'true');
+  // a failed save moves it back and says why
+  connFail=true;
+  await pane.locator('.shared-conns [data-graph-conn="side"]').click();
+  assert.equal(await pane.locator('.shared-conns [data-graph-conn="side"]').getAttribute('aria-checked'),'false');
+  await page.locator('#toast',{hasText:'Could not save that.'}).waitFor();
+  assert.equal(await pane.locator('.shared-conns [data-graph-conn="side"]').getAttribute('aria-checked'),'true');
+  connFail=false;connWait=0;
   // an admin requires the Work calendar too
   await new Promise(r=>setTimeout(r,800));
   // requiring something asks the admin to confirm first; Cancel leaves it as it was

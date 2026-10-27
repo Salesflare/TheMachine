@@ -24,8 +24,11 @@ On a hosted Machine:
 
 On your own computer:
 
-1. Sign in to the GitHub CLI first: `gh auth login`.
-2. In the dashboard, open **Connections**, then **+ Add**, and pick GitHub. Or run `assistant connect github`.
+1. In the dashboard, open **Connections**, then **+ Add**, and pick GitHub.
+2. Pick **Work** with its company, or **Personal**, and press **Connect**.
+3. If your Machine isn't signed in to GitHub yet, it shows a code. Press **Open GitHub ↗**, enter the code and allow it. It goes on by itself.
+
+Or run `assistant connect github`.
 3. Confirm your GitHub login. The Machine checks it matches on every sync.
 
 ## Remove it

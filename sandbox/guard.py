@@ -4,6 +4,7 @@ refuse the connection or the process before it happens (they can't be removed ag
 import sys
 
 LOCAL = ('127.0.0.1', '::1', 'localhost')
+BROWSER_PORTS = (9222, 9333)  # the DevTools of a browser on this computer, someone's own: never from the sandbox
 BLOCKED = []  # what was refused, for the sandbox's own log and tests
 
 
@@ -22,6 +23,8 @@ def _hook(event, args):
         address = args[1]
         if isinstance(address, tuple) and not _local(address[0]):
             _refuse('connect', str(address[0]), 'no network beyond this machine')
+        if isinstance(address, tuple) and len(address) > 1 and address[1] in BROWSER_PORTS:
+            _refuse('connect', f'browser port {address[1]}', 'not the browser on this computer')
         if isinstance(address, (str, bytes)):  # a local socket file: D-Bus, Tailscale, the Gateway
             _refuse('socket', 'unix', 'no local services')
     elif event == 'socket.getaddrinfo':

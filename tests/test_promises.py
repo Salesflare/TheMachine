@@ -360,6 +360,28 @@ class Promises(unittest.TestCase):
             cli.main(['promises'])
         self.assertIn('Promised to you (1)\n  #1  Sam Lee: send the signed contract · due Fri, Oct 23', out.getvalue())
 
+    def test_a_slack_sender_known_only_by_id_shows_by_name(self):
+        # A Slack message carries only its sender's member id; users.info gave the name (identity_names)
+        dm = {'account_id': 'slack', 'source_id': 'D0CHANNEL1:1793023194.394409', 'kind': 'slack.message', 'occurred_at': '2026-10-19T08:40:00+00:00',
+              'title': '#DM U0TEAMMATE: can you keep the old routes working', 'body': 'I will keep redirects from the old routes.', 'deleted': False,
+              'metadata': {'channel_id': 'D0CHANNEL1', 'channel_name': 'DM U0TEAMMATE', 'user_id': 'U0TEAMMATE', 'message_ts': '1793023194.394409'}}
+        self.store.commit_page('slack', {}, [dm])
+        self.store.remember_name('slack:U0TEAMMATE', 'Robin Example', 'robin@example.com')
+        with self.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE kind='slack.message'").fetchone()[0]
+        [row] = self.store.events(['slack'], event_ids=[event])
+        self.assertEqual((row['metadata']['sender_display'], row['metadata']['channel_name'], row['title']),
+                         ('Robin Example', 'DM Robin Example', '#DM Robin Example: can you keep the old routes working'))
+        _, pages = self.store.review_claim([row])
+        self.assertEqual(pages[0][0]['metadata']['sender_display'], 'Robin Example')  # what the review reads
+        saved = self.record(event_id=event, who='Slack teammate U0TEAMMATE', what='keep redirects from the old routes')
+        self.assertEqual(self.row(saved['id'])['who'], 'Robin Example')
+        with self.store.connect() as db:  # one noted before this fix
+            db.execute("UPDATE promises SET who='Slack teammate U0TEAMMATE' WHERE id=?", (saved['id'],))
+        self.assertEqual([p['who'] for p in self.store.promises()], ['Robin Example'])
+        self.assertEqual(self.store.promise_page(saved['id'])['who'], 'Robin Example')
+        self.assertEqual(a.slack_ids_named(None, 'U0UNKNOWN1 said it', {}), 'U0UNKNOWN1 said it')  # an unknown id stays
+
 
 if __name__ == '__main__':
     unittest.main()

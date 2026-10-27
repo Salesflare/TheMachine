@@ -2018,7 +2018,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             return None
         trusted = fleet_trust.admins(group, meta('trust:' + ref))[0]
         pause = fleet_trust.paused(group, trusted, meta('graph_pause:' + ref))
-        if (pause and pause.get('on')) or (not pause and not (meta('graph_legacy:' + ref) or sent)):
+        required = (fleet_trust.policy_of(group, trusted, meta('graph_policy:' + ref)) or {}).get('require')
+        if (pause and pause.get('on')) or (not pause and not (meta('graph_legacy:' + ref) or sent or required)):
             return None
         return group
 
