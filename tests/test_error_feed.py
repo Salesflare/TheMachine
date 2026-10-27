@@ -107,6 +107,18 @@ class Scrub(Base):
         self.assertEqual(ef.normalize("Cannot read properties of undefined (reading 'title')"), 'Cannot read properties of undefined (reading "…")')
         self.assertEqual(ef.normalize('timeout after 30.5s on row 12345'), 'timeout after <n> s on row <n>')
 
+    def test_a_plain_code_is_not_a_secret(self):
+        # Seen in the feed: "android <secret>" for error=android_feed_unavailable. Codes of lowercase words stay;
+        # anything with digits, capitals or one long run of letters still goes.
+        self.assertEqual(ef.normalize('android error=android_feed_unavailable'), 'android error = android_feed_unavailable')
+        self.assertEqual(ef.normalize('delivery status=delivery_outcome_unknown'), 'delivery status = delivery_outcome_unknown')
+        for secret in ('xoxb_1234_abcdefghijklmnopqrstuvwx', 'ABCdefGHIjklMNOpqrSTUvwxYZ012345', 'abcdefghijklmnopqrstuvwxyzabcd',
+                       'abc-defghijklmnopqrstuvwxyzabcdefg'):
+            self.assertEqual(ef.normalize('sync failed ' + secret), 'sync failed <secret>', secret)
+        self.assertEqual(ef.normalize('token=abc_def_ghi_jkl_mno_pqr'), 'token = <secret>')
+        self.assertEqual(a.fault_message(RuntimeError('feed failed error=android_feed_unavailable')), 'feed failed error=android_feed_unavailable')
+        self.assertEqual(a.fault_message(RuntimeError('bad ABCdefGHIjklMNOpqrSTUvwxYZ012345')), 'bad <secret>')
+
     def test_the_shape_check_refuses_anything_else(self):
         for bad in ('Sam’s card', 'naïve', 'a' * 200, 'x\ny', "it's"):
             self.assertFalse(ef.allowed(bad), bad)

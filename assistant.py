@@ -8260,7 +8260,8 @@ def fault_message(error, limit=200):
     text = re.sub(r'[\w.+-]+@[\w-]+(?:\.[\w-]+)+', '<email>', text)
     text = FAULT_QUOTED.sub(lambda m: m.group(0) if re.fullmatch(r'[a-z_][a-z0-9_.-]{0,40}', m.group(1) or m.group(2) or '') else '<text>', text)
     text = re.sub(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '<id>', text, flags=re.I)
-    text = re.sub(r'(?<![\w<])[A-Za-z0-9_\-+/=]{24,}', '<secret>', text)
+    # a plain code of lowercase words (android_feed_unavailable) stays: error_feed.PLAIN_CODE
+    text = re.sub(r'(?<![\w<])[A-Za-z0-9_\-+/=]{24,}', lambda m: m.group(0) if error_feed.PLAIN_CODE.fullmatch(m.group(0)) else '<secret>', text)
     text = re.sub(r'\+?\d[\d .-]{4,}\d', '<number>', text)
     text = text.strip()
     return (text[:limit - 1] + '…' if len(text) > limit else text) or None
