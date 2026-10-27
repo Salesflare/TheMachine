@@ -56,7 +56,7 @@ try{
  assert.deepEqual(await page.locator('.side-sub a[aria-current]').evaluateAll(a=>a.map(x=>x.dataset.graphSub)),['people']);
  await page.locator('#open-settings').click();await page.locator('#settings').waitFor();
  assert.equal(await page.locator('.side-sub a[aria-current]').count(),0,'Settings puts the Graph row out');
- await page.goBack();await page.locator('#people').waitFor();
+ await page.goBack();await page.locator('#people').waitFor({timeout:2000});  // Back from Settings shows People at once
  assert.deepEqual(await page.locator('.side-sub a[aria-current]').evaluateAll(a=>a.map(x=>x.dataset.graphSub)),['people']);
  // The week grid with a scrollbar that takes room: every column starts where its head does
  await page.locator('nav [data-tab="calendar"]').click();await page.locator('#page-head [data-cal-mode="week"]').click();await page.locator('.cal-tg-body').waitFor();

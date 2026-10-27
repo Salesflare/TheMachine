@@ -6358,7 +6358,11 @@ function graphBack(pane){if(pane){graphPane=pane;localStorage.setItem('graph-pan
 function graphRoute(){const pm=/^#promise\/(\d+)$/.exec(location.hash),m=/^#graph\/(.+)$/.exec(location.hash);let id=pm?'promise:'+pm[1]:'';try{id=id||(m?decodeURIComponent(m[1]):'')}catch{}
  if(id){if($('#people').hidden){graphNode=id;document.querySelector('nav [data-tab="people"]')?.click()}else if(graphNode!==id)people(id);return}
  if(!$('#people').hidden&&graphNode)people('')}
-addEventListener('popstate',()=>{if(!drawerStep)graphRoute()});addEventListener('hashchange',graphRoute);setTimeout(graphRoute);
+// Back or Forward onto an entry the app pushed (Settings, a card's chat) fires popstate but no hashchange, so a tab link
+// like #graph=people is opened here too, not only at the next refresh.
+// A hash link fires popstate and then hashchange, which opens it; so wait a tick and open it only when none came.
+let hashSeen=0;addEventListener('hashchange',()=>{hashSeen++},true);
+addEventListener('popstate',()=>{if(drawerStep)return;graphRoute();const seen=hashSeen;setTimeout(()=>{if(hashSeen===seen)openTabLink()})});addEventListener('hashchange',graphRoute);setTimeout(graphRoute);
 document.addEventListener('click',e=>{for(const m of document.querySelectorAll('.fact-menu[open]'))if(!m.contains(e.target))m.open=false});
 document.addEventListener('click',e=>{const item=e.target.closest('.person-menu [role=menuitem]');if(item)item.closest('details').open=false});
 $('nav').addEventListener('click',e=>{const t=e.target.closest('button');if(t?.dataset.tab&&t.dataset.tab!=='people'&&/^#graph[/=]/.test(location.hash))history.replaceState(null,'',location.pathname+location.search);graphSubSync()});
