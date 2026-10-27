@@ -3648,7 +3648,8 @@ $('#facts').addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.closest
 $('#facts').addEventListener('submit',async e=>{const form=e.target.closest('[data-fact-edit]');if(!form)return;e.preventDefault();const id=Number(form.dataset.factEdit),text=form.text.value.trim(),save=form.querySelector('[type=submit]');save.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'edit_fact',args:{id,text}})});const f=(state.facts||[]).find(x=>x.id===id);if(f)f.text=text;learnEdit=learnEditText=null;$('#facts').innerHTML=learnedList();toast('Saved.');refresh()}catch(err){save.disabled=false;toast(err.message,true)}});
 // Ctrl+Enter (Cmd+Enter on a Mac) in a filled text field clicks the nearest primary button of its form, editor or card, if enabled. Plain Enter is left alone.
-document.addEventListener('keydown',e=>{const f=e.target;if(e.key!=='Enter'||!(e.ctrlKey||e.metaKey)||e.isComposing||e.defaultPrevented||!f.matches?.('textarea,input:not([type]),input[type=text],input[type=email],input[type=search],input[type=url],input[type=tel],input[type=number]')||!f.value.trim())return;const shown=b=>b.getClientRects().length>0;for(let box=f.parentElement;box&&box!==document.body;box=box.parentElement){const b=[...box.querySelectorAll('button.primary')].find(shown);if(b){e.preventDefault();if(!b.disabled)b.click();return}if(box.matches('form,dialog,article'))return}});
+// A chat composer is its own boundary: it sends its message itself and never presses the card's Do it behind it.
+document.addEventListener('keydown',e=>{const f=e.target;if(e.key!=='Enter'||!(e.ctrlKey||e.metaKey)||e.isComposing||e.defaultPrevented||!f.matches?.('textarea,input:not([type]),input[type=text],input[type=email],input[type=search],input[type=url],input[type=tel],input[type=number]')||!f.value.trim())return;const shown=b=>b.getClientRects().length>0;for(let box=f.parentElement;box&&box!==document.body;box=box.parentElement){const b=[...box.querySelectorAll('button.primary')].find(shown);if(b){e.preventDefault();if(!b.disabled)b.click();return}if(box.matches('form,dialog,article,.chat-compose'))return}});
 $('#suggestions').addEventListener('keydown',e=>{const h=e.target.closest('.section-head[data-fold]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleSection(h.dataset.fold)}});
 $('#suggestions').addEventListener('toggle',e=>{if(e.target.id==='later-list')$('[data-fold-tile="later"]')?.setAttribute('aria-expanded',e.target.open)},true);
 let scopeFilter=['work','personal'].includes(localStorage.getItem('scope-filter'))?localStorage.getItem('scope-filter'):'all';
@@ -4374,7 +4375,20 @@ $('#suggestions').addEventListener('paste',e=>{if(e.target.id!=='chat-input')ret
  $('#suggestions').addEventListener('dragover',e=>{if(!dragged(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy'});
  $('#suggestions').addEventListener('dragleave',e=>{if(!dragged(e))return;if(--depth<=0){depth=0;mark(false)}});
  $('#suggestions').addEventListener('drop',e=>{if(!dragged(e))return;e.preventDefault();depth=0;mark(false);chatAddFiles([...e.dataTransfer.files])})}
-$('#suggestions').addEventListener('keydown',e=>{if(e.target.id!=='chat-input'||e.key!=='Enter'||e.shiftKey||e.isComposing||e.ctrlKey||e.metaKey||matchMedia('(pointer: coarse)').matches)return;e.preventDefault();$('[data-chat-send]')?.click()});
+// Enter sends (on a phone it's a new line, the keyboard's Send key sends), Shift+Enter is a new line, Ctrl/Cmd+Enter
+// always sends. Every way goes through chatSubmit, the Send button's own path, and is handled here so the page-wide
+// Ctrl+Enter (it clicks the nearest primary button) never reaches the card's Do it under the box.
+$('#suggestions').addEventListener('keydown',e=>{if(e.target.id!=='chat-input'||e.key!=='Enter'||e.isComposing||e.keyCode===229||e.altKey)return;const mod=e.ctrlKey||e.metaKey;
+ if(!mod&&(e.shiftKey||matchMedia('(pointer: coarse)').matches))return;e.preventDefault();chatSubmit()});
+// Sends what's in the message box (and its files): the bubble shows and the box empties once the Machine has it
+async function chatSubmit(){const b=$('[data-chat-send]'),input=$('#chat-input');if(!b||b.disabled)return;const s=chatOpen(),text=input?.value.trim(),sending=chatPending.filter(f=>f.state==='ok'&&f.sid===s?.id);
+ if(!s||!text&&!sending.length||chatPending.some(f=>f.state==='up')){input?.focus();return}b.disabled=true;
+ const decide=args=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:s.id,...args}})});
+ try{if(s.status==='completed')await decide({choice:'reopen',feedback:'',decision_id:crypto.randomUUID()});
+  await decide({choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID(),...(sending.length?{files:sending.map(f=>f.id)}:{})});
+  const files=sending.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}));chatDropFiles();chatTray();chatFileError('');
+  input.value='';chatGrow(input);chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text,at:Date.now(),...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
+ catch(err){toast(err.message,true);b.disabled=false}}
 $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const layout=e.target.closest('.chat-layout');if(e.target===layout&&chatDrawer){chatDrawer=false;layout.classList.remove('drawer');return}
  if(e.target.closest('[data-chat-drawer]')){e.target.closest('details')?.removeAttribute('open');drawerOpen();return}
@@ -4392,14 +4406,7 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  if(b?.hasAttribute('data-chat-stop')){e.stopPropagation();const s=chatOpen();if(!s)return;b.disabled=true;
   try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_stop',args:{suggestion_id:s.id}})});
    if(chat)chat={...chat,active:false,live:null,cursor:null};await refresh();paintChat();chatPoll()}catch(err){toast(err.message,true);b.disabled=false}return}
- if(!b?.hasAttribute('data-chat-send'))return;e.stopPropagation();const s=chatOpen(),text=input?.value.trim(),sending=chatPending.filter(f=>f.state==='ok'&&f.sid===s?.id);
- if(!s||!text&&!sending.length||chatPending.some(f=>f.state==='up')){input?.focus();return}b.disabled=true;
- const decide=args=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:s.id,...args}})});
- try{if(s.status==='completed')await decide({choice:'reopen',feedback:'',decision_id:crypto.randomUUID()});
-  await decide({choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID(),...(sending.length?{files:sending.map(f=>f.id)}:{})});
-  const files=sending.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}));chatDropFiles();chatTray();chatFileError('');
-  input.value='';chatGrow(input);chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text,at:Date.now(),...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
- catch(err){toast(err.message,true);b.disabled=false}},true);
+ if(!b?.hasAttribute('data-chat-send'))return;e.stopPropagation();chatSubmit()},true);
 // Links to a tab or a sub-tab: #events, #graph, #graph=roles, #connections, #connections=chat (and the tabs' own ids).
 const TAB_LINKS={inbox:'inbox',suggestions:'inbox',calendar:'calendar',events:'events',graph:'people',people:'people',feedback:'feedback',connections:'health',health:'health'};
 function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.setItem('graph-pane',pane);graphNode='';$('#people-query').value=''}

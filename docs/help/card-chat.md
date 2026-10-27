@@ -17,6 +17,8 @@ On a phone, tap the to-do's title. On a computer, use the to-do's chat link or *
 
 A question gets an answer and leaves the draft as it is. Approvals stay on the to-do's buttons: chat never sends a draft in the same reply that wrote it.
 
+On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter starts a new line. On a phone, use the send button.
+
 ## Stop a reply
 
 While a reply is being written, the send button turns into **Stop**. Stop ends it right away and keeps what it wrote so far, marked **Stopped**. Write a new message to carry on, or tap **Try again**.
