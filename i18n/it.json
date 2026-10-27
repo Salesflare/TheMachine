@@ -1269,7 +1269,7 @@
  "Sign in as": "Accedi come",
  "Signed in to {}. Looking there now.": "Accesso a {} effettuato. Ora guardo lì.",
  "Signed in to {}": "Accesso a {} effettuato",
- "Signed in. I’m carrying on with the task.": "Accesso effettuato. Proseguo con l’attività.",
+ "Signed in. Carrying on with it.": "Accesso fatto. Vado avanti.",
  "Signed in. I’ll carry on.": "Accesso effettuato. Proseguo.",
  "Approve the sign-in in your {} app, then press Continue.": "Approva l’accesso nella tua app {}, poi premi Continua.",
  "The browser took too long to answer.": "Il browser ha impiegato troppo a rispondere.",
@@ -2389,5 +2389,9 @@
  "(No title)": "(Senza titolo)",
  "{}’s calendar": "Calendario di {}",
  "and {} more": "e altri {}",
- "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Ultimo controllo {}. Controlla ogni 15 minuti nuovi contatti e persone appena arrivate."
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Ultimo controllo {}. Controlla ogni 15 minuti nuovi contatti e persone appena arrivate.",
+ "Already carrying on with it.": "Ci sto già lavorando.",
+ "Already done. See the to-do.": "Già fatto. Guarda l’attività.",
+ "Nothing is waiting to try again here.": "Qui non c’è niente da riprovare.",
+ "Signed in. I’ll start shortly.": "Accesso fatto. Inizio a breve."
 }

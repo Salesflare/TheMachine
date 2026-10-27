@@ -79,7 +79,8 @@ class UX(unittest.TestCase):
         self.decide('retry');new=self.job()['job_id'];self.assertNotEqual(old,new)
         self.assertEqual(self.row()['latest_feedback']['feedback'],'Please make it shorter')
         self.assertTrue(self.decide('retry')['duplicate'])
-        with self.assertRaises(ValueError):self.decide('retry','retry-again')
+        # A second tap (a card drawn before) while the new run waits: nothing new, the same job, no error
+        self.assertEqual(self.decide('retry','retry-again').get('already'),'running');self.assertEqual(self.job()['job_id'],new)
         with self.assertRaises(ValueError):self.store.prepare(self.sid,'Stale',old)
     def test_unconfirmed_preparation_retry_needs_terminal_proof(self):
         self.decide('accept');job=self.job()['job_id']

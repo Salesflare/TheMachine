@@ -523,7 +523,7 @@ class SourceError(Exception):
 # authenticated dashboard may record them; never the local CLI the agent can run.
 CONNECT_ACTIONS = ('connect_sources', 'connect_start', 'connect_poll', 'connect_answer', 'connect_cancel', 'connect_remove', 'connect_scope',
                    'connect_signin', 'connect_signin_state')
-OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'card_chat', 'recap_decide'}
+OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'card_chat', 'recap_decide'}
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_take_back', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
                          'fleet_split_adjust', 'task_import', *task_pages.ACTIONS}
@@ -592,7 +592,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACT
                                'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule',
                                'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
                                'push_test', 'notify_set', 'notify_active', 'notify_preview', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
-                               'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
+                               'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
                                'set_work_hours', 'connector_sync', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'calendar_write', 'set_locale',
                                'browser_show', 'client_error'})
 UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send', 'bug_later'}, 9 * 1024 * 1024
@@ -6299,7 +6299,13 @@ class Store:
         if choice == 'retry':
             job=db.execute('SELECT status,error,job_id FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
             if row['status'] not in ('accepted','instructions') or not job or job['status']!='blocked':
-                raise ValueError('Try again is available only for a blocked preparation')
+                if row['status'] in ('accepted','instructions','prepared') and job and job['status'] in ('queued','starting','running','done'):
+                    # Already carrying on (its sign-in was seen, another device or a second tap was first) or done:
+                    # this tap from a card drawn before that asks for what is already happening, so nothing to do.
+                    return {'status':row['status'],'already':'done' if job['status']=='done' else 'running'}
+                # Closed, snoozed or never started meanwhile: a stale tap, not an error (and never one in the ordered
+                # Telegram ingress queue). The card redraws as it is now.
+                return {'status':row['status'],'duplicate':True,'skipped':True,'reason':'stale_retry','already':'closed'}
             db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',(decision_id,suggestion_id,choice,feedback[:5000],source,now()))
             self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
@@ -6974,7 +6980,7 @@ class Store:
             if job: suggestion.update(preparation_status=job['status'],preparation_reason=job['reason'],preparation_error=job['error'],
                                       preparation_details=job['details'],preparation_started_at=job['started_at'],preparation_retried=job['auto_retries']>0,
                                       preparation_questions=blocker_questions(job.get('questions')),preparation_no_questions=job.get('questions')=='[]',
-                                      preparation_cause=job.get('cause'))
+                                      preparation_cause=job.get('cause'),preparation_signed_in=str(job['decision_id']).startswith('signed-in:'))
             suggestion.update(self.suggestion_result(suggestion, db))
 
     def done_rows(self, db, titles=False):
@@ -12916,7 +12922,7 @@ class App:
             if not isinstance(args.get('suggestion_id'), str):
                 raise ValueError('Which task?')
             return self.browser_show(args['suggestion_id'])
-        if name in ('browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget'):
+        if name in ('browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget'):
             # A separate path: what the owner types goes into the page and, when asked, the encrypted store, never
             # into a log, the model or an error message (see browser_login.py).
             if not owner_dashboard:
@@ -12926,6 +12932,10 @@ class App:
                 if not isinstance(args.get('suggestion_id'), str):
                     raise ValueError('Which task?')
                 return self.signin_open(args['suggestion_id'])
+            if name == 'browser_login_check':
+                # The owner closed the browser (its pane, the dialog's view): look now rather than at the next round, so a
+                # task whose sign-in is done carries on at once. Read-only, the same look as watch_sign_ins.
+                return {'resumed': self.watch_sign_ins(now=True)}
             if name == 'browser_login_pages' and isinstance(args.get('watch'), str):
                 # the dialog after a sign-in it sent waits on the owner elsewhere (approving it in the site's app)
                 seen = browser_login.watch(self.config, args['watch'])
@@ -15369,25 +15379,27 @@ class App:
             resumed.append(task)
         return resumed
 
-    def watch_sign_ins(self, every=SIGNIN_WATCH):
+    def watch_sign_ins(self, every=SIGNIN_WATCH, now=False):
         """Signing in in the browser itself carries on too. While a task waits on a sign-in, look every `every` seconds
         at the shared browser (read-only: which sign-in fields show, never what is in them, and the tabs' addresses).
         The task's site was seen at its sign-in (a form, a sign-in address, its identity provider) and now a tab of it
         is past that with no form: the owner got in, so carry on, once per blocked run. Also for sign-ins with
-        nothing to type (itsme or eID, a passkey, a captcha, choosing an account)."""
+        nothing to type (itsme or eID, a passkey, a captcha, choosing an account). `now`: look at once (the owner just
+        closed the browser). Returns the tasks it carried on."""
         state = self.__dict__.setdefault('signin_watch', {'next': 0.0, 'seen': set(), 'done': set()})
-        if time.monotonic() < state['next']:
-            return
+        if time.monotonic() < state['next'] and not now:
+            return []
         state['next'] = time.monotonic() + every
         waits = [(task, job, page) for task, job, page in self.signin_waits() if page and job not in state['done']]
         if not waits:
             state['seen'].clear()
-            return
+            return []
         try:
             shown = [p['host'] for p in browser_login.pages(self.config)]
             tabs = self.signin_tabs()
         except Exception:  # no browser right now: look again later
-            return
+            return []
+        resumed = []
         opened = self.__dict__.get('signin_opened', {})
         for task, job, page in waits:
             mine = [t['url'] for t in tabs if t['id'] == opened.get(task) or same_site(t['url'], page)]
@@ -15396,7 +15408,8 @@ class App:
             elif job in state['seen'] and any(same_site(url, page) for url in mine):
                 state['seen'].discard(job)
                 state['done'].add(job)
-                self.resume_signed_in(suggestion_id=task)
+                resumed += self.resume_signed_in(suggestion_id=task)
+        return resumed
 
     def release_finished_browser_lease(self, lease_file=BROWSER_LEASE):
         """A Do it run holds the browser as `assistant-<first 8 of its job ID>`. Runs can end without

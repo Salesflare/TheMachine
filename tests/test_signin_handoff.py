@@ -184,6 +184,64 @@ class SigninHandoff(unittest.TestCase):
                     self.assertEqual(self.job()['status'], 'blocked')
         self.assertEqual(self.job()['status'], 'queued')
 
+    def signed_in_in_the_browser(self):
+        """The 2026-10-27 report: blocked on a sign-in, the owner signs in in the browser and the watcher carries on."""
+        self.block()
+        forms = [[{'host': 'www.example.com'}], []]
+        with patch.object(a.browser_login, 'pages', side_effect=lambda config: forms.pop(0) if forms else []), \
+                patch.object(a.App, 'signin_tabs', return_value=[{'id': 't', 'url': 'https://www.example.com/home'}]):
+            self.app.watch_sign_ins(every=0)
+            self.assertEqual(self.app.watch_sign_ins(every=0), [self.sid])
+        self.assertEqual(self.job()['status'], 'queued')
+        with self.store.connect() as db:  # the card says it signed in and starts shortly
+            card = [dict(db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())]
+            self.store.card_views(db, card)
+        self.assertTrue(card[0]['preparation_signed_in'])
+
+    def decisions(self):
+        with self.store.connect() as db:
+            return [r[0] for r in db.execute('SELECT choice FROM decisions WHERE suggestion_id=? ORDER BY rowid', (self.sid,))]
+
+    def test_try_again_on_a_card_drawn_before_it_carried_on_is_no_error(self):
+        # Continue or Try again from the card still showing the sign-in: the run already carries on, so nothing new.
+        self.signed_in_in_the_browser()
+        job, before = self.job(), self.decisions()
+        for status in ('queued', 'starting', 'running'):
+            with self.store.connect() as db:
+                db.execute('UPDATE preparations SET status=? WHERE suggestion_id=?', (status, self.sid))
+            self.assertEqual(self.store.decide(self.sid, 'retry', '', 'tap-' + status, 'dashboard'), {'status': 'accepted', 'already': 'running'})
+        self.assertEqual(self.job()['job_id'], job['job_id'])
+        self.assertEqual(self.decisions(), before)
+
+    def test_try_again_once_it_finished_says_it_is_done(self):
+        self.signed_in_in_the_browser()
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='done' WHERE suggestion_id=?", (self.sid,))
+            db.execute("UPDATE suggestions SET status='prepared' WHERE id=?", (self.sid,))
+        self.assertEqual(self.store.decide(self.sid, 'retry', '', 'late', 'dashboard')['already'], 'done')
+
+    def test_try_again_on_a_closed_card_is_a_stale_tap_not_an_error(self):
+        self.signed_in_in_the_browser()
+        self.store.decide(self.sid, 'complete', '', 'done', 'dashboard')
+        for source in ('dashboard', 'telegram'):
+            said = self.store.decide(self.sid, 'retry', '', 'late-' + source, source)
+            self.assertEqual((said['status'], said['already'], said['skipped']), ('completed', 'closed', True))
+        self.assertEqual(self.decisions()[-1], 'complete')
+
+    def test_closing_the_browser_looks_at_once(self):
+        # The pane or the dialog closed: the dashboard asks for a look now, not at the next round of the watcher.
+        self.block()
+        forms = [[{'host': 'www.example.com'}], []]
+        with patch.object(a.browser_login, 'pages', side_effect=lambda config: forms.pop(0) if forms else []), \
+                patch.object(a.App, 'signin_tabs', return_value=[{'id': 't', 'url': 'https://www.example.com/home'}]):
+            self.app.watch_sign_ins()  # sees the form; the next round is 20 seconds away
+            self.assertEqual(self.app.watch_sign_ins(), [])
+            self.assertEqual(self.job()['status'], 'blocked')
+            self.assertEqual(self.app.action('browser_login_check', {}, owner_dashboard=True), {'resumed': [self.sid]})
+        self.assertEqual(self.job()['status'], 'queued')
+        with self.assertRaises(ValueError):
+            self.app.action('browser_login_check', {}, owner_dashboard=False)
+
     def test_the_watcher_never_resumes_without_having_seen_the_form(self):
         self.block()
         with patch.object(a.browser_login, 'pages', return_value=[]), \
@@ -406,6 +464,12 @@ class DashboardWiring(unittest.TestCase):
         self.assertIn('id="signin-frame"', html)
         self.assertIn('id="signin-retry"', html)
         self.assertIn("api/progress?id='+encodeURIComponent(signinTask)", html)
+
+    def test_a_waiting_card_shows_it_carried_on_and_closing_the_browser_looks_at_once(self):
+        html = Path(__file__).parent.parent.joinpath('dashboard.html').read_text()
+        self.assertIn('setInterval(taskSigninPoll,5000)', html)
+        self.assertIn("action:'browser_login_check'", html)
+        self.assertIn('signinClosed()', html)
 
 
 if __name__ == '__main__':

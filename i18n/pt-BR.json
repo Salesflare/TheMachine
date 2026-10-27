@@ -1269,7 +1269,7 @@
  "Sign in as": "Entrar como",
  "Signed in to {}. Looking there now.": "Conectado a {}. Procurando lá agora.",
  "Signed in to {}": "Conectado a {}",
- "Signed in. I’m carrying on with the task.": "Conectado. Vou continuar a tarefa.",
+ "Signed in. Carrying on with it.": "Conectado. Vou continuar.",
  "Signed in. I’ll carry on.": "Conectado. Vou continuar.",
  "Approve the sign-in in your {} app, then press Continue.": "Aprove o login no app {} e toque em Continuar.",
  "The browser took too long to answer.": "O navegador demorou demais para responder.",
@@ -2389,5 +2389,9 @@
  "(No title)": "(Sem título)",
  "{}’s calendar": "Agenda de {}",
  "and {} more": "e mais {}",
- "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Última verificação {}. Verifica a cada 15 minutos novos contatos e pessoas que acabaram de entrar."
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Última verificação {}. Verifica a cada 15 minutos novos contatos e pessoas que acabaram de entrar.",
+ "Already carrying on with it.": "Já estou cuidando disso.",
+ "Already done. See the to-do.": "Já está feito. Veja a tarefa.",
+ "Nothing is waiting to try again here.": "Não há nada aqui esperando uma nova tentativa.",
+ "Signed in. I’ll start shortly.": "Conectado. Começo em instantes."
 }

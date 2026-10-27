@@ -2724,7 +2724,7 @@ const plainDetails=t=>String(t||'').replace(/(?:~|\/home|\/tmp|\/var|\/Users|mem
 // line by line while it works.
 const stepItems=list=>(list||[]).slice(-3).map(x=>`<li title="${esc(x.title)}">${esc(x.title)}</li>`).join('');
 function preparationNote(s,ask=''){
-if(s.preparation_status==='queued')return `<p class="note">${s.preparation_retried?'That attempt didn’t finish, so I’m trying once more…':'I’ll start shortly.'}</p><div class="prep"><ul class="steps" aria-hidden="true"></ul></div>`;
+if(s.preparation_status==='queued')return `<p class="note">${s.preparation_retried?'That attempt didn’t finish, so I’m trying once more…':s.preparation_signed_in?'Signed in. I’ll start shortly.':'I’ll start shortly.'}</p><div class="prep"><ul class="steps" aria-hidden="true"></ul></div>`;
 // A blocker that asks the owner already leads as the Needs you line: not said twice.
 if(s.preparation_status==='blocked')return `${ask?(s.preparation_browser?`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):`<p class="note">${format(s.preparation_reason||'I couldn’t finish this. You can try again or change the request.')} ${browserLink(s.id,s.preparation_browser)}</p>`}${s.preparation_details?`<details class="tech" data-tech="${s.id}" ${openTech.has(s.id)?'open':''}><summary>${ask?'Technical details':'Details'}</summary><pre>${linkText(ask?plainDetails(s.preparation_details):s.preparation_details)}</pre></details>`:''}`;
 return `<p class="note">Preparing… ${s.preparation_started_at?`<span class="elapsed" data-since="${esc(s.preparation_started_at)}">${elapsed(s.preparation_started_at)}</span>`:''}${s.preparation_retried?' · second try':''} <span data-browser="${s.id}">${browserLink(s.id,s.preparation_browser)}</span></p><div class="prep"><ul class="steps" data-steps="${s.id}" aria-live="polite">${stepItems(steps.get(s.id))}</ul><div class="peek" data-peek="${s.id}">${peekHTML(s.id)}</div></div>`}
@@ -5128,8 +5128,11 @@ function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('m
 {const o=new MutationObserver(()=>graphSubSync());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
 $('#suggestions').oninput=e=>{if(e.target.tagName==='TEXTAREA')e.target.classList.toggle('filled',!!e.target.value)};
 async function saveDecision(id,choice,feedback='',answer=false){
-const saved=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:id,choice,feedback,decision_id:crypto.randomUUID()}})});
+let saved;try{saved=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:id,choice,feedback,decision_id:crypto.randomUUID()}})})}
+catch(err){await refresh().catch(()=>{});throw err}  // the card was drawn before something changed it: show it as it is now
 changing.delete(id);await refresh();
+// Try again or Continue on a card drawn before it carried on by itself (its sign-in was seen): nothing new, say so.
+if(saved?.already){toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.');return}
 // A Change stays on the card (its "You asked" note has See in chat ›); the chat never opens by itself.
 if(['complete','reject'].includes(choice))toast(saved?.status==='completed'?'Marked done':'Marked not needed',false,id);else toast(answer?'Thanks. I’ll carry on.':({accept:'I’ll prepare it.',other:'Changes saved.',retry:'Trying again.',undo:'Reopened.',reopen:'Reopened.'})[choice]||'Saved.');
 }
@@ -7087,6 +7090,20 @@ document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click'
 document.addEventListener('toggle',e=>{const id=e.target.dataset?.tech;if(id)e.target.open?openTech.add(id):openTech.delete(id)},true);
 setInterval(()=>document.querySelectorAll('.elapsed[data-since]').forEach(x=>x.textContent=elapsed(x.dataset.since)),1000);
 setInterval(async()=>{if(document.hidden)return;for(const list of [...document.querySelectorAll('[data-steps]')].slice(0,3)){const id=list.dataset.steps;try{const p=await request('api/progress?id='+encodeURIComponent(id));if(!['starting','running'].includes(p.status)){peeks.delete(id);paintPeek(id);refresh();return}steps.set(id,p.steps);if(p.peek)peeks.set(id,{image:null,...peeks.get(id),on:true});else if(peeks.has(id)){peeks.get(id).on=false;paintPeek(id)}{const html=stepItems(p.steps);if(list.innerHTML!==html)list.innerHTML=html}const slot=document.querySelector(`[data-browser="${CSS.escape(id)}"]`),html=browserLink(id,p.browser);if(slot&&slot.innerHTML!==html)slot.innerHTML=html}catch{}}},4000);
+// A card waiting on the owner's sign-in carries on by itself once they're in, whichever way they signed in (the dialog,
+// the Browser pane, the browser on the computer): the service sees it (watch_sign_ins). Look at such cards every few
+// seconds so the card shows that at once, and look in the browser right away when the owner closes it there.
+const signinWaiting=s=>s.preparation_status==='blocked'&&!!s.preparation_browser?.sign_in&&['accepted','instructions'].includes(s.status);
+let taskSigninBusy=false;
+async function taskSigninPoll(){if(taskSigninBusy||document.hidden)return;const waits=(state?.suggestions||[]).filter(signinWaiting).slice(0,3);if(!waits.length)return;taskSigninBusy=true;
+ try{for(const s of waits){let p;try{p=await request('api/progress?id='+encodeURIComponent(s.id))}catch{continue}
+  if(p.status!=='blocked'){if(['queued','starting','running'].includes(p.status)&&!$('#signin-dialog').open&&!($('#toast').classList.contains('show')&&['Signed in. Carrying on with it.','Signed in. I’ll carry on.'].map(x=>t(x)).includes($('#toast').textContent.trim())))toast('Signed in. Carrying on with it.');await refresh();return}}}
+ finally{taskSigninBusy=false}}
+setInterval(taskSigninPoll,5000);
+async function signinClosed(){if(!(state?.suggestions||[]).some(signinWaiting))return;
+ try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_login_check',args:{}})});
+  if(r.resumed?.length){toast('Signed in. Carrying on with it.');await refresh();return}}catch{}
+ taskSigninPoll()}
 const signinPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 let signinPages=[];
 const SIGNIN_FIELDS=['#signin-user-row','#signin-pass-row','#signin-code-row','#signin-save-row','#signin-go','#signin-saved'];
@@ -7132,7 +7149,7 @@ const siteName=page=>signinSite?.name||Object.values(SIGNIN_SITES).find(s=>onSit
 function signinDone(resumed){signinApproving=null;
 if(signinAfter){const go=signinAfter,name=signinSite?.name||'the site';signinAfter=null;$('#signin-dialog').close();toast(`Signed in to ${name}. Looking there now.`);go();return}
 if(signinSite){signinMode('wait');$('#signin-browser').hidden=true;$('#signin-title').textContent=`Signed in to ${signinSite.name}`;signinStatus(`You’re in. Your setup page connects ${signinSite.name} by itself; you can close this tab.`,false);return}
-$('#signin-dialog').close();toast(resumed?.length?'Signed in. I’m carrying on with the task.':'Signed in. I’ll carry on.');refresh()}
+$('#signin-dialog').close();toast(resumed?.length?'Signed in. Carrying on with it.':'Signed in. I’ll carry on.');refresh()}
 // No field left but not in yet: the site waits on its app (LinkedIn's "approve this sign-in"), a two-step page or a check.
 function signinApprove(page,run){signinApproving=page;const name=siteName(page);signinMode('wait');$('#signin-continue').hidden=false;$('#signin-continue').className='primary';
 signinStatus(`Approve the sign-in in your ${name} app, then press Continue.`,true);signinCheck(run,false)}
@@ -7169,7 +7186,7 @@ signinMode('browser',view);const name=info?.site||'This site',says=SIGNIN_SAYS[i
 signinStatus((info?.state==='unknown'?'Finish signing in for this task':says?says(name)+' Finish it':`Finish signing in to ${name}`)+(view?' below.':' in the browser.')+(signinAfter?' Then press Continue.':' I carry on by myself once you’re in.'),false);
 if(view)$('#signin-frame').src=link;signinWatch(run)}
 async function signinWatch(run){while(run===signinRun&&$('#signin-dialog').open&&signinTask){await new Promise(r=>setTimeout(r,4000));if(run!==signinRun||!$('#signin-dialog').open)return;
-try{const p=await request('api/progress?id='+encodeURIComponent(signinTask));if(p.status!=='blocked'){$('#signin-dialog').close();toast('Signed in. I’m carrying on with the task.');refresh();return}}catch{}}}
+try{const p=await request('api/progress?id='+encodeURIComponent(signinTask));if(p.status!=='blocked'){$('#signin-dialog').close();toast('Signed in. Carrying on with it.');refresh();return}}catch{}}}
 $('#signin-retry').onclick=()=>openSignin(...signinArgs);
 $('#signin-continue').onclick=async()=>{if(signinApproving){signinCheck(signinRun,true);return}if(signinAfter){signinDone();return}const id=signinTask;$('#signin-dialog').close();try{await saveDecision(id,'retry')}catch(err){toast(err.message,true)}};
 $('#signin-page').onchange=e=>signinShow(signinPages[Number(e.target.value)]);
@@ -7186,7 +7203,7 @@ $('#signin-browser').onclick=async()=>{const link=state.browser_link;if(browserP
 // Full size: the sign-in's browser over the whole window, for a small screen in the view; the same button goes back.
 const signinFull=on=>{$('#signin-dialog').classList.toggle('signin-full',on);$('#signin-full').setAttribute('aria-pressed',String(on));$('#signin-full').textContent=on?'Exit full size':'Full size'};
 $('#signin-full').onclick=()=>signinFull(!$('#signin-dialog').classList.contains('signin-full'));
-$('#signin-dialog').addEventListener('close',()=>{signinFull(false);signinRun++;signinAfter=null;$('#signin-frame').removeAttribute('src');$('#signin-pass').value='';$('#signin-code').value='';$('#signin-user').value=''});
+$('#signin-dialog').addEventListener('close',()=>{signinFull(false);if(signinTask)signinClosed();signinRun++;signinAfter=null;$('#signin-frame').removeAttribute('src');$('#signin-pass').value='';$('#signin-code').value='';$('#signin-user').value=''});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy-command]');if(!b)return;try{await navigator.clipboard.writeText(b.dataset.copyCommand);toast('Copied.')}catch{toast('Couldn’t copy automatically. Select the command to copy it.',true)}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-signin]');if(b)openSignin(b.dataset.signin||null,!!b.dataset.task,b.dataset.task||null,b.dataset.page||null)});
 // Saved sign-ins: one row per site with its username and whether a password is kept. The password itself never
@@ -7217,7 +7234,7 @@ async function browserShow(id){return request('api/action',{method:'POST',header
 const showNote=r=>r.shown?(r.opened?'Opened it again in your Machine’s browser.':'It’s in front in your Machine’s browser.'):r.unknown?'I don’t know which page this task used.':r.error||'I couldn’t reach the browser.';
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-browser-show]');if(!b)return;const link=state.browser_link;if(!link||!(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)&&browserPane())e.preventDefault();try{const r=await browserShow(b.dataset.browserShow);if(!link||!r.shown)toast(showNote(r),!r.shown)}catch(err){toast(err.message,true)}});
 {const m=/^#browser-for=([a-f0-9]{16})$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname);browserShow(m[1]).then(r=>{if(r.view&&r.shown){if(!browserPane())location.assign(r.view)}else toast(showNote(r),!r.shown)},err=>toast(err.message,true))}}
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-browser-focus]');if(!b)return;b.disabled=true;try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_focus',args:b.dataset.task?{suggestion_id:b.dataset.task}:{page:b.dataset.page||null}})});if(!('quiet' in b.dataset)||!r.shown)toast(r.shown?'The browser is in front now.':r.unknown?'I don’t know which tab this task uses; find it in the browser.':'I couldn’t reach the browser on this computer.',!r.shown)}catch(err){if(!('quiet' in b.dataset))toast(err.message,true)}finally{b.disabled=false}});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-browser-focus]');if(!b)return;if(b.href&&!(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)&&browserPane())e.preventDefault();  /* on a computer: the Browser pane, as the sign-in dialog's Open the browser */b.disabled=true;try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_focus',args:b.dataset.task?{suggestion_id:b.dataset.task}:{page:b.dataset.page||null}})});if(!('quiet' in b.dataset)||!r.shown)toast(r.shown?'The browser is in front now.':r.unknown?'I don’t know which tab this task uses; find it in the browser.':'I couldn’t reach the browser on this computer.',!r.shown)}catch(err){if(!('quiet' in b.dataset))toast(err.message,true)}finally{b.disabled=false}});
 const canRefresh=()=>!document.hidden&&!document.querySelector('textarea:focus')&&!$('#snooze-dialog').open&&!$('#result-dialog').open&&!$('#email-dialog').open&&!$('#send-dialog').open;
 const refreshWhenReady=()=>{if(placeBusy()){clearTimeout(refreshWhenReady.t);refreshWhenReady.t=setTimeout(refreshWhenReady,800);return}if(canRefresh()&&!refreshes)refresh()};  // not under a moving finger
 // Return from another app, a suspended phone tab or an outage: update connection warnings immediately.
@@ -7251,7 +7268,7 @@ const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchM
   for(const b of document.querySelectorAll('nav button')){b.classList.remove('active');b.setAttribute('aria-current','false')}
   $('#open-settings').setAttribute('aria-current','false');row.setAttribute('aria-current','page');
   const f=$('#bp-frame');if(f.dataset.src!==src){f.dataset.src=src;f.src=src}
-  $('#bp-tab').href=row.getAttribute('href')||src;
+  $('#bp-tab').href=row.getAttribute('href')||src;pane.dataset.shown='1';
   if(location.hash!=='#browser'){from=location.hash;history.pushState(null,'',location.pathname+location.search+'#browser');pushed=true}return true};
  browserPane=show;
  const leave=()=>{if(pane.hidden)return;if(bpBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${bpBack}"]`)?.click()};
@@ -7259,7 +7276,7 @@ const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchM
  // Settings from the pane goes on top of it, so Back shows the pane again (Settings itself replaces the address)
  $('#open-settings').addEventListener('click',()=>{if(!pane.hidden&&location.hash==='#browser')history.pushState(null,'',location.pathname+location.search+'#browser')},true);
  $('#bp-close').onclick=()=>{if(pushed&&location.hash==='#browser'){pushed=false;history.back()}else leave()};
- new MutationObserver(()=>{if(!pane.hidden)return;full(false);row.setAttribute('aria-current','false');if(location.hash!=='#browser')return;
+ new MutationObserver(()=>{if(!pane.hidden)return;full(false);if(pane.dataset.shown){delete pane.dataset.shown;signinClosed()}row.setAttribute('aria-current','false');if(location.hash!=='#browser')return;
   if(pushed&&!from){pushed=false;quiet=true;history.back()}else history.replaceState(null,'',location.pathname+location.search)}).observe(pane,{attributes:true,attributeFilter:['hidden']});
  matchMedia('(min-width:1024px)').addEventListener('change',()=>{if(!wide())leave()});  // a phone or tablet turned narrow: back to the view before
  addEventListener('hashchange',e=>{if(quiet){quiet=false;return}if(location.hash==='#browser')show();else if(e.oldURL.endsWith('#browser')){pushed=false;leave()}});

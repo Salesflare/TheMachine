@@ -150,7 +150,7 @@ const signin=running.getByRole('button',{name:'Sign in',exact:true});assert.equa
 await signin.click();const sd=page.locator('#signin-dialog');await sd.waitFor({state:'visible'});await page.locator('#signin-status-text').getByText('Drone Portal signs in with itsme or eID. Finish it below.',{exact:false}).waitFor();
 assert.ok(posts.some(p=>p.suggestion_id===ids[1]&&Object.keys(p).length===1));assert.equal(await page.locator('#signin-frame').getAttribute('src'),'/browser/vnc.html?frame=window');
 assert.ok(await page.locator('#signin-fine').isHidden());assert.equal(await page.locator('#signin-error').textContent(),'');assert.ok(await sd.getByRole('button',{name:'Continue'}).isVisible());assert.ok(await page.locator('#signin-go').isHidden());
-await page.screenshot({path:'/tmp/261020-signin-eid.png'});progress.status='running';await sd.waitFor({state:'hidden',timeout:9000});await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('carrying on'));
+await page.screenshot({path:'/tmp/261020-signin-eid.png'});progress.status='running';await sd.waitFor({state:'hidden',timeout:9000});await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('Signed in. Carrying on with it.'));
 state=base;await page.evaluate(()=>refresh());}
 await running.getByRole('button',{name:'Open the browser'}).click();await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('browser'));assert.deepEqual(posts.at(-1),{suggestion_id:ids[1]});delete suggestions[1].preparation_browser;
 const first=await running.locator('.elapsed').textContent();await page.waitForTimeout(2100);assert.notEqual(await running.locator('.elapsed').textContent(),first);

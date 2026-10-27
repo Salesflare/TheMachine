@@ -1269,7 +1269,7 @@
  "Sign in as": "Sign in as",
  "Signed in to {}. Looking there now.": "Signed in to {}. Looking there now.",
  "Signed in to {}": "Signed in to {}",
- "Signed in. I’m carrying on with the task.": "Signed in. I’m carrying on with the task.",
+ "Signed in. Carrying on with it.": "Signed in. Carrying on with it.",
  "Signed in. I’ll carry on.": "Signed in. I’ll carry on.",
  "Approve the sign-in in your {} app, then press Continue.": "Approve the sign-in in your {} app, then press Continue.",
  "The browser took too long to answer.": "The browser took too long to answer.",
@@ -2389,5 +2389,9 @@
  "(No title)": "(No title)",
  "{}’s calendar": "{}’s calendar",
  "and {} more": "and {} more",
- "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Last checked {}. Checks every 15 minutes for new contacts and people who just joined."
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.",
+ "Already carrying on with it.": "Already carrying on with it.",
+ "Already done. See the to-do.": "Already done. See the to-do.",
+ "Nothing is waiting to try again here.": "Nothing is waiting to try again here.",
+ "Signed in. I’ll start shortly.": "Signed in. I’ll start shortly."
 }

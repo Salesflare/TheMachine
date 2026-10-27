@@ -1269,7 +1269,7 @@
  "Sign in as": "Inloggen als",
  "Signed in to {}. Looking there now.": "Ingelogd bij {}. Ik kijk daar nu.",
  "Signed in to {}": "Ingelogd bij {}",
- "Signed in. I’m carrying on with the task.": "Ingelogd. Ik ga verder met de taak.",
+ "Signed in. Carrying on with it.": "Ingelogd. Ik ga ermee verder.",
  "Signed in. I’ll carry on.": "Ingelogd. Ik ga verder.",
  "Approve the sign-in in your {} app, then press Continue.": "Keur het inloggen goed in je {}-app en druk dan op Doorgaan.",
  "The browser took too long to answer.": "De browser deed te lang over een antwoord.",
@@ -2389,5 +2389,9 @@
  "(No title)": "(Geen titel)",
  "{}’s calendar": "Agenda van {}",
  "and {} more": "en nog {}",
- "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Laatst gecontroleerd {}. Controleert elke 15 minuten op nieuwe contacten en mensen die net lid zijn."
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Laatst gecontroleerd {}. Controleert elke 15 minuten op nieuwe contacten en mensen die net lid zijn.",
+ "Already carrying on with it.": "Ik ben er al mee bezig.",
+ "Already done. See the to-do.": "Al klaar. Bekijk de to-do.",
+ "Nothing is waiting to try again here.": "Hier wacht niets om opnieuw te proberen.",
+ "Signed in. I’ll start shortly.": "Ingelogd. Ik begin zo."
 }
