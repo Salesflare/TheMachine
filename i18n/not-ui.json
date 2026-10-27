@@ -64,6 +64,7 @@
  "Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom themselves (a Fleet-shared token only reads). Offer an email to the customer instead (kind email, to their address): the card says Intercom can’t reply from here.",
  "Rows${s.total>s.rows.length?",
  "Rows{}",
+ "Share {}{}",
  "Shortcut",
  "Stages${pick?",
  "Stages{}",
