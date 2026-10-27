@@ -7688,9 +7688,9 @@ SETTINGS_OF['settings-support']='security';
  d.innerHTML=`<div class="section-head"><h2>Support access</h2><p>Let The Machine team read this Machine’s logs and settings to fix a problem. Read-only, never your messages or keys. <a class="learn" href="https://themachine.computer/help/get-support#support-access" target="_blank" rel="noopener">Learn more</a></p></div><div class="list settings-list"><div><span class="grow"><strong id="sa-state">Off</strong><small id="sa-note">Ends by itself after 24 hours.</small></span><button type="button" class="ghost" id="sa-toggle">Allow for 24 hours</button></div></div><ul class="sa-log" id="sa-log"></ul>`;
  $('#settings-share').after(d)}
 let saAt=0,saData=null,saShown=false;
-// A self-hosted Machine asks its app; one that isn't paired answers with an error (4xx) and the section stays hidden
+// A self-hosted Machine paired with the Network (status fleet) asks its app; if it isn't paired after all, it answers with an error (4xx) and the section stays hidden
 const saLocal=allow=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'support_access',args:allow===undefined?{}:{allow}})});
-async function supportAccessLoad(force){if(!force&&Date.now()-saAt<30000)return;saAt=Date.now();
+async function supportAccessLoad(force){if(!bugHosted()&&!state.fleet){saShown=false;$('#settings-support').hidden=true;return}if(!force&&Date.now()-saAt<30000)return;saAt=Date.now();
  try{if(bugHosted()){const r=await fetch('/_machine/support-access',{credentials:'same-origin',redirect:'manual'});if(!r.ok)throw Error();saData=await r.json()}else saData=await saLocal();saShown=true}
  catch(e){saData={error:true};if(!bugHosted()&&e.status>=400&&e.status<500)saShown=false}supportAccessRender()}
 function supportAccessRender(){const d=saData||{},on=!!d.until&&new Date(d.until)>new Date(),b=$('#sa-toggle');$('#settings-support').hidden=!(bugHosted()||saShown);

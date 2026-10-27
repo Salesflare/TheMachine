@@ -18,6 +18,7 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
     if(!paired){res.statusCode=400;res.end(JSON.stringify({error:'This Machine isn’t linked to an account.'}));return}
     if(args.allow!==undefined)until=args.allow?new Date(Date.now()+86400000).toISOString():null;
     res.end(JSON.stringify({until,hours:24,accesses:until?[{at:new Date().toISOString(),what:'The Machine team: read the settings'}]:[]}));return}}
+  if(url.pathname==='/api/status'){res.end(JSON.stringify(paired?{fleet:{on:false}}:{}));return}
   res.end(url.pathname==='/api/events'?'[]':'{}')})});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
@@ -27,7 +28,7 @@ try{
   paired=true;until=null;actions.length=0;
   const phone=width<600,context=await browser.newContext({viewport:{width,height},isMobile:phone,hasTouch:phone}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>typeof showSettings==='function'&&typeof supportAccessLoad==='function');
+  await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>typeof showSettings==='function'&&typeof supportAccessLoad==='function'&&!!state.fleet);
   await page.evaluate(()=>showSettings('security'));
   await page.waitForSelector('#settings-support:not([hidden])');
   assert.equal(await page.textContent('#sa-state'),'Off');
@@ -42,8 +43,10 @@ try{
   assert.ok(box.right<=width&&box.scroll<=width,`${width}: fits ${JSON.stringify(box)}`);
   await page.click('#sa-toggle');await page.waitForFunction(()=>document.querySelector('#sa-toggle').textContent==='Allow for 24 hours');
   assert.equal(actions.at(-1).args.allow,false);
-  // Not paired: the app refuses, the section stays hidden
+  // Not paired after all: the app refuses, the section hides
   paired=false;await page.evaluate(()=>supportAccessLoad(true));await page.waitForFunction(()=>document.querySelector('#settings-support').hidden);
+  // Not paired: it doesn't ask at all
+  const asked=actions.length;await page.evaluate(()=>{state.fleet=undefined;supportAccessLoad(true)});assert.equal(actions.length,asked);assert.ok(await page.$eval('#settings-support',el=>el.hidden));
   await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
