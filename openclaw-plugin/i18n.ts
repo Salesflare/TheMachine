@@ -18,14 +18,26 @@ export function languageOf(config: any): string {
 // Set from the config on each tap or message, as the dashboard root is.
 export function useLanguage(config: any) { current = languageOf(config); }
 
+// One fixed file per language, each read by name: no path comes from a config value.
+const EN = new URL('../i18n/en.json', import.meta.url), NL = new URL('../i18n/nl.json', import.meta.url),
+  FR = new URL('../i18n/fr.json', import.meta.url), DE = new URL('../i18n/de.json', import.meta.url),
+  ES = new URL('../i18n/es.json', import.meta.url);
+const FILES: Record<string, () => {at: number, text: () => string}> = {
+  en: () => ({at: statSync(EN).mtimeMs, text: () => readFileSync(EN, 'utf8')}),
+  nl: () => ({at: statSync(NL).mtimeMs, text: () => readFileSync(NL, 'utf8')}),
+  fr: () => ({at: statSync(FR).mtimeMs, text: () => readFileSync(FR, 'utf8')}),
+  de: () => ({at: statSync(DE).mtimeMs, text: () => readFileSync(DE, 'utf8')}),
+  es: () => ({at: statSync(ES).mtimeMs, text: () => readFileSync(ES, 'utf8')}),
+};
+
 // Read again when the file changed: an update brings new catalogs without a plugin reload.
 function catalog(lang: string): Record<string, any> {
-  const file = new URL(`../i18n/${lang}.json`, import.meta.url);
-  let at = 0;
-  try { at = statSync(file).mtimeMs; } catch { return {}; }
-  if (catalogs[lang]?.at !== at) {
-    try { catalogs[lang] = {at, entries: JSON.parse(readFileSync(file, 'utf8'))}; }
-    catch { catalogs[lang] = {at, entries: {}}; }
+  if (!Object.hasOwn(FILES, lang)) return {};
+  let file;
+  try { file = FILES[lang](); } catch { return {}; }
+  if (catalogs[lang]?.at !== file.at) {
+    try { catalogs[lang] = {at: file.at, entries: JSON.parse(file.text())}; }
+    catch { catalogs[lang] = {at: file.at, entries: {}}; }
   }
   return catalogs[lang].entries;
 }
