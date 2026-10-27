@@ -13,13 +13,20 @@ order: 2
 ## Nichts geht raus vor deinem Ja
 
 - Eine Antwort kommt als Entwurf zurück. **Prüfen und senden** öffnet ihn, bereit zum Bearbeiten. Er geht erst raus, wenn du auf **Jetzt senden** tippst.
-- Der Text ist reiner Text: Ein Link erscheint als seine Wörter mit der Adresse in Klammern und geht wieder als Link raus.
+- Eine E-Mail öffnet sich so, wie sie aussehen wird, mit Fettdruck, Listen und Links. Eine Slack- oder Chat-Nachricht ist reiner Text: Ein Link erscheint als seine Wörter mit der Adresse in Klammern und geht wieder als Link raus.
 - **Änderungen anfragen** im selben Fenster: Sag, was anders sein soll, und deine Machine macht den Entwurf neu.
 - Eine Antwort antwortet auf die neueste E-Mail des Verlaufs, und die Quelle der Aufgabe öffnet diese E-Mail.
 - Ein Schritt, der etwas verbindlich macht, etwa absenden, bezahlen oder buchen, hält an und wartet auf deine Bestätigung.
 - Im Chat einer Aufgabe wird ein Entwurf nie in derselben Nachricht gesendet, die ihn geschrieben hat.
 
 Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnachricht, eine Nachricht über WhatsApp, LinkedIn oder X. Der Artikel jeder Verbindung sagt, was sie senden kann.
+
+## Eine E-Mail bearbeiten
+
+- Nimm die Knöpfe über dem Text, oder `Ctrl B` für fett, `Ctrl I` für kursiv und `Ctrl K` für einen Link (`⌘` auf einem Mac). Es gibt auch Knöpfe für eine Aufzählung und eine nummerierte Liste.
+- Ein Link braucht eine Adresse, die mit https:// beginnt. Eingefügter Text kommt als reiner Text, ohne Farben oder Bilder.
+- Formatierung, die eine E-Mail nicht tragen kann, wird vor dem Senden entfernt, und die Nachricht zeigt, wie sie rausgeht. Tippe noch einmal auf **Jetzt senden**, um sie zu senden.
+- Die E-Mail geht genau so raus, wie sie angezeigt wird, mit einer Kopie als reiner Text für Mail-Apps ohne Formatierung.
 
 ## Wenn es nicht geht
 

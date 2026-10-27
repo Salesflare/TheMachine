@@ -752,7 +752,7 @@ def closing_spaced(body):
 
 
 # Drafts that reach the recipient as plain text (WhatsApp, LinkedIn, X, a Fleet handoff): links go as words (URL).
-# Email and Slack keep Markdown links: the send turns them into real links (body_html, slack_text).
+# Email and Slack keep Markdown links: the send turns them into real links (mail_html, slack_text).
 PLAIN_LINKS = ('handoff', 'whatsapp', 'linkedin', 'x')
 LINK = re.compile(r'\[([^\[\]\n]{1,200})\]\((https://[^\s()<>]{1,2000})\)|(https://[^\s<>]*[^\s<>.,;:!?)\]])')
 
@@ -761,15 +761,103 @@ def body_text(body):
     return LINK.sub(lambda m: f'{m[1]} ({m[2]})' if m[1] else m[3], body)
 
 
-def body_html(body):
-    parts, last = [], 0
-    for m in LINK.finditer(body):
-        parts.append(html.escape(body[last:m.start()]))
-        url, text = (m[2], m[1]) if m[1] else (m[3], m[3])
-        parts.append(f'<a href="{html.escape(url)}">{html.escape(text)}</a>')
-        last = m.end()
-    parts.append(html.escape(body[last:]))
-    return ''.join(parts).replace('\n', '<br>\n')
+# An email's body is plain text with a few marks, the same ones the dashboard's editor writes: **bold**, _italic_ (or
+# *italic*), [words](https://link), lines that start with "- " (a bulleted list) or "1. " (a numbered list), and a
+# backslash before a mark that is meant as itself (\*). Nothing else is markup: every other character goes out as text,
+# so no HTML from a draft or an edit ever reaches the mail. The dashboard draws the same marks the same way (mailHtml;
+# tests/mail_format_cases.json keeps the two in step), so the approved preview is the mail that goes out.
+MAIL_ESCAPE = re.compile(r'\\([\\*_\[\]()\-.#])')
+MAIL_BULLET = re.compile(r'- ([\s\S]*)')
+MAIL_NUMBER = re.compile(r'([0-9]{1,3})\. ([\s\S]*)')
+MAIL_LINK = LINK
+MAIL_BOLD = re.compile(r'\*\*([^\s*](?:(?:[^*]|\*(?!\*))*[^\s])?)\*\*(?!\*)')
+_MAIL_SPAN = r'(?:[^\s{0}<]|<b>[^<]*</b>)(?:(?:[^{0}<]|<b>[^<]*</b>)*(?:[^\s{0}<]|<b>[^<]*</b>))?'
+MAIL_ITALIC = (re.compile(r'(^|[^\w*])\*(' + _MAIL_SPAN.format(r'*') + r')\*(?![\w*])'),
+               re.compile(r'(^|[^\w])_(' + _MAIL_SPAN.format('_') + r')_(?!\w)'))
+MAIL_KEPT = re.compile('[\\uE000-\\uF8FF]')
+
+
+def mail_inline(text, nested=False):
+    """One line of an email body as HTML: escaped text, links, then bold and italic. A link's words take marks, not links.
+    The marks only ever make whole, nested <b> and <i> pairs: a mark that doesn't close stays as typed."""
+    kept = []
+
+    def keep(value):
+        kept.append(value)
+        return chr(0xE000 + len(kept) - 1)
+
+    def link(m):
+        if m[1]:
+            return keep(f'<a href="{html.escape(m[2])}">{mail_inline(m[1], True)}</a>')
+        return keep(f'<a href="{html.escape(m[3])}">{html.escape(m[3])}</a>')
+
+    text = MAIL_KEPT.sub('', str(text))
+    text = MAIL_ESCAPE.sub(lambda m: keep(html.escape(m[1])), text)
+    if not nested:
+        text = MAIL_LINK.sub(link, text)
+    text = html.escape(text, quote=False)
+    text = MAIL_BOLD.sub(r'<b>\1</b>', text)
+    for italic in MAIL_ITALIC:
+        text = italic.sub(r'\1<i>\2</i>', text)
+    while MAIL_KEPT.search(text):
+        text = MAIL_KEPT.sub(lambda m: kept[ord(m[0]) - 0xE000], text)
+    return text
+
+
+def mail_plain(line):
+    """The same line as plain text: marks gone, a link as "words (address)" (a bare address once)."""
+    page = re.sub(r'</?[bi]>', '', mail_inline(line))
+    page = re.sub(r'<a href="([^"]*)">(.*?)</a>', lambda m: m[2] if m[2] == m[1] else f'{m[2]} ({m[1]})', page)
+    return html.unescape(page)
+
+
+def mail_blocks(body):
+    """The body's lines in runs: ('text', [lines]), ('ul', [items]) and ('ol', start, [items])."""
+    blocks = []
+    for line in str(body).split('\n'):
+        bullet, number = MAIL_BULLET.fullmatch(line), MAIL_NUMBER.fullmatch(line)
+        if bullet:
+            if blocks and blocks[-1][0] == 'ul':
+                blocks[-1][-1].append(bullet[1])
+            else:
+                blocks.append(('ul', [bullet[1]]))
+        elif number:
+            if blocks and blocks[-1][0] == 'ol':
+                blocks[-1][-1].append(number[2])
+            else:
+                blocks.append(('ol', int(number[1]), [number[2]]))
+        elif blocks and blocks[-1][0] == 'text':
+            blocks[-1][1].append(line)
+        else:
+            blocks.append(('text', [line]))
+    return blocks
+
+
+def mail_html(body):
+    """The HTML part of an email: a div per line (an empty one holds a <br>, as mail apps write it), real lists, bold,
+    italic and links; everything else escaped."""
+    out = []
+    for block in mail_blocks(body):
+        if block[0] == 'text':
+            out.extend(f'<div>{mail_inline(line) or "<br>"}</div>' for line in block[1])
+        else:
+            start = f' start="{block[1]}"' if block[0] == 'ol' and block[1] != 1 else ''
+            items = ''.join(f'<li>{mail_inline(item)}</li>' for item in block[-1])
+            out.append(f'<{block[0]}{start} style="margin:0 0 0 1.6em;padding:0">{items}</{block[0]}>')
+    return ''.join(out)
+
+
+def mail_text(body):
+    """The plain-text part of the same email: marks gone, links as "words (address)", list lines as written."""
+    lines = []
+    for block in mail_blocks(body):
+        if block[0] == 'text':
+            lines.extend(mail_plain(line) for line in block[1])
+        elif block[0] == 'ul':
+            lines.extend('- ' + mail_plain(item) for item in block[1])
+        else:
+            lines.extend(f'{block[1] + i}. ' + mail_plain(item) for i, item in enumerate(block[2]))
+    return '\n'.join(lines)
 
 
 class SignatureText(HTMLParser):
@@ -811,7 +899,8 @@ def email_preview(action):
     for field in ('cc', 'bcc'):
         if action.get(field):
             lines.append(field.upper() + ': ' + ', '.join(action[field]))
-    return ('\n'.join(lines) + '\nSubject: ' + action['subject'] + '\n\n' + action['body']
+    # Outside the dashboard (a phone notification, Telegram) the body reads as the mail's plain-text part
+    return ('\n'.join(lines) + '\nSubject: ' + action['subject'] + '\n\n' + mail_text(action['body'])
             + ('\n\n+ your signature' if action.get('signature') else '')
             + ('\n\nAttachments: ' + attachment_list(action) if action.get('attachments') else '')
             + ('\n' + snooze_note(action) if action.get('snooze_days') else '') + delegate_note(action))
@@ -837,10 +926,10 @@ def mime_bytes(action, job, signature='', config=None):
         message['In-Reply-To'] = action['in_reply_to']
         message['References'] = action.get('references', action['in_reply_to'])
     signature = signature if action.get('signature') else ''
-    text = body_text(action['body']) + ('\n\n' + signature_text(signature) if signature else '')
+    text = mail_text(action['body']) + ('\n\n' + signature_text(signature) if signature else '')
     message.set_content(text, charset='utf-8')
-    # Links behind their text, then a blank line and the real signature.
-    page = '<div dir="ltr">' + body_html(action['body']) + '<br>\n<br>\n'
+    # The body as drafted or edited (mail_html: links behind their words, lists, bold), a blank line, the real signature.
+    page = '<div dir="ltr">' + mail_html(action['body']) + '\n<br>\n'
     if signature:
         page += '<div class="gmail_signature">' + signature + '</div>'
     message.add_alternative(page + '</div>', subtype='html', charset='utf-8')

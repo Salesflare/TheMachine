@@ -1,0 +1,117 @@
+[
+ {
+  "body": "Hi Anna,\n\nBook [a slot](https://example.com/book).\n\nCheers,\n\nAlex",
+  "html": "<div>Hi Anna,</div><div><br></div><div>Book <a href=\"https://example.com/book\">a slot</a>.</div><div><br></div><div>Cheers,</div><div><br></div><div>Alex</div>",
+  "text": "Hi Anna,\n\nBook a slot (https://example.com/book).\n\nCheers,\n\nAlex"
+ },
+ {
+  "body": "**bold**, _italic_, *italic* and **bold _both_**",
+  "html": "<div><b>bold</b>, <i>italic</i>, <i>italic</i> and <b>bold <i>both</i></b></div>",
+  "text": "bold, italic, italic and bold both"
+ },
+ {
+  "body": "_a_**_b_**",
+  "html": "<div><i>a</i><b><i>b</i></b></div>",
+  "text": "ab"
+ },
+ {
+  "body": "**a *b***",
+  "html": "<div><b>a <i>b</i></b></div>",
+  "text": "a b"
+ },
+ {
+  "body": "*a **b** c*",
+  "html": "<div><i>a <b>b</b> c</i></div>",
+  "text": "a b c"
+ },
+ {
+  "body": "5 * 3 * 2, a*b*c, snake_case_name, file_name_",
+  "html": "<div>5 * 3 * 2, a*b*c, snake_case_name, file_name_</div>",
+  "text": "5 * 3 * 2, a*b*c, snake_case_name, file_name_"
+ },
+ {
+  "body": "\\*not italic\\* and \\_not\\_ and \\[not](https://example.com/a) a link",
+  "html": "<div>*not italic* and _not_ and [not](<a href=\"https://example.com/a\">https://example.com/a</a>) a link</div>",
+  "text": "*not italic* and _not_ and [not](https://example.com/a) a link"
+ },
+ {
+  "body": "- one\n- **two**\n\n1. first\n2. second",
+  "html": "<ul style=\"margin:0 0 0 1.6em;padding:0\"><li>one</li><li><b>two</b></li></ul><div><br></div><ol style=\"margin:0 0 0 1.6em;padding:0\"><li>first</li><li>second</li></ol>",
+  "text": "- one\n- two\n\n1. first\n2. second"
+ },
+ {
+  "body": "3. third\n4. fourth",
+  "html": "<ol start=\"3\" style=\"margin:0 0 0 1.6em;padding:0\"><li>third</li><li>fourth</li></ol>",
+  "text": "3. third\n4. fourth"
+ },
+ {
+  "body": "\\- not a list\n1\\. not a number",
+  "html": "<div>- not a list</div><div>1. not a number</div>",
+  "text": "- not a list\n1. not a number"
+ },
+ {
+  "body": "Hi,\n\n- a\n- b\n\nBye",
+  "html": "<div>Hi,</div><div><br></div><ul style=\"margin:0 0 0 1.6em;padding:0\"><li>a</li><li>b</li></ul><div><br></div><div>Bye</div>",
+  "text": "Hi,\n\n- a\n- b\n\nBye"
+ },
+ {
+  "body": "<script>alert(1)</script> <b>x</b> & \"quotes\" 'single'",
+  "html": "<div>&lt;script&gt;alert(1)&lt;/script&gt; &lt;b&gt;x&lt;/b&gt; &amp; \"quotes\" 'single'</div>",
+  "text": "<script>alert(1)</script> <b>x</b> & \"quotes\" 'single'"
+ },
+ {
+  "body": "[<img src=x onerror=alert(1)>](https://example.com/x)",
+  "html": "<div><a href=\"https://example.com/x\">&lt;img src=x onerror=alert(1)&gt;</a></div>",
+  "text": "<img src=x onerror=alert(1)> (https://example.com/x)"
+ },
+ {
+  "body": "[words](javascript:alert(1)) [mail](mailto:a@example.com) [plain](http://example.com)",
+  "html": "<div>[words](javascript:alert(1)) [mail](mailto:a@example.com) [plain](http://example.com)</div>",
+  "text": "[words](javascript:alert(1)) [mail](mailto:a@example.com) [plain](http://example.com)"
+ },
+ {
+  "body": "see https://example.com/a?b=1&c=2. and (https://example.com/p)",
+  "html": "<div>see <a href=\"https://example.com/a?b=1&amp;c=2\">https://example.com/a?b=1&amp;c=2</a>. and (<a href=\"https://example.com/p\">https://example.com/p</a>)</div>",
+  "text": "see https://example.com/a?b=1&c=2. and (https://example.com/p)"
+ },
+ {
+  "body": "https://example.com/a_b_c and _it_",
+  "html": "<div><a href=\"https://example.com/a_b_c\">https://example.com/a_b_c</a> and <i>it</i></div>",
+  "text": "https://example.com/a_b_c and it"
+ },
+ {
+  "body": "[see https://example.com/x](https://example.com/y) **[bold link](https://example.com/z)**",
+  "html": "<div><a href=\"https://example.com/y\">see https://example.com/x</a> <b><a href=\"https://example.com/z\">bold link</a></b></div>",
+  "text": "see https://example.com/x (https://example.com/y) bold link (https://example.com/z)"
+ },
+ {
+  "body": "**bold **x and ** y**",
+  "html": "<div>**bold **x and ** y**</div>",
+  "text": "**bold **x and ** y**"
+ },
+ {
+  "body": "***both***",
+  "html": "<div>*<b>both*</b></div>",
+  "text": "*both*"
+ },
+ {
+  "body": "é_x_é and é *y* é",
+  "html": "<div>é_x_é and é <i>y</i> é</div>",
+  "text": "é_x_é and é y é"
+ },
+ {
+  "body": "\\\\ a backslash",
+  "html": "<div>\\ a backslash</div>",
+  "text": "\\ a backslash"
+ },
+ {
+  "body": " kept chars  vanish",
+  "html": "<div> kept chars  vanish</div>",
+  "text": " kept chars  vanish"
+ },
+ {
+  "body": "",
+  "html": "<div><br></div>",
+  "text": ""
+ }
+]

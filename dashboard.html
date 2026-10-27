@@ -1064,6 +1064,14 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .send-body{margin:0 0 10px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--sunken);font-size:.98rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}.send-body .sig{color:var(--faint)}
 .send-body.code{font:.78rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow:auto;max-height:55vh}
 #send-dialog #send-editor label{color:var(--faint)}#send-dialog #send-editor :is(input,textarea){background:var(--sunken);border-color:var(--border);border-radius:10px;font-size:.98rem;line-height:1.55;color:var(--text)}
+/* The email editor (mailRich): the text as it will look, a small toolbar over it; the same box as the preview */
+.mail-edit{display:grid;gap:6px;margin:0 0 10px}.mail-label{color:var(--faint);font-size:.85rem}
+.mail-tools{display:flex;gap:2px;padding:3px;border-radius:var(--r-sm);background:var(--sunken);width:max-content;max-width:100%}.mail-tools button{min-height:32px;min-width:32px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--muted);box-shadow:none;display:inline-flex;align-items:center;justify-content:center;font:600 .95rem/1 var(--sans);cursor:pointer}.mail-tools button i{font-family:Georgia,serif}.mail-tools svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.mail-tools svg circle{fill:currentColor;stroke:none}.mail-tools svg .fill{stroke-width:1.2}
+@media(hover:hover){.mail-tools button:hover{background:var(--tile);color:var(--text)}}.mail-tools button[aria-pressed="true"]{background:var(--c-accent-tint);color:var(--text)}
+.mail-link{display:flex;gap:6px;align-items:center}.mail-link input{flex:1 1 auto;min-width:0;width:auto}.mail-link button{flex:none;min-height:36px;padding-inline:12px}
+.mail-paper{min-height:180px;max-height:min(52vh,520px);overflow:auto;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--sunken);color:var(--text);font-size:.98rem;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap;outline:none;cursor:text}.mail-paper:focus-visible,.mail-paper:focus{border-color:var(--c-accent,var(--mint));box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 25%,transparent)}
+.mail-paper a,.send-body.mail a,.db.mail a{color:var(--c-link,var(--text));text-decoration:underline;text-underline-offset:2px}.mail-paper :is(ul,ol),.send-body.mail :is(ul,ol),.db.mail :is(ul,ol){margin:0 0 0 1.6em!important;padding:0!important}
+.send-body.mail,.db.mail{white-space:normal}.send-body.mail>div,.db.mail>div{white-space:pre-wrap}.send-body.mail .sig{display:block;margin-top:1.55em}
 #send-dialog .fine{margin:0 0 6px;font-size:.85rem;line-height:1.45;color:var(--faint)}
 #send-dialog #send-files{margin:0 0 10px}
 /* On a phone it is a bottom sheet like the other editors */
@@ -2122,7 +2130,12 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 :is(#new-card,#help-panel){width:min(600px,calc(100vw - 24px));padding:18px 18px 14px}
 #new-card .snooze-heading{margin-bottom:12px}
 :is(#new-card,#help-panel) .chat-box{border-radius:22px}
-#new-card .chat-box textarea{height:auto;min-height:48px}
+/* New to-do's box: the text on top across the full width, the paperclip and the add button on one row under it,
+   both the same size and lined up with the text's edges, so the box reads the same empty, typed or grown. */
+#new-card .chat-box{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"text text text" "attach . send";align-items:center;row-gap:4px;column-gap:8px;padding:12px 10px 8px 14px}
+#new-card .chat-box textarea{grid-area:text;height:auto;min-height:44px;padding:0 4px 0 2px}
+#new-card .chat-box .chat-attach{grid-area:attach;align-self:center;margin:0 0 0 -6px}
+#new-card .chat-box .chat-tools{grid-area:send;justify-self:end}
 /* On a phone the composer is a bottom sheet that stays above the keyboard, like the card chat's box. */
 @media(max-width:560px){
   :is(#new-card,#help-panel){position:fixed;inset:auto 0 var(--nc-kb,0px) 0;width:100%;max-width:100%;margin:0;max-height:calc(100dvh - var(--nc-kb,0px) - 24px);border-radius:var(--r-xl,20px) var(--r-xl,20px) 0 0;padding:14px max(16px,env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
@@ -2147,7 +2160,6 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .nc-error:empty{display:none}
 /* New to-do's files: the chat composer's tray and paperclip; a drop on the form outlines its box */
 #new-card .nc-tray{margin:0 0 8px}#new-card .nc-tray[hidden]{display:none}
-#new-card .chat-box .chat-attach{align-self:flex-end;margin-bottom:7px}
 .nc-drop-hint{display:none}#new-card.nc-drop .nc-drop-hint{display:block;margin:0 0 8px;font-size:.82rem;color:var(--c-accent,var(--mint));font-weight:600;text-align:center}
 #new-card.nc-drop .chat-box{border-color:var(--c-accent,var(--mint));box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 22%,transparent)}
 .card .card-files{margin:8px 0 0}
@@ -2219,6 +2231,8 @@ kbd.kb,.pal-keys kbd,.keys-sheet kbd,.pal-foot kbd,.side-search kbd{display:inli
 .keys-sheet div>p{display:flex;align-items:center;gap:10px;margin:0;padding:5px 0;color:var(--c-text-2);font:400 var(--fs-sm)/1.3 var(--sans)}
 .keys-sheet div>p>span:first-child{flex:1;min-width:0}.keys-sheet .keys{display:flex;align-items:center;gap:4px}.keys-sheet .then{color:var(--c-text-3);font-size:var(--fs-xs)}
 article.kb-on,article.kb-on:focus{outline:2px solid color-mix(in srgb,var(--c-accent) 70%,transparent);outline-offset:3px}
+/* The keys' other stops: a list's head and a promise row get the same ring as a picked to-do */
+:is(.section-head,summary,.promise).kb-on{outline:2px solid color-mix(in srgb,var(--c-accent) 70%,transparent);outline-offset:2px;border-radius:var(--r-sm,8px);box-shadow:none}
 @media(max-width:1023px){
   .side-search .kb-open{display:none}
 }
@@ -2301,7 +2315,15 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 ><dl id="send-head" class="send-head"></dl
 ><div id="send-preview" class="send-body"></div
 ><div id="send-editor" hidden
-><label id="send-subject-label">Subject<input id="send-subject" maxlength="250"></label><label>Message<textarea id="send-body"></textarea></label></div
+><label id="send-subject-label">Subject<input id="send-subject" maxlength="250"></label><label
+ id="send-body-label">Message<textarea id="send-body"></textarea></label><div
+ id="send-rich" class="mail-edit" hidden><span
+ id="send-rich-label" class="mail-label">Message</span><div class="mail-tools" role="toolbar" aria-label="Formatting"><button type="button" data-mail-tool="b" aria-pressed="false" title="Bold (Ctrl B)" aria-label="Bold"><b>B</b></button><button type="button" data-mail-tool="i" aria-pressed="false" title="Italic (Ctrl I)" aria-label="Italic"><i>I</i></button><button type="button" data-mail-tool="ul" aria-pressed="false" title="Bulleted list" aria-label="Bulleted list"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="7" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="5" cy="17" r="1.3"/><path d="M9.5 7H20M9.5 12H20M9.5 17H20"/></svg></button><button type="button" data-mail-tool="ol" aria-pressed="false" title="Numbered list" aria-label="Numbered list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7h10M10 12h10M10 17h10"/><path class="fill" d="M4.2 5.2h1.3v3.6M4 8.8h2.6M3.9 11.1c.4-.5 1.9-.6 1.9.4 0 .8-1.9 1.4-1.9 2.4h2M4 15.6h1.8l-1 1.2c.9 0 1.2.4 1.2.8 0 .9-1.5 1.1-2.1.5"/></svg></button><button type="button" data-mail-tool="link" aria-pressed="false" title="Link (Ctrl K)" aria-label="Link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l3.2-3.2a3.6 3.6 0 0 0-5.1-5.1l-1.1 1.1M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-3.2 3.2a3.6 3.6 0 0 0 5.1 5.1l1.1-1.1"/></svg></button></div><div
+ id="send-rich-link" class="mail-link" hidden><input
+ id="send-rich-url" type="url" inputmode="url" placeholder="https://" aria-label="Link address" autocomplete="off"><button
+ id="send-rich-add" type="button" class="primary">Add link</button><button
+ id="send-rich-cancel" type="button" class="ghost">Cancel</button></div><div
+ id="send-rich-body" class="mail-paper" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="send-rich-label" spellcheck="true" translate="no"></div></div></div
 ><div id="send-files" class="attachments" hidden></div
 ><p id="send-fine" class="fine" hidden></p
 ><p id="send-error" role="status"></p
@@ -2956,7 +2978,26 @@ const draftText=a=>a.kind==='finish'?(a.message||a.preview):a.kind==='calendar'?
 // Email and Slack turn [words](https://...) into a real link when sent, so the draft shows it as one; a handoff
 // reaches the teammate as plain text, words (URL), so the draft shows that.
 const MD_LINK=/\[([^\[\]\n]{1,200})\]\((https:\/\/[^\s()<>]{1,2000})\)/g;
-const draftBody=(a,text)=>['email','email_demo','slack'].includes(a.kind)?esc(text).replace(MD_LINK,(m,t,u)=>`<a href="${u}" target="_blank" rel="noreferrer">${t}</a>`):esc(String(text).replace(MD_LINK,'$1 ($2)'));
+// An email's text marks, drawn exactly as the send writes them (next_actions.mail_html; tests/mail_format_cases.json
+// keeps the two in step): **bold**, _italic_ or *italic*, [words](https://link), "- " and "1. " lines as lists, \* for
+// a mark meant as itself. Everything else is text. The preview, the editor and the sent mail are one and the same.
+const MAIL_ESCAPE=/\\([\\*_\[\]()\-.#])/g,MAIL_LINK=/\[([^\[\]\n]{1,200})\]\((https:\/\/[^\s()<>]{1,2000})\)|(https:\/\/[^\s<>]*[^\s<>.,;:!?)\]])/g,MAIL_KEPT=/[\uE000-\uF8FF]/g;
+const MAIL_BOLD=/\*\*([^\s*](?:(?:[^*]|\*(?!\*))*[^\s])?)\*\*(?!\*)/g,mailSpan=c=>`(?:[^\\s${c}<]|<b>[^<]*</b>)(?:(?:[^${c}<]|<b>[^<]*</b>)*(?:[^\\s${c}<]|<b>[^<]*</b>))?`;
+const MAIL_ITALIC=[new RegExp(`(^|[^\\p{L}\\p{N}_*])\\*(${mailSpan('*')})\\*(?![\\p{L}\\p{N}_*])`,'gu'),new RegExp(`(^|[^\\p{L}\\p{N}_])_(${mailSpan('_')})_(?![\\p{L}\\p{N}_])`,'gu')];
+const mailEsc=(v,q=true)=>String(v).replace(q?/[&<>"']/g:/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#x27;'}[c]));
+function mailInline(text,nested=false,attrs=''){const kept=[],keep=v=>String.fromCharCode(0xE000+kept.push(v)-1);
+ let s=String(text??'').replace(MAIL_KEPT,'').replace(MAIL_ESCAPE,(m,c)=>keep(mailEsc(c)));
+ if(!nested)s=s.replace(MAIL_LINK,(m,w,u,bare)=>keep(w?`<a href="${mailEsc(u)}"${attrs}>${mailInline(w,true)}</a>`:`<a href="${mailEsc(bare)}"${attrs}>${mailEsc(bare)}</a>`));
+ s=mailEsc(s,false).replace(MAIL_BOLD,'<b>$1</b>');for(const r of MAIL_ITALIC)s=s.replace(r,'$1<i>$2</i>');
+ while(MAIL_KEPT.test(s)){MAIL_KEPT.lastIndex=0;s=s.replace(MAIL_KEPT,c=>kept[c.charCodeAt(0)-0xE000])}MAIL_KEPT.lastIndex=0;return s}
+function mailBlocks(body){const out=[];for(const line of String(body??'').split('\n')){const b=/^- ([\s\S]*)$/.exec(line),n=/^([0-9]{1,3})\. ([\s\S]*)$/.exec(line),last=out[out.length-1];
+  if(b){if(last?.type==='ul')last.items.push(b[1]);else out.push({type:'ul',items:[b[1]]})}
+  else if(n){if(last?.type==='ol')last.items.push(n[2]);else out.push({type:'ol',start:+n[1],items:[n[2]]})}
+  else if(last?.type==='text')last.items.push(line);else out.push({type:'text',items:[line]})}return out}
+// The HTML part as sent; links=true opens them in a new tab here (the mail itself has plain links)
+const mailHtml=(body,here=true)=>{const at=here?' target="_blank" rel="noreferrer"':'';return mailBlocks(body).map(b=>b.type==='text'?b.items.map(l=>`<div>${mailInline(l,false,at)||'<br>'}</div>`).join('')
+ :`<${b.type}${b.type==='ol'&&b.start!==1?` start="${b.start}"`:''} style="margin:0 0 0 1.6em;padding:0">${b.items.map(i=>`<li>${mailInline(i,false,at)}</li>`).join('')}</${b.type}>`).join('')};
+const draftBody=(a,text)=>['email','email_demo'].includes(a.kind)?mailHtml(text):a.kind==='slack'?esc(text).replace(MD_LINK,(m,t,u)=>`<a href="${u}" target="_blank" rel="noreferrer">${t}</a>`):esc(String(text).replace(MD_LINK,'$1 ($2)'));
 // An email that goes instead of a reply in the to-do's Intercom conversation: why (next_actions.INTERCOM_FALLBACK, the same words).
 const INTERCOM_WHY={shared:'Intercom is shared with you to read only, so this goes by email.',off:'Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.',missing:'Intercom isn’t connected on this Machine, so this goes by email.'};
 // The draft as written: To · Subject in small type, the text with its line breaks; long drafts fold behind Show more.
@@ -2967,7 +3008,7 @@ const to=a.kind==='x'&&!a.to_name&&a.to_screen_name?'@'+a.to_screen_name:a.to_na
 // A final step (Submit, Pay…): its label, and who gets the message when it posts one.
 const head=fin?(sent?'Done: ':'')+a.label+(to?' · '+t('To: {}',to):''):(label?label+' · ':'')+(sent?'Sent to':'To')+': '+(to||'…')+(mail&&a.subject?' · '+a.subject:'');
 const key='draft-'+s.id+'-'+a.revision,rows=String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/56):1),0),fold=rows>16,open=expandedBodies.has(key);
-return `<div class="draft${sent?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${fin?(a.message?'Message to post':'What goes out'):(sent?'Sent':'Draft')+' '+(mail?'email':'message')}"><div class="dm">${esc(head)}</div>${mail&&!sent&&INTERCOM_WHY[a.intercom_fallback]?`<p class="draft-why">${esc(INTERCOM_WHY[a.intercom_fallback])}${a.intercom_fallback==='off'?'':' <a href="#health" class="draft-connect" data-connect-open="intercom">Connect your own Intercom</a>'}</p>`:''}<div class="db">${draftBody(a,text)}</div>${(a.attachments||[]).length?`<div class="attachments">${draftFileLinks(s.id,a.attachments)}</div>`:''}</div>${fold?`<button type="button" class="more" data-more="${esc(key)}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
+return `<div class="draft${sent?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${fin?(a.message?'Message to post':'What goes out'):(sent?'Sent':'Draft')+' '+(mail?'email':'message')}"><div class="dm">${esc(head)}</div>${mail&&!sent&&INTERCOM_WHY[a.intercom_fallback]?`<p class="draft-why">${esc(INTERCOM_WHY[a.intercom_fallback])}${a.intercom_fallback==='off'?'':' <a href="#health" class="draft-connect" data-connect-open="intercom">Connect your own Intercom</a>'}</p>`:''}<div class="db${mail?' mail':''}">${draftBody(a,text)}</div>${(a.attachments||[]).length?`<div class="attachments">${draftFileLinks(s.id,a.attachments)}</div>`:''}</div>${fold?`<button type="button" class="more" data-more="${esc(key)}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
 // The button row: the main action(s) first, then the two most useful others; the rest wait under More, so a card never
 // shows a wall of buttons. Which others come first depends on the card: a decision needs Snooze and Not needed, a ready
 // card Mark done and Snooze.
@@ -3156,7 +3197,7 @@ new MutationObserver(settingsSync).observe($('#settings'),{childList:true,subtre
 const settingsHash=()=>{if(!$('#settings').hidden)history.replaceState(null,'',location.pathname+location.search+'#settings/'+settingsNow)};
 function showSettings(tab){if(tab==='hours')tab='notify';if(SETTINGS_TABS.some(t=>t[0]===tab)){settingsTab=tab;localStorage.setItem('settings-tab',tab)}const was=!$('#settings').hidden;
  for(const b of document.querySelectorAll('nav button[data-tab]')){b.classList.remove('active');b.setAttribute('aria-current','false')}for(const x of document.querySelectorAll('main>section'))x.hidden=x.id!=='settings';$('#open-settings').setAttribute('aria-current','page');
- settingsSync();settingsHash();if(!was)scrollTo(0,0);requestAnimationFrame(()=>tabsShow($('#settings-tabs')))}
+ settingsSync();settingsHash();if(!was)scrollTo(0,0);requestAnimationFrame(()=>{tabsShow($('#settings-tabs'));if(!was)kbLand()})}
 $('#open-settings').onclick=()=>showSettings();
 $('#settings-tabs').onclick=e=>{const b=e.target.closest('[data-settings-tab]');if(!b)return;showSettings(b.dataset.settingsTab)};
 $('nav').addEventListener('click',e=>{if(!e.target.closest('button')?.dataset.tab)return;$('#open-settings').setAttribute('aria-current','false');if(location.hash.startsWith('#settings'))history.replaceState(null,'',location.pathname+location.search)});
@@ -3805,7 +3846,8 @@ const SIGNIN_NAME={google:'Google',microsoft:'Microsoft',zoom:'Zoom'};
 function renderDisconnected(){const list=state.disconnected||[];$('#disconnected').innerHTML=list.length?`<div class="section-head"><h2>Disconnected lately</h2></div><div class="list disconnected-list">${list.map(r=>{const ok=r.state==='removed';return `<article style="--c:var(--${ok?'mint':'amber'})"><h3>${esc(r.email)}</h3><div class="row">${chip(ok?'Removed, confirmed':`Pending: ${SIGNIN_NAME[r.provider]||'The provider'} hasn’t confirmed. Retrying`,ok?'mint':'amber')}<small>${esc(SIGNIN_NAME[r.provider]||r.provider)}</small>${time(r.at)}</div></article>`}).join('')}</div>`:''}
 function spark(c){const a=[...(c.sync_activity||[])].reverse();if(!a.length)return '';const max=Math.max(1,...a.map(x=>x.signals||0));return `<div class="spark" role="img" aria-label="${esc((f=>a.length===1?t('Last sync: {} failed',f):t('Last {} syncs: {} failed',a.length,f))(a.filter(x=>x.status!=='success').length))}">${a.map(x=>x.status!=='success'?`<i class="fail" style="height:100%" title="${esc(date(x.at))} · ${esc(syncError(x.error))}"></i>`:`<i class="${x.signals?'':'zero'}" style="height:${x.signals?Math.max(18,Math.round(x.signals/max*100)):10}%" title="${esc(date(x.at))} · ${esc(t(['{} signal','{} signals'],x.signals??0))}"></i>`).join('')}</div>`}
 // Connections' sub-tabs: the sources by kind, then saved sign-ins and the reviews. A tab with a source that needs
-// attention shows how many; the first such tab opens unless one was picked.
+// attention shows how many; the first such tab opens unless one was picked. Like every tab row, a number means
+// something needs you: Sign-ins has none (a saved sign-in never needs anything), Who's who and Friends only when waiting.
 const HEALTH_GROUPS={gmail:'mail',calendar:'mail',outlook:'mail',outlook_calendar:'mail',slack:'chat',whatsapp:'chat',telegram:'chat',signal:'chat',discord:'chat',teams:'chat'};  // Android sits in Other sources: most phones (iPhones) have no notification feed to give
 const healthGroup=s=>HEALTH_GROUPS[s]||'other';
 let healthPane=(localStorage.getItem('health-pane')||'').replace(/^phone$/,'other'),healthPicked=false,savedLoginCount=0;
@@ -3813,7 +3855,7 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  const panes=[['mail','Mail and calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c.service)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
  if(!panes.length)panes.push({id:'mail',label:'Sources'});
  panes.push({id:'add',label:'+ Add'});
- if(savedLoginCount||healthPicked&&healthPane==='signins')panes.push({id:'signins',label:'Sign-ins',badge:savedLoginCount});panes.push({id:'reviews',label:'Reviews'});
+ if(savedLoginCount||healthPicked&&healthPane==='signins')panes.push({id:'signins',label:'Sign-ins'});panes.push({id:'reviews',label:'Reviews'});
  const ids=panes.map(p=>p.id),current=healthPicked&&ids.includes(healthPane)?healthPane:panes.find(p=>p.badge&&p.warn)?.id||(ids.includes(healthPane)?healthPane:ids[0]);
  healthPane=current;const row=$('#health-tabs');row.innerHTML=subTabs('Connections','data-health-pane',panes,current);
  for(const el of document.querySelectorAll('#health [data-health-for]'))el.hidden=!el.dataset.healthFor.split(' ').includes(current);
@@ -4280,7 +4322,7 @@ function promisesList(open){const items=(state.promises||[]).filter(p=>['open','
 const pday=v=>new Date(v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'});
 const row=p=>`<div class="promise"><span class="grow">${t(p.together?'With {}:':p.direction==='mine'?'To {}:':'From {}:',`<b>${esc(p.who)}</b>`)} <a class="promise-link" href="${promiseHref(p)}">${esc(p.what)}</a><small>${esc(t(p.direction==='mine'?'You said it {}':'Said {}',pday(p.made_at)))}${p.state==='card'?' · '+esc(t('a to-do now')):p.due?'':' · '+esc(new Date(p.check_at)>Date.now()?t('no date, follow-up {}',pday(p.check_at)):t('no date, checked {}',pday(p.check_at)))}</small></span>${dueChip(p)}${p.state==='open'?`<button type="button" class="quiet" data-promise="${p.id}" data-close="kept" aria-label="${esc(t('Done: {}',p.what))}">Done</button><button type="button" class="quiet" data-promise="${p.id}" data-close="dropped" aria-label="${esc(t('Not needed: {}',p.what))}">Drop</button>`:''}</div>`;
 const group=(direction,title)=>{const rows=items.filter(p=>p.direction===direction);return rows.length?`<h3 class="promise-head">${title}<span class="count">${rows.length}</span></h3>`+rows.map(row).join(''):''};
-return `<details id="promises-list" ${open?'open':''}><summary><span>Promises</span><span class="count">${items.length}</span></summary>${group('mine','You promised')}${group('theirs','Promised to you')}</details>`}
+return `<details id="promises-list" ${open?'open':''}><summary id="promises-head"><span>Promises</span><span class="count">${items.length}</span></summary>${group('mine','You promised')}${group('theirs','Promised to you')}</details>`}
 // Reviews off (a new install, before --activate or the hosted "Turn it on" step): said on every tab, with the way to turn them on; with cards already there, that they came from the one-time first look.
 const turnOn=()=>state.manage_url?{url:state.manage_url+'#turn-on',action:'Turn on reviews'}:{action:'Run: ./install.sh --activate'};
 function renderNeedsYou(){const items=[...(state.needs_you||[])],manage=state.manage_url;
@@ -4358,7 +4400,7 @@ const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestio
 const foldsBack=foldsKeep($('#suggestions'));
 if(!chatOpen())$('#suggestions').innerHTML=scopeNote(!outstanding.length&&!fleetCards.length&&!loading)+(outstanding.length||fleetCards.length?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+[[ready,'Ready for you','ready'],[needs,'Needs your decision','needs'],[preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes.
-+(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary><span>Done / dismissed</span><span class="count">${doneTotal}</span></summary>${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
++(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary id="later-head"><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary id="finished-head"><span>Done / dismissed</span><span class="count">${doneTotal}</span></summary>${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
 sideCounts={ready:ready.length,needs:needs.length,preparing:preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[ready,'Ready','ready'],[needs.filter(x=>typeof x!=='string'),'To decide','needs'],[preparing,'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]);
 {const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[ready,'Ready','ready'],[needs.filter(x=>typeof x!=='string'),'To decide','needs'],[preparing,'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]))}pageHead();
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
@@ -4392,7 +4434,7 @@ return `<div>${chip(label,saved?'mint':active?'amber':r.pending_count?'orange':'
 renderReviewLive();$('#analyses').innerHTML=clipList('analyses',state.analyses.filter(a=>a.status!=='running'||!(state.review_live?.runs||[]).length).map(a=>{const id='review-'+esc(a.started_at),complete=a.status==='complete',running=a.status==='running',recovered=!complete&&a.remaining_count===0;const count=complete?(a.checked_count??JSON.parse(a.items||'[]').length):JSON.parse(a.items||'[]').length;const status=complete?'Reviewed':running?'Reviewing':recovered?'Recovered':'Retry needed';const detail=complete?(a.summary||'Review saved.'):`${a.last_error?reviewError(a.last_error):running?'Review in progress.':reviewError(null)} ${recovered?'These signals were reviewed in a later run.':!running?`${a.remaining_count??count} still waiting; the review worker will retry them.`:''}`;return `<div>${chip(status,complete||recovered?'mint':running?'amber':'orange')}<span class="grow">${complete?t('{} signals checked',count):running?t('{} signals being reviewed',count):t('{} signals in the original review',count)}</span>${time(a.started_at)}${a.attempts>1?`<small>${esc(t(['Resumed {} time','Resumed {} times'],a.attempts-1))}</small>`:''}${complete&&a.last_error?`<small>${esc(reviewError(a.last_error))} Review recovered and saved.</small>`:''}<details id="${id}" ${expandedReview.has(id)?'open':''}><summary>Review notes</summary><p>${esc(detail)}</p></details></div>`}),$('#review-live').innerHTML?'':'<div class="muted no-reviews">No reviews yet.</div>');
 const deliveryTone=s=>({sent:'mint',delivered:'mint',queued:'lavender',pending:'lavender',uncertain:'amber',failed:'orange'}[s]||'muted');
 $('#deliveries').innerHTML=clipList('deliveries',state.deliveries.map(d=>`<div>${chip(({sent:'Sent',queued:'Waiting to send',uncertain:'Checking delivery',cancelled:'Canceled',previewed:'Preview, not sent'})[d.status]||d.status,deliveryTone(d.status))}<span class="grow">${esc(state.suggestions.find(s=>s.id===d.suggestion_id)?.title||d.suggestion_id)}</span>${time(d.updated_at)}${d.error?`<small class="error">${esc(({gateway_preflight_failed:'OpenClaw unavailable. It retries.',delivery_not_admitted:'OpenClaw blocked this send. It retries.',delivery_outcome_unknown:'Not sure it arrived. Checking before it resends.',interrupted_delivery:'Send interrupted. Checking before it resends.'})[d.error]||d.error)}</small>`:''}${d.needs_edit?'<small>Telegram update pending</small>':''}</div>`),'<div class="muted">No deliveries yet.</div>');renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderShareOffer();renderVoices();renderSkills();
-if(!shownCached){lastOk=Date.now();$('#live').classList.remove('stale');$('#stale-note').hidden=true}$('#updated').innerHTML='<span class="lbl">Updated </span>'+esc(hhmm(shownAt||Date.now()));
+if(!shownCached){lastOk=Date.now();$('#live').classList.remove('stale');$('#stale-note').hidden=true}if(!shownCached&&!kbLanded){kbLanded=true;requestAnimationFrame(()=>kbLand())}/* the page's first focus, once the to-dos are in */$('#updated').innerHTML='<span class="lbl">Updated </span>'+esc(hhmm(shownAt||Date.now()));
 for(const c of state.connectors.filter(c=>![...$('#account').options].some(o=>o.value===c.id))){let o=new Option((c.display_name||c.email)+' · '+service(c.service),c.id);$('#account').add(o)}
 }
 let resultId=null,resultText='';
@@ -4466,7 +4508,7 @@ $('#send-files').innerHTML=draftFileLinks(id,files);
 $('#send-error').textContent=demo?'Demo only. Nothing will be sent.':'';$('#send-confirm').disabled=options.length&&!sendRecipients().length;sendShow();
 }
 const sendRows=rows=>{$('#send-head').innerHTML=rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')};
-const sendBody=(body,signature)=>{$('#send-preview').innerHTML=draftBody(sendDraft||{},body)+(signature?'<span class="sig">\n\n+ your signature</span>':'')};
+const sendBody=(body,signature)=>{const mail=['email','email_demo'].includes(sendDraft?.kind);$('#send-preview').classList.toggle('mail',mail);$('#send-preview').innerHTML=draftBody(sendDraft||{},body)+(signature?mail?'<span class="sig">+ your signature</span>':'<span class="sig">\n\n+ your signature</span>':'')};
 const sendFine=text=>{$('#send-fine').textContent=text;$('#send-fine').hidden=!text};
 let sendFrom=null;
 const sendRecipients=()=>[...document.querySelectorAll('#send-recipients input:checked')].map(x=>x.value);
@@ -4476,7 +4518,91 @@ function openSendLink(){const match=/^#send=([a-f0-9]{16})&revision=([a-f0-9]{12
 // into links; an untouched text sends exactly as drafted.
 const plainDraft=t=>String(t||'').replace(MD_LINK,'$1 ($2)').replace(/\*\*([^*\n]+)\*\*/g,'$1').replace(/__([^_\n]+)__/g,'$1');
 const unplainDraft=(edited,original)=>{let out=edited;for(const m of String(original||'').matchAll(MD_LINK))out=out.split(m[1]+' ('+m[2]+')').join(m[0]);return out};
-function editSend(focus=true){$('#send-subject').value=sendDraft.subject||'';$('#send-body').value=plainDraft(draftText(sendDraft));$('#send-editor').hidden=false;sendHeader(false);$('#send-preview').hidden=true;$('#send-edit').hidden=true;if(focus!==false)$('#send-body').focus()}
+function editSend(focus=true){const mail=sendDraft.kind==='email';$('#send-subject').value=sendDraft.subject||'';$('#send-body-label').hidden=mail;$('#send-rich').hidden=!mail;$('#send-rich-link').hidden=true;
+ if(mail){mailLoad(draftText(sendDraft));if(KB_MAC)for(const[k,v]of[['b','Bold (Ctrl B)'],['i','Italic (Ctrl I)'],['link','Link (Ctrl K)']]){const x=document.querySelector(`[data-mail-tool="${k}"]`);if(x)x.title=t(v).replace('Ctrl ','⌘')}}  /* on a Mac the keys are ⌘ */
+ else $('#send-body').value=plainDraft(draftText(sendDraft));
+ $('#send-editor').hidden=false;sendHeader(false);$('#send-preview').hidden=true;$('#send-edit').hidden=true;if(focus!==false)(mail?mailRich():$('#send-body')).focus()}
+// An email is edited as it will look (bold, italic, lists, links), never as marks or HTML. The editor holds only what
+// an email can carry: a paste or a drop comes in as plain text, and Send reads the page back into the email's marks
+// (mailBody), draws those once more the way the mail will be written (mailHtml) and sends only when both read the same.
+// When they don't, the editor shows what would go out and Send waits for another tap. An untouched draft sends as drafted.
+const mailRich=()=>$('#send-rich-body');
+const mailStyled=(el,k)=>k==='b'?/^(B|STRONG)$/.test(el.tagName)||/^(bold|bolder|[6-9]00)$/.test(el.style.fontWeight):/^(I|EM)$/.test(el.tagName)||el.style.fontStyle==='italic';
+// The page as lines: {type:'line'|'ul'|'ol', start, runs:[{t,b,i,h}]}; a bare address that is its own link counts as text
+// Anything the email can't carry: other blocks (a heading, a quote), media, or text that looks different from its line
+// (a color, a size, underline). Bold, italic and links are carried; their own look is theirs.
+const MAIL_KEEP=/^(DIV|BR|B|STRONG|I|EM|UL|OL|LI|SPAN|FONT|A)$/;
+function mailForeign(el){if(!MAIL_KEEP.test(el.tagName))return true;if(el.tagName==='A')return !/^https:\/\//.test(el.getAttribute('href')||'');if(/^(DIV|BR|UL|OL|LI)$/.test(el.tagName)||!el.isConnected)return false;
+ const c=getComputedStyle(el),p=getComputedStyle(el.parentElement);return ['color','fontSize','fontFamily','textDecorationLine','verticalAlign','letterSpacing'].some(k=>c[k]!==p[k])||!/^(rgba\(0, 0, 0, 0\)|transparent)$/.test(c.backgroundColor)}
+function mailModel(root){const blocks=[];let cur=null,foreign=false;
+ const line=type=>cur||(cur={type,runs:[]});const end=()=>{if(cur)blocks.push(cur);cur=null};
+ const after=n=>{for(let x=n;x&&x!==root&&!/^(DIV|P|LI|UL|OL)$/.test(x.tagName||'');x=x.parentNode)for(let s=x.nextSibling;s;s=s.nextSibling)if(s.nodeType===1||s.data?.trim())return true;return false};
+ const walk=(n,m,type)=>{for(const c of n.childNodes){
+  if(c.nodeType===3){c.data.split('\n').forEach((p,k)=>{if(k){line(type);end()}if(p)line(type).runs.push({t:p.replace(/ /g,' '),...m})});continue}
+  if(c.nodeType!==1)continue;const tag=c.tagName;if(!foreign&&mailForeign(c))foreign=true;
+  if(tag==='BR'){line(type);if(after(c))end();continue}
+  if(tag==='UL'||tag==='OL'){end();let first=true;for(const li of c.children){cur={type:tag.toLowerCase(),runs:[]};if(first&&tag==='OL')cur.start=c.start||1;first=false;walk(li,m,cur.type);line(tag.toLowerCase());end()}continue}
+  if(/^(DIV|P|H[1-6]|BLOCKQUOTE|PRE|LI|TABLE|TR|TD|TH|SECTION|ARTICLE)$/.test(tag)){end();walk(c,m,type);end();continue}
+  const h=tag==='A'&&/^https:\/\//.test(c.getAttribute('href')||'')?c.getAttribute('href'):m.h;
+  walk(c,{b:m.b||mailStyled(c,'b'),i:m.i||mailStyled(c,'i'),h},type)}};
+ walk(root,{b:false,i:false,h:''},'line');end();
+ // Spaces carry no bold or italic (they look the same either way), so a mark never has to open or close on one
+ for(const bl of blocks){const runs=[],add=x=>{if(!x.t)return;const l=runs[runs.length-1];if(l&&l.b===x.b&&l.i===x.i&&l.h===x.h)l.t+=x.t;else runs.push(x)};
+  for(const r of bl.runs){const h=r.h&&r.h!==r.t?r.h:'',m=/^(\s*)([\s\S]*?)(\s*)$/.exec(r.t);add({t:m[1],b:false,i:false,h});add({t:m[2],b:!!r.b,i:!!r.i,h});add({t:m[3],b:false,i:false,h})}
+  bl.runs=runs;if(bl.type==='ol'&&bl.start==null)delete bl.start}
+ blocks.foreign=foreign;return blocks}
+const MAIL_BARE=/https:\/\/[^\s<>]*[^\s<>.,;:!?)\]]/g;
+const mailMarkText=s=>{let out='',at=0;for(const m of s.matchAll(MAIL_BARE)){out+=s.slice(at,m.index).replace(/[\\*_\[\]]/g,'\\$&')+m[0];at=m.index+m[0].length}return out+s.slice(at).replace(/[\\*_\[\]]/g,'\\$&')};
+const mailWrap=(s,mark)=>{const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(s);return m[2]?m[1]+mark+m[2]+mark+m[3]:s};
+// Back into the email's marks: links around bold around italic, so the marks always close in order
+function mailBody(blocks){const italic=rs=>rs.map(r=>r.i?mailWrap(mailMarkText(r.t),'_'):mailMarkText(r.t)).join('');
+ const bold=rs=>{let out='',k=0;while(k<rs.length){const b=rs[k].b,g=[];while(k<rs.length&&rs[k].b===b)g.push(rs[k++]);out+=b?mailWrap(italic(g),'**'):italic(g)}return out};
+ const runs=rs=>{let out='',k=0;while(k<rs.length){const h=rs[k].h,g=[];while(k<rs.length&&rs[k].h===h)g.push(rs[k++]);out+=h?`[${bold(g).replace(/\n/g,' ')}](${h})`:bold(g)}return out};
+ let n=1;return blocks.map((bl,k)=>{const text=runs(bl.runs);
+  if(bl.type==='ul')return '- '+text;if(bl.type==='ol'){n=bl.start!=null?bl.start:n+1;return n+'. '+text}
+  return text.replace(/^- /,'\\- ').replace(/^([0-9]{1,3})\. /,'$1\\. ')}).join('\n')}
+const mailSame=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const mailModelOf=body=>{const d=document.createElement('div');d.innerHTML=mailHtml(body,false);return mailModel(d)};
+let mailStart=null;
+// fresh: the draft as it stands (an untouched editor sends exactly it); else only the page changes, to show what goes out
+function mailLoad(body,fresh=true){const r=mailRich();r.innerHTML=mailHtml(body,false);if(fresh)mailStart=mailModel(r);mailTools()}
+// What goes out from the editor: the draft as it was when nothing changed, else the page read back. null: not the same yet.
+function mailOut(original){const now=mailModel(mailRich());if(!now.foreign&&mailStart&&mailSame(now,mailStart))return original;const body=mailBody(now);
+ if(!now.foreign&&mailSame(mailModelOf(body),now))return body;
+ mailLoad(body,false);$('#send-error').textContent=t('Some formatting can’t go in an email, so it was taken out. Check the message, then send.');return null}
+function mailTools(){const on=document.activeElement===mailRich()||mailRich().contains(document.getSelection()?.anchorNode);
+ for(const b of document.querySelectorAll('[data-mail-tool]')){const k=b.dataset.mailTool;let v=false;
+  if(on)try{v=k==='link'?!!document.getSelection().anchorNode?.parentElement?.closest('#send-rich-body a'):document.queryCommandState({b:'bold',i:'italic',ul:'insertUnorderedList',ol:'insertOrderedList'}[k])}catch{}
+  b.setAttribute('aria-pressed',String(v))}}
+let mailRange=null;
+function mailTool(k){const r=mailRich();r.focus();if(mailRange){const s=getSelection();s.removeAllRanges();s.addRange(mailRange);mailRange=null}
+ if(k==='link'){const a=getSelection().anchorNode?.parentElement?.closest('#send-rich-body a');
+  if(a){const range=document.createRange();range.selectNodeContents(a);const s=getSelection();s.removeAllRanges();s.addRange(range);document.execCommand('unlink');mailTools();return}
+  mailRange=getSelection().rangeCount?getSelection().getRangeAt(0).cloneRange():null;$('#send-rich-link').hidden=false;$('#send-rich-url').value='';$('#send-rich-url').focus();return}
+ document.execCommand({b:'bold',i:'italic',ul:'insertUnorderedList',ol:'insertOrderedList'}[k]);mailTools()}
+// A link is an https address; a bare name.example gets https:// in front. Anything else (javascript:, mailto:…) is refused.
+function mailLinkAdd(){let u=$('#send-rich-url').value.trim();if(u&&!/^[a-z][a-z0-9+.-]*:/i.test(u))u='https://'+u.replace(/^\/+/,'');
+ let ok=false;try{const x=new URL(u);ok=x.protocol==='https:'&&!!x.hostname}catch{}
+ if(!ok){$('#send-rich-url').setCustomValidity(t('Use a web address that starts with https://'));$('#send-rich-url').reportValidity();return}
+ u=u.replace(/[\s()<>]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0'));
+ $('#send-rich-link').hidden=true;const r=mailRich();r.focus();const s=getSelection();if(mailRange){s.removeAllRanges();s.addRange(mailRange)}mailRange=null;
+ if(s.isCollapsed)document.execCommand('insertHTML',false,`<a href="${esc(u)}">${esc(u)}</a>`);else document.execCommand('createLink',false,u);mailTools()}
+$('#send-rich-url').addEventListener('input',e=>e.target.setCustomValidity(''));
+$('#send-rich-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();mailLinkAdd()}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();$('#send-rich-link').hidden=true;mailRich().focus()}});
+$('#send-rich-add').onclick=mailLinkAdd;$('#send-rich-cancel').onclick=()=>{$('#send-rich-link').hidden=true;mailRange=null;mailRich().focus()};
+$('#send-rich').addEventListener('mousedown',e=>{if(e.target.closest('[data-mail-tool]'))e.preventDefault()});  // keeps the selection in the text
+$('#send-rich').addEventListener('click',e=>{const b=e.target.closest('[data-mail-tool]');if(b)mailTool(b.dataset.mailTool)});
+document.addEventListener('selectionchange',()=>{if(!$('#send-rich').hidden)mailTools()});
+{const r=mailRich();
+ r.addEventListener('keydown',e=>{const mod=KB_MAC?e.metaKey&&!e.ctrlKey:e.ctrlKey&&!e.metaKey,k=e.key.toLowerCase();
+  if(e.key==='Enter'&&e.shiftKey){e.preventDefault();document.execCommand('insertParagraph');return}  // one line per line, as the mail writes it
+  if(!mod||e.altKey)return;
+  if(k==='b'||k==='i'){e.preventDefault();mailTool(k);return}
+  if(k==='k'){e.preventDefault();mailTool('link');return}
+  if(k==='u'||(e.shiftKey&&(k==='7'||k==='8'))){e.preventDefault();if(k!=='u')mailTool(k==='7'?'ol':'ul')}});
+ const plain=(e,data)=>{const text=data?.getData('text/plain');e.preventDefault();if(text)document.execCommand('insertText',false,text.replace(/\r\n?/g,'\n'))};
+ r.addEventListener('paste',e=>plain(e,e.clipboardData));r.addEventListener('drop',e=>plain(e,e.dataTransfer));
+ r.addEventListener('input',()=>{$('#send-error').textContent='';mailTools()})}
 $('#send-edit').onclick=()=>editSend();
 // Ask for changes inside the dialog: the same instruction as the card's, and the draft is redone from it.
 $('#send-ask-open').onclick=()=>{$('#send-act').hidden=true;$('#send-ask').hidden=false;$('#send-ask-text').focus()};
@@ -4491,8 +4617,12 @@ $('#theme-toggle').onclick=()=>{chooseTheme(document.documentElement.dataset.the
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',showTheme);
 $('#send-cancel').onclick=()=>$('#send-dialog').close();
 $('#send-confirm').onclick=async()=>{const b=$('#send-confirm');b.disabled=true;try{
-if(!$('#send-editor').hidden){const typed=$('#send-body').value,body=typed===plainDraft(draftText(sendDraft))?draftText(sendDraft):unplainDraft(typed,draftText(sendDraft)),subject=['linkedin','slack','x','whatsapp','intercom','doc_reply','finish'].includes(sendDraft.kind)?undefined:$('#send-subject').value;
-if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:sendTask,revision:sendRevision,body,subject}})});sendRevision=r.revision}}
+if(!$('#send-editor').hidden){const mail=sendDraft.kind==='email',typed=$('#send-body').value,body=mail?mailOut(draftText(sendDraft)):typed===plainDraft(draftText(sendDraft))?draftText(sendDraft):unplainDraft(typed,draftText(sendDraft)),subject=['linkedin','slack','x','whatsapp','intercom','doc_reply','finish'].includes(sendDraft.kind)?undefined:$('#send-subject').value;
+if(body==null){b.disabled=false;return}
+if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:sendTask,revision:sendRevision,body,subject}})});sendRevision=r.revision;
+ // The saved text is what goes out. When saving changed it (a blank line before the name), it shows first and Send waits.
+ if(r.body!=null){sendDraft={...sendDraft,revision:r.revision,...(subject===undefined?{}:{subject}),...(sendDraft.kind==='finish'?{[sendDraft.message?'message':'preview']:r.body}:{body:r.body})};
+  if(r.body.trim()!==body.trim()){if(mail)mailLoad(r.body);else $('#send-body').value=plainDraft(r.body);$('#send-error').textContent=t('Saved with a small change. Check the message, then send.');b.disabled=false;return}}}}
 await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:sendTask,revision:sendRevision,approval_id:crypto.randomUUID(),...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})}})});
 $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':'Sending your approved draft…');await refresh();
 }catch(e){$('#send-error').textContent=e.message;b.disabled=false}};
@@ -4664,7 +4794,7 @@ render();document.querySelector('nav [data-tab="inbox"]').click();
 const c=document.getElementById('task-'+target.id);if(!c)return;
 for(let parent=c.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
 history.replaceState(null,'',location.pathname+location.search);
-c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash')}
+c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');kbFocus(c,false)}
 // Card chat (#chat=<id>): a card's whole story as a conversation, strictly by time: the messages it is about, what the
 // Machine did (its steps folded into one quiet line before each reply) and the drafts it wrote, what you said and
 // what went out. The card's buttons sit in a slim bar above the message box. A message is a Change (the same decide
@@ -4847,7 +4977,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
     const before=prev&&prev.kind===d.kind&&!sent.has(prev.body.trim())&&prev.body!==d.body?chatDiff(prev.body,d.body):null;prev=d;
     const to=d.to.length?' to '+d.to.join(', '):'',what=d.reply?'Reply':d.kind==='email'||d.kind==='email_demo'?'Email':d.kind==='whatsapp'?'WhatsApp':'Message';
     const links=[chatLong(d.body,quiet?2:4)?`<button type="button" class="link" data-unclamp="${dk}">${chatOpenSet.has(dk)?'Less':'Show all'}</button>`:'',before?`<button type="button" class="link" data-unclamp="${dk}:diff">${chatOpenSet.has(dk+':diff')?'Hide changes':'Show what changed'}</button>`:''].filter(Boolean).join('');
-    return `<div class="chat-draft${went||not?' went':''}${last?' current':''}"><div class="chat-draft-head"><span>${what}${esc(to)}</span>${went?(liveSent?'':'<span class="went-tag">Sent</span>'):not?'<span class="went-tag not">Not sent</span>':last||!quiet?'':'<span>Earlier draft</span>'}</div>${d.subject&&!d.reply?`<div class="chat-draft-subject">${esc(d.subject)}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)?' open':''}">${chatMarkdown(d.body)}</div>
+    return `<div class="chat-draft${went||not?' went':''}${last?' current':''}"><div class="chat-draft-head"><span>${what}${esc(to)}</span>${went?(liveSent?'':'<span class="went-tag">Sent</span>'):not?'<span class="went-tag not">Not sent</span>':last||!quiet?'':'<span>Earlier draft</span>'}</div>${d.subject&&!d.reply?`<div class="chat-draft-subject">${esc(d.subject)}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)?' open':''}${d.kind==='email'||d.kind==='email_demo'?' mail-text':''}">${d.kind==='email'||d.kind==='email_demo'?mailHtml(d.body):chatMarkdown(d.body)}</div>
      ${before&&chatOpenSet.has(dk+':diff')?`<div class="chat-diff">${before}</div>`:''}${ls&&(last||liveSent)?chatSendLine(d,ls):''}${links||last&&p.send?`<div class="chat-draft-foot"><span>${links}</span>${last&&p.send?p.lead:''}</div>`:''}</div>`}).join('');
    const head=h?`<div class="chat-result-head"><span class="chat-result-title" translate="no">${format(h.title)}</span></div>${h.rest?`<div class="bubble" translate="no">${clamp(k,chatMarkdown(h.rest),quiet&&chatLong(h.rest,2))}</div>`:''}${chips}${noted}`:'';
    push(i,result(n,i,head+parts+(ds.length?options(n,true):h?options(n,false):''),!h&&ds.length===1))}});
@@ -4997,7 +5127,7 @@ let chatPushed=false;
 function openChatLink(){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
  if(id===chatId)return;const was=chatId;chatId=id;chat=null;chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
- if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatPoll()}else{render();if(was)document.getElementById('task-'+was)?.scrollIntoView({block:'center'})}}
+ if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;
 addEventListener('scroll',()=>{chatScrolledAt=Date.now()},{passive:true});
@@ -5132,7 +5262,7 @@ async function sessionCheck(){if(sessionAsked||!localCache.on&&csrfLive)return;s
 async function refresh(){refreshes++;try{const edits=localEdits,next=wakeSnoozed(await request('api/status',{redirect:'manual'}));if(edits!==localEdits)return await refresh();
  sessionCheck();shownCached=false;shownAt=Date.now();if(localCache.on){const sig=(next.suggestions||[]).map(x=>x.id+x.status).join();if(sig!==statusSig||Date.now()-statusSaved>15000){statusSaved=Date.now();statusSig=sig;localCache.put('status',next)}}
  state=next;cardsMerge();browserPill(state);if(state.source_url)$('#source-code').href=state.source_url;if(uiVersionCheck())return;focusKept(render);deviceRender();sendWatch();openChatLink();openSnoozeLink();openResultLink();openSendLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink();if(!$('#people').hidden)await people(graphNode,true);try{if(!$('#calendar').hidden)calendarView();else calBadge()}catch(e){console.error(e)}if(refreshFailed){notice('');refreshFailed=false}retryIn=0;clearTimeout(retryTimer);return true}catch(e){refreshFailed=true;if(e.sessionGone||e.status===401||e.status===403)await cacheGone(!!e.sessionGone);if(e.offline){notice('');clearTimeout(retryTimer);retryIn=e.retryAfter||Math.min(30000,(retryIn||2500)*2);retryTimer=setTimeout(refreshWhenReady,retryIn)}else notice(e.message,true);staleLine(e.restarting?'Restarting · retrying':shownAt?t('Offline · updated {}',hhmm(shownAt)):'Unavailable');if(!state?.suggestions)$('#suggestions').innerHTML='<div class="empty all-clear"><img class="sticker" src="brand/sad.webp" alt=""><div><strong>I can’t reach the assistant.</strong>I’ll keep trying every 30 seconds.</div></div>',notice('');return false}finally{refreshes--}}
-$('nav').onclick=e=>{const t=e.target.closest('button');if(!t?.dataset.tab)return;for(const b of document.querySelectorAll('nav button[data-tab]')){b.classList.toggle('active',b===t);b.setAttribute('aria-current',b===t?'page':'false')}for(const s of document.querySelectorAll('main>section'))s.hidden=s.id!==t.dataset.tab;if(t.dataset.tab==='people')people(graphNode,!!$('#people-view').innerHTML);if(t.dataset.tab==='health')savedLogins();if(t.dataset.tab==='events'&&!$('#results').innerHTML){$('#results').innerHTML='<p class="muted">Loading…</p>';search()}if(t.dataset.tab==='fleet')fleetShown=fleetView(true);requestAnimationFrame(()=>document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsShow))};
+$('nav').onclick=e=>{const t=e.target.closest('button');if(!t?.dataset.tab)return;for(const b of document.querySelectorAll('nav button[data-tab]')){b.classList.toggle('active',b===t);b.setAttribute('aria-current',b===t?'page':'false')}for(const s of document.querySelectorAll('main>section'))s.hidden=s.id!==t.dataset.tab;if(t.dataset.tab==='people')people(graphNode,!!$('#people-view').innerHTML);if(t.dataset.tab==='health')savedLogins();if(t.dataset.tab==='events'&&!$('#results').innerHTML){$('#results').innerHTML='<p class="muted">Loading…</p>';search()}if(t.dataset.tab==='fleet')fleetShown=fleetView(true);requestAnimationFrame(()=>{document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsShow);kbLand()})};
 // The desktop sidebar (from 1024px): the cards as a quiet list under the tabs, by section, each section folds (Done
 // starts folded) and the fold is remembered; a filter on the titles; the whole sidebar folds to icons.
 const sideStore={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
@@ -6549,7 +6679,7 @@ function graphTabsInner(pane){const g=GRAPH_TABS[pane],shown=g.tabs.filter(([id]
  const tab=shown.some(([id])=>id===graphPick(pane,'tab',''))?graphPick(pane,'tab',''):shown[0][0],sort=g.sorts.some(([id])=>id===graphPick(pane,'sort',''))?graphPick(pane,'sort',''):g.sorts[0][0];
  graphListPager(tab,sort);const label=g.sorts.find(([id])=>id===sort)[1];
  const menu=tab==='warmup'?'':`<details class="graph-sort"><summary aria-label="Order: ${esc(label)}">${esc(label)} <span aria-hidden="true">▾</span></summary><div class="graph-sort-list" role="menu">${g.sorts.map(([id,t])=>`<button type="button" role="menuitemradio" aria-checked="${id===sort}" data-graph-sort="${id}">${esc(t)}</button>`).join('')}<hr><button type="button" role="menuitem" data-graph-csv="${tab}" data-sort="${sort}">Download CSV</button>${graphLocal?'':`<button type="button" role="menuitem" data-crm-import="${pane}">Import CSV…</button>${graphLastImport?`<button type="button" role="menuitem" data-crm-undo-import="${graphLastImport.id}">Undo last import</button>`:''}`}</div></details>`;
- return `<div class="graph-tabbar" data-graph-tabs="${pane}">${subTabs(g.label,'data-graph-list',shown.map(([id,t])=>({id,label:t,badge:graphLists[id]})),tab)}${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmTools(pane,tab)}${menu}</div>${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmActive(pane)}${(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])?`<p class="graph-note muted">${esc(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])}</p>`:''}${pagerSlot(crmKey(tab,sort),crmCount(pane)?'Nothing matches these filters.':g.empty,'graph-list')}`}
+ return `<div class="graph-tabbar" data-graph-tabs="${pane}">${subTabs(g.label,'data-graph-list',shown.map(([id,t])=>({id,label:t})),tab)}${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmTools(pane,tab)}${menu}</div>${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmActive(pane)}${(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])?`<p class="graph-note muted">${esc(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])}</p>`:''}${pagerSlot(crmKey(tab,sort),crmCount(pane)?'Nothing matches these filters.':g.empty,'graph-list')}`}
 function graphTabsPaint(pane){const box=document.querySelector(`[data-graph-panel="${pane}"] [data-graph-box]`);if(!box)return;box.innerHTML=graphTabsInner(pane);pagerMount(box);tabsShow(box.querySelector('.sub-tabs'))}
 $('#people-view').addEventListener('click',e=>{const c=e.target.closest('[data-graph-csv]');if(c){c.closest('details').open=false;graphCsv(c.dataset.graphCsv,c.dataset.sort).catch(err=>toast(err.message,true));return}});
 // A list as a spreadsheet (CSV): every row of the tab, in its order, a page at a time from the Machine. A cell that
@@ -7302,7 +7432,8 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-graph-retry]'))
 document.addEventListener('click',e=>{const item=e.target.closest('.person-menu [role=menuitem]');if(item)item.closest('details').open=false});
 $('nav').addEventListener('click',e=>{const t=e.target.closest('button');if(t?.dataset.tab&&t.dataset.tab!=='people'&&/^#graph[/=]/.test(location.hash))history.replaceState(null,'',location.pathname+location.search);graphSubSync()});
 let graphScroll=null,graphShown='',graphNode='',graphDrawn='',graphRequest=0,editRole=false,graphPane=localStorage.getItem('graph-pane')||'';
-// Sub-tabs, as in Fleet: a pill row over panes that are all drawn at once and shown one at a time.
+// Sub-tabs, as in Fleet: a pill row over panes that are all drawn at once and shown one at a time. A badge only
+// counts what needs the owner (a source with a problem, roles to confirm, friend requests), never a total.
 const subTabs=(label,attr,panes,current)=>`<div class="sub-tabs" role="tablist" aria-label="${esc(label)}">${panes.map(p=>`<button type="button" role="tab" ${attr}="${esc(p.id)}" aria-selected="${p.id===current}"><span class="ell">${esc(p.label)}</span>${p.badge?` <span class="badge${p.warn?' warn':''}">${p.badge}</span>`:''}</button>`).join('')}</div>`;
 function tabsFade(row){const max=row.scrollWidth-row.clientWidth;row.classList.toggle('more-left',row.scrollLeft>2);row.classList.toggle('more-right',row.scrollLeft<max-2)}
 function tabsShow(row){if(!row)return;const t=row.querySelector('[aria-selected="true"]');if(t&&row.scrollWidth>row.clientWidth)row.scrollLeft=Math.max(0,t.offsetLeft-row.offsetLeft-(row.clientWidth-t.offsetWidth)/2);tabsFade(row)}
@@ -8015,7 +8146,7 @@ const ncRead=d=>d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'sh
 function ncDialog(){let d=$('#new-card');if(d)return d;d=document.createElement('dialog');d.id='new-card';d.setAttribute('aria-labelledby','new-card-title');
  d.innerHTML=`<form method="dialog"><div class="snooze-heading"><h2 id="new-card-title">New to-do</h2><button aria-label="Close">×</button></div></form><p class="nc-drop-hint">Drop to add to the to-do</p><div class="chat-tray nc-tray" id="nc-tray" hidden></div><div class="chat-box"><button type="button" class="chat-attach" id="nc-attach" aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="nc-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="nc-text" rows="2" aria-label="${esc(t('What needs doing?'))}" placeholder="${esc(t('What needs doing?'))}" maxlength="2000" enterkeyhint="done"></textarea><div class="chat-tools"><button type="button" class="chat-send" id="nc-add" aria-label="Add the to-do" title="Add the to-do" disabled>${SEND}</button></div></div><div class="nc-chips" id="nc-chips" role="group" aria-label="Optional"></div><div class="nc-pick" id="nc-pick" hidden></div><p class="nc-error" id="nc-error" role="alert"></p><p class="nc-foot"><span>Nothing is sent. I’ll fill in the rest.</span><span class="nc-keys">Enter adds it</span></p>`;
  document.body.append(d);
- const text=$('#nc-text');text.addEventListener('input',()=>{ncReady();text.style.height='auto';text.style.height=Math.min(200,Math.max(48,text.scrollHeight))+'px'});
+ const text=$('#nc-text');text.addEventListener('input',()=>{ncReady();text.style.height='auto';text.style.height=Math.min(200,Math.max(44,text.scrollHeight))+'px'});
  text.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ncCreate()}});
  $('#nc-add').onclick=ncCreate;
  // Files: the paperclip (on a phone also the camera), a pasted screenshot, or a drop on the form
@@ -8351,24 +8482,54 @@ function keysOpen(){let d=$('#keys-sheet');for(const x of document.querySelector
  const row=(keys,label,more='')=>`<p><span>${esc(label)}</span><span class="keys">${kbKeys(keys)}${more}</span></p>`,ctx={card:null,id:'',chat:false};
  const of=g=>ACTIONS.filter(a=>a.group===g&&a.keys&&!a.review&&!a.each&&(!a.when||(()=>{try{return a.when(ctx)}catch{return false}})()||g==='This to-do'||g==='Calendar')).map(a=>row(a.keys,actLabel(a,ctx))).join('');
  d.innerHTML=`<form method="dialog"><div class="snooze-heading"><h2 id="keys-title">Keyboard shortcuts</h2><button aria-label="Close">×</button></div></form><div class="keys-sheet">
- <div><h3>General</h3>${row('mod+k','Search and commands','<span class="then">or</span><kbd>/</kbd>')}${of('Actions')}${row('esc','Close')}</div>
+ <div><h3>General</h3>${row('mod+k','Search and commands','<span class="then">or</span><kbd>/</kbd>')}${of('Actions')}${row('esc','Close a chat or dialog')}</div>
  <div><h3>Go to</h3>${of('Go to')}</div>
  <div><h3>Calendar</h3>${of('Calendar')}${row('←','Previous')}${row('→','Next')}</div>
- <div><h3>Lists and to-dos</h3>${row('j','Next')}${row('k','Previous')}${row('enter','Open')}${of('This to-do')}</div></div>`;
+ <div><h3>Lists and to-dos</h3>${row('j','Next','<span class="then">or</span><kbd>↓</kbd>')}${row('k','Previous','<span class="then">or</span><kbd>↑</kbd>')}${row('enter','Open')}${row('→','Open a folded list')}${row('←','Fold it again')}${of('This to-do')}</div></div>`;
  d.showModal()}
 
-// J/K: the next or previous item in the page's list (cards, events, the Graph's rows); in a chat, the next card.
-const KB_LISTS={inbox:'#suggestions article.card',events:'#results article',people:'#people-view article,#people-view .person-item',fleet:'#fleet-view article'};
+// J/K (or ↓ ↑): the next or previous item in the page's list (cards, events, the Graph's rows); in a chat, the next
+// card. On Suggestions the heads of the folded lists are stops too, so a page with every list folded still has
+// something to land on: → or Enter opens one, ← folds it again.
+const KB_LISTS={inbox:'#suggestions article.card,#suggestions .section-head[data-fold],#suggestions details[id]>summary,#promises-list[open] .promise',events:'#results article',people:'#people-view article,#people-view .person-item',fleet:'#fleet-view article'};
 function kbItems(){const sec=[...document.querySelectorAll('main>section')].find(s=>!s.hidden);if(!sec||!KB_LISTS[sec.id])return [];
- return [...sec.querySelectorAll(KB_LISTS[sec.id])].filter(x=>x.getClientRects().length&&!x.parentElement.closest('article,.person-item'))}
-function kbPick(el){document.querySelector('.kb-on')?.classList.remove('kb-on');kbSel=el||null;if(!el)return;el.classList.add('kb-on');if(!el.hasAttribute('tabindex'))el.tabIndex=-1;el.focus({preventScroll:true});el.scrollIntoView({block:'nearest'})}
+ // shown: laid out, and not inside a folded list (Chrome still lays out a closed <details>' content, hidden)
+ return [...sec.querySelectorAll(KB_LISTS[sec.id])].filter(x=>x.getClientRects().length&&!x.parentElement.closest('article,.person-item')&&!(x.matches('summary')?x.parentElement.parentElement:x).closest('details:not([open])'))}
+function kbPick(el,scroll=true){document.querySelector('.kb-on')?.classList.remove('kb-on');kbSel=el||null;if(!el)return;el.classList.add('kb-on');if(!el.hasAttribute('tabindex'))el.tabIndex=-1;el.focus({preventScroll:true});if(scroll)el.scrollIntoView({block:'nearest'})}
+// Whether the keyboard is in use: the last thing pressed was a key (or nothing yet, on a fresh page), not a tap or click.
+// Only then does a page put focus on its first item and show the ring, so a mouse never sees a ring it didn't ask for.
+var kbInput='';addEventListener('keydown',e=>{if(!/^(Shift|Control|Alt|Meta)$/.test(e.key))kbInput='key'},true);addEventListener('pointerdown',()=>{kbInput='pointer'},true);
+const kbKeyed=()=>kbInput!=='pointer';var kbLanded=false;
+function kbFocus(el,scroll=true){if(!el)return;if(kbKeyed()){kbPick(el,scroll);return}if(!el.hasAttribute('tabindex'))el.tabIndex=-1;el.focus({preventScroll:true})}
+// A page's first focus, from the keyboard: the first to-do (else a folded list's head) on Suggestions, the first row of
+// a list page, else the page's open tab or first button. Never over a dialog, an open chat or something already focused.
+function kbLand(n=0){const a=document.activeElement,sec=[...document.querySelectorAll('main>section')].find(s=>!s.hidden);
+ if(!sec||!kbKeyed()||!matchMedia('(pointer:fine)').matches||document.querySelector('dialog[open]')||chatId&&sec.id==='inbox')return;
+ if(a&&a!==document.body&&!(a.closest?.('nav,.app-side')))return;
+ const xs=kbItems(),first=xs.find(x=>x.matches('article'))||xs[0];if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
+ if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1),200);return}  // the list is still loading
+ const shown=x=>x.getClientRects().length&&!x.disabled;
+ const t=[...sec.querySelectorAll('[role="tab"][aria-selected="true"]')].find(shown)||[...sec.querySelectorAll('button,a[href],summary,[tabindex="0"]')].find(shown);
+ if(t){t.focus({preventScroll:true})}}
 function kbMove(step){if(chatId&&!$('#inbox').hidden){const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')],i=rows.findIndex(a=>a.getAttribute('href')==='#chat='+chatId),n=rows[i+step];
   if(n)chatGo(n.getAttribute('href').slice(6));return}
- const xs=kbItems();if(!xs.length)return;const now=kbSel?.isConnected?xs.indexOf(kbSel):-1;
+ const xs=kbItems();if(!xs.length)return;const a=document.activeElement;if(!kbSel?.isConnected&&xs.includes(a))kbSel=a;  // a redraw that put focus back
+ const now=kbSel?.isConnected?xs.indexOf(kbSel):-1;
  const prev=now<0&&kbSel?.id?xs.findIndex(x=>x.id===kbSel.id):now;kbPick(xs[prev<0?(step>0?0:xs.length-1):Math.max(0,Math.min(xs.length-1,prev+step))])}
-function kbEnter(){kbLive();const el=kbSel;if(!el?.isConnected||document.activeElement!==el)return false;
+function kbEnter(){kbLive();const el=kbSel;if(!el?.isConnected||document.activeElement!==el||el.matches('summary'))return false;  // a summary opens itself
  if(el.id?.startsWith('task-')){chatGo(el.id.slice(5));return true}const t=el.querySelector('[data-graph-open],a[href],button');if(t){t.click();return true}el.click();return true}
-document.addEventListener('focusin',e=>{if(kbSel&&e.target!==kbSel&&!kbSel.contains(e.target)&&!e.target.closest?.('#palette,#keys-sheet')){kbSel.classList.remove('kb-on');kbSel=null}});
+document.addEventListener('focusin',e=>{const t=e.target;
+ if(kbSel&&t!==kbSel&&!kbSel.contains(t)&&!t.closest?.('#palette,#keys-sheet')){kbSel.classList.remove('kb-on');kbSel=null}
+ // focus that comes back to an item (a dialog closing, Tab) picks it, so J/K go on from there
+ if(t!==kbSel&&t.closest?.('#suggestions')&&kbItems().includes(t)){kbSel=t;if(kbKeyed())t.classList.add('kb-on')}});
+// → opens a folded list's head, ← folds it
+function kbFold(el,open){if(!el)return false;if(el.matches('summary')){const d=el.parentElement;if(d.open===open)return false;d.open=open;return true}
+ if(el.matches('.section-head[data-fold]')){if((el.getAttribute('aria-expanded')==='true')===open)return false;toggleSection(el.dataset.fold);return true}return false}
+const kbInChat=()=>!!chatId&&!$('#inbox').hidden;
+// Esc closes the open chat, as its Back does; the card it was about gets focus again
+function kbChatClose(){const b=document.querySelector('#suggestions [data-chat-back]');if(!b)return false;b.click();return true}
+$('#suggestions').addEventListener('keydown',e=>{if(e.key!=='Escape'||e.target.id!=='chat-input'||e.isComposing||e.defaultPrevented)return;e.preventDefault();
+ if(e.target.value.trim()){e.target.blur();return}kbChatClose()});  // with words in the box the first Esc only leaves it
 
 // The keys. Never while typing (a field, a text area, contenteditable), during IME composition, or over another dialog.
 let kbG=0;
@@ -8381,7 +8542,12 @@ document.addEventListener('keydown',e=>{if(e.defaultPrevented||e.isComposing||e.
  if(key==='/'){e.preventDefault();palOpen();return}
  if(key==='?'){e.preventDefault();keysOpen();return}
  if((key==='j'||key==='k')&&$('#calendar').hidden){e.preventDefault();kbMove(key==='j'?1:-1);return}
+ // ↓ ↑ as J K, while the page or a list item has focus (a button in a card keeps its own arrows), not in a chat or the Calendar
+ const onItem=()=>{const a=document.activeElement;return !a||a===document.body||a===kbSel||kbItems().includes(a)};
+ if((key==='ArrowDown'||key==='ArrowUp')&&!e.shiftKey&&$('#calendar').hidden&&!kbInChat()&&onItem()){e.preventDefault();kbMove(key==='ArrowDown'?1:-1);return}
+ if((key==='ArrowRight'||key==='ArrowLeft')&&!e.shiftKey&&kbFold(document.activeElement,key==='ArrowRight')){e.preventDefault();return}
  if(key==='Enter'){if(kbEnter())e.preventDefault();return}
+ if(key==='Escape'&&kbInChat()&&!drawerIs()&&kbChatClose()){e.preventDefault();return}
  if(key==='Escape'&&kbSel){kbPick(null);return}
  if(e.shiftKey||key.length!==1)return;
  const ctx=kbCtx(),a=actsFor(ctx).find(a=>a.keys===key.toLowerCase()&&!a.review&&!a.bound);if(a){e.preventDefault();actRun(a,ctx)}});

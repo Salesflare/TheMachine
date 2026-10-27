@@ -13,13 +13,20 @@ order: 2
 ## Rien ne part sans votre accord
 
 - Une réponse revient sous forme de brouillon. **Vérifier et envoyer** l’ouvre, prête à modifier ; elle ne part que quand vous appuyez sur **Envoyer maintenant**.
-- Le texte est brut : un lien apparaît avec ses mots et l’adresse entre crochets, et repart comme un lien.
+- Un e-mail s’ouvre tel qu’il sera, avec son gras, ses listes et ses liens. Un message Slack ou de chat est du texte brut : un lien apparaît avec ses mots et l’adresse entre crochets, et repart comme un lien.
 - **Demander des modifications** dans la même fenêtre : dites ce qu’il faut changer et votre Machine refait le brouillon.
 - Une réponse répond au dernier e-mail du fil, et la source de la tâche ouvre cet e-mail.
 - Une étape qui engage quelque chose, comme valider, payer ou réserver, s’arrête et attend votre confirmation.
 - Dans le chat d’une tâche, un brouillon n’est jamais envoyé dans le message qui l’a rédigé.
 
 Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Slack, un message WhatsApp, LinkedIn ou X. L’article de chaque connexion dit ce qu’elle peut envoyer.
+
+## Modifier un e-mail
+
+- Utilisez les boutons au-dessus du texte, ou `Ctrl B` pour le gras, `Ctrl I` pour l’italique et `Ctrl K` pour un lien (`⌘` sur un Mac). Des boutons ajoutent aussi une liste à puces ou une liste numérotée.
+- Un lien a besoin d’une adresse qui commence par https://. Le texte collé arrive brut, sans ses couleurs ni ses images.
+- La mise en forme qu’un e-mail ne peut pas porter est retirée avant tout envoi, et le message montre comment il partira. Appuyez de nouveau sur **Envoyer maintenant** pour l’envoyer.
+- L’e-mail part exactement comme affiché, avec une copie en texte brut pour les apps de messagerie qui n’affichent pas la mise en forme.
 
 ## Quand elle ne peut pas
 

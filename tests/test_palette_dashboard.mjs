@@ -118,13 +118,13 @@ try{
   assert.equal(await page.locator('#open-settings').getAttribute('aria-keyshortcuts'),'G Comma');
   assert.equal(await page.locator(`#task-${id(1)} .more-menu [data-rename]`).evaluate(b=>getComputedStyle(b,'::after').content),'"E"');
   assert.equal(await page.locator(`#task-${id(1)} .more-menu [data-rename]`).textContent(),'Rename','the key is not part of its name');
-  // J/K through the cards; S opens the snooze picker for the picked one, E renames, D marks it done
-  const order=await page.evaluate(()=>[...document.querySelectorAll('#suggestions article.card')].map(a=>a.id));
+  // J/K through the cards (and the heads of their lists); S opens the snooze picker for the picked one, E renames, D marks it done
+  const order=await page.evaluate(()=>kbItems().map(a=>a.id));assert.ok(order[0].startsWith('section-'),'a list head is the first stop');
   await page.keyboard.press('j');assert.equal(await page.evaluate(()=>document.activeElement.id),order[0]);
   await page.keyboard.press('j');assert.equal(await page.evaluate(()=>document.activeElement.id),order[1]);
   await page.keyboard.press('k');assert.equal(await page.evaluate(()=>document.activeElement.id),order[0]);
   assert.ok(await page.locator('#'+order[0]).evaluate(a=>a.classList.contains('kb-on')));
-  await page.locator('#task-'+id(1)).focus();await page.keyboard.press('s');await page.locator('#snooze-dialog').waitFor();await page.keyboard.press('Escape');await page.locator('#snooze-dialog').waitFor({state:'hidden'});
+  for(let i=0;i<8&&await page.evaluate(()=>document.activeElement.id)!=='task-'+id(1);i++)await page.keyboard.press('j');await page.keyboard.press('s');await page.locator('#snooze-dialog').waitFor();await page.keyboard.press('Escape');await page.locator('#snooze-dialog').waitFor({state:'hidden'});
   assert.equal(sent('decide').length,0,'S only opens the picker');
   await page.locator('#task-'+id(1)).focus();await page.keyboard.press('e');await page.locator('.rename-box input').waitFor();await page.keyboard.press('Escape');
   await page.locator('#task-'+id(1)).focus();await page.keyboard.press('d');await page.waitForFunction(()=>true);
@@ -132,7 +132,7 @@ try{
   assert.deepEqual([sent('decide')[0].args.suggestion_id,sent('decide')[0].args.choice],[id(1),'complete']);
   // Send-type actions: no key, and from the palette only the Send dialog opens; nothing is confirmed or sent
   await page.locator('#task-'+id(2)).waitFor();await page.locator('body').click({position:{x:700,y:5}});
-  for(let i=0;i<4&&await page.evaluate(()=>document.activeElement.id)!=='task-'+'02'.repeat(8);i++)await page.keyboard.press('j');
+  for(let i=0;i<8&&await page.evaluate(()=>document.activeElement.id)!=='task-'+'02'.repeat(8);i++)await page.keyboard.press('j');
   assert.deepEqual(await page.evaluate(()=>ACTIONS.filter(a=>a.review&&a.keys).map(a=>a.id)),[],'no review action has a key');
   const before=actions.length;await page.keyboard.press('Control+k');await page.keyboard.type('review');
   assert.equal((await labels(page))[0],'Review the email…');await page.keyboard.press('Enter');await page.locator('#send-dialog').waitFor();

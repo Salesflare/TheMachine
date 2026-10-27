@@ -7066,7 +7066,8 @@ class Store:
             db.execute('INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_subject,before_body,after_subject,after_body,source,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                 (uuid.uuid4().hex,suggestion_id,revision,revised['revision'],action['kind'],action.get('subject'),next_actions.draft_text(action),revised.get('subject'),next_actions.draft_text(revised),source,stamp))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
-        return {'status':'revised','revision':revised['revision']}
+        # The text as saved (an email gets a blank line before the name): the dashboard shows it before it sends
+        return {'status':'revised','revision':revised['revision'],'body':next_actions.draft_text(revised),'subject':revised.get('subject')}
 
     def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None):
         with self.connect() as db:

@@ -589,7 +589,7 @@ class Requests(unittest.TestCase):
         handoff = n.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': f'Check {link} please.'}, CONFIG, ['work'])
         self.assertEqual(handoff['body'], 'Check the tax settings (https://vendor.example/tax) please.')
         mail_draft = n.validate({'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Tax', 'body': f'See {link}.'}, CONFIG, ['work'])
-        self.assertEqual(mail_draft['body'], f'See {link}.')  # the send makes it a link (body_html)
+        self.assertEqual(mail_draft['body'], f'See {link}.')  # the send makes it a link (mail_html)
 
     def test_a_preparation_learns_who_is_in_the_fleet_and_how_to_hand_it_to_them(self):
         self.with_kim()

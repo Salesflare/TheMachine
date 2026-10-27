@@ -13,13 +13,20 @@ order: 2
 ## Nothing goes out before your yes
 
 - A reply comes back as a draft. **Review and send** opens it ready to edit; it only goes out when you press **Send now**.
-- The text is plain: a link reads as its words with the address in brackets, and goes out as a link again.
+- An email opens as it will look, with its bold, lists and links. A Slack or chat message is plain text: a link reads as its words with the address in brackets, and goes out as a link again.
 - **Ask for changes** in the same window: say what to change and your Machine redoes the draft.
 - A reply answers the newest email of its thread, and the to-do's source opens that email.
 - A step that commits something, like submit, pay or book, stops and waits for your confirm.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
 
 What it can send depends on the source: an email, a Slack direct message, a WhatsApp, LinkedIn or X message. Each connection's article says what it can send.
+
+## Editing an email
+
+- Use the buttons above the text, or `Ctrl B` for bold, `Ctrl I` for italic and `Ctrl K` for a link (`⌘` on a Mac). There are buttons for a bulleted and a numbered list too.
+- A link needs an address that starts with https://. Pasted text comes in plain, without its colors or pictures.
+- Formatting an email can't carry is taken out before anything is sent, and the message shows how it will go. Press **Send now** again to send it.
+- The email goes out exactly as shown, with a plain-text copy for mail apps that don't show formatting.
 
 ## When it can't
 

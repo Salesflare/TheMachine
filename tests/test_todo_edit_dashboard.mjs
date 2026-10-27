@@ -4,8 +4,8 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Working on a to-do: Ask for changes says what it changes and keeps Review and send in reach; editing a draft shows plain
-// text (links read "words (address)") and sends the links back as links; who it is about opens their page; one a teammate
+// Working on a to-do: Ask for changes says what it changes and keeps Review and send in reach; editing an email shows it
+// as it will look (bold, links) and sends the links back as links; who it is about opens their page; one a teammate
 // has can go to someone else; and one that is preparing stays where it was, at a steady height.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const now=new Date().toISOString(),posts=[];
@@ -59,20 +59,23 @@ try{
   assert.equal(await page.locator('#send-preview a').getAttribute('href'),'https://example.com/pricing');
   assert.doesNotMatch(await page.locator('#send-preview').innerText(),/\]\(|\[the/);
   // Review and send opens in the editor, with Ask for changes beside Send now
-  assert.ok(await page.locator('#send-body').isVisible(),'the draft opens ready to edit');
+  assert.ok(await page.locator('#send-rich-body').isVisible(),'the draft opens ready to edit');
   assert.ok(await page.locator('#send-ask-open').isVisible(),'Ask for changes is in the dialog');
   // Opening it sends nothing: no confirm_action and no "Sending" toast until Send now
   assert.equal(posts.filter(p=>p.action==='confirm_action'||p.action==='revise_draft').length,0,'nothing is sent before Send now');
   assert.equal(await page.locator('#toast.show',{hasText:'Sending your approved draft'}).count(),0);await shot(page,'send-edit-first',width);
-  const edited=await page.locator('#send-body').inputValue();
-  assert.equal(edited,'Hi Noor,\n\nThe price is €29 a seat. See the pricing page (https://example.com/pricing).\n\nAlex');
+  // The editor shows the email as it will look: bold as bold, the link as a link, no marks
+  const rich=page.locator('#send-rich-body');
+  assert.equal(await rich.evaluate(n=>[...n.children].map(c=>c.textContent).join('\n')),'Hi Noor,\n\nThe price is €29 a seat. See the pricing page.\n\nAlex');
+  assert.equal(await rich.locator('b').innerText(),'€29');assert.equal(await rich.locator('a').getAttribute('href'),'https://example.com/pricing');
   // Untouched: sent as drafted, no revision
   await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
   assert.equal(posts.filter(p=>p.action==='revise_draft').length,0);assert.equal(posts.filter(p=>p.action==='confirm_action').at(-1).revision,'v1');
-  // Edited: the link goes back as a link
+  // Edited: the bold stays bold and the link goes back as a link
   await page.locator('#task-r1 [data-smart="v1"]').first().click();await page.locator('#send-dialog[open]').waitFor();
-  await page.locator('#send-body').fill(edited.replace('Alex','Thanks,\nAlex'));await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
-  assert.equal(posts.filter(p=>p.action==='revise_draft').at(-1).body,'Hi Noor,\n\nThe price is €29 a seat. See [the pricing page](https://example.com/pricing).\n\nThanks,\nAlex');
+  await rich.locator('div',{hasText:/^Alex$/}).click();await page.keyboard.press('Home');await page.keyboard.type('Thanks,');await page.keyboard.press('Enter');
+  await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
+  assert.equal(posts.filter(p=>p.action==='revise_draft').at(-1).body,'Hi Noor,\n\nThe price is **€29** a seat. See [the pricing page](https://example.com/pricing).\n\nThanks,\nAlex');
   // and what is sent is exactly the edited text: the revision saved from it, then Send now confirms that revision
   {const i=posts.findLastIndex(p=>p.action==='revise_draft'),j=posts.findLastIndex(p=>p.action==='confirm_action');assert.ok(i>=0&&j===i+1,'revise then confirm');assert.equal(posts[j].revision,'v2')}
   // Ask for changes inside the dialog: the instruction saves as the to-do's Change, and the dialog closes

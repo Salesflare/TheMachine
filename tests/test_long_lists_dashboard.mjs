@@ -85,7 +85,7 @@ async function mainDone(page,label){
 async function graphPage(page,label){
  await page.evaluate(()=>showTab('people','people'));const pane=page.locator('[data-graph-panel="people"]');
  await until(async()=>await pane.locator('.graph-list article').count()===30,'people page 1 '+label);
- assert.deepEqual(await pane.locator('[data-graph-list]').evaluateAll(b=>b.map(x=>x.textContent.replace(/\s+/g,' ').trim())),['All 95','Gone quiet 3'],'tabs with counts, the empty one hidden '+label);
+ assert.deepEqual(await pane.locator('[data-graph-list]').evaluateAll(b=>b.map(x=>x.textContent.replace(/\s+/g,' ').trim())),['All','Gone quiet'],'tabs without totals (a number only means something needs you), the empty one hidden '+label);
  const sort=pane.locator('.graph-sort>summary');assert.equal((await sort.textContent()).replace(/\s+/g,' ').trim(),'Closest ▾');
  const bar=await page.evaluate(()=>{const t=document.querySelector('[data-graph-panel="people"] .sub-tabs').getBoundingClientRect(),s=document.querySelector('[data-graph-panel="people"] .graph-sort').getBoundingClientRect();return {same:Math.abs(t.top-s.top)<12,right:Math.round(innerWidth-s.right)}});
  assert.ok(bar.same,'the order menu sits on the tabs\' row when it fits '+label);

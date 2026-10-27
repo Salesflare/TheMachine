@@ -7,7 +7,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Graph and Connections have sub-tabs like Fleet: a pill row over panes. Links open the right one (#graph=roles,
 // #connections=chat, and the old #people and #health), a source that needs attention shows on its sub-tab, section
-// heads keep their heading on one line, and every tab has the same column width. Graph's tab counts the roles to review. At 390px the row scrolls with a fade.
+// heads keep their heading on one line, and every tab has the same column width. Graph's tab counts the roles to review;
+// a tab shows a number only when something needs the owner (Sign-ins never). At 390px the row scrolls with a fade.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const now=new Date().toISOString(),day=now.slice(0,10);
 const person=(n,i)=>({id:'email:p'+i+'@example.org',kind:'person',name:n,strength:3-i/10,closeness:'regular',last_at:day,signals:4,ids:['p'+i+'@example.org']});
@@ -70,7 +71,9 @@ try{
  // Connections: sources by kind; the one with a failing source shows its count and opens first.
  await page.goto(base);await navClick(page.locator('nav [data-tab="health"]'));await page.locator('#health-tabs [role=tab]').first().waitFor();
  for(let i=0;i<100&&(await tabs(page,'#health-tabs')).length<6;i++)await page.waitForTimeout(20);
- assert.deepEqual(await tabs(page,'#health-tabs'),['Mail and calendar','Chat\n1','Other sources','+ Add','Sign-ins\n1','Reviews']);
+ // A number only where something needs you: Chat has a failing source; a saved sign-in needs nothing, so Sign-ins has none
+ assert.deepEqual(await tabs(page,'#health-tabs'),['Mail and calendar','Chat\n1','Other sources','+ Add','Sign-ins','Reviews']);
+ assert.equal(await page.locator('#health-tabs [data-health-pane="signins"] .badge').count(),0);
  assert.equal(await page.locator('#health-tabs [data-health-pane="chat"] .badge.warn').count(),1);
  assert.equal(await selected(page,'#health-tabs'),'Chat\n1');
  assert.deepEqual(await page.locator('#connectors>article:not([hidden]) h3').allInnerTexts(),['team-chat','wa']);

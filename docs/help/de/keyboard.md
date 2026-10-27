@@ -17,10 +17,18 @@ Auf dem Handy tippst du auf das Suchsymbol in der oberen Leiste.
 Drück `?` für **Tastenkürzel**, die vollständige Liste für deinen Computer.
 
 - Zu einer Seite springen: `G`, dann `S` Vorschläge, `C` Kalender, `E` Termine, `P` Personen, `O` Organisationen, `J` Projekte, `F` Fleet, `B` Feedback, `N` Verbindungen, `,` Einstellungen.
-- `C` legt eine neue Aufgabe an. `J` und `K` bewegen sich durch eine Liste, Enter öffnet.
+- `C` legt eine neue Aufgabe an. `J` und `K` (oder `↓` und `↑`) bewegen sich durch eine Liste, Enter öffnet.
 - Bei einer Aufgabe: `E` benennt sie um, `S` stellt sie zurück, `D` markiert sie als erledigt, `R` schreibt in ihren Chat.
 
 Tasten funktionieren nicht, während du in ein Feld tippst.
+
+## Sich bewegen
+
+- Jede Seite setzt den Fokus auf ihr erstes Element, wenn du mit der Tastatur hinkommst. Bei Vorschläge ist das die erste Aufgabe, oder die erste Liste, wenn alle Listen eingeklappt sind.
+- `J` oder `↓` geht zur nächsten Aufgabe, `K` oder `↑` zur vorherigen. Der Kopf einer eingeklappten Liste ist auch ein Halt: Enter oder `→` öffnet sie, `←` klappt sie wieder ein.
+- Enter auf einer Aufgabe öffnet ihren Chat, bereit zum Schreiben. Esc verlässt das Feld, das nächste Esc schließt den Chat und geht zurück zur Aufgabe. Bei leerem Feld schließt ein Esc ihn.
+- Esc schließt auch einen Dialog, die Palette und die Liste der Tastenkürzel und setzt den Fokus dahin zurück, wo er war.
+- Tab geht durch die Knöpfe. Was den Fokus hat, zeigt einen Ring.
 
 ## Keine Taste sendet etwas
 

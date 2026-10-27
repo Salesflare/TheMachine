@@ -475,7 +475,7 @@ class EmailFormat(unittest.TestCase):
         parts=self.parts(self.email(),'<div dir="ltr">Alex Owner<div><a href="https://example.com">example.com</a></div></div>')
         html,text=parts['text/html'],parts['text/plain']
         self.assertIn('<a href="https://example.com/book">a slot</a>',html);self.assertNotIn('](',html)
-        self.assertIn('Alex<br>\n<br>\n<div class="gmail_signature"><div dir="ltr">Alex Owner',html)
+        self.assertIn('<div>Alex</div>\n<br>\n<div class="gmail_signature"><div dir="ltr">Alex Owner',html)
         self.assertIn('a slot (https://example.com/book)',text);self.assertIn('Alex\n\nAlex Owner\nexample.com',text)
         self.assertNotIn('<b>',text)
     def test_no_signature_when_turned_off_or_on_old_approved_drafts(self):

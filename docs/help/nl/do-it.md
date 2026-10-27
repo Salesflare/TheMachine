@@ -13,13 +13,20 @@ order: 2
 ## Niets gaat weg voor je ja zegt
 
 - Een antwoord komt terug als concept. **Nakijken en versturen** opent het, klaar om te bewerken; het gaat pas weg als je op **Nu versturen** drukt.
-- De tekst is platte tekst: een link staat er als zijn woorden met het adres tussen haakjes, en gaat weer als link weg.
+- Een e-mail opent zoals hij eruit zal zien, met vet, lijsten en links. Een Slack- of chatbericht is platte tekst: een link staat er als zijn woorden met het adres tussen haakjes, en gaat weer als link weg.
 - **Wijzigingen vragen** in hetzelfde venster: zeg wat er anders moet en je Machine maakt het concept opnieuw.
 - Een antwoord reageert op de nieuwste e-mail van de thread, en de bron van de to-do opent die e-mail.
 - Een stap die iets vastlegt, zoals verzenden, betalen of boeken, stopt en wacht op je bevestiging.
 - In de chat van een to-do wordt een concept nooit verstuurd in hetzelfde bericht dat het schreef.
 
 Wat hij kan versturen, hangt af van de bron: een e-mail, een direct bericht in Slack, een bericht op WhatsApp, LinkedIn of X. Het artikel van elke koppeling zegt wat die kan versturen.
+
+## Een e-mail bewerken
+
+- Gebruik de knoppen boven de tekst, of `Ctrl B` voor vet, `Ctrl I` voor cursief en `Ctrl K` voor een link (`⌘` op een Mac). Er zijn ook knoppen voor een opsomming en een genummerde lijst.
+- Een link heeft een adres nodig dat begint met https://. Geplakte tekst komt binnen als platte tekst, zonder kleuren of afbeeldingen.
+- Opmaak die niet in een e-mail kan, gaat eruit voor er iets verstuurd wordt, en het bericht toont hoe het weggaat. Druk nog eens op **Nu versturen** om het te versturen.
+- De e-mail gaat precies zo weg als je hem ziet, met een kopie in platte tekst voor mailapps die geen opmaak tonen.
 
 ## Als het niet lukt
 

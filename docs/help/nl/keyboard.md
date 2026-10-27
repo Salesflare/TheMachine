@@ -17,10 +17,18 @@ Tik op een telefoon op het zoekicoon in de bovenste balk.
 Druk op `?` voor **Sneltoetsen**, de volledige lijst voor je computer.
 
 - Naar een pagina gaan: `G` en dan `S` Suggesties, `C` Agenda, `E` Gebeurtenissen, `P` Personen, `O` Organisaties, `J` Projecten, `F` Fleet, `B` Feedback, `N` Koppelingen, `,` Instellingen.
-- `C` voegt een nieuwe to-do toe. `J` en `K` gaan door een lijst, Enter opent.
+- `C` voegt een nieuwe to-do toe. `J` en `K` (of `↓` en `↑`) gaan door een lijst, Enter opent.
 - Op een to-do: `E` hernoemt hem, `S` snoozet hem, `D` markeert hem als gedaan, `R` schrijft in zijn chat.
 
 Toetsen werken niet terwijl je in een veld typt.
+
+## Rondgaan
+
+- Elke pagina zet de focus op het eerste item als je er met het toetsenbord komt. Op Suggesties is dat de eerste to-do, of de eerste lijst als alle lijsten ingeklapt zijn.
+- `J` of `↓` gaat naar de volgende to-do, `K` of `↑` naar de vorige. De kop van een ingeklapte lijst is ook een stop: Enter of `→` opent hem, `←` klapt hem weer in.
+- Enter op een to-do opent zijn chat, klaar om te typen. Esc verlaat het vak, en de volgende Esc sluit de chat en gaat terug naar de to-do. Met een leeg vak sluit één Esc hem.
+- Esc sluit ook een venster, het palet en de lijst met sneltoetsen, en zet de focus terug waar hij was.
+- Tab gaat door de knoppen. Wat de focus heeft, krijgt een rand.
 
 ## Een toets verstuurt nooit iets
 
