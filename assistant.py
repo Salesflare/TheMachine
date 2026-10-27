@@ -575,7 +575,8 @@ CRM_ACTIONS = {'graph_owner', 'graph_org_merge', 'graph_org_split', 'graph_org_a
 OWNER_ACTIONS |= CRM_ACTIONS
 # Help (help_chat.py) and Report a bug (support.report): the owner's own, from their dashboard only. help_ask answers
 # and changes nothing; bug_send sends only what bug_preview showed, after the owner's tap.
-SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send', 'bug_later', 'bug_queued'}
+# support_access: the owner's switch for Support access on a paired self-hosted Machine (fleet.Fleet.support_access).
+SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send', 'bug_later', 'bug_queued', 'support_access'}
 OWNER_ACTIONS |= SUPPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
@@ -11606,6 +11607,7 @@ class App:
             self.fleet.save_config = self.fleet_save_config
             self.fleet.connector_profile = self.shared_connector_profile
             self.fleet.connect_delivered = self.fleet_connect_delivered  # Sign in with Intercom for this Machine (fleet.py)
+            self.fleet.support_read = self.support_read  # Support access: the team's read, while the owner allows it (fleet.py)
         # Skills (skills.py): the owner's how-tos, written to the OpenClaw workspace; shared ones come in through the Fleet.
         self.skills = skills.Skills(self.store.connect, config.get('openclaw_workspace') or WORKSPACE, self.fleet, config=config)
         self.skills.finder = self.skills_find_start
@@ -16871,6 +16873,17 @@ class App:
             except help_chat.Unavailable as error:
                 raise ValueError(str(error)) from None
         path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
+        if name == 'support_access':
+            if not getattr(self, 'fleet', None):
+                raise ValueError('This Machine isn’t linked to an account.')
+            allow = args.get('allow')
+            try:
+                return self.fleet.support_access(None if allow is None else bool(allow))
+            except (fleet.Off, OSError, ValueError) as error:
+                LOG.info('support access not reached error=%s', type(error).__name__)
+                if allow is None:
+                    return {'until': self.fleet.support_until(), 'hours': self.fleet.SUPPORT_HOURS, 'accesses': [], 'error': True}
+                raise ValueError('Can’t reach your account right now. Try again.') from None
         if name == 'bug_preview':
             return {**support.report(path, doctor=onboarding.doctor), 'paired': bool(getattr(self, 'fleet', None))}
         if name == 'bug_queued':  # the reports still waiting to go out (bug_queue.py)
@@ -16911,6 +16924,16 @@ class App:
         if getattr(self, 'bug_queue_wake', None):
             self.bug_queue_wake.set()
         return {'sent': False, 'queued': True, 'at': item['next_at']}
+
+    def support_read(self, what):
+        """Support access on a paired self-hosted Machine (fleet.Fleet.support_round): the scrubbed support report's lines
+        (logs) or support.snapshot (settings), the same the owner's Report a bug shows, read-only."""
+        import onboarding
+        import support
+        path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
+        if what == 'logs':
+            return {'parts': support.report(path)['parts']}
+        return support.snapshot(path, doctor=onboarding.doctor)
 
     def account_view(self):
         """Settings, Account on a self-hosted Machine paired with the Network: its owner's account in short, from the

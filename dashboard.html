@@ -7574,8 +7574,9 @@ window.machineActions={add:actionAdd,list:()=>actsFor(kbCtx()),open:palOpen};
 // app's own code second, on this Machine's own model, and changes nothing. Report a bug shows the description, the
 // screenshot and the scrubbed support report exactly as they go, and sends them only on Send: a hosted Machine to its
 // account (/_machine/bug, with the owner's sign-in there), a self-hosted one paired with the Network through its app
-// (bug_send). Settings, Security, Support access (hosted): the owner lets The Machine team read logs and settings, read-only,
-// for 24 hours, and sees every time they did.
+// (bug_send). Settings, Security, Support access: the owner lets The Machine team read logs and settings, read-only,
+// for 24 hours, and sees every time they did. Hosted through /_machine/support-access with the owner's sign-in there; a
+// self-hosted one paired with the Network through its app (support_access, fleet.Fleet.support_access), hidden when it isn't.
 // The markup in its own function, so the string check (scripts/i18n_extract.py, area help) reads it
 function helpMarkup(){return `<div class="snooze-heading"><h2 id="help-title">Help</h2><button type="button" data-help-close aria-label="Close">×</button></div>
 <div class="sub-tabs" role="tablist" aria-label="Help"><button type="button" role="tab" data-help-tab="ask" aria-selected="true">Ask</button><button type="button" role="tab" data-help-tab="bug" aria-selected="false">Report a bug</button></div>
@@ -7686,15 +7687,18 @@ SETTINGS_OF['settings-support']='security';
 {const d=document.createElement('div');d.id='settings-support';d.hidden=true;
  d.innerHTML=`<div class="section-head"><h2>Support access</h2><p>Let The Machine team read this Machine’s logs and settings to fix a problem. Read-only, never your messages or keys. <a class="learn" href="https://themachine.computer/help/get-support#support-access" target="_blank" rel="noopener">Learn more</a></p></div><div class="list settings-list"><div><span class="grow"><strong id="sa-state">Off</strong><small id="sa-note">Ends by itself after 24 hours.</small></span><button type="button" class="ghost" id="sa-toggle">Allow for 24 hours</button></div></div><ul class="sa-log" id="sa-log"></ul>`;
  $('#settings-share').after(d)}
-let saAt=0,saData=null;
-async function supportAccessLoad(force){if(!bugHosted()){$('#settings-support').hidden=true;return}if(!force&&Date.now()-saAt<30000)return;saAt=Date.now();
- try{const r=await fetch('/_machine/support-access',{credentials:'same-origin',redirect:'manual'});if(!r.ok)throw Error();saData=await r.json()}catch{saData={error:true}}supportAccessRender()}
-function supportAccessRender(){const d=saData||{},on=!!d.until&&new Date(d.until)>new Date(),b=$('#sa-toggle');$('#settings-support').hidden=!bugHosted();
+let saAt=0,saData=null,saShown=false;
+// A self-hosted Machine asks its app; one that isn't paired answers with an error (4xx) and the section stays hidden
+const saLocal=allow=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'support_access',args:allow===undefined?{}:{allow}})});
+async function supportAccessLoad(force){if(!force&&Date.now()-saAt<30000)return;saAt=Date.now();
+ try{if(bugHosted()){const r=await fetch('/_machine/support-access',{credentials:'same-origin',redirect:'manual'});if(!r.ok)throw Error();saData=await r.json()}else saData=await saLocal();saShown=true}
+ catch(e){saData={error:true};if(!bugHosted()&&e.status>=400&&e.status<500)saShown=false}supportAccessRender()}
+function supportAccessRender(){const d=saData||{},on=!!d.until&&new Date(d.until)>new Date(),b=$('#sa-toggle');$('#settings-support').hidden=!(bugHosted()||saShown);
  $('#sa-state').textContent=d.error?'Can’t check right now':on?'On until '+fmtDHM(d.until,{weekday:'short',month:'short',day:'numeric'}):'Off';
  $('#sa-note').textContent=on?'Read-only. Turn it off any time.':'Ends by itself after 24 hours.';b.textContent=on?'Turn off':'Allow for 24 hours';b.dataset.on=on?'1':'';b.disabled=!!d.error;
- $('#sa-log').innerHTML=(d.accesses||[]).slice(0,10).map(a=>`<li>${esc(a.what)}, ${esc(fmtDHM(a.at,{month:'short',day:'numeric'}))}</li>`).join('')}
+ $('#sa-log').innerHTML=(d.accesses||[]).slice(0,10).map(a=>`<li>${esc(t(a.what))}, ${esc(fmtDHM(a.at,{month:'short',day:'numeric'}))}</li>`).join('')}
 $('#sa-toggle').onclick=async()=>{const b=$('#sa-toggle'),was=!!b.dataset.on;b.disabled=true;
- try{const r=await fetch('/_machine/support-access',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({allow:!was})});if(!r.ok)throw Error();saData=await r.json();toast(was?'Support access is off.':'Support access is on for 24 hours.')}
+ try{if(bugHosted()){const r=await fetch('/_machine/support-access',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({allow:!was})});if(!r.ok)throw Error();saData=await r.json()}else saData=await saLocal(!was);toast(was?'Support access is off.':'Support access is on for 24 hours.')}
  catch{toast('That didn’t work. Try again.',true)}finally{saAt=Date.now();supportAccessRender()}};
 new MutationObserver(()=>{if(!$('#settings').hidden)supportAccessLoad()}).observe($('#settings'),{attributes:true,attributeFilter:['hidden']});
 </script></html>

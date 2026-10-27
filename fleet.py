@@ -1633,6 +1633,10 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         # paired Machine (Sign in with Intercom, started on its own dashboard: connect_start), opened here (connects_round)
         self.connect_delivered = None
         self.connects_due = False
+        # support_read(what) -> {...}: support access, The Machine team's read of this paired Machine's logs or settings
+        # (support.report, support.snapshot), only while its owner allows it here (support_round)
+        self.support_read = None
+        self.support_due = False
         with self.connect() as db:
             ensure(db)
             shared_graph.ensure(db)
@@ -2769,6 +2773,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 LOG.error('shared connectors error=%s', type(error).__name__)
         if found.get('connects'):
             self.connects_due = True  # a sign-in waits for this Machine: picked up right after (connects_round)
+        if found.get('support'):
+            self.support_due = True  # The Machine team asks for a support read: answered right after (support_round)
         for ask in found.get('asks', []):
             if sealing and ask.get('id') and sealing.taken(ask['id']):
                 continue  # taken before: its answer is sent or waits in the outbox, so it's never acted on twice
@@ -3001,6 +3007,69 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             done.append(item['id'])
         return done
 
+    # -- support access (Settings, Security, Support access; the control plane's cloud/support_access.py)
+    SUPPORT_HOURS = 24
+    SUPPORT_READS = ('logs', 'settings')
+    SUPPORT_POLL = 30
+
+    def support_until(self):
+        """Until when the owner allows support access on this Machine, or None. Kept here: the control plane's own
+        record of it only lets it ask; this Machine answers only while this says so."""
+        until = self.meta('support_access_until')
+        current = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+        return until if isinstance(until, str) and until > current else None
+
+    def support_access(self, allow=None):
+        """The owner's switch, from their own dashboard: on for SUPPORT_HOURS, or off. The control plane is told (it
+        audits it and lists it for the team) and says which reads there were. Returns the view for the switch."""
+        if allow is not None:
+            until = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=self.SUPPORT_HOURS)).isoformat(timespec='seconds') if allow else None
+            self.set_meta('support_access_until', until)
+            found = self.relay.call('POST', '/support-access', {'allow': bool(allow)}, timeout=20) or {}
+        else:
+            found = self.relay.call('GET', '/support-access', None, timeout=20) or {}
+        accesses = [{'at': str(a.get('at') or ''), 'what': str(a.get('what') or '')[:80]} for a in found.get('accesses') or []
+                    if isinstance(a, dict)][:50]
+        return {'until': self.support_until(), 'hours': self.SUPPORT_HOURS, 'accesses': accesses}
+
+    def support_round(self):
+        """The team's reads waiting for this Machine: each answered from support_read while the owner allows it here,
+        refused otherwise. Only the reads in SUPPORT_READS; what goes back is scrubbed (support.py) and the control
+        plane scrubs it again."""
+        import time
+        # the inbox says one waits; while the owner allows it, it also looks every SUPPORT_POLL seconds (a Machine in no
+        # Fleet has no inbox)
+        if not self.support_due and not (self.support_until() and time.monotonic() - self.last.get('support', 0.0) > self.SUPPORT_POLL):
+            return []
+        self.support_due = False
+        self.last['support'] = time.monotonic()
+        try:
+            found = self.relay.call('GET', '/support', timeout=30) or {}
+        except (Off, Unavailable, OSError, ValueError):
+            return []
+        done = []
+        for item in (found.get('requests') or [])[:3]:
+            if not isinstance(item, dict) or not isinstance(item.get('id'), str):
+                continue
+            what = item.get('what')
+            if not self.support_until():
+                result = {'refused': 'Support access is off on this Machine.'}
+            elif what not in self.SUPPORT_READS or not self.support_read:
+                result = {'refused': f'This Machine has no {what} read.'}
+            else:
+                try:
+                    result = self.support_read(what)
+                except Exception as error:  # noqa: BLE001 - reported as a code, so the team knows it didn't happen
+                    LOG.error('support read error=%s', type(error).__name__)
+                    result = {'refused': f'The read stopped: {type(error).__name__}'}
+            LOG.info('support read what=%s answered=%s', what, 'refused' not in result)
+            try:
+                self.relay.call('POST', '/support', {'id': item['id'], 'result': result}, timeout=40)
+            except (Off, Unavailable, OSError, ValueError):
+                pass
+            done.append(item['id'])
+        return done
+
     def run(self, stop):
         backoff = away = 0
         while not stop.is_set():
@@ -3013,6 +3082,10 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             except Exception as error:  # noqa: BLE001 - never stops the Fleet
                 LOG.error('connect round error=%s', type(error).__name__)
             try:
+                self.support_round()
+            except Exception as error:  # noqa: BLE001 - never stops the Fleet
+                LOG.error('support round error=%s', type(error).__name__)
+            try:
                 self.step()
                 self.off, backoff, away = False, 0, 0
             except Off:
@@ -3021,7 +3094,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                     self.drop_received()  # out of every Fleet, or it is off for them: shared connectors go (shared_connectors.py)
                 except Exception as error:  # noqa: BLE001 - never stops the Fleet
                     LOG.error('shared connectors error=%s', type(error).__name__)
-                stop.wait(OFF_WAIT)
+                stop.wait(OFF_WAIT if not self.support_until() else self.SUPPORT_POLL)  # support access on: its reads come sooner
             except (Unavailable, OSError) as error:
                 # The relay restarting (502) or the connection cut: normal for a moment, an error only once it lasts.
                 away += 1
