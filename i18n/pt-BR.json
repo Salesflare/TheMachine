@@ -1922,5 +1922,11 @@
  "New or changed signals, without duplicates. Last 24h counts when they were collected, not when they were sent.": "Sinais novos ou alterados, sem duplicados. Nas últimas 24 h conta quando foram coletados, não quando foram enviados.",
  "Last signal {}": "Último sinal {}",
  "next meeting {}": "próxima reunião {}",
- "Last sync: {} failed": "Última sincronização: {} com falha"
+ "Last sync: {} failed": "Última sincronização: {} com falha",
+ "It can’t see or change your data.": "Ele não vê nem altera seus dados.",
+ "How do I snooze a to-do?": "Como faço para adiar uma tarefa?",
+ "Your question": "Sua pergunta",
+ "What you did, what you expected, what happened": "O que você fez, o que esperava, o que aconteceu",
+ "Code: {}": "Código: {}",
+ "Report this bug": "Relatar este bug"
 }
