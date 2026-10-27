@@ -1,7 +1,7 @@
 ---
 title: Google Docs and Word
 area: connections
-summary: Comments, mentions, suggested edits and shares on your Google Docs or Word files. It reads, and posts a comment reply only after you press Post.
+summary: Comments, mentions, suggested edits and shares on your Google Docs or Word files. It reads, and posts a comment reply only when you OK it.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
 ---
@@ -30,13 +30,17 @@ Reading docs needs its own OK, apart from your mail sign-in. Your Gmail and cale
 - Google: read-only access to your Drive files and comments. Posting replies needs one more OK, which you can skip.
 - Microsoft: read access to your files, including the ones shared with you in OneDrive and SharePoint.
 
-Until you give it, the Docs card says **Waiting for your OK to read docs**, with a button to give it.
+If that OK is taken back later, the Docs card says **Waiting for your OK to read docs**.
 
 ## Connect it
 
+On a hosted Machine, Docs shows up under **+ Add** once your setup page offers it.
+
+On your own computer:
+
 1. Connect Gmail or Outlook for the address first.
 2. Open **Connections**, then **+ Add**, pick Docs and enter that address. Or run `assistant connect docs`.
-3. Press **Connect Google Docs** or **Connect Microsoft documents** on its card, and approve.
+3. It checks that your sign-in may read docs. Without that OK it isn't added.
 
 ## Work or personal
 

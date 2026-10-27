@@ -3307,7 +3307,7 @@ if(f.step==='deepen')return `Now the rest of the week: ${f.done} of ${f.total} a
 return `Quiet conversations last: ${f.done} of ${f.total}`}
 // Signing in again and disconnecting: a hosted machine's account page for Google and Microsoft, else here.
 // Docs (connectors/docs.py): its own consent, pressed on the account page (or Add again on a self-hosted Machine)
-const docsConnect=c=>c.service!=='docs'||c.error!=='docs_not_connected'?'Reconnect':c.docs_provider==='microsoft'?'Connect Microsoft documents':'Connect Google Docs';
+const docsConnect=c=>c.service!=='docs'||!/docs_not_connected/.test(c.error||'')?'Reconnect':c.docs_provider==='microsoft'?'Connect Microsoft documents':'Connect Google Docs';
 function reconnectButton(c,label='Reconnect'){return c.account_page?`<a class="head-link" href="${esc(c.account_page)}" target="_blank" rel="noopener">${label} ↗</a>`:c.connect_name?`<button type="button" class="browser-link" data-reconnect="${esc(c.connect_name)}" data-account="${esc(c.id)}">${label}</button>`:''}
 // Work (with its company) or Personal: the owner marks each sign-in. Leaving a Work Fleet removes that company's work
 // accounts from this Machine (work_removal.py); personal ones stay.
@@ -3340,7 +3340,7 @@ return `<article data-group="${healthGroup(c.service)}"><div class="conn-head">$
 <p class="connection-status">${esc(connectorHealth(c).text)}</p>
 ${c.service==='intercom'?`<p class="muted conn-replies">${c.replies_as?`Replies as ${esc(c.replies_as)}, only after you press Send.`:'Reads only. Never replies.'}</p>`:''}
 ${c.service==='salesflare'?'<p class="muted conn-replies">Reads accounts, contacts, emails and meetings. Changes nothing.</p>':''}
-${c.service==='docs'?`<p class="muted conn-replies">${c.docs_provider==='microsoft'?'Word, OneDrive and SharePoint. Reads comments, mentions, tracked changes and shares. Replies stay drafts for you to post in Word.':c.docs_replies?'Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only after you press Post.':'Google Docs. Reads comments, mentions, suggestions and shares. Never writes.'}</p>`:''}
+${c.service==='docs'?`<p class="muted conn-replies">${c.docs_provider==='microsoft'?'Word, OneDrive and SharePoint. Reads comments, mentions, tracked changes and shares. Replies stay drafts for you to post in Word.':'Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only when you OK it.'}</p>`:''}
 ${c.service==='gateway'?'<p class="muted">The Gateway\'s own log, so The Machine notices when it has trouble itself and tells you.</p>':''}
 <div class="figures"><div><b>${(c.total??0).toLocaleString(DL)}</b><span>${unit}</span></div><div><b>${c.signals_24h||0}</b><span>last 24h</span></div><div><b>${c.pending||0}</b><span>not reviewed</span></div></div>
 ${spark(c)}<div class="conn-foot"><small>Last sync ${time(c.last_success,true)}</small>${c.last_sync_signals==null?'':`<small title="New or changed signals, without duplicates. Last 24h counts when they were collected, not when they were sent.">${c.last_sync_signals} in last sync</small>`}</div>

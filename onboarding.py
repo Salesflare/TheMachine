@@ -242,6 +242,8 @@ def catalog(config):
     found = []
     for name in sources():
         service = SERVICES.get(name, name)
+        if service == 'docs' and config.get('manage_url') and not config.get('docs_consent'):
+            continue  # a hosted Machine: Docs waits until its account page offers the Docs consent (assistant.docs_offered)
         setup = setup_of(service) or {}
         found.append({'name': name, 'service': service, 'label': label(service), 'note': setup.get('note'), 'what': setup.get('what'),
                       'connected': have.get(service, 0), 'broker': service in brokered or bool(setup.get('broker')),

@@ -69,11 +69,11 @@ try{
   await page.evaluate(()=>document.querySelector('nav [data-tab="health"]').click());
   await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.textContent.trim()==='Other sources')?.click());
   let health=await page.locator('#health, main').first().textContent();
-  assert.ok(health.includes('Posts a reply only after you press Post.'),'docs card copy');
+  assert.ok(health.includes('Posts a reply only when you OK it.')&&!health.includes('Never writes'),'docs card copy');
   connectors=[docs({error:'docs_not_connected',docs_replies:false,connect_name:'docs'})];
   await page.evaluate(()=>refresh());await page.waitForTimeout(200);
   health=await page.locator('#health, main').first().textContent();
-  assert.ok(health.includes('Waiting for your OK to read docs')&&health.includes('Connect Google Docs')&&health.includes('Never writes.'),'docs consent');
+  assert.ok(health.includes('Waiting for your OK to read docs')&&health.includes('Connect Google Docs')&&health.includes('Posts a reply only when you OK it.'),'docs consent');
   connectors=[docs({error:'docs_not_connected',docs_provider:'microsoft',docs_replies:false,connect_name:'docs'})];
   await page.evaluate(()=>refresh());await page.waitForTimeout(200);
   health=await page.locator('#health, main').first().textContent();

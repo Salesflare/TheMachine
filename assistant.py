@@ -7959,6 +7959,18 @@ def docs_transport(config):
     return next_actions.DocReplyTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Replier') else None
 
 
+def docs_offered(config):
+    """A hosted Machine's account page offers the Docs consent (the control plane sets `docs_consent` once it does).
+    Until then a hosted Machine neither offers Docs under Add nor links to a consent that isn't there."""
+    return not config.get('manage_url') or bool(config.get('docs_consent'))
+
+
+def docs_unset(connector):
+    """A Docs connection that never read anything for want of its consent: no card, since it isn't set up."""
+    return (connector.get('service') == 'docs' and 'docs_not_connected' in str(connector.get('error') or '')
+            and not connector.get('last_success'))
+
+
 def docs_health(config, account, state):
     """A Docs connection on its card: its provider, and whether approved replies post (state.replies, from its syncs)."""
     plugin = load_connector('docs')
@@ -11348,7 +11360,7 @@ def sign_in_help(service, error, manage):
             if manage and site else None}
 
 
-def reconnect_help(account, manage):
+def reconnect_help(account, manage, docs_consent=False):
     """How a connection is signed in again or disconnected from its card: `account_page` when a hosted machine's
     account page holds its sign-in (Google and Microsoft there), else `connect_name`, the Add step that redoes it here."""
     if not account:
@@ -11359,8 +11371,8 @@ def reconnect_help(account, manage):
         return {'shared_by': str(shared.get('fleet_name') or 'your Fleet')}
     if shared:
         return {'connect_name': 'crm' if service == 'salesflare' else service, 'shared_with': str(shared.get('fleet_name') or 'your Fleet')}
-    if manage and service == 'docs':  # its Connect Google Docs or Connect Microsoft documents consent, on the account page
-        return {'account_page': urllib.parse.urljoin(manage, '#docs')}
+    if manage and service == 'docs':  # its Connect Google Docs or Microsoft documents consent, once the account page offers it
+        return {'account_page': urllib.parse.urljoin(manage, '#docs')} if docs_consent else {}
     if manage and account.get('transport') == 'broker':
         return {'account_page': urllib.parse.urljoin(manage, '#microsoft' if service in MICROSOFT_SERVICES else '#source-zoom' if service == 'zoom' else '#google')}
     return {'connect_name': 'crm' if service == 'salesflare' else service}
@@ -12093,9 +12105,10 @@ class App:
             result['browser_link'] = browser_link(self.config)  # the sign-in dialog's way out to the browser itself
             result['needs_you'] = needs_you(self.config)
             by_id = {a['id']: a for a in self.config['accounts']}
+            result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
             for connector in result['connectors']:
                 connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))
-                connector.update(reconnect_help(by_id.get(connector['id']), result['manage_url']))
+                connector.update(reconnect_help(by_id.get(connector['id']), result['manage_url'], docs_offered(self.config)))
                 if result['manage_url']:
                     continue  # a hosted machine: no terminal there, its account page signs in again
                 if 'google_signin_expired' in (connector.get('error') or '') and connector['id'] in by_id:

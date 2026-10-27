@@ -360,3 +360,40 @@ class Reply(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class Hosted(unittest.TestCase):
+    """Until a hosted Machine's account page offers the Docs consent: no Docs under Add, no card, no link to nowhere."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.hosted = {'database': str(Path(tmp.name) / 'events.sqlite'), 'manage_url': 'https://cp.example/account',
+                       'google_broker': {'url': 'https://cp.example/api/google/token'}, 'accounts': [GMAIL, ACCOUNT]}
+
+    def offered(self, config):
+        return 'docs' in {s['service'] for s in onboarding.catalog(config)}
+
+    def test_add_offers_docs_only_where_its_consent_can_be_given(self):
+        self.assertFalse(self.offered(self.hosted))
+        self.assertTrue(self.offered({**self.hosted, 'docs_consent': True}))
+        self.assertTrue(self.offered({k: v for k, v in self.hosted.items() if k != 'manage_url'}))  # self-hosted: Add checks the sign-in
+
+    def test_a_docs_connection_without_its_consent_has_no_card(self):
+        with self.store.connect() as db:
+            db.execute('INSERT INTO checkpoints(account_id,state,error,failures) VALUES(?,?,?,?)', ('acme-docs', '{}', 'docs_not_connected', 1))
+        app = object.__new__(a.App)
+        app.store, app.config = self.store, self.hosted
+        connectors = [c['id'] for c in app.action('status', {})['connectors']]
+        self.assertIn(GMAIL['id'], connectors)
+        self.assertNotIn('acme-docs', connectors)
+        self.assertTrue(a.docs_unset({'service': 'docs', 'error': 'docs_not_connected'}))
+        self.assertFalse(a.docs_unset({'service': 'docs', 'error': 'docs_not_connected', 'last_success': '2026-10-27T08:00:00Z'}))  # it worked: say so
+        self.assertFalse(a.docs_unset({'service': 'gmail', 'error': 'docs_not_connected'}))
+
+    def test_no_link_to_a_consent_the_account_page_does_not_offer(self):
+        manage = self.hosted['manage_url']
+        self.assertNotIn('account_page', a.reconnect_help(ACCOUNT, manage, a.docs_offered(self.hosted)))
+        self.assertEqual(a.reconnect_help(ACCOUNT, manage, a.docs_offered({**self.hosted, 'docs_consent': True}))['account_page'],
+                         'https://cp.example/account#docs')
