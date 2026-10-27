@@ -87,6 +87,13 @@ class Snapshot(unittest.TestCase):
         # the runs that failed lately, not older ones
         self.assertEqual([(f['kind'], f['id'], f['error']) for f in out['failures']], [('review', 'abcdef123456', 'model_timeout')])
 
+    def test_a_model_id_stays_and_a_person_under_primary_does_not(self):
+        out = support._settings({'model': {'primary': 'openrouter/anthropic/claude-x:free'}, 'calendar': {'primary': 'sam@example.org'},
+                                 'owner': {'primary': 'Sam Smith', 'handle': 'openai/gpt-5', 'login': 'github.com/sam'}})
+        self.assertEqual(out['model'], {'primary': 'openrouter/anthropic/claude-x:free'})
+        self.assertEqual(out['calendar'], {'primary': '<redacted>'})
+        self.assertEqual(out['owner'], {'primary': '<redacted>', 'handle': '<redacted>', 'login': '<redacted>'})
+
     def test_a_machine_without_a_database_or_openclaw_still_answers(self):
         self.config.write_text(json.dumps({'database': str(self.root / 'none.sqlite')}))
         with patch.dict('os.environ', {'OPENCLAW_STATE_DIR': str(self.root / 'nowhere')}):
