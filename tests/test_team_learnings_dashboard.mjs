@@ -9,10 +9,13 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // sent, item by item, to edit or remove; an error log only when ticked; Send posts only the kept items as they read;
 // Not now and Never ask; the Settings switches (offer, and voting on other Machines' tips). All mocked, nothing leaves the test. SHOTS=dir saves screenshots.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const C1={given:'a first reply to a customer who has not heard of the owner yet',when:'the owner opens the draft',then:'the draft says who the owner is before the ask'};
+const C2={given:'a cold intro to a new supplier',when:'the owner asks for a draft in chat',then:'it opens with who the owner is and why they write'};
+const C3={given:'the graph rebuild fails on a busy day',when:'the owner opens the to-do for it',then:'it says what failed and when it tries again'};
 const ask=()=>({id:'tl_1',created_at:'2026-10-23T09:00:00+00:00',error:null,items:[
- {n:1,text:'Drafts for people who don’t know the context yet should introduce it first.',example:'A first email to a new supplier opens with who we are and why we write.',area:'drafts',taken:'Took out 2 names.',log:null},
+ {n:1,text:'Drafts for people who don’t know the context yet should introduce it first.',example:'A first email to a new supplier opens with who we are and why we write.',area:'drafts',taken:'Took out 2 names.',log:null,use_cases:[C1,C2]},
  {n:2,text:'People often switch a card’s channel to WhatsApp in chat. A button on the card would save a step.',example:'',area:'chat',taken:'',log:null},
- {n:3,text:'Graph updates fail now and then on a busy day, and the card for it shows nothing.',example:'',area:'graph',taken:'',log:'KeyError: missing key "…"\n  at graph.py:120 build (7 times this week)'}]});
+ {n:3,text:'Graph updates fail now and then on a busy day, and the card for it shows nothing.',example:'',area:'graph',taken:'',use_cases:[C3],log:'KeyError: missing key "…"\n  at graph.py:120 build (7 times this week)'}]});
 let view,posts;
 const reset=()=>{view={offer:true,vote:true,network:true,ask:ask(),last_shared:null};posts=[]};
 const server=createServer(async(req,res)=>{
@@ -54,12 +57,23 @@ try{
   assert.equal(await box.locator('[data-share-log]').isChecked(),false,'off by default');
   assert.equal(await box.locator('#share-named').isChecked(),false);
   assert.equal(await box.locator('[data-share="send"]').textContent(),'Send 3 learnings');
+  // Use cases: situation, action, result, each editable; Remove only while more than one stays
+  assert.equal(await items.nth(0).locator('.share-case').count(),2);
+  assert.equal(await items.nth(0).locator('[data-case-remove]').count(),2);
+  assert.equal(await items.nth(1).locator('.share-case').count(),0,'none, none shown');
+  assert.equal(await items.nth(2).locator('[data-case-remove]').count(),0,'the last one stays');
+  assert.equal(await items.nth(0).locator('.share-case').first().locator('[data-share-case="then"]').inputValue(),C1.then);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
   await shot(box,`edit-${width}-${scheme}`);
   if(shots&&width===1440&&scheme==='light')await page.screenshot({path:`${shots}/edit-${width}-${scheme}-page.png`});
   if(scheme==='light'){
    // Edit the first, remove the second, tick the log on the third: what goes is what it now reads
    await items.nth(0).locator('textarea').first().fill('Drafts for new contacts should introduce the context first.');
+   await items.nth(0).locator('.share-case').first().locator('[data-share-case="then"]').fill('the draft introduces the owner first');
+   await items.nth(0).locator('.share-case').nth(1).locator('[data-case-remove]').click();
+   await items.nth(0).locator('.share-case.removed',{hasText:'Use case removed.'}).waitFor();
+   assert.equal(await items.nth(0).locator('[data-case-remove]').count(),0,'one left: it stays');
+   assert.equal(await items.nth(0).locator('.share-case').first().locator('[data-share-case="then"]').inputValue(),'the draft introduces the owner first','an edit survives the re-render');
    await items.nth(1).locator('[data-share-remove]').click();
    await box.locator('.share-item.removed',{hasText:'Removed. It won’t be sent.'}).waitFor();
    assert.equal(await box.locator('[data-share="send"]').textContent(),'Send 2 learnings');
@@ -68,8 +82,8 @@ try{
    await box.locator('[data-share="send"]').click();
    await page.locator('#toast',{hasText:'Sent 2 learnings. Thank you.'}).waitFor({state:'attached'});
    assert.deepEqual(posts,[{action:'learnings_share',args:{id:'tl_1',named:false,items:[
-    {n:1,text:'Drafts for new contacts should introduce the context first.',example:ask().items[0].example,log:false},
-    {n:3,text:ask().items[2].text,example:'',log:true}]}}]);
+    {n:1,text:'Drafts for new contacts should introduce the context first.',example:ask().items[0].example,log:false,use_cases:[{...C1,then:'the draft introduces the owner first'}]},
+    {n:3,text:ask().items[2].text,example:'',log:true,use_cases:[C3]}]}}]);
    await card.waitFor({state:'detached'});
   }else if(width===1440){
    await box.locator('[data-share="never"]').click();

@@ -35,6 +35,11 @@ and explain why they are needed. The dashboard is plain HTML, CSS and JavaScript
 - Every feature change updates its help article in `docs/help/` in the same pull request (the articles are the help at
   themachine.computer/help). `python3 scripts/help_check.py` names the article a new connector, dashboard tab or Settings
   tab needs, and any button text, route or command an article names that the code no longer has.
+- A change built from a team learning (the control plane's Learnings inbox, a picked learning's **Build brief**) treats
+  its use cases as the reference for what was meant. Add a test per use case where one fits, and check the result
+  against each. The PR body lists every use case with the test that covers it, or says plainly where it falls short:
+  "Use case 2: only partly covered, because …", "Use case 3: not covered, because …", or "doesn't hold up, because …".
+  Never reword a use case to fit what was built, and never drop one quietly.
 - Preserve the separation between collected evidence, owner decisions and approved sends.
   An unknown send outcome must never cause a blind resend.
 - Use reserved example addresses and synthetic content in fixtures and screenshots.

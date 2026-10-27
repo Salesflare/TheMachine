@@ -2937,9 +2937,7 @@ class Store:
             db.execute('CREATE TABLE IF NOT EXISTS merge_effects(action_id TEXT NOT NULL,operation TEXT NOT NULL,receipt TEXT NOT NULL,status TEXT NOT NULL,'
                        'updated_at TEXT NOT NULL,PRIMARY KEY(action_id,operation))')
             db.execute(task_pages.SCHEMA)  # task pages offered or shared from handoffs by email (task_pages.py)
-            for statement in team_learnings.SCHEMA.split(';'):  # learnings for The Machine team (team_learnings.py)
-                if statement.strip():
-                    db.execute(statement)
+            team_learnings.ensure(db)  # learnings for The Machine team (team_learnings.py), with their use cases
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             # Promises the owner made and promises made to them, from reviewed messages. Each is
             # checked when due: still open, it becomes a card (status carded, suggestion_id).

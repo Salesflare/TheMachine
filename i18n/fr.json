@@ -2252,5 +2252,10 @@
  "known to {}": "connu de {}",
  "{} went quiet": "{} ne donne plus de nouvelles",
  "last contact {}": "dernier contact {}",
- "Anyone in touch with {} lately?": "Quelqu’un a-t-il été en contact avec {} récemment ?"
+ "Anyone in touch with {} lately?": "Quelqu’un a-t-il été en contact avec {} récemment ?",
+ "Use cases": "Cas d’usage",
+ "Use case removed.": "Cas d’usage retiré.",
+ "Situation": "Situation",
+ "Action": "Action",
+ "Remove use case": "Retirer le cas d’usage"
 }

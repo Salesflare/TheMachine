@@ -2252,5 +2252,10 @@
  "known to {}": "bekend bij {}",
  "{} went quiet": "{} is stil gevallen",
  "last contact {}": "laatste contact {}",
- "Anyone in touch with {} lately?": "Heeft iemand onlangs contact gehad met {}?"
+ "Anyone in touch with {} lately?": "Heeft iemand onlangs contact gehad met {}?",
+ "Use cases": "Use cases",
+ "Use case removed.": "Use case verwijderd.",
+ "Situation": "Situatie",
+ "Action": "Actie",
+ "Remove use case": "Use case verwijderen"
 }

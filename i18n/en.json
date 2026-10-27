@@ -2252,5 +2252,10 @@
  "known to {}": "known to {}",
  "{} went quiet": "{} went quiet",
  "last contact {}": "last contact {}",
- "Anyone in touch with {} lately?": "Anyone in touch with {} lately?"
+ "Anyone in touch with {} lately?": "Anyone in touch with {} lately?",
+ "Use cases": "Use cases",
+ "Use case removed.": "Use case removed.",
+ "Situation": "Situation",
+ "Action": "Action",
+ "Remove use case": "Remove use case"
 }

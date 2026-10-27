@@ -20,6 +20,8 @@ spec = importlib.util.spec_from_file_location('learnings_assistant', Path(__file
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 
+CASE = {'given': 'a first reply to a customer who has not heard of the owner yet', 'when': 'the owner opens the draft',
+        'then': 'the draft says who the owner is before the ask'}
 PERSONAL = ('Sam Lee', 'Globex', 'sam@globex.example', 'Office move', 'https://globex.example/deal', '+32 470 12 34 56')
 
 
@@ -79,7 +81,9 @@ class TeamLearnings(unittest.TestCase):
     fresh = True
 
     def distil(self, learnings):
-        """One learnings run, as the turn does it: started by the service, read, saved, finished."""
+        """One learnings run, as the turn does it: started by the service, read, saved, finished. A learning without
+        use_cases gets the generic CASE, as the turn is asked to write one or more."""
+        learnings = [{**item, 'use_cases': [CASE]} if isinstance(item, dict) and 'use_cases' not in item else item for item in learnings]
         run_id = self.store.learnings_due()
         self.assertTrue(run_id)
         session = a.PROFILE_SESSION_PREFIX + run_id
@@ -90,6 +94,7 @@ class TeamLearnings(unittest.TestCase):
             if request['action'] == 'start':
                 self.assertIn('Nothing personal', request['message'])
                 self.assertIn('Judge by what the notes mean', request['message'])
+                self.assertIn('use_cases: 1 to 3', request['message'])
                 self.store.save_profile({'learnings': learnings}, session)
                 return {'status': 'admitted'}
             return {'status': 'ok'}
@@ -298,6 +303,90 @@ class TeamLearnings(unittest.TestCase):
         self.assertFalse(self.app.action('set_learnings_vote', {'on': False}, owner_dashboard=True)['team_learnings']['vote'])
         self.assertIsNone(self.votes([{'id': 'c1', 'ref': 'tl_x00000000', 'text': 'Drafts should introduce the context first.'}], lambda p: []))
         self.assertEqual(self.network.sent, [])
+
+    # ------------------------------------------------------------ use cases
+
+    def test_use_cases_are_stripped_and_checked_before_they_leave(self):
+        with self.store.connect() as db:
+            names = tl.known_names(db, {'accounts': self.store.accounts})
+        self.assertEqual(tl.check_case(CASE, names), (CASE, []))
+        # Product and screen names may stay capitalized mid-sentence; a sentence may start with a capital
+        fine = {'given': 'A customer writes on WhatsApp on a Friday', 'when': 'the owner taps Snooze in Settings of The Machine',
+                'then': 'the to-do comes back on Monday. Nothing else changes'}
+        self.assertEqual(tl.check_case(fine, names)[1], [])
+        for field, bad, problem in (('given', 'a reply to Sam Lee about the deal', 'name'),
+                                    ('given', 'a reply to Initech about the deal', 'name'),  # a company the graph doesn't know yet
+                                    ('when', 'the owner writes "see you at the office then"', 'quote'),
+                                    ('when', 'the owner mails sam@globex.example', 'address'),
+                                    ('then', 'the invoice of €1,200 goes out', 'amount'),
+                                    ('then', 'it is sent on 2026-10-30', 'date'),
+                                    ('then', 'the owner checks https://globex.example/deal', 'link')):
+            case, problems = tl.check_case({**CASE, field: bad}, names)
+            self.assertIn(problem, problems, bad)
+        # What the turn wrote: names are stripped; one that still isn't generic is left out, and the owner is told
+        cases, taken = tl.clean_cases([{**CASE, 'given': 'a first reply to Sam Lee at Globex'},
+                                       {**CASE, 'when': 'the owner writes “hi there, long time”'},
+                                       {**CASE, 'given': 'a reply in Initech’s thread'}, CASE, CASE,
+                                       {'given': 'x', 'when': 'y', 'then': 'z'}], names)
+        self.assertEqual([c['given'] for c in cases], ['a first reply to someone at a company', CASE['given']])
+        self.assertEqual(tl.taken_line(taken), 'Took out 2 names and 2 use cases.')
+        for bit in PERSONAL + ('Initech', 'long time'):
+            self.assertNotIn(bit, json.dumps(cases))
+
+    def test_a_learning_carries_its_use_cases_to_the_team_as_the_owner_kept_them(self):
+        other = {'given': 'a colleague asks for a status update in chat', 'when': 'the owner opens the to-do',
+                 'then': 'the draft starts with the status, not a greeting'}
+        ask = self.distil([
+            {'text': 'Drafts for people who don’t know the context yet should introduce it first.', 'area': 'drafts',
+             'use_cases': [CASE, {**other, 'then': 'the owner says “ok” and moves on'}, other]},
+            {'text': 'A learning without any use case says too little to build from.', 'use_cases': []}])
+        self.assertEqual(len(ask['items']), 1)  # the one without a use case is dropped
+        item = ask['items'][0]
+        self.assertEqual(item['use_cases'], [CASE, other])  # the quoted one is left out
+        self.assertEqual(item['taken'], 'Took out a use case.')
+        share = lambda cases: self.app.action('learnings_share', {'id': ask['id'], 'items': [{'n': 1, 'use_cases': cases}]}, owner_dashboard=True)
+        with self.assertRaisesRegex(ValueError, 'use case 1: write it generically'):
+            share([{**CASE, 'given': 'a first reply to Initech'}])
+        with self.assertRaisesRegex(ValueError, 'use case 2: take out an address first'):
+            share([CASE, {**other, 'when': 'the owner mails owner@globex.example'}])
+        with self.assertRaisesRegex(ValueError, 'keep at least one use case'):
+            share([])
+        with self.assertRaisesRegex(ValueError, 'fill in all three parts'):
+            share([{**CASE, 'then': ''}])
+        self.assertEqual(self.network.sent, [])
+        edited = {**other, 'then': 'the draft opens with the status'}
+        share([edited])  # the owner kept one, edited
+        self.assertEqual(self.network.opened()['items'][0]['use_cases'], [edited])
+        self.assertNotIn('status', json.dumps(self.network.sent[0]))  # sealed like the learning itself
+
+    def test_a_vote_carries_its_own_use_case_and_counts_without_one(self):
+        their = {'given': 'a supplier sends a second reminder', 'when': 'the owner opens the to-do', 'then': 'the draft mentions the first reminder'}
+        page = self.votes([
+            {'id': 'c1', 'ref': 'tl_other00000', 'text': 'Drafts for people who don’t know the context yet should introduce it first.', 'area': 'drafts',
+             'use_cases': [CASE, {**CASE, 'given': 'a reply to Initech'}]},
+            {'id': 'c2', 'ref': 'tl_other00001', 'text': 'Reminders should say how many came before.', 'area': 'drafts', 'use_cases': [their]},
+            {'id': 'c3', 'ref': 'tl_other00002', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'}],
+            lambda page: [{'id': 'c1', 'vote': 'useful', 'use_case': {'given': 'a first mail to a new partner', 'when': 'the owner opens the draft',
+                                                                    'then': 'it introduces the owner first'}},
+                          {'id': 'c2', 'vote': 'not_useful', 'use_case': {**their, 'given': 'Sam Lee sends a second reminder'}},
+                          {'id': 'c3', 'vote': 'not_relevant'}])
+        self.assertEqual([r['use_cases'] for r in page['learnings']], [[CASE], [their], []])  # one that isn't generic never reaches the turn
+        self.assertIn('"use_case"', tl.vote_prompt('r', page))
+        votes = {b['id']: b for b in self.network.sent if b['action'] == 'vote'}
+        self.assertEqual(votes['c1']['use_case']['then'], 'it introduces the owner first')
+        self.assertNotIn('use_case', votes['c2'])  # a name in it: dropped, the vote still goes
+        self.assertEqual(votes['c2']['vote'], 'not_useful')
+        self.assertNotIn('use_case', votes['c3'])
+
+    def test_an_older_votes_table_gets_the_use_case_columns(self):
+        import sqlite3
+        db = sqlite3.connect(':memory:')
+        db.execute('CREATE TABLE team_learning_votes(candidate_id TEXT PRIMARY KEY,ref TEXT,text TEXT NOT NULL,example TEXT,area TEXT,'
+                   'status TEXT NOT NULL,vote TEXT,reason TEXT,fetched_at TEXT NOT NULL,sent_at TEXT,error TEXT)')
+        tl.ensure(db)
+        tl.ensure(db)  # twice is fine
+        columns = {r[1] for r in db.execute('PRAGMA table_info(team_learning_votes)')}
+        self.assertTrue({'use_cases', 'use_case'} <= columns)
 
 
 if __name__ == '__main__':
