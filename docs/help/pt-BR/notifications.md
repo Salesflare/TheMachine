@@ -24,7 +24,7 @@ Como o Slack, ele vê se você está usando o painel, não só se ele está aber
 
 - Em uso: o painel está na sua frente, em foco, e você clicou, digitou, rolou ou tocou nele nos últimos 10 minutos. Nada vibra. O Telegram chega sem som.
 - Longe: o painel está em segundo plano, minimizado, fechado ou parado há 10 minutos. Um push sai um minuto depois que você deixou o painel, a menos que você volte e veja antes.
-- Ainda não visto 15 minutos depois: um único e-mail com tudo o que ainda espera por você. No máximo um por hora. O que você resolveu nesse meio-tempo, no Telegram ou em outro lugar, fica de fora.
+- Ainda não visto 15 minutos depois: um único e-mail com tudo o que ainda espera por você. No máximo um por hora. O que você resolveu nesse meio-tempo, no Telegram ou em outro lugar, fica de fora. Usar o painel depois que algo chegou conta como ter visto, então um dia no painel pode não ter nenhum e-mail.
 - Fora do seu horário de trabalho: nada. O resumo da manhã traz o que chegou.
 
 Só notifica o que precisa de você. Andamento e edições não. Várias de uma vez vibram uma vez só. O ícone do app mostra quantas tarefas precisam de você.

@@ -24,7 +24,7 @@ Net als Slack kijkt het of je het dashboard gebruikt, niet alleen of het open st
 
 - In gebruik: het dashboard staat voor je, in focus, en je klikte, typte, scrolde of tikte erop in de laatste 10 minuten. Er trilt niets. Telegram komt zonder geluid binnen.
 - Weg: het dashboard staat op de achtergrond, is geminimaliseerd of gesloten, of is 10 minuten niet gebruikt. Een push gaat een minuut nadat je wegging, tenzij je terugkwam en het eerst zag.
-- 15 minuten later nog niet gezien: één e-mail met alles wat nog op je wacht. Hoogstens één per uur. Wat je intussen afhandelde, op Telegram of elders, staat er niet in.
+- 15 minuten later nog niet gezien: één e-mail met alles wat nog op je wacht. Hoogstens één per uur. Wat je intussen afhandelde, op Telegram of elders, staat er niet in. Het dashboard gebruiken nadat iets binnenkwam, telt als gezien. Op een dag aan het dashboard komt er dus soms geen enkele e-mail.
 - Buiten je werkuren: niets. Het ochtendoverzicht bevat wat er binnenkwam.
 
 Alleen wat jou nodig heeft, geeft een melding. Voortgang en wijzigingen niet. Een reeks meldingen trilt één keer. Het icoon van de app toont hoeveel to-do's jou nodig hebben.

@@ -24,7 +24,7 @@ Wie Slack schaut es, ob du das Dashboard benutzt, nicht nur, ob es offen ist:
 
 - In Benutzung: Das Dashboard ist vor dir, im Fokus, und du hast in den letzten 10 Minuten geklickt, getippt, gescrollt oder es berührt. Nichts vibriert. Telegram kommt ohne Ton an.
 - Weg: Das Dashboard ist im Hintergrund, minimiert, geschlossen oder seit 10 Minuten unbenutzt. Ein Push geht eine Minute, nachdem du es verlassen hast, raus, außer du kommst zurück und siehst es vorher.
-- 15 Minuten später noch ungesehen: eine E-Mail mit allem, was noch auf dich wartet. Höchstens eine pro Stunde. Was du inzwischen erledigt hast, auf Telegram oder anderswo, fehlt darin.
+- 15 Minuten später noch ungesehen: eine E-Mail mit allem, was noch auf dich wartet. Höchstens eine pro Stunde. Was du inzwischen erledigt hast, auf Telegram oder anderswo, fehlt darin. Wer das Dashboard nutzt, nachdem etwas hereinkam, hat es gesehen. An einem Tag am Dashboard kommt also womöglich gar keine E-Mail.
 - Außerhalb deiner Arbeitszeiten: nichts. Die morgendliche Zusammenfassung enthält, was reinkam.
 
 Nur was dich braucht, benachrichtigt. Fortschritt und Änderungen nicht. Viele auf einmal vibrieren nur einmal. Das App-Symbol zeigt, wie viele Aufgaben dich brauchen.

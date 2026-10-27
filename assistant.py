@@ -11041,6 +11041,7 @@ def hold_mail(store, config, kind, title, ref, work=False):
         if not notify.allowed(db, kind, 'email'):
             return False
         notify.hold(db, 'email', kind, title, time.time() + notify.EMAIL_AFTER, ref=ref, show=security_levels.notify_text(db, work))
+    LOG.info('notify email held kind=%s ref=%s', kind, ref)
     return True
 
 
@@ -14150,6 +14151,8 @@ class App:
                 except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
                     LOG.warning('digest telegram error=%s', type(error).__name__)
             target = prefs.get('email') and self.notify_mail_target()
+            if prefs.get('email') and not target:
+                LOG.info('digest email skipped reason=not_paired')
             if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
                 went.append('email')
         with self.store.connect() as db:

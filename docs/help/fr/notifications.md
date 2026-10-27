@@ -24,7 +24,7 @@ Comme Slack, il regarde si vous utilisez le tableau de bord, pas seulement s’i
 
 - En cours d’utilisation : le tableau de bord est devant vous, au premier plan, et vous avez cliqué, tapé, fait défiler ou touché l’écran dans les 10 dernières minutes. Rien ne vibre. Telegram arrive sans son.
 - Absent : le tableau de bord est en arrière-plan, réduit, fermé ou inactif depuis 10 minutes. Un push part une minute après que vous l’avez quitté, sauf si vous revenez et le voyez avant.
-- Toujours pas vu 15 minutes plus tard : un seul e-mail avec tout ce qui vous attend encore. Au plus un par heure. Ce que vous avez traité entre-temps, sur Telegram ou ailleurs, n’y figure pas.
+- Toujours pas vu 15 minutes plus tard : un seul e-mail avec tout ce qui vous attend encore. Au plus un par heure. Ce que vous avez traité entre-temps, sur Telegram ou ailleurs, n’y figure pas. Utiliser le tableau de bord après l’arrivée d’un élément compte comme l’avoir vu : une journée passée sur le tableau de bord peut donc n’envoyer aucun e-mail.
 - En dehors de vos heures de travail : rien. Le récap du matin contient ce qui est arrivé.
 
 Seul ce qui a besoin de vous envoie une notification. Pas les avancées ni les modifications. Une rafale ne vibre qu’une fois. L’icône de l’app montre combien de tâches ont besoin de vous.

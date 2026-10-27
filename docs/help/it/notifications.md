@@ -24,7 +24,7 @@ Come Slack, guarda se stai usando la dashboard, non solo se è aperta:
 
 - In uso: la dashboard è davanti a te, in primo piano, e negli ultimi 10 minuti hai cliccato, scritto, scorso o toccato. Non vibra niente. Telegram arriva senza suono.
 - Assente: la dashboard è in secondo piano, ridotta a icona, chiusa o inattiva da 10 minuti. Una push parte un minuto dopo che l'hai lasciata, a meno che tu non torni e la veda prima.
-- Ancora non vista dopo 15 minuti: una sola email con tutto ciò che ti aspetta ancora. Al massimo una all'ora. Ciò che hai gestito nel frattempo, su Telegram o altrove, resta fuori.
+- Ancora non vista dopo 15 minuti: una sola email con tutto ciò che ti aspetta ancora. Al massimo una all'ora. Ciò che hai gestito nel frattempo, su Telegram o altrove, resta fuori. Usare la dashboard dopo che qualcosa è arrivato conta come averlo visto: in una giornata passata sulla dashboard può non arrivare nessuna email.
 - Fuori dal tuo orario di lavoro: niente. Il riepilogo del mattino contiene ciò che è arrivato.
 
 Notifica solo ciò che ha bisogno di te. Avanzamenti e modifiche no. Una raffica vibra una volta sola. L'icona dell'app mostra quante attività hanno bisogno di te.
