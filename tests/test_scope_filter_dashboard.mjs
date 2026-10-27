@@ -71,6 +71,7 @@ try{
   await note(page).waitFor();
   assert.equal((await note(page).innerText()).replace(/\s+/g,' ').trim(),lang==='nl'?"Geen privé-to-do's · Alles tonen":'No personal to-dos · Show all');
   assert.equal(await page.locator('#suggestions .all-clear').count(),0);
+  if(width>=1440)assert.equal(await page.locator('#page-head .page-sub').count(),0,'no All clear while a filter hides the rest');
   assert.deepEqual(saved,[],'a Machine that has a filter is never overwritten by a browser');
   await shot(page,`${lang}-${width}x${height}-personal-empty`);
   await context.close();suggestions[2].status='pending';
