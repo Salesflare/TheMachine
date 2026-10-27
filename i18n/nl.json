@@ -2320,5 +2320,6 @@
  "Send error reports": "Foutrapporten sturen",
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Als er iets misgaat, stuur ik wat er misging en waar in de code. Nooit je berichten, namen of adressen.",
  "I’ll send error reports.": "Ik stuur foutrapporten.",
- "I won’t send error reports.": "Ik stuur geen foutrapporten."
+ "I won’t send error reports.": "Ik stuur geen foutrapporten.",
+ "Couldn’t load this page.": "Deze pagina kon niet laden."
 }

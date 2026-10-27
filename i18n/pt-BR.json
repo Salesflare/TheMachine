@@ -2320,5 +2320,6 @@
  "Send error reports": "Enviar relatórios de erro",
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Quando algo quebra, envio o que falhou e onde no código. Nunca suas mensagens, nomes ou endereços.",
  "I’ll send error reports.": "Vou enviar relatórios de erro.",
- "I won’t send error reports.": "Não vou enviar relatórios de erro."
+ "I won’t send error reports.": "Não vou enviar relatórios de erro.",
+ "Couldn’t load this page.": "Não foi possível carregar esta página."
 }

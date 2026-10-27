@@ -2320,5 +2320,6 @@
  "Send error reports": "Send error reports",
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.",
  "I’ll send error reports.": "I’ll send error reports.",
- "I won’t send error reports.": "I won’t send error reports."
+ "I won’t send error reports.": "I won’t send error reports.",
+ "Couldn’t load this page.": "Couldn’t load this page."
 }

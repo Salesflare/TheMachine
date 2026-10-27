@@ -9251,14 +9251,21 @@ def source_line(rows):
     if not rows:
         return None
     first = rows[0]  # The reviewer's main evidence (callers keep its order).
-    m = first['metadata'] if isinstance(first['metadata'], dict) else json.loads(first['metadata'])
+    more = [r for r in rows[1:] if r['kind'] != 'fleet.request']  # a Fleet request's own event is the card's text, not another source
+    return 'Source: ' + source_text(first) + (f' (+{len(more)} more)' if more else '')
+
+
+def source_text(row):
+    """What a signal is, who it is from and when ("email from Sam Lee · Mon 20 Oct"), for any kind, the owner's own
+    to-do (owner.card) too."""
+    when = locale_prefs.day_text(dt.datetime.fromisoformat(row['occurred_at']).astimezone(local_tz()))
+    if row['kind'] == 'owner.card':
+        return f'to-do the owner added · {when}'
+    m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
     who = (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')
            or (('#' + m['channel_name']) if m.get('channel_name') else '') or (m.get('crm_account') or {}).get('name') or '')
     who = re.sub(r'\s*<[^>]+>', '', str(who)).strip().strip('"') or None
-    when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()))
-    line = 'Source: ' + source_kind(first['kind']) + (f' from {who}' if who else '') + f' · {when}'
-    more = [r for r in rows[1:] if r['kind'] != 'fleet.request']  # a Fleet request's own event is the card's text, not another source
-    return line + (f' (+{len(more)} more)' if more else '')
+    return source_kind(row['kind']) + (f' from {who}' if who else '') + f' · {when}'
 
 
 def delivery_time(when, digest_at='08:30', current=None, work=False, urgent=False):
@@ -16441,8 +16448,16 @@ class App:
             return ''
 
     def graph_event_lines(self, event_ids):
+        """One line per signal, newest first: "<id> (<account>) <what, from whom, when> · <title>". A signal that can't be
+        read is logged and left out, so one odd event never fails a whole page."""
         rows = self.store.events([a['id'] for a in self.config['accounts']], event_ids=list(event_ids)) if event_ids else []
-        return [f"{r['id']} ({r['account_id']}) {source_line([r])[8:]} · {clamp(' '.join(r['title'].split()), 100)}" for r in sorted(rows, key=lambda r: r['occurred_at'], reverse=True)]
+        lines = []
+        for r in sorted(rows, key=lambda r: str(r['occurred_at'] or ''), reverse=True):
+            try:
+                lines.append(f"{r['id']} ({r['account_id']}) {source_text(r)} · {clamp(' '.join(str(r['title'] or '').split()), 100)}")
+            except (ValueError, KeyError, TypeError, AttributeError) as error:
+                LOG.warning('graph event line skipped event=%s error=%s', r.get('id') if isinstance(r, dict) else '?', type(error).__name__)
+        return lines
 
     def graph_share_action(self, name, args, owner_dashboard=False):
         """The owner's Shared Graph controls, from the dashboard (and Telegram's owner chat through graph share)."""
@@ -16863,8 +16878,14 @@ class App:
                                                 where, ' '.join(' '.join(said).split()) if said else '']))
                 row['preview'] = line[:240] + ('…' if len(line) > 240 else '')
             return row
-        items = [x for x in map(row_for, found['items']) if x]
-        found['upcoming'] = [x for x in map(row_for, found.get('upcoming', [])) if x]
+        def safe_row(item):  # one signal that can't be read is logged and left out, never the whole timeline
+            try:
+                return row_for(item)
+            except (ValueError, KeyError, TypeError, AttributeError) as error:
+                LOG.warning('graph timeline row skipped event=%s error=%s', item.get('id'), type(error).__name__)
+                return None
+        items = [x for x in map(safe_row, found['items']) if x]
+        found['upcoming'] = [x for x in map(safe_row, found.get('upcoming', [])) if x]
         if getattr(self, 'fleet', None) and rows:  # the Shared Graph: each Work thread's Team or Only you
             try:
                 with self.store.connect() as db:
@@ -17157,6 +17178,28 @@ class App:
         class Handler(http.server.BaseHTTPRequestHandler):
             def log_message(self, *_):
                 pass  # Access URLs/searches can contain private information.
+
+            def send_response(self, *args, **kwargs):
+                self.answered = True
+                super().send_response(*args, **kwargs)
+
+            def handle_one_request(self):
+                """An unexpected error answers a plain 500 with its reason instead of dropping the connection: a proxy in
+                front (Caddy) reads a dropped answer as the service restarting and says so. The traceback goes to the log."""
+                self.answered = False
+                try:
+                    super().handle_one_request()
+                except Exception as error:
+                    if isinstance(error, (BrokenPipeError, ConnectionResetError)):
+                        raise
+                    LOG.exception('request failed path=%s', urllib.parse.urlsplit(getattr(self, 'path', '') or '').path)
+                    self.close_connection = True
+                    if not self.answered and getattr(self, 'path', None):
+                        try:
+                            self.output(500, {'error': 'Something went wrong on your Machine. Try again.'})
+                            self.wfile.flush()
+                        except Exception:  # the connection itself is gone: nothing more to say
+                            pass
 
             def coding(self, data, content_type, status=200):
                 """The coding for this answer (compressed answers, COMPRESSIBLE): None when it goes as it is."""
