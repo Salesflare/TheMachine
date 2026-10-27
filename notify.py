@@ -18,6 +18,8 @@ import time
 import urllib.error
 import urllib.request
 
+from i18n import t
+
 KINDS = ('todo', 'result', 'reminder', 'digest')
 CHANNELS = ('push', 'telegram', 'email')
 # Today's behavior for to-dos; the digest is new: a push only. Email is for the digest only.
@@ -108,8 +110,9 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     Without show_text (Careful, or notify_text off) it carries counts only."""
     if not (meetings or due or overnight):
         return None
-    counts = [f'{len(meetings)} meeting' + ('s' if len(meetings) != 1 else '') if meetings else '',
-              f'{len(due)} due' if due else '', f'{len(overnight)} new' if overnight else '']
+    # in the owner's language (i18n.py); English when there is no entry
+    counts = [t('{} meetings', len(meetings)) if meetings else '', t('{} due', len(due)) if due else '',
+              t('{} new', len(overnight)) if overnight else '']
     summary = ' · '.join(c for c in counts if c)
     lines = []
     if show_text:
@@ -119,20 +122,20 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             lines.append(head)
             lines.extend('• ' + line(i) for i in items[:3])
             if len(items) > 3:
-                lines.append(f'• +{len(items) - 3} more')
+                lines.append(t('• +{} more', len(items) - 3))
             lines.append('')
-        part('Today', meetings, lambda m: clock(m['at']) + ' ' + m['title'])
-        part('Due', due, lambda d: d['title'])
-        part('Overnight', overnight, lambda o: o['title'])
+        part(t('Today'), meetings, lambda m: clock(m['at']) + ' ' + m['title'])
+        part(t('Due'), due, lambda d: d['title'])
+        part(t('Overnight'), overnight, lambda o: o['title'])
     else:
         lines += [summary, '']
     if root:
-        lines.append('Open The Machine: ' + root)
+        lines.append(t('Open The Machine: {}', root))
     body = summary
     if show_text and meetings:
-        body = 'First: ' + clock(meetings[0]['at']) + ' ' + meetings[0]['title'] + '. ' + summary
-    return {'push': {'title': 'Your morning', 'body': body[:200], 'url': root or '.', 'tag': 'digest'},
-            'text': '\n'.join(lines).strip(), 'subject': 'Your morning: ' + summary}
+        body = t('First: {}. {}', clock(meetings[0]['at']) + ' ' + meetings[0]['title'], summary)
+    return {'push': {'title': t('Your morning'), 'body': body[:200], 'url': root or '.', 'tag': 'digest'},
+            'text': '\n'.join(lines).strip(), 'subject': t('Your morning: {}', summary)}
 
 
 # -- email, through the control plane (hosted and paired Machines)

@@ -1462,5 +1462,26 @@
  "{} guests": {
   "one": "{} gast",
   "other": "{} gasten"
+ },
+ "3 days": "3 dagen",
+ "1 week": "1 week",
+ "Overnight": "Vannacht",
+ "Your morning": "Je ochtend",
+ "Your morning: {}": "Je ochtend: {}",
+ "{} due": "{} te doen",
+ "{} new": "{} nieuw",
+ "• +{} more": "• +{} meer",
+ "Open The Machine: {}": "Open The Machine: {}",
+ "First: {}. {}": "Eerst: {}. {}",
+ "Renamed": "Hernoemd",
+ "Back to the suggested title": "Terug naar de voorgestelde titel",
+ "Merged into the other to-do": "Samengevoegd met de andere to-do",
+ "Kept both to-dos": "Beide to-do's behouden",
+ "Thread out of your inbox until {} · {}.": "Thread uit je inbox tot {} · {}.",
+ "I couldn’t snooze the thread in your mailbox.": "Ik kon de thread niet snoozen in je mailbox.",
+ "Stopped. Write what to do next, or tap Try again.": "Gestopt. Schrijf wat er nu moet gebeuren, of tik op Opnieuw proberen.",
+ "{} meetings": {
+  "one": "{} afspraak",
+  "other": "{} afspraken"
  }
 }

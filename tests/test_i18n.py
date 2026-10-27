@@ -106,6 +106,25 @@ class ServerTextTest(unittest.TestCase):
         locale_prefs.configure({})
         self.assertEqual(i18n.t('Language'), 'Language')
 
+    def test_the_digest_reads_in_the_owners_language(self):
+        import notify
+        locale_prefs.configure({'language': 'nl'})
+        out = notify.compose([{'at': '2026-10-27T09:00', 'title': 'Standup', 'guests': []}], [{'title': 'A'}], [{'title': 'B'}, {'title': 'C'}])
+        self.assertEqual(out['subject'], 'Je ochtend: 1 afspraak · 1 te doen · 2 nieuw')
+        self.assertTrue(out['text'].startswith('Vandaag\n• 09:00 Standup'))
+        locale_prefs.configure({})
+        self.assertEqual(notify.compose([], [{'title': 'A'}], [])['subject'], 'Your morning: 1 due')
+
+    def test_prompts_ask_for_the_owners_language_and_drafts_in_the_threads(self):
+        import assistant
+        locale_prefs.configure({'language': 'fr'})
+        prompt = assistant.review_prompt('run1', ['mail'])
+        self.assertIn('What the owner reads from you (to-do titles, summaries, bodies, notes, steps, chat replies) is in French', prompt)
+        self.assertIn('a draft or message to someone else is in the language of that thread', prompt)
+        self.assertIn('Write in French.', assistant.import_prompt('run1'))
+        locale_prefs.configure({})
+        self.assertIn('is in US English (organization, color, prioritize)', assistant.review_prompt('run1', ['mail']))
+
     def test_dates_read_in_the_owners_language(self):
         moment = dt.datetime(2026, 10, 24, 14, 5)
         expected = {'en': 'Sat 24 Oct at 14:05', 'nl': 'za 24 okt om 14:05', 'fr': 'sam. 24 oct. à 14:05',

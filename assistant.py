@@ -370,9 +370,9 @@ def thread_snooze_note(state):
     until = state.get('snooze_until')
     if state.get('snooze_status') in ('queued', 'snoozed') and until:
         moment = dt.datetime.fromisoformat(until).astimezone(local_tz())
-        return ' Thread out of your inbox until ' + locale_prefs.day_text(moment) + ' · ' + locale_prefs.clock_text(moment) + '.'
+        return ' ' + i18n.t('Thread out of your inbox until {} · {}.', locale_prefs.day_text(moment), locale_prefs.clock_text(moment))
     if state.get('snooze_status') == 'failed':
-        return ' ' + (state.get('snooze_error') or 'I couldn’t snooze the thread in your mailbox.')
+        return ' ' + (state.get('snooze_error') or i18n.t('I couldn’t snooze the thread in your mailbox.'))
     return ''
 
 
@@ -434,14 +434,14 @@ def snooze_choices(work=False):
     """The quick snooze options with labels for when each lands; work skips days off."""
     local_now = dt.datetime.fromisoformat(now()).astimezone(local_tz())
     tomorrow = (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days=1)
-    choices, seen = [['2h', '2 hours']], set()
+    choices, seen = [['2h', i18n.t('2 hours')]], set()
     for option, plain in [('tomorrow', 'Tomorrow'), ('3d', '3 days'), ('1w', '1 week')]:
         due = dt.datetime.fromisoformat(snooze_time(option, work=work)).astimezone(local_tz())
         if due in seen:
             continue
         seen.add(due)
         moved = work and due.date() != (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days={'tomorrow': 1, '3d': 3, '1w': 7}[option])
-        name = 'Tomorrow' if due.date() == tomorrow else due.strftime('%A') if moved and (due.date() - tomorrow).days < 6 else locale_prefs.day_text(due) if moved else plain
+        name = i18n.t('Tomorrow') if due.date() == tomorrow else locale_prefs.weekday_name(due) if moved and (due.date() - tomorrow).days < 6 and locale_prefs.language() != 'en' else due.strftime('%A') if moved and (due.date() - tomorrow).days < 6 else locale_prefs.day_text(due) if moved else i18n.t(plain)
         choices.append([option, name + ' · ' + morning_label()])
     return choices
 

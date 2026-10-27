@@ -1462,5 +1462,26 @@
  "{} guests": {
   "one": "{} Gast",
   "other": "{} Gäste"
+ },
+ "3 days": "3 Tage",
+ "1 week": "1 Woche",
+ "Overnight": "Über Nacht",
+ "Your morning": "Dein Morgen",
+ "Your morning: {}": "Dein Morgen: {}",
+ "{} due": "{} fällig",
+ "{} new": "{} neu",
+ "• +{} more": "• +{} weitere",
+ "Open The Machine: {}": "The Machine öffnen: {}",
+ "First: {}. {}": "Zuerst: {}. {}",
+ "Renamed": "Umbenannt",
+ "Back to the suggested title": "Zurück zum vorgeschlagenen Titel",
+ "Merged into the other to-do": "Mit der anderen Aufgabe zusammengeführt",
+ "Kept both to-dos": "Beide Aufgaben behalten",
+ "Thread out of your inbox until {} · {}.": "Thread bis {} · {} aus deinem Posteingang.",
+ "I couldn’t snooze the thread in your mailbox.": "Ich konnte den Thread in deinem Postfach nicht zurückstellen.",
+ "Stopped. Write what to do next, or tap Try again.": "Gestoppt. Schreib, was als Nächstes passieren soll, oder tippe auf Erneut versuchen.",
+ "{} meetings": {
+  "one": "{} Termin",
+  "other": "{} Termine"
  }
 }

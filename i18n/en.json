@@ -1462,5 +1462,26 @@
  "{} guests": {
   "one": "{} guest",
   "other": "{} guests"
+ },
+ "3 days": "3 days",
+ "1 week": "1 week",
+ "Overnight": "Overnight",
+ "Your morning": "Your morning",
+ "Your morning: {}": "Your morning: {}",
+ "{} due": "{} due",
+ "{} new": "{} new",
+ "• +{} more": "• +{} more",
+ "Open The Machine: {}": "Open The Machine: {}",
+ "First: {}. {}": "First: {}. {}",
+ "Renamed": "Renamed",
+ "Back to the suggested title": "Back to the suggested title",
+ "Merged into the other to-do": "Merged into the other to-do",
+ "Kept both to-dos": "Kept both to-dos",
+ "Thread out of your inbox until {} · {}.": "Thread out of your inbox until {} · {}.",
+ "I couldn’t snooze the thread in your mailbox.": "I couldn’t snooze the thread in your mailbox.",
+ "Stopped. Write what to do next, or tap Try again.": "Stopped. Write what to do next, or tap Try again.",
+ "{} meetings": {
+  "one": "{} meeting",
+  "other": "{} meetings"
  }
 }
