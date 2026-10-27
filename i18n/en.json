@@ -2286,5 +2286,19 @@
  "Work only": "Work only",
  "Personal only": "Personal only",
  "No work to-dos": "No work to-dos",
- "No personal to-dos": "No personal to-dos"
+ "No personal to-dos": "No personal to-dos",
+ "Add files": "Add files",
+ "{} is too big ({}). Images can be up to {}.": "{} is too big ({}). Images can be up to {}.",
+ "{} is too big ({}). Files can be up to {}.": "{} is too big ({}). Files can be up to {}.",
+ "That file is too big ({}). Images can be up to {}.": "That file is too big ({}). Images can be up to {}.",
+ "That file is too big ({}). Files can be up to {}.": "That file is too big ({}). Files can be up to {}.",
+ "That file is too big. Files can be up to {}.": "That file is too big. Files can be up to {}.",
+ "That file didn’t upload. Try again.": "That file didn’t upload. Try again.",
+ "That file is empty": "That file is empty",
+ "I can’t read that type of file. Add an image, a PDF, a text or an Office file.": "I can’t read that type of file. Add an image, a PDF, a text or an Office file.",
+ "Too many files waiting. Send or remove some first.": "Too many files waiting. Send or remove some first.",
+ "A file is gone. Add it again.": "A file is gone. Add it again.",
+ "The images are too big together. A to-do can carry up to {} of images.": "The images are too big together. A to-do can carry up to {} of images.",
+ "Drop to add to the to-do": "Drop to add to the to-do",
+ "A to-do can carry up to {} files.": "A to-do can carry up to {} files."
 }

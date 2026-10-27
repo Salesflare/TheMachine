@@ -44,3 +44,6 @@ A to-do about a person shows their name at the top. Tap it to open their page in
 
 - **Due**: type a date, like "tomorrow", "next Fri" or "3 Nov", or pick one from the calendar.
 - **Email**: attach the email it's about. Search by subject or sender.
+- **Files**: tap the paperclip in the box, paste a screenshot, or drop files on the form. On a phone you can also take a photo. Up to 5 files, the same kinds and sizes as in the chat (see [Add files](card-chat.md#add-files)). × takes one back.
+
+The files stay with the to-do: they show on it and in its chat, and The Machine reads them when it works on it.

@@ -195,6 +195,101 @@ class ChatStopFiles(unittest.TestCase):
             self.assertEqual(chat_files.sweep(db, self.app.config, later), 1)
         self.assertFalse((folder / kept['id']).exists())
 
+    # A new to-do with files (New to-do on the dashboard)
+
+    DRAFT = 'ab' * 8
+
+    def draft_upload(self, name, data, draft=DRAFT):
+        return self.app.action('chat_upload', {'draft': draft, 'name': name, 'data': b64(data)}, owner_dashboard=True)
+
+    def new_card(self, files, draft=DRAFT, text='Check the quote against the brief'):
+        self.app.config['accounts'] = [{'id': 'work', 'boundary': 'work:acme.example'}]
+        return self.app.action('card_new', {'text': text, 'draft': draft, 'files': files}, owner_dashboard=True)
+
+    def test_a_new_to_do_keeps_its_files_and_every_run_gets_them(self):
+        image = self.draft_upload('Whiteboard.png', PNG)
+        doc = self.draft_upload('Quote.pdf', PDF)
+        made = self.new_card([image['id'], doc['id']])
+        self.assertEqual([f['name'] for f in made['files']], ['Whiteboard.png', 'Quote.pdf'])
+        # On the card (the dashboard's status), in its chat with the owner's own words, and for the review
+        self.store.accounts = self.app.config['accounts']
+        shown = next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == made['id'])
+        self.assertEqual([f['name'] for f in shown['files']], ['Whiteboard.png', 'Quote.pdf'])
+        self.sid = made['id']
+        with patch.object(self.app, 'card_chat_gateway', return_value={'messages': []}):
+            mine = next(i for i in self.app.card_chat(self.sid)['items'] if i['kind'] == 'source' and i['mine'])
+        self.assertEqual([f['id'] for f in mine['files']], [image['id'], doc['id']])
+        with self.store.connect() as db:
+            view = a.review_view(dict(db.execute('SELECT * FROM events WHERE id=?', (made['event_id'],)).fetchone()))
+        self.assertEqual(view['owner_card']['files'], ['Whiteboard.png', 'Quote.pdf'])
+        # Its preparation reads them: the image as an image, both as files by path
+        self.store.decide(self.sid, 'accept', '', 'go-1', 'dashboard')
+        start = self.run_turn()
+        self.assertEqual(start['attachments'], [{'type': 'image', 'mimeType': 'image/png', 'fileName': 'Whiteboard.png', 'content': b64(PNG)}])
+        folder = self.root / 'open' / self.job()['job_id']
+        self.assertEqual((folder / 'Quote.pdf').read_bytes(), PDF)
+        self.assertIn('attached these files to this to-do', start['message'])
+        self.assertIn(str(folder / 'Quote.pdf'), start['message'])
+        # A later message in the same session: the files again by path, the image not sent twice, the message's own as usual
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='done'")
+            db.execute('UPDATE preparation_runs SET status=?,finished_at=?', ('done', a.now()))
+        extra = self.upload('Notes.txt', b'more')
+        self.say('And this one', [extra['id']])
+        start = self.run_turn()
+        self.assertNotIn('attachments', start)
+        self.assertIn('Quote.pdf', start['message'])
+        self.assertIn('Notes.txt', start['message'])
+        self.assertIn('to their message', start['message'])
+        # The to-do's files are never taken back as unsent, nor sent again with a message
+        with self.assertRaisesRegex(ValueError, 'gone'):
+            self.say('Again', [doc['id']], key='chat-9')
+        self.app.action('chat_file_remove', {'suggestion_id': self.sid, 'id': doc['id']}, owner_dashboard=True)
+        later = (a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=3)).isoformat()
+        with self.store.connect() as db:
+            chat_files.sweep(db, self.app.config, later)
+            self.assertEqual(chat_files.read(db, self.app.config, doc['id'])[0], PDF)
+
+    def test_a_new_to_dos_files_are_checked(self):
+        with self.assertRaisesRegex(ValueError, 'too big .*Images can be up to 5.0 MB'):
+            self.draft_upload('big.png', PNG + b'0' * chat_files.IMAGE_BYTES)
+        with self.assertRaisesRegex(ValueError, 'too big .*Files can be up to 10.0 MB'):
+            self.draft_upload('big.pdf', PDF + b'0' * chat_files.FILE_BYTES)
+        with self.assertRaisesRegex(ValueError, 'can’t read that type'):
+            self.draft_upload('page.html', b'<p>hi</p>')
+        with self.assertRaises(ValueError):  # a draft key is the form's own: 16 hex
+            self.draft_upload('a.txt', b'hi', draft='../x')
+        many = [self.draft_upload(f'{n}.txt', b'hi')['id'] for n in range(chat_files.MAX_FILES)]
+        with self.assertRaisesRegex(ValueError, 'Too many files'):
+            self.draft_upload('six.txt', b'hi')
+        with self.assertRaisesRegex(ValueError, 'up to 5 files'):
+            self.new_card(many + ['cf_' + '0' * 20])
+        # Another form's file, or one gone, makes nothing: no to-do, the files still waiting
+        theirs = self.draft_upload('theirs.txt', b'hi', draft='cd' * 8)
+        with self.assertRaisesRegex(ValueError, 'gone'):
+            self.new_card([theirs['id']])
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM suggestions WHERE origin='owner'").fetchone())
+            self.assertEqual(db.execute('SELECT count(*) FROM chat_files WHERE decision_id IS NULL').fetchone()[0], len(many) + 1)
+        # A form's uploads outlive the sweep of cards that are gone, until a day has passed
+        with self.store.connect() as db:
+            chat_files.sweep(db, self.app.config, a.now())
+            self.assertEqual(db.execute("SELECT count(*) FROM chat_files WHERE suggestion_id LIKE 'new:%'").fetchone()[0], len(many) + 1)
+            later = (a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(hours=25)).isoformat()
+            chat_files.sweep(db, self.app.config, later)
+            self.assertEqual(db.execute('SELECT count(*) FROM chat_files').fetchone()[0], 0)
+        made = self.new_card([], text='No files here')
+        self.assertNotIn('files', made)
+
+    def test_a_merged_to_do_takes_its_files_along(self):
+        doc = self.draft_upload('Quote.pdf', PDF)
+        made = self.new_card([doc['id']])
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET merge_offer=? WHERE id=?', (json.dumps({'card_id': self.sid}), made['id']))
+        self.store.merge_answer(made['id'], True, 'merge-1')
+        with self.store.connect() as db:
+            self.assertEqual(chat_files.of_cards(db, [self.sid])[self.sid][0]['id'], doc['id'])
+
     def test_the_actions_are_the_owners_from_the_dashboard(self):
         for name in ('chat_stop', 'chat_upload', 'chat_file_remove'):
             self.assertIn(name, a.OWNER_ACTIONS)

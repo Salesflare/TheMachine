@@ -2286,5 +2286,19 @@
  "Work only": "Só trabalho",
  "Personal only": "Só pessoal",
  "No work to-dos": "Nenhuma tarefa de trabalho",
- "No personal to-dos": "Nenhuma tarefa pessoal"
+ "No personal to-dos": "Nenhuma tarefa pessoal",
+ "Add files": "Adicionar arquivos",
+ "{} is too big ({}). Images can be up to {}.": "{} é grande demais ({}). Imagens podem ter até {}.",
+ "{} is too big ({}). Files can be up to {}.": "{} é grande demais ({}). Arquivos podem ter até {}.",
+ "That file is too big ({}). Images can be up to {}.": "Esse arquivo é grande demais ({}). Imagens podem ter até {}.",
+ "That file is too big ({}). Files can be up to {}.": "Esse arquivo é grande demais ({}). Arquivos podem ter até {}.",
+ "That file is too big. Files can be up to {}.": "Esse arquivo é grande demais. Arquivos podem ter até {}.",
+ "That file didn’t upload. Try again.": "Esse arquivo não foi enviado. Tente de novo.",
+ "That file is empty": "Esse arquivo está vazio",
+ "I can’t read that type of file. Add an image, a PDF, a text or an Office file.": "Não consigo ler esse tipo de arquivo. Adicione uma imagem, um PDF, um texto ou um arquivo do Office.",
+ "Too many files waiting. Send or remove some first.": "Arquivos demais esperando. Envie ou remova alguns primeiro.",
+ "A file is gone. Add it again.": "Um arquivo sumiu. Adicione de novo.",
+ "The images are too big together. A to-do can carry up to {} of images.": "As imagens são grandes demais juntas. Uma tarefa pode levar até {} de imagens.",
+ "Drop to add to the to-do": "Solte para adicionar à tarefa",
+ "A to-do can carry up to {} files.": "Uma tarefa pode levar até {} arquivos."
 }

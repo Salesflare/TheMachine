@@ -31,4 +31,4 @@ Tap the paperclip, paste a screenshot, or drop files on the chat. Each file show
 - PDFs, text, CSV, JSON and Office files up to 10 MB are files The Machine reads, and can attach to a draft.
 - Up to 5 files per message.
 
-Files stay on your Machine, in its data folder, encrypted like your messages. Files you add but never send are removed after a day.
+Files stay on your Machine, in its data folder, encrypted like your messages. Files you add but never send are removed after a day. A new to-do can carry files too, from **New to-do** (see [Make one yourself](cards.md#make-one-yourself)).
