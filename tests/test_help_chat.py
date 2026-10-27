@@ -133,9 +133,21 @@ class Personal(unittest.TestCase):
 
     def test_personalizing_and_writing_style_find_what_it_does_by_itself(self):
         self.assertEqual(self.slugs('how can I personalize this perfectly')[0], 'personalize')
-        found = self.slugs("I'd like to have it write like I do", [{'role': 'user', 'text': 'how can I personalize this perfectly'}])
-        self.assertIn('writing', found)
-        self.assertNotIn('skills', found)
+        found = [s['slug'] + '#' + s['anchor'] for s in help_chat.retrieve("I'd like to have it write like I do", [{'role': 'user', 'text': 'how can I personalize this perfectly'}])[0]]
+        self.assertIn('personalize#teach-it-faster', found)
+        self.assertIn('personalize#what-you-can-set', found)  # Settings, Writing
+        self.assertNotIn('skills#', found)
+
+    def test_a_page_that_matches_as_a_whole_brings_its_sections_not_code(self):
+        sections, snippets = help_chat.retrieve('how can I personalize this perfectly')
+        self.assertEqual([s['anchor'] for s in sections], ['', 'it-learns-by-itself', 'teach-it-faster', 'what-you-can-set'])
+        self.assertEqual(snippets, [])
+        self.assertEqual(help_chat.retrieve('can I customi' 'ze it to my preferences')[1], [])
+
+    def test_the_prompt_gives_the_answer_itself(self):
+        text = help_chat.prompt('how can I personalize this perfectly', [], [], [])
+        self.assertIn("Don't send them off to read a page instead", text)
+        self.assertIn("what the pages don't say or promise", text)
         for question, slug in (('can I customi' 'se it to my preferences', 'personalize'), ('the drafts sound too formal, can I change the tone', 'writing'),
                                ('it pings me too much, how do I get fewer notifications', 'notifications'),
                                ('who can see my emails, is my data private', 'security-and-privacy'),

@@ -179,6 +179,10 @@ def retrieve(question, history=(), folder=HELP, root=ROOT):
                                                               for n in {d['title'], re.split(r',| and ', d['title'])[0].strip()})]
     found = ([d for d in named if d not in found] + found)[:SECTIONS]
     best = max(best, 6 if named else 0)
+    # A page that matches as a whole brings its own sections: its intro only says what it is about
+    if found and not found[0]['anchor']:
+        own = [d for d in docs.docs if d['slug'] == found[0]['slug'] and d['anchor']]
+        found = [found[0], *[d for d in found if d in own], *[d for d in own if d not in found], *[d for d in found[1:] if d not in own]][:SECTIONS]
     snippets = [doc for score, doc in code.search(query, SNIPPETS)] if len(found) < SECTIONS or best < 6 else []
     return found, snippets[:SNIPPETS]
 
@@ -242,11 +246,15 @@ def prompt(question, history, sections, snippets, audience=None):
     """The whole turn: a short brief, the matching sections and snippets, the last few turns and the question."""
     name, why = audience or ('everyday', [])
     parts = ["You answer questions about The Machine, an assistant app, in its dashboard's Help panel. Answer only from the "
-             "help sections below; use the code notes only for what they leave open, and say when you are not sure. If neither covers "
+             "help sections below; use the code notes only for what they leave open. If neither covers "
              "it, say so and suggest Report a bug or support@themachine.computer. You can't see or change the person's Machine, "
              "settings or data, and you take no actions: tell them where to click instead. Reply in at most 120 words, short "
              "sentences, in light markdown: **bold** for what to click, a - list for steps, no headings, no em dashes. Mark "
              "each fact with the number of its source, like [1].",
+             "Give the answer itself: the concrete things from the sections that do what they ask, most useful first, with "
+             "where to click. Don't send them off to read a page instead; the source numbers link it. Never comment on how "
+             "the question is worded, or on what the pages don't say or promise. Ask a question back only when the answer "
+             "really depends on it.",
              "Prefer what The Machine already does by itself (it learns from what they send, edit, dismiss and say in a to-do's "
              "chat) and what they can set in Settings over building something new. Suggest a skill, an agent or code only when "
              "nothing built in covers it, or they ask for one.",
