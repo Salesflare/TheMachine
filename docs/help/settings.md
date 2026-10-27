@@ -41,4 +41,10 @@ A few settings live on the computer your Machine runs on, not in the app:
 
 Every address of yours the Machine found: your accounts, Gmail or Outlook aliases, your calendar, your Slack and Intercom profile. Mail and meetings from any of them show as you. **Remove** one that isn't yours.
 
-A shared address, like info@ or a Google Group, never counts by itself. One the Machine isn't sure about is under **Maybe yours**: tap **Confirm** if only you use it, or **Not mine**.
+A shared address, like info@ or a Google Group, never counts by itself. One the Machine isn't sure about is under **Maybe yours**, and nothing is picked for you. Choose one:
+
+- **Mine: I handle it**: it counts as yours. Mail to it can become your to-dos.
+- **The team's: others pick it up too**: it isn't you. Mail that only went to it makes no to-dos for you, and no drafts. It still fills in the Graph, shared with your team as before.
+- **Not mine**: it won't count as yours.
+
+**Change** on its row switches it later. Your own sign-in address is always yours.

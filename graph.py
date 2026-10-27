@@ -237,6 +237,8 @@ class Owner:
             self.emails |= {str(e).lower() for e in a.get('owner_emails') or () if '@' in str(e)}
         self.emails |= {str(e).lower() for e in config.get('owner_emails') or ()}
         self.excluded = own_addresses.excluded(db, config) if db is not None else own_addresses.configured(config)[1]
+        # The team's (Settings, Your addresses): never the owner, and never a person either; its mail still counts
+        self.team = own_addresses.team(db, config) if db is not None else set()
         if db is not None:
             self.emails |= own_addresses.yours(db, config)
         self.domains = {e.rsplit('@', 1)[1] for e in self.emails} - FREEMAIL
@@ -275,8 +277,10 @@ class Owner:
                         self.names.add(plain_name(name))
 
     def mine(self, address):
-        """The owner's own address, or a shared role address (info@, support@) at the owner's domains."""
-        return address in self.emails or (address.rsplit('@', 1)[-1] in self.domains and bool(ROLE.match(address)))
+        """The owner's own address, one they marked as the team's, or a shared role address (info@, support@) at the
+        owner's domains."""
+        return (address in self.emails or address in self.team
+                or (address.rsplit('@', 1)[-1] in self.domains and bool(ROLE.match(address))))
 
 
 def addresses(value):

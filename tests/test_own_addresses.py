@@ -161,6 +161,37 @@ class Stored(unittest.TestCase):
         oa.choose(self.db, 'sales@sideco.test', 'remove', NOW)
         self.assertEqual(oa.view(self.db, CONFIG)['maybe'], [])
 
+    def test_the_teams_is_never_yours_and_changeable(self):
+        oa.choose(self.db, 'sales@sideco.test', 'team', NOW)
+        self.assertNotIn('sales@sideco.test', oa.yours(self.db, CONFIG))
+        self.assertEqual(oa.team(self.db, CONFIG), {'sales@sideco.test'})
+        self.assertIn('sales@sideco.test', oa.excluded(self.db, CONFIG))  # never learned as the owner from mail they sent
+        v = oa.view(self.db, CONFIG)
+        self.assertEqual((v['maybe'], v['team']), ([], [{'address': 'sales@sideco.test', 'sources': ['Gmail alias'], 'choice': 'team'}]))
+        oa.choose(self.db, 'sales@sideco.test', 'confirm', NOW)  # changed later, from its row
+        self.assertIn('sales@sideco.test', oa.yours(self.db, CONFIG))
+        self.assertEqual(oa.team(self.db, CONFIG), set())
+        self.assertEqual(next(a for a in oa.view(self.db, CONFIG)['yours'] if a['address'] == 'sales@sideco.test')['choice'], 'confirm')
+        oa.choose(self.db, 'sales@sideco.test', 'remove', NOW)
+        self.assertEqual([a['address'] for a in oa.view(self.db, CONFIG)['not_mine']], ['sales@sideco.test'])
+
+    def test_nothing_is_chosen_for_the_owner(self):
+        self.assertEqual(oa.choices(self.db), {})
+        self.assertNotIn('sales@sideco.test', oa.yours(self.db, CONFIG) | oa.team(self.db, CONFIG))
+
+    def test_own_sign_in_is_never_the_teams_or_removed(self):
+        for choice in ('team', 'remove'):
+            with self.assertRaises(ValueError):
+                oa.choose(self.db, 'sam@acme.test', choice, NOW, CONFIG)
+        pinned = {**CONFIG, 'owner_emails': ['sam@sideco.test']}
+        with self.assertRaises(ValueError):
+            oa.choose(self.db, 'sam@sideco.test', 'team', NOW, pinned)
+        self.db.execute("INSERT INTO own_address_choices VALUES('sam@sideco.test','team',?)", (NOW,))  # older data
+        self.assertIn('sam@sideco.test', oa.yours(self.db, pinned))
+        self.assertEqual(oa.team(self.db, pinned), set())
+        with self.assertRaises(ValueError):
+            oa.choose(self.db, 'bogus@sideco.test', 'mine', NOW)
+
     def test_fetch_once_a_day_and_a_failed_read_keeps_the_last_list(self):
         self.assertTrue(oa.fetch_due(self.db, 'side-mail', NOW))
         oa.save_fetched(self.db, 'side-mail', [{'address': 'sam@sideco.test', 'alias': True}], NOW)
@@ -223,6 +254,63 @@ class InTheGraph(unittest.TestCase):
         self.assertEqual(call['preview'], 'With Sam Lee')
 
 
+class TheTeams(unittest.TestCase):
+    """A shared address the owner marked as the team's (support@): mail that only went to it makes no to-do for the
+    owner and is marked for the review, it's never the owner in the Graph and never a person, and its mail still links
+    the people who wrote to it."""
+    add = tg.Graph.add
+    build = tg.Graph.build
+
+    def setUp(self):
+        tg.Graph.setUp(self)
+        self.store.accounts = tg.CONFIG['accounts']
+        self.store.config = tg.CONFIG
+        with self.store.connect() as db:
+            oa.save_fetched(db, 'work', oa.send_as_entries(sendas({'sendAsEmail': 'sam@acme.com', 'isPrimary': True},
+                                                                  {'sendAsEmail': 'support@acme.com', 'treatAsAlias': False}), 'sam@acme.com'), NOW)
+        self.customer = tg.mail(3, 'Ivy Park <ivy@globex.example>', 'support@acme.com', title='Export fails')
+        self.direct = tg.mail(2, 'Ivy Park <ivy@globex.example>', 'support@acme.com', cc='sam@acme.com', title='Sam, can you look?')
+        self.sent = tg.mail(1, 'Sam Lee <support@acme.com>', 'ivy@globex.example', ('SENT',), title='Re: Export fails')
+        self.add(self.customer, self.direct, self.sent)
+        self.build()
+        with self.store.connect() as db:
+            self.ids = [r[0] for r in db.execute('SELECT id FROM events ORDER BY occurred_at')]
+            oa.choose(db, 'support@acme.com', 'team', NOW, tg.CONFIG)
+        self.build()
+
+    def card(self, event_id):
+        return self.store.suggest(f'k{event_id}', 'Look at the export', 'Ivy says the export fails.', [event_id], match=True)
+
+    def test_no_card_from_mail_only_to_it(self):
+        with self.assertRaisesRegex(ValueError, "support@acme.com, which the owner marked as the team's"):
+            self.card(self.ids[0])
+        self.assertFalse(self.card(self.ids[1]).get('duplicate'))  # it went to the owner too: theirs as always
+
+    def test_the_review_sees_why(self):
+        with self.store.connect() as db:
+            rows = [dict(r) for r in db.execute('SELECT * FROM events ORDER BY occurred_at')]
+        teams = self.store.team_inboxes(rows)
+        self.assertEqual(teams, {self.ids[0]: 'support@acme.com'})
+        self.assertIn("marked as the team's", tg.a.review_view(rows[0], team_inbox=teams.get(rows[0]['id']))['team_inbox'])
+        self.assertNotIn('team_inbox', tg.a.review_view(rows[1]))
+
+    def test_mine_makes_it_the_owners_again(self):
+        with self.store.connect() as db:
+            oa.choose(db, 'support@acme.com', 'confirm', NOW, tg.CONFIG)
+        self.assertFalse(self.card(self.ids[0]).get('duplicate'))
+
+    def test_never_the_owner_nor_a_person_in_the_graph(self):
+        with self.store.connect() as db:
+            owner = graph.Owner(tg.CONFIG, db)
+            owner.learn([(1, 'work', 'gmail.message', None, self.sent['metadata'])])
+            people = {r[0] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person'")}
+        self.assertNotIn('support@acme.com', owner.emails)  # sent from it, but the owner said it's the team's
+        self.assertTrue(owner.mine('support@acme.com'))
+        self.assertIn('email:ivy@globex.example', people)
+        self.assertNotIn('email:support@acme.com', people)
+        self.assertNotIn('support@acme.com', self.app.owner_emails())
+
+
 class Dashboard(unittest.TestCase):
     """Settings, Account: the list in status, and Confirm or Remove from the dashboard only."""
     def setUp(self):
@@ -240,6 +328,13 @@ class Dashboard(unittest.TestCase):
         self.assertEqual(out['own_addresses']['maybe'], [])
         self.assertIn('sales@acme.com', self.app.owner_emails())
         self.assertTrue(self.app.graph_dirty.is_set())
+
+    def test_the_teams_from_the_dashboard_and_never_the_owners_own(self):
+        out = self.app.action('own_address', {'address': 'sales@acme.com', 'choice': 'team'}, owner_dashboard=True)
+        self.assertEqual([a['address'] for a in out['own_addresses']['team']], ['sales@acme.com'])
+        self.assertNotIn('sales@acme.com', self.app.owner_emails())
+        with self.assertRaisesRegex(ValueError, 'always yours'):
+            self.app.action('own_address', {'address': 'sam@acme.com', 'choice': 'team'}, owner_dashboard=True)
 
     def test_fetch_reads_send_as_once_a_day(self):
         asked = []

@@ -2410,5 +2410,20 @@
  "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom no está conectado en esta Machine, así que esto va por correo.",
  "Send by email instead?": "¿Enviar por correo en su lugar?",
  "Intercom from {} ·": "Intercom de {} ·",
- "Connect your own Intercom": "Conecta tu propio Intercom"
+ "Connect your own Intercom": "Conecta tu propio Intercom",
+ "Whose is it? Change it any time.": "¿De quién es? Puedes cambiarlo cuando quieras.",
+ "The team’s": "Del equipo",
+ "Not yours": "No tuyas",
+ "Mine: I handle it": "Mía: yo me encargo",
+ "Its mail can become your to-dos.": "Su correo puede convertirse en tus tareas.",
+ "The team’s: others pick it up too": "Del equipo: otros también la atienden",
+ "No to-dos from it. Its mail still fills in the Graph.": "Sin tareas desde ella. Su correo sigue completando el Graph.",
+ "It won’t count as yours.": "No contará como tuya.",
+ "The team’s · No to-dos from it": "Del equipo · Sin tareas desde ella",
+ "Marked as the team’s. No to-dos from it.": "Marcada como del equipo. Sin tareas desde ella.",
+ "No to-dos from it": "Sin tareas desde ella",
+ "Whose is {}?": "¿De quién es {}?",
+ "Looks like a team address": "Parece una dirección de equipo",
+ "Gmail sends as it, but not as an alias": "Gmail envía como ella, pero no como alias",
+ "Your own sign-in address is always yours": "Tu propia dirección de inicio de sesión siempre es tuya"
 }
