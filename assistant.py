@@ -43,6 +43,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from zoneinfo import ZoneInfo
+import bug_queue
 import embeddings
 import graph
 import own_addresses
@@ -574,7 +575,7 @@ CRM_ACTIONS = {'graph_owner', 'graph_org_merge', 'graph_org_split', 'graph_org_a
 OWNER_ACTIONS |= CRM_ACTIONS
 # Help (help_chat.py) and Report a bug (support.report): the owner's own, from their dashboard only. help_ask answers
 # and changes nothing; bug_send sends only what bug_preview showed, after the owner's tap.
-SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send'}
+SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send', 'bug_later', 'bug_queued'}
 OWNER_ACTIONS |= SUPPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
@@ -591,7 +592,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACT
                                'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
                                'set_work_hours', 'connector_sync', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'calendar_write', 'set_locale',
                                'browser_show'})
-UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send'}, 9 * 1024 * 1024
+UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send', 'bug_later'}, 9 * 1024 * 1024
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
 # its code version records an error within AUTO_UNDO_NEW, or the fault it fixed comes back.
 UNDO_MERGE = dt.timedelta(hours=24)
@@ -16070,6 +16071,18 @@ class App:
                     break
                 self.stop.wait(1)
 
+    def bug_queue_worker(self):
+        """Report a bug: the reports the control plane couldn't take yet go out when they are due (bug_queue.py),
+        looked at every 30 seconds."""
+        self.bug_queue_wake = getattr(self, 'bug_queue_wake', None) or threading.Event()
+        while not self.stop.is_set():
+            try:
+                bug_queue.flush(self.config, self.fleet.bug_report)
+            except Exception as error:  # noqa: BLE001 - never stops the service
+                LOG.error('bug queue error=%s', type(error).__name__)
+            self.bug_queue_wake.wait(30)
+            self.bug_queue_wake.clear()
+
     def refresh_model_usage(self):
         reply = usage_status(self.config)
         if reply is None:
@@ -16844,6 +16857,8 @@ class App:
         path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
         if name == 'bug_preview':
             return {**support.report(path, doctor=onboarding.doctor), 'paired': bool(getattr(self, 'fleet', None))}
+        if name == 'bug_queued':  # the reports still waiting to go out (bug_queue.py)
+            return {'queued': bug_queue.view(self.config)}
         text = str(args.get('description') or '').strip()[:self.BUG_TEXT]
         if not text:
             raise ValueError('Say what went wrong first.')
@@ -16859,11 +16874,27 @@ class App:
         # What the owner saw, scrubbed once more here: whatever the page sent, nothing else leaves
         body = {'description': text, 'screenshot': shot,
                 'report': support.scrub_value(report) if report is not None else None}
-        try:
-            return {'sent': True, **(self.fleet.bug_report(body) or {})}
-        except (fleet.Off, OSError, ValueError) as error:
-            LOG.info('bug report not sent error=%s', type(error).__name__)
-            raise ValueError('The report didn’t go out. Try again, or email support@themachine.computer.') from None
+        # Sent now, or kept here and sent by itself later when the control plane can't take it now (bug_queue.py):
+        # bug_later is a hosted dashboard's report its control plane refused for now, kept the same way
+        retry_after = 0
+        if name == 'bug_later':
+            try:
+                retry_after = max(0, min(int(args.get('retry_after') or 0), 86400))
+            except (TypeError, ValueError):
+                retry_after = 0
+        else:
+            try:
+                return {'sent': True, **(self.fleet.bug_report(body) or {})}
+            except Exception as error:  # noqa: BLE001 - said to the owner below
+                LOG.info('bug report not sent now error=%s', type(error).__name__)
+                if not bug_queue.retryable(error):
+                    said = str(error)  # the control plane's reason when it is one for the owner (a sentence), else ours
+                    raise ValueError(said if said.endswith('.') else 'The report didn’t go out. Email support@themachine.computer.') from None
+                retry_after = getattr(error, 'retry_after', 0)
+        item = bug_queue.add(self.config, body, retry_after)
+        if getattr(self, 'bug_queue_wake', None):
+            self.bug_queue_wake.set()
+        return {'sent': False, 'queued': True, 'at': item['next_at']}
 
     def account_view(self):
         """Settings, Account on a self-hosted Machine paired with the Network: its owner's account in short, from the
@@ -17603,6 +17634,8 @@ class App:
         if getattr(self, 'fleet', None):
             threading.Thread(target=self.fleet.run, args=(self.stop,), daemon=True).start()
         threading.Thread(target=self.model_usage_worker, daemon=True).start()
+        if getattr(self, 'fleet', None):
+            threading.Thread(target=self.bug_queue_worker, name='bug-queue', daemon=True).start()
         threading.Thread(target=self.retention_worker, daemon=True).start()
         if getattr(self, 'skills', None) and self.skills.catalog:  # what OpenClaw has, for Settings > Skills and skill hints
             threading.Thread(target=self.skills.catalog.worker, args=(self.stop,), daemon=True).start()

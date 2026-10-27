@@ -7,12 +7,15 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Help: Ask shows the answer with links to the help pages it used (only themachine.computer/help and the app's code);
 // Report a bug shows everything that goes before anything goes, and sends only on Send; an error toast opens it.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-const actions=[];
+const actions=[];let limit=false,queued=[];  // limit: the control plane said 429, so the Machine keeps the report
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');let body='';
  req.on('data',c=>body+=c);req.on('end',()=>{
   if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
   res.setHeader('Content-Type','application/json');
-  if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');actions.push({action,args,upload:req.headers['x-upload']});
+  if(url.pathname==='/_machine/bug'){actions.push({action:'cp',args:JSON.parse(body)});res.writeHead(429,{'Retry-After':'900'});res.end('{"error":"You sent a few reports just now.","retry_after":900}');return}
+  if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');if(action==='bug_queued'){res.end(JSON.stringify({queued}));return}actions.push({action,args,upload:req.headers['x-upload']});
+   const later=Math.floor(Date.UTC(2030,0,1,10,55)/1000);
+   if(action==='bug_later'||action==='bug_send'&&limit){queued=[{id:'bq_1',what:args.description,next_at:later}];res.end(JSON.stringify({sent:false,queued:true,at:later}));return}
    if(action==='help_ask'&&/comes back/.test(args.question)){res.end(JSON.stringify({answer:'Try a reload.',bug:'I snoozed a to-do until tomorrow.\nI expected it to stay away.\nIt came back within a minute.',sources:[]}));return}
    if(action==='help_ask'){setTimeout(()=>res.end(JSON.stringify({answer:'Press **Snooze**, then pick a time.\n\n- See [Snooze](https://themachine.computer/help/snooze)\n- Not [this](https://evil.example/y)',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]})),300);return}
    if(action==='bug_preview'){res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true}));return}
@@ -80,6 +83,18 @@ try{
   await page.waitForSelector('#help-panel[open]');
   assert.match(await page.inputValue('#bug-what'),/Couldn’t save that/);
   await page.evaluate(()=>toast('Saved.'));assert.equal(await page.$('#toast [data-bug-report]'),null,'only errors offer it');
+  // At the control plane's limit (or offline) the report is never lost: kept on the Machine, said plainly, shown as waiting
+  const goesAt=await page.evaluate(()=>fmtHM(Date.UTC(2030,0,1,10,55)));
+  for(const hosted of [false,true]){limit=true;queued=[];actions.length=0;await page.evaluate(h=>{state.manage_url=h?'https://app.example/setup':null},hosted);
+   await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Fourth report.');await page.click('#bug-next');await page.waitForSelector('#bug-review:not([hidden])');
+   await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
+   assert.equal(await page.textContent('#bug-done-text'),`Saved. It goes out by itself at ${goesAt}.`);
+   assert.equal(await page.textContent('#bug-error2'),'','no error');
+   assert.deepEqual(actions.map(a=>a.action).filter(a=>a!=='bug_preview'),hosted?['cp','bug_later']:['bug_send']);
+   if(hosted)assert.equal(actions.at(-1).args.retry_after,900,'the control plane’s Retry-After goes with it');
+   await page.click('[data-help-tab="bug"]');await page.waitForSelector('#bug-queued:not([hidden])');
+   assert.equal(await page.textContent('#bug-queued li'),`Fourth report. · Goes out at ${goesAt}`)}
+  limit=false;queued=[];await page.evaluate(()=>{state.manage_url=null});
   await context.close();
  }
  assert.deepEqual(errors,[]);

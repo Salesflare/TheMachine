@@ -2189,7 +2189,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 #help-panel .fine{margin:0;font-size:.8rem;color:var(--muted)}#bug-form,#bug-review{display:flex;flex-direction:column;gap:12px}#bug-form label{display:flex;flex-direction:column;gap:6px}#bug-form textarea{margin:0}
 .bug-shot{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.bug-shot img,.bug-sent img{display:block;max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:10px}.bug-shot img{order:-1;flex:0 0 100%;height:160px;object-fit:contain;object-position:left;border:0;border-radius:0}
 #bug-form label.bug-check{flex-direction:row;align-items:center;gap:8px}#bug-form label.bug-check+.fine{margin-top:-8px;padding-left:26px}#bug-form label.bug-check input{width:auto;margin:0}
-.bug-sent{display:flex;flex-direction:column;gap:10px;max-height:min(56dvh,520px);overflow:auto}.bug-sent h3{margin:0;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.bug-sent p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.bug-sent{display:flex;flex-direction:column;gap:10px;max-height:min(56dvh,520px);overflow:auto}#bug-queued{margin-top:14px;gap:6px;font-size:.9rem}#bug-queued[hidden]{display:none}.bug-sent h3{margin:0;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.bug-sent p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .bug-sent img{max-height:140px;width:auto;align-self:flex-start}.bug-parts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}.bug-all summary{cursor:pointer;font-size:.85rem;color:var(--muted);margin:2px 0 6px}
 .bug-sent pre,#support-access pre{margin:0;max-height:260px;overflow:auto;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap;overflow-wrap:anywhere}
 #help-panel .actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}#bug-error:empty{display:none}#bug-error{margin:0;color:var(--red,#e07070)}
@@ -7545,9 +7545,9 @@ function helpMarkup(){return `<div class="snooze-heading"><h2 id="help-title">He
 <div id="help-bug-pane" hidden><form id="bug-form" novalidate><label>What went wrong?<textarea id="bug-what" rows="4" maxlength="4000"></textarea></label>
 <div class="bug-shot"><button type="button" class="chat-say" id="bug-shot-take" hidden>Take a screenshot</button><button type="button" class="chat-say" id="bug-shot-pick">Attach an image</button><input type="file" id="bug-shot-file" accept="image/png,image/jpeg,image/webp" hidden><img id="bug-shot-img" alt="Screenshot to send" hidden><button type="button" class="chat-say" id="bug-shot-remove" hidden>Remove</button></div>
 <label class="bug-check"><input type="checkbox" id="bug-diag" checked> Include the support report</label><p class="fine">Versions, checks and recent errors. No messages, keys or addresses.</p>
-<p id="bug-error" role="status"></p><div class="actions"><button class="primary" id="bug-next">Review</button></div></form>
+<p id="bug-error" role="status"></p><div class="actions"><button class="primary" id="bug-next">Review</button></div><div id="bug-queued" class="bug-sent" hidden></div></form>
 <div id="bug-review" hidden><p class="fine">This is everything that goes to The Machine team. Nothing is sent until you press Send.</p><div class="bug-sent" id="bug-sent"></div><p id="bug-error2" class="fine" role="status"></p><div class="actions"><button type="button" class="primary" id="bug-send">Send</button><button type="button" class="ghost" id="bug-back">Back</button></div></div>
-<div id="bug-done" hidden><p>Sent. We’ll answer by email.</p><div class="actions"><button type="button" class="ghost" data-help-close>Close</button></div></div></div>`}
+<div id="bug-done" hidden><p id="bug-done-text">Sent. We’ll answer by email.</p><div class="actions"><button type="button" class="ghost" data-help-close>Close</button></div></div></div>`}
 const helpBox=document.createElement('dialog');helpBox.id='help-panel';helpBox.setAttribute('aria-labelledby','help-title');
 helpBox.innerHTML=helpMarkup();
 document.body.append(helpBox);
@@ -7584,7 +7584,7 @@ $('#help-q').addEventListener('input',helpGrow);
 $('#help-q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#help-form').requestSubmit()}});
 function bugReset(about){$('#bug-form').hidden=false;$('#bug-review').hidden=$('#bug-done').hidden=true;$('#bug-error').textContent='';
  if(about&&!$('#bug-what').value.trim())$('#bug-what').value=`The dashboard said: “${about}”\n\n`;
- $('#bug-shot-take').hidden=!navigator.mediaDevices?.getDisplayMedia||matchMedia('(pointer:coarse)').matches;bugShotShow()}
+ $('#bug-shot-take').hidden=!navigator.mediaDevices?.getDisplayMedia||matchMedia('(pointer:coarse)').matches;bugShotShow();bugQueuedLoad()}
 function bugShotShow(){const img=$('#bug-shot-img');img.hidden=!bugShot;if(bugShot)img.src=bugShot;else img.removeAttribute('src');$('#bug-shot-remove').hidden=!bugShot}
 async function bugShrink(src){const img=new Image();img.src=src;await img.decode();const k=Math.min(1,1600/img.naturalWidth),c=document.createElement('canvas');  // a JPEG at most 1600 px wide
  c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
@@ -7601,7 +7601,7 @@ $('#bug-shot-remove').onclick=()=>{bugShot=null;bugShotShow()};
 const bugHosted=()=>!!state.manage_url;
 const BUG_PARTS={versions:'App and OpenClaw versions','service-status':'Service status',doctor:'Setup checks','service-log':'Recent app errors','openclaw-log':'Recent OpenClaw errors'};
 // The report in short, one line per part; Show everything has the exact text that goes
-function bugSummary(r){const n=k=>(r.parts?.[k]||[]).length,lines=Object.keys(r.parts||{}).filter(k=>n(k)).map(k=>(BUG_PARTS[k]||k)+(/log$/.test(k)?` (${n(k)} line${n(k)===1?'':'s'})`:''));
+function bugSummary(r){const n=k=>(r.parts?.[k]||[]).length,lines=Object.keys(r.parts||{}).filter(k=>n(k)).map(k=>/log$/.test(k)?t(['{} ({} line)','{} ({} lines)'],t(BUG_PARTS[k]||k),n(k)):BUG_PARTS[k]||k);
  if(r.settings)lines.push('Settings, without keys or what anyone wrote');
  return `<ul class="bug-parts">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul><p class="fine">No message contents, keys or addresses.</p>`}
 function bugPayload(){return {description:$('#bug-what').value.trim(),screenshot:bugShot,report:bugReport?{parts:bugReport.parts,settings:bugReport.settings}:null}}
@@ -7616,11 +7616,31 @@ $('#bug-form').onsubmit=async e=>{e.preventDefault();const out=$('#bug-error');o
   $('#bug-form').hidden=true;$('#bug-review').hidden=false;$('#bug-send').focus()}
  catch(err){out.textContent=err.message}finally{b.disabled=false;b.textContent='Review'}};
 $('#bug-back').onclick=()=>{$('#bug-review').hidden=true;$('#bug-form').hidden=false};
+// A report the control plane can't take now (its limit, 5xx, offline) is never lost: the Machine keeps it and sends it
+// by itself when it is due (bug_queue.py). A hosted dashboard hands it over (bug_later) with the control plane's
+// Retry-After; a hosted Machine outside the Network can't send it itself, so this page keeps it and sends it while open.
+const bugAction=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'X-Upload':'bug-report'},body:JSON.stringify({action,args})});
+async function bugPost(body){let r=null,d={};
+ try{r=await fetch('/_machine/bug',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'same-origin',redirect:'manual'});try{d=await r.json()}catch{}}catch{}
+ if(r?.ok)return {sent:true};
+ if(r&&r.status&&r.status!==429&&r.status<500)throw Error(d.error||'The report didn’t go out. Email support@themachine.computer.');
+ return {wait:Math.max(60,+(r?.headers.get('retry-after')||d.retry_after||0))}}
+let bugPage=[];try{bugPage=JSON.parse(localStorage.getItem('bug-later')||'[]')}catch{}
+const bugPageKeep=()=>{try{localStorage.setItem('bug-later',JSON.stringify(bugPage))}catch{}};  // a full storage keeps it for this visit only
+async function bugPageFlush(){for(const q of bugPage.filter(q=>q.next_at*1000<=Date.now())){let r;try{r=await bugPost(q.body)}catch{r={sent:true}}  // refused for good: dropped
+  if(r.sent)bugPage=bugPage.filter(x=>x!==q);else{q.tries=(q.tries||0)+1;q.next_at=Math.floor(Date.now()/1000)+Math.max(r.wait,Math.min(3600,60*2**q.tries));break}}
+ bugPageKeep()}
+if(bugPage.length&&bugHosted())bugPageFlush();setInterval(()=>{if(bugPage.length&&bugHosted())bugPageFlush()},30000);
+async function bugHostedSend(body){const r=await bugPost(body);if(r.sent)return r;
+ try{return await bugAction('bug_later',{...body,retry_after:r.wait})}
+ catch{const q={id:'p'+Date.now(),body,what:body.description.slice(0,80),next_at:Math.floor(Date.now()/1000)+r.wait};bugPage.push(q);bugPageKeep();return {queued:true,at:q.next_at}}}
+function bugQueuedShow(list){list=[...(list||[]),...bugPage.map(q=>({what:q.body.description.slice(0,80),next_at:q.next_at}))];const el=$('#bug-queued');el.hidden=!list.length;
+ el.innerHTML=list?.length?`<h3>Waiting to go out</h3><ul class="bug-parts">${list.map(q=>`<li><span translate="no">${esc(q.what)}</span> · ${esc(t('Goes out at {}',fmtHM(q.next_at*1000)))}</li>`).join('')}</ul>`:''}
+async function bugQueuedLoad(){try{bugQueuedShow((await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_queued',args:{}})})).queued)}catch{bugQueuedShow([])}}
 $('#bug-send').onclick=async()=>{const b=$('#bug-send'),out=$('#bug-error2');b.disabled=true;b.textContent='Sending…';out.textContent='';const body=bugPayload();
- try{if(bugHosted()){const r=await fetch('/_machine/bug',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'same-origin',redirect:'manual'});
-   if(!r.ok){let m='';try{m=(await r.json()).error}catch{}throw Error(m||'The report didn’t go out. Try again.')}}
-  else await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'X-Upload':'bug-report'},body:JSON.stringify({action:'bug_send',args:body})});
-  $('#bug-review').hidden=true;$('#bug-done').hidden=false;$('#bug-what').value='';$('#bug-what').style.height='';bugShot=bugReport=null;bugShotShow()}
+ try{const r=bugHosted()?await bugHostedSend(body):await bugAction('bug_send',body);
+  $('#bug-done-text').textContent=r?.queued?t('Saved. It goes out by itself at {}.',fmtHM(r.at*1000)):t('Sent. We’ll answer by email.');
+  $('#bug-review').hidden=true;$('#bug-done').hidden=false;$('#bug-what').value='';$('#bug-what').style.height='';bugShot=bugReport=null;bugShotShow();bugQueuedLoad()}
  catch(err){out.textContent=err.message}finally{b.disabled=false;b.textContent='Send'}};
 SETTINGS_OF['settings-support']='security';
 {const d=document.createElement('div');d.id='settings-support';d.hidden=true;

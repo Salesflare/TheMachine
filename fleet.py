@@ -177,6 +177,11 @@ class NetworkUnavailable(ValueError):
 Unavailable = NetworkUnavailable  # its name before, for code that still says Unavailable
 
 
+class Limited(ValueError):
+    """The control plane said 429: not now, come back in `retry_after` seconds (its Retry-After, else its body's)."""
+    retry_after = 0
+
+
 def where(error):
     """Where an error came from, for the log: the innermost function and line, never the message (it may hold data)."""
     frames = traceback.extract_tb(error.__traceback__)
@@ -288,9 +293,19 @@ def pair(code, label, emails, timeout=30):
         except urllib.error.HTTPError as error:
             with error:
                 try:
-                    message = json.loads(error.read() or b'{}').get('error') or ''
+                    found = json.loads(error.read() or b'{}')
                 except ValueError:
-                    message = ''
+                    found = {}
+                found = found if isinstance(found, dict) else {}
+                message = str(found.get('error') or '')
+                if error.code == 429:
+                    limited = Limited(message or 'Not now; try again later.')
+                    for wait in (error.headers.get('Retry-After') if error.headers else None, found.get('retry_after')):
+                        try:
+                            limited.retry_after = max(limited.retry_after, min(int(float(wait)), 86400))
+                        except (TypeError, ValueError):
+                            pass
+                    raise limited from None
             raise ValueError(message or f'The Network said {error.code}') from None
         except (urllib.error.URLError, OSError):
             if base == RELAY:
@@ -549,9 +564,19 @@ class NetworkClient:
                     away.code = error.code
                     raise away from None
                 try:
-                    message = json.loads(error.read() or b'{}').get('error') or ''
+                    found = json.loads(error.read() or b'{}')
                 except ValueError:
-                    message = ''
+                    found = {}
+                found = found if isinstance(found, dict) else {}
+                message = str(found.get('error') or '')
+                if error.code == 429:
+                    limited = Limited(message or 'Not now; try again later.')
+                    for wait in (error.headers.get('Retry-After') if error.headers else None, found.get('retry_after')):
+                        try:
+                            limited.retry_after = max(limited.retry_after, min(int(float(wait)), 86400))
+                        except (TypeError, ValueError):
+                            pass
+                    raise limited from None
             raise ValueError(message or f'The Network said {error.code}') from None
 
 
