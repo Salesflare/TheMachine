@@ -43,7 +43,7 @@ Os filtros escolhidos aparecem acima da lista, com **Limpar**. O menu de ordem t
 
 ## Dono
 
-Em um Fleet de Trabalho, cada pessoa, organização e projeto tem um dono: **Proprietário**, em Com você, na página. É você, a menos que escolha alguém do seu Fleet de Trabalho. **Meus**, ao lado de Filtrar e em um quadro, mostra só os seus. Um card no quadro mostra o nome do dono. Cada mudança aparece na linha do tempo. Um registro compartilhado com a sua equipe leva o dono junto, com as mesmas regras de compartilhamento do resto.
+Em um Fleet de Trabalho, cada pessoa, organização e projeto tem um dono: **Proprietário**, em Com você, na página. É você, a menos que escolha alguém do seu Fleet de Trabalho. **Meus**, ao lado de Filtrar e em um quadro, mostra só os seus. Um card no quadro mostra o nome do dono. Cada mudança aparece na linha do tempo. Um registro compartilhado com a sua equipe leva o dono junto, com as mesmas regras do resto.
 
 ## Campos e tags
 
@@ -175,6 +175,14 @@ Marque alguns, ou **Selecionar tudo**, para fazer de uma vez, e **Desfazer** log
 **Pipeline**, no topo de um quadro, soma o valor dos projetos abertos por etapa e o que deve fechar por mês, pelas datas de fechamento. Projetos ganhos, perdidos e parados não estão abertos. O que você ganhou neste mês aparece à parte. Os valores são em euros, a menos que sua Machine esteja configurada para outra moeda. **Meus** conta só os seus.
 
 Um quadro novo, ou um quadro sugerido que você salva, passa uma vez por todo o seu histórico. Ele encontra projetos e organizações que se encaixam, cria um projeto por organização e coloca cada um em uma etapa. O cabeçalho diz "Olhando seu histórico…" enquanto trabalha, e depois quantos adicionou e quantos esperam sua revisão. Um quadro Só você guarda o que encontra só para você.
+
+### O quadro de um colega
+
+Em **Equipe**, os quadros que seus colegas compartilham aparecem ao lado dos seus, primeiro os que têm mais projetos seus. Cada card diz o que aconteceu por último, com a data, como no quadro do dono: a linha mais nova compartilhada com a equipe, ou então a última mudança de etapa. O nome do dono só aparece quando uma etapa tem cards de mais de um colega; se uma pessoa é dona do quadro todo, o cabeçalho diz.
+
+**Meus**, **Comigo** e **Todos** escolhem o que um quadro compartilhado mostra. Meus é aquilo em que você está: uma conversa dele, um projeto que você é dono ou tem, ou uma tarefa sua sobre ele. Comigo é o que espera por você: uma tarefa aberta sobre ele, ou uma conversa em que a mensagem mais nova foi escrita para você.
+
+O resto de uma etapa fica em **Mostrar mais N**. Projetos parecidos, como uma série de testes "… avaliação de CRM", ficam juntos em uma linha com uma contagem; toque nela para abri-los. Nada disso muda o que é compartilhado.
 
 ## Uma tarefa sobre alguém
 

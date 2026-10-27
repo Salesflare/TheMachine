@@ -4,6 +4,7 @@ area: connections
 summary: Commentaires, mentions, suggestions de modification et partages sur vos fichiers Google Docs ou Word. Il lit, et ne publie une réponse à un commentaire qu’avec votre accord.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
+site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## Ce qu’il lit
 
@@ -34,13 +35,12 @@ Si cet accord est retiré plus tard, la carte Docs indique **En attente de votre
 
 ## Le connecter
 
-Sur une Machine hébergée, Docs apparaît sous **+ Ajouter** dès que votre page de configuration le propose.
+Connectez d’abord Outlook pour cette adresse. Ensuite :
 
-Sur votre propre ordinateur :
+- Machine hébergée : sur votre page de configuration, ouvrez **Documents** sous **Plus de sources** et appuyez sur **Connecter les documents** à côté de cette adresse. Microsoft vous demande d’autoriser la lecture de vos fichiers.
+- Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **+ Ajouter**, choisissez **Documents** et appuyez sur **Se connecter avec Microsoft**.
 
-1. Connectez d’abord Gmail ou Outlook pour cette adresse.
-2. Ouvrez **Connexions**, puis **+ Ajouter**, choisissez Docs et saisissez cette adresse. Ou lancez `assistant connect docs`.
-3. Il vérifie que votre connexion peut lire les documents. Sans cet accord, il n’est pas ajouté.
+Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’est pas ajouté. Les Google Docs ne sont pas encore disponibles via la connexion de The Machine.
 
 ## Travail ou perso
 

@@ -3,7 +3,7 @@ title: Foutrapporten
 area: security
 summary: Als er iets stukgaat, vertelt je Machine het team van The Machine wat er misging en waar in de code. Nooit je berichten, namen of adressen.
 covers: error-reports
-code: error_feed.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html
 order: 4
 ---
 ## Wat het is
@@ -33,8 +33,12 @@ Wat er in je berichten, to-do's, concepten of chats staat. Namen, e-mailadressen
 
 Dezelfde fout telt één keer, met een aantal. Hooguit één batch per 10 minuten. Het team bewaart ze 30 dagen.
 
+## Pacing
+
+Werk op de achtergrond wacht als de limieten van je AI-abonnement bijna op zijn, zodat er ruimte blijft voor je eigen chats (zie [Model](model.md)). Met foutrapporten aan vertelt je Machine het team ook, één keer per dag, hoe vaak dat gebeurde: per keer het uur waarop het begon, welke limiet, hoeveel minuten het duurde en hoeveel taken wachtten. Alleen aantallen en minuten, niets over wat die taken waren.
+
 ## Uitzetten
 
-Zet in Instellingen, Beveiliging **Foutrapporten sturen** uit. Er wordt niets meer bijgehouden of verstuurd, en wat nog wachtte, wordt verwijderd. Fouten verschijnen nog steeds op je eigen Machine, die een oplossing kan voorstellen.
+Zet in Instellingen, Beveiliging **Foutrapporten sturen** uit. Er wordt niets meer bijgehouden of verstuurd, ook geen pacingtellingen, en wat nog wachtte, wordt verwijderd. Fouten verschijnen nog steeds op je eigen Machine, die een oplossing kan voorstellen.
 
 Zie [Beveiliging en privacy](security-and-privacy.md).

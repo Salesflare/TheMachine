@@ -176,6 +176,14 @@ Hake ein paar an, oder **Alle auswählen**, um sie auf einmal zu bearbeiten, und
 
 Ein neues Board, oder ein vorgeschlagenes Board, das du speicherst, durchsucht einmal deinen ganzen Verlauf. Es findet passende Projekte und Organisationen, legt ein Projekt pro Organisation an und setzt jedes in eine Phase. Die Kopfzeile sagt „Durchsuche deinen Verlauf…“, solange es arbeitet, und dann, wie viele es hinzugefügt hat und wie viele auf deine Prüfung warten. Ein Board mit Nur du behält, was es findet, für dich.
 
+### Das Board eines Teammitglieds
+
+In **Team** erscheinen Boards, die deine Teammitglieder teilen, neben deinen, die mit den meisten deiner Projekte zuerst. Jede Karte sagt, was zuletzt passiert ist, mit Datum, wie auf dem Board ihres Inhabers: die neueste Zeile, die mit dem Team geteilt ist, sonst ihre letzte Verschiebung. Der Name des Inhabers erscheint nur, wenn eine Phase Karten von mehr als einem Teammitglied hat. Gehört einer Person das ganze Board, sagt das die Kopfzeile.
+
+**Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist oder das du selbst hast, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
+
+Der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Projekte, die sich ähneln, etwa eine Reihe von Tests „… CRM-Evaluierung“, klappen zu einer Zeile mit Anzahl zusammen. Tippe darauf, um sie zu öffnen. Nichts davon ändert, was geteilt wird.
+
 ## Eine Aufgabe zu jemandem
 
 **Neue Aufgabe** im Menü **⋯** einer Person, Organisation oder eines Projekts startet eine Aufgabe dazu.

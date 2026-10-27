@@ -176,6 +176,14 @@ Cochez-en quelques-uns, ou **Tout sélectionner**, pour les traiter d’un coup,
 
 Un nouveau tableau, ou un tableau suggéré que vous enregistrez, parcourt une fois tout votre historique. Il trouve les projets et organisations qui correspondent, crée un projet par organisation et place chacun dans une étape. L’en-tête affiche « Parcours de votre historique… » pendant le travail, puis combien de projets ont été ajoutés et combien attendent votre vérification. Un tableau Vous seul garde ce qu’il trouve pour vous seul.
 
+### Le tableau d’un collègue
+
+Dans **Équipe**, les tableaux que vos collègues partagent s’affichent à côté des vôtres, en commençant par ceux qui ont le plus de vos projets. Chaque carte indique ce qui s’est passé en dernier, avec sa date, comme sur le tableau de son propriétaire : la dernière ligne partagée avec l’équipe, sinon son dernier déplacement. Le nom du propriétaire n’apparaît que quand une étape a des cartes de plusieurs collègues ; quand une seule personne possède tout le tableau, l’en-tête le dit.
+
+**Les miens**, **Pour moi** et **Tout** choisissent ce qu’un tableau partagé affiche. Les miens, c’est ce sur quoi vous êtes : un de ses fils, un projet que vous possédez ou avez vous-même, ou une de vos tâches à son sujet. Pour moi, c’est ce qui vous attend : une tâche ouverte à son sujet, ou un fil dont le dernier message vous était adressé.
+
+Le reste d’une étape se replie dans **Afficher N de plus**. Les projets qui se ressemblent, comme une série d’essais « … évaluation CRM », se replient en une ligne avec un nombre ; touchez-la pour les ouvrir. Rien de tout cela ne change ce qui est partagé.
+
 ## Une tâche sur quelqu’un
 
 **Nouvelle tâche**, dans le menu **⋯** d’une personne, d’une organisation ou d’un projet, crée une tâche à son sujet.

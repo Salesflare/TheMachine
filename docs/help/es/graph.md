@@ -176,6 +176,14 @@ Marca unos cuantos, o **Seleccionar todo**, para hacerlos a la vez, y **Deshacer
 
 Un tablero nuevo, o un tablero sugerido que guardas, revisa una vez todo tu historial. Encuentra proyectos y organizaciones que encajan, crea un proyecto por organización y coloca cada uno en una etapa. La cabecera dice "Revisando tu historial…" mientras trabaja, y luego cuántos añadió y cuántos esperan tu revisión. Un tablero de Solo tú guarda solo para ti lo que encuentra.
 
+### El tablero de un compañero
+
+En **Equipo**, los tableros que comparten tus compañeros aparecen junto a los tuyos, primero los que tienen más proyectos tuyos. Cada tarjeta dice qué pasó por última vez, con su fecha, como en el tablero de su propietario: la línea más reciente compartida con el equipo, o si no su último movimiento. El nombre del propietario solo aparece cuando una etapa tiene tarjetas de más de un compañero; cuando una persona es dueña de todo el tablero, lo dice la cabecera.
+
+**Míos**, **Me toca** y **Todo** eligen qué muestra un tablero compartido. Míos es en lo que estás: un hilo suyo, un proyecto del que eres propietario o que tienes tú, o una tarea tuya sobre él. Me toca es lo que te espera: una tarea abierta sobre él, o un hilo en el que el mensaje más reciente se te escribió a ti.
+
+El resto de una etapa se pliega en **Mostrar N más**. Los proyectos que se parecen, como una serie de pruebas "… CRM evaluation", se pliegan en una fila con un recuento; tócala para abrirlos. Nada de esto cambia lo que se comparte.
+
 ## Una tarea sobre alguien
 
 **Nueva tarea** en el menú **⋯** de una persona, organización o proyecto empieza una tarea sobre ella.

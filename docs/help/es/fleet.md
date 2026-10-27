@@ -1,7 +1,7 @@
 ---
 title: Fleets
 area: fleet
-summary: Un Work Fleet para tu equipo, un Family Fleet para casa. Machines que se ayudan entre sí, con tu sí en cada respuesta.
+summary: Un Work Fleet para tu equipo, un Family Fleet para casa. Machines que se ayudan entre sí, según tus reglas para compartir.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
 site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
@@ -23,13 +23,39 @@ Aparece en cuanto estás en un Fleet, con un panel para cada Fleet, Familia, Ami
 
 Pregunta "¿quién conoce a alguien en Acme?" desde la pestaña Fleet, o con **Preguntar al Fleet** en una organización del [Graph](graph.md). La Machine de cada compañero responde según sus propias reglas para compartir, y le pregunta antes cuando la regla lo dice.
 
+## Respondido solo en un Work Fleet
+
+En un Work Fleet Estándar, tu Machine responde sola a **quién conoce a alguien**, **contexto de reuniones** ("¿quién es este invitado?") y **quién se ocupa de los correos compartidos** de un compañero. Usa solo lo que el [Graph del equipo](team-graph.md) ya comparte con tu equipo. Los hilos privados, personales y sensibles nunca cuentan, y solo da nombres de personas que el Graph del equipo ya comparte. Cada respuesta aparece en la pestaña Fleet, en **Actividad**.
+
+Para pararla, ponla en **Nunca** en **Compartiendo**. Una regla guardada como **Pregúntame primero** ahora funciona como **Siempre**. Mientras el Graph del equipo de tu Fleet no comparte, quién conoce a alguien y contexto de reuniones siguen preguntándote antes.
+
+Los Work Fleets Prudentes, Amigos y Familia siguen preguntándote antes. Las presentaciones, los traspasos, los seguimientos compartidos y las preguntas libres mantienen sus propias reglas.
+
+## Aprendizajes del equipo
+
+Como mucho una vez al día, tu Machine lee unos cuantos hilos de clientes que el Graph del equipo ya comparte con tu equipo, y anota cómo trabaja el equipo. Por ejemplo: "Las solicitudes de reembolso se responden desde la bandeja de soporte con la plantilla de reembolso." Aparecen en el panel de tu Work Fleet, en **Aprendizajes del equipo**, para todos en el Fleet, y cada uno queda registrado en **Actividad**. No se pregunta antes a nadie.
+
+- Solo hilos en los que escribió alguien de tu equipo. Nunca privados, personales ni sensibles.
+- Solo lo que se cumple con varios clientes: un proceso, una herramienta, un estilo de escritura o quién se ocupa de qué. Nunca algo sobre un solo cliente, nunca comentarios sobre tu propio producto, y nunca nombres, direcciones, números ni citas.
+- Cada uno lleva una etiqueta: de qué tipo es, que viene de conversaciones del equipo y que es para este Fleet. Los que no tiene claros se descartan.
+
+Cualquiera en el Fleet puede **Quitar** un aprendizaje. Desaparece para todos y no se vuelve a crear. Para pararlo, desactiva **Ofrecer compartir aprendizajes** en Ajustes, Seguridad. Los Work Fleets Prudentes no reciben ninguno.
+
 ## Solicitudes de resumen del equipo
 
-Un compañero con el resumen del equipo activado pide cada mañana a tu Machine cifras y fechas. Eso nunca se convierte en una tarea. Espera en la pestaña Fleet, en el panel de tu Fleet de Trabajo, en **Solicitudes de resumen del equipo**: **Compartir una vez**, **Compartir siempre**, **Rechazar** o **Nunca**. Solo espera la última solicitud de cada compañero, y las que no se responden caducan. No se comparte nada hasta que eliges.
+Un compañero con el resumen del equipo activado pide cada mañana a tu Machine cifras y fechas. En un Work Fleet tu Machine responde sola, solo con lo que el [Graph del equipo](team-graph.md) ya comparte con tu equipo. Los hilos privados y personales nunca cuentan, y no sale nada mientras el Graph del equipo de tu Fleet no comparte. Cada respuesta aparece en la pestaña Fleet, en **Actividad**. Nunca se convierte en una tarea ni en una notificación.
+
+Para pararlo, desactiva **Compartir mis datos del informe con el equipo** en la pestaña Fleet, en **Compartiendo**. Su resumen te muestra entonces como sin responder.
+
+En un Fleet Prudente, las solicitudes te esperan en la pestaña Fleet, en **Solicitudes de resumen del equipo**: **Compartir una vez**, **Compartir siempre**, **Rechazar** o **Nunca**. Solo espera la última solicitud de cada compañero, y las que no se responden caducan. No se comparte nada hasta que eliges.
 
 ## Graph del equipo
 
 En un Work Fleet, el trabajo con clientes se comparte con tu equipo, después de que lo revises. Consulta [Graph del equipo](team-graph.md).
+
+## Conectores compartidos
+
+Un propietario o administrador puede conectar Stripe o Intercom una vez y compartirlo con el equipo, desde el cuadro **Conectores compartidos** de la pestaña Fleet. Las Machines de los compañeros lo leen, solo lectura, y ven quién lo compartió. Solo los administradores lo cambian o lo paran. Consulta [Stripe](stripe.md) e [Intercom](intercom.md).
 
 ## Qué responde tu Machine
 

@@ -4,6 +4,7 @@ area: connections
 summary: Reacties, vermeldingen, voorgestelde wijzigingen en gedeelde bestanden in je Google Docs of Word-bestanden. Het leest, en plaatst alleen een antwoord op een reactie als jij het goedkeurt.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
+site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## Wat het leest
 
@@ -34,13 +35,12 @@ Wordt die OK later ingetrokken, dan zegt de kaart van Docs **Wacht op je OK om d
 
 ## Koppelen
 
-Op een gehoste Machine verschijnt Docs onder **+ Toevoegen** zodra je setuppagina het aanbiedt.
+Koppel eerst Outlook voor het adres. Dan:
 
-Op je eigen computer:
+- Gehoste Machine: open op je setuppagina **Documenten** onder **Meer bronnen** en druk op **Documenten koppelen** naast dat adres. Microsoft vraagt je om het lezen van je bestanden toe te staan.
+- Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Documenten** en druk op **Inloggen met Microsoft**.
 
-1. Koppel eerst Gmail of Outlook voor het adres.
-2. Open **Koppelingen**, dan **+ Toevoegen**, kies Docs en vul dat adres in. Of voer `assistant connect docs` uit.
-3. Hij controleert of je login documenten mag lezen. Zonder die OK wordt het niet toegevoegd.
+Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd. Google Docs zijn nog niet beschikbaar via de login van The Machine.
 
 ## Werk of privé
 

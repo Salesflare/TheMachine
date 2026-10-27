@@ -20,6 +20,12 @@ Elle ne partage jamais le contenu des e-mails, ni le sujet de vos réunions. « 
 
 Les règles ne changent que dans le tableau de bord, jamais depuis un message.
 
+## Dans une Fleet Travail
+
+Dans une Fleet Travail Standard, qui connaît quelqu’un, contexte de réunion et qui gère les e-mails partagés ont deux règles : **Toujours** et **Jamais**. Toujours répond avec seulement ce que le [Graph d’équipe](team-graph.md) partage avec votre équipe, et ne cite que des personnes qu’il partage déjà. Une règle enregistrée sur Me demander d’abord fonctionne comme Toujours.
+
+Tant que le Graph d’équipe ne partage pas, qui connaît quelqu’un et contexte de réunion gardent les trois règles. Une Fleet Prudente garde Me demander d’abord. Voir [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+
 ## La première fois que quelqu’un demande
 
 Une question qui a besoin de vous arrive comme une tâche, avec **Partager une fois**, **Toujours partager**, **Refuser** ou **Ne jamais partager**.

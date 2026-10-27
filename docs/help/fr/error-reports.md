@@ -3,7 +3,7 @@ title: Rapports d’erreur
 area: security
 summary: Quand quelque chose casse, votre Machine indique à l’équipe The Machine ce qui a échoué et où dans le code. Jamais vos messages, noms ou adresses.
 covers: error-reports
-code: error_feed.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html
 order: 4
 ---
 ## Ce que c’est
@@ -33,8 +33,12 @@ Le contenu de vos messages, tâches, brouillons ou chats. Les noms, adresses e-m
 
 La même erreur compte une fois, avec un nombre. Au plus un lot toutes les 10 minutes. L’équipe les garde 30 jours.
 
+## Rythme
+
+Le travail en arrière-plan attend quand les limites de votre abonnement d’IA sont presque atteintes, pour garder de la place pour vos propres chats (voir [Votre modèle d’IA](model.md)). Avec les rapports d’erreur activés, votre Machine indique aussi à l’équipe, une fois par jour, combien de fois c’est arrivé : pour chaque fois, l’heure de début, quelle limite, combien de minutes cela a duré et combien de traitements ont attendu. Seulement des nombres et des minutes, rien sur ce qu’étaient les traitements.
+
 ## Les désactiver
 
-Dans Paramètres, Sécurité, désactivez **Envoyer des rapports d’erreur**. Plus rien n’est enregistré ni envoyé, et ce qui attendait est supprimé. Les erreurs s’affichent toujours sur votre propre Machine, qui peut proposer une correction.
+Dans Paramètres, Sécurité, désactivez **Envoyer des rapports d’erreur**. Plus rien n’est enregistré ni envoyé, y compris les chiffres de rythme, et ce qui attendait est supprimé. Les erreurs s’affichent toujours sur votre propre Machine, qui peut proposer une correction.
 
 Voir [Sécurité et confidentialité](security-and-privacy.md).

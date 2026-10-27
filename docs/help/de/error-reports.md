@@ -3,7 +3,7 @@ title: Fehlerberichte
 area: security
 summary: Wenn etwas kaputtgeht, sagt deine Machine dem Team von The Machine, was fehlgeschlagen ist und wo im Code. Nie deine Nachrichten, Namen oder Adressen.
 covers: error-reports
-code: error_feed.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html
 order: 4
 ---
 ## Was es ist
@@ -33,8 +33,12 @@ Was in deinen Nachrichten, Aufgaben, Entwürfen oder Chats steht. Namen, E-Mail-
 
 Derselbe Fehler zählt einmal, mit einer Anzahl. Höchstens ein Paket alle 10 Minuten. Das Team bewahrt sie 30 Tage auf.
 
+## Drosselung
+
+Hintergrundarbeit wartet, wenn die Limits deines KI-Tarifs knapp werden, damit Platz für deine eigenen Chats bleibt (siehe [Modell](model.md)). Mit eingeschalteten Fehlerberichten sagt deine Machine dem Team außerdem einmal am Tag, wie oft das passiert ist: für jedes Mal die Stunde, in der es begann, welches Limit, wie viele Minuten es dauerte und wie viele Jobs warteten. Nur Anzahlen und Minuten, nichts darüber, was die Jobs waren.
+
 ## Ausschalten
 
-Schalte in Einstellungen, Sicherheit **Fehlerberichte senden** aus. Dann wird nichts mehr erfasst oder gesendet, und was noch wartete, wird gelöscht. Fehler erscheinen weiterhin auf deiner eigenen Machine, die eine Lösung anbieten kann.
+Schalte in Einstellungen, Sicherheit **Fehlerberichte senden** aus. Dann wird nichts mehr erfasst oder gesendet, auch keine Drosselungs-Zahlen, und was noch wartete, wird gelöscht. Fehler erscheinen weiterhin auf deiner eigenen Machine, die eine Lösung anbieten kann.
 
 Siehe [Sicherheit und Datenschutz](security-and-privacy.md).

@@ -3,7 +3,7 @@ title: Relatórios de erro
 area: security
 summary: Quando algo quebra, sua Machine conta para a equipe de The Machine o que falhou e onde no código. Nunca suas mensagens, nomes ou endereços.
 covers: error-reports
-code: error_feed.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html
 order: 4
 ---
 ## O que é
@@ -33,8 +33,12 @@ O que dizem suas mensagens, tarefas, rascunhos ou chats. Nomes, endereços de e-
 
 O mesmo erro conta uma vez, com uma contagem. No máximo um lote a cada 10 minutos. A equipe guarda os erros por 30 dias.
 
+## Ritmo
+
+O trabalho em segundo plano espera quando os limites do seu plano de IA estão no fim, para sobrar espaço para os seus chats (veja [Seu modelo de IA](model.md)). Com os relatórios de erro ligados, ela também conta à equipe, uma vez por dia, quantas vezes isso aconteceu: para cada vez, a hora do início, qual limite, quantos minutos durou e quantos trabalhos esperaram. Só contagens e minutos, nada sobre os trabalhos.
+
 ## Desativar
 
-Em Configurações, Segurança, desative **Enviar relatórios de erro**. Nada mais é registrado ou enviado, e o que estava esperando é excluído. Os erros continuam aparecendo na sua própria Machine, que pode oferecer uma correção.
+Em Configurações, Segurança, desative **Enviar relatórios de erro**. Nada mais é registrado ou enviado, incluindo as contagens de ritmo, e o que estava esperando é excluído. Os erros continuam aparecendo na sua própria Machine, que pode oferecer uma correção.
 
 Veja [Segurança e privacidade](security-and-privacy.md).

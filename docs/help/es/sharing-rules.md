@@ -20,6 +20,12 @@ Nunca comparte el contenido de los correos ni de qué tratan tus reuniones. "¿D
 
 Las reglas solo cambian en el panel, nunca desde un mensaje.
 
+## En un Work Fleet
+
+En un Work Fleet Estándar, quién conoce a alguien, contexto de reuniones y quién se ocupa de los correos compartidos tienen dos reglas: **Siempre** y **Nunca**. Siempre responde solo con lo que el [Graph del equipo](team-graph.md) comparte con tu equipo, y solo nombres de personas que ya comparte. Una regla guardada como Pregúntame antes funciona como Siempre.
+
+Mientras el Graph del equipo no comparte, quién conoce a alguien y contexto de reuniones mantienen las tres reglas. Un Fleet Prudente mantiene Pregúntame antes. Consulta [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+
 ## La primera vez que alguien pregunta
 
 Una pregunta que te necesita llega como tarea, con **Compartir una vez**, **Compartir siempre**, **Rechazar** o **No compartir nunca**.

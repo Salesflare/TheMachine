@@ -3,7 +3,7 @@ title: Segnalazioni di errore
 area: security
 summary: Quando qualcosa si rompe, la tua Machine dice al team di The Machine cosa non ha funzionato e in che punto del codice. Mai i tuoi messaggi, nomi o indirizzi.
 covers: error-reports
-code: error_feed.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html
 order: 4
 ---
 ## Cos'è
@@ -33,8 +33,12 @@ Cosa dicono i tuoi messaggi, le attività, le bozze o le chat. Nomi, indirizzi e
 
 Lo stesso errore conta una volta, con un conteggio. Al massimo un invio ogni 10 minuti. Il team li conserva 30 giorni.
 
+## Ritmo
+
+Il lavoro in background aspetta quando i limiti del tuo piano AI si esauriscono, per lasciare spazio alle tue chat (vedi [Il tuo modello AI](model.md)). Con le segnalazioni di errore attive, la tua Machine dice al team, una volta al giorno, quante volte è successo: per ogni volta, l'ora in cui è iniziato, quale limite, quanti minuti è durato e quanti lavori hanno aspettato. Solo conteggi e minuti, niente sui lavori.
+
 ## Disattivalo
 
-In Impostazioni, Sicurezza, disattiva **Invia segnalazioni di errore**. Non viene più registrato né inviato niente, e ciò che era in attesa viene eliminato. Gli errori restano visibili sulla tua Machine, che può proporre una correzione.
+In Impostazioni, Sicurezza, disattiva **Invia segnalazioni di errore**. Non viene più registrato né inviato niente, compresi i conteggi sul ritmo, e ciò che era in attesa viene eliminato. Gli errori restano visibili sulla tua Machine, che può proporre una correzione.
 
 Vedi [Sicurezza e privacy](security-and-privacy.md).

@@ -4,6 +4,7 @@ area: connections
 summary: Kommentare, Erwähnungen, Änderungsvorschläge und Freigaben in deinen Google Docs oder Word-Dateien. Es liest und postet eine Antwort auf einen Kommentar nur, wenn du sie freigibst.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
+site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## Was es liest
 
@@ -34,13 +35,12 @@ Wird dieses OK später zurückgenommen, zeigt die Docs-Karte **Wartet auf dein O
 
 ## Verbinden
 
-Auf einer gehosteten Machine erscheint Docs unter **+ Hinzufügen**, sobald deine Einrichtungsseite es anbietet.
+Verbinde zuerst Outlook für die Adresse. Dann:
 
-Auf deinem eigenen Computer:
+- Gehostete Machine: Öffne auf deiner Einrichtungsseite **Dokumente** unter **Weitere Quellen** und tippe neben dieser Adresse auf **Dokumente verbinden**. Microsoft bittet dich, das Lesen deiner Dateien zu erlauben.
+- Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **+ Hinzufügen**, wähle **Dokumente** und tippe auf **Mit Microsoft anmelden**.
 
-1. Verbinde zuerst Gmail oder Outlook für die Adresse.
-2. Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Docs und gib diese Adresse ein. Oder führe `assistant connect docs` aus.
-3. Es prüft, ob deine Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt.
+Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt. Google Docs sind über die Anmeldung von The Machine noch nicht verfügbar.
 
 ## Arbeit oder privat
 

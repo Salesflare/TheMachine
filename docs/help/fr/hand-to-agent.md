@@ -21,9 +21,16 @@ Une mission n’envoie jamais rien à votre place.
 Dans **Paramètres**, **Général**, sous **Agents de code** :
 
 - **Session Claude Code** : l’adresse d’une session Claude Code.
-- **Environnement cloud Codex** : son identifiant d’environnement.
+- **Environnement cloud Codex** : son identifiant d’environnement, pour le cloud Codex.
 - **Tourne sur**, et éventuellement une **Branche**.
 
-Claude renvoie son résultat via le connecteur The Machine. Ajoutez-le une fois dans claude.ai, Settings, Connectors, Add custom connector, avec l’adresse affichée à cet endroit. Pour Codex sur une Machine hébergée, appuyez d’abord sur **Connecter Codex** sur votre page de configuration, sous **Ajoutez-en d’autres à tout moment**. Il utilise le même abonnement ChatGPT que votre modèle, et OpenAI demande un code de plus, pour Codex.
+Claude renvoie son résultat via le connecteur The Machine. Ajoutez-le une fois dans claude.ai, Settings, Connectors, Add custom connector, avec l’adresse affichée à cet endroit.
+
+## Où Codex tourne
+
+Sur une Machine hébergée, choisissez-le sur votre page de configuration, sous **Ajoutez-en d’autres à tout moment**, **Codex** :
+
+- **Sur mon ordinateur** (par défaut) : la mission tourne sur votre propre ordinateur, avec le Codex connecté là-bas. Rien de Codex n’est sur votre serveur, et la mission est chiffrée pour cet ordinateur uniquement : le Network la transmet mais ne peut pas la lire. Installez The Machine sur cet ordinateur, associez-le sur la page de votre compte et lancez `codex login` dessus. Laissez The Machine tourner dessus. La mission apparaît comme un fil dans l’app Codex sur cet ordinateur, et le résultat revient sur la tâche. Quand l’ordinateur est éteint, les missions attendent son retour.
+- **Cloud Codex** : la mission tourne dans le cloud d’OpenAI. Appuyez sur **Connecter Codex**. Il utilise le même abonnement ChatGPT que votre modèle, et OpenAI demande un code de plus, pour Codex. Saisissez ensuite l’environnement cloud Codex dans les Paramètres.
 
 Sur une Machine hébergée, Agents de code apparaît dès que GitHub ou Codex est connecté. La section apparaît aussi sur les configurations qui exécutent les missions ailleurs. Plus d’infos dans le [guide des agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

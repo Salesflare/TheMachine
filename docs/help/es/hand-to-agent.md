@@ -21,9 +21,16 @@ Un trabajo nunca envía nada por ti.
 En **Ajustes**, **General**, en **Agentes de código**:
 
 - **Sesión de Claude Code**: la dirección de una sesión de Claude Code.
-- **Entorno en la nube de Codex**: el id de su entorno.
+- **Entorno en la nube de Codex**: el id de su entorno, para Codex cloud.
 - **Se ejecuta en** y, si quieres, una **Rama**.
 
-Claude devuelve su resultado a través del conector de The Machine. Añádelo una vez en claude.ai, Settings, Connectors, Add custom connector, con la dirección que se muestra ahí. Para Codex en una Machine alojada, pulsa primero **Conectar Codex** en tu página de configuración, en **Añade más cuando quieras**. Usa el mismo plan de ChatGPT que tu modelo, y OpenAI pide un código más, para Codex.
+Claude devuelve su resultado a través del conector de The Machine. Añádelo una vez en claude.ai, Settings, Connectors, Add custom connector, con la dirección que se muestra ahí.
+
+## Dónde se ejecuta Codex
+
+En una Machine alojada, elígelo en tu página de configuración, en **Añade más cuando quieras**, **Codex**:
+
+- **En mi ordenador** (por defecto): el trabajo se ejecuta en tu propio ordenador, con el Codex que tiene la sesión iniciada allí. Nada de Codex está en tu servidor, y el trabajo va cifrado solo para ese ordenador: la Network lo pasa pero no puede leerlo. Instala The Machine en ese ordenador, vincúlalo en tu página Cuenta y ejecuta `codex login` allí. Mantén The Machine en marcha en él. El trabajo aparece como un hilo en la app de Codex de ese ordenador, y el resultado vuelve a la tarea. Cuando el ordenador está apagado, los trabajos esperan hasta que vuelva.
+- **Codex cloud**: el trabajo se ejecuta en la nube de OpenAI. Pulsa **Conectar Codex**. Usa el mismo plan de ChatGPT que tu modelo, y OpenAI pide un código más, para Codex. Luego introduce el entorno de Codex cloud en Ajustes.
 
 En una Machine alojada, Agentes de código aparece en cuanto GitHub o Codex está conectado. También aparece en configuraciones que ejecutan trabajos en otro sitio. Más en la [guía de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

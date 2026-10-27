@@ -3,7 +3,7 @@ title: Informes de errores
 area: security
 summary: Cuando algo falla, tu Machine le dice al equipo de The Machine qué falló y en qué parte del código. Nunca tus mensajes, nombres ni direcciones.
 covers: error-reports
-code: error_feed.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html
 order: 4
 ---
 ## Qué es
@@ -33,8 +33,12 @@ Lo que dicen tus mensajes, tareas, borradores o chats. Nombres, direcciones de c
 
 El mismo error cuenta una vez, con un recuento. Como mucho, un lote cada 10 minutos. El equipo los guarda 30 días.
 
+## Ritmo
+
+El trabajo en segundo plano espera cuando los límites de tu plan de IA se están agotando, para dejar sitio a tus propios chats (consulta [Tu modelo de IA](model.md)). Con los informes de errores activados, tu Machine también le dice al equipo, una vez al día, cuántas veces pasó: para cada vez, la hora en que empezó, qué límite, cuántos minutos duró y cuántos trabajos esperaron. Solo recuentos y minutos, nada sobre qué eran los trabajos.
+
 ## Desactívalo
 
-En Ajustes, Seguridad, desactiva **Enviar informes de errores**. No se registra ni se envía nada más, y lo que estaba esperando se elimina. Los errores se siguen viendo en tu propia Machine, que puede ofrecerte un arreglo.
+En Ajustes, Seguridad, desactiva **Enviar informes de errores**. No se registra ni se envía nada más, recuentos de ritmo incluidos, y lo que estaba esperando se elimina. Los errores se siguen viendo en tu propia Machine, que puede ofrecerte un arreglo.
 
 Consulta [Seguridad y privacidad](security-and-privacy.md).

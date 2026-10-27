@@ -176,6 +176,14 @@ Vink er een paar aan, of **Alles selecteren**, om ze in één keer te doen, en *
 
 Een nieuw bord, of een voorgesteld bord dat je bewaart, kijkt één keer door je hele geschiedenis. Het vindt projecten en organisaties die passen, maakt één project per organisatie en zet elk in een fase. De kop zegt "Bezig met je geschiedenis doorzoeken…" terwijl het werkt, en daarna hoeveel het toevoegde en hoeveel er wachten tot je ze nakijkt. Een bord voor Alleen jij houdt wat het vindt bij jou.
 
+### Het bord van een teamgenoot
+
+In **Team** staan gedeelde borden van teamgenoten naast de jouwe, met de meeste van je projecten eerst. Elke kaart zegt wat er het laatst gebeurde, met datum, zoals op het bord van de eigenaar: de nieuwste regel gedeeld met het team, anders de laatste verplaatsing. De eigenaar staat er alleen bij als een fase kaarten van meerdere teamgenoten heeft; is één persoon eigenaar van het hele bord, dan staat dat in de kop.
+
+**Van mij**, **Wacht op mij** en **Alle** kiezen wat een gedeeld bord toont. Van mij is waar jij bij betrokken bent: een thread ervan, een project waarvan je eigenaar bent of dat je zelf hebt, of een to-do van jou erover. Wacht op mij is wat op jou wacht: een open to-do erover, of een thread waarin het nieuwste bericht aan jou geschreven is.
+
+De rest van een fase klapt in onder **Nog N tonen**. Projecten die op elkaar lijken, zoals een reeks proefperiodes "… CRM-evaluatie", worden één rij met een aantal; tik erop om ze te openen. Niets hiervan verandert wat er gedeeld wordt.
+
 ## Een to-do over iemand
 
 **Nieuwe to-do** in het menu **⋯** van een persoon, organisatie of project begint een to-do over die persoon, organisatie of dat project.

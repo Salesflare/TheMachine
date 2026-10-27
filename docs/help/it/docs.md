@@ -4,6 +4,7 @@ area: connections
 summary: Commenti, menzioni, modifiche suggerite e condivisioni sui tuoi file Google Docs o Word. Legge, e pubblica una risposta a un commento solo quando dai l’OK.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
+site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## Cosa legge
 
@@ -34,13 +35,12 @@ Se in seguito quell’OK viene revocato, la scheda Docs dice **In attesa del tuo
 
 ## Collegalo
 
-Su una Machine in hosting, Docs compare sotto **+ Aggiungi** quando la tua pagina di configurazione lo offre.
+Collega prima Outlook per quell’indirizzo. Poi:
 
-Sul tuo computer:
+- Machine in hosting: nella tua pagina di configurazione, apri **Documenti** sotto **Altre fonti** e premi **Collega documenti** accanto a quell’indirizzo. Microsoft ti chiede di consentire la lettura dei tuoi file.
+- Il tuo computer, abbinato al tuo account: apri **Connessioni**, **+ Aggiungi**, scegli **Documenti** e premi **Accedi con Microsoft**.
 
-1. Collega prima Gmail o Outlook per quell’indirizzo.
-2. Apri **Connessioni**, poi **+ Aggiungi**, scegli Docs e inserisci quell’indirizzo. Oppure esegui `assistant connect docs`.
-3. Verifica che il tuo accesso possa leggere i documenti. Senza quell’OK non viene aggiunto.
+Verifica che l’accesso possa leggere i documenti. Senza quell’OK non viene aggiunto. I Google Docs non sono ancora disponibili tramite l’accesso di The Machine.
 
 ## Lavoro o personale
 

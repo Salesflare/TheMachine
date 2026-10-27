@@ -176,6 +176,14 @@ Spuntane alcuni, o **Seleziona tutto**, per gestirli in una volta, e **Annulla**
 
 Una nuova bacheca, o una bacheca suggerita che salvi, guarda una volta in tutta la tua cronologia. Trova progetti e organizzazioni adatti, crea un progetto per organizzazione e mette ciascuno in una fase. L'intestazione dice "Sto guardando nella tua cronologia…" mentre lavora, poi quanti ne ha aggiunti e quanti aspettano la tua revisione. Una bacheca Solo tu tiene per te quello che trova.
 
+### La bacheca di un collega
+
+In **Team**, le bacheche condivise dai colleghi compaiono accanto alle tue, prima quelle con più tuoi progetti. Ogni scheda dice l'ultima cosa successa, con la data, come sulla bacheca del suo proprietario: la riga più recente condivisa con il team, altrimenti il suo ultimo spostamento. Il nome del proprietario compare solo quando una fase ha schede di più colleghi; se è tutta di una persona, lo dice l'intestazione.
+
+**Miei**, **Tocca a me** e **Tutti** scelgono cosa mostra una bacheca condivisa. Miei è ciò di cui fai parte: un suo thread, un progetto di cui sei proprietario o che hai tu, o una tua attività che lo riguarda. Tocca a me è ciò che aspetta te: un'attività aperta che lo riguarda, o un thread in cui il messaggio più recente è stato scritto a te.
+
+Il resto di una fase si raccoglie in **Mostra altri N**. I progetti che si somigliano, come una serie di prove "… valutazione CRM", si raccolgono in una riga con un conteggio; toccala per aprirli. Niente di tutto questo cambia ciò che viene condiviso.
+
 ## Un'attività su qualcuno
 
 **Nuova attività** nel menu **⋯** di una persona, un'organizzazione o un progetto avvia un'attività che li riguarda.
