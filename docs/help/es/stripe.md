@@ -18,9 +18,9 @@ Nada en Stripe. Nunca escribe, reembolsa ni reintenta un pago. La app de Stripe 
 
 Inicia sesión con Stripe, la forma fácil:
 
-1. En una Machine alojada: abre tu página de configuración en app.themachine.computer/setup, ve a **Más fuentes** y abre Stripe. En tu propio ordenador, vinculado a tu cuenta: **Conexiones**, **+ Añadir**, Stripe.
+1. En el panel: **Conexiones**, **+ Añadir**, Stripe. O en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Stripe. En tu propio ordenador, vincúlalo primero a tu cuenta.
 2. Pulsa **Iniciar sesión con Stripe**. Stripe te pregunta qué cuenta, y muestra lo que The Machine puede leer.
-3. Pulsa **Instalar**. Vuelves a tu página de configuración, y Stripe está conectado.
+3. Pulsa **Instalar**. Vuelves a donde empezaste, y Stripe está conectado.
 
 O pega una clave restringida:
 

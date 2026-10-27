@@ -28,6 +28,8 @@ Em uma Machine hospedada:
 2. Abra Zoom, escolha trabalho ou pessoal, e clique em **Conectar Zoom**.
 3. Entre no Zoom e autorize a The Machine. Ela é feita pela Salesflare.
 
+Ou no painel: **Conexões**, **+ Adicionar**, escolha Zoom e clique em **Entrar com Zoom**. Quando terminar, você volta para o painel.
+
 No seu próprio computador, depois que ele estiver [pareado com sua conta](fleet.md): abra **Conexões**, depois **+ Adicionar**, escolha Zoom e clique em **Entrar com Zoom**.
 
 ## Remover

@@ -18,9 +18,9 @@ Nichts in Stripe. Es schreibt nie, erstattet nichts und wiederholt keine Zahlung
 
 Mit Stripe anmelden, der einfache Weg:
 
-1. Auf einer gehosteten Machine: Öffne deine Einrichtungsseite unter app.themachine.computer/setup, geh zu **Weitere Quellen** und öffne Stripe. Auf deinem eigenen Computer, gekoppelt mit deinem Konto: **Verbindungen**, **+ Hinzufügen**, Stripe.
+1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Stripe. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Stripe. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
 2. Tippe auf **Mit Stripe anmelden**. Stripe fragt, welches Konto, und zeigt, was The Machine lesen darf.
-3. Tippe auf **Installieren**. Du bist zurück auf deiner Einrichtungsseite, und Stripe ist verbunden.
+3. Tippe auf **Installieren**. Du bist zurück, wo du angefangen hast, und Stripe ist verbunden.
 
 Oder füge stattdessen einen eingeschränkten Schlüssel ein:
 

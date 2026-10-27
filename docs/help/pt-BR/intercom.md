@@ -28,6 +28,8 @@ Em uma Machine hospedada:
 2. Abra Intercom e toque em **Entrar com o Intercom**.
 3. Aprove a The Machine no Intercom. Ela é feita pela Salesflare.
 
+Ou no painel: **Conexões**, **+ Adicionar**, escolha Intercom e clique em **Entrar com Intercom**. Quando terminar, você volta para o painel.
+
 Se o login não funcionar para o seu workspace, abra **Ou cole um token de acesso**, cole um token do Developer Hub do Intercom e toque em **Conectar**.
 
 No seu próprio computador:

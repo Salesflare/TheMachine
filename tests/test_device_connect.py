@@ -258,6 +258,12 @@ class Dashboard(unittest.TestCase):
         found = app.action('connect_sources', {}, owner_dashboard=True)
         self.assertNotIn('paired', found)
         self.assertFalse(any(x.get('signin') for x in found['sources']))
+        # Google, Microsoft, Zoom, Stripe and Intercom sign in from + Add, by the control plane's own flow (POST /_machine/connect)
+        signins = {x['service']: x['hosted_signin'] for x in found['sources'] if x.get('hosted_signin')}
+        self.assertEqual({k: signins.get(k) for k in ('gmail', 'calendar', 'outlook', 'outlook_calendar', 'zoom', 'stripe', 'intercom')},
+                         {'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft', 'zoom': 'zoom',
+                          'stripe': 'stripe', 'intercom': 'intercom'})
+        self.assertNotIn('docs', signins)  # Docs keeps its own consent on the account page
         with self.assertRaises(ValueError):
             app.action('connect_signin', {'name': 'intercom'}, owner_dashboard=True)
 

@@ -28,6 +28,8 @@ Auf einer gehosteten Machine:
 2. Öffne Intercom und tippe auf **Mit Intercom anmelden**.
 3. Gib The Machine in Intercom frei. Es kommt von Salesflare.
 
+Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Intercom und tippe auf **Mit Intercom anmelden**. Danach bist du zurück im Dashboard.
+
 Passt die Anmeldung nicht zu deinem Workspace, öffne stattdessen **Oder füge ein Zugriffstoken ein**, füge ein Token aus dem Developer Hub von Intercom ein und tippe auf **Verbinden**.
 
 Auf deinem eigenen Computer:

@@ -28,6 +28,8 @@ On a hosted Machine:
 2. Open Intercom and press **Sign in with Intercom**.
 3. Approve The Machine in Intercom. It is made by Salesflare.
 
+Or in the dashboard: **Connections**, **+ Add**, pick Intercom and press **Sign in with Intercom**. When you're done, you're back in the dashboard.
+
 If the sign-in doesn't suit your workspace, open **Or paste an access token** instead, paste a token from Intercom's Developer Hub and press **Connect**.
 
 On your own computer:

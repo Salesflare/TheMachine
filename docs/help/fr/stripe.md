@@ -18,9 +18,9 @@ Rien dans Stripe. Il n’écrit jamais rien, ne rembourse et ne relance jamais u
 
 Connectez-vous avec Stripe, le plus simple :
 
-1. Sur une Machine hébergée : ouvrez votre page de configuration sur app.themachine.computer/setup, allez dans **Plus de sources** et ouvrez Stripe. Sur votre propre ordinateur, associé à votre compte : **Connexions**, **+ Ajouter**, Stripe.
+1. Dans le tableau de bord : **Connexions**, **+ Ajouter**, Stripe. Ou sur la page de configuration d’une Machine hébergée, sur app.themachine.computer/setup : **Plus de sources**, Stripe. Sur votre propre ordinateur, associez-le d’abord à votre compte.
 2. Appuyez sur **Se connecter avec Stripe**. Stripe demande quel compte, et montre ce que The Machine peut lire.
-3. Appuyez sur **Installer**. Vous revenez sur votre page de configuration, et Stripe est connecté.
+3. Appuyez sur **Installer**. Vous revenez là où vous avez commencé, et Stripe est connecté.
 
 Ou collez plutôt une clé restreinte :
 

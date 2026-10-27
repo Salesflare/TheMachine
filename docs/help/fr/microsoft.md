@@ -29,6 +29,8 @@ Sur une Machine hébergée :
 2. Appuyez sur **Connecter Microsoft** et connectez-vous.
 3. Si Microsoft demande l’accord d’un admin, appuyez sur **Copier le lien pour votre admin**, ou sur **Je suis l’admin : approuver maintenant** si c’est vous.
 
+Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Outlook et appuyez sur **Se connecter avec Microsoft**. Une fois terminé, vous revenez au tableau de bord.
+
 Sur votre propre ordinateur, une fois [associé à votre compte](fleet.md) : ouvrez **Connexions**, puis **+ Ajouter**, choisissez Outlook et appuyez sur **Se connecter avec Microsoft**. Les e-mails et l’agenda se connectent ensemble.
 
 Avec votre propre app : ouvrez **Utiliser votre propre app** à cet endroit, ou lancez `assistant connect outlook` ou `assistant connect outlook_calendar`. Il utilise votre propre inscription d’app dans Microsoft Entra et un code de connexion. Il demande s’il doit aussi envoyer ce que vous approuvez.

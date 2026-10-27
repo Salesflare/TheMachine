@@ -548,6 +548,9 @@ CONNECT_ACTIONS = (
 )
 # Connections, + Add: where a hosted Machine's setup page signs in or links a source the dashboard can't (its tile id)
 HOSTED_TILES = {'github': 'source-github', 'whatsapp': 'source-whatsapp', 'android': 'source-android'}
+# The sign-ins a hosted Machine's dashboard starts itself (+ Add): the control plane's own OAuth flow, as on its setup
+# page, through POST /_machine/connect on the dashboard's host, and back to the dashboard when it is done
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom'}
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
 CONNECT_SIGNIN_WAIT = 600
@@ -15407,6 +15410,9 @@ class App:
                 for source in found['sources']:
                     if source['service'] in HOSTED_TILES and 'account_page' not in source:
                         source['account_page'] = HOSTED_TILES[source['service']]
+                    # Google, Microsoft, Zoom, Stripe and Intercom: signed in from + Add itself, by the control plane
+                    if fleet.SIGNIN_OF.get(source['service']) in HOSTED_SIGNINS:
+                        source['hosted_signin'] = fleet.SIGNIN_OF[source['service']]
             if not hosted:
                 # Sign in with <provider> through The Machine's own app (fleet.py connect_start), once this Machine is
                 # paired with an account; pasting a token stays as the fallback

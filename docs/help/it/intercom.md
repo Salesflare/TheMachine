@@ -28,6 +28,8 @@ Su una Machine in hosting:
 2. Apri Intercom e premi **Accedi con Intercom**.
 3. Approva The Machine in Intercom. È fatta da Salesflare.
 
+Oppure nella dashboard: **Connessioni**, **+ Aggiungi**, scegli Intercom e premi **Accedi con Intercom**. Quando hai finito, torni alla dashboard.
+
 Se l'accesso non va bene per il tuo workspace, apri invece **Oppure incolla un token di accesso**, incolla un token dal Developer Hub di Intercom e premi **Collegati**.
 
 Sul tuo computer:

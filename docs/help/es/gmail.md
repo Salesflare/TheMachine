@@ -25,6 +25,8 @@ En una Machine alojada:
 2. En **Correo y calendario**, pulsa **Conectar Google** e inicia sesión. La pantalla de Google nombra a Salesflare, que hace The Machine.
 3. Gmail y Google Calendar se conectan juntos.
 
+O en el panel: **Conexiones**, **+ Añadir**, elige Gmail y pulsa **Iniciar sesión con Google**. Cuando termines, vuelves al panel.
+
 En tu propio ordenador, una vez [vinculado con tu cuenta](fleet.md):
 
 1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige Gmail.

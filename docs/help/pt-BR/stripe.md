@@ -18,9 +18,9 @@ Nada no Stripe. Ele nunca escreve, reembolsa ou tenta de novo um pagamento. O ap
 
 Entre com o Stripe, o jeito fácil:
 
-1. Em uma Machine hospedada: abra sua página de configuração em app.themachine.computer/setup, vá em **Mais fontes** e abra Stripe. No seu próprio computador, pareado com sua conta: **Conexões**, **+ Adicionar**, Stripe.
+1. No painel: **Conexões**, **+ Adicionar**, Stripe. Ou na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Stripe. No seu próprio computador, pareie-o primeiro com sua conta.
 2. Clique em **Entrar com o Stripe**. O Stripe pergunta qual conta e mostra o que The Machine pode ler.
-3. Clique em **Instalar**. Você volta para sua página de configuração, e o Stripe está conectado.
+3. Clique em **Instalar**. Você volta para onde começou, e o Stripe está conectado.
 
 Ou cole uma chave restrita:
 

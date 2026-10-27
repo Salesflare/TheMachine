@@ -12,7 +12,7 @@ L’onglet **Connexions** regroupe vos sources en **Mail et agenda**, **Chat** e
 
 ## En ajouter une
 
-Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Une fois la source connectée, votre Machine redémarre pour commencer à la lire, puis ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google et Microsoft renvoient vers votre page de configuration. Sur votre propre ordinateur, `assistant connect` fait la même chose dans un terminal.
+Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Une fois la source connectée, votre Machine redémarre pour commencer à la lire, puis ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google, Microsoft, Zoom, Stripe et Intercom se connectent ici : choisissez **Travail** ou **Perso**, connectez-vous et vous revenez à ce formulaire, qui montre où en est la connexion. Sur votre propre ordinateur, `assistant connect` fait la même chose dans un terminal.
 
 ## Travail ou perso
 

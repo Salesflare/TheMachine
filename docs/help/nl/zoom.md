@@ -28,6 +28,8 @@ Op een gehoste Machine:
 2. Open Zoom, kies werk of privé, en druk op **Zoom koppelen**.
 3. Log in bij Zoom en sta The Machine toe. Het is gemaakt door Salesflare.
 
+Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Zoom en druk op **Inloggen met Zoom**. Als je klaar bent, ben je terug in het dashboard.
+
 Op je eigen computer, zodra hij [aan je account gekoppeld is](fleet.md): open **Koppelingen**, dan **+ Toevoegen**, kies Zoom en druk op **Inloggen met Zoom**.
 
 ## Verwijderen

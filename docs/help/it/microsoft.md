@@ -29,6 +29,8 @@ Su una Machine ospitata:
 2. Premi **Collega Microsoft** e accedi.
 3. Se Microsoft chiede l'approvazione di un admin, premi **Copia il link per il tuo admin**, oppure **Sono l'admin: approva ora** se sei tu.
 
+Oppure nella dashboard: **Connessioni**, **+ Aggiungi**, scegli Outlook e premi **Accedi con Microsoft**. Quando hai finito, torni alla dashboard.
+
 Sul tuo computer, quando è [abbinato al tuo account](fleet.md): apri **Connessioni**, poi **+ Aggiungi**, scegli Outlook e premi **Accedi con Microsoft**. Posta e calendario si collegano insieme.
 
 Con la tua app: apri **Usa la tua app** lì, oppure esegui `assistant connect outlook` o `assistant connect outlook_calendar`. Usa la registrazione della tua app in Microsoft Entra e un codice di accesso. Ti chiede se inviare anche ciò che approvi.

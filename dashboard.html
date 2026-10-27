@@ -3819,8 +3819,10 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  for(const el of document.querySelectorAll('#health [data-health-for]'))el.hidden=!el.dataset.healthFor.split(' ').includes(current);
  for(const a of document.querySelectorAll('#connectors>article'))a.hidden=a.dataset.group!==current;tabsShow(row.firstChild);if(current==='add')connectAdd()}  // measured once the other panes are hidden, never with every source shown at once
 // Connections, Add: every source this install can add, set up right here with the same steps as `assistant connect`;
-// its questions show one at a time. On a hosted machine Google and Microsoft are signed in on the account page, and a
-// source with its own sign-in there (Intercom) links to that page, which also offers pasting its token. On a self-hosted
+// its questions show one at a time. On a hosted machine Google, Microsoft, Zoom, Stripe and Intercom sign in right
+// here too (hosted_signin): a POST to /_machine/connect starts the account's own sign-in for it, and the provider comes
+// back to this page (#connect=<provider>/<command>), where the form follows the connecting. Others with a tile on the
+// account page (GitHub, WhatsApp) link to it. On a self-hosted
 // one such a source signs in through The Machine's own app (fleet.py connect_start), once this Machine is paired with
 // an account, and its row follows how that goes; pasting a token stays, folded away.
 let connectList=null,connectListAt=0,connectRun=null,connectTimer=0,connectSignin=null,signinTimer=0,connectForm=null,connectSiteShown=null;
@@ -3830,6 +3832,7 @@ async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Da
  try{connectList=await connectPost('connect_sources')}catch(e){$('#connect-add').innerHTML=`<p class="error">${esc(e.message)}</p>`;return}renderConnectAdd()}
 function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(!connectList)return;
  const items=connectList.sources.map(x=>{const more=x.connected?`<small class="count">${x.connected} connected</small>`:'',what=x.what?`<small>${esc(x.what)}</small>`:'';
+  if(x.hosted_signin&&connectList.manage_url)return `<button type="button" class="connect-source" data-connect-signin="${esc(x.name)}"><b>${esc(x.label)}</b>${what}${more}</button>`;
   if(x.account_page&&connectList.manage_url)return `<a class="connect-source" href="${esc(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener"><b>${esc(x.label)} ↗</b>${what}${more}</a>`;
   if(x.signin&&!connectList.manage_url)return `<button type="button" class="connect-source" data-connect-signin="${esc(x.name)}"><b>${esc(x.label)}</b>${what}${more}</button>`;
   return x.broker?(connectList.manage_url?`<a class="connect-source" href="${esc(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener"><b>${esc(x.label)} ↗</b>${what}${more}</a>`:''):`<button type="button" class="connect-source" data-connect="${esc(x.name)}"><b>${esc(x.label)}</b>${what}${more}</button>`}).join('');
@@ -3859,6 +3862,30 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up'},
  microsoft_docs:{label:'Microsoft',title:'Docs',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
  stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key'}};
+const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.hosted_signin),p=hosted?x.hosted_signin:x.signin===true?x.service:x.signin;
+ return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{})}};
+// A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
+// Pasting a key or token stays on the account page's tile.
+const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',intercom:'#source-intercom'};
+function hostedSigninBody(s,copy,back){const scope=s.provider==='intercom'?'':'<fieldset class="connect-scope"><legend>Work or personal?</legend><label><input type="radio" name="signin-scope" value="work" checked> Work</label><label><input type="radio" name="signin-scope" value="personal"> Personal</label></fieldset>';
+ if(s.state==='connecting')return '<p class="muted">Signed in. Connecting it now.</p>';
+ if(s.state==='done')return `<p class="note sent-ok"><span>Connected.</span> <span>Restarting to start reading it…</span></p><div class="actions">${back}</div>`;
+ if(s.state==='failed'||s.state==='stopped')return `<p class="alert">${esc(s.state==='stopped'?'That sign-in didn’t finish.':s.error||'Not connected.')}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>`;
+ const other=copy.other&&s.own&&connectList?.manage_url?`<p class="fine"><a href="${esc(connectList.manage_url+HOSTED_TILE[s.provider])}" target="_blank" rel="noopener"><span>${esc(copy.other)}</span> ↗</a></p>`:'';
+ return `<p class="muted">${esc(copy.about||'')}</p>${scope}<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${esc(s.label)}</button>${back}</div>${other}`}
+function hostedSigninGo(s){const form=document.createElement('form'),box=$('#connect-add'),add=(name,value)=>{const i=document.createElement('input');i.type='hidden';i.name=name;i.value=value;form.append(i)};
+ form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
+ if(s.provider!=='intercom'){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
+ if(s.provider==='intercom'&&s.another)add('another','1');
+ document.body.append(form);form.submit()}
+function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hosted||s.state!=='connecting'||!s.command)return;
+ signinTimer=setTimeout(async()=>{try{const r=await request('/_machine/connect-state?c='+encodeURIComponent(s.command));if(connectSignin!==s)return;
+  connectSignin={...s,state:r.state,error:r.error};$('#connect-add').dataset.sig='';renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}hostedPoll()},2500)}
+// Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
+async function openConnectLink(){const m=/^#connect=(google|microsoft|zoom|stripe|intercom)(?:\/(c_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+ history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
+ const x=connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
+ connectSignin=signinOf(x,command?'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();$('#connect-add').scrollIntoView({block:'start'})}
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
  const back='<button type="button" data-connect-back>Back</button>';let body;
  const copy=SIGNIN_COPY[s.provider]||{};
@@ -3868,13 +3895,15 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  else if(s.state==='failed'||s.state==='stopped')body=`<p class="alert">${esc(s.state==='stopped'?'That sign-in didn’t finish.':s.error||'Not connected.')}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>`;
  else body=`<p class="muted">${esc(copy.about||'')}</p>`+(paired?`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${esc(s.label)}</button>${back}</div>`
   :`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><a class="btn-link primary" href="${esc(connectList.pair_url)}" target="_blank" rel="noopener">Pair this Machine first ↗</a>${back}</div>`);
- const paste=s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button" data-connect="${esc(s.source)}">${esc(copy.go||'')}</button></div></details>`;
+ if(s.hosted)body=hostedSigninBody(s,copy,back);
+ const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button" data-connect="${esc(s.source)}">${esc(copy.go||'')}</button></div></details>`;
  const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}</div>`;
- const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
+ const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;
  signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.source});if(!connectSignin)return;
   if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}signinPoll()},2500)}
 async function signinGo(){const s=connectSignin;if(!s)return;
+ if(s.hosted){if(s.state==='intro')return hostedSigninGo(s);connectSignin={...s,state:'intro',error:''};$('#connect-add').dataset.sig='';return renderConnectSignin()}  // Try again: Work or Personal first
  const tab=window.open('about:blank','_blank');  // opened now, while it is the click: a browser blocks it after a wait
  try{const r=await connectPost('connect_signin',{name:s.source});if(tab){tab.opener=null;tab.location.href=r.url}else location.assign(r.url);
   connectSignin={source:s.source,provider:s.provider,label:s.label,own:s.own,state:'started'}}catch(err){tab?.close();connectSignin={...s,state:'failed',error:err.message}}
@@ -3925,7 +3954,7 @@ async function connectSiteSignin(site){try{await connectPost('connect_site_signi
  const after=()=>connectPoll();after.says='Signed in. Connecting it now.';openSignin(null,true,null,null,site,after)}
 async function connectAnswer(value){const q=connectRun?.question;if(!q)return;try{connectRun={...connectRun,...await connectPost('connect_answer',{session:connectRun.session,question:q.id,value})}}catch(e){toast(e.message,true)}renderConnectRun();connectPoll()}
 $('#connect-add').addEventListener('click',async e=>{const t=e.target;
- const signin=t.closest('[data-connect-signin]');if(signin){const x=connectList.sources.find(v=>v.name===signin.dataset.connectSignin),p=x.signin===true?x.service:x.signin;connectSignin={source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,state:'intro'};$('#connect-add').dataset.sig='';renderConnectSignin();return}
+ const signin=t.closest('[data-connect-signin]');if(signin){const x=connectList.sources.find(v=>v.name===signin.dataset.connectSignin);connectSignin=signinOf(x,'intro');$('#connect-add').dataset.sig='';renderConnectSignin();return}
  if(t.closest('[data-signin-go]')){signinGo();return}
  const start=t.closest('[data-connect]');if(start){connectSignin=null;clearTimeout(signinTimer);
   if(!start.dataset.connectAccount&&connectList?.sources.some(v=>v.name===start.dataset.connect&&v.form)){connectRun=null;connectForm=start.dataset.connect;$('#connect-add').dataset.sig='';renderConnectForm();return}
@@ -4342,7 +4371,7 @@ if(learnEdit==null)$('#facts').innerHTML=learnedList();renderShare();renderVotes
 $('#decisions').innerHTML=clipList('decisions',state.decisions.map(d=>`<article style="--c:var(--${({mint:'mint',muted:'faint',lavender:'lavender',amber:'amber'})[choiceTone[d.choice]||'muted']})"><h3>${esc(state.suggestions.find(s=>s.id===d.suggestion_id)?.title||d.suggestion_id)}</h3><div class="row">${chip({accept:'Accepted',reject:'Not needed',snooze:'Saved for later',other:'Instructions',complete:'Done',send:'Approved send',reopen:'Reopened',undo:'Reopened',retry:'Trying again',update:'Updated',prepare_ahead:'Prepared ahead'}[d.choice]||d.choice,choiceTone[d.choice]||'muted')}<small>via ${esc(d.source)}</small>${time(d.created_at)}</div>${d.annotation?'<p class="note">Earlier message was matched incorrectly. The correction is recorded.</p>':''}${d.feedback?`<blockquote>${esc(d.feedback)}</blockquote>`:''}</article>`),'<p class="muted">No decisions yet.</p>',5);
 const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
 $('#connectors').innerHTML=state.connectors.map(c=>connectorCard(c,expandedSync)).join('');renderDisconnected();
-if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').innerHTML=`<a class="manage" href="${esc(state.manage_url)}#google">Connect Google</a> &nbsp;<a class="manage" href="${esc(state.manage_url)}#microsoft">Connect Microsoft</a> &nbsp;<a class="manage" href="${esc(state.manage_url)}#sources">Add another source</a> &nbsp;or <a href="${esc(new URL('/connectors',state.manage_url).href)}">ask for one you miss</a>.`}
+if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').innerHTML=`<a class="manage" href="#connect=google">Connect Google</a> &nbsp;<a class="manage" href="#connect=microsoft">Connect Microsoft</a> &nbsp;<a class="manage" href="${esc(state.manage_url)}#sources">Add another source</a> &nbsp;or <a href="${esc(new URL('/connectors',state.manage_url).href)}">ask for one you miss</a>.`}
 // drawn once, so an open disclosure stays open (and the page stays put) through each refresh
 else if($('#connect-more .connect-cli')?.dataset.lang!==I18N.lang)$('#connect-more').innerHTML='<details class="connect-cli" data-lang="'+I18N.lang+'"><summary>Set up from the terminal</summary><p>'+t('On this Machine, run {} for Google, {} for Microsoft, or {} for more.','<code>assistant connect gmail</code>','<code>assistant connect outlook</code>','<code>assistant connect</code>')+'</p></details>';
 const issues=state.connectors.filter(c=>connectorTone(c)==='orange'||connectorTone(c)==='amber').length;$('#badge-health').textContent=issues||'';if('graph_waiting' in state)$('#badge-people').textContent=state.graph_waiting||'';renderHealthTabs();
@@ -5035,7 +5064,7 @@ function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.
 function openTabLink(){const st=/^#settings(?:[/=]([a-z]+))?$/.exec(location.hash);if(st){if($('#settings').hidden||st[1]&&st[1]!==settingsNow)showSettings(st[1]);return}const m=/^#([a-z]+)(?:=([a-z]+))?$/.exec(location.hash);if(!m||!TAB_LINKS[m[1]])return;
  const tab=TAB_LINKS[m[1]];if(tab==='people'&&GRAPH_PANES.includes(m[2])){if(!$('#people').hidden&&!graphNode&&graphShown===m[2])return;showTab(tab,m[2]);return}
  history.replaceState(null,'',location.pathname+location.search);showTab(tab,m[2])}
-window.addEventListener('hashchange',()=>{openChatLink();openSnoozeLink();openResultLink();openCardLink();openFleetLink();openSharedLink();openTabLink()});
+window.addEventListener('hashchange',()=>{openChatLink();openSnoozeLink();openResultLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink()});
 function noteSplit(n){if(!n)return'';const parts=[['style','style'],['fact','missing facts'],['continue','keep going'],['new_ask','new asks'],['unsorted','not sorted']].filter(([k])=>n[k]);
 return parts.length?`<div class="notes-split"><span>Your Change notes</span><div>${parts.map(([k,t])=>`<span class="chip t-${{style:'lavender',fact:'amber',continue:'orange',new_ask:'mint',unsorted:'muted'}[k]}">${n[k]} ${t}</span>`).join('')}</div></div>`:''}
 function trendChart(trend){let rows=trend?.[trendView];if(!rows)return'';const first=rows.findIndex(r=>r.worth_it+r.dismissed+r.open);rows=first<0?rows.slice(-1):rows.slice(first);const daily=trendView==='daily';
@@ -5102,7 +5131,7 @@ async function sessionCheck(){if(sessionAsked||!localCache.on&&csrfLive)return;s
  catch(e){sessionAsked=false;if(e.sessionGone||e.status===401||e.status===403)await cacheGone(!!e.sessionGone)}}
 async function refresh(){refreshes++;try{const edits=localEdits,next=wakeSnoozed(await request('api/status',{redirect:'manual'}));if(edits!==localEdits)return await refresh();
  sessionCheck();shownCached=false;shownAt=Date.now();if(localCache.on){const sig=(next.suggestions||[]).map(x=>x.id+x.status).join();if(sig!==statusSig||Date.now()-statusSaved>15000){statusSaved=Date.now();statusSig=sig;localCache.put('status',next)}}
- state=next;cardsMerge();browserPill(state);if(state.source_url)$('#source-code').href=state.source_url;if(uiVersionCheck())return;focusKept(render);deviceRender();sendWatch();openChatLink();openSnoozeLink();openResultLink();openSendLink();openCardLink();openFleetLink();openSharedLink();openTabLink();if(!$('#people').hidden)await people(graphNode,true);try{if(!$('#calendar').hidden)calendarView();else calBadge()}catch(e){console.error(e)}if(refreshFailed){notice('');refreshFailed=false}retryIn=0;clearTimeout(retryTimer);return true}catch(e){refreshFailed=true;if(e.sessionGone||e.status===401||e.status===403)await cacheGone(!!e.sessionGone);if(e.offline){notice('');clearTimeout(retryTimer);retryIn=e.retryAfter||Math.min(30000,(retryIn||2500)*2);retryTimer=setTimeout(refreshWhenReady,retryIn)}else notice(e.message,true);staleLine(e.restarting?'Restarting · retrying':shownAt?t('Offline · updated {}',hhmm(shownAt)):'Unavailable');if(!state?.suggestions)$('#suggestions').innerHTML='<div class="empty all-clear"><img class="sticker" src="brand/sad.webp" alt=""><div><strong>I can’t reach the assistant.</strong>I’ll keep trying every 30 seconds.</div></div>',notice('');return false}finally{refreshes--}}
+ state=next;cardsMerge();browserPill(state);if(state.source_url)$('#source-code').href=state.source_url;if(uiVersionCheck())return;focusKept(render);deviceRender();sendWatch();openChatLink();openSnoozeLink();openResultLink();openSendLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink();if(!$('#people').hidden)await people(graphNode,true);try{if(!$('#calendar').hidden)calendarView();else calBadge()}catch(e){console.error(e)}if(refreshFailed){notice('');refreshFailed=false}retryIn=0;clearTimeout(retryTimer);return true}catch(e){refreshFailed=true;if(e.sessionGone||e.status===401||e.status===403)await cacheGone(!!e.sessionGone);if(e.offline){notice('');clearTimeout(retryTimer);retryIn=e.retryAfter||Math.min(30000,(retryIn||2500)*2);retryTimer=setTimeout(refreshWhenReady,retryIn)}else notice(e.message,true);staleLine(e.restarting?'Restarting · retrying':shownAt?t('Offline · updated {}',hhmm(shownAt)):'Unavailable');if(!state?.suggestions)$('#suggestions').innerHTML='<div class="empty all-clear"><img class="sticker" src="brand/sad.webp" alt=""><div><strong>I can’t reach the assistant.</strong>I’ll keep trying every 30 seconds.</div></div>',notice('');return false}finally{refreshes--}}
 $('nav').onclick=e=>{const t=e.target.closest('button');if(!t?.dataset.tab)return;for(const b of document.querySelectorAll('nav button[data-tab]')){b.classList.toggle('active',b===t);b.setAttribute('aria-current',b===t?'page':'false')}for(const s of document.querySelectorAll('main>section'))s.hidden=s.id!==t.dataset.tab;if(t.dataset.tab==='people')people(graphNode,!!$('#people-view').innerHTML);if(t.dataset.tab==='health')savedLogins();if(t.dataset.tab==='events'&&!$('#results').innerHTML){$('#results').innerHTML='<p class="muted">Loading…</p>';search()}if(t.dataset.tab==='fleet')fleetShown=fleetView(true);requestAnimationFrame(()=>document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsShow))};
 // The desktop sidebar (from 1024px): the cards as a quiet list under the tabs, by section, each section folds (Done
 // starts folded) and the fold is remembered; a filter on the titles; the whole sidebar folds to icons.

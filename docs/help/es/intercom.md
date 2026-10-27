@@ -28,6 +28,8 @@ En una Machine alojada:
 2. Abre Intercom y pulsa **Iniciar sesión con Intercom**.
 3. Aprueba The Machine en Intercom. La hace Salesflare.
 
+O en el panel: **Conexiones**, **+ Añadir**, elige Intercom y pulsa **Iniciar sesión con Intercom**. Cuando termines, vuelves al panel.
+
 Si el inicio de sesión no encaja con tu espacio de trabajo, abre **O pega un token de acceso**, pega un token del Developer Hub de Intercom y pulsa **Conectar**.
 
 En tu propio ordenador:

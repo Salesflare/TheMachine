@@ -28,6 +28,8 @@ On a hosted Machine:
 2. Open Zoom, pick work or personal, and press **Connect Zoom**.
 3. Sign in to Zoom and allow The Machine. It is made by Salesflare.
 
+Or in the dashboard: **Connections**, **+ Add**, pick Zoom and press **Sign in with Zoom**. When you're done, you're back in the dashboard.
+
 On your own computer, once it's [paired with your account](fleet.md): open **Connections**, then **+ Add**, pick Zoom and press **Sign in with Zoom**.
 
 ## Remove it

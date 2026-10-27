@@ -28,6 +28,8 @@ Sur une Machine hébergée :
 2. Ouvrez Intercom et appuyez sur **Se connecter avec Intercom**.
 3. Approuvez The Machine dans Intercom. Elle est créée par Salesflare.
 
+Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Intercom et appuyez sur **Se connecter avec Intercom**. Une fois terminé, vous revenez au tableau de bord.
+
 Si la connexion ne convient pas à votre espace de travail, ouvrez plutôt **Ou collez un jeton d’accès**, collez un jeton du Developer Hub d’Intercom et appuyez sur **Se connecter**.
 
 Sur votre propre ordinateur :

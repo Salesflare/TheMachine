@@ -28,6 +28,8 @@ Op een gehoste Machine:
 2. Open Intercom en druk op **Inloggen met Intercom**.
 3. Keur The Machine goed in Intercom. Het is gemaakt door Salesflare.
 
+Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Intercom en druk op **Inloggen met Intercom**. Als je klaar bent, ben je terug in het dashboard.
+
 Past de login niet bij je workspace, open dan **Of plak een toegangstoken**, plak een token uit de Developer Hub van Intercom en druk op **Verbinden**.
 
 Op je eigen computer:

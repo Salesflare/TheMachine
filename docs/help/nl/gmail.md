@@ -25,6 +25,8 @@ Op een gehoste Machine:
 2. Druk onder **Mail en agenda** op **Google koppelen** en log in. Het scherm van Google noemt Salesflare, dat The Machine maakt.
 3. Gmail en Google Calendar worden samen gekoppeld.
 
+Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Gmail en druk op **Inloggen met Google**. Als je klaar bent, ben je terug in het dashboard.
+
 Op je eigen computer, zodra hij [aan je account gekoppeld is](fleet.md):
 
 1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies Gmail.

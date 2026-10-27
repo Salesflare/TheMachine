@@ -25,6 +25,8 @@ Sur une Machine hébergée :
 2. Sous **E-mail et agenda**, appuyez sur **Connecter Google** et connectez-vous. L’écran de Google indique Salesflare, qui crée The Machine.
 3. Gmail et Google Agenda se connectent ensemble.
 
+Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Gmail et appuyez sur **Se connecter avec Google**. Une fois terminé, vous revenez au tableau de bord.
+
 Sur votre propre ordinateur, une fois [associé à votre compte](fleet.md) :
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Gmail.

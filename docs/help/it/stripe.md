@@ -18,9 +18,9 @@ Niente in Stripe. Non scrive mai, non rimborsa e non ritenta mai un pagamento. L
 
 Accedi con Stripe, il modo più semplice:
 
-1. Su una Machine ospitata: apri la tua pagina di configurazione su app.themachine.computer/setup, vai su **Altre fonti** e apri Stripe. Sul tuo computer, abbinato al tuo account: **Connessioni**, **+ Aggiungi**, Stripe.
+1. Nella dashboard: **Connessioni**, **+ Aggiungi**, Stripe. Oppure nella pagina di configurazione di una Machine in hosting, su app.themachine.computer/setup: **Altre fonti**, Stripe. Sul tuo computer, abbinalo prima al tuo account.
 2. Premi **Accedi con Stripe**. Stripe chiede quale account, e mostra cosa può leggere The Machine.
-3. Premi **Installa**. Torni alla tua pagina di configurazione, e Stripe è collegato.
+3. Premi **Installa**. Torni da dove hai iniziato, e Stripe è collegato.
 
 Oppure incolla invece una chiave con restrizioni:
 

@@ -29,6 +29,8 @@ Auf einer gehosteten Machine:
 2. Tippe auf **Microsoft verbinden** und melde dich an.
 3. Wenn Microsoft nach einer Admin-Freigabe fragt, tippe auf **Link für deinen Admin kopieren**, oder auf **Ich bin der Admin: jetzt freigeben**, wenn du das bist.
 
+Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Danach bist du zurück im Dashboard.
+
 Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](fleet.md) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Mail und Kalender werden zusammen verbunden.
 
 Mit deiner eigenen App: Öffne dort **Eigene App nutzen** oder führe `assistant connect outlook` oder `assistant connect outlook_calendar` aus. Es nutzt deine eigene App-Registrierung in Microsoft Entra und einen Anmeldecode. Es fragt, ob es auch senden soll, was du freigibst.

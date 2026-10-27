@@ -29,6 +29,8 @@ Op een gehoste Machine:
 2. Druk op **Microsoft koppelen** en log in.
 3. Vraagt Microsoft om goedkeuring van een beheerder, druk dan op **Link kopiëren voor je beheerder**, of op **Ik ben de beheerder: nu goedkeuren** als jij dat bent.
 
+Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Outlook en druk op **Inloggen met Microsoft**. Als je klaar bent, ben je terug in het dashboard.
+
 Op je eigen computer, zodra hij [aan je account gekoppeld is](fleet.md): open **Koppelingen**, dan **+ Toevoegen**, kies Outlook en druk op **Inloggen met Microsoft**. Mail en agenda worden samen gekoppeld.
 
 Met je eigen app: open daar **Je eigen app gebruiken**, of voer `assistant connect outlook` of `assistant connect outlook_calendar` uit. Het gebruikt je eigen app-registratie in Microsoft Entra en een inlogcode. Hij vraagt of hij ook moet versturen wat je goedkeurt.

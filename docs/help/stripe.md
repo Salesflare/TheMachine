@@ -18,9 +18,9 @@ Nothing in Stripe. It never writes, refunds or retries a payment. The Machine's 
 
 Sign in with Stripe, the easy way:
 
-1. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources** and open Stripe. On your own computer, paired with your account: **Connections**, **+ Add**, Stripe.
+1. In the dashboard: **Connections**, **+ Add**, Stripe. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Stripe. On your own computer, pair it with your account first.
 2. Press **Sign in with Stripe**. Stripe asks which account, and shows what The Machine may read.
-3. Press **Install**. You're back on your setup page, and Stripe is connected.
+3. Press **Install**. You're back where you started, and Stripe is connected.
 
 Or paste a restricted key instead:
 

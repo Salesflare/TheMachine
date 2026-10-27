@@ -25,6 +25,8 @@ Auf einer gehosteten Machine:
 2. Tippe unter **Mail und Kalender** auf **Google verbinden** und melde dich an. Auf dem Google-Bildschirm steht Salesflare, die Firma hinter The Machine.
 3. Gmail und Google Calendar werden zusammen verbunden.
 
+Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Gmail und tippe auf **Mit Google anmelden**. Danach bist du zurück im Dashboard.
+
 Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](fleet.md) ist:
 
 1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle Gmail.

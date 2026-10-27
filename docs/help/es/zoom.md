@@ -28,6 +28,8 @@ En una Machine alojada:
 2. Abre Zoom, elige trabajo o personal, y pulsa **Conectar Zoom**.
 3. Inicia sesión en Zoom y permite The Machine. La hace Salesflare.
 
+O en el panel: **Conexiones**, **+ Añadir**, elige Zoom y pulsa **Iniciar sesión con Zoom**. Cuando termines, vuelves al panel.
+
 En tu propio ordenador, una vez [vinculado con tu cuenta](fleet.md): abre **Conexiones**, luego **+ Añadir**, elige Zoom y pulsa **Iniciar sesión con Zoom**.
 
 ## Quítalo
