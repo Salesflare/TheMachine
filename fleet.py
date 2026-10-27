@@ -102,6 +102,7 @@ RULES = ('ask', 'always', 'never')
 # The rules a kind takes, when not all three: a free question is never answered without the owner.
 KIND_RULES = {'anything': ('ask', 'never')}
 NO_DETAILS = ('handling', 'brief', 'anything')  # kinds without a "how much they hear" choice
+QUIET = ('brief',)  # asks that wait in the Fleet tab only: no to-do, no badge, no phone, Telegram or digest; still nothing shared until the owner chooses
 BRIEF_BYTES = 30000  # under what the relay carries for a brief
 BRIEF_EVERY = ('off', 'day', 'week')
 BRIEF_SETTLE = 7200      # seconds after asking: the brief is told then, or once everyone answered, within work hours
@@ -1884,6 +1885,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             return self.take_contact(ask, teammate, fleet, name)
         if kind == 'connector':  # a Fleet admin's shared connector (shared_connectors.py): checked, never shown or asked
             return self.take_connector(ask)
+        superseded = set()
         with self.connect() as db:
             if not teammate or not question:
                 self.log(db, 'in', fleet, ask.get('from'), name, kind if kind in KIND_LABEL else 'other', 'a question this Machine does not answer', 'declined')
@@ -1918,10 +1920,25 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                     db.execute('INSERT OR IGNORE INTO fleet_in(id,fleet,member_id,name,kind,question,status,at,draft) VALUES(?,?,?,?,?,?,?,?,?)',
                                (ask['id'], fleet, teammate['member_id'], name, kind, json.dumps(question), 'waiting', now(),
                                 json.dumps(draft) if draft else None))
+                    if kind == 'brief':  # a brief comes back every day: only the latest one waits, the older ones expire
+                        superseded = self.fold_briefs(db, fleet, teammate['member_id'], ask['id'])
                     self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question), 'waiting for you')
                     status, body = 'waiting', None
         self.relay.call('POST', '/answer', {'id': ask['id'], 'status': status, **({'answer': body} if body is not None else {})})
+        if superseded and self.retell:
+            for message_id in superseded:
+                self.retell(message_id)
         return status
+
+    def fold_briefs(self, db, fleet, member_id, keep):
+        """A teammate's older brief asks still waiting expire once a newer one comes in: nothing of them was shared, and
+        their brief already went out without it. Returns the Telegram messages to bring up to date (from before briefs
+        stopped notifying)."""
+        rows = db.execute("SELECT id,telegram_message_id FROM fleet_in WHERE fleet=? AND member_id=? AND kind='brief' AND status='waiting' AND id<>?",
+                          (fleet, member_id, keep)).fetchall()
+        for row in rows:
+            db.execute("UPDATE fleet_in SET status='expired',decided_at=? WHERE id=? AND status='waiting'", (now(), row['id']))
+        return {r['telegram_message_id'] for r in rows if r['telegram_message_id']}
 
     def take_skill(self, ask, teammate, fleet, name):
         keeper = getattr(self, 'skills', None)
@@ -2183,10 +2200,11 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         return [r['id'] for r in rows]
 
     def untold(self, db):
-        """Waiting questions the owner wasn't told about yet, and may be now: brief and free questions wait for their
-        work hours (they show in the Fleet tab meanwhile)."""
-        rows = db.execute("SELECT * FROM fleet_in WHERE status='waiting' AND notified_at IS NULL ORDER BY at,id").fetchall()
-        return rows if self.working() else [r for r in rows if r['kind'] not in ('brief', 'anything')]
+        """Waiting questions the owner wasn't told about yet, and may be now: free questions wait for their work hours.
+        Brief asks never notify: they wait quietly in the Fleet tab, never as a to-do (QUIET)."""
+        rows = db.execute("SELECT * FROM fleet_in WHERE status='waiting' AND notified_at IS NULL AND kind NOT IN (%s) ORDER BY at,id"
+                          % ','.join('?' * len(QUIET)), QUIET).fetchall()
+        return rows if self.working() else [r for r in rows if r['kind'] != 'anything']
 
     def set_rule(self, fleet, member_id, kind, rule=None, details=None, scope=None, clear=False):
         fleet = self.ref(fleet)
@@ -3186,7 +3204,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
 
     def summary(self):
         with self.connect() as db:
-            waiting = db.execute("SELECT COUNT(*) FROM fleet_in WHERE status='waiting'").fetchone()[0]
+            waiting = db.execute("SELECT COUNT(*) FROM fleet_in WHERE status='waiting' AND kind NOT IN (%s)" % ','.join('?' * len(QUIET)), QUIET).fetchone()[0]
             waiting += db.execute("SELECT COUNT(*) FROM fleet_notices WHERE kind IN ('seat_request','friend_request') AND status='open'").fetchone()[0]
         return {'on': True, 'waiting': waiting + self.proposals()}
 

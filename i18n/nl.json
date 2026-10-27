@@ -2393,5 +2393,12 @@
  "Already carrying on with it.": "Ik ben er al mee bezig.",
  "Already done. See the to-do.": "Al klaar. Bekijk de to-do.",
  "Nothing is waiting to try again here.": "Hier wacht niets om opnieuw te proberen.",
- "Signed in. I’ll start shortly.": "Ingelogd. Ik begin zo."
+ "Signed in. I’ll start shortly.": "Ingelogd. Ik begin zo.",
+ "Brief requests": "Briefverzoeken",
+ "Teammates ask for counts and dates for their team brief. Nothing is shared until you choose. Unanswered ones expire.": "Teamgenoten vragen aantallen en datums voor hun teambrief. Er wordt niets gedeeld tot jij kiest. Onbeantwoorde verzoeken vervallen.",
+ "Daily brief": "Dagelijkse brief",
+ "Weekly brief": "Wekelijkse brief",
+ "Always share": "Altijd delen",
+ "Share once": "Eén keer delen",
+ "Never": "Nooit"
 }

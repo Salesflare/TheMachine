@@ -2393,5 +2393,12 @@
  "Already carrying on with it.": "Ich bin schon dabei.",
  "Already done. See the to-do.": "Schon erledigt. Sieh dir die Aufgabe an.",
  "Nothing is waiting to try again here.": "Hier wartet nichts auf einen neuen Versuch.",
- "Signed in. I’ll start shortly.": "Angemeldet. Ich fange gleich an."
+ "Signed in. I’ll start shortly.": "Angemeldet. Ich fange gleich an.",
+ "Brief requests": "Brief-Anfragen",
+ "Teammates ask for counts and dates for their team brief. Nothing is shared until you choose. Unanswered ones expire.": "Teammitglieder fragen Zahlen und Daten für ihren Team-Brief an. Nichts wird geteilt, bis du entscheidest. Unbeantwortete Anfragen verfallen.",
+ "Daily brief": "Täglicher Brief",
+ "Weekly brief": "Wöchentlicher Brief",
+ "Always share": "Immer teilen",
+ "Share once": "Einmal teilen",
+ "Never": "Nie"
 }

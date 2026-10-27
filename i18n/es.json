@@ -2393,5 +2393,12 @@
  "Already carrying on with it.": "Ya estoy en ello.",
  "Already done. See the to-do.": "Ya está hecho. Mira la tarea.",
  "Nothing is waiting to try again here.": "Aquí no hay nada pendiente de reintentar.",
- "Signed in. I’ll start shortly.": "Sesión iniciada. Empiezo enseguida."
+ "Signed in. I’ll start shortly.": "Sesión iniciada. Empiezo enseguida.",
+ "Brief requests": "Solicitudes de resumen del equipo",
+ "Teammates ask for counts and dates for their team brief. Nothing is shared until you choose. Unanswered ones expire.": "Tus compañeros piden cifras y fechas para su resumen del equipo. No se comparte nada hasta que elijas. Las que no respondas caducan.",
+ "Daily brief": "Resumen diario",
+ "Weekly brief": "Resumen semanal",
+ "Always share": "Compartir siempre",
+ "Share once": "Compartir una vez",
+ "Never": "Nunca"
 }

@@ -2393,5 +2393,12 @@
  "Already carrying on with it.": "Already carrying on with it.",
  "Already done. See the to-do.": "Already done. See the to-do.",
  "Nothing is waiting to try again here.": "Nothing is waiting to try again here.",
- "Signed in. I’ll start shortly.": "Signed in. I’ll start shortly."
+ "Signed in. I’ll start shortly.": "Signed in. I’ll start shortly.",
+ "Brief requests": "Brief requests",
+ "Teammates ask for counts and dates for their team brief. Nothing is shared until you choose. Unanswered ones expire.": "Teammates ask for counts and dates for their team brief. Nothing is shared until you choose. Unanswered ones expire.",
+ "Daily brief": "Daily brief",
+ "Weekly brief": "Weekly brief",
+ "Always share": "Always share",
+ "Share once": "Share once",
+ "Never": "Never"
 }

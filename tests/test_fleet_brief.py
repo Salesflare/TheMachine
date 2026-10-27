@@ -155,14 +155,38 @@ class Brief(unittest.TestCase):
         self.fleet.set_rule('work', 'pat1', 'brief', 'always')
         self.assertEqual(self.fleet.take_ask({**ask, 'id': 'q4', 'question': {'period': 'year', 'since': 'yesterday'}}), 'declined')
 
+    def test_a_newer_brief_ask_folds_the_older_ones_and_none_is_a_todo_or_a_notification(self):
+        # A brief comes back every day: only the latest waits (in the Fleet tab), the older ones expire unshared. It never
+        # counts as a Fleet to-do, and never notifies (phone, Telegram, digest), in work hours or not.
+        day = lambda n, since: {'id': f'd{n}', 'fleet': 'work', 'from': 'pat1', 'kind': 'brief', 'question': {'period': 'day', 'since': since}}
+        told = []
+        self.fleet.notify = lambda rows: told.append([r['kind'] for r in rows]) or None
+        Hours(NOW).install(self.fleet)
+        for n, since in enumerate(('2026-10-19', '2026-10-20', '2026-10-21')):
+            self.assertEqual(self.fleet.take_ask(day(n, since)), 'waiting')
+        self.assertEqual([w['id'] for w in self.fleet.view()['waiting']], ['d2'])
+        self.assertEqual(self.fleet.summary()['waiting'], 0)
+        self.assertEqual(self.fleet.notify_round(clock=NOW + dt.timedelta(minutes=5)), [])
+        self.assertEqual(told, [])
+        with self.store.connect() as db:
+            self.assertEqual({r['id']: r['status'] for r in db.execute("SELECT id,status FROM fleet_in")}, {'d0': 'expired', 'd1': 'expired', 'd2': 'waiting'})
+        self.assertFalse(any(c.get('answer') for c in self.relay.sent('/answer')))  # nothing shared by folding
+        self.assertTrue(all(c['status'] == 'waiting' for c in self.relay.sent('/answer')))
+        # Another teammate's ask is their own: it doesn't fold Pat's
+        self.relay.directory['fleets'][0]['members'].append({'member_id': 'kim1', 'name': 'Kim', 'role': 'member', 'emails': ['kim@acme.example']})
+        self.fleet.directory(refresh=True)
+        self.assertEqual(self.fleet.take_ask({**day(9, '2026-10-21'), 'from': 'kim1'}), 'waiting')
+        self.assertEqual(sorted(w['id'] for w in self.fleet.view()['waiting']), ['d2', 'd9'])
+
     def test_always_on_one_day_shares_the_other_waiting_days_and_never_declines_them(self):
         # The rule is per teammate and kind: a day's brief and the next day's are the same kind of question.
         day = lambda n, since: {'id': f'd{n}', 'fleet': 'work', 'from': 'pat1', 'kind': 'brief', 'question': {'period': 'day', 'since': since}}
-        for n, since in enumerate(('2026-10-19', '2026-10-20', '2026-10-21')):
-            self.assertEqual(self.fleet.take_ask(day(n, since)), 'waiting')
-        self.fleet.decide('d2', 'always')
-        self.assertEqual(self.fleet.view()['waiting'], [])  # cleared from Needs your decision
-        self.assertEqual(sorted(c['id'] for c in self.relay.sent('/answer') if c['status'] == 'answered'), ['d0', 'd1', 'd2'])
+        self.assertEqual(self.fleet.take_ask(day(0, '2026-10-19')), 'waiting')
+        with self.store.connect() as db:  # as on a Machine from before briefs folded: two days still waiting
+            db.execute("INSERT INTO fleet_in(id,fleet,member_id,name,kind,question,status,at) SELECT 'd1',fleet,member_id,name,kind,question,status,at FROM fleet_in WHERE id='d0'")
+        self.fleet.decide('d1', 'always')
+        self.assertEqual(self.fleet.view()['waiting'], [])  # cleared from the Fleet tab
+        self.assertEqual(sorted(c['id'] for c in self.relay.sent('/answer') if c['status'] == 'answered'), ['d0', 'd1'])
         self.assertTrue(any(l['outcome'].startswith('shared automatically (your Always rule)') for l in self.fleet.view()['log']))
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT choice FROM fleet_in WHERE id='d0'").fetchone()['choice'], 'rule')
@@ -171,9 +195,10 @@ class Brief(unittest.TestCase):
         self.fleet.set_rule('work', 'pat1', 'brief', 'ask')
         self.assertEqual(self.fleet.take_ask(day(3, '2026-10-22')), 'waiting')
         self.assertEqual(self.fleet.take_ask(day(4, '2026-10-23')), 'waiting')
-        self.fleet.decide('d3', 'never')
+        self.fleet.decide('d4', 'never')
         self.assertEqual(self.fleet.view()['waiting'], [])
         self.assertEqual(self.relay.sent('/answer')[-1], {'id': 'd4', 'status': 'declined'})
+        self.assertEqual(self.fleet.take_ask(day(5, '2026-10-24')), 'declined')
 
     def test_a_question_left_waiting_under_an_always_rule_is_settled_by_the_next_round(self):
         # As on a Machine updated after its owner chose Always on another day's brief: the rule is there, a question still waits.
@@ -278,7 +303,7 @@ class Brief(unittest.TestCase):
         self.assertNotIn('unanswered:lead.example', [i['key'] for i in self.fleet.view()['briefs']['work']['items']])
         self.assertNotIn(ask_id, [a['id'] for a in self.fleet.view()['asked']])
 
-    def test_off_by_default_and_a_brief_question_tells_the_owner_only_in_their_hours(self):
+    def test_off_by_default_and_a_brief_question_never_notifies(self):
         self.assertEqual(self.fleet.brief_settings(), {'every': 'off', 'tell': False})
         self.assertEqual(self.fleet.brief_round(), 0)
         self.assertEqual(self.relay.sent('/ask'), [])
@@ -292,8 +317,9 @@ class Brief(unittest.TestCase):
         later = NOW + dt.timedelta(minutes=5)
         self.assertEqual(self.fleet.notify_round(clock=later), [])
         hours.on = True
-        self.assertEqual(self.fleet.notify_round(clock=later), ['q1'])
-        self.assertEqual(told, [['brief']])
+        self.assertEqual(self.fleet.notify_round(clock=later), [])  # it waits quietly in the Fleet tab
+        self.assertEqual(told, [])
+        self.assertEqual([w['id'] for w in self.fleet.view()['waiting']], ['q1'])
 
 
 class Items(unittest.TestCase):

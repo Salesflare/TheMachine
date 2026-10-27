@@ -2393,5 +2393,12 @@
  "Already carrying on with it.": "J’y travaille déjà.",
  "Already done. See the to-do.": "Déjà fait. Voir la tâche.",
  "Nothing is waiting to try again here.": "Rien n’attend un nouvel essai ici.",
- "Signed in. I’ll start shortly.": "Connecté. Je commence bientôt."
+ "Signed in. I’ll start shortly.": "Connecté. Je commence bientôt.",
+ "Brief requests": "Demandes de brief",
+ "Teammates ask for counts and dates for their team brief. Nothing is shared until you choose. Unanswered ones expire.": "Vos coéquipiers demandent des chiffres et des dates pour leur brief d’équipe. Rien n’est partagé tant que vous n’avez pas choisi. Sans réponse, elles expirent.",
+ "Daily brief": "Brief quotidien",
+ "Weekly brief": "Brief hebdomadaire",
+ "Always share": "Toujours partager",
+ "Share once": "Partager une fois",
+ "Never": "Jamais"
 }
