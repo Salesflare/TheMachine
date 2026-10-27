@@ -7,11 +7,15 @@
   sealed result until this Machine fetches it (`/api/fleet/agent-results`).
 - Codex (`cloud`): `codex cloud exec --env <id>`, followed with `codex cloud list --json` and, once it is ready,
   `codex cloud diff`. It runs in Codex cloud, under the owner's own ChatGPT sign-in.
-- Codex on the owner's own computer (`device`): the hosted Machine registers a ticket's sha256 with the brief on the
-  Network (`dispatch`). The self-hosted Machine the owner paired on their computer asks for work with its own device
-  token (serve: `jobs`), runs it there as an ordinary local job (a thread in the Codex app on that computer, under the
-  Codex sign-in it has there), and reports progress and the result into that ticket (`progress`, `done`). The hosted
-  Machine fetches it like a Claude result. Only the owner's own paired computer gets the job.
+- Codex on the owner's own computer (`device`): the hosted Machine registers a ticket's sha256 on the Network with the
+  brief sealed end to end for that one computer (`dispatch`): network_crypto.seal, for the Network keys the computer
+  published, signed with this Machine's own, bound to sender, computer and ticket. The Network relays the envelope and
+  can't read it. The self-hosted Machine the owner paired on their computer asks for work with its own device token
+  (serve: `jobs`), opens the brief with its private key (network-keys.json, never sent anywhere) after checking it was
+  signed by its owner's hosted Machine, runs it there as an ordinary local job (a thread in the Codex app on that
+  computer, under the Codex sign-in it has there), and reports progress and the result into that ticket (`progress`,
+  `done`). The hosted Machine fetches it like a Claude result. Each side pins the other's keys the first time it sees
+  them (agent_key_pins); when they change, nothing is sealed or opened until the computer is paired again.
 
 None of them keeps, reads or moves a Claude or ChatGPT credential: the CLIs hold their own, on their own computer.
 """
@@ -28,6 +32,7 @@ import threading
 import time
 
 import agent_jobs as aj
+import network_crypto as nc
 
 LOG = logging.getLogger('personal-assistant')
 SESSION = re.compile(r'(?:session_|cse_)[A-Za-z0-9]{8,64}')
@@ -40,6 +45,44 @@ READY_TTL = 600           # seconds a paired computer trusts its `codex login st
 HASH = re.compile(r'[0-9a-f]{64}')
 DONE = ('ready', 'applied')
 FAILED = ('error', 'failed', 'cancelled')
+PIN_SCHEMA = 'CREATE TABLE IF NOT EXISTS agent_key_pins(slot TEXT PRIMARY KEY,fingerprint TEXT NOT NULL,first_at TEXT NOT NULL)'
+REPAIR = 'Its keys changed since it was paired. Pair it again on your Account page, then try again.'
+
+
+def own_keys(jobs):
+    """This Machine's Network keys (network-keys.json next to its database, made here once), or None."""
+    import network
+    path = network.keys_path(jobs.config)
+    if not path:
+        return None
+    try:
+        return nc.load_or_make(path)
+    except (OSError, nc.SealError) as error:
+        LOG.warning('agent keys error=%s', type(error).__name__)
+        return None
+
+
+def pinned(jobs, slot, public):
+    """The other side's keys, checked (box key signed by its sign key) and pinned the first time: the keys, None when
+    they don't check out, False when they differ from the pinned ones."""
+    checked = nc.check_keys(public) if public else None
+    if not checked:
+        return None
+    with jobs.connect() as db:
+        db.execute(PIN_SCHEMA)
+        row = db.execute('SELECT fingerprint FROM agent_key_pins WHERE slot=?', (slot,)).fetchone()
+        if not row:
+            db.execute('INSERT INTO agent_key_pins(slot,fingerprint,first_at) VALUES(?,?,?)', (slot, checked['fingerprint'], aj.now()))
+            return public
+    if row['fingerprint'] != checked['fingerprint']:
+        LOG.warning('agent keys changed slot=%s', slot[:40])
+        return False
+    return public
+
+
+def job_context(sender, device, digest):
+    """What a sealed brief is bound to: from this hosted Machine, for that computer, for this ticket."""
+    return {'p': 'codex-job', 'k': 'codex', 'f': sender, 't': device, 'r': digest}
 
 
 def runner(row, command, own, jobs):
@@ -226,11 +269,40 @@ class DeviceCodex:
     def __init__(self, jobs):
         self.jobs = jobs
 
+    def target(self):
+        """The owner's computer to seal for (an online one that runs Codex first) and this Machine's key slot."""
+        try:
+            found = self.jobs.network({'action': 'where'}) or {}
+        except Exception as error:  # noqa: BLE001 - the Network's own message, never a secret
+            raise aj.Stopped('failed', f'The Network could not say where Codex runs: {error}'[:300]) from None
+        ready = [d for d in found.get('devices') or [] if isinstance(d, dict) and d.get('codex') and d.get('id')]
+        device = next((d for d in ready if d.get('online')), ready[0] if ready else None)
+        if not device:
+            raise aj.Stopped('missing', 'Set up Codex on your computer first')
+        label = str(device.get('label') or 'your computer')[:60]
+        if not device.get('keys'):
+            raise aj.Stopped('missing', f'Update The Machine on {label}, then try again.')
+        keys = pinned(self.jobs, 'to:' + str(device['id']), device['keys'])
+        if keys is False:
+            raise aj.Stopped('failed', f'{label}: {REPAIR}')
+        if not keys or not found.get('me'):
+            raise aj.Stopped('failed', f'The keys of {label} do not check out. Pair it again, then try again.')
+        return device, keys, str(found['me'])
+
     def run(self, job, prompt, resume, folder, transcript, timeout, on_progress, on_session, procs):
         ticket = secrets.token_urlsafe(24)  # only its hash leaves this Machine: no one else can claim the result
         digest = hashlib.sha256(ticket.encode()).hexdigest()
+        private = own_keys(self.jobs)
+        if not private:
+            raise aj.Stopped('failed', 'This Machine has no keys to seal the job with.')
+        device, keys, me = self.target()
         try:
-            sent = self.jobs.network({'action': 'dispatch', 'tool': 'codex', 'job': job['id'], 'ticket_hash': digest, 'brief': prompt}) or {}
+            sealed = nc.seal({'brief': prompt}, private, keys, job_context(me, device['id'], digest))
+        except nc.SealError:
+            raise aj.Stopped('failed', 'This job is too long to hand to your computer. Shorten it, then try again.') from None
+        try:
+            sent = self.jobs.network({'action': 'dispatch', 'tool': 'codex', 'job': job['id'], 'ticket_hash': digest, 'to': device['id'],
+                                      'sealed': sealed, 'keys': nc.public_keys(private)}) or {}
         except Exception as error:  # noqa: BLE001 - the Network's own message, never a secret
             raise aj.Stopped('failed', f'The Network could not take the job: {error}'[:300]) from None
         with self.jobs.connect() as db:
@@ -293,11 +365,15 @@ def serve(jobs, stop, run=None):
 def serve_once(jobs, run=None):
     with jobs.connect() as db:
         db.execute(RELAY_SCHEMA)
-    ready = codex_ready(jobs, run)
-    reply = jobs.network({'action': 'jobs', 'tools': ['codex'] if ready else []}) or {}
+    private = own_keys(jobs)
+    ready = bool(private) and codex_ready(jobs, run)
+    ask = {'action': 'jobs', 'tools': ['codex'] if ready else []}
+    if private:
+        ask['keys'] = nc.public_keys(private)  # published once; the Network seals nothing, the hosted Machine does
+    reply = jobs.network(ask) or {}
     taken = 0
     for job in reply.get('jobs') or []:
-        if ready and isinstance(job, dict) and take(jobs, job):
+        if ready and isinstance(job, dict) and take(jobs, job, private, str(reply.get('me') or '')):
             taken += 1
     for digest in reply.get('cancelled') or []:
         with jobs.connect() as db:
@@ -311,10 +387,40 @@ def serve_once(jobs, run=None):
     return taken
 
 
-def take(jobs, job):
-    """One job from the owner's hosted Machine: an ordinary local Codex job here, in a folder of its own."""
-    digest, brief = str(job.get('ticket_hash') or ''), job.get('brief')
-    if job.get('tool') != 'codex' or not HASH.fullmatch(digest) or not isinstance(brief, str) or not brief.strip() or len(brief) > 60_000:
+def opened(jobs, job, private, me):
+    """The brief of a job sealed for this computer, or (None, why): it must be sealed for this computer's own key, for
+    this ticket, and signed by the hosted Machine whose keys this computer pinned (pairing again starts over)."""
+    digest, sender = str(job.get('ticket_hash') or ''), str(job.get('from') or '')
+    if not (me and sender.startswith('m:')):
+        return None, 'It came without who sent it, so it was not opened.'
+    keys = pinned(jobs, 'from:' + me + ':' + sender, job.get('from_keys'))
+    if keys is False:
+        return None, 'The keys of your Machine changed since this computer first saw them. Pair this computer again.'
+    if not keys:
+        return None, 'It was not signed by your Machine, so it was not opened.'
+    try:
+        body = nc.open_sealed(job.get('sealed'), private, keys, job_context(sender, me, digest))
+    except nc.SealError:
+        return None, 'It did not open on this computer, so it was not run.'
+    brief = body.get('brief') if isinstance(body, dict) else None
+    if not isinstance(brief, str) or not brief.strip() or len(brief) > 60_000:
+        return None, 'It came without a job to run.'
+    return brief, None
+
+
+def take(jobs, job, private=None, me=''):
+    """One job from the owner's hosted Machine: an ordinary local Codex job here, in a folder of its own. A brief that
+    doesn't open (or isn't signed by the owner's Machine) is never run: that side hears why."""
+    digest = str(job.get('ticket_hash') or '')
+    if job.get('tool') != 'codex' or not HASH.fullmatch(digest):
+        return False
+    brief, why = opened(jobs, job, private, me) if private else (None, 'This computer has no keys to open it.')
+    if why:
+        LOG.warning('agent job not opened ticket=%s', digest[:12])
+        try:
+            jobs.network({'action': 'done', 'ticket_hash': digest, 'failed': True, 'error_kind': 'sealed', 'summary': why})
+        except Exception as error:  # noqa: BLE001 - that side times out instead
+            LOG.warning('agent report error=%s', type(error).__name__)
         return False
     job_id, at = 'aj_' + secrets.token_hex(8), aj.now()
     with jobs.connect() as db:
