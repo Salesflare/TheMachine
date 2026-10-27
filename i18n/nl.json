@@ -1484,5 +1484,8 @@
   "one": "{} afspraak",
   "other": "{} afspraken"
  },
- "Automatic: {}": "Automatisch: {}"
+ "Automatic: {}": "Automatisch: {}",
+ "Project for this to-do": "Project voor deze to-do",
+ "On {}.": "Nu bij {}.",
+ "Off its project.": "Niet meer bij een project."
 }

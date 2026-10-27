@@ -1484,5 +1484,8 @@
   "one": "{} meeting",
   "other": "{} meetings"
  },
- "Automatic: {}": "Automatic: {}"
+ "Automatic: {}": "Automatic: {}",
+ "Project for this to-do": "Project for this to-do",
+ "On {}.": "On {}.",
+ "Off its project.": "Off its project."
 }

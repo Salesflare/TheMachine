@@ -1484,5 +1484,8 @@
   "one": "{} reunión",
   "other": "{} reuniones"
  },
- "Automatic: {}": "Automático: {}"
+ "Automatic: {}": "Automático: {}",
+ "Project for this to-do": "Proyecto de esta tarea",
+ "On {}.": "Ahora en {}.",
+ "Off its project.": "Fuera de su proyecto."
 }

@@ -20,6 +20,7 @@
  "Import {}${kept?",
  "Imported: {} new, {} updated${r.skipped?",
  "Now the rest of the week: {} of {} active conversations{}",
+ "On",
  "Preparing… ${s.preparation_started_at?",
  "Reading {} of {} accounts.${r.stuck?",
  "Rows${s.total>s.rows.length?",

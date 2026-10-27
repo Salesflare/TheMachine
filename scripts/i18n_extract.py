@@ -4,7 +4,7 @@
     python3 scripts/i18n_extract.py --add      # add it to en.json (then translate it in every language)
     python3 scripts/i18n_extract.py --all      # every area, moved or not
 
-The dashboard translates by source text (i18n.js in dashboard.html): an element's text, placeholder, aria-label or
+The dashboard translates by source text (the i18n script in dashboard.html): an element's text, placeholder, aria-label or
 title that equals a catalog key reads in the owner's language. So moving an area into the catalog means its strings
 are keys in en.json, nothing in the markup changes. AREAS says where each area lives: element ids in the static markup
 and the names of the functions that build it. tests/test_i18n.py fails when a moved area (MOVED) has English that is

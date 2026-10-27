@@ -1484,5 +1484,8 @@
   "one": "{} Termin",
   "other": "{} Termine"
  },
- "Automatic: {}": "Automatisch: {}"
+ "Automatic: {}": "Automatisch: {}",
+ "Project for this to-do": "Projekt für diese Aufgabe",
+ "On {}.": "Jetzt in {}.",
+ "Off its project.": "Aus dem Projekt genommen."
 }
