@@ -515,8 +515,14 @@ class SharedGraph(unittest.TestCase):
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,project) VALUES('c1','c1','Call Lee','',"
                        "'[]','[]','pending',?,'Renewal: Lee')", (a.now(),))
         with self.mem.store.connect() as db:
-            tiles = {p['name']: p for b in self.mem.team_overview(db, {})['boards'] for p in b['projects']}
+            view = self.mem.team_overview(db, {})
+            tiles = {p['name']: p for b in view['boards'] for p in b['projects']}
         self.assertEqual((tiles['Renewal: Lee']['yours'], tiles['Renewal: Lee']['needs_you']), (True, True))
+        # The team's list says the same (Mine / Needs me / All on the List as on the Board), and a tile has a state
+        listed = {p['name']: p for p in view['projects']}
+        for name in ('Renewal: Lee', 'Pilot: Kim', 'Hire: Ada'):
+            self.assertEqual((listed[name]['yours'], listed[name]['needs_you']), (tiles[name]['yours'], tiles[name]['needs_you']), name)
+            self.assertEqual(tiles[name]['state'], 'active')
         self.assertEqual(json.dumps(self.team(self.mem)), sent)  # what was shared stays as it was
 
     def test_a_project_on_a_team_board_goes_with_its_board_record_before_any_thread_of_it_is_shared(self):

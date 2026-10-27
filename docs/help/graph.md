@@ -33,17 +33,17 @@ If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps sa
 
 ## Filter and sort
 
-**Filter**, next to the tabs on People, Organizations and Projects, narrows the list by owner, tag, board, stage, organization, value and expected close date. People and organizations match through their open projects.
+**Filter**, next to the tabs on People, Organizations and Projects, narrows the list by owner, tag, board, stage, organization, value, expected close date and **No reply in 10+ days**. People and organizations match through their open projects. On Projects, the List and the Board share one Filter.
 
 The filters you picked show above the list, with **Clear**. The order menu also sorts by **Value** and **Close date**. Your Machine does the filtering, so long lists stay fast. On a phone the filters open as a sheet.
 
 ## Team
 
-**Team**, next to Mine, shows what your teammates share. It has the same tabs, order menu and **New person** or **New organization** as Mine; what you add is yours. **Filter** narrows it by who shared it, an organization (People) or state (Projects).
+**Team**, next to Mine, shows what your teammates share. It has the same tabs, order menu and **New person** or **New organization** as Mine; what you add is yours. **Filter** narrows it by who shared it, an organization (People) or state (Projects). On Projects, **Mine**, **Needs me** and **All** pick the same projects as on a shared board.
 
 ## Owner
 
-In a Work Fleet, each person, organization and project has an owner: **Owner** under With you on its page. It's you, unless you pick someone from your Work Fleet. **Mine**, next to Filter and on a board, shows only yours. A board card shows its owner's name. Each change shows in its timeline. A record shared with your team carries its owner with it, under the same sharing rules as the rest.
+In a Work Fleet, each person, organization and project has an owner: **Owner** under With you on its page. It's you, unless you pick someone from your Work Fleet. **Owner** in Filter shows only yours, on the list and the board. A board card shows its owner's name. Each change shows in its timeline. A record shared with your team carries its owner with it, under the same sharing rules as the rest.
 
 ## Fields and tags
 
@@ -151,6 +151,7 @@ Or run them by hand, like deals in a CRM:
 - **Archive** takes it off the board and lists; a new message about it brings it back. **Delete** removes it for good; its messages and people stay.
 - Move a card by dragging it, or with **⋯**, **Move to** on a phone. Your move stands until a newer message moves it.
 - **Stages**, at the top of a board, shows only the stages you pick, per board. **Clear** shows them all again.
+- "4 with no reply in 10+ days" under a stage: tap it to show only those, on the board and the list. Tap again to show all.
 
 ### A project's to-dos
 
@@ -172,7 +173,7 @@ Projects of one kind in stages, like an evaluation pipeline. **⋯** on a board:
 
 Tick a few, or **Select all**, to do them at once, and **Undo** right after if you change your mind. A project that bundles several counterparts becomes one project per counterpart when you add it.
 
-**Pipeline**, at the top of a board, adds up the value of its open projects per stage, and what's expected to close per month from their close dates. Won, lost and stalled projects aren't open; what you won this month shows apart. Values are in euros unless your Machine is set to another currency. **Mine** counts only yours.
+**Pipeline**, at the top of a board, adds up the value of its open projects per stage, and what's expected to close per month from their close dates. Won, lost and stalled projects aren't open; what you won this month shows apart. Values are in euros unless your Machine is set to another currency. With **Owner** in Filter, it counts only yours.
 
 A new board, or a suggested board you save, looks through your whole history once. It finds projects and organizations that fit, makes one project per organization and puts each in a stage. The header says "Looking through your history…" while it works, then how many it added and how many wait for you to review. An Only-you board keeps what it finds to you.
 
@@ -180,7 +181,7 @@ A new board, or a suggested board you save, looks through your whole history onc
 
 In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. Each card says what happened last, with its date, like on its owner's board: the newest line shared with the team, else its last move. Its owner's name shows only when a stage has cards of more than one teammate; when one person owns the whole board, the header says so.
 
-**Mine**, **Needs me** and **All** pick what a shared board shows. Mine is what you're on: a thread of it, a project you own or have yourself, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
+**Mine**, **Needs me** and **All** pick what a shared board shows, and the Team list of projects with it. Mine is what you're on: a thread of it, a project you own or have yourself, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
 
 The rest of a stage folds into **Show N more**. Projects that look alike, like a run of "… CRM evaluation" trials, fold into one row with a count; tap it to open them. None of this changes what's shared.
 

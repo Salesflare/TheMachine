@@ -1690,6 +1690,18 @@ def page(db, name, sort='', cursor=0, limit=30, filters=None):
     return found
 
 
+def page_ids(db, name, filters):
+    """Every id on a Graph list that its filters keep, for the Projects board: the board shows the List's filters too."""
+    import crm
+    if name not in PAGED:
+        raise ValueError('list is one of ' + ', '.join(PAGED))
+    where, args = _paged_where(db, name)
+    extra_where, extra_args, _ = crm.list_query(db, name, crm.clean_filters(filters), '')
+    if extra_where:
+        where, args = '(' + where + ') AND ' + extra_where, (*args, *extra_args)
+    return {'ids': [r[0] for r in db.execute('SELECT id FROM graph_nodes WHERE ' + where, args)]}
+
+
 def list_counts(db):
     """How long each Graph tab's list is, for its count; an empty tab is not shown."""
     found = {name: db.execute(f'SELECT COUNT(*) FROM graph_nodes WHERE {where}', args).fetchone()[0]
@@ -4125,6 +4137,30 @@ def org_card(db, domain):
             'logo': logo if isinstance(logo, str) and (logo.startswith('https://') or PICTURE.fullmatch(logo)) else None}
 
 
+def _waiting_since(db, node):
+    """When the owner first wrote on a project since the other side last did (None when the other side wrote last)."""
+    mine_since = None
+    for r in db.execute("SELECT e.occurred_at,(json_extract(e.metadata,'$.from_me') IS 1 OR EXISTS(SELECT 1 FROM json_each(e.metadata,'$.labels') "
+                        "WHERE value='SENT')) mine FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? AND g.probable=0 "
+                        f"AND e.deleted=0 AND e.kind IN ({','.join('?' for _ in MESSAGE_KINDS)}) ORDER BY e.occurred_at", (node, *MESSAGE_KINDS)):
+        mine_since = (mine_since or r['occurred_at']) if r['mine'] else None
+    return mine_since
+
+
+def waiting_ids(db, now):
+    """The open projects on a board, outside Stalled, whose other side hasn't answered the owner for STUCK_DAYS or
+    more: the ones a board counts as "with no reply in 10+ days" (boards: stuck), for the No reply filter."""
+    today, found = parse_time(now), set()
+    for b in db.execute('SELECT * FROM boards').fetchall():
+        names = stage_names(b)
+        for p in db.execute('SELECT id,stage FROM projects WHERE board_id=? AND closed_at IS NULL', (b['id'],)).fetchall():
+            stage = p['stage'] if p['stage'] in names else names[0]
+            since = None if stage == STALLED else _waiting_since(db, 'project:' + str(p['id']))
+            if since and (today - parse_time(since)).days >= STUCK_DAYS:
+                found.add('project:' + str(p['id']))
+    return found
+
+
 def boards(db, now):
     """Every board with its stages and projects, for the Projects board view. Each project: its stage, why it last
     moved and when (with the message), its next step, its organization (logo from enrichment), how long it has been
@@ -4141,11 +4177,7 @@ def boards(db, now):
         for p in rows:
             node = 'project:' + str(p['id'])
             org = project_org(db, p['org'] or (infer_org(db, p['id'], org_cache) if not p['org_by'] else None))  # set, or what fill_orgs will set
-            mine_since = None  # the first of the owner's messages since the other side last wrote
-            for r in db.execute("SELECT e.occurred_at,(json_extract(e.metadata,'$.from_me') IS 1 OR EXISTS(SELECT 1 FROM json_each(e.metadata,'$.labels') "
-                                "WHERE value='SENT')) mine FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? AND g.probable=0 "
-                                f"AND e.deleted=0 AND e.kind IN ({','.join('?' for _ in MESSAGE_KINDS)}) ORDER BY e.occurred_at", (node, *MESSAGE_KINDS)):
-                mine_since = (mine_since or r['occurred_at']) if r['mine'] else None
+            mine_since = _waiting_since(db, node)
             since = parse_time(p['stage_at'] or p['created_at'])
             last = None if p['stage_by'] else next(iter(project_events(db, p['id'], 1, now)), None)  # an unplaced tile: its latest message
             todos = db.execute(f"SELECT s.id,s.title FROM suggestions s WHERE s.status IN ({','.join('?' for _ in OPEN_CARD)}) AND {cards_on} "

@@ -4,8 +4,9 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The Graph as a CRM on the dashboard: Mine and Filter on the lists (the filters go to the Machine), the filter sheet,
-// Mine and owners on the board, an owner on a page and its change in the timeline, an organization's websites with
+// The Graph as a CRM on the dashboard: Filter on the lists (the filters go to the Machine), the filter sheet, no Mine
+// button on the Mine tab (Owner is in Filter), the List's filters on the board too (the Machine says which projects they
+// keep) with No reply in 10+ days a tap on a stage, owners on tiles, an owner on a page and its change in the timeline, an organization's websites with
 // Split off, Same organization? and Add a website…, and a CSV import with its preview, mapping and Undo. On a phone and
 // a desktop. CRM_SHOT=<dir> writes screenshots.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
@@ -16,10 +17,11 @@ const globex=node('org','org:globex.example','Globex',{domain:'globex.example',d
  owner:'m-kim',owner_name:'Kim Vale',changes:[{field:'owner',old:{id:'me'},new:{id:'m-kim',name:'Kim Vale'},at:day(2)},{field:'merged',new:{id:'org:globex.io',name:'globex.io'},at:day(3)}],
  doubles:[{a:{id:'org:globex.example',name:'Globex'},b:{id:'org:globex-group.example',name:'Globex Group',domain:'globex-group.example'},why:'Same company name on another website'}]});
 const projects=[{id:'project:1',kind:'project',name:'Globex pilot',state:'active',signals:3,last_at:day(1),value:12000,close_date:'2026-11-30',board:'Sales',stage:'Demo',owner:'m-kim',owner_name:'Kim Vale'},
- {id:'project:2',kind:'project',name:'Umber deal',state:'active',signals:2,last_at:day(2),value:3000,close_date:'2026-12-20',board:'Sales',stage:'Discovery'}];
+ {id:'project:2',kind:'project',name:'Umber deal',state:'active',signals:2,last_at:day(2),value:3000,close_date:'2026-12-20',board:'Sales',stage:'Discovery',waiting:true}];
 const stages=[{name:'Discovery'},{name:'Demo'},{name:'Won'}];
-const tiles=[{id:'project:1',name:'Globex pilot',stage:'Demo',days:3,value:12000,close_date:'2026-11-30',owner:'m-kim',owner_name:'Kim Vale'},{id:'project:2',name:'Umber deal',stage:'Discovery',days:1,value:3000}];
-const boards=[{id:1,name:'Sales',stages,default:true,stuck:0,maybes:[],projects:tiles}];
+const tiles=[{id:'project:1',name:'Globex pilot',stage:'Demo',days:3,value:12000,close_date:'2026-11-30',owner:'m-kim',owner_name:'Kim Vale'},{id:'project:2',name:'Umber deal',stage:'Discovery',days:1,value:3000,no_reply_days:12},
+ {id:'project:3',name:'Vale renewal',stage:'Discovery',days:2,no_reply_days:2}];
+const boards=[{id:1,name:'Sales',stages,default:true,stuck:1,maybes:[],projects:tiles}];
 const ada=node('person','person:a','Ada Lovelace',{ids:['email:ada@globex.example'],org:'org:globex.example',side:'work'});
 const preview=mapping=>({kind:'person',columns:[{index:0,header:'Full name',field:'name',samples:['Ada Lovelace','Nia Holm']},{index:1,header:'E-mail',field:'email',samples:['ada@globex.example']},{index:2,header:'Company',field:mapping?.['2']??'org',samples:['Globex','Newco']}],
  fields:[{id:'name',name:'Name'},{id:'email',name:'Email'},{id:'org',name:'Organization'},{id:'title',name:'Title'}],counts:{new:1,match:1,skip:1},total:3,
@@ -33,7 +35,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    :b.action==='graph_org_merge'?{node_id:'org:globex.example'}:{ok:true};
   res.end(JSON.stringify(out));return}
  if(url.pathname==='/api/graph/list'){const p=Object.fromEntries(url.searchParams);lists.push(p);const all=p.list==='orgs'?[globex]:p.list==='projects'?projects:[ada];
-  const items=all.filter(x=>(p.owner!=='me'||!x.owner)&&(!p.value_min||(x.value||0)>=+p.value_min));
+  const items=(p.ids==='1'&&p.list==='projects'?[...projects,{id:'project:3'}]:all).filter(x=>(p.owner!=='me'||!x.owner)&&(!p.value_min||(x.value||0)>=+p.value_min)&&(!p.waiting||x.waiting));
+  if(p.ids==='1'){res.end(JSON.stringify({ids:items.map(x=>x.id)}));return}
   res.end(JSON.stringify({items,next:null,sort:p.sort,total:items.length}));return}
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node'),q=(url.searchParams.get('q')||'').toLowerCase();
   if(q){res.end(JSON.stringify({found:[globex,node('org','org:umber.example','Umber',{domain:'umber.example'})].filter(x=>x.name.toLowerCase().includes(q))}));return}
@@ -58,38 +61,50 @@ try{
   const click=sel=>mobile?page.locator(sel).first().tap():page.locator(sel).first().click();
   await page.evaluate(()=>{localStorage.removeItem('graph-filters');sideStore.set('projects-view','list');document.querySelector('nav [data-tab="people"]').click()});
   await page.evaluate(()=>document.querySelector('[data-graph-sub="projects"]').click());
-  // Projects list: Mine and Filter; Mine asks the Machine for the owner's own only
-  await page.locator('#people-view [data-crm-mine="projects"]').waitFor();await page.locator('#people-view [data-graph-panel="projects"] .graph-list article').first().waitFor();
+  // Projects list: Filter, no Mine button on the Mine tab
+  await page.locator('#people-view .proj-list [data-crm-filter="projects"]').waitFor();await page.locator('#people-view [data-graph-panel="projects"] .graph-list article').first().waitFor();
+  assert.equal(await page.locator('#people-view [data-crm-mine]').count(),0);
   await fits(page,'projects '+tag);await shot(page,`projects-list-${tag}`);
-  await click('#people-view [data-crm-mine="projects"]');await page.waitForFunction(()=>document.querySelector('[data-crm-mine="projects"]')?.getAttribute('aria-pressed')==='true');
-  await page.waitForFunction(()=>document.querySelectorAll('[data-graph-panel="projects"] .graph-list article').length===1);
-  assert.equal(last('projects').owner,'me');
-  // The filter sheet: board and value; the active filters show with Clear
-  await click('#people-view [data-crm-filter="projects"]');await page.locator('#crm-dialog[open]').waitFor();
+  // The filter sheet: owner, board and value; the active filters show with Clear
+  await click('#people-view .proj-list [data-crm-filter="projects"]');await page.locator('#crm-dialog[open]').waitFor();
   assert.equal(await page.locator('#crm-dialog-title').textContent(),'Filter projects');
+  await page.locator('#crm-form select[name=owner]').selectOption('me');
   await page.locator('#crm-form select[name=board]').selectOption('1');assert.deepEqual(await page.locator('#crm-form select[name=stage] option').allTextContents(),['Any stage','Discovery','Demo','Won']);
   await page.locator('#crm-form [name=value_min]').fill('lots');await click('#crm-form button.primary');assert.equal(await page.locator('#crm-form [data-crm-error]').textContent(),'Value: a number, like 12000.');
   await page.locator('#crm-form [name=value_min]').fill('5000');await fits(page,'filter '+tag);await shot(page,`filter-sheet-${tag}`);
   await click('#crm-form button.primary');await page.locator('#crm-dialog[open]').waitFor({state:'detached'});
-  await page.waitForFunction(()=>document.querySelector('[data-graph-panel="projects"] .graph-active'));
+  await page.waitForFunction(()=>document.querySelector('[data-graph-panel="projects"] .proj-list .graph-active'));
   await until(()=>last('projects').value_min,'the filtered list is asked for');
   assert.deepEqual({owner:last('projects').owner,board:last('projects').board,value_min:last('projects').value_min},{owner:'me',board:'1',value_min:'5000'});
-  assert.match(await page.locator('[data-graph-panel="projects"] .graph-active').textContent(),/Board: Sales.*Value from €5,000/);
-  assert.equal(await page.locator('[data-crm-filter="projects"] .badge').textContent(),'2');
+  assert.match(await page.locator('[data-graph-panel="projects"] .proj-list .graph-active').textContent(),/Owner: you.*Board: Sales.*Value from €5,000/);
+  assert.equal(await page.locator('.proj-list [data-crm-filter="projects"] .badge').textContent(),'3');
   await page.locator('[data-graph-panel="projects"] .pager-empty').waitFor();assert.equal(await page.locator('[data-graph-panel="projects"] .pager-empty').textContent(),'Nothing matches these filters.');
   await shot(page,`projects-filtered-${tag}`);
-  await click('[data-graph-panel="projects"] [data-crm-clear]');await page.waitForFunction(()=>!document.querySelector('[data-graph-panel="projects"] .graph-active'));
+  await click('[data-graph-panel="projects"] [data-crm-clear]');await page.waitForFunction(()=>!document.querySelector('[data-graph-panel="projects"] .proj-list .graph-active'));
   await page.waitForFunction(()=>document.querySelectorAll('[data-graph-panel="projects"] .graph-list article').length===2);  /* the whole list, as loaded before */
   // Sort by value goes to the Machine too
   await click('#people-view [data-graph-panel="projects"] .graph-sort summary');await click('#people-view [data-graph-panel="projects"] [data-graph-sort="value"]');
   await page.waitForFunction(()=>document.querySelector('[data-graph-panel="projects"] .graph-sort summary').textContent.startsWith('Value'));await until(()=>last('projects').sort==='value','sorted by value on the Machine');
-  // The board: owners on tiles, and Mine hides the ones a teammate owns
-  await page.evaluate(()=>projectsViewSet('board'));await page.locator('#people-view [data-board-mine]').waitFor();
+  // The board: owners on tiles, the same Filter as the List (Owner: you hides the ones a teammate owns), the stuck line
+  // a tap that keeps exactly those, and Clear
+  await page.evaluate(()=>projectsViewSet('board'));await page.locator('#people-view .proj-board [data-crm-filter="projects"]').waitFor();
+  assert.equal(await page.locator('#people-view [data-board-mine]').count(),0);
   assert.equal(await page.locator('#people-view .tile[data-node="project:1"] .tile-owner').textContent(),'Kim Vale');
   await shot(page,`board-owners-${tag}`);
-  await click('#people-view [data-board-mine]');await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:1"]'));
-  assert.equal(await page.locator('#people-view [data-board-mine]').getAttribute('aria-pressed'),'true');
-  await click('#people-view [data-board-mine]');await page.locator('#people-view .tile[data-node="project:1"]').waitFor({state:'attached'});
+  await page.evaluate(()=>crmSet('projects',{owner:'me'}));await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:1"]'));
+  assert.equal(lists.at(-1).ids,'1');assert.equal(lists.at(-1).owner,'me');
+  assert.match(await page.locator('#people-view .proj-board .board-active').textContent(),/Owner: you/);
+  assert.equal(await page.locator('#people-view .proj-board [data-crm-filter="projects"] .badge').textContent(),'1');
+  await click('#people-view .proj-board [data-board-filter-clear]');await page.locator('#people-view .tile[data-node="project:1"]').waitFor({state:'attached'});
+  assert.deepEqual(await page.evaluate(()=>crmF('projects')),{});
+  await page.locator('#people-view .lane-sum [data-crm-waiting]').first().waitFor({state:'attached'});
+  assert.equal(await page.locator('#people-view .lane-sum [data-crm-waiting]').first().textContent(),'1 with no reply in 10+ days');
+  await page.evaluate(()=>document.querySelector('#people-view .lane-sum [data-crm-waiting]').click());
+  await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:3"]')&&!document.querySelector('#people-view .tile[data-node="project:1"]'));
+  assert.equal(lists.at(-1).waiting,'1');assert.ok(await page.locator('#people-view .tile[data-node="project:2"]').count());
+  assert.match(await page.locator('#people-view .proj-board .board-active').textContent(),/No reply in 10\+ days/);await shot(page,`board-waiting-${tag}`);
+  await page.evaluate(()=>projectsViewSet('list'));await page.waitForFunction(()=>/No reply in 10\+ days/.test(document.querySelector('[data-graph-panel="projects"] .proj-list .graph-active')?.textContent||''));
+  await page.evaluate(()=>{crmSet('projects',{});projectsViewSet('board')});await page.locator('#people-view .tile[data-node="project:3"]').waitFor({state:'attached'});
   // Organizations: Same organization? merges the second into the first
   await page.evaluate(()=>document.querySelector('[data-graph-sub="orgs"]').click());await page.locator('#people-view [data-graph-panel="orgs"] .same-pair').waitFor();
   await shot(page,`orgs-doubles-${tag}`);

@@ -2573,8 +2573,16 @@ class SharedGraph:
                 continue
             {'person': people, 'org': orgs, 'project': projects}.get(view['kind'], []).append(view)
         key = lambda n: -(n.get('strength') or 0)
+        boards = self.team_boards(db, entries, shared)
+        # Mine and Needs me on the team's list as on its boards; a tile's state for the list's State filter
+        marks = {p['id']: p for b in boards for p in b['projects']}
+        for item in projects:
+            tile = marks.get(item['id'])
+            item['yours'], item['needs_you'] = (bool(tile.get('yours')), bool(tile.get('needs_you'))) if tile else (not item.get('team_only'), False)
+        for tile in marks.values():
+            tile['state'] = (local.get(tile['id']) or {}).get('state') or 'active'
         return {'team': True, 'people': sorted(people, key=key)[:60], 'orgs': sorted(orgs, key=key)[:30], 'projects': sorted(projects, key=key)[:40],
-                'quiet': [], 'new': [], 'boards': self.team_boards(db, entries, shared), 'counts': {'person': len(people), 'org': len(orgs), 'project': len(projects)},
+                'quiet': [], 'new': [], 'boards': boards, 'counts': {'person': len(people), 'org': len(orgs), 'project': len(projects)},
                 'sharing': self.sharing()}
 
     def _yours(self, db, e, rec, me_ids, my_mail, todos):

@@ -37,6 +37,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(b.action==='graph_tag'){tags=a.add?[...tags,a.tag]:tags.filter(t=>t!==a.tag);out={tags}}
   res.end(JSON.stringify(out));return}
  if(url.pathname==='/api/graph/list'){const p=Object.fromEntries(url.searchParams);lists.push(p);const all=p.list==='orgs'?[globex()]:p.list==='projects'?[]:[ada];
+  if(p.ids==='1'){res.end(JSON.stringify({ids:tiles.filter(x=>p.owner!=='me'||!x.owner).map(x=>x.id)}));return}  /* the board's Owner: you */
   const items=all.filter(x=>!p.tag||(x.tags||[]).some(t=>t.toLowerCase()===p.tag.toLowerCase()));
   res.end(JSON.stringify({items,next:null,sort:p.sort,total:items.length}));return}
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');
@@ -58,7 +59,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(tag+': '+e.message));page.on('dialog',d=>d.accept());await page.goto(base);await page.waitForFunction(()=>typeof people==='function');
   const click=sel=>mobile?page.locator(sel).first().tap():page.locator(sel).first().click();
-  await page.evaluate(()=>{localStorage.removeItem('graph-filters');sideStore.set('projects-view','board');sideStore.set('board-mine','0');document.querySelector('nav [data-tab="people"]').click()});
+  await page.evaluate(()=>{localStorage.removeItem('graph-filters');sideStore.set('projects-view','board');document.querySelector('nav [data-tab="people"]').click()});
   await page.evaluate(()=>document.querySelector('[data-graph-sub="projects"]').click());
   // The Pipeline: value per stage, and expected per month (overdue first, then this month on), the ones with no date apart
   await page.locator('#people-view .pipeline').waitFor();
@@ -69,10 +70,10 @@ try{
   assert.equal(monthRows[0],'overdue €5,000 1');assert.match(monthRows[1],/ €3,000 1$/);assert.match(monthRows[2],/ €12k 1$/);assert.equal(monthRows.length,4);
   assert.equal(await page.locator('#people-view .pipe-note').textContent(),'No close date: €2,000 in 1');
   await fits(page,'pipeline '+tag);await page.locator('#people-view .pipeline').scrollIntoViewIfNeeded();await shot(page,`pipeline-${tag}`);
-  // Mine: only your own count (a teammate owns the overdue one)
-  await click('#people-view [data-board-mine]');await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:3"]'));
+  // Owner: you (the List's filter, on the board too): only your own count (a teammate owns the overdue one)
+  await page.evaluate(()=>crmSet('projects',{owner:'me'}));await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:3"]'));
   assert.match(await page.locator('#people-view .pipeline summary').textContent(),/€17k open in 3/i);
-  await click('#people-view [data-board-mine]');
+  await page.evaluate(()=>crmSet('projects',{}));await page.locator('#people-view .tile[data-node="project:3"]').waitFor({state:'attached'});
   // Closed, it stays closed
   await click('#people-view .pipeline summary');await page.waitForFunction(()=>!document.querySelector('#people-view .pipeline').open);
   assert.equal(await page.evaluate(()=>sideStore.get('board-pipeline')),'0');await page.evaluate(()=>sideStore.set('board-pipeline','1'));

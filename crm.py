@@ -461,7 +461,7 @@ def _brief(row):
 
 # ------------------------------------------------------------------ lists: filters and sorts on the Machine
 
-FILTERS = ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to')
+FILTERS = ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting')
 SORTS = ('value', 'close')
 
 
@@ -478,6 +478,10 @@ def clean_filters(raw):
         elif key == 'tag':
             import crm_fields
             value = crm_fields.clean_tag(value)
+        elif key == 'waiting':  # no reply in 10+ days (graph.waiting_ids): on or not there
+            if value != '1':
+                raise ValueError('No reply in 10+ days: on or off')
+            value = 1
         elif key == 'board':
             if not value.isdigit():
                 raise ValueError('Board: one of your boards')
@@ -567,6 +571,17 @@ def list_query(db, name, filters, sort):
     if 'tag' in filters:
         where.append("EXISTS(SELECT 1 FROM json_each(graph_nodes.info,'$.tags') t WHERE t.value=? COLLATE NOCASE)")
         args.append(filters['tag'])
+    if 'waiting' in filters:  # projects with no reply in 10+ days; people and organizations on one of them
+        waiting = json.dumps(sorted(graph.waiting_ids(db, now_iso())))
+        if kind == 'project':
+            where.append('id IN (SELECT value FROM json_each(?))')
+        elif kind == 'person':
+            where.append("id IN (SELECT l.a FROM graph_links l WHERE l.kind='project' AND l.b IN (SELECT value FROM json_each(?)) "
+                         "UNION SELECT node_id FROM project_people WHERE 'project:'||project_id IN (SELECT value FROM json_each(?)))")
+            args.append(waiting)
+        else:
+            where.append("id IN (SELECT 'org:'||p.org FROM projects p WHERE 'project:'||p.id IN (SELECT value FROM json_each(?)) AND p.org IS NOT NULL)")
+        args.append(waiting)
     if 'org' in filters:
         ids = org_ids(db, filters['org'])
         marks = ','.join('?' * len(ids)) or "''"

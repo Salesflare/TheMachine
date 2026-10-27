@@ -17673,6 +17673,10 @@ class App:
         with self.store.connect() as db:
             return graph.with_fleet(db, graph.page(db, name, sort, cursor, limit, filters), self.graph_fleet_marks(db))
 
+    def graph_list_ids(self, name, filters):
+        with self.store.connect() as db:
+            return graph.page_ids(db, name, filters)
+
     def owner_choices(self):
         """Who can own a record: the members of the owner's Work Fleets (crm.owner_choices); none without a Fleet."""
         if not getattr(self, 'fleet', None):
@@ -18437,6 +18441,8 @@ class App:
                     try:
                         if path.path == '/api/cards/done':
                             self.output(200, app.store.done_page(args.get('cursor') or 0, args.get('limit') or 30, args.get('q', ''), args.get('scope', '')))
+                        elif args.get('ids') == '1':  # the ids its filters keep, for the Projects board
+                            self.output(200, app.graph_list_ids(args.get('list', ''), {k: args[k] for k in crm.FILTERS if k in args}))
                         else:
                             self.output(200, app.graph_list(args.get('list', ''), args.get('sort', ''), args.get('cursor') or 0, args.get('limit') or 30,
                                                             {k: args[k] for k in crm.FILTERS if k in args}))

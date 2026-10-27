@@ -201,6 +201,9 @@ a.btn-link[hidden]{display:none}
 @media(max-width:560px){#settings-account>div{flex-wrap:wrap}#settings-account #settings-more{flex:1 1 100%}#settings-account .btn-link{margin-top:4px}}
 .alpha{margin-left:6px;padding:1px 7px;border-radius:999px;font:600 .68rem/1.5 var(--mono);letter-spacing:.04em;text-transform:uppercase;background:#eca45b33;color:var(--amber);vertical-align:middle}
 .role-all{margin:-4px 0 12px}
+/* Who's who: a long role stays in its pill on one row with the name, cut with … (the full role on hover) */
+.whos .graph-row{flex-wrap:nowrap;min-width:0}.whos .graph-row>button.node{flex:none;max-width:60%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.whos .role-chip{flex:0 1 auto;min-width:4.5em;max-width:100%;overflow:hidden}.whos .role-chip::before{flex:none}
 .lead{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.9rem;margin:0 0 14px}
 .summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}
 .summary-row .lead{margin:0}
@@ -603,6 +606,9 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .lane-hint{margin:0;padding:0 4px 10px;color:var(--c-text-3);font-size:var(--fs-xs);line-height:1.4}
 .lane-hint:has(+.lane-sum){padding-bottom:2px}
 .lane-sum{margin:0;padding:0 4px 10px;color:var(--c-orange);font-size:var(--fs-xs)}
+/* "N with no reply in 10+ days" is a tap that keeps exactly those (the No reply filter); again shows all */
+.lane-sum button{display:inline;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:inherit;font:inherit;text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
+.lane-sum button:hover{text-decoration-color:currentColor}.lane-sum button[aria-pressed=true]{background:none;color:inherit;font-weight:650}
 .tiles{display:flex;flex-direction:column;gap:8px}
 .lane.side{grid-column:1/-1;margin-top:12px}
 .lane.side .tiles{display:grid;grid-template-columns:repeat(var(--lanes),minmax(0,1fr));gap:8px}
@@ -711,7 +717,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .crm-newfield{margin:8px 0 0}.crm-newfield>summary{cursor:pointer;color:var(--c-text-2);font-weight:600;margin-bottom:8px}
 .graph-tools{display:flex;align-items:center;gap:6px;margin-left:auto;flex:none}.graph-tools+.graph-sort{margin-left:0}
 .graph-tools button{display:inline-flex;align-items:center;gap:4px;height:32px;min-height:32px;margin:0;padding:0 12px;border:1px solid var(--c-line);border-radius:999px;background:none;box-shadow:none;color:var(--c-text-2);font:600 .85rem/1 var(--sans);white-space:nowrap}
-.graph-tools .crm-funnel{display:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}.graph-tools button[aria-pressed=true]{border-color:var(--text);background:var(--text);color:var(--surface)}.graph-tools .badge{margin-left:0}
+.crm-funnel{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}.graph-tools .crm-funnel{display:none;width:16px;height:16px}.graph-tools .board-seg{margin:0}.graph-tools .board-seg button{height:28px;min-height:28px;padding:0 10px;border:0}.graph-tools .board-seg button[aria-pressed=true]{background:var(--text);color:var(--surface)}.graph-tools button[aria-pressed=true]{border-color:var(--text);background:var(--text);color:var(--surface)}.graph-tools .badge{margin-left:0}
 .graph-active{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;color:var(--c-text-2);font-size:var(--fs-sm)}.graph-active .chip{margin:0}.graph-active button.link{min-height:0;padding:2px 4px;border:0;background:none;box-shadow:none;color:var(--text);text-decoration:underline;font:inherit}
 #crm-form .ed-row3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .crm-count{margin:0;font-size:var(--fs-sm);color:var(--c-text-2)}.crm-count b{color:var(--text)}
@@ -733,7 +739,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .org-sites li{display:flex;align-items:center;gap:8px;min-height:34px}.org-sites ul{margin:4px 0 0;padding:0;list-style:none}.org-sites li span{flex:1;min-width:0;overflow-wrap:anywhere}
 .ge-change .ge-dot{flex:none;width:28px;display:grid;place-items:center;color:var(--c-text-3)}
 #crm-form fieldset{margin:0;padding:0;border:0;min-width:0}#crm-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
-.board-mine+.board-filter{margin-left:6px}.board-filter[aria-pressed=true] .badge{background:rgba(255,255,255,.22);color:inherit}.board-filter .crm-funnel{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px}.board-active{flex-basis:100%;margin:8px 0 0}.board-stage-pick{display:grid;gap:8px;margin:12px 0 4px;padding:0;border:0}
+.board-tools{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 0 auto}.board-tools>:is(.board-mine,.board-new,.board-seg){margin:0}.board-stages-icon{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}.board-filter[aria-pressed=true] .badge{background:rgba(255,255,255,.22);color:inherit}.board-filter .crm-funnel{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px}.board-active{flex-basis:100%;margin:8px 0 0}.board-stage-pick{display:grid;gap:8px;margin:12px 0 4px;padding:0;border:0}
 .board-mine{flex:none;height:32px;min-height:32px;margin:0 0 0 auto;padding:0 12px;border:1px solid var(--c-line);border-radius:999px;background:none;box-shadow:none;color:var(--c-text-2);font:600 .85rem/1 var(--sans)}.board-mine[aria-pressed=true]{border-color:var(--text);background:var(--text);color:var(--surface)}.board-mine+.board-new{margin-left:6px}
 @media(max-width:560px){.graph-tabbar{flex-wrap:wrap}.graph-tools{margin-left:0;order:3}.graph-tools .crm-funnel{display:block}.graph-tools .crm-word{display:none}.graph-tools [data-crm-filter]{padding:0 9px}.crm-col{grid-template-columns:1fr}}
 /* Already in your Graph: ones like what is being typed, each a link to open it instead of adding it twice */
@@ -6492,7 +6498,7 @@ function graphTabsInner(pane){const g=GRAPH_TABS[pane],shown=g.tabs.filter(([id]
  const tab=shown.some(([id])=>id===graphPick(pane,'tab',''))?graphPick(pane,'tab',''):shown[0][0],sort=g.sorts.some(([id])=>id===graphPick(pane,'sort',''))?graphPick(pane,'sort',''):g.sorts[0][0];
  graphListPager(tab,sort);const label=g.sorts.find(([id])=>id===sort)[1];
  const menu=tab==='warmup'?'':`<details class="graph-sort"><summary aria-label="Order: ${esc(label)}">${esc(label)} <span aria-hidden="true">▾</span></summary><div class="graph-sort-list" role="menu">${g.sorts.map(([id,t])=>`<button type="button" role="menuitemradio" aria-checked="${id===sort}" data-graph-sort="${id}">${esc(t)}</button>`).join('')}<hr><button type="button" role="menuitem" data-graph-csv="${tab}" data-sort="${sort}">Download CSV</button>${graphLocal?'':`<button type="button" role="menuitem" data-crm-import="${pane}">Import CSV…</button>${graphLastImport?`<button type="button" role="menuitem" data-crm-undo-import="${graphLastImport.id}">Undo last import</button>`:''}`}</div></details>`;
- return `<div class="graph-tabbar" data-graph-tabs="${pane}">${subTabs(g.label,'data-graph-list',shown.map(([id,t])=>({id,label:t,badge:graphLists[id]})),tab)}${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmTools(pane)}${menu}</div>${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmActive(pane)}${(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])?`<p class="graph-note muted">${esc(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])}</p>`:''}${pagerSlot(crmKey(tab,sort),crmCount(pane)?'Nothing matches these filters.':g.empty,'graph-list')}`}
+ return `<div class="graph-tabbar" data-graph-tabs="${pane}">${subTabs(g.label,'data-graph-list',shown.map(([id,t])=>({id,label:t,badge:graphLists[id]})),tab)}${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmTools(pane,tab)}${menu}</div>${tab==='warmup'||graphLocal&&!graphListsTeam?'':crmActive(pane)}${(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])?`<p class="graph-note muted">${esc(graphListsTeam?TEAM_NOTES[tab]:g.notes[tab])}</p>`:''}${pagerSlot(crmKey(tab,sort),crmCount(pane)?'Nothing matches these filters.':g.empty,'graph-list')}`}
 function graphTabsPaint(pane){const box=document.querySelector(`[data-graph-panel="${pane}"] [data-graph-box]`);if(!box)return;box.innerHTML=graphTabsInner(pane);pagerMount(box);tabsShow(box.querySelector('.sub-tabs'))}
 $('#people-view').addEventListener('click',e=>{const c=e.target.closest('[data-graph-csv]');if(c){c.closest('details').open=false;graphCsv(c.dataset.graphCsv,c.dataset.sort).catch(err=>toast(err.message,true));return}});
 // A list as a spreadsheet (CSV): every row of the tab, in its order, a page at a time from the Machine. A cell that
@@ -6519,10 +6525,10 @@ const graphSection=(title,note,items)=>items?.length?`<div class="section-head">
 // Projects as a board: projects of one kind in stages (graph.boards), a view of Graph › Projects next to the list. Board by
 // default when there is a board; the choice is remembered on this device. Moves come from what the messages mean; the owner
 // drags a tile (or picks a stage from its menu) and that stands until a newer message moves it. Nothing here sends anything.
-let graphBoards=[],boardShown=sideStore.get('board-shown')||'',boardStage={},boardOpen=new Set(),fitsOpen=new Set(),fitsPicked=new Map(),boardMine=sideStore.get('board-mine')==='1';
+let graphBoards=[],boardShown=sideStore.get('board-shown')||'',boardStage={},boardOpen=new Set(),fitsOpen=new Set(),fitsPicked=new Map();
 const projView=()=>graphBoards.length?(sideStore.get('projects-view')==='list'?'list':'board'):'list';
 const shortDay=v=>v?new Date(String(v).length<=10?v+'T12:00':v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'';  /* Fri, Oct 23 */
-const boardNow=()=>graphBoards.find(b=>b.name===boardShown)||graphBoards[0];
+const boardNow=()=>{const fb=graphBoards[0]&&!graphBoards[0].team&&crmF('projects').board;return (fb&&graphBoards.find(b=>String(b.id)===String(fb)))||graphBoards.find(b=>b.name===boardShown)||graphBoards[0]};
 const tileWhy=(p,side)=>{const last=p.last_at?' · '+(p.last_event_id?`<button type="button" class="link" data-quote-event="${p.last_event_id}" title="Read its latest message">${esc(shortDay(p.last_at))}</button>`:esc(shortDay(p.last_at))):'';
  if(p.sort_failed)return `<p class="tile-why failed">${esc(p.sort_failed)}${last}</p>`;
  if(p.sort_note)return `<p class="tile-why">Not sorted: ${esc(p.sort_note)}${last}</p>`;
@@ -6556,7 +6562,8 @@ const LANE_ROWS=()=>matchMedia('(max-width:560px)').matches?6:8;
 // them). It opens on Mine when the board has some of theirs. The rest of a stage folds into "Show N more". Look-alike
 // projects of one kind ("Acme CRM evaluation", "Bolt CRM evaluation": three or more alike in a stage) fold into one row.
 let boardTeamPick=sideStore.get('board-team-pick')||'',groupOpen=new Set();
-const teamPick=b=>{const v=boardTeamPick||(b.projects.some(p=>p.yours)?'mine':'all');return v==='needs'||v==='mine'?v:'all'};
+const teamPickOf=items=>{const v=boardTeamPick||(items.some(p=>p.yours)?'mine':'all');return v==='needs'||v==='mine'?v:'all'};
+const teamPick=b=>teamPickOf(b.projects);
 const teamHit=(p,v)=>v==='all'||(v==='mine'?p.yours:p.needs_you);
 // Alike: the same last two words ("… CRM evaluation"), else the same first two ("Pilot review: …"), on three or more
 const alikeKeys=n=>{const w=String(n||'').trim().split(/\s+/);return w.length>2?[w.slice(-2).join(' '),w.slice(0,2).join(' ').replace(/[:\-–]+$/,'')]:[]};
@@ -6572,7 +6579,7 @@ const lane=(b,s,items,on)=>{const key=b.name+'|'+s.name,oneOwner=items.length>1&
   return `<section class="lane${s.side?' side':''}${on?' on':''}" data-lane="${esc(s.name)}" aria-label="${esc(s.name)}"><div class="lane-h"><h4>${esc(s.name)}</h4><span>${v==='all'?items.length:`${hit.length}/${items.length}`}</span></div>`
    +`<div class="tiles">${shown.length?shown.map(r=>r.group?groupRow(b,s,r,oneOwner):tile(r,b,oneOwner)).join(''):more>0?'':'<p class="lane-empty">Nothing here yet</p>'}</div>${more>0?`<button type="button" class="lane-more" data-lane-more="${esc(key)}">Show ${more} more</button>`:''}</section>`}
  const all=boardOpen.has(key)||s.side&&!matchMedia('(max-width:560px)').matches,shown=all?items:items.slice(0,LANE_ROWS()),stuck=items.filter(stuckDays).length;
- return `<section class="lane${s.side?' side':''}${on?' on':''}" data-lane="${esc(s.name)}" aria-label="${esc(s.name)}"><div class="lane-h"><h4>${esc(s.name)}</h4><span>${items.length}</span>${items.some(p=>p.value!=null)?`<span class="lane-total" title="Total value">${esc(money(items.reduce((t,p)=>t+(p.value||0),0)))}</span>`:''}</div>${s.hint?`<p class="lane-hint">${esc(s.hint)}</p>`:''}${stuck?`<p class="lane-sum">${stuck} with no reply in 10+ days</p>`:''}`
+ return `<section class="lane${s.side?' side':''}${on?' on':''}" data-lane="${esc(s.name)}" aria-label="${esc(s.name)}"><div class="lane-h"><h4>${esc(s.name)}</h4><span>${items.length}</span>${items.some(p=>p.value!=null)?`<span class="lane-total" title="Total value">${esc(money(items.reduce((t,p)=>t+(p.value||0),0)))}</span>`:''}</div>${s.hint?`<p class="lane-hint">${esc(s.hint)}</p>`:''}${stuck?`<p class="lane-sum"><button type="button" class="link" data-crm-waiting aria-pressed="${!!crmF('projects').waiting}" title="${crmF('projects').waiting?'Show all':'Show only these'}">${stuck} with no reply in 10+ days</button></p>`:''}`
   +`<div class="tiles">${items.length?shown.map(p=>tile(p,b,oneOwner)).join(''):'<p class="lane-empty">Nothing here yet</p>'}</div>${items.length>shown.length?`<button type="button" class="lane-more" data-lane-more="${esc(key)}">Show ${items.length-shown.length} more</button>`:''}${b.team||s.side?'':`<button type="button" class="lane-add" data-proj-new data-proj-stage="${esc(s.name)}" aria-label="Add a project to ${esc(s.name)}">+ Add</button>`}</section>`};
 // A new board looks through the history once: "Looking through your history…", then what it found (graph.backfill_view)
 // "N projects could belong here": Add or Leave out one, or tick some (or Select all) and do them at once. A project that bundles several
@@ -6628,19 +6635,31 @@ function boardStagesSet(name,list){const all=boardStagesAll();if(list?.length)al
 function boardFilterOpen(){const b=boardNow();if(!b)return;const pick=boardStagesOf(b);crm={mode:'board-stages',board:b.name};
  $('#crm-form').innerHTML=crmHead('Stages to show')+`<fieldset class="board-stage-pick" aria-label="Stages of ${esc(b.name)}">${b.stages.map(s=>`<label class="ed-check"><input type="checkbox" name="stage" value="${esc(s.name)}"${!pick||pick.includes(s.name)?' checked':''}> ${esc(s.side?'Stalled':s.name)} <span class="muted">${b.projects.filter(p=>p.stage===s.name).length}</span></label>`).join('')}</fieldset>`
   +crmFoot('Show','<button type="button" class="ghost" data-crm-clear-all>Show all</button>');crmShow()}
-document.addEventListener('click',e=>{if(e.target.closest('[data-board-filter]')){e.preventDefault();return boardFilterOpen()}if(e.target.closest('[data-board-filter-clear]')){e.preventDefault();const b=boardNow();if(b)boardStagesSet(b.name,null)}});
+document.addEventListener('click',e=>{if(e.target.closest('[data-board-filter]')){e.preventDefault();return boardFilterOpen()}if(e.target.closest('[data-board-filter-clear]')){e.preventDefault();const b=boardNow();if(!b)return;const all=boardStagesAll();delete all[b.name];sideStore.set('board-stages',JSON.stringify(all));crmSet('projects',{})}});  /* both: the filters and the stages; crmSet draws the List and the Board */
+// The Board shows the List's filters (crmF('projects'), one set for both). On the Mine tab the Machine says which
+// projects they keep (api/graph/list?ids=1, the List's own query), a Board filter picks the board and a Stage filter its
+// column; on the Team tab they go by who shared it and its state, with Mine, Needs me or All.
+let boardIds={q:null,ids:null,seq:0};
+function boardKeep(b){if(b.team){const f=teamFilters.projects||{};return f.by||f.state?p=>(!f.by||viaNames(p).includes(f.by))&&(!f.state||(p.state||'active')===f.state):null}
+ const q=crmQuery('projects');if(!q)return null;if(boardIds.q===q&&boardIds.ids)return p=>boardIds.ids.has(p.id);
+ if(boardIds.want!==q){const seq=++boardIds.seq;boardIds.want=q;request('api/graph/list?list=projects&ids=1'+q).then(r=>{if(seq!==boardIds.seq)return;boardIds={...boardIds,q,ids:new Set(r.ids||[])};boardRedraw()},err=>{if(seq===boardIds.seq){boardIds.want=null;toast(err.message,true)}})}
+ return boardIds.ids?p=>boardIds.ids.has(p.id):null}  /* the last answer until the new one is in */
+const boardActive=(b,pick,stages)=>{const chips=crmChips('projects')+(pick?`<span class="chip">${esc(t('Stages: {}',stages.map(s=>s.side?'Stalled':s.name).join(', ')))}</span>`:'');
+ return chips?`<p class="graph-active board-active">${chips}<button type="button" class="link" data-board-filter-clear>Clear</button></p>`:''};
 function boardView(){const b0=boardNow();if(!b0)return '<div class="empty all-clear"><div><strong>No boards yet.</strong>Projects of one kind show here in stages, as your messages move them.</div></div>';
- const mineOn=boardMine&&!b0.team&&graphOwners.length,b=mineOn?{...b0,projects:b0.projects.filter(p=>!p.owner)}:b0;
- const pick=boardStagesOf(b),stages=pick?b.stages.filter(s=>pick.includes(s.name)):b.stages;
+ const keep=boardKeep(b0),b=keep?{...b0,projects:b0.projects.filter(keep)}:b0,fs=!b0.team&&crmF('projects').stage;
+ const pick=boardStagesOf(b),picked=pick?b.stages.filter(s=>pick.includes(s.name)):b.stages,one=fs&&picked.filter(s=>s.name.toLowerCase()===String(fs).toLowerCase()),stages=one?.length?one:picked;
  const by=s=>b.projects.filter(p=>p.stage===s.name),main=stages.filter(s=>!s.side),hits=s=>b.team?by(s).filter(p=>teamHit(p,teamPick(b))).length:by(s).length,firstFull=(stages.find(hits)||stages.find(s=>by(s).length))?.name||stages[0].name;
  const on=stages.some(s=>s.name===boardStage[b.name])?boardStage[b.name]:firstFull;
- return `<div class="board-head"><div><div class="board-name-row">${graphBoards.length>1?`<select class="board-pick" aria-label="Board">${graphBoards.map(x=>`<option${x.name===b.name?' selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<h3 class="board-title" title="${esc(b.name)}">${esc(b.name)}</h3>${b.team?'':`<details class="board-menu"><summary aria-label="Board options" title="Board options">${DOTS}</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-board-edit="${b.id}">Edit board</button>${graphTeammates.length?`<button type="button" role="menuitem" data-board-share="${b.id}">Share board…</button>`:''}${b.default||graphBoards.length<2?'':`<button type="button" role="menuitem" data-board-default="${b.id}">Open on this board</button>`}<button type="button" role="menuitem" data-board-new>New board</button></div></details>`}</div><p class="board-sub">${b.visibility==='only_you'||b.visibility==='people'?seenBy(b.visibility,(b.shared_with||[]).map(x=>x.name))+' · ':''}${b.projects.length} project${b.projects.length===1?'':'s'}${b.stuck?` · ${b.stuck} waiting on a reply`:''}${b.sorting?` · sorting ${b.sorting}`:''}${b.team&&boardOwner(b)?' · '+esc(t('Owner: {}',boardOwner(b))):''} · ${!b.team&&b.backfill?backfillNote(b.backfill):`a review moves them as ${b.team?'the team\'s':'your'} messages come in`}</p></div>`
-  +(graphBoards.length>1?`<div class="board-chips" role="group" aria-label="Boards">${graphBoards.map(x=>`<button type="button" data-board="${esc(x.name)}" aria-pressed="${x.name===b.name}">${esc(x.name)}</button>`).join('')}</div>`:'')+(b.team?teamPicker(b):!graphOwners.length?'':`<button type="button" class="board-mine" data-board-mine aria-pressed="${!!mineOn}" title="Only the projects you own">Mine</button>`)+`<button type="button" class="board-mine board-filter" data-board-filter aria-haspopup="dialog" aria-pressed="${!!pick}" title="Show only some stages"><svg class="crm-funnel" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg>Stages${pick?` <span class="badge">${stages.length}</span>`:''}</button>`+(b.team?'':'<button type="button" class="board-new" data-proj-new>+ New project</button>')+'</div>'
+ return `<div class="board-head"><div><div class="board-name-row">${graphBoards.length>1?`<select class="board-pick" aria-label="Board">${graphBoards.map(x=>`<option${x.name===b.name?' selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<h3 class="board-title" title="${esc(b.name)}">${esc(b.name)}</h3>${b.team?'':`<details class="board-menu"><summary aria-label="Board options" title="Board options">${DOTS}</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-board-edit="${b.id}">Edit board</button>${graphTeammates.length?`<button type="button" role="menuitem" data-board-share="${b.id}">Share board…</button>`:''}${b.default||graphBoards.length<2?'':`<button type="button" role="menuitem" data-board-default="${b.id}">Open on this board</button>`}<button type="button" role="menuitem" data-board-new>New board</button></div></details>`}</div><p class="board-sub">${b.visibility==='only_you'||b.visibility==='people'?seenBy(b.visibility,(b.shared_with||[]).map(x=>x.name))+' · ':''}${b0.projects.length} project${b0.projects.length===1?'':'s'}${b0.stuck?` · ${b0.stuck} waiting on a reply`:''}${b.sorting?` · sorting ${b.sorting}`:''}${b.team&&boardOwner(b)?' · '+esc(t('Owner: {}',boardOwner(b))):''} · ${!b.team&&b.backfill?backfillNote(b.backfill):`a review moves them as ${b.team?'the team\'s':'your'} messages come in`}</p></div>`
+  +(graphBoards.length>1?`<div class="board-chips" role="group" aria-label="Boards">${graphBoards.map(x=>`<button type="button" data-board="${esc(x.name)}" aria-pressed="${x.name===b.name}">${esc(x.name)}</button>`).join('')}</div>`:'')
+  +`<div class="board-tools">${b.team?teamPicker(b):''}${crmFilterButton('projects','board-mine board-filter')}<button type="button" class="board-mine board-filter" data-board-filter aria-haspopup="dialog" aria-pressed="${!!pick}" title="Show only some stages"><svg class="board-stages-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14M12 5v9M19 5v6"/></svg>Stages${pick?` <span class="badge">${picked.length}</span>`:''}</button>`+(b.team?'':'<button type="button" class="board-new" data-proj-new>+ New project</button>')+'</div></div>'
   +(!b.team&&b.maybes?.length?fitsReview(b):'')+(b.team?teamEmpty(b):'')+pipeline(b)
-  +(pick?`<p class="graph-active board-active"><span class="chip">Stages: ${esc(stages.map(s=>s.side?'Stalled':s.name).join(', '))}</span><button type="button" class="link" data-board-filter-clear>Clear</button></p>`:'')
+  +boardActive(b,pick,picked)
   +`<div class="sub-tabs stage-tabs" role="tablist" aria-label="Stages">${stages.map(s=>`<button type="button" role="tab" data-stage-tab="${esc(s.name)}" aria-selected="${s.name===on}"><span class="ell">${esc(s.side?'Stalled':s.name)}</span> <span class="badge">${hits(s)}</span></button>`).join('')}</div>`
   +`<div class="pboard-wrap"><div class="pboard" style="--lanes:${Math.max(1,main.length)}">${stages.map(s=>lane(b,s,by(s),s.name===on)).join('')}</div></div>`}
-const teamPicker=b=>{const v=teamPick(b),n=k=>b.projects.filter(p=>teamHit(p,k)).length;
+const teamPicker=b=>teamSeg(b.projects);
+const teamSeg=items=>{const v=teamPickOf(items),n=k=>items.filter(p=>teamHit(p,k)).length;
  return `<div class="board-seg" role="group" aria-label="Show">${[['mine','Mine'],['needs','Needs me'],['all','All']].map(([k,label])=>`<button type="button" data-board-team="${k}" aria-pressed="${k===v}"><span>${label}</span>${k==='all'?'':` <span class="badge">${n(k)}</span>`}</button>`).join('')}</div>`};
 const boardOwner=b=>{const o=b.projects[0]?.owner_name;return o&&b.projects.length>1&&b.projects.every(p=>p.owner_name===o)?o:''};
 const teamEmpty=b=>{const v=teamPick(b);return v!=='all'&&!b.projects.some(p=>teamHit(p,v))?`<p class="graph-active board-active">${v==='mine'?'None of these are yours yet.':'Nothing here needs you now.'}</p>`:''};
@@ -6655,14 +6674,19 @@ async function boardMove(node,stage){const b=boardNow(),p=b?.projects.find(x=>x.
  Object.assign(p,{stage,by:'owner',at:new Date().toISOString(),event_id:null,days:0});boardRedraw();
  try{await graphPost('graph_stage',{node_id:node,stage});toast('Moved to '+stage+'.');await people('',true)}catch(err){Object.assign(p,{stage:was});boardRedraw();toast(err.message,true)}}
 $('#page-head').addEventListener('click',e=>{const b=e.target.closest('[data-proj-view]');if(b)projectsViewSet(b.dataset.projView)});
+// Mine, Needs me or All: one choice for the team's List and Board
+function teamPickSet(v){boardTeamPick=v;sideStore.set('board-team-pick',v);graphTabsPaint('projects');boardRedraw()}
+$('#people-view').addEventListener('click',e=>{const pick=e.target.closest('.proj-list [data-board-team]');if(!pick)return;e.stopPropagation();teamPickSet(pick.dataset.boardTeam)},true);
 $('#people-view').addEventListener('click',e=>{if(!e.target.closest('.proj-board'))return;
- const chip=e.target.closest('[data-board]');if(chip){e.stopPropagation();boardShown=chip.dataset.board;sideStore.set(boardKey(),boardShown);boardRedraw();return}
- const pick=e.target.closest('[data-board-team]');if(pick){e.stopPropagation();boardTeamPick=pick.dataset.boardTeam;sideStore.set('board-team-pick',boardTeamPick);boardRedraw();return}
+ const chip=e.target.closest('[data-board]');if(chip){e.stopPropagation();boardPick(chip.dataset.board);return}
+ const pick=e.target.closest('[data-board-team]');if(pick){e.stopPropagation();teamPickSet(pick.dataset.boardTeam);return}
  const st=e.target.closest('[data-stage-tab]');if(st){e.stopPropagation();boardStage[boardNow().name]=st.dataset.stageTab;boardRedraw();return}
  const more=e.target.closest('[data-lane-more]');if(more){e.stopPropagation();boardOpen.add(more.dataset.laneMore);boardRedraw();return}
  const to=e.target.closest('[data-stage-to]');if(to){e.stopPropagation();to.closest('details').open=false;boardMove(to.dataset.stageNode,to.dataset.stageTo);return}
  if(e.target.closest('.tile-menu,.tile a[href]'))e.stopPropagation()},true);
-$('#people-view').addEventListener('change',e=>{if(!e.target.matches?.('.board-pick'))return;boardShown=e.target.value;sideStore.set(boardKey(),boardShown);boardRedraw()});
+$('#people-view').addEventListener('change',e=>{if(!e.target.matches?.('.board-pick'))return;boardPick(e.target.value)});
+function boardPick(name){boardShown=name;sideStore.set(boardKey(),boardShown);const f=crmF('projects'),to=graphBoards.find(b=>b.name===name);
+ if(f.board&&to&&!to.team){const next={...f,board:String(to.id)};delete next.stage;return crmSet('projects',next)}boardRedraw()}  /* a Board filter follows the board picked; its Stage was another board's */
 document.addEventListener('toggle',e=>{const d=e.target;if(d?.classList?.contains('tile-group'))d.open?groupOpen.add(d.dataset.group):groupOpen.delete(d.dataset.group)},true);
 $('#people-view').addEventListener('keydown',e=>{const t=e.target.closest?.('.tile');if(t&&e.target===t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();graphOpen(t.dataset.node)}});
 // Boards the owner makes. A review suggests one for a group of projects of one kind ("Start a board for Hiring?"): Save,
@@ -7028,7 +7052,7 @@ function orgPage(n,group){const p=n.profile||{};return `<article class="graph-de
 const orgProjects=n=>n.projects?.length?`<section class="detail-section org-projects"><h4>Projects</h4><ul>${n.projects.map(p=>`<li${p.open?'':' class="done"'}><button type="button" class="inline-node" data-node="${esc(p.id)}" title="${esc(p.name)}">${esc(p.name)}</button><small class="muted">${esc(p.outcome==='won'?'Won':p.outcome==='lost'?'Lost':p.archived?'Archived':p.stage?p.stage+(p.board?' on '+p.board:''):'No board')}</small></li>`).join('')}</ul></section>`:'';
 const deleteRow=n=>n.kind!=='person'?'':`<div class="person-delete"><div class="person-delete-confirm" hidden><p>Delete ${esc(n.name)} and everything The Machine knows about them? This can’t be undone.</p><p class="muted">Won’t be added again.</p><div class="row"><button class="danger-solid" data-person-delete-yes>Delete</button><button class="ghost" data-person-delete-no>Cancel</button></div></div></div>`;
 const orgWrongRow=n=>n.wrong?`<p class="graph-sub role-row"><span class="muted">Looked-up details cleared: they were another company’s.</span><button class="ghost" data-org-lookup>Look it up again</button></p>`:'';
-const whosWho=(items,total)=>items?.length?`<div class="section-head"><h2>Who’s who</h2><span class="count">${total||items.length}</span><p>Roles your Machine picked up. Confirm or edit; it learns from your edits.</p></div>${items.length>1?`<p class="role-all"><button class="ghost" data-role-all>✓ All ${items.length} are right</button></p>`:''}<div class="graph-list">${items.map(w=>`<article class="whos" data-whos="${esc(w.id)}"><div class="graph-row">${nodeButton(w)}<span class="chip" style="--c:var(--lavender)">${esc(w.role)}</span></div>${w.quote?`<p class="graph-sub">${quoteLine(w.id,w.quote,w.event_id)}</p>`:''}<p class="graph-sub role-row">${confirmButton(w.id,w.role)}<button class="ghost" data-role-edit-for="${esc(w.id)}">Edit</button></p></article>`).join('')}</div>`:'';
+const whosWho=(items,total)=>items?.length?`<div class="section-head"><h2>Who’s who</h2><span class="count">${total||items.length}</span><p>Roles your Machine picked up. Confirm or edit; it learns from your edits.</p></div>${items.length>1?`<p class="role-all"><button class="ghost" data-role-all>✓ All ${items.length} are right</button></p>`:''}<div class="graph-list">${items.map(w=>`<article class="whos" data-whos="${esc(w.id)}"><div class="graph-row">${nodeButton(w)}<span class="chip role-chip" style="--c:var(--lavender)"><span class="ell">${esc(w.role)}</span></span></div>${w.quote?`<p class="graph-sub">${quoteLine(w.id,w.quote,w.event_id)}</p>`:''}<p class="graph-sub role-row">${confirmButton(w.id,w.role)}<button class="ghost" data-role-edit-for="${esc(w.id)}">Edit</button></p></article>`).join('')}</div>`:'';
 // Same person? The graph joins identities only on strong evidence (the same name on one message, the same LinkedIn
 // profile, their number in their own mail); a likely match is a quiet question here and in People: Merge or Not the
 // same, which is remembered. Joined identities list why, each with Undo (it splits them for good).
@@ -7287,7 +7311,7 @@ async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=
   ||'<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing mapped yet.</strong>People appear as messages and meetings come in.</div></div>');
  if(version===graphRequest){pagerMount(view);if(back!=null&&version===graphRequest){graphScroll=null;scrollTo(0,back)}}if(!quiet)notice('')}catch(e){if(version===graphRequest&&(!quiet||!oldHtml))notice(e.message,true)}}
 const graphPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
-// The Graph as a CRM (crm.py, crm_import.py). Mine and Filter by each list (owner, board, stage, organization, value,
+// The Graph as a CRM (crm.py, crm_import.py). Filter by each list (owner, board, stage, organization, value,
 // close date; done on the Machine, a page at a time), an owner from the Work Fleet on each record, one organization
 // with several websites (Same organization as…, Add a website…, Split off, Same organization?), and a CSV import with
 // a preview and Undo. Filters are kept per list on this device.
@@ -7299,21 +7323,23 @@ const crmTeam=()=>!!(graphLocal&&graphListsTeam);
 const crmF=pane=>(crmTeam()?teamFilters:crmFilters)[pane]||{};
 const viaNames=n=>String(n.via||'').replace(/^via\s+/i,'').split(/,\s*|\s+and\s+/).map(x=>x.trim()).filter(Boolean);
 const teamSharers=()=>[...new Set(['people','orgs','projects','projects_done'].flatMap(k=>(graphLocal?.[k]||[]).flatMap(viaNames)))].sort((a,b)=>a.localeCompare(b));
-function teamKept(list){const items=graphLocal?.[list]||[];if(!crmTeam()||list==='warmup')return items;const f=crmF(crmPaneOf(list));
- return items.filter(n=>(!f.by||viaNames(n).includes(f.by))&&(!f.org||String(n.org_name||n.org||'').toLowerCase().includes(f.org.toLowerCase()))&&(!f.state||n.state===f.state))}
+function teamKept(list){const items=graphLocal?.[list]||[];if(!crmTeam()||list==='warmup')return items;const f=crmF(crmPaneOf(list)),v=list==='projects'?teamPickOf(items):'all';
+ return items.filter(n=>(!f.by||viaNames(n).includes(f.by))&&(!f.org||String(n.org_name||n.org||'').toLowerCase().includes(f.org.toLowerCase()))&&(!f.state||n.state===f.state)&&teamHit(n,v))}
 const crmQuery=list=>list==='warmup'?'':Object.entries(crmF(crmPaneOf(list))).filter(([,v])=>v!==''&&v!=null).map(([k,v])=>`&${k}=${encodeURIComponent(v)}`).join('');
-const crmKey=(list,sort)=>`graph:${list}:${sort}${crmQuery(list)?':'+crmQuery(list):''}`;
+const crmKey=(list,sort)=>`graph:${list}:${sort}${crmQuery(list)?':'+crmQuery(list):''}${crmTeam()&&list==='projects'?':'+teamPickOf(graphLocal?.projects||[]):''}`;  /* the team's Mine / Needs me / All is its own page */
 const crmCount=pane=>Object.values(crmF(pane)).filter(v=>v!==''&&v!=null).length;
-const crmSet=(pane,f)=>{const team=crmTeam(),all=team?teamFilters:crmFilters;all[pane]=Object.fromEntries(Object.entries(f).filter(([,v])=>v!==''&&v!=null));try{localStorage.setItem(team?'graph-team-filters':'graph-filters',JSON.stringify(all))}catch{}graphTabsPaint(pane)};
+const crmSet=(pane,f)=>{const team=crmTeam(),all=team?teamFilters:crmFilters;all[pane]=Object.fromEntries(Object.entries(f).filter(([,v])=>v!==''&&v!=null));try{localStorage.setItem(team?'graph-team-filters':'graph-filters',JSON.stringify(all))}catch{}graphTabsPaint(pane);if(pane==='projects')boardRedraw()};
 const crmBoards=()=>(graphMineBoards||graphBoards||[]).filter(b=>!b.team);
 const ownerName=id=>id==='me'?'you':graphOwners.find(m=>m.id===id)?.name||'a teammate';
-const crmTools=pane=>{const f=crmF(pane),n=crmCount(pane)-(f.owner==='me'&&graphOwners.length&&!crmTeam()?1:0);
- return `<div class="graph-tools">${graphOwners.length&&!crmTeam()?`<button type="button" data-crm-mine="${pane}" aria-pressed="${f.owner==='me'}" title="Only the ones you own">Mine</button>`:''}<button type="button" data-crm-filter="${pane}" aria-haspopup="dialog" aria-label="Filter"><svg class="crm-funnel" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg><span class="crm-word">Filter</span>${n?` <span class="badge">${n}</span>`:''}</button></div>`};
+// The Mine tab is the owner's own Graph, so it has no Mine button (Filter has Owner). The Team tab's projects have
+// Mine, Needs me and All, the same choice on the List and the Board.
+const crmFilterButton=(pane,cls='')=>{const n=crmCount(pane);return `<button type="button"${cls?` class="${cls}"`:''} data-crm-filter="${pane}" aria-haspopup="dialog" aria-label="Filter"><svg class="crm-funnel" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg><span class="crm-word">Filter</span>${n?` <span class="badge">${n}</span>`:''}</button>`};
+const crmTools=(pane,tab)=>`<div class="graph-tools">${pane==='projects'&&tab==='projects'&&crmTeam()&&(graphLocal?.projects||[]).length?teamSeg(graphLocal.projects):''}${crmFilterButton(pane)}</div>`;
 const CRM_STATE={active:'Active',cooling:'Cooling',dormant:'Dormant'};
-const CRM_LABEL={by:v=>t('Shared by {}',v),state:v=>t('State: {}',t(CRM_STATE[v]||v)),owner:v=>t('Owner: {}',ownerName(v)),tag:v=>t('Tag: {}',v),board:v=>t('Board: {}',crmBoards().find(b=>String(b.id)===String(v))?.name||v),stage:v=>t('Stage: {}',v),org:v=>t('Organization: {}',v),
+const CRM_LABEL={waiting:()=>t('No reply in 10+ days'),by:v=>t('Shared by {}',v),state:v=>t('State: {}',t(CRM_STATE[v]||v)),owner:v=>t('Owner: {}',ownerName(v)),tag:v=>t('Tag: {}',v),board:v=>t('Board: {}',crmBoards().find(b=>String(b.id)===String(v))?.name||v),stage:v=>t('Stage: {}',v),org:v=>t('Organization: {}',v),
  value_min:v=>t('Value from {}',money(+v)),value_max:v=>t('Value up to {}',money(+v)),close_from:v=>t('Closes from {}',closeDay(v)),close_to:v=>t('Closes by {}',closeDay(v))};
-const crmActive=pane=>{const f=crmF(pane),on=Object.entries(f).filter(([k,v])=>CRM_LABEL[k]&&v!==''&&!(k==='owner'&&v==='me'&&graphOwners.length));
- return on.length?`<p class="graph-active">${on.map(([k,v])=>`<span class="chip">${esc(CRM_LABEL[k](v))}</span>`).join('')}<button type="button" class="link" data-crm-clear="${pane}">Clear</button></p>`:''};
+const crmChips=pane=>Object.entries(crmF(pane)).filter(([k,v])=>CRM_LABEL[k]&&v!=='').map(([k,v])=>`<span class="chip">${esc(CRM_LABEL[k](v))}</span>`).join('');
+const crmActive=pane=>{const on=crmChips(pane);return on?`<p class="graph-active">${on}<button type="button" class="link" data-crm-clear="${pane}">Clear</button></p>`:''};
 const ownerRow=n=>kv('Owner',`<label class="owner-pick"><select data-owner-pick="${esc(n.id)}" aria-label="Owner of ${esc(n.name)}"><option value="me"${n.owner?'':' selected'}>You</option>${graphOwners.map(m=>`<option value="${esc(m.id)}"${n.owner===m.id?' selected':''}>${esc(m.name)}</option>`).join('')}${n.owner&&!graphOwners.some(m=>m.id===n.owner)?`<option value="${esc(n.owner)}" selected>${esc(n.owner_name||'Not in your Fleet now')}</option>`:''}</select></label>`);
 const changeText=c=>c.field==='owner'?`Owner set to ${c.new?.id==='me'?'you':c.new?.name||'a teammate'}`:c.field==='merged'?`Merged in ${c.new?.name||''}`:c.field==='split'?`Split off ${c.new?.name||''}`:'Changed';
 const aliasName=a=>a.startsWith('org:named:')?a.slice(10).replace(/-/g,' '):a.slice(4);
@@ -7341,6 +7367,7 @@ function crmFilterOpen(pane){const f=crmF(pane);crm={mode:'filter',pane};const b
   +(pane==='orgs'?'':`<label class="ed-field">Organization<input name="org" value="${esc(f.org||'')}" placeholder="Name or website" autocomplete="off"></label>`)
   +`<div class="ed-row3"><label class="ed-field">Value from<input name="value_min" inputmode="decimal" value="${esc(f.value_min??'')}" placeholder="Any" autocomplete="off"></label><label class="ed-field">Value up to<input name="value_max" inputmode="decimal" value="${esc(f.value_max??'')}" placeholder="Any" autocomplete="off"></label></div>`
   +`<div class="ed-row3"><label class="ed-field">Closes from<input name="close_from" type="date" value="${esc(f.close_from||'')}"></label><label class="ed-field">Closes by<input name="close_to" type="date" value="${esc(f.close_to||'')}"></label></div>`
+  +(pane==='projects'?`<label class="ed-check"><input type="checkbox" name="waiting" value="1"${f.waiting?' checked':''}> No reply in 10+ days</label>`:'')
   +(by?'<p class="ed-note">Board, stage, value and close date go by their open projects.</p>':'')
   +crmFoot('Show results','<button type="button" class="ghost" data-crm-clear-all>Clear all</button>');
  crmShow()}
@@ -7401,7 +7428,7 @@ $('#crm-form').addEventListener('submit',async e=>{e.preventDefault();const c=cr
  if(c.mode==='picture')return;
  if(c.mode==='board-stages'){const on=[...f.querySelectorAll('input[name=stage]:checked')].map(x=>x.value);if(!on.length)return crmSay('Pick at least one stage.');const all=f.querySelectorAll('input[name=stage]').length;$('#crm-dialog').close();return boardStagesSet(c.board,on.length===all?null:on)}
  if(c.mode==='fields'){btn.disabled=true;try{await crmFieldsSave(c)}catch(x){crmSay(x.message)}finally{btn.disabled=false}return}
- if(c.mode==='filter'){const next=Object.fromEntries(['by','state','owner','tag','board','stage','org','value_min','value_max','close_from','close_to'].map(k=>[k,v(k)]));
+ if(c.mode==='filter'){const next=Object.fromEntries(['by','state','owner','tag','board','stage','org','value_min','value_max','close_from','close_to'].map(k=>[k,v(k)]));next.waiting=f.elements.waiting?.checked?'1':'';
   for(const k of ['value_min','value_max'])if(next[k]&&!/^\d+([.,]\d+)?$/.test(next[k].replace(/[\s€$£]/g,'')))return crmSay('Value: a number, like 12000.');
   crmSet(c.pane,next);$('#crm-dialog').close();return}
  btn.disabled=true;
@@ -7413,13 +7440,12 @@ $('#crm-form').addEventListener('submit',async e=>{e.preventDefault();const c=cr
   if(c.mode==='org-site'){if(!v('website'))return crmSay('Type a website, like acme.io.');const r=await graphPost('graph_org_merge',{node_id:c.id,website:v('website')});$('#crm-dialog').close();toast('Added.');return crmAfter(r.node_id)}}
  catch(x){crmSay(x.message)}finally{btn.disabled=false}});
 $('#crm-dialog').addEventListener('close',e=>{if(!e.currentTarget.open)crm=null});
-document.addEventListener('click',async e=>{const t=e.target.closest('[data-crm-mine],[data-crm-filter],[data-crm-clear],[data-crm-import],[data-crm-undo-import],[data-org-split],[data-org-merge],[data-org-apart],[data-org-same],[data-org-site],[data-board-mine]');if(!t)return;
+document.addEventListener('click',async e=>{const t=e.target.closest('[data-crm-filter],[data-crm-clear],[data-crm-import],[data-crm-undo-import],[data-org-split],[data-org-merge],[data-org-apart],[data-org-same],[data-org-site],[data-crm-waiting]');if(!t)return;
  e.preventDefault();e.stopPropagation();t.closest('details')?.removeAttribute('open');
- if(t.dataset.crmMine){const p=t.dataset.crmMine,f={...crmF(p)};if(f.owner==='me')delete f.owner;else f.owner='me';return crmSet(p,f)}
  if(t.dataset.crmFilter)return crmFilterOpen(t.dataset.crmFilter);
  if(t.dataset.crmClear)return crmSet(t.dataset.crmClear,{});
  if(t.dataset.crmImport)return crmImportOpen(t.dataset.crmImport);
- if(t.hasAttribute('data-board-mine')){boardMine=!boardMine;sideStore.set('board-mine',boardMine?'1':'0');return boardRedraw()}
+ if(t.hasAttribute('data-crm-waiting')){const f={...crmF('projects')};if(f.waiting)delete f.waiting;else f.waiting='1';return crmSet('projects',f)}
  if(t.hasAttribute('data-org-same'))return crmOrgOpen('org-same');
  if(t.hasAttribute('data-org-site'))return crmOrgOpen('org-site');
  t.disabled=true;

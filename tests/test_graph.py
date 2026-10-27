@@ -851,6 +851,30 @@ class Boards(unittest.TestCase):
             # A project on a board keeps its node in the graph
             self.assertTrue(db.execute('SELECT 1 FROM graph_nodes WHERE id=?', (node,)).fetchone())
 
+    def test_no_reply_in_ten_days_is_a_filter_for_the_list_and_the_board(self):
+        asked, answered, mine = self.mails()
+        with self.store.connect() as db:
+            node = graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Listings', stages=self.STAGES,
+                                   reason='asked for a listing', event_id=asked, org='partner.example')['node_id']
+            graph.label(db, [answered, mine], 'Paperkite', 'review', NOW.isoformat())
+        self.build()
+        later = (NOW + dt.timedelta(days=9)).isoformat()  # the owner wrote last, ten days before
+        with self.store.connect() as db:
+            self.assertEqual(graph.waiting_ids(db, NOW.isoformat()), set())  # a day: not yet
+            self.assertEqual(graph.waiting_ids(db, later), {node})
+            board, = graph.boards(db, later)
+            self.assertEqual(board['stuck'], 1)  # the board's count is the filter's
+            # The List and the Board ask the same query (the Board for the ids it keeps); today is past ten days
+            self.assertEqual([i['id'] for i in graph.page(db, 'projects', filters={'waiting': '1'})['items']], [node])
+            self.assertEqual(graph.page_ids(db, 'projects', {'waiting': '1'}), {'ids': [node]})
+            self.assertEqual(graph.page_ids(db, 'projects', {}), {'ids': [node]})
+            self.assertEqual([i['id'] for i in graph.page(db, 'people', filters={'waiting': '1'})['items']], ['email:ann@partner.example'])
+            with self.assertRaisesRegex(ValueError, 'on or off'):
+                graph.page(db, 'projects', filters={'waiting': 'yes'})
+            graph.set_stage(db, node, graph.STALLED, 'owner', NOW.isoformat())  # Stalled never counts
+            self.assertEqual(graph.waiting_ids(db, later), set())
+            self.assertEqual(graph.page_ids(db, 'projects', {'waiting': '1'}), {'ids': []})
+
     def test_finish_analysis_moves_only_from_its_own_batch(self):
         asked, agreed, _ = self.mails()
         claim = self.store.begin_analysis(['work'], 10)

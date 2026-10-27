@@ -62,6 +62,15 @@ try{
   assert.ok(sizes.page<=sizes.viewport,'overflow at '+width);widths.push({width,...sizes});
   if(process.env.ROLES_SHOT)await page.screenshot({path:process.env.ROLES_SHOT+'-'+width+'.png',fullPage:true});
  }
+ // A long role stays in its pill on the name's row at every width, cut with …, the full role on hover
+ await page.evaluate(()=>{document.querySelector('.whos .role-chip .ell').textContent='Vice President of Global Partnerships and Strategic Alliances EMEA'});
+ for(const width of [320,390,768,1440]){
+  await page.setViewportSize({width,height:844});
+  const pill=await page.evaluate(()=>{const c=document.querySelector('.whos .role-chip'),e=c.querySelector('.ell'),row=c.closest('.graph-row'),card=c.closest('.whos'),r=c.getBoundingClientRect(),n=row.querySelector('button.node').getBoundingClientRect();
+   e.dispatchEvent(new PointerEvent('pointerover',{bubbles:true}));return {inCard:r.right<=card.getBoundingClientRect().right,oneRow:Math.abs(r.top-n.top)<12,cut:e.scrollWidth>e.clientWidth,ell:getComputedStyle(e).textOverflow,title:e.title,name:n.width+1>=row.querySelector('button.node').scrollWidth}});
+  assert.ok(pill.inCard&&pill.oneRow&&pill.name,`the role pill fits at ${width}: ${JSON.stringify(pill)}`);
+  if(pill.cut)assert.deepEqual([pill.ell,pill.title],['ellipsis','Vice President of Global Partnerships and Strategic Alliances EMEA']);
+ }
  await page.setViewportSize({width:390,height:844});
  await list.locator('[data-role-confirm="org:client.example"]').click();
  for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(20);
