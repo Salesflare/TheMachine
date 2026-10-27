@@ -287,7 +287,8 @@ class BugReports(unittest.TestCase):
         with patch.object(support.service, 'available', return_value=False):
             out = self.app.support_action('bug_preview', {})
         text = json.dumps(out)
-        for secret in ('Sam Smith', '470', 'ABCdefGHI', 'jane'):
+        # the whole number, not '470' alone: the preview carries the build's commit, which may contain those digits
+        for secret in ('Sam Smith', '+32 470', '470 12', '12 34 56', 'ABCdefGHI', 'jane'):
             self.assertNotIn(secret, text)
         self.assertIn('openai/gpt-5', text)
         self.assertFalse(out['paired'])
