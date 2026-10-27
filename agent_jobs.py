@@ -14,6 +14,10 @@ Where a job runs (`place`):
   result comes back through The Machine's claude.ai connector (`report_result`), with a token for that job only.
 - `cloud` (Codex, hosted Machines): `codex cloud exec`, polled with `codex cloud status` and `codex cloud diff`. It runs
   in Codex cloud, not on the owner's computer, and the card says so.
+- `device` (Codex, hosted Machines, "Where Codex runs: On my computer" on the setup page): the job goes over The Machine
+  Network to the self-hosted Machine the owner paired on their own computer, which runs it there as a `local` job with
+  the Codex signed in on that computer, and reports the result back into the job's ticket (agent_remote.py). The hosted
+  Machine needs no Codex of its own and no sign-in.
 
 Credentials stay with the CLIs: this module never reads, copies or stores them. Transcripts and results stay in the job
 folder, readable only by the owner's account. Config (`agents` in config.json, all optional):
@@ -49,7 +53,8 @@ import error_feed
 
 LOG = logging.getLogger('personal-assistant')
 TOOLS = {'claude': 'Claude Code', 'codex': 'Codex'}
-PLACES = {'claude': ('local', 'remote'), 'codex': ('local', 'cloud')}
+PLACES = {'claude': ('local', 'remote'), 'codex': ('local', 'cloud', 'device')}
+RELAYED = 'net:'  # suggestion_id prefix of a job a hosted Machine of the owner's handed to this computer
 ACTIVE = ('sent', 'running', 'waiting')
 BRIEF_MAX = 12000
 ASK_MAX = 4000
@@ -96,10 +101,18 @@ def coding_relevant(config, codex_home=None):
     return (Path(codex_home or os.environ.get('CODEX_HOME') or Path.home() / '.codex') / 'auth.json').exists()
 
 
-def tools(config):
+def device_label(where):
+    """The owner's computer that takes Codex jobs (from the Network's `where`): an online one first."""
+    ready = [d for d in (where or {}).get('devices') or [] if isinstance(d, dict) and d.get('codex')]
+    found = next((d for d in ready if d.get('online')), ready[0] if ready else {})
+    return str(found.get('label') or 'your computer')[:60]
+
+
+def tools(config, where=None):
     """The tools this Machine can hand jobs to, with where they run: [{id, name, place, device?}]. A hosted Machine
-    (one with a manage_url) has no local CLI of the owner's: there Claude needs its paired session and Codex its cloud
-    environment set up first."""
+    (one with a manage_url) has no local CLI of the owner's: there Claude needs its paired session and Codex either the
+    owner's own computer (`where`, what the Network says they chose: {'codex': 'device', 'devices': [...]}) or its
+    cloud environment set up first."""
     found = settings(config)
     if found is None:
         return []
@@ -110,6 +123,11 @@ def tools(config):
         if own is False:
             continue
         own = own if isinstance(own, dict) else {}
+        if tool == 'codex' and hosted and (where or {}).get('codex') == 'device':
+            out.append({'id': tool, 'name': name, 'place': 'device', 'device': device_label(where)})
+            continue
+        if tool == 'codex' and own.get('place') == 'device':
+            continue  # only a hosted Machine hands Codex jobs to the owner's computer
         place = own.get('place') or ('remote' if tool == 'claude' else 'cloud') if hosted else own.get('place') or 'local'
         if place not in PLACES[tool] or not find(tool, own.get('command')):
             continue
@@ -1275,6 +1293,7 @@ class AgentJobs:
         self.limit = threading.BoundedSemaphore(max(1, min(int(own.get('max_parallel') or 2), 8)))
         self.timeout = max(60, min(int(float(own.get('timeout_minutes') or 30) * 60), 6 * 3600))
         self.procs, self.lock = {}, threading.Lock()
+        self._where = {'at': 0.0, 'found': None, 'going': False}
         with self.connect() as db:
             db.executescript(SCHEMA)
             have = {r[1] for r in db.execute('PRAGMA table_info(agent_jobs)')}
@@ -1294,11 +1313,40 @@ class AgentJobs:
         return drafts[0].get('revision') if len(drafts) == 1 else None
 
     # -- what the dashboard shows
-    def tools(self):
-        return tools(self.config)
+    WHERE_TTL = 120  # seconds the Network's answer to "where does Codex run" is used before asking again
 
-    def tool(self, tool_id):
-        found = next((t for t in self.tools() if t['id'] == tool_id), None)
+    def hosted_codex(self):
+        own = settings(self.config) or {}
+        return bool(self.config.get('manage_url') and self._network and own.get('codex') is not False)
+
+    def where(self, wait=False):
+        """Where the owner's Codex jobs go (the Network's `where`, agent_remote.where): cached; asked again in the
+        background once WHERE_TTL is up, or now with `wait` (before a handoff). None when unknown or not hosted."""
+        if not self.hosted_codex():
+            return None
+        state = self._where
+        fresh = time.monotonic() - state['at'] < self.WHERE_TTL
+        if wait and not fresh:
+            self.refresh_where()
+        elif not fresh and not state['going']:
+            state['going'] = True
+            threading.Thread(target=self.refresh_where, daemon=True, name='agent-where').start()
+        return state['found']
+
+    def refresh_where(self):
+        import agent_remote
+        try:
+            found = agent_remote.where(self)
+            if found is not None:
+                self._where.update(found=found)
+        finally:
+            self._where.update(at=time.monotonic(), going=False)
+
+    def tools(self, wait=False):
+        return tools(self.config, self.where(wait))
+
+    def tool(self, tool_id, wait=False):
+        found = next((t for t in self.tools(wait) if t['id'] == tool_id), None)
         if not found:
             raise ValueError(f'{TOOLS.get(tool_id, "That tool")} is not available on this Machine')
         return found
@@ -1317,6 +1365,8 @@ class AgentJobs:
                    links=list(dict.fromkeys(URL.findall(row['summary'] or '')))[:10], ask=asks[-1]['text'] if asks else None)
         if row['place'] == 'remote':
             out['device'] = str(((settings(self.config) or {}).get('claude') or {}).get('device') or 'your computer')[:60]
+        if row['place'] == 'device':
+            out['device'], out['can_follow_up'] = device_label(self._where['found']), False
         return out
 
     def latest(self, db, suggestion_ids):
@@ -1354,7 +1404,7 @@ class AgentJobs:
                                    sources=parts.get('sources') or (), inline=any(t['place'] != 'local' for t in self.tools()))}
 
     def start(self, suggestion_id, tool_id, brief, note=None):
-        tool = self.tool(tool_id)
+        tool = self.tool(tool_id, wait=True)
         if len(str(note or '')) > ASK_MAX:
             raise ValueError('The note is too long')
         brief = with_note(str(brief or '').strip(), note) if str(brief or '').strip() else ''
@@ -1528,6 +1578,9 @@ class AgentJobs:
                 shutil.rmtree(git_dir(work), ignore_errors=True)
 
     def runner(self, row):
+        if row['place'] == 'device':
+            import agent_remote
+            return agent_remote.DeviceCodex(self)  # nothing runs here: the owner's own computer runs it
         own = (settings(self.config) or {}).get(row['tool']) or {}
         command = find(row['tool'], own.get('command') if isinstance(own, dict) else None)
         if not command:
@@ -1560,7 +1613,7 @@ class AgentJobs:
                 runner = self.runner(row)
                 with self.connect() as db:
                     claimed = db.execute("UPDATE agent_jobs SET status=?,started_at=COALESCE(started_at,?),updated_at=? WHERE id=? AND turns=? AND status='sent'",
-                                         ('waiting' if row['place'] == 'remote' else 'running', now(), now(), job_id, row['turns'])).rowcount
+                                         ('waiting' if row['place'] in ('remote', 'device') else 'running', now(), now(), job_id, row['turns'])).rowcount
                 if not claimed:
                     return
                 turn_no = row['turns']
@@ -1680,6 +1733,8 @@ class AgentJobs:
         reads it there and sends it with the card's own Send."""
         if not self.revise or (text is None and DRAFT_FILE not in [f['path'] for f in files]):
             return False
+        if str(owner['suggestion_id']).startswith(RELAYED):
+            return False  # a job for the owner's hosted Machine: its draft goes back with the result (agent_remote.py)
         found = self.work(job_id) / DRAFT_FILE
         if text is None:
             try:

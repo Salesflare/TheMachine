@@ -7,8 +7,13 @@
   sealed result until this Machine fetches it (`/api/fleet/agent-results`).
 - Codex (`cloud`): `codex cloud exec --env <id>`, followed with `codex cloud list --json` and, once it is ready,
   `codex cloud diff`. It runs in Codex cloud, under the owner's own ChatGPT sign-in.
+- Codex on the owner's own computer (`device`): the hosted Machine registers a ticket's sha256 with the brief on the
+  Network (`dispatch`). The self-hosted Machine the owner paired on their computer asks for work with its own device
+  token (serve: `jobs`), runs it there as an ordinary local job (a thread in the Codex app on that computer, under the
+  Codex sign-in it has there), and reports progress and the result into that ticket (`progress`, `done`). The hosted
+  Machine fetches it like a Claude result. Only the owner's own paired computer gets the job.
 
-Neither keeps or reads a Claude or ChatGPT credential: the CLIs hold their own.
+None of them keeps, reads or moves a Claude or ChatGPT credential: the CLIs hold their own, on their own computer.
 """
 from __future__ import annotations
 
@@ -30,6 +35,9 @@ CODEX_TASK = re.compile(r'\btask_[a-z]_[0-9a-f]{16,64}\b')
 REMOTE_DAYS = 2           # a remote Claude job waits this long for its result
 POLL = 20                 # seconds between fetches while a remote job waits
 CODEX_POLL = 15
+SERVE_POLL = 30           # seconds between a paired computer's asks for Codex jobs
+READY_TTL = 600           # seconds a paired computer trusts its `codex login status`
+HASH = re.compile(r'[0-9a-f]{64}')
 DONE = ('ready', 'applied')
 FAILED = ('error', 'failed', 'cancelled')
 
@@ -116,7 +124,7 @@ def watch(jobs):
 
 def _waiting(jobs):
     with jobs.connect() as db:
-        return [dict(r) for r in db.execute("SELECT * FROM agent_jobs WHERE (place='remote' AND status IN ('waiting','running') "
+        return [dict(r) for r in db.execute("SELECT * FROM agent_jobs WHERE (place IN ('remote','device') AND status IN ('waiting','running') "
                                             "AND token_hash IS NOT NULL) OR token_hash IN (SELECT ticket_hash FROM agent_result_receipts WHERE acked=0)")]
 
 
@@ -139,16 +147,24 @@ def fetch(jobs, rows=None):
         return 0
     by_hash = {r['token_hash']: r for r in rows}
     try:
-        found = (jobs.network({'action': 'fetch', 'tickets': list(by_hash)}) or {}).get('results') or []
+        reply = jobs.network({'action': 'fetch', 'tickets': list(by_hash)}) or {}
     except Exception as error:  # noqa: BLE001 - try again on the next round
         LOG.warning('agent results fetch error=%s', type(error).__name__)
-        found = []
-    took = []
+        reply = {}
+    found, took = reply.get('results') or [], []
     for result in found:
         row = by_hash.get(result.get('ticket_hash'))
-        if row:
+        if row and result.get('failed'):
+            if stopped(jobs, row, result):
+                took.append(row['token_hash'])
+        elif row:
             if jobs.remote_result(row['id'], result):
                 took.append(row['token_hash'])
+    for going in reply.get('running') or []:  # a job on the owner's computer: which one, and how far it got
+        row = by_hash.get(going.get('ticket_hash')) if isinstance(going, dict) else None
+        if row and row['token_hash'] not in took:
+            line = f"On {str(going.get('device') or 'your computer')[:60]}" + (f": {going['progress']}" if going.get('progress') else '')
+            jobs.progress(row['id'], line[:200], turn=row['turns'])
     with jobs.connect() as db:
         receipts = [dict(r) for r in db.execute('SELECT ticket_hash,report FROM agent_result_receipts WHERE acked=0')]
     if receipts:
@@ -165,9 +181,199 @@ def fetch(jobs, rows=None):
     for row in rows:
         started = row['started_at'] or row['created_at']
         if row['token_hash'] not in took and dt.datetime.fromisoformat(started).timestamp() < cutoff:
-            jobs.finish(row['id'], 'failed', error='No result came back. Open it in Claude to see where it got to.',
+            jobs.finish(row['id'], 'failed', error=('No result came back. Open Codex on your computer to see where it got to.'
+                                                    if row['place'] == 'device' else 'No result came back. Open it in Claude to see where it got to.'),
                         error_kind='timeout', only_if=('waiting', 'running'))
     return len(took)
+
+
+def stopped(jobs, row, result):
+    """The owner's computer said the job stopped there: the card says why, and the receipt is acknowledged once."""
+    with jobs.connect() as db:
+        previous = db.execute('SELECT report FROM agent_result_receipts WHERE ticket_hash=?', (row['token_hash'],)).fetchone()
+    report_no = int(result.get('report') or 1)
+    if previous and report_no <= previous['report']:
+        return False
+    kind = str(result.get('error_kind') or 'failed')[:40]
+    error = str(result.get('summary') or 'It stopped on your computer.').strip()[:500]
+    jobs.finish(row['id'], 'cancelled' if kind == 'cancelled' else 'failed', error=error, error_kind=kind,
+                only_if=('waiting', 'running'), turn=row['turns'])
+    with jobs.connect() as db:
+        db.execute('INSERT INTO agent_result_receipts(ticket_hash,report,acked) VALUES(?,?,0) ON CONFLICT(ticket_hash) '
+                   'DO UPDATE SET report=excluded.report,acked=0', (row['token_hash'], report_no))
+    return True
+
+
+def where(jobs):
+    """Where the owner's Codex jobs go, from the Network: {'codex': 'device'|'cloud'|None, 'devices': [...]}, or None
+    when it can't say now (the last answer stays)."""
+    own = (aj.settings(jobs.config) or {}).get('codex')
+    cloud = isinstance(own, dict) and own.get('place') == 'cloud' and bool(own.get('env'))
+    try:
+        found = jobs.network({'action': 'where', 'cloud_ready': cloud}) or {}
+    except Exception as error:  # noqa: BLE001 - asked again later
+        LOG.warning('agent where error=%s', type(error).__name__)
+        return None
+    devices = [{'label': str(d.get('label') or '')[:60], 'codex': bool(d.get('codex')), 'online': bool(d.get('online'))}
+               for d in found.get('devices') or [] if isinstance(d, dict)][:10]
+    return {'codex': found.get('codex') if found.get('codex') in ('device', 'cloud') else None, 'devices': devices}
+
+
+class DeviceCodex:
+    """A hosted Machine's Codex job for the owner's own computer: handed over the Network, nothing runs here."""
+    command = None
+
+    def __init__(self, jobs):
+        self.jobs = jobs
+
+    def run(self, job, prompt, resume, folder, transcript, timeout, on_progress, on_session, procs):
+        ticket = secrets.token_urlsafe(24)  # only its hash leaves this Machine: no one else can claim the result
+        digest = hashlib.sha256(ticket.encode()).hexdigest()
+        try:
+            sent = self.jobs.network({'action': 'dispatch', 'tool': 'codex', 'job': job['id'], 'ticket_hash': digest, 'brief': prompt}) or {}
+        except Exception as error:  # noqa: BLE001 - the Network's own message, never a secret
+            raise aj.Stopped('failed', f'The Network could not take the job: {error}'[:300]) from None
+        with self.jobs.connect() as db:
+            db.execute('UPDATE agent_jobs SET token_hash=? WHERE id=?', (digest, job['id']))
+        if sent.get('device') and not sent.get('online'):
+            on_progress(f"Waiting for {str(sent['device'])[:60]} to come online")
+        watch(self.jobs)
+        return None, None  # the result comes back from that computer through the Network
+
+    def cancel(self, row):
+        if row['token_hash']:
+            try:
+                self.jobs.network({'action': 'cancel', 'ticket_hash': row['token_hash']})
+            except Exception as error:  # noqa: BLE001 - canceled here anyway
+                LOG.warning('agent cancel error=%s', type(error).__name__)
+
+    def link(self, session):
+        return None
+
+    def resume_watch(self, row):
+        watch(self.jobs)
+
+
+# ------------------------------------------------------------------ the owner's own computer: Codex jobs from their hosted Machine
+
+RELAY_SCHEMA = """CREATE TABLE IF NOT EXISTS agent_relayed(ticket_hash TEXT PRIMARY KEY,job_id TEXT NOT NULL,
+  reported INTEGER NOT NULL DEFAULT 0,progress TEXT,created_at TEXT NOT NULL)"""
+_ready = {'at': 0.0, 'ok': False}
+
+
+def codex_ready(jobs, run=None):
+    """Whether this computer can take Codex jobs: Codex is here and signed in (`codex login status`, which prints no
+    secret; checked every READY_TTL). The sign-in stays Codex's own: nothing of it is read or sent."""
+    own = (aj.settings(jobs.config) or {}).get('codex')
+    if own is False or (isinstance(own, dict) and own.get('serve') is False):
+        return False
+    if time.monotonic() - _ready['at'] < READY_TTL:
+        return _ready['ok']
+    command = aj.find('codex', own.get('command') if isinstance(own, dict) else None)
+    ok = False
+    if command:
+        try:
+            ok = (run or _run)([command, 'login', 'status'], None, aj.run_env(), 60)[0] == 0
+        except (OSError, subprocess.SubprocessError):
+            ok = False
+    _ready.update(at=time.monotonic(), ok=ok)
+    return ok
+
+
+def serve(jobs, stop, run=None):
+    """A paired self-hosted Machine: asks the Network for its owner's Codex jobs every SERVE_POLL seconds."""
+    while not stop.is_set():
+        try:
+            serve_once(jobs, run)
+        except Exception as error:  # noqa: BLE001 - asked again on the next round
+            LOG.warning('agent serve error=%s', type(error).__name__)
+        stop.wait(SERVE_POLL)
+
+
+def serve_once(jobs, run=None):
+    with jobs.connect() as db:
+        db.execute(RELAY_SCHEMA)
+    ready = codex_ready(jobs, run)
+    reply = jobs.network({'action': 'jobs', 'tools': ['codex'] if ready else []}) or {}
+    taken = 0
+    for job in reply.get('jobs') or []:
+        if ready and isinstance(job, dict) and take(jobs, job):
+            taken += 1
+    for digest in reply.get('cancelled') or []:
+        with jobs.connect() as db:
+            row = db.execute('SELECT job_id FROM agent_relayed WHERE ticket_hash=?', (str(digest),)).fetchone()
+        if row:
+            try:
+                jobs.cancel(row['job_id'])
+            except ValueError:
+                pass  # it ended meanwhile
+    report(jobs)
+    return taken
+
+
+def take(jobs, job):
+    """One job from the owner's hosted Machine: an ordinary local Codex job here, in a folder of its own."""
+    digest, brief = str(job.get('ticket_hash') or ''), job.get('brief')
+    if job.get('tool') != 'codex' or not HASH.fullmatch(digest) or not isinstance(brief, str) or not brief.strip() or len(brief) > 60_000:
+        return False
+    job_id, at = 'aj_' + secrets.token_hex(8), aj.now()
+    with jobs.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        if db.execute('SELECT 1 FROM agent_relayed WHERE ticket_hash=?', (digest,)).fetchone():
+            return False
+        db.execute('INSERT INTO agent_jobs(id,suggestion_id,tool,place,status,brief,asks,turns,token_hash,created_at,updated_at) '
+                   'VALUES(?,?,?,?,?,?,?,?,?,?,?)', (job_id, aj.RELAYED + digest[:16], 'codex', 'local', 'sent', brief, '[]', 1, digest, at, at))
+        db.execute('INSERT INTO agent_relayed(ticket_hash,job_id,created_at) VALUES(?,?,?)', (digest, job_id, at))
+    try:
+        jobs.prepare_folder(job_id, brief, {})
+    except OSError as error:
+        jobs.finish(job_id, 'failed', error='I could not make the job folder on this computer', error_kind='folder')
+        LOG.error('agent job folder error=%s', type(error).__name__)
+        return True
+    jobs.launch(job_id, brief, resume=None)
+    return True
+
+
+def report(jobs):
+    """Tells the Network how each job from the hosted Machine is doing: its progress line while it runs, then its
+    result (summary, changes, a rewritten message) or why it stopped, once."""
+    with jobs.connect() as db:
+        rows = [dict(r) for r in db.execute('SELECT r.ticket_hash, r.progress AS sent, j.* FROM agent_relayed r '
+                                            'JOIN agent_jobs j ON j.id=r.job_id WHERE r.reported=0')]
+    for row in rows:
+        try:
+            if row['status'] in ('result', 'failed', 'cancelled'):
+                jobs.network(done_body(jobs, row))
+                with jobs.connect() as db:
+                    db.execute('UPDATE agent_relayed SET reported=1 WHERE ticket_hash=?', (row['ticket_hash'],))
+            elif row['status'] == 'running' and (row['progress'] or 'Running') != row['sent']:
+                line = row['progress'] or 'Running'
+                jobs.network({'action': 'progress', 'ticket_hash': row['ticket_hash'], 'progress': line[:200]})
+                with jobs.connect() as db:
+                    db.execute('UPDATE agent_relayed SET progress=? WHERE ticket_hash=?', (line, row['ticket_hash']))
+        except Exception as error:  # noqa: BLE001 - told on the next round; a ticket the Network forgot is not retried
+            if 'not a job this computer took' in str(error):
+                with jobs.connect() as db:
+                    db.execute('UPDATE agent_relayed SET reported=1 WHERE ticket_hash=?', (row['ticket_hash'],))
+            LOG.warning('agent report error=%s', type(error).__name__)
+
+
+def done_body(jobs, row):
+    body = {'action': 'done', 'ticket_hash': row['ticket_hash']}
+    if row['status'] != 'result':
+        return {**body, 'failed': True, 'error_kind': row['error_kind'] or row['status'],
+                'summary': (row['error'] or 'It stopped on this computer.')[:500]}
+    draft = ''
+    found = jobs.work(row['id']) / aj.DRAFT_FILE
+    if aj.DRAFT_FILE in [f.get('path') for f in json.loads(row['files'] or '[]')]:
+        try:
+            if not found.is_symlink() and found.stat().st_size <= 50_000:
+                draft = found.read_text(errors='replace').strip()
+        except OSError:
+            draft = ''
+    links = [u for u in dict.fromkeys(aj.URL.findall(row['summary'] or '')) if u.startswith('https://')][:10]
+    return {**body, 'summary': (row['summary'] or 'Done, without a summary.')[:aj.SUMMARY_MAX],
+            'diff': (row['diff'] or '')[:aj.DIFF_MAX], 'draft': draft, 'links': links}
 
 
 class CloudCodex:

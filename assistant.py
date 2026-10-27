@@ -12413,12 +12413,17 @@ class App:
         if own is None:
             return None
         claude, codex = (own.get('claude') if isinstance(own.get('claude'), dict) else {}), (own.get('codex') if isinstance(own.get('codex'), dict) else {})
-        if not (self.config.get('manage_url') and agent_jobs.coding_relevant(self.config) or claude.get('place') == 'remote'
+        where = self.agents.where() if getattr(self, 'agents', None) else None  # Where Codex runs, from the setup page
+        on_device = (where or {}).get('codex') == 'device'
+        if not (self.config.get('manage_url') and (agent_jobs.coding_relevant(self.config) or on_device) or claude.get('place') == 'remote'
                 or codex.get('place') == 'cloud'):
             return None  # hosted: shown once GitHub or Codex is connected (agent_jobs.coding_relevant)
-        origin = urllib.parse.urlsplit(str(self.config.get('manage_url') or ''))
+        manage = str(self.config.get('manage_url') or '')
+        origin = urllib.parse.urlsplit(manage)
         base = f'{origin.scheme}://{origin.netloc}' if origin.scheme == 'https' and origin.netloc else 'https://app.themachine.computer'
         return {'claude_session': str(claude.get('session') or ''), 'device': str(claude.get('device') or ''),
+                'codex_where': 'device' if on_device else None, 'codex_device': agent_jobs.device_label(where) if on_device else '',
+                'codex_setup': manage.split('#')[0] + '#codex' if manage.startswith('https://') else '',
                 'codex_env': str(codex.get('env') or ''), 'codex_branch': str(codex.get('branch') or ''),
                 'connector': base + '/mcp', 'on_network': bool(getattr(self, 'fleet', None)),
                 'saveable': bool(getattr(self, 'config_path', None))}
@@ -18263,6 +18268,11 @@ class App:
                 self.agents.recover()  # a job that ran when the service stopped, or one still waiting for a slot
             except Exception as error:  # noqa: BLE001 - never stops the service
                 LOG.error('agent jobs recover error=%s', type(error).__name__)
+            if getattr(self, 'fleet', None) and not self.config.get('manage_url') and agent_jobs.find('codex'):
+                # Paired with the owner's account on their own computer: Codex jobs their hosted Machine hands here
+                # (Where Codex runs: On my computer) run with this computer's own Codex (agent_remote.serve)
+                import agent_remote
+                threading.Thread(target=agent_remote.serve, args=(self.agents, self.stop), daemon=True, name='agent-serve').start()
         if getattr(self, 'skills', None):
             self.skills.sync()  # the workspace has the skills that are on, also after edits made while this was off
         signal.signal(signal.SIGTERM, lambda *_: self.stop.set())
