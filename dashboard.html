@@ -2279,8 +2279,9 @@ function t(key,...args){if(Array.isArray(key))key=I18N.cat?.[key[1]]!=null||I18N
 function i18nPatterns(cat){const out=[],esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  for(const key of Object.keys(cat)){const forms=I18N.en[key]&&typeof I18N.en[key]==='object'?Object.values(I18N.en[key]):[key];
   for(const f of forms){if(!/\{\d*\}/.test(f))continue;const parts=f.split(/\{\d*\}/);const head=parts[0];
-   out.push({head,key,re:new RegExp('^'+parts.map(esc).join('((?:(?! · ).)+?)')+'$','s')})}}
- return out.sort((a,b)=>b.head.length-a.head.length)}
+   out.push({head,key,f,lit:parts.join('').length,re:new RegExp('^'+parts.map(esc).join('((?:(?! · ).)+?)')+'$','s')})}}
+ // the longest head first, then the most specific (most literal text), then by text: never the catalog file's order
+ const by=(x,y)=>x<y?-1:x>y?1:0;return out.sort((a,b)=>b.head.length-a.head.length||b.lit-a.lit||by(a.key,b.key)||by(a.f,b.f))}
 function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.length>400||!/[A-Za-z]/.test(s))return null;
  if(I18N.memo.has(s))return I18N.memo.get(s);let out=null;const cat=I18N.cat;
  if(Object.prototype.hasOwnProperty.call(cat,s)){const v=cat[s];out=typeof v==='object'?(v.one&&I18N.en[s]?.one===s?v.one:v.other):v}

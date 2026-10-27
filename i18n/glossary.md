@@ -9,6 +9,8 @@ counts in any case. File names (.skill, SKILL.md) don't count.
 Tone: short UI copy, the way a native product says it, never word for word. Dutch uses *je*, French *vous*, German *du*,
 Spanish *tú*, Italian *tu*, Brazilian Portuguese *você*. No em dashes. Placeholders (`{}`, `{0}`, `{1}`) stay; reorder with `{0}`, `{1}` when the sentence needs it.
 
+The catalogs are sorted by key: add a key anywhere, then run `python3 scripts/i18n_extract.py --sort` before pushing.
+
 ## Names
 
 Product and brand names stay exactly as they are in every language, and the check requires them verbatim:

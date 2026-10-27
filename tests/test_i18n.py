@@ -62,6 +62,11 @@ class CatalogTest(unittest.TestCase):
                         self.assertEqual(len(HOLE.findall(form)), len(HOLE.findall(key)), f'{lang}: {key!r} -> {form!r}')
                         self.assertNotIn('—', form, f'{lang}: no em dashes ({key!r})')
 
+    def test_the_catalogs_are_sorted(self):
+        # Sorted keys, one per line: pull requests that add different strings merge without conflicts.
+        bad = [p.name for p in i18n_extract.unsorted()]
+        self.assertEqual(bad, [], 'not in sorted form; fix with: python3 scripts/i18n_extract.py --sort')
+
     def test_the_catalogs_follow_the_glossary(self):
         names, terms, exceptions = glossary()
         self.assertIn('Graph', names)

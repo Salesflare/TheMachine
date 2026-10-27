@@ -3,12 +3,17 @@
     python3 scripts/i18n_extract.py            # what's missing from i18n/en.json in the moved areas
     python3 scripts/i18n_extract.py --add      # add it to en.json (then translate it in every language)
     python3 scripts/i18n_extract.py --all      # every area, moved or not
+    python3 scripts/i18n_extract.py --sort     # rewrite every i18n/*.json in its canonical form (run before pushing)
 
 The dashboard translates by source text (the i18n script in dashboard.html): an element's text, placeholder, aria-label or
 title that equals a catalog key reads in the owner's language. So moving an area into the catalog means its strings
 are keys in en.json, nothing in the markup changes. AREAS says where each area lives: element ids in the static markup
 and the names of the functions that build it. tests/test_i18n.py fails when a moved area (MOVED) has English that is
-neither in en.json nor in i18n/not-ui.json (strings the extractor finds that nobody reads: ids, codes, examples)."""
+neither in en.json nor in i18n/not-ui.json (strings the extractor finds that nobody reads: ids, codes, examples).
+
+The catalogs are kept sorted by key, one key per line (canonical()), so pull requests that add different strings touch
+different lines and merge without conflicts; add a key anywhere and --sort puts it in its place. tests/test_i18n.py
+fails on a catalog that isn't in that form."""
 from __future__ import annotations
 
 import html.parser
@@ -258,6 +263,32 @@ def area_strings(area, source=None):
     return unique
 
 
+def canonical(data):
+    """A catalog's text: keys sorted (a list, as not-ui.json, sorted too), indent 1, UTF-8 as is, a final newline."""
+    if isinstance(data, list):
+        data = sorted(data)
+    return json.dumps(data, ensure_ascii=False, indent=1, sort_keys=True) + '\n'
+
+
+def write_catalog(path, data):
+    path.write_text(canonical(data), encoding='utf-8')
+
+
+def unsorted():
+    """The catalogs (i18n/*.json) whose text isn't canonical(): what --sort rewrites."""
+    out = []
+    for path in sorted(CATALOG.glob('*.json')):
+        text = path.read_text(encoding='utf-8')
+        if text != canonical(json.loads(text)):
+            out.append(path)
+    return out
+
+
+def sort_all():
+    for path in unsorted():
+        write_catalog(path, json.loads(path.read_text(encoding='utf-8')))
+
+
 def catalog(lang):
     path = CATALOG / f'{lang}.json'
     return json.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
@@ -281,6 +312,11 @@ def missing(areas=MOVED):
 
 
 def main(argv):
+    if '--sort' in argv:
+        fixed = unsorted()
+        sort_all()
+        print('\n'.join(f'sorted {p.relative_to(ROOT)}' for p in fixed) or 'every catalog is sorted')
+        return 0
     areas = list(AREAS) if '--all' in argv else MOVED
     gone = missing(areas)
     if '--add' in argv:
@@ -288,7 +324,7 @@ def main(argv):
         for strings in gone.values():
             for s in strings:
                 en.setdefault(s, s)
-        (CATALOG / 'en.json').write_text(json.dumps(en, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+        write_catalog(CATALOG / 'en.json', en)
     print(json.dumps(gone, ensure_ascii=False, indent=1))
     return 0
 

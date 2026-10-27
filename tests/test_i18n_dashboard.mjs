@@ -55,6 +55,10 @@ try{
   const q=document.createElement('p');q.textContent='Forgot 3 saved sign-ins.';document.body.append(q);
   return new Promise(r=>setTimeout(()=>r([p.textContent,q.textContent,t('Language'),t('Forgot {} saved sign-ins.',2),t('Not in a catalog {}',4),i18nLookup('Connected account · Your calendar · alex@example.com')]),50))});
  assert.deepEqual(later,['1 identifiant enregistré oublié.','3 identifiants enregistrés oubliés.','Langue','2 identifiants enregistrés oubliés.','Not in a catalog 4','Compte connecté · Votre agenda · alex@example.com']);
+ // Which {} entry reads a text never depends on the catalog file's order: the most specific one wins.
+ const order=await page.evaluate(()=>{const keys=ps=>ps.map(p=>p.f).join('\n');
+  return [keys(i18nPatterns(I18N.cat))===keys(i18nPatterns(Object.fromEntries(Object.entries(I18N.cat).reverse()))),i18nLookup('Sign in to Acme on your Machine')]});
+ assert.deepEqual(order,[true,'Se connecter à Acme sur votre Machine']);
  await page.locator('#locale-language').selectOption('en');
  await page.waitForFunction(()=>document.documentElement.lang==='en');
  assert.equal((await settingsLabel(page)).trim(),'Settings');
