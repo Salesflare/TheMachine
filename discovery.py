@@ -156,7 +156,8 @@ class Discovery:
         personal, and the owner says whether friend or family. Nothing is read from what anyone wrote."""
         import graph
         from fleet import account_emails
-        domains = {e.rsplit('@', 1)[1] for e in account_emails(self.config)} - set(graph.FREEMAIL)
+        own = self.own_domains() if hasattr(self, 'own_domains') else set()
+        domains = ({e.rsplit('@', 1)[1] for e in account_emails(self.config)} | own) - set(graph.FREEMAIL)
         return 'colleague' if email.rsplit('@', 1)[-1] in domains else 'personal'
 
     def _role(self, db, node_id, email):

@@ -18,7 +18,7 @@ from it comes under two or more people's names (a Google Group's "Ann via Sales"
 else's mail server. It is `maybe` when unsure: a role-like address (info@, sales@, support@, team@), a Gmail send-as
 address that isn't set as an alias, or one only seen in sent mail. A `maybe` is listed in Settings, Account, for the
 owner to choose with one tap, and it counts only once they do: **Mine** (theirs, like any other address of theirs), **The
-team's** (others pick it up too: never theirs, and mail that only went to it makes no to-do for them; team()), or **Not
+team's** (others answer it too: never theirs, and mail that only went to it makes no to-do for them; team()), or **Not
 mine**. Never chosen for them. Their own sign-in and config addresses are always theirs: those can't be the team's or
 removed. A removed address never counts again, and neither do the ones in config `not_owner_emails`."""
 from __future__ import annotations
@@ -30,7 +30,9 @@ SCHEMA = '''
 CREATE TABLE IF NOT EXISTS own_addresses(address TEXT PRIMARY KEY,sources TEXT NOT NULL,state TEXT NOT NULL,reason TEXT,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS own_address_choices(address TEXT PRIMARY KEY,choice TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS own_address_fetched(account_id TEXT PRIMARY KEY,entries TEXT,tried_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS own_domains(domain TEXT PRIMARY KEY,at TEXT NOT NULL);
 '''
+DOMAIN = re.compile(r'^(?=.{4,190}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$')
 ADDRESS = re.compile(r'^[^@\s<>",;]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,}$')
 # A local part more than one person tends to read: role and team inboxes, also with a suffix (sales-eu@, support.nl@)
 ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|contact|help|accounts?|finance|jobs|careers|hr|press|'
@@ -323,7 +325,7 @@ def fixed(db, address, config=None):
 
 
 def choose(db, address, choice, now, config=None):
-    """The owner's word on one address, changeable later: 'confirm' (Mine), 'team' (The team's: others pick it up too)
+    """The owner's word on one address, changeable later: 'confirm' (Mine), 'team' (The team’s: others answer it too)
     or 'remove' (Not mine)."""
     address = clean(address)
     if not address or choice not in CHOICES:
@@ -370,6 +372,49 @@ def team(db, config=None):
         return set()
 
 
+def clean_domain(value):
+    """A bare domain from what the owner typed: acme.co, @acme.co, someone@acme.co or https://www.acme.co/ all read acme.co."""
+    text = str(value or '').strip().lower().rsplit('@', 1)[-1]
+    text = re.sub(r'^[a-z]+://', '', text).split('/', 1)[0].removeprefix('www.').rstrip('.')
+    return text if DOMAIN.match(text) else ''
+
+
+def detected_domains(db, config):
+    """The owner's company domains the Machine found by itself: those of their own addresses, never a free mail one."""
+    import graph
+    emails = {str(a.get('email') or '').lower() for a in own_accounts(config)} | (yours(db, config) if db is not None else configured(config)[0])
+    return {e.rsplit('@', 1)[1] for e in emails if '@' in e} - graph.FREEMAIL
+
+
+def domains(db):
+    """Domains the owner added as their company's own too (Settings, Your company's domains): a second domain like
+    acme.co next to acme.com. Mail from people there is from colleagues, never a client, and its organization is them."""
+    try:
+        ensure(db)
+        return {r[0] for r in db.execute('SELECT domain FROM own_domains')}
+    except Exception:  # a read-only or locked database: none added
+        return set()
+
+
+def set_domain(db, value, on, now, config=None):
+    """Adds (on) or removes one of the owner's own company domains. A free mail domain is never a company's, and a
+    domain found from their own addresses is theirs already."""
+    import graph
+    domain = clean_domain(value)
+    if not domain:
+        raise ValueError('Type a domain, like acme.com')
+    if domain in graph.FREEMAIL:
+        raise ValueError('That’s a free email domain, not your company’s')
+    ensure(db)
+    if on:
+        if domain in detected_domains(db, config or {}):
+            raise ValueError('That domain is yours already')
+        db.execute('INSERT OR REPLACE INTO own_domains(domain,at) VALUES(?,?)', (domain, now))
+    else:
+        db.execute('DELETE FROM own_domains WHERE domain=?', (domain,))
+    return domain
+
+
 def view(db, config):
     """Settings, Account: the owner's addresses with where each came from, and the maybes to confirm."""
     ensure(db)
@@ -397,4 +442,7 @@ def view(db, config):
         elif state == 'maybe':
             maybe.append({'address': address, 'sources': [label(s) for s in sources if s != said], 'why': reason})
     order = lambda x: (not any(s in ('Connected account', 'Settings file') for s in x['sources']), x['address'])
-    return {'yours': sorted(mine, key=order), 'maybe': maybe, 'team': teams, 'not_mine': others}
+    added = domains(db)
+    found = [{'domain': d, 'added': False} for d in sorted(detected_domains(db, config) - added)]
+    return {'yours': sorted(mine, key=order), 'maybe': maybe, 'team': teams, 'not_mine': others,
+            'domains': found + [{'domain': d, 'added': True} for d in sorted(added)]}

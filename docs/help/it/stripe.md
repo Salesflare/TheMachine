@@ -37,6 +37,8 @@ In una Fleet di lavoro, un proprietario o un admin collega Stripe una volta e lo
 
 Anche le Machine dei colleghi lo leggono, in sola lettura. Sotto Connessioni dice chi l'ha condiviso, e solo gli admin della Fleet possono cambiarlo o fermarlo. La tua Machine rinnova il loro accesso ogni ora, quindi se resta spenta più a lungo, il loro Stripe si ferma finché non torna. Nessuno riceve mai il tuo accesso in sé. Dettagli: [Fleet](fleet.md).
 
+Una connessione Stripe che passa da un altro servizio, con una sola chiave per molte connessioni, non può essere condivisa: quella chiave apre più di Stripe. Collega invece Stripe da solo per il team.
+
 ## Rimuovilo
 
 - Nella dashboard: **Connessioni**, apri Stripe, **Dettagli**, poi **Disconnetti**. Ciò che ha già portato dentro resta.

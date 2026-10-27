@@ -42,8 +42,16 @@ Cada dirección tuya que encontró la Machine: tus cuentas, alias de Gmail u Out
 
 Una dirección compartida, como info@ o un Google Group, nunca cuenta por sí sola. Una de la que la Machine no está segura aparece en **Quizá tuyas**, y no se elige nada por ti. Elige una opción:
 
-- **Mía: yo me encargo**: cuenta como tuya. El correo que le llega puede convertirse en tus tareas.
-- **Del equipo: otros también la atienden**: no eres tú. El correo que solo fue a esa dirección no crea tareas ni borradores para ti. Sigue alimentando el Graph, compartido con tu equipo como antes.
+- **Mía: solo yo la respondo**: cuenta como tuya. El correo que le llega puede convertirse en tus tareas.
+- **Del equipo: otros también la responden**: no eres tú. El correo que solo fue a esa dirección no crea tareas ni borradores para ti. Sigue alimentando el Graph, compartido con tu equipo como antes.
 - **No es mía**: no contará como tuya.
 
+Elige según quién la responde hoy. Una bandeja del equipo como support@ es del equipo. Una como partnerships@ que ahora solo respondes tú es tuya; pásala al equipo cuando otros también la respondan.
+
 **Cambiar** en su fila lo cambia más adelante. Tu propia dirección de inicio de sesión siempre es tuya.
+
+### Los dominios de tu empresa
+
+Los dominios de tus propias direcciones cuentan como los de tu empresa. Si usa otro, como acme.co junto a acme.com, escríbelo en **Los dominios de tu empresa** y pulsa **Añadir**.
+
+Quienes están ahí pasan a ser tus colegas, nunca clientes: sus hilos quedan fuera del Team Graph como cualquier hilo solo entre colegas, y no se crea una organización. **Quitar** lo saca de nuevo. Un dominio de correo gratuito como gmail.com no se puede añadir.

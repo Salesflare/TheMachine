@@ -199,6 +199,39 @@ class Shared(unittest.TestCase):
                 self.assertNotIn(TOKEN, json.dumps([list(r) for r in db.execute(f'SELECT * FROM {table}')]))
         self.assertEqual(a.reconnect_help(self.held(self.mem), None), {'shared_by': 'Acme'})  # no Reconnect or Disconnect
 
+    def test_a_key_that_opens_more_than_the_account_is_never_sent(self):
+        """A Stripe account reached through Maton has a key for every connection behind it: shown, never shareable."""
+        secret = Path(self.temp.name) / 'own1' / 'maton.env'
+        secret.write_text('fixture-maton-key-opens-everything\n')
+        self.own.config['credentials']['maton'] = str(secret)
+        self.own.config['accounts'].append({'id': 'stripe-maton', 'service': 'stripe', 'transport': 'maton', 'credential': 'maton',
+                                            'stripe_account': 'acct_1', 'account_name': 'Acme'})
+        self.own.config['accounts'].append({'id': 'old-intercom', 'service': 'intercom', 'transport': 'api', 'retired': True,
+                                            'credential': 'intercom', 'workspace_id': 'old1'})
+        self.vouch_admin()
+        listed = {x['id']: x for x in self.own.shared_view()['accounts']}
+        self.assertTrue(listed['stripe-maton'].get('blocked'))
+        self.assertNotIn('old-intercom', listed)  # a retired connection isn't offered
+        self.assertFalse(listed['intercom'].get('blocked'))
+        with self.assertRaisesRegex(ValueError, 'can’t be shared'):
+            self.own.share('stripe-maton', FLEET, ['mem3'])
+        with self.assertRaises(ValueError):
+            self.own.share('old-intercom', FLEET, ['mem3'])
+        self.assertEqual(self.own._sendable(self.own.config['accounts'][-2]), (None, None))
+        self.run_all()
+        self.assertNotIn('fixture-maton-key', json.dumps(self.net.calls))
+        self.assertNotIn('stripe', self.net.shared)
+
+    def test_a_domain_the_owner_added_is_the_teams_own(self):
+        """A second company domain (Settings, Your company's domains): colleagues there, never a client to share."""
+        import own_addresses
+        self.assertNotIn('acme-two.example', self.own.internal(FLEET))
+        with self.own.connect() as db:
+            own_addresses.set_domain(db, 'acme-two.example', True, '2026-10-27T00:00:00+00:00', self.own.config)
+        self.assertIn('acme-two.example', self.own.internal(FLEET))
+        self.assertIn('acme-two.example', self.own.fleet_domains(FLEET))
+        self.assertEqual(self.own._hint('kim@acme-two.example'), 'colleague')
+
     def join(self, member='mem4', name='Kim'):
         self.net.people[member] = (name, 'member')
         self.boxes.append(self.machine(member))

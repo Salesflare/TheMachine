@@ -42,8 +42,16 @@ Cada endereço seu que a Machine encontrou: suas contas, aliases do Gmail ou do 
 
 Um endereço compartilhado, como info@ ou um Google Group, nunca conta sozinho. Um endereço do qual a Machine não tem certeza fica em **Talvez seus**, e nada é escolhido por você. Escolha um:
 
-- **Meu: eu cuido dele**: conta como seu. E-mails para ele podem virar suas tarefas.
-- **Da equipe: outros também cuidam dele**: não é você. E-mails que só foram para ele não criam tarefas nem rascunhos para você. Ele continua alimentando o Graph, compartilhado com sua equipe como antes.
+- **Meu: só eu respondo**: conta como seu. E-mails para ele podem virar suas tarefas.
+- **Da equipe: outros também respondem**: não é você. E-mails que só foram para ele não criam tarefas nem rascunhos para você. Ele continua alimentando o Graph, compartilhado com sua equipe como antes.
 - **Não é meu**: não conta como seu.
 
+Escolha por quem responde hoje. Uma caixa da equipe como support@ é da equipe. Um endereço como partnerships@ que agora só você responde é seu; mude para a equipe quando outros também responderem.
+
 **Mudar** na linha dele troca isso depois. Seu próprio endereço de login é sempre seu.
+
+### Domínios da sua empresa
+
+Os domínios dos seus próprios endereços contam como os da sua empresa. Se ela usa outro, como acme.co ao lado de acme.com, digite em **Domínios da sua empresa** e toque em **Adicionar**.
+
+Quem está lá passa a ser seu colega, nunca cliente: as conversas ficam fora do Team Graph como qualquer conversa só entre colegas, e nenhuma organização é criada. **Remover** tira de novo. Um domínio de e-mail gratuito como gmail.com não pode ser adicionado.

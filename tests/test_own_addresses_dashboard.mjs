@@ -19,11 +19,12 @@ const yours=[{address:'sam@acme.example',sources:['Connected account','Slack pro
  {address:'samuel.lee.longer.address@subsidiary.acme-international.example',sources:['Gmail alias'],removable:true}];
 let addresses,posted=[],lang='en';
 const reset=()=>{addresses={yours:[...yours],maybe:[{address:'partnerships@acme.example',sources:['Gmail alias'],why:'Looks like a team address'},
- {address:'support@acme.example',sources:['Gmail send-as','Mail you sent'],why:'Looks like a team address'}],team:[],not_mine:[]};posted=[]};
+ {address:'support@acme.example',sources:['Gmail send-as','Mail you sent'],why:'Looks like a team address'}],team:[],not_mine:[],
+ domains:[{domain:'acme.example',added:false}]};posted=[]};
 // The service's own moves (own_addresses.view): a choice takes the address out of every list and into its own
 function choose({address,choice}){const all=[...addresses.yours,...addresses.maybe,...addresses.team,...addresses.not_mine],a=all.find(x=>x.address===address);
  const out=x=>x.filter(y=>y.address!==address),plain={address,sources:a.sources.filter(s=>s!=='You confirmed it'),choice};
- addresses={yours:out(addresses.yours),maybe:out(addresses.maybe),team:out(addresses.team),not_mine:out(addresses.not_mine)};
+ addresses={yours:out(addresses.yours),maybe:out(addresses.maybe),team:out(addresses.team),not_mine:out(addresses.not_mine),domains:addresses.domains};
  if(choice==='confirm')addresses.yours.push({...plain,sources:[...plain.sources,'You confirmed it'],removable:true});
  else addresses[choice==='team'?'team':'not_mine'].push(plain)}
 const server=createServer(async(req,res)=>{
@@ -34,7 +35,8 @@ const server=createServer(async(req,res)=>{
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],hours,own_addresses:addresses,
   locale:{locale:'en-BE',region:'BE',language:lang,language_set:true,clock:'auto',hour12:false,auto_hour12:false,date_locale:lang==='en'?'en-GB':'nl-BE',languages,saveable:true}}));return}
  if(url.pathname==='/api/action'){let body='';for await(const c of req)body+=c;const {action,args}=JSON.parse(body);posted.push([action,args]);
-  if(action==='own_address')choose(args);res.end(JSON.stringify({own_addresses:addresses}));return}
+  if(action==='own_address')choose(args);
+  if(action==='own_domain')addresses.domains=args.on?[...addresses.domains,{domain:args.domain,added:true}]:addresses.domains.filter(d=>d.domain!==args.domain);res.end(JSON.stringify({own_addresses:addresses}));return}
  res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -61,7 +63,7 @@ try{
   assert.equal(await page.locator('#addr-list>div').first().locator('button').count(),0);  // a connected account stays
   // Three choices per maybe, each with what it changes, and none picked for the owner
   const first=page.locator('#addr-maybe-list>div').first();
-  assert.match(await first.innerText(),/^partnerships@acme\.example\nLooks like a team address · Gmail alias\nMine: I handle it\nIts mail can become your to-dos\.\nThe team’s: others pick it up too\nNo to-dos from it\. Its mail still fills in the Graph\.\nNot mine\nIt won’t count as yours\.$/);
+  assert.match(await first.innerText(),/^partnerships@acme\.example\nLooks like a team address · Gmail alias\nMine: only I answer it\nIts mail can become your to-dos\.\nThe team’s: others answer it too\nA shared inbox, like support@\. No to-dos from it\. Its mail still fills in the Graph\.\nNot mine\nIt won’t count as yours\.$/);
   assert.equal(await first.getByRole('radiogroup',{name:'Whose is partnerships@acme.example?'}).count(),1);
   assert.deepEqual(await page.locator('#addr-maybe-list [role="radio"]').evaluateAll(b=>b.map(x=>x.getAttribute('aria-checked'))),Array(6).fill('false'));
   assert.equal(await page.locator('#addr-team').isHidden(),true);
@@ -94,6 +96,13 @@ try{
   await page.locator('#addr-list [data-addr="sam.lee@acme-labs.example"]').click();
   await page.locator('#addr-not-list>div',{hasText:'sam.lee@acme-labs.example'}).waitFor();
   assert.deepEqual(posted.map(p=>p[1].choice),['confirm','team','remove','remove']);
+  // Your company's domains: the found one stays; one the owner adds has Remove (a second domain, never a client)
+  assert.match(await page.locator('#addr-domain-list').innerText(),/^acme\.example\nFrom your addresses$/);
+  await page.locator('#addr-domain-form input').fill('acme-two.example');await page.locator('#addr-domain-form button').click();
+  await page.locator('#addr-domain-list [data-domain-remove="acme-two.example"]').click();
+  await page.locator('#addr-domain-list [data-domain-remove]').waitFor({state:'detached'});
+  assert.deepEqual(posted.slice(-2),[['own_domain',{domain:'acme-two.example',on:true}],['own_domain',{domain:'acme-two.example',on:false}]]);
+  assert.equal(await fits(page),true);
   await context.close();
  }
  // Dutch and dark, the way the owner reads it: every reason, choice and line translated, and at 390px it all fits
@@ -107,7 +116,7 @@ try{
   await navClick(page.locator('#open-settings'));await page.locator('#addr-maybe-list>div').first().waitFor();
   await page.waitForFunction(()=>/Van mij/.test(document.querySelector('#addr-maybe-list').innerText));
   const text=await page.locator('#addr-maybe-list>div').first().innerText();
-  assert.match(text,/Lijkt een teamadres · Gmail-alias\nVan mij: ik behandel het\nDe mail ervan kan je to-do's worden\.\nVan het team: anderen nemen het ook op\nGeen to-do's hiervan\. De mail vult nog wel de Graph aan\.\nNiet van mij\nHet telt niet als van jou\./);
+  assert.match(text,/Lijkt een teamadres · Gmail-alias\nVan mij: alleen ik beantwoord het\nDe mail ervan kan je to-do's worden\.\nVan het team: anderen beantwoorden het ook\nEen gedeelde inbox, zoals support@\. Geen to-do's ervan\. De mail vult de Graph nog steeds aan\.\nNiet van mij\nHet telt niet als van jou\./);
   assert.equal(await fits(page),true);
   await shot(page,`after-nl-${width}x${height}`);
   await context.close();

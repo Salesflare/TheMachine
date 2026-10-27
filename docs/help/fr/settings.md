@@ -42,8 +42,16 @@ Toutes vos adresses que la Machine a trouvées : vos comptes, vos alias Gmail ou
 
 Une adresse partagée, comme info@ ou un Google Group, ne compte jamais d’elle-même. Celle dont la Machine n’est pas sûre est sous **Peut-être à vous**, et rien n’est choisi à votre place. Choisissez :
 
-- **À moi : je m’en occupe** : elle compte comme la vôtre. Les e-mails qui y arrivent peuvent devenir vos tâches.
-- **À l’équipe : d’autres s’en occupent aussi** : ce n’est pas vous. Un e-mail envoyé seulement à cette adresse ne crée ni tâche ni brouillon pour vous. Elle alimente toujours le Graph, partagé avec votre équipe comme avant.
+- **À moi : personne d’autre n’y répond** : elle compte comme la vôtre. Les e-mails qui y arrivent peuvent devenir vos tâches.
+- **À l’équipe : d’autres y répondent aussi** : ce n’est pas vous. Un e-mail envoyé seulement à cette adresse ne crée ni tâche ni brouillon pour vous. Elle alimente toujours le Graph, partagé avec votre équipe comme avant.
 - **Pas à moi** : elle ne compte pas comme la vôtre.
 
+Choisissez selon qui y répond aujourd’hui. Une boîte d’équipe comme support@ est à l’équipe. Une adresse comme partnerships@ à laquelle personne d’autre ne répond pour l’instant est à vous ; passez-la à l’équipe dès que d’autres y répondent aussi.
+
 **Modifier** sur sa ligne change ce choix plus tard. Votre propre adresse de connexion est toujours la vôtre.
+
+### Les domaines de votre entreprise
+
+Les domaines de vos propres adresses comptent comme ceux de votre entreprise. Si elle en utilise un autre, comme acme.co à côté d’acme.com, saisissez-le sous **Les domaines de votre entreprise** et appuyez sur **Ajouter**.
+
+Les personnes de ce domaine sont alors vos collègues, jamais des clients : leurs fils restent hors du Team Graph comme tout fil entre collègues, et aucune organisation n’est créée. **Retirer** l’enlève. Un domaine d’e-mail gratuit comme gmail.com ne peut pas être ajouté.

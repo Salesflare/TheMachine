@@ -61,7 +61,7 @@ Finché non inizi, la tua Machine te lo ricorda ogni pochi giorni, durante il tu
 
 ## Cosa è condiviso
 
-**Fleet** › **Cosa è condiviso** mostra tutto in un posto: i conteggi per tipo, ogni conversazione condivisa con il motivo, quelle in attesa in **Condividerle?** e ciò che tieni privato. In **Impostazioni** c'è una scorciatoia, e anche l'etichetta su ogni conversazione ci porta.
+**Fleet** › **Cosa è condiviso** mostra tutto in un posto: i conteggi per tipo, ogni conversazione condivisa con il motivo, quelle in attesa in **Condividerle?** e ciò che tieni privato. In **Impostazioni** c'è una scorciatoia, e anche l'etichetta su ogni conversazione ci porta. Tocca l’oggetto di una conversazione per leggerla.
 
 Una nuova conversazione con un cliente aspetta un'ora prima di partire, così hai tempo per cambiare idea.
 
@@ -79,7 +79,7 @@ Solo le Machine dei tuoi colleghi. Tutto è crittografato end-to-end, sigillato 
 
 ## Ingresso e nuovi dispositivi
 
-Un admin fa entrare ogni persona nella Fleet una volta. Dopo, condividere con lei non richiede altre conferme.
+Un admin fa entrare ogni persona nella Fleet una volta. Dopo, condividere con lei non richiede altre conferme. La richiesta compare in **Suggerimenti** per ogni admin, e la prima risposta vale per tutto il team. I membri non la ricevono mai.
 
 Una nuova Machine di qualcuno che è già dentro riceve il Graph del team dopo 24 ore. Nel frattempo gli admin la vedono e possono toccare **Non è sua** per tenerla fuori.
 

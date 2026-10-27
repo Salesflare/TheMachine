@@ -49,6 +49,15 @@ RESEND_SECONDS = 6 * 3600  # an unanswered send goes again after this (questions
 MAX_PROMPTS = 50
 SENDING_FOR = 900  # a round after a member OK that ran longer than this stopped (a restart): the next round sends it
 TOKEN = re.compile(r'[A-Za-z0-9_=:.+/-]{8,512}')
+# What can be sent: the account's own key ('api': a dedicated, read-only key for that one account) or a sign-in's access
+# token ('broker'). Never a key that opens more than the account, such as a Maton key, which reaches every connection
+# behind it (Slack, mail, ...). An account without a transport is read as 'api', as the connectors do.
+TRANSPORTS = ('api', 'broker')
+
+
+def shareable(account):
+    """Whether this connected account can be shared at all: one of SHAREABLE, through one of TRANSPORTS."""
+    return isinstance(account, dict) and account.get('service') in SHAREABLE and (account.get('transport') or 'api') in TRANSPORTS
 
 
 def _now():
@@ -126,7 +135,9 @@ class SharedConnectors:
 
     def _sendable(self, account, min_left=0):
         """(token, seconds it works or None when it lasts) to send for this account: a pasted token as is, or a signed-in
-        account's fresh access token (share_token), never its sign-in."""
+        account's fresh access token (share_token), never its sign-in. Nothing for any other transport (TRANSPORTS)."""
+        if not shareable(account):
+            return None, None
         if account.get('transport') != 'broker':
             return self._token(account), None
         if not self.share_token:
@@ -162,8 +173,10 @@ class SharedConnectors:
     def share(self, account_id, fleet, members=()):
         """Shares this Machine's connected account with one Work Fleet: every confirmed admin, and the members ticked."""
         account = next((a for a in self.config.get('accounts', []) if a.get('id') == account_id), None)
-        if not account or account.get('service') not in SHAREABLE:
+        if not account or account.get('service') not in SHAREABLE or account.get('retired'):
             raise ValueError('Only a connected Intercom or Stripe account can be shared')
+        if not shareable(account):
+            raise ValueError('This connection can’t be shared: connect it for the team first')
         if isinstance(account.get('shared'), dict) and not account['shared'].get('origin'):
             raise ValueError('This account is shared with you; only an admin of that Fleet can share it')
         group = self._group(fleet)
@@ -732,8 +745,10 @@ class SharedConnectors:
                                                 'email': m.get('account_email') or '', 'role': m.get('role'), 'keys': bool(ft.keys_of(m)),
                                                 'confirmed': m['member_id'] in trusted}
                                                for m in group.get('members', []) if not m.get('me')]})
-        own = [{'id': a['id'], 'service': a['service'], 'label': SHAREABLE[a['service']]['label'], 'workspace': a.get(SHAREABLE[a['service']]['name']) or ''}
-               for a in self.config.get('accounts', []) if a.get('service') in SHAREABLE and not a.get('shared') and a.get(SHAREABLE[a['service']]['identity'])]
+        own = [{'id': a['id'], 'service': a['service'], 'label': SHAREABLE[a['service']]['label'], 'workspace': a.get(SHAREABLE[a['service']]['name']) or '',
+                **({} if shareable(a) else {'blocked': True})}
+               for a in self.config.get('accounts', []) if a.get('service') in SHAREABLE and not a.get('shared') and not a.get('retired')
+               and a.get(SHAREABLE[a['service']]['identity'])]
         try:  # the Shared Graph: whether this Machine's Work is shared, asked off or off, per Work Fleet (shared_graph.py)
             graph = self.sharing() if hasattr(self, 'sharing') else []
         except (ValueError, KeyError, TypeError, OSError) as error:

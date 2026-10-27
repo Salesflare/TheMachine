@@ -37,6 +37,8 @@ En un Work Fleet, un propietario o administrador conecta Stripe una vez y lo com
 
 Las Machines de los compañeros también lo leen, solo lectura. En Conexiones dice quién lo compartió, y solo los administradores del Fleet pueden cambiarlo o pararlo. Tu Machine renueva su acceso cada hora, así que mientras está apagada más tiempo, su Stripe se pausa hasta que vuelva. Nadie recibe nunca tu inicio de sesión. Detalles: [Fleets](fleet.md).
 
+Una conexión de Stripe que pasa por otro servicio, con una sola clave para muchas conexiones, no se puede compartir: esa clave abre más que Stripe. Conecta Stripe por separado para el equipo.
+
 ## Quítalo
 
 - En el panel: **Conexiones**, abre Stripe, **Detalles** y luego **Desconectar**. Lo que ya trajo se queda.

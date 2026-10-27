@@ -61,7 +61,7 @@ Até você começar, sua Machine lembra você a cada poucos dias, durante seu ho
 
 ## O que é compartilhado
 
-**Fleet** › **O que é compartilhado** mostra tudo em um só lugar: totais por tipo, cada conversa compartilhada com o motivo, as que esperam em **Compartilhar estes?** e o que você mantém privado. **Configurações** tem um atalho, e o rótulo de cada conversa também.
+**Fleet** › **O que é compartilhado** mostra tudo em um só lugar: totais por tipo, cada conversa compartilhada com o motivo, as que esperam em **Compartilhar estes?** e o que você mantém privado. **Configurações** tem um atalho, e o rótulo de cada conversa também. Toque no assunto de uma conversa para ler.
 
 Uma nova conversa com cliente espera uma hora antes de ir, para dar tempo de você mudar de ideia.
 
@@ -79,7 +79,7 @@ Só as Machines dos seus colegas. Tudo é criptografado de ponta a ponta, selado
 
 ## Entrada e novos dispositivos
 
-Um admin deixa cada pessoa entrar no Fleet uma vez. Depois disso, compartilhar com ela não precisa de mais nenhum OK.
+Um admin deixa cada pessoa entrar no Fleet uma vez. Depois disso, compartilhar com ela não precisa de mais nenhum OK. O pedido aparece em **Sugestões** para cada admin, e a primeira resposta vale para a equipe toda. Membros nunca recebem.
 
 Uma nova Machine de alguém que já está no Fleet recebe o Graph da equipe depois de 24 horas. Enquanto isso, os admins veem essa Machine e podem tocar em **Não é dessa pessoa** para deixá-la de fora.
 

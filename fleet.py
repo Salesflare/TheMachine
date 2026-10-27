@@ -1786,6 +1786,18 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 pass
         return mine | found | {str(a.get('email') or '').lower() for a in self.config.get('accounts', []) if a.get('email')}
 
+    def own_domains(self):
+        """The domains the owner added as their company's too (own_addresses.domains): never a client's."""
+        import sqlite3
+        import own_addresses
+        if not self.connect:
+            return set()
+        try:
+            with self.connect() as db:
+                return own_addresses.domains(db)
+        except sqlite3.Error:
+            return set()
+
     def rule(self, db, fleet, member_id, kind, raw=False):
         """A teammate's rule for a kind of question: their exception if they have one, else the Fleet's rule (member ALL).
         In a Careful Work Fleet it applies without Always and without names (security_levels.py); raw is as stored."""
@@ -1928,7 +1940,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         """The owner's and this Fleet's own domains: never a company in a brief."""
         mine = {e.rsplit('@', 1)[1] for e in self.my_emails() if '@' in e}
         team = {e.rsplit('@', 1)[1] for m in self.teammates(fleet) for e in m.get('emails', []) if '@' in e}
-        return (mine | team) - graph.FREEMAIL
+        return (mine | team | self.own_domains()) - graph.FREEMAIL
 
     def log(self, db, direction, fleet, member_id, name, kind, what, outcome):
         db.execute('INSERT INTO fleet_log(at,direction,fleet,member_id,name,kind,what,outcome) VALUES(?,?,?,?,?,?,?,?)',

@@ -202,6 +202,59 @@ class Stored(unittest.TestCase):
         self.assertEqual(oa.fetched(self.db, CONFIG), {'side-mail': [{'address': 'sam@sideco.test', 'alias': True}]})
 
 
+class CompanyDomains(unittest.TestCase):
+    """A second domain of the owner's company (acme.co next to acme.com): theirs to add in Settings, never a free mail
+    domain, and the ones their own addresses are at need no adding."""
+    def setUp(self):
+        self.db = sqlite3.connect(':memory:')
+        oa.ensure(self.db)
+
+    def test_add_and_remove(self):
+        self.assertEqual(oa.view(self.db, CONFIG)['domains'], [{'domain': 'acme.test', 'added': False}, {'domain': 'sideco.test', 'added': False}])
+        self.assertEqual(oa.set_domain(self.db, 'Someone@Acme-Two.example', True, NOW, CONFIG), 'acme-two.example')
+        self.assertEqual(oa.set_domain(self.db, 'https://www.acme-three.example/about', True, NOW, CONFIG), 'acme-three.example')
+        self.assertEqual(oa.domains(self.db), {'acme-two.example', 'acme-three.example'})
+        self.assertEqual(oa.view(self.db, CONFIG)['domains'][2:], [{'domain': 'acme-three.example', 'added': True},
+                                                                   {'domain': 'acme-two.example', 'added': True}])
+        oa.set_domain(self.db, 'acme-three.example', False, NOW, CONFIG)
+        self.assertEqual(oa.domains(self.db), {'acme-two.example'})
+
+    def test_never_a_free_mail_domain_or_nonsense(self):
+        for bad in ('gmail.com', 'not a domain', '', 'x@', 'localhost'):
+            with self.assertRaises(ValueError):
+                oa.set_domain(self.db, bad, True, NOW, CONFIG)
+        with self.assertRaisesRegex(ValueError, 'yours already'):
+            oa.set_domain(self.db, 'acme.test', True, NOW, CONFIG)
+        self.assertEqual(oa.domains(self.db), set())
+
+
+class SecondDomainInTheGraph(unittest.TestCase):
+    """People at a domain the owner added are colleagues, and no organization is made for it."""
+    add = tg.Graph.add
+    build = tg.Graph.build
+
+    def setUp(self):
+        tg.Graph.setUp(self)
+        self.app.fleet = None
+        self.store.accounts = tg.CONFIG['accounts']
+        self.add(tg.mail(3, 'Kim Test <kim@acme-two.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'kim@acme-two.example', ('SENT',)))
+        self.build()
+
+    def org_and_kim(self):
+        with self.store.connect() as db:
+            org = db.execute("SELECT 1 FROM graph_nodes WHERE id='org:acme-two.example'").fetchone()
+            kim = json.loads(db.execute("SELECT info FROM graph_nodes WHERE id='email:kim@acme-two.example'").fetchone()[0])
+        return bool(org), bool(kim.get('colleague'))
+
+    def test_added_domain_makes_colleagues(self):
+        self.assertEqual(self.org_and_kim(), (True, False))  # a client, until the owner says it's theirs
+        with self.store.connect() as db:
+            oa.set_domain(db, 'acme-two.example', True, NOW, tg.CONFIG)
+            self.assertIn('acme-two.example', graph.Owner(tg.CONFIG, db).domains)
+        self.build()
+        self.assertEqual(self.org_and_kim(), (False, True))
+
+
 class Outlook(unittest.TestCase):
     def test_proxy_addresses_as_send_as(self):
         answer = ms_graph.send_as({'mail': 'Sam@Acme.test', 'proxyAddresses': ['SMTP:sam@acme.test', 'smtp:sam.lee@acme.test', 'SIP:sam@acme.test', 'x500:/o=x']})

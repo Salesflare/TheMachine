@@ -242,6 +242,8 @@ class Owner:
         if db is not None:
             self.emails |= own_addresses.yours(db, config)
         self.domains = {e.rsplit('@', 1)[1] for e in self.emails} - FREEMAIL
+        if db is not None:  # and the ones the owner added as their company's too (acme.co next to acme.com)
+            self.domains |= own_addresses.domains(db) - FREEMAIL
         self.slack = {a['user_id'] for a in accounts if a.get('service') == 'slack' and a.get('user_id')}
         self.handles = {str(a.get('handle') or a.get('login') or '').lower() for a in accounts if a.get('service') in ('x', 'github')} - {''}
         # The owner's own numbers: config owner_phones (top level or per account) and the ones kept for About you

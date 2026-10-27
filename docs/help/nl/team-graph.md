@@ -61,7 +61,7 @@ Tot je start, herinnert je Machine je er om de paar dagen aan, tijdens je werkur
 
 ## Wat gedeeld wordt
 
-**Fleet** › **Wat gedeeld wordt** toont alles op één plek: aantallen per soort, elke gedeelde thread met waarom hij meeging, de threads die wachten onder **Deze delen?**, en wat je privé houdt. **Instellingen** heeft een snelkoppeling, en het label op elke thread ook.
+**Fleet** › **Wat gedeeld wordt** toont alles op één plek: aantallen per soort, elke gedeelde thread met waarom hij meeging, de threads die wachten onder **Deze delen?**, en wat je privé houdt. **Instellingen** heeft een snelkoppeling, en het label op elke thread ook. Tik op het onderwerp van een thread om hem te lezen.
 
 Een nieuwe thread met een klant wacht een uur voordat hij meegaat, zodat je nog van gedachten kunt veranderen.
 
@@ -79,7 +79,7 @@ Alleen de Machines van je teamgenoten. Alles is end-to-end versleuteld, verzegel
 
 ## Lid worden en nieuwe apparaten
 
-Een beheerder laat elke persoon één keer toe tot de Fleet. Daarna is er geen OK meer nodig om met die persoon te delen.
+Een beheerder laat elke persoon één keer toe tot de Fleet. Daarna is er geen OK meer nodig om met die persoon te delen. De vraag staat onder **Suggesties** voor elke beheerder, en het eerste antwoord telt voor het hele team. Leden krijgen hem nooit.
 
 Een nieuwe Machine van iemand die al lid is, krijgt de Graph van het team na 24 uur. Beheerders zien hem in de tussentijd en kunnen op **Niet van hen** tikken om hem buiten te houden.
 

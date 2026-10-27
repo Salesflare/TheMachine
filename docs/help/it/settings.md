@@ -42,8 +42,16 @@ Ogni tuo indirizzo che la Machine ha trovato: i tuoi account, gli alias di Gmail
 
 Un indirizzo condiviso, come info@ o un Google Group, non conta mai da solo. Uno di cui la Machine non è sicura è sotto **Forse tuoi**, e non viene scelto nulla per te. Scegli:
 
-- **Mio: me ne occupo io**: conta come tuo. La posta che gli arriva può diventare tue attività.
-- **Del team: se ne occupano anche altri**: non sei tu. La posta inviata solo a quell’indirizzo non crea attività né bozze per te. Continua ad alimentare il Graph, condiviso con il tuo team come prima.
+- **Mio: rispondo solo io**: conta come tuo. La posta che gli arriva può diventare tue attività.
+- **Del team: rispondono anche altri**: non sei tu. La posta inviata solo a quell’indirizzo non crea attività né bozze per te. Continua ad alimentare il Graph, condiviso con il tuo team come prima.
 - **Non è mio**: non conta come tuo.
 
+Scegli in base a chi risponde oggi. Una casella del team come support@ è del team. Una come partnerships@ a cui ora rispondi solo tu è tua; passala al team quando rispondono anche altri.
+
 **Cambia** sulla sua riga lo modifica in seguito. Il tuo indirizzo di accesso è sempre tuo.
+
+### I domini della tua azienda
+
+I domini dei tuoi indirizzi contano come quelli della tua azienda. Se ne usa un altro, come acme.co accanto a acme.com, scrivilo sotto **I domini della tua azienda** e premi **Aggiungi**.
+
+Le persone di quel dominio diventano tuoi colleghi, mai clienti: le loro conversazioni restano fuori dal Team Graph come ogni conversazione solo tra colleghi, e non viene creata un’organizzazione. **Rimuovi** lo toglie. Un dominio email gratuito come gmail.com non si può aggiungere.

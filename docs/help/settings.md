@@ -42,10 +42,18 @@ Every address of yours the Machine found: your accounts, Gmail or Outlook aliase
 
 A shared address, like info@ or a Google Group, never counts by itself. One the Machine isn't sure about is under **Maybe yours**, and nothing is picked for you. Choose one:
 
-- **Mine: I handle it**: it counts as yours. Mail to it can become your to-dos.
-- **The team's: others pick it up too**: it isn't you. Mail that only went to it makes no to-dos for you, and no drafts. It still fills in the Graph, shared with your team as before.
+- **Mine: only I answer it**: it counts as yours. Mail to it can become your to-dos.
+- **The team’s: others answer it too**: it isn't you. Mail that only went to it makes no to-dos for you, and no drafts. It still fills in the Graph, shared with your team as before.
 - **Not mine**: it won't count as yours.
 
+Pick by who answers it today. A team inbox like support@ is the team's. One like partnerships@ that only you answer now is yours; switch it to the team's once others answer it too.
+
 **Change** on its row switches it later. Your own sign-in address is always yours.
+
+### Your company's domains
+
+The domains of your own addresses count as your company's. When it also uses another one, like acme.co next to acme.com, type it under **Your company’s domains** and press **Add**.
+
+People there are then your colleagues, never a client: their threads stay out of the Team Graph like any colleague-only thread, and no organization is made for it. **Remove** takes one out again. A free email domain like gmail.com can't be added.
 
 A Gmail alias of yours can also be the **From** of a draft, when Gmail confirms you can send as it. See [Gmail](gmail.md#what-it-can-send).

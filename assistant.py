@@ -637,6 +637,7 @@ OWNER_ACTIONS = {
     'model_reset',
     'model_usage_refresh',
     'own_address',
+    'own_domain',
     'project_archive',
     'project_delete',
     'project_outcome',
@@ -901,6 +902,7 @@ DASHBOARD_ACTIONS = frozenset({
     'notify_preview',
     'notify_set',
     'own_address',
+    'own_domain',
     'project_archive',
     'project_delete',
     'project_outcome',
@@ -13681,6 +13683,13 @@ class App:
             with self.store.connect() as db:
                 own_addresses.choose(db, args.get('address'), str(args.get('choice') or ''), now(), self.config)
             self.graph_dirty.set()  # who counts as the owner changed: the graph follows within a minute
+            return {'own_addresses': self.own_addresses_view()}
+        if name == 'own_domain':
+            if not owner_dashboard:
+                raise ValueError('Only the owner changes their company’s domains, in Settings')
+            with self.store.connect() as db:
+                own_addresses.set_domain(db, args.get('domain'), args.get('on') is not False, now(), self.config)
+            self.graph_dirty.set()  # its people become colleagues and its organization folds into the owner's: within a minute
             return {'own_addresses': self.own_addresses_view()}
         if name == 'set_people_lookup':
             if not owner_dashboard:

@@ -61,7 +61,7 @@ Tant que vous n’avez pas commencé, votre Machine vous le rappelle tous les qu
 
 ## Ce qui est partagé
 
-**Fleet** › **Ce qui est partagé** montre tout au même endroit : le nombre par type, chaque fil partagé avec la raison de son envoi, ceux qui attendent sous **Partager ceux-ci ?**, et ce que vous gardez privé. **Paramètres** a un raccourci, tout comme l’étiquette de chaque fil.
+**Fleet** › **Ce qui est partagé** montre tout au même endroit : le nombre par type, chaque fil partagé avec la raison de son envoi, ceux qui attendent sous **Partager ceux-ci ?**, et ce que vous gardez privé. **Paramètres** a un raccourci, tout comme l’étiquette de chaque fil. Touchez l’objet d’un fil pour le lire.
 
 Un nouveau fil client attend une heure avant de partir, pour vous laisser le temps de changer d’avis.
 
@@ -79,7 +79,7 @@ Uniquement les Machines de vos collègues. Tout est chiffré de bout en bout, sc
 
 ## Arrivées et nouveaux appareils
 
-Un admin fait entrer chaque personne dans la Fleet une fois. Ensuite, partager avec elle ne demande plus d’accord.
+Un admin fait entrer chaque personne dans la Fleet une fois. Ensuite, partager avec elle ne demande plus d’accord. La demande s’affiche dans **Suggestions** pour chaque admin, et la première réponse vaut pour toute l’équipe. Les membres ne la reçoivent jamais.
 
 Une nouvelle Machine d’une personne déjà membre reçoit le Graph de l’équipe après 24 heures. Les admins la voient en attendant et peuvent appuyer sur **Pas la sienne** pour l’exclure.
 

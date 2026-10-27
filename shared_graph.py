@@ -1420,7 +1420,8 @@ class SharedGraph:
         included, not the other addresses this Machine has connected)."""
         found = self.fleets().get(self.ref(fleet)) or {}
         emails = [e for m in found.get('members', []) for e in [m.get('account_email'), *([] if m.get('me') else m.get('emails', []))] if e]
-        return {str(e).lower().rsplit('@', 1)[1] for e in emails if '@' in str(e)} - graph.FREEMAIL
+        own = self.own_domains() if hasattr(self, 'own_domains') else set()  # the owner's second company domain (acme.co)
+        return ({str(e).lower().rsplit('@', 1)[1] for e in emails if '@' in str(e)} | own) - graph.FREEMAIL
 
     def _company_accounts(self, fleet):
         """This Fleet's own company's Work connections: an address on one of the Fleet's domains (fleet_domains). A

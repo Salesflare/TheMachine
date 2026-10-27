@@ -37,6 +37,8 @@ In a Work Fleet, an owner or admin connects Stripe once and shares it with the t
 
 Teammates' Machines read it too, read only. Under Connections it says who shared it, and only the Fleet's admins can change or stop it. Your Machine renews their access every hour, so while it is off for longer, their Stripe pauses until it is back. Nobody ever gets your sign-in itself. Details: [Fleets](fleet.md).
 
+A Stripe connection that goes through another service with one key for many connections can't be shared: that key opens more than Stripe. Connect Stripe on its own for the team instead.
+
 ## Remove it
 
 - In the dashboard: **Connections**, open Stripe, **Details**, then **Disconnect**. What it already brought in stays.

@@ -61,7 +61,7 @@ Bis du startest, erinnert dich deine Machine alle paar Tage daran, während dein
 
 ## Was geteilt wird
 
-**Fleet** › **Was geteilt wird** zeigt alles an einem Ort: Anzahlen pro Art, jeden geteilten Thread mit dem Grund, warum er mitging, die wartenden unter **Diese teilen?** und was du privat hältst. **Einstellungen** hat eine Abkürzung dorthin, ebenso das Label an jedem Thread.
+**Fleet** › **Was geteilt wird** zeigt alles an einem Ort: Anzahlen pro Art, jeden geteilten Thread mit dem Grund, warum er mitging, die wartenden unter **Diese teilen?** und was du privat hältst. **Einstellungen** hat eine Abkürzung dorthin, ebenso das Label an jedem Thread. Tippe auf den Betreff eines Threads, um ihn zu lesen.
 
 Ein neuer Kunden-Thread wartet eine Stunde, bevor er mitgeht, damit Zeit bleibt, es dir anders zu überlegen.
 
@@ -79,7 +79,7 @@ Nur die Machines deiner Teammitglieder. Alles ist Ende-zu-Ende verschlüsselt, v
 
 ## Beitritt und neue Geräte
 
-Ein Admin lässt jede Person einmal in die Fleet. Danach braucht das Teilen mit ihr kein weiteres OK.
+Ein Admin lässt jede Person einmal in die Fleet. Danach braucht das Teilen mit ihr kein weiteres OK. Die Frage steht für jeden Admin unter **Vorschläge**, und die erste Antwort gilt für das ganze Team. Mitglieder bekommen sie nie.
 
 Eine neue Machine einer Person, die schon dabei ist, bekommt den Graph des Teams nach 24 Stunden. Admins sehen sie in der Zwischenzeit und können auf **Nicht ihres** tippen, um sie draußen zu halten.
 

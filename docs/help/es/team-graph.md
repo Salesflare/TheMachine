@@ -61,7 +61,7 @@ Hasta que empieces, tu Machine te lo recuerda cada pocos días, dentro de tu hor
 
 ## Qué se comparte
 
-**Fleet** › **Qué se comparte** lo muestra todo en un sitio: recuentos por tipo, cada hilo compartido con el motivo, los que esperan en **¿Compartir estos?** y lo que mantienes en privado. **Ajustes** tiene un atajo, y también la etiqueta de cada hilo.
+**Fleet** › **Qué se comparte** lo muestra todo en un sitio: recuentos por tipo, cada hilo compartido con el motivo, los que esperan en **¿Compartir estos?** y lo que mantienes en privado. **Ajustes** tiene un atajo, y también la etiqueta de cada hilo. Toca el asunto de un hilo para leerlo.
 
 Un hilo nuevo con un cliente espera una hora antes de enviarse, para que haya tiempo de cambiar de idea.
 
@@ -79,7 +79,7 @@ Solo las Machines de tus compañeros. Todo va cifrado de extremo a extremo, sell
 
 ## Incorporaciones y dispositivos nuevos
 
-Un administrador deja entrar a cada persona en el Fleet una vez. Después, compartir con ella no necesita más OK.
+Un administrador deja entrar a cada persona en el Fleet una vez. Después, compartir con ella no necesita más OK. La pregunta aparece en **Sugerencias** para cada administrador, y la primera respuesta vale para todo el equipo. Los miembros nunca la reciben.
 
 Una Machine nueva de alguien que ya está dentro recibe el Graph del equipo a las 24 horas. Mientras tanto, los administradores la ven y pueden tocar **No es suya** para dejarla fuera.
 

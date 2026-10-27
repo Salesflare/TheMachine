@@ -42,8 +42,16 @@ Elk adres van jou dat de Machine vond: je accounts, aliassen in Gmail of Outlook
 
 Een gedeeld adres, zoals info@ of een Google Group, telt nooit vanzelf mee. Een adres waarover de Machine niet zeker is, staat onder **Misschien van jou**, en er wordt niets voor je gekozen. Kies er een:
 
-- **Van mij: ik behandel het**: het telt als van jou. Mail eraan kan je to-do's worden.
-- **Van het team: anderen nemen het ook op**: het is niet jij. Mail die alleen daarheen ging, maakt geen to-do's en geen concepten voor je. Het vult nog steeds de Graph aan, gedeeld met je team zoals voorheen.
+- **Van mij: alleen ik beantwoord het**: het telt als van jou. Mail eraan kan je to-do's worden.
+- **Van het team: anderen beantwoorden het ook**: het is niet jij. Mail die alleen daarheen ging, maakt geen to-do's en geen concepten voor je. Het vult nog steeds de Graph aan, gedeeld met je team zoals voorheen.
 - **Niet van mij**: het telt niet als van jou.
 
+Kies op basis van wie het nu beantwoordt. Een teaminbox zoals support@ is van het team. Een adres zoals partnerships@ dat nu alleen jij beantwoordt, is van jou; zet het op van het team zodra anderen het ook beantwoorden.
+
 **Wijzigen** op de rij zet het later om. Je eigen inlogadres is altijd van jou.
+
+### Domeinen van je bedrijf
+
+De domeinen van je eigen adressen tellen als die van je bedrijf. Gebruikt het er nog een, zoals acme.co naast acme.com, typ het dan onder **Domeinen van je bedrijf** en druk op **Toevoegen**.
+
+Mensen daar zijn dan je collega's, nooit een klant: hun threads blijven buiten de Team Graph zoals elke thread met alleen collega's, en er komt geen organisatie voor. **Verwijderen** haalt er een weer weg. Een gratis e-maildomein zoals gmail.com kan niet.

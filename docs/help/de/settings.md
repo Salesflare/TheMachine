@@ -42,8 +42,16 @@ Jede deiner Adressen, die die Machine gefunden hat: deine Konten, Aliasse in Gma
 
 Eine geteilte Adresse wie info@ oder eine Google Group zählt nie von selbst. Eine, bei der sich die Machine nicht sicher ist, steht unter **Vielleicht deine**, und nichts wird für dich ausgewählt. Wähle eins:
 
-- **Meine: Ich kümmere mich darum**: Sie zählt als deine. Mails an sie können deine Aufgaben werden.
-- **Vom Team: Andere kümmern sich auch darum**: Sie ist nicht du. Mails nur an diese Adresse machen dir keine Aufgaben und keine Entwürfe. Sie füllt weiter den Graph, mit deinem Team geteilt wie bisher.
+- **Meine: Nur ich beantworte sie**: Sie zählt als deine. Mails an sie können deine Aufgaben werden.
+- **Vom Team: Andere beantworten sie auch**: Sie ist nicht du. Mails nur an diese Adresse machen dir keine Aufgaben und keine Entwürfe. Sie füllt weiter den Graph, mit deinem Team geteilt wie bisher.
 - **Nicht meine**: Sie zählt nicht als deine.
 
+Wähle danach, wer sie heute beantwortet. Ein Team-Postfach wie support@ ist vom Team. Eine Adresse wie partnerships@, die gerade nur du beantwortest, ist deine; stell sie auf Team um, sobald andere sie auch beantworten.
+
 **Ändern** in ihrer Zeile stellt es später um. Deine eigene Anmeldeadresse ist immer deine.
+
+### Domains deiner Firma
+
+Die Domains deiner eigenen Adressen zählen als die deiner Firma. Nutzt sie noch eine weitere, etwa acme.co neben acme.com, gib sie unter **Domains deiner Firma** ein und drücke **Hinzufügen**.
+
+Leute dort sind dann deine Kollegen, nie Kunden: Ihre Threads bleiben aus dem Team Graph wie jeder Thread nur unter Kollegen, und es entsteht keine Organisation dafür. **Entfernen** nimmt sie wieder raus. Eine kostenlose E-Mail-Domain wie gmail.com geht nicht.

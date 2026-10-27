@@ -42,7 +42,7 @@ const fleet={on:true,kinds:{},kind_rules:{},no_details:[],scoped:[],scopes:{},wa
   {member_id:'m_kim',name:'Kim Lee',role:'member',email:'kim@acme.example'}],members:[],rules:{},exceptions:{}}],
  shared:{prompts:[{id:'p1',kind:'member',fleet:FL,fleet_name:'Acme',name:'Kim Lee',email:'kim@acme.example',fp:'ab12 cd34 ef56 ab12 cd34 ef56'},
   {id:'p2',kind:'optout',fleet:FL,fleet_name:'Acme',name:'Tom Ray',email:'tom@acme.example',fp:'cd34 ef56 ab12 cd34 ef56 ab12'}],shares:[],accounts:[],can_share:[],graph:sharing}};
-const calls=[];
+const calls=[],opened=[];
 let connWait=0,connFail=false;  // a slow or failing save of a connection's switch
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -54,6 +54,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
   const team=url.searchParams.get('view')==='team';
   return res.end(JSON.stringify({projects:[],quiet:[],new:[],orgs:[],boards:[],sharing,people:team?(noTeam?[]:[lee,robin]):[{...lee,via:undefined}],...(team?{team:true,held:[]}:{})}))}
  if(url.pathname==='/api/fleet')return res.end(JSON.stringify(fleet));
+ if(url.pathname==='/api/originals'){opened.push(url.searchParams.get('event'));return res.end(JSON.stringify({originals:[]}))}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   if(call.action==='graph_share'){share={share:call.args.share,fixed:false,why:'By hand'};if(call.args.event_id===41&&call.args.share==='only_you')return res.end(JSON.stringify({ok:true,suggest:{key:'@client.example',name:'Client Co',choice:'private'}}))}
   if(call.action==='graph_start')sharing[0].started=true;
@@ -94,6 +95,11 @@ try{
   await page.locator('#suggestions').waitFor({state:'attached'});
   await new Promise(r=>setTimeout(r,300));
   assert.equal(await page.locator('#fleet-start-'+FL).count(),0);
+  // the admin's Team Graph OKs wait under Suggestions too, not only in the Fleet tab: one answer counts for the team
+  await page.locator('#suggestions #fleet-share-p1').waitFor();
+  assert.match(await page.locator('#fleet-share-p1').innerText(),/Kim Lee joined Acme\. Share the team's Graph with them\?\s+kim@acme\.example\s+Only admins decide this, once for the whole team\.[\s\S]*Share\s+Not now$/);
+  assert.match(await page.locator('#fleet-share-p2').innerText(),/Tom Ray asks to stop sharing their Work with the team\.[\s\S]*Approve\s+Not now$/);
+  if(width===1440)await page.locator('#fleet-share-p1').screenshot({path:(process.env.SHOTS||'/tmp')+'/graph-ask-suggestion-1440.png'});
   await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=people');
   await page.locator('[data-graph-team="team"]').waitFor();
   // Mine has no via; Team has the teammates' people with a quiet "via Ada"
@@ -179,6 +185,11 @@ try{
   await pane.locator('[data-shared-many="team"]').click();
   await new Promise(r=>setTimeout(r,300));
   assert.deepEqual(calls.find(c=>c.action==='graph_share_many'),{action:'graph_share_many',args:{event_ids:[61],share:'team'}});
+  // a subject opens the owner's own message, in Share these? and in what went
+  for(const list of ['.shared-ask','.shared-out']){const title=pane.locator(list+' [data-shared-read]').first();if(!await title.count())continue;
+   const id=await title.getAttribute('data-shared-read');await title.click();await page.locator('#email-dialog[open]').waitFor();
+   assert.equal(opened.at(-1),id);await page.keyboard.press('Escape');await page.locator('#email-dialog[open]').waitFor({state:'detached'})}
+  assert.ok(opened.length>=1);
   await pane.locator('.shared-out [data-shared-set="51"]').click();
   await page.locator('#toast',{hasText:"Kept private. It won't go."}).waitFor();
   assert.deepEqual(calls.filter(c=>c.action==='graph_share').at(-1),{action:'graph_share',args:{event_id:51,share:'only_you'}});
