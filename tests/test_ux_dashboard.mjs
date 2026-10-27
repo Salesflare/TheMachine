@@ -156,9 +156,9 @@ await running.getByRole('button',{name:'Open the browser'}).click();await page.w
 const first=await running.locator('.elapsed').textContent();await page.waitForTimeout(2100);assert.notEqual(await running.locator('.elapsed').textContent(),first);
 await page.screenshot({path:'/tmp/261012-preparing-progress.png'});
 await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();const send=page.locator('#send-dialog');await send.waitFor({state:'visible'});
-assert.match(await sendHead(page),/^From: owner@example.com\nTo: will@vendor.example\n/);
+assert.match(await sendHead(page),/^From: owner@example.com\nTo: will@vendor.example$/);assert.ok(await page.locator('#send-body').isVisible(),'it opens in the editor');assert.equal(await page.locator('#send-subject').inputValue(),'Pick');
 await send.getByLabel('will@vendor.example').uncheck();assert.ok(await page.locator('#send-confirm').isDisabled());assert.match(await sendHead(page),/To: \(choose above\)/);
-await send.getByLabel('ann@example.com').check();assert.match(await sendHead(page),/To: ann@example.com\nSubject: Pick/);
+await send.getByLabel('ann@example.com').check();assert.match(await sendHead(page),/To: ann@example.com$/);
 await page.screenshot({path:'/tmp/261012-send-recipients.png'});
 await page.locator('#send-confirm').click();await send.waitFor({state:'hidden'});
 const sent=posts.at(-1);assert.equal(sent.revision,'abcdef123456');assert.deepEqual(sent.recipients,['ann@example.com']);
@@ -225,11 +225,11 @@ await page.evaluate(id=>openResult(id),ids[2]);const r=page.locator('#result-fil
 await page.evaluate(id=>openEmail(id),ids[2]);const e=page.locator('#email-content .draft-files a.attachment');await e.waitFor();assert.equal(await e.getAttribute('href'),href);await page.getByText('Original question').first().waitFor();await page.getByRole('button',{name:'Close email'}).click();}
 await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});assert.equal(posts.at(-1).revision,'abcdef123456');assert.equal(posts.at(-1).suggestion_id,ids[2]);
 // Edit the draft yourself: Send saves the edit first, then sends that exact new revision.
-{await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();await page.locator('#send-edit').click();
+{await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();
 assert.equal(await page.locator('#send-body').inputValue(),suggestions[2].next_action.body);assert.doesNotMatch(await sendHead(page),/Subject:/);assert.ok(await page.locator('#send-preview').isHidden());
 await page.locator('#send-body').fill('My own words.');await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
 assert.deepEqual([posts.at(-2).body,posts.at(-2).revision,posts.at(-2).subject],['My own words.','abcdef123456',suggestions[2].next_action.subject]);assert.equal(posts.at(-1).revision,'fedcba654321');
-await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();assert.equal(await page.locator('#send-editor').isHidden(),true);await page.locator('#send-cancel').click();}
+await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();assert.equal(await page.locator('#send-editor').isHidden(),false);await page.locator('#send-cancel').click();}
 suggestions[2].next_actions=[{...suggestions[2].next_action,label:'Send reply',state:{status:'blocked',error:'Gmail is connected read-only. Nothing was sent.'}},
  {kind:'prepare',revision:'fedcba654321',label:'Investigate further',instructions:'Check the field mapping'},
  {kind:'open',revision:'111111111111',label:'Open the Zap',url:'https://example.com/zap'}];

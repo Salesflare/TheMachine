@@ -34,7 +34,7 @@ try{
  // The sender: who declined and why, shown as text, with what to do now.
  const c=page.locator('#task-c1');await c.waitFor();
  assert.match(await c.innerText(),/Kim declined: Not mine: <b>ask ops<\/b>/);
- assert.deepEqual(await c.locator('.actions>button').allInnerTexts(),['Do it myself','Hand to someone else','Mark done']);
+ assert.deepEqual(await c.locator('.actions>button').allInnerTexts(),['Do it myself','Hand off to someone else','Mark done']);
  await c.locator('[data-handoff-mine]').click();await page.waitForTimeout(200);
  assert.deepEqual(calls.at(-1),{action:'fleet_handoff_mine',args:{suggestion_id:'c1'}});
  await page.waitForFunction(()=>!document.querySelector('#task-c1 [data-handoff-mine]'));

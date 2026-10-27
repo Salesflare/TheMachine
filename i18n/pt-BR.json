@@ -2353,5 +2353,31 @@
  "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
   "one": "{} sincronização com falha nas últimas 24 horas. Falhas antigas não afetam uma conexão que se recuperou.",
   "other": "{} sincronizações com falha nas últimas 24 horas. Falhas antigas não afetam uma conexão que se recuperou."
- }
+ },
+ "Hand off to someone else": "Passar para outra pessoa",
+ "Take it back": "Pegar de volta",
+ "Tell me what to change first.": "Diga primeiro o que mudar.",
+ "What needs doing?": "O que precisa ser feito?",
+ "Add the to-do": "Adicionar a tarefa",
+ "Remove the due date": "Remover o prazo",
+ "Attach an email this to-do is about": "Anexe um e-mail sobre o qual é esta tarefa",
+ "Quick picks": "Escolhas rápidas",
+ "I can’t read that yet. Try 15:00, in 2 hours or Friday.": "Ainda não consigo ler isso. Tente 15:00, em 2 horas ou sexta.",
+ "Friday, 15:00, in 2 hours, tomorrow 9": "sexta, 15:00, em 2 horas, amanhã às 9",
+ "Taken back. It’s yours again.": "Pegada de volta. É sua de novo.",
+ "Hand off to": "Passar para",
+ "By email": "Por e-mail",
+ "waiting": "aguardando",
+ "With {} · waiting": "Com {} · aguardando",
+ "Take it back from {}": "Pegar de volta de {}",
+ "Their email": "O e-mail da pessoa",
+ "Add a note for {}": "Adicione uma nota para {}",
+ "What they are asked to do": "O que pedem para a pessoa fazer",
+ "Goes along": "Vai junto",
+ "Nobody has this to-do now": "Ninguém está com esta tarefa agora",
+ "Still with {} until you send it to {}": "Ainda com {} até você passar para {}",
+ "Review handoff to {}": "Revisar o repasse para {}",
+ "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.": "Você recebe nesta tarefa um rascunho de e-mail para enviar, com um link que leva a tarefa para uma Machine própria.",
+ "Contact: {}": "Contato: {}",
+ "LinkedIn from {} ·": "LinkedIn de {} ·"
 }

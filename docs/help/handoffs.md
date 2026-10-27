@@ -22,13 +22,15 @@ If the handoff didn't go out, the to-do and its chat say so, with **Try again**.
 
 ## Hand it to someone else instead
 
-**More**, **Hand to someone else** opens the handoff form. Or say so in the to-do's chat ("this should go to Kim"). The new handoff waits on the to-do for you to read: "Still with Pat until you send it to Kim", with **Review handoff to** Kim. That opens the form with the text, on Kim.
+While a teammate has it, the to-do says so in one line ("With Pat · waiting"), with **Take it back** and **Hand off to someone else**. **Take it back** makes it yours again: Pat's Machine is told, and their answer no longer moves it.
+
+**Hand off to someone else** opens the handoff form, on someone who doesn't have it yet. Or say so in the to-do's chat ("this should go to Kim"). The new handoff waits on the to-do for you to read: "Still with Pat until you send it to Kim", with **Review handoff to** Kim. That opens the form with the text, on Kim.
 
 **Take it back from** Pat is on by default; turn it off to let both have it. Nothing goes out until you pick **Hand off**. Then the chat says "Taken back from Pat" and "Handed off to Kim's Machine". Pat's Machine is told too, and the to-do it made for them goes.
 
 ## When they decline
 
-They can say why: not theirs, already done, or no time this week. Then pick **Do it myself**, **Hand to someone else** or **Mark done**.
+They can say why: not theirs, already done, or no time this week. Then pick **Do it myself**, **Hand off to someone else** or **Mark done**.
 
 ## Someone outside the Network
 

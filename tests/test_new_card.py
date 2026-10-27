@@ -79,6 +79,19 @@ class NewCard(unittest.TestCase):
         self.store.decide(made['id'], 'complete', '', 'd-done', 'dashboard')
         self.assertEqual(self.row(made['id'])['status'], 'completed')
 
+    def test_a_due_time_is_kept_with_its_day(self):
+        made = self.new(due='2026-10-27', due_at='2026-10-27T15:00:00+01:00')
+        card = self.row(made['id'])
+        self.assertEqual((card['due'], card['due_at']), ('2026-10-27', '2026-10-27T14:00+00:00'))
+        self.store.accounts = self.app.config['accounts']
+        shown = next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == made['id'])
+        self.assertEqual(shown['due_at'], '2026-10-27T14:00+00:00')  # the dashboard shows the time
+        self.assertIsNone(self.row(self.new(due='2026-10-30')['id'])['due_at'])  # a day alone stays a day
+        for bad, error in (({'due': 'Friday'}, 'YYYY-MM-DD'), ({'due': '2026-10-27', 'due_at': '2026-10-27T15:00'}, 'offset'),
+                           ({'due_at': '2026-10-27T15:00:00+01:00'}, 'goes with due')):
+            with self.assertRaisesRegex(ValueError, error):
+                self.new(**bad)
+
     def test_scope_and_attachments_choose_the_account(self):
         self.assertEqual(json.loads(self.row(self.new(scope='personal')['id'])['account_ids']), ['p'])
         self.store.commit_page('w', {}, [mail('m1')])

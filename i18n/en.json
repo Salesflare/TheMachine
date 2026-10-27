@@ -2353,5 +2353,31 @@
  "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
   "one": "{} failed sync in the last 24 hours. Old failures don’t affect a connection that recovered.",
   "other": "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered."
- }
+ },
+ "Hand off to someone else": "Hand off to someone else",
+ "Take it back": "Take it back",
+ "Tell me what to change first.": "Tell me what to change first.",
+ "What needs doing?": "What needs doing?",
+ "Add the to-do": "Add the to-do",
+ "Remove the due date": "Remove the due date",
+ "Attach an email this to-do is about": "Attach an email this to-do is about",
+ "Quick picks": "Quick picks",
+ "I can’t read that yet. Try 15:00, in 2 hours or Friday.": "I can’t read that yet. Try 15:00, in 2 hours or Friday.",
+ "Friday, 15:00, in 2 hours, tomorrow 9": "Friday, 15:00, in 2 hours, tomorrow 9",
+ "Taken back. It’s yours again.": "Taken back. It’s yours again.",
+ "Hand off to": "Hand off to",
+ "By email": "By email",
+ "waiting": "waiting",
+ "With {} · waiting": "With {} · waiting",
+ "Take it back from {}": "Take it back from {}",
+ "Their email": "Their email",
+ "Add a note for {}": "Add a note for {}",
+ "What they are asked to do": "What they are asked to do",
+ "Goes along": "Goes along",
+ "Nobody has this to-do now": "Nobody has this to-do now",
+ "Still with {} until you send it to {}": "Still with {} until you send it to {}",
+ "Review handoff to {}": "Review handoff to {}",
+ "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.": "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.",
+ "Contact: {}": "Contact: {}",
+ "LinkedIn from {} ·": "LinkedIn from {} ·"
 }

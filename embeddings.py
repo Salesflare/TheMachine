@@ -70,7 +70,7 @@ def request(settings, texts, timeout=120):
     try:
         checked, served = SERVED.get(settings['url'], (-1e9, ()))
         if time.monotonic() - checked > 600:
-            with urllib.request.urlopen(endpoint(settings).rsplit('/', 1)[0] + '/models', timeout=10) as response:
+            with urllib.request.urlopen(endpoint(settings).rsplit('/', 1)[0] + '/models', timeout=min(10, timeout)) as response:
                 served = {m.get('id') for m in json.load(response).get('data', [])}
             SERVED[settings['url']] = (time.monotonic(), served)
         if settings.get('model') not in served:

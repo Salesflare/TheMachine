@@ -36,14 +36,16 @@ A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and 
 
 A closed to-do can come back with **Reopen**. It also comes back by itself when something new happens, like a new message from them. Your own reply doesn't bring it back.
 
-A to-do about a person shows their name at the top. Tap it to open their page in the Graph. **Read message** opens the thread.
+A to-do about a person shows their name at the top, and their organization next to it. Tap either to open its page in the Graph. **Read message** opens the thread.
+
+A "Waiting on" to-do (someone promised you something) links your own last message to them, the one you're waiting on an answer to: "Email to Pat · Tue".
 
 ## Make one yourself
 
 **New to-do** (under **Find a to-do** on a computer) adds a to-do for anything. Creating it sends nothing.
 
-- **Due**: type a date, like "tomorrow", "next Fri" or "3 Nov", or pick one from the calendar.
-- **Email**: attach the email it's about. Search by subject or sender.
+- **Due**: type a day or a time, like "tomorrow", "next Fri", "3 Nov", "15:00", "2pm", "in 2 hours" or "tomorrow 9". It reads your language too ("over 2 uur", "morgen 9u"). The calendar icon has quick picks, like Snooze, and **Choose date**.
+- **Email**: attach the email it's about. It searches your email only, by subject or sender.
 - **Files**: tap the paperclip in the box, paste a screenshot, or drop files on the form. On a phone you can also take a photo. Up to 5 files, the same kinds and sizes as in the chat (see [Add files](card-chat.md#add-files)). × takes one back.
 
 The files stay with the to-do: they show on it and in its chat, and The Machine reads them when it works on it.

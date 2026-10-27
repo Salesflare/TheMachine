@@ -332,6 +332,31 @@ class Requests(unittest.TestCase):
         self.fleet.take_answer({'id': pat, 'status': 'answered', 'answer': {'stage': 'accepted'}})
         self.assertEqual((len(self.told), self.card_row(card)['status']), (told, 'snoozed'))  # not "Pat accepted", and still with Kim
 
+    def test_take_it_back_makes_the_to_do_the_owners_again(self):
+        """Take it back, while a teammate still has it: everyone it is with is told, it leaves Later, and their later
+        answer no longer moves it. With nobody holding it there is nothing to take back."""
+        self.with_kim()
+        self.fleet.wait_card = lambda card_id, why, key, expected: self.store.wait_handoff(card_id, why, key, expected)
+        card = self.ready_card([], 'k-take-back')
+        self.fleet.hand_off(card, self.ref, 'kim1', 'Export leaks rows', self.HANDOFF_TEXT)
+        self.assertEqual(self.card_row(card)['status'], 'snoozed')  # with Kim, under Later
+        with self.store.connect() as db:
+            kim = db.execute("SELECT id FROM fleet_out WHERE kind='handoff'").fetchone()[0]
+        done = self.app.action('fleet_handoff_take_back', {'suggestion_id': card}, owner_dashboard=True)
+        self.assertEqual(done, {'ok': True, 'from': ['Kim Doe']})
+        self.assertEqual(self.relay.sent('/withdraw')[-1], {'id': kim, 'fleet': self.ref, 'to': 'kim1', 'kind': 'handoff'})
+        self.assertEqual(self.card_row(card)['status'], 'prepared')  # back where it was, the owner's
+        with self.store.connect() as db:
+            shown = [self.card_row(card)]
+            self.fleet.annotate(db, shown)
+            log = db.execute("SELECT outcome FROM fleet_log WHERE direction='out' ORDER BY id DESC LIMIT 1").fetchone()[0]
+        self.assertNotIn('fleet_handoff', shown[0])
+        self.assertEqual(log, 'taken back')
+        self.fleet.take_answer({'id': kim, 'status': 'answered', 'answer': {'stage': 'declined'}})
+        self.assertEqual(self.card_row(card)['status'], 'prepared')
+        with self.assertRaisesRegex(ValueError, 'Nobody has this to-do now'):
+            self.app.action('fleet_handoff_take_back', {'suggestion_id': card}, owner_dashboard=True)
+
     def test_a_handoff_taken_back_drops_the_card_it_made_saying_so(self):
         self.fleet.drop_card = lambda card_id, why='Teammate not reached', key=None: self.store.decide(card_id, 'reject', why, key or 'x', 'fleet')
         self.ask('handoff', {'title': 'Send Sam the pricing', 'summary': 'Sam wants pricing.'}, 'q1')

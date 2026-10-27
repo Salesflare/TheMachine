@@ -64,13 +64,13 @@ try{
   assert.deepEqual(await primary('t1'),['Mark done']);
   assert.deepEqual(await primary('d1'),['Review and send to Noor']);
   assert.equal(await page.locator('#task-d1 [data-choice="answer"]').count(),0);
-  // Stopped to ask: the blocker leads as the amber Needs you line, once; Answer leads; Hand to someone else and Mark done follow
+  // Stopped to ask: the blocker leads as the amber Needs you line, once; Answer leads; Hand off to someone else and Mark done follow
   assert.equal(await line('h1'),'Needs you: I couldn’t find the bounty amount; please share it or point me to the message.');
   assert.equal(await page.locator('#task-h1 .status-line.outcome').count(),1);
   assert.equal((await page.locator('#task-h1').innerText()).split('bounty amount').length,2);
   assert.deepEqual(await primary('h1'),['Answer']);
   assert.equal(await page.locator('#task-h1 [data-handoff-mine]').count(),0);
-  assert.deepEqual((await page.locator('#task-h1 .actions > button').allTextContents()).slice(0,3),['Answer','Hand to someone else','Mark done']);
+  assert.deepEqual((await page.locator('#task-h1 .actions > button').allTextContents()).slice(0,3),['Answer','Hand off to someone else','Mark done']);
   assert.equal(await page.locator('#task-h1 [data-choice="retry"]').count(),1);
   assert.deepEqual(await primary('e1'),['Try again']);assert.deepEqual(await primary('g1'),['Continue']);
   // Named questions: each its own line with quick picks; no Try again after a fruitless one; details collapsed and plain

@@ -2353,5 +2353,31 @@
  "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
   "one": "{} sincronizzazione fallita nelle ultime 24 ore. I vecchi errori non contano per una connessione tornata attiva.",
   "other": "{} sincronizzazioni fallite nelle ultime 24 ore. I vecchi errori non contano per una connessione tornata attiva."
- }
+ },
+ "Hand off to someone else": "Passa a qualcun altro",
+ "Take it back": "Riprendi",
+ "Tell me what to change first.": "Dimmi prima cosa cambiare.",
+ "What needs doing?": "Cosa c’è da fare?",
+ "Add the to-do": "Aggiungi l’attività",
+ "Remove the due date": "Rimuovi la scadenza",
+ "Attach an email this to-do is about": "Allega un’email di cui parla questa attività",
+ "Quick picks": "Scelte rapide",
+ "I can’t read that yet. Try 15:00, in 2 hours or Friday.": "Non riesco ancora a leggerlo. Prova 15:00, tra 2 ore o venerdì.",
+ "Friday, 15:00, in 2 hours, tomorrow 9": "venerdì, 15:00, tra 2 ore, domani alle 9",
+ "Taken back. It’s yours again.": "Ripresa. È di nuovo tua.",
+ "Hand off to": "Passa a",
+ "By email": "Per email",
+ "waiting": "in attesa",
+ "With {} · waiting": "Da {} · in attesa",
+ "Take it back from {}": "Riprendi da {}",
+ "Their email": "La sua email",
+ "Add a note for {}": "Aggiungi una nota per {}",
+ "What they are asked to do": "Cosa si chiede di fare",
+ "Goes along": "Va insieme",
+ "Nobody has this to-do now": "Nessuno ha questa attività ora",
+ "Still with {} until you send it to {}": "Ancora da {} finché non la passi a {}",
+ "Review handoff to {}": "Rivedi il passaggio a {}",
+ "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.": "Ricevi in questa attività una bozza di email da inviare tu, con un link che porta l’attività su una loro Machine.",
+ "Contact: {}": "Contatto: {}",
+ "LinkedIn from {} ·": "LinkedIn da {} ·"
 }

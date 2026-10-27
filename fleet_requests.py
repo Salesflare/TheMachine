@@ -701,6 +701,26 @@ class Requests:
                 LOG.info('fleet handoff wait skipped error=%s', error)
         return sent
 
+    def take_back(self, card_id):
+        """Take it back: the to-do is the owner's again. Everyone it is still with is told (withdraw), and their later
+        answer no longer moves it. The names it was taken back from."""
+        with self.connect() as db:
+            rows = self.open_handoffs(db, str(card_id))
+            title = db.execute('SELECT title FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
+        if not rows:
+            raise ValueError('Nobody has this to-do now')
+        taken_at = fleet.now()
+        with self.connect() as db:
+            for r in rows:
+                db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)',
+                           ('handoff_withdrawn:' + r['id'], json.dumps({'at': taken_at, 'name': r['name']})))
+        for r in rows:
+            told = self.withdraw(r)
+            with self.connect() as db:
+                self.log(db, 'out', r['fleet'], r['member_id'], r['name'], 'handoff', title['title'] if title else '',
+                         'taken back' if told else "taken back on your to-do; their Machine couldn't be told")
+        return {'ok': True, 'from': list(dict.fromkeys(r['name'] for r in rows))}
+
     def withdraw(self, row):
         """Tell their Machine a handoff was taken back (network.py seals it for theirs; the outbox keeps it while the
         Network is away). Only the Machine that asked can: the relay checks that too. False when it can't be told."""

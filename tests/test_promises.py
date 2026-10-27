@@ -193,6 +193,26 @@ class Promises(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 2)
 
+    def test_waiting_on_them_leads_with_the_owners_own_last_message(self):
+        """"Waiting on Sam": what it waits on is the owner's last word in that thread (a reply, a nudge), so that one is
+        the to-do's source ("Email to Sam Lee"); their promise comes second. In another thread it doesn't count."""
+        self.store.commit_page('work', {}, [email('ask', '2026-10-19T08:10:00+00:00', sender='Sam Lee <sam@client.example>', thread='t9')])
+        with self.store.connect() as db:
+            ask = db.execute("SELECT id FROM events WHERE source_id='ask'").fetchone()[0]
+        theirs = self.app().action('promise', {'direction': 'theirs', 'event_id': ask, 'who': 'Sam Lee', 'what': 'send the signed contract', 'due': '2026-10-23'})['id']
+        self.at('2026-10-21T10:00:00+00:00')
+        self.store.commit_page('work', {}, [email('nudge', '2026-10-20T09:00:00+00:00', sent=True, sender='sam@client.example', thread='t9', title='Re: Contract'),
+                                            email('nudge2', '2026-10-21T09:00:00+00:00', sent=True, sender='sam@client.example', thread='t9', title='Re: Contract'),
+                                            email('elsewhere', '2026-10-21T09:30:00+00:00', sent=True, sender='sam@client.example', thread='t2', title='Lunch')])
+        with self.store.connect() as db:
+            last = db.execute("SELECT id FROM events WHERE source_id='nudge2'").fetchone()[0]
+        self.at('2026-10-24T07:00:00+00:00')
+        self.app().promise_step()
+        card = next(s for s in self.store.snapshot([])['suggestions'] if s['dedupe_key'] == f'promise:{theirs}')
+        self.assertEqual(a.json.loads(card['event_ids'])[:2], [last, ask])
+        self.assertRegex(card['source_line'], r'^Source: email to Sam Lee · ')
+        self.assertIsNotNone(card['awaiting'])  # their reply still closes it
+
     def test_a_promise_joins_the_to_do_its_matter_already_has(self):
         """No second to-do for the same thing: a promise in a message or thread that already has a to-do goes with it.
         Open: it joins that one. Closed by the owner after promising: it closes with it. Theirs, came due after the

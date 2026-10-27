@@ -525,7 +525,7 @@ CONNECT_ACTIONS = ('connect_sources', 'connect_start', 'connect_poll', 'connect_
                    'connect_signin', 'connect_signin_state')
 OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'card_chat', 'recap_decide'}
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
-FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
+FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_take_back', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
                          'fleet_split_adjust', 'task_import', *task_pages.ACTIONS}
 OWNER_ACTIONS |= FLEET_REQUEST_ACTIONS
 # Friends (friends.py): adding, accepting, removing and blocking friends, and asking a friend when they are free.
@@ -2800,7 +2800,7 @@ class Store:
                 db.execute('ALTER TABLE suggestions ADD COLUMN feedback_kind TEXT')
             if 'urgent' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN urgent INTEGER NOT NULL DEFAULT 0')
-            for column in ['deliver_after', 'source_line']:
+            for column in ['deliver_after', 'source_line', 'due_at']:  # due_at: a due time, when the owner gave one (New to-do)
                 if column not in columns:
                     db.execute('ALTER TABLE suggestions ADD COLUMN '+column+' TEXT')
             for column in ['feedback_requested_at','feedback_after_message_id','feedback_prompt_message_id','feedback_card_message_id']:
@@ -3551,7 +3551,7 @@ class Store:
                     'occurred_at': row['occurred_at'], 'title': row['title'], 'body': '',
                     'metadata': json.loads(row['metadata']), 'deleted': True}
 
-    def events(self, account_ids, query='', limit=40, pending=False, event_ids=None, reviewable=False, since=''):
+    def events(self, account_ids, query='', limit=40, pending=False, event_ids=None, reviewable=False, since='', kinds=None):
         if not account_ids:
             raise ValueError('Explicit account_ids are required')
         limit = max(len(set(event_ids)), 1) if event_ids is not None else min(max(int(limit), 1), RUN_SIGNAL_BUDGET)
@@ -3567,6 +3567,9 @@ class Store:
         if since:
             sql += ' AND e.occurred_at>=?'
             args.append(since)
+        if kinds:  # only these kinds (New to-do's Email pill: emails)
+            sql += ' AND e.kind IN (' + ','.join('?' for _ in kinds) + ')'
+            args.extend(kinds)
         if query:
             sql += ' AND e.id IN (SELECT rowid FROM event_search WHERE event_search MATCH ?)'
             # Treat search input as words, not arbitrary FTS operators.
@@ -4459,7 +4462,7 @@ class Store:
                 'note': 'Not merged: the owner made this card, so they are asked whether it is the same as that one. '
                         'Other signals in this call were not saved; suggest them again without the owner\'s signal.'}
 
-    def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None):
+    def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with
         their words as its first evidence: a signal of kind owner.card, left for the next review to fill in. Nothing is
         sent: the card is already on their screen (delivery not_sent) and its buttons need their tap as on any card.
@@ -4483,7 +4486,7 @@ class Store:
             kept = chat_files.adopt(db, files[0], sid, files[1]) if files else []
             if kept:  # the review knows the to-do has them (its runs get the files themselves)
                 db.execute('UPDATE events SET metadata=? WHERE id=?', (json.dumps({**meta, 'files': [{'name': f['name'], 'type': f['type']} for f in kept]}), cursor.lastrowid))
-            db.execute('UPDATE suggestions SET origin=?,owner_words=?,deliver_after=NULL WHERE id=?', ('owner', words, sid))
+            db.execute('UPDATE suggestions SET origin=?,owner_words=?,deliver_after=NULL,due_at=? WHERE id=?', ('owner', words, due_at, sid))
             db.execute("UPDATE deliveries SET status='not_sent',updated_at=? WHERE suggestion_id=?", (stamp, sid))
         return {'id': sid, 'status': saved['status'], 'title': title, 'event_id': cursor.lastrowid, **({'files': kept} if kept else {})}
 
@@ -6514,6 +6517,7 @@ class Store:
             elif title and row['title_source'] == 'user':
                 db.execute('UPDATE suggestions SET title_suggested=? WHERE id=?', (title[:300], suggestion_id))  # their title stays; Reset gets this one
             draft_saved(db,suggestion_id,next_action)
+            reply_lead(db,suggestion_id,next_action)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             db.execute("UPDATE preparations SET status='done',updated_at=?,error=NULL,reason=NULL WHERE suggestion_id=?",(now(),suggestion_id))
             if (outcome or {}).get('state')=='snoozed':
@@ -6920,11 +6924,12 @@ class Store:
             # Written requests belong on the card too, even after preparation
             # or a later button click, and beyond the recent-feedback limit.
             for suggestion in cards:
-                if suggestion['status'] not in ('completed', 'rejected'):  # who it's about, to rank open cards by
-                    try:
-                        suggestion['people'], suggestion['weight'] = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'))
-                    except (sqlite3.Error, ValueError, TypeError):
-                        pass
+                try:  # who it's about (its chip, also on a done to-do), and their weight to rank open cards by
+                    suggestion['people'], weight = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'))
+                    if suggestion['status'] not in ('completed', 'rejected'):
+                        suggestion['weight'] = weight
+                except (sqlite3.Error, ValueError, TypeError):
+                    pass
                 if suggestion.get('project'):  # its project's page, for the chip on the to-do
                     try:
                         suggestion['project_node'] = graph.card_project_view(db, suggestion['project'])
@@ -8242,6 +8247,8 @@ SOURCE_KIND['fleet.request'] = 'Fleet'
 SOURCE_KIND['fleet.email'] = 'email'  # a copy a teammate's handoff carried (fleet_requests.handoff_sources)
 SOURCE_KIND['owner.card'] = 'note'  # a card the owner made themselves (New card): their own words
 SOURCE_KIND['fleet.message'] = 'message'
+# Email, whatever brought it in: what New to-do's Email pill searches (api/events?kind=email)
+EMAIL_KINDS = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'fleet.email'})
 
 
 AGENT_DB = Path.home() / '.openclaw/agents/main/agent/openclaw-agent.sqlite'
@@ -9102,6 +9109,49 @@ KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting'
 NOT_A_PERSON = re.compile(r'(?i)^(?:no-?reply|do-?not-?reply|mailer-daemon|postmaster|notifications?|bounces?)[@+.-]')
 
 
+def reply_to_newest(rows, value):
+    """A reply drafted to an older email of the thread answers its newest one (what Reply does in a mail app), so
+    the draft and the to-do's source are the message it really answers. rows: the to-do's emails, newest first."""
+    known = []
+    for row in rows:
+        try:
+            m = json.loads(row['metadata']) if isinstance(row['metadata'], str) else row['metadata']
+        except ValueError:
+            continue
+        if m.get('message-id') and m.get('thread_id'):
+            known.append((m['thread_id'], str(m['message-id']).strip()))
+    def fix(item):
+        if not isinstance(item, dict) or item.get('kind') != 'email' or not isinstance(item.get('in_reply_to'), str):
+            return item
+        thread = next((t for t, mid in known if mid == item['in_reply_to'].strip()), None)
+        newest = next((mid for t, mid in known if t == thread), None) if thread and item.get('thread_id', thread) == thread else None
+        if not newest or newest == item['in_reply_to'].strip():
+            return item
+        refs = str(item.get('references') or item['in_reply_to']).split()
+        return {**item, 'in_reply_to': newest, 'references': ' '.join(refs + ([newest] if newest not in refs else []))}
+    if isinstance(value, list):
+        return [fix(x) for x in value]
+    if isinstance(value, dict) and isinstance(value.get('actions'), list):
+        return {**value, 'actions': [fix(x) for x in value['actions']]}
+    return fix(value)
+
+
+def reply_lead(db, suggestion_id, next_action):
+    """The email a ready reply answers leads the to-do's evidence, so its source line and Read email open that one."""
+    target = next((a['in_reply_to'] for a in next_actions.actions(next_action) if a.get('kind') == 'email' and a.get('in_reply_to')), None)
+    row = target and db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    if not row:
+        return
+    ids = json.loads(row['event_ids'] or '[]')
+    rows = {r['id']: dict(r) for r in db.execute("SELECT e.* FROM events e JOIN json_each(?) ids ON ids.value=e.id", (row['event_ids'],))}
+    lead = next((i for i in ids if i in rows and rows[i]['kind'] == 'gmail.message'
+                 and str(json.loads(rows[i]['metadata'] or '{}').get('message-id') or '').strip() == target.strip()), None)
+    if lead is None or ids[0] == lead:
+        return
+    ids = [lead] + [i for i in ids if i != lead]
+    db.execute('UPDATE suggestions SET event_ids=?,source_line=? WHERE id=?', (encoded(ids), source_line([rows[i] for i in ids if i in rows]), suggestion_id))
+
+
 def thread_recipients(rows, own):
     """Addresses a reply could go to, from the task's own emails: Reply-To, From, To, Cc (newest first).
 
@@ -9219,6 +9269,30 @@ def promise_home(db, promise):
     return card if card and not card['dedupe_key'].startswith('promise:') else None
 
 
+def owner_last_word(db, watch, owner_slack_ids=()):
+    """The owner's own latest message in the conversation someone else's promise was made in, after it: what a "Waiting
+    on" to-do rests on ("I wrote them last"), so the to-do leads with it and its source opens it. None when they haven't
+    written there since."""
+    if not isinstance(watch, dict) or not watch.get('since') or not watch.get('account_id'):
+        return None
+    found = None
+    for e in db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? '
+                        'AND occurred_at<=? AND deleted=0 ORDER BY occurred_at,id', (watch['account_id'], watch['kind'], watch['since'], now())):
+        e = dict(e)
+        m = json.loads(e['metadata'] or '{}')
+        if not own_message(e, owner_slack_ids):
+            continue
+        if watch['kind'] == 'gmail.message':
+            same = bool(watch.get('thread_id')) and m.get('thread_id') == watch['thread_id']
+        elif watch['kind'] == 'slack.message':
+            same = bool(watch.get('channel_id')) and m.get('channel_id') == watch['channel_id']
+        else:
+            same = bool(watch.get('conversation')) and (m.get('chat_id') or m.get('conversation_id')) == watch['conversation']
+        if same:
+            found = e
+    return found
+
+
 def promise_closed_at(db, card):
     """When a closed to-do was last marked done or not needed."""
     return db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('complete','reject')", (card['id'],)).fetchone()[0]
@@ -9254,7 +9328,22 @@ def source_line(rows):
         return None
     first = rows[0]  # The reviewer's main evidence (callers keep its order).
     more = [r for r in rows[1:] if r['kind'] != 'fleet.request']  # a Fleet request's own event is the card's text, not another source
-    return 'Source: ' + source_text(first) + (f' (+{len(more)} more)' if more else '')
+    if first['kind'] != 'slack.message' and own_message(first):
+        # The owner's own message (a "Waiting on" to-do leads with it): who it went to, by the name their messages carry
+        m = first['metadata'] if isinstance(first['metadata'], dict) else json.loads(first['metadata'] or '{}')
+        when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()))
+        names = {}
+        for r in rows:
+            rm = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+            shown = re.sub(r'\s*<[^>]+>', '', str(rm.get('from') or '')).strip().strip('"')
+            if _address(rm.get('from')) and shown and '@' not in shown:
+                names[_address(rm.get('from'))] = shown
+        to = _address(m.get('to'))
+        them = (names.get(to) or re.sub(r'\s*<[^>]+>', '', str(m.get('to') or '').split(',')[0]).strip().strip('"') or to) if to else m.get('chat_name')
+        line = source_kind(first['kind']) + (f' to {them}' if them else '') + f' · {when}'
+    else:
+        line = source_text(first)
+    return 'Source: ' + line + (f' (+{len(more)} more)' if more else '')
 
 
 def source_text(row):
@@ -12331,11 +12420,15 @@ class App:
             return {**result, 'semantic': semantic}
         if name == 'events' and args.get('semantic') and str(args.get('query') or '').strip() and args.get('event_ids') is None and embeddings.settings(self.config):
             # Meaning and keywords fused, best first; the plain keyword search stays the default.
-            found, _ = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40))
+            # The dashboard waits for it: a slow embedding server falls back to keywords in seconds, not minutes.
+            found, _ = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40), timeout=8 if args.get('full') else 30)
             order = [i for i, _ in found]
             args = {**args, 'event_ids': order, 'query': ''}
         if name == 'events':
-            rows = self.store.events(selected, args.get('query', ''), args.get('limit', 40), event_ids=args.get('event_ids'))
+            kinds = args.get('kinds')
+            if kinds is not None and not (isinstance(kinds, list) and all(isinstance(k, str) and re.fullmatch(r'[a-z_]+\.[a-z_]+', k) for k in kinds)):
+                raise ValueError('kinds is a list of event kinds')
+            rows = self.store.events(selected, args.get('query', ''), args.get('limit', 40), event_ids=args.get('event_ids'), kinds=kinds)
             if args.get('semantic') and args.get('event_ids') is not None:
                 rows.sort(key=lambda r: args['event_ids'].index(r['id']) if r['id'] in args['event_ids'] else 0)
             # The CLI reads whole rows; agent tool results must stay under OpenClaw's size cut.
@@ -12445,6 +12538,8 @@ class App:
             with self.store.connect() as db:
                 emails=db.execute("SELECT e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='gmail.message' ORDER BY e.occurred_at DESC",(row['event_ids'],)).fetchall()
             options=thread_recipients(emails,[a.get('email','') for a in self.config['accounts']])
+            for key in ('next_actions','next_action'):
+                if args.get(key):args={**args,key:reply_to_newest(emails,args[key])}
             with self.store.connect() as db:
                 threads={m['conversation_id']:m.get('chat_name') or 'LinkedIn conversation' for m in (json.loads(r[0]) for r in db.execute(
                     "SELECT e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='linkedin.message' ORDER BY e.occurred_at",(row['event_ids'],)))}
@@ -13442,7 +13537,7 @@ class App:
 
     def new_card(self, args):
         """New card: what the owner typed, with optional Work or Personal, a due date (YYYY-MM-DD; the dashboard reads
-        "Friday" or "in 2 weeks" into one), people, organizations or a project from the Graph, and emails to attach.
+        "Friday" or "in 2 weeks" into one) and, when the owner gave a time ("15:00", "in 2 hours"), due_at, people, organizations or a project from the Graph, and emails to attach.
         It is a normal card (Store.owner_card); the next review fills it in."""
         accounts = self.config.get('accounts', [])
         if not accounts:
@@ -13478,11 +13573,22 @@ class App:
         account = (work_ids[0] if scope == 'work' else personal_ids[0] if scope == 'personal'
                    else found[attach[0]] if attach else accounts[0]['id'])
         work = any(a['id'] == account and str(a.get('boundary') or '').startswith('work:') for a in accounts)
+        due, due_at = args.get('due') or None, args.get('due_at') or None
+        try:  # a day (the owner's own calendar day), and a moment when they gave a time ("15:00", "in 2 hours")
+            due = due and dt.date.fromisoformat(str(due)).isoformat()
+            when = due_at and dt.datetime.fromisoformat(str(due_at))
+        except ValueError:
+            raise ValueError('due is YYYY-MM-DD and due_at a time with its offset') from None
+        if when and when.tzinfo is None:
+            raise ValueError('due_at needs its offset')
+        due_at = when and when.astimezone(dt.timezone.utc).isoformat(timespec='minutes')
+        if due_at and not due:
+            raise ValueError('due_at goes with due, its day')
         files = args.get('files') or []
         if files and not isinstance(files, list):
             raise ValueError('files is a list of file ids')
-        saved = self.store.owner_card(args.get('text'), account, work=work, due=args.get('due') or None, about=about, attach=attach, project=project,
-                                      files=('new:' + str(args.get('draft') or ''), files) if files else None)
+        saved = self.store.owner_card(args.get('text'), account, work=work, due=due, about=about, attach=attach, project=project,
+                                      files=('new:' + str(args.get('draft') or ''), files) if files else None, due_at=due_at)
         if about and getattr(self, 'graph_dirty', None):
             self.graph_dirty.set()  # the card shows on their Graph page after the next build
         return saved
@@ -13629,6 +13735,14 @@ class App:
             return done
         if name == 'fleet_handoff_mine':  # Do it myself, on a card a teammate handed back
             return self.fleet.handoff_mine(str(args.get('suggestion_id') or ''))
+        if name == 'fleet_handoff_take_back':  # Take it back, while a teammate still has it: the owner's again, back from Later
+            card = str(args.get('suggestion_id') or '')
+            done = self.fleet.take_back(card)
+            with self.store.connect() as db:
+                row = db.execute('SELECT status FROM suggestions WHERE id=?', (card,)).fetchone()
+            if row and row['status'] == 'snoozed':
+                self.store.decide(card, 'accept', '', 'fleet-take-back-' + secrets.token_hex(6), 'dashboard')
+            return done
         if name == 'fleet_split':  # send a follow-up split as the owner filled it in
             return self.fleet.send_split(str(args.get('id') or ''), args.get('items'))
         if name == 'fleet_split_dismiss':
@@ -14248,9 +14362,13 @@ class App:
             promise_logged(_db, p['id'], 'carded', 'closed with its to-do')
             return {'id': home['id'], 'status': home['status'], 'duplicate': True}
         ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)))
+        # Waiting on them: when the owner wrote there since (a reply, a nudge), that message leads, so the to-do's source
+        # is what it waits on; their promise comes second.
+        last = owner_last_word(_db, json.loads(p["watch"]), self.store.owner_user_ids) if p['direction'] == 'theirs' and p.get('watch') else None
+        evidence = [last['id'], p['event_id']] if last else [p['event_id']]
         # A closed to-do on the same matter comes back with the promise (one to-do per matter): theirs came due, or the
         # owner promised more after closing it.
-        saved = self.store.suggest('promise:%d' % p['id'], title[:90], body[:700], [p['event_id']], 'now', self.config.get('digest_at', '08:30'),
+        saved = self.store.suggest('promise:%d' % p['id'], title[:90], body[:700], evidence, 'now', self.config.get('digest_at', '08:30'),
                                    work=self.is_work([p['account_id']]), due=p['due'], ahead=ahead, _db=_db, owner_step=bool(p.get('owner_step')),
                                    **({'card_id': home['id'], 'match': True, 'reopen': 'due'} if home is not None else {}))
         with contextlib.nullcontext(_db) as db:
@@ -16111,10 +16229,10 @@ class App:
             except Exception as error:
                 LOG.error('embeddings error=%s',error if isinstance(error,embeddings.EmbeddingError) else type(error).__name__);wait=300
 
-    def related(self, accounts, event_ids=(), query='', limit=8, exclude=()):
+    def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30):
         """([(event_id, similarity)], semantic) within the given accounts. With the embedding server
-        down a query still gets keyword matches."""
-        try:return embeddings.related(self.store.connect,embeddings.settings(self.config),accounts,event_ids,query,limit,exclude=exclude),True
+        down (or slower than `timeout` seconds) a query still gets keyword matches."""
+        try:return embeddings.related(self.store.connect,embeddings.settings(self.config),accounts,event_ids,query,limit,exclude=exclude,timeout=timeout),True
         except embeddings.EmbeddingError as error:
             LOG.error('related error=%s',error)
             if not query.strip():return [],False
@@ -17384,8 +17502,11 @@ class App:
                     args = urllib.parse.parse_qs(path.query)
                     try:
                         query = args.get('q', [''])[0]
-                        # With words, search by meaning and keywords together; "all" searches every account.
-                        self.output(200, app.action('events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()), 'full': True}))
+                        # With words, search by meaning and keywords together; "all" searches every account. kind=email:
+                        # emails only, by keywords (New to-do's Email pill: subjects and senders, at once).
+                        email = args.get('kind', [''])[0] == 'email'
+                        self.output(200, app.action('events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
+                                                               'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})}))
                     except (ValueError, sqlite3.OperationalError):
                         self.output(400, {'error': 'Select accounts and use a valid search'})
                 elif path.path == '/api/account':

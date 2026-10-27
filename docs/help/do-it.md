@@ -12,8 +12,10 @@ order: 2
 
 ## Nothing goes out before your yes
 
-- A reply comes back as a draft. **Review and send** opens a preview; it only goes out when you press **Send now**.
-- **Edit** in the preview changes the text first. It shows plain text: a link reads as its words with the address in brackets, and goes out as a link again.
+- A reply comes back as a draft. **Review and send** opens it ready to edit; it only goes out when you press **Send now**.
+- The text is plain: a link reads as its words with the address in brackets, and goes out as a link again.
+- **Ask for changes** in the same window: say what to change and your Machine redoes the draft.
+- A reply answers the newest email of its thread, and the to-do's source opens that email.
 - A step that commits something, like submit, pay or book, stops and waits for your confirm.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
 

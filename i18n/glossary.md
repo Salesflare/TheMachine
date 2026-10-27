@@ -52,6 +52,7 @@ English strings the check skips, with why:
 | English | nl | fr | de | es | it | pt-BR |
 |---|---|---|---|---| --- | --- |
 | Done (a to-do) | Gedaan | Fait | Erledigt | Hecho | Fatto | Feito |
+| Due (a to-do's date) | Deadline (never "Te doen": that means to do) | Échéance | Fällig | Vence | Scadenza | Vence, Prazo |
 | Do it | Doe het | Faire | Ausführen | Hazlo | Fallo | Fazer |
 | Work / Personal | Werk / Privé | Travail / Perso | Arbeit / Privat | Trabajo / Personal | Lavoro / Personale | Trabalho / Pessoal |
 | People / Organizations / Projects | Personen / Organisaties / Projecten | Personnes / Organisations / Projets | Personen / Organisationen / Projekte | Personas / Organizaciones / Proyectos | Persone / Organizzazioni / Progetti | Pessoas / Organizações / Projetos |

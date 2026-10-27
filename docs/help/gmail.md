@@ -15,7 +15,7 @@ Promotions, newsletters, Updates and Forums mail get a quick look first: sender,
 
 ## What it can send
 
-An email from a to-do, and only after you approve it. **Do it** prepares a draft; **Review and send** opens a preview, and nothing goes out until you press **Send now**. **Sign in with Google** asks Google for sending too. With your own app on your own computer, the sign-in is read-only until you add sending yourself.
+An email from a to-do, and only after you approve it. **Do it** prepares a draft; **Review and send** opens it ready to edit, and nothing goes out until you press **Send now**. **Sign in with Google** asks Google for sending too. With your own app on your own computer, the sign-in is read-only until you add sending yourself.
 
 ## Connect it
 

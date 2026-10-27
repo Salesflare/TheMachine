@@ -90,7 +90,7 @@ default, Always accept, Never), and nothing happens on your side until you accep
    <teammate> yet · Check in", which opens its chat. A card that came back early by the older rule goes back to Later
    by itself while they still haven't answered. Once they accept (or mark it done), it is marked done for you, still saying to whom (Undo
    brings it back); if they decline, it is back in Ready, saying "<teammate> declined: <their reason>", with **Do it
-   myself**, **Hand to someone else** and **Mark done**. Decline asks "Why? (optional)" with quick picks (Not mine,
+   myself**, **Hand off to someone else** and **Mark done**. Decline asks "Why? (optional)" with quick picks (Not mine,
    Already done, No time this week); **Accept with a note** (under More) adds a short note too. Only the sender sees it,
    sealed like the answer. A card handed to you can't be handed straight back to whoever gave it; to others it can.
    To hand it to someone else while the first teammate still has it, say so in its chat: the new handoff text waits on

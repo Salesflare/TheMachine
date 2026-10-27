@@ -11,7 +11,7 @@ const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf
 const now=new Date().toISOString(),posts=[];
 const BODY='Hi Noor,\n\nThe price is **€29** a seat. See [the pricing page](https://example.com/pricing).\n\nAlex';
 const cards=[{id:'r1',title:'Send Noor the pricing',body:'Draft ready.',status:'prepared',scope:'work',created_at:now,preparation_status:'done',event_ids:[2],
-  people:[{id:'email:noor@example.com',name:'Noor Haddad'}],
+  people:[{id:'email:noor@example.com',name:'Noor Haddad',org:{id:'org:example.com',name:'Example Co'}}],
   next_actions:[{kind:'email',revision:'v1',label:'Send to Noor',to:['noor@example.com'],to_name:'Noor',from:'alex@example.com',subject:'Pricing',body:BODY}]},
  {id:'k1',title:'Fix the export',body:'Kim has it.',status:'snoozed',scope:'work',created_at:now,event_ids:[3],snoozed_until:new Date(Date.now()+3*864e5).toISOString(),
   fleet_handoff:{name:'Kim Lee',stage:'asked'},handoff_wait:{name:'Kim Lee'}},
@@ -58,27 +58,45 @@ try{
   await send.click();await page.locator('#send-dialog[open]').waitFor();
   assert.equal(await page.locator('#send-preview a').getAttribute('href'),'https://example.com/pricing');
   assert.doesNotMatch(await page.locator('#send-preview').innerText(),/\]\(|\[the/);
-  await page.locator('#send-edit').click();
+  // Review and send opens in the editor, with Ask for changes beside Send now
+  assert.ok(await page.locator('#send-body').isVisible(),'the draft opens ready to edit');
+  assert.ok(await page.locator('#send-ask-open').isVisible(),'Ask for changes is in the dialog');
+  // Opening it sends nothing: no confirm_action and no "Sending" toast until Send now
+  assert.equal(posts.filter(p=>p.action==='confirm_action'||p.action==='revise_draft').length,0,'nothing is sent before Send now');
+  assert.equal(await page.locator('#toast.show',{hasText:'Sending your approved draft'}).count(),0);await shot(page,'send-edit-first',width);
   const edited=await page.locator('#send-body').inputValue();
   assert.equal(edited,'Hi Noor,\n\nThe price is €29 a seat. See the pricing page (https://example.com/pricing).\n\nAlex');
   // Untouched: sent as drafted, no revision
   await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
   assert.equal(posts.filter(p=>p.action==='revise_draft').length,0);assert.equal(posts.filter(p=>p.action==='confirm_action').at(-1).revision,'v1');
   // Edited: the link goes back as a link
-  await page.locator('#task-r1 [data-smart="v1"]').first().click();await page.locator('#send-dialog[open]').waitFor();await page.locator('#send-edit').click();
+  await page.locator('#task-r1 [data-smart="v1"]').first().click();await page.locator('#send-dialog[open]').waitFor();
   await page.locator('#send-body').fill(edited.replace('Alex','Thanks,\nAlex'));await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
   assert.equal(posts.filter(p=>p.action==='revise_draft').at(-1).body,'Hi Noor,\n\nThe price is €29 a seat. See [the pricing page](https://example.com/pricing).\n\nThanks,\nAlex');
-  // Who it is about: a chip that opens their page
-  const who=r1.locator('a.chip.who');
+  // and what is sent is exactly the edited text: the revision saved from it, then Send now confirms that revision
+  {const i=posts.findLastIndex(p=>p.action==='revise_draft'),j=posts.findLastIndex(p=>p.action==='confirm_action');assert.ok(i>=0&&j===i+1,'revise then confirm');assert.equal(posts[j].revision,'v2')}
+  // Ask for changes inside the dialog: the instruction saves as the to-do's Change, and the dialog closes
+  await page.locator('#task-r1 [data-smart="v1"]').first().click();await page.locator('#send-dialog[open]').waitFor();
+  await page.locator('#send-ask-open').click();await page.locator('#send-ask-text').fill('Make it shorter');
+  await shot(page,'send-ask',width);
+  await page.locator('#send-ask-save').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
+  const asked=posts.filter(p=>p.action==='decide').at(-1);assert.equal(asked.choice,'other');assert.equal(asked.feedback,'Make it shorter');
+  // Who it is about: a chip that opens their page, and their organization's
+  const who=r1.locator('a.chip.who:not(.org)');
   assert.equal(await who.getAttribute('href'),'#graph/'+encodeURIComponent('email:noor@example.com'));
-  assert.equal((await who.innerText()).trim(),width>600?'Noor Haddad':'Noor');
-  // A teammate has it: Hand to someone else, under More, takes it back from them
+  assert.equal((await who.first().innerText()).trim(),width>600?'Noor Haddad':'Noor');
+  assert.equal(await r1.locator('a.chip.who.org').getAttribute('href'),'#graph/'+encodeURIComponent('org:example.com'));
+  assert.equal((await r1.locator('a.chip.who.org').innerText()).trim(),'Example Co');
+  // A teammate has it: one state (With Kim · waiting), Take it back and Hand off to someone else in sight
   const k1=page.locator('#task-k1');
   if(!await k1.isVisible())await page.locator('#later-list>summary').click();await k1.waitFor();
-  await k1.locator('.more-actions>summary').click();
-  const re=k1.locator('.more-menu [data-fleet-handoff]');assert.equal(await re.innerText(),'Hand to someone else');
+  assert.match(await k1.locator('.note.fleet').innerText(),/With Kim · waiting/);
+  assert.equal(await k1.locator('.actions>[data-handoff-take-back]').innerText(),'Take it back');
+  const re=k1.locator('.actions>[data-fleet-handoff]');assert.equal(await re.innerText(),'Hand off to someone else');
+  await k1.locator('[data-handoff-take-back]').click();await page.waitForFunction(()=>!document.querySelector('[data-handoff-take-back]:disabled'));
+  assert.deepEqual(posts.filter(p=>p.action==='fleet_handoff_take_back').at(-1),{action:'fleet_handoff_take_back',suggestion_id:'k1'});
   await re.click();const form=k1.locator('.fleet-handoff-form');await form.waitFor();
-  await form.locator('input[value="f1|m2"]').check({force:true});
+  assert.ok(await form.locator('input[value="f1|m2"]').isChecked(),'the form starts on someone who does not have it yet');
   await k1.getByText('Take it back from Kim').waitFor();
   assert.ok(await k1.locator('input[name="replace"]').isChecked());await k1.scrollIntoViewIfNeeded();await shot(page,'reassign',width);
   // Preparing: it stays in its section, and its steps keep one height from the start

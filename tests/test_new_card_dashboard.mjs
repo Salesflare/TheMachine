@@ -26,7 +26,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify({found:[{id:'email:pat@acme.example',kind:'person',name:'Pat Doe',ids:['pat@acme.example']},{id:'org:acme.example',kind:'org',name:'Acme',domain:'acme.example'}]}));return}
- if(url.pathname==='/api/events'){res.end(JSON.stringify([{id:7,kind:'gmail.message',title:'Contract draft',metadata:{from:'Sam Lee <sam@client.example>'},body:''},{id:8,kind:'calendar.event',title:'Contract call',metadata:{},body:''}]));return}
+ if(url.pathname==='/api/events'){const all=[{id:7,kind:'gmail.message',title:'Contract draft',metadata:{from:'Sam Lee <sam@client.example>'},body:''},{id:8,kind:'calendar.event',title:'Contract call',metadata:{},body:''},{id:9,kind:'slack.message',title:'contract?',metadata:{},body:''}];
+  res.end(JSON.stringify(url.searchParams.get('kind')==='email'?all.filter(e=>e.kind==='gmail.message'):all));return}  // the server filters: kind=email
  if(url.pathname==='/api/action'){const r=JSON.parse(body);if(r.action!=='card_chat')actions.push(r);
   if(r.action==='card_new'){const c={id:'ab'.repeat(8),title:r.args.text.slice(0,90),body:'',status:'pending',scope:r.args.scope||'work',created_at:now,event_ids:[9],origin:'owner',owner_words:r.args.text,due:r.args.due};cards.unshift(c);res.end(JSON.stringify({id:c.id,status:'pending',title:c.title}));return}
   if(r.action==='card_rename'){if(failRename){res.statusCode=400;res.end(JSON.stringify({error:'Keep the title under 200 characters'}));return}
@@ -42,6 +43,7 @@ const open=async(width,height)=>{const mobile=width<600;reset();
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+id(1)).waitFor();return {context,page}};
 const sent=name=>actions.filter(a=>a.action===name);
+const shot=async(page,what)=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/after-${what}-${page.viewportSize().width}.png`})};
 const until=async(f,what)=>{for(let i=0;i<50;i++){if(await f())return;await new Promise(r=>setTimeout(r,60))}assert.fail('timed out: '+what)};
 const renameTo=async(page,text)=>{const input=page.locator('.rename-box input');await input.waitFor();await input.fill(text);await input.press('Enter');await page.locator('.rename-box').waitFor({state:'detached'})};
 try{
@@ -50,6 +52,12 @@ try{
  {const {context,page}=await open(1440,900);
   const due=await page.evaluate(()=>{const t=new Date(2026,9,22),f=x=>{const d=ncDue(x,t);return d?ncISO(d):null};return ['friday','Thursday','in 2 weeks','tomorrow','24 Oct','oct 2','24/10','2026-11-03','next week','in a month','by friday','soonish','next Fri','3 Nov','fri next week','next week monday'].map(f)});
   assert.deepEqual(due,['2026-10-23','2026-10-29','2026-11-05','2026-10-23','2026-10-24','2027-10-02','2026-10-24','2026-11-03','2026-10-26','2026-11-22','2026-10-23',null,'2026-10-23','2026-11-03','2026-10-30','2026-10-26']);
+  // Times too, from Thursday 10:30, and the same in the app's other languages; a bare "9" needs a day
+  const timed=await page.evaluate(()=>{const t=new Date(2026,9,22,10,30),p=n=>String(n).padStart(2,'0'),f=x=>{const d=ncDue(x,t);return d?ncISO(d)+(d.timed?' '+p(d.getHours())+':'+p(d.getMinutes()):''):null};
+   return ['in 2 hours','15:00','2pm','now','tomorrow 9','fri at 3pm','9am','in 30 min','tonight','9','over 2 uur','morgen 9u','nu','vrijdag','morgen om 15:30','demain 14h','dans 2 heures','morgen um 9 Uhr','mañana a las 9','en 2 horas','domani alle 15',"tra un'ora",'amanhã às 9','24 oktober'].map(f)});
+  assert.deepEqual(timed,['2026-10-22 12:30','2026-10-22 15:00','2026-10-22 14:00','2026-10-22 10:30','2026-10-23 09:00','2026-10-23 15:00','2026-10-23 09:00','2026-10-22 11:00','2026-10-22 18:00',null,
+   '2026-10-22 12:30','2026-10-23 09:00','2026-10-22 10:30','2026-10-23','2026-10-23 15:30','2026-10-23 14:00','2026-10-22 12:30','2026-10-23 09:00','2026-10-23 09:00','2026-10-22 12:30','2026-10-23 15:00','2026-10-22 11:30','2026-10-23 09:00','2026-10-24']);
+  assert.equal(await page.evaluate(()=>{const d=new Date(2026,9,22,15,0);return ncAt(d).slice(0,19)}),'2026-10-22T15:00:00');
   await context.close()}
  {const {context,page}=await open(1440,900);
   // The row sits under Find a to-do, above the tabs; the phone's "+" is not shown on a computer
@@ -62,24 +70,30 @@ try{
   await page.locator('#nc-text').type('Send Pat the signed contract');await page.keyboard.press('Shift+Enter');await page.keyboard.type('and the deck');
   await page.locator('[data-nc="work"]').click();assert.equal(await page.locator('[data-nc="work"]').getAttribute('aria-pressed'),'true');
   await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('friday');assert.match(await page.locator('#nc-read').textContent(),/^Due Fri, \w{3} \d+ Enter sets it$/);
-  await page.locator('#nc-find').fill('whenever');assert.equal(await page.locator('#nc-read').textContent(),'I can’t read that date yet');
+  await page.locator('#nc-find').fill('whenever');assert.equal(await page.locator('#nc-read').textContent(),'I can’t read that yet. Try 15:00, in 2 hours or Friday.');
+  await page.locator('#nc-find').fill('15:00');assert.match(await page.locator('#nc-read').textContent(),/^Due \w{3}, \w{3} \d+ 15:00 Enter sets it$/);
   await page.locator('#nc-find').fill('friday');await page.locator('#nc-find').press('Enter');assert.match(await page.locator('#nc-chips').textContent(),/Due Fri/);
   // A tap on the read date sets it too; the calendar button picks one
   await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('3 Nov');await page.locator('#nc-read [data-nc-set]').click();
   assert.match(await page.locator('#nc-chips').textContent(),/Due Tue, Nov 3/);
-  await page.locator('[data-nc="due"]').click();assert.equal(await page.locator('#nc-pick input[type="date"]').count(),1,'a date picker');
+  // The calendar icon opens quick picks like Snooze's, and Choose date
+  await page.locator('[data-nc="due"]').click();await page.locator('#nc-cal').click();
+  assert.deepEqual(await page.locator('#nc-quick [data-nc-quick]').allInnerTexts(),['2 hours','Tomorrow · 9:00','3 days · 9:00','1 week · 9:00']);
+  await shot(page,'due-quick');
+  await page.locator('[data-nc-quick="tomorrow"]').click();assert.match(await page.locator('#nc-chips').textContent(),/Due \w{3}, \w{3} \d+ 09:00/);
+  await page.locator('[data-nc="due"]').click();await page.locator('#nc-cal').click();assert.equal(await page.locator('#nc-pick input[type="date"]').count(),1,'a date picker');
   {const d=new Date(Date.now()+10*864e5),iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
    await page.locator('#nc-date').fill(iso);assert.match(await page.locator('#nc-chips').textContent(),new RegExp('Due \\w{3}, \\w{3} '+d.getDate()+'\\b'))}
   await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('friday');await page.locator('#nc-find').press('Enter');
   await page.locator('[data-nc="about"]').click();await page.locator('#nc-find').fill('Pat');await page.locator('[data-nc-hit="0"]').waitFor();await page.locator('[data-nc-hit="0"]').click();
   await page.locator('[data-nc="attach"]').click();await page.locator('#nc-find').fill('contract');await page.locator('[data-nc-hit="0"]').waitFor();
-  assert.equal(await page.locator('[data-nc-hit]').count(),1,'only messages can be attached');await page.locator('#nc-find').press('Enter');
+  assert.equal(await page.locator('[data-nc-hit]').count(),1,'only emails can be attached (it asks for kind=email)');await page.locator('#nc-find').press('Enter');
   assert.match(await page.locator('#nc-chips').textContent(),/Pat Doe.*Contract draft/);
   assert.equal(actions.length,0,'nothing is saved before Enter');
   await page.locator('#nc-text').press('Enter');await dialog.waitFor({state:'hidden'});
   assert.equal(actions.length,1,'one action: card_new, and no send');const made=sent('card_new')[0].args;
   assert.equal(made.text,'Send Pat the signed contract\nand the deck');assert.equal(made.scope,'work');assert.deepEqual([made.about,made.attach],[['email:pat@acme.example'],[7]]);
-  assert.equal(new Date(made.due+'T12:00:00').getDay(),5,'due on a Friday');
+  assert.equal(new Date(made.due+'T12:00:00').getDay(),5,'due on a Friday');assert.equal(made.due_at,null,'a day, no time');
   // The fresh card shows like any other, with Added by you in quiet text
   const fresh=page.locator('#task-'+'ab'.repeat(8));await fresh.waitFor();assert.match(await fresh.locator('.meta-side').textContent(),/^Added by you/);
   assert.match(await fresh.locator('.actions').textContent(),/Do it/);

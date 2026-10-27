@@ -2105,11 +2105,12 @@ def card_people(db, event_ids, limit=3):
     if not ids:
         return [], 0.0
     marks = ','.join('?' for _ in ids)
-    rows = db.execute(f"SELECT DISTINCT n.id,n.name,n.strength,n.info,o.info org_info FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
+    rows = db.execute(f"SELECT DISTINCT n.id,n.name,n.strength,n.info,o.id org_id,o.name org_name,o.info org_info FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
                       f"LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({marks}) "
                       "ORDER BY n.strength DESC", ids).fetchall()
     people = [{'id': r['id'], 'name': r['name'], 'role': json.loads(r['info']).get('role'),
-               'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying'))} for r in rows]
+               'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
+               **({'org': {'id': r['org_id'], 'name': r['org_name']}} if r['org_id'] and r['org_name'] else {})} for r in rows]
     weight = max((r['strength'] + (2 if p['paying'] else 0) for r, p in zip(rows, people)), default=0.0)
     return people[:limit], round(weight, 3)
 
