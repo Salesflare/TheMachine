@@ -2,7 +2,18 @@
 
 Read-only: GET on the account, events and customer endpoints only. Never writes, refunds or retries.
 
-Config, with a restricted read-only key (Events, Customers, Account: Read) in a credential file:
+Signed in with Stripe (the easy way): the owner installs the control plane's Stripe App, which asks Stripe for read
+permissions only, from the setup page or Connections, + Add. Like Zoom (connectors/zoom.py), the refresh token lives on
+this Machine only, sealed in mail_grants.py, and is sent along to the broker for each access token (an hour). Stripe
+rolls it on every refresh: the broker passes the new one back and it is kept here.
+    {"id": "billing", "service": "stripe", "transport": "broker", "boundary": "work:Acme",
+     "stripe_account": "acct_...", "poll_seconds": 900}
+    "stripe_broker": {"url": "https://app.example.com/api/stripe/token"},
+    "credentials": {"stripe-broker": "~/.local/share/personal-assistant/google-broker"}
+A Work Fleet's admin can share it with the team (shared_connectors.py): their Machine sends fresh access tokens to
+teammates' Machines, which read it as a plain "api" account and never refresh it themselves.
+
+Or, with a restricted read-only key (Events, Customers, Account: Read) in a credential file:
     {"id": "billing", "service": "stripe", "transport": "api", "boundary": "work:Acme",
      "credential": "stripe", "stripe_account": "acct_...", "poll_seconds": 900}
 or through a Maton Stripe connection:
@@ -15,6 +26,7 @@ at or above this monthly value become events; smaller ones are routine.
 import datetime as dt
 import json
 import re
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -25,13 +37,92 @@ KINDS = {'stripe.event': 'Stripe'}
 SETUP = {'label': 'Stripe', 'what': 'Failed payments, disputes, churn and big new subscriptions.',
          'account': {'id': 'billing', 'service': 'stripe', 'transport': 'api', 'boundary': 'work', 'credential': 'stripe',
                      'poll_seconds': 900},
+         # On a hosted Machine its account page also offers Sign in with Stripe (the app The Machine), as well as pasting
+         'account_page': 'source-stripe',
          'note': 'Create a restricted key in Stripe with read access to Events, Customers and Account only.',
          'ask': [('stripe_account', 'Stripe account ID (acct_…)')],
          'secret': 'Restricted Stripe key (rk_…)',
-         'maton': 'Maton Stripe connection ID'}
+         'maton': 'Maton Stripe connection ID',
+         'hints': {'stripe_signin_expired': 'Stripe asks you to sign in again',
+                   'stripe:HTTP_401': 'Stripe turned the key down; sign in with Stripe again, or paste a new restricted key'}}
 TYPES = ('invoice.payment_failed', 'customer.subscription.deleted', 'customer.subscription.updated',
          'customer.subscription.created', 'charge.dispute.created')
 PATHS = ('v1/account', 'v1/events', 'v1/customers/')
+API = 'https://api.stripe.com/'
+_tokens = {}
+_lock = threading.Lock()
+
+
+def _key(account):
+    return str(account.get('stripe_account') or '').strip().lower()
+
+
+def broker_token(config, account, helpers, fresh=False, min_left=0):
+    """A short-lived access token for a signed-in Stripe account: (token, seconds left). Sends the sign-in kept here to
+    the broker and keeps the one Stripe rolled. min_left: a cached token with less time left is refreshed first."""
+    import mail_grants
+    key = _key(account)
+    if not key.startswith('acct_'):
+        raise helpers.SourceError('stripe_no_account')
+    with _lock:
+        hit = _tokens.get(key)
+        if hit and not fresh and hit[1] - time.monotonic() > max(0, min_left):
+            return hit[0], int(hit[1] - time.monotonic())
+        url = (config.get('stripe_broker') or {}).get('url')
+        if not url or not str(url).startswith('https://'):
+            raise helpers.SourceError('stripe_broker_not_configured')
+        try:
+            secret = helpers.credential(config, 'stripe-broker')
+        except Exception:
+            raise helpers.SourceError('stripe_broker_credential') from None
+        for attempt in (0, 1):
+            try:
+                kept = mail_grants.get(config, 'stripe', key)
+            except mail_grants.GrantError:
+                raise helpers.SourceError('stripe_signin_unreadable') from None
+            if not kept:
+                raise helpers.SourceError('stripe_signin_expired')
+            request = urllib.request.Request(url, method='POST', data=json.dumps({'email': key, 'refresh_token': kept}).encode(),
+                                             headers={'Authorization': 'Bearer ' + secret.strip(), 'Content-Type': 'application/json',
+                                                      'Accept': 'application/json'})
+            try:
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    answer = json.loads(response.read(200_000))
+                break
+            except urllib.error.HTTPError as error:
+                retry = error.headers.get('Retry-After', '') if error.headers else ''
+                error.close()
+                if error.code in (401, 404):
+                    try:
+                        moved = mail_grants.get(config, 'stripe', key) not in (None, kept)
+                    except mail_grants.GrantError:
+                        moved = False
+                    if moved and not attempt:
+                        continue  # another process (a check while connecting) rolled it just now: the newer one
+                    raise helpers.SourceError('stripe_signin_expired', error.code) from None
+                raise helpers.SourceError('stripe_broker', error.code, retry_after=int(retry) if retry.isdigit() else None) from None
+            except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+                raise helpers.SourceError('stripe_broker_unreachable') from None
+        access = answer.get('access_token') if isinstance(answer, dict) else None
+        if not isinstance(access, str) or not access:
+            raise helpers.SourceError('stripe_broker')
+        rotated = answer.get('refresh_token')
+        if isinstance(rotated, str) and rotated and rotated != kept:
+            mail_grants.rotate(config, 'stripe', key, kept, rotated)  # the one sent is spent now: only the new one works
+        left = max(0, int(answer.get('expires_in') or 0) - 120)
+        _tokens[key] = (access, time.monotonic() + left)
+        return access, left
+
+
+def share_token(config, account, helpers, min_left=0):
+    """What a Work Fleet admin's Machine sends its teammates for this account (shared_connectors.py): (token, seconds
+    it works for, None for a pasted key that lasts). A signed-in account's access token lasts an hour, so this Machine
+    sends a fresh one before the last one runs out; teammates never get the sign-in itself."""
+    if account.get('transport') == 'broker':
+        return broker_token(config, account, helpers, min_left=min_left)
+    if account.get('transport') == 'maton':
+        raise helpers.SourceError('stripe_maton_not_shared')
+    return Source(config, account, helpers).secret().strip(), None
 
 
 class Source:
@@ -51,34 +142,54 @@ class Source:
         return secret
 
     def get(self, path, params=None):
+        """One GET to Stripe's API (or through Maton). Never any other method, and only the paths in PATHS."""
         SourceError = self.helpers.SourceError
         if not path.startswith(PATHS):
             raise SourceError('stripe_path_not_allowed')
         maton = self.account.get('transport') == 'maton'
-        base = 'https://api.maton.ai/stripe/' if maton else 'https://api.stripe.com/'
-        headers = {'Authorization': 'Bearer ' + self.secret(), 'Accept': 'application/json'}
-        if maton:
-            headers['Maton-Connection'] = self.account['connection_id']
+        broker = self.account.get('transport') == 'broker'
+        base = 'https://api.maton.ai/stripe/' if maton else API
         url = base + path + ('?' + urllib.parse.urlencode(params, doseq=True) if params else '')
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=45) as response:
-                if maton and response.headers.get('Maton-Connection') != self.account['connection_id']:
-                    raise SourceError('connection_identity_mismatch')
-                return json.load(response)
-        except urllib.error.HTTPError as error:
-            retry = error.headers.get('Retry-After') if error.headers else None
-            raise SourceError('stripe', error.code, min(3600, max(60, int(retry))) if retry and retry.isdigit() else None) from None
-        except (urllib.error.URLError, TimeoutError, OSError) as error:
-            raise SourceError('network:' + type(error).__name__ + ':stripe_read') from None
-        except ValueError:
-            raise SourceError('stripe_invalid_json') from None
+        for attempt in (0, 1):
+            token = broker_token(self.config, self.account, self.helpers, fresh=bool(attempt))[0] if broker else self.secret()
+            headers = {'Authorization': 'Bearer ' + token, 'Accept': 'application/json'}
+            if maton:
+                headers['Maton-Connection'] = self.account['connection_id']
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, headers=headers, method='GET'), timeout=45) as response:
+                    if maton and response.headers.get('Maton-Connection') != self.account['connection_id']:
+                        raise SourceError('connection_identity_mismatch')
+                    return json.load(response)
+            except urllib.error.HTTPError as error:
+                retry = error.headers.get('Retry-After') if error.headers else None
+                error.close()
+                if broker and error.code == 401 and not attempt:
+                    continue  # the access token ran out early: one fresh one
+                raise SourceError('stripe', error.code, min(3600, max(60, int(retry))) if retry and retry.isdigit() else None) from None
+            except (urllib.error.URLError, TimeoutError, OSError) as error:
+                raise SourceError('network:' + type(error).__name__ + ':stripe_read') from None
+            except ValueError:
+                raise SourceError('stripe_invalid_json') from None
+        raise SourceError('stripe', 401)
 
     def verify(self):
-        """The key must belong to the configured Stripe account, not just any account."""
+        """The key must belong to the configured Stripe account, not just any account. A signed-in one's broker checks
+        that too, on every token (the account the sign-in was for); Stripe may not let an app read the account itself."""
         if not self.verified:
-            if self.get('v1/account').get('id') != self.account['stripe_account']:
+            try:
+                found = str(self.get('v1/account').get('id') or '')
+            except self.helpers.SourceError as error:
+                if error.status != 403 or self.account.get('transport') == 'api' and not self.account.get('shared'):
+                    raise
+                found = ''  # an app's token without account access: the broker or the Fleet grant named the account
+            if found and found.lower() != _key(self.account):
                 raise self.helpers.SourceError('account_identity_mismatch')
             self.verified = True
+
+    def connect(self):
+        """A shared Stripe token, checked before it is kept (shared_connectors.py): it reads this account."""
+        self.verify()
+        return self.account
 
     def customer(self, customer_id):
         if not isinstance(customer_id, str) or not customer_id.startswith('cus_'):

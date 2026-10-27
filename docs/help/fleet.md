@@ -53,6 +53,10 @@ In a Careful Fleet, asks wait for you in the Fleet tab under **Brief requests**:
 
 In a Work Fleet, client work is shared with your team, after you look it over. See [Team Graph](team-graph.md).
 
+## Shared connectors
+
+An owner or admin can connect Stripe or Intercom once and share it with the team, from the Fleet tab's **Shared connectors** box. Teammates' Machines read it, read only, and see who shared it. Only admins change or stop it. See [Stripe](stripe.md) and [Intercom](intercom.md).
+
 ## What your Machine answers
 
 Set it per Fleet, on the Sharing pane. See [Sharing rules](sharing-rules.md). **Settings** has a shortcut: **Fleet rules**.

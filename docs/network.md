@@ -52,7 +52,7 @@ its own implementation of the same standard algorithms.
 
 ## Shared connectors
 
-A Work Fleet's admins can share a connector (Intercom for now) with the Fleet, so the team's Machines read the same
+A Work Fleet's admins can share a connector (Intercom or Stripe) with the Fleet, so the team's Machines read the same
 customer conversations without anyone pasting a token. The token goes from Machine to Machine, sealed. The Network
 never has it, and never needs it.
 
@@ -76,6 +76,10 @@ never has it, and never needs it.
   Machine drops it when the Fleet stops showing it or is off. The remaining admins' Machines then show "<name> left
   <Fleet>. Replace the Intercom token so it stops working on their Machine." with a field for the new one; any admin can replace it, the new token goes
   to who stays, and every Machine drops the old one. Stop sharing on an admin's Fleet tab does the same for everyone.
+- **Stripe signed in with Sign in with Stripe** rolls its sign-in on every refresh, so the sign-in never leaves the
+  admin's Machine. That Machine sends teammates access tokens, an hour each, under the same grant, and a fresh one when
+  theirs has less than 20 minutes left. Nothing lasting goes out, so there is no token to replace when someone leaves:
+  theirs runs out within the hour. While the admin's Machine is off for over an hour, the team's Stripe pauses.
 - **Confirmed removal.** After a stop, each Machine that had the token says it deleted it (`op: dropped`, retried
   for a week). The Fleet page on the account says "Removed, confirmed" once all have; someone removed counts as
   confirmed once their Machine removed the work data and the token they had was replaced.

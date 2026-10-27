@@ -67,7 +67,7 @@ PLACEHOLDERS = {'email': 'alex@example.com', 'connection_id': '00000000-0000-000
                 'identity_sha256': 'sha256-of-your-linked-whatsapp-jid'}
 # Per-account identity: never copied when a new account starts from one you already have.
 IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'team_id', 'user_id', 'slack_host', 'node_id',
-            'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account',
+            'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account', 'account_name', 'shared',
             'exclude', 'excluded_terms', 'scope', 'browser_profile', 'browser_cdp', 'connected_at', 'boundary_by'}
 # The source is set up but can't serve right now (shared browser in use, rate limit): saved anyway, and the
 # collector's own retry reads it, instead of failing setup over a moment's contention.
@@ -687,6 +687,10 @@ def missing(config, account):
         if not (config.get('zoom_broker') or {}).get('url'):
             return 'zoom_broker url is not set'
         names.append('zoom-broker')
+    elif account.get('transport') == 'broker' and account.get('service') == 'stripe':
+        if not (config.get('stripe_broker') or {}).get('url'):
+            return 'stripe_broker url is not set'
+        names.append('stripe-broker')
     elif account.get('transport') == 'broker':
         if not (config.get('google_broker') or {}).get('url'):
             return 'google_broker url is not set'
@@ -1643,9 +1647,9 @@ def enable_replies(config_path, account_id, token):
     return admin, name
 
 
-# Google, Microsoft and Zoom signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
-GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',)}
-GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom'}
+# Google, Microsoft, Zoom and Stripe signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
+GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',), 'stripe': ('stripe',)}
+GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe'}
 DELIVERED = {'intercom', 'microsoft_docs', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
 
@@ -1729,7 +1733,8 @@ def connect_grant(config_path, provider, args):
     grant = args.get('grant') if isinstance(args.get('grant'), dict) else {}
     email = str(grant.get('email') or '').strip().lower()
     refresh = grant.get('refresh_token')
-    if (grant.get('provider') != provider or not re.fullmatch(r'[^@\s]{1,200}@[^@\s]{1,200}\.[^@\s]{2,63}', email)
+    shape = r'acct_[a-z0-9]{6,40}' if provider == 'stripe' else r'[^@\s]{1,200}@[^@\s]{1,200}\.[^@\s]{2,63}'  # Stripe: the account id
+    if (grant.get('provider') != provider or not re.fullmatch(shape, email)
             or not isinstance(refresh, str) or not 8 <= len(refresh) <= 4096):
         raise SetupError(f'No {name} sign-in came with it', 'sign in again from Connections, + Add')
     config = load(config_path)
@@ -1748,6 +1753,8 @@ def connect_grant(config_path, provider, args):
     config.setdefault('credentials', {})[provider + '-broker'] = device_token  # its own device token, as for the Network
     same = [a for a in config.get('accounts', []) if str(a.get('email', '')).lower() == email and a.get('boundary')]
     boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider == 'zoom' else 'personal'))
+    if provider == 'stripe':
+        return _connect_stripe_grant(config_path, config, email, refresh, previous)
     mail_grants.put(config, provider, email, refresh)
     checked = []
     try:
@@ -1826,6 +1833,34 @@ def connect_docs_grant(config_path, args):
             mail_grants.put(config, 'microsoft', email, previous)
         raise
     return {'ok': True, 'name': email}
+
+
+def _connect_stripe_grant(config_path, config, key, refresh, previous):
+    """connect_grant for Stripe: one account per Stripe account id (no address), checked with a real read first."""
+    import mail_grants
+    mail_grants.put(config, 'stripe', key, refresh)
+    try:
+        account = next((a for a in config.get('accounts', []) if a.get('service') == 'stripe' and not a.get('shared')
+                        and str(a.get('stripe_account', '')).lower() == key), None)
+        if account is None:
+            account = new_account(config, 'stripe', ui=AnswersUI({'part of your life': 'work', 'company': 'work'}))
+            account['boundary'] = account.get('boundary') or 'work'
+        account = {**account, 'stripe_account': key, 'transport': 'broker'}
+        for name in ('credential', 'credential_variable', 'connection_id', 'shared', 'account_name'):
+            account.pop(name, None)  # started from another Stripe account here: not its key, nor its Fleet share
+        error = check(config, account)
+        if error and not error.startswith(BUSY):
+            raise SetupError(f'Stripe for {key} did not check out ({error})', 'sign in again from Connections, + Add')
+        known = any(a.get('id') == account['id'] for a in config.get('accounts', []))
+        config['accounts'] = [account if a.get('id') == account['id'] else a for a in config.get('accounts', [])] + ([] if known else [account])
+        save(config_path, config)
+    except BaseException:
+        if previous:
+            mail_grants.put(config, 'stripe', key, previous)
+        else:
+            mail_grants.forget(config, 'stripe', key, revoke=False)
+        raise
+    return {'ok': True, 'name': account.get('account_name') or 'Stripe'}
 
 
 # ---------------------------------------------------------------- service, first sync

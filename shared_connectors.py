@@ -1,4 +1,4 @@
-"""Shared connectors: a Work Fleet's admin connects a source once (Intercom first) and teammates' Machines read it too,
+"""Shared connectors: a Work Fleet's admin connects a source once (Intercom, Stripe) and teammates' Machines read it too,
 without anyone seeing or pasting the token (docs/network.md, Shared connectors). Mixed into fleet.Fleet.
 
 How it goes:
@@ -16,6 +16,9 @@ How it goes:
 - Stopping, replacing or leaving: when the directory stops showing the share, or shows another grant, or the Fleet is
   gone, the account and its token file go. When someone who held it leaves, the admins' Machines ask their owners to
   replace the token in Intercom; the new token goes to the remaining recipients under a new grant.
+- Stripe signed in with Sign in with Stripe: its sign-in rolls on every refresh, so it stays on the admin's Machine. That
+  Machine sends access tokens (an hour each) under the same grant, a fresh one before the last runs out (RENEW_LEFT).
+  When that Machine is off for over an hour, teammates' Stripe pauses until it is back. Nothing lasting to replace.
 
 Read-only stays read-only: the shared account is the same connector, which never replies, assigns, closes, tags or sends.
 """
@@ -27,13 +30,21 @@ import logging
 import re
 import secrets
 import threading
+import time
 from pathlib import Path
 
 import fleet_trust as ft
 import network_crypto as nc
 
 LOG = logging.getLogger('personal-assistant')
-SHAREABLE = {'intercom': {'label': 'Intercom', 'fields': ('workspace_id', 'workspace_name', 'region', 'admin_id'), 'identity': 'workspace_id'}}
+# name: the field the Fleet tab shows. lapses: a signed-in Stripe account's token is an access token for an hour (its
+# sign-in rolls on every refresh, so it never leaves the admin's Machine): that Machine sends a fresh one before the last
+# one runs out (RENEW_LEFT), and a teammate who leaves keeps nothing that lasts, so there is no token to replace.
+SHAREABLE = {'intercom': {'label': 'Intercom', 'fields': ('workspace_id', 'workspace_name', 'region', 'admin_id'), 'identity': 'workspace_id',
+                          'name': 'workspace_name'},
+             'stripe': {'label': 'Stripe', 'fields': ('stripe_account', 'account_name'), 'identity': 'stripe_account', 'name': 'account_name'}}
+RENEW_LEFT = 20 * 60  # a lapsing token sent with less than this left is sent again, fresh
+FRESH_LEFT = 40 * 60  # and the fresh one has at least this left
 RESEND_SECONDS = 6 * 3600  # an unanswered send goes again after this (questions expire on the Network after 3 days)
 MAX_PROMPTS = 50
 SENDING_FOR = 900  # a round after a member OK that ran longer than this stopped (a restart): the next round sends it
@@ -63,6 +74,9 @@ class SharedConnectors:
     # soon(fn): runs fn after the request returns. The app runs it on its own thread; by itself (and in tests) at once.
     soon = staticmethod(lambda fn: fn())
     connector_profile = None
+    # share_token(service, account, min_left) -> (token, seconds it works, or None when it lasts): a signed-in account's
+    # fresh access token (connectors/stripe.py share_token), set by the app. Without it only a pasted token is shared.
+    share_token = None
 
     # -- state
     def _private(self):
@@ -110,6 +124,16 @@ class SharedConnectors:
             value = found.get(account['credential_variable'], '').strip().strip('"').strip("'")
         return value if TOKEN.fullmatch(value or '') else None
 
+    def _sendable(self, account, min_left=0):
+        """(token, seconds it works or None when it lasts) to send for this account: a pasted token as is, or a signed-in
+        account's fresh access token (share_token), never its sign-in."""
+        if account.get('transport') != 'broker':
+            return self._token(account), None
+        if not self.share_token:
+            return None, None
+        token, left = self.share_token(account['service'], account, min_left)
+        return (token, left) if token and TOKEN.fullmatch(token) else (None, None)
+
     def _state(self, fleet, service):
         return self.meta(f'shared:{fleet}:{service}', {}) or {}
 
@@ -139,7 +163,7 @@ class SharedConnectors:
         """Shares this Machine's connected account with one Work Fleet: every confirmed admin, and the members ticked."""
         account = next((a for a in self.config.get('accounts', []) if a.get('id') == account_id), None)
         if not account or account.get('service') not in SHAREABLE:
-            raise ValueError('Only a connected Intercom account can be shared')
+            raise ValueError('Only a connected Intercom or Stripe account can be shared')
         if isinstance(account.get('shared'), dict) and not account['shared'].get('origin'):
             raise ValueError('This account is shared with you; only an admin of that Fleet can share it')
         group = self._group(fleet)
@@ -153,9 +177,9 @@ class SharedConnectors:
         if self._held(fleet, service) and self._held(fleet, service) is not account:
             raise ValueError(f'{group.get("name") or "That Fleet"} already shares {SHAREABLE[service]["label"]}')
         identity = account.get(SHAREABLE[service]['identity'])
-        token = self._token(account)
+        token = self._sendable(account, FRESH_LEFT)[0]
         if not identity or not token:
-            raise ValueError('Connect it first, so its workspace is known')
+            raise ValueError('Connect it first, so its account is known')
         chosen = {str(m) for m in members or ()}
         approved = {}
         for m in group.get('members', []):
@@ -167,7 +191,7 @@ class SharedConnectors:
         grant_id = secrets.token_hex(16)
         stamp = _now()
         self.relay.call('POST', '/shared', {'op': 'set', 'fleet': fleet, 'service': service, 'grant': grant_id,
-                                            'workspace': str(identity), 'name': str(account.get('workspace_name') or identity)[:100]}, timeout=30)
+                                            'workspace': str(identity), 'name': str(account.get(SHAREABLE[service]['name']) or identity)[:100]}, timeout=30)
         shared = {'fleet': fleet, 'fleet_name': str(group.get('name') or '')[:80], 'service': service, 'grant': grant_id, 'at': stamp,
                   'by': me['member_id'], 'origin': True}
         self._save(lambda config: self._mark(config, account_id, shared))
@@ -341,7 +365,7 @@ class SharedConnectors:
         grant_id, stamp = secrets.token_hex(16), _now()
         identity = held.get(SHAREABLE[service]['identity'])
         self.relay.call('POST', '/shared', {'op': 'set', 'fleet': fleet, 'service': service, 'grant': grant_id, 'workspace': str(identity),
-                                            'name': str(held.get('workspace_name') or identity)[:100]}, timeout=30)
+                                            'name': str(held.get(SHAREABLE[service]['name']) or identity)[:100]}, timeout=30)
         shared = {**held['shared'], 'grant': grant_id, 'at': stamp, 'by': me['member_id']}
         self._save(lambda config: (self._mark(config, held['id'], shared), True)[1])  # the service rereads the token
         state = self._state(fleet, service)
@@ -413,8 +437,10 @@ class SharedConnectors:
         held = self._held(group['id'], service)
         if not share or not held or held['shared'].get('grant') != share.get('grant'):
             return
-        token = self._token(held)
-        if not token:
+        # A signed-in account's access token is asked for only when one goes out, so no round refreshes it for nothing
+        lapses = held.get('transport') == 'broker'
+        token, left = (None, None) if lapses else self._sendable(held)
+        if not token and not lapses:
             return
         state = self._state(group['id'], service)
         approved, sent = state.setdefault('approved', {}), state.setdefault('sent', {})
@@ -422,13 +448,14 @@ class SharedConnectors:
         holders = state.setdefault('holders', {})
         members = {m['member_id']: m for m in group.get('members', []) if m.get('member_id')}
         now_held = set(share.get('held') or [])
-        # Who had it and left: their owner should replace the token in Intercom
+        # Who had it and left: their owner should replace the token in Intercom (a lapsing one runs out by itself)
         for mid in now_held | {share.get('by')}:  # the one who shared it holds it too
             if mid in members and mid != me['member_id']:
                 holders[mid] = str(members[mid].get('label') or members[mid].get('name') or '')[:80]
         for mid, name in list(holders.items()):
             if mid not in members:
-                self._prompt('replace', group, service, {'member_id': mid, 'name': name})
+                if not lapses:
+                    self._prompt('replace', group, service, {'member_id': mid, 'name': name})
                 holders.pop(mid)
                 approved.pop(mid, None)
         # Approvals other confirmed admins signed (their grants on the control plane) count for the key they covered. Kept
@@ -456,13 +483,19 @@ class SharedConnectors:
                 continue
             self._drop_prompts(lambda p: p['fleet'] == group['id'] and p['service'] == service and p['member'] == mid
                                and p['kind'] in ('recipient', 'rekey'))  # another admin said OK
-            if mid in now_held:
-                continue
             last = sent.get(mid) or {}
-            if last.get('grant') == share['grant'] and last.get('fp') == keys['fp'] and _age(last.get('at')) < RESEND_SECONDS:
+            renew = lapses and float(last.get('until') or 0) - time.time() < RENEW_LEFT  # theirs runs out soon: a fresh one
+            if mid in now_held and not renew:
                 continue
+            if (last.get('grant') == share['grant'] and last.get('fp') == keys['fp'] and _age(last.get('at')) < RESEND_SECONDS
+                    and not renew):
+                continue
+            if not token:
+                token, left = self._sendable(held, FRESH_LEFT)
+                if not token:
+                    break
             self._send(group, me, service, held, token, share, m, keys)
-            sent[mid] = {'grant': share['grant'], 'fp': keys['fp'], 'at': _now()}
+            sent[mid] = {'grant': share['grant'], 'fp': keys['fp'], 'at': _now(), **({'until': int(time.time()) + int(left)} if lapses else {})}
         self._set_state(group['id'], service, state)
 
     def _send(self, group, me, service, held, token, share, member, keys):
@@ -643,6 +676,18 @@ class SharedConnectors:
                    SHAREABLE[service]['identity']: s['workspace'],
                    'shared': {'fleet': group['id'], 'fleet_name': fleet_name, 'service': service, 'grant': s['grant'], 'at': s['at'], 'by': s['by']}}
 
+        if held and held['shared'].get('grant') == s['grant'] and held.get('credential') == name \
+                and (self.config.get('credentials') or {}).get(name) == str(path):
+            # the same grant, a fresh token (Stripe's lasts an hour): the connector reads the file each time, no restart
+            def renew(config):
+                for a in config.get('accounts', []):
+                    if a.get('id') == held['id']:
+                        a['shared'] = {**a['shared'], 'at': s['at']}
+                return False
+            self._save(renew)
+            LOG.info('shared connector renewed fleet=%s service=%s', group['id'], service)
+            return
+
         def change(config):
             config.setdefault('credentials', {})[name] = str(path)
             taken = {a.get('id') for a in config.get('accounts', [])}
@@ -687,7 +732,7 @@ class SharedConnectors:
                                                 'email': m.get('account_email') or '', 'role': m.get('role'), 'keys': bool(ft.keys_of(m)),
                                                 'confirmed': m['member_id'] in trusted}
                                                for m in group.get('members', []) if not m.get('me')]})
-        own = [{'id': a['id'], 'service': a['service'], 'label': SHAREABLE[a['service']]['label'], 'workspace': a.get('workspace_name') or ''}
+        own = [{'id': a['id'], 'service': a['service'], 'label': SHAREABLE[a['service']]['label'], 'workspace': a.get(SHAREABLE[a['service']]['name']) or ''}
                for a in self.config.get('accounts', []) if a.get('service') in SHAREABLE and not a.get('shared') and a.get(SHAREABLE[a['service']]['identity'])]
         try:  # the Shared Graph: whether this Machine's Work is shared, asked off or off, per Work Fleet (shared_graph.py)
             graph = self.sharing() if hasattr(self, 'sharing') else []

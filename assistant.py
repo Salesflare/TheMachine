@@ -11769,7 +11769,7 @@ def reconnect_help(account, manage, docs_consent=False):
     if manage and service == 'docs':  # its Connect Google Docs or Microsoft documents consent, once the account page offers it
         return {'account_page': urllib.parse.urljoin(manage, '#docs')} if docs_consent else {}
     if manage and account.get('transport') == 'broker':
-        return {'account_page': urllib.parse.urljoin(manage, '#microsoft' if service in MICROSOFT_SERVICES else '#source-zoom' if service == 'zoom' else '#google')}
+        return {'account_page': urllib.parse.urljoin(manage, '#microsoft' if service in MICROSOFT_SERVICES else '#source-' + service if service in ('zoom', 'stripe') else '#google')}
     return {'connect_name': 'crm' if service == 'salesflare' else service}
 
 
@@ -11899,6 +11899,7 @@ class App:
             # Shared connectors (shared_connectors.py): kept in config.json, checked with the connector's own profile read
             self.fleet.save_config = self.fleet_save_config
             self.fleet.connector_profile = self.shared_connector_profile
+            self.fleet.share_token = self.shared_connector_token  # Stripe signed in: a fresh access token to send
             self.fleet.connect_delivered = self.fleet_connect_delivered  # Sign in with Intercom for this Machine (fleet.py)
             self.fleet.support_read = self.support_read  # Support access: the team's read, while the owner allows it (fleet.py)
         # Skills (skills.py): the owner's how-tos, written to the OpenClaw workspace; shared ones come in through the Fleet.
@@ -16683,6 +16684,18 @@ class App:
                              or 'That token does not work: ' + str(error)) from None
         return account
 
+    def shared_connector_token(self, service, account, min_left=0):
+        """The token a Fleet admin's Machine sends for its shared account: (token, seconds it works, None: lasts). A
+        signed-in Stripe account's is an access token for an hour, never the sign-in (connectors/stripe.py share_token)."""
+        plugin = load_connector(service)
+        if not plugin or not callable(getattr(plugin, 'share_token', None)):
+            return None, None
+        try:
+            return plugin.share_token(self.config, account, CONNECTOR_HELPERS, min_left=min_left)
+        except SourceError as error:
+            LOG.info('shared connector token unavailable service=%s error=%s', service, error)
+            return None, None
+
     def fleet_remove_work(self, item):
         """The control plane, through the Network: remove a Work Fleet's company data (work_removal.py), then restart."""
         if not getattr(self, 'config_path', None):
@@ -16699,13 +16712,13 @@ class App:
         the control plane forgets this Machine had it, so nothing refreshes it again."""
         import mail_grants
         provider = {'microsoft_docs': 'microsoft'}.get(fleet.SIGNIN_OF.get(account.get('service')), fleet.SIGNIN_OF.get(account.get('service')))
-        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom'):
+        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe'):
             return
-        email = str(account.get('email') or '').lower()
+        email = str(account.get('stripe_account' if provider == 'stripe' else 'email') or '').lower()
         # Docs for a Microsoft address reads with the same sign-in as its Outlook mail and calendar
         services = {s for s, p in fleet.SIGNIN_OF.items() if p == provider} | ({'docs'} if provider == 'microsoft' else set())
-        if any(a.get('id') != account['id'] and a.get('service') in services and str(a.get('email', '')).lower() == email
-               for a in self.config.get('accounts', [])):
+        if any(a.get('id') != account['id'] and a.get('service') in services
+               and str(a.get('stripe_account' if provider == 'stripe' else 'email', '')).lower() == email for a in self.config.get('accounts', [])):
             return
         try:
             mail_grants.forget(self.config, provider, email)
