@@ -23,7 +23,7 @@ const connectors=()=>[...Array.from({length:tick},(_,i)=>({id:'gmail:new'+i,serv
  ...Array.from({length:24},(_,n)=>({id:'gmail:a'+n,service:'gmail',display_name:'Inbox '+n,email:'inbox'+n+'@example.com',state:'ok',last_success:ago(n+2),total:100+n,signals_24h:n})),
  {id:'calendar:a',service:'calendar',display_name:'Calendar',email:'cal@example.com',state:'ok',last_success:ago(3),total:5}];
 const status=()=>({suggestions:cards(),promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
- agents_settings:{},connectors:connectors(),fleet:{on:true,waiting:0},needs_you:tick?[{text:'Something needs you '+tick}]:[]});
+ agents_settings:{claude_session:'session_01Example',device:'Desk',codex_env:'env_1',codex_branch:'',connector:'https://machine.example/mcp',saveable:true,on_network:true},chat_model:{models:[{ref:'openai/example-model',name:'Example',levels:['low','medium','high'],default:'medium'},{ref:'openai/example-mini',name:'Example mini',levels:['low','medium'],default:'low'}],known:true,main:{model:'openai/example-model',thinking:'medium'},default:{model:'openai/example-model',thinking:'medium'},saved:{}},model_status:{model:'openai/example-model',provider:'openai',chatgpt:true,plan:'pro',resets:{available:1},can_reset:true,windows:[{label:'5h',used:40,reset:Date.now()/1000+7200},{label:'Week',used:20,reset:Date.now()/1000+3*86400}],checked_at:new Date().toISOString()},connectors:connectors(),fleet:{on:true,waiting:0},needs_you:tick?[{text:'Something needs you '+tick}]:[]});
 const history={session:true,status:'ok',active:false,cursor:'k1',items:Array.from({length:40},(_,n)=>({kind:n%2?'reply':'note',text:'Message '+n+'. '+long.slice(0,90),at:Date.now()-100000+n*1000}))};
 const person=(n,name)=>({id:'email:p'+n+'@example.com',kind:'person',name,strength:3-n/100,last_at:ago(n*7%95+1),signals:4,ids:[]});
 const people=()=>[...Array.from({length:tick},(_,i)=>person(900+i,'Newcomer '+i)).map(p=>({...p,strength:9})),...Array.from({length:95},(_,n)=>person(n,'Person '+String(n).padStart(3,'0')))];
@@ -67,7 +67,8 @@ const screens=[
  ['Calendar',async page=>{await page.evaluate(()=>showTab('calendar'));await page.locator('#calendar-view .cal-block').nth(3).waitFor()}],
  ['Connections',async page=>{await page.evaluate(()=>showTab('health','mail'));await page.locator('#connectors>article:not([hidden])').nth(20).waitFor()}],
  ['Fleet',async page=>{await page.evaluate(()=>showTab('fleet'));await page.locator('#fleet-view').getByText('Teammate 20').first().waitFor()}],
- ['Settings',async page=>{await page.evaluate(()=>showSettings('general'));await page.waitForTimeout(300)}]];
+ // Model is the tallest tab: Codex and Claude Code, the model picker and the plan's usage
+ ['Settings',async page=>{await page.evaluate(()=>showSettings('model'));await page.waitForTimeout(300)}]];
 // The element on screen 300px down, tracked through the refresh: the same node, or (drawn anew) the one with its text
 const mark=()=>{const words=x=>x.textContent.replace(/\s+/g,' ').trim().slice(0,80),same=x=>[...document.querySelectorAll('main '+x.tagName)].filter(y=>y.getClientRects().length&&words(y)===words(x)).length;
  // the row under the reader: the smallest element there whose words are its own (a date line repeats on every row)
