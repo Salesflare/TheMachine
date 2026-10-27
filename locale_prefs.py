@@ -1,9 +1,10 @@
 """Language and region: how dates and times read on the dashboard, in cards, Telegram, the digest and Fleet messages
 (Settings, General).
 
-`locale` in config.json is a language-REGION tag like en-US, en-GB or en-BE. The language is English for now (the
-only one the app speaks; others come with translations), the region sets the date order (Oct 24 or 24 Oct) and the
-default clock. `clock` is '12h' or '24h' when the owner overrides the region's. A hosted Machine gets its first
+`locale` in config.json is a language-REGION tag like en-US, en-GB or nl-BE: the region sets the date order (Oct 24 or
+24 Oct) and the default clock. `language` is the UI language (LANGUAGES, the catalogs in i18n/): what the dashboard,
+Telegram, emails and the model's own notes read in. Without one, a non-English language in `locale` (from signup) counts,
+else English; the dashboard's first load sets it from the browser's languages (Accept-Language), once. `clock` is '12h' or '24h' when the owner overrides the region's. A hosted Machine gets its first
 `locale` from signup (ASSISTANT_LOCALE at install). A Machine without one (self-hosted) gets it the same way from the
 dashboard's first load (guess: the country of the browser's time zone, else its language's region), and keeps US
 dates and a 24-hour clock until then.
@@ -16,7 +17,7 @@ import re
 import zoneinfo
 from pathlib import Path
 
-LANGUAGES = {'en': 'English'}  # UI languages; a tag in another language keeps its region and reads English for now
+LANGUAGES = {'en': 'English', 'nl': 'Nederlands', 'fr': 'Français', 'de': 'Deutsch', 'es': 'Español'}  # i18n/<code>.json
 DEFAULT_REGION = 'US'  # dates without a locale
 CLOCKS = ('auto', '12h', '24h')
 # Regions whose people mostly read a 12-hour clock (CLDR's preferred hour cycle "h"); the rest read 24-hour.
@@ -25,11 +26,12 @@ H12 = frozenset('US CA AU NZ IN PK BD PH MY SG HK TW KR EG SA AE JO KW QA BH OM 
 # Regions that put the month first (Oct 24); the rest read the day first (24 Oct).
 MONTH_FIRST = frozenset('US CA PH PR GU AS VI MP UM FM MH PW'.split())
 
-_current = {'locale': None, 'clock': 'auto'}
+_current = {'locale': None, 'clock': 'auto', 'language': None}
 
 
 def normalize(value):
-    """'en-BE' from 'en-BE', 'en_be' or 'nl-BE' (English for now), '' for no setting, None when it isn't a tag."""
+    """'en-BE' from 'en-BE' or 'en_be', 'nl-BE' from 'nl-be', 'en-JP' from 'ja-JP' (a language there is no catalog for),
+    '' for no setting, None when it isn't a tag."""
     text = str(value or '').strip().replace('_', '-')
     if not text:
         return ''
@@ -53,26 +55,65 @@ def hour12(locale, clock='auto'):
     return region(locale) in H12
 
 
-def date_locale(locale):
-    """The Intl locale the dashboard formats dates with: US order (Sat, Oct 24) or day first (Sat 24 Oct)."""
+def language():
+    """The owner's UI language now ('en' until configured)."""
+    return _current['language'] or 'en'
+
+
+def language_of(config):
+    """The UI language: the owner's choice, else a non-English language from the locale (signup), else English."""
+    chosen = str((config or {}).get('language') or '').lower()
+    if chosen in LANGUAGES:
+        return chosen
+    tag = normalize((config or {}).get('locale'))
+    return tag.split('-')[0] if tag else 'en'
+
+
+def date_locale(locale, language='en'):
+    """The Intl locale the dashboard formats dates with: in English US order (Sat, Oct 24) or day first (Sat 24 Oct),
+    in another language that language as the region writes it (nl-BE: za 24 okt.)."""
+    if language and language != 'en':
+        return f'{language}-{region(locale) or {"nl": "NL", "fr": "FR", "de": "DE", "es": "ES"}.get(language, "US")}'
     return 'en-US' if (region(locale) or DEFAULT_REGION) in MONTH_FIRST else 'en-GB'
+
+
+def pick_language(wanted):
+    """The first UI language in a browser's list (navigator.languages, or an Accept-Language header): 'nl' from
+    'nl-BE,nl;q=0.9,en;q=0.8', 'en' when none has a catalog."""
+    if isinstance(wanted, str):
+        ranked = []
+        for i, part in enumerate(wanted.split(',')[:20]):
+            tag, _, q = part.strip().partition(';q=')
+            try:
+                weight = float(q) if q else 1.0
+            except ValueError:
+                weight = 0.0
+            ranked.append((-weight, i, tag.strip()))
+        wanted = [tag for _, _, tag in sorted(ranked)]
+    for tag in list(wanted or [])[:20]:
+        code = str(tag or '').strip().lower().replace('_', '-').split('-')[0]
+        if code in LANGUAGES:
+            return code
+    return 'en'
 
 
 def configure(config):
     """Use the owner's setting from config.json; a bad value is ignored (the defaults stand)."""
     tag = normalize((config or {}).get('locale'))
     clock = (config or {}).get('clock')
-    _current.update(locale=tag or None, clock=clock if clock in CLOCKS else 'auto')
+    _current.update(locale=tag or None, clock=clock if clock in CLOCKS else 'auto', language=language_of(config),
+                    chosen=str((config or {}).get('language') or '').lower() in LANGUAGES)
 
 
 def view(config=None):
     """What Settings shows and the dashboard formats with."""
     if config is not None:
         tag, clock = normalize(config.get('locale')) or None, config.get('clock') if config.get('clock') in CLOCKS else 'auto'
+        language, chosen = language_of(config), str(config.get('language') or '').lower() in LANGUAGES
     else:
-        tag, clock = _current['locale'], _current['clock']
-    return {'locale': tag, 'region': region(tag), 'language': (tag or 'en-US').split('-')[0], 'clock': clock,
-            'hour12': hour12(tag, clock), 'auto_hour12': hour12(tag), 'date_locale': date_locale(tag), 'languages': LANGUAGES}
+        tag, clock, language, chosen = _current['locale'], _current['clock'], _current['language'] or 'en', _current.get('chosen', False)
+    return {'locale': tag, 'region': region(tag), 'language': language, 'language_set': chosen, 'clock': clock,
+            'hour12': hour12(tag, clock), 'auto_hour12': hour12(tag), 'date_locale': date_locale(tag, language), 'languages': LANGUAGES}
 
 
 @functools.lru_cache(maxsize=1)
@@ -111,6 +152,10 @@ def guess(zone, language=''):
 def settings(changes):
     """{'locale', 'clock'} from the dashboard, checked; a ValueError says what is wrong."""
     out = {}
+    if 'language' in changes:
+        if str(changes.get('language') or '').lower() not in LANGUAGES:
+            raise ValueError('Pick a language: ' + ', '.join(LANGUAGES))
+        out['language'] = str(changes['language']).lower()
     if 'locale' in changes:
         tag = normalize(changes.get('locale'))
         if not tag:
@@ -137,8 +182,29 @@ def clock_text(moment, seconds=False):
     return moment.strftime('%H:%M:%S' if seconds else '%H:%M')
 
 
+# Short day and month names in the other UI languages (English uses strftime's, in the C locale)
+NAMES = {
+    'nl': ('ma di wo do vr za zo'.split(), 'jan feb mrt apr mei jun jul aug sep okt nov dec'.split()),
+    'fr': ('lun. mar. mer. jeu. ven. sam. dim.'.split(), 'janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.'.split()),
+    'de': ('Mo. Di. Mi. Do. Fr. Sa. So.'.split(), 'Jan. Feb. März Apr. Mai Juni Juli Aug. Sep. Okt. Nov. Dez.'.split()),
+    'es': ('lun mar mié jue vie sáb dom'.split(), 'ene feb mar abr may jun jul ago sept oct nov dic'.split()),
+}
+AT = {'en': ' at ', 'nl': ' om ', 'fr': ' à ', 'de': ' um ', 'es': ' a las '}
+
+
+def weekday_name(moment):
+    """'Sat', 'za', 'sam.': the short weekday in the owner's language."""
+    names = NAMES.get(language())
+    return names[0][moment.weekday()] if names else f'{moment:%a}'
+
+
 def day_text(moment, weekday=True, year=False):
-    """'Sat, Oct 24' or 'Sat 24 Oct' (as the dashboard's Intl en-US and en-GB write them), with ', 2026' or ' 2026'."""
+    """'Sat, Oct 24' or 'Sat 24 Oct' (as the dashboard's Intl en-US and en-GB write them), with ', 2026' or ' 2026'. In
+    another language day first with its names: 'za 24 okt', 'sam. 24 oct.', 'Sa. 24. Okt.'."""
+    names = NAMES.get(language())
+    if names:
+        text = f'{moment.day}{"." if language() == "de" else ""} {names[1][moment.month - 1]}'
+        return (names[0][moment.weekday()] + ' ' if weekday else '') + text + (f' {moment.year}' if year else '')
     us = (region(_current['locale']) or DEFAULT_REGION) in MONTH_FIRST
     text = (f'{moment:%b} {moment.day}' if us else f'{moment.day} {moment:%b}')
     if weekday:
@@ -150,6 +216,8 @@ def day_text(moment, weekday=True, year=False):
 
 def span_text(start, end):
     """'Oct 19–23' or '19–23 Oct'; across months 'Oct 30 – Nov 5' or '30 Oct – 5 Nov'."""
+    if (start.month, start.year) == (end.month, end.year) and language() in NAMES:
+        return f'{start.day}–{day_text(end, weekday=False)}'
     if (start.month, start.year) == (end.month, end.year):
         us = (region(_current['locale']) or DEFAULT_REGION) in MONTH_FIRST
         return f'{end:%b} {start.day}–{end.day}' if us else f'{start.day}–{end.day} {end:%b}'
@@ -158,12 +226,12 @@ def span_text(start, end):
 
 def at_text(moment, year=False):
     """'Sat, Oct 24 at 2:05 PM' or 'Sat 24 Oct at 14:05'."""
-    return day_text(moment, year=year) + ' at ' + clock_text(moment)
+    return day_text(moment, year=year) + AT.get(language(), ' at ') + clock_text(moment)
 
 
 def short_text(moment):
     """'Sat 2:05 PM' or 'Sat 14:05': a moment this week."""
-    return f'{moment:%a} ' + clock_text(moment)
+    return weekday_name(moment) + ' ' + clock_text(moment)
 
 
 def range_text(start, end):

@@ -1,4 +1,5 @@
-"""User-facing text is in US English (Organization, color, -ize) until The Machine goes multilingual.
+"""User-facing English is US English (Organization, color, -ize). The other languages' catalogs and the glossary
+(i18n/, besides en.json) are not English and are skipped.
 
 Checks prose only: Markdown outside code, the dashboard and scripts, and comments and strings in Python. Identifiers,
 stored values and API fields keep their old spelling (a bare lowercase literal like 'cancelled', an attribute, a call,
@@ -66,7 +67,7 @@ class UsEnglish(unittest.TestCase):
         bad = []
         for name in files:
             path = ROOT / name
-            if name in SKIP or name.startswith(('brand/', 'sandbox/fixtures/')) or path.suffix not in SUFFIXES or not path.is_file():
+            if name in SKIP or name.startswith(('brand/', 'sandbox/fixtures/')) or (name.startswith('i18n/') and name != 'i18n/en.json') or path.suffix not in SUFFIXES or not path.is_file():
                 continue
             bad += problems(path, path.read_text(encoding='utf-8', errors='replace'))
         self.assertEqual(bad, [], 'UK spellings in user-facing text (use US English, or add a reasoned entry to ALLOWED):\n' + '\n'.join(bad))

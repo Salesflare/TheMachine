@@ -56,9 +56,10 @@ class LocaleTest(unittest.TestCase):
         self.use(locale='en-BE', clock='sometimes')  # a bad value is ignored
         self.assertEqual(locale_prefs.view()['clock'], 'auto')
 
-    def test_tags_are_normalized_and_other_languages_read_english_for_now(self):
+    def test_tags_are_normalized_and_languages_without_a_catalog_read_english(self):
         self.assertEqual(locale_prefs.normalize('en_gb'), 'en-GB')
-        self.assertEqual(locale_prefs.normalize('nl-BE'), 'en-BE')
+        self.assertEqual(locale_prefs.normalize('nl-BE'), 'nl-BE')
+        self.assertEqual(locale_prefs.normalize('ja-JP'), 'en-JP')
         self.assertEqual(locale_prefs.normalize(''), '')
         self.assertIsNone(locale_prefs.normalize('english'))
         self.assertIsNone(locale_prefs.normalize('en-GB"><script>'))

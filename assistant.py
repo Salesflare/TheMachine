@@ -9861,7 +9861,7 @@ def dashboard_page(token, owner, base):
 # compressed size (BREACH). The CSRF token is only in api/session, which is never compressed, nor is anything else not
 # listed here (file downloads, the browser view, streams). Brotli when the module is there, else zstd (Python 3.14),
 # else gzip; the client's Accept-Encoding decides, q=0 refuses one.
-COMPRESSIBLE = frozenset({'/', '/sw.js', '/manifest.webmanifest', '/api/status', '/api/events', '/api/calendar', '/api/graph',
+COMPRESSIBLE = frozenset({'/', '/sw.js', '/manifest.webmanifest', *(f'/i18n/{code}.json' for code in ('en', 'nl', 'fr', 'de', 'es')), '/api/status', '/api/events', '/api/calendar', '/api/graph',
                           '/api/graph/list', '/api/graph/timeline', '/api/cards/done', '/api/promise'})
 COMPRESS_MIN = 1024  # smaller answers fit a packet or two anyway
 try:
@@ -17062,6 +17062,8 @@ class App:
                     self.output(200, (ROOT / 'manifest.webmanifest').read_text(), 'application/manifest+json')
                 elif path.path == '/sw.js':
                     self.output(200, (ROOT / 'sw.js').read_text(), 'text/javascript')
+                elif re.fullmatch(r'/i18n/[a-z]{2}\.json', path.path) and path.path[6:8] in locale_prefs.LANGUAGES:
+                    self.output(200, (ROOT / 'i18n' / path.path[6:]).read_bytes(), 'application/json')  # the catalogs (i18n.py)
                 elif path.path == '/api/push-key':
                     self.output(200, {'key': push_key(app.config)})
                 elif path.path in BRAND_ASSETS:
