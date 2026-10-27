@@ -12,6 +12,8 @@ order: 3
 2. Choose who, check what goes along (leave any part out with ×), and add a note. The text starts with the task and why it matters, from the to-do, and where it came from (its link). Nothing from a Personal account or another company's goes along.
 3. Send it. Their Machine shows it to them as a to-do.
 
+Their Machine pings them on their phone or in Telegram. With neither set up, it emails them once instead: who handed it, its title and a link, nothing else. See [Notifications](notifications.md).
+
 An Intercom conversation goes along with its place in Intercom. If their Machine reads the same Intercom workspace, their to-do is on that conversation: **Read message** opens it, the customer shows on it, and their reply goes back in Intercom. If not, the to-do still links the conversation in Intercom.
 
 While you wait, the to-do sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** asks how it's going; **Change time** moves the check-in.

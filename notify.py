@@ -15,6 +15,8 @@ to email notifications"):
   minute after the desktop locks). Left out when they came back and saw it in the meantime.
 - Email for what is still unseen and still waiting EMAIL_AFTER later, bundled into one, at most once per EMAIL_EVERY
   (Slack: bundled every 15 minutes or hourly, only while inactive). Morning digest on work days.
+- A teammate's handoff to an owner their Machine can't ping (no phone or Telegram): one email of its own for it, also
+  EMAIL_AFTER later and only while still unseen and waiting (take_handoffs, handoff_mail).
 - A batch buzzes once (assistant.deliver_one); nothing goes out outside work hours (Slack: notification schedule)."""
 from __future__ import annotations
 
@@ -167,6 +169,33 @@ def take_due(db, still_open=lambda ref: True, clock=wall):
     db.executemany('DELETE FROM notify_queue WHERE id=?', [(i,) for i in gone])
     return ([{'payload': json.loads(r['payload'] or '{}'), 'kind': r['kind']} for r in pushes],
             [{'title': r['title'], 'show': bool(r['show']), 'kind': r['kind']} for r in lines])
+
+
+def take_handoffs(db, clock=wall):
+    """Handoff emails that go now (hold_handoff): [{title, show, name, id}]. Each was held once for its handoff, went
+    when due and no dashboard is in use, and is gone when the owner saw it or it no longer waits (take_due runs first).
+    Outside work hours notify_step doesn't come here, so one held then goes when the hours start."""
+    ensure(db)
+    at = clock()
+    if active(clock):
+        return []
+    rows = [dict(r) for r in db.execute("SELECT * FROM notify_queue WHERE channel='handoff' AND due<=? ORDER BY created,id", (at,))]
+    db.executemany('DELETE FROM notify_queue WHERE id=?', [(r['id'],) for r in rows])
+    return [{'title': r['title'], 'show': bool(r['show']), 'name': json.loads(r['payload'] or '{}').get('name') or '',
+             'id': (r['ref'] or '').partition(':')[2]} for r in rows]
+
+
+def handoff_mail(item, root=''):
+    """The one email for a teammate's handoff to an owner their Machine can't ping (no phone or Telegram): who handed
+    what, and a link to the dashboard. Only the title, and only where the security level shows it."""
+    name = item['name'] or t('Your teammate')
+    subject = t('{} handed you a to-do: {}', name, item['title']) if item['show'] else t('{} handed you a to-do', name)
+    body = []
+    if root:
+        # [label](url): the control plane's mailer makes it a link, "label (url)" in the text part (cloud/emails.py)
+        body += ['[' + t('Accept or decline it on The Machine') + '](' + root + ('#fleet=' + item['id'] if item.get('id') else '') + ')', '']
+    body.append(t('You get this once per handoff, as your Machine can’t ping you on a phone or Telegram. Turn it off in Settings, Notifications.'))
+    return {'subject': subject, 'text': '\n'.join(body).strip()}
 
 
 def mailed(db, clock=wall):

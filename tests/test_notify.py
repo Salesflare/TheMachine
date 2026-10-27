@@ -190,6 +190,103 @@ class Notifications(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel='push'").fetchone()[0], 0)
 
+    def handoff(self, key='q_' + 'a' * 16, title='Fix the tag leaks', kind='handoff'):
+        """A teammate's handoff waiting for the owner, as fleet_in has it."""
+        question = {'title': title, 'summary': 'Customer data in the export, see the thread', 'contact': ''} if kind == 'handoff' else {'about': 'Acme'}
+        row = {'id': key, 'fleet': 'fl_x', 'member_id': 'k', 'name': 'Kim Lee', 'kind': kind, 'question': json.dumps(question),
+               'status': 'waiting', 'at': a.now()}
+        with self.store.connect() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS fleet_in(id TEXT PRIMARY KEY,fleet TEXT NOT NULL,member_id TEXT NOT NULL,name TEXT NOT NULL,'
+                       'kind TEXT NOT NULL,question TEXT NOT NULL,status TEXT NOT NULL,at TEXT NOT NULL,decided_at TEXT)')
+            db.execute('INSERT INTO fleet_in(id,fleet,member_id,name,kind,question,status,at) VALUES(?,?,?,?,?,?,?,?)', tuple(row.values()))
+        return row
+
+    def paired(self):
+        """Hosted or paired, so email can go, but no phone and no Telegram."""
+        self.config.update(credentials={'fleet': 'fleet'}, fleet={'url': 'https://cp.example/api/fleet'})
+        self.mails = []
+        self.mail = lambda url, token, subject, text: self.mails.append((subject, text)) or True
+
+    def test_a_handoff_to_an_owner_nothing_else_reaches_is_emailed_once_with_its_title_and_a_link(self):
+        self.paired()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        row = self.handoff()
+        with patch.object(notify.time, 'time', return_value=t0):
+            self.app.fleet_notify([row])
+            self.app.fleet_notify([row])  # told twice: still one email
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER - 1), [])
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER), ['email'])
+        self.assertEqual(len(self.mails), 1)
+        subject, text = self.mails[0]
+        self.assertEqual(subject, 'Kim Lee handed you a to-do: Fix the tag leaks')
+        self.assertIn('[Accept or decline it on The Machine](https://the-machine.example/assistant/#fleet=' + row['id'] + ')', text)
+        self.assertIn('Turn it off in Settings, Notifications.', text)
+        self.assertNotIn('Customer data', text)  # the title only, never their summary
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER + notify.EMAIL_EVERY), [])
+        self.assertEqual(len(self.mails), 1)
+
+    def test_no_handoff_email_with_a_phone_or_telegram_once_seen_or_handled_or_switched_off(self):
+        self.paired()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        later = t0 + notify.EMAIL_AFTER + 60
+        # Seen on the dashboard in the meantime
+        seen = self.handoff('q_' + 'b' * 16)
+        with patch.object(notify.time, 'time', return_value=t0):
+            self.app.fleet_notify([seen])
+        notify.mark_active(lambda: t0 + 30, client='desk', on=True)
+        notify.mark_active(lambda: t0 + 40, client='desk', on=False)
+        # Accepted on another device before it was due
+        taken = self.handoff('q_' + 'c' * 16)
+        with patch.object(notify.time, 'time', return_value=t0 + 50):
+            self.app.fleet_notify([taken])
+        with self.store.connect() as db:
+            db.execute("UPDATE fleet_in SET status='accepted' WHERE id=?", (taken['id'],))
+        self.assertEqual(self.step(later), [])
+        # Email off for results: nothing held
+        self.app.action('notify_set', {'kind': 'result', 'channel': 'email', 'on': False}, owner_dashboard=True)
+        self.assertFalse(a.hold_handoff(self.store, self.config, self.handoff('q_' + 'd' * 16)))
+        self.app.action('notify_set', {'kind': 'result', 'channel': 'email', 'on': True}, owner_dashboard=True)
+        # Telegram reaches them: no email for a handoff
+        self.config['telegram_owner'] = '42'
+        with patch.object(a, 'fleet_telegram', return_value={}), patch.object(a.fleet, 'telegram_message', return_value={}), \
+                patch.object(notify.time, 'time', return_value=later):
+            self.app.fleet_notify([self.handoff('q_' + 'e' * 16)])
+        del self.config['telegram_owner']
+        # A phone reaches them: no email either
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        with patch.object(a, 'push_send', return_value=[]), patch.object(notify.time, 'time', return_value=later):
+            self.app.fleet_notify([self.handoff('q_' + 'f' * 16)])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel IN ('handoff','email')").fetchone()[0], 0)
+        self.assertEqual(self.step(later + notify.EMAIL_AFTER), [])
+        self.assertEqual(self.mails, [])
+
+    def test_a_handoff_email_in_careful_has_no_title_and_other_fleet_questions_keep_the_bundle(self):
+        self.paired()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        with patch.object(a.security_levels, 'notify_text', return_value=False), patch.object(notify.time, 'time', return_value=t0):
+            self.app.fleet_notify([self.handoff()])
+        with patch.object(notify.time, 'time', return_value=t0), patch.object(a.fleet, 'question_text', return_value='Who knows Acme?'):
+            self.app.fleet_notify([self.handoff('q_' + 'g' * 16, kind='relationships')])
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER), ['email', 'email'])
+        (careful, body), (bundle, _) = self.mails
+        self.assertEqual(careful, 'Kim Lee handed you a to-do')
+        self.assertNotIn('tag leaks', careful + body)
+        self.assertEqual(bundle, "Waiting for you: Kim Lee's Machine asks: Who knows Acme?")
+
+    def test_handoff_mail_reads_in_the_owners_language(self):
+        item = {'name': 'Kim Lee', 'title': 'Fix the tag leaks', 'show': True, 'id': 'q_1'}
+        self.addCleanup(a.locale_prefs.configure, {})
+        for lang, words in (('nl', 'gaf je een to-do door: Fix'), ('fr', 'vous a transféré')):
+            a.locale_prefs.configure({'language': lang})
+            self.assertIn(words, notify.handoff_mail(item, 'https://m.example/')['subject'])
+            self.assertIn('https://m.example/#fleet=q_1', notify.handoff_mail(item, 'https://m.example/')['text'])
+        a.locale_prefs.configure({})
+        message = notify.handoff_mail(item, 'https://m.example/')
+        self.assertEqual(message['subject'], 'Kim Lee handed you a to-do: Fix the tag leaks')
+        self.assertTrue(message['text'].startswith('[Accept or decline it on The Machine](https://m.example/#fleet=q_1)\n\n'))
+        self.assertEqual(notify.handoff_mail(dict(item, name=''), '')['subject'], 'Your teammate handed you a to-do: Fix the tag leaks')
+
     def test_kinds_of_a_card_delivery(self):
         self.assertEqual(notify.kind_of({'status': 'pending'}), 'todo')
         self.assertEqual(notify.kind_of({'status': 'pending', 'reminder': 1}), 'reminder')

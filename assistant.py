@@ -10490,6 +10490,24 @@ def hold_mail(store, config, kind, title, ref, work=False):
     return True
 
 
+def hold_handoff(store, config, row):
+    """A teammate handed the owner a to-do and their Machine can't ping them: one email for it EMAIL_AFTER from now,
+    unless they see it first or it no longer waits (notify.take_handoffs). Once per handoff; nothing when email is off
+    for results or can't go."""
+    if not mail_ready(config):
+        return False
+    title = str((json.loads(row['question'] or '{}') or {}).get('title') or '').strip()
+    ref = 'fleet:' + row['id']
+    with store.connect() as db:
+        notify.ensure(db)
+        if not title or not notify.allowed(db, 'result', 'email') or \
+                db.execute("SELECT 1 FROM notify_queue WHERE channel='handoff' AND ref=?", (ref,)).fetchone():
+            return False
+        notify.hold(db, 'handoff', 'result', title, time.time() + notify.EMAIL_AFTER, ref=ref, payload={'name': row['name']},
+                    show=security_levels.notify_text(db, True))
+    return True
+
+
 # Setup hints: what a hosted owner skipped at setup, suggested in the dashboard once it is relevant (one at a time,
 # at the top of Suggestions, with Not now). A source when its mail keeps coming in, Telegram once a snooze would only
 # come back on the dashboard, Codex once GitHub is connected. Each links to that step on the setup page.
@@ -13463,16 +13481,21 @@ class App:
                 db.execute("DELETE FROM notify_queue WHERE channel='push'")
                 return None
             pushes, lines = notify.take_due(db, self.notify_open)
+            handoffs = notify.take_handoffs(db)
             subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')] if pushes else []
         went = []
         for item in pushes:
             if subscriptions and self.config.get('dashboard_host') and push_send(self.store, self.config, subscriptions, item['payload'], 'held', push, kind=item['kind'], held=True):
                 went.append('push')
-        target = lines and self.notify_mail_target()
+        target = (lines or handoffs) and self.notify_mail_target()
         if target:
             root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
-            message = notify.waiting_mail(lines, root)
-            if (mail or notify.mail)(target[0], target[1], message['subject'], message['text']):
+            for item in handoffs:  # each its own email, once
+                message = notify.handoff_mail(item, root)
+                if (mail or notify.mail)(target[0], target[1], message['subject'], message['text']):
+                    went.append('email')
+            message = notify.waiting_mail(lines, root) if lines else None
+            if message and (mail or notify.mail)(target[0], target[1], message['subject'], message['text']):
                 with self.store.connect() as db:
                     notify.mailed(db)
                 went.append('email')
@@ -13560,12 +13583,19 @@ class App:
 
     def fleet_notify(self, rows):
         """Questions waiting for the owner: a phone notification, an email if still unanswered and unseen later, and a
-        Telegram message with quick buttons when Telegram is on. Returns the Telegram message id, which binds those
+        Telegram message with quick buttons when Telegram is on. A teammate's handoff gets an email only when neither a
+        phone nor Telegram reaches the owner, one of its own (hold_handoff). Returns the Telegram message id, which binds those
         buttons to these questions."""
         fleet_push(self.store, self.config, rows)
+        pings = None
         for row in rows:
             try:
-                hold_mail(self.store, self.config, 'result', fleet.asks_line(row), 'fleet:' + row['id'], True)
+                if row['kind'] != 'handoff':
+                    hold_mail(self.store, self.config, 'result', fleet.asks_line(row), 'fleet:' + row['id'], True)
+                    continue
+                pings = self.fleet_pings() if pings is None else pings
+                if not pings:  # a teammate's handoff and nothing else reaches the owner: its own email
+                    hold_handoff(self.store, self.config, row)
             except Exception as error:  # noqa: BLE001 - the notification goes on without its email
                 LOG.warning('fleet mail hold error=%s', type(error).__name__)
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
@@ -13573,6 +13603,14 @@ class App:
         result = fleet_telegram(self.config, fleet.telegram_message(rows, fleet.dashboard_root(self.config)))
         message_id = str(result.get('messageId') or '')
         return message_id if re.fullmatch(r'\d+', message_id) else None
+
+    def fleet_pings(self):
+        """A Fleet question reaches the owner on their phone or in Telegram: an app to push to with push on for
+        results, or Telegram on for them."""
+        with self.store.connect() as db:
+            push = bool(self.config.get('dashboard_host')) and notify.allowed(db, 'result', 'push') and \
+                bool(db.execute('SELECT 1 FROM push_subscriptions LIMIT 1').fetchone())
+        return push or (telegram_on(self.config) and self.notify_on('result', 'telegram'))
 
     def fleet_notify_notice(self, view, message):
         """A Fleet notice: a phone notification, and a Telegram message when Telegram is on (Confirm and Decline on a

@@ -26,7 +26,7 @@ PATHS = {
     'fleet_requests.py': ['question_text', 'how_text', 'answer_text', 'taken_line', 'request_card', 'on_it_line', 'marked_line',
                           'request_answered'],
     'family.py': ['question_text', 'answer_text', 'family_card', 'family_reminders'],
-    'notify.py': ['compose', 'waiting_mail'],
+    'notify.py': ['compose', 'waiting_mail', 'handoff_mail'],
 }
 # Matched by code elsewhere, so they stay as they are: 'You' sorts the owner first in the Fleet brief.
 ALLOWED = {'You', 'heating up'}

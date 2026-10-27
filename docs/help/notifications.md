@@ -25,6 +25,7 @@ Like Slack, it looks at whether you're using the dashboard, not just whether it'
 - In use: the dashboard is in front of you, in focus, and you clicked, typed, scrolled or touched it in the last 10 minutes. Nothing buzzes. Telegram arrives without a sound.
 - Away: the dashboard is in the background, minimized, closed, or idle for 10 minutes. A push goes a minute after you left, unless you came back and saw it first.
 - Still unseen 15 minutes later: one email with everything that still waits for you. At most one an hour. Anything you handled in the meantime, on Telegram or elsewhere, is left out.
+- A teammate hands you a to-do and your Machine has no phone or Telegram to ping you on: one email for it, 15 minutes later if you still haven't seen it. Just its title and a link. **Email** for **Results and questions** turns it off.
 - Outside your work hours: nothing. The morning digest has what came in.
 
 Only what needs you notifies. Progress and edits don't. A burst buzzes once. The app's icon shows how many to-dos need you.
