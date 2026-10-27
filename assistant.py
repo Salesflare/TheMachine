@@ -10227,6 +10227,23 @@ def reminder_channels(store, config):
     return {'telegram': telegram_on(config) and telegram_pref, 'push': push}
 
 
+def mail_ready(config):
+    """Email can go: a hosted or paired Machine hands it to the control plane's mailer (App.notify_mail_target)."""
+    return bool(fleet.settings(config) and (config.get('credentials') or {}).get('fleet'))
+
+
+def hold_mail(store, config, kind, title, ref, work=False):
+    """Something now waits for the owner: an email EMAIL_AFTER from now if they still haven't seen it then and aren't
+    using a dashboard (notify.take_due). Nothing when email is off for this kind or can't go."""
+    if not mail_ready(config):
+        return False
+    with store.connect() as db:
+        if not notify.allowed(db, kind, 'email'):
+            return False
+        notify.hold(db, 'email', kind, title, time.time() + notify.EMAIL_AFTER, ref=ref, show=security_levels.notify_text(db, work))
+    return True
+
+
 # Setup hints: what a hosted owner skipped at setup, suggested in the dashboard once it is relevant (one at a time,
 # at the top of Suggestions, with Not now). A source when its mail keeps coming in, Telegram once a snooze would only
 # come back on the dashboard, Codex once GitHub is connected. Each links to that step on the setup page.
@@ -10284,17 +10301,19 @@ def waiting_count(db):
                       "AND (deliver_after IS NULL OR deliver_after<=?)", (now(),)).fetchone()[0]
 
 
-def push_send(store, config, subscriptions, payload, label, sender=None, kind=None):
-    """kind (notify.KINDS): left out when the owner turned that kind off for push, or while a dashboard is in focus
-    (notify.active); it carries the badge count. Without kind (a test) it always goes."""
+def push_send(store, config, subscriptions, payload, label, sender=None, kind=None, held=False):
+    """kind (notify.KINDS): left out when the owner turned that kind off for push; held while a dashboard is in use or
+    for a minute after they left one (notify.push_now), then sent by App.notify_step unless they saw it there. It
+    carries the badge count. Without kind (a test, the digest) it goes at once."""
     if kind:
         with store.connect() as db:
             if not notify.allowed(db, kind, 'push'):
                 return []
+            if not held and not notify.push_now():  # a dashboard in use, or just left: wait, it may be seen there
+                notify.hold(db, 'push', kind, str(payload.get('title') or ''), time.time(), payload=payload)
+                LOG.info('push %s held', label)
+                return []
             payload = {**payload, 'badge': waiting_count(db)}
-        if notify.active():
-            LOG.info('push %s skipped=active', label)
-            return []
     try:
         results = (sender or (lambda request: push_node(config, request)))({'action': 'send', 'subscriptions': subscriptions, 'payload': payload})['results']
     except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
@@ -10596,6 +10615,12 @@ def deliver_one(store, config, edit_cards=True):
     if status == 'sent':
         try:push_notify(store, config, row)
         except Exception as failure:LOG.warning('push error=%s', type(failure).__name__)
+        try:
+            work = any(a['id'] in json.loads(row.get('account_ids') or '[]') and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
+            ready = row['_result_notice'] and row['status'] == 'prepared'
+            title = i18n.t('Ready: {}', row['title']) if ready else i18n.t('Reminder: {}', row['title']) if row.get('reminder') and not row['_result_notice'] else row['title']
+            hold_mail(store, config, notify.kind_of(row), title, 'suggestion:' + row['id'], work)
+        except Exception as failure:LOG.warning('mail hold error=%s', type(failure).__name__)
     if row['_result_notice']:
         LOG.info('delivery suggestion=%s notice=1 status=%s error=%s',row['id'],status,error)
     else:
@@ -12533,9 +12558,17 @@ class App:
         if name in ('notify_set', 'notify_active', 'notify_preview'):  # Settings, Notifications (notify.py)
             if not owner_dashboard:
                 raise ValueError('Notifications are set in the dashboard')
-            if name == 'notify_active':  # a dashboard in focus: no push while the owner is here
-                notify.mark_active()
-                return {'active': True}
+            if name == 'notify_active':  # a page says whether it is in use (visible, in focus, touched lately) or not
+                client = str(args.get('client') or 'page')
+                if not re.fullmatch(r'[a-z0-9]{1,16}', client):
+                    raise ValueError('Invalid page')
+                on = args.get('active', True) is not False
+                try:
+                    idle = max(0, min(int(args.get('idle') or 0), 86400))
+                except (TypeError, ValueError):
+                    idle = 0
+                notify.mark_active(client=client, on=on, idle=idle)
+                return {'active': notify.active()}
             if name == 'notify_preview':  # shown on the page only: nothing is sent
                 digest = self.digest()
                 return {'empty': not digest, 'text': digest['text'] if digest else '', 'push': digest['push'] if digest else None}
@@ -13128,11 +13161,54 @@ class App:
         except Exception:  # noqa: BLE001 - no readable token: no email
             return None
 
+    def notify_open(self, ref):
+        """Whether a held notification's to-do or Fleet question still waits for the owner."""
+        what, _, key = ref.partition(':')
+        with self.store.connect() as db:
+            if what == 'suggestion':
+                row = db.execute('SELECT s.status,s.handled_hint,p.status prep FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
+                                 'WHERE s.id=?', (key,)).fetchone()
+                return bool(row) and not row['handled_hint'] and (row['status'] in ('pending', 'prepared', 'instructions')
+                                                                  or (row['status'] == 'accepted' and row['prep'] == 'blocked'))
+            if what == 'fleet':
+                try:
+                    return bool(db.execute("SELECT 1 FROM fleet_in WHERE id=? AND status='waiting'", (key,)).fetchone())
+                except sqlite3.OperationalError:
+                    return False
+        return True
+
+    def notify_step(self, current=None, push=None, mail=None):
+        """Held notifications (notify.take_due): a push a minute after the owner left the dashboard, and one email for
+        what is still unseen and waiting a while later. Within work hours only; a held push outside them is dropped."""
+        local = (current or dt.datetime.now(dt.timezone.utc)).astimezone(local_tz())
+        with self.store.connect() as db:
+            notify.ensure(db)
+            if not in_hours(local):
+                db.execute("DELETE FROM notify_queue WHERE channel='push'")
+                return None
+            pushes, lines = notify.take_due(db, self.notify_open)
+            subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')] if pushes else []
+        went = []
+        for item in pushes:
+            if subscriptions and self.config.get('dashboard_host') and push_send(self.store, self.config, subscriptions, item['payload'], 'held', push, kind=item['kind'], held=True):
+                went.append('push')
+        target = lines and self.notify_mail_target()
+        if target:
+            root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+            message = notify.waiting_mail(lines, root)
+            if (mail or notify.mail)(target[0], target[1], message['subject'], message['text']):
+                with self.store.connect() as db:
+                    notify.mailed(db)
+                went.append('email')
+        if went:
+            LOG.info('notify held channels=%s', ','.join(went))
+        return went
+
     def notify_view(self):
         with self.store.connect() as db:
             prefs = notify.prefs(db)
             devices = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
-        return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': bool(fleet.settings(self.config) and (self.config.get('credentials') or {}).get('fleet')),
+        return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': mail_ready(self.config),
                 'push_devices': devices, 'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30')}
 
     def digest(self, current=None):
@@ -13207,9 +13283,15 @@ class App:
         return went
 
     def fleet_notify(self, rows):
-        """Questions waiting for the owner: a phone notification, and a Telegram message with quick buttons when
-        Telegram is on. Returns the Telegram message id, which binds those buttons to these questions."""
+        """Questions waiting for the owner: a phone notification, an email if still unanswered and unseen later, and a
+        Telegram message with quick buttons when Telegram is on. Returns the Telegram message id, which binds those
+        buttons to these questions."""
         fleet_push(self.store, self.config, rows)
+        for row in rows:
+            try:
+                hold_mail(self.store, self.config, 'result', fleet.asks_line(row), 'fleet:' + row['id'], True)
+            except Exception as error:  # noqa: BLE001 - the notification goes on without its email
+                LOG.warning('fleet mail hold error=%s', type(error).__name__)
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, fleet.telegram_message(rows, fleet.dashboard_root(self.config)))
@@ -13803,6 +13885,7 @@ class App:
             try:
                 self.feedback_prompt_step()
                 deliver(self.store, self.config)
+                self.notify_step()
                 self.digest_step()
             except Exception as error:
                 LOG.error('delivery error=%s', type(error).__name__)

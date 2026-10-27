@@ -2257,5 +2257,12 @@
  "Use case removed.": "Caso de uso removido.",
  "Situation": "Situação",
  "Action": "Ação",
- "Remove use case": "Remover caso de uso"
+ "Remove use case": "Remover caso de uso",
+ "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "Usando o painel? Nada vibra. Ausente ou inativo: um push depois de um minuto, e um e-mail se ainda não foi visto 15 minutos depois.",
+ "{} things wait for you": {
+  "one": "{} item espera por você",
+  "other": "{} itens esperam por você"
+ },
+ "Waiting for you: {}": "Esperando por você: {}",
+ "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Você recebe isto quando algo espera por você e você ainda não viu no painel. Mude em Configurações, Notificações."
 }

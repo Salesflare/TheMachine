@@ -6,7 +6,7 @@ covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
 ---
-The dashboard installs as an app on a phone or a computer. It then sends a notification for each to-do, result and reminder, within your [work hours](work-hours.md). Pick what it sends in [Notifications](notifications.md).
+The dashboard installs as an app on a phone or a computer. It then sends a notification for each to-do, result and reminder when you are away from the dashboard, within your [work hours](work-hours.md). Pick what it sends in [Notifications](notifications.md).
 
 A quiet note at the top of Suggestions offers both, one at a time: first the app, then notifications. **Not now** hides it for 14 days, and a second **Not now** stops it on that device. The same controls stay in **Settings**, **General**, **This device**.
 

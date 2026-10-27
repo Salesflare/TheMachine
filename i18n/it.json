@@ -2257,5 +2257,12 @@
  "Use case removed.": "Caso d’uso rimosso.",
  "Situation": "Situazione",
  "Action": "Azione",
- "Remove use case": "Rimuovi caso d’uso"
+ "Remove use case": "Rimuovi caso d’uso",
+ "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "Usi la dashboard? Niente vibra. Via o inattivo: una notifica push dopo un minuto, e una sola email se dopo 15 minuti non l’hai ancora visto.",
+ "{} things wait for you": {
+  "one": "{} cosa ti aspetta",
+  "other": "{} cose ti aspettano"
+ },
+ "Waiting for you: {}": "Ti aspetta: {}",
+ "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Ricevi questa email quando qualcosa ti aspetta e non l’hai visto nella dashboard. Cambialo in Impostazioni, Notifiche."
 }

@@ -49,7 +49,7 @@ try{
  const head=await page.locator('#settings .section-head:visible').first().evaluate(e=>{const h=e.querySelector('h2').getBoundingClientRect(),p=e.querySelector('p').getBoundingClientRect();return {below:p.top>=h.bottom-1,left:Math.abs(p.left-h.left)<2}});
  assert.deepEqual(head,{below:true,left:true});
  assert.equal(await page.locator('.site-footer #theme-toggle, .site-footer #push-toggle').count(),0);
- await page.locator('#settings-tabs [data-settings-tab="hours"]').click();await page.locator('#hours').waitFor();
+ await page.locator('#settings-tabs [data-settings-tab="notify"]').click();await page.locator('#hours').waitFor();
  assert.deepEqual(await page.locator('#hours-days [aria-pressed="true"]').allTextContents(),['Mon','Tue','Wed','Thu','Fri']);
  assert.equal(await page.locator('#hours-start').inputValue(),'08:00');
  assert.equal(await page.locator('#hours-end').inputValue(),'23:00');

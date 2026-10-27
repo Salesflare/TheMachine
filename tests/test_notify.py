@@ -33,16 +33,162 @@ class Notifications(unittest.TestCase):
             db.execute('UPDATE suggestions SET deliver_after=NULL')
         return sid
 
-    def test_defaults_keep_todays_behavior_and_each_cell_saves(self):
+    def test_defaults_have_email_for_every_kind_and_each_cell_saves(self):
         view = self.app.action('notify_set', {'kind': 'todo', 'channel': 'push', 'on': False}, owner_dashboard=True)
-        self.assertEqual(view['prefs']['todo'], {'push': False, 'telegram': True})
-        self.assertEqual(view['prefs']['digest'], {'push': True, 'telegram': False, 'email': False})
-        self.assertEqual(view['prefs']['result'], {'push': True, 'telegram': True})
-        for bad in ({'kind': 'todo', 'channel': 'email'}, {'kind': 'spam', 'channel': 'push'}):
+        self.assertEqual(view['prefs']['todo'], {'push': False, 'telegram': True, 'email': True})
+        self.assertEqual(view['prefs']['digest'], {'push': True, 'telegram': False, 'email': True})
+        self.assertEqual(view['prefs']['result'], {'push': True, 'telegram': True, 'email': True})
+        self.assertEqual(view['prefs']['reminder'], {'push': True, 'telegram': True, 'email': True})
+        self.assertFalse(self.app.action('notify_set', {'kind': 'todo', 'channel': 'email', 'on': False}, owner_dashboard=True)['prefs']['todo']['email'])
+        for bad in ({'kind': 'todo', 'channel': 'sms'}, {'kind': 'spam', 'channel': 'push'}):
             with self.assertRaises(ValueError):
                 self.app.action('notify_set', {**bad, 'on': True}, owner_dashboard=True)
         with self.assertRaises(ValueError):  # only the owner, on the dashboard
             self.app.action('notify_set', {'kind': 'todo', 'channel': 'push', 'on': True})
+
+    def test_presence_like_slack_in_use_idle_or_in_the_background(self):
+        clock = [1000.0]
+        at = lambda: clock[0]
+        notify.mark_active(at, client='desk', on=True)
+        self.assertTrue(notify.active(at))
+        self.assertFalse(notify.push_now(at))  # in use: held, they may see it there
+        clock[0] += 30
+        notify.mark_active(at, client='desk', on=False, idle=2)  # the window went to the background
+        self.assertFalse(notify.active(at))
+        self.assertEqual(notify.last_seen(at), 1028)
+        self.assertFalse(notify.push_now(at))
+        clock[0] = 1028 + notify.AWAY_GRACE
+        self.assertTrue(notify.push_now(at))  # a minute after they left
+        # Focused but untouched: still in use for ten minutes, last seen when they stopped touching it
+        clock[0] = 5000.0
+        notify.mark_active(at, client='desk', on=True)
+        clock[0] += 300
+        notify.mark_active(at, client='desk', on=True, idle=300)
+        self.assertTrue(notify.active(at))
+        self.assertEqual(notify.last_seen(at), 5000)
+        clock[0] += 300
+        notify.mark_active(at, client='desk', on=False, idle=600)  # idle: away, a push may go
+        self.assertFalse(notify.active(at))
+        self.assertTrue(notify.push_now(at))
+        self.assertEqual(notify.last_seen(at), 5000)
+        # Another page in use (the phone) keeps them here; a page that stops beating (closed) lets go
+        notify.mark_active(at, client='phone', on=True)
+        self.assertTrue(notify.active(at))
+        clock[0] += notify.ACTIVE_FOR + 1
+        self.assertFalse(notify.active(at))
+        # A page open in the background that was never in use changes nothing
+        before = notify.last_seen(at)
+        notify.mark_active(at, client='other', on=False)
+        self.assertEqual(notify.last_seen(at), before)
+
+    def test_the_page_says_in_use_or_not(self):
+        self.app.action('notify_active', {'client': 'abc123', 'active': True}, owner_dashboard=True)
+        self.assertTrue(notify.active())
+        self.assertEqual(self.app.action('notify_active', {'client': 'abc123', 'active': False, 'idle': 'x'}, owner_dashboard=True), {'active': False})
+        with self.assertRaises(ValueError):
+            self.app.action('notify_active', {'client': '../x', 'active': True}, owner_dashboard=True)
+
+    def held(self, mails=None):
+        """A paired Machine with one phone: pushes into self.sent, emails into mails."""
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        self.config.update(credentials={'fleet': 'fleet'}, fleet={'url': 'https://cp.example/api/fleet'})
+        self.mails = [] if mails is None else mails
+        self.mail = lambda url, token, subject, text: self.mails.append((subject, text)) or True
+
+    def step(self, clock):
+        with patch.object(notify.time, 'time', return_value=clock), patch.object(a, 'local_tz', return_value=UTC), \
+                patch.object(a, 'credential', return_value='token'):
+            return self.app.notify_step(current=a.dt.datetime.fromtimestamp(clock, UTC), push=self.sender, mail=self.mail)
+
+    def deliver(self, sid, clock, row=None):
+        with patch.object(notify.time, 'time', return_value=clock):
+            a.push_notify(self.store, self.config, row or {'id': sid, 'title': 'Reply to the landlord', 'body': 'B', 'status': 'pending'}, self.sender)
+            a.hold_mail(self.store, self.config, 'todo', 'Reply to the landlord', 'suggestion:' + sid)
+
+    def test_just_left_the_dashboard_the_push_waits_a_minute_and_coming_back_cancels_it(self):
+        self.held()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        notify.mark_active(lambda: t0, client='desk', on=True)
+        notify.mark_active(lambda: t0 + 5, client='desk', on=False)  # switched to another app
+        sid = self.card()
+        self.deliver(sid, t0 + 10)
+        self.assertEqual(self.sent, [])  # held
+        self.assertEqual(self.step(t0 + 30), [])
+        self.assertEqual(self.step(t0 + 5 + notify.AWAY_GRACE), ['push'])
+        self.assertEqual(self.sent[0]['payload']['title'], 'Reply to the landlord')
+        self.assertEqual(self.sent[0]['payload']['badge'], 1)
+        # Next one: they come back before the minute is up, and see it there. No push, no email.
+        sid2 = self.card('two', 'Pay the invoice')
+        notify.mark_active(lambda: t0 + 100, client='desk', on=True)
+        notify.mark_active(lambda: t0 + 101, client='desk', on=False)
+        self.deliver(sid2, t0 + 102, {'id': sid2, 'title': 'Pay the invoice', 'body': 'B', 'status': 'pending'})
+        notify.mark_active(lambda: t0 + 120, client='desk', on=True)
+        notify.mark_active(lambda: t0 + 125, client='desk', on=False)
+        self.assertEqual(self.step(t0 + 3000), [])
+        self.assertEqual(len(self.sent), 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE ref='suggestion:'||?", (sid2,)).fetchone()[0], 0)
+
+    def test_in_use_nothing_buzzes_and_nothing_is_emailed(self):
+        self.held()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        notify.mark_active(lambda: t0, client='desk', on=True)
+        sid = self.card()
+        self.deliver(sid, t0 + 1)
+        notify.mark_active(lambda: t0 + 60, client='desk', on=True)
+        self.assertEqual(self.step(t0 + 60 + notify.EMAIL_AFTER), [])
+        self.assertEqual((self.sent, self.mails), ([], []))
+
+    def test_still_unseen_after_a_while_one_email_bundles_what_waits_at_most_hourly(self):
+        self.held()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()  # away since the start: pushes go at once
+        one, two, done = self.card(), self.card('two', 'Pay the invoice'), self.card('three', 'Book the venue')
+        self.deliver(one, t0)
+        with patch.object(notify.time, 'time', return_value=t0 + 60):
+            a.hold_mail(self.store, self.config, 'result', 'Ready: Pay the invoice', 'suggestion:' + two)
+            a.hold_mail(self.store, self.config, 'todo', 'Book the venue', 'suggestion:' + done)
+        self.assertEqual(len(self.sent), 1)
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='dismissed' WHERE id=?", (done,))  # handled on Telegram meanwhile
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER - 1), [])
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER), ['email'])
+        subject, text = self.mails[0]
+        self.assertEqual(subject, '2 things wait for you')
+        self.assertIn('• Reply to the landlord', text)
+        self.assertIn('• Ready: Pay the invoice', text)
+        self.assertNotIn('Book the venue', text)
+        self.assertIn('Open The Machine: https://the-machine.example/assistant/', text)
+        # More comes in: it waits for the hour to be up, then goes alone
+        four = self.card('four', 'Answer the school')
+        with patch.object(notify.time, 'time', return_value=t0 + 1000):
+            a.hold_mail(self.store, self.config, 'todo', 'Answer the school', 'suggestion:' + four)
+        self.assertEqual(self.step(t0 + 1000 + notify.EMAIL_AFTER), [])
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER + notify.EMAIL_EVERY), ['email'])
+        self.assertEqual(self.mails[1][0], 'Waiting for you: Answer the school')
+
+    def test_email_follows_its_switch_the_security_level_and_the_hours(self):
+        self.held()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        sid = self.card()
+        self.app.action('notify_set', {'kind': 'todo', 'channel': 'email', 'on': False}, owner_dashboard=True)
+        with patch.object(notify.time, 'time', return_value=t0):
+            self.assertFalse(a.hold_mail(self.store, self.config, 'todo', 'Reply to the landlord', 'suggestion:' + sid))
+        self.app.action('notify_set', {'kind': 'todo', 'channel': 'email', 'on': True}, owner_dashboard=True)
+        with patch.object(a.security_levels, 'notify_text', return_value=False), patch.object(notify.time, 'time', return_value=t0):
+            self.assertTrue(a.hold_mail(self.store, self.config, 'todo', 'Reply to the landlord', 'suggestion:' + sid))
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER), ['email'])
+        self.assertEqual(self.mails[0][0], '1 thing waits for you')
+        self.assertNotIn('landlord', self.mails[0][1])
+        # Not hosted or paired: nothing to send it with, so nothing is held
+        self.assertFalse(a.hold_mail(self.store, {'accounts': []}, 'todo', 'T', 'suggestion:' + sid))
+        # Outside work hours a held push is dropped (the digest has it)
+        with self.store.connect() as db:
+            notify.hold(db, 'push', 'todo', 'T', t0, payload={'title': 'T'})
+        night = a.dt.datetime(2026, 10, 12, 23, 30, tzinfo=UTC).timestamp()
+        with patch.object(a, 'WORK_HOURS', dict(a.WORK_HOURS_DEFAULT, end='18:00')):
+            self.assertIsNone(self.step(night))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel='push'").fetchone()[0], 0)
 
     def test_kinds_of_a_card_delivery(self):
         self.assertEqual(notify.kind_of({'status': 'pending'}), 'todo')
@@ -165,6 +311,7 @@ class Notifications(unittest.TestCase):
         with patch.object(a, 'local_tz', return_value=UTC), patch.object(self.app, 'digest', return_value=None):
             self.assertEqual(self.app.digest_step(current=monday, push=self.sender), [])
         self.app.action('notify_set', {'kind': 'digest', 'channel': 'push', 'on': False}, owner_dashboard=True)
+        self.app.action('notify_set', {'kind': 'digest', 'channel': 'email', 'on': False}, owner_dashboard=True)
         with patch.object(a, 'local_tz', return_value=UTC):
             self.assertIsNone(self.app.digest_step(current=monday + a.dt.timedelta(days=1), push=self.sender))
         self.assertEqual(self.sent, [])

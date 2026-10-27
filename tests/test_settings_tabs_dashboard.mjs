@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Settings in tabs: Account, General, Work hours, Writing, Skills, Model, each part of Settings in one. A Machine linked
+// Settings in tabs: Account, General, Notifications (with Work hours), Writing, Skills, Model, each part of Settings in one. A Machine linked
 // to a control plane account (hosted, or self-hosted and paired) gets Account first (test_account_dashboard.mjs); one
 // with no account has none. A tab with nothing to show is
 // left out. Links open a tab (#settings/skills, #settings=model), the URL follows the tab, and the last tab is kept.
@@ -40,7 +40,7 @@ try{
   await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
   // hosted: Security holds Support access
-  assert.deepEqual(await tabs(page),['Account','General','Security','Work hours','Writing','Skills','Model']);
+  assert.deepEqual(await tabs(page),['Account','General','Security','Notifications','Writing','Skills','Model']);
   // Account first, a tab like the others; General has this device, and no account card (it's in Account now).
   assert.equal(await selected(page),'Account');assert.equal(await page.evaluate(()=>location.hash),'#settings/account');
   assert.equal(await visible(page,'#settings-acct'),true);assert.equal(await visible(page,'#theme-toggle'),false);
@@ -49,11 +49,11 @@ try{
   for(const sel of ['#hours','#signatures','#settings-skills','#model-panel'])assert.equal(await visible(page,sel),false,sel);
   assert.equal(await help(page),HELP+'settings');
   // Each tab shows its own part.
-  for(const [tab,sel] of [['hours','#hours'],['writing','#signatures'],['writing','#settings-voices'],['skills','#settings-skills'],['model','#model-panel']]){
+  for(const [tab,sel] of [['notify','#hours'],['writing','#signatures'],['writing','#settings-voices'],['skills','#settings-skills'],['model','#model-panel']]){
    await page.locator(`#settings-tabs [data-settings-tab="${tab}"]`).click();
    assert.equal(await visible(page,sel),true,sel);assert.equal(await visible(page,'#theme-toggle'),false);
    assert.equal(await page.evaluate(()=>location.hash),'#settings/'+tab);
-   assert.equal(await help(page),HELP+({hours:'work-hours'}[tab]||tab))}
+   assert.equal(await help(page),HELP+({notify:'notifications'}[tab]||tab))}
   // The pills are one height. On a phone they are one row that scrolls sideways inside the screen; on a desktop every
   // pill is in view, on a second row if the fonts are wide.
   const row=await page.evaluate(()=>{const bar=document.querySelector('#settings-tabs'),box=bar.getBoundingClientRect(),r=[...bar.children].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect());
@@ -68,12 +68,12 @@ try{
   await navClick(page.locator('nav [data-tab="events"]'));assert.equal(await page.evaluate(()=>location.hash),'');assert.equal(await help(page),HELP+'dashboard');
   await navClick(page.locator('#open-settings'));assert.equal(await selected(page),'Model');
   await page.goto(base+'/#settings/skills');await page.locator('#settings-skills:visible').waitFor();assert.equal(await selected(page),'Skills');
-  await page.goto(base+'/#settings=hours');await page.locator('#hours:visible').waitFor();assert.equal(await selected(page),'Work hours');
+  await page.goto(base+'/#settings=hours');await page.locator('#hours:visible').waitFor();assert.equal(await selected(page),'Notifications');  // an old Work hours link
   await page.evaluate(()=>{location.hash='#settings/writing'});await page.locator('#signatures:visible').waitFor();
   assert.equal(await page.locator('#settings').isVisible(),true);
   // On your own computer: no Account tab, and a tab with nothing in it (no model reported) is left out.
   hosted=false;model=false;await page.goto('about:blank');await page.goto(base+'/#settings/model');await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['General','Work hours','Writing','Skills']);
+  assert.deepEqual(await tabs(page),['General','Notifications','Writing','Skills']);
   assert.equal(await selected(page),'General');assert.equal(await visible(page,'#settings-cloud'),true);
   // Self-hosted but paired with the Network: the Account tab too.
   paired=true;await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();

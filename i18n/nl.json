@@ -2257,5 +2257,12 @@
  "Use case removed.": "Use case verwijderd.",
  "Situation": "Situatie",
  "Action": "Actie",
- "Remove use case": "Use case verwijderen"
+ "Remove use case": "Use case verwijderen",
+ "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "Gebruik je het dashboard? Dan zoemt er niets. Weg of inactief: na een minuut een push, en één e-mail als het 15 minuten later nog niet gezien is.",
+ "{} things wait for you": {
+  "one": "{} ding wacht op je",
+  "other": "{} dingen wachten op je"
+ },
+ "Waiting for you: {}": "Wacht op je: {}",
+ "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Je krijgt dit als er iets op je wacht dat je nog niet op het dashboard zag. Wijzig het in Instellingen, Meldingen."
 }
