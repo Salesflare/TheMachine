@@ -116,7 +116,7 @@ def literal(path, name):
 def features():
     """Every feature id the code has today."""
     html = (ROOT / 'dashboard.html').read_text(encoding='utf-8')
-    nav = re.search(r'<nav aria-label="Sections">(.*?)</nav>', html, re.S)[1]
+    nav = re.search(r'<nav aria-label="Sections">(.*?)</nav\s*>', html, re.S)[1]
     settings = re.search(r'const SETTINGS_TABS=(\[.*?\]);', html)[1]
     found = {f'connector:{s}' for s in literal('onboarding.py', 'SERVICES').values()}
     found |= {f'connector:{p.stem}' for p in (ROOT / 'connectors').glob('*.py') if 'SETUP' in p.read_text(encoding='utf-8')}

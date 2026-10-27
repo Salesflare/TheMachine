@@ -39,6 +39,10 @@ and explain why they are needed. The dashboard is plain HTML, CSS and JavaScript
   catalogs are kept sorted by key, so pull requests that add different strings merge without conflicts. Run
   `python3 scripts/i18n_extract.py --sort` before pushing; `tests/test_i18n.py` fails on a catalog that isn't sorted.
   When merging main still leaves a catalog conflict, `python3 scripts/i18n_extract.py --merge` settles it key by key.
+- Keep changes where they belong, so parallel pull requests merge cleanly: a new dashboard function goes next to the
+  functions of its area, not at the end of the script; the dashboard's static markup has one element with an id per
+  line (break inside the tag before it, `</div` newline `><div id=…>`, so the page stays the same); the action lists in
+  `assistant.py` (`*_ACTIONS`) have one name per line, sorted (`tests/test_owner_boundary.py` checks).
 - A change built from a team learning (the control plane's Learnings inbox, a picked learning's **Build brief**) treats
   its use cases as the reference for what was meant. Add a test per use case where one fits, and check the result
   against each. The PR body lists every use case with the test that covers it, or says plainly where it falls short:

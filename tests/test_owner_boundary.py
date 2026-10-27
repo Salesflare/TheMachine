@@ -240,6 +240,23 @@ class OwnerBoundary(unittest.TestCase):
             self.assertNotEqual(status, 403, (action, body))
             self.assertEqual(self.post(port, {'action': action, 'args': {}}, {'Authorization': 'Bearer ' + TOKEN})[0], 403)
 
+    def test_the_action_lists_are_sorted_one_per_line(self):
+        # One action per line, sorted: pull requests that add different actions merge without conflicts.
+        import ast
+        problems = []
+        for node in ast.parse(Path(a.__file__).read_text()).body:
+            if not (isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id.endswith('_ACTIONS')):
+                continue
+            value = node.value.args[0] if isinstance(node.value, ast.Call) and node.value.args else node.value
+            if not isinstance(value, (ast.Set, ast.Tuple)):
+                continue
+            items = [ast.unparse(e) for e in value.elts]
+            lines = [e.lineno for e in value.elts]
+            stars = [i for i in items if i.startswith('*')]
+            if items != sorted(stars) + sorted(i for i in items if not i.startswith('*')) or len(set(lines)) != len(lines):
+                problems.append(node.targets[0].id)
+        self.assertEqual(problems, [], 'one per line: spreads (*X) first, then the names, each sorted')
+
     def test_every_action_the_dashboard_posts_gets_through(self):
         # A save the dashboard makes that the allowlist lacks fails with "Operation is not available here" (Region did).
         html = (Path(__file__).parent.parent.joinpath('dashboard.html')).read_text()
