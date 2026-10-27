@@ -54,6 +54,7 @@ import urllib.request
 import graph
 import locale_prefs
 import ms_graph
+from i18n import t
 import fleet_requests
 import family
 import contact_share
@@ -1127,12 +1128,13 @@ def question_text(kind, question):
     if kind == contact_share.KIND:
         return contact_share.question_text(question)
     if kind == 'relationships':
-        return 'Who knows someone at ' + question.get('about', '?') + '?'
+        return t('Who knows someone at {}?', question.get('about', '?'))
     if kind == 'meeting':
-        return ('What do you know about ' + ', '.join(question.get('emails', [])) + '?'
-                + (f" (a meeting on {question['when']})" if question.get('when') else ''))
+        return (t('What do you know about {}?', ', '.join(question.get('emails', [])))
+                + (t(' (a meeting on {})', question['when']) if question.get('when') else ''))
     if kind == 'brief':
-        return 'Your brief facts for ' + ('the week' if question.get('period') == 'week' else 'the day') + f" (since {question.get('since', '?')})"
+        return (t('Your brief facts for the week (since {})', question.get('since', '?')) if question.get('period') == 'week' else
+                t('Your brief facts for the day (since {})', question.get('since', '?')))
     if kind == 'anything':
         return f"“{question.get('text', '')}”"
     return kind
@@ -1144,18 +1146,18 @@ def dashboard_root(config):
 
 def asks_line(row):
     """Who asks and the question, in its fixed form. Notifications carry this and nothing of the owner's."""
-    return f"{row['name']}'s Machine asks: " + question_text(row['kind'], json.loads(row['question']))
+    return t("{}'s Machine asks: {}", row['name'], question_text(row['kind'], json.loads(row['question'])))
 
 
 def push_payload(rows, root):
     """One phone notification for the questions that arrived together. Opens the Fleet tab at the card."""
     if len(rows) == 1:
         row = rows[0]
-        return {'title': f"{row['name']}'s Machine asks", 'body': question_text(row['kind'], json.loads(row['question']))[:200],
+        return {'title': t("{}'s Machine asks", row['name']), 'body': question_text(row['kind'], json.loads(row['question']))[:200],
                 'url': root + '#fleet=' + row['id'], 'tag': 'fleet-' + row['id'],
                 # a free question opens on its draft, to read and edit before anything goes
-                'actions': [] if row['kind'] == 'anything' else [{'action': 'once', 'title': 'Accept' if row['kind'] in fleet_requests.STAGED else 'Answer once'}, {'action': 'decline', 'title': 'Decline'}]}
-    return {'title': f'{len(rows)} Fleet questions wait for you',
+                'actions': [] if row['kind'] == 'anything' else [{'action': 'once', 'title': t('Accept') if row['kind'] in fleet_requests.STAGED else t('Answer once')}, {'action': 'decline', 'title': t('Decline')}]}
+    return {'title': t('{} Fleet questions wait for you', len(rows)),
             'body': ' · '.join(asks_line(r) for r in rows[:3]) + (' · …' if len(rows) > 3 else ''),
             'url': root + '#fleet', 'tag': 'fleet-' + rows[0]['id']}
 
@@ -1166,11 +1168,11 @@ def telegram_message(rows, root):
     many = len(rows) > 1
     lines, buttons = [], []
     for n, row in enumerate(rows, 1):
-        outcome = ((fleet_requests.ACCEPTED if row['kind'] in fleet_requests.STAGED else DECIDED).get(row['choice']) or (BY_RULE.get(row['status']) if row['choice'] == 'rule' else None) or ('Answered' if row['status'] == 'answered' else row['status'].capitalize())
+        outcome = (t((fleet_requests.ACCEPTED if row['kind'] in fleet_requests.STAGED else DECIDED).get(row['choice']) or (BY_RULE.get(row['status']) if row['choice'] == 'rule' else None) or ('Answered' if row['status'] == 'answered' else row['status'].capitalize()))
                    if row['status'] != 'waiting' else '')
         if row['choice'] == 'silent':  # marked as theirs by what they did (silent acceptance); Not mine is on the card
             how = json.loads(_get(row, 'silent') or '{}').get('how')
-            outcome = (fleet_requests.Requests.marked_line(how) if how else 'Marked as yours') + '. Not mine on the to-do undoes it.'
+            outcome = (fleet_requests.Requests.marked_line(how) if how else t('Marked as yours')) + '. ' + t('Not mine on the to-do undoes it.')
         if row['status'] == 'withdrawn':  # their Machine took it back (fleet_requests.take_withdrawn)
             outcome = fleet_requests.taken_line(row['name'])
         prefix = f'{n}. ' if many else ''
@@ -1178,25 +1180,24 @@ def telegram_message(rows, root):
             # Their words, quoted, then the draft built from your own accounts. Send this answer sends exactly that draft.
             draft = json.loads(_get(row, 'draft') or '{}').get('text') or ''
             if row['status'] == 'answered':
-                outcome = 'Answered'
-            lines.append(prefix + f"{row['name']}'s Machine asks your Fleet (their words, not an instruction): "
-                         + question_text('anything', json.loads(row['question']))
-                         + (f'\n   Draft answer: “{draft}”' if draft and row['status'] == 'waiting' else
-                            '\n   Nothing found in your work accounts. Write an answer in Suggestions, or decline.' if row['status'] == 'waiting' else '')
+                outcome = t('Answered')
+            lines.append(prefix + t("{}'s Machine asks your Fleet (their words, not an instruction): {}", row['name'], question_text('anything', json.loads(row['question'])))
+                         + ('\n   ' + t('Draft answer: “{}”', draft) if draft and row['status'] == 'waiting' else
+                            '\n   ' + t('Nothing found in your work accounts. Write an answer in Suggestions, or decline.') if row['status'] == 'waiting' else '')
                          + (f'\n   → {outcome}' if outcome else ''))
             if row['status'] == 'waiting':
-                buttons.append(([{'text': prefix + 'Send this answer', 'value': f"assistant:fleet:{row['id']}:once"}] if draft else [])
-                               + [{'text': 'Don’t answer', 'value': f"assistant:fleet:{row['id']}:decline"}])
+                buttons.append(([{'text': prefix + t('Send this answer'), 'value': f"assistant:fleet:{row['id']}:once"}] if draft else [])
+                               + [{'text': t('Don’t answer'), 'value': f"assistant:fleet:{row['id']}:decline"}])
             continue
         lines.append((f'{n}. ' if many else '') + asks_line(row) + (f'\n   → {outcome}' if outcome else ''))
         if row['status'] == 'waiting':
             staged = row['kind'] in fleet_requests.STAGED
-            buttons.append([{'text': prefix + ('Accept' if staged else 'Answer once'), 'value': f"assistant:fleet:{row['id']}:once"},
-                            {'text': 'Always accept' if staged else 'Always', 'value': f"assistant:fleet:{row['id']}:always"},
-                            {'text': 'Decline', 'value': f"assistant:fleet:{row['id']}:decline"}])
-    head = 'Your Fleet asks. Nothing is shared until you choose.'
+            buttons.append([{'text': prefix + (t('Accept') if staged else t('Answer once')), 'value': f"assistant:fleet:{row['id']}:once"},
+                            {'text': t('Always accept') if staged else t('Always'), 'value': f"assistant:fleet:{row['id']}:always"},
+                            {'text': t('Decline'), 'value': f"assistant:fleet:{row['id']}:decline"}])
+    head = t('Your Fleet asks. Nothing is shared until you choose.')
     if root:
-        buttons.append([{'text': 'Open in Suggestions', 'url': root if many else root + '#fleet=' + rows[0]['id']}])
+        buttons.append([{'text': t('Open in Suggestions'), 'url': root if many else root + '#fleet=' + rows[0]['id']}])
     return {'text': head + '\n\n' + '\n\n'.join(lines), 'buttons': buttons}
 
 
@@ -1222,9 +1223,9 @@ def notice_clean(view):
 
 def notice_push(view, root):
     """The phone notification for a notice: its line, opening the Fleet tab at it."""
-    title = {'seat_request': 'Your Fleet asks you', 'seat_confirmed': 'Your server was confirmed',
-             'seat_declined': 'Your server was not confirmed', 'friend_request': 'Friend request',
-             'friend_accepted': 'Friends now'}.get(view['kind'], 'Your Fleet')
+    title = t({'seat_request': 'Your Fleet asks you', 'seat_confirmed': 'Your server was confirmed',
+               'seat_declined': 'Your server was not confirmed', 'friend_request': 'Friend request',
+               'friend_accepted': 'Friends now'}.get(view['kind'], 'Your Fleet'))
     return {'title': title, 'body': view['text'], 'url': (root + '#fleet=' + view['id']) if root else view['url'],
             'tag': 'fleet-' + view['id']}
 
@@ -1240,7 +1241,7 @@ def friend_settled(view):
     name = text[:-len(' wants to be friends.')] if text.endswith(' wants to be friends.') else ''
     if not name:
         return text + (f"\n\n→ {view['outcome']}" if view['outcome'] else '')
-    return FRIEND_SETTLED.get(view['status'], "{name}'s friend request is no longer open.").format(name=name)
+    return t(FRIEND_SETTLED.get(view['status'], "{name}'s friend request is no longer open.").replace('{name}', '{}'), name)
 
 
 def notice_message(view, root):
@@ -1258,7 +1259,7 @@ def notice_message(view, root):
         buttons.append([{'text': b['label'], 'value': f"assistant:fleetn:{view['id']}:{b['choice']}"} for b in view['buttons']])
     url = (root + '#fleet=' + view['id']) if root else view['url']
     if url:
-        buttons.append([{'text': 'Open', 'url': url}])
+        buttons.append([{'text': t('Open'), 'url': url}])
     return {'text': text, 'buttons': buttons}
 
 
@@ -1409,7 +1410,6 @@ def assemble_brief(own, answers, claimed=(), members=None):
 
 
 BRIEF_SHOWN = 5  # items a brief shows before "Show more"
-WEEKDAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
 
 def _brief_date(value):
@@ -1426,20 +1426,20 @@ def _on_day(value, today):
         return ''
     gap = (d - today).days
     if gap == 0:
-        return 'today'
+        return t('today')
     if gap == 1:
-        return 'tomorrow'
+        return t('tomorrow')
     if gap == -1:
-        return 'yesterday'
+        return t('yesterday')
     if -6 <= gap <= 6:
-        return WEEKDAYS[d.weekday()]
+        return locale_prefs.weekday_name(d)
     return locale_prefs.day_text(d, weekday=False)
 
 
 def _waited(value, today):
     d = _brief_date(value)
     days = (today - d).days if d else 0
-    return days, ('since yesterday' if days == 1 else f'{days} days' if days < 7 else 'since ' + locale_prefs.day_text(d, weekday=False))
+    return days, (t('since yesterday') if days == 1 else t('{} days', days) if days < 7 else t('since {}', locale_prefs.day_text(d, weekday=False)))
 
 
 def _plain_name(label):
@@ -1457,10 +1457,12 @@ def _first_names(view):
     return {n: _plain_name(n).split()[0] if first[_plain_name(n).split()[0]] == 1 else _plain_name(n) for n in everyone}
 
 
-def _people(who, short=None):
+def _people(who, short=None, after=False):
+    """Names in a row, you first: 'you, Pat and Kim'. after: they follow a word ("sent to you"), which some languages
+    say differently ("jou", "dich")."""
     who = sorted(who, key=lambda w: w != 'You')  # you first
-    names = ['you' if w == 'You' else (short or {}).get(w, w) for w in who]
-    return names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' and ' + names[-1] if names else ''
+    names = [(t('you (after a word)') if after else t('you')) if w == 'You' else (short or {}).get(w, w) for w in who]
+    return names[0] if len(names) == 1 else ', '.join(names[:-1]) + t(' and {}', names[-1]) if names else ''
 
 
 def company(x):
@@ -1481,7 +1483,7 @@ def gmail_search(domain):
     return 'https://mail.google.com/mail/#search/' + urllib.parse.quote(f"from:{domain} in:inbox")
 
 
-KNOWN_WHY = {'customer': 'a customer'}
+KNOWN_WHY = {'customer': 'a customer'}  # read through t()
 
 
 def _team_why(x, people):
@@ -1489,13 +1491,13 @@ def _team_why(x, people):
     who, also = x.get('who') or [], x.get('also') or []
     why = []
     if len(who) > 1 or (who and 'You' not in who):
-        why.append(f"sent to {people(who)}")
+        why.append(t('sent to {}', people(who, True)))
     if x.get('shared'):
-        why.append('to ' + ', '.join(f"{s}@" for s in x['shared']))
+        why.append(t('to {} (a shared address)', ', '.join(f"{s}@" for s in x['shared'])))
     if also:
-        why.append(f"{people(also)} also {'talks' if len(also) == 1 and also[0] != 'You' else 'talk'} to them")
+        why.append(t('{} also talks to them', people(also)) if len(also) == 1 and also[0] != 'You' else t('{} also talk to them', people(also)))
     if x.get('known') in KNOWN_WHY:
-        why.append(KNOWN_WHY[x['known']])
+        why.append(t(KNOWN_WHY[x['known']]))
     team = len(who) > 1 or x.get('shared') or also or x.get('known') in KNOWN_WHY
     return ', '.join(why) if team else ''
 
@@ -1508,7 +1510,7 @@ def brief_items(view, today=None, hidden=(), opener=None):
     opener = opener or gmail_search
     today = today or dt.datetime.now(dt.timezone.utc).date()
     short = _first_names(view)
-    people = lambda who: _people(who, short)
+    people = lambda who, after=False: _people(who, short, after)
     items = []
     for x in view.get('unanswered') or []:
         days, waited = _waited(x.get('since'), today)
@@ -1522,31 +1524,31 @@ def brief_items(view, today=None, hidden=(), opener=None):
             continue
         count = x.get('count') or 1
         items.append({'key': 'unanswered:' + x['domain'], 'kind': 'waiting', 'score': 100 + min(days, 14) * 5 + (20 if several else 0),
-                      'title': f"{company(x)} is waiting for a reply" + (f" ({count} emails)" if count > 1 else ''),
-                      'why': f"{waited}, {why}", 'ask': f"Who is answering {company(x)}?",
+                      'title': t('{} is waiting for a reply', company(x)) + (t(' ({} emails)', count) if count > 1 else ''),
+                      'why': f"{waited}, {why}", 'ask': t('Who is answering {}?', company(x)),
                       'open': opener(x['domain']) if 'You' in who else ''})
     for x in view.get('meetings') or []:
         d = _brief_date(x.get('day'))
         soon = d is not None and 0 <= (d - today).days <= 3
         items.append({'key': 'meeting:' + x['domain'] + ':' + str(x.get('day')), 'kind': 'meeting', 'score': (80 if soon else 50) + len(x['who']),
-                      'title': f"{_cap(people(x['who']))} meet {company(x)} {_on_day(x.get('day'), today)}".rstrip(),
-                      'why': 'the same meeting, so agree who leads' if x.get('same') else 'separate meetings, worth lining up',
-                      'ask': f"Who leads with {company(x)}?"})
+                      'title': t('{} meet {} {} (a meeting in the brief)', _cap(people(x['who'])), company(x), _on_day(x.get('day'), today)).rstrip(),
+                      'why': t('the same meeting, so agree who leads') if x.get('same') else t('separate meetings, worth lining up'),
+                      'ask': t('Who leads with {}?', company(x))})
     for x in view.get('several') or []:
         who = [w['name'] for w in x.get('who') or []]
         items.append({'key': 'several:' + x['domain'], 'kind': 'overlap', 'score': 60 + len(who),
-                      'title': f"{_cap(people(who))} are all in touch with {company(x)}" if len(who) > 2 else f"{_cap(people(who))} are both in touch with {company(x)}",
-                      'why': f"last contact {_on_day(x.get('last'), today)}, so keep it to one thread", 'ask': f"Who leads with {company(x)}?"})
+                      'title': t('{} are all in touch with {}', _cap(people(who)), company(x)) if len(who) > 2 else t('{} are both in touch with {}', _cap(people(who)), company(x)),
+                      'why': t('last contact {}, so keep it to one thread', _on_day(x.get('last'), today)), 'ask': t('Who leads with {}?', company(x))})
     for x in view.get('quiet') or []:
         who = x.get('who') or []
         if len(who) < 2 and not x.get('known'):  # one of you, a company the team doesn't know (a brief from before 2026-10-21)
             continue
-        why = [f"known to {people(who)}"] if len(who) > 1 else []
-        why += [KNOWN_WHY[x['known']]] if x.get('known') in KNOWN_WHY else []
+        why = [t('known to {}', people(who, True))] if len(who) > 1 else []
+        why += [t(KNOWN_WHY[x['known']])] if x.get('known') in KNOWN_WHY else []
         items.append({'key': 'quiet:' + x['domain'], 'kind': 'quiet', 'score': 40 + (10 if len(who) > 1 else 0),
-                      'title': f"{company(x)} went quiet",
-                      'why': f"last contact {_on_day(x.get('last'), today)}, " + ', '.join(why),
-                      'ask': f"Anyone in touch with {company(x)} lately?"})
+                      'title': t('{} went quiet', company(x)),
+                      'why': ', '.join([t('last contact {}', _on_day(x.get('last'), today))] + why),
+                      'ask': t('Anyone in touch with {} lately?', company(x))})
     hidden = set(hidden)
     items = [i for i in items if i['key'] not in hidden]
     items.sort(key=lambda i: -i['score'])
@@ -1555,17 +1557,17 @@ def brief_items(view, today=None, hidden=(), opener=None):
 
 def brief_text(view, today=None, hidden=()):
     """The brief as plain lines, for the Telegram message (the Fleet tab draws brief_items itself)."""
-    head = ('Your Fleet this week' if view.get('every') == 'week' else 'Your Fleet today') + (f" · {view['fleet_name']}" if view.get('fleet_name') else '')
+    head = (t('Your Fleet this week') if view.get('every') == 'week' else t('Your Fleet today')) + (f" · {view['fleet_name']}" if view.get('fleet_name') else '')
     items = brief_items(view, today, hidden)
     lines = [head] + [f"• {i['title']}. {_cap(i['why'])}." for i in items[:BRIEF_SHOWN]]
     if len(items) > BRIEF_SHOWN:
-        lines.append(f"…and {len(items) - BRIEF_SHOWN} more in the Fleet tab.")
+        lines.append(t('…and {} more in the Fleet tab.', len(items) - BRIEF_SHOWN))
     if not items:
-        lines.append('Nothing that needs the team.')
+        lines.append(t('Nothing that needs the team.'))
     told = view.get('from') or []
-    lines += ['', ('From ' + _people(['You'] + told, _first_names(view)) + '.') if told else 'Only from your own Machine so far.']
+    lines += ['', t('From {}.', _people(['You'] + told, _first_names(view), True)) if told else t('Only from your own Machine so far.')]
     if view.get('missing'):
-        lines.append('Still to answer: ' + _people(view['missing'], _first_names(view)) + '.')
+        lines.append(t('Still to answer: {}.', _people(view['missing'], _first_names(view))))
     return '\n'.join(lines)
 
 
@@ -2112,12 +2114,12 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         try:
             result = self.decide_notice(nid, choice, row['telegram_key'], via='telegram', timeout=TAP_TIMEOUT)
         except ValueError as error:  # a refusal, or the Network away (Unavailable)
-            result = {'status': 'stale', 'reason': clean(str(error), 240).rstrip('.') + '. Nothing was done.'}
+            result = {'status': 'stale', 'reason': clean(str(error), 240).rstrip('.') + '. ' + t('Nothing was done.')}
         except (Off, OSError):
-            result = {'status': 'stale', 'reason': 'Your Machine could not reach the Network just now, so nothing was done. Tap again in a minute.'}
+            result = {'status': 'stale', 'reason': t('Your Machine could not reach the Network just now, so nothing was done. Tap again in a minute.')}
         except Exception as error:  # never a tap that silently does nothing
             LOG.warning('fleet notice tap error=%s at=%s', type(error).__name__, where(error))
-            result = {'status': 'stale', 'reason': 'Something went wrong on your Machine, so nothing was done. Tap again in a minute.'}
+            result = {'status': 'stale', 'reason': t('Something went wrong on your Machine, so nothing was done. Tap again in a minute.')}
         row = self.notice(nid)
         message, key = self.notice_telegram(row)
         if result['status'] not in ('confirmed', 'declined') and result['reason'] and json.loads(row['view'])['status'] == 'open':

@@ -33,6 +33,7 @@ import time
 import crm_fields
 import fleet_trust as ft
 import graph
+from i18n import t
 import network_crypto as nc
 import security_levels
 
@@ -1553,7 +1554,7 @@ class SharedGraph:
         self.set_meta('graph_start:' + fleet, start)
         name = str(group.get('name') or 'your team')[:80]
         try:
-            self.tell(f'Your Work is ready to share with {name}. Look it over and start when you are ready.', 'shared-' + fleet)
+            self.tell(t('Your Work is ready to share with {}. Look it over and start when you are ready.', name), 'shared-' + fleet)
         except Exception as error:  # noqa: BLE001 - a reminder never stops the round
             LOG.warning('shared graph reminder error=%s', type(error).__name__)
 

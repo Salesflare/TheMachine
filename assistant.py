@@ -407,7 +407,7 @@ def settle_sent(store, db, suggestion_id, job_id, label='', note=None):
         return False
     body = NOTHING_SENT.sub('', row['body'] or '').strip() or row['body']
     db.execute('UPDATE suggestions SET body=?,outcome=NULL WHERE id=?', (body, suggestion_id))
-    store._decide(db, suggestion_id, 'complete', (note or ('Sent: ' + label if label else 'Sent'))[:200], 'sent:' + job_id, 'assistant')
+    store._decide(db, suggestion_id, 'complete', (note or (i18n.t('Sent: {}', label) if label else i18n.t('Sent')))[:200], 'sent:' + job_id, 'assistant')
     return True
 
 
@@ -9321,54 +9321,56 @@ def merge_state(row, state):
 
 def card(row):
     title = row['title'].replace('*', '').replace('_', '')
-    status = {'accepted': 'On it.', 'rejected': 'Not needed.',
-              'snoozed': 'Snoozed until '+locale_prefs.at_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()))+'.' if row.get('snoozed_until') else 'Snoozed.',
-              'instructions': 'Got your feedback. I’ll update this.',
-              'prepared': 'Ready for you.', 'completed': 'Done.'}.get(row['status'], '')
+    t = i18n.t  # what Telegram shows, in the owner's language
+    status = {'accepted': t('On it.'), 'rejected': t('Not needed.'),
+              'snoozed': t('Snoozed until {}.', locale_prefs.at_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()))) if row.get('snoozed_until') else t('Snoozed.'),
+              'instructions': t('Got your feedback. I’ll update this.'),
+              'prepared': t('Ready for you.'), 'completed': t('Done.')}.get(row['status'], '')
     # One status line: where it stands and what's left for the owner. A later sign that it's
     # handled replaces the result's own line; a result that found it already done needs no hint.
     outcome = {}
     if row['status'] == 'prepared' and row.get('outcome'):
         try:
             outcome = json.loads(row['outcome'])
-            status = {'your_step': 'Ready for you to check and ' + str(outcome.get('step')) + '.',
-                      'done': 'Finished. Mark it done if it looks right.',
-                      'answered': 'Answered. Nothing done yet.',
-                      'snoozed': 'Back, as you asked.',
-                      'already_done': 'Looks done already. Mark it done if that’s right.'}.get(outcome['state']) or 'Needs you: ' + sentence(outcome['needs'])
+            status = {'your_step': t('Ready for you to check and {}.', outcome.get('step')),
+                      'done': t('Finished. Mark it done if it looks right.'),
+                      'answered': t('Answered. Nothing done yet.'),
+                      'snoozed': t('Back, as you asked.'),
+                      'already_done': t('Looks done already. Mark it done if that’s right.')}.get(outcome['state']) or t('Needs you: {}', sentence(outcome['needs']))
         except (ValueError, KeyError, TypeError, AttributeError):
             outcome = {}
     if row.get('early') and row['status'] == 'prepared' and not outcome.get('needs') and outcome.get('state') != 'already_done' and any(
             a.get('kind') != 'open' for a in row.get('next_actions') or []):
-        status = 'Ready to approve. Nothing goes out until you do.'
+        status = t('Ready to approve. Nothing goes out until you do.')
     if row.get('handled_hint') and row['status'] not in ('completed','rejected') and outcome.get('state') != 'already_done':
         try:
             hint = json.loads(row['handled_hint'])
-            status = ('Done: ' + hint['reason'].rstrip('.') + '.') if hint.get('fleet') else 'Looks handled: ' + hint['reason'].rstrip('.') + '. Mark it done if so.'
+            status = t('Done: {}.', hint['reason'].rstrip('.')) if hint.get('fleet') else t('Looks handled: {}. Mark it done if so.', hint['reason'].rstrip('.'))
         except (ValueError, KeyError, TypeError):
             pass
     if row.get('preparation_status') in ('starting','running'):
-        status='Preparing… I’ve been in the browser a while; it may need you there (a sign-in or a check).' if row.get('preparation_browser') else 'Preparing…'
-    elif row.get('preparation_status') == 'queued': status='Next up. I’ll start shortly.'
-    elif row.get('preparation_status') == 'blocked' and row.get('preparation_error') == 'stopped': status=CHAT_STOPPED
+        status=t('Preparing… I’ve been in the browser a while; it may need you there (a sign-in or a check).') if row.get('preparation_browser') else t('Preparing…')
+    elif row.get('preparation_status') == 'queued': status=t('Next up. I’ll start shortly.')
+    elif row.get('preparation_status') == 'blocked' and row.get('preparation_error') == 'stopped': status=t(CHAT_STOPPED)
     elif row.get('preparation_status') == 'blocked' and (row.get('preparation_browser') or {}).get('sign_in'):
-        status='Waiting for you to sign in: '+row['preparation_reason'].rstrip('.')+'. Sign in through Sign in and I carry on by myself.'
+        status=t('Waiting for you to sign in: {}. Sign in through Sign in and I carry on by myself.', row['preparation_reason'].rstrip('.'))
     elif row.get('preparation_status') == 'blocked' and row['status'] not in ('completed','rejected','snoozed') and not row.get('handled_hint') and ask_blocked(row):
-        status='Needs you: '+sentence(ask_text(row))
-    elif row.get('preparation_status') == 'blocked': status='I’m stuck: '+(row.get('preparation_reason') or 'Preparation did not finish. I’ll keep this in your list.')
+        status=t('Needs you: {}', sentence(ask_text(row)))
+    elif row.get('preparation_status') == 'blocked': status=t('I’m stuck: {}', row.get('preparation_reason') or t('Preparation did not finish. I’ll keep this in your list.'))
     action_state=row.get('action_status') or next((item.get('state') for item in row.get('next_actions',[]) if item.get('state',{}).get('status') in ('queued','sending','sent','uncertain','blocked','failed','undoing','undone')),None)
     if action_state and (row['status']=='prepared' or (row['status']=='completed' and action_state.get('status')=='sent')):
         merging=merge_state(row,action_state)
         sent=next((a for a in row.get('next_actions') or [] if a.get('state') is action_state),{})
         who=', '.join(sent.get('to') or []) if sent.get('kind')=='email' and not sent.get('to_options') else sent.get('to_name') or ''
         at=locale_prefs.clock_text(dt.datetime.fromisoformat(action_state['sent_at']).astimezone(local_tz())) if action_state.get('sent_at') else ''
-        to_at=(' to '+who if who and sent.get('kind')!='intercom' else '')+(' at '+at if at else '')
+        to_at=(t(' to {}', who) if who and sent.get('kind')!='intercom' else '')+(t(' at {}', at) if at else '')
         auto=merging and action_state.get('auto')
-        status={'queued':'Testing the fix. It merges by itself if every check passes.' if auto else 'Testing and merging the fix…' if merging else 'Sending your approved draft…','sending':'Testing and merging the fix…' if merging else 'Sending your approved draft…',
-                'sent':(('Merged by itself and restarted. You can undo it for 24 hours; it undoes itself if the error comes back.' if auto else 'Merged. The Machine restarts with the fix.')
+        mid=str(action_state.get('message_id') or '')
+        status={'queued':t('Testing the fix. It merges by itself if every check passes.') if auto else t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),'sending':t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),
+                'sent':((t('Merged by itself and restarted. You can undo it for 24 hours; it undoes itself if the error comes back.') if auto else t('Merged. The Machine restarts with the fix.'))
                         +(' '+action_state['error'] if action_state.get('error') else '')) if merging else
-                ('✓ '+('LinkedIn message sent' if str(action_state.get('message_id') or '').startswith(('urn:li:','linkedin:')) else 'Slack message sent' if str(action_state.get('message_id') or '').startswith('slack:') else 'Reply posted on X' if str(action_state.get('message_id') or '').startswith('x:') else 'X message sent' if str(action_state.get('message_id') or '').startswith('xdm:') else 'WhatsApp message sent' if str(action_state.get('message_id') or '').startswith('whatsapp:') else 'Sent as '+' '.join(str(sent.get('as_name') or 'your Intercom admin').split())+' in Intercom' if str(action_state.get('message_id') or '').startswith('intercom:') else 'Reply posted in the doc' if str(action_state.get('message_id') or '').startswith('doc:') else 'Email sent')+to_at+'.'+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(' Tap Merge fix to merge it anyway.' if auto else ''),'failed':action_state.get('error'),
-                'undoing':'Undoing the merge…','undone':action_state.get('error') or 'Merge undone.'}.get(action_state['status'],status)
+                ('✓ '+(t('LinkedIn message sent') if mid.startswith(('urn:li:','linkedin:')) else t('Slack message sent') if mid.startswith('slack:') else t('Reply posted on X') if mid.startswith('x:') else t('X message sent') if mid.startswith('xdm:') else t('WhatsApp message sent') if mid.startswith('whatsapp:') else t('Sent as {} in Intercom', ' '.join(str(sent.get('as_name') or t('your Intercom admin')).split())) if mid.startswith('intercom:') else t('Reply posted in the doc') if mid.startswith('doc:') else t('Email sent'))+to_at+'.'+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(t(' Tap Merge fix to merge it anyway.') if auto else ''),'failed':action_state.get('error'),
+                'undoing':t('Undoing the merge…'),'undone':action_state.get('error') or t('Merge undone.')}.get(action_state['status'],status)
     try:
         handed = json.loads(row['awaiting']) if row.get('awaiting') else {}
     except (ValueError, TypeError):
@@ -9377,19 +9379,19 @@ def card(row):
         status = checkin_line(row) + '.'
     if handed.get('delegated'):
         if row['status'] == 'snoozed' and row.get('snoozed_until'):
-            status = f"Sent to {handed['name']}. Waiting for their reply until " + locale_prefs.day_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz())) + '; it closes when they answer.'
+            status = t('Sent to {}. Waiting for their reply until {}; it closes when they answer.', handed['name'], locale_prefs.day_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz())))
         elif row['status'] == 'completed' and handed.get('answered'):
-            status = f"{handed['name']} replied, so I closed this."
+            status = t('{} replied, so I closed this.', handed['name'])
         elif row['status'] == 'prepared':
-            status = f"No reply from {handed['name']} yet."
+            status = t('No reply from {} yet.', handed['name'])
     if row['status'] not in ('completed','rejected','snoozed') and row.get('change_prompt',{}).get('status')=='uncertain':
-        status+='\nI couldn’t confirm the Change prompt. If it arrived, reply to it; otherwise use Change on the dashboard.'
+        status+='\n'+t('I couldn’t confirm the Change prompt. If it arrived, reply to it; otherwise use Change on the dashboard.')
     # A hashtag, so tapping it in Telegram lists every #work or #personal card.
     tag = '#' + row['scope'] if row.get('scope') else ''
     due = ''
     if row.get('due') and row.get('status') not in ('completed', 'rejected'):
         try:
-            due = 'Due ' + locale_prefs.day_text(dt.date.fromisoformat(row['due']))
+            due = t('Due {}', locale_prefs.day_text(dt.date.fromisoformat(row['due'])))
         except ValueError:
             pass
     source = ' · '.join(x for x in (due, row.get('source_line'), tag) if x)
@@ -9693,8 +9695,8 @@ def checkin_line(row):
         return ''
     local, today = dt.datetime.fromisoformat(until).astimezone(local_tz()), dt.datetime.fromisoformat(now()).astimezone(local_tz()).date()
     days = (local.date() - today).days
-    when = 'today' if days == 0 else 'tomorrow' if days == 1 else local.strftime('%a') if 1 < days < 7 else locale_prefs.day_text(local)
-    return f"Check in with {wait['name']} {when} {locale_prefs.clock_text(local)} if no answer"
+    when = i18n.t('today') if days == 0 else i18n.t('tomorrow') if days == 1 else locale_prefs.weekday_name(local) if 1 < days < 7 else locale_prefs.day_text(local)
+    return i18n.t('Check in with {} {} {} if no answer', wait['name'], when, locale_prefs.clock_text(local))
 
 
 def answered_only(row):
@@ -9706,6 +9708,7 @@ def answered_only(row):
 
 
 def controls(row, root=''):
+    t = i18n.t  # button labels in the owner's language; the choices stay as they are
     if row['status'] in ['completed','rejected']:
         choices = [('Undo','undo')] if row.get('undo_until') and row['undo_until']>now() else []
     elif row['status'] == 'snoozed':
@@ -9721,15 +9724,16 @@ def controls(row, root=''):
         choices = [('Done','complete')] + [('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete']
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]
+    choices = [(t(label), choice) for label, choice in choices]
     if row['status'] == 'pending' and row.get('labels'):
         choices = [(row['labels'].get(choice, label), choice) for label, choice in choices]
     buttons=[]
     link=(row.get('preparation_browser') or {}).get('link') or ''
     signin=(row.get('preparation_browser') or {}).get('signin_url') or ''
     if signin.startswith('https://') and row['status'] in ('accepted','instructions'):
-        buttons.append({'label':'Sign in','action':{'type':'url','url':signin}})  # the dashboard's sign-in, which also opens the browser
+        buttons.append({'label':t('Sign in'),'action':{'type':'url','url':signin}})  # the dashboard's sign-in, which also opens the browser
     elif link.startswith('https://') and row['status'] in ('accepted','instructions'):
-        buttons.append({'label':'Open the browser','action':{'type':'url','url':link}})
+        buttons.append({'label':t('Open the browser'),'action':{'type':'url','url':link}})
     if row['status']=='prepared':
         shown=card_draft(row)
         for action in actions:
@@ -9739,7 +9743,7 @@ def controls(row, root=''):
                 if shown and shown['full'] and shown['action']['revision']==action['revision']:
                     # The card shows this draft in full: Send confirms it, Edit opens it in the dashboard editor.
                     buttons.append({'label':next_actions.label(action),'action':{'type':'callback','value':f"assistant:{row['id']}:confirm_{action['revision']}"}})
-                    if root:buttons.append({'label':'Edit','action':{'type':'url','url':f"{root}#send={row['id']}&revision={action['revision']}&edit=1"}})
+                    if root:buttons.append({'label':t('Edit'),'action':{'type':'url','url':f"{root}#send={row['id']}&revision={action['revision']}&edit=1"}})
                     continue
                 choice=('next_' if action['kind']=='prepare' else 'send_')+action['revision']
                 buttons.append({'label':next_actions.label(action),'action':{'type':'callback','value':f"assistant:{row['id']}:{choice}"}})
@@ -9747,13 +9751,13 @@ def controls(row, root=''):
             elif action['kind']=='calendar' and root and not action_busy(state):buttons.append({'label':next_actions.label(action),'action':{'type':'url','url':f"{root}#send={row['id']}&revision={action['revision']}"}})  # shown in the dashboard first, then tapped there
             elif action['kind']=='handoff' and root and not row.get('handled_hint'):buttons.append({'label':next_actions.label(action),'action':{'type':'url','url':f"{root}#task-{row['id']}"}})  # the Fleet handoff form is on the dashboard
     if row['status'] in ('prepared','completed') and any(a['kind']=='merge' and (a.get('state') or row.get('action_status') or {}).get('undo_until','')>now() for a in actions):
-        buttons.append({'label':'Undo merge','action':{'type':'callback','value':f"assistant:{row['id']}:unmerge"}})  # a merged fix stays reversible for a day
+        buttons.append({'label':t('Undo merge'),'action':{'type':'callback','value':f"assistant:{row['id']}:unmerge"}})  # a merged fix stays reversible for a day
     if row.get('skill_proposal') and row['skill_proposal'].get('update') and row['status']=='pending':
         # Update changes one of the owner's skills: its before and after are on the dashboard, and the tap is there.
         choices=[c for c in choices if c[1]!='accept']
-        if root:buttons.append({'label':'Review update','action':{'type':'url','url':f"{root}#chat={row['id']}"}})
+        if root:buttons.append({'label':t('Review update'),'action':{'type':'url','url':f"{root}#chat={row['id']}"}})
     elif row.get('skill_proposal') and root:
-        buttons.append({'label':'Read instructions','action':{'type':'url','url':f"{root}#chat={row['id']}"}})
+        buttons.append({'label':t('Read instructions'),'action':{'type':'url','url':f"{root}#chat={row['id']}"}})
     buttons+=[{'label':label,'action':{'type':'callback','value':f"assistant:{row['id']}:{choice}"}} for label,choice in choices]
     # Fewer rows: up to three buttons per row that fit a phone's width, in order, so a Send
     # shares its row with Mark done. Same rule as packRows in the plugin.
@@ -9769,11 +9773,12 @@ def controls(row, root=''):
 
 
 def prompt_text(title,plain=False,kind='change'):
+    t = i18n.t  # “cancel” stays the word the reply handler takes, in every language
     if kind=='dismiss':
-        if plain:return 'Why isn’t this needed? Reply to this message. Send “cancel” to keep it.'
-        return 'Not needed: '+title[:90]+'\n\nWhy isn’t this needed? Reply here, or send “cancel” to keep it.'
-    if plain:return 'What would you like instead? Reply to this message. Send “cancel” to stop.'
-    return 'Change: '+title[:90]+'\n\nWhat would you like instead? Reply here, or send “cancel”.'
+        if plain:return t('Why isn’t this needed? Reply to this message. Send “cancel” to keep it.')
+        return t('Not needed: {}', title[:90])+'\n\n'+t('Why isn’t this needed? Reply here, or send “cancel” to keep it.')
+    if plain:return t('What would you like instead? Reply to this message. Send “cancel” to stop.')
+    return t('Change: {}', title[:90])+'\n\n'+t('What would you like instead? Reply here, or send “cancel”.')
 
 
 class DeliveryNotSent(ValueError):
@@ -10200,11 +10205,12 @@ def push_notify(store, config, row, sender=None):
         signin = not ready and (row.get('preparation_browser') or {}).get('signin_url')
         # A run the service stopped (a timeout, two failures) asks nothing: Stuck, as on the card
         lead = 'Ready' if ready else 'Needs you to sign in' if signin else 'Stuck' if row.get('preparation_error') else 'Needs your help'
-        payload = {'title': lead + ': ' + row['title'] if text else lead,
+        # one key per lead, so the dashboard never reads a bare "{}: {}" into other text
+        payload = {'title': i18n.t(lead + ': {}', row['title']) if text else i18n.t(lead),
                    'body': plain(strip_result_links(row['body']) if ready else row.get('preparation_reason') or '') if text else '',
                    'url': signin or root + '#chat=' + row['id']}
     else:
-        payload = {'title': (('Reminder: ' if row.get('reminder') else '') + row['title']) if text else 'Reminder' if row.get('reminder') else 'New to-do',
+        payload = {'title': (i18n.t('Reminder: {}', row['title']) if row.get('reminder') else row['title']) if text else i18n.t('Reminder') if row.get('reminder') else i18n.t('New to-do'),
                    'body': plain(row['body']) if text else '', 'url': root + '#chat=' + row['id']}
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
     if row.get('_silent'):
@@ -10266,12 +10272,12 @@ def setup_hints(store, config, now=None):
 def reminder_line(channels):
     """The honest promise for a snooze, from reminder_channels. The dashboard says the same (remindLine)."""
     if channels['telegram'] and channels['push']:
-        return 'I’ll remind you on Telegram and as a notification.'
+        return i18n.t('I’ll remind you on Telegram and as a notification.')
     if channels['telegram']:
-        return 'I’ll remind you on Telegram.'
+        return i18n.t('I’ll remind you on Telegram.')
     if channels['push']:
-        return 'I’ll send you a notification.'
-    return 'It’ll be back on the dashboard then.'
+        return i18n.t('I’ll send you a notification.')
+    return i18n.t('It’ll be back on the dashboard then.')
 
 
 def waiting_count(db):
@@ -10343,32 +10349,33 @@ def telegram(config, row, action, message_id=None):
         ready=row['status']=='prepared'
         root='https://'+config['dashboard_host']+config.get('dashboard_path','/')
         signin=not ready and (row.get('preparation_browser') or {}).get('signin_url')
-        message=('Ready: ' if ready else 'Needs you to sign in: ' if signin else 'Needs your help: ' if ask_blocked(row) or (row.get('preparation_browser') and not row.get('preparation_error')) else 'Stuck: ')+'**'+title+'**'
-        message+='\n\n[View '+('result' if ready else 'task')+']('+root+'#chat='+row['id']+')'  # the card's own page, as a tap in the list opens
+        lead='Ready' if ready else 'Needs you to sign in' if signin else 'Needs your help' if ask_blocked(row) or (row.get('preparation_browser') and not row.get('preparation_error')) else 'Stuck'
+        message=i18n.t(lead+': {}', '**'+title+'**')
+        message+='\n\n['+(i18n.t('View result') if ready else i18n.t('View task'))+']('+root+'#chat='+row['id']+')'  # the card's own page, as a tap in the list opens
         # A sign-in blocker opens the dashboard's sign-in for this task; once in, the task carries on by itself.
-        blocks=[{'type':'buttons','buttons':[{'label':'Sign in','action':{'type':'url','url':signin}}]}] if signin else []
+        blocks=[{'type':'buttons','buttons':[{'label':i18n.t('Sign in'),'action':{'type':'url','url':signin}}]}] if signin else []
         return telegram_request(config,{'action':'send','channel':'telegram','accountId':telegram_account(config),
             'target':config.get('telegram_owner'),**({} if str(row['message_id']).startswith('web-') else {'replyTo':str(row['message_id'])}),
             'message':message,'presentation':{'blocks':blocks},**({'silent':True} if row.get('_silent') else {})})
     body=dict(row)
     if row['status']=='prepared' and row.get('requested_feedback'):
         asked=re.sub(r'([\\`*_{}\[\]()#+.!>|~-])',r'\\\1',row['requested_feedback'][:500])
-        body['body']='You asked: “'+asked+'”\n\n'+body['body']
+        body['body']=i18n.t('You asked: “{}”', asked)+'\n\n'+body['body']
     if row['status']=='instructions' and row.get('preparation_status')!='blocked':
         asked=row.get('requested_feedback')
         if asked:
             asked=re.sub(r'([\\`*_{}\[\]()#+.!>|~-])',r'\\\1',asked[:500])
-            body['body']='You asked: “'+asked+'”\n\nGot it — I’m preparing your update. I’ll send it here when it’s ready.'
-        else:body['body']='Got it — I’m preparing your update. I’ll send it here when it’s ready.'
+            body['body']=i18n.t('You asked: “{}”', asked)+'\n\n'+i18n.t('Got it. I’m preparing your update. I’ll send it here when it’s ready.')
+        else:body['body']=i18n.t('Got it. I’m preparing your update. I’ll send it here when it’s ready.')
     root='https://'+config['dashboard_host']+config.get('dashboard_path','/') if config.get('dashboard_host') else ''
     shown=card_draft(row)
     if root:
         body['body']=strip_result_links(body['body'])
         if shown:body['body']+='\n\n'+shown['text']
-        if row['status']=='prepared':body['body']+='\n\n[Read result]('+root+'#chat='+row['id']+')'
-        elif row.get('original_urls'):body['body']+='\n\n[Open original]('+row['original_urls'][0]+')'
+        if row['status']=='prepared':body['body']+='\n\n['+i18n.t('Read result')+']('+root+'#chat='+row['id']+')'
+        elif row.get('original_urls'):body['body']+='\n\n['+i18n.t('Open original')+']('+row['original_urls'][0]+')'
     args = {'action':action,'channel':'telegram','accountId':telegram_account(config),'target':config.get('telegram_owner'),
-            'message':('Your update\n\n' if action=='send' and row.get('reminder') and (row['status'] in ('prepared','instructions') or row.get('preparation_status')=='blocked') else 'Reminder\n\n' if action=='send' and row.get('reminder') else '')+card(body),'presentation':controls(row,root)}
+            'message':(i18n.t('Your update')+'\n\n' if action=='send' and row.get('reminder') and (row['status'] in ('prepared','instructions') or row.get('preparation_status')=='blocked') else i18n.t('Reminder')+'\n\n' if action=='send' and row.get('reminder') else '')+card(body),'presentation':controls(row,root)}
     if message_id:
         args['messageId'] = str(message_id)
     elif row.get('_silent'):
@@ -10855,31 +10862,31 @@ def recap_graph_lines(store, since=None):
                                                                 "AND json_extract(info,'$.closed_at') IS NULL ORDER BY strength DESC")]
     except sqlite3.Error:
         return []
-    out = []
-    for state in ('heating up', 'active', 'cooling'):
+    out, t = [], i18n.t
+    for state, label in (('heating up', 'Heating up'), ('active', 'Active'), ('cooling', 'Cooling')):
         names = [recap_escape(p['name']) for p in view['projects'] if p['state'] == state][:3]
         if names:
-            out.append(f"• {state[0].upper() + state[1:]}: {', '.join(names)}")
+            out.append('• ' + t(label + ': {}', ', '.join(names)))
 
     def who(p):
         org, org_role = orgs.get(p.get('org'), (None, None))
-        what = p.get('role') or (f'at {org}, {org_role}' if org_role else None)
-        return recap_escape(p['name'] + ' (' + (what + ', ' if what else '') + ('usually daily)' if round(p['usual_gap_days']) <= 1 else f"usually every {round(p['usual_gap_days'])} days)"))
+        what = p.get('role') or (t('at {}, {}', org, org_role) if org_role else None)
+        gap = round(p['usual_gap_days'])
+        return recap_escape(p['name'] + ' (' + (what + ', ' if what else '') + (t('usually daily') if gap <= 1 else t('usually every {} days', gap)) + ')')
     named = [p for p in view['new'] if recap_named(p)]
     unnamed = sum(1 for p in view['new'] if '@' in str(p.get('name') or ''))  # known only by their address so far
     if named:
-        more = f', and {unnamed} more known only by address' if unnamed else ''
-        out.append(f"• New people: {', '.join(recap_escape(p['name']) for p in named[:4])}{more}")
+        more = t(', and {} more known only by address', unnamed) if unnamed else ''
+        out.append('• ' + t('New people: {}', ', '.join(recap_escape(p['name']) for p in named[:4])) + more)
     # New projects, once the graph is older than this week (on its first week every project is new).
     if since and made and all(m for _, m in made) and min(m for _, m in made) < since:
         fresh = [recap_escape(n) for n, m in made if m >= since][:3]
         if fresh:
-            out.append(f"• New projects: {', '.join(fresh)}")
+            out.append('• ' + t('New projects: {}', ', '.join(fresh)))
     if view['quiet']:
-        out.append('• Gone quiet: ' + ', '.join(who(p) for p in view['quiet']))
+        out.append('• ' + t('Gone quiet: {}', ', '.join(who(p) for p in view['quiet'])))
     if view['whos_who']:
-        n = len(view['whos_who'])
-        out.append(f"• {n} role{'s' if n != 1 else ''} to confirm in the Graph tab's Who's who")
+        out.append('• ' + t("{} roles to confirm in the Graph tab's Who's who", len(view['whos_who'])))
     return out
 
 
@@ -10898,10 +10905,9 @@ def recap_share_lines(store, config):
         if fleet_id not in names:
             continue
         held = week.get('held') or 0
-        n = lambda k, one, many: f"{week.get(k, 0)} {one if week.get(k, 0) == 1 else many}"
-        line = f"• Shared {n('threads', 'thread', 'threads')} with {names[fleet_id] or 'your team'} this week, {held} held back."
+        line = '• ' + i18n.t('Shared {} threads with {} this week, {} held back.', week.get('threads', 0), names[fleet_id] or i18n.t('your team'), held)
         if host:
-            line += f" [What's shared]({'https://' + host + config.get('dashboard_path', '/') + '#shared=' + fleet_id})"
+            line += ' [' + i18n.t("What's shared") + f"]({'https://' + host + config.get('dashboard_path', '/') + '#shared=' + fleet_id})"
         out.append(line)
     return out
 
@@ -10919,9 +10925,9 @@ def recap_buttons(items):
         n, value = item['n'], f"assistant:recap:{item['id']}:"
         if item['status'] == 'open':
             labels = [('Filter', 'filter'), ('Keep', 'keep')] if item['kind'] == 'noise' else [('Drop', 'drop'), ('Do it now', 'now'), ('Keep', 'keep')]
-            rows.append([{'text': f'{label} {n}', 'value': value + choice} for label, choice in labels])
+            rows.append([{'text': f'{i18n.t(label)} {n}', 'value': value + choice} for label, choice in labels])
         elif item['status'] == 'filtered':
-            rows.append([{'text': f'Undo {n}', 'value': value + 'undo'}])
+            rows.append([{'text': f"{i18n.t('Undo')} {n}", 'value': value + 'undo'}])
     return rows
 
 
@@ -10929,7 +10935,7 @@ def recap_view(text, items):
     """The recap as it stands now: each decided line says what was done, and only open lines keep their buttons."""
     for item in items:
         if item['status'] in RECAP_DONE:
-            text = text.replace(item['line'], item['line'] + ' · **' + RECAP_DONE[item['status']] + '**', 1)
+            text = text.replace(item['line'], item['line'] + ' · **' + i18n.t(RECAP_DONE[item['status']]) + '**', 1)
     return {'text': text, 'buttons': recap_buttons(items)}
 
 
@@ -11011,7 +11017,8 @@ def weekly_recap_message(store, config, current=None, usage=None):
     kept_cards = {k['ref']: k['decided_at'] for k in kept if k['kind'] == 'snoozed'}
     start_local, end_local = dt.datetime.fromisoformat(since).astimezone(tz), current.astimezone(tz)
     span = locale_prefs.span_text(start_local, end_local)
-    lines = [f'**Your week with The Machine** · {span}']
+    t = i18n.t  # the recap goes out now: in the owner's language
+    lines = ['**' + t('Your week with The Machine') + f'** · {span}']
 
     # 1. What needs the owner: promises made to them that are late, then their own open ones with a date.
     promised = [p for p in store.promises(7) if p['state'] in ('open', 'card')]
@@ -11020,92 +11027,91 @@ def weekly_recap_message(store, config, current=None, usage=None):
     late_to = [p for p in promised if p['direction'] == 'theirs' and ((p['due'] and p['due'] < today.isoformat()) or (not p['due'] and p['check_at'] <= current.isoformat()))]
     soon = (today + dt.timedelta(days=14)).isoformat()  # their own: late ones and those due in the next two weeks
     mine = sorted((p for p in promised if p['direction'] == 'mine' and p['due'] and p['due'] <= soon), key=lambda p: p['due'])
-    needs = [f"• Waiting on {recap_escape(p['who'])}: {said(p)}, "
-             + (f"due {recap_day(p['due'])}" if p['due'] else f"since {recap_day(p['made_at'])}") for p in late_to[:4]]
-    needs += [f"• Promised {recap_escape(p['who'])}: {said(p)}, "
-              + (f"was due {recap_day(p['due'])}" if p['due'] < today.isoformat() else f"due {recap_day(p['due'])}") for p in mine[:4]]
+    needs = ['• ' + t('Waiting on {}: {}, ', recap_escape(p['who']), said(p))
+             + (t('due {}', recap_day(p['due'])) if p['due'] else t('since {}', recap_day(p['made_at']))) for p in late_to[:4]]
+    needs += ['• ' + t('Promised {}: {}, ', recap_escape(p['who']), said(p))
+              + (t('was due {}', recap_day(p['due'])) if p['due'] < today.isoformat() else t('due {}', recap_day(p['due']))) for p in mine[:4]]
     more = max(0, len(late_to) - 4) + max(0, len(mine) - 4)
     if needs:
-        lines += ['', '**Needs you**', *needs] + ([f'• {more} more in Promises' + (f' on the [dashboard]({root})' if root else '')] if more else [])
+        lines += ['', '**' + t('Needs you') + '**', *needs] + (['• ' + t('{} more in Promises', more) + (' ' + t('on the [dashboard]({})', root) if root else '')] if more else [])
 
     # 2. The week ahead: meetings worth preparing, cards due and dates others promised.
     week = []
     for m in meetings[:5]:
         card = m['card']
-        prep = (' · ' + link('prep ready' if card['status'] == 'prepared' else 'to-do', card['id'])) if card else ''
-        week.append((m['at'], f"• {recap_day(m['at'], True)} {recap_escape(recap_clip(m['title'], 60))}, {m['guests']} {'person' if m['guests'] == 1 else 'people'}{prep}"))
+        prep = (' · ' + link(t('prep ready') if card['status'] == 'prepared' else t('to-do'), card['id'])) if card else ''
+        week.append((m['at'], f"• {recap_day(m['at'], True)} {recap_escape(recap_clip(m['title'], 60))}, {t('{} people', m['guests'])}{prep}"))
     listed = {m['card']['id'] for m in meetings[:5] if m['card']}
     for card in open_cards.values():
         if card['due'] and in_week(card['due']) and card['id'] not in listed:
-            week.append((card['due'], f"• {recap_day(card['due'][:10])}: {link(recap_clip(card['title']), card['id'])} is due"))
+            week.append((card['due'], f"• {recap_day(card['due'][:10])}: " + t('{} is due', link(recap_clip(card['title']), card['id']))))
     for p in promised:
         same = lambda q: q['direction'] == 'mine' and q['who'] == p['who'] and q['what'].lower() == p['what'].lower()
         if p['direction'] == 'theirs' and p['due'] and in_week(p['due']) and not any(map(same, mine)):  # today's are on time, late ones are under Needs you, a shared plan shows once
-            week.append((p['due'], f"• {recap_day(p['due'])}: {recap_escape(p['who'])} said they'd {said(p)}"))
+            week.append((p['due'], f"• {recap_day(p['due'])}: " + t("{} said they'd {}", recap_escape(p['who']), said(p))))
     if week:
         when = lambda v: str(v) if len(str(v)) <= 10 else dt.datetime.fromisoformat(str(v).replace('Z', '+00:00')).astimezone(tz).strftime('%Y-%m-%dT%H:%M')
         week.sort(key=lambda w: when(w[0]))
-        lines += ['', '**Next week**', *[w for _, w in week[:8]]]
+        lines += ['', '**' + t('Next week') + '**', *[w for _, w in week[:8]]]
 
     # 3. What changed: the hit rate in one line, what it learned and whether that works.
     q, before = store.quality(7, current.isoformat()), store.quality(7, since)
     changed = []
     if q['hit_rate'] is not None:
         was = before['hit_rate']
-        trend = '' if was is None else ', same as the week before' if was == q['hit_rate'] else f", up from {was}%" if q['hit_rate'] > was else f", down from {was}%"
-        first = f" Do it was right first time in {q['first_time']} of {q['do_it']}." if q['do_it'] else ''
-        changed.append(f"• {q['hit_rate']}% of to-dos worth it ({q['worth_it']} of {q['worth_it'] + q['dismissed']}){trend}.{first}")
+        trend = '' if was is None else t(', same as the week before') if was == q['hit_rate'] else t(', up from {}%', was) if q['hit_rate'] > was else t(', down from {}%', was)
+        first = ' ' + t('Do it was right first time in {} of {}.', q['first_time'], q['do_it']) if q['do_it'] else ''
+        changed.append('• ' + t('{}% of to-dos worth it ({} of {})', q['hit_rate'], q['worth_it'], q['worth_it'] + q['dismissed']) + f"{trend}.{first}")
     learned = store.behaviour(7)
     rules = sum(1 for c in changes if c['kind'] == 'draft_rule' and not c['text'].startswith('Removed'))
     voices = sum(1 for c in changes if c['kind'] == 'voice')
     guide = sum(1 for c in changes if c['kind'] == 'file' and c['text'] == 'PREPARATION.md edited')  # what behaviour() counts as a rule change
     filters = sum(1 for c in changes if c['kind'] == 'filter' and not c['text'].startswith('Removed'))
-    plural = lambda n, one, many: f'{n} {one if n == 1 else many}'
-    bits = [b for n, b in ((rules, plural(rules, 'writing rule', 'writing rules')), (voices, plural(voices, 'update', 'updates') + ' to how you write'),
-                           (guide, plural(guide, 'edit', 'edits') + ' to the drafting guide'), (filters, plural(filters, 'new filter', 'new filters'))) if n]
+    bits = [b for n, b in ((rules, t('{} writing rules', rules)), (voices, t('{} updates to how you write', voices)),
+                           (guide, t('{} edits to the drafting guide', guide)), (filters, t('{} new filters', filters))) if n]
     sent = learned['sent_as_written'] + learned['sent_edited']
     s = learned['since_rules']
     if bits:
         done = (s['as_written'] + s['edited']) if s else 0
-        works = (f" Since then, {s['as_written']} of {done} drafts went out as written" + (f" ({learned['sent_as_written'] - s['as_written']} of {sent - done} before)." if sent > done else '.')
-                 if s and done else ' No drafts sent since then yet.' if s else '')
-        changed.append('• Adjusted: ' + ', '.join(bits) + '.' + works)
+        works = (' ' + t('Since then, {} of {} drafts went out as written', s['as_written'], done) + (' ' + t('({} of {} before).', learned['sent_as_written'] - s['as_written'], sent - done) if sent > done else '.')
+                 if s and done else ' ' + t('No drafts sent since then yet.') if s else '')
+        changed.append('• ' + t('Adjusted: {}.', ', '.join(bits)) + works)
     elif sent:
-        changed.append(f"• Drafts: {learned['sent_as_written']} of {sent} went out as written.")
+        changed.append('• ' + t('Drafts: {} of {} went out as written.', learned['sent_as_written'], sent))
     if changed:
-        lines += ['', '**What changed**', *changed]
+        lines += ['', '**' + t('What changed') + '**', *changed]
     with store.connect() as db:
         share = team_learnings.waiting(db)
     if share:  # only a pointer: they go out from the Feedback page, after the owner read them
-        lines += ['', '**For The Machine team**', f"• {share} {'learning' if share == 1 else 'learnings'} to share, if you like: "
-                  + (f'[read them]({root}#feedback)' if root else 'read them under Feedback') + '. Nothing goes without your OK.']
+        lines += ['', '**' + t('For The Machine team') + '**', '• ' + t('{} learnings to share, if you like: ', share)
+                  + (f"[{t('read them')}]({root}#feedback)" if root else t('read them under Feedback')) + '. ' + t('Nothing goes without your OK.')]
     alive = recap_graph_lines(store, since) + recap_share_lines(store, config)
     if alive:
-        lines += ['', '**People and projects**', *alive]
+        lines += ['', '**' + t('People and projects') + '**', *alive]
 
     # 4. One-tap choices: nothing changes until the owner taps, and a tap changes only their own filters or cards.
     items = []
     busy = [(k, v) for k, v in sorted(noise.items(), key=lambda kv: -kv[1]['n']) if k[0] and v['n'] >= 20 and v['rule'] not in kept_rules][:3]
     for (account, where), v in busy:
         items.append({'kind': 'noise', 'ref': account, 'data': {'account': account, 'rule': v['rule'], 'label': f'{where} ({names.get(account, account)})'},
-                      'line': f"{len(items) + 1}. {recap_escape(where)} ({recap_escape(names.get(account, account))}): {v['n']:,} this week, no to-dos"})
+                      'line': f"{len(items) + 1}. {recap_escape(where)} ({recap_escape(names.get(account, account))}): " + t('{} this week, no to-dos', f"{v['n']:,}")})
     if items:
-        lines += ['', '**Busy without results**', *(i['line'] for i in items)]
+        lines += ['', '**' + t('Busy without results') + '**', *(i['line'] for i in items)]
     again = [s for s in snoozed if s['id'] in open_cards and not (s['id'] in kept_cards and s['last'] <= kept_cards[s['id']])][:3]
     first_card = len(items)
     for s in again:
         items.append({'kind': 'snoozed', 'ref': s['id'], 'data': {'title': open_cards[s['id']]['title']},
-                      'line': f"{len(items) + 1}. {link(recap_clip(open_cards[s['id']]['title']), s['id'])}, {s['n']} times"})
+                      'line': f"{len(items) + 1}. {link(recap_clip(open_cards[s['id']]['title']), s['id'])}, " + t('{} times', s['n'])})
     if len(items) > first_card:
-        lines += ['', '**Snoozed more than once**', *(i['line'] for i in items[first_card:])]
+        lines += ['', '**' + t('Snoozed more than once') + '**', *(i['line'] for i in items[first_card:])]
     if items:
-        lines.append('Nothing changes until you tap.')
+        lines.append(t('Nothing changes until you tap.'))
 
     # 5. Behind the scenes, in one line.
-    tail = f"{reviewed:,} signals reviewed in {runs:,} runs, {backlog:,} waiting"
+    tail = t('{} signals reviewed in {} runs, {} waiting', f'{reviewed:,}', f'{runs:,}', f'{backlog:,}')
     if usage:
-        tail += f"; about ${usage['usd']:.2f} at API list price, on your subscription"
-    lines += ['', f'_Behind the scenes: {tail}._']
+        tail += t('; about ${} at API list price, on your subscription', f"{usage['usd']:.2f}")
+    lines += ['', '_' + t('Behind the scenes: {}.', tail) + '_']
     for n, item in enumerate(items, 1):
         item.update(id='r_' + secrets.token_hex(6), n=n, status='open')
     return {'text': '\n'.join(lines), 'items': items}
@@ -11324,14 +11330,17 @@ def promise_text(p):
     said = locale_prefs.day_text(made)
     due = dt.date.fromisoformat(p['due']) if p.get('due') else None
     # The due chip says when it is due; the line adds it only when it isn't the day it was said
-    by = f" for {locale_prefs.day_text(due)}" if due and due != made.date() else ''
+    t = i18n.t  # written once, when the card is made: in the owner's language then
+    by = due and due != made.date() and locale_prefs.day_text(due)
     if p['direction'] == 'mine':
         title = p['what'][:1].upper() + p['what'][1:]
-        title = title if p['who'].lower() in title.lower() or len(title) + len(p['who']) > 84 else f"{title} for {p['who']}"
-        body = f"Promised {p['who']} on {said}{by}. Nothing shows it done yet."
+        title = title if p['who'].lower() in title.lower() or len(title) + len(p['who']) > 84 else title + t(' for {}', p['who'])
+        body = (t('Promised {} on {} for {}. Nothing shows it done yet.', p['who'], said, by) if by else
+                t('Promised {} on {}. Nothing shows it done yet.', p['who'], said))
     else:
-        title = f"Waiting on {p['who']}: {p['what']}"
-        body = f"Promised on {said}{by}. Nothing has come in yet, so a short nudge may help."
+        title = t('Waiting on {}: {}', p['who'], p['what'])
+        body = (t('Promised on {} for {}. Nothing has come in yet, so a short nudge may help.', said, by) if by else
+                t('Promised on {}. Nothing has come in yet, so a short nudge may help.', said))
     return title, body
 
 
@@ -11556,8 +11565,8 @@ class App:
             self.fleet.search = lambda accounts, query, limit: self.related(accounts, query=query, limit=limit)[0]
             self.fleet.card_task = card_task  # a handoff leads with what the teammate is asked to do, never a chat reply
             # A card made for a request that goes again: a silent acceptance not told, or a handoff its sender took back
-            self.fleet.drop_card = lambda card_id, why='Teammate not reached', key=None: self.store.decide(
-                card_id, 'reject', why, key or 'fleet-silent-undo-' + secrets.token_hex(6), 'fleet')
+            self.fleet.drop_card = lambda card_id, why=None, key=None: self.store.decide(
+                card_id, 'reject', why or i18n.t('Teammate not reached'), key or 'fleet-silent-undo-' + secrets.token_hex(6), 'fleet')
             self.fleet.own_event = lambda event: own_or_joined(event, self.store.owner_user_ids)  # silent acceptance: only what the owner did
             self.fleet.notify_brief = self.fleet_notify_brief
             self.fleet.remove_work = self.fleet_remove_work
@@ -12542,7 +12551,7 @@ class App:
                 row = db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE endpoint=?', (str(args.get('endpoint') or ''),)).fetchone()
             if not row:
                 raise ValueError('Notifications are off on this device. Turn them on first.')
-            results = push_send(self.store, self.config, [dict(row)], {'title': 'Notifications are on', 'body': 'This is how a new to-do shows up.', 'url': '.', 'tag': 'push-test'}, 'test')
+            results = push_send(self.store, self.config, [dict(row)], {'title': i18n.t('Notifications are on'), 'body': i18n.t('This is how a new to-do shows up.'), 'url': '.', 'tag': 'push-test'}, 'test')
             if not any(200 <= r.get('status', 0) < 300 for r in results):
                 raise ValueError('The test didn’t go through. Turn notifications off and on again.')
             return {'sent': True}
@@ -13225,11 +13234,11 @@ class App:
         with self.store.connect() as db:
             subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
         if subscriptions and self.config.get('dashboard_host'):
-            push_send(self.store, self.config, subscriptions, {'title': 'What your Fleet saw', 'body': text.split('\n', 2)[-1][:200],
+            push_send(self.store, self.config, subscriptions, {'title': i18n.t('What your Fleet saw'), 'body': text.split('\n', 2)[-1][:200],
                                                                'url': url, 'tag': 'fleet-brief'}, 'fleet-brief', kind='result')
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
-        result = fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': 'Open the brief', 'url': url}]] if url else []})
+        result = fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open the brief'), 'url': url}]] if url else []})
         message_id = str(result.get('messageId') or '')
         return message_id if re.fullmatch(r'\d+', message_id) else None
 
@@ -13418,10 +13427,10 @@ class App:
         with self.store.connect() as db:
             subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
         if subscriptions and root:
-            push_send(self.store, self.config, subscriptions, {'title': 'Your Fleet', 'body': text[:200], 'url': root, 'tag': 'fleet-' + anchor},
+            push_send(self.store, self.config, subscriptions, {'title': i18n.t('Your Fleet'), 'body': text[:200], 'url': root, 'tag': 'fleet-' + anchor},
                       'fleet=' + anchor, kind='result')
         if telegram_on(self.config) and self.notify_on('result', 'telegram'):
-            fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': 'Open in Suggestions', 'url': root}]] if root else []})
+            fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open in Suggestions'), 'url': root}]] if root else []})
 
     def fleet_retell(self, message_id, message=None):
         try:
@@ -13485,7 +13494,7 @@ class App:
             card = str(args.get('suggestion_id') or '')
             done = self.fleet.handoff_not_mine(card)
             if not done['joined']:  # a card made for it goes; one the owner already had stays, with its drafts and history
-                self.store.decide(card, 'reject', 'Not mine', 'fleet-not-mine-' + secrets.token_hex(6), 'dashboard')
+                self.store.decide(card, 'reject', i18n.t('Not mine'), 'fleet-not-mine-' + secrets.token_hex(6), 'dashboard')
             return done
         if name == 'fleet_handoff_mine':  # Do it myself, on a card a teammate handed back
             return self.fleet.handoff_mine(str(args.get('suggestion_id') or ''))
@@ -15627,7 +15636,7 @@ class App:
         if item['decision_id'] == decision:
             return {'status': item['status'], 'duplicate': True}
         if (choice == 'undo') != (item['status'] == 'filtered') or (choice != 'undo' and item['status'] != 'open'):
-            return {'status': item['status'], 'reason': 'Already done: ' + RECAP_DONE.get(item['status'], 'open').lower() + '.'}
+            return {'status': item['status'], 'reason': i18n.t('Already done: {}.', i18n.t(RECAP_DONE.get(item['status'], 'Open')).lower())}
         data, status = json.loads(item['data']), {'filter': 'filtered', 'keep': 'kept', 'undo': 'open', 'drop': 'dropped', 'now': 'started'}[choice]
         source = 'dashboard' if owner_dashboard else 'telegram'
         if choice in ('filter', 'undo'):
@@ -15645,7 +15654,7 @@ class App:
             else:
                 reason = None
                 if choice == 'drop':
-                    self.store.decide(card, 'reject', 'Dropped from the weekly recap', decision + ':drop', source)
+                    self.store.decide(card, 'reject', i18n.t('Dropped from the weekly recap'), decision + ':drop', source)
                 else:  # Unsnooze, then Do it: preparing never sends anything without the owner's own tap on the card
                     result = self.store.decide(card, 'accept', '', decision + ':back', source) if row['status'] == 'snoozed' else {'status': row['status']}
                     if result.get('status') == 'pending':

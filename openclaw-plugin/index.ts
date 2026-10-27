@@ -8,6 +8,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
 import { buildCallback } from './telegram-callback.ts';
+import { t, useLanguage } from './i18n.ts';
 
 const button = (id: string, text: string, choice: string) => ({ text,
   callback_data: buildCallback(`assistant:${id}:${choice}`) });
@@ -30,7 +31,7 @@ async function showResult(ctx:any,message:any,reason?:string){
 }
 // The local service didn't answer the tap. Nothing was decided; the message and its buttons stay as they were.
 async function notReached(ctx:any){
-  await ctx.respond.reply({text:'Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.'}).catch(()=>{});
+  await ctx.respond.reply({text:t('Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.')}).catch(()=>{});
 }
 const TOOL_ACTIONS = ['status', 'events', 'begin_analysis', 'analysis_page', 'finish_analysis', 'suggest', 'prepare', 'preparation_blocked', 'preparation_history', 'remember_fact', 'looks_handled', 'handoff_on_it', 'split_from_notes', 'promise', 'related', 'graph', 'profile_evidence', 'save_profile', 'skills_found'];
 // dismiss_handled stays for older cards; the service records that reason as done.
@@ -63,24 +64,24 @@ function cardButtons(item: any) {
   const buttons:any[]=[];
   // A run waiting on the browser keeps its Open the browser link on every redraw. Same rule as controls() in assistant.py.
   const browser=String(item.preparation_browser?.link||'');
-  if(browser.startsWith('https://')&&['accepted','instructions'].includes(item.status))buttons.push({text:'Open the browser',url:browser});
+  if(browser.startsWith('https://')&&['accepted','instructions'].includes(item.status))buttons.push({text:t('Open the browser'),url:browser});
   if(item.status==='prepared')for(const action of taskActions(item)){
     if(action.kind==='finish'&&(action.state||item.action_status)?.status==='done')continue;
     if(action.kind==='open')buttons.push({text:action.label,url:action.url});
     else if(['email','email_demo','linkedin','slack','x','whatsapp','merge','prepare','finish'].includes(action.kind)&&!['queued','sending','sent','uncertain','local_preparation','undoing','undone'].includes((action.state||item.action_status)?.status)){
       // The card shows this draft in full (card_send, card_draft in assistant.py): Send confirms it, Edit opens the editor.
       if(item.card_send&&item.card_send===action.revision){
-        buttons.push(button(item.id,action.label||'Send','confirm_'+action.revision));
-        if(dashboardRoot)buttons.push({text:'Edit',url:`${dashboardRoot}#send=${item.id}&revision=${action.revision}&edit=1`});
+        buttons.push(button(item.id,action.label||t('Send'),'confirm_'+action.revision));
+        if(dashboardRoot)buttons.push({text:t('Edit'),url:`${dashboardRoot}#send=${item.id}&revision=${action.revision}&edit=1`});
         continue;
       }
-      buttons.push(button(item.id,action.label||(action.kind==='prepare'?'Prepare next step':'Send'),(action.kind==='prepare'?'next_':'send_')+action.revision));
+      buttons.push(button(item.id,action.label||(action.kind==='prepare'?t('Prepare next step'):t('Send')),(action.kind==='prepare'?'next_':'send_')+action.revision));
     }
   }
   // A merged fix stays reversible for a day. Same rule as controls() in assistant.py.
   if(['prepared','completed'].includes(item.status)&&taskActions(item).some((a:any)=>a.kind==='merge'&&Date.parse((a.state||item.action_status)?.undo_until||'')>Date.now()))
-    buttons.push(button(item.id,'Undo merge','unmerge'));
-  return packRows([...buttons,...choices.map(([text,choice])=>button(item.id,text,choice))]);
+    buttons.push(button(item.id,t('Undo merge'),'unmerge'));
+  return packRows([...buttons,...choices.map(([text,choice])=>button(item.id,t(text),choice))]);
 }
 
 // Fewer rows: fill each row with up to three buttons that fit a phone's width, in order, so a
@@ -98,43 +99,43 @@ const fileList=(files:any[])=>files.map((a:any)=>`${a.name} (${a.size<1024?a.siz
 
 function sendReview(item:any,draft:any,dashboardBase=''){
  // Edit opens the same draft in the dashboard editor; Send then sends exactly the edited text.
- const edit=dashboardBase?[{text:'Edit',url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}&edit=1`}]:[];
+ const edit=dashboardBase?[{text:t('Edit'),url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}&edit=1`}]:[];
  const demo=draft.kind==='email_demo';
  // Handing it to someone: say the card waits for their reply.
- const waits=draft.delegate?[`After sending, this to-do waits ${draft.wait_days} day${draft.wait_days>1?'s':''} for ${draft.to_name?draft.to_name+'’s':'a'} reply; it closes when they answer.`]:[];
+ const waits=draft.delegate?[draft.to_name?t('After sending, this to-do waits {} days for {}’s reply; it closes when they answer.',draft.wait_days,draft.to_name):t('After sending, this to-do waits {} days for a reply; it closes when they answer.',draft.wait_days)]:[];
  // A fix to The Machine itself: what it changes and which files; the full diff is on the dashboard.
- if(draft.kind==='merge')return {text:['Merge this fix into The Machine?','',draft.summary,'',draft.stat,
-     ...(draft.plugin?['','The OpenClaw plugin changes too: it takes effect after openclaw plugins reload personal-assistant-bridge.']:[]),
-     '','Merge now runs the tests again, then updates the running code and restarts The Machine.'].join('\n'),
-   buttons:[[button(item.id,'Merge now','confirm_'+draft.revision),...(dashboardBase?[{text:'See the diff',url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}`}]:[]),button(item.id,'Cancel','back')]]};
+ if(draft.kind==='merge')return {text:[t('Merge this fix into The Machine?'),'',draft.summary,'',draft.stat,
+     ...(draft.plugin?['',t('The OpenClaw plugin changes too: it takes effect after openclaw plugins reload personal-assistant-bridge.')]:[]),
+     '',t('Merge now runs the tests again, then updates the running code and restarts The Machine.')].join('\n'),
+   buttons:[[button(item.id,t('Merge now'),'confirm_'+draft.revision),...(dashboardBase?[{text:t('See the diff'),url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}`}]:[]),button(item.id,t('Cancel'),'back')]]};
  // The last step of a prepared task: what goes out, and Confirm runs only that step.
  // It posts a message: its exact text, which Edit changes in the dashboard; Confirm types exactly that.
- if(draft.kind==='finish')return {text:[`${draft.label}?`,...(draft.message?[...(draft.to_name?[`To: ${draft.to_name}`]:[]),draft.preview,'',draft.message]:['',draft.preview]),...(draft.attachments?.length?['',`Attachments: ${fileList(draft.attachments)}`]:draft.message?['','Files: none']:[]),...(draft.url?['',draft.url]:[]),
-     '',draft.message?`Confirm types exactly this text on the page, ${draft.attachments?.length?'attaches the files above':'attaches no file'}, submits it, checks that it went through and reports back.`:'Confirm does only this last step, checks that it went through and reports back.'].join('\n'),
-   buttons:edit.length?[[button(item.id,'Confirm','confirm_'+draft.revision),...edit,button(item.id,'Cancel','back')],...(draft.url?[[{text:'Open page',url:draft.url}]]:[])]
-     :[[button(item.id,'Confirm','confirm_'+draft.revision),...(draft.url?[{text:'Open page',url:draft.url}]:[]),button(item.id,'Cancel','back')]]};
- if(draft.kind==='linkedin')return {text:['Send this LinkedIn message?',`To: ${draft.to_name}${draft.profile?` (linkedin.com/in/${draft.profile})`:''}`,'',draft.body].join('\n'),
-   buttons:[[button(item.id,'Send now','confirm_'+draft.revision),...edit,button(item.id,'Cancel','back')]]};
+ if(draft.kind==='finish')return {text:[`${draft.label}?`,...(draft.message?[...(draft.to_name?[t('To: {}',draft.to_name)]:[]),draft.preview,'',draft.message]:['',draft.preview]),...(draft.attachments?.length?['',t('Attachments: {}',fileList(draft.attachments))]:draft.message?['',t('Files: none')]:[]),...(draft.url?['',draft.url]:[]),
+     '',draft.message?(draft.attachments?.length?t('Confirm types exactly this text on the page, attaches the files above, submits it, checks that it went through and reports back.'):t('Confirm types exactly this text on the page, attaches no file, submits it, checks that it went through and reports back.')):t('Confirm does only this last step, checks that it went through and reports back.')].join('\n'),
+   buttons:edit.length?[[button(item.id,t('Confirm'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')],...(draft.url?[[{text:t('Open page'),url:draft.url}]]:[])]
+     :[[button(item.id,t('Confirm'),'confirm_'+draft.revision),...(draft.url?[{text:t('Open page'),url:draft.url}]:[]),button(item.id,t('Cancel'),'back')]]};
+ if(draft.kind==='linkedin')return {text:[t('Send this LinkedIn message?'),t('To: {}',draft.to_name)+`${draft.profile?` (linkedin.com/in/${draft.profile})`:''}`,'',draft.body].join('\n'),
+   buttons:[[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
  // X: a reply shows the account and the post it answers; a DM the conversation.
- if(draft.kind==='x')return {text:(draft.reply_to?[`Reply on X as @${draft.handle}?`,`To: @${draft.to_screen_name}${draft.to_name&&draft.to_name!=='@'+draft.to_screen_name?` (${draft.to_name})`:''}`,...(draft.to_text?[`“${draft.to_text}”`]:[])]
-     :['Send this X message?',`As @${draft.handle} to ${draft.to_name}`]).concat(['',draft.body]).join('\n'),
-   buttons:[[button(item.id,'Send now','confirm_'+draft.revision),...edit,button(item.id,'Cancel','back')]]};
- if(draft.kind==='whatsapp')return {text:['Send this WhatsApp message?',`To: ${draft.to_name}`,'',draft.body].join('\n'),
-   buttons:[[button(item.id,'Send now','confirm_'+draft.revision),...edit,button(item.id,'Cancel','back')]]};
- if(draft.kind==='slack')return {text:['Send this Slack message?',`To: ${draft.to_name}${draft.to_email?` (${draft.to_email})`:''}`,'',draft.body,...(waits.length?['',...waits]:[])].join('\n'),
-   buttons:[[button(item.id,'Send now','confirm_'+draft.revision),...edit,button(item.id,'Cancel','back')]]};
+ if(draft.kind==='x')return {text:(draft.reply_to?[t('Reply on X as @{}?',draft.handle),t('To: {}','@'+draft.to_screen_name)+`${draft.to_name&&draft.to_name!=='@'+draft.to_screen_name?` (${draft.to_name})`:''}`,...(draft.to_text?[`“${draft.to_text}”`]:[])]
+     :[t('Send this X message?'),t('As @{} to {}',draft.handle,draft.to_name)]).concat(['',draft.body]).join('\n'),
+   buttons:[[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
+ if(draft.kind==='whatsapp')return {text:[t('Send this WhatsApp message?'),t('To: {}',draft.to_name),'',draft.body].join('\n'),
+   buttons:[[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
+ if(draft.kind==='slack')return {text:[t('Send this Slack message?'),t('To: {}',draft.to_name)+`${draft.to_email?` (${draft.to_email})`:''}`,'',draft.body,...(waits.length?['',...waits]:[])].join('\n'),
+   buttons:[[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
  // No verified recipient: one Send button per address the service found in the thread.
  const options:string[]=draft.to_options||[];
- const lines=[demo?'Demo email preview · nothing will be sent':options.length?'Who should get this email?':`Send this email?`,`From: ${draft.from}`,`To: ${options.length?'you choose below':draft.to.join(', ')}`];
+ const lines=[demo?t('Demo email preview · nothing will be sent'):options.length?t('Who should get this email?'):t('Send this email?'),t('From: {}',draft.from),t('To: {}',options.length?t('you choose below'):draft.to.join(', '))];
  for(const key of ['cc','bcc'])if(draft[key]?.length)lines.push(`${key.toUpperCase()}: ${draft[key].join(', ')}`);
- lines.push(`Subject: ${draft.subject}`,'',draft.body);
- if(draft.signature)lines.push('','+ your signature');
- if(draft.attachments?.length)lines.push('',`Attachments: ${fileList(draft.attachments)}`);
- if(draft.snooze_days)lines.push(`After sending, the thread leaves your inbox for ${draft.snooze_days} day${draft.snooze_days>1?'s':''} (a weekday morning; a reply brings it back sooner).`);
+ lines.push(t('Subject: {}',draft.subject),'',draft.body);
+ if(draft.signature)lines.push('',t('+ your signature'));
+ if(draft.attachments?.length)lines.push('',t('Attachments: {}',fileList(draft.attachments)));
+ if(draft.snooze_days)lines.push(t('After sending, the thread leaves your inbox for {} days (a weekday morning; a reply brings it back sooner).',draft.snooze_days));
  lines.push(...waits);
- if(options.length)return {text:lines.join('\n'),buttons:[...options.slice(0,4).map((address,i)=>[button(item.id,`Send to ${address}`.slice(0,60),`confirm_${draft.revision}_${i}`)]),
-   [...(options.length>1&&dashboardBase?[{text:'Choose several',url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}`}]:[]),...edit,button(item.id,'Cancel','back')]]};
- return {text:lines.join('\n'),buttons:[demo?[button(item.id,'Back','back')]:[button(item.id,'Send now','confirm_'+draft.revision),...edit,button(item.id,'Cancel','back')]]};
+ if(options.length)return {text:lines.join('\n'),buttons:[...options.slice(0,4).map((address,i)=>[button(item.id,t('Send to {}',address).slice(0,60),`confirm_${draft.revision}_${i}`)]),
+   [...(options.length>1&&dashboardBase?[{text:t('Choose several'),url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}`}]:[]),...edit,button(item.id,t('Cancel'),'back')]]};
+ return {text:lines.join('\n'),buttons:[demo?[button(item.id,t('Back'),'back')]:[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
 }
 
 async function settings() {
@@ -223,6 +224,7 @@ export default definePluginEntry({
             String(ctx.senderId) !== config.telegram_owner || String(ctx.callback.chatId) !== config.telegram_owner) {
           return { handled: true };
         }
+        useLanguage(config);
         dashboardRoot=config.dashboard_host?`https://${config.dashboard_host}${config.dashboard_path||'/'}`:'';
         // A Fleet question waiting for the owner. The service accepts the tap only from the message it sent for it.
         const fleetTap = /^assistant:fleet:(q_[a-f0-9]{16}):(once|always|decline)$/.exec(ctx.callback.data);
@@ -250,7 +252,7 @@ export default definePluginEntry({
             if (error.status !== 400) { await notReached(ctx); return { handled: true }; }
             await ctx.respond.clearButtons().catch(()=>{});
             await ctx.respond.reply({ text: /^That Telegram message is not/.test(error.message||'') ?
-              'This message is not the one sent for that request, so nothing was done. Please use the dashboard.' : error.message });
+              t('This message is not the one sent for that request, so nothing was done. Please use the dashboard.') : error.message });
             return { handled: true };
           }
           // The message itself shows the result: Accepted, Declined, already handled, or why nothing happened with the
@@ -268,7 +270,7 @@ export default definePluginEntry({
             message_id: String(ctx.callback.messageId), decision_id: `telegram:${ctx.callbackId}` }); }
           catch (error:any) {
             if (error.status !== 400) { await notReached(ctx); return { handled: true }; }
-            await ctx.respond.reply({ text: error.message || 'That did nothing. Please use the dashboard.' }).catch(()=>{});
+            await ctx.respond.reply({ text: error.message || t('That did nothing. Please use the dashboard.') }).catch(()=>{});
             return { handled: true };
           }
           if (result?.reason) await ctx.respond.reply({ text: result.reason }).catch(()=>{});
@@ -277,7 +279,7 @@ export default definePluginEntry({
         const match = /^assistant:([a-f0-9]{16}):(accept|reject|snooze|other|complete|undo|unmerge|retry|back|snooze_(?:2h|tomorrow|3d|1w)|dismiss_(?:irrelevant|handled|wrong|other|none)|(?:send|confirm|next)_[a-f0-9]{12}|confirm_[a-f0-9]{12}_[0-5])$/.exec(ctx.callback.data);
         if (!match) {
           // A button this version doesn't know (an older message, or one from a newer Machine): say so, never stay silent.
-          await ctx.respond.reply({ text: 'That button did nothing: it is not one this Machine knows. Please use the dashboard.' }).catch(()=>{});
+          await ctx.respond.reply({ text: t('That button did nothing: it is not one this Machine knows. Please use the dashboard.') }).catch(()=>{});
           return { handled: true };
         }
         const [, id, choice] = match;
@@ -285,7 +287,7 @@ export default definePluginEntry({
         const delivery = state.deliveries.find((d: any) => d.suggestion_id === id);
         const recorded = delivery ? [String(delivery.message_id), ...JSON.parse(delivery.previous_message_ids || '[]').map(String)] : [];
         if (!delivery || !recorded.includes(String(ctx.callback.messageId))) {
-          await ctx.respond.reply({ text: 'This to-do is not the current recorded delivery. Please use the dashboard.' });
+          await ctx.respond.reply({ text: t('This to-do is not the current recorded delivery. Please use the dashboard.') });
           return { handled: true };
         }
         const item = state.suggestions.find((s: any) => s.id === id);
@@ -299,13 +301,13 @@ export default definePluginEntry({
           if(item.status!=='prepared'||!draft||!['email','email_demo','linkedin','slack','x','whatsapp','merge','prepare','finish'].includes(draft.kind)||['queued','sending','sent','uncertain','local_preparation','undoing','undone'].includes((draft.state||item.action_status)?.status)){
             await ctx.respond.editButtons({buttons:cardButtons(item)});
             // A Send on an older version of the card: nothing goes out, and the tap says why.
-            if(choice.startsWith('confirm_'))await ctx.respond.reply({text:['sending','sent','queued'].includes((draft?.state||item.action_status)?.status)?'Already sent. Nothing was sent twice.':'That draft changed or is no longer ready, so nothing was sent. Check the updated to-do.'});
+            if(choice.startsWith('confirm_'))await ctx.respond.reply({text:['sending','sent','queued'].includes((draft?.state||item.action_status)?.status)?t('Already sent. Nothing was sent twice.'):t('That draft changed or is no longer ready, so nothing was sent. Check the updated to-do.')});
             return {handled:true};
           }
           if((choice.startsWith('next_')&&draft.kind!=='prepare')||(choice.startsWith('confirm_')&&!['email','linkedin','slack','x','whatsapp','merge','finish'].includes(draft.kind))||(choice.startsWith('send_')&&!['email','email_demo','linkedin','slack','x','whatsapp','merge','finish'].includes(draft.kind)))return {handled:true};
           if(choice.startsWith('send_')){
             if(sendReview(item,draft,`https://${config.dashboard_host}${config.dashboard_path||'/'}`).text.length>3200){
-              await ctx.respond.editButtons({buttons:[[{text:draft.kind==='merge'?'Review and merge':draft.kind==='finish'?'Review':'Review and send',url:`https://${config.dashboard_host}${config.dashboard_path||'/'}#send=${id}&revision=${revision}`},button(id,'Cancel','back')]]});
+              await ctx.respond.editButtons({buttons:[[{text:draft.kind==='merge'?t('Review and merge'):draft.kind==='finish'?t('Review'):t('Review and send'),url:`https://${config.dashboard_host}${config.dashboard_path||'/'}#send=${id}&revision=${revision}`},button(id,t('Cancel'),'back')]]});
             }else await ctx.respond.editMessage(sendReview(item,draft,`https://${config.dashboard_host}${config.dashboard_path||'/'}`));
             return {handled:true};
           }
@@ -313,7 +315,7 @@ export default definePluginEntry({
           if(options.length&&!recipient){await ctx.respond.editMessage(sendReview(item,draft,`https://${config.dashboard_host}${config.dashboard_path||'/'}`));return {handled:true};}
           try{await call('confirm_action',{suggestion_id:id,revision,approval_id:`telegram:${ctx.callbackId}`,...(recipient?{recipients:[recipient]}:{})});}
           catch(error:any){if(error.status!==400)throw error;await call('refresh_card',{suggestion_id:id});
-            await ctx.respond.reply({text:`Nothing was sent: ${error.message}`});return {handled:true};}
+            await ctx.respond.reply({text:t('Nothing was sent: {}',error.message)});return {handled:true};}
           await ctx.respond.editButtons({buttons:cardButtons({...item,...(['prepare','finish'].includes(draft.kind)?{status:'accepted'}:{}),next_actions:taskActions(item).map((a:any)=>a.revision===revision?{...a,state:{status:'queued'}}:a)})});
           return {handled:true};
         }
@@ -336,11 +338,11 @@ export default definePluginEntry({
         }
         if (choice === 'snooze') {
           // The service labels each option by when it lands; work items skip the weekend.
-          const presets=(item.snooze_choices||[['2h','2 hours'],['tomorrow','Tomorrow · 9:00'],['3d','3 days · 9:00'],['1w','1 week · 9:00']])
+          const presets=(item.snooze_choices||[['2h',t('2 hours')],['tomorrow',t('Tomorrow · 9:00')],['3d',t('3 days · 9:00')],['1w',t('1 week · 9:00')]])
             .map(([option,text]:[string,string])=>button(id,text,'snooze_'+option));
           await ctx.respond.editButtons({ buttons: [
             ...[presets.slice(0,2),presets.slice(2,4)].filter(row=>row.length),
-            [{ text: 'Choose date', url: `https://${config.dashboard_host}${config.dashboard_path || '/'}#snooze-custom=${id}` }, button(id, 'Cancel', 'back')],
+            [{text:t('Choose date'),url: `https://${config.dashboard_host}${config.dashboard_path || '/'}#snooze-custom=${id}` }, button(id,t('Cancel'), 'back')],
           ] });
           return { handled: true };
         }
@@ -348,9 +350,9 @@ export default definePluginEntry({
           // Not needed asks why, in one tap. The reasons teach the reviewer what to skip.
           // Already handled is Mark done, so it is not offered here.
           await ctx.respond.editButtons({ buttons: [
-            [button(id, 'Not relevant', 'dismiss_irrelevant'), button(id, 'Wrong facts', 'dismiss_wrong')],
-            [button(id, 'Other reason…', 'dismiss_other'), button(id, 'No reason', 'dismiss_none')],
-            [button(id, 'Cancel', 'back')],
+            [button(id,t('Not relevant'), 'dismiss_irrelevant'), button(id,t('Wrong facts'), 'dismiss_wrong')],
+            [button(id,t('Other reason…'), 'dismiss_other'), button(id,t('No reason'), 'dismiss_none')],
+            [button(id,t('Cancel'), 'back')],
           ] });
           return { handled: true };
         }
@@ -403,6 +405,7 @@ export default definePluginEntry({
     });
     api.on('before_dispatch', async (event: any, context: any) => {
       const config = await settings();
+      useLanguage(config);
       const sender = String(context.senderId || event.senderId || '').replace(/^telegram:/, '');
       const conversation = String(context.conversationId || '').replace(/^telegram:/, '');
       if ((context.channelId || event.channel) !== 'telegram' || context.accountId !== (config.telegram_account || 'default') ||
@@ -413,22 +416,23 @@ export default definePluginEntry({
       const result = await call('feedback_reply', { text: event.content || event.body || '', message_id: String(messageId),
         timestamp: event.timestamp, reply_to_id: context.replyToId || event.replyToId });
       if (!result.handled) return;
-      return { handled: true, ...(result.cancelled ? { text: 'Canceled.' } : {}) };
+      return { handled: true, ...(result.cancelled ? { text: t('Canceled.') } : {}) };
     });
     api.registerCommand({
       name: 'assistant_feedback', channels: ['telegram'], acceptsArgs: true,
       description: 'Add written feedback or instructions to a suggestion', requireAuth: true,
       async handler(ctx: any) {
         const config = await settings();
+        useLanguage(config);
         if (!ctx.isAuthorizedSender || String(ctx.senderId) !== config.telegram_owner ||
             ctx.accountId !== (config.telegram_account || 'default') || String(ctx.from).replace(/^telegram:/, '') !== config.telegram_owner) {
-          return { text: 'Feedback is available only in the owner’s private Telegram conversation.' };
+          return { text: t('Feedback is available only in the owner’s private Telegram conversation.') };
         }
         const match = /^([a-f0-9]{16})\s+([\s\S]+)$/.exec(ctx.args || '');
-        if (!match) return { text: 'Use /assistant_feedback suggestion_id your explanation or instructions.' };
+        if (!match) return { text: t('Use /assistant_feedback suggestion_id your explanation or instructions.') };
         const result = await call('decide', { suggestion_id: match[1], choice: 'other', feedback: match[2],
           decision_id: `feedback:${crypto.randomUUID()}`, source: 'telegram' });
-        return { text: 'Saved your instructions. No external action was executed.' };
+        return { text: t('Saved your instructions. No external action was executed.') };
       },
     });
   },

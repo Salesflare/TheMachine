@@ -31,6 +31,7 @@ import family
 import graph
 import locale_prefs
 import meeting_notes
+from i18n import t
 import next_actions
 
 LOG = logging.getLogger('personal-assistant')
@@ -203,9 +204,9 @@ def clean_silent(answer):
 
 def how_text(where, who, at=None, tz=None):
     """How the owner took a handoff on: "talked to Sam on Slack, Fri 10:12", "emailed Sam", "had a call"."""
-    what = ((f'emailed {who}' if who else 'wrote by email') if where == 'email' else
-            (f'talked to {who} in a call' if who else 'had a call') if where == 'a call' else
-            (f'talked to {who} on {where}' if who else f'wrote on {where}'))
+    what = ((t('emailed {}', who) if who else t('wrote by email')) if where == 'email' else
+            (t('talked to {} in a call', who) if who else t('had a call')) if where == 'a call' else
+            (t('talked to {} on {}', who, where) if who else t('wrote on {}', where)))
     if at:
         when = dt.datetime.fromisoformat(at).astimezone(tz)
         what += ', ' + locale_prefs.short_text(when)
@@ -216,20 +217,20 @@ def question_text(kind, question):
     if kind in family.REQUESTS:
         return family.question_text(kind, question)
     if kind == 'intro':
-        return f"An intro to someone at {question.get('about', '?')}" + (f" (their note: “{question['note']}”)" if question.get('note') else '')
+        return t('An intro to someone at {}', question.get('about', '?')) + (t(' (their note: “{}”)', question['note']) if question.get('note') else '')
     if kind == 'handoff':
-        return (f"Can you take this on: {question.get('title', '?')}? Their summary: “{question.get('summary', '')}”"
-                + (f"\n   Contact: {question['contact']}." if question.get('contact') else '') + (f" Due {question['when']}." if question.get('when') else ''))
-    parts = question.get('parts') or [{'name': 'a teammate', 'what': i['what']} for i in question.get('items', [])]
-    return (f"Follow-ups from {question.get('title') or 'the meeting'} on {question.get('when', '?')}: "
-            + '; '.join(f"{'you' if p.get('mine') else p.get('name') or 'a teammate'}: {p['what']}" for p in parts))
+        return (t('Can you take this on: {}? Their summary: “{}”', question.get('title', '?'), question.get('summary', ''))
+                + ('\n   ' + t('Contact: {}.', question['contact']) if question.get('contact') else '') + (' ' + t('Due {}.', question['when']) if question.get('when') else ''))
+    parts = question.get('parts') or [{'name': t('a teammate'), 'what': i['what']} for i in question.get('items', [])]
+    return (t('Follow-ups from {} on {}: ', question.get('title') or t('the meeting'), question.get('when', '?'))
+            + '; '.join(f"{t('you') if p.get('mine') else p.get('name') or t('a teammate')}: {p['what']}" for p in parts))
 
 
 def answer_text(kind, answer):
     if kind in family.REQUESTS:
         return family.answer_text(kind, answer)
     answer = answer or {}
-    return (STAGES.get(answer.get('stage'), 'no answer') + (f": “{answer['what']}”" if answer.get('what') else '')
+    return (t(STAGES.get(answer.get('stage'), 'no answer')) + (f": “{answer['what']}”" if answer.get('what') else '')
             + ((' (' if answer.get('what') else ': ') + f"“{answer['note']}”" + (')' if answer.get('what') else '') if answer.get('note') else ''))
 
 
@@ -246,7 +247,7 @@ def first_name(name):
 def taken_line(name):
     """A request its sender took back, as the one it went to sees it: "Taken back by Kim"."""
     first = first_name(name) if name and name != 'A teammate' else ''
-    return 'Taken back by ' + (first or 'your teammate')
+    return t('Taken back by {}', first or t('your teammate'))
 
 
 def intro_draft(asker, contact, me):
@@ -406,9 +407,10 @@ class Requests:
             name = fleet.clean(person['name'], 80) or address
             me = self.config.get('owner_name') or next((m.get('name') for m in (self.fleets().get(row['fleet']) or {}).get('members', []) if m.get('me')), '')
             subject, body = intro_draft(sender, name, me)
-            return self.make_card(kind='intro', ask_id=row['id'], name=sender, title=f'Intro for {sender}: {name}'[:90],
-                                  body=(f'{sender} asked through your Fleet for an intro to someone at {address.rsplit("@", 1)[1]}. You know {name} '
-                                        f'best there. The draft asks them first whether they want the intro; nothing goes out until you send it.'),
+            # The to-do is the owner's, in their language; the draft to the contact stays English (no thread to follow)
+            return self.make_card(kind='intro', ask_id=row['id'], name=sender, title=t('Intro for {}: {}', sender, name)[:90],
+                                  body=t('{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them '
+                                         'first whether they want the intro; nothing goes out until you send it.', sender, address.rsplit("@", 1)[1], name),
                                   evidence=[evidence['id']], action={'kind': 'email', 'account_id': evidence['account_id'], 'to': [address],
                                                                       'subject': subject, 'body': body})
         if row['kind'] == 'handoff':
@@ -423,21 +425,21 @@ class Requests:
             summary = question['summary'][:480]
             same = self.same_card(row['fleet'], question)
             if same:  # they already have a card on it: the handoff joins that card instead of making a second one
-                return self.make_card(kind='handoff', ask_id=row['id'], name=sender, title=f'{sender} handed you: {question["title"]}'[:90],
-                                      body=f'{sender} handed this to you too, through your Fleet. Their summary, as they wrote it: “{summary}”',
+                return self.make_card(kind='handoff', ask_id=row['id'], name=sender, title=t('{} handed you: {}', sender, question["title"])[:90],
+                                      body=t('{} handed this to you too, through your Fleet. Their summary, as they wrote it: “{}”', sender, summary),
                                       evidence=[], into=same, **({'carried': question['sources']} if question.get('sources') else {}))
             # Task first: what they ask of you, in their words; then the contact; the sources it was built from are the
             # card's own sources (copies on this Machine, readable offline), never links into their mailbox.
-            first = sender.split()[0] if sender else 'A teammate'
+            first = sender.split()[0] if sender else t('A teammate')
             carried = question.get('sources') or []
             return self.make_card(kind='handoff', ask_id=row['id'], name=sender, title=question['title'][:90],
-                                  body=f'{first} asks you to take this on: “{summary}”',
+                                  body=t('{} asks you to take this on: “{}”', first, summary),
                                   evidence=evidence, due=question.get('when'), **({'carried': carried} if carried else {}))
         mine = '; '.join(text and [text] or [p['what'] for p in question['parts'] if p['mine']])
         others = '; '.join(f"{p['name']}: {p['what']}" for p in question['parts'] if not p['mine'])
-        card = self.make_card(kind='followup', ask_id=row['id'], name=sender, title=f'Follow up: {mine}'[:90],
-                              body=(f"Your part of the follow-ups from {question.get('title') or 'the meeting'} on {question['when']}, split in your "
-                                    f"Fleet by {sender}: {mine}." + (f' The others: {others}.' if others else ''))[:700],
+        card = self.make_card(kind='followup', ask_id=row['id'], name=sender, title=t('Follow up: {}', mine)[:90],
+                              body=(t('Your part of the follow-ups from {} on {}, split in your Fleet by {}: {}.', question.get('title') or t('the meeting'),
+                                      question['when'], sender, mine) + (' ' + t('The others: {}.', others) if others else ''))[:700],
                               evidence=[question['event_id']] if question.get('event_id') else [])
         self.keep_split(row['fleet'], question, 'in', sender, card)
         return card
@@ -693,7 +695,7 @@ class Requests:
                          'taken back' if told else "taken back on your to-do; their Machine couldn't be told")
         if self.wait_card:  # it's with them now: the card leaves Ready and waits under Later until their Machine answers
             try:
-                self.wait_card(str(card_id), f"Handed off to {fleet.label(self.member(fleet_ref, member_id))}",
+                self.wait_card(str(card_id), t('Handed off to {}', fleet.label(self.member(fleet_ref, member_id))),
                                'fleet-handoff-wait-' + '-'.join(sorted((sent or {}).get('ids', {}).values()) or [str(card_id), fleet.now()]), expected)
             except ValueError as error:
                 LOG.info('fleet handoff wait skipped error=%s', error)
@@ -810,7 +812,7 @@ class Requests:
                     return  # taken back from them: their answer is kept, and moves or tells nothing
         if row['kind'] == 'handoff' and stage in ('accepted', 'adjusted', 'done') and self.close_card and str(row['context'] or '').startswith('handoff:'):
             try:  # it's theirs now: the owner's card is done, saying to whom (Undo or Reopen bring it back)
-                self.close_card(row['context'][8:], self.on_it_line(row['name'], answer) if (answer or {}).get('silent') else f"Handed off to {row['name']}",
+                self.close_card(row['context'][8:], self.on_it_line(row['name'], answer) if (answer or {}).get('silent') else t('Handed off to {}', row['name']),
                                 'fleet-handoff-' + str(row['id']))
             except ValueError as error:
                 LOG.info('fleet handoff close skipped error=%s', error)
@@ -818,16 +820,18 @@ class Requests:
             self.handoff_back(row)
         if stage == 'waiting' or not self.tell:
             return
-        what = {'intro': f"your intro request ({question.get('about')})", 'handoff': f"your handoff: {question.get('title')}",
-                'followup': 'their part of the follow-ups', 'todo': f"the to-do: {question.get('title')}",
-                'event': f"the plan: {question.get('title')}"}[row['kind']]
-        note = f" Their note: “{answer['note']}”" if (answer or {}).get('note') else ''
+        what = {'intro': t('your intro request ({})', question.get('about')), 'handoff': t('your handoff: {}', question.get('title')),
+                'followup': t('their part of the follow-ups'), 'todo': t('the to-do: {}', question.get('title')),
+                'event': t('the plan: {}', question.get('title'))}[row['kind']]
+        note = ' ' + t('Their note: “{}”', answer['note']) if (answer or {}).get('note') else ''
         if (answer or {}).get('silent'):
             stage = 'on_it'
-        said = {'on_it': f"{self.on_it_line(row['name'], answer)}: {what}." if stage == 'on_it' else '',
-                'accepted': f"{row['name']} {'is in for' if row['kind'] == 'event' else 'accepted'} {what}.{note}", 'adjusted': f"{row['name']} accepted {what}, changed to: “{(answer or {}).get('what', '')}”.{note}",
-                'sent': f"{row['name']} sent the intro email for {what}.", 'declined': f"{row['name']} declined {what}.{note}",
-                'done': f"{row['name']} marked {what} done.", 'expired': f"{row['name']} didn't get to {what} in time."}.get(stage)
+        name = row['name']
+        said = {'on_it': f"{self.on_it_line(name, answer)}: {what}." if stage == 'on_it' else '',
+                'accepted': (t('{} is in for {}.', name, what) if row['kind'] == 'event' else t('{} accepted {}.', name, what)) + note,
+                'adjusted': t('{} accepted {}, changed to: “{}”.', name, what, (answer or {}).get('what', '')) + note,
+                'sent': t('{} sent the intro email for {}.', name, what), 'declined': t('{} declined {}.', name, what) + note,
+                'done': t('{} marked {} done.', name, what), 'expired': t('{} didn’t get to {} in time.', name, what)}.get(stage)
         if said:
             try:
                 self.tell(said, row['id'])
@@ -836,8 +840,8 @@ class Requests:
 
     def on_it_line(self, name, answer):
         """The sender's line for a silent acceptance: "Pat is on it · talked to Sam on Slack, Fri 10:12"."""
-        first = (name or 'Your teammate').split()[0]
-        return f"{first} is on it · {how_text(answer['where'], answer.get('with'), answer['at'], self.local_now().tzinfo)}"
+        first = (name or t('Your teammate')).split()[0]
+        return t('{} is on it · {}', first, how_text(answer['where'], answer.get('with'), answer['at'], self.local_now().tzinfo))
 
     def handoff_back(self, row):
         """Not theirs after all: the handed-off card comes back to Ready, saying who declined and why, to do it yourself,
@@ -950,7 +954,7 @@ class Requests:
 
     @staticmethod
     def marked_line(how):
-        return f"Marked as yours, since you {how} about it"
+        return t('Marked as yours, since you {} about it', how)
 
     def silent_note(self, card_id):
         """The note on a card that became the owner's by what they did: "Marked as yours, since you talked to Sam about it"."""

@@ -12,6 +12,7 @@ assert.ok(callbackChunk,'installed Telegram callback codec is available');
 const {a:decodeCallback}=await import(join(coreDist,callbackChunk));
 let source=await readFile(new URL('../openclaw-plugin/index.ts',import.meta.url),'utf8');
 source=source.replace("import { buildCallback } from './telegram-callback.ts';",`import { buildCallback } from ${JSON.stringify(new URL('../openclaw-plugin/telegram-callback.ts',import.meta.url).pathname)};`);
+source=source.replace("import { t, useLanguage } from './i18n.ts';",`import { t, useLanguage } from ${JSON.stringify(new URL('../openclaw-plugin/i18n.ts',import.meta.url).pathname)};`);
 const start=source.indexOf('async function settings()'),end=source.indexOf('export default definePluginEntry');
 source=source.slice(0,start)+'async function settings(){return globalThis.fixtureConfig;}\nfunction ownerChat(){return String(globalThis.fixtureConfig.telegram_owner);}\nasync function call(action,args={}){return globalThis.fixtureCall(action,args); }\n'+source.slice(end);
 for(const line of ["import { readFile } from 'node:fs/promises';","import { homedir } from 'node:os';","import { join } from 'node:path';"])source=source.replace(line,'');

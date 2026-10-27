@@ -26,6 +26,7 @@ import secrets
 import urllib.parse
 
 import locale_prefs
+from i18n import t
 
 KIND = 'family'
 KINDS = ('availability', 'todo', 'event')
@@ -108,18 +109,18 @@ def _shown(value):
 
 
 def question_text(kind, question):
+    note = t(' (their note: “{}”)', question['note']) if question.get('note') else ''
     if kind == 'todo':
-        return f"To-do: {question.get('title', '?')}" + (f", due {_shown(question['due'])}" if question.get('due') else '') + \
-               (f" (their note: “{question['note']}”)" if question.get('note') else '')
-    return (f"Plan: {question.get('title', '?')}, {_shown(question.get('start'))}" + (f" at {question['place']}" if question.get('place') else '')
-            + (f" (their note: “{question['note']}”)" if question.get('note') else ''))
+        return t('To-do: {}', question.get('title', '?')) + (t(', due {}', _shown(question['due'])) if question.get('due') else '') + note
+    return (t('Plan: {}, {}', question.get('title', '?'), _shown(question.get('start'))) + (', ' + question['place'] if question.get('place') else '')
+            + note)
 
 
 def answer_text(kind, answer):
     stage = (answer or {}).get('stage')
     if kind == 'event':
-        return {'accepted': 'is in', 'declined': 'can’t make it', 'done': 'is in'}.get(stage, 'no answer')
-    return STAGES.get(stage, 'no answer')
+        return t({'accepted': 'is in', 'declined': 'can’t make it', 'done': 'is in'}.get(stage, 'no answer'))
+    return t(STAGES.get(stage, 'no answer'))
 
 
 def calendar_link(question):
@@ -242,17 +243,17 @@ class Family:
     def family_card(self, row, question, sender):
         """The card for a to-do or plan the owner accepted: theirs now, made by plain code from the member's words."""
         if row['kind'] == 'todo':
-            return self.make_card(kind='todo', ask_id=row['id'], name=sender, title=f'{question["title"]} (for {sender})'[:90],
-                                  body=(f'{sender} asked you through your Family: “{question["title"]}”'
-                                        + (f' Their note: “{question["note"]}”' if question.get('note') else '')
-                                        + (f' Due {_shown(question["due"])}.' if question.get('due') else '')),
+            return self.make_card(kind='todo', ask_id=row['id'], name=sender, title=(question["title"] + t(' (for {})', sender))[:90],
+                                  body=(t('{} asked you through your Family: “{}”', sender, question["title"])
+                                        + (' ' + t('Their note: “{}”', question["note"]) if question.get('note') else '')
+                                        + (' ' + t('Due {}.', _shown(question["due"])) if question.get('due') else '')),
                                   evidence=[], due=(question.get('due') or '')[:10] or None, family=True)
         link = calendar_link(question)
         return self.make_card(kind='event', ask_id=row['id'], name=sender, title=f'{question["title"]}, {_shown(question["start"])}'[:90],
-                              body=(f'You said yes to {sender}’s plan: “{question["title"]}”, {_shown(question["start"])}'
-                                    + (f' at {question["place"]}' if question.get('place') else '') + '.'
-                                    + (f' Their note: “{question["note"]}”' if question.get('note') else '')
-                                    + f' Add it to your calendar yourself: {link}'),
+                              body=(t('You said yes to {}’s plan: “{}”, {}', sender, question["title"], _shown(question["start"]))
+                                    + (', ' + question["place"] if question.get('place') else '') + '.'
+                                    + (' ' + t('Their note: “{}”', question["note"]) if question.get('note') else '')
+                                    + ' ' + t('Add it to your calendar yourself: {}', link)),
                               evidence=[], due=question['start'][:10], family=True)
 
     def family_reminders(self, today=None):
@@ -271,7 +272,7 @@ class Family:
         for r in due:
             q = json.loads(r['question'])
             try:
-                self.tell(f"Reminder: {q['title']} (for {r['name']}) is due {'today' if (q.get('due') or '')[:10] == today else _shown(q['due'])}.", r['id'])
+                self.tell(t('Reminder: {} (for {}) is due {}.', q['title'], r['name'], t('today') if (q.get('due') or '')[:10] == today else _shown(q['due'])), r['id'])
                 told += 1
             except Exception:  # a reminder that can't go out now is not retried: the card still shows it
                 pass
