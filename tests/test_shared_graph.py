@@ -522,6 +522,32 @@ class SharedGraph(unittest.TestCase):
             view = self.own.team_overview(db, {})
             self.assertEqual([b['name'] for b in view['boards']], [])
 
+    def test_a_teammates_board_tile_says_what_happened_and_whether_it_is_yours(self):
+        """On a teammate's Machine a shared board's tile carries its newest shared line (not only its owner's name), and
+        Mine / Needs me: on a thread of it, or an open to-do about it. Nothing more is shared for it."""
+        self.olive_mail()
+        self.add(self.own, mail('work', 8, 'Kim Lo <kim@buyer.example>', 'own1@acme.example', 'Pilot terms', 'Can we start the pilot Monday?', 1, 't-pilot',
+                                cc='mem3@acme.example'))
+        self.judge(self.own, ('work-8', 'client', 'Kim asked to start the pilot Monday'))
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Lee': ['work-1'], 'Hire: Ada': ['work-4'], 'Pilot: Kim': ['work-8']})
+        self.rounds()
+        sent = json.dumps(self.team(self.mem))
+        with self.mem.store.connect() as db:
+            board = next(b for b in self.mem.team_overview(db, {})['boards'] if b['name'] == 'Renewals')
+        tiles = {p['name']: p for p in board['projects']}
+        self.assertEqual(tiles['Renewal: Lee']['line'], 'Lee asked for the renewal quote')
+        self.assertTrue(tiles['Renewal: Lee']['line_at'])
+        self.assertNotIn('line', tiles['Hire: Ada'])  # nothing of it was shared: its stage and date say what happened
+        self.assertEqual((tiles['Renewal: Lee']['yours'], tiles['Renewal: Lee']['needs_you']), (False, False))
+        self.assertEqual((tiles['Pilot: Kim']['yours'], tiles['Pilot: Kim']['needs_you']), (True, True))  # cc'd, and Kim wrote last
+        with self.mem.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,project) VALUES('c1','c1','Call Lee','',"
+                       "'[]','[]','pending',?,'Renewal: Lee')", (a.now(),))
+        with self.mem.store.connect() as db:
+            tiles = {p['name']: p for b in self.mem.team_overview(db, {})['boards'] for p in b['projects']}
+        self.assertEqual((tiles['Renewal: Lee']['yours'], tiles['Renewal: Lee']['needs_you']), (True, True))
+        self.assertEqual(json.dumps(self.team(self.mem)), sent)  # what was shared stays as it was
+
     def test_a_project_on_a_team_board_goes_with_its_board_record_before_any_thread_of_it_is_shared(self):
         self.olive_mail()
         self.board(self.own, 'Hiring', 'team', {'Hire: Ada': ['work-4']}, stage='Screening')  # only colleagues on it

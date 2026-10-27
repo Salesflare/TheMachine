@@ -910,6 +910,16 @@ def _line(text):
     return ' '.join(str(text or '').split())[:160]
 
 
+TITLE_WORDS = tuple(w + ': ' for w in (*ITEM_WORDS.values(), 'Meeting notes', 'Note'))  # a line that is only an item's title
+
+
+def plain_line(text):
+    """A timeline line as text: chat links (<mailto:a@b|a@b>, <https://x|label>) by their label, no stray brackets."""
+    text = re.sub(r'<(?:mailto:|https?://)[^|>]*\|([^>]*)>', r'\1', str(text or ''))
+    text = re.sub(r'<(?:mailto:)?([^<>|]*)>', r'\1', text)
+    return _line(re.sub(r'[<>]', '', text).replace('mailto:', ''))
+
+
 def _message(e):
     """One message of a shared thread: mail as it is; a meeting with its organizer and who was invited; notes with their host."""
     m = e['metadata']
@@ -2561,14 +2571,50 @@ class SharedGraph:
                 'quiet': [], 'new': [], 'boards': self.team_boards(db, entries, shared), 'counts': {'person': len(people), 'org': len(orgs), 'project': len(projects)},
                 'sharing': self.sharing()}
 
+    def _yours(self, db, e, rec, me_ids, my_mail, todos):
+        """(yours, needs you) of a teammate's project here: this Machine's owner is on one of its shared threads, owns
+        it, has it in their own Graph or has an open to-do about it; it needs them when that to-do is open or the newest
+        message of a thread they're on came from someone else to them. From what was shared already, nothing more."""
+        on, waiting = bool(e['local']) or rec.get('owner') in me_ids, False
+        for s in e['sources']:
+            for tag in (s['record'].get('threads') or [])[:40]:
+                row = db.execute('SELECT body FROM team_mail WHERE fleet=? AND member=? AND tag=?', (s['fleet'], s['member'], tag)).fetchone()
+                body = json.loads(row['body']) if row else {}
+                if body.get('private') or not on_thread(body, my_mail):
+                    continue
+                on = True
+                last = (body.get('messages') or [{}])[-1]
+                if isinstance(last, dict):
+                    sender = addresses({'from': last.get('from')})
+                    waiting = waiting or bool(sender and not set(sender) & my_mail and set(addresses({'to': last.get('to'), 'cc': last.get('cc')})) & my_mail)
+        todo = todos.get(str(rec.get('name') or '').casefold(), 0) > 0
+        return on or todo, todo or waiting
+
+    @staticmethod
+    def _last_line(e):
+        """What happened last on a teammate's project, with its date: the newest line of its shared timeline from every
+        source, a review's line or a move before a bare title ("Chat: …"), with chat markup (<mailto:a|b>) read as text."""
+        lines = [x for s in e['sources'] for x in (s['record'].get('timeline') or []) if isinstance(x, dict) and x.get('line')]
+        last = max(lines, key=lambda x: (not str(x['line']).startswith(TITLE_WORDS), str(x.get('at') or '')), default=None)
+        return {'line': plain_line(last['line']), 'line_at': last.get('at')} if last else {}
+
     def team_boards(self, db, entries, shared):
         """Shared Boards: the team's pipelines. A tile per project, with its owner (the closest), its stage (the newest
-        move by hand, else the newest a message showed) and who moved it."""
+        move by hand, else the newest a message showed), who moved it and its newest timeline line. Each tile says
+        whether it is this Machine's owner's own (yours) and needs them (needs_you), for Mine and Needs me; the boards
+        with most of theirs come first."""
         team_ids, hidden = graph.team_board_ids(db), {'project:' + str(i) for i in graph.hidden_project_ids(db)}
         mine = {b['name'].casefold(): b for b in graph.boards(db, now()) if b['id'] in team_ids}  # an Only-you board never shows here
+        me_ids = {m['member_id'] for m in (self._me_in(g) for g in self._kept_groups()) if m and m.get('member_id')}
+        my_mail = {x.lower() for x in self.my_emails()}
+        todos = collections.Counter()
+        if graph._has_column(db, 'suggestions', 'project'):
+            for r in db.execute("SELECT project FROM suggestions WHERE status IN (SELECT value FROM json_each(?)) AND coalesce(project,'')<>''",
+                                (json.dumps(graph.OPEN_CARD),)):
+                todos[str(r['project']).casefold()] += 1
         boards = {}
         for name, b in mine.items():
-            projects = [dict(p, mine=True) for p in b['projects'] if p['id'] in shared and p['id'] not in hidden]
+            projects = [dict(p, mine=True, yours=True, needs_you=bool(p.get('todos'))) for p in b['projects'] if p['id'] in shared and p['id'] not in hidden]
             boards[name] = {'name': b['name'], 'stages': b['stages'], 'projects': projects, 'stuck': 0, 'team': True}
         names = {(f, m): (s.get('name') or '') for (f, m), s in self.team_sources().items()}
         for e in entries:
@@ -2599,12 +2645,14 @@ class SharedGraph:
                     'at': rec.get('stage_at'), 'event_id': None, 'next': rec.get('next'), 'first': False, 'days': days, 'closed': False,
                     'no_reply_days': None, 'org': {'name': (rec.get('org') or {}).get('name'), 'logo': None} if rec.get('org') else None, 'card': None,
                     'owner': rec.get('owner'), 'owner_name': rec.get('owner_name'), 'fleet': e['sources'][0]['fleet'], 'via': via(e['sources']),
-                    'team_only': not e['local']}
+                    'team_only': not e['local'], 'owner_hand': bool(rec.get('owner_hand')), **self._last_line(e)}
             if mine_tile:
                 mine_tile.update(owner=tile['owner'], owner_name=tile['owner_name'], via=tile['via'], fleet=tile['fleet'], stage=stage if rec.get('stage_by') else mine_tile['stage'])
             else:
+                tile['yours'], tile['needs_you'] = self._yours(db, e, rec, me_ids, my_mail, todos)
                 board['projects'].append(tile)
-        return [b for b in boards.values() if b['projects']]
+        out = [b for b in boards.values() if b['projects']]
+        return sorted(out, key=lambda b: -sum(1 for p in b['projects'] if p.get('yours')))  # stable: otherwise as before
 
     def team_section(self, db, entry):
         """What teammates shared about one entity: sources, timeline lines and client threads, each with whose it is.

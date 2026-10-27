@@ -328,6 +328,14 @@ review on each Machine moves its own copy, which it publishes). Each tile has an
 it. **Ask <name>** on a tile, person or organization starts a handoff to that teammate (the Fleet's handoff,
 `fleet_requests.py`), never anything to someone outside the Fleet.
 
+On a teammate's Machine a tile says what happened last: the newest line of the project's shared timeline (a review's
+line or a move before a bare "Chat: …" title), else why it moved, else its stage and date. The owner's name shows only
+when a column has more than one. **Mine / Needs me / All** filter a shared board from what reached this Machine only:
+Mine is a shared thread the owner is on, a project they own (picked) or have in their own Graph, or an open to-do of
+theirs named for it; Needs me is that to-do, or a thread whose newest message is to them from someone else. The rest of
+a stage folds into "Show N more", look-alike names (three or more with the same last or first two words) into one row.
+Nothing more is shared for any of it (`SharedGraph.team_boards`).
+
 ## What members and admins see
 
 | | Member | Admin | CP |

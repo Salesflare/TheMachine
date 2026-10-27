@@ -176,6 +176,14 @@ Tick a few, or **Select all**, to do them at once, and **Undo** right after if y
 
 A new board, or a suggested board you save, looks through your whole history once. It finds projects and organizations that fit, makes one project per organization and puts each in a stage. The header says "Looking through your history…" while it works, then how many it added and how many wait for you to review. An Only-you board keeps what it finds to you.
 
+### A teammate's board
+
+In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. Each card says what happened last, with its date, like on its owner's board: the newest line shared with the team, else its last move. Its owner's name shows only when a stage has cards of more than one teammate; when one person owns the whole board, the header says so.
+
+**Mine**, **Needs me** and **All** pick what a shared board shows. Mine is what you're on: a thread of it, a project you own or have yourself, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
+
+The rest of a stage folds into **Show N more**. Projects that look alike, like a run of "… CRM evaluation" trials, fold into one row with a count; tap it to open them. None of this changes what's shared.
+
 ## A to-do about someone
 
 **New to-do** in the **⋯** menu of a person, organization or project starts a to-do about them.
