@@ -3410,8 +3410,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-sf-s
  if(act==='restart'&&!confirm('Restart the Salesflare sync? It drops the round it is on and reads the last week again. Nothing it brought in is lost.'))return;
  b.disabled=true;try{await connectPost('connector_sync',{account:b.dataset.account,do:act});toast(act==='stop'?'Stopped. Nothing new comes in until you start it.':act==='start'?'Started. It reads again in a moment.':'Restarted. It reads the last week again now.');await refresh()}catch(err){toast(err.message,true)}finally{b.disabled=false}});
 function connectorCard(c,open){
-const unit={calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items'}[c.service]||'messages',t=connectorTone(c);
-return `<article data-group="${healthGroup(c.service)}"><div class="conn-head">${icon(c.service)}<div><h3>${esc(c.display_name||c.email)}</h3><small>${service(c.service)} · ${esc(scopeLabel(c.boundary))}</small></div><span class="state-dot t-${t}" title="${esc(connectorHealth(c).text)}"></span></div>
+const unit={calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items'}[c.service]||'messages',tone=connectorTone(c);
+return `<article data-group="${healthGroup(c.service)}"><div class="conn-head">${icon(c.service)}<div><h3>${esc(c.display_name||c.email)}</h3><small>${service(c.service)} · ${esc(scopeLabel(c.boundary))}</small></div><span class="state-dot t-${tone}" title="${esc(connectorHealth(c).text)}"></span></div>
 <p class="connection-status">${esc(connectorHealth(c).text)}</p>
 ${c.service==='intercom'?`<p class="muted conn-replies">${c.replies_as?`Replies as ${esc(c.replies_as)}, only after you press Send.`:'Reads only. Never replies.'}</p>`:''}
 ${c.service==='salesflare'?'<p class="muted conn-replies">Reads accounts, contacts, emails and meetings. Changes nothing.</p>':''}
