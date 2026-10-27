@@ -12,7 +12,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const command='GOG_KEYRING_BACKEND=file GOG_KEYRING_PASSWORD="$(cat /home/owner/private/keyring-password)" gog auth add owner@example.com --client existing';
 let statusCalls=0,manage=null;const actions=[];
-const connectors=[{id:'work-gmail',service:'gmail',email:'owner@example.com',boundary:'work:Example',display_name:'owner@example.com',
+const connectors=[{id:'work-gmail',service:'gmail',email:'owner@example.com',boundary:'work:Example',boundary_by:'guess',display_name:'owner@example.com',
  error:'gmail:google_signin_expired_run_gog_auth_add',retry_at:new Date(Date.now()+3600e3).toISOString(),failures:2,sign_in_command:command,connect_name:'gmail',
  sync_activity:[{at:new Date().toISOString(),status:'failed',error:'gmail:google_signin_expired_run_gog_auth_add'}]}];
 const server=createServer((req,res)=>{
