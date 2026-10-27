@@ -262,6 +262,14 @@ def first_name(name):
     return (str(name or '').split() or [''])[0]
 
 
+def clean_ping(answer):
+    """A waiting handoff's word on whether the teammate's Machine can ping them: True, False, or None (not said; a
+    Machine from before this, or a relay that keeps no answer with "waiting")."""
+    if isinstance(answer, dict) and answer.get('stage') == 'waiting' and isinstance(answer.get('ping'), bool):
+        return answer['ping']
+    return None
+
+
 def taken_line(name):
     """A request its sender took back, as the one it went to sees it: "Taken back by Kim"."""
     first = first_name(name) if name and name != 'A teammate' else ''
@@ -851,6 +859,52 @@ class Requests:
         scored = sorted(((len(want & words(c['title'] + ' ' + (c['body'] or ''))), c['id']) for c in near), reverse=True)
         return scored[0][1] if scored and scored[0][0] >= 3 and (len(scored) == 1 or scored[1][0] < scored[0][0]) else None
 
+    # -- no ping: a handoff that waits on a Machine that can't notify its owner (no phone, Telegram or email)
+    def tell_ping(self, rows, ping):
+        """The receiving side: tells whoever handed these over whether this Machine can ping its owner about them, once
+        per change. It travels as the handoff's "waiting" with a sealed {stage: waiting, ping}; an older sender reads a
+        plain waiting."""
+        for row in rows:
+            if row['kind'] != 'handoff':
+                continue
+            key = 'handoff_noping_in:' + str(row['id'])
+            flagged = self.meta(key) is not None
+            if flagged != ping:  # False and already said, or True and never said otherwise: nothing new
+                continue
+            try:
+                self.relay.call('POST', '/answer', {'id': row['id'], 'status': 'waiting', 'answer': {'stage': 'waiting', 'ping': ping}})
+            except Exception as error:  # noqa: BLE001 - said again next round
+                LOG.info('fleet handoff ping not told error=%s', type(error).__name__)
+                continue
+            if ping:
+                with self.connect() as db:
+                    db.execute('DELETE FROM fleet_meta WHERE key=?', (key,))
+            else:
+                self.set_meta(key, fleet.now())
+
+    def ping_answered(self, row, ping):
+        """The sending side: the teammate's Machine can't ping them (kept, shown on the card, told once) or now can."""
+        if ping is None:
+            return
+        key = 'handoff_noping:' + str(row['id'])
+        with self.connect() as db:
+            if db.execute('SELECT 1 FROM fleet_meta WHERE key=?', ('handoff_withdrawn:' + str(row['id']),)).fetchone():
+                return
+            had = db.execute('SELECT 1 FROM fleet_meta WHERE key=?', (key,)).fetchone()
+            if ping:
+                db.execute('DELETE FROM fleet_meta WHERE key=?', (key,))
+                return
+        if had:
+            return
+        self.set_meta(key, fleet.now())
+        if self.tell:
+            title = json.loads(row['question']).get('title')
+            try:
+                self.tell(t('{} won’t get a ping about {}. Let them know.', first_name(row['name']) or t('Your teammate'),
+                            t('your handoff: {}', title)), row['id'])
+            except Exception as error:  # noqa: BLE001
+                LOG.warning('fleet tell error=%s', type(error).__name__)
+
     def request_answered(self, row, status, answer):
         """A teammate's stage on the owner's own request: kept, logged, and told (accepted, sent, declined, done)."""
         stage = (answer or {}).get('stage') or {'declined': 'declined', 'expired': 'expired', 'waiting': 'waiting'}.get(status, status)
@@ -1299,6 +1353,7 @@ class Requests:
         mine = {r['key'][13:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_mine:%'")}
         withdrawn = {r['key'][18:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_withdrawn:%'")}
         still = {}  # card: first names of everyone it is still with (both, when the owner kept both)
+        noping = {r['key'][15:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_noping:%'")}
         for r in db.execute("SELECT * FROM fleet_out WHERE context LIKE 'handoff:%' ORDER BY at"):
             if r['id'] in withdrawn:  # taken back: not current, and nothing it says moves the card
                 continue
@@ -1322,6 +1377,8 @@ class Requests:
             handed[r['context'][8:]] = {'name': r['name'], 'stage': {'asked': 'asked', 'waiting': 'waiting for them'}.get(stage, STAGES.get(stage, stage)),
                                         **({'asked': asked[:ASKED_CHARS - 1] + '…' if len(asked) > ASKED_CHARS else asked} if asked and stage not in ('declined', 'expired') else {}),
                                         **({'note': answer['note']} if answer.get('note') else {}),
+                                        # their Machine can't notify them: the card says so, so the owner tells them
+                                        **({'no_ping': True} if stage in ('asked', 'waiting') and r['id'] in noping else {}),
                                         # handed back: Do it myself, Hand to someone else or Mark done, until the owner picks
                                         **({'back': r['id'] not in mine} if stage in ('declined', 'expired') else {})}
         for card, names in still.items():

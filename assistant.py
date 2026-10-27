@@ -11813,6 +11813,7 @@ class App:
         self.fleet = fleet.Fleet(self.store.connect, config, lambda: credential(config, 'fleet')) if fleet.settings(config) and config.get('credentials', {}).get('fleet') else None
         if self.fleet:
             self.fleet.notify = self.fleet_notify
+            self.fleet.can_ping = self.fleet_can_ping
             self.fleet.soon = lambda fn: threading.Thread(target=fn, name='graph-after-ok', daemon=True).start()  # Share: the heavy round after the tap
             self.fleet.retell = lambda message_id: threading.Thread(target=self.fleet_retell, args=(message_id,), daemon=True).start()
             self.fleet.notify_notice = self.fleet_notify_notice
@@ -13557,6 +13558,15 @@ class App:
             db.execute('UPDATE notify_digests SET status=?,channels=? WHERE day=?', ('sent' if went else 'empty' if not digest else 'not_sent', encoded(went), day))
         LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
         return went
+
+    def fleet_can_ping(self):
+        """Whether fleet_notify reaches the owner at all: a phone or computer with notifications, Telegram, or email,
+        each on for results. With none, a Fleet question only waits on the dashboard (fleet.notify_round)."""
+        with self.store.connect() as db:
+            push = bool(self.config.get('dashboard_host')) and notify.allowed(db, 'result', 'push') and \
+                bool(db.execute('SELECT 1 FROM push_subscriptions LIMIT 1').fetchone())
+            mail = mail_ready(self.config) and notify.allowed(db, 'result', 'email')
+        return push or mail or (telegram_on(self.config) and self.notify_on('result', 'telegram'))
 
     def fleet_notify(self, rows):
         """Questions waiting for the owner: a phone notification, an email if still unanswered and unseen later, and a

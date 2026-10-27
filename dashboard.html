@@ -1507,7 +1507,7 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .chat-event{position:relative}.chat-event .chat-time{position:absolute;top:0;font-size:inherit;line-height:inherit;left:100%;margin-left:8px;white-space:nowrap;pointer-events:none}
 .chat-log>.chat-event.cont{margin-top:4px}
 .chat-event.failed{color:var(--orange)}.chat-event.failed button.link{padding:0;min-height:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
-.chat-handoff-options{align-self:stretch}.card .note.handoff-failed{color:var(--orange)}.card .note.handoff-failed button.link{padding:0;min-height:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.chat-handoff-options{align-self:stretch}.card .note.handoff-failed{color:var(--orange)}.card .note.no-ping{color:var(--amber);opacity:1}.card .note.handoff-failed button.link{padding:0;min-height:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .chat-event a.learn-link{color:inherit;text-decoration:underline;text-underline-offset:3px}.chat-event a.learn-link:hover{color:var(--text)}
 .voice-form.voice-flash{animation:voice-flash 1.6s ease-out}@keyframes voice-flash{from{box-shadow:0 0 0 3px var(--lavender)}to{box-shadow:0 0 0 3px transparent}}
 @media(prefers-reduced-motion:reduce){.voice-form.voice-flash{animation:none}}
@@ -5562,7 +5562,7 @@ function fleetHandoffs(f,work,inFleet){const cards=new Set((state?.suggestions||
  const what=q=>{const m=HO_Q.exec(q||'');return m?[m[1]+(m[2]?`: “${m[2]}”`:''),m[3].trim()].filter(Boolean).join(' '):String(q||'')};
  const stage=a=>{const [st,...note]=String(a.answer||'').split(': ');const n=note.join(': ');
   if(a.withdrawn)return['Taken back','muted',true];
-  if(['asked','waiting'].includes(a.status))return['Waiting for an answer'+(a.delivered===false?', not delivered yet':''),'amber',false];
+  if(['asked','waiting'].includes(a.status))return[a.no_ping?t('Waiting, they won’t get a ping'):'Waiting for an answer'+(a.delivered===false?', not delivered yet':''),'amber',false];
   if(a.status==='expired')return['No answer in time','orange',false];
   if(a.status==='declined'||st==='declined')return['Declined','orange',false,n];
   if(st==='done')return['Done','muted',true];
@@ -5586,11 +5586,13 @@ const firstName=n=>String(n||'').split(' ')[0];
 // A handoff that didn't go out to "Pat’s Machine" (Pat Lee): said with a first name, like the chat's lines
 const handoffMachine=n=>n&&n!=='A teammate'?String(n).split(' ')[0]+'’s Machine':'a teammate’s Machine';
 const handoffFailed=s=>s.fleet_handoff_failed&&!s.fleet_handoff&&!closed(s)?`<p class="note fleet handoff-failed" role="alert">Handoff didn’t go out to ${esc(handoffMachine(s.fleet_handoff_failed.name))} · <button type="button" class="link" data-fleet-handoff="${esc(s.id)}">Try again</button></p>`:'';
+// Their Machine can't notify them (no phone, Telegram or email on): said under the handoff while it waits on them
+const noPing=s=>s.fleet_handoff?.no_ping&&!closed(s)?`<p class="note fleet no-ping" role="status">${esc(t('{} won’t get a ping. Let them know.',firstName(s.fleet_handoff.name)))}</p>`:'';
 function fleetHandoff(s){const contact=s.handoff_contact?`<p class="note handoff-contact">Contact: ${esc(s.handoff_contact)}</p>`:'';
  if(handoffFailed(s))return contact+handoffFailed(s);
  if(s.handoff_silent&&!s.fleet_handoff&&!closed(s))return contact+`<p class="note fleet silent-note">${esc(s.handoff_silent.line)} · <button type="button" class="link" data-handoff-not-mine="${esc(s.id)}">Not mine</button></p>`;  // theirs by what they did; one tap undoes it
  if(contact&&!s.fleet_handoff)return contact;
- if(s.fleet_handoff)return`<p class="note${s.fleet_handoff.back?'':' handled'} fleet">${handoffLine(s.fleet_handoff,s)}</p>${s.handoff_wait&&s.snoozed_until?`<p class="checkin-line" title="${esc(date(s.snoozed_until))}">${esc(checkinLabel(s))}</p>`:''}`;  // also once it is done
+ if(s.fleet_handoff)return`<p class="note${s.fleet_handoff.back?'':' handled'} fleet">${handoffLine(s.fleet_handoff,s)}</p>${noPing(s)}${s.handoff_wait&&s.snoozed_until?`<p class="checkin-line" title="${esc(date(s.snoozed_until))}">${esc(checkinLabel(s))}</p>`:''}`;  // also once it is done
  if(closed(s)||!state?.fleet?.on||s.scope!=='work')return'';
  if(s.fleet_handoff)return`<p class="note handled fleet">Handed off to ${esc(s.fleet_handoff.name)}: ${esc(s.fleet_handoff.stage)}</p>`;
  return''}  // the Hand off button sits with the card's other buttons (cardActions); its form with the other editors

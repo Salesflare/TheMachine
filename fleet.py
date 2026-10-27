@@ -1658,6 +1658,9 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         # Set by the app: notify(rows) tells the owner about waiting questions and returns the Telegram message id
         # (or None); retell(message_id) brings that Telegram message up to date after a decision elsewhere.
         self.notify = self.retell = None
+        # can_ping() -> bool (set by the app): whether notify can reach the owner at all (a phone or computer with
+        # notifications, Telegram or email). Unset: assumed so.
+        self.can_ping = None
         # notify_notice(view) tells the owner about a notice (phone, Telegram) and returns the Telegram message id;
         # retell_notice(message_id, message) brings that message up to date.
         self.notify_notice = self.retell_notice = None
@@ -2346,6 +2349,11 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         age = lambda row: (stamp - dt.datetime.fromisoformat(row['at'])).total_seconds()
         if age(rows[-1]) < NOTIFY_SETTLE and age(rows[0]) < NOTIFY_MAX:
             return []
+        if self.can_ping and not self.can_ping():
+            # Nothing would reach them: not marked as told, so they hear of it once a channel is on, and whoever
+            # handed them something hears that this Machine can't ping its owner (fleet_requests.tell_ping)
+            self.tell_ping(rows, False)
+            return []
         rows = rows[:NOTIFY_ROWS]
         with self.connect() as db:  # marked first: a failed notification is not repeated every round
             db.executemany('UPDATE fleet_in SET notified_at=? WHERE id=?', [(now(), r['id']) for r in rows])
@@ -2357,6 +2365,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         if message_id:
             with self.connect() as db:
                 db.executemany('UPDATE fleet_in SET telegram_message_id=? WHERE id=?', [(str(message_id), r['id']) for r in rows])
+        self.tell_ping(rows, True)  # told after all: a sender who heard "no ping" hears it went
         return [r['id'] for r in rows]
 
     def untold(self, db):
@@ -2467,6 +2476,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 self.log(db, 'out', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], json.loads(row['question'])),
                          ('answered: ' + answer_text(row['kind'], answer)) if answer is not None else status)
         if row['kind'] in fleet_requests.STAGED:
+            if status == 'waiting' and row['kind'] == 'handoff':  # their Machine has it, and says whether it can ping them
+                self.ping_answered(row, fleet_requests.clean_ping(item.get('answer')))
             self.request_answered(row, status, answer)
         if receipt:
             self.set_meta('answer_receipt:' + str(item.get('id')), receipt)
@@ -3317,6 +3328,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             scopes = {}
             for r in db.execute('SELECT * FROM fleet_scopes'):
                 scopes.setdefault(r['fleet'], {}).setdefault(r['member_id'], {})[r['kind']] = scope_of(r['scope'])
+            noping = {r['key'][15:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_noping:%'")}
             waiting = [{**{k: v for k, v in dict(r).items() if k != 'draft'}, 'question': question_text(r['kind'], json.loads(r['question'])),
                         **({'draft': json.loads(r['draft'])} if _get(r, 'draft') else {})}
                        for r in db.execute("SELECT * FROM fleet_in WHERE status='waiting' ORDER BY at DESC LIMIT 50")]
@@ -3336,7 +3348,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                       'question': question_text(r['kind'], json.loads(r['question'])),
                       'answer': answer_text(r['kind'], json.loads(r['answer'])) if r['answer'] else None,
                       **({'busy': json.loads(r['answer']).get('busy', [])} if r['kind'] == 'availability' and r['answer'] else {}),
-                      **({'delivered': delivered[r['id']]} if r['id'] in delivered and r['status'] in ('asked', 'waiting') else {})}
+                      **({'delivered': delivered[r['id']]} if r['id'] in delivered and r['status'] in ('asked', 'waiting') else {}),
+                      **({'no_ping': True} if r['status'] in ('asked', 'waiting') and r['id'] in noping else {})}
                      for r in db.execute("SELECT * FROM fleet_out WHERE (context IS NULL OR (context NOT LIKE 'card:%' AND context NOT LIKE 'brief:%' "
                                          "AND context NOT LIKE 'free:%' AND context NOT LIKE 'family-%')) ORDER BY at DESC LIMIT 60") if shown(r)]
             free = self.free_asked(db)

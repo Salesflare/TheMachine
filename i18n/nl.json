@@ -1917,6 +1917,7 @@
  "Waiting on {}: {}": "Wacht op {}: {}",
  "Waiting on {}: {}, ": "Wacht op {}: {}, ",
  "Waiting to go out": "Wacht op verzending",
+ "Waiting, they won’t get a ping": "Wacht, krijgt geen melding",
  "Was": "Was",
  "Was:": "Was:",
  "We": "Wo",
@@ -2420,6 +2421,8 @@
  "{} went quiet": "{} is stil gevallen",
  "{} with no reply in 10+ days": "{} zonder antwoord in 10+ dagen",
  "{} without access": "{} zonder toegang",
+ "{} won’t get a ping about {}. Let them know.": "{} krijgt geen melding over {}. Laat het even weten.",
+ "{} won’t get a ping. Let them know.": "{} krijgt geen melding. Laat het even weten.",
  "{} writing rules": {
   "one": "{} schrijfregel",
   "other": "{} schrijfregels"

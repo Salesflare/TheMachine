@@ -1917,6 +1917,7 @@
  "Waiting on {}: {}": "In attesa di {}: {}",
  "Waiting on {}: {}, ": "In attesa di {}: {}, ",
  "Waiting to go out": "In attesa di invio",
+ "Waiting, they won’t get a ping": "In attesa, senza notifica",
  "Was": "Prima",
  "Was:": "Prima:",
  "We": "Me",
@@ -2420,6 +2421,8 @@
  "{} went quiet": "{} non si fa sentire",
  "{} with no reply in 10+ days": "{} senza risposta da oltre 10 giorni",
  "{} without access": "{} senza accesso",
+ "{} won’t get a ping about {}. Let them know.": "{} non riceverà una notifica per {}. Diglielo tu.",
+ "{} won’t get a ping. Let them know.": "{} non riceverà una notifica. Diglielo tu.",
  "{} writing rules": {
   "one": "{} regola di scrittura",
   "other": "{} regole di scrittura"

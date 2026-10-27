@@ -82,7 +82,9 @@ class FakeRelay:
             return {'ok': True}
         if route == '/answer':
             r = self.net.asks[body['id']]
-            r.update(status=body['status'], answered=body['status'] != 'waiting', answer=body.get('answer'), answer_sealed=body.get('sealed'))
+            # a waiting reaches the asker only when it carries something (a handoff's ping), as on the control plane
+            r.update(status=body['status'], answered=body['status'] != 'waiting' or body.get('sealed') is not None, acked=False,
+                     answer=body.get('answer'), answer_sealed=body.get('sealed'))
             return {'ok': True}
         if route == '/ack':
             for item in body.get('answers', []):
@@ -286,6 +288,18 @@ class Machines(unittest.TestCase):
         # Pat's Machine can't take back what Owner asked, and the Network refuses it too
         self.assertFalse(self.pat.withdraw({'id': ask_id, 'fleet': self.pat.ref('work'), 'member_id': 'me1'}))
 
+    def test_a_handoff_on_a_machine_that_cant_ping_its_owner_says_so_sealed(self):
+        import datetime as dt
+        ask_id, _ = self.handoff()
+        self.pat.notify, self.pat.can_ping = (lambda rows: None), (lambda: False)
+        self.pat.notify_round(dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=fleet.NOTIFY_SETTLE + 1))
+        said = [b for _, p, b in self.pat.raw.calls if p == '/answer'][-1]
+        self.assertEqual((sorted(said), said['status']), (['id', 'sealed', 'status'], 'waiting'))  # nothing in the clear
+        self.me.step(wait=0)
+        self.assertIsNotNone(self.me.meta('handoff_noping:' + ask_id))
+        with self.me.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM fleet_out WHERE id=?', (ask_id,)).fetchone()[0], 'waiting')  # not an answer
+
     def test_a_withdrawal_that_does_not_check_out_is_dropped(self):
         ask_id, row = self.handoff()
         other, _ = self.handoff()
@@ -336,6 +350,7 @@ class OlderNetwork(Machines):
     test_tampered_or_unsealed_is_dropped = test_outbox_keeps_answers_while_the_network_is_away_and_never_acts_twice = None
     test_not_delivered_yet_is_shown = test_nothing_in_the_clear_to_or_from_a_machine_without_keys = None
     test_a_handoff_taken_back_reaches_their_machine_sealed_and_only_from_the_sender = test_a_withdrawal_that_does_not_check_out_is_dropped = None
+    test_a_handoff_on_a_machine_that_cant_ping_its_owner_says_so_sealed = None
 
 
 class Failover(unittest.TestCase):

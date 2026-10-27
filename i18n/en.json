@@ -1917,6 +1917,7 @@
  "Waiting on {}: {}": "Waiting on {}: {}",
  "Waiting on {}: {}, ": "Waiting on {}: {}, ",
  "Waiting to go out": "Waiting to go out",
+ "Waiting, they won’t get a ping": "Waiting, they won’t get a ping",
  "Was": "Was",
  "Was:": "Was:",
  "We": "We",
@@ -2420,6 +2421,8 @@
  "{} went quiet": "{} went quiet",
  "{} with no reply in 10+ days": "{} with no reply in 10+ days",
  "{} without access": "{} without access",
+ "{} won’t get a ping about {}. Let them know.": "{} won’t get a ping about {}. Let them know.",
+ "{} won’t get a ping. Let them know.": "{} won’t get a ping. Let them know.",
  "{} writing rules": {
   "one": "{} writing rule",
   "other": "{} writing rules"

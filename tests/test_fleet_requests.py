@@ -179,6 +179,73 @@ class Requests(unittest.TestCase):
             self.fleet.annotate(db, suggestions)
         self.assertEqual(suggestions[0]['fleet_handoff'], {'name': 'Pat', 'stage': 'accepted', 'asked': 'Sam wants pricing.'})
 
+    def test_a_handoff_waiting_on_a_machine_that_cant_ping_its_owner_is_not_marked_told_and_says_so(self):
+        told, ask_id = [], 'q_' + 'h' * 16
+        self.fleet.notify = lambda rows: told.append([r['id'] for r in rows]) or None
+        self.fleet.can_ping = lambda: False  # no phone, Telegram or email on this Machine
+        self.assertEqual(self.ask('handoff', {'title': 'Take the renewal', 'summary': 'Short'}, ask_id), 'waiting')
+        self.assertEqual(self.answered(), {'id': ask_id, 'status': 'waiting'})
+        settled = dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=fleet.NOTIFY_SETTLE + 1)
+        for _ in range(2):  # said once, not every round
+            self.assertEqual(self.fleet.notify_round(settled), [])
+        self.assertEqual(told, [])
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute('SELECT notified_at FROM fleet_in WHERE id=?', (ask_id,)).fetchone()[0])  # never "told"
+        self.assertEqual([b for b in self.relay.sent('/answer') if b.get('answer')], [{'id': ask_id, 'status': 'waiting', 'answer': {'stage': 'waiting', 'ping': False}}])
+        # Notifications on: told now, and the sender hears it does reach them.
+        self.fleet.can_ping = lambda: True
+        self.assertEqual(self.fleet.notify_round(settled), [ask_id])
+        self.assertEqual(told, [[ask_id]])
+        self.assertEqual(self.answered(), {'id': ask_id, 'status': 'waiting', 'answer': {'stage': 'waiting', 'ping': True}})
+        # A Machine that pings its owner sends nothing extra.
+        self.assertEqual(self.ask('handoff', {'title': 'Another', 'summary': 'Short'}, 'q_' + 'i' * 16), 'waiting')
+        with self.store.connect() as db:
+            db.execute('UPDATE fleet_in SET at=? WHERE id=?', ((settled - dt.timedelta(seconds=fleet.NOTIFY_MAX + 5)).isoformat(), 'q_' + 'i' * 16))
+        self.assertEqual(self.fleet.notify_round(settled), ['q_' + 'i' * 16])
+        self.assertEqual(self.answered(), {'id': 'q_' + 'i' * 16, 'status': 'waiting'})
+
+    def test_the_sender_sees_when_their_teammate_wont_get_a_ping(self):
+        card = self.handed_card()
+        self.fleet.hand_off(card, self.ref, 'pat1', 'Send Sam the pricing', 'Sam wants pricing.')
+        with self.store.connect() as db:
+            ask_id = db.execute("SELECT id FROM fleet_out WHERE kind='handoff'").fetchone()[0]
+        self.fleet.take_answer({'id': ask_id, 'status': 'waiting'})  # an older Machine: says nothing about pings
+        def annotated():
+            suggestions = [{'id': card}]
+            with self.store.connect() as db:
+                self.fleet.annotate(db, suggestions)
+            return suggestions[0]['fleet_handoff']
+        self.assertNotIn('no_ping', annotated())
+        for _ in range(2):  # told once
+            self.fleet.take_answer({'id': ask_id, 'status': 'waiting', 'answer': {'stage': 'waiting', 'ping': False}})
+        self.assertEqual(self.told, ['Pat won’t get a ping about your handoff: Send Sam the pricing. Let them know.'])
+        self.assertEqual(annotated(), {'name': 'Pat', 'stage': 'waiting for them', 'asked': 'Sam wants pricing.', 'no_ping': True})
+        self.assertTrue([a for a in self.fleet.view()['asked'] if a['id'] == ask_id][0]['no_ping'])
+        self.fleet.take_answer({'id': ask_id, 'status': 'waiting', 'answer': {'stage': 'waiting', 'ping': 'maybe'}})  # not the fixed form
+        self.assertTrue(annotated()['no_ping'])
+        self.fleet.take_answer({'id': ask_id, 'status': 'waiting', 'answer': {'stage': 'waiting', 'ping': True}})  # they turned one on
+        self.assertNotIn('no_ping', annotated())
+        self.fleet.take_answer({'id': ask_id, 'status': 'waiting', 'answer': {'stage': 'waiting', 'ping': False}})
+        self.fleet.take_answer({'id': ask_id, 'status': 'answered', 'answer': {'stage': 'accepted'}})
+        self.assertNotIn('no_ping', annotated())  # theirs now: nothing to tell them
+        self.assertNotIn('no_ping', [a for a in self.fleet.view()['asked'] if a['id'] == ask_id][0])
+
+    def test_can_ping_is_any_channel_that_reaches_the_owner(self):
+        app = object.__new__(a.App)
+        app.store = self.store
+        app.config = {'accounts': [], 'credentials': {}}
+        self.assertFalse(app.fleet_can_ping())  # Razvan's case: no phone, no Telegram, no email
+        with self.store.connect() as db:
+            db.execute("INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES('https://push.example/1','k','a',?)", (NOW.isoformat(),))
+        self.assertFalse(app.fleet_can_ping())  # a subscription without a dashboard address can't be sent
+        app.config = {**app.config, 'dashboard_host': 'machine.example'}
+        self.assertTrue(app.fleet_can_ping())
+        with self.store.connect() as db:
+            a.notify.set_pref(db, 'result', 'push', False)
+        self.assertFalse(app.fleet_can_ping())  # turned off for results
+        app.config = {**app.config, 'fleet': {'url': 'https://cp.example/api/fleet'}, 'credentials': {'fleet': 'token'}}
+        self.assertTrue(app.fleet_can_ping())  # email through the control plane
+
     def chat_events(self, card):
         with self.store.connect() as db:
             owner, _ = self.app.card_chat_service(db, card)

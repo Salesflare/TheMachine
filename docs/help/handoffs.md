@@ -16,6 +16,8 @@ An Intercom conversation goes along with its place in Intercom. If their Machine
 
 While you wait, the to-do sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** asks how it's going; **Change time** moves the check-in.
 
+If Pat's Machine can't notify them (no phone notifications, Telegram or email turned on there), the to-do says "Pat won't get a ping. Let them know." and you hear it once. Tell Pat yourself. The line goes once they turn on a notification.
+
 It comes back on top only when there is something to decide: Pat answered, declined or marked it done, the handoff failed, or a deadline came. A to-do due today checks in a few hours later, one due soon the work day before, an urgent one without a date the next work morning, and any other in 3 work days.
 
 Back for a check-in, it says "Still with Pat · check in?": Pat still has it, nothing came back. **Check in now** opens the chat; **Take it back** and **Hand off to someone else** sit beside it, and Mark done, Snooze and Not needed are under More.

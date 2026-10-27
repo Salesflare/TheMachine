@@ -267,7 +267,12 @@ to the Fleet's Machines):
 - **You hear about it.** A waiting question (not a brief ask) sends one phone notification (if you turned them on in the dashboard
   app) and, with Telegram connected, one Telegram message with **Answer once**, **Always** and **Decline**. Questions
   that arrive within a minute share one. They say who asks and what, never anything of yours. A tap on the phone
-  notification opens the question's card under Suggestions and asks you to confirm.
+  notification opens the question's card under Suggestions and asks you to confirm. With no way to reach you (no
+  phone notifications, Telegram or email on), it waits on the dashboard and is not marked as told, so it notifies once
+  you turn one on. A handoff's sender then hears that you won't get a ping: your Machine sends the handoff's "waiting"
+  again with a sealed `{stage: waiting, ping: false}` (and `ping: true` once you can be reached). Their card says
+  "<teammate> won't get a ping. Let them know." and the Handoffs box "Waiting, they won't get a ping". A Machine from
+  before reads a plain waiting.
 - **Rules:** one per kind of question for each Fleet, for everyone in it, the same three choices: **Ask me first**
   (the default), **Always** or **Never**. Where it applies, under it how much they hear: **Without names** (the
   default) or **With names** (for meeting context: **Names and promises**). Under each rule a short example, from
