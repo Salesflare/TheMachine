@@ -1601,5 +1601,18 @@
  "New to-dos: {}": "Nieuwe to-do's: {}",
  "Results and questions: {}": "Resultaten en vragen: {}",
  "Reminders: {}": "Herinneringen: {}",
- "Morning digest: {}": "Ochtendoverzicht: {}"
+ "Morning digest: {}": "Ochtendoverzicht: {}",
+ "It can’t see or change your data.": "Het ziet of wijzigt je gegevens niet.",
+ "All help pages": "Alle helppagina's",
+ "What went wrong?": "Wat ging er mis?",
+ "Take a screenshot": "Screenshot maken",
+ "Attach an image": "Afbeelding toevoegen",
+ "Include the support report": "Supportrapport meesturen",
+ "Versions, checks and recent errors. No messages, keys or addresses.": "Versies, controles en recente fouten. Geen berichten, sleutels of adressen.",
+ "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "Dit is alles wat naar het team van The Machine gaat. Er wordt niets verstuurd tot je op Versturen drukt.",
+ "Sent. We’ll answer by email.": "Verstuurd. We antwoorden per e-mail.",
+ "How do I snooze a to-do?": "Hoe snooze ik een to-do?",
+ "Your question": "Je vraag",
+ "What you did, what you expected, what happened": "Wat je deed, wat je verwachtte, wat er gebeurde",
+ "Code: {}": "Code: {}"
 }

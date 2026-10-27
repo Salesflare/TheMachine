@@ -1601,5 +1601,18 @@
  "New to-dos: {}": "New to-dos: {}",
  "Results and questions: {}": "Results and questions: {}",
  "Reminders: {}": "Reminders: {}",
- "Morning digest: {}": "Morning digest: {}"
+ "Morning digest: {}": "Morning digest: {}",
+ "It can’t see or change your data.": "It can’t see or change your data.",
+ "All help pages": "All help pages",
+ "What went wrong?": "What went wrong?",
+ "Take a screenshot": "Take a screenshot",
+ "Attach an image": "Attach an image",
+ "Include the support report": "Include the support report",
+ "Versions, checks and recent errors. No messages, keys or addresses.": "Versions, checks and recent errors. No messages, keys or addresses.",
+ "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "This is everything that goes to The Machine team. Nothing is sent until you press Send.",
+ "Sent. We’ll answer by email.": "Sent. We’ll answer by email.",
+ "How do I snooze a to-do?": "How do I snooze a to-do?",
+ "Your question": "Your question",
+ "What you did, what you expected, what happened": "What you did, what you expected, what happened",
+ "Code: {}": "Code: {}"
 }

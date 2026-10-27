@@ -1601,5 +1601,18 @@
  "New to-dos: {}": "Tareas nuevas: {}",
  "Results and questions: {}": "Resultados y preguntas: {}",
  "Reminders: {}": "Recordatorios: {}",
- "Morning digest: {}": "Resumen matutino: {}"
+ "Morning digest: {}": "Resumen matutino: {}",
+ "It can’t see or change your data.": "No ve ni cambia tus datos.",
+ "All help pages": "Toda la ayuda",
+ "What went wrong?": "¿Qué ha fallado?",
+ "Take a screenshot": "Hacer una captura",
+ "Attach an image": "Adjuntar una imagen",
+ "Include the support report": "Incluir el informe de soporte",
+ "Versions, checks and recent errors. No messages, keys or addresses.": "Versiones, comprobaciones y errores recientes. Sin mensajes, claves ni direcciones.",
+ "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "Esto es todo lo que llega al equipo de The Machine. No se envía nada hasta que pulses Enviar.",
+ "Sent. We’ll answer by email.": "Enviado. Te responderemos por correo.",
+ "How do I snooze a to-do?": "¿Cómo puedo posponer una tarea?",
+ "Your question": "Tu pregunta",
+ "What you did, what you expected, what happened": "Qué hiciste, qué esperabas, qué pasó",
+ "Code: {}": "Código: {}"
 }

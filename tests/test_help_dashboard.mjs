@@ -13,7 +13,7 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
   if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
   res.setHeader('Content-Type','application/json');
   if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');actions.push({action,args,upload:req.headers['x-upload']});
-   if(action==='help_ask'){res.end(JSON.stringify({answer:'Press Snooze, then pick a time.',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]}));return}
+   if(action==='help_ask'){setTimeout(()=>res.end(JSON.stringify({answer:'Press **Snooze**, then pick a time.\n\n- See [Snooze](https://themachine.computer/help/snooze)\n- Not [this](https://evil.example/y)',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]})),300);return}
    if(action==='bug_preview'){res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true}));return}
    if(action==='bug_send'){res.end(JSON.stringify({sent:true,id:'s_1'}));return}}
   res.end(url.pathname==='/api/events'?'[]':'{}')})});
@@ -27,9 +27,20 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>typeof toast==='function'&&document.querySelector('#open-help'));
   await page.evaluate(()=>document.querySelector('#open-help').click());await page.waitForSelector('#help-panel[open]');
-  await page.fill('#help-q','How do I snooze a to-do?');await page.click('#help-go');
-  await page.waitForSelector('.help-src a');
-  const links=await page.$$eval('.help-src a',as=>as.map(a=>[a.href,a.target,a.rel]));
+  // One composer like the card chat's: Send waits for text, Enter asks, Shift+Enter is a new line
+  assert.equal(await page.isDisabled('#help-go'),true,'nothing to ask yet');
+  await page.fill('#help-q','How do I');await page.press('#help-q','Shift+Enter');await page.type('#help-q','snooze a to-do?');
+  assert.equal(await page.inputValue('#help-q'),'How do I\nsnooze a to-do?');assert.equal(actions.length,0,'Shift+Enter only adds a line');
+  await page.press('#help-q','Enter');
+  // While it looks up: the typing dots in the answer's place, not a bordered box
+  await page.waitForSelector('#help-log .chat-msg.machine .typing[role=status]');
+  await page.waitForSelector('.help-log .chat-files a');
+  assert.equal(await page.$eval('#help-log .chat-msg.you .bubble',b=>b.textContent),'How do I\nsnooze a to-do?');
+  // The answer as markdown; links in it only to the help pages, any other keeps its words
+  const answer=await page.$eval('#help-log .chat-msg.machine .bubble',b=>({bold:b.querySelector('strong')?.textContent,items:b.querySelectorAll('li').length,links:[...b.querySelectorAll('a')].map(a=>a.href),text:b.textContent,tr:b.getAttribute('translate')}));
+  assert.equal(answer.bold,'Snooze');assert.equal(answer.items,2);assert.deepEqual(answer.links,['https://themachine.computer/help/snooze']);
+  assert.ok(answer.text.includes('Not this'));assert.equal(answer.tr,'no','the page translation leaves the answer alone');
+  const links=await page.$$eval('.help-log .chat-files a',as=>as.map(a=>[a.href,a.target,a.rel]));
   assert.deepEqual(links,[['https://themachine.computer/help/snooze#snooze-a-to-do','_blank','noopener']],'only help and code links show');
   assert.equal(actions[0].action,'help_ask');
   // Report a bug: a click on the tab works (the panel doesn't move under it), Review shows all, nothing goes before Send

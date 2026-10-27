@@ -184,8 +184,9 @@ def prompt(question, history, sections, snippets):
     parts = ["You answer questions about The Machine, an assistant app, in its dashboard's Help panel. Answer only from the "
              "help sections below; use the code notes only for what they leave open, and say when you are not sure. If neither covers "
              "it, say so and suggest Report a bug or support@themachine.computer. You can't see or change the person's Machine, "
-             "settings or data, and you take no actions: tell them where to click instead. Reply in plain text, at most 120 words, "
-             "short sentences, no headings, no em dashes. Mark each fact with the number of its source, like [1].", '']
+             "settings or data, and you take no actions: tell them where to click instead. Reply in at most 120 words, short "
+             "sentences, in light markdown: **bold** for what to click, a - list for steps, no headings, no em dashes. Mark "
+             "each fact with the number of its source, like [1].", '']
     n = 0
     for s in sections:
         n += 1

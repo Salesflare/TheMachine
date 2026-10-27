@@ -37,7 +37,7 @@ AREAS = {
               [('graphCountsSet', 'graphHashSync'), ('helpLink', 'saveDecision'), ('graphStash', 'openConversation')]),
     'calendar': (['calendar', 'cal-dialog'], [('calFetchWeek', 'calSave')]),
     'connections': (['health', 'signin-dialog'], [('connectorHealth', 'connectorCard'), ('signinMode', 'browserShow')]),
-    'help': ([], [('helpTab', 'supportAccessRender')]),
+    'help': ([], [('helpMarkup', 'supportAccessRender')]),
     'events': (['events', 'email-dialog'], [('search', 'openEvent')]),
     'new': ([], [('ncDue', 'newMenu')]),
 }
