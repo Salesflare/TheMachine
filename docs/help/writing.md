@@ -5,6 +5,7 @@ summary: Your email signatures, and a few lines per channel on how you write. Dr
 covers: settings:writing
 code: dashboard.html, signatures.py, authorship.py, learning_loop.py
 order: 3
+keywords: tone, style, voice, write like me, sound like me, my style, wording, formal, informal
 ---
 ## Signatures
 

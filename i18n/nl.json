@@ -2302,5 +2302,10 @@
  "Work only": "Alleen werk",
  "Personal only": "Alleen privé",
  "No work to-dos": "Geen to-do's voor werk",
- "No personal to-dos": "Geen privé-to-do's"
+ "No personal to-dos": "Geen privé-to-do's",
+ "Share what Help is asked": "Delen wat aan Help gevraagd wordt",
+ "Only the topic of each question, like “snooze a to-do”. Never your words.": "Alleen het onderwerp van elke vraag, zoals “een to-do snoozen”. Nooit je eigen woorden.",
+ "Help topics go to the team, never your words.": "Help-onderwerpen gaan naar het team, nooit je woorden.",
+ "Help topics won’t go to the team.": "Help-onderwerpen gaan niet naar het team.",
+ "Only the topic of each question goes to The Machine team, never your words.": "Alleen het onderwerp van elke vraag gaat naar het team van The Machine, nooit je woorden."
 }

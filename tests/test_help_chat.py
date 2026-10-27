@@ -121,6 +121,125 @@ class Retrieval(unittest.TestCase):
         self.assertEqual(args[-2:], ['--model', 'p/m'])
 
 
+class Personal(unittest.TestCase):
+    """Jeroen asked "how can I personalize this perfectly", then "I'd like to have it write like I do", and was told to
+    make a skill: no help page said "personalize", and "write" didn't find Writing. Now the built-in ways come first."""
+
+    def setUp(self):
+        help_chat._asked.clear()
+
+    def slugs(self, question, history=()):
+        return [s['slug'] for s in help_chat.retrieve(question, history)[0]]
+
+    def test_personalizing_and_writing_style_find_what_it_does_by_itself(self):
+        self.assertEqual(self.slugs('how can I personalize this perfectly')[0], 'personalize')
+        found = self.slugs("I'd like to have it write like I do", [{'role': 'user', 'text': 'how can I personalize this perfectly'}])
+        self.assertIn('writing', found)
+        self.assertNotIn('skills', found)
+        for question, slug in (('can I customi' 'se it to my preferences', 'personalize'), ('the drafts sound too formal, can I change the tone', 'writing'),
+                               ('it pings me too much, how do I get fewer notifications', 'notifications'),
+                               ('who can see my emails, is my data private', 'security-and-privacy'),
+                               ('what do my colleagues see when I share with my team', 'sharing-rules')):
+            self.assertIn(slug, self.slugs(question)[:2], question)
+
+    def test_words_find_their_stem(self):
+        self.assertEqual({help_chat.stem(w) for w in ('write', 'writing', 'wrote', 'written')}, {'writ'})
+        self.assertEqual(help_chat.stem('personali' 'se'), help_chat.stem('personalized'))  # British spelling too
+
+    def test_the_prompt_prefers_what_is_built_in_and_answers_at_their_level(self):
+        prompts = []
+        help_chat.ask('how can I personalize this', run=lambda c, text, m: prompts.append(text) or 'x', config={'manage_url': 'https://m.example'})
+        self.assertIn('Suggest a skill, an agent or code only when nothing built in covers it', prompts[0])
+        self.assertIn('How technical they likely are: everyday', prompts[0])
+        self.assertIn('no file names, code, commands', prompts[0])
+        self.assertEqual(help_chat.level({'accounts': [{'service': 'github'}]}, 'Backend engineer')[0], 'technical')
+        self.assertEqual(help_chat.level({'manage_url': 'https://m.example'}, 'Head of sales', ['how do I snooze'])[0], 'everyday')
+        self.assertEqual(help_chat.level({'manage_url': 'https://m.example'}, '', ['where is the config.json token'])[0], 'some')
+        self.assertEqual(help_chat.level({}, 'Founder', ["I'm not technical, what does Fleet mean"])[0], 'everyday')
+        # the role itself never goes in, only the guess
+        help_chat.ask('how do I snooze', run=lambda c, text, m: prompts.append(text) or 'x', role='Backend engineer at Northwind')
+        self.assertNotIn('Northwind', prompts[-1])
+
+    def test_the_topic_line_is_taken_out_and_kept_apart(self):
+        out = help_chat.ask('how do I snooze a to-do', run=lambda c, t, m: 'Tap **Snooze** [1].\nTOPIC: snooze a to-do')
+        self.assertEqual((out['answer'], out['topic'], out['answered']), ('Tap **Snooze**.', 'snooze a to-do', True))
+        out = help_chat.ask('how do I snooze a to-do', run=lambda c, t, m: 'Tap **Snooze** [1].')
+        self.assertTrue(out['topic'].startswith('snooze'))  # no line: the best section's own title
+        out = help_chat.ask('Snoozed to-dos come back at once', run=lambda c, t, m: 'Reload.\n\nBUG:\nIt came back.\n\nTOPIC: snooze')
+        self.assertEqual((out['answer'], out['bug'], out['topic']), ('Reload.', 'It came back.', 'snooze'))
+
+
+class Topics(unittest.TestCase):
+    """help_topics.py: only generic words from the help pages, counted per day, sent once and deleted; off deletes."""
+
+    def setUp(self):
+        import help_topics
+        self.topics = help_topics
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / 'db.sqlite'
+        import sqlite3
+        self.connect = lambda: sqlite3.connect(self.path, isolation_level=None)
+        with self.connect() as db:
+            db.execute("CREATE TABLE graph_nodes(id TEXT, kind TEXT, name TEXT)")
+            db.execute("INSERT INTO graph_nodes VALUES('p1','person','Robin Vale'),('o1','org','Northwind')")
+
+    def test_only_generic_words_from_the_help_pages_are_kept(self):
+        names = [('Robin Vale', 'person'), ('Robin', 'person'), ('Northwind', 'org')]
+        for good in ('snooze a to-do', 'writing style', 'Gmail sign-in', 'notifications'):
+            self.assertTrue(self.topics.clean(good, names), good)
+        for bad in ('email Robin about the renewal', 'northwind invoice', 'mail robin@example.org', 'call +32 470 12 34 56',
+                    'the "blue plan" quote', 'Quarterly Zebra project', 'zxqv frobnicate', 'a b c d e f g h', 'x' * 70):
+            self.assertIsNone(self.topics.clean(bad, names), bad)
+
+    def test_counted_per_day_sent_once_and_deleted_and_off_deletes_what_waits(self):
+        with self.connect() as db:
+            self.assertEqual(self.topics.record(db, {}, 'snooze a to-do', True, today='2026-10-26'), 'snooze a to-do')
+            self.topics.record(db, {}, 'Snooze a to-do', True, today='2026-10-26')
+            self.assertIsNone(self.topics.record(db, {}, 'email Robin Vale', True, today='2026-10-26'))  # dropped
+            self.assertEqual(self.topics.record(db, {}, 'Robin Vale', False, today='2026-10-26'), 'other')  # unanswered, no words
+            self.topics.record(db, {}, 'writing style', True, today='2026-10-27')
+        calls = []
+        sent = self.topics.send(self.connect, lambda method, path, body: calls.append(body) or {'ok': True}, today='2026-10-27')
+        self.assertEqual(sent, 1)  # today waits until it is over
+        self.assertEqual(calls[0], {'action': 'help_topics', 'day': '2026-10-26', 'topics': [
+            {'topic': 'snooze a to-do', 'answered': True, 'n': 2}, {'topic': 'other', 'answered': False, 'n': 1}]})
+        self.assertNotIn('Robin', json.dumps(calls))
+        self.assertEqual(self.topics.send(self.connect, lambda *a: calls.append(a) or {'ok': True}, today='2026-10-27'), 0)
+        with self.connect() as db:
+            self.topics.set_on(db, False)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM help_topics').fetchone()[0], 0)
+            self.assertIsNone(self.topics.record(db, {}, 'writing style', True, today='2026-10-27'))
+        self.assertEqual(self.topics.send(self.connect, lambda *a: self.fail('sent while off'), today='2026-10-28'), 0)
+
+    def test_a_failed_send_keeps_the_day(self):
+        with self.connect() as db:
+            self.topics.record(db, {}, 'snooze a to-do', True, today='2026-10-26')
+        def away(*a):
+            raise OSError('away')
+        self.assertEqual(self.topics.send(self.connect, away, today='2026-10-27'), 0)
+        with self.connect() as db:
+            self.assertEqual(db.execute('SELECT n FROM help_topics').fetchone()[0], 1)
+
+    def test_help_keeps_the_topic_only_with_the_network_and_never_shows_it(self):
+        app = object.__new__(a.App)
+        app.config, app.fleet = {}, None
+        app.help_model = lambda c, t, m: 'Tap **Snooze** [1].\nTOPIC: snooze a to-do'
+        store = type('S', (), {'connect': staticmethod(self.connect)})()
+        app.store = store
+        app.user_md = lambda: Path(self.temp.name) / 'USER.md'
+        help_chat._asked.clear()
+        out = app.support_action('help_ask', {'question': 'how do I snooze a to-do'})
+        self.assertNotIn('topic', out)
+        with self.connect() as db:
+            self.topics.ensure(db)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM help_topics').fetchone()[0], 0)  # no Network: nothing kept
+        app.fleet = object()
+        app.support_action('help_ask', {'question': 'how do I snooze a to-do'})
+        with self.connect() as db:
+            self.assertEqual(db.execute('SELECT topic,n FROM help_topics').fetchall(), [('snooze a to-do', 1)])
+
+
 class BugReports(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -168,6 +287,15 @@ class BugReports(unittest.TestCase):
         for name in a.SUPPORT_ACTIONS:
             self.assertIn(name, a.DASHBOARD_ACTIONS)
             self.assertIn(name, a.OWNER_ACTIONS)
+
+    def test_settings_that_name_a_person_or_what_the_owner_keeps_out_are_left_out(self):
+        self.config.write_text(json.dumps({'accounts': [{'service': 'intercom', 'reply_admin_name': 'Robin Vale', 'workspace_name': 'Acme',
+                                                         'handle': 'robinvale', 'excluded_terms': ['payroll'], 'poll_seconds': 300}]}))
+        with patch.object(support.service, 'available', return_value=False):
+            text = json.dumps(self.app.support_action('bug_preview', {}))
+        for personal in ('Robin', 'Acme', 'robinvale', 'payroll'):
+            self.assertNotIn(personal, text)
+        self.assertIn('300', text)
 
     def test_the_report_scrubs_lines_as_the_control_plane_does(self):
         line = 'WARN reply "hi Sam, call +32 470 12 34 56" to sam@example.org failed key=abc'

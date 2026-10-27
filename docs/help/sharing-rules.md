@@ -5,6 +5,7 @@ summary: Per Fleet and per kind of question, what your Machine may answer. Ask m
 covers: 
 code: fleet.py, dashboard.html
 order: 2
+keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
 ---
 ## Set them
 

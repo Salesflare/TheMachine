@@ -5,6 +5,7 @@ summary: What reaches you, where and when: push, Telegram or email per kind, you
 covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
+keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
 ---
 In **Settings**, **Notifications**, pick per kind where it reaches you:
 

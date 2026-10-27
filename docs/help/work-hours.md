@@ -4,6 +4,7 @@ area: settings
 summary: When your Machine may message you, when snoozes land and when the morning digest comes.
 code: dashboard.html, assistant.py
 order: 3
+keywords: quiet hours, weekend, evening, night, do not disturb, time zone
 ---
 In **Settings**, **Notifications**, under **Work hours**:
 

@@ -4,7 +4,12 @@ and the app's own code second, with links to what the answer used.
 Cheap by design: only the few sections that match the question go in (never every article), with a short prompt,
 as a one-shot turn on the Machine's own model through OpenClaw (`openclaw infer model run --gateway`: its own
 session, no tools, no workspace files), so it can answer and change nothing. Nothing about the owner goes in: no
-messages, people or settings, only the question, the last few turns of this help chat and the public docs and code."""
+messages, people or settings, only the question, the last few turns of this help chat, the public docs and code, and
+one line on how technical they likely are (level), guessed here from their setup, the role in USER.md and how they
+write; the role itself stays out.
+
+Each answer also names its topic in a few generic words (TOPIC:), for The Machine team's count of what people ask
+(help_topics.py); the question never leaves."""
 from __future__ import annotations
 
 import json
@@ -25,6 +30,7 @@ QUESTION_CHARS, HISTORY_TURNS, TURN_CHARS = 600, 4, 600
 PER_HOUR = 30
 BUG = re.compile(r'^[ \t]*\**BUG:?\**[ \t]*$', re.M)  # the model's own line before a bug write-up
 BUG_CHARS = 1500
+TOPIC_LINE = re.compile(r'^[ \t]*\**TOPIC:?\**[ \t]*(.*)$', re.M | re.I)  # the model's last line: what the question is about
 TIMEOUT = 120
 CODE_FILES = ('*.py', 'connectors/*.py')  # the app's own modules; never config, data or tests
 STOP = set('a an and are as at be by can do does for from has have how i if in is it its me my of on or so that the this '
@@ -39,8 +45,25 @@ class Unavailable(Exception):
     """No answer now: no model, too many questions, or the model run failed. Its text is for the owner."""
 
 
+IRREGULAR = {'wrote': 'write', 'written': 'write', 'writes': 'write', 'tone': 'tone', 'sent': 'send', 'got': 'get'}
+
+
+def stem(w):
+    """A rough stem, so "writing", "wrote" and "write", or "personalize" and "personalized", find the same section."""
+    w = IRREGULAR.get(w, w)
+    if len(w) > 4 and w.endswith('s') and not w.endswith('ss'):
+        w = w[:-1]
+    for suffix in ('ation', 'ing', 'ed'):
+        if w.endswith(suffix) and len(w) - len(suffix) >= 4:
+            w = w[:-len(suffix)]
+            break
+    if len(w) > 6 and w.endswith(('is', 'ise')):
+        w = w[:w.rindex('is')] + 'iz'  # British -ise as -ize
+    return w[:-1] if len(w) > 3 and w.endswith('e') else w
+
+
 def words(text):
-    return [w[:-1] if len(w) > 4 and w.endswith('s') else w for w in WORD.findall(str(text).lower()) if w not in STOP]
+    return [stem(w) for w in WORD.findall(str(text).lower()) if w not in STOP]
 
 
 def heading_id(text):
@@ -64,7 +87,8 @@ def help_sections(folder=HELP):
         title = fields.get('title') or path.stem
         parts = re.split(r'^#{2,3} (.+)$', body, flags=re.M)
         intro = (fields.get('summary', '') + '\n' + parts[0]).strip()
-        out.append({'slug': path.stem, 'anchor': '', 'title': title, 'heading': '', 'text': intro})
+        # keywords: words people use for it that the article doesn't ("personalize", "tone"), searched, never shown
+        out.append({'slug': path.stem, 'anchor': '', 'title': title, 'heading': '', 'text': intro, 'keywords': fields.get('keywords', '')})
         for heading, text in zip(parts[1::2], parts[2::2]):
             out.append({'slug': path.stem, 'anchor': heading_id(heading), 'title': title, 'heading': heading.strip(), 'text': text.strip()})
     return out
@@ -133,7 +157,8 @@ def indexes(folder=HELP, root=ROOT):
     with _lock:
         if key not in _cache:
             # a heading and the article's title count twice: they say what a section is about
-            _cache[key] = (Index(help_sections(folder), lambda d: f"{d['title']} {d['title']} {d['heading']} {d['heading']} {d['text']}"),
+            _cache[key] = (Index(help_sections(folder), lambda d: f"{d['title']} {d['title']} {d['heading']} {d['heading']} "
+                                                              f"{d.get('keywords', '')} {d.get('keywords', '')} {d['text']}"),
                            Index(code_snippets(root), lambda d: f"{d['name']} {d['text']}"))
         return _cache[key]
 
@@ -181,17 +206,59 @@ def clean_history(history):
     return out
 
 
-def prompt(question, history, sections, snippets):
+LEVELS = {
+    'everyday': 'plain everyday words, no file names, code, commands, config or technical terms; name the button to tap',
+    'some': 'plain words; name the setting or screen, and a technical term only with a few words on what it means',
+    'technical': 'precise and brief; config keys, commands and code names are fine where they help',
+}
+TECH_ROLE = re.compile(r'(?i)\b(?:engineer\w*|develop\w*|programm\w*|devops|sysadmin|cto|it|software|data scien\w*|architect|sre|'
+                       r'technical|security|infrastructure|platform|backend|frontend|full[ -]?stack|ml|ai researcher)\b')
+TECH_WORDS = re.compile(r'(?i)\b(?:api|cli|ssh|json|yaml|config\.json|terminal|docker|git|token|webhook|systemd|python|regex|localhost|'
+                        r'port|env|sql|repo|deploy|stack ?trace|log ?file|gateway|openclaw|cron)\b|`|\$ \w')
+PLAIN_WORDS = re.compile(r'(?i)\b(?:what does .{1,30} mean|i\'?m not (?:very )?technical|not good with (?:computers|tech)|confus\w+|simple words)\b')
+
+
+def level(config=None, role='', said=()):
+    """(level, why): how technical the owner likely is, from what this Machine knows: how it runs (on their own
+    computer, or hosted), GitHub or a coding agent set up, the role in USER.md and the words they use in this chat.
+    Only the level and these plain reasons go into the turn."""
+    config, points, why = config or {}, 0, []
+    if config and not str(config.get('manage_url') or '').startswith('https://'):
+        points, why = points + 1, why + ['runs The Machine on their own computer']
+    services = {a.get('service') for a in config.get('accounts') or [] if isinstance(a, dict)}
+    if 'github' in services or config.get('agents'):
+        points, why = points + 1, why + ['set up GitHub or a coding agent']
+    if role and TECH_ROLE.search(role):
+        points, why = points + 2, why + ['has a technical role']
+    text = ' '.join(said)
+    if TECH_WORDS.search(text):
+        points, why = points + 1, why + ['uses technical words here']
+    if PLAIN_WORDS.search(text):
+        points, why = points - 2, why + ['asks for plain words here']
+    return ('technical' if points >= 3 else 'some' if points >= 1 else 'everyday'), why
+
+
+def prompt(question, history, sections, snippets, audience=None):
     """The whole turn: a short brief, the matching sections and snippets, the last few turns and the question."""
+    name, why = audience or ('everyday', [])
     parts = ["You answer questions about The Machine, an assistant app, in its dashboard's Help panel. Answer only from the "
              "help sections below; use the code notes only for what they leave open, and say when you are not sure. If neither covers "
              "it, say so and suggest Report a bug or support@themachine.computer. You can't see or change the person's Machine, "
              "settings or data, and you take no actions: tell them where to click instead. Reply in at most 120 words, short "
              "sentences, in light markdown: **bold** for what to click, a - list for steps, no headings, no em dashes. Mark "
-             "each fact with the number of its source, like [1]. Judge from what they mean, not from the words they use, "
+             "each fact with the number of its source, like [1].",
+             "Prefer what The Machine already does by itself (it learns from what they send, edit, dismiss and say in a to-do's "
+             "chat) and what they can set in Settings over building something new. Suggest a skill, an agent or code only when "
+             "nothing built in covers it, or they ask for one.",
+             f"How technical they likely are: {name}" + (f" ({', '.join(why)})" if why else '') + f". Answer in {LEVELS[name]}. "
+             "If how they write in this chat says otherwise, follow that.",
+             "Judge from what they mean, not from the words they use, "
              "whether they describe something in The Machine not working as it should (a bug, not a how-to question). Only then, "
              "after your answer, add a line that is just BUG: and below it a short report for The Machine team, in their "
-             "language: what they did, what they expected and what happened, one line each, from what they said only.", '']
+             "language: what they did, what they expected and what happened, one line each, from what they said only.",
+             "Last, always end with one line TOPIC: and 2 to 5 lowercase English words for what the question is about, the way "
+             "the help pages would say it, like \"snooze a to-do\" or \"writing style\". Never a name, company, address, "
+             "number or their own words.", '']
     n = 0
     for s in sections:
         n += 1
@@ -235,8 +302,9 @@ def limited(now=None):
     return False
 
 
-def ask(question, history=(), run=None, config=None, model=None, folder=HELP, root=ROOT):
-    """{'answer', 'sources'} for one question. `run(config, prompt, model)` makes the model turn."""
+def ask(question, history=(), run=None, config=None, model=None, folder=HELP, root=ROOT, role=''):
+    """{'answer', 'sources', 'topic', 'answered'} for one question. `run(config, prompt, model)` makes the model turn.
+    `role` is the owner's role from USER.md, for level() only."""
     question = ' '.join(str(question or '').split())[:QUESTION_CHARS]
     if not question:
         raise ValueError('Type a question first.')
@@ -244,7 +312,9 @@ def ask(question, history=(), run=None, config=None, model=None, folder=HELP, ro
     sections, snippets = retrieve(question, history, folder, root)
     if limited():
         raise Unavailable('That’s a lot of questions for one hour. Try again a bit later.')
-    answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets), model)
+    audience = level(config, role, [question, *[t['text'] for t in history if t['role'] == 'user']])
+    answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets, audience), model)
+    answer, topic = split_topic(answer)
     answer, bug = split_bug(answer)
     used = sources(sections, snippets)
     cited = {int(n) for n in re.findall(r'\[(\d{1,2})\]', answer)}
@@ -252,7 +322,26 @@ def ask(question, history=(), run=None, config=None, model=None, folder=HELP, ro
     out = {'answer': shown[:4000], 'sources': [s for i, s in enumerate(used, 1) if not cited or i in cited] or used}
     if bug:
         out['bug'] = bug  # the dashboard offers Report this bug, prefilled with it; nothing is sent from here
+    # For help_topics.record, never shown: the model's words for the topic, else the best section's own title
+    best = sections[0] if sections else None
+    out['topic'] = topic or (f"{best['title']} {best['heading']}".strip().lower() if best else '')
+    out['answered'] = bool(sections)
     return out
+
+
+def split_topic(answer):
+    """(answer, topic or ''): the TOPIC: line the turn ends with, taken out of what the owner sees."""
+    found = list(TOPIC_LINE.finditer(answer or ''))
+    if not found:
+        return answer, ''
+    m = found[-1]
+    return (answer[:m.start()] + answer[m.end():]).strip(), ' '.join(m[1].strip(' "\'.*').split())[:80]
+
+
+def vocabulary(folder=HELP, root=ROOT):
+    """Every word stem the public help pages use: a topic may use only these (help_topics.clean)."""
+    docs, _ = indexes(folder, root)
+    return {w for terms in docs.terms for w in terms}
 
 
 def split_bug(answer):

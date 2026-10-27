@@ -89,6 +89,9 @@ LINE_SCRUB = ((re.compile(r'\b(?:sk|pk|rk|ghp|gho|ghs|ghu|github_pat|glpat|xox[a
 TROUBLE = re.compile(r'warn|error|fail|exception|traceback|critical|fatal|denied|refused|timed? ?out|oom|killed|abort|drain|'
                      r'restart|reload|sigterm|sigkill|low memory', re.I)
 CONTENT_KEY = re.compile(rf'(?i)^(?:{_CONTENT_KEYS}|signature|voice|notes?|about|bio|address|label)$')
+# Settings that name a person or what the owner keeps out (an admin's name, a handle or login, exclusion terms): no value
+# under these either. The same in cloud/support.py; a test there keeps them equal.
+PERSONAL_KEY = re.compile(r'(?i)^(?:\w+_name|handle|login|primary|\w*emails|senders|excluded\w*|exclude_\w+)$')
 REPORT_LINES = {'service-log': 200, 'openclaw-log': 120, 'doctor': 80, 'versions': 30}
 REPORT_CHARS = 48000  # all lines together, as the control plane caps a report's logs
 
@@ -118,7 +121,7 @@ def _settings(value, key=''):
         return {k: _settings(v, k) for k, v in value.items()}
     if isinstance(value, list):
         return [_settings(v, key) for v in value][:40]
-    if isinstance(value, str) and value and CONTENT_KEY.match(key or ''):
+    if isinstance(value, str) and value and (CONTENT_KEY.match(key or '') or PERSONAL_KEY.match(key or '')):
         return '<redacted>'
     return value
 

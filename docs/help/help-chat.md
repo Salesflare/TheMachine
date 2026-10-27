@@ -14,6 +14,16 @@ Help reads the help pages that match your question, and the app's own source cod
 
 It runs on your Machine's own model as a short, separate chat. Only your question and the matching pages go in: none of your messages, people or settings.
 
+It answers at your level: plain words for most people, more detail when your setup or your questions are technical. It guesses that from how your Machine is set up, your role and how you ask. Only the guess goes in.
+
+It points to what The Machine already does and what you can set first. A skill only when nothing built in covers it. See [Make it yours](personalize.md).
+
+## What the team sees
+
+To make the help better, your Machine counts a few words for what each question is about, like "snooze a to-do". Never your question or the answer, and no names, addresses or numbers: only words from these help pages. Once a day the counts go to The Machine team, without your account.
+
+To stop it, turn off **Share what Help is asked** in **Settings**, **Security**, under **The Machine team**. It needs [The Machine Network](/network). What wasn't sent yet is deleted.
+
 ## What it can't do
 
 Help answers questions. It can't see your data, and it changes nothing: it tells you where to tap instead.

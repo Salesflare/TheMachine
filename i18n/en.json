@@ -2302,5 +2302,10 @@
  "Work only": "Work only",
  "Personal only": "Personal only",
  "No work to-dos": "No work to-dos",
- "No personal to-dos": "No personal to-dos"
+ "No personal to-dos": "No personal to-dos",
+ "Share what Help is asked": "Share what Help is asked",
+ "Only the topic of each question, like “snooze a to-do”. Never your words.": "Only the topic of each question, like “snooze a to-do”. Never your words.",
+ "Help topics go to the team, never your words.": "Help topics go to the team, never your words.",
+ "Help topics won’t go to the team.": "Help topics won’t go to the team.",
+ "Only the topic of each question goes to The Machine team, never your words.": "Only the topic of each question goes to The Machine team, never your words."
 }

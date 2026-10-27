@@ -2302,5 +2302,10 @@
  "Work only": "Travail uniquement",
  "Personal only": "Perso uniquement",
  "No work to-dos": "Aucune tâche travail",
- "No personal to-dos": "Aucune tâche perso"
+ "No personal to-dos": "Aucune tâche perso",
+ "Share what Help is asked": "Partager ce qu’on demande à l’aide",
+ "Only the topic of each question, like “snooze a to-do”. Never your words.": "Seulement le sujet de chaque question, comme « mettre une tâche en attente ». Jamais vos mots.",
+ "Help topics go to the team, never your words.": "Les sujets de l’aide vont à l’équipe, jamais vos mots.",
+ "Help topics won’t go to the team.": "Les sujets de l’aide ne vont pas à l’équipe.",
+ "Only the topic of each question goes to The Machine team, never your words.": "Seul le sujet de chaque question va à l’équipe The Machine, jamais vos mots."
 }

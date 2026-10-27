@@ -5,6 +5,7 @@ summary: Your own private server, mail stored encrypted, and nothing sent withou
 covers: 
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
+keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
 ---
 ## In short
 
@@ -27,6 +28,10 @@ The dashboard needs Google or Microsoft sign-in plus an authenticator code or a 
 ## Connections
 
 Each connection's article says what it reads and what it can send. Disconnect any of them any time: see [Connections](connections.md).
+
+## Help
+
+Help runs on your own Machine and can't see your data. Only the topic of each question goes to The Machine team, never your words. See [Ask Help](help-chat.md#what-the-team-sees).
 
 ## More
 
