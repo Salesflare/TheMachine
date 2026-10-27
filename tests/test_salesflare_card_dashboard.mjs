@@ -39,11 +39,10 @@ try{
   assert.equal(await page.evaluate(h=>ago(new Date(Date.now()-h*3600e3).toISOString()),3),'3 hours ago');
   assert.equal(await page.evaluate(()=>ago(new Date(Date.now()+864e5*2).toISOString())),'in 2 days');
   // The Salesflare card
-  await page.goto('http://127.0.0.1:'+server.address().port+'/#connections');await page.waitForFunction(()=>typeof DL==='string'&&DL==='en-GB');
-  const other=page.locator('#connections button',{hasText:'Other sources'});
-  if(await other.count())await other.first().click();
+  await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article'));
+  await page.evaluate(()=>showTab('health','other'));
   const card=page.locator('#connectors article',{hasText:'Salesflare CRM'});
-  await card.waitFor().catch(async e=>{throw new Error(`${width}: ${e.message}\npage errors: ${JSON.stringify(errors)}\nconnectors: ${await page.locator('#connections').innerText().catch(()=>'?')}`)});
+  await card.waitFor().catch(async e=>{throw new Error(`${width}: ${e.message}\npage errors: ${JSON.stringify(errors)}\nconnectors: ${await page.locator('#health').innerText({timeout:2000}).catch(()=>'?')}`)});
   assert.match(await card.innerText(),/Reads accounts, contacts, emails and meetings\. Changes nothing\./);
   assert.match(await card.locator('.sf-line').innerText(),/^Reading 12 of 42 accounts\. Started 3 hours ago, may be stuck\.$/);
   assert.equal(await card.locator('.sf-aside').innerText(),'2 skipped as too slow');
