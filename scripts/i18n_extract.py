@@ -24,7 +24,7 @@ CATALOG = ROOT / 'i18n'
 # area: (ids of static elements, ranges of top-level functions that build it: (first, last) by name, each range taking
 # every top-level statement from the first function to the end of the last)
 AREAS = {
-    'shell': (['topbar', 'app-side', 'limit-banner', 'needs-you', 'page-head', 'copyright', 'help-link'],
+    'shell': (['topbar', 'app-side', 'browser-pane', 'limit-banner', 'needs-you', 'page-head', 'copyright', 'help-link'],
               [('renderLimitBanner', 'limitNote'), ('renderNeedsYou', 'needsYouPlace'), ('render', 'render'),
                ('showTab', 'drawerClose'), ('palScore', 'kbHints')]),
     'todos': (['inbox', 'snooze-dialog', 'send-dialog', 'result-dialog'],
@@ -35,7 +35,7 @@ AREAS = {
                   ('installKind', 'renderNotify')]),
     'graph': (['people', 'project-dialog', 'record-dialog', 'crm-dialog', 'board-dialog'],
               [('graphCountsSet', 'graphHashSync'), ('helpLink', 'saveDecision'), ('graphStash', 'openConversation')]),
-    'calendar': (['calendar', 'cal-dialog'], [('calFetchWeek', 'calSave')]),
+    'calendar': (['calendar', 'cal-dialog', 'cal-view'], [('calFetchWeek', 'calSave')]),
     'connections': (['health', 'signin-dialog'], [('connectorHealth', 'connectorCard'), ('signinMode', 'browserShow')]),
     'help': ([], [('helpMarkup', 'supportAccessRender')]),
     'events': (['events', 'email-dialog'], [('search', 'openEvent')]),

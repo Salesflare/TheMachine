@@ -4,9 +4,10 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// On a computer (from 1024px) Browser shows the Machine's browser in the main area beside the sidebar, with Open in
-// new tab and close. The Browser row is the active one; another row, back and close leave it, and the viewer stays
-// loaded meanwhile. On a phone, or without a viewer on the dashboard's own address, it stays a new tab.
+// On a computer Browser shows the Machine's browser in the main area beside the sidebar (from 1024px) or under the top
+// bar (a narrower window, like the desktop app on half a screen), with Full size, Open in new tab and close. The
+// Browser row is the active one; another row, back and close leave it, and the viewer stays loaded meanwhile. On a
+// phone, or without a viewer on the dashboard's own address, it stays a new tab.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 let embed='/browser/';const loads=[];
 const card={id:'aaaaaaaaaaaaaaa1',title:'Reply to the venue',body:'Drafted a reply.',status:'prepared',scope:'work',created_at:new Date().toISOString(),event_ids:[1]};
@@ -52,10 +53,25 @@ try{
  const hist=await context.newPage();hist.on('pageerror',e=>errors.push(e.message));await hist.goto('about:blank');await hist.goto(base);await hist.locator('#open-browser').click();
  await hist.locator('#browser-pane').waitFor();await hist.locator('nav [data-tab="events"]').click();await hist.waitForFunction(()=>!location.hash);
  await hist.goBack();assert.equal(hist.url(),'about:blank');
- // Narrower than a computer while it is open: the view before comes back
+ // A computer's window made narrower while it is open: the pane stays, under the top bar, and fills what is left
  await hist.goto(base);await hist.locator('#open-browser').click();await hist.locator('#browser-pane').waitFor();
- await hist.setViewportSize({width:800,height:900});await hist.locator('#inbox').waitFor();  // not only hidden by the narrow layout
- assert.equal(await hist.locator('#browser-pane').getAttribute('hidden'),'');await hist.close();
+ await hist.setViewportSize({width:900,height:700});await new Promise(r=>setTimeout(r,300));
+ assert.equal(await hist.locator('#browser-pane').isVisible(),true);
+ {const f=await hist.locator('#bp-frame').boundingBox(),top=await hist.locator('.topbar').boundingBox();
+  assert.ok(f.y>=top.y+top.height-1&&f.width===900&&Math.abs(f.y+f.height-700)<=1,JSON.stringify(f))}
+ // Full size: the whole window, over the top bar; again goes back
+ await hist.locator('#bp-full').click();assert.equal(await hist.locator('#bp-full').getAttribute('aria-pressed'),'true');
+ {const p=await hist.locator('#browser-pane').boundingBox();assert.deepEqual([p.x,p.y,p.width,p.height],[0,0,900,700])}
+ assert.equal(await hist.locator('#bp-full').textContent(),'Exit full size');
+ await hist.locator('#bp-full').click();assert.equal(await hist.evaluate(()=>'bpFull' in document.documentElement.dataset),false);
+ // Leaving it ends Full size
+ await hist.locator('#bp-full').click();await hist.locator('#bp-close').click();await hist.locator('#browser-pane').waitFor({state:'hidden'});
+ assert.equal(await hist.evaluate(()=>'bpFull' in document.documentElement.dataset),false);await hist.close();
+ // Opened in a narrow window: the pane too, from the drawer, never a new tab or window
+ const narrow=await browser.newContext({viewport:{width:900,height:700}});await narrow.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+ const n=await narrow.newPage();n.on('pageerror',e=>errors.push(e.message));await n.goto(base);await n.locator('#drawer-open').click();
+ await n.locator('#open-browser').click();await n.locator('#browser-pane').waitFor();assert.equal(narrow.pages().length,1);
+ assert.equal(await n.evaluate(()=>document.documentElement.dataset.drawer||''),'');await narrow.close();
  // Settings from the pane, then Back: the pane again
  const set=await context.newPage();set.on('pageerror',e=>errors.push(e.message));await set.goto(base);await set.locator('#open-browser').click();await set.locator('#browser-pane').waitFor();
  await set.locator('#open-settings').click();await set.locator('#settings').waitFor();assert.equal(await set.locator('#browser-pane').isHidden(),true);
@@ -71,7 +87,7 @@ try{
  // A link straight to #browser opens it
  const deep=await context.newPage();deep.on('pageerror',e=>errors.push(e.message));await deep.goto(base+'/#browser');await deep.locator('#browser-pane').waitFor();await deep.close();
  // A phone keeps the new tab
- const phone=await browser.newContext({viewport:{width:390,height:800}});await phone.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+ const phone=await browser.newContext({viewport:{width:390,height:800},isMobile:true,hasTouch:true});await phone.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const p2=await phone.newPage();p2.on('pageerror',e=>errors.push(e.message));await p2.goto(base);await p2.locator('#open-settings').waitFor({state:'attached'});  // in the drawer on a phone
  await p2.evaluate(()=>document.querySelector('#open-browser').click());await new Promise(r=>setTimeout(r,300));
  assert.equal(await p2.locator('#browser-pane').isHidden(),true);await phone.close();

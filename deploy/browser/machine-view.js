@@ -38,11 +38,12 @@ if (framed) {
         box(mask[1], right, Math.max(0, top), W - right, Math.min(H, bottom) - Math.max(0, top));
     }
     // The pane changes size (the dashboard's sidebar folds, the window is resized): frame the window again for the new
-    // size, unless the owner zoomed or moved around themselves
+    // size, unless the owner zoomed or moved around themselves. Never at size 0: a hidden pane keeps its framing, and
+    // shown again (another resize) it frames for the size it has then.
     let moved = false, resizeTimer = 0;
     addEventListener('resize', () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => { if (rfb && !moved) frame(whole); else placeMask(); }, 80);
+        resizeTimer = setTimeout(() => { if (!innerWidth || !innerHeight) return; if (rfb && !moved) frame(whole); else placeMask(); }, 80);
     });
 
     function apply(z, focusX, focusY) {  // zoom to z, keeping the screen point under (focusX, focusY) in place

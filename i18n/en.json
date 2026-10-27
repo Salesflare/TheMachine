@@ -2379,5 +2379,15 @@
  "Review handoff to {}": "Review handoff to {}",
  "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.": "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.",
  "Contact: {}": "Contact: {}",
- "LinkedIn from {} ·": "LinkedIn from {} ·"
+ "LinkedIn from {} ·": "LinkedIn from {} ·",
+ "Full size": "Full size",
+ "Exit full size": "Exit full size",
+ "Open in new tab ↗": "Open in new tab ↗",
+ "Event": "Event",
+ "Open in Google Calendar ↗": "Open in Google Calendar ↗",
+ "Open in Outlook ↗": "Open in Outlook ↗",
+ "(No title)": "(No title)",
+ "{}’s calendar": "{}’s calendar",
+ "and {} more": "and {} more",
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Last checked {}. Checks every 15 minutes for new contacts and people who just joined."
 }

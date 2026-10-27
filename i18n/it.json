@@ -2379,5 +2379,15 @@
  "Review handoff to {}": "Rivedi il passaggio a {}",
  "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.": "Ricevi in questa attività una bozza di email da inviare tu, con un link che porta l’attività su una loro Machine.",
  "Contact: {}": "Contatto: {}",
- "LinkedIn from {} ·": "LinkedIn da {} ·"
+ "LinkedIn from {} ·": "LinkedIn da {} ·",
+ "Full size": "Ingrandisci",
+ "Exit full size": "Riduci",
+ "Open in new tab ↗": "Apri in una nuova scheda ↗",
+ "Event": "Evento",
+ "Open in Google Calendar ↗": "Apri in Google Calendar ↗",
+ "Open in Outlook ↗": "Apri in Outlook ↗",
+ "(No title)": "(Senza titolo)",
+ "{}’s calendar": "Calendario di {}",
+ "and {} more": "e altri {}",
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Ultimo controllo {}. Controlla ogni 15 minuti nuovi contatti e persone appena arrivate."
 }

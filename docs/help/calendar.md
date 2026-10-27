@@ -29,7 +29,7 @@ In the grid, events at the same time sit side by side while each stays readable.
 
 ## Open something
 
-Click a row to open its to-do's chat, the promise, or the meeting in its own calendar. Looking changes nothing.
+Click a row to open its to-do's chat, the promise, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
 
 ## Add or change an event
 

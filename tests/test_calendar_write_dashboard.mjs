@@ -197,8 +197,8 @@ try{
   if(width<600){assert.ok(top.title<4&&top.nav<4,'two rows '+JSON.stringify(top));assert.deepEqual(top.order,[true,true],'‹ › then the range, Today at the end');assert.ok(top.head<=110,'a compact header: '+top.head)}
   else assert.equal(top.newBg,'rgba(0, 0, 0, 0)','New event is a quiet button, not a filled one');
   assert.notEqual(top.edge,'none','the sticky header has an edge');
-  // Meetings with guests and read-only shared calendars: no editor, they open in their calendar
-  for(const t of ['Quarterly planning','Away']){const row=page.locator('#calendar-view .cal-item',{hasText:t}).first();assert.equal(await row.getAttribute('data-cal-edit'),null,t);assert.equal(await row.getAttribute('target'),'_blank',t)}
+  // Meetings with guests and read-only shared calendars: no editor, their details in the app
+  for(const t of ['Quarterly planning','Away']){const row=page.locator('#calendar-view .cal-item',{hasText:t}).first();assert.equal(await row.getAttribute('data-cal-edit'),null,t);assert.ok(await row.getAttribute('data-cal-view'),t);assert.equal(await row.getAttribute('target'),null,t)}
   if(shots){await page.waitForTimeout(300);await page.screenshot({path:`${shots}/calwrite-calendar-${width}-${scheme}.png`});
    await page.evaluate(()=>scrollTo(0,260));await page.waitForTimeout(200);await page.screenshot({path:`${shots}/calendar-agenda-scrolled-${width}-${scheme}.png`});
    for(const mode of ['week','month']){await page.evaluate(m=>calSetMode(m),mode);await page.waitForTimeout(400);await page.screenshot({path:`${shots}/calendar-${mode}-${width}-${scheme}.png`})}

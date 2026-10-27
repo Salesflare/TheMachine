@@ -2379,5 +2379,15 @@
  "Review handoff to {}": "Relire le transfert à {}",
  "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.": "Vous recevez sur cette tâche un brouillon d’e-mail à envoyer vous-même, avec un lien qui amène la tâche sur leur propre Machine.",
  "Contact: {}": "Contact : {}",
- "LinkedIn from {} ·": "LinkedIn de {} ·"
+ "LinkedIn from {} ·": "LinkedIn de {} ·",
+ "Full size": "Agrandir",
+ "Exit full size": "Réduire",
+ "Open in new tab ↗": "Ouvrir dans un nouvel onglet ↗",
+ "Event": "Événement",
+ "Open in Google Calendar ↗": "Ouvrir dans Google Agenda ↗",
+ "Open in Outlook ↗": "Ouvrir dans Outlook ↗",
+ "(No title)": "(Sans titre)",
+ "{}’s calendar": "Agenda de {}",
+ "and {} more": "et {} de plus",
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Dernière vérification {}. Vérifie toutes les 15 minutes les nouveaux contacts et les personnes qui viennent d’arriver."
 }

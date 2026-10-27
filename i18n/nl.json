@@ -2379,5 +2379,15 @@
  "Review handoff to {}": "Overdracht aan {} nakijken",
  "You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.": "Je krijgt op deze to-do een concept-e-mail om zelf te versturen, met een link die de taak naar een eigen Machine brengt.",
  "Contact: {}": "Contact: {}",
- "LinkedIn from {} ·": "LinkedIn van {} ·"
+ "LinkedIn from {} ·": "LinkedIn van {} ·",
+ "Full size": "Vergroten",
+ "Exit full size": "Verkleinen",
+ "Open in new tab ↗": "Openen in nieuw tabblad ↗",
+ "Event": "Afspraak",
+ "Open in Google Calendar ↗": "Openen in Google Agenda ↗",
+ "Open in Outlook ↗": "Openen in Outlook ↗",
+ "(No title)": "(Geen titel)",
+ "{}’s calendar": "Agenda van {}",
+ "and {} more": "en nog {}",
+ "Last checked {}. Checks every 15 minutes for new contacts and people who just joined.": "Laatst gecontroleerd {}. Controleert elke 15 minuten op nieuwe contacten en mensen die net lid zijn."
 }

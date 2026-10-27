@@ -107,11 +107,23 @@ try{
   assert.ok(!b.some(x=>x.rows.join().includes('Due next month')));
   // No event line starts with "You"
   assert.ok(!b.flatMap(x=>x.rows).some(r=>r.split(' | ').some(p=>/^You\b/.test(p))));
-  // The meeting's card chip; the standup at 00:15 is over and steps back; a meeting without a card opens its calendar
+  // The meeting's card chip; the standup at 00:15 is over and steps back; a meeting without a card opens its details in
+  // the app, with its own calendar one link away (never a new tab or window by itself)
   assert.equal(await page.locator('#calendar-view a.cal-item[href="#chat='+cards[0].id+'"] .chip').textContent(),'Prep ready');
   assert.ok(await page.locator('.cal-item.past .cal-title',{hasText:'Team standup'}).count());
-  const ext=page.locator('#calendar-view a.cal-item',{hasText:'Quarterly planning'});assert.equal(await ext.getAttribute('target'),'_blank');assert.match(await ext.getAttribute('href'),/^https:\/\/calendar\.google\.com\//);
-  assert.equal(await page.locator('#calendar-view div.cal-item',{hasText:'Dentist'}).count(),1,'no card and no link: not a link');
+  const ext=page.locator('#calendar-view a.cal-item',{hasText:'Quarterly planning'});assert.equal(await ext.getAttribute('target'),null);assert.equal(await ext.getAttribute('href'),null);
+  assert.equal(await ext.getAttribute('data-cal-view'),'103');
+  const pages=context.pages().length;await ext.click();const view=page.locator('#cal-view');await view.waitFor();
+  assert.equal(await page.locator('#cal-v-title').textContent(),'Quarterly planning');
+  const vrows=await page.locator('#cal-v-rows div').evaluateAll(els=>els.map(e=>e.querySelector('dt').textContent+': '+e.querySelector('dd').textContent));
+  assert.ok(vrows.some(r=>r.startsWith('Where: Room 2')),vrows.join(' / '));assert.ok(vrows.some(r=>r==='With: 8 guests'),vrows.join(' / '));
+  assert.ok(vrows.some(r=>/^When: \w+, /.test(r)),vrows.join(' / '));
+  const gopen=page.locator('#cal-v-open');assert.equal(await gopen.textContent(),'Open in Google Calendar ↗');assert.equal(await gopen.getAttribute('target'),'_blank');
+  assert.match(await gopen.getAttribute('href'),/^https:\/\/calendar\.google\.com\//);assert.equal(context.pages().length,pages,'looking opens nothing');
+  await page.locator('#cal-view .send-act [data-cal-close]').click();await view.waitFor({state:'hidden'});
+  // No card and no link: its details, without the link
+  await page.locator('#calendar-view a.cal-item[data-cal-view]',{hasText:'Dentist'}).click();await view.waitFor();assert.equal(await gopen.isHidden(),true);
+  await page.keyboard.press('Escape');await view.waitFor({state:'hidden'});
   assert.equal(await page.locator('#badge-calendar').textContent(),String(b[1].rows.length));
   // A row opens the card's chat; back returns to the Calendar
   await page.locator('#calendar-view a.cal-item',{hasText:'Send the revised quote'}).click();
