@@ -1483,5 +1483,6 @@
  "{} meetings": {
   "one": "{} Termin",
   "other": "{} Termine"
- }
+ },
+ "Automatic: {}": "Automatisch: {}"
 }

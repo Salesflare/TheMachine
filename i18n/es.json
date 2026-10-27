@@ -1483,5 +1483,6 @@
  "{} meetings": {
   "one": "{} reunión",
   "other": "{} reuniones"
- }
+ },
+ "Automatic: {}": "Automático: {}"
 }
