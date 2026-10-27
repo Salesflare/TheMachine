@@ -53,6 +53,9 @@ jobs:
         run: |
           node --input-type=module -e 'const {chromium}=await import(process.env.OPENCLAW_PACKAGE_DIR+"/node_modules/playwright-core/index.mjs"); console.log("CHROMIUM_PATH="+chromium.executablePath())' >> "$GITHUB_ENV"
       - name: Test Python, Node, OpenClaw SDK and dashboard
+        env:
+          # several PR jobs share the self-hosted host, and 8 browser tests each starve it into flaky timeouts
+          THE_MACHINE_TEST_JOBS: ${{ runner.environment == 'self-hosted' && '3' || '' }}
         run: python3 scripts/test.py
       - name: Check whitespace
         run: git diff --check
