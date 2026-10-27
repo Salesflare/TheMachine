@@ -14,7 +14,9 @@ Le haut des Suggestions indique « Les revues sont désactivées, donc aucune su
 
 ## La limite de votre modèle
 
-Les revues se mettent en pause à environ 65 % de la limite sur 5 heures de votre forfait et répartissent la limite hebdomadaire, pour garder de la marge pour vos propres chats. Quand une limite est atteinte, le haut du tableau de bord indique laquelle et quand elle se réinitialise. **Connexions**, puis **Revues**, l’affiche à côté de l’exécution. **Paramètres**, **Modèle** affiche vos limites. Voir [Modèle](model.md).
+Les revues de ce qui est arrivé se mettent en pause à environ 65 % de la limite sur 5 heures de votre forfait et à 90 % de sa limite hebdomadaire, pour garder de la marge pour vos propres chats. Un tableau qui parcourt votre historique avance plus lentement, à environ un septième de la semaine par jour.
+
+Pendant que les revues attendent, le haut du tableau de bord indique jusqu’à quand, par exemple « Les revues attendent jusqu’à 07:15 pour ménager votre semaine ChatGPT. » **Lancer la revue** en démarre une tout de suite. Quand une limite est atteinte, le haut du tableau de bord indique laquelle et quand elle se réinitialise. **Connexions**, puis **Revues**, l’affiche à côté de l’exécution. **Paramètres**, **Modèle** affiche vos limites. Voir [Modèle](model.md).
 
 Rien n’est perdu pendant l’attente : ce qui est arrivé est passé en revue dès que possible.
 

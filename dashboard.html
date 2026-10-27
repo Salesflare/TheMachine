@@ -2174,7 +2174,7 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 /* This device: the shared quiet notice card (.notice-card) at the top of Suggestions, to install the app or turn on notifications. */
 .device-nudge{gap:10px 14px;color:var(--muted)}
 .device-nudge[hidden],body.chat-open .device-nudge{display:none}
-/* A usage limit reached (state.model_pause): the same quiet notice card, with an amber dot, at the top of every view. */
+/* A usage limit reached (state.model_pause), or reviews waiting for the budget (state.review_pause): the same quiet notice card, with an amber dot, at the top of every view. */
 .limit-banner{flex-wrap:nowrap;align-items:flex-start}.limit-banner::before{content:"";flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--amber)}
 .nudge-icon{flex:none;width:36px;height:36px;border-radius:9px}
 .nudge-text{flex:1 1 240px;min-width:0}.nudge-text>span{display:block}
@@ -2733,10 +2733,18 @@ const windowLabel=l=>['Week','168h','7d'].includes(l)?t('Weekly limit'):['Day','
 function resetAction(m){if(!m)return '';if(m.can_reset)return `<button type="button" class="ghost" data-model-reset>Use a reset</button>`;
  return m.usage_page?`<a class="head-link" href="${esc(m.usage_page)}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
 // The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null
-function limitBanner(p){if(!p)return '';const now=Date.now()/1000,until=+p.until>now?+p.until:0,r=until?new Date(until*1000):null,
- what={'5h':'{} 5-hour limit reached.',week:'{} weekly limit reached.'}[p.window]||'{} usage limit reached.',when=r?(r.toDateString()===new Date().toDateString()?t('at {}',fmtHM(r)):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):'';
- return `<span><strong>${esc(t(what,p.name||'AI'))}</strong>${when?' '+esc(t('Resets {}.',when)):''} ${esc(t('Nothing is lost: The Machine picks up where it left off.'))}</span>`}
-function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
+const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):''};
+function limitBanner(p){if(!p)return '';const when=pauseWhen(p.until),
+ what={'5h':'{} 5-hour limit reached.',week:'{} weekly limit reached.'}[p.window]||'{} usage limit reached.';
+ return `<span><strong>${esc(t(what,p.name||'AI'))}</strong>${when?' '+esc(t('Resets {}.',/^\d/.test(when)?t('at {}',when):when)):''} ${esc(t('Nothing is lost: The Machine picks up where it left off.'))}</span>`}
+// Reviews of new signals waiting for the budget (state.review_pause: window '5h' or 'week', until, name), with Review now
+function reviewBanner(p){if(!p)return '';const when=pauseWhen(p.until),name=p.name||'AI',week=p.window==='week';
+ const line=when?t(week?'Reviews wait until {} to save your {} week.':'Reviews wait until {} to save your {} 5-hour limit.',when,name):t(week?'Reviews wait to save your {} week.':'Reviews wait to save your {} 5-hour limit.',name);
+ return `<span>${esc(line)}</span><button type="button" class="head-link" data-review-now>${esc(t('Review now'))}</button>`}
+function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause)||reviewBanner(state.review_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
+ try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
+  state.review_pause=null;renderLimitBanner();notice(t('A review starts in a moment.'))}catch(err){b.disabled=false;notice(err.message,true)}});
 function limitNote(m){if(!m?.limit_reached)return '';return `<p class="limit-note"><strong>${esc(t(m.chatgpt?'ChatGPT limit reached':'Model limit reached'))}</strong>${m.limit_resets_at?esc(t(', resets at {}',clockAt(m.limit_resets_at))):''}${resetAction(m)?' · '+resetAction(m):''}</p>`}
 // A model id as people say it: "acme/lm-2.5-swift" reads "LM-2.5 Swift", "acme/sonnet-4-5-20250929" reads
 // "Sonnet 4.5" (no release date, version parts joined with dots); the id itself shows on hover.

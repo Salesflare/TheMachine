@@ -24,7 +24,7 @@ Si votre forfait a des limites d’utilisation, il montre la part utilisée de c
 
 ## De la place pour vos propres chats
 
-Le travail en arrière-plan (vérifications, votre profil, brouillons préparés à l’avance) laisse de la place pour vos propres chats. Il se met en pause vers 65 % de la limite de 5 heures, et répartit la limite hebdomadaire à environ un septième par jour. Une connexion sans limite d’utilisation, comme une clé API, n’est jamais mise en pause.
+Le travail en arrière-plan (vérifications, votre profil, brouillons préparés à l’avance) laisse de la place pour vos propres chats. Il se met en pause vers 65 % de la limite de 5 heures. Les revues de ce qui est arrivé continuent jusqu’à environ 90 % de la limite hebdomadaire ; le reste la répartit à environ un septième par jour. Une connexion sans limite d’utilisation, comme une clé API, n’est jamais mise en pause.
 
 Le travail en arrière-plan ne tourne jamais sur GPT-6 Astra. Il utilise GPT-6.1 Sol à la place.
 

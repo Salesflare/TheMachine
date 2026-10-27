@@ -35,7 +35,9 @@ O mesmo erro conta uma vez, com uma contagem. No máximo um lote a cada 10 minut
 
 ## Ritmo
 
-O trabalho em segundo plano espera quando os limites do seu plano de IA estão no fim, para sobrar espaço para os seus chats (veja [Seu modelo de IA](model.md)). Com os relatórios de erro ligados, ela também conta à equipe, uma vez por dia, quantas vezes isso aconteceu: para cada vez, a hora do início, qual limite, quantos minutos durou e quantos trabalhos esperaram. Só contagens e minutos, nada sobre os trabalhos.
+O trabalho em segundo plano espera quando os limites do seu plano de IA estão no fim, para sobrar espaço para os seus chats (veja [Seu modelo de IA](model.md)). As revisões do que chegou só esperam perto dos limites; o trabalho mais pesado, como percorrer seu histórico, é distribuído ao longo da semana.
+
+Com os relatórios de erro ligados, ela também conta à equipe, uma vez por dia, quantas vezes isso aconteceu: para cada vez, a hora do início, qual limite, quantos minutos durou e quantos trabalhos esperaram. Só contagens e minutos, nada sobre os trabalhos.
 
 ## Desativar
 

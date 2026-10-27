@@ -35,7 +35,9 @@ El mismo error cuenta una vez, con un recuento. Como mucho, un lote cada 10 minu
 
 ## Ritmo
 
-El trabajo en segundo plano espera cuando los límites de tu plan de IA se están agotando, para dejar sitio a tus propios chats (consulta [Tu modelo de IA](model.md)). Con los informes de errores activados, tu Machine también le dice al equipo, una vez al día, cuántas veces pasó: para cada vez, la hora en que empezó, qué límite, cuántos minutos duró y cuántos trabajos esperaron. Solo recuentos y minutos, nada sobre qué eran los trabajos.
+El trabajo en segundo plano espera cuando los límites de tu plan de IA se están agotando, para dejar sitio a tus propios chats (consulta [Tu modelo de IA](model.md)). Las revisiones de lo que llegó solo esperan cerca de los límites; el trabajo más pesado, como recorrer tu historial, se reparte a lo largo de la semana.
+
+Con los informes de errores activados, tu Machine también le dice al equipo, una vez al día, cuántas veces pasó: para cada vez, la hora en que empezó, qué límite, cuántos minutos duró y cuántos trabajos esperaron. Solo recuentos y minutos, nada sobre qué eran los trabajos.
 
 ## Desactívalo
 
