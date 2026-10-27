@@ -348,12 +348,14 @@ class FakeNetwork:
         raise ValueError(what)
 
 
-def handed(net, count):
-    """'waiting' shows as a hand-off to the owner's computer starts; it is sealed and sent right after."""
-    for _ in range(200):
-        if len(net.jobs) >= count:
-            return
+def handed(home, job_id):
+    """'waiting' shows as a hand-off to the owner's computer starts; it is sealed, sent and its ticket kept right after."""
+    for _ in range(400):
+        with home.connect() as db:
+            if db.execute('SELECT token_hash FROM agent_jobs WHERE id=?', (job_id,)).fetchone()[0]:
+                return
         time.sleep(0.05)
+    raise AssertionError('not handed over')
 
 
 class AgentJobs(unittest.TestCase):
@@ -659,7 +661,7 @@ class AgentJobs(unittest.TestCase):
             job = wait(home, home.start(self.sid, 'codex', 'Fix the typo in README')['id'], done=('waiting', 'failed'))
         self.assertEqual((job['status'], job['device'], job['can_follow_up']), ('waiting', 'Laptop', False), job)
         self.assertEqual(self.calls('codex'), [])  # nothing ran on the hosted Machine
-        handed(net, 1)
+        handed(home, job['id'])
         self.assertEqual(home.get(job['id'])['status'], 'waiting', home.get(job['id']))
         [(ticket, waiting)] = net.jobs.items()
         self.assertNotIn('Fix the typo', json.dumps(net.sent))  # the Network only ever saw it sealed
@@ -689,7 +691,7 @@ class AgentJobs(unittest.TestCase):
                                     card=lambda sid: {'card': {'title': 'Fix'}, 'drafts': [], 'links': [], 'files': [], 'messages': ''}, network=net.hosted)
         with patch.object(agent_remote, 'watch', lambda jobs: None):
             job = wait(home, home.start(self.sid, 'codex', 'Fix it')['id'], done=('waiting', 'failed'))
-        handed(net, 1)
+        handed(home, job['id'])
         [ticket] = net.jobs
         net.jobs[ticket]['running'] = 'Editing README.md'
         agent_remote.fetch(home)
@@ -700,7 +702,7 @@ class AgentJobs(unittest.TestCase):
         # Cancel here: the Network hears it
         with patch.object(agent_remote, 'watch', lambda jobs: None):
             second = wait(home, home.retry(job['id'])['id'], done=('waiting', 'failed'))
-        handed(net, 2)
+        handed(home, second['id'])
         home.cancel(second['id'])
         self.assertEqual(net.sent[-1][1]['action'], 'cancel')
 
