@@ -537,7 +537,8 @@ def send_as(me):
     for proxy in me.get('proxyAddresses') or ():
         kind, _, address = str(proxy).partition(':')
         if kind.lower() == 'smtp' and '@' in address and address.lower() != str(primary or '').lower():
-            out.append({'sendAsEmail': address.lower(), 'isPrimary': False, 'treatAsAlias': True, 'verificationStatus': 'accepted'})
+            # An address that reaches this mailbox, not one Graph confirms it can send as: no verificationStatus
+            out.append({'sendAsEmail': address.lower(), 'isPrimary': False, 'treatAsAlias': True})
     return {'sendAs': out}
 
 

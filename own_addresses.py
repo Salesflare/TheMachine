@@ -112,8 +112,11 @@ def send_as_entries(answer, primary):
         user = str(smtp.get('username') or '').strip().lower()
         # Sends through another mail server signed in as someone else: that's their mailbox, not an alias of this one
         other = bool(smtp) and bool(user) and user != address and user.split('@')[0] != address.split('@')[0]
-        out.append({'address': address, 'primary': bool(entry.get('isPrimary')) or address == clean(primary),
-                    'alias': entry.get('treatAsAlias') is not False, 'name': str(entry.get('displayName') or '')[:120], 'other_server': other})
+        main = bool(entry.get('isPrimary')) or address == clean(primary)
+        # verified: the provider says this mailbox can send as it (Gmail's main address, or a send-as one it accepted)
+        out.append({'address': address, 'primary': main, 'alias': entry.get('treatAsAlias') is not False,
+                    'name': str(entry.get('displayName') or '')[:120], 'other_server': other,
+                    'verified': main or entry.get('verificationStatus') == 'accepted'})
     return out
 
 
@@ -154,6 +157,29 @@ def fetched(db, config):
                 out[r[0]] = [e for e in json.loads(r[1]) if isinstance(e, dict)]
             except ValueError:
                 continue
+    return out
+
+
+def senders(db, config):
+    """{account_id: [mailbox address, *aliases]}: the addresses each of the owner's own Gmail mailboxes may send a
+    draft from. An alias is offered only when Gmail lists it as verified for that mailbox (the kept send-as list) and
+    it is the owner's (Mine, or found as theirs), never the team's, Not mine, or one sent through another account's
+    server. Outlook only ever offers the mailbox address: Graph can't confirm sending as another address. The send
+    itself checks Gmail again (next_actions.EmailTransport.preflight)."""
+    out = {a['id']: [clean(a.get('email'))] for a in mail_accounts(config) if a.get('id')}
+    try:
+        lists = fetched(db, config)
+        mine = yours(db, config) - team(db, config) - excluded(db, config)
+    except Exception:  # a read-only or locked database: the mailbox addresses alone
+        return out
+    for account in mail_accounts(config):
+        if account.get('service', 'gmail') != 'gmail' or account.get('id') not in out:
+            continue
+        for e in lists.get(account['id']) or ():
+            address = clean(e.get('address'))
+            if (address and e.get('verified') is True and not e.get('primary') and not e.get('other_server')
+                    and address in mine and address not in out[account['id']]):
+                out[account['id']].append(address)
     return out
 
 

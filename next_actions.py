@@ -13,6 +13,7 @@ import mail_attachments
 import ms_graph
 import signatures
 import html
+import i18n
 from html.parser import HTMLParser
 import json
 import mimetypes
@@ -286,14 +287,31 @@ def delegation(value, result, name=None):
         result['to_name'] = name
 
 
+def pick_sender(mailbox, options, replied):
+    """The From a draft starts with: a reply to mail that came to one of the owner's aliases (and not to the mailbox
+    address itself) goes out from that alias; a reply after the owner's own message keeps the address they sent it
+    from; anything else from the mailbox address. options: the addresses this mailbox may send from (mailbox first);
+    replied: {'to': [...], 'from': address, 'sent': bool} of the email it answers, or None."""
+    offered = [a.lower() for a in options or ()]
+    if not replied or len(offered) < 2:
+        return mailbox
+    if replied.get('sent'):
+        sender = str(replied.get('from') or '').lower()
+        return sender if sender in offered else mailbox
+    addressed = [str(a).lower() for a in replied.get('to') or ()]
+    if mailbox.lower() in addressed:
+        return mailbox
+    return next((a for a in addressed if a in offered[1:]), mailbox)
+
+
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
-             intercom_conversations=None, calendar_events=None, doc_comments=None):
+             intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None):
     if value is None:
         return None
     if isinstance(value,list):
         if not 1<=len(value)<=3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
         if any(not isinstance(item,dict) for item in value):raise ValueError('Each next action must be one concrete choice')
-        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments) for item in value]
+        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
             raise ValueError('Next actions must be distinct concrete choices')
         return {'kind':'menu','actions':choices}
@@ -426,6 +444,13 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                 result[field] = text
         if result.get('thread_id') and not result.get('in_reply_to'):
             raise ValueError('Thread replies need the original RFC Message-ID, not only a Gmail thread ID')
+        # From: the mailbox address, or an alias of the owner's that Gmail confirms this mailbox sends as (senders,
+        # own_addresses.senders). The service picks it, never the draft; the owner can change it in the review.
+        offered = [a for a in (senders or {}).get(account['id']) or () if a and a.lower() != account['email'].lower()]
+        if offered and not outlook(account):
+            result['from_options'] = [account['email'], *offered]
+            result['from'] = pick_sender(account['email'], result['from_options'],
+                                         (replied or {}).get(str(result.get('in_reply_to') or '').strip()))
         days = value.get('snooze_days', 3 if result.get('thread_id') else 0)
         if isinstance(days, bool) or not isinstance(days, int) or not 0 <= days <= 14:
             raise ValueError('snooze_days is a whole number of days from 0 (no snooze) to 14')
@@ -844,9 +869,26 @@ class EmailTransport:
     def account(self, action):
         if action['kind']!='email':raise ValueError('Only a real owner-approved email can use the email transport')
         account = next(a for a in self.config['accounts'] if a['id'] == action['account_id'])
-        if account['email'].lower() != action['from'].lower():
+        # The mailbox address, or one of the aliases the draft offered (Gmail only; preflight checks it with Gmail again)
+        if account['email'].lower() != action['from'].lower() and (outlook(account) or action['from'].lower() not in
+                                                                  [a.lower() for a in action.get('from_options') or ()]):
             raise ValueError('The sender account changed; review the draft again')
         return account
+
+    def alias_check(self, action, account):
+        """Sending from an alias: Gmail must confirm right now that this mailbox sends as it (verified), and not
+        through another account's mail server. Anything else, or no answer, sends nothing."""
+        address = action['from'].lower()
+        try:
+            entry = self.read(self.config, account, 'gmail', 'v1', 'gmail.users.settings.sendAs.get',
+                              {'userId': 'me', 'sendAsEmail': address}, 'https://www.googleapis.com/auth/gmail.readonly')
+        except Exception:
+            entry = None
+        smtp = (entry or {}).get('smtpMsa') if isinstance((entry or {}).get('smtpMsa'), dict) else {}
+        user = str(smtp.get('username') or '').strip().lower()
+        if (not isinstance(entry, dict) or str(entry.get('sendAsEmail') or '').lower() != address
+                or entry.get('verificationStatus') != 'accepted' or (user and user != address)):
+            raise ValueError(i18n.t('Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.', address))
 
     def env(self):
         env = os.environ.copy()
@@ -862,8 +904,10 @@ class EmailTransport:
             raise ValueError('Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.')
         profile = self.read(self.config, account, 'gmail', 'v1', 'gmail.users.getProfile',
                             {'userId': 'me'}, 'https://www.googleapis.com/auth/gmail.readonly')
-        if profile.get('emailAddress', '').lower() != action['from'].lower():
+        if profile.get('emailAddress', '').lower() != account['email'].lower():
             raise ValueError('Gmail sender identity could not be verified. Nothing was sent.')
+        if action['from'].lower() != account['email'].lower():
+            self.alias_check(action, account)
         for record in action.get('attachments', []):
             try:
                 attachment_bytes(record, self.config)

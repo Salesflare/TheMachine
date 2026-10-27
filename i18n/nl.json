@@ -2425,5 +2425,8 @@
  "Whose is {}?": "Van wie is {}?",
  "Looks like a team address": "Lijkt een teamadres",
  "Gmail sends as it, but not as an alias": "Gmail verstuurt ermee, maar niet als alias",
- "Your own sign-in address is always yours": "Je eigen inlogadres is altijd van jou"
+ "Your own sign-in address is always yours": "Je eigen inlogadres is altijd van jou",
+ "Send from": "Versturen vanaf",
+ "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.": "Gmail kon niet bevestigen dat deze mailbox als {} mag versturen. Er is niets verstuurd.",
+ "Send it from one of the addresses offered.": "Verstuur het vanaf een van de aangeboden adressen."
 }

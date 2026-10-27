@@ -2425,5 +2425,8 @@
  "Whose is {}?": "Wem gehört {}?",
  "Looks like a team address": "Sieht nach einer Team-Adresse aus",
  "Gmail sends as it, but not as an alias": "Gmail sendet als sie, aber nicht als Alias",
- "Your own sign-in address is always yours": "Deine eigene Anmeldeadresse ist immer deine"
+ "Your own sign-in address is always yours": "Deine eigene Anmeldeadresse ist immer deine",
+ "Send from": "Senden von",
+ "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.": "Gmail konnte nicht bestätigen, dass dieses Postfach als {} senden darf. Nichts wurde gesendet.",
+ "Send it from one of the addresses offered.": "Sende es von einer der angebotenen Adressen."
 }

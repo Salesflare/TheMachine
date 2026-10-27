@@ -2425,5 +2425,8 @@
  "Whose is {}?": "Whose is {}?",
  "Looks like a team address": "Looks like a team address",
  "Gmail sends as it, but not as an alias": "Gmail sends as it, but not as an alias",
- "Your own sign-in address is always yours": "Your own sign-in address is always yours"
+ "Your own sign-in address is always yours": "Your own sign-in address is always yours",
+ "Send from": "Send from",
+ "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.": "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.",
+ "Send it from one of the addresses offered.": "Send it from one of the addresses offered."
 }

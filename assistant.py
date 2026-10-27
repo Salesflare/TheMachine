@@ -6646,7 +6646,7 @@ class Store:
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
         return {'status':'revised','revision':revised['revision']}
 
-    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None):
+    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None):
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
@@ -6664,6 +6664,12 @@ class Store:
                 action={**{k:v for k,v in action.items() if k!='to_options'},'to':list(recipients)}
             elif recipients:
                 raise ValueError('This draft already has its recipients.')
+            if sender is not None:
+                # The owner picked the From in the review, only from the addresses the draft offered (own_addresses.senders).
+                options=[a.lower() for a in action.get('from_options') or ()] if action['kind']=='email' else []
+                if not isinstance(sender,str) or sender.lower() not in options and sender.lower()!=str(action.get('from') or '').lower():
+                    raise ValueError(i18n.t('Send it from one of the addresses offered.'))
+                action={**action,'from':next((a for a in action.get('from_options') or () if a.lower()==sender.lower()),action['from'])}
             if action['kind'] in ('prepare','finish') and db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')",(suggestion_id,)).fetchone():
                 raise ValueError('An earlier send is still being checked. Wait for that outcome before changing the result.')
             previous=db.execute('SELECT * FROM action_jobs WHERE suggestion_id=? AND revision=?',(suggestion_id,revision)).fetchone()
@@ -9241,6 +9247,23 @@ def reply_lead(db, suggestion_id, next_action):
         return
     ids = [lead] + [i for i in ids if i != lead]
     db.execute('UPDATE suggestions SET event_ids=?,source_line=? WHERE id=?', (encoded(ids), source_line([rows[i] for i in ids if i in rows]), suggestion_id))
+
+
+def replied_to(rows):
+    """{Message-ID: {'to', 'from', 'sent'}} for the task's emails: who each was addressed to (To, then Cc) and sent
+    from, and whether the owner sent it. A reply's default From comes from the one it answers (next_actions.pick_sender)."""
+    out = {}
+    for row in rows:
+        try:
+            m = json.loads(row['metadata']) if isinstance(row['metadata'], str) else row['metadata']
+        except ValueError:
+            continue
+        if not isinstance(m, dict) or not m.get('message-id'):
+            continue
+        get = lambda field: [a.strip().lower() for _, a in email.utils.getaddresses([str(m.get(field) or '')]) if '@' in a]
+        out.setdefault(str(m['message-id']).strip(), {'to': get('to') + get('cc'), 'from': (get('from') or [''])[0],
+                                                      'sent': 'SENT' in (m.get('labels') or ())})
+    return out
 
 
 def thread_recipients(rows, own):
@@ -12634,6 +12657,8 @@ class App:
             for key in ('next_actions','next_action'):
                 if args.get(key):args={**args,key:reply_to_newest(emails,args[key])}
             with self.store.connect() as db:
+                senders=own_addresses.senders(db,self.config)
+            with self.store.connect() as db:
                 threads={m['conversation_id']:m.get('chat_name') or 'LinkedIn conversation' for m in (json.loads(r[0]) for r in db.execute(
                     "SELECT e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='linkedin.message' ORDER BY e.occurred_at",(row['event_ids'],)))}
                 x_threads={'mentions':{},'dms':{}}
@@ -12659,7 +12684,7 @@ class App:
                 # The owner talks to this person on WhatsApp although the task came in another way: their existing chat.
                 whatsapp_chats.update(owner_whatsapp_chats(self.config,db,args.get('next_actions',args.get('next_action')),whatsapp_chats))
                 calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
-            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs)
+            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails))
             for item in next_actions.actions(action):
                 if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
                     raise ValueError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')
@@ -12730,7 +12755,7 @@ class App:
             if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
             elif not owner_dashboard and re.fullmatch(r'telegram:[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='telegram'
             else:raise ValueError('Sending approval must come from the owner’s controls')
-            return self.store.confirm_action(args['suggestion_id'],args['revision'],args['approval_id'],source,args.get('recipients'))
+            return self.store.confirm_action(args['suggestion_id'],args['revision'],args['approval_id'],source,args.get('recipients'),args.get('sender'))
         if name in CARD_ACTIONS:
             if not owner_dashboard:
                 raise ValueError('Cards are added, renamed and merged by the owner, on the dashboard')
