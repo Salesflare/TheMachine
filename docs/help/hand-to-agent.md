@@ -24,13 +24,13 @@ A job never sends anything for you.
 
 ## Set it up
 
-In **Settings**, **General**, under **Coding agents**:
+In **Settings**, **Model**, under **Codex and Claude Code**:
 
-- **Claude Code session**: the address of a Claude Code session.
-- **Codex cloud environment**: its environment id, for Codex cloud.
-- **Runs on**, and optionally a **Branch**.
+- **Codex**: where it runs. On your computer it needs nothing more here; **Change** opens your setup page.
+- **Codex cloud**: its environment ID, from Codex, and optionally a **Branch** to start from.
+- **Claude Code**: the link of a Claude Code session.
 
-Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector, with the address shown there.
+Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector, with the address shown under the session.
 
 ## Where Codex runs
 
@@ -39,4 +39,4 @@ On a hosted Machine, pick it on your setup page, under **Add more any time**, **
 - **On my computer** (the default): the job runs on your own computer, with the Codex signed in there. Nothing of Codex is on your server, and the job is encrypted for that computer only: the Network passes it on but can't read it. Install The Machine on that computer, pair it on your Account page, and run `codex login` there. Keep The Machine running on it. The job shows as a thread in the Codex app on that computer, and the result comes back on the to-do. When the computer is off, jobs wait until it's back.
 - **Codex cloud**: the job runs in OpenAI's cloud. Press **Connect Codex**. It uses the same ChatGPT plan as your model, and OpenAI asks for one more code, for Codex. Then enter the Codex cloud environment in Settings.
 
-On a hosted Machine, Coding agents shows once GitHub or Codex is connected. It also shows on setups that run jobs elsewhere. More in the [agents guide](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+On a hosted Machine, Codex and Claude Code shows once GitHub or Codex is connected. It also shows on setups that run jobs elsewhere. More in the [agents guide](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

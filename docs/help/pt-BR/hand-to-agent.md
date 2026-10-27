@@ -24,13 +24,13 @@ Um trabalho nunca envia nada por você.
 
 ## Configurar
 
-Em **Configurações**, **Geral**, em **Agentes de código**:
+Em **Configurações**, **Modelo**, em **Codex e Claude Code**:
 
-- **Sessão do Claude Code**: o endereço de uma sessão do Claude Code.
-- **Ambiente de nuvem do Codex**: o id do ambiente, para a nuvem do Codex.
-- **Roda em** e, se quiser, uma **Branch**.
+- **Codex**: onde ele roda. No seu computador, não precisa de mais nada aqui; **Mudar** abre a sua página de configuração.
+- **Codex cloud**: o ID do ambiente, do Codex, e, se quiser, uma **Branch** de onde começar.
+- **Claude Code**: o link de uma sessão do Claude Code.
 
-O Claude envia o resultado de volta pelo conector da The Machine. Adicione o conector uma vez no claude.ai, em Settings, Connectors, Add custom connector, com o endereço mostrado ali.
+O Claude envia o resultado de volta pelo conector da The Machine. Adicione o conector uma vez no claude.ai, em Settings, Connectors, Add custom connector, com o endereço mostrado abaixo da sessão.
 
 ## Onde o Codex roda
 
@@ -39,4 +39,4 @@ Em uma Machine hospedada, escolha na sua página de configuração, em **Adicion
 - **No meu computador** (o padrão): o trabalho roda no seu próprio computador, com o Codex conectado lá. Nada do Codex fica no seu servidor, e o trabalho é criptografado só para esse computador: a Network repassa, mas não consegue ler. Instale The Machine nesse computador, pareie na sua página Conta e rode `codex login` lá. Deixe The Machine rodando nele. O trabalho aparece como uma conversa no app do Codex nesse computador, e o resultado volta na tarefa. Quando o computador está desligado, os trabalhos esperam até ele voltar.
 - **Nuvem do Codex**: o trabalho roda na nuvem da OpenAI. Clique em **Conectar o Codex**. Ele usa o mesmo plano do ChatGPT que o seu modelo, e a OpenAI pede mais um código, para o Codex. Depois digite o ambiente de nuvem do Codex em Configurações.
 
-Em uma Machine hospedada, Agentes de código aparece quando o GitHub ou o Codex está conectado. Também aparece em configurações que rodam trabalhos em outro lugar. Mais no [guia de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+Em uma Machine hospedada, Codex e Claude Code aparece quando o GitHub ou o Codex está conectado. Também aparece em configurações que rodam trabalhos em outro lugar. Mais no [guia de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

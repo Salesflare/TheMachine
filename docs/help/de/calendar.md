@@ -29,7 +29,7 @@ Im Raster stehen Termine zur selben Zeit nebeneinander, solange jeder lesbar ble
 
 ## Etwas öffnen
 
-Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting in seinem eigenen Kalender zu öffnen. Ansehen ändert nichts.
+Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting in seinem eigenen Kalender zu öffnen. Bei einem Meeting sind Personen, die dein Graph kennt, und die Organisationen und Projekte, um die es geht, Links zu ihrer Seite. Ansehen ändert nichts.
 
 ## Termin hinzufügen oder ändern
 
@@ -41,4 +41,4 @@ Wenn sich ein Kalender von hier aus ändern lässt, fügt **Neuer Termin** einen
 
 Auch eine Aufgabe kann eine Änderung vorschlagen, etwa eine Abholung, die eingetragen werden soll. Sie zeigt genau, was sich ändert, und erst dein **Hinzufügen**, **Speichern** oder **Löschen** führt es aus.
 
-Noch keine Meetings? Verbinde [Google Calendar](google-calendar.md) oder [Outlook-Kalender](microsoft.md).
+Noch keine Meetings? Ohne Kalender öffnet **Kalender verbinden** die Verbindungen: Verbinde [Google Calendar](google-calendar.md) oder [Outlook-Kalender](microsoft.md).

@@ -47,8 +47,8 @@ The CLIs keep their own sign-ins. The Machine never reads, copies or stores a Cl
 
 ## On a hosted Machine
 
-A hosted Machine has no Claude Code or Codex of yours, so it hands the job on. Set it up in **Settings > General >
-Coding agents**.
+A hosted Machine has no Claude Code or Codex of yours, so it hands the job on. Set it up in **Settings > Model >
+Codex and Claude Code**.
 
 - **Claude Code**: paste the link of a Claude Code session from claude.ai/code. The job goes to that session as a
   message (`claude -p <message> --cloud <session>`). That session can't reach your Machine, so it sends its result

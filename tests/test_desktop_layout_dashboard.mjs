@@ -132,12 +132,16 @@ try{
   assert.equal(await page.locator('#side-toggle').getAttribute('aria-label'),'Collapse sidebar');
   await row.hover();await page.waitForTimeout(500);assert.equal(await page.locator('#side-tip').isVisible(),false,'no tooltip with the labels showing');
   await context.close()}
- // Settings in the same column: the lists as wide as the forms, the agent fields in clean rows, no browser button (Browser is in the sidebar)
- {const {context,page}=await open(1440,900);await tab(page,'settings');await page.locator('#agents-settings').waitFor();
-  const st=await page.evaluate(()=>{const w=q=>Math.round(document.querySelector(q).getBoundingClientRect().width),r=q=>document.querySelector(q).getBoundingClientRect();
-   return {list:Math.round([...document.querySelectorAll('#settings .settings-list')].find(e=>e.offsetWidth).getBoundingClientRect().width),form:w('#agents-settings'),session:w('#agents-session'),device:[r('#agents-device').top,r('#agents-device').width],branch:[r('#agents-branch').top,r('#agents-branch').width],browser:!!document.querySelector('#settings-browser').offsetParent}});
-  assert.equal(st.list,st.form,'settings lists are as wide as the forms');assert.ok(st.session>=st.form-2,'the session field is full width');
-  assert.equal(st.device[0],st.branch[0],'Runs on and Branch side by side');assert.ok(Math.abs(st.device[1]-st.branch[1])<2);assert.equal(st.browser,false);
+ // Settings in the same column: the lists as wide as the forms, no browser button (Browser is in the sidebar).
+ // Codex and Claude Code sit on the Model tab, one row each, the fields lined up on the right.
+ {const {context,page}=await open(1440,900);await tab(page,'settings');
+  assert.equal(await page.evaluate(()=>!!document.querySelector('#settings-browser').offsetParent),false);
+  await page.evaluate(()=>showSettings('model'));await page.locator('#agents-settings').waitFor();
+  const st=await page.evaluate(()=>{const r=q=>document.querySelector(q).getBoundingClientRect(),f=document.querySelector('#agents-settings');
+   return {list:Math.round(f.querySelector('.settings-list').getBoundingClientRect().width),form:Math.round(r('#agents-settings').width),
+    fields:['#agents-env','#agents-branch','#agents-session'].map(q=>[Math.round(r(q).left),Math.round(r(q).width)]),shown:[...f.querySelectorAll('.settings-list>[id]')].filter(e=>e.offsetParent).map(e=>e.id)}});
+  assert.equal(st.list,st.form,'the list is as wide as the form');assert.deepEqual(st.shown,['agents-env-row','agents-branch-row'],'Codex cloud: its environment and branch, no device row');
+  for(const f of st.fields)assert.deepEqual(f,st.fields[0],'the fields line up');
   await context.close()}
  // An open chat: its header spans the main area, one line that ends in an ellipsis; the thread stays in the column
  {const {context,page}=await open(2000,1000);await page.locator('.side-cards a').first().click();await page.locator('#chat-log').waitFor();

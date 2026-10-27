@@ -24,13 +24,13 @@ Een opdracht verstuurt nooit iets voor je.
 
 ## Instellen
 
-In **Instellingen**, **Algemeen**, onder **Codeeragents**:
+In **Instellingen**, **Model**, onder **Codex en Claude Code**:
 
-- **Claude Code-sessie**: het adres van een Claude Code-sessie.
-- **Codex-cloudomgeving**: de id van de omgeving, voor Codex-cloud.
-- **Draait op**, en eventueel een **Branch**.
+- **Codex**: waar het draait. Op je computer is hier niets meer nodig; **Wijzigen** opent je setuppagina.
+- **Codex cloud**: de id van de omgeving, uit Codex, en eventueel een **Branch** om van te starten.
+- **Claude Code**: de link van een Claude Code-sessie.
 
-Claude stuurt zijn resultaat terug via de connector van The Machine. Voeg die één keer toe in claude.ai, Settings, Connectors, Add custom connector, met het adres dat daar staat.
+Claude stuurt zijn resultaat terug via de connector van The Machine. Voeg die één keer toe in claude.ai, Settings, Connectors, Add custom connector, met het adres dat onder de sessie staat.
 
 ## Waar Codex draait
 
@@ -39,4 +39,4 @@ Op een gehoste Machine kies je het op je setuppagina, onder **Voeg later meer to
 - **Op mijn computer** (standaard): de opdracht draait op je eigen computer, met de Codex waarmee daar ingelogd is. Er staat niets van Codex op je server, en de opdracht is versleuteld voor alleen die computer: het Network geeft hem door maar kan hem niet lezen. Installeer The Machine op die computer, koppel hem op je pagina Account, en voer daar `codex login` uit. Laat The Machine erop draaien. De opdracht verschijnt als thread in de Codex-app op die computer, en het resultaat komt terug op de to-do. Staat de computer uit, dan wachten opdrachten tot hij terug is.
 - **Codex-cloud**: de opdracht draait in de cloud van OpenAI. Druk op **Codex koppelen**. Het gebruikt hetzelfde ChatGPT-abonnement als je model, en OpenAI vraagt nog één code, voor Codex. Vul daarna de Codex-cloudomgeving in bij Instellingen.
 
-Op een gehoste Machine verschijnt Codeeragents zodra GitHub of Codex gekoppeld is. Het verschijnt ook bij setups die opdrachten elders draaien. Meer in de [gids over agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+Op een gehoste Machine verschijnt Codex en Claude Code zodra GitHub of Codex gekoppeld is. Het verschijnt ook bij setups die opdrachten elders draaien. Meer in de [gids over agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

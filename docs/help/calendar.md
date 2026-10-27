@@ -29,7 +29,7 @@ In the grid, events at the same time sit side by side while each stays readable.
 
 ## Open something
 
-Click a row to open its to-do's chat, the promise, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
+Click a row to open its to-do's chat, the promise, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. Someone your Graph knows, and the organizations and projects the meeting is on, are links to their page. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
 
 ## Add or change an event
 
@@ -41,4 +41,4 @@ When a calendar can be changed from here, **New event** adds one (on a phone it'
 
 A to-do can offer a change too, like a pick-up to add. It shows exactly what changes, and only your **Add**, **Save** or **Delete** makes it.
 
-No meetings yet? Connect [Google Calendar](google-calendar.md) or [Outlook Calendar](microsoft.md).
+No meetings yet? Without a calendar, **Connect your calendar** opens Connections: connect [Google Calendar](google-calendar.md) or [Outlook Calendar](microsoft.md).

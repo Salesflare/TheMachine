@@ -29,7 +29,7 @@ Dans la grille, les événements à la même heure se placent côte à côte tan
 
 ## Ouvrir un élément
 
-Cliquez sur une ligne pour ouvrir le chat de sa tâche, la promesse, ou la réunion dans son propre agenda. Regarder ne change rien.
+Cliquez sur une ligne pour ouvrir le chat de sa tâche, la promesse, ou la réunion dans son propre agenda. Dans une réunion, une personne que votre Graph connaît, ainsi que les organisations et projets dont parle la réunion, sont des liens vers leur page. Regarder ne change rien.
 
 ## Ajouter ou modifier un événement
 
@@ -41,4 +41,4 @@ Quand un agenda peut être modifié d’ici, **Nouvel événement** en ajoute un
 
 Une tâche peut aussi proposer un changement, comme un trajet à ajouter. Elle montre exactement ce qui change, et seul votre **Ajouter**, **Enregistrer** ou **Supprimer** le fait.
 
-Pas encore de réunions ? Connectez [Google Agenda](google-calendar.md) ou [Outlook Calendar](microsoft.md).
+Pas encore de réunions ? Sans agenda, **Connecter votre agenda** ouvre Connexions : connectez [Google Agenda](google-calendar.md) ou [Outlook Calendar](microsoft.md).

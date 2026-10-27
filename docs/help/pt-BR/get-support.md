@@ -20,6 +20,7 @@ Abra **Ajuda** e depois **Relatar um bug**. Uma mensagem de erro também tem um 
 1. Diga o que deu errado.
 2. Adicione uma captura de tela, se ajudar: **Tirar uma captura de tela** do painel, ou **Anexar uma imagem**.
 3. Deixe **Incluir o relatório de suporte** ativado, a menos que prefira não incluir: versões, verificações e erros recentes, sem mensagens, chaves ou endereços.
+   Se pudermos precisar olhar mais de perto, marque também **Deixe o suporte olhar por 24 horas**. Veja [Acesso de suporte](get-support.md#support-access).
 4. Toque em **Revisar**. Aparece tudo o que vai ser enviado, exatamente como vai.
 5. Toque em **Enviar**. Nada é enviado antes disso.
 
@@ -29,11 +30,11 @@ Se um relatório não puder sair na hora (você está offline ou enviou muitos e
 
 ## Acesso de suporte
 
-Nossa equipe pode olhar a sua Machine por você, mas só depois que você permitir. Em **Configurações**, **Segurança**, **Acesso de suporte**, toque em **Permitir por 24 horas**. No seu próprio computador, a sua Machine precisa estar [pareada com a sua conta](friends.md).
+Nossa equipe pode olhar a sua Machine por você, mas só depois que você permitir. Quando você relatar um bug, marque **Deixe o suporte olhar por 24 horas**. Ele é ativado quando você toca em **Enviar**. No seu próprio computador, a sua Machine precisa estar [pareada com a sua conta](friends.md).
 
 - Só leitura: logs, configurações, versões, como cada conexão sincroniza e erros recentes, limpos como no relatório de suporte. Nunca suas mensagens, chaves, senhas ou quem são seus contatos.
-- Termina sozinho depois de 24 horas. **Desativar** termina agora.
-- Cada acesso aparece listado abaixo, com a hora.
+- Termina sozinho depois de 24 horas. Enquanto está ativo, **Configurações**, **Segurança** mostra o acesso: **Desativar** termina agora.
+- Cada acesso aparece listado ali, com a hora.
 
 ## No seu próprio computador
 

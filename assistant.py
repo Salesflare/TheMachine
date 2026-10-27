@@ -4020,6 +4020,7 @@ class Store:
                     out.append({**w, 'name': w['name'] or known.get(w['email'].lower(), '')})
             row['with'] = out[:20]
             row['people'] = list(dict.fromkeys(w['name'] or w['email'] for w in out))[:20]
+        self._calendar_links([f[3] for f in found])
         # The owner's own copy first, so a meeting on their calendar and a shared one shows once, as theirs
         seen, result = set(), []
         for theirs, shared, keys, row in sorted(found, key=lambda f: (f[0], f[1])):
@@ -4028,6 +4029,63 @@ class Store:
             seen |= keys
             result.append(row)
         return sorted(result, key=lambda x: (x['start'], x['id']))
+
+    def _calendar_links(self, rows):
+        """The Graph behind each meeting, for links in its details: each guest the Graph knows gets their node
+        (`node_id` on `with`), and the meeting carries its organizations and open projects (`orgs`, `projects`:
+        [{node_id, name}]): the ones it is on, and those of its people. Guesses (probable) are left out. Only what
+        the Graph already shows the owner."""
+        ids = [r['id'] for r in rows]
+        if not ids:
+            return
+        try:
+            with self.connect() as db:
+                found = db.execute(
+                    'SELECT g.event_id,n.id,n.kind,n.name,n.info,o.id org_id,o.name org_name FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id '
+                    "LEFT JOIN graph_nodes o ON n.kind='person' AND o.kind='org' AND o.id=json_extract(n.info,'$.org') "
+                    "WHERE g.probable=0 AND (n.kind IN ('person','org') OR n.kind='project' AND json_extract(n.info,'$.closed_at') IS NULL) AND g.event_id IN (SELECT value FROM json_each(?)) "
+                    'ORDER BY n.strength DESC', (json.dumps(ids),)).fetchall()
+                people = sorted({r['id'] for r in found if r['kind'] == 'person'})
+                # The open projects its people are on, and the ones its own signal was filed under
+                on_people = db.execute("SELECT l.a,'project:'||p.id,p.name FROM graph_links l JOIN projects p ON 'project:'||p.id=l.b "
+                                       "WHERE l.kind='project' AND p.closed_at IS NULL AND l.a IN (SELECT value FROM json_each(?)) ORDER BY p.id",
+                                       (json.dumps(people),)).fetchall() if people else []
+                filed = db.execute("SELECT e.event_id,'project:'||p.id,p.name FROM event_projects e JOIN projects p ON p.id=e.project_id "
+                                   'WHERE p.closed_at IS NULL AND e.event_id IN (SELECT value FROM json_each(?))', (json.dumps(ids),)).fetchall()
+        except sqlite3.OperationalError:
+            return  # no Graph yet
+        per, projects_of = collections.defaultdict(list), collections.defaultdict(list)
+        for r in found:
+            per[r['event_id']].append(r)
+        for who, node, name in on_people:
+            projects_of[who].append((node, name))
+        for row in rows:
+            emails, orgs, projects, theirs = {}, {}, {}, {}
+            for event_id, node, name in filed:
+                if event_id == row['id']:
+                    projects.setdefault(node, name)
+            for r in per.get(row['id'], ()):
+                if r['kind'] == 'person':
+                    for i in (json.loads(r['info'] or '{}').get('identifiers') or [r['id']]):
+                        if str(i).startswith('email:'):
+                            emails.setdefault(str(i)[6:].lower(), r['id'])
+                    if r['org_id'] and r['org_name']:
+                        orgs.setdefault(r['org_id'], r['org_name'])
+                    for node, name in projects_of.get(r['id'], ()):
+                        theirs.setdefault(node, name)
+                elif r['kind'] == 'org':
+                    orgs.setdefault(r['id'], r['name'])
+                else:
+                    projects.setdefault(r['id'], r['name'])
+            for node, name in theirs.items():
+                projects.setdefault(node, name)
+            for w in row['with']:
+                if emails.get(w['email'].lower()):
+                    w['node_id'] = emails[w['email'].lower()]
+            if orgs:
+                row['orgs'] = [{'node_id': k, 'name': str(v)[:80]} for k, v in orgs.items()][:6]
+            if projects:
+                row['projects'] = [{'node_id': k, 'name': str(v)[:80]} for k, v in projects.items()][:6]
 
     def review_context(self, owner_session, owner_run=None):
         # No source content here: this is a small durable recovery hint, not recall.

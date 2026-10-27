@@ -8,8 +8,13 @@ const pick=()=>{const m=saved(),t=m==='auto'?(sys.matches?'light':'dark'):m;root
 // On an iPhone home-screen app the page is drawn under the status bar in dark (white text), and iOS's light bar is used in light.
 let sb=document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]');if(!sb){sb=document.createElement('meta');sb.name='apple-mobile-web-app-status-bar-style';document.head.appendChild(sb)}sb.content=t==='light'?'default':'black-translucent'};
 // On a hosted dashboard (<name>.app.example) the cookie goes on the app's domain, so the app's pages follow; else on this host only.
-window.chooseTheme=t=>{localStorage.setItem('theme',t);const h=location.hostname,parent=h.split('.').slice(1).join('.'),base=`theme=${t}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol==='https:'?'; Secure':''}`;
-if(parent.includes('.')&&!/^[\d.]+$/.test(h))document.cookie=base+'; Domain='+parent;if(!document.cookie.includes('theme='+t))document.cookie=base;pick()};
+// Every other copy this page can see goes first: this host's own, and one on a domain above it (a dashboard at
+// my.example leaves one on example, which <name>.app.example sees too). With two that disagree the first one read
+// wins, so the switch looked stuck.
+window.chooseTheme=t=>{try{localStorage.setItem('theme',t)}catch{}const h=location.hostname,labels=h.split('.'),parent=labels.slice(1).join('.'),ip=/^[\d.]+$/.test(h)||h.includes(':'),
+sec=location.protocol==='https:'?'; Secure':'',base=`theme=${t}; Path=/; Max-Age=31536000; SameSite=Lax${sec}`,gone='theme=; Path=/; Max-Age=0; SameSite=Lax'+sec;
+document.cookie=gone;if(!ip)for(let i=0;i<labels.length-1;i++)document.cookie=gone+'; Domain='+labels.slice(i).join('.');
+if(parent.includes('.')&&!ip)document.cookie=base+'; Domain='+parent;if(!document.cookie.includes('theme='+t))document.cookie=base;pick()};
 try{if(localStorage.getItem('side')==='collapsed')root.dataset.side='collapsed'}catch{}window.applyTheme=pick;pick();sys.addEventListener('change',pick);document.addEventListener('visibilitychange',()=>{if(!document.hidden){pick();window.showTheme?.()}})})();</script>
 <link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="brand/favicon-512.png">
@@ -1249,7 +1254,7 @@ nav button.active .badge,[data-theme="light"] nav button.active .badge{backgroun
 .share-log-text pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.78rem;line-height:1.45;margin:6px 0 0;padding:8px 10px;border-radius:var(--r-sm);background:var(--surface);max-width:100%;box-sizing:border-box}
 .share-foot{display:flex;align-items:center;gap:8px}.share-foot small{color:var(--muted);font-size:var(--fs-xs)}.share-foot button{margin-left:auto}
 .share-error{color:var(--orange);font-size:var(--fs-sm)}
-/* Vote on tips from other Machines: On, Ask first, Off under its text; under Ask first the votes wait in one box on Feedback */
+/* Vote on learnings from other Machines: On, Ask first, Off under its text; under Ask first the votes wait in one box on Feedback */
 .share-vote-seg{display:inline-flex;margin-top:8px}.seg.share-vote-seg label input:checked+span{background:var(--mint);color:var(--charcoal)}.share-vote-row small#share-vote-note:empty{display:none}
 #share-votes .share-panel{margin-bottom:var(--sp-5)}.vote-item p{margin:0;min-width:0;overflow-wrap:anywhere}.vote-tip{font-size:var(--fs-sm);line-height:1.45}
 .vote-item p.vote-ex,.vote-item p.vote-case{font-size:var(--fs-xs);line-height:1.45;color:var(--muted)}.vote-is{font-size:var(--fs-sm)}.vote-is strong{font-weight:var(--fw-strong)}.vote-item .share-foot{justify-content:flex-end}.vote-item .share-foot button{margin-left:0;min-height:30px;padding:0 12px;font-size:.85rem}
@@ -1293,6 +1298,12 @@ article h3{font-size:var(--fs-lg);line-height:1.35;letter-spacing:-.005em;color:
 .chip::before{width:6px;height:6px}
 .chip.scope::before{display:none}
 .chip.scope{padding-left:9px}
+.card-badges .chip,.card-badges .chip.scope{font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);letter-spacing:0;padding:1px 9px 1px 8px;min-height:0}
+.chip svg.ci,a.chip.who svg.ci{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+a.chip.who,.chip.project-chip a{gap:4px}.chip.project-chip a{display:inline-flex;align-items:center}.chip.project-chip a>span{overflow:hidden;text-overflow:ellipsis}
+.card-badges .chip.project-chip{padding-right:3px;gap:0}
+.chip.project-chip .project-pick{display:inline-grid;place-items:center;width:16px;height:16px;padding:0;margin-left:1px;border-radius:50%;opacity:.75}
+.chip.project-chip .project-pick:hover{opacity:1;background:var(--tile-hover,#ffffff14)}.chip.project-chip .project-pick svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 pre,blockquote,.draft{border-radius:var(--r-md)}
 pre{background:var(--sunken);border-color:var(--border)}
 blockquote,[data-theme="light"] blockquote{border-left:2px solid var(--border-strong);background:transparent;color:var(--muted);padding:2px 12px;border-radius:0}
@@ -1663,8 +1674,9 @@ main{padding-top:calc(28px + env(safe-area-inset-top));padding-left:max(24px,env
 @media(max-width:560px){#events .search{padding-right:4px}#events .search button{display:none}#events .search select{max-width:46%}}
 /* Settings: one column; every field a label above a full-width input, the session and environment on their own row, the short ones side by side */
 #settings .settings-list{max-width:none}
-.agents-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}.agents-grid>label{display:flex;flex-direction:column;gap:6px;min-width:0}.agents-grid>label.wide{grid-column:1/-1}.agents-grid input{width:100%;min-width:0;box-sizing:border-box}
-@media(max-width:420px){.agents-grid{grid-template-columns:1fr}}
+.agents-list input{flex:0 1 260px;min-width:0;box-sizing:border-box}.agents-list label.grow{cursor:default}.agents-list small{display:block}
+@media(max-width:520px){.agents-list>div{flex-wrap:wrap}.agents-list label.grow{flex-basis:100%}.agents-list input{flex:1 1 100%}}
+#agents-connector-note{margin-top:8px}#agents-connector{overflow-wrap:anywhere}
 /* The folded sidebar's tooltip: a small pill to the right of the row, the theme's text color as its ground */
 #side-tip{position:fixed;z-index:1000;transform:translateY(-50%);padding:5px 9px;border-radius:7px;background:var(--text);color:var(--bg);font:500 var(--fs-xs)/1.25 var(--sans);white-space:nowrap;pointer-events:none;box-shadow:0 6px 18px -6px #0006}#side-tip[hidden]{display:none}
 /* App sidebar: one component. From 1024px it is a fixed column on the left, like a chat app: the brand, a card filter,
@@ -1889,7 +1901,7 @@ a.cal-item:hover{background:var(--c-hover)}a.cal-item:hover+.cal-item,a.cal-item
 .cal-item.past .cal-time,.cal-item.past .cal-main,.cal-chip.past{opacity:.55}
 .cal-free{margin:0;padding:12px 0 4px;color:var(--c-text-3);font-size:var(--fs-sm)}
 .cal-note{margin:4px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}.cal-note a{color:var(--c-text-2)}
-.cal-clear{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:8px;padding:40px 16px 24px;text-align:center}.cal-clear img{width:64px;height:64px;object-fit:contain}.cal-clear strong{display:block;margin-top:6px;font:var(--fw-heading) var(--fs-xl)/1.25 var(--serif);color:var(--text)}.cal-clear span{display:block;color:var(--c-text-3);font-size:var(--fs-sm)}
+.cal-clear{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:8px;padding:40px 16px 24px;text-align:center}.cal-clear img{width:64px;height:64px;object-fit:contain}.cal-clear strong{display:block;margin-top:6px;font:var(--fw-heading) var(--fs-xl)/1.25 var(--serif);color:var(--text)}.cal-clear span{display:block;color:var(--c-text-3);font-size:var(--fs-sm)}.cal-clear>button{margin-top:10px}.cal-connect button{margin-left:6px;padding:2px 10px;min-height:0;font-size:var(--fs-sm)}
 /* The Calendar's header stays on top while the days scroll: Today (quiet when this week is on show), ‹ ›, the week */
 body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;margin:-10px -10px 16px;padding:10px 10px 12px;background:var(--bg);box-shadow:0 1px 0 var(--c-line)}
 @media(max-width:1023px){body:has(#calendar:not([hidden])) #page-head{top:calc(52px + env(safe-area-inset-top))}}
@@ -1924,7 +1936,8 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 #cal-dialog{width:min(480px,calc(100vw - 24px))}#cal-dialog [hidden]{display:none}
 #cal-view{width:min(440px,calc(100vw - 24px))}#cal-view [hidden]{display:none}#cal-view .snooze-heading{margin-bottom:10px;align-items:flex-start;gap:12px}#cal-view h2{margin:0;font-size:1.2rem;overflow-wrap:anywhere}
 #cal-view .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
-.cal-v-rows{margin:0;display:grid;gap:10px}.cal-v-rows div{display:grid;grid-template-columns:84px 1fr;gap:10px}.cal-v-rows dt{color:var(--faint);font-size:.88rem;padding-top:1px}.cal-v-rows dd{margin:0;color:var(--text);overflow-wrap:anywhere}.cal-v-with{display:grid;gap:4px}.cal-v-mail{color:var(--faint);font-size:.86rem}
+.cal-v-rows{margin:0;display:grid;gap:10px}.cal-v-rows div{display:grid;grid-template-columns:84px 1fr;gap:10px}.cal-v-rows dt{color:var(--faint);font-size:.88rem;padding-top:1px}.cal-v-rows dd{margin:0;color:var(--text);overflow-wrap:anywhere}.cal-v-with{display:grid;gap:4px}.cal-v-mail{color:var(--faint);font-size:.86rem}.cal-v-known{display:flex;min-width:0}
+.cal-v-links{display:flex;flex-wrap:wrap;gap:6px}.cal-v-links .chip,.cal-v-known .chip{max-width:100%;font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);padding:1px 9px 1px 8px;min-height:0}
 #cal-view .send-act{display:flex;margin-top:16px}#cal-view .send-act button{flex:1 1 0;min-height:46px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
 #cal-dialog .snooze-heading{margin-bottom:12px}#cal-dialog h2{margin:0;font-size:1.2rem}
 #cal-dialog .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
@@ -2246,6 +2259,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 #help-panel .fine{margin:0;font-size:.8rem;color:var(--muted)}#bug-form,#bug-review{display:flex;flex-direction:column;gap:12px}#bug-form label{display:flex;flex-direction:column;gap:6px}#bug-form textarea{margin:0}
 .bug-shot{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.bug-shot img,.bug-sent img{display:block;max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:10px}.bug-shot img{order:-1;flex:0 0 100%;height:160px;object-fit:contain;object-position:left;border:0;border-radius:0}
 #bug-form label.bug-check{flex-direction:row;align-items:center;gap:8px}#bug-form label.bug-check+.fine{margin-top:-8px;padding-left:26px}#bug-form label.bug-check input{width:auto;margin:0}
+#bug-sa-row:not([hidden]){display:contents}
 .bug-sent{display:flex;flex-direction:column;gap:10px;max-height:min(56dvh,520px);overflow:auto}#bug-queued{margin-top:14px;gap:6px;font-size:.9rem}#bug-queued[hidden]{display:none}.bug-sent h3{margin:0;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.bug-sent p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .bug-sent img{max-height:140px;width:auto;align-self:flex-start}.bug-parts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}.bug-all summary{cursor:pointer;font-size:.85rem;color:var(--muted);margin:2px 0 6px}
 .bug-sent pre,#support-access pre{margin:0;max-height:260px;overflow:auto;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -2355,6 +2369,19 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><div id="settings-model" hidden><div class="section-head"><h2>Model</h2><p>What answers for you, and how much of your plan’s limits it has used.</p></div
 ><div id="model-panel" class="model-panel"></div
 ><div id="model-chats" hidden></div></div
+><form id="agents-settings" hidden novalidate><div class="section-head"><h3>Codex and Claude Code</h3><p>Where a coding to-do goes when you hand it off. <a class="learn" href="https://themachine.computer/help/hand-to-agent#set-it-up" target="_blank" rel="noopener">Learn more</a></p></div><div class="list settings-list agents-list"
+><div id="agents-codex-row" hidden><span class="grow"><strong>Codex</strong
+><small id="agents-codex-where"></small></span
+><a id="agents-codex-change" class="head-link" target="_blank" rel="noopener" hidden>Change ↗</a></div
+><div id="agents-env-row"><label class="grow" for="agents-env"><strong>Codex cloud</strong><small>Its environment ID, from Codex.</small></label
+><input id="agents-env" maxlength="80" placeholder="Environment ID" autocomplete="off" spellcheck="false"></div
+><div id="agents-branch-row"><label class="grow" for="agents-branch"><strong>Branch</strong><small>Optional. Codex starts from it.</small></label
+><input id="agents-branch" maxlength="120" placeholder="main" autocomplete="off" spellcheck="false"></div><div><label class="grow" for="agents-session"><strong>Claude Code</strong><small>The link of a Claude Code session.</small></label
+><input id="agents-session" placeholder="https://claude.ai/code/session_…" autocomplete="off" spellcheck="false"></div></div
+><p class="fine" id="agents-connector-note" hidden>Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector: <code id="agents-connector"></code></p
+><p id="agents-error" role="status"></p
+><div class="actions" id="agents-actions" hidden
+><button id="agents-save" class="primary">Save</button></div></form
 ><div id="settings-skills" hidden><div class="section-head"><h2>Skills</h2><p>How-tos your Machine follows. Write your own or get them from others. <a class="learn" href="https://themachine.computer/help/skills" target="_blank" rel="noopener">Learn more</a></p></div
 ><div class="skills-find" id="skills-find" hidden
 ><input id="skills-filter" type="search" placeholder="Find a skill" aria-label="Find a skill"></div
@@ -2417,9 +2444,9 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><div class="sec-fleets fine" id="sec-fleets"></div></div
 ><div id="settings-lookups" hidden><div class="section-head"><h2>Graph</h2></div><div class="list settings-list"><div><span class="grow"><strong>Look up work contacts</strong><small>Job title, photo and location of people with a company address. <a class="learn" href="https://themachine.computer/help/graph#job-title-and-photo" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="lookup-people" class="lookup-switch" role="switch" aria-checked="true" aria-label="Look up work contacts"></button></div></div></div
-><div id="settings-share" hidden><div class="section-head"><h2>The Machine team</h2></div><div class="list settings-list"><div><span class="grow"><strong>Offer to share learnings</strong><small>Now and then I ask before sending a few general tips. Nothing personal. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></small></span
-><button type="button" id="share-offer" class="lookup-switch" role="switch" aria-checked="true" aria-label="Offer to share learnings"></button></div><div class="share-vote-row"><span class="grow"><strong>Vote on tips from other Machines</strong><small>Now and then I check if another Machine’s tip would help you, and send back only a vote. <a class="learn" href="https://themachine.computer/help/share-learnings#voting" target="_blank" rel="noopener">Learn more</a></small
-><span class="seg share-vote-seg" id="share-vote" role="radiogroup" aria-label="Vote on tips from other Machines"><label><input type="radio" name="share-vote" value="on" checked><span>On</span></label><label><input type="radio" name="share-vote" value="ask"><span>Ask first</span></label><label><input type="radio" name="share-vote" value="off"><span>Off</span></label></span
+><div id="settings-share" hidden><div class="section-head"><h2>The Machine team</h2></div><div class="list settings-list"><div><span class="grow"><strong>Offer to share learnings</strong><small>Now and then I ask before sending a few general learnings. Nothing personal. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></small></span
+><button type="button" id="share-offer" class="lookup-switch" role="switch" aria-checked="true" aria-label="Offer to share learnings"></button></div><div class="share-vote-row"><span class="grow"><strong>Vote on learnings from other Machines</strong><small>Now and then I check if another Machine’s learning would help you, and send back only a vote. <a class="learn" href="https://themachine.computer/help/share-learnings#voting" target="_blank" rel="noopener">Learn more</a></small
+><span class="seg share-vote-seg" id="share-vote" role="radiogroup" aria-label="Vote on learnings from other Machines"><label><input type="radio" name="share-vote" value="on" checked><span>On</span></label><label><input type="radio" name="share-vote" value="ask"><span>Ask first</span></label><label><input type="radio" name="share-vote" value="off"><span>Off</span></label></span
 ><small id="share-vote-note"></small></span></div><div><span class="grow"><strong>Share what Help is asked</strong><small>Only the topic of each question, like “snooze a to-do”. Never your words. <a class="learn" href="https://themachine.computer/help/help-chat#what-the-team-sees" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="share-help" class="lookup-switch" role="switch" aria-checked="true" aria-label="Share what Help is asked"></button></div><div><span class="grow"><strong>Send error reports</strong><small>When something breaks, I send what failed and where in the code. Never your messages, names or addresses. <a class="learn" href="https://themachine.computer/help/error-reports" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="share-errors" class="lookup-switch" role="switch" aria-checked="true" aria-label="Send error reports"></button></div></div></div
@@ -2433,11 +2460,6 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><button type="button" id="theme-toggle" class="theme-toggle" role="switch" aria-checked="false" aria-label="Light mode" title="Switch theme"><span class="track-icon moon"><svg class="" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/><path fill="currentColor" d="M17 3.2l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/></svg></span><span class="track-icon sun"><svg class="" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.5v1.8M12 19.7v1.8M2.5 12h1.8M19.7 12h1.8M5.3 5.3l1.3 1.3M17.4 17.4l1.3 1.3M5.3 18.7l1.3-1.3M17.4 6.6l1.3-1.3"/></g></svg></span><span class="knob"><svg class="k-moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z"/><path fill="currentColor" d="M17 3.2l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/></svg><svg class="k-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.5v1.8M12 19.7v1.8M2.5 12h1.8M19.7 12h1.8M5.3 5.3l1.3 1.3M17.4 17.4l1.3 1.3M5.3 18.7l1.3-1.3M17.4 6.6l1.3-1.3"/></g></svg></span></button></div><div><span class="grow"><strong>Phone notifications</strong><small>One per to-do, even without Telegram. On a phone, add The Machine to your home screen and open it there first.</small></span
 ><button type="button" id="push-toggle" class="push-toggle" aria-pressed="false" aria-label="Phone notifications" title="Turn on phone notifications" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="bell" d="M12 3.2a5.6 5.6 0 0 0-5.6 5.6v3.3c0 .9-.3 1.8-.9 2.5l-1 1.2c-.5.6-.1 1.5.7 1.5h13.6c.8 0 1.2-.9.7-1.5l-1-1.2a3.9 3.9 0 0 1-.9-2.5V8.8A5.6 5.6 0 0 0 12 3.2z"/><path class="clapper" d="M9.7 19.4a2.4 2.4 0 0 0 4.6 0"/><path class="slash" d="M4 4l16 16"/></svg></button></div></div
 ><p id="settings-browser" class="settings-browser" hidden><a class="head-link" target="_blank" rel="noopener">Open the Machine’s browser ↗</a></p
-><form id="agents-settings" hidden novalidate><div class="section-head"><h2>Coding agents</h2><p>Where Hand to Claude Code and Hand to Codex send a to-do.</p></div
-><p class="fine" id="agents-codex-where" hidden></p><div class="hours-grid agents-grid"><label class="wide">Claude Code session<input id="agents-session" placeholder="https://claude.ai/code/session_…" autocomplete="off"></label><label class="wide">Codex cloud environment<input id="agents-env" maxlength="80" placeholder="Environment id" autocomplete="off"></label><label>Runs on<input id="agents-device" maxlength="60" placeholder="Laptop" autocomplete="off"></label><label><span>Branch <small>(optional)</small></span
-><input id="agents-branch" maxlength="120" placeholder="main" autocomplete="off"></label></div><p class="fine">Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector: <code id="agents-connector"></code> <a class="learn" href="https://themachine.computer/help/hand-to-agent#set-it-up" target="_blank" rel="noopener">Learn more</a></p
-><p id="agents-error" role="status"></p><div class="actions"
-><button id="agents-save" class="primary">Save</button></div></form
 ><div id="settings-fleet" hidden><div class="section-head"><h2>Fleet</h2></div><div class="list settings-list"><div><span class="grow">What your Machine answers each teammate.</span
 ><button type="button" class="ghost" id="settings-fleet-rules">Fleet rules</button></div
 ><div id="settings-shared-row" hidden><span class="grow">What goes to your team, and what stays with you.</span
@@ -2929,9 +2951,14 @@ return `<div class="draft${sent?' sent':''}${fold&&!open?' clamp':''}" role="gro
 const SECONDARY={pending:['snooze','reject','complete','accept','change','handoff'],snoozed:['accept','snooze','reject']};
 // Already handled (a later message, or the teammate's own Machine): nothing to hand on.
 // Who an open to-do is about (the one waited on first): a chip that opens their page in the Graph.
+// The to-do's pills (status, Work or Personal, who, their organization, the project) are one size; who, organization
+// and project each start with the Graph's own icon for it, drawn the same way
+const CHIP_ICON={person:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c.8-3.4 3.4-5.2 6.5-5.2s5.7 1.8 6.5 5.2"/></svg>',
+ org:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20V5.5h8V20M14 9.5h4V20M4 20h16M9 9h2M9 12.5h2M9 16h2"/></svg>',
+ project:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/></svg>'};
 const whoChip=s=>{const p=(s.people||[])[0];if(!p?.id||!p.name)return '';let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  const waited=s.handoff_wait?.name||w.name,first=waited&&(s.people||[]).find(x=>x.name===waited)||p;
- const short=String(first.name).split(' ')[0];return `<a class="chip scope who" href="${esc(graphHash(first.id))}" title="Open ${esc(first.name)}" aria-label="Open ${esc(first.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6z" fill="currentColor"/></svg><span class="who-full">${esc(first.name)}</span>${short!==first.name?`<span class="who-short">${esc(short)}</span>`:''}</a>${first.org?.id&&first.org.name&&first.org.name!==first.name?`<a class="chip scope who org" href="${esc(graphHash(first.org.id))}" title="Open ${esc(first.org.name)}" aria-label="Open ${esc(first.org.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V4h10v17M14 9h6v12M2 21h20M8 8h2M8 12h2M8 16h2" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>${esc(first.org.name)}</span></a>`:''}`};
+ const short=String(first.name).split(' ')[0];return `<a class="chip scope who" href="${esc(graphHash(first.id))}" title="Open ${esc(first.name)}" aria-label="Open ${esc(first.name)}">${CHIP_ICON.person}<span class="who-full">${esc(first.name)}</span>${short!==first.name?`<span class="who-short">${esc(short)}</span>`:''}</a>${first.org?.id&&first.org.name&&first.org.name!==first.name?`<a class="chip scope who org" href="${esc(graphHash(first.org.id))}" title="Open ${esc(first.org.name)}" aria-label="Open ${esc(first.org.name)}">${CHIP_ICON.org}<span>${esc(first.org.name)}</span></a>`:''}`};
 // A to-do a teammate has now: Take it back makes it yours again; Hand off to someone else gives it to another one
 // (and takes it back from them, see handoffEditor). Both sit in sight, beside the to-do's own buttons.
 const canReassign=s=>!closed(s)&&!s.handled_hint&&!!state?.fleet?.on&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!handingOff.has(s.id)&&!redirect(s);
@@ -2992,7 +3019,7 @@ const ownerStep=s=>!!s.owner_step&&!closed(s)&&s.status!=='snoozed';
 const ownerStepChoices=choices=>[['complete','Done'],...choices.filter(([c])=>c!=='complete').map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
-const projectChip=s=>s.project_node?`<span class="chip project-chip"><a href="${graphHash(s.project_node.node_id)}" title="Project">${esc(s.project_node.name)}</a><button type="button" class="project-pick" data-card-project="${esc(s.id)}" aria-label="Change project" title="Change project">▾</button></span>`:'';
+const projectChip=s=>s.project_node?`<span class="chip project-chip"><a href="${graphHash(s.project_node.node_id)}" title="Project">${CHIP_ICON.project}<span>${esc(s.project_node.name)}</span></a><button type="button" class="project-pick" data-card-project="${esc(s.id)}" aria-label="Change project" title="Change project"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button></span>`:'';
 async function cardProjectPick(id,anchor){let names=[];try{const r=await request('api/graph?view=projects');names=r.projects||[]}catch{}
  const s=(state.suggestions||[]).find(x=>x.id===id)||{},cur=s.project_node?.node_id||'';document.querySelector('.project-picker')?.remove();
  const box=document.createElement('div');box.className='project-picker';box.setAttribute('role','dialog');box.setAttribute('aria-label','Project for this to-do');
@@ -3092,7 +3119,7 @@ function zones(){try{return Intl.supportedValuesOf('timeZone')}catch(e){return[]
 // Each part of Settings goes to a tab by its id; a part without one goes with the part before it (a heading with what
 // follows it). A tab with nothing to show is left out. Links: #settings, #settings/skills (or #settings=skills); the last tab is kept.
 const SETTINGS_TABS=[['account','Account'],['general','General'],['security','Security'],['notify','Notifications'],['writing','Writing'],['skills','Skills'],['model','Model']];
-const SETTINGS_OF={'settings-notify':'notify','settings-acct':'account','settings-addresses':'account',hours:'notify','settings-signatures':'writing','settings-voices':'writing','settings-skills':'skills','settings-model':'model','agents-settings':'general','settings-browser':'general','settings-fleet':'general','settings-account-block':'general','settings-locale':'general','settings-security':'security','settings-lookups':'security','settings-share':'security'};
+const SETTINGS_OF={'settings-notify':'notify','settings-acct':'account','settings-addresses':'account',hours:'notify','settings-signatures':'writing','settings-voices':'writing','settings-skills':'skills','settings-model':'model','agents-settings':'model','settings-browser':'general','settings-fleet':'general','settings-account-block':'general','settings-locale':'general','settings-security':'security','settings-lookups':'security','settings-share':'security'};
 let settingsTab=localStorage.getItem('settings-tab')||'account',settingsNow='';
 {const bar=document.createElement('div');bar.className='sub-tabs';bar.id='settings-tabs';bar.setAttribute('role','tablist');bar.setAttribute('aria-label','Settings');
  bar.innerHTML=SETTINGS_TABS.map(([id,label])=>`<button type="button" role="tab" data-settings-tab="${id}" aria-selected="false">${label}</button>`).join('');
@@ -3174,14 +3201,21 @@ $('#settings-locale').addEventListener('change',async e=>{const el=e.target;if(!
  const args=el.id==='locale-language'?{language:el.value}:el.id==='locale-region'?{locale:(l.language||'en').split('-')[0]+'-'+el.value}:{clock:el.value};el.disabled=true;
  try{state.locale=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_locale',args})});await i18nLoad(state.locale.language);DL=state.locale.date_locale||DL;H12=!!state.locale.hour12;i18nRerender();notice(t('Saved.'))}
  catch(err){notice(err.message);renderLocale()}finally{el.disabled=!state.locale?.saveable}});
-// Coding agents (agent_remote.py): the Claude Code session a card goes to and the Codex cloud environment.
+// Codex and Claude Code (Settings, Model; agent_remote.py): where Hand to Codex and Hand to Claude Code send a to-do.
+// Only what this Machine needs is asked: Codex on the owner's computer is one line (chosen on the setup page); Codex
+// cloud asks its environment ID, and its branch once that is in; Claude Code asks a session link, and once one is in,
+// the connector that brings Claude's result back. Runs on (agents.claude.device) is kept as it was.
 function renderAgents(){const f=$('#agents-settings'),a=state.agents_settings;f.hidden=!a;if(!a||agentsDirty)return;
- const cw=$('#agents-codex-where'),onDevice=a.codex_where==='device';cw.hidden=!onDevice;$('#agents-env').closest('label').hidden=onDevice;$('#agents-branch').closest('label').hidden=onDevice;
- if(onDevice)cw.innerHTML=esc(t('Codex runs on {}, with the Codex signed in there.',a.codex_device))+(a.codex_setup?` <a class="learn" href="${esc(a.codex_setup)}" target="_blank" rel="noopener">${esc(t('Change'))}</a>`:'');
- $('#agents-session').value=a.claude_session?'https://claude.ai/code/'+a.claude_session:'';$('#agents-device').value=a.device;$('#agents-env').value=a.codex_env;$('#agents-branch').value=a.codex_branch;$('#agents-connector').textContent=a.connector;
- for(const el of f.querySelectorAll('input,button'))el.disabled=!a.saveable;$('#agents-error').textContent=a.saveable?(a.on_network?'':'Claude results need The Machine Network.'):'Change these in config.json (agents) on this computer.'}
-let agentsDirty=false;$('#agents-settings').addEventListener('input',()=>{agentsDirty=true});
-$('#agents-settings').addEventListener('submit',async e=>{e.preventDefault();const args={claude_session:$('#agents-session').value.trim(),device:$('#agents-device').value.trim(),codex_env:$('#agents-env').value.trim(),codex_branch:$('#agents-branch').value.trim()};
+ const onDevice=a.codex_where==='device',ch=$('#agents-codex-change');
+ $('#agents-codex-row').hidden=!onDevice;$('#agents-env-row').hidden=onDevice;$('#agents-branch-row').hidden=onDevice||!a.codex_env;
+ $('#agents-codex-where').textContent=onDevice?t('Runs on {}, with the Codex signed in there.',a.codex_device):'';
+ ch.hidden=!(onDevice&&a.codex_setup);if(a.codex_setup)ch.href=a.codex_setup;
+ $('#agents-session').value=a.claude_session?'https://claude.ai/code/'+a.claude_session:'';$('#agents-env').value=a.codex_env;$('#agents-branch').value=a.codex_branch;
+ $('#agents-connector').textContent=a.connector;$('#agents-connector-note').hidden=!a.claude_session;$('#agents-actions').hidden=true;
+ for(const el of f.querySelectorAll('input,button'))el.disabled=!a.saveable;
+ $('#agents-error').textContent=a.saveable?(a.claude_session&&!a.on_network?'Claude results need The Machine Network.':''):'Change these in config.json (agents) on this computer.'}
+let agentsDirty=false;$('#agents-settings').addEventListener('input',()=>{agentsDirty=true;$('#agents-actions').hidden=false;$('#agents-error').textContent=''});
+$('#agents-settings').addEventListener('submit',async e=>{e.preventDefault();const a=state.agents_settings||{},args={claude_session:$('#agents-session').value.trim(),device:a.device||'',codex_env:$('#agents-env').value.trim(),codex_branch:$('#agents-branch').value.trim()};
  try{$('#agents-save').disabled=true;state.agents_settings=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_agents',args})});
   agentsDirty=false;renderAgents();notice('Saved.')}catch(err){$('#agents-error').textContent=err.message}finally{$('#agents-save').disabled=!state.agents_settings?.saveable}});
 // How you write: a few short lines per channel (All: everywhere), learned from your own messages, notes and edits.
@@ -3309,7 +3343,7 @@ function renderShare(force){const a=state.team_learnings?.ask,box=$('#share-lear
  const key=[a.id,shareOpen,Object.keys(shareDraft.items).filter(k=>shareDraft.items[k].removed).join(','),Object.entries(shareDraft.items).map(([n,d])=>n+':'+Object.keys(d.cases||{}).filter(k=>d.cases[k].removed).join('.')).join(','),a.error||''].join('|');
  if(key===shareKey&&!force)return;shareKey=key;
  const n=a.items.length,kept=shareKept(a).length;
- const head=`<div class="notice-card share-ask" role="region" aria-label="Share learnings"><span><strong>Share ${n===1?'a learning':n+' learnings'} with The Machine team?</strong> General tips from how you use it. You choose what to share.</span>${shareOpen?'':'<div class="share-ask-acts"><button type="button" class="head-link" data-share="open">Review</button><button type="button" class="quiet" data-share="later">Not now</button></div>'}</div>`;
+ const head=`<div class="notice-card share-ask" role="region" aria-label="Share learnings"><span><strong>Share ${n===1?'a learning':n+' learnings'} with The Machine team?</strong> General learnings from how you use it. You choose what to share.</span>${shareOpen?'':'<div class="share-ask-acts"><button type="button" class="head-link" data-share="open">Review</button><button type="button" class="quiet" data-share="later">Not now</button></div>'}</div>`;
  if(!shareOpen){box.innerHTML=head;return}
  const item=i=>{const d=shareDraft.items[i.n]||{};
   if(d.removed)return `<li class="share-item removed" data-n="${i.n}"><span>Removed. It won’t be sent.</span><button type="button" class="quiet" data-share-undo>Undo</button></li>`;
@@ -3320,7 +3354,7 @@ function renderShare(force){const a=state.team_learnings?.ask,box=$('#share-lear
    +`<div class="share-foot">${i.taken?`<small>${esc(i.taken)}</small>`:''}<button type="button" class="quiet" data-share-remove>Remove</button></div></li>`};
  box.innerHTML=head+`<div class="share-panel" role="region" aria-label="What would be sent"><p class="fine">This is exactly what would be sent. Edit or remove anything.</p><ol class="share-items">${a.items.map(item).join('')}</ol>`
   +`<label class="share-named"><input type="checkbox" id="share-named"${shareDraft.named?' checked':''}> Add my email so the team can reply</label>`
-  +'<p class="fine">Sealed for the team. Without your email it comes from a made-up name. Other Machines may vote on a tip, without knowing who sent it. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></p>'
+  +'<p class="fine">Sealed for the team. Without your email it comes from a made-up name. Other Machines may vote on a learning, without knowing who sent it. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></p>'
   +(a.error?'<p class="share-error" role="status">Delivery isn’t confirmed yet. Try again to confirm the same items, without duplicates.</p>':'')
   +`<div class="actions"><button type="button" class="primary" data-share="send"${kept?'':' disabled'}>Send ${shareCount(kept)}</button><button type="button" class="ghost" data-share="later">Not now</button><button type="button" class="quiet" data-share="never">Never ask</button></div></div>`}
 $('#share-learnings').addEventListener('input',e=>{const li=e.target.closest('.share-item'),a=state.team_learnings?.ask;if(!li||!a)return;const d=shareDraft.items[li.dataset.n]??={};
@@ -3344,10 +3378,10 @@ $('#share-learnings').addEventListener('click',async e=>{const a=state.team_lear
 function renderShareOffer(){const t=state.team_learnings;$('#settings-share').hidden=!t?.network;$('#share-offer').setAttribute('aria-checked',String(!!t?.offer));const vm=t?.vote_mode||(t?.vote===false?'off':'on');for(const r of document.querySelectorAll('#share-vote input'))r.checked=r.value===vm;$('#share-vote-note').textContent=vm==='ask'?'Each vote waits for you on the Feedback page.':'';$('#share-help').setAttribute('aria-checked',String(t?.help_topics!==false));$('#share-errors').setAttribute('aria-checked',String(t?.errors!==false))}
 $('#share-help').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_help_topics',{on});state.team_learnings=r.team_learnings;renderShareOffer();secLocal('help_topics',on?'on':'off');notice(on?'Help topics go to the team, never your words.':'Help topics won’t go to the team.')}catch(err){notice(err.message)}finally{b.disabled=false}};
-// Vote on tips from other Machines: On (votes by itself), Ask first (each vote waits on the Feedback page) or Off.
+// Vote on learnings from other Machines: On (votes by itself), Ask first (each vote waits on the Feedback page) or Off.
 $('#share-vote').addEventListener('change',async e=>{const mode=e.target.value,all=document.querySelectorAll('#share-vote input');for(const r of all)r.disabled=true;
  try{const r=await sharePost('set_learnings_vote',{mode});state.team_learnings=r.team_learnings;renderShareOffer();renderVotes(true);
-  notice(mode==='on'?'I’ll vote on tips from other Machines.':mode==='ask'?'I’ll ask you before each vote goes.':'I won’t vote on tips from other Machines.')}
+  notice(mode==='on'?'I’ll vote on learnings from other Machines.':mode==='ask'?'I’ll ask you before each vote goes.':'I won’t vote on learnings from other Machines.')}
  catch(err){notice(err.message);renderShareOffer()}finally{for(const r of all)r.disabled=false}});
 // Feedback, under Ask first: the votes waiting for the owner, in one quiet box (never a to-do each, never a notification).
 // Review shows each tip and the vote as it would go; Send or Skip one, or all at once.
@@ -3355,7 +3389,7 @@ let votesOpen=false,votesKey='';const VOTE_LABEL={useful:'Useful',not_useful:'No
 function renderVotes(force){const tl=state.team_learnings,box=$('#share-votes');if(!box)return;const list=tl?.vote_mode==='ask'?tl.votes_waiting||[]:[];
  if(!list.length){box.innerHTML='';votesKey='';votesOpen=false;return}
  const key=votesOpen+'|'+list.map(v=>v.id).join(',');if(key===votesKey&&!force)return;votesKey=key;
- const n=list.length,head=`<div class="notice-card share-ask" role="region" aria-label="Votes on tips from other Machines"><span><strong>${esc(t(['{} vote waits for you','{} votes wait for you'],n))}</strong> ${esc(t('Tips from other Machines, and how I’d vote for you.'))}</span>${votesOpen?'':`<div class="share-ask-acts"><button type="button" class="head-link" data-votes="open">${esc(t('Review'))}</button></div>`}</div>`;
+ const n=list.length,head=`<div class="notice-card share-ask" role="region" aria-label="Votes on learnings from other Machines"><span><strong>${esc(t(['{} vote waits for you','{} votes wait for you'],n))}</strong> ${esc(t('Learnings from other Machines, and how I’d vote for you.'))}</span>${votesOpen?'':`<div class="share-ask-acts"><button type="button" class="head-link" data-votes="open">${esc(t('Review'))}</button></div>`}</div>`;
  if(!votesOpen){box.innerHTML=head;return}
  const item=v=>`<li class="share-item vote-item" data-id="${esc(v.id)}"><p class="vote-tip">${esc(v.text)}</p>${v.example?`<p class="fine vote-ex">${esc(v.example)}</p>`:''}`
   +`<p class="vote-is"><span class="share-lbl">${esc(t('My vote'))}</span> <strong>${esc(t(VOTE_LABEL[v.vote]||v.vote))}</strong>${v.reason?` · ${esc(v.reason)}`:''}</p>`
@@ -4020,7 +4054,12 @@ let pokes=0,pokeLine='',pokeAwake=false,pokeTimer;
 const PLAY_AFTER=POKES.length,PLAY_BUTTON='<button class="play" type="button">▶ Play a mini game <small>Catch the Zzz · 20s</small></button>';
 function poke(){if(pokes<POKES.length)pokeLine=POKES[pokes];else{let next;do next=POKE_MORE[Math.floor(Math.random()*POKE_MORE.length)];while(next===pokeLine);pokeLine=next}pokes++;pokeAwake=true;localStorage.setItem('pokes-total',(+localStorage.getItem('pokes-total')||0)+1);$('#suggestions .poke-hint')?.remove();if(pokes>=PLAY_AFTER&&!$('#suggestions .all-clear .play'))$('#suggestions .all-clear')?.insertAdjacentHTML('beforeend',PLAY_BUTTON);
 const img=$('#suggestions .all-clear img.sleepy'),line=$('#suggestions .poke-line');if(line)line.textContent=pokeLine;if(img){img.src='brand/wave.webp';img.classList.remove('wobble');void img.offsetWidth;img.classList.add('wobble')}
-clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';const i=$('#suggestions .all-clear img.sleepy'),l=$('#suggestions .poke-line');if(i)i.src='brand/sleepy.webp';if(l)l.textContent='I’ll add something when it’s useful.'},6000)}
+clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';const i=$('#suggestions .all-clear img.sleepy'),l=$('#suggestions .poke-line');if(i)i.src='brand/sleepy.webp';if(l)l.textContent=clearLine()},6000)}
+// All clear says what was read and what's next, so an empty list reads as quiet, not stuck: a quiet mailbox has little to do
+function clearLine(){const rh=state?.review_health||{},pend=rh.pending||0,read=(rh.total||0)-pend;
+ if(!rh.last_completed||read<1)return t('I’ll add something when it’s useful.');
+ return t(['Read {} signal so far, the last review {}.','Read {} signals so far, the last review {}.'],read.toLocaleString(DL),ago(rh.last_completed))+' '
+  +(pend?t(['{} more waits for the next one.','{} more wait for the next one.'],pend.toLocaleString(DL)):t('I’ll add something when it’s useful.'))}
 // Until the first poke, the robot sometimes mumbles a hint, so people find out they can;
 // not on a fresh install, where "all clear" only means nothing has come in yet. Once you've poked
 // three times (counted on this device), it hints at most once a week.
@@ -4253,7 +4292,7 @@ $('#badge-inbox').textContent=(outstanding.length+(fleetData?fleetCards.length:s
 if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)))}catch{}
 const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestions').toggleAttribute('aria-busy',loading);
 const foldsBack=foldsKeep($('#suggestions'));
-if(!chatOpen())$('#suggestions').innerHTML=scopeNote(!outstanding.length&&!fleetCards.length&&!loading)+(outstanding.length||fleetCards.length?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||'I’ll add something when it’s useful.')}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+[[ready,'Ready for you','ready'],[needs,'Needs your decision','needs'],[preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
+if(!chatOpen())$('#suggestions').innerHTML=scopeNote(!outstanding.length&&!fleetCards.length&&!loading)+(outstanding.length||fleetCards.length?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+[[ready,'Ready for you','ready'],[needs,'Needs your decision','needs'],[preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes.
 +(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary><span>Done / dismissed</span><span class="count">${doneTotal}</span></summary>${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
 sideCounts={ready:ready.length,needs:needs.length,preparing:preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[ready,'Ready','ready'],[needs.filter(x=>typeof x!=='string'),'To decide','needs'],[preparing,'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]);
@@ -5266,8 +5305,10 @@ function calHead(){const step=calStepName(),[prev,next]=step==='month'?[t('Previ
 const calHash=()=>'#calendar?view='+calMode+'&date='+localDay(calMode==='month'?calMonth:calThree()?calStart:calAt);
 function calPush(replace){const h=calHash();if(location.hash===h)return;history[replace?'replaceState':'pushState'](null,'',location.pathname+location.search+h)}
 const calName=k=>{const t=localDay(new Date());return k===t?'Today':k===localDay(calDay(1))?'Tomorrow':k===localDay(calDay(-1))?'Yesterday':calOf(k).toLocaleDateString(DL,{weekday:'long'})};
-const calMoreRow=dir=>{const end=dir==='up'?calFrom<=calAdd(calMonday(new Date()),-7*CAL_BACK):calTo>=calAdd(calMonday(new Date()),7*CAL_AHEAD);if(end)return '';
- return `<div class="cal-more" data-cal-more="${dir}"><button type="button" class="quiet">${calMoreFailed[dir]?'Couldn’t load. Try again':dir==='up'?'Show earlier days':'Later days'}</button></div>`};
+// A manual one (under "A clear week") loads only on a tap: loading by itself there found nothing again and again, and
+// the button flashed between Loading and Later days
+const calMoreRow=(dir,manual)=>{const end=dir==='up'?calFrom<=calAdd(calMonday(new Date()),-7*CAL_BACK):calTo>=calAdd(calMonday(new Date()),7*CAL_AHEAD);if(end)return '';
+ return `<div class="cal-more" data-cal-more="${dir}"${manual?' data-cal-manual':''}><button type="button" class="quiet">${calMoreFailed[dir]?'Couldn’t load. Try again':dir==='up'?'Show earlier days':'Later days'}</button></div>`};
 // The sticky header's bottom edge: rows under it are out of sight
 const calEdge=()=>{const h=$('#page-head');return h&&!h.hidden?Math.max(0,h.getBoundingClientRect().bottom):0};
 function calAnchor(box){const edge=calEdge();for(const el of box.querySelectorAll('.cal-block[data-day]')){const r=el.getBoundingClientRect();if(r.bottom>edge)return {day:el.dataset.day,top:r.top}}return null}
@@ -5318,14 +5359,17 @@ function calMonthGrid(days,byDay,today){const m=calMonth.getMonth(),phone=!DESK.
 function calRender(){const box=$('#calendar-view');if(!box||!state)return;const list=calList(),[from,to]=calRange(),{days,items}=calItems(from,to),byDay=k=>items.filter(i=>i.day===k),late=byDay('overdue'),today=localDay(new Date());
  $('#calendar').classList.toggle('week',!list);
  const cals=(state.connectors||[]).some(c=>['calendar','outlook_calendar'].includes(c.service)),failed=calFailedIn(from,to);
- const note=failed?'<p class="cal-note">Meetings couldn’t load. To-dos and promises are here.</p>':!cals?'<p class="cal-note">No calendar connected, so no meetings yet. <a href="#connections">Connections</a></p>':'';
+ // No calendar yet: a button that connects one (Connections, + Add, at Google or Outlook Calendar, by the mail connected)
+ const connect=cls=>`<button type="button" class="${cls}" data-connect-open="${(state.connectors||[]).some(c=>c.service==='outlook')?'outlook_calendar':'calendar'}">${esc(t('Connect your calendar'))}</button>`;
+ const note=failed?'<p class="cal-note">Meetings couldn’t load. To-dos and promises are here.</p>':!cals?`<p class="cal-note cal-connect"><span>No calendar connected, so no meetings yet.</span>${connect('ghost')}</p>`:'';
  const lateBlock=late.length?`<section class="cal-block late" aria-label="Overdue"><h3 class="cal-day"><span>Overdue</span><span class="count">${late.length}</span></h3>${late.map(calRow).join('')}</section>`:'';
  let html='';
  if(calMode==='month')html=lateBlock+calMonthGrid(days,byDay,today);
  else if(!list)html=lateBlock+calTimeGrid(days,byDay,today);
- else if(!items.length&&calMeetings&&!failed)html=`<div class="all-clear cal-clear"><img src="brand/avatar.png" alt="" width="64" height="64"><div><strong>A clear week</strong><span>Meetings, due to-dos and promises show here.</span></div></div>`+calMoreRow('down');
+ else if(!items.length&&!cals&&!failed)html=`<div class="all-clear cal-clear"><img src="brand/avatar.png" alt="" width="64" height="64"><div><strong>No calendar yet</strong><span>Connect one to see your meetings here, with due to-dos and promises.</span></div>${connect('primary')}</div>`;
+ else if(!items.length&&calMeetings&&!failed)html=`<div class="all-clear cal-clear"><img src="brand/avatar.png" alt="" width="64" height="64"><div><strong>A clear week</strong><span>Meetings, due to-dos and promises show here.</span></div></div>`+calMoreRow('down',true);
  else html=calMoreRow('up')+days.map((k,i)=>(i&&calOf(k).getDay()===1?`<p class="cal-wk">${esc(calSpan(calOf(k)))}</p>`:'')+calDayBlock(k,byDay(k),lateBlock,today)).join('')+calMoreRow('down');
- html+=note;if(!calMeetings&&!items.length)html='<p class="cal-note">Loading…</p>';
+ if(!(list&&!items.length&&!cals))html+=note;if(!calMeetings&&!items.length&&cals)html='<p class="cal-note">Loading…</p>';
  // Earlier days coming in above, or a week's meetings arriving, never move what is on screen; the time grid keeps its hour
  const keep=list&&!$('#calendar').hidden?calAnchor(box):null,pane=box.querySelector('.cal-tg-scroll'),hash=calHash(),y=pane&&calGridShown===hash?pane.scrollTop:null;
  if(box.innerHTML!==html){box.innerHTML=html;if(keep){const el=box.querySelector(`[data-day="${keep.day}"]`),d=el?el.getBoundingClientRect().top-keep.top:0;if(Math.abs(d)>.5)scrollBy(0,d)}calObserve(box)}
@@ -5354,7 +5398,7 @@ async function calMore(dir){if(calBusy)return calBusy;const up=dir==='up',a=up?c
  if(!calMoreRow(dir))return;const btn=$(`#calendar-view [data-cal-more="${dir}"] button`);if(btn){btn.disabled=true;btn.textContent='Loading…'}
  calBusy=(async()=>{await Promise.all(calMondays(a,b).map(d=>calFetchWeek(d)));calMoreFailed[dir]=calFailedIn(a,b);if(!calMoreFailed[dir]){if(up)calFrom=a;else calTo=b}calRender()})().finally(()=>{calBusy=null});return calBusy}
 const calIO=window.IntersectionObserver?new IntersectionObserver(es=>{for(const e of es){const dir=e.target.dataset.calMore;if(!e.isIntersecting||calMoreFailed[dir]||dir==='up'&&!calUp)continue;calMore(dir)}},{rootMargin:'300px 0px'}):null;
-function calObserve(box){if(!calIO)return;calIO.disconnect();box.querySelectorAll('[data-cal-more]').forEach(el=>calIO.observe(el))}
+function calObserve(box){if(!calIO)return;calIO.disconnect();box.querySelectorAll('[data-cal-more]:not([data-cal-manual])').forEach(el=>calIO.observe(el))}
 const calUpSeen=()=>{const el=$('#calendar-view [data-cal-more="up"]');return el&&el.getBoundingClientRect().bottom>-300};
 // Which way the agenda moves, and its week in the header and the address as it scrolls
 let calScrollTick=0,calUrlTimer=0;
@@ -5433,13 +5477,19 @@ function calView(m){const a=new Date(m.start),b0=new Date(m.end),b=isNaN(b0)||b0
   ...(m.guests&&!(m.with||m.people)?.length?[['With',t(['{} guest','{} guests'],m.guests)]]:[])];
  // With: the name (from the invite or the Graph) with its address muted beside it, or the address alone
  const met=(m.with||(m.people||[]).map(p=>p.includes('@')?{name:'',email:p}:{name:p,email:''})).slice(0,6),more=Math.max(m.guests||0,(m.with||m.people||[]).length)-met.length;
- const withHtml=met.map(w=>`<span class="cal-v-who"${w.email?` title="${esc(w.email)}"`:''}>${w.name?esc(w.name)+(w.email?` <span class="cal-v-mail">${esc(w.email)}</span>`:''):esc(w.email)}</span>`).join('')
+ // A guest the Graph knows opens their page; the organizations and projects it's on open theirs
+ const withHtml=met.map(w=>{const label=w.name?esc(w.name)+(w.email?` <span class="cal-v-mail">${esc(w.email)}</span>`:''):esc(w.email);
+   return w.node_id?`<span class="cal-v-who cal-v-known"><a class="chip scope who" href="${esc(graphHash(w.node_id))}"${w.email?` title="${esc(w.email)}"`:''}>${CHIP_ICON.person}<span>${esc(w.name||w.email)}</span></a></span>`
+    :`<span class="cal-v-who"${w.email?` title="${esc(w.email)}"`:''}>${label}</span>`}).join('')
   +(more>0?`<span class="cal-v-who cal-v-mail">${esc(t('and {} more',more))}</span>`:'');
  $('#cal-v-title').textContent=m.title||t('(No title)');
- $('#cal-v-rows').innerHTML=rows.map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${esc(v)}</dd></div>`).join('')+(met.length?`<div><dt>${esc(t('With'))}</dt><dd class="cal-v-with">${withHtml}</dd></div>`:'');
+ $('#cal-v-rows').innerHTML=rows.map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${esc(v)}</dd></div>`).join('')+(met.length?`<div><dt>${esc(t('With'))}</dt><dd class="cal-v-with">${withHtml}</dd></div>`:'')
+  +[['Organization','Organizations','org',m.orgs],['Project','Projects','project',m.projects]].filter(r=>r[3]?.length).map(([one,many,icon,list])=>
+   `<div><dt>${esc(t(list.length>1?many:one))}</dt><dd class="cal-v-links">${list.map(n=>`<a class="chip scope who" href="${esc(graphHash(n.node_id))}">${CHIP_ICON[icon]}<span>${esc(n.name)}</span></a>`).join('')}</dd></div>`).join('');
  const open=$('#cal-v-open');open.hidden=!m.url;if(m.url){open.href=m.url;open.textContent=t(calOpenLabel(m.url))}
  $('#cal-view').showModal()}
 for(const b of document.querySelectorAll('#cal-view [data-cal-close]'))b.onclick=()=>$('#cal-view').close();
+$('#cal-v-rows').addEventListener('click',e=>{if(e.target.closest('a[href^="#graph"]'))$('#cal-view').close()});
 function calOpen(el){if(el.dataset.calEdit){calEditor(Number(el.dataset.calEdit));return}const m=(calMeetings||[]).find(x=>x.id===Number(el.dataset.calView));if(m)calView(m)}
 function calEditor(id){const m=id?(calMeetings||[]).find(x=>x.id===id):null;if(id&&!m?.edit)return;
  const sel=$('#cal-f-cal'),mine=m?calCals.filter(c=>c.id===m.account_id):calCals;if(!mine.length){toast('That calendar can’t be changed here.',true);return}
@@ -8272,6 +8322,7 @@ function helpMarkup(){return `<div class="snooze-heading"><h2 id="help-title">He
 <div id="help-bug-pane" hidden><form id="bug-form" novalidate><label>What went wrong?<textarea id="bug-what" rows="4" maxlength="4000"></textarea></label>
 <div class="bug-shot"><button type="button" class="chat-say" id="bug-shot-take" hidden>Take a screenshot</button><button type="button" class="chat-say" id="bug-shot-pick">Attach an image</button><input type="file" id="bug-shot-file" accept="image/png,image/jpeg,image/webp" hidden><img id="bug-shot-img" alt="Screenshot to send" hidden><button type="button" class="chat-say" id="bug-shot-remove" hidden>Remove</button></div>
 <label class="bug-check"><input type="checkbox" id="bug-diag" checked> Include the support report</label><p class="fine">Versions, checks and recent errors. No messages, keys or addresses.</p>
+<div id="bug-sa-row" hidden><label class="bug-check"><input type="checkbox" id="bug-sa"> Let support look for 24 hours</label><p class="fine">Read-only logs and settings, scrubbed like the report. It ends by itself.</p></div>
 <p id="bug-error" role="status"></p><div class="actions"><button class="primary" id="bug-next">Review</button></div><div id="bug-queued" class="bug-sent" hidden></div></form>
 <div id="bug-review" hidden><p class="fine">This is everything that goes to The Machine team. Nothing is sent until you press Send.</p><div class="bug-sent" id="bug-sent"></div><p id="bug-error2" class="fine" role="status"></p><div class="actions"><button type="button" class="primary" id="bug-send">Send</button><button type="button" class="ghost" id="bug-back">Back</button></div></div>
 <div id="bug-done" hidden><p id="bug-done-text">Sent. We’ll answer by email.</p><div class="actions"><button type="button" class="ghost" data-help-close>Close</button></div></div></div>`}
@@ -8348,7 +8399,7 @@ $('#help-q').addEventListener('input',helpGrow);
 $('#help-q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#help-form').requestSubmit()}});
 function bugReset(about){$('#bug-form').hidden=false;$('#bug-review').hidden=$('#bug-done').hidden=true;$('#bug-error').textContent='';
  if(about&&!$('#bug-what').value.trim())$('#bug-what').value=`The dashboard said: “${about}”\n\n`;
- $('#bug-shot-take').hidden=!navigator.mediaDevices?.getDisplayMedia||matchMedia('(pointer:coarse)').matches;bugShotShow();bugQueuedLoad()}
+ $('#bug-shot-take').hidden=!navigator.mediaDevices?.getDisplayMedia||matchMedia('(pointer:coarse)').matches;bugShotShow();bugQueuedLoad();$('#bug-sa').checked=false;bugSaRow();supportAccessLoad(true).then(bugSaRow)}
 function bugShotShow(){const img=$('#bug-shot-img');img.hidden=!bugShot;if(bugShot)img.src=bugShot;else img.removeAttribute('src');$('#bug-shot-remove').hidden=!bugShot}
 async function bugShrink(src){const img=new Image();img.src=src;await img.decode();const k=Math.min(1,1600/img.naturalWidth),c=document.createElement('canvas');  // a JPEG at most 1600 px wide
  c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
@@ -8376,6 +8427,7 @@ $('#bug-form').onsubmit=async e=>{e.preventDefault();const out=$('#bug-error');o
   bugReport=$('#bug-diag').checked?found:null;const p=bugPayload();
   $('#bug-sent').innerHTML=`<h3>What went wrong</h3><p>${esc(p.description)}</p>`+(p.screenshot?`<h3>Screenshot</h3><img src="${esc(p.screenshot)}" alt="The screenshot">`:'')
    +`<h3>Support report</h3>`+(p.report?bugSummary(p.report)+`<details class="bug-all"><summary>Show everything</summary><pre>${esc(JSON.stringify(p.report,null,1))}</pre></details>`:'<p>Not included.</p>')
+   +(bugSaWanted()?`<h3>Support access</h3><p>${esc(t('On for 24 hours once you press Send. Turn it off any time in Settings, Security.'))}</p>`:'')
    +`<p class="fine">${bugHosted()?'Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.':'Your account adds your email address, so we can answer.'}</p>`;
   $('#bug-form').hidden=true;$('#bug-review').hidden=false;$('#bug-send').focus()}
  catch(err){out.textContent=err.message}finally{b.disabled=false;b.textContent='Review'}};
@@ -8402,8 +8454,8 @@ function bugQueuedShow(list){list=[...(list||[]),...bugPage.map(q=>({what:q.body
  el.innerHTML=list?.length?`<h3>Waiting to go out</h3><ul class="bug-parts">${list.map(q=>`<li><span translate="no">${esc(q.what)}</span> · ${esc(t('Goes out at {}',fmtHM(q.next_at*1000)))}</li>`).join('')}</ul>`:''}
 async function bugQueuedLoad(){try{bugQueuedShow((await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_queued',args:{}})})).queued)}catch{bugQueuedShow([])}}
 $('#bug-send').onclick=async()=>{const b=$('#bug-send'),out=$('#bug-error2');b.disabled=true;b.textContent='Sending…';out.textContent='';const body=bugPayload();
- try{const r=bugHosted()?await bugHostedSend(body):await bugAction('bug_send',body);
-  $('#bug-done-text').textContent=r?.queued?t('Saved. It goes out by itself at {}.',fmtHM(r.at*1000)):t('Sent. We’ll answer by email.');
+ try{const r=bugHosted()?await bugHostedSend(body):await bugAction('bug_send',body);const sa=bugSaWanted()&&await supportAccessSet(true).then(()=>saOn(),()=>{toast('Support access didn’t turn on. Report it again with the box ticked.',true);return false});
+  $('#bug-done-text').textContent=(r?.queued?t('Saved. It goes out by itself at {}.',fmtHM(r.at*1000)):t('Sent. We’ll answer by email.'))+(sa?' '+t('Support can look until {}.',fmtDHM(saData.until,{weekday:'short',month:'short',day:'numeric'})):'');
   $('#bug-review').hidden=true;$('#bug-done').hidden=false;$('#bug-what').value='';$('#bug-what').style.height='';bugShot=bugReport=null;bugShotShow();bugQueuedLoad()}
  catch(err){out.textContent=err.message}finally{b.disabled=false;b.textContent='Send'}};
 SETTINGS_OF['settings-support']='security';
@@ -8416,12 +8468,16 @@ const saLocal=allow=>request('api/action',{method:'POST',headers:{'Content-Type'
 async function supportAccessLoad(force){if(!bugHosted()&&!state.fleet){saShown=false;$('#settings-support').hidden=true;return}if(!force&&Date.now()-saAt<30000)return;saAt=Date.now();
  try{if(bugHosted()){const r=await fetch('/_machine/support-access',{credentials:'same-origin',redirect:'manual'});if(!r.ok)throw Error();saData=await r.json()}else saData=await saLocal();saShown=true}
  catch(e){saData={error:true};if(!bugHosted()&&e.status>=400&&e.status<500)saShown=false}supportAccessRender()}
-function supportAccessRender(){const d=saData||{},on=!!d.until&&new Date(d.until)>new Date(),b=$('#sa-toggle');$('#settings-support').hidden=!(bugHosted()||saShown);
+// Support access is given where it's needed, in Report a bug (bugSaRow); Settings shows it only while it's on, to see each look and end it
+const saOn=()=>!!saData?.until&&new Date(saData.until)>new Date(),saCan=()=>(bugHosted()||saShown)&&!saData?.error;
+const bugSaRow=()=>{$('#bug-sa-row').hidden=!saCan()||saOn()},bugSaWanted=()=>!$('#bug-sa-row').hidden&&$('#bug-sa').checked;
+async function supportAccessSet(allow){if(bugHosted()){const r=await fetch('/_machine/support-access',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({allow})});if(!r.ok)throw Error();saData=await r.json()}else saData=await saLocal(allow);saAt=Date.now();supportAccessRender()}
+function supportAccessRender(){const d=saData||{},on=saOn(),b=$('#sa-toggle');$('#settings-support').hidden=!(bugHosted()||saShown)||!on;
  $('#sa-state').textContent=d.error?'Can’t check right now':on?'On until '+fmtDHM(d.until,{weekday:'short',month:'short',day:'numeric'}):'Off';
  $('#sa-note').textContent=on?'Read-only. Turn it off any time.':'Ends by itself after 24 hours.';b.textContent=on?'Turn off':'Allow for 24 hours';b.dataset.on=on?'1':'';b.disabled=!!d.error;
  $('#sa-log').innerHTML=(d.accesses||[]).slice(0,10).map(a=>`<li>${esc(t(a.what))}, ${esc(fmtDHM(a.at,{month:'short',day:'numeric'}))}</li>`).join('')}
 $('#sa-toggle').onclick=async()=>{const b=$('#sa-toggle'),was=!!b.dataset.on;b.disabled=true;
- try{if(bugHosted()){const r=await fetch('/_machine/support-access',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({allow:!was})});if(!r.ok)throw Error();saData=await r.json()}else saData=await saLocal(!was);toast(was?'Support access is off.':'Support access is on for 24 hours.')}
+ try{await supportAccessSet(!was);toast(was?'Support access is off.':'Support access is on for 24 hours.')}
  catch{toast('That didn’t work. Try again.',true)}finally{saAt=Date.now();supportAccessRender()}};
 new MutationObserver(()=>{if(!$('#settings').hidden)supportAccessLoad()}).observe($('#settings'),{attributes:true,attributeFilter:['hidden']});
 </script></html>

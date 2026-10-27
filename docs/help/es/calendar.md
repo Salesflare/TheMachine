@@ -29,7 +29,7 @@ En la cuadrícula, los eventos a la misma hora se colocan uno al lado del otro y
 
 ## Abre algo
 
-Haz clic en una fila para abrir el chat de su tarea, la promesa o la reunión en su propio calendario. Mirar no cambia nada.
+Haz clic en una fila para abrir el chat de su tarea, la promesa o la reunión en su propio calendario. En una reunión, alguien que tu Graph conoce, y las organizaciones y proyectos de los que trata, son enlaces a su página. Mirar no cambia nada.
 
 ## Añade o cambia un evento
 
@@ -41,4 +41,4 @@ Cuando un calendario se puede cambiar desde aquí, **Nuevo evento** añade uno (
 
 Una tarea también puede ofrecer un cambio, como añadir una recogida. Muestra exactamente qué cambia, y solo tu **Añadir**, **Guardar** o **Eliminar** lo hace.
 
-¿Aún no hay reuniones? Conecta [Google Calendar](google-calendar.md) o el [Calendario de Outlook](microsoft.md).
+¿Aún no hay reuniones? Sin calendario, **Conecta tu calendario** abre Conexiones: conecta [Google Calendar](google-calendar.md) o el [Calendario de Outlook](microsoft.md).

@@ -57,6 +57,27 @@ class Calendar(unittest.TestCase):
         self.assertEqual(pilot['with'], [{'name': 'Sam Client', 'email': 'sam@client.example'}, {'name': '', 'email': 'kim@client.example'}])
         self.assertEqual(pilot['people'], ['Sam Client', 'kim@client.example'])
 
+    def test_a_meeting_links_to_its_people_organizations_and_projects_on_the_graph(self):
+        with self.store.connect() as db:
+            pilot_id = db.execute("SELECT id FROM events WHERE title='Pilot review'").fetchone()[0]
+            db.executemany('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,1,0,?)', [
+                ('email:sam@client.example', 'person', 'Sam Client', json.dumps({'identifiers': ['email:sam@client.example', 'slack:U1'], 'org': 'org:client.example'})),
+                ('org:client.example', 'org', 'Client Co', '{}'), ('project:1', 'project', 'Pilot', '{}'), ('project:2', 'project', 'Maybe', '{}'),
+                ('project:3', 'project', 'Rollout', '{}'), ('project:4', 'project', 'Old', json.dumps({'closed_at': '2026-01-01'}))])
+            db.executemany('INSERT INTO projects(id,name,created_at,closed_at) VALUES(?,?,?,?)', [(3, 'Rollout', '2026-10-01', None), (4, 'Old', '2026-01-01', '2026-02-01')])
+            db.executemany("INSERT INTO graph_links(a,b,kind,strength) VALUES('email:sam@client.example',?,'project',1)", [('project:3',), ('project:4',)])
+            db.executemany('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,?,1)', [
+                ('email:sam@client.example', pilot_id, '2026-10-23', 0), ('project:1', pilot_id, '2026-10-23', 0), ('project:2', pilot_id, '2026-10-23', 1),
+                ('project:4', pilot_id, '2026-10-23', 0)])
+        week = self.store.calendar(['cal'], *self.week)
+        pilot = week[1]
+        self.assertEqual(pilot['with'][0], {'name': 'Sam Client', 'email': 'sam@client.example', 'node_id': 'email:sam@client.example'})
+        self.assertNotIn('node_id', pilot['with'][1])  # not on the Graph: no link
+        self.assertEqual(pilot['orgs'], [{'node_id': 'org:client.example', 'name': 'Client Co'}])
+        # on the meeting, then Sam's open one; a guess and a closed project stay out
+        self.assertEqual(pilot['projects'], [{'node_id': 'project:1', 'name': 'Pilot'}, {'node_id': 'project:3', 'name': 'Rollout'}])
+        self.assertNotIn('orgs', week[0])
+
     def test_the_week_is_slim_rows_soonest_first(self):
         rows = self.store.calendar(['cal'], *self.week)
         self.assertEqual([r['title'] for r in rows], ['Late call', 'Pilot review', 'Odd link', 'Team offsite'])

@@ -29,7 +29,7 @@ Na grade, eventos no mesmo horário ficam lado a lado, e cada um continua legív
 
 ## Abrir algo
 
-Clique em uma linha para abrir o chat da tarefa, a promessa ou a reunião na própria agenda. Só olhar não muda nada.
+Clique em uma linha para abrir o chat da tarefa, a promessa ou a reunião na própria agenda. Em uma reunião, quem o seu Graph conhece, e as organizações e projetos de que ela trata, são links para a página deles. Só olhar não muda nada.
 
 ## Adicionar ou mudar um evento
 
@@ -41,4 +41,4 @@ Quando uma agenda pode ser alterada daqui, **Novo evento** adiciona um (no celul
 
 Uma tarefa também pode sugerir uma mudança, como adicionar uma busca de alguém. Ela mostra exatamente o que muda, e só o seu **Adicionar**, **Salvar** ou **Excluir** faz a mudança.
 
-Ainda sem reuniões? Conecte o [Google Calendar](google-calendar.md) ou o [Outlook Calendar](microsoft.md).
+Ainda sem reuniões? Sem agenda, **Conecte seu calendário** abre Conexões: conecte o [Google Calendar](google-calendar.md) ou o [Outlook Calendar](microsoft.md).

@@ -4,8 +4,9 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Settings, Security, Support access on a self-hosted Machine: shown once it is paired (the app answers support_access),
-// the switch goes through the app, and hidden when it isn't paired (the app refuses).
+// Support access on a self-hosted Machine: given where it's needed, as a box in Report a bug (off unless ticked, and only
+// after Send), through the app; Settings, Security shows it only while it's on, with each look and Turn off. Hidden
+// when the Machine isn't paired (the app refuses).
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 let paired=true,until=null;const actions=[];
@@ -17,7 +18,10 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
    if(action==='support_access'){
     if(!paired){res.statusCode=400;res.end(JSON.stringify({error:'This Machine isn’t linked to an account.'}));return}
     if(args.allow!==undefined)until=args.allow?new Date(Date.now()+86400000).toISOString():null;
-    res.end(JSON.stringify({until,hours:24,accesses:until?[{at:new Date().toISOString(),what:'The Machine team: read the settings'}]:[]}));return}}
+    res.end(JSON.stringify({until,hours:24,accesses:until?[{at:new Date().toISOString(),what:'The Machine team: read the settings'}]:[]}));return}
+   if(action==='bug_preview'){res.end(JSON.stringify({paired:true,parts:[],settings:{}}));return}
+   if(action==='bug_send'){res.end(JSON.stringify({sent:true}));return}
+   if(action==='bug_queued'){res.end(JSON.stringify({queued:[]}));return}}
   if(url.pathname==='/api/status'){res.end(JSON.stringify(paired?{fleet:{on:false}}:{}));return}
   res.end(url.pathname==='/api/events'?'[]':'{}')})});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -29,21 +33,39 @@ try{
   const phone=width<600,context=await browser.newContext({viewport:{width,height},isMobile:phone,hasTouch:phone}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>typeof showSettings==='function'&&typeof supportAccessLoad==='function'&&!!state.fleet);
-  await page.evaluate(()=>showSettings('security'));
+  // Off: nothing in Settings
+  await page.evaluate(()=>showSettings('security'));await page.waitForFunction(()=>saData&&!saData.error);
+  assert.ok(await page.$eval('#settings-support',el=>el.hidden),'no standing switch while it is off');
+  // Report a bug: the box, off by default; sending without it gives no access
+  await page.evaluate(()=>{document.querySelector('#settings').hidden=true;helpOpen('bug')});await page.waitForSelector('#bug-sa-row:not([hidden])');
+  assert.equal(await page.isChecked('#bug-sa'),false);
+  await page.fill('#bug-what','The list is empty');await page.uncheck('#bug-diag');await page.click('#bug-next');await page.waitForSelector('#bug-review:not([hidden])');
+  assert.ok(!(await page.textContent('#bug-sent')).includes('Support access'));await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
+  assert.equal(actions.filter(a=>a.action==='support_access'&&a.args.allow!==undefined).length,0,'no access unless ticked');
+  // Ticked: the review says so, and it turns on only after Send
+  await page.evaluate(()=>helpOpen('bug'));await page.waitForSelector('#bug-sa-row:not([hidden])');
+  await page.fill('#bug-what','Still empty');await page.uncheck('#bug-diag');await page.check('#bug-sa');if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-ask-${width}x${height}.png`});await page.click('#bug-next');await page.waitForSelector('#bug-review:not([hidden])');
+  assert.ok((await page.textContent('#bug-sent')).includes('Support access'));assert.equal(until,null,'nothing before Send');
+  await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
+  assert.deepEqual(actions.filter(a=>a.action==='support_access'&&a.args.allow!==undefined).map(a=>a.args),[{allow:true}],'through the app, after Send');
+  assert.ok(actions.findIndex(a=>a.action==='bug_send')<actions.findIndex(a=>a.args?.allow===true));
+  assert.match(await page.textContent('#bug-done-text'),/Support can look until /);
+  if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-sent-${width}x${height}.png`});
+  // While it's on: no box in Report a bug; Settings shows it with each look and Turn off
+  await page.evaluate(()=>helpOpen('bug'));await page.waitForTimeout(150);assert.ok(await page.$eval('#bug-sa-row',el=>el.hidden));
+  await page.evaluate(()=>{document.querySelector('#help-panel').close();showSettings('security')});
   await page.waitForSelector('#settings-support:not([hidden])');
-  assert.equal(await page.textContent('#sa-state'),'Off');
-  assert.equal(await page.textContent('#sa-toggle'),'Allow for 24 hours');
-  await page.click('#sa-toggle');await page.waitForFunction(()=>document.querySelector('#sa-toggle').textContent==='Turn off');
+  assert.equal(await page.textContent('#sa-toggle'),'Turn off');
   assert.ok((await page.textContent('#sa-state')).startsWith('On until'));
   assert.ok((await page.textContent('#sa-log')).includes('The Machine team: read the settings'));
-  assert.deepEqual(actions.map(a=>a.args),[{},{allow:true}],'the switch goes through the app');
   await page.evaluate(()=>document.querySelector('#settings-support').scrollIntoView({block:'center'}));
   if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-${width}x${height}.png`});
   const box=await page.$eval('#settings-support',el=>{const r=el.getBoundingClientRect();return {right:r.right,scroll:document.documentElement.scrollWidth}});
   assert.ok(box.right<=width&&box.scroll<=width,`${width}: fits ${JSON.stringify(box)}`);
-  await page.click('#sa-toggle');await page.waitForFunction(()=>document.querySelector('#sa-toggle').textContent==='Allow for 24 hours');
+  await page.click('#sa-toggle');await page.waitForFunction(()=>document.querySelector('#settings-support').hidden);
   assert.equal(actions.at(-1).args.allow,false);
-  // Not paired after all: the app refuses, the section hides
+  // On again, then not paired after all: the app refuses, the section hides
+  await page.evaluate(()=>supportAccessSet(true));await page.waitForSelector('#settings-support:not([hidden])');
   paired=false;await page.evaluate(()=>supportAccessLoad(true));await page.waitForFunction(()=>document.querySelector('#settings-support').hidden);
   // Not paired: it doesn't ask at all
   const asked=actions.length;await page.evaluate(()=>{state.fleet=undefined;supportAccessLoad(true)});assert.equal(actions.length,asked);assert.ok(await page.$eval('#settings-support',el=>el.hidden));

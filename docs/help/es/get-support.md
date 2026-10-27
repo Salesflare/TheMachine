@@ -20,6 +20,7 @@ Abre **Ayuda** y luego **Informar de un error**. Un mensaje de error también ti
 1. Cuenta qué falló.
 2. Añade una captura si ayuda: **Hacer una captura** del panel, o **Adjuntar una imagen**.
 3. Deja activado **Incluir el informe de soporte**, salvo que prefieras que no: versiones, comprobaciones y errores recientes, sin mensajes, claves ni direcciones.
+   Si podemos necesitar mirar más de cerca, marca también **Deja que soporte mire durante 24 horas**. Consulta [Acceso de soporte](get-support.md#support-access).
 4. Toca **Revisar**. Muestra todo lo que se envía, tal como se envía.
 5. Toca **Enviar**. No se envía nada antes.
 
@@ -29,11 +30,11 @@ Si un informe no puede salir enseguida (no tienes conexión o enviaste muchos en
 
 ## Acceso de soporte
 
-Nuestro equipo puede revisar tu Machine por ti, pero solo cuando lo permitas. En **Ajustes**, **Seguridad**, **Acceso de soporte**, toca **Permitir durante 24 horas**. En tu propio ordenador, tu Machine tiene que estar [vinculada a tu cuenta](friends.md).
+Nuestro equipo puede revisar tu Machine por ti, pero solo cuando lo permitas. Cuando informes de un error, marca **Deja que soporte mire durante 24 horas**. Se activa cuando pulsas **Enviar**. En tu propio ordenador, tu Machine tiene que estar [vinculada a tu cuenta](friends.md).
 
 - Solo lectura: registros, ajustes, versiones, cómo se sincroniza cada conexión y errores recientes, limpiados como el informe de soporte. Nunca tus mensajes, claves, contraseñas ni quiénes son tus contactos.
-- Termina solo a las 24 horas. **Desactivar** lo termina ahora.
-- Cada revisión aparece listada debajo, con la hora.
+- Termina solo a las 24 horas. Mientras está activo, **Ajustes**, **Seguridad** lo muestra: **Desactivar** lo termina ahora.
+- Cada revisión aparece listada ahí, con la hora.
 
 ## Desde tu propio ordenador
 

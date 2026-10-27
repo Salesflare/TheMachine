@@ -20,6 +20,7 @@ Open **Help**, then **Report a bug**. An error message has a **Report a bug** bu
 1. Say what went wrong.
 2. Add a screenshot if it helps: **Take a screenshot** of the dashboard, or **Attach an image**.
 3. Keep **Include the support report** on, unless you'd rather not: versions, checks and recent errors, without messages, keys or addresses.
+   If we may need a closer look, tick **Let support look for 24 hours** too. See [Support access](get-support.md#support-access).
 4. Tap **Review**. It shows everything that goes, exactly as it goes.
 5. Tap **Send**. Nothing is sent before that.
 
@@ -29,11 +30,11 @@ If a report can't go out right away (you're offline, or you sent many in a short
 
 ## Support access
 
-Our team can look at your Machine for you, but only once you allow it. In **Settings**, **Security**, **Support access**, tap **Allow for 24 hours**. On your own computer, it needs your Machine [paired with your account](friends.md).
+Our team can look at your Machine for you, but only once you allow it. When you report a bug, tick **Let support look for 24 hours**. It turns on when you press **Send**. On your own computer, it needs your Machine [paired with your account](friends.md).
 
 - Read-only: logs, settings, versions, how each connection syncs and recent errors, scrubbed like the support report. Never your messages, keys, passwords or who your contacts are.
-- It ends by itself after 24 hours. **Turn off** ends it now.
-- Every look is listed under it, with when.
+- It ends by itself after 24 hours. While it's on, **Settings**, **Security** shows it: **Turn off** ends it now.
+- Every look is listed there, with when.
 
 ## From your own computer
 

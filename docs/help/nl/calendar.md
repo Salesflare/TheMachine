@@ -29,7 +29,7 @@ In het raster staan afspraken op hetzelfde tijdstip naast elkaar, zolang elke af
 
 ## Iets openen
 
-Klik op een rij om de chat van de to-do, de belofte of de afspraak in de eigen agenda te openen. Kijken verandert niets.
+Klik op een rij om de chat van de to-do, de belofte of de afspraak in de eigen agenda te openen. Bij een afspraak zijn iemand die je Graph kent, en de organisaties en projecten waar de afspraak over gaat, links naar hun pagina. Kijken verandert niets.
 
 ## Een afspraak toevoegen of wijzigen
 
@@ -41,4 +41,4 @@ Kan een agenda van hieruit gewijzigd worden, dan voegt **Nieuwe afspraak** er ee
 
 Een to-do kan ook een wijziging aanbieden, zoals een ophaalmoment om toe te voegen. Hij toont precies wat er verandert, en alleen jouw **Toevoegen**, **Opslaan** of **Verwijderen** voert het uit.
 
-Nog geen afspraken? Koppel [Google Calendar](google-calendar.md) of [Outlook-agenda](microsoft.md).
+Nog geen afspraken? Zonder agenda opent **Koppel je agenda** Koppelingen: koppel [Google Calendar](google-calendar.md) of [Outlook-agenda](microsoft.md).

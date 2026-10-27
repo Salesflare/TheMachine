@@ -20,6 +20,7 @@ const server=createServer(async(req,res)=>{
   signatures:[{account_id:'mail',email:'owner@example.org',service:'gmail',html:'<b>Owner</b>',source:'detected',saveable:true}],skills:{skills:[],waiting:0,targets:[],folder:'skills/the-machine'},
   ...(model?{model_usage:[],model_status:{model:'openai/example-model',provider:'openai',windows:[],checked_at:new Date().toISOString()}}:{}),
   ...(hosted?{manage_url:'https://account.example/setup',account_url:'https://account.example/account'}:{}),...(paired?{fleet:{on:true,waiting:0},account_url:'https://app.themachine.computer/account'}:{})}));return}
+ if(url.pathname==='/_machine/support-access'){res.end(JSON.stringify({until:new Date(Date.now()+36e5).toISOString(),hours:24,accesses:[]}));return}  // on: Settings, Security shows it
  res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -39,7 +40,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
-  // hosted: Security holds Support access; it shows once opening Settings has asked the app for its state, so wait for it
+  // hosted: Security holds Support access while it's on; it shows once opening Settings has asked for its state, so wait for it
   await page.locator('#settings-tabs [data-settings-tab="security"]:not([hidden])').waitFor();
   assert.deepEqual(await tabs(page),['Account','General','Security','Notifications','Writing','Skills','Model']);
   // Account first, a tab like the others; General has this device, and no account card (it's in Account now).

@@ -9,12 +9,12 @@ order: 1
 Abre **Ajustes** con el engranaje de arriba. Sus pestañas:
 
 - **Cuenta**: **Tus direcciones**, las que cuentan como tú, con de dónde salió cada una. Tu plan en resumen, botones a las páginas de tu cuenta y **Cerrar sesión**. Consulta [Planes y facturación](plans-and-billing.md).
-- **General**: idioma y región, este dispositivo, agentes de código, el navegador de tu Machine, tu Fleet y tu cuenta.
-- **Seguridad**: Estándar o Prudente, y los ajustes que fijan. Consulta [Niveles de seguridad](security-levels.md). También **Acceso de soporte**, en una Machine alojada o vinculada a tu cuenta: consulta [Obtener ayuda](get-support.md#support-access).
+- **General**: idioma y región, este dispositivo, el navegador de tu Machine, tu Fleet y tu cuenta.
+- **Seguridad**: Estándar o Prudente, y los ajustes que fijan. Consulta [Niveles de seguridad](security-levels.md). También **Acceso de soporte**, mientras está activo: consulta [Obtener ayuda](get-support.md#support-access).
 - **Notificaciones**: qué te llega y por dónde, y tu horario laboral. Consulta [Notificaciones](notifications.md) y [Horario laboral](work-hours.md).
 - **Redacción**: firmas y cómo escribes. Consulta [Redacción](writing.md).
 - **Habilidades**: guías que sigue tu Machine. Consulta [Habilidades](skills.md).
-- **Modelo**: qué responde por ti, y sus límites. Consulta [Modelo](model.md).
+- **Modelo**: qué responde por ti, y sus límites. Consulta [Modelo](model.md). También **Codex y Claude Code**: consulta [Pasar a Claude Code o Codex](hand-to-agent.md).
 
 Una pestaña sin nada que mostrar se oculta.
 
@@ -23,7 +23,6 @@ Una pestaña sin nada que mostrar se oculta.
 - **Idioma y región**: tu **Región** fija cómo se leen las fechas (Oct 24 o 24 oct) y el reloj habitual. **Formato de hora** elige en su lugar 12 horas (2:05 PM) o 24 horas (14:05). Las tareas, Telegram, el resumen y los mensajes del Fleet lo siguen. Una Machine alojada parte del país de la zona horaria que elegiste al registrarte. Las horas como "hace 3 horas" y los números también lo siguen.
 - **Idioma**: English, Nederlands, Français, Deutsch, Español, Italiano o Português (Brasil). La primera vez que abres el panel elige el idioma de tu navegador, si es uno de estos (el portugués de Portugal recibe por ahora portugués de Brasil). El panel, las fechas, los mensajes de Telegram, las notificaciones, el resumen semanal y las notas y títulos de tareas que tu Machine escribe por ti lo siguen desde el momento en que lo eliges; lo que ya estaba escrito se queda como estaba. Las preguntas del Fleet y de la Family se leen en el idioma de cada compañero. Los borradores para otras personas se quedan en el idioma de su conversación. Ayuda y sus páginas también lo siguen.
 - **Este dispositivo**: la app (**Instalar app**), **Notificaciones** con **Enviar una prueba**, y **Modo claro**, solo para este navegador o teléfono. Consulta [Instala la app y activa las notificaciones](phone-app.md).
-- **Agentes de código**: consulta [Pasar a Claude Code o Codex](hand-to-agent.md).
 - **Abrir el navegador de la Machine ↗**: el navegador que usa tu Machine para sitios como LinkedIn.
 - **Reglas de Fleet**: consulta [Reglas para compartir](sharing-rules.md).
 - **Cuenta**: **Abrir cuenta** y **Cerrar sesión**, en una Machine alojada.

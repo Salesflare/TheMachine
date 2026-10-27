@@ -20,6 +20,7 @@ Apri **Aiuto**, poi **Segnala un bug**. Anche un messaggio di errore ha un pulsa
 1. Spiega cosa è andato storto.
 2. Aggiungi uno screenshot se aiuta: **Fai uno screenshot** della dashboard, oppure **Allega un’immagine**.
 3. Lascia attivo **Includi il report per il supporto**, a meno che tu non preferisca di no: versioni, controlli ed errori recenti, senza messaggi, chiavi o indirizzi.
+   Se potremmo dover guardare più da vicino, spunta anche **Lascia guardare l’assistenza per 24 ore**. Vedi [Accesso per l’assistenza](get-support.md#support-access).
 4. Tocca **Rivedi**. Mostra tutto quello che parte, esattamente com’è.
 5. Tocca **Invia**. Prima non parte nulla.
 
@@ -29,11 +30,11 @@ Se una segnalazione non può partire subito (sei offline, o ne hai inviate molte
 
 ## Accesso per l’assistenza
 
-Il nostro team può dare un’occhiata alla tua Machine per te, ma solo dopo che l’hai permesso. In **Impostazioni**, **Sicurezza**, **Accesso per l’assistenza**, tocca **Consenti per 24 ore**. Sul tuo computer, la tua Machine deve essere [associata al tuo account](friends.md).
+Il nostro team può dare un’occhiata alla tua Machine per te, ma solo dopo che l’hai permesso. Quando segnali un bug, spunta **Lascia guardare l’assistenza per 24 ore**. Si attiva quando premi **Invia**. Sul tuo computer, la tua Machine deve essere [associata al tuo account](friends.md).
 
 - Sola lettura: log, impostazioni, versioni, come si sincronizza ogni connessione ed errori recenti, ripuliti come il report per il supporto. Mai i tuoi messaggi, chiavi, password o chi sono i tuoi contatti.
-- Termina da solo dopo 24 ore. **Disattiva** lo termina subito.
-- Ogni accesso è elencato lì sotto, con data e ora.
+- Termina da solo dopo 24 ore. Finché è attivo, **Impostazioni**, **Sicurezza** lo mostra: **Disattiva** lo termina subito.
+- Ogni accesso è elencato lì, con data e ora.
 
 ## Dal tuo computer
 

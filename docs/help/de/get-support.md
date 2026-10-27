@@ -20,6 +20,7 @@ Auf einer gehosteten Machine steht in der Fußzeile des Dashboards „Stimmt etw
 1. Sag, was schiefging.
 2. Füge einen Screenshot hinzu, wenn es hilft: **Screenshot machen** vom Dashboard oder **Bild anhängen**.
 3. Lass **Supportbericht mitschicken** an, außer du möchtest das nicht: Versionen, Prüfungen und letzte Fehler, ohne Nachrichten, Schlüssel oder Adressen.
+   Wenn wir vielleicht genauer hinsehen müssen, hak auch **Den Support 24 Stunden lang nachsehen lassen** an. Siehe [Support-Zugriff](get-support.md#support-access).
 4. Tippe auf **Prüfen**. Es zeigt alles, was rausgeht, genau so, wie es rausgeht.
 5. Tippe auf **Senden**. Vorher wird nichts gesendet.
 
@@ -29,11 +30,11 @@ Wenn ein Bericht nicht sofort rausgehen kann (du bist offline oder hast in kurze
 
 ## Support-Zugriff
 
-Unser Team kann für dich auf deine Machine schauen, aber erst, wenn du es erlaubst. Tippe in **Einstellungen**, **Sicherheit**, **Support-Zugriff** auf **Für 24 Stunden erlauben**. Auf deinem eigenen Computer muss deine Machine dafür [mit deinem Konto gekoppelt](friends.md) sein.
+Unser Team kann für dich auf deine Machine schauen, aber erst, wenn du es erlaubst. Wenn du einen Fehler meldest, hak **Den Support 24 Stunden lang nachsehen lassen** an. Er startet, wenn du auf **Senden** tippst. Auf deinem eigenen Computer muss deine Machine dafür [mit deinem Konto gekoppelt](friends.md) sein.
 
 - Nur lesend: Logs, Einstellungen, Versionen, wie jede Verbindung synchronisiert, und letzte Fehler, bereinigt wie der Supportbericht. Nie deine Nachrichten, Schlüssel, Passwörter oder wer deine Kontakte sind.
-- Es endet von selbst nach 24 Stunden. **Ausschalten** beendet es sofort.
-- Jeder Blick wird darunter aufgelistet, mit Zeitpunkt.
+- Es endet von selbst nach 24 Stunden. Solange es an ist, zeigt **Einstellungen**, **Sicherheit** es an: **Ausschalten** beendet es sofort.
+- Jeder Blick wird dort aufgelistet, mit Zeitpunkt.
 
 ## Von deinem eigenen Computer
 

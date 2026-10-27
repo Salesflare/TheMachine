@@ -29,7 +29,7 @@ Nella griglia, gli eventi alla stessa ora stanno affiancati finché restano legg
 
 ## Apri qualcosa
 
-Fai clic su una riga per aprire la chat della sua attività, la promessa o la riunione nel suo calendario. Guardare non cambia nulla.
+Fai clic su una riga per aprire la chat della sua attività, la promessa o la riunione nel suo calendario. In una riunione, chi il tuo Graph conosce, e le organizzazioni e i progetti di cui tratta, sono link alla loro pagina. Guardare non cambia nulla.
 
 ## Aggiungi o modifica un evento
 
@@ -41,4 +41,4 @@ Quando un calendario si può modificare da qui, **Nuovo evento** ne aggiunge uno
 
 Anche un’attività può proporre una modifica, come un ritiro da aggiungere. Mostra esattamente cosa cambia, e lo fa solo il tuo **Aggiungi**, **Salva** o **Elimina**.
 
-Ancora nessuna riunione? Collega [Google Calendar](google-calendar.md) o [Outlook Calendar](microsoft.md).
+Ancora nessuna riunione? Senza calendario, **Collega il tuo calendario** apre Connessioni: collega [Google Calendar](google-calendar.md) o [Outlook Calendar](microsoft.md).

@@ -20,6 +20,7 @@ Ouvrez **Aide**, puis **Signaler un bug**. Un message d’erreur a aussi un bout
 1. Dites ce qui n’a pas marché.
 2. Ajoutez une capture d’écran si cela aide : **Faire une capture d’écran** du tableau de bord, ou **Joindre une image**.
 3. Laissez **Joindre le rapport pour le support** activé, sauf si vous préférez ne pas le faire : versions, vérifications et erreurs récentes, sans messages, clés ni adresses.
+   Si nous devons regarder de plus près, cochez aussi **Laisser le support regarder pendant 24 heures**. Voir [Accès du support](get-support.md#support-access).
 4. Touchez **Vérifier**. Tout ce qui part s’affiche, exactement tel quel.
 5. Touchez **Envoyer**. Rien ne part avant.
 
@@ -29,11 +30,11 @@ Si un signalement ne peut pas partir tout de suite (vous êtes hors ligne, ou vo
 
 ## Accès du support
 
-Notre équipe peut regarder votre Machine pour vous, mais seulement une fois que vous l’autorisez. Dans **Paramètres**, **Sécurité**, **Accès du support**, touchez **Autoriser pendant 24 heures**. Sur votre propre ordinateur, votre Machine doit pour cela être [associée à votre compte](friends.md).
+Notre équipe peut regarder votre Machine pour vous, mais seulement une fois que vous l’autorisez. Quand vous signalez un bug, cochez **Laisser le support regarder pendant 24 heures**. L’accès s’active quand vous appuyez sur **Envoyer**. Sur votre propre ordinateur, votre Machine doit pour cela être [associée à votre compte](friends.md).
 
 - Lecture seule : journaux, paramètres, versions, la synchro de chaque connexion et les erreurs récentes, nettoyés comme le rapport pour le support. Jamais vos messages, clés, mots de passe, ni qui sont vos contacts.
-- L’accès se termine de lui-même après 24 heures. **Désactiver** y met fin tout de suite.
-- Chaque consultation est listée en dessous, avec sa date.
+- L’accès se termine de lui-même après 24 heures. Tant qu’il est actif, **Paramètres**, **Sécurité** l’affiche : **Désactiver** y met fin tout de suite.
+- Chaque consultation y est listée, avec sa date.
 
 ## Depuis votre propre ordinateur
 
