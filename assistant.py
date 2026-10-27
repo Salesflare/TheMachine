@@ -706,8 +706,8 @@ CHAT_ACTIONS = {
 OWNER_ACTIONS |= CHAT_ACTIONS
 # Skills (skills.py): writing, sharing and installing them is the owner's own, from the dashboard. The agent can only
 # propose one (skill_propose), which waits for the owner's Approve.
-# Everything else OpenClaw has: shown read-only; OpenClaw's own on/off and ClawHub install, on the owner's tap.
-# Importing from Claude and ChatGPT: listed for the owner to tick; a skill with scripts only as OpenClaw's own, after reading.
+# Everything else OpenClaw has (skill_installed*, skill_hub_*): shown read-only; OpenClaw's own on/off and ClawHub install, on the owner's tap.
+# Importing from Claude and ChatGPT (skill_import_*): listed for the owner to tick; a skill with scripts only as OpenClaw's own, after reading.
 SKILL_ACTIONS = {
     'skill_decide',
     'skill_delete',
