@@ -24,7 +24,7 @@ Wenn dein Tarif Nutzungslimits hat, siehst du, wie viel von jedem verbraucht ist
 
 ## Platz für deine eigenen Chats
 
-Hintergrundarbeit (Prüfungen, dein Profil, vorab vorbereitete Entwürfe) lässt Platz für deine eigenen Chats. Sie pausiert bei etwa 65 % des 5-Stunden-Limits und verteilt das Wochenlimit auf etwa ein Siebtel pro Tag. Eine Anmeldung ohne Nutzungslimits, etwa ein API-Schlüssel, wird nie pausiert.
+Hintergrundarbeit (Prüfungen, dein Profil, vorab vorbereitete Entwürfe) lässt Platz für deine eigenen Chats. Sie pausiert bei etwa 65 % des 5-Stunden-Limits. Prüfungen dessen, was reingekommen ist, laufen bis etwa 90 % des Wochenlimits; der Rest verteilt es auf etwa ein Siebtel pro Tag. Eine Anmeldung ohne Nutzungslimits, etwa ein API-Schlüssel, wird nie pausiert.
 
 Hintergrundarbeit läuft nie auf GPT-6 Astra. Sie nutzt stattdessen GPT-6.1 Sol.
 

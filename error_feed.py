@@ -108,6 +108,9 @@ PATH = re.compile(r'(?:[A-Za-z]:\\|\\\\)[^\s,;)]+|(?<![\w<])~?(?:/[^\s/,;:)]+)+/
 UUID = re.compile(r'\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b', re.I)
 HEX = re.compile(r'\b(?:0x)?[0-9a-f]*\d[0-9a-f]*[a-f][0-9a-f]*\b|\b(?:0x)?[0-9a-f]*[a-f][0-9a-f]*\d[0-9a-f]*\b', re.I)
 LONG = re.compile(r'[A-Za-z0-9_\-+/=]{24,}')
+# A plain code made of lowercase words (android_feed_unavailable, error=delivery_outcome_unknown) is not a secret:
+# a token has digits, capitals or one long run of letters. Each word at most 20 letters.
+PLAIN_CODE = re.compile(r'[a-z]{1,20}(?:[_=-][a-z]{1,20})+')
 NUMBER = re.compile(r'[-+]?\d[\d.,:_]*')
 TOKEN = re.compile(r'<[a-z]{1,8}>|…|[^\W\d_][\w$]*(?:\.[^\W\d_][\w$]*)*|\S')
 PUNCT = set('.,:;()[]{}=<>!?+-*/#&|%"…')
@@ -150,7 +153,7 @@ def normalize(message, names=()):
     text = support.HOME.sub('<path>', text)
     text = UUID.sub('<id>', text)
     text = re.sub(r'<(?:jwt|bot-token|api-key|token|hex|secret|redacted)>|\[(?:redacted|email|number)\]', '<secret>', text)
-    text = LONG.sub('<secret>', text)
+    text = LONG.sub(lambda m: m.group(0) if PLAIN_CODE.fullmatch(m.group(0)) else '<secret>', text)
     text = HEX.sub('<id>', text)
     text = NUMBER.sub('<n>', text)
     lowered = {str(n).lower() for n in names if n}

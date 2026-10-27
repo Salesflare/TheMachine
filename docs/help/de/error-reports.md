@@ -35,7 +35,9 @@ Derselbe Fehler zählt einmal, mit einer Anzahl. Höchstens ein Paket alle 10 Mi
 
 ## Drosselung
 
-Hintergrundarbeit wartet, wenn die Limits deines KI-Tarifs knapp werden, damit Platz für deine eigenen Chats bleibt (siehe [Modell](model.md)). Mit eingeschalteten Fehlerberichten sagt deine Machine dem Team außerdem einmal am Tag, wie oft das passiert ist: für jedes Mal die Stunde, in der es begann, welches Limit, wie viele Minuten es dauerte und wie viele Jobs warteten. Nur Anzahlen und Minuten, nichts darüber, was die Jobs waren.
+Hintergrundarbeit wartet, wenn die Limits deines KI-Tarifs knapp werden, damit Platz für deine eigenen Chats bleibt (siehe [Modell](model.md)). Prüfungen dessen, was reingekommen ist, warten nur kurz vor den Limits; schwerere Arbeit, etwa das Durchgehen deines Verlaufs, wird über die Woche verteilt.
+
+Mit eingeschalteten Fehlerberichten sagt deine Machine dem Team außerdem einmal am Tag, wie oft das passiert ist: für jedes Mal die Stunde, in der es begann, welches Limit, wie viele Minuten es dauerte und wie viele Jobs warteten. Nur Anzahlen und Minuten, nichts darüber, was die Jobs waren.
 
 ## Ausschalten
 

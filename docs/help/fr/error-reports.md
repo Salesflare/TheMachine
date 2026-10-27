@@ -35,7 +35,9 @@ La même erreur compte une fois, avec un nombre. Au plus un lot toutes les 10 mi
 
 ## Rythme
 
-Le travail en arrière-plan attend quand les limites de votre abonnement d’IA sont presque atteintes, pour garder de la place pour vos propres chats (voir [Votre modèle d’IA](model.md)). Avec les rapports d’erreur activés, votre Machine indique aussi à l’équipe, une fois par jour, combien de fois c’est arrivé : pour chaque fois, l’heure de début, quelle limite, combien de minutes cela a duré et combien de traitements ont attendu. Seulement des nombres et des minutes, rien sur ce qu’étaient les traitements.
+Le travail en arrière-plan attend quand les limites de votre abonnement d’IA sont presque atteintes, pour garder de la place pour vos propres chats (voir [Votre modèle d’IA](model.md)). Les revues de ce qui est arrivé n’attendent que près des limites ; le travail plus lourd, comme parcourir votre historique, est réparti sur la semaine.
+
+Avec les rapports d’erreur activés, votre Machine indique aussi à l’équipe, une fois par jour, combien de fois c’est arrivé : pour chaque fois, l’heure de début, quelle limite, combien de minutes cela a duré et combien de traitements ont attendu. Seulement des nombres et des minutes, rien sur ce qu’étaient les traitements.
 
 ## Les désactiver
 

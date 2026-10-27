@@ -35,7 +35,9 @@ The same error counts once, with a count. At most a batch every 10 minutes. The 
 
 ## Pacing
 
-Background work waits when your AI plan's limits run low, to keep room for your own chats (see [Your AI model](model.md)). With error reports on, your Machine also tells the team, once a day, how often that happened: for each time, the hour it started, which limit, how many minutes it lasted and how many jobs waited. Only counts and minutes, nothing about what the jobs were.
+Background work waits when your AI plan's limits run low, to keep room for your own chats (see [Your AI model](model.md)). Reviews of what came in wait only near the limits; heavier work, like a look through your history, is spread over the week.
+
+With error reports on, your Machine also tells the team, once a day, how often that happened: for each time, the hour it started, which limit, how many minutes it lasted and how many jobs waited. Only counts and minutes, nothing about what the jobs were.
 
 ## Turn it off
 

@@ -24,7 +24,7 @@ Si tu plan tiene límites de uso, muestra cuánto se ha usado de cada uno y cuá
 
 ## Margen para tus propios chats
 
-El trabajo en segundo plano (revisiones, tu perfil, borradores preparados de antemano) deja margen para tus propios chats. Se pausa hacia el 65% del límite de 5 horas y reparte el límite semanal a razón de más o menos un séptimo al día. Un inicio de sesión sin límites de uso, como una clave de API, nunca se pausa.
+El trabajo en segundo plano (revisiones, tu perfil, borradores preparados de antemano) deja margen para tus propios chats. Se pausa hacia el 65% del límite de 5 horas. Las revisiones de lo que llegó siguen hasta cerca del 90% del límite semanal; el resto lo reparte a razón de más o menos un séptimo al día. Un inicio de sesión sin límites de uso, como una clave de API, nunca se pausa.
 
 El trabajo en segundo plano nunca se ejecuta con GPT-6 Astra. Usa GPT-6.1 Sol en su lugar.
 

@@ -2186,7 +2186,7 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 /* This device: the shared quiet notice card (.notice-card) at the top of Suggestions, to install the app or turn on notifications. */
 .device-nudge{gap:10px 14px;color:var(--muted)}
 .device-nudge[hidden],body.chat-open .device-nudge{display:none}
-/* A usage limit reached (state.model_pause): the same quiet notice card, with an amber dot, at the top of every view. */
+/* A usage limit reached (state.model_pause), or reviews waiting for the budget (state.review_pause): the same quiet notice card, with an amber dot, at the top of every view. */
 .limit-banner{flex-wrap:nowrap;align-items:flex-start}.limit-banner::before{content:"";flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--amber)}
 .nudge-icon{flex:none;width:36px;height:36px;border-radius:9px}
 .nudge-text{flex:1 1 240px;min-width:0}.nudge-text>span{display:block}
@@ -2755,10 +2755,18 @@ const windowLabel=l=>['Week','168h','7d'].includes(l)?t('Weekly limit'):['Day','
 function resetAction(m){if(!m)return '';if(m.can_reset)return `<button type="button" class="ghost" data-model-reset>Use a reset</button>`;
  return m.usage_page?`<a class="head-link" href="${esc(m.usage_page)}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
 // The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null
-function limitBanner(p){if(!p)return '';const now=Date.now()/1000,until=+p.until>now?+p.until:0,r=until?new Date(until*1000):null,
- what={'5h':'{} 5-hour limit reached.',week:'{} weekly limit reached.'}[p.window]||'{} usage limit reached.',when=r?(r.toDateString()===new Date().toDateString()?t('at {}',fmtHM(r)):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):'';
- return `<span><strong>${esc(t(what,p.name||'AI'))}</strong>${when?' '+esc(t('Resets {}.',when)):''} ${esc(t('Nothing is lost: The Machine picks up where it left off.'))}</span>`}
-function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
+const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):''};
+function limitBanner(p){if(!p)return '';const when=pauseWhen(p.until),
+ what={'5h':'{} 5-hour limit reached.',week:'{} weekly limit reached.'}[p.window]||'{} usage limit reached.';
+ return `<span><strong>${esc(t(what,p.name||'AI'))}</strong>${when?' '+esc(t('Resets {}.',/^\d/.test(when)?t('at {}',when):when)):''} ${esc(t('Nothing is lost: The Machine picks up where it left off.'))}</span>`}
+// Reviews of new signals waiting for the budget (state.review_pause: window '5h' or 'week', until, name), with Review now
+function reviewBanner(p){if(!p)return '';const when=pauseWhen(p.until),name=p.name||'AI',week=p.window==='week';
+ const line=when?t(week?'Reviews wait until {} to save your {} week.':'Reviews wait until {} to save your {} 5-hour limit.',when,name):t(week?'Reviews wait to save your {} week.':'Reviews wait to save your {} 5-hour limit.',name);
+ return `<span>${esc(line)}</span><button type="button" class="head-link" data-review-now>${esc(t('Review now'))}</button>`}
+function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause)||reviewBanner(state.review_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
+ try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
+  state.review_pause=null;renderLimitBanner();notice(t('A review starts in a moment.'))}catch(err){b.disabled=false;notice(err.message,true)}});
 function limitNote(m){if(!m?.limit_reached)return '';return `<p class="limit-note"><strong>${esc(t(m.chatgpt?'ChatGPT limit reached':'Model limit reached'))}</strong>${m.limit_resets_at?esc(t(', resets at {}',clockAt(m.limit_resets_at))):''}${resetAction(m)?' · '+resetAction(m):''}</p>`}
 // A model id as people say it: "acme/lm-2.5-swift" reads "LM-2.5 Swift", "acme/sonnet-4-5-20250929" reads
 // "Sonnet 4.5" (no release date, version parts joined with dots); the id itself shows on hover.
@@ -4375,6 +4383,9 @@ const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newe
 if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended
 if((!running&&reviewWasLive)||fresh){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive()}catch(e){}},5000);
 const SKELETON=$('#suggestions .skeleton')?.outerHTML||'';
+// Where a decision came from, in the page's language ("on the dashboard", not "via dashboard"). Unknown sources: "via <source>".
+const DECISION_VIA={dashboard:'on the dashboard',telegram:'on Telegram',assistant:'automatically',fleet:'from the Fleet','owner-chat':'in the chat',signed_in:'after a sign-in',agent:'by an agent',elsewhere:'elsewhere'};
+const decisionVia=source=>DECISION_VIA[source]?t(DECISION_VIA[source]):t('via {}',source);
 function render(){scopeSync(state.locale);applyLocale(state.locale);renderNeedsYou();renderNotify();
 const finishedOpen=$('#finished-list')?.open||false,laterOpen=$('#later-list')?.open||false,promisesOpen=$('#promises-list')?.open||false;
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
@@ -4410,7 +4421,7 @@ const choiceTone={accept:'mint',complete:'mint',reject:'muted',snooze:'lavender'
 {const q=state.quality;const pct=v=>v==null?'–':`${v}%`;const was=(v,prev)=>prev==null||v==null?'':`<small>${v>prev?'up':v<prev?'down':'same'} from ${prev}%</small>`;
 $('#quality').innerHTML=!q||!q.cards?'<div class="muted">No to-dos in the last 30 days yet.</div>':`<div class="stats quality"><div class="stat"><b>${pct(q.hit_rate)}</b><span>Worth it</span>${was(q.hit_rate,q.previous.hit_rate)}</div><div class="stat"><b>${pct(q.first_time_rate)}</b><span>First try</span>${was(q.first_time_rate,q.previous.first_time_rate)}</div><div class="stat"><b>${pct(q.finished_rate)}</b><span>Finished</span>${was(q.finished_rate,q.previous.finished_rate)}</div><div class="stat"><b>${q.sent_as_written+q.sent_edited?q.sent_as_written+'/'+(q.sent_as_written+q.sent_edited):'–'}</b><span>Sent as is</span></div></div>${trendChart(q.trend)}${noteSplit(q.notes)}<div class="list quality-sources">${Object.entries(q.by_source).sort((a,b)=>(b[1].worth_it+b[1].dismissed)-(a[1].worth_it+a[1].dismissed)).map(([k,n])=>`<div><span class="grow">${esc(k)}</span><span>${n.worth_it} of ${n.worth_it+n.dismissed} worth it</span></div>`).join('')}</div>`}
 if(learnEdit==null)$('#facts').innerHTML=learnedList();renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
-$('#decisions').innerHTML=clipList('decisions',state.decisions.map(d=>`<article style="--c:var(--${({mint:'mint',muted:'faint',lavender:'lavender',amber:'amber'})[choiceTone[d.choice]||'muted']})"><h3>${esc(state.suggestions.find(s=>s.id===d.suggestion_id)?.title||d.suggestion_id)}</h3><div class="row">${chip({accept:'Accepted',reject:'Not needed',snooze:'Saved for later',other:'Instructions',complete:'Done',send:'Approved send',reopen:'Reopened',undo:'Reopened',retry:'Trying again',update:'Updated',prepare_ahead:'Prepared ahead'}[d.choice]||d.choice,choiceTone[d.choice]||'muted')}<small>via ${esc(d.source)}</small>${time(d.created_at)}</div>${d.annotation?'<p class="note">Earlier message was matched incorrectly. The correction is recorded.</p>':''}${d.feedback?`<blockquote>${esc(d.feedback)}</blockquote>`:''}</article>`),'<p class="muted">No decisions yet.</p>',5);
+$('#decisions').innerHTML=clipList('decisions',state.decisions.map(d=>`<article style="--c:var(--${({mint:'mint',muted:'faint',lavender:'lavender',amber:'amber'})[choiceTone[d.choice]||'muted']})"><h3>${esc(state.suggestions.find(s=>s.id===d.suggestion_id)?.title||d.suggestion_id)}</h3><div class="row">${chip({accept:'Accepted',reject:'Not needed',snooze:'Saved for later',other:'Instructions',complete:'Done',send:'Approved send',reopen:'Reopened',undo:'Reopened',retry:'Trying again',update:'Updated',prepare_ahead:'Prepared ahead'}[d.choice]||d.choice,choiceTone[d.choice]||'muted')}<small>${esc(decisionVia(d.source))}</small>${time(d.created_at)}</div>${d.annotation?'<p class="note">Earlier message was matched incorrectly. The correction is recorded.</p>':''}${d.feedback?`<blockquote>${esc(d.feedback)}</blockquote>`:''}</article>`),'<p class="muted">No decisions yet.</p>',5);
 const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
 $('#connectors').innerHTML=state.connectors.map(c=>connectorCard(c,expandedSync)).join('');renderDisconnected();
 if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').innerHTML=`<a class="manage" href="#connect=google">Connect Google</a> &nbsp;<a class="manage" href="#connect=microsoft">Connect Microsoft</a> &nbsp;<a class="manage" href="${esc(state.manage_url)}#sources">Add another source</a> &nbsp;or <a href="${esc(new URL('/connectors',state.manage_url).href)}">ask for one you miss</a>.`}

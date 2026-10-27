@@ -5,6 +5,9 @@ the cards they asked for keep room:
 - the 5-hour window: background work pauses at SHORT_PAUSE percent (the first look and its first draft at FIRST_PAUSE:
   that is the first magic), until the window resets;
 - the weekly window: paced at a seventh a day (what a quiet day leaves over carries to the next), never past WEEK_CAP;
+  reviews of new signals (`signals`) are not paced per day: they go on until WEEK_CAP, so what came in today is looked
+  at today, while heavier work (a board's look through the history, drafts prepared ahead, the profile) keeps the
+  daily share;
 - a usage limit a run hit (the provider said so): everything the service starts waits until the reset it named, or
   the window's own reset, instead of trying again every few minutes.
 
@@ -32,9 +35,10 @@ def window_kind(label):
     return 'short'
 
 
-def pause(usage, now_s=None, first=False):
+def pause(usage, now_s=None, first=False, signals=False):
     """None when a background turn may start now; else why not: {'window': '5h'|'week', 'provider', 'used', 'until',
-    'threshold'} (`until` an epoch second, None when unknown; `threshold` the percent it paused at). Counted by pacing.py."""
+    'threshold'} (`until` an epoch second, None when unknown; `threshold` the percent it paused at). Counted by pacing.py.
+    `signals`: a review of new signals, which the weekly window holds only at WEEK_CAP (the 5-hour one as usual)."""
     now_s = time.time() if now_s is None else now_s
     for entry in usage or []:
         for w in entry.get('windows') or []:
@@ -46,10 +50,10 @@ def pause(usage, now_s=None, first=False):
                 if used >= (FIRST_PAUSE if first else SHORT_PAUSE):
                     return {**found, 'window': '5h', 'until': reset, 'threshold': FIRST_PAUSE if first else SHORT_PAUSE}
                 continue
-            allowed = WEEK_CAP if first else allowed_this_week(reset, now_s)
+            allowed = WEEK_CAP if first or signals else allowed_this_week(reset, now_s)
             if used >= allowed:
                 day_end = None
-                if reset and used < WEEK_CAP and not first:
+                if reset and used < WEEK_CAP and not first and not signals:
                     start = reset - WEEK
                     day_end = start + math.ceil(max(now_s - start, 1) / DAY) * DAY
                 return {**found, 'window': 'week', 'until': min(day_end or reset, reset) if reset else None, 'threshold': int(round(allowed))}

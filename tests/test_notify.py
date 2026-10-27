@@ -136,8 +136,11 @@ class Notifications(unittest.TestCase):
         sid = self.card()
         self.deliver(sid, t0 + 1)
         notify.mark_active(lambda: t0 + 60, client='desk', on=True)
-        self.assertEqual(self.step(t0 + 60 + notify.EMAIL_AFTER), [])
+        with self.assertLogs(a.LOG, 'INFO') as logs:
+            self.assertEqual(self.step(t0 + 60 + notify.EMAIL_AFTER), [])
         self.assertEqual((self.sent, self.mails), ([], []))
+        # the log says why no email went: it was seen on a dashboard while it waited
+        self.assertIn('notify email dropped seen=1 stale=0 handled=0', '\n'.join(logs.output))
 
     def test_still_unseen_after_a_while_one_email_bundles_what_waits_at_most_hourly(self):
         self.held()
@@ -150,7 +153,9 @@ class Notifications(unittest.TestCase):
         self.assertEqual(len(self.sent), 1)
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='dismissed' WHERE id=?", (done,))  # handled on Telegram meanwhile
-        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER - 1), [])
+        with self.assertLogs(a.LOG, 'INFO') as logs:
+            self.assertEqual(self.step(t0 + notify.EMAIL_AFTER - 1), [])
+        self.assertIn('notify email dropped seen=0 stale=0 handled=1', '\n'.join(logs.output))
         self.assertEqual(self.step(t0 + notify.EMAIL_AFTER), ['email'])
         subject, text = self.mails[0]
         self.assertEqual(subject, '2 things wait for you')
@@ -427,7 +432,13 @@ class Notifications(unittest.TestCase):
         self.assertEqual(len(json.loads(seen[0].data)['subject']), notify.MAIL_SUBJECT)
         self.assertFalse(notify.mail('', 'tok', 'S', 'B', opener))
         def broken(request, timeout): raise OSError('down')
-        self.assertFalse(notify.mail('https://cp.example/api/fleet', 'tok', 'S', 'B', broken))
+        def refused(request, timeout): raise notify.urllib.error.HTTPError(request.full_url, 429, 'enough email for today', {}, None)
+        with self.assertLogs(a.LOG, 'WARNING') as logs:
+            self.assertFalse(notify.mail('https://cp.example/api/fleet', 'tok', 'S', 'B', broken))
+            self.assertFalse(notify.mail('https://cp.example/api/fleet', 'tok', 'S', 'B', refused))
+            self.assertFalse(notify.mail('https://cp.example/api/fleet', 'tok', 'S', 'B', lambda request, timeout: Answer(b'{}')))
+        # a failed send is in the log with its reason, never the token or the text
+        self.assertEqual([line.split(':', 2)[2] for line in logs.output], ['notify mail error=OSError', 'notify mail status=429', 'notify mail not taken'])
 
 
 if __name__ == '__main__':

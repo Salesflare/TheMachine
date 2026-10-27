@@ -25,6 +25,7 @@ import os
 from pathlib import Path
 from decimal import Decimal
 import random
+import socket
 import re
 import secrets
 import shlex
@@ -650,6 +651,7 @@ OWNER_ACTIONS = {
     'promise_due',
     'recap_decide',
     'request_feedback',
+    'review_now',
     'revise_draft',
     'security_level',
     'security_setting',
@@ -916,6 +918,7 @@ DASHBOARD_ACTIONS = frozenset({
     'push_subscribe',
     'push_test',
     'push_unsubscribe',
+    'review_now',
     'revise_draft',
     'security_level',
     'security_setting',
@@ -1468,6 +1471,7 @@ FIRST_LOOK_NEXT_SIGNALS = 60
 # one per this many seconds, and only once the first card was shown, so the first cards come first and a new
 # install's usage is spread out instead of spent in its first minutes.
 BACKGROUND_GAP_SECONDS = 600
+REVIEW_ASKED_SECONDS = 600  # the owner's Review now holds this long for the next review step
 FIRST_MAGIC_SETTLE_SECONDS = 900  # no card shown yet: a finished review counts as the first look after this long
 # Background work never runs on these models (several times the cost for the same result): the cheaper one instead.
 BACKGROUND_SWAP = {'gpt-6-astra': 'gpt-6.1-sol'}
@@ -2447,12 +2451,48 @@ class Slack:
         self.limited_reads = {'conversations.history', 'conversations.replies'}
         self.read_seconds = max(65, int(config.get('slack_read_seconds', 180)))
         self.last_limited = time.monotonic()
+        # Machines on one workspace (a team's hosted servers, an own install) share that one read a minute. Each reads
+        # in its own minute of a round, on the clock: a slot picked from this Machine and connection. A 429 means
+        # another Machine reads in that minute or the round is too short for all of them: the round grows by a minute
+        # (up to SLACK_ROUND_MAX) and this one takes another slot; after SLACK_CALM reads without one it shrinks again.
+        self.round, self.calm = self.read_seconds, 0
+        self.slots = self.round // 60
+        self.slot = int(hashlib.sha256(f"{socket.gethostname()}|{account.get('connection_id') or account.get('id')}".encode()).hexdigest(), 16) % self.slots
+
+    SLOT_OPEN = 20  # seconds into its minute a read may still start
+    SLACK_ROUND_MAX = 600  # ten Machines on one workspace, each a read every ten minutes
+    SLACK_CALM = 30
+
+    def slot_wait(self, at):
+        """Seconds from `at` (epoch) until this Machine's minute of the round, 0 within its first SLOT_OPEN seconds."""
+        if self.slots < 2:
+            return 0
+        into = (at - self.slot * 60) % self.round
+        return 0 if into < self.SLOT_OPEN else self.round - into
+
+    def read_went(self, limited):
+        """After a history or replies read: Slack refused it for the rate limit (limited) or took it."""
+        if limited:
+            self.round, self.calm = max(self.round, min(max(self.SLACK_ROUND_MAX, self.read_seconds), self.round + 60)), 0
+            before, self.slots = self.slot, self.round // 60
+            if self.slots > 1:
+                self.slot = random.choice([n for n in range(self.slots) if n != before])
+        elif self.round > self.read_seconds:
+            self.calm += 1
+            if self.calm >= self.SLACK_CALM:
+                self.round, self.calm = max(self.read_seconds, self.round - 60), 0
+                self.slots = self.round // 60
+                self.slot %= self.slots
 
     def pace(self, method):
         stamp = time.monotonic()
         delay = max(0, 2 - (stamp - self.last_call))
         if method in self.limited_reads:
-            delay = max(delay, self.read_seconds - (stamp - self.last_limited))
+            if self.slots < 2:
+                delay = max(delay, self.round - (stamp - self.last_limited))
+            else:  # never two reads within Slack's minute, then this Machine's own minute (after a restart too)
+                delay = max(delay, 65 - (stamp - self.last_limited))
+                delay += self.slot_wait(time.time() + delay)
         if self.stop is not None:
             if self.stop.wait(delay):
                 raise SourceError('collector_stopped')
@@ -2490,6 +2530,8 @@ class Slack:
             if error.code == 429:
                 # Spread out computers that share the connection, so they don't all retry at once.
                 retry_after += random.randint(5, 60)
+                if method in self.limited_reads:
+                    self.read_went(True)
             raise SourceError('slack:' + method, error.code, retry_after) from None
         except (urllib.error.URLError, TimeoutError) as error:
             # Keep only the exception class and an allowlisted read method,
@@ -2505,8 +2547,12 @@ class Slack:
             label = data.get('error') if isinstance(data, dict) else None
             known = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found',
                      'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked'}
+            if label == 'ratelimited' and method in self.limited_reads:
+                self.read_went(True)
             raise SourceError('slack_' + (label if label in known else 'invalid_response') + ':' + method,
                               retry_after=60 if label == 'ratelimited' else None)
+        if method in self.limited_reads:
+            self.read_went(False)
         return data
 
     def profile(self):
@@ -8242,6 +8288,12 @@ def fault_frames(tb, root=APP_ROOT):
     return frames[-8:]
 
 
+def fault_where(error):
+    """Where an error happened, for its log line: this code's frames, innermost first ("assistant.py:120 related_lines <
+    assistant.py:88 run"), never values. '-' when none of it is ours."""
+    return ' < '.join(f"{f['file']}:{f['line']} {f['function']}" for f in reversed(fault_frames(error.__traceback__)[-4:])) or '-'
+
+
 FAULT_QUOTED = re.compile(r"'([^']*)'|\"([^\"]*)\"")
 
 
@@ -8255,7 +8307,8 @@ def fault_message(error, limit=200):
     text = re.sub(r'[\w.+-]+@[\w-]+(?:\.[\w-]+)+', '<email>', text)
     text = FAULT_QUOTED.sub(lambda m: m.group(0) if re.fullmatch(r'[a-z_][a-z0-9_.-]{0,40}', m.group(1) or m.group(2) or '') else '<text>', text)
     text = re.sub(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '<id>', text, flags=re.I)
-    text = re.sub(r'(?<![\w<])[A-Za-z0-9_\-+/=]{24,}', '<secret>', text)
+    # a plain code of lowercase words (android_feed_unavailable) stays: error_feed.PLAIN_CODE
+    text = re.sub(r'(?<![\w<])[A-Za-z0-9_\-+/=]{24,}', lambda m: m.group(0) if error_feed.PLAIN_CODE.fullmatch(m.group(0)) else '<secret>', text)
     text = re.sub(r'\+?\d[\d .-]{4,}\d', '<number>', text)
     text = text.strip()
     return (text[:limit - 1] + '…' if len(text) > limit else text) or None
@@ -10992,6 +11045,7 @@ def hold_mail(store, config, kind, title, ref, work=False):
         if not notify.allowed(db, kind, 'email'):
             return False
         notify.hold(db, 'email', kind, title, time.time() + notify.EMAIL_AFTER, ref=ref, show=security_levels.notify_text(db, work))
+    LOG.info('notify email held kind=%s ref=%s', kind, ref)
     return True
 
 
@@ -12998,6 +13052,7 @@ class App:
                 result['model_pause'] = self.model_pause()
             except Exception as error:  # noqa: BLE001 - the dashboard shows without it
                 LOG.error('model pause error=%s', type(error).__name__); result['model_pause'] = None
+            result['review_pause'] = self.review_pause()
             result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
             result['review_live'] = self.review_live()
             result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
@@ -13138,6 +13193,14 @@ class App:
                 return {**enrichment.status(db, self.config), 'people': enrichment.people_status(db)}
         if name == 'preview_review':
             return self.start_preview()
+        if name == 'review_now':  # the dashboard's Review now while reviews wait for the budget: the owner's own, like a preview
+            if not owner_dashboard:
+                raise ValueError('Only the owner can do this, on the dashboard')
+            if not (self.config.get('review_worker') or {}).get('enabled'):
+                return self.start_preview()
+            self.review_asked, self.review_paused = time.time(), None
+            LOG.info('review now asked')
+            return {'asked': True}
         if name == 'roles_start':
             return self.store.roles_start(bool(args.get('again')))
         if name == 'profile_start':
@@ -14101,6 +14164,8 @@ class App:
                 except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
                     LOG.warning('digest telegram error=%s', type(error).__name__)
             target = prefs.get('email') and self.notify_mail_target()
+            if prefs.get('email') and not target:
+                LOG.info('digest email skipped reason=not_paired')
             if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
                 went.append('email')
         with self.store.connect() as db:
@@ -15282,7 +15347,7 @@ class App:
                     try:
                         lines=self.related_lines(job['suggestion_id'])
                         if len(request['message'])+len(lines)<PROMPT_LIMIT-500:request['message']+=lines
-                    except Exception as error:LOG.error('related error=%s',type(error).__name__)
+                    except Exception as error:LOG.error('related error=%s at=%s',type(error).__name__,fault_where(error))
                 if getattr(self,'skills',None) and not job.get('finish'):
                     try:  # "There's a skill for this": an installed one that isn't ready, or one on ClawHub (the agent can search it)
                         lines=self.skills.hint_prompt(clawhub=True)
@@ -16272,13 +16337,14 @@ class App:
                 # Projects the owner just put on a board are sorted within minutes, with or without new signals
                 sort_due = bool(graph.unsorted_projects(db, 1)) or graph.fit_due(db, now())
                 # A new board looks through the history in rounds a few minutes apart, while the model's limits have room
-                backfill_due = not sort_due and self.model_room() and graph.backfill_due(db, now())
+                backfill_due = not sort_due and self.model_room() and not self.history_paced() and graph.backfill_due(db, now())
+                asked = getattr(self, 'review_asked', 0) > time.time() - REVIEW_ASKED_SECONDS  # the owner's Review now
                 gap = retry if recovery or failed else settings.get('sort_gap_seconds', 60) if sort_due else \
                     settings.get('backfill_gap_seconds', 180) if backfill_due else settings.get('gap_seconds', 600)
                 sort_due = sort_due or backfill_due
                 if last and last['status'] == 'ok' and last['window_hours'] and not recovery:
                     gap = min(gap, 60)  # after the quick first review, the rest follows right away
-                if last and (stamp - dt.datetime.fromisoformat(last['finished_at'])).total_seconds() < gap:
+                if last and (stamp - dt.datetime.fromisoformat(last['finished_at'])).total_seconds() < gap and not asked:
                     return None
                 # Leave a review claimed elsewhere (a manual run) alone until it ends or expires.
                 if not recovery and db.execute("SELECT 1 FROM analyses WHERE status IN ('running','retryable') AND coalesce(resumed_at,started_at)>?",
@@ -16287,7 +16353,10 @@ class App:
                 # Reviews just turned on and nothing reviewed yet: first a quick look at the newest mail, at once (no
                 # waiting for a batch or for the rest of the import); the regular reviews take the rest after it.
                 quick = 0 if recovery else self.quick_first_review(db)
-                if self.background_pause(first=bool(quick), job='review', db=db):  # one usage check before every background turn (model_budget)
+                # One usage check before every background turn (model_budget). New signals are not paced per day, only
+                # at the week's WEEK_CAP and the 5-hour window; the owner's Review now goes like their own chat.
+                self.review_paused = self.background_pause(first=bool(quick), owner=asked, job='review', db=db, signals=True)
+                if self.review_paused:
                     return None
                 if quick:
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
@@ -16304,7 +16373,7 @@ class App:
                     mail = self.mail_backfill(db) if not recovery else {'filling': [], 'fresh': []}
                     if mail['filling'] and young and not sort_due:
                         return None
-                    if not recovery and not mail['fresh'] and not sort_due and (not waiting or (waiting < settings.get('min_signals', 40) and young)):
+                    if not recovery and not mail['fresh'] and not sort_due and (not waiting or (waiting < settings.get('min_signals', 40) and young and not asked)):
                         return None
                     if not waiting and not recovery and not sort_due:
                         return None
@@ -16315,6 +16384,7 @@ class App:
                     budget = FIRST_LOOK_NEXT_SIGNALS if nxt else RUN_SIGNAL_BUDGET
                     db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,planned,budget,promising) VALUES(?,?,?,?,?,?,?)",
                                (run['run_id'], 'starting', run['started_at'], run['started_at'], min(waiting, budget), budget if nxt else None, int(nxt)))
+                    self.review_asked = 0
             if run['status'] == 'starting':
                 db.execute('UPDATE review_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
         expired = (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds() > (
@@ -17335,10 +17405,10 @@ class App:
         getattr(self, 'model_usage_wake', threading.Event()).set()
         return until
 
-    def background_pause(self, first=False, owner=False, job=None, db=None):
+    def background_pause(self, first=False, owner=False, job=None, db=None, signals=False):
         """None when a turn the service starts may go now; else why it waits ({'window', 'until', 'limited'...}). A
         usage limit holds everything; the budget (model_budget.pause) holds background work only, `first` for the
-        first look and its first draft. A sign-in that reports no usage windows (an API key) is never paused here.
+        first look and its first draft, `signals` for a review of new signals (the week holds it only at WEEK_CAP). A sign-in that reports no usage windows (an API key) is never paused here.
         Each budget check is counted (pacing.py): how often background work paces, how long, how many jobs (`job`,
         an id that stays here) waited."""
         now_s, usage = time.time(), getattr(self, 'model_usage', None)
@@ -17351,11 +17421,12 @@ class App:
             return max(full, key=lambda f: f['until'] or 0)
         if owner:
             return None
-        found = model_budget.pause(usage, now_s, first=first)
+        found = model_budget.pause(usage, now_s, first=first, signals=signals)
         tracker = getattr(self, 'pacing', None)
         if tracker is None and getattr(self, 'store', None) is not None:
             tracker = self.pacing = pacing.Tracker(self.store.connect)
-        if tracker:
+        # A review of new signals that goes while the day's share holds heavier work doesn't end that work's stretch
+        if tracker and not (signals and not found and model_budget.pause(usage, now_s, first=first)):
             tracker.note(found, job, first=first, now_s=now_s, db=db)  # db: a caller's write transaction (preparation_step)
         return {**found, 'limited': False} if found else None
 
@@ -17372,9 +17443,28 @@ class App:
         found = self.background_pause(owner=True)
         if not found:
             return None
+        return {'window': found['window'], 'until': found.get('until'), 'name': self.model_name()}
+
+    def model_name(self):
+        """The sign-in's name for the owner: Claude, ChatGPT, or None when it is neither."""
         model = openclaw_model(self.config) or ''
-        name = 'Claude' if model.startswith(('claude-cli/', 'anthropic/')) or claude_plan_route(self.config) else 'ChatGPT' if model.startswith(('openai', 'codex')) else None
-        return {'window': found['window'], 'until': found.get('until'), 'name': name}
+        return 'Claude' if model.startswith(('claude-cli/', 'anthropic/')) or claude_plan_route(self.config) else 'ChatGPT' if model.startswith(('openai', 'codex')) else None
+
+    def review_pause(self):
+        """What the dashboard says while reviews of new signals wait for the budget (review_step), with its Review now:
+        which window, until when, the sign-in's name. None when they don't wait, or a usage limit holds them (model_pause
+        says that)."""
+        found = getattr(self, 'review_paused', None)
+        if not found or found.get('limited') or not (self.config.get('review_worker') or {}).get('enabled'):
+            return None
+        if found.get('until') and found['until'] <= time.time():
+            return None
+        return {'window': found['window'], 'until': found.get('until'), 'name': self.model_name()}
+
+    def history_paced(self):
+        """A board's look through the history keeps the daily share of the week (model_budget.pause without `signals`),
+        also when it rides along with a review of new signals. Not counted in pacing.py: the review's own check is."""
+        return bool(model_budget.pause(getattr(self, 'model_usage', None)))
 
     def model_room(self, most=80):
         """The model's limits have room for extra work (a board's look through the history): no window the sign-in reports
@@ -17415,7 +17505,7 @@ class App:
         """The next round of a new board's look through the history for this review (graph.backfill_brief), ranked by
         meaning first when there are local embeddings. Empty while the model's limits are nearly used."""
         try:
-            if not self.model_room():
+            if not self.model_room() or self.history_paced():
                 return ''
             with self.store.connect() as db:
                 pending = graph.backfill_pending(db)
@@ -18204,7 +18294,9 @@ class App:
         if not accounts or not ids:return ''
         found,_=self.related(accounts,ids,'',limit)
         rows={r['id']:r for r in self.store.events(accounts,event_ids=[i for i,_ in found])} if found else {}
-        lines=[f"- {i} ({rows[i]['account_id']}) {source_line([rows[i]])[8:]} · {clamp(' '.join(rows[i]['title'].split()),100)}" for i,_ in found if i in rows]
+        # source_line skips the owner's own to-dos (owner.card: the card says "Added by you"); here each one names what it is
+        where=lambda r:source_text(r) if r['kind']=='owner.card' else source_line([r])[8:]
+        lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}" for i,_ in found if i in rows]
         return ('\n\nPossibly related (found by meaning in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
 
     def protection_now(self, config):

@@ -22,12 +22,15 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 import threading
 import time
 import urllib.error
 import urllib.request
 
 from i18n import t
+
+LOG = logging.getLogger('personal-assistant')
 
 KINDS = ('todo', 'result', 'reminder', 'digest')
 CHANNELS = ('push', 'telegram', 'email')
@@ -153,10 +156,15 @@ def take_due(db, still_open=lambda ref: True, clock=wall):
     dashboard is in use."""
     ensure(db)
     at, seen = clock(), last_seen(clock)
+    # Why a waiting email never went, in the log (seen on a dashboard, too old, handled), so "no email" can be checked
+    dropped = {'seen': db.execute("SELECT count(*) FROM notify_queue WHERE channel='email' AND created<=?", (seen,)).fetchone()[0]}
     db.execute('DELETE FROM notify_queue WHERE created<=?', (seen,))
-    db.execute("DELETE FROM notify_queue WHERE channel='email' AND created<?", (at - EMAIL_STALE,))
+    dropped['stale'] = db.execute("DELETE FROM notify_queue WHERE channel='email' AND created<?", (at - EMAIL_STALE,)).rowcount
     rows = [dict(r) for r in db.execute('SELECT * FROM notify_queue ORDER BY created,id')]
     gone = [r['id'] for r in rows if r['ref'] and not still_open(r['ref'])]
+    dropped['handled'] = sum(r['channel'] == 'email' for r in rows if r['id'] in gone)
+    if any(dropped.values()):
+        LOG.info('notify email dropped seen=%d stale=%d handled=%d', dropped['seen'], dropped['stale'], dropped['handled'])
     rows = [r for r in rows if r['id'] not in gone]
     pushes, lines = [], []
     if not active(clock):
@@ -284,6 +292,11 @@ def mail(url, token, subject, text, opener=urllib.request.urlopen):
                                      headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
     try:
         with opener(request, timeout=30) as response:
-            return bool(json.loads(response.read(10_000) or b'{}').get('sent'))
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
-        return False
+            if json.loads(response.read(10_000) or b'{}').get('sent'):
+                return True
+            LOG.warning('notify mail not taken')
+    except urllib.error.HTTPError as error:  # the control plane said no: 401 not paired, 404 no address, 429 enough today, 502/503 its mailer
+        LOG.warning('notify mail status=%d', error.code)
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+        LOG.warning('notify mail error=%s', type(error).__name__)
+    return False

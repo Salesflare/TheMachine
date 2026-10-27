@@ -14,7 +14,9 @@ The top of Suggestions says "Reviews are off, so no suggestions arrive yet." On 
 
 ## Your model's limit
 
-Reviews pause at about 65% of your plan's 5-hour limit and pace the weekly limit, to keep room for your own chats. When a limit is reached, the top of the dashboard says which one and when it resets. **Connections**, then **Reviews**, shows it next to the run. **Settings**, **Model** shows your limits. See [Model](model.md).
+Reviews of what came in pause at about 65% of your plan's 5-hour limit and at 90% of its weekly limit, to keep room for your own chats. A board's look through your history goes slower, at about a seventh of the week a day.
+
+While reviews wait, the top of the dashboard says until when, like "Reviews wait until 07:15 to save your ChatGPT week." **Review now** starts one right away. When a limit is reached, the top of the dashboard says which one and when it resets. **Connections**, then **Reviews**, shows it next to the run. **Settings**, **Model** shows your limits. See [Model](model.md).
 
 Nothing is lost while it waits: what came in is reviewed once it can.
 

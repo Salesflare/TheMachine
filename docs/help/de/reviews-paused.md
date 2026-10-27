@@ -14,7 +14,9 @@ Oben in Vorschläge steht „Die Durchsicht ist aus, daher kommen noch keine Vor
 
 ## Das Limit deines Modells
 
-Prüfungen pausieren bei etwa 65 % des 5-Stunden-Limits deines Tarifs und verteilen das Wochenlimit, damit Platz für deine eigenen Chats bleibt. Ist ein Limit erreicht, steht oben im Dashboard, welches und wann es zurückgesetzt wird. **Verbindungen**, dann **Prüfungen** zeigt es neben dem Durchlauf. **Einstellungen**, **Modell** zeigt deine Limits. Siehe [Modell](model.md).
+Prüfungen dessen, was reingekommen ist, pausieren bei etwa 65 % des 5-Stunden-Limits deines Tarifs und bei 90 % des Wochenlimits, damit Platz für deine eigenen Chats bleibt. Ein Board, das deinen Verlauf durchgeht, ist langsamer, mit etwa einem Siebtel der Woche pro Tag.
+
+Während Prüfungen warten, steht oben im Dashboard, bis wann, etwa „Die Durchsicht wartet bis 07:15, um deine ChatGPT-Woche zu schonen.“ **Jetzt durchsehen** startet sofort eine. Ist ein Limit erreicht, steht oben im Dashboard, welches und wann es zurückgesetzt wird. **Verbindungen**, dann **Prüfungen** zeigt es neben dem Durchlauf. **Einstellungen**, **Modell** zeigt deine Limits. Siehe [Modell](model.md).
 
 Während es wartet, geht nichts verloren: Was reingekommen ist, wird geprüft, sobald es geht.
 

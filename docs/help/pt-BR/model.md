@@ -24,7 +24,7 @@ Se o seu plano tem limites de uso, aparece quanto de cada um já foi usado e qua
 
 ## Espaço para os seus chats
 
-O trabalho em segundo plano (revisões, seu perfil, rascunhos preparados com antecedência) deixa espaço para os seus próprios chats. Ele pausa em cerca de 65% do limite de 5 horas e distribui o limite semanal em cerca de um sétimo por dia. Um login sem limites de uso, como uma chave de API, nunca é pausado.
+O trabalho em segundo plano (revisões, seu perfil, rascunhos preparados com antecedência) deixa espaço para os seus próprios chats. Ele pausa em cerca de 65% do limite de 5 horas. As revisões do que chegou seguem até cerca de 90% do limite semanal; o resto o distribui em cerca de um sétimo por dia. Um login sem limites de uso, como uma chave de API, nunca é pausado.
 
 O trabalho em segundo plano nunca roda no GPT-6 Astra. Ele usa o GPT-6.1 Sol no lugar.
 

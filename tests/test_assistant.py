@@ -913,20 +913,51 @@ class SlackInvariants(unittest.TestCase):
             with self.assertRaises(assistant.SourceError):client.profile()
 
     def test_slack_rate_pacing_and_restart_warmup(self):
-        with patch.object(assistant.time, 'monotonic', return_value=100), patch.object(assistant.time, 'sleep') as sleep:
-            client = assistant.Slack({}, self.account)
-            client.pace('conversations.replies')
-            sleep.assert_called_with(180)
-        with patch.object(assistant.time, 'monotonic', return_value=110), patch.object(assistant.time, 'sleep') as sleep:
-            client.pace('conversations.history')  # history and replies share one budget
-            sleep.assert_called_with(170)
-        with patch.object(assistant.time, 'monotonic', return_value=111), patch.object(assistant.time, 'sleep') as sleep:
+        T = assistant.time
+        def at(mono, wall):
+            return patch.object(T, 'monotonic', return_value=mono), patch.object(T, 'time', return_value=wall), patch.object(T, 'sleep')
+        client = assistant.Slack({}, self.account)
+        self.assertEqual(client.slots, 3)  # a 3-minute round: three Machines on one workspace each get their own minute
+        client.slot = 1  # this Machine reads in the second minute of each round (60-80 s past a multiple of 180)
+        m, w, s = at(100, 1800)
+        with m, w, s as sleep:
+            client.last_limited = 100
+            client.pace('conversations.replies')  # just started: never within Slack's minute of a read before the restart
+            sleep.assert_called_with(65)  # 1800 + 65 = 1865 is 5 s into its minute
+        m, w, s = at(200, 1900)
+        with m, w, s as sleep:
+            client.pace('conversations.history')  # history and replies share one budget: 40 s past its minute, wait for the next round
+            sleep.assert_called_with(140)
+        m, w, s = at(201, 2040)
+        with m, w, s as sleep:
             client.pace('conversations.info')  # not limited to one a minute: only the 2-second spacing
             sleep.assert_called_with(1)
-        with patch.object(assistant.time, 'monotonic', return_value=200), patch.object(assistant.time, 'sleep') as sleep:
+        m, w, s = at(200, 2000)
+        with m, w, s as sleep:
             restarted = assistant.Slack({'slack_read_seconds': 30}, self.account)  # never below Slack's own minute
+            self.assertEqual(restarted.slots, 1)
             restarted.pace('conversations.history')
             sleep.assert_called_with(65)
+
+    def test_two_machines_on_one_workspace_read_in_different_minutes(self):
+        # Seen on a team's five Machines on one Slack workspace: they shared Slack's one read a minute and each kept
+        # hitting 429. Each now reads in its own minute of the round; the same minute moves one of them after a 429,
+        # and the round grows until there is a minute for each (test_slack_rate_limit_identifies_method_without_content).
+        T = assistant.time
+        machines = [assistant.Slack({}, self.account), assistant.Slack({}, self.account)]
+        machines[0].slot, machines[1].slot = 0, 2
+        reads = []
+        for client in machines:
+            with patch.object(T, 'monotonic', return_value=100), patch.object(T, 'time', return_value=1000), patch.object(T, 'sleep') as sleep:
+                client.pace('conversations.history')
+                reads.append((1000 + sleep.call_args[0][0]) % 180)
+        self.assertGreaterEqual(abs(reads[0] - reads[1]), 60)
+        with patch.object(assistant.socket, 'gethostname', return_value='machine-a'):
+            a, again = assistant.Slack({}, self.account), assistant.Slack({}, self.account)
+        with patch.object(assistant.socket, 'gethostname', return_value='machine-b'):
+            others = {assistant.Slack({}, {**self.account, 'connection_id': f'c{n}'}).slot for n in range(12)}
+        self.assertEqual(a.slot, again.slot)  # stable for a Machine and connection, so a restart keeps its minute
+        self.assertEqual(others, {0, 1, 2})
 
     def test_slack_wait_cancels_before_request_on_shutdown(self):
         import threading
@@ -955,6 +986,22 @@ class SlackInvariants(unittest.TestCase):
             with self.assertRaises(assistant.SourceError) as raised:client.get('conversations.replies')
         self.assertEqual(str(raised.exception),'slack:conversations.replies:HTTP_429')
         self.assertTrue(125 <= raised.exception.retry_after <= 180)  # Slack's wait plus a spread so computers sharing the connection don't retry together
+        self.assertEqual((client.round, client.slots), (240, 4))  # the round grew by a minute: room for one more Machine
+        for _ in range(8):
+            before = client.slot
+            with patch.object(client,'pace'),patch.object(assistant,'credential',return_value='KEY=fake'),patch.object(assistant.urllib.request,'urlopen',side_effect=error):
+                with self.assertRaises(assistant.SourceError):client.get('conversations.history')
+            self.assertNotEqual(client.slot, before)  # another Machine reads in this minute: this one takes another
+            self.assertLess(client.slot, client.slots)
+        self.assertEqual(client.round, 600)  # ten minutes at most
+        for _ in range(client.SLACK_CALM):
+            client.read_went(False)
+        self.assertEqual((client.round, client.slots), (540, 9))  # calm for a while: a minute shorter again
+        self.assertLess(client.slot, 9)
+        calm = assistant.Slack({}, account)
+        for _ in range(100):
+            calm.read_went(False)
+        self.assertEqual(calm.round, 180)  # never below slack_read_seconds
 
     def test_slack_old_known_thread_is_refreshed_after_overlap(self):
         self.channel.update(last_scan='40000.000001',next_full=assistant.time.time()+86400,threads=['1100.000001'])

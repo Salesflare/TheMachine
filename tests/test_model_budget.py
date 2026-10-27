@@ -44,6 +44,16 @@ class Budget(unittest.TestCase):
         self.assertEqual(b.allowed_this_week(NOW + 10, NOW), b.WEEK_CAP)  # the last day: never past the cap
         self.assertEqual(b.pause(usage(week=95), NOW, first=True)['window'], 'week')
 
+    def test_reviews_of_new_signals_go_on_until_the_week_cap(self):
+        # 2026-10-27: day 2 of the week, 29% allowed, mostly spent by Codex: 109 new signals waited until the next day.
+        reset = NOW + 5 * DAY + HOUR
+        self.assertEqual(b.pause(usage(week=40, week_reset=reset), NOW)['threshold'], 29)  # heavier work keeps the day's share
+        self.assertIsNone(b.pause(usage(week=89, week_reset=reset), NOW, signals=True))
+        found = b.pause(usage(week=90, week_reset=reset), NOW, signals=True)
+        self.assertEqual((found['window'], found['until'], found['threshold']), ('week', reset, b.WEEK_CAP))  # until the week resets
+        found = b.pause(usage(short=65, week=10), NOW, signals=True)  # the 5-hour window still holds them
+        self.assertEqual((found['window'], found['threshold']), ('5h', b.SHORT_PAUSE))
+
     def test_a_sign_in_without_usage_windows_is_never_paused(self):
         self.assertIsNone(b.pause(None, NOW))
         self.assertIsNone(b.pause([{'provider': 'openai', 'windows': []}], NOW))
@@ -84,6 +94,64 @@ class Checks(unittest.TestCase):
         self.assertEqual(runner.requests, [])
         self.app.model_usage = usage(short=30, short_reset=time.time() + HOUR)
         self.assertEqual(self.app.review_step(runner), 'admitted')
+
+    def after_the_quick_look(self, new=50):
+        self.app.model_usage = None
+        self.assertEqual(self.app.review_step(Runner()), 'admitted')
+        with self.store.connect() as db:
+            db.execute("UPDATE review_runs SET status='ok',finished_at='2000-01-01T00:00:00+00:00'")
+            db.execute("UPDATE events SET analyzed_version=0")
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': f'n{n}', 'kind': 'gmail.message', 'occurred_at': a.now(),
+                                             'title': 'New', 'body': 'Hi', 'metadata': {}, 'deleted': False} for n in range(new)])
+
+    def test_reviews_of_new_signals_are_not_held_by_the_days_share_but_heavier_work_is(self):
+        self.after_the_quick_look()
+        day_two = time.time() + 5 * DAY + HOUR  # 29% of the week allowed today
+        self.app.model_usage = usage(short=10, week=40, short_reset=time.time() + HOUR, week_reset=day_two)
+        self.assertEqual(self.app.review_step(Runner()), 'admitted')
+        self.assertIsNone(self.app.review_paused)
+        self.assertEqual(self.app.background_pause(job='preparation')['window'], 'week')  # drafts prepared ahead, the profile
+        self.assertTrue(self.app.history_paced())  # a board's look through the history
+        self.assertEqual(self.app.backfill_text('r1'), '')
+        with self.store.connect() as db:
+            rows = db.execute('SELECT win,threshold,jobs FROM pacing_starts').fetchall()
+        self.assertEqual([tuple(r) for r in rows], [('week', 29, 1)])  # pacing.py still counts the work that waited
+        with self.store.connect() as db:
+            db.execute("UPDATE review_runs SET status='ok',finished_at='2000-01-01T00:00:00+00:00'")
+        self.assertEqual(self.app.review_step(Runner()), 'admitted')
+        with self.store.connect() as db:  # a review that went meanwhile doesn't end that stretch
+            self.assertEqual(db.execute('SELECT count(*),max(ended_at) FROM pacing_starts').fetchone()[:], (1, None))
+        self.app.model_usage = usage(short=10, week=90, short_reset=time.time() + HOUR, week_reset=day_two)
+        with self.store.connect() as db:
+            db.execute("UPDATE review_runs SET status='ok',finished_at='2000-01-01T00:00:00+00:00'")
+        self.assertIsNone(self.app.review_step(Runner()))  # at the week's cap they wait too
+        self.assertEqual((self.app.review_paused['window'], self.app.review_paused['until']), ('week', day_two))
+
+    def test_reviews_that_wait_say_so_on_the_dashboard_and_review_now_starts_one(self):
+        self.after_the_quick_look(new=5)  # a small batch: it would wait for more, or an hour
+        self.app.config['openclaw_config'] = str(Path(self.temp.name) / 'openclaw.json')
+        Path(self.app.config['openclaw_config']).write_text(json.dumps({'agents': {'defaults': {'model': 'openai/gpt-6.1-sol'}}}))
+        reset = int(time.time()) + HOUR
+        self.app.model_usage = usage(short=70, short_reset=reset)
+        self.assertIsNone(self.app.review_step(Runner()))
+        self.assertEqual(self.app.review_pause(), {'window': '5h', 'until': reset, 'name': 'ChatGPT'})
+        self.assertIsNone(self.app.model_pause())  # not a usage limit: the limit banner stays away
+        with self.assertRaises(ValueError):
+            self.app.action('review_now', {})  # the owner's, on the dashboard
+        self.assertEqual(self.app.action('review_now', {}, owner_dashboard=True), {'asked': True})
+        self.assertIsNone(self.app.review_pause())
+        runner = Runner()
+        self.assertEqual(self.app.review_step(runner), 'admitted')
+        self.assertEqual(runner.requests[0]['kind'], 'review')
+        self.assertEqual(self.app.review_asked, 0)  # once
+        with self.store.connect() as db:
+            db.execute("UPDATE review_runs SET status='ok',finished_at='2000-01-01T00:00:00+00:00'")
+            db.execute("UPDATE events SET analyzed_version=0")
+        self.app.model_usage = usage(short=100, short_reset=reset)  # a full window holds even Review now
+        self.app.action('review_now', {}, owner_dashboard=True)
+        self.assertIsNone(self.app.review_step(Runner()))
+        self.assertIsNone(self.app.review_pause())
+        self.assertEqual(self.app.model_pause()['window'], '5h')
 
     def test_a_usage_limit_a_run_hit_holds_everything_until_it_resets(self):
         until = int(time.time()) + 2 * HOUR

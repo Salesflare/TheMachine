@@ -35,7 +35,9 @@ Dezelfde fout telt één keer, met een aantal. Hooguit één batch per 10 minute
 
 ## Pacing
 
-Werk op de achtergrond wacht als de limieten van je AI-abonnement bijna op zijn, zodat er ruimte blijft voor je eigen chats (zie [Model](model.md)). Met foutrapporten aan vertelt je Machine het team ook, één keer per dag, hoe vaak dat gebeurde: per keer het uur waarop het begon, welke limiet, hoeveel minuten het duurde en hoeveel taken wachtten. Alleen aantallen en minuten, niets over wat die taken waren.
+Werk op de achtergrond wacht als de limieten van je AI-abonnement bijna op zijn, zodat er ruimte blijft voor je eigen chats (zie [Model](model.md)). Reviews van wat binnenkwam wachten alleen vlak bij de limieten; zwaarder werk, zoals je geschiedenis doorlopen, wordt over de week verdeeld.
+
+Met foutrapporten aan vertelt je Machine het team ook, één keer per dag, hoe vaak dat gebeurde: per keer het uur waarop het begon, welke limiet, hoeveel minuten het duurde en hoeveel taken wachtten. Alleen aantallen en minuten, niets over wat die taken waren.
 
 ## Uitzetten
 

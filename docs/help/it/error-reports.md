@@ -35,7 +35,9 @@ Lo stesso errore conta una volta, con un conteggio. Al massimo un invio ogni 10 
 
 ## Ritmo
 
-Il lavoro in background aspetta quando i limiti del tuo piano AI si esauriscono, per lasciare spazio alle tue chat (vedi [Il tuo modello AI](model.md)). Con le segnalazioni di errore attive, la tua Machine dice al team, una volta al giorno, quante volte è successo: per ogni volta, l'ora in cui è iniziato, quale limite, quanti minuti è durato e quanti lavori hanno aspettato. Solo conteggi e minuti, niente sui lavori.
+Il lavoro in background aspetta quando i limiti del tuo piano AI si esauriscono, per lasciare spazio alle tue chat (vedi [Il tuo modello AI](model.md)). Le revisioni di quello che è arrivato aspettano solo vicino ai limiti; il lavoro più pesante, come scorrere la tua cronologia, è distribuito sulla settimana.
+
+Con le segnalazioni di errore attive, la tua Machine dice al team, una volta al giorno, quante volte è successo: per ogni volta, l'ora in cui è iniziato, quale limite, quanti minuti è durato e quanti lavori hanno aspettato. Solo conteggi e minuti, niente sui lavori.
 
 ## Disattivalo
 

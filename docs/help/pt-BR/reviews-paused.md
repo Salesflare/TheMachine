@@ -14,7 +14,9 @@ O topo de Sugestões diz "As revisões estão desativadas, então ainda não che
 
 ## O limite do seu modelo
 
-As revisões pausam em cerca de 65% do limite de 5 horas do seu plano e dosam o limite semanal, para sobrar espaço para os seus próprios chats. Quando um limite é atingido, o topo do painel diz qual foi e quando ele reinicia. **Conexões** e depois **Revisões** mostra isso ao lado da execução. **Configurações**, **Modelo** mostra seus limites. Veja [Modelo](model.md).
+As revisões do que chegou pausam em cerca de 65% do limite de 5 horas do seu plano e em 90% do limite semanal, para sobrar espaço para os seus próprios chats. Um quadro que percorre seu histórico vai mais devagar, em cerca de um sétimo da semana por dia.
+
+Enquanto as revisões esperam, o topo do painel diz até quando, como "As revisões esperam até 07:15 para poupar sua semana do ChatGPT." **Revisar agora** inicia uma na hora. Quando um limite é atingido, o topo do painel diz qual foi e quando ele reinicia. **Conexões** e depois **Revisões** mostra isso ao lado da execução. **Configurações**, **Modelo** mostra seus limites. Veja [Modelo](model.md).
 
 Nada se perde enquanto espera: o que chegou é revisado assim que for possível.
 
