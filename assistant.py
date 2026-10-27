@@ -8241,6 +8241,12 @@ def fault_frames(tb, root=APP_ROOT):
     return frames[-8:]
 
 
+def fault_where(error):
+    """Where an error happened, for its log line: this code's frames, innermost first ("assistant.py:120 related_lines <
+    assistant.py:88 run"), never values. '-' when none of it is ours."""
+    return ' < '.join(f"{f['file']}:{f['line']} {f['function']}" for f in reversed(fault_frames(error.__traceback__)[-4:])) or '-'
+
+
 FAULT_QUOTED = re.compile(r"'([^']*)'|\"([^\"]*)\"")
 
 
@@ -15281,7 +15287,7 @@ class App:
                     try:
                         lines=self.related_lines(job['suggestion_id'])
                         if len(request['message'])+len(lines)<PROMPT_LIMIT-500:request['message']+=lines
-                    except Exception as error:LOG.error('related error=%s',type(error).__name__)
+                    except Exception as error:LOG.error('related error=%s at=%s',type(error).__name__,fault_where(error))
                 if getattr(self,'skills',None) and not job.get('finish'):
                     try:  # "There's a skill for this": an installed one that isn't ready, or one on ClawHub (the agent can search it)
                         lines=self.skills.hint_prompt(clawhub=True)
@@ -18197,7 +18203,9 @@ class App:
         if not accounts or not ids:return ''
         found,_=self.related(accounts,ids,'',limit)
         rows={r['id']:r for r in self.store.events(accounts,event_ids=[i for i,_ in found])} if found else {}
-        lines=[f"- {i} ({rows[i]['account_id']}) {source_line([rows[i]])[8:]} · {clamp(' '.join(rows[i]['title'].split()),100)}" for i,_ in found if i in rows]
+        # source_line skips the owner's own to-dos (owner.card: the card says "Added by you"); here each one names what it is
+        where=lambda r:source_text(r) if r['kind']=='owner.card' else source_line([r])[8:]
+        lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}" for i,_ in found if i in rows]
         return ('\n\nPossibly related (found by meaning in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
 
     def protection_now(self, config):

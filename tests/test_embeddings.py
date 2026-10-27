@@ -337,5 +337,25 @@ class Embeddings(unittest.TestCase):
         self.assertEqual(len(emb.embed(SETTINGS, ['y ' * 3000] * 10)), 10)
         self.assertEqual([len(batch) for batch in sent], [4, 4, 2])
 
+    def test_related_lines_name_the_owners_own_to_dos(self):
+        """A to-do the owner added (owner.card) has no source line of its own: as a seed or a match it still gets listed."""
+        self.store.commit_page('work', {}, [event('6', 'Pay the September invoice', 'Pay the unpaid September invoice', kind='owner.card'),
+                                            event('7', 'Chase the September invoice', 'Chase the unpaid September invoice', kind='owner.card')])
+        self.embed_all()
+        sid = self.store.suggest('invoice', 'Pay the September invoice', 'I can check it.', [self.ids('work', '6')])['id']
+        lines = self.app.related_lines(sid)
+        self.assertIn(f"- {self.ids('work', '7')} (work) to-do the owner added · ", lines)
+        self.assertIn(f"- {self.ids('work', '1')} (work) email from Ann Example", lines)
+
+    def test_a_related_lines_failure_logs_where_it_happened(self):
+        def broken(*_):
+            return None[8:]
+        try:
+            broken()
+        except TypeError as error:
+            where = a.fault_where(error)
+        self.assertRegex(where, r'^tests/test_embeddings\.py:\d+ broken < tests/test_embeddings\.py:\d+ test_a_related')
+        self.assertEqual(a.fault_where(ValueError('no traceback')), '-')
+
 if __name__ == '__main__':
     unittest.main()
