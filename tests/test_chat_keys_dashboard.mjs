@@ -80,7 +80,8 @@ try{
   const asks=()=>actions.filter(a=>a.action==='help_ask').map(a=>a.args.question);
   await page.fill('#help-q','How do I');await page.press('#help-q','Shift+Enter');assert.equal(await page.inputValue('#help-q'),'How do I\n');assert.equal(asks().length,0);
   for(const [combo,q] of [['Enter','How do I snooze?'],['Control+Enter','How do I share a to-do?'],['Meta+Enter','How do I stop a run?']]){
-   await page.fill('#help-q',q);await page.press('#help-q',combo);
+   // One question at a time: the next goes once the answer before it is in
+   await page.waitForFunction(()=>!document.querySelector('#help-log .typing'));await page.fill('#help-q',q);await page.press('#help-q',combo);
    await page.waitForFunction(q=>[...document.querySelectorAll('#help-log .chat-msg.you .bubble')].some(b=>b.textContent===q),q);
    assert.equal(asks().at(-1),q,combo+' asks Help');assert.equal(await page.inputValue('#help-q'),'',combo+' empties the Help box')}
   assert.equal(asks().length,3);
