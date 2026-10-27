@@ -70,6 +70,9 @@ try{
   return {line:s.textDecorationLine,h:r.height,dx:Math.abs((q.left-r.left)-(r.right-q.right)),dy:Math.abs((q.top-r.top)-(r.bottom-q.bottom))}});
   assert.equal(a.line,'none');assert.ok(a.h>=30&&a.dx<=2&&a.dy<=2,JSON.stringify(a))}
  assert.equal(await page.evaluate(()=>[modelName('acme/lm-2.5-swift'),modelName('example-model'),modelName('')].join('|')),'LM-2.5 Swift|Example Model|');
+ // Dated ids read without the release date, version parts with dots
+ assert.equal(await page.evaluate(()=>['acme/sonnet-4-5-20250929','acme/lm-3-1','acme/lm-2-mini-2025-08-07','acme/lm-6.1-sol','acme/lm-4-latest','hub/vendor/lm-2.5-flash-lite','local/lm-oss:20b'].map(modelName).join('|')),
+  'Sonnet 4.5|LM-3.1|LM-2 Mini|LM-6.1 Sol|LM-4|LM-2.5 Flash Lite|LM Oss 20b');
  assert.equal(await page.locator('#model-panel a').first().getAttribute('href'),'https://chatgpt.com/codex/cloud/settings/usage');
  assert.doesNotMatch(await page.locator('#model-panel').textContent(),/unknown|cannot read/);
  assert.match(await page.locator('#model-panel').textContent(),/Usage limit resetsChatGPT shows them\./);

@@ -1558,8 +1558,12 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .model-pick select{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;font-size:16px;cursor:pointer}
 .model-pick:has(select:focus-visible){outline:2px solid var(--c-accent,var(--mint));outline-offset:1px}
 #model-chats .grow{min-width:0}
-#model-chats select{flex:none;width:200px;text-overflow:ellipsis}
-@media(max-width:520px){#model-chats select{width:150px;padding-left:12px}}
+/* Settings' pickers look like a select but show the short name; the list itself can say more (Ultra's cost) */
+.select-like{position:relative;flex:none;display:inline-flex;align-items:center;min-width:200px;max-width:100%;border:1px solid var(--border-strong);border-radius:10px;padding:8px 34px 8px 14px;white-space:nowrap;cursor:pointer;background:var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23a7aaa4' stroke-width='1.8'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center}
+.select-like>span{overflow:hidden;text-overflow:ellipsis}
+.select-like select{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;font-size:16px;cursor:pointer}
+.select-like:focus-within{outline:2px solid var(--amber);outline-offset:2px}
+@media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .settings-list>div{flex-wrap:wrap}#model-chats .grow{flex-basis:100%}#model-chats .select-like{width:100%}}
 .chat-status:not(:empty){margin:0 0 12px}
 .chat-picks{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.chat-picks::-webkit-scrollbar{display:none}.chat-picks:empty,.chat-picks[hidden]{display:none}
 .chat-say{flex:none;width:auto;min-height:30px;margin:0;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--muted);font:400 .84rem/1.3 var(--sans);white-space:nowrap;cursor:pointer}.chat-say:hover{background:var(--c-hover);color:var(--text)}
@@ -2294,7 +2298,7 @@ function i18nObserve(){if(I18N.obs)return;I18N.obs=new MutationObserver(list=>{f
  I18N.obs.observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:I18N_ATTRS})}
 // Switch the page to lang with its catalog (null for English): every node re-reads its English.
 function i18nUse(lang,cat){I18N.lang=lang;I18N.cat=lang==='en'?null:cat;I18N.memo.clear();I18N.pats=I18N.cat?i18nPatterns(I18N.cat):[];
- document.documentElement.lang=lang;i18nWalk(document.body);if(I18N.cat)i18nObserve()}
+ document.documentElement.lang=lang;i18nWalk(document.body);if(I18N.cat)i18nObserve();const ci=document.getElementById('chat-input');if(ci)ci.placeholder=t('Ask or change something')}  // text areas are left alone by the walk
 // true when the page switched (so what renders from data, like region names, renders again)
 async function i18nLoad(lang){if(!lang||lang===I18N.lang&&(lang==='en'||I18N.cat)||lang===I18N.loading)return false;
  if(lang==='en'){i18nUse('en',null);try{localStorage.removeItem('i18n')}catch{}return true}
@@ -2422,11 +2426,13 @@ function limitBanner(p){if(!p)return '';const now=Date.now()/1000,t=+p.until>now
  return `<span><strong>${esc(p.name||'AI')} ${what} reached.</strong>${when?` Resets ${esc(when)}.`:''} Nothing is lost: The Machine picks up where it left off.</span>`}
 function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
 function limitNote(m){if(!m?.limit_reached)return '';return `<p class="limit-note"><strong>${m.chatgpt?'ChatGPT limit reached':'Model limit reached'}</strong>${m.limit_resets_at?`, resets at ${esc(clockAt(m.limit_resets_at))}`:''}${resetAction(m)?' · '+resetAction(m):''}</p>`}
-// A model id as people say it: "acme/lm-2.5-swift" reads "LM-2.5 Swift"; the id itself shows on hover.
-const modelName=id=>{const words=String(id||'').split('/').pop().split(/[-_ ]+/).filter(Boolean);let out='';
+// A model id as people say it: "acme/lm-2.5-swift" reads "LM-2.5 Swift", "acme/sonnet-4-5-20250929" reads
+// "Sonnet 4.5" (no release date, version parts joined with dots); the id itself shows on hover.
+const modelName=id=>{const parts=String(id||'').split('/').pop().replace(/[-_](\d{8}|\d{4}-\d{2}-\d{2})$/,'').replace(/[-_]latest$/i,'').split(/[-_ :]+/).filter(Boolean),words=[];
+ for(const w of parts){const p=words[words.length-1];if(words.length>1&&/^\d+(\.\d+)*$/.test(p)&&/^\d{1,2}$/.test(w))words[words.length-1]=p+'.'+w;else words.push(w)}let out='';
  words.forEach((w,i)=>{const word=i===0&&/^[a-z]{1,3}$/i.test(w)?w.toUpperCase():/^\d/.test(w)?w:w[0].toUpperCase()+w.slice(1);out+=i===0?word:(i===1&&/^[A-Z]{1,3}$/.test(out)&&/^\d/.test(w)?'-':' ')+word});return out};
-function renderModelPanel(){const m=state.model_status,box=$('#settings-model');if(!box)return;box.hidden=!m&&!state.chat_model?.models?.length;if(!m)return;const now=Date.now()/1000;
- const head=`<div class="list settings-list"><div><span class="grow"><strong title="${esc(m.model||'')}">${esc(modelName(m.model)||'Model unknown')}</strong><small>${esc([m.chatgpt?'Signed in with ChatGPT':m.claude_plan?'Uses your Claude plan':m.provider,m.plan?`plan: ${m.plan}`:''].filter(Boolean).join(' · '))}</small></span><small class="model-checked" title="${esc(m.checked_at?fmtDHM(m.checked_at,{day:'numeric',month:'short'}):'')}">Updated ${esc(ago(m.checked_at))}</small></div></div>`;
+function renderModelPanel(){const m=state.model_status,box=$('#settings-model');if(!box)return;box.hidden=!m&&!state.chat_model?.models?.length;if(!m)return;const now=Date.now()/1000,bg=state.chat_model?.background||m.model;
+ const head=`<div class="list settings-list"><div><span class="grow"><strong title="${esc(bg||'')}">${esc(modelName(bg)||'Model unknown')}</strong><small>${esc(['Background work',m.chatgpt?'Signed in with ChatGPT':m.claude_plan?'Uses your Claude plan':m.provider,m.plan?`plan: ${m.plan}`:''].filter(Boolean).join(' · '))}</small></span><small class="model-checked" title="${esc(m.checked_at?fmtDHM(m.checked_at,{day:'numeric',month:'short'}):'')}">Updated ${esc(ago(m.checked_at))}</small></div></div>`;
  const bars=(m.windows||[]).filter(w=>!(w.reset&&w.reset<now)).map(w=>`<div class="usage${w.used>=100?' full':''}"><span>${esc(windowLabel(w.label))}: ${+w.used|0}% used${w.reset?` · resets in ${esc(untilText(w.reset))}`:''}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`).join('')||'<p class="muted">No usage windows reported yet.</p>';
  const r=m.resets,expiry=r?.credits?.find(c=>c.expires)?.expires;
  // Resets this computer can't count (no Codex CLI signed in to the same account, as on a hosted Machine): no
@@ -2437,6 +2443,8 @@ function renderModelPanel(){const m=state.model_status,box=$('#settings-model');
 // The model and thinking level chats use (chat_model.py): Settings, Model sets the default; the pill under a to-do
 // chat's or Help's message box sets that chat's own. Only what the sign-in offers, each model with its own levels.
 const THINKING={off:'No thinking',minimal:'Minimal thinking',low:'Low thinking',medium:'Medium thinking',high:'High thinking',xhigh:'Extra high thinking',adaptive:'Adaptive thinking',max:'Max thinking',ultra:'Ultra thinking'};
+// In the lists only: Ultra runs helpers alongside, so it says what it costs
+const THINK_OPTION={ultra:'Ultra thinking (slower, uses more of your plan)'};
 const LEVEL_ORDER=Object.keys(THINKING),CHEV='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>';
 const cmEntry=ref=>(state.chat_model?.models||[]).find(m=>m.ref===ref);
 // The supported level nearest the one asked for (OpenClaw maps the same way)
@@ -2450,7 +2458,7 @@ function cmCurrent(kind){const cm=state.chat_model;if(kind==='default')return cm
 function cmModelOptions(sel){const groups={};for(const m of state.chat_model?.models||[])(groups[m.ref.split('/')[0]]||=[]).push(m);
  const opt=ref=>`<option value="${esc(ref)}"${ref===sel?' selected':''}>${esc(modelName(ref))}</option>`,many=Object.keys(groups).length>1;
  return (sel&&!cmEntry(sel)?opt(sel):'')+Object.entries(groups).map(([p,ms])=>many?`<optgroup label="${esc(p)}">${ms.map(m=>opt(m.ref)).join('')}</optgroup>`:ms.map(m=>opt(m.ref)).join('')).join('')}
-const cmThinkOptions=(ref,sel)=>(cmEntry(ref)?.levels||[]).map(l=>`<option value="${l}"${l===sel?' selected':''}>${esc(THINKING[l]||l)}</option>`).join('');
+const cmThinkOptions=(ref,sel)=>(cmEntry(ref)?.levels||[]).map(l=>`<option value="${l}"${l===sel?' selected':''}>${esc(THINK_OPTION[l]||THINKING[l]||l)}</option>`).join('');
 // The pill: "Model · Thinking", each part a native picker over its label (so phones get their own picker)
 function cmPill(kind){const cm=state.chat_model,cur=cmCurrent(kind);if(!cm?.known||!cm.models.length||!cur?.model)return '';const levels=cmEntry(cur.model)?.levels||[];
  return `<label class="model-pick" title="${esc(cur.model)}"><span translate="no">${esc(modelName(cur.model))}</span>${CHEV}<select data-cm-model="${kind}" aria-label="Model" translate="no">${cmModelOptions(cur.model)}</select></label>`
@@ -2459,8 +2467,8 @@ function cmPill(kind){const cm=state.chat_model,cur=cmCurrent(kind);if(!cm?.know
 function cmPaint(kind){const box=$(kind==='help'?'#help-model':'#chat-model');if(!box||box.contains(document.activeElement))return;const h=cmPill(kind);if(box.dataset.html!==h){box.dataset.html=h;box.innerHTML=h}}
 function renderChatModel(){const cm=state.chat_model,box=$('#model-chats');if(!box||box.contains(document.activeElement))return;box.hidden=!cm?.known||!cm.models.length;if(box.hidden)return;
  const cur=cm.default||{},levels=cmEntry(cur.model)?.levels||[];
- const h=`<div class="section-head"><h3>Chats</h3><p>What to-do chats and Help use. Each chat can pick its own under its message box.</p></div><div class="list settings-list"><div><span class="grow"><strong>Model</strong><small>Only models your sign-in offers.</small></span><select data-cm-model="default" aria-label="Model" translate="no">${cmModelOptions(cur.model)}</select></div>`
-  +(levels.length>1?`<div><span class="grow"><strong>Thinking</strong><small>More thinking is slower and uses more of your plan.</small></span><select data-cm-think="default" aria-label="Thinking">${cmThinkOptions(cur.model,cur.thinking)}</select></div>`:'')+'</div>';
+ const h=`<div class="section-head"><h3>Chats</h3><p>What to-do chats and Help use. Each chat can pick its own under its message box.</p></div><div class="list settings-list"><div><span class="grow"><strong>Model</strong><small>Only models your sign-in offers.</small></span><label class="select-like" translate="no"><span>${esc(modelName(cur.model))}</span><select data-cm-model="default" aria-label="Model">${cmModelOptions(cur.model)}</select></label></div>`
+  +(levels.length>1?`<div><span class="grow"><strong>Thinking</strong><small>More thinking is slower and uses more of your plan.</small></span><label class="select-like"><span>${esc(THINKING[cur.thinking]||cur.thinking||'')}</span><select data-cm-think="default" aria-label="Thinking">${cmThinkOptions(cur.model,cur.thinking)}</select></label></div>`:'')+'</div>';
  if(box.dataset.html!==h){box.dataset.html=h;box.innerHTML=h}}
 document.addEventListener('change',async e=>{const el=e.target.closest('[data-cm-model],[data-cm-think]');if(!el)return;const kind=el.dataset.cmModel||el.dataset.cmThink,cur=cmCurrent(kind)||{};
  const next=el.dataset.cmModel?{model:el.value,thinking:cmNearest(cur.thinking,cmEntry(el.value)?.levels)}:{model:cur.model,thinking:el.value};
@@ -4405,7 +4413,7 @@ function chatView(s,groups){const p=chatParts(s);
  return `<div class="chat-layout${chatDrawer?' drawer':''}" data-chat="${s.id}">${side}<div class="chat-main"><header class="chat-head"><a class="chat-back" href="#card=${s.id}" data-chat-back aria-label="Back to the to-do" title="Back to the to-do">${BACK}</a><h2 class="chat-title" title="${esc(s.title)}">${esc(s.title)}</h2>
   <details class="chat-menu" id="chat-menu"><summary aria-label="More actions" title="More actions">${DOTS}</summary><div class="chat-menu-list" role="group" aria-label="More actions">${p.rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button></div></details></header>
  <article id="task-${s.id}" class="chat-panel">${p.panel}</article><div class="chat-log" id="chat-log" aria-live="polite">${chatLog(s)}</div>
- <div class="chat-compose"><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':' hidden'}>${chatPicks(s)}</div><p class="chat-drop-hint">Drop to add to your message</p><p class="chat-file-error" id="chat-file-error" role="alert" hidden></p><div class="chat-tray" id="chat-tray"${chatPending.length?'':' hidden'}>${chatTrayHTML()}</div><div class="chat-box"><button type="button" class="chat-attach" data-chat-attach aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="chat-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="Ask or change something" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span><button type="button" class="chat-send chat-stop" data-chat-stop aria-label="Stop" title="Stop"${chat?.active?'':' hidden'}>${STOP}</button><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send"${chat?.active?' hidden':''} disabled>${SEND}</button></div></div><div class="chat-model" id="chat-model">${cmPill('chat')}</div></div></div></div>`}
+ <div class="chat-compose"><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':' hidden'}>${chatPicks(s)}</div><p class="chat-drop-hint">Drop to add to your message</p><p class="chat-file-error" id="chat-file-error" role="alert" hidden></p><div class="chat-tray" id="chat-tray"${chatPending.length?'':' hidden'}>${chatTrayHTML()}</div><div class="chat-box"><button type="button" class="chat-attach" data-chat-attach aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="chat-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="${esc(window.t('Ask or change something'))}" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span><button type="button" class="chat-send chat-stop" data-chat-stop aria-label="Stop" title="Stop"${chat?.active?'':' hidden'}>${STOP}</button><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send"${chat?.active?' hidden':''} disabled>${SEND}</button></div></div><div class="chat-model" id="chat-model">${cmPill('chat')}</div></div></div></div>`}
 function chatGrow(t){if(!t)return;t.style.height='34px';t.style.height=Math.min(160,Math.max(34,t.scrollHeight))+'px';chatSendState()}
 // While a reply runs, Stop takes the place of Send until something is typed or added (sending then replaces the run).
 function chatSendState(){const t=$('#chat-input'),b=$('[data-chat-send]'),x=$('[data-chat-stop]');if(!t||!b)return;

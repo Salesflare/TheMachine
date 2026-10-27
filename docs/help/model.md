@@ -6,11 +6,13 @@ covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
 ---
-In **Settings**, **Model** shows the model in use and how you're signed in, like with ChatGPT.
+In **Settings**, **Model** shows the model background work uses (marked **Background work**) and how you're signed in, like with ChatGPT.
 
 ## Model and thinking for chats
 
-Under **Chats**, pick the model and the thinking level your to-do chats and Help use. The list has only the models your sign-in offers, like ChatGPT's when you signed in with ChatGPT, and each model only the levels it has. More thinking answers harder questions better, but is slower and uses more of your plan. A change applies from the next message.
+Under **Chats**, pick the model and the thinking level your to-do chats and Help use. The list has only the models your sign-in offers, like ChatGPT's when you signed in with ChatGPT, and each model only the levels it has.
+
+More thinking answers harder questions better, but is slower and uses more of your plan. **Ultra thinking** brings in helpers for the hardest questions: the slowest, and it uses the most. A change applies from the next message.
 
 One chat can use something else: under its message box, tap the model or the thinking level. That choice is for that chat only. Pick the same as in Settings again to follow Settings.
 

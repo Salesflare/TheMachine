@@ -2429,5 +2429,8 @@
  "What to-do chats and Help use. Each chat can pick its own under its message box.": "Ce qu’utilisent les chats des tâches et l’Aide. Chaque chat peut choisir le sien sous sa zone de message.",
  "Only models your sign-in offers.": "Seulement les modèles de votre connexion.",
  "Thinking": "Réflexion",
- "More thinking is slower and uses more of your plan.": "Plus de réflexion est plus lent et utilise davantage votre forfait."
+ "More thinking is slower and uses more of your plan.": "Plus de réflexion est plus lent et utilise davantage votre forfait.",
+ "Background work": "Travail en arrière-plan",
+ "Ultra thinking (slower, uses more of your plan)": "Réflexion ultra (plus lente, utilise davantage votre forfait)",
+ "Ask or change something": "Demandez ou modifiez quelque chose"
 }

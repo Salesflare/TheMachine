@@ -154,6 +154,8 @@ class AppTest(unittest.TestCase):
         self.assertEqual((start['provider'], start['model'], start['thinking']), ('acme', 'lm-2', 'high'))
         self.app.action('chat_model_default', {'model': 'acme/lm-2', 'thinking': 'low'}, owner_dashboard=True)
         self.assertIsNone(json.loads(self.config_path.read_text())['chat_model'])
+        # Settings names the model background work uses apart from the one chats use
+        self.assertEqual(self.app.chat_model_view()['background'], 'acme/lm-2')
 
     def test_help_gets_the_pick(self):
         seen = []

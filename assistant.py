@@ -14964,6 +14964,7 @@ class App:
         for chats (chat_model.view). The list is the last reading; none yet reads `known: False`."""
         found = chat_model.view(self.config, self.chat_models(read=False))
         swap = background_model(self.config)
+        found['background'] = '/'.join(swap) if swap else found['main']['model']  # what the top of Settings, Model names
         if swap and not chat_model.chosen(self.config):  # Help runs on the lighter model unless a model was picked
             found['help'] = chat_model.resolve(self.config, self.chat_models(read=False), {'model': '/'.join(swap)})
         return found
