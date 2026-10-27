@@ -38,6 +38,7 @@ and explain why they are needed. The dashboard is plain HTML, CSS and JavaScript
 - New UI strings go in every catalog in `i18n/` (glossary in `i18n/glossary.md`). Add keys anywhere in the files: the
   catalogs are kept sorted by key, so pull requests that add different strings merge without conflicts. Run
   `python3 scripts/i18n_extract.py --sort` before pushing; `tests/test_i18n.py` fails on a catalog that isn't sorted.
+  When merging main still leaves a catalog conflict, `python3 scripts/i18n_extract.py --merge` settles it key by key.
 - A change built from a team learning (the control plane's Learnings inbox, a picked learning's **Build brief**) treats
   its use cases as the reference for what was meant. Add a test per use case where one fits, and check the result
   against each. The PR body lists every use case with the test that covers it, or says plainly where it falls short:
