@@ -9,6 +9,26 @@ counts in any case. File names (.skill, SKILL.md) don't count.
 Tone: short UI copy, the way a native product says it, never word for word. Dutch uses *je*, French *vous*, German *du*,
 Spanish *tú*, Italian *tu*, Brazilian Portuguese *você*. No em dashes. Placeholders (`{}`, `{0}`, `{1}`) stay; reorder with `{0}`, `{1}` when the sentence needs it.
 
+## The Machine is "she" (and "he" in Dutch)
+
+One grammatical gender for The Machine, and for an owner's Machine, in each language: the one its word for "machine"
+has, so pronouns, articles and agreement never switch within a page. The name itself stays The Machine. Calling
+it an assistant follows the same gender (the last part of each rule), and so does The Machine speaking for itself
+("I'm stuck": *Je suis bloquée*, *Estoy atascada*, *Sono bloccata*; "by myself": *toute seule*, *sozinha*). The same
+table is in the control plane's glossary (cloud/i18n/glossary.md) for the site and the setup pages.
+
+| Language | Gender | Rule |
+|---|---|---|
+| nl | masculine | hij, hem, zijn: "The Machine leest je mail. Hij stuurt je alleen wat telt." Never ze or haar for it. Assistant: assistent. |
+| fr | feminine | elle, la, sa, and feminine agreement (prête, connectée): "The Machine lit vos e-mails. Elle ..." Never il. Assistant: une assistante, votre assistante. |
+| de | feminine | sie, ihr, die, deine Machine: "The Machine liest deine Mails. Sie ..." Never er or sein. Assistant: Assistentin, KI-Assistentin. |
+| es | feminine | ella, la, su, and feminine agreement (lista, conectada): "tu Machine está lista". Never él. Assistant: una asistente, tu propia asistente. |
+| it | feminine | lei, la, sua, and feminine agreement (pronta, collegata): "la tua Machine è pronta". Never lui. Assistant: un’assistente, la tua assistente. |
+| pt-BR | feminine | ela, a, sua, dela, da, na, and feminine agreement (pronta, conectada): "sua Machine está pronta". Never ele, o, do, no. Assistant: uma assistente, sua assistente. |
+
+`tests/test_i18n.py` checks the forms that are always wrong (a masculine article before Machine or assistant, a
+masculine "I" in French, Spanish and Italian); the rest is for the translator to keep.
+
 ## Names
 
 Product and brand names stay exactly as they are in every language, and the check requires them verbatim:

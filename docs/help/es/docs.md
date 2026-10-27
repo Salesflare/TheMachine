@@ -1,14 +1,14 @@
 ---
-title: Google Docs y Word
+title: Docs: Word, OneDrive y SharePoint
 area: connections
-summary: Comentarios, menciones, sugerencias de edición y archivos compartidos en tus documentos de Google Docs o Word. Lee, y publica una respuesta a un comentario solo cuando das el OK.
+summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint. Google Docs llegará más adelante.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
 site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## Qué lee
 
-Docs usa el inicio de sesión de Google o Microsoft que ya tienes para esa dirección. Trae:
+Docs lee archivos de Word en OneDrive y SharePoint, con el inicio de sesión de Microsoft que ya tienes para esa dirección. Funciona en una Machine alojada y en tu propio ordenador vinculado a tu cuenta. Google Docs llegará más adelante: el inicio de sesión de Google de The Machine aún no puede leer documentos. Trae:
 
 - Documentos que alguien comparte contigo.
 - Comentarios y respuestas en documentos tuyos, y comentarios que te mencionan.
@@ -40,7 +40,7 @@ Conecta primero Outlook para esa dirección. Luego:
 - Machine alojada: en tu página de configuración, abre **Docs** en **Más fuentes** y pulsa **Conectar documentos** junto a esa dirección. Microsoft te pide permitir que lea tus archivos.
 - Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **+ Añadir**, elige **Documentos** y pulsa **Iniciar sesión con Microsoft**.
 
-Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añade. Los documentos de Google Docs aún no están disponibles a través del inicio de sesión de The Machine.
+Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añade.
 
 ## Trabajo o personal
 

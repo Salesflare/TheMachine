@@ -18,13 +18,13 @@ Eine gehostete Machine läuft auf einem eigenen privaten Server in der EU. Wir h
 
 Dein Server startet, dann führt dich die Einrichtungsseite Schritt für Schritt durch den Rest:
 
-1. **Mail und Kalender**: Verbinde Google oder Microsoft. Das geht schon, während dein Server startet. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
+1. **Mail und Kalender**: Verbinde Google oder Microsoft. Das geht schon, während dein Server startet. Nach der Anmeldung zeigt der Schritt, dass sie arbeitet, bis deine Machine installiert ist und deine Mails gelesen hat, etwa eine Minute. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
 2. **Dein Modell**: Melde dich mit ChatGPT an oder nutze deinen eigenen Schlüssel. Siehe [ChatGPT](chatgpt.md).
 3. Prüfungen schalten sich von selbst ein. Die ersten Aufgaben kommen aus deinen neuesten Mails, dann aus deinen letzten 7 Tagen.
 
 Unter **Jederzeit mehr hinzufügen** stehen die optionalen: **Weitere Quellen** wie Slack, WhatsApp oder GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) und die Verbindung deines Browsers. Keine davon ist zum Start nötig. Dein Dashboard schlägt sie vor, wenn sie helfen, etwa GitHub, sobald dessen Mails regelmäßig reinkommen.
 
-Wenn alles bereit ist, tippe auf **Dashboard öffnen**. Füge es für Benachrichtigungen zum Startbildschirm deines Handys hinzu: siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
+Sobald deine Machine bereit ist, steht **Dashboard öffnen** oben auf der Seite. Füge es für Benachrichtigungen zum Startbildschirm deines Handys hinzu: siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
 
 ## Später zurückkommen
 

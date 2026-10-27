@@ -18,13 +18,13 @@ Una Machine alojada funciona en su propio servidor privado en la UE. Nosotros la
 
 Tu servidor arranca, y luego la página de configuración te guía por el resto, paso a paso:
 
-1. **Correo y calendario**: conecta Google o Microsoft. Puedes hacerlo mientras arranca tu servidor. Consulta [Gmail](gmail.md) y [Microsoft](microsoft.md).
+1. **Correo y calendario**: conecta Google o Microsoft. Puedes hacerlo mientras arranca tu servidor. Después de iniciar sesión, el paso indica que está trabajando hasta que tu Machine esté instalada y haya leído tu correo, más o menos un minuto. Consulta [Gmail](gmail.md) y [Microsoft](microsoft.md).
 2. **Tu modelo**: inicia sesión con ChatGPT o usa tu propia clave. Consulta [ChatGPT](chatgpt.md).
 3. Las revisiones se activan solas. Las primeras tareas salen de tu correo más reciente, y luego de tus últimos 7 días.
 
 En **Añade más cuando quieras** están las opcionales: **Más fuentes** como Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) y la conexión de tu navegador. Ninguna hace falta para empezar. Tu panel te las sugiere cuando ayudan, por ejemplo GitHub cuando no para de llegar su correo.
 
-Cuando esté lista, pulsa **Abrir tu panel**. Añádelo a la pantalla de inicio de tu teléfono para recibir notificaciones: consulta [Instala la app y activa las notificaciones](phone-app.md).
+En cuanto tu Machine esté lista, **Abrir tu panel** aparece arriba en la página. Añádelo a la pantalla de inicio de tu teléfono para recibir notificaciones: consulta [Instala la app y activa las notificaciones](phone-app.md).
 
 ## Vuelve más tarde
 

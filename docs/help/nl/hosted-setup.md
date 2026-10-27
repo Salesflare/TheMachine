@@ -18,13 +18,13 @@ Een gehoste Machine draait op een eigen privéserver in de EU. Wij houden hem dr
 
 Je server start, en daarna leidt de setuppagina je door de rest, stap voor stap:
 
-1. **Mail en agenda**: koppel Google of Microsoft. Dat kan terwijl je server start. Zie [Gmail](gmail.md) en [Microsoft](microsoft.md).
+1. **Mail en agenda**: koppel Google of Microsoft. Dat kan terwijl je server start. Na het inloggen zegt de stap dat hij bezig is tot je Machine geïnstalleerd is en je mail gelezen heeft, ongeveer een minuut. Zie [Gmail](gmail.md) en [Microsoft](microsoft.md).
 2. **Je model**: log in met ChatGPT of gebruik je eigen sleutel. Zie [ChatGPT](chatgpt.md).
 3. Reviews gaan vanzelf aan. De eerste to-do's komen uit je nieuwste mail, daarna uit je laatste 7 dagen.
 
 Onder **Voeg later meer toe** staan de optionele: **Meer bronnen** zoals Slack, WhatsApp of GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) en de koppeling met je browser. Geen ervan is nodig om te beginnen. Je dashboard stelt ze voor als ze helpen, bijvoorbeeld GitHub zodra er mail van blijft binnenkomen.
 
-Als alles klaar is, druk je op **Open je dashboard**. Zet het op het beginscherm van je telefoon voor meldingen: zie [De app installeren en meldingen aanzetten](phone-app.md).
+Zodra je Machine klaar is, staat **Open je dashboard** bovenaan de pagina. Zet het op het beginscherm van je telefoon voor meldingen: zie [De app installeren en meldingen aanzetten](phone-app.md).
 
 ## Later terugkomen
 

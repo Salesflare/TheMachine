@@ -18,13 +18,13 @@ A hosted Machine runs on a private server of its own in the EU. We keep it runni
 
 Your server starts, then the setup page walks you through the rest, one step at a time:
 
-1. **Mail and Calendar**: connect Google or Microsoft. You can do this while your server starts. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
+1. **Mail and Calendar**: connect Google or Microsoft. You can do this while your server starts. After you sign in, the step says it's working until your Machine is installed and has read your mail, about a minute. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
 2. **Your model**: sign in with ChatGPT or use your own key. See [ChatGPT](chatgpt.md).
 3. Reviews turn on by themselves. First to-dos come from your newest mail, then from your last 7 days.
 
 Under **Add more any time** are the optional ones: **More sources** such as Slack, WhatsApp or GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) and your browser's connection. None are needed to start. Your dashboard suggests them when they help, for example GitHub once its mail keeps coming in.
 
-When it's ready, press **Open your dashboard**. Add it to your phone's home screen for notifications: see [Install the app and turn on notifications](phone-app.md).
+As soon as your Machine is ready, **Open your dashboard** shows at the top of the page. Add it to your phone's home screen for notifications: see [Install the app and turn on notifications](phone-app.md).
 
 ## Come back later
 

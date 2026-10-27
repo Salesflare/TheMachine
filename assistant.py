@@ -9878,7 +9878,7 @@ def source_line(rows):
     if first['kind'] != 'slack.message' and own_message(first):
         # The owner's own message (a "Waiting on" to-do leads with it): who it went to, by the name their messages carry
         m = first['metadata'] if isinstance(first['metadata'], dict) else json.loads(first['metadata'] or '{}')
-        when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()))
+        when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()), lang='en')
         names = {}
         for r in rows:
             rm = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
@@ -9950,7 +9950,7 @@ def slack_named(db, rows):
 def source_text(row):
     """What a signal is, who it is from and when ("email from Sam Lee · Mon 20 Oct"), for any kind, the owner's own
     to-do (owner.card) too."""
-    when = locale_prefs.day_text(dt.datetime.fromisoformat(row['occurred_at']).astimezone(local_tz()))
+    when = locale_prefs.day_text(dt.datetime.fromisoformat(row['occurred_at']).astimezone(local_tz()), lang='en')
     if row['kind'] == 'owner.card':
         return f'to-do the owner added · {when}'
     m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')

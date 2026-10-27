@@ -1,14 +1,14 @@
 ---
-title: Google Docs en Word
+title: Docs: Word, OneDrive en SharePoint
 area: connections
-summary: Reacties, vermeldingen, voorgestelde wijzigingen en gedeelde bestanden in je Google Docs of Word-bestanden. Het leest, en plaatst alleen een antwoord op een reactie als jij het goedkeurt.
+summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint. Google Docs komen later.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
 site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## Wat het leest
 
-Docs gebruikt de login bij Google of Microsoft die je al hebt voor dat adres. Het haalt binnen:
+Docs leest Word-bestanden in OneDrive en SharePoint, met de Microsoft-login die je al hebt voor dat adres. Dat werkt op een gehoste Machine en op je eigen computer die aan je account gekoppeld is. Google Docs komen later: de Google-login van The Machine kan nog geen documenten lezen. Het haalt binnen:
 
 - Documenten die iemand met je deelt.
 - Reacties en antwoorden op documenten van jou, en reacties die jou vermelden.
@@ -40,7 +40,7 @@ Koppel eerst Outlook voor het adres. Dan:
 - Gehoste Machine: open op je setuppagina **Documenten** onder **Meer bronnen** en druk op **Documenten koppelen** naast dat adres. Microsoft vraagt je om het lezen van je bestanden toe te staan.
 - Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Documenten** en druk op **Inloggen met Microsoft**.
 
-Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd. Google Docs zijn nog niet beschikbaar via de login van The Machine.
+Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd.
 
 ## Werk of privé
 

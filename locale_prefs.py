@@ -225,12 +225,15 @@ def weekday_name(moment):
     return names[0][moment.weekday()] if names else f'{moment:%a}'
 
 
-def day_text(moment, weekday=True, year=False):
+def day_text(moment, weekday=True, year=False, lang=None):
     """'Sat, Oct 24' or 'Sat 24 Oct' (as the dashboard's Intl en-US and en-GB write them), with ', 2026' or ' 2026'. In
-    another language day first with its names: 'za 24 okt', 'sam. 24 oct.', 'Sa. 24. Okt.', 'sáb. 24 de out.'."""
-    names = NAMES.get(language())
+    another language day first with its names: 'za 24 okt', 'sam. 24 oct.', 'Sa. 24. Okt.', 'sáb. 24 de out.'. lang='en'
+    for text that is stored and read later in whatever language the owner has then (a card's source line): the region
+    still decides the order, the words are English and the dashboard writes them again in the UI language."""
+    lang = lang or language()
+    names = NAMES.get(lang)
     if names:
-        text = f'{moment.day}{"." if language() == "de" else " de" if language() == "pt-BR" else ""} {names[1][moment.month - 1]}'
+        text = f'{moment.day}{"." if lang == "de" else " de" if lang == "pt-BR" else ""} {names[1][moment.month - 1]}'
         return (names[0][moment.weekday()] + ' ' if weekday else '') + text + (f' {moment.year}' if year else '')
     us = (region(_current['locale']) or DEFAULT_REGION) in MONTH_FIRST
     text = (f'{moment:%b} {moment.day}' if us else f'{moment.day} {moment:%b}')

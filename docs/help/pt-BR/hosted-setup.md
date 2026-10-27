@@ -18,13 +18,13 @@ Uma Machine hospedada roda em um servidor privado só dela, na UE. Nós mantemos
 
 Seu servidor inicia, e a página de configuração guia você pelo resto, um passo de cada vez:
 
-1. **E-mail e agenda**: conecte o Google ou a Microsoft. Você pode fazer isso enquanto o servidor inicia. Veja [Gmail](gmail.md) e [Microsoft](microsoft.md).
+1. **E-mail e agenda**: conecte o Google ou a Microsoft. Você pode fazer isso enquanto o servidor inicia. Depois do login, a etapa mostra que está trabalhando até sua Machine estar instalada e ter lido seu e-mail, cerca de um minuto. Veja [Gmail](gmail.md) e [Microsoft](microsoft.md).
 2. **Seu modelo**: entre com o ChatGPT ou use sua própria chave. Veja [ChatGPT](chatgpt.md).
 3. As revisões são ativadas sozinhas. As primeiras tarefas vêm dos seus e-mails mais recentes, depois dos seus últimos 7 dias.
 
 Em **Adicione mais quando quiser** ficam as opcionais: **Mais fontes** como Slack, WhatsApp ou GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) e a conexão do seu navegador. Nenhuma é necessária para começar. Seu painel sugere cada uma quando ajuda, por exemplo o GitHub quando os e-mails dele não param de chegar.
 
-Quando estiver pronta, toque em **Abrir seu painel**. Adicione o painel à tela inicial do seu celular para receber notificações: veja [Instalar o app e ativar notificações](phone-app.md).
+Assim que sua Machine estiver pronta, **Abrir seu painel** aparece no topo da página. Adicione o painel à tela inicial do seu celular para receber notificações: veja [Instalar o app e ativar notificações](phone-app.md).
 
 ## Voltar depois
 

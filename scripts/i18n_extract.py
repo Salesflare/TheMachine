@@ -157,7 +157,7 @@ def _texts(literal):
         if '{' in part:
             # a run with holes: keep it when it reads as a sentence around them
             words = re.sub(r'\{\d+\}', '', part)
-            if not (re.search(r'[A-Za-z]{2,}\s+[A-Za-z]{2,}|[A-Z][a-z]+', words)
+            if not (len(re.findall(r'[A-Za-z]{2,}', words)) >= 2 or re.search(r'[A-Z][a-z]+', words)
                     or re.fullmatch(r'\s*[a-z]{3,}(?:/[a-z]{3,})?\s*', words) and re.fullmatch(r'\{\d+\} \w+|\w+ \{\d+\}', part)) \
                     or re.search(r'[=;]|\(|\)|=>', words):  # a sentence around them, or "{} connected" 
                 continue
@@ -596,6 +596,42 @@ def viewer_strings(path=VIEWER):
         if _english(text):
             found.append(text)
     return _unique(found)
+
+
+# Words glued to a value with + that nobody reads as a sentence of their own: units, class names, a window title's
+# prefix, search keywords, a file name, a channel name before its localized date
+GLUED_OK = {' KB', ' MB', ' B', 'Pasted image.', 'prep t-', 'The Machine · ', ' (a closeness)', 'Telegram ',
+            'projects board kanban '}
+
+
+def glued(source=None):
+    """[(literal, context)]: dashboard words glued to a value with + ("'Hand to '+name") without a catalog entry that
+    frames them ("Hand to {}"). The page only translates whole lines, so such a line reads English in every language:
+    use t('Hand to {}', name) instead."""
+    source = source if source is not None else DASHBOARD.read_text(encoding='utf-8')
+    body = source[source.index('</style>', source.index('<style>')) + len('</style>'):]
+    en = catalog('en')
+    keys = list(en) + [f for v in en.values() if isinstance(v, dict) for f in v.values()]
+    out = []
+    for code in re.findall(r'<script\b[^>]*>(.*?)</script>', body, re.S):
+        code = _uncomment(code)
+        for lit, start in literals(code):
+            if code[start] == '`':
+                continue
+            end = start + len(lit) + 2
+            before, after = code[max(0, start - 3):start], code[end:end + 3]
+            if not (re.search(r'\+\s*$', before) or re.match(r'\s*\+', after)):
+                continue
+            if lit in GLUED_OK or ' ' not in lit or '/' in lit or not re.search(r'[A-Za-z]{2,}', lit) or not looks_ui(lit):
+                continue
+            if re.search(r'(keywords|id|key):\s*$', code[max(0, start - 12):start]):
+                continue
+            word = re.escape(lit.strip())
+            left = r'\{\d*\}\s*' if lit[:1] == ' ' else r'(^|\{\d*\}\s*)'
+            right = r'\s*\{\d*\}' if lit[-1:] == ' ' else r'(\s*\{\d*\}|$)'
+            if not any(re.search(left + word + right, k) for k in keys):
+                out.append((lit, code[max(0, start - 40):end + 40].replace('\n', ' ')))
+    return out
 
 
 def missing(areas=None):

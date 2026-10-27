@@ -87,10 +87,33 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(problems, [], '\n'.join(problems[:40]))
         self.assertTrue(en)
 
+    def test_the_machine_keeps_one_gender_in_each_language(self):
+        # glossary.md, "The Machine is she (and he in Dutch)": forms that are always wrong for The Machine, an owner's
+        # Machine, the assistant and The Machine speaking for itself
+        wrong = {
+            'nl': r'\bMachine (?:kan|heeft|wil|zet|doet) haar\b',
+            'fr': r'\b(?:[Ll]e|[Dd]u|[Aa]u|[Uu]n|[Cc]e) Machine\b|(?:\b[Ll]’|\b[Uu]n |\b[Vv]otre )assistant\b(?!e)|\b[Jj]e suis (?:bloqué|prêt|connecté|occupé)\b(?!e)|\b[Jj]e continue tout seul\b',
+            'de': r'\b(?:[Dd]er|[Dd]en|[Dd]es|[Ee]in|[Ee]inen|[Dd]ein|[Dd]einen) (?:KI-)?Assistent(?:en)?\b|\b(?:[Dd]einem|[Dd]einen|[Ss]einem|[Ee]inem|[Ee]inen) Machine\b',
+            'es': r'\b(?:[Ee]l|[Dd]el|[Aa]l|[Uu]n) (?:propio )?(?:asistente|Machine)\b|\b[Ee]stoy (?:listo|atascado|seguro|ocupado)\b',
+            'it': r'\b(?:[Ii]l|[Dd]el|[Aa]l|[Nn]el|[Uu]n|[Tt]uo|[Ss]uo) (?:tuo |suo )?(?:Machine|assistente)\b|\b[Ss]ono (?:riuscito|bloccato|pronto)\b',
+            'pt-BR': r'\b(?:[Oo]|[Dd]o|[Nn]o|[Aa]o|[Pp]elo|[Uu]m) (?:próprio )?(?:assistente|Machine)\b|\b[Ee]stou (?:pronto|preso)\b|\b[Ee]u continuo sozinho\b',
+        }
+        problems = [f'{lang}: {key!r} -> {text!r}' for lang, pattern in wrong.items()
+                    for key, value in load(f'{lang}.json').items() for text in forms(value) if re.search(pattern, text)]
+        self.assertEqual(problems, [], '\n'.join(problems[:40]))
+        self.assertIn('## The Machine is "she"', (ROOT / 'i18n' / 'glossary.md').read_text(encoding='utf-8'))
+
     def test_the_moved_areas_have_no_english_outside_the_catalog(self):
         # A new string in a moved area: add it with `python3 scripts/i18n_extract.py --add`, translate it in every
         # language, or list it in i18n/not-ui.json when nobody reads it as is.
         self.assertEqual(i18n_extract.missing(), {})
+
+
+    def test_no_words_are_glued_to_a_value(self):
+        # "'Hand to '+name" reads English in every language: the page translates a line only when a catalog entry
+        # frames it, so write t('Hand to {}', name) and add "Hand to {}" in every language.
+        found = i18n_extract.glued()
+        self.assertEqual(found, [], '\n'.join(f'{lit!r} in {ctx}' for lit, ctx in found[:30]))
 
 
 class ServerTextTest(unittest.TestCase):
@@ -145,6 +168,20 @@ class ServerTextTest(unittest.TestCase):
         self.assertEqual(locale_prefs.view()['date_locale'], 'pt-BR')  # Brazilian dates wherever the owner is
         locale_prefs.configure({'locale': 'en-BE', 'language': 'it'})
         self.assertEqual(locale_prefs.view()['date_locale'], 'it-BE')
+
+    def test_a_cards_source_date_is_stored_in_english_words_in_the_regions_order(self):
+        # The source line is stored and read later in whatever language the owner has then; the dashboard writes its
+        # date again in that language. Stored in Dutch it read "di 27 okt" in an English UI.
+        import assistant
+        row = {'kind': 'email.message', 'occurred_at': '2026-10-27T12:00:00+00:00',
+               'metadata': {'from': 'Sam Lee <sam@example.com>'}, 'title': 'Intro'}
+        for lang in ('nl', 'fr', 'en'):
+            locale_prefs.configure({'locale': 'en-BE', 'language': lang})
+            self.assertTrue(assistant.source_text(row).endswith(' · Tue 27 Oct'), (lang, assistant.source_text(row)))
+            self.assertEqual(locale_prefs.day_text(dt.date(2026, 10, 27)), {'nl': 'di 27 okt', 'fr': 'mar. 27 oct.', 'en': 'Tue 27 Oct'}[lang])
+        locale_prefs.configure({'locale': 'en-US', 'language': 'nl'})
+        self.assertTrue(assistant.source_text(row).endswith(' · Tue, Oct 27'), assistant.source_text(row))
+        locale_prefs.configure({})
 
     def test_the_language_comes_from_the_choice_then_signup_then_english(self):
         self.assertEqual(locale_prefs.language_of({'language': 'de', 'locale': 'nl-BE'}), 'de')

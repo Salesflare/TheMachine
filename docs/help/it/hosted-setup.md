@@ -18,13 +18,13 @@ Una Machine ospitata gira su un server privato tutto suo nell'UE. Pensiamo noi a
 
 Il server si avvia, poi la pagina di configurazione ti guida nel resto, un passo alla volta:
 
-1. **Email e calendario**: collega Google o Microsoft. Puoi farlo mentre il server si avvia. Vedi [Gmail](gmail.md) e [Microsoft](microsoft.md).
+1. **Email e calendario**: collega Google o Microsoft. Puoi farlo mentre il server si avvia. Dopo l’accesso, il passaggio dice che sta lavorando finché la tua Machine non è installata e ha letto la tua posta, circa un minuto. Vedi [Gmail](gmail.md) e [Microsoft](microsoft.md).
 2. **Il tuo modello**: accedi con ChatGPT o usa la tua chiave. Vedi [ChatGPT](chatgpt.md).
 3. Le revisioni si attivano da sole. Le prime attività arrivano dalla posta più recente, poi dagli ultimi 7 giorni.
 
 Sotto **Aggiungi altro quando vuoi** ci sono quelle facoltative: **Altre fonti** come Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) e la connessione del tuo browser. Nessuna serve per iniziare. La dashboard te le suggerisce quando sono utili, per esempio GitHub quando continua ad arrivarti la sua posta.
 
-Quando è pronta, premi **Apri la tua dashboard**. Aggiungila alla schermata Home del telefono per le notifiche: vedi [Installa l'app e attiva le notifiche](phone-app.md).
+Appena la tua Machine è pronta, **Apri la tua dashboard** compare in cima alla pagina. Aggiungila alla schermata Home del telefono per le notifiche: vedi [Installa l'app e attiva le notifiche](phone-app.md).
 
 ## Torna più tardi
 

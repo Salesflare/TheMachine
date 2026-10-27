@@ -34,15 +34,17 @@ KINDS = {'docs.comment': 'Doc comment', 'docs.mention': 'Doc mention', 'docs.sug
 SETUP = {
     'label': 'Docs',
     'account': {'id': 'docs', 'service': 'docs', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 900},
-    'what': 'Comments, mentions, edits and shares on Google Docs or Word.',
-    'note': 'Uses the Google or Microsoft sign-in this Machine already has for that address. Reading docs needs its own '
-            'consent: press Connect Google Docs (or Connect Microsoft documents) on your account page.',
-    'ask': [('email', 'The Google or Microsoft address that owns the docs')],
+    # Word files only for now, hosted and self-hosted alike: Google Docs come through the token broker, which doesn't
+    # offer their consent yet (docs/help/docs.md)
+    'what': 'Comments, mentions, tracked changes and shares on Word files in OneDrive and SharePoint. Google Docs come later.',
+    'note': 'Uses the Microsoft sign-in this Machine already has for that address. Reading files needs its own consent: '
+            'press Connect documents on your setup page, or Sign in with Microsoft here.',
+    'ask': [('email', 'The Microsoft address that owns the files')],
     # a hosted Machine: its account page's Docs tile has the consent (Connect documents); on a paired self-hosted one,
     # + Add signs in with Microsoft through the control plane (fleet.SIGNIN_OF, onboarding.connect_docs_grant)
     'account_page': 'docs',
-    'hints': {'docs_not_connected': 'Press Connect Google Docs or Connect Microsoft documents to let it read docs',
-              'docs_no_signin': 'Connect Gmail or Outlook for this address first',
+    'hints': {'docs_not_connected': 'Press Connect Microsoft documents to let it read Word files',
+              'docs_no_signin': 'Connect Outlook for this address first',
               'docs_signin_expired': 'Sign in again for this address'}}
 READ_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 REPLY_SCOPE = 'https://www.googleapis.com/auth/drive'

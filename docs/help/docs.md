@@ -1,14 +1,14 @@
 ---
-title: Google Docs and Word
+title: Docs: Word, OneDrive and SharePoint
 area: connections
-summary: Comments, mentions, suggested edits and shares on your Google Docs or Word files. It reads, and posts a comment reply only when you OK it.
+summary: Comments, mentions, tracked changes and shares on your Word files in OneDrive and SharePoint. Google Docs come later.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
 site: More sources, Connect documents, Sign in with Microsoft
 ---
 ## What it reads
 
-Docs uses the Google or Microsoft sign-in you already have for that address. It brings in:
+Docs reads Word files in OneDrive and SharePoint, with the Microsoft sign-in you already have for that address. That works on a hosted Machine and on your own computer paired with your account. Google Docs come later: The Machine's Google sign-in can't read docs yet. It brings in:
 
 - Docs someone shares with you.
 - Comments and replies on docs you own, and comments that mention you.
@@ -40,7 +40,7 @@ Connect Outlook for the address first. Then:
 - Hosted Machine: on your setup page, open **Docs** under **More sources** and press **Connect documents** next to that address. Microsoft asks you to allow reading your files.
 - Your own computer, paired with your account: open **Connections**, **+ Add**, pick **Docs** and press **Sign in with Microsoft**.
 
-It checks that the sign-in may read docs. Without that OK it isn't added. Google Docs aren't available through The Machine's sign-in yet.
+It checks that the sign-in may read docs. Without that OK it isn't added.
 
 ## Work or personal
 
