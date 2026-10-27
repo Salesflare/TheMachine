@@ -681,6 +681,22 @@ def bulk_kind(kind, metadata, title='', owner_in_thread=False):
     return None
 
 
+def team_only(kind, metadata, own, team):
+    """The team address (Settings, Your addresses: The team's) a mail went to when it went to none of the owner's own,
+    and the owner didn't send it; else None. Others pick that mail up, so it makes no to-do for the owner."""
+    if not team or kind != 'gmail.message' or not isinstance(metadata, dict):
+        return None
+    if set(metadata.get('labels') or ()) & {'SENT', 'DRAFT'} or metadata.get('from_me'):
+        return None
+    to = [a for _, a in graph.addresses(metadata.get('to')) + graph.addresses(metadata.get('cc'))]
+    hit = next((a for a in to if a in team), None)
+    return hit if hit and not any(a in own for a in to) else None
+
+
+TEAM_INBOX_RULE = ('Mail to {}, an address the owner marked as the team\'s: others pick it up. Context and the Graph only: '
+                   'no card, draft or promise for the owner from it')
+
+
 def signal_weight(row):
     """How much of a review's signal budget a signal takes: BRIEF_WEIGHT for bulk mail (a title line), else 1."""
     metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
@@ -789,8 +805,9 @@ OWNER_CARD_RULE = ('The owner added this card themselves, in their own words. Fi
                    'pass that card_id and the owner is asked whether to merge.')
 
 
-def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False):
-    """What a reviewer needs from a signal, without sync bookkeeping. brief: bulk mail as a title line (bulk_kind)."""
+def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False, team_inbox=None):
+    """What a reviewer needs from a signal, without sync bookkeeping. brief: bulk mail as a title line (bulk_kind).
+    team_inbox: the team address it only went to (team_only)."""
     metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'])
     if brief and not row.get('deleted') and bulk_kind(row['kind'], metadata, row['title'], owner_in_thread):
         return title_view(row, metadata)
@@ -820,6 +837,8 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
                               **({'files': [str(f.get('name'))[:120] for f in metadata['files'][:5] if isinstance(f, dict)]} if isinstance(metadata.get('files'), list) else {})}
     if row['kind'] == 'calendar.event' and not calendar_owned(metadata):
         view['not_owners'] = f"On {calendar_owner_name(metadata)}'s calendar, shared with the owner, who isn't on it: context only, no card, prep or promise for them"
+    if team_inbox:
+        view['team_inbox'] = TEAM_INBOX_RULE.format(team_inbox)
     return view
 
 
@@ -3890,6 +3909,25 @@ class Store:
                     found.add(row['id'])
         return found
 
+    def team_inbox(self, db, rows):
+        """{event id: team address} for mail that only went to an address the owner marked as the team's (team_only),
+        in a thread the owner didn't write in: no to-do for them from it."""
+        team = own_addresses.team(db, self.config)
+        if not team:
+            return {}
+        own = own_addresses.yours(db, self.config) | {str(a.get('email') or '').lower() for a in self.accounts if '@' in str(a.get('email') or '')}
+        found = {}
+        for r in rows:
+            metadata = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+            hit = team_only(r['kind'], metadata, own, team)
+            if hit and not self.owner_wrote_in(db, r['account_id'], metadata):
+                found[r['id']] = hit
+        return found
+
+    def team_inboxes(self, rows):
+        with self.connect() as db:
+            return self.team_inbox(db, rows)
+
     def conversation_context(self, rows, limit=4, hours=48):
         """Up to four earlier messages from the same chat for each Slack/WhatsApp signal, so a
         short reply ("let me check") is reviewed with what it answers."""
@@ -4119,8 +4157,9 @@ class Store:
         context = self.conversation_context(rows)
         replies = self.card_replies(rows)
         hints = self.project_hints([r['id'] for r in rows])
-        owned = self.owner_threads(rows)
-        pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned), **({'answers_your_card': replies[r['id']]} if r['id'] in replies else {}),
+        owned, teams = self.owner_threads(rows), self.team_inboxes(rows)
+        pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned, team_inbox=teams.get(r['id'])),
+                               **({'answers_your_card': replies[r['id']]} if r['id'] in replies else {}),
                                **hints.get(r['id'], {})} for r in rows])
         page_of = {view['id']: n for n, page in enumerate(pages) for view in page}
         brief = {view['id'] for page in pages for view in page if view.get('title_only')}
@@ -4149,8 +4188,9 @@ class Store:
         # A signal may grow after the original page layout was committed.
         replies = self.card_replies([rows[i] for i in ids if i in rows])
         hints = self.project_hints([i for i in ids if i in rows])
-        owned = self.owner_threads([rows[i] for i in ids if i in rows])
-        views = [{**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned), **({'answers_your_card': replies[i]} if i in replies else {}), **hints.get(i, {})}
+        owned, teams = self.owner_threads([rows[i] for i in ids if i in rows]), self.team_inboxes([rows[i] for i in ids if i in rows])
+        views = [{**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned, team_inbox=teams.get(i)),
+                  **({'answers_your_card': replies[i]} if i in replies else {}), **hints.get(i, {})}
                  for i in ids if i in rows]
         row_offset = int(row_offset)
         if row_offset < 0 or row_offset > len(views):
@@ -4257,6 +4297,10 @@ class Store:
             if all(r['kind'] == 'calendar.event' and not calendar_owned(json.loads(r['metadata'])) for r in rows):
                 raise ValueError("That meeting is on someone else's calendar that the owner can see, and they aren't on it: "
                                  'not theirs, so no card for it')
+            teams = self.team_inbox(db, rows)
+            if teams and len(teams) == len(rows):
+                raise ValueError(f"That mail only went to {sorted(set(teams.values()))[0]}, which the owner marked as the team's: "
+                                 'others pick it up, so no card for it')
             own = owner_card_of(db, rows) if match else None
             if own is not None and card_id is not None and card_id != own['id']:
                 # The owner's card is theirs to merge: the review only asks.
@@ -13097,7 +13141,7 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner confirms or removes their addresses, in Settings')
             with self.store.connect() as db:
-                own_addresses.choose(db, args.get('address'), str(args.get('choice') or ''), now())
+                own_addresses.choose(db, args.get('address'), str(args.get('choice') or ''), now(), self.config)
             self.graph_dirty.set()  # who counts as the owner changed: the graph follows within a minute
             return {'own_addresses': self.own_addresses_view()}
         if name == 'set_people_lookup':

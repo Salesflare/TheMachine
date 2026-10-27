@@ -17,8 +17,10 @@ Shared addresses never count as the owner's. An address is `shared` when a teamm
 from it comes under two or more people's names (a Google Group's "Ann via Sales"), or when Gmail sends it through someone
 else's mail server. It is `maybe` when unsure: a role-like address (info@, sales@, support@, team@), a Gmail send-as
 address that isn't set as an alias, or one only seen in sent mail. A `maybe` is listed in Settings, Account, for the
-owner to confirm with one tap; it counts only once confirmed. A removed address never counts again, and neither do the
-ones in config `not_owner_emails`."""
+owner to choose with one tap, and it counts only once they do: **Mine** (theirs, like any other address of theirs), **The
+team's** (others pick it up too: never theirs, and mail that only went to it makes no to-do for them; team()), or **Not
+mine**. Never chosen for them. Their own sign-in and config addresses are always theirs: those can't be the team's or
+removed. A removed address never counts again, and neither do the ones in config `not_owner_emails`."""
 from __future__ import annotations
 
 import json
@@ -40,6 +42,7 @@ CALENDAR_SERVICES = ('calendar', 'outlook_calendar')
 LABELS = {'config': 'Settings file', 'account': 'Connected account', 'alias': 'Alias', 'calendar': 'Your calendar',
           'slack': 'Slack profile', 'intercom': 'Intercom profile', 'received': 'Mail to you', 'named': 'Has your name',
           'sent': 'Mail you sent', 'confirmed': 'You confirmed it'}
+CHOICES = ('confirm', 'team', 'remove')  # Mine, The team's, Not mine
 STRONG = {'config', 'account', 'alias', 'calendar', 'slack', 'intercom', 'received'}
 FETCH_EVERY_DAYS = 1
 SENT_ONLY = 'Only seen in mail you sent'
@@ -287,15 +290,24 @@ def choices(db):
     return {r[0]: r[1] for r in db.execute('SELECT address,choice FROM own_address_choices')}
 
 
-def choose(db, address, choice, now):
-    """The owner's word on one address: 'confirm' (a maybe is theirs) or 'remove' (never theirs)."""
+def fixed(db, address, config=None):
+    """The owner's own sign-in or a config address: always theirs, never the team's or removed."""
+    row = db.execute('SELECT sources FROM own_addresses WHERE address=?', (address,)).fetchone()
+    return address in configured(config or {})[0] or bool(row and {'account', 'config'} & set(json.loads(row[0])))
+
+
+def choose(db, address, choice, now, config=None):
+    """The owner's word on one address, changeable later: 'confirm' (Mine), 'team' (The team's: others pick it up too)
+    or 'remove' (Not mine)."""
     address = clean(address)
-    if not address or choice not in ('confirm', 'remove'):
+    if not address or choice not in CHOICES:
         raise ValueError('Pick an address')
     ensure(db)
     row = db.execute('SELECT state FROM own_addresses WHERE address=?', (address,)).fetchone()
     if not row:
         raise ValueError('That address isn’t on the list anymore')
+    if choice != 'confirm' and fixed(db, address, config):
+        raise ValueError('Your own sign-in address is always yours')
     db.execute('INSERT OR REPLACE INTO own_address_choices(address,choice,at) VALUES(?,?,?)', (address, choice, now))
 
 
@@ -310,16 +322,26 @@ def yours(db, config=None):
     except Exception:  # a read-only or locked database: config alone
         made, chosen = {}, {}
     found = {a for a, s in made.items() if s == 'yours' or (s == 'maybe' and chosen.get(a) == 'confirm')}
-    return pinned | (found - {a for a, c in chosen.items() if c == 'remove'} - excluded)
+    return pinned | (found - {a for a, c in chosen.items() if c in ('remove', 'team')} - excluded)
 
 
 def excluded(db, config=None):
-    """Addresses the owner said aren't theirs."""
+    """Addresses the owner said aren't theirs: Not mine, and the team's (theirs to read, not theirs to be)."""
     _, out = configured(config or {})
     try:
-        return out | {a for a, c in choices(db).items() if c == 'remove'}
+        return out | {a for a, c in choices(db).items() if c in ('remove', 'team')}
     except Exception:
         return out
+
+
+def team(db, config=None):
+    """Addresses the owner marked as the team's: mail that only went to one of them makes no to-do for the owner, and
+    no draft goes out from it. Never one of their own (config or their sign-in)."""
+    pinned, _ = configured(config or {})
+    try:
+        return {a for a, c in choices(db).items() if c == 'team'} - pinned
+    except Exception:
+        return set()
 
 
 def view(db, config):
@@ -332,18 +354,21 @@ def view(db, config):
     gmail = any(s == 'gmail' for s in mailbox.values())
     alias = 'Outlook alias' if outlook and not gmail else 'Gmail alias' if gmail and not outlook else LABELS['alias']
     label = lambda s: alias if s == 'alias' else {'sendas': 'Gmail send-as'}.get(s, LABELS.get(s, s))
-    mine, maybe = [], []
+    mine, maybe, teams, others = [], [], [], []
     for r in db.execute('SELECT address,sources,state,reason FROM own_addresses ORDER BY address'):
         address, sources, state, reason = r[0], json.loads(r[1]), r[2], r[3]
-        if address in out_ or chosen.get(address) == 'remove':
+        if address in out_ or state == 'shared':
             continue
-        if state == 'yours' or (state == 'maybe' and chosen.get(address) == 'confirm'):
+        choice, pin = chosen.get(address), address in pinned or 'account' in sources
+        said = {SENT_ONLY: 'sent', NAMED_ONLY: 'named'}.get(reason)
+        if choice in ('team', 'remove') and not pin:  # the owner's word, changeable from the row
+            (teams if choice == 'team' else others).append({'address': address, 'sources': [label(s) for s in sources if s != said], 'choice': choice})
+        elif state == 'yours' or (state == 'maybe' and choice == 'confirm'):
             if state == 'maybe':
                 sources = [*sources, 'confirmed']
-            fixed = address in pinned or 'account' in sources
-            mine.append({'address': address, 'sources': [label(s) for s in sources], 'removable': not fixed})
+            mine.append({'address': address, 'sources': [label(s) for s in sources], 'removable': not pin,
+                         **({'choice': 'confirm'} if state == 'maybe' else {})})
         elif state == 'maybe':
-            said = {SENT_ONLY: 'sent', NAMED_ONLY: 'named'}.get(reason)
             maybe.append({'address': address, 'sources': [label(s) for s in sources if s != said], 'why': reason})
     order = lambda x: (not any(s in ('Connected account', 'Settings file') for s in x['sources']), x['address'])
-    return {'yours': sorted(mine, key=order), 'maybe': maybe}
+    return {'yours': sorted(mine, key=order), 'maybe': maybe, 'team': teams, 'not_mine': others}

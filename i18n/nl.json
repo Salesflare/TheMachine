@@ -2432,5 +2432,20 @@
  "More thinking is slower and uses more of your plan.": "Meer denkwerk is trager en gebruikt meer van je abonnement.",
  "Background work": "Achtergrondwerk",
  "Ultra thinking (slower, uses more of your plan)": "Ultra denkwerk (trager, gebruikt meer van je abonnement)",
- "Ask or change something": "Vraag of wijzig iets"
+ "Ask or change something": "Vraag of wijzig iets",
+ "Whose is it? Change it any time.": "Van wie is het? Je kunt het altijd wijzigen.",
+ "The team’s": "Van het team",
+ "Not yours": "Niet van jou",
+ "Mine: I handle it": "Van mij: ik behandel het",
+ "Its mail can become your to-dos.": "De mail ervan kan je to-do's worden.",
+ "The team’s: others pick it up too": "Van het team: anderen nemen het ook op",
+ "No to-dos from it. Its mail still fills in the Graph.": "Geen to-do's hiervan. De mail vult nog wel de Graph aan.",
+ "It won’t count as yours.": "Het telt niet als van jou.",
+ "The team’s · No to-dos from it": "Van het team · Geen to-do's hiervan",
+ "Marked as the team’s. No to-dos from it.": "Gemarkeerd als van het team. Geen to-do's hiervan.",
+ "No to-dos from it": "Geen to-do's hiervan",
+ "Whose is {}?": "Van wie is {}?",
+ "Looks like a team address": "Lijkt een teamadres",
+ "Gmail sends as it, but not as an alias": "Gmail verstuurt ermee, maar niet als alias",
+ "Your own sign-in address is always yours": "Je eigen inlogadres is altijd van jou"
 }

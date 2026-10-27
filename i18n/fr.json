@@ -2432,5 +2432,20 @@
  "More thinking is slower and uses more of your plan.": "Plus de réflexion est plus lent et utilise davantage votre forfait.",
  "Background work": "Travail en arrière-plan",
  "Ultra thinking (slower, uses more of your plan)": "Réflexion ultra (plus lente, utilise davantage votre forfait)",
- "Ask or change something": "Demandez ou modifiez quelque chose"
+ "Ask or change something": "Demandez ou modifiez quelque chose",
+ "Whose is it? Change it any time.": "À qui est-elle ? Modifiable à tout moment.",
+ "The team’s": "À l’équipe",
+ "Not yours": "Pas à vous",
+ "Mine: I handle it": "À moi : je m’en occupe",
+ "Its mail can become your to-dos.": "Ses e-mails peuvent devenir vos tâches.",
+ "The team’s: others pick it up too": "À l’équipe : d’autres s’en occupent aussi",
+ "No to-dos from it. Its mail still fills in the Graph.": "Aucune tâche à partir d’elle. Ses e-mails enrichissent toujours le Graph.",
+ "It won’t count as yours.": "Elle ne comptera pas comme la vôtre.",
+ "The team’s · No to-dos from it": "À l’équipe · Aucune tâche à partir d’elle",
+ "Marked as the team’s. No to-dos from it.": "Marquée comme celle de l’équipe. Aucune tâche à partir d’elle.",
+ "No to-dos from it": "Aucune tâche à partir d’elle",
+ "Whose is {}?": "À qui est {} ?",
+ "Looks like a team address": "Ressemble à une adresse d’équipe",
+ "Gmail sends as it, but not as an alias": "Gmail envoie avec, mais pas comme alias",
+ "Your own sign-in address is always yours": "Votre adresse de connexion est toujours la vôtre"
 }

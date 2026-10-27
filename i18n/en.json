@@ -2432,5 +2432,20 @@
  "More thinking is slower and uses more of your plan.": "More thinking is slower and uses more of your plan.",
  "Background work": "Background work",
  "Ultra thinking (slower, uses more of your plan)": "Ultra thinking (slower, uses more of your plan)",
- "Ask or change something": "Ask or change something"
+ "Ask or change something": "Ask or change something",
+ "Whose is it? Change it any time.": "Whose is it? Change it any time.",
+ "The team’s": "The team’s",
+ "Not yours": "Not yours",
+ "Mine: I handle it": "Mine: I handle it",
+ "Its mail can become your to-dos.": "Its mail can become your to-dos.",
+ "The team’s: others pick it up too": "The team’s: others pick it up too",
+ "No to-dos from it. Its mail still fills in the Graph.": "No to-dos from it. Its mail still fills in the Graph.",
+ "It won’t count as yours.": "It won’t count as yours.",
+ "The team’s · No to-dos from it": "The team’s · No to-dos from it",
+ "Marked as the team’s. No to-dos from it.": "Marked as the team’s. No to-dos from it.",
+ "No to-dos from it": "No to-dos from it",
+ "Whose is {}?": "Whose is {}?",
+ "Looks like a team address": "Looks like a team address",
+ "Gmail sends as it, but not as an alias": "Gmail sends as it, but not as an alias",
+ "Your own sign-in address is always yours": "Your own sign-in address is always yours"
 }
