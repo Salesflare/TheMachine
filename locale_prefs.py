@@ -17,7 +17,12 @@ import re
 import zoneinfo
 from pathlib import Path
 
-LANGUAGES = {'en': 'English', 'nl': 'Nederlands', 'fr': 'Français', 'de': 'Deutsch', 'es': 'Español'}  # i18n/<code>.json
+LANGUAGES = {'en': 'English', 'nl': 'Nederlands', 'fr': 'Français', 'de': 'Deutsch', 'es': 'Español', 'it': 'Italiano',
+             'pt-BR': 'Português (Brasil)'}  # i18n/<code>.json
+# A browser language without its own catalog that reads one of these for now: Portuguese from Portugal reads Brazilian.
+NEAREST = {'pt': 'pt-BR'}
+_CODES = {code.lower(): code for code in LANGUAGES}
+_BASES = {code.split('-')[0] for code in LANGUAGES}
 DEFAULT_REGION = 'US'  # dates without a locale
 CLOCKS = ('auto', '12h', '24h')
 # Regions whose people mostly read a 12-hour clock (CLDR's preferred hour cycle "h"); the rest read 24-hour.
@@ -39,7 +44,7 @@ def normalize(value):
     if not found:
         return None
     language = found.group(1).lower()
-    return (language if language in LANGUAGES else 'en') + '-' + found.group(2).upper()
+    return (language if language in _BASES else 'en') + '-' + found.group(2).upper()
 
 
 def region(locale):
@@ -55,6 +60,11 @@ def hour12(locale, clock='auto'):
     return region(locale) in H12
 
 
+def code(value):
+    """The catalog code for a language setting: 'pt-BR' from 'pt-br' or 'pt_BR', 'it' from 'IT'; None for another."""
+    return _CODES.get(str(value or '').strip().lower().replace('_', '-'))
+
+
 def language():
     """The owner's UI language now ('en' until configured)."""
     return _current['language'] or 'en'
@@ -62,18 +72,20 @@ def language():
 
 def language_of(config):
     """The UI language: the owner's choice, else a non-English language from the locale (signup), else English."""
-    chosen = str((config or {}).get('language') or '').lower()
-    if chosen in LANGUAGES:
+    chosen = code((config or {}).get('language'))
+    if chosen:
         return chosen
     tag = normalize((config or {}).get('locale'))
-    return tag.split('-')[0] if tag else 'en'
+    return pick_language([tag]) if tag else 'en'
 
 
 def date_locale(locale, language='en'):
     """The Intl locale the dashboard formats dates with: in English US order (Sat, Oct 24) or day first (Sat 24 Oct),
     in another language that language as the region writes it (nl-BE: za 24 okt.)."""
+    if language and '-' in language:
+        return language  # its own region's way (pt-BR), wherever the owner is
     if language and language != 'en':
-        return f'{language}-{region(locale) or {"nl": "NL", "fr": "FR", "de": "DE", "es": "ES"}.get(language, "US")}'
+        return f'{language}-{region(locale) or {"nl": "NL", "fr": "FR", "de": "DE", "es": "ES", "it": "IT"}.get(language, "US")}'
     return 'en-US' if (region(locale) or DEFAULT_REGION) in MONTH_FIRST else 'en-GB'
 
 
@@ -91,9 +103,11 @@ def pick_language(wanted):
             ranked.append((-weight, i, tag.strip()))
         wanted = [tag for _, _, tag in sorted(ranked)]
     for tag in list(wanted or [])[:20]:
-        code = str(tag or '').strip().lower().replace('_', '-').split('-')[0]
-        if code in LANGUAGES:
-            return code
+        tag = str(tag or '').strip().lower().replace('_', '-')
+        base = tag.split('-')[0]
+        found = _CODES.get(tag) or _CODES.get(base) or NEAREST.get(base)
+        if found:
+            return found
     return 'en'
 
 
@@ -102,14 +116,14 @@ def configure(config):
     tag = normalize((config or {}).get('locale'))
     clock = (config or {}).get('clock')
     _current.update(locale=tag or None, clock=clock if clock in CLOCKS else 'auto', language=language_of(config),
-                    chosen=str((config or {}).get('language') or '').lower() in LANGUAGES)
+                    chosen=code((config or {}).get('language')) is not None)
 
 
 def view(config=None):
     """What Settings shows and the dashboard formats with."""
     if config is not None:
         tag, clock = normalize(config.get('locale')) or None, config.get('clock') if config.get('clock') in CLOCKS else 'auto'
-        language, chosen = language_of(config), str(config.get('language') or '').lower() in LANGUAGES
+        language, chosen = language_of(config), code(config.get('language')) is not None
     else:
         tag, clock, language, chosen = _current['locale'], _current['clock'], _current['language'] or 'en', _current.get('chosen', False)
     return {'locale': tag, 'region': region(tag), 'language': language, 'language_set': chosen, 'clock': clock,
@@ -153,9 +167,9 @@ def settings(changes):
     """{'locale', 'clock'} from the dashboard, checked; a ValueError says what is wrong."""
     out = {}
     if 'language' in changes:
-        if str(changes.get('language') or '').lower() not in LANGUAGES:
+        if not code(changes.get('language')):
             raise ValueError('Pick a language: ' + ', '.join(LANGUAGES))
-        out['language'] = str(changes['language']).lower()
+        out['language'] = code(changes['language'])
     if 'locale' in changes:
         tag = normalize(changes.get('locale'))
         if not tag:
@@ -188,8 +202,10 @@ NAMES = {
     'fr': ('lun. mar. mer. jeu. ven. sam. dim.'.split(), 'janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.'.split()),
     'de': ('Mo. Di. Mi. Do. Fr. Sa. So.'.split(), 'Jan. Feb. März Apr. Mai Juni Juli Aug. Sep. Okt. Nov. Dez.'.split()),
     'es': ('lun mar mié jue vie sáb dom'.split(), 'ene feb mar abr may jun jul ago sept oct nov dic'.split()),
+    'it': ('lun mar mer gio ven sab dom'.split(), 'gen feb mar apr mag giu lug ago set ott nov dic'.split()),
+    'pt-BR': ('seg. ter. qua. qui. sex. sáb. dom.'.split(), 'jan. fev. mar. abr. mai. jun. jul. ago. set. out. nov. dez.'.split()),
 }
-AT = {'en': ' at ', 'nl': ' om ', 'fr': ' à ', 'de': ' um ', 'es': ' a las '}
+AT = {'en': ' at ', 'nl': ' om ', 'fr': ' à ', 'de': ' um ', 'es': ' a las ', 'it': ' alle ', 'pt-BR': ' às '}
 
 
 def weekday_name(moment):
@@ -200,10 +216,10 @@ def weekday_name(moment):
 
 def day_text(moment, weekday=True, year=False):
     """'Sat, Oct 24' or 'Sat 24 Oct' (as the dashboard's Intl en-US and en-GB write them), with ', 2026' or ' 2026'. In
-    another language day first with its names: 'za 24 okt', 'sam. 24 oct.', 'Sa. 24. Okt.'."""
+    another language day first with its names: 'za 24 okt', 'sam. 24 oct.', 'Sa. 24. Okt.', 'sáb. 24 de out.'."""
     names = NAMES.get(language())
     if names:
-        text = f'{moment.day}{"." if language() == "de" else ""} {names[1][moment.month - 1]}'
+        text = f'{moment.day}{"." if language() == "de" else " de" if language() == "pt-BR" else ""} {names[1][moment.month - 1]}'
         return (names[0][moment.weekday()] + ' ' if weekday else '') + text + (f' {moment.year}' if year else '')
     us = (region(_current['locale']) or DEFAULT_REGION) in MONTH_FIRST
     text = (f'{moment:%b} {moment.day}' if us else f'{moment.day} {moment:%b}')

@@ -7,7 +7,7 @@
 Keys are the English text itself, as in the dashboard (dashboard.html, the i18n script), so English stays the source and
 the fallback: a string without an entry reads as written. {} placeholders fill in order; a translation may use {0}, {1}
 to reorder them. A plural entry picks its form by the first number among the values (CLDR one/other: the four
-languages here all have just those two in UI copy, French counting 0 and 1 as one)."""
+languages here all have just those two in UI copy, French and Brazilian Portuguese counting 0 and 1 as one)."""
 from __future__ import annotations
 
 import functools
@@ -39,7 +39,7 @@ def plural_form(lang, n):
         n = abs(float(n))
     except (TypeError, ValueError):
         return 'other'
-    if lang == 'fr':
+    if lang in ('fr', 'pt-BR'):
         return 'one' if n < 2 else 'other'
     return 'one' if n == 1 else 'other'
 
@@ -68,7 +68,8 @@ def t(text, *args, lang=None):
 
 def language_name(lang=None):
     """'Dutch' for nl: how a prompt names the owner's language."""
-    return {'en': 'English', 'nl': 'Dutch', 'fr': 'French', 'de': 'German', 'es': 'Spanish'}.get(lang or locale_prefs.language(), 'English')
+    return {'en': 'English', 'nl': 'Dutch', 'fr': 'French', 'de': 'German', 'es': 'Spanish', 'it': 'Italian',
+            'pt-BR': 'Brazilian Portuguese'}.get(lang or locale_prefs.language(), 'English')
 
 
 def written_in(lang=None):

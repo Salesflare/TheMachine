@@ -7,7 +7,7 @@ capitalized term (Ready, Settings) is the name of a status or a screen and only 
 counts in any case. File names (.skill, SKILL.md) don't count.
 
 Tone: short UI copy, the way a native product says it, never word for word. Dutch uses *je*, French *vous*, German *du*,
-Spanish *tú*. No em dashes. Placeholders (`{}`, `{0}`, `{1}`) stay; reorder with `{0}`, `{1}` when the sentence needs it.
+Spanish *tú*, Italian *tu*, Brazilian Portuguese *você*. No em dashes. Placeholders (`{}`, `{0}`, `{1}`) stay; reorder with `{0}`, `{1}` when the sentence needs it.
 
 ## Names
 
@@ -19,26 +19,26 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut.
 
 ## Terms
 
-| English | nl | fr | de | es |
-|---|---|---|---|---|
-| to-do | to-do, to-do's | tâche, tâches | Aufgabe, Aufgaben | tarea, tareas |
-| snooze | snooze, snoozen, gesnoozed | mettre en attente, en attente, attente | zurückstellen, zurückgestellt, Zurückstellen | posponer, pospuesto, pospuesta, pospón |
-| hand off | overdragen, overdracht, draag over | transférer, transfert, transférez | übergeben, Übergabe, übergib | pasar, traspaso, pasa |
-| handoff | overdracht, overdragen | transfert, transférer | Übergabe, übergeben | traspaso, pasar |
-| Ready | Klaar | Prêt, Prête, Prêts | Bereit | Listo, Lista, Listos |
-| To decide | Te beslissen | À décider | Zu entscheiden | Por decidir |
-| Not needed | Niet nodig | Pas nécessaire | Nicht nötig | No hace falta |
-| signal | signaal, signalen | signal, signaux | Signal, Signale | señal, señales |
-| draft | concept, concepten | brouillon, brouillons | Entwurf, Entwürfe | borrador, borradores |
-| skill | skill, skills | compétence, compétences | Skill, Skills | habilidad, habilidades |
-| Connections | Koppelingen | Connexions | Verbindungen | Conexiones |
-| Settings | Instellingen | Paramètres | Einstellungen | Ajustes |
-| Suggestions | Suggesties | Suggestions | Vorschläge | Sugerencias |
-| saved sign-in | opgeslagen login, opgeslagen logins | identifiant enregistré, identifiants enregistrés | gespeicherte Anmeldung, gespeicherte Anmeldungen, gespeicherten Anmeldungen | inicio de sesión guardado, inicios de sesión guardados |
-| work hours | werkuren | heures de travail | Arbeitszeiten | horario laboral |
-| digest | overzicht | récap | Zusammenfassung | resumen |
-| promise | belofte, beloftes, beloofd | promesse, promesses, promis | Versprechen, versprochen | promesa, promesas, prometido, prometiste, prometió, prometieron |
-| learning | inzicht, inzichten | apprentissage, apprentissages | Erkenntnis, Erkenntnisse | aprendizaje, aprendizajes |
+| English | nl | fr | de | es | it | pt-BR |
+|---|---|---|---|---| --- | --- |
+| to-do | to-do, to-do's | tâche, tâches | Aufgabe, Aufgaben | tarea, tareas | attività | tarefa, tarefas |
+| snooze | snooze, snoozen, gesnoozed | mettre en attente, en attente, attente | zurückstellen, zurückgestellt, Zurückstellen | posponer, pospuesto, pospuesta, pospón | posticipa, posticipare, posticipata, posticipato, posticipate, posticipati, posticipo, posticipi | adiar, adiada, adiado, adiadas, adiados, adie, adia |
+| hand off | overdragen, overdracht, draag over | transférer, transfert, transférez | übergeben, Übergabe, übergib | pasar, traspaso, pasa | passa, passare, passala, passalo, passaggio | passar, passe, repasse, repassar |
+| handoff | overdracht, overdragen | transfert, transférer | Übergabe, übergeben | traspaso, pasar | passaggio, passare | repasse, passar |
+| Ready | Klaar | Prêt, Prête, Prêts | Bereit | Listo, Lista, Listos | Pronto, Pronta, Pronti, Pronte | Pronto, Pronta, Prontos, Prontas |
+| To decide | Te beslissen | À décider | Zu entscheiden | Por decidir | Da decidere | A decidir |
+| Not needed | Niet nodig | Pas nécessaire | Nicht nötig | No hace falta | Non serve | Não precisa |
+| signal | signaal, signalen | signal, signaux | Signal, Signale | señal, señales | segnale, segnali | sinal, sinais |
+| draft | concept, concepten | brouillon, brouillons | Entwurf, Entwürfe | borrador, borradores | bozza, bozze | rascunho, rascunhos |
+| skill | skill, skills | compétence, compétences | Skill, Skills | habilidad, habilidades | skill | habilidade, habilidades |
+| Connections | Koppelingen | Connexions | Verbindungen | Conexiones | Connessioni | Conexões |
+| Settings | Instellingen | Paramètres | Einstellungen | Ajustes | Impostazioni | Configurações |
+| Suggestions | Suggesties | Suggestions | Vorschläge | Sugerencias | Suggerimenti | Sugestões |
+| saved sign-in | opgeslagen login, opgeslagen logins | identifiant enregistré, identifiants enregistrés | gespeicherte Anmeldung, gespeicherte Anmeldungen, gespeicherten Anmeldungen | inicio de sesión guardado, inicios de sesión guardados | accesso salvato, accessi salvati | login salvo, logins salvos |
+| work hours | werkuren | heures de travail | Arbeitszeiten | horario laboral | orario di lavoro | horário de trabalho |
+| digest | overzicht | récap | Zusammenfassung | resumen | riepilogo | resumo |
+| promise | belofte, beloftes, beloofd | promesse, promesses, promis | Versprechen, versprochen | promesa, promesas, prometido, prometiste, prometió, prometieron | promessa, promesse, promesso, promessi | promessa, promessas, prometeu, prometido, prometi, prometeram |
+| learning | inzicht, inzichten | apprentissage, apprentissages | Erkenntnis, Erkenntnisse | aprendizaje, aprendizajes | apprendimento, apprendimenti | aprendizado, aprendizados |
 
 ## Exceptions
 
@@ -48,20 +48,23 @@ English strings the check skips, with why:
 
 ## Not checked, but use these
 
-| English | nl | fr | de | es |
-|---|---|---|---|---|
-| Done (a to-do) | Gedaan | Fait | Erledigt | Hecho |
-| Do it | Doe het | Faire | Ausführen | Hazlo |
-| Work / Personal | Werk / Privé | Travail / Perso | Arbeit / Privat | Trabajo / Personal |
-| People / Organizations / Projects | Personen / Organisaties / Projecten | Personnes / Organisations / Projets | Personen / Organisationen / Projekte | Personas / Organizaciones / Proyectos |
-| board | bord | tableau | Board | tablero |
-| chat | chat | chat | Chat | chat |
-| Careful / Standard (security) | Voorzichtig / Standaard | Prudent / Standard | Vorsichtig / Standard | Prudente / Estándar |
-| Fleet rules | Fleet-regels | règles Fleet | Fleet-Regeln | reglas de Fleet |
-| sign in / sign out | inloggen / uitloggen | se connecter / se déconnecter | anmelden / abmelden | iniciar sesión / cerrar sesión |
+| English | nl | fr | de | es | it | pt-BR |
+|---|---|---|---|---| --- | --- |
+| Done (a to-do) | Gedaan | Fait | Erledigt | Hecho | Fatto | Feito |
+| Do it | Doe het | Faire | Ausführen | Hazlo | Fallo | Fazer |
+| Work / Personal | Werk / Privé | Travail / Perso | Arbeit / Privat | Trabajo / Personal | Lavoro / Personale | Trabalho / Pessoal |
+| People / Organizations / Projects | Personen / Organisaties / Projecten | Personnes / Organisations / Projets | Personen / Organisationen / Projekte | Personas / Organizaciones / Proyectos | Persone / Organizzazioni / Progetti | Pessoas / Organizações / Projetos |
+| board | bord | tableau | Board | tablero | bacheca | quadro |
+| chat | chat | chat | Chat | chat | chat | chat |
+| Careful / Standard (security) | Voorzichtig / Standaard | Prudent / Standard | Vorsichtig / Standard | Prudente / Estándar | Prudente / Standard | Cuidadoso / Padrão |
+| Fleet rules | Fleet-regels | règles Fleet | Fleet-Regeln | reglas de Fleet | regole Fleet | regras do Fleet |
+| sign in / sign out | inloggen / uitloggen | se connecter / se déconnecter | anmelden / abmelden | iniciar sesión / cerrar sesión | accedi / esci | entrar / sair |
 
 ## Open questions for Jeroen
 
 - *to-do*: kept as "to-do" in Dutch (it is what Dutch speakers say), translated elsewhere. Keep it English everywhere?
 - German *du* and French *vous*: right register for the customers?
 - *skill*: kept in Dutch and German, translated in French and Spanish.
+- Italian uses informal *tu*, like Apple, Google and Spotify in Italian. Keeps "skill" in English, like Dutch and German.
+- Brazilian Portuguese uses *você*. Settings reads "Configurações" (Android and web apps); iOS says "Ajustes".
+- Portuguese from Portugal (and plain pt) reads Brazilian Portuguese until it has its own catalog.

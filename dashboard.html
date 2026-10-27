@@ -2251,8 +2251,11 @@ async function i18nLoad(lang){if(!lang||lang===I18N.lang&&(lang==='en'||I18N.cat
  if(lang==='en'){i18nUse('en',null);try{localStorage.removeItem('i18n')}catch{}return true}
  I18N.loading=lang;try{const [cat,en]=await Promise.all([fetch('i18n/'+lang+'.json?v='+I18N.ver).then(r=>r.ok?r.json():null),Object.keys(I18N.en).length?I18N.en:fetch('i18n/en.json?v='+I18N.ver).then(r=>r.ok?r.json():{})]);
   if(!cat)return false;I18N.en=en||{};i18nUse(lang,cat);try{localStorage.setItem('i18n',JSON.stringify({lang,ver:I18N.ver,cat,en:I18N.en}))}catch{}return true}catch{return false}finally{I18N.loading=null}}
-// The first language a browser asks for that there is a catalog for (navigator.languages is its Accept-Language).
-function i18nBrowser(langs){for(const l of (navigator.languages?.length?navigator.languages:[navigator.language||'en'])){const c=String(l).toLowerCase().split('-')[0];if(langs[c])return c}return 'en'}
+// The first language a browser asks for that there is a catalog for (navigator.languages is its Accept-Language):
+// the exact tag (pt-BR), else its language (it-CH reads it), Portuguese from Portugal reading Brazilian for now.
+const I18N_NEAREST={pt:'pt-BR'};
+function i18nBrowser(langs){const codes=Object.fromEntries(Object.keys(langs).map(c=>[c.toLowerCase(),c]));
+ for(const l of (navigator.languages?.length?navigator.languages:[navigator.language||'en'])){const t=String(l).toLowerCase(),b=t.split('-')[0],c=codes[t]||codes[b]||(langs[I18N_NEAREST[b]]?I18N_NEAREST[b]:'');if(c)return c}return 'en'}
 // With each state (applyLocale): the owner's language; never chosen yet (language_set false), the browser's, saved once.
 let i18nAsked=false;
 function i18nApply(l){let lang=l.language||'en';
@@ -2765,7 +2768,7 @@ function renderLocale(){const l=state.locale,box=$('#settings-locale');box.hidde
  $('#locale-sample').textContent=fmtDHM(sample,{weekday:'short',day:'numeric',month:'short'});
  for(const el of [reg,clk,$('#locale-language')])el.disabled=!l.saveable}
 $('#settings-locale').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select')||!el.value)return;const l=state.locale||{};
- const args=el.id==='locale-language'?{language:el.value}:el.id==='locale-region'?{locale:(l.language||'en')+'-'+el.value}:{clock:el.value};el.disabled=true;
+ const args=el.id==='locale-language'?{language:el.value}:el.id==='locale-region'?{locale:(l.language||'en').split('-')[0]+'-'+el.value}:{clock:el.value};el.disabled=true;
  try{state.locale=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_locale',args})});await i18nLoad(state.locale.language);render();notice(t('Saved.'))}
  catch(err){notice(err.message);renderLocale()}finally{el.disabled=!state.locale?.saveable}});
 // Coding agents (agent_remote.py): the Claude Code session a card goes to and the Codex cloud environment.

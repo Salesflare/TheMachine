@@ -10,15 +10,15 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // included, and back to English without a reload. Words around filled-in parts ("{} · {} today") and plurals read
 // translated too, and rows of parts joined by " · " part by part; t() is the same lookup for code. English is untouched when the language is English.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-const cats={};for(const l of ['en','nl','fr','de','es'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
-const languages={en:'English',nl:'Nederlands',fr:'Français',de:'Deutsch',es:'Español'};
+const cats={};for(const l of ['en','nl','fr','de','es','it','pt-BR'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
+const languages={en:'English',nl:'Nederlands',fr:'Français',de:'Deutsch',es:'Español',it:'Italiano','pt-BR':'Português (Brasil)'};
 const view=(language,set=true)=>({locale:'en-BE',region:'BE',language,language_set:set,clock:'auto',hour12:false,auto_hour12:false,
- date_locale:language==='en'?'en-GB':language+'-BE',languages,saveable:true});
+ date_locale:language==='en'?'en-GB':language.includes('-')?language:language+'-BE',languages,saveable:true});
 let locale=view('en',false),saved=[],asked=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- const cat=/^\/i18n\/(\w\w)\.json$/.exec(url.pathname);if(cat){asked.push(cat[1]);res.end(cats[cat[1]]||'{}');return}
+ const cat=/^\/i18n\/(\w\w(?:-[A-Z]{2})?)\.json$/.exec(url.pathname);if(cat){asked.push(cat[1]);res.end(cats[cat[1]]||'{}');return}
  if(url.pathname==='/api/action'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{const {action,args}=JSON.parse(body);
   if(action!=='set_locale'){res.end('{}');return}saved.push(args);if(args.language)locale=view(args.language);res.end(JSON.stringify(locale))});return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],
@@ -67,6 +67,13 @@ try{
  await page.waitForTimeout(300);
  assert.deepEqual(saved,[]);assert.deepEqual(asked,[]);
  assert.equal((await settingsLabel(page)).trim(),'Settings');
+ await context.close();
+ // Never chosen, a browser from Portugal: Brazilian Portuguese for now, saved once.
+ locale=view('en',false);saved=[];
+ [context,page]=await open('pt-PT');
+ await page.waitForFunction(()=>document.documentElement.lang==='pt-BR');
+ assert.deepEqual(saved,[{language:'pt-BR'}]);
+ assert.equal((await settingsLabel(page)).trim(),'Configurações');
  await context.close();
  // Chosen Dutch: the next start reads Dutch at once, from the copy kept on the device.
  locale=view('nl');

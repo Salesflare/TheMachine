@@ -102,6 +102,10 @@ class ServerTextTest(unittest.TestCase):
         self.assertEqual(i18n.t('Forgot {} saved sign-ins.', 1, lang='en'), 'Forgot 1 saved sign-in.')
         self.assertEqual(i18n.fill('{1} then {0}', ['a', 'b']), 'b then a')
         self.assertEqual(i18n.plural_form('fr', 0), 'one')
+        self.assertEqual(i18n.plural_form('pt-BR', 0), 'one')
+        self.assertEqual(i18n.plural_form('it', 0), 'other')
+        self.assertEqual(i18n.t('{} meetings', 2, lang='pt-BR'), '2 reuniões')
+        self.assertEqual(i18n.t('{} meetings', 1, lang='it'), '1 riunione')
         self.assertEqual(i18n.language_name(), 'Dutch')
         locale_prefs.configure({})
         self.assertEqual(i18n.t('Language'), 'Language')
@@ -128,11 +132,14 @@ class ServerTextTest(unittest.TestCase):
     def test_dates_read_in_the_owners_language(self):
         moment = dt.datetime(2026, 10, 24, 14, 5)
         expected = {'en': 'Sat 24 Oct at 14:05', 'nl': 'za 24 okt om 14:05', 'fr': 'sam. 24 oct. à 14:05',
-                    'de': 'Sa. 24. Okt. um 14:05', 'es': 'sáb 24 oct a las 14:05'}
+                    'de': 'Sa. 24. Okt. um 14:05', 'es': 'sáb 24 oct a las 14:05', 'it': 'sab 24 ott alle 14:05',
+                    'pt-BR': 'sáb. 24 de out. às 14:05'}
         for lang, text in expected.items():
             locale_prefs.configure({'locale': 'en-BE', 'language': lang})
             self.assertEqual(locale_prefs.at_text(moment), text)
-        self.assertEqual(locale_prefs.view()['date_locale'], 'es-BE')
+        self.assertEqual(locale_prefs.view()['date_locale'], 'pt-BR')  # Brazilian dates wherever the owner is
+        locale_prefs.configure({'locale': 'en-BE', 'language': 'it'})
+        self.assertEqual(locale_prefs.view()['date_locale'], 'it-BE')
 
     def test_the_language_comes_from_the_choice_then_signup_then_english(self):
         self.assertEqual(locale_prefs.language_of({'language': 'de', 'locale': 'nl-BE'}), 'de')
@@ -144,8 +151,18 @@ class ServerTextTest(unittest.TestCase):
         self.assertEqual(locale_prefs.pick_language('nl-BE,nl;q=0.9,en;q=0.8'), 'nl')
         self.assertEqual(locale_prefs.pick_language('en-US,fr;q=0.5'), 'en')
         self.assertEqual(locale_prefs.pick_language('ja,fr-CA;q=0.4,de;q=0.6'), 'de')
-        self.assertEqual(locale_prefs.pick_language(['pt-BR', 'es-419']), 'es')
+        self.assertEqual(locale_prefs.pick_language(['ja', 'es-419']), 'es')
         self.assertEqual(locale_prefs.settings({'language': 'FR'}), {'language': 'fr'})
+        self.assertEqual(locale_prefs.settings({'language': 'pt-br'}), {'language': 'pt-BR'})
+        # Italian and Brazilian Portuguese; Portuguese from Portugal (or just pt) reads Brazilian for now
+        self.assertEqual(locale_prefs.pick_language('it-CH,it;q=0.9'), 'it')
+        self.assertEqual(locale_prefs.pick_language('pt-BR,pt;q=0.9'), 'pt-BR')
+        self.assertEqual(locale_prefs.pick_language('pt-PT,en;q=0.5'), 'pt-BR')
+        self.assertEqual(locale_prefs.pick_language(['pt']), 'pt-BR')
+        self.assertEqual(locale_prefs.language_of({'locale': 'pt-BR'}), 'pt-BR')
+        self.assertEqual(locale_prefs.language_of({'locale': 'it-IT'}), 'it')
+        self.assertEqual(locale_prefs.language_of({'language': 'pt-BR'}), 'pt-BR')
+        self.assertEqual(locale_prefs.normalize('pt-BR'), 'pt-BR')
         with self.assertRaises(ValueError):
             locale_prefs.settings({'language': 'xx'})
 
