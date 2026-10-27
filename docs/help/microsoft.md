@@ -16,7 +16,7 @@ Mail in Other and newsletters get a quick look first: sender, subject and a few 
 
 ## What it can send and change
 
-- An email from a to-do, only after you approve it in the preview.
+- An email from a to-do, only after you approve it in the preview. It always goes out from the mailbox's own address: Microsoft doesn't confirm sending as an alias.
 - When you snooze a to-do about an email, the thread's messages move to a Snoozed folder in Outlook and come back when the to-do does.
 
 The calendar is never changed.

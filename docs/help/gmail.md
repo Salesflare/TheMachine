@@ -17,6 +17,8 @@ Promotions, newsletters, Updates and Forums mail get a quick look first: sender,
 
 An email from a to-do, and only after you approve it. **Do it** prepares a draft; **Review and send** opens it ready to edit, and nothing goes out until you press **Send now**. **Sign in with Google** asks Google for sending too. With your own app on your own computer, the sign-in is read-only until you add sending yourself.
 
+**From** in the review is a small picker when Gmail lets this mailbox send as an alias of yours (one marked **Mine** in Settings, [Your addresses](settings.md#your-addresses)). A reply to mail that came to that alias starts from it; new mail starts from your mailbox address. Right before sending, Gmail is asked again: if it doesn't confirm the address, nothing is sent.
+
 ## Connect it
 
 On a hosted Machine:

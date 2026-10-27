@@ -48,3 +48,5 @@ A shared address, like info@ or a Google Group, never counts by itself. One the 
 - **Not mine**: it won't count as yours.
 
 **Change** on its row switches it later. Your own sign-in address is always yours.
+
+A Gmail alias of yours can also be the **From** of a draft, when Gmail confirms you can send as it. See [Gmail](gmail.md#what-it-can-send).
