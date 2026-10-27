@@ -812,7 +812,8 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
     if earlier:
         view['earlier_in_conversation'] = earlier
     if row['kind'] == 'owner.card':
-        view['owner_card'] = {'card_id': metadata.get('card_id'), 'rule': OWNER_CARD_RULE}
+        view['owner_card'] = {'card_id': metadata.get('card_id'), 'rule': OWNER_CARD_RULE,
+                              **({'files': [str(f.get('name'))[:120] for f in metadata['files'][:5] if isinstance(f, dict)]} if isinstance(metadata.get('files'), list) else {})}
     if row['kind'] == 'calendar.event' and not calendar_owned(metadata):
         view['not_owners'] = f"On {calendar_owner_name(metadata)}'s calendar, shared with the owner, who isn't on it: context only, no card, prep or promise for them"
     return view
@@ -4440,10 +4441,11 @@ class Store:
                 'note': 'Not merged: the owner made this card, so they are asked whether it is the same as that one. '
                         'Other signals in this call were not saved; suggest them again without the owner\'s signal.'}
 
-    def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None):
+    def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with
         their words as its first evidence: a signal of kind owner.card, left for the next review to fill in. Nothing is
-        sent: the card is already on their screen (delivery not_sent) and its buttons need their tap as on any card."""
+        sent: the card is already on their screen (delivery not_sent) and its buttons need their tap as on any card.
+        files: (draft key, file ids) the form uploaded (chat_files.py), kept with the to-do and given to its runs."""
         words = '\n'.join(' '.join(line.split()) for line in str(text or '').strip().splitlines()).strip()
         words = re.sub(r'\n{3,}', '\n\n', words)
         if not words:
@@ -4460,9 +4462,12 @@ class Store:
                                 (account_id, 'owner:' + sid, stamp, title, words, json.dumps(meta), hashlib.sha256(words.encode()).hexdigest(), stamp))
             saved = self.suggest('owner:' + sid, title, clamp(words, 699), [cursor.lastrowid, *[i for i in attach if i != cursor.lastrowid]], when='now',
                                  work=work, due=due, project=project, _db=db, suggestion_id=sid)
+            kept = chat_files.adopt(db, files[0], sid, files[1]) if files else []
+            if kept:  # the review knows the to-do has them (its runs get the files themselves)
+                db.execute('UPDATE events SET metadata=? WHERE id=?', (json.dumps({**meta, 'files': [{'name': f['name'], 'type': f['type']} for f in kept]}), cursor.lastrowid))
             db.execute('UPDATE suggestions SET origin=?,owner_words=?,deliver_after=NULL WHERE id=?', ('owner', words, sid))
             db.execute("UPDATE deliveries SET status='not_sent',updated_at=? WHERE suggestion_id=?", (stamp, sid))
-        return {'id': sid, 'status': saved['status'], 'title': title, 'event_id': cursor.lastrowid}
+        return {'id': sid, 'status': saved['status'], 'title': title, 'event_id': cursor.lastrowid, **({'files': kept} if kept else {})}
 
     def rename_card(self, suggestion_id, title=None, reset=False, decision_id=None, source='dashboard'):
         """The owner's own title for a card, kept in `title` (so every surface shows it) while the generated one waits in
@@ -4531,6 +4536,7 @@ class Store:
                 meta = json.loads(event['metadata'])
                 if meta.get('card_id') == own['id']:
                     db.execute('UPDATE events SET metadata=? WHERE id=?', (json.dumps({**meta, 'card_id': other['id']}), event['id']))
+            chat_files.move(db, own['id'], other['id'])  # the files the owner made their to-do with
             db.execute("UPDATE suggestions SET status='rejected',closed_from=status,merge_offer=NULL WHERE id=?", (own['id'],))
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                        (decision_id, own['id'], 'merge', '', source, stamp))
@@ -6912,6 +6918,8 @@ class Store:
                 if prompt:suggestion['change_prompt']=dict(prompt)
                 feedback = db.execute("SELECT id,feedback,choice,created_at,source FROM decisions WHERE suggestion_id=? AND trim(feedback)<>'' AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC,rowid DESC LIMIT 1", (suggestion['id'],)).fetchone()
                 suggestion['latest_feedback'] = dict(feedback) if feedback else None
+            for sid, files in chat_files.of_cards(db, [c['id'] for c in cards if c.get('origin') == 'owner']).items():
+                next(c for c in cards if c['id'] == sid)['files'] = files  # what the owner made it with (New to-do)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
         found={r['suggestion_id']:dict(r) for r in db.execute('SELECT p.*,d.choice cause FROM preparations p LEFT JOIN decisions d ON d.id=p.decision_id'
@@ -13017,8 +13025,9 @@ class App:
         if name == 'chat_stop':
             return self.chat_stop(args.get('suggestion_id'))
         if name in ('chat_upload', 'chat_file_remove'):
-            sid = str(args.get('suggestion_id') or '')
-            if not re.fullmatch(r'[a-f0-9]{16}', sid):
+            # A New to-do form's files upload before the to-do exists, under the form's own draft key
+            sid = 'new:' + str(args['draft']) if args.get('draft') is not None else str(args.get('suggestion_id') or '')
+            if not re.fullmatch(r'(?:new:)?[a-f0-9]{16}', sid):
                 raise ValueError('Unknown suggestion')
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
@@ -13435,7 +13444,11 @@ class App:
         account = (work_ids[0] if scope == 'work' else personal_ids[0] if scope == 'personal'
                    else found[attach[0]] if attach else accounts[0]['id'])
         work = any(a['id'] == account and str(a.get('boundary') or '').startswith('work:') for a in accounts)
-        saved = self.store.owner_card(args.get('text'), account, work=work, due=args.get('due') or None, about=about, attach=attach, project=project)
+        files = args.get('files') or []
+        if files and not isinstance(files, list):
+            raise ValueError('files is a list of file ids')
+        saved = self.store.owner_card(args.get('text'), account, work=work, due=args.get('due') or None, about=about, attach=attach, project=project,
+                                      files=('new:' + str(args.get('draft') or ''), files) if files else None)
         if about and getattr(self, 'graph_dirty', None):
             self.graph_dirty.set()  # the card shows on their Graph page after the next build
         return saved
@@ -14408,7 +14421,7 @@ class App:
                 request['message']+='\nThis continues the SAME session, with earlier work in context. Before changing anything in an app, read assistant_signals preparation_history (offset 0, then any next_offset): a compact list of earlier calls. Summaries are shortened: when reconciling a call, request preparation_history with its call_ref, offset 0 and any next_offset for exact saved parameters and receipts. If detail_complete=false, check the retained transcript or original app for the missing suffix. Do not repeat an external step that already happened; check uncertain ones against the app first. If the owner\'s latest note asks for something different (a rewrite, another approach), do that. Saving your result or a blocker is always allowed.'
             try:  # files the owner added to the message that started this run: images as images, all of them as files
                 with self.store.connect() as db:
-                    images,lines=chat_files.for_run(db,self.config,job.get('decision_id'),job['job_id'])
+                    images,lines=chat_files.for_run(db,self.config,job.get('decision_id'),job['job_id'],job['suggestion_id'],request['session_job_id']==job['job_id'])
                 if images:request['attachments']=images
                 request['message']+=lines
             except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
@@ -14717,6 +14730,7 @@ class App:
             ids = []
         names, owner, kinds, metas = {}, [], {}, {}
         card = db.execute('SELECT title,owner_step FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        own_files = chat_files.of_cards(db, [suggestion_id])
         title, planned = (card['title'] or '', bool(card['owner_step'])) if card else ('', False)  # planned: only the owner can do its step
         for r in db.execute('SELECT id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids) if ids else []:
             m = json.loads(r['metadata'])
@@ -14739,8 +14753,10 @@ class App:
                     continue
             text = chat_excerpt(v['body'], v['title']) if text is None else text
             if text or v['title']:
+                # The owner's own words (New to-do) carry the files they made it with
+                made = own_files.pop(suggestion_id, None) if kind == 'owner.card' else None
                 owner.append({'kind': 'source', 'from': clamp(who, 120), 'via': via, 'title': clamp(v['title'], 200),
-                              'text': text, 'mine': v['from'] == 'You', 'at': at})
+                              'text': text, 'mine': v['from'] == 'You', 'at': at, **({'files': made} if made else {})})
         # A chat source has only its channel and handle ("#DM U…"): name it after the person the card's sends go to
         for r in db.execute('SELECT payload FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:

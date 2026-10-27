@@ -14,7 +14,11 @@ so the agent can read a document with its own tools or attach a file to a draft.
 Only types the agent can use are taken, checked by extension and, for images and PDFs, by their first bytes, so a file
 is never served as something it is not. Images are at most IMAGE_BYTES (the Gateway takes up to 6 MB per image),
 other files at most FILE_BYTES, and a message has at most MAX_FILES files with at most IMAGES_BYTES of images (so the
-run's request stays within the Gateway's 25 MB frame)."""
+run's request stays within the Gateway's 25 MB frame).
+
+A new to-do can carry files too (New to-do on the dashboard): they upload before the to-do exists, under a draft key
+(DRAFT, the form's own), and the to-do takes them when it is made (`adopt`), kept with it (decision_id CARD + its id)
+rather than with a message. Every run of that to-do gets them (`for_run`), as the task's own files."""
 from __future__ import annotations
 
 import base64
@@ -48,6 +52,8 @@ MAGIC = {'image/png': (b'\x89PNG\r\n\x1a\n',), 'image/jpeg': (b'\xff\xd8\xff',),
          'application/pdf': (b'%PDF-',)}
 ZIPPED = ('.docx', '.xlsx', '.pptx', '.odt', '.ods')
 ID = re.compile(r'cf_[0-9a-f]{20}')
+DRAFT = re.compile(r'new:[0-9a-f]{16}')  # a New to-do form's uploads, before the to-do exists
+CARD = 'card:'  # decision_id of files kept with the to-do itself
 
 
 def initialize(db):
@@ -115,7 +121,8 @@ def too_big(mime, size):
 
 def save(db, config, suggestion_id, name, data_b64, stamp):
     """Keep one upload for a card's next message: {id, name, type, size}. ValueError in the owner's words."""
-    if not db.execute('SELECT 1 FROM suggestions WHERE id=?', (suggestion_id,)).fetchone():
+    draft = bool(DRAFT.fullmatch(str(suggestion_id)))
+    if not draft and not db.execute('SELECT 1 FROM suggestions WHERE id=?', (suggestion_id,)).fetchone():
         raise ValueError('Unknown suggestion')
     name = plain_name(name)
     if not name or not isinstance(data_b64, str):
@@ -133,7 +140,7 @@ def save(db, config, suggestion_id, name, data_b64, stamp):
         raise ValueError('I can’t read that type of file. Add an image, a PDF, a text or an Office file.')
     if (why := too_big(mime, len(data))):
         raise ValueError(why)
-    if db.execute('SELECT count(*) FROM chat_files WHERE suggestion_id=? AND decision_id IS NULL', (suggestion_id,)).fetchone()[0] >= MAX_FILES * 4:
+    if db.execute('SELECT count(*) FROM chat_files WHERE suggestion_id=? AND decision_id IS NULL', (suggestion_id,)).fetchone()[0] >= MAX_FILES * (1 if draft else 4):
         raise ValueError('Too many files waiting. Send or remove some first.')
     root = folder(config)
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -166,6 +173,39 @@ def check(db, suggestion_id, ids, decision_id=None):
     if sum(r['size'] for r in rows if r['mime'].startswith('image/')) > IMAGES_BYTES:
         raise ValueError(f'The images are too big together. A message can carry up to {human(IMAGES_BYTES)} of images.')
     return rows
+
+
+def adopt(db, draft, suggestion_id, ids):
+    """A new to-do takes the files its form uploaded (under `draft`): kept with it from now on. [{id, name, type, size}].
+    ValueError in the owner's words when one is gone or they are too many or too big together."""
+    if not ids:
+        return []
+    if not DRAFT.fullmatch(str(draft or '')):
+        raise ValueError('A file is gone. Add it again.')
+    if not isinstance(ids, list) or len(ids) > MAX_FILES or len(set(map(str, ids))) != len(ids):
+        raise ValueError(f'A to-do can carry up to {MAX_FILES} files.')
+    rows = []
+    for file_id in ids:
+        row = db.execute('SELECT * FROM chat_files WHERE id=? AND suggestion_id=? AND decision_id IS NULL', (str(file_id), draft)).fetchone() \
+            if ID.fullmatch(str(file_id)) else None
+        if not row:
+            raise ValueError('A file is gone. Add it again.')
+        rows.append(row)
+    if sum(r['size'] for r in rows if r['mime'].startswith('image/')) > IMAGES_BYTES:
+        raise ValueError(f'The images are too big together. A to-do can carry up to {human(IMAGES_BYTES)} of images.')
+    for r in rows:
+        db.execute('UPDATE chat_files SET suggestion_id=?,decision_id=? WHERE id=?', (suggestion_id, CARD + suggestion_id, r['id']))
+    return [{'id': r['id'], 'name': r['name'], 'type': r['mime'], 'size': r['size']} for r in rows]
+
+
+def move(db, from_id, to_id):
+    """A to-do merged into another: its own files go with it."""
+    db.execute('UPDATE chat_files SET suggestion_id=?,decision_id=? WHERE decision_id=?', (to_id, CARD + to_id, CARD + from_id))
+
+
+def of_cards(db, suggestion_ids):
+    """{to-do id: [{id, name, type, size}]}: the files kept with each to-do, for the card and its chat."""
+    return {k[len(CARD):]: v for k, v in listed(db, [CARD + str(i) for i in suggestion_ids]).items()}
 
 
 def bind(db, decision_id, rows):
@@ -201,43 +241,56 @@ def read(db, config, file_id):
     return _open(db, (folder(config) / row['id']).read_bytes()), row['mime'], row['name']
 
 
-def for_run(db, config, decision_id, job_id):
-    """What a run gets of its message's files: (Gateway attachments for the images, the prompt's lines about all of
-    them). Each file gets a readable copy by its own name in the run's private folder, removed once the run has ended."""
-    rows = db.execute('SELECT * FROM chat_files WHERE decision_id=? ORDER BY rowid', (decision_id,)).fetchall() if decision_id else []
-    if not rows:
+def for_run(db, config, decision_id, job_id, suggestion_id=None, fresh=True):
+    """What a run gets of its message's files and of its to-do's own (a New to-do's): (Gateway attachments for the
+    images, the prompt's lines about all of them). Each file gets a readable copy by its own name in the run's private
+    folder, removed once the run has ended. The to-do's images go as images when the session is new (`fresh`; a
+    session that carries on has them already) and they fit next to the message's; otherwise the model reads them by path."""
+    rows = db.execute('SELECT * FROM chat_files WHERE decision_id=? ORDER BY rowid', (decision_id,)).fetchall() \
+        if decision_id and not str(decision_id).startswith(CARD) else []
+    own = db.execute('SELECT * FROM chat_files WHERE decision_id=? ORDER BY rowid', (CARD + suggestion_id,)).fetchall() if suggestion_id else []
+    if not rows and not own:
         return [], ''
     base = mail_attachments.open_root(config, create=True)
     if not base:
         raise OSError('No private folder for the run')
     target = base / re.sub(r'[^A-Za-z0-9_-]', '', job_id)[:80]
     target.mkdir(exist_ok=True, mode=0o700)
-    images, lines, names = [], [], set()
-    for r in rows:
-        source = folder(config) / r['id']
-        try:
-            data = _open(db, source.read_bytes())
-        except (OSError, message_seal.SealError):
-            lines.append(f"- {r['name']}: this file is missing on this computer")
-            continue
-        name, n = r['name'], 1
-        while name.lower() in names:  # two files of the same name keep both
-            n += 1
-            stem, ext = os.path.splitext(r['name'])
-            name = f'{stem} ({n}){ext}'
-        names.add(name.lower())
-        path = target / name
-        if path.is_symlink():
-            path.unlink()
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, 'O_NOFOLLOW', 0), 0o600)
-        with os.fdopen(fd, 'wb') as out:
-            out.write(data)
-        if r['mime'].startswith('image/'):
-            images.append({'type': 'image', 'mimeType': r['mime'], 'fileName': name, 'content': base64.b64encode(data).decode()})
-        lines.append(f"- {path} ({r['mime']}, {human(r['size'])}){' (also in this message as an image)' if r['mime'].startswith('image/') else ''}")
-    note = ('\n\nThe owner attached these files to their message. They are part of what they ask: read each one before you '
-            'answer (images are in this message; read documents with your tools). You can attach them to a draft from these paths.\n' + '\n'.join(lines))
-    return images, note
+    images, names, notes = [], set(), []
+    room = IMAGES_BYTES - sum(r['size'] for r in rows if r['mime'].startswith('image/'))  # the to-do's images fit next to the message's
+    for group, card in ((own, True), (rows, False)):
+        lines = []
+        for r in group:
+            try:
+                data = _open(db, (folder(config) / r['id']).read_bytes())
+            except (OSError, message_seal.SealError):
+                lines.append(f"- {r['name']}: this file is missing on this computer")
+                continue
+            name, n = r['name'], 1
+            while name.lower() in names:  # two files of the same name keep both
+                n += 1
+                stem, ext = os.path.splitext(r['name'])
+                name = f'{stem} ({n}){ext}'
+            names.add(name.lower())
+            path = target / name
+            if path.is_symlink():
+                path.unlink()
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+            with os.fdopen(fd, 'wb') as out:
+                out.write(data)
+            shown = r['mime'].startswith('image/') and (not card or (fresh and r['size'] <= room))
+            if shown:
+                images.append({'type': 'image', 'mimeType': r['mime'], 'fileName': name, 'content': base64.b64encode(data).decode()})
+                room -= r['size'] if card else 0
+            lines.append(f"- {path} ({r['mime']}, {human(r['size'])}){' (also in this message as an image)' if shown else ''}")
+        if lines and card:
+            notes.append('\n\nThe owner attached these files to this to-do when they made it. They are part of the task: read each one '
+                         'before you start (an image not in this message: read it by its path; read documents with your tools). '
+                         'You can attach them to a draft from these paths.\n' + '\n'.join(lines))
+        elif lines:
+            notes.append('\n\nThe owner attached these files to their message. They are part of what they ask: read each one before you '
+                         'answer (images are in this message; read documents with your tools). You can attach them to a draft from these paths.\n' + '\n'.join(lines))
+    return images, ''.join(notes)
 
 
 def sweep(db, config, stamp):
@@ -245,7 +298,7 @@ def sweep(db, config, stamp):
     protection: sealed in place once it is on, opened again once it is off."""
     cutoff = (dt.datetime.fromisoformat(stamp) - dt.timedelta(hours=UNSENT_HOURS)).isoformat()
     gone = [r['id'] for r in db.execute('SELECT id FROM chat_files WHERE (decision_id IS NULL AND created_at<?) '
-                                        'OR NOT EXISTS(SELECT 1 FROM suggestions s WHERE s.id=chat_files.suggestion_id)', (cutoff,))]
+                                        "OR (suggestion_id NOT LIKE 'new:%' AND NOT EXISTS(SELECT 1 FROM suggestions s WHERE s.id=chat_files.suggestion_id))", (cutoff,))]
     for file_id in gone:
         db.execute('DELETE FROM chat_files WHERE id=?', (file_id,))
         (folder(config) / file_id).unlink(missing_ok=True)
