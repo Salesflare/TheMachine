@@ -279,6 +279,37 @@ class SharedGraph(unittest.TestCase):
         for text in (BODY, 'Lee Park', 'lee@client.example', 'client.example', 'Renewal quote', 'renewal', HEALTH):
             self.assertNotIn(text, sent)  # every call and all the Network held: sealed
 
+    def brief(self, box):
+        with box.store.connect() as db:
+            return box.compute(db, 'brief', {'since': ago(30)[:10]}, False, FLEET)
+
+    def personal_and_client(self):
+        """A client thread and a personal one in the same work account, both with people Olive writes back to."""
+        self.add(self.own,
+                 mail('work', 21, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Renewal quote', BODY, 3, 't-c'),
+                 mail('work', 22, 'Olive <own1@acme.example>', 'lee@client.example', 'Re: Renewal quote', 'Checking.', 2, 't-c'),
+                 mail('work', 23, 'Kai Moss <kai@pal.example>', 'own1@acme.example', 'Your daughter', 'Congrats on the graduation!', 3, 't-p'),
+                 mail('work', 24, 'Olive <own1@acme.example>', 'kai@pal.example', 'Re: Your daughter', 'Thank you!', 2, 't-p'))
+        self.judge(self.own, ('work-21', 'client', 'Lee asked for the quote'), ('work-23', 'personal', 'Kai wrote'))
+
+    def test_a_brief_answer_holds_only_what_the_team_graph_shares_never_a_personal_thread(self):
+        # Brief facts in a Work Fleet follow the Team Graph's sharing: the client thread counts, the personal one in the
+        # same work account never does, and the ask is answered by itself (no approval card).
+        self.personal_and_client()
+        facts = self.brief(self.own)
+        self.assertIn('client.example', [x['domain'] for x in facts['touched']])
+        self.assertNotIn('pal.example', json.dumps(facts))
+        with self.own.connect() as db:
+            self.assertEqual(self.own.rule(db, FLEET, 'adm2', 'brief')[0], 'always')
+        self.own.set_rule(FLEET, fleet.ALL, 'brief', 'never')  # Share my brief facts with the team: off
+        with self.own.connect() as db:
+            self.assertEqual(self.own.rule(db, FLEET, 'adm2', 'brief')[0], 'never')
+
+    def test_sharing_is_off_until_an_admin_turns_it_on_and_brief_facts_hold_nothing_meanwhile(self):
+        self.personal_and_client()
+        facts = self.brief(self.own)
+        self.assertEqual((facts['touched'], facts['unanswered'], facts['meetings'], facts['quiet']), ([], [], [], []))
+
     def test_personal_never_shared_not_even_that_it_exists(self):
         self.olive_mail()
         self.rounds()

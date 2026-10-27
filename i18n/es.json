@@ -2447,5 +2447,10 @@
  "Whose is {}?": "¿De quién es {}?",
  "Looks like a team address": "Parece una dirección de equipo",
  "Gmail sends as it, but not as an alias": "Gmail envía como ella, pero no como alias",
- "Your own sign-in address is always yours": "Tu propia dirección de inicio de sesión siempre es tuya"
+ "Your own sign-in address is always yours": "Tu propia dirección de inicio de sesión siempre es tuya",
+ "Share my brief facts with the team": "Compartir mis datos del informe con el equipo",
+ "{}: Share my brief facts with the team": "{}: Compartir mis datos del informe con el equipo",
+ "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Cifras y fechas de lo que el Graph del equipo ya comparte. Los hilos privados y personales nunca cuentan.",
+ "Brief facts on.": "Datos del informe activados.",
+ "Brief facts off. Nothing goes to their briefs.": "Datos del informe desactivados. No va nada a sus informes."
 }

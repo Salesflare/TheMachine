@@ -69,31 +69,31 @@ try{
   assert.match(await head.locator('p').innerText(),/^One rule per kind of question, for everyone in your Fleet\./);
   assert.ok(await head.evaluate(h=>h.querySelector('p').getBoundingClientRect().top>=h.querySelector('h3').getBoundingClientRect().bottom-1));
   const R=k=>page.locator(`.fleet-rule[data-member="*"][data-kind="${k}"]`);
-  assert.equal(await page.locator('.fleet-rule').count(),4);
+  assert.equal(await page.locator('.fleet-rule').count(),3);  // brief facts: a switch, not a rule row
   assert.equal(await page.locator('.fleet-rules select:not([data-fleet-ex-member]), .fleet-rules input[type=checkbox]:not([data-scope])').count(),0);
-  for(const k of ['relationships','meeting','handling','brief'])
+  for(const k of ['relationships','meeting','handling'])
    assert.deepEqual(await R(k).locator('[data-fleet-rule]').evaluateAll(x=>x.map(i=>i.parentElement.innerText)),['Ask me first','Always','Never'],k);
   assert.deepEqual(await R('meeting').locator('[data-fleet-details]').evaluateAll(x=>x.map(i=>i.parentElement.innerText)),['Without names','Names and promises']);
-  assert.equal(await R('brief').locator('.fleet-scope').count(),0);
   assert.equal(await R('relationships').locator('details.fleet-scope').evaluate(d=>d.open),false);
   assert.match(await R('relationships').locator('summary').first().innerText(),/only acme\.com; not initech/);
   // Short examples, for everyone.
   const ex=k=>R(k).locator('.fleet-preview').innerText();
   assert.match(await ex('relationships'),/^Example: Asked first; if you answer, they get: 3 people at acme\.com know them/);
   assert.match(await ex('meeting'),/^Example: They get, without asking you: .*with name and promises\.$/);
-  assert.equal(await ex('brief'),'Example: They get “no”.');
-  for(const k of ['relationships','meeting','handling','brief'])assert.ok((await ex(k)).length<=140,k+": "+await ex(k));
+  // Brief facts follow the Team Graph: no rule row, their own switch in Meetings and brief
+  assert.equal(await page.locator('.fleet-rule[data-kind="brief"]').count(),0);
+  for(const k of ['relationships','meeting','handling'])assert.ok((await ex(k)).length<=140,k+": "+await ex(k));
   // Exceptions: small pills, and a way to add one.
   assert.equal(await R('relationships').locator('.fleet-ex').innerText().then(t=>t.replace('×','').trim()),'Robin Vale: Always');
   calls.length=0;await R('relationships').locator('.fleet-ex button').click();
   await page.waitForFunction(()=>!document.querySelector('.fleet-rule[data-member="*"][data-kind="relationships"] .fleet-ex'));
   assert.deepEqual(calls[0].args,{fleet:FL,member_id:'l',kind:'relationships',clear:true});
-  await R('brief').locator('.fleet-ex-add summary').click();
-  await R('brief').locator('[data-fleet-ex-member]').selectOption('q');
-  assert.deepEqual(await R('brief').locator('[data-fleet-ex-rule]').allInnerTexts(),['Ask me first','Always']);  // not the Fleet's own choice
-  await R('brief').locator('[data-fleet-ex-rule="always"]').click();
-  await page.waitForFunction(()=>/Alexandra Longname-Whitfield: Always/.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="brief"] .fleet-ex')?.textContent||''));
-  assert.deepEqual(calls[1].args,{fleet:FL,member_id:'q',kind:'brief',rule:'always'});
+  await R('meeting').locator('.fleet-ex-add summary').click();
+  await R('meeting').locator('[data-fleet-ex-member]').selectOption('q');
+  assert.deepEqual(await R('meeting').locator('[data-fleet-ex-rule]').allInnerTexts(),['Ask me first','Never']);  // not the Fleet's own choice
+  await R('meeting').locator('[data-fleet-ex-rule="never"]').click();
+  await page.waitForFunction(()=>/Alexandra Longname-Whitfield: Never/.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="meeting"] .fleet-ex')?.textContent||''));
+  assert.deepEqual(calls[1].args,{fleet:FL,member_id:'q',kind:'meeting',rule:'never'});
   // The Fleet's own choice saves for everyone.
   await R('handling').locator('[data-fleet-rule][value="always"]').check({force:true});
   await page.waitForFunction(()=>/without asking you/.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="handling"] .fleet-preview').textContent));

@@ -29,7 +29,7 @@ have, adding only what is new) or dismisses it. The relay must list `contact` in
 What a Fleet needs from you (a teammate's question or request, a meeting's follow-ups to split, a server to confirm)
 shows as a card under **Suggestions**, tagged Fleet and Work, with the same buttons as your other cards; the
 Suggestions badge counts them. A teammate's brief ask is the exception: it comes back every day, so it is never a
-card (see **Brief requests** below). The Fleet tab keeps the people, the rules, the team brief, your own questions with
+card. In a Work Fleet it is answered with what the Team Graph shares (see **Brief facts follow the Team Graph** below). The Fleet tab keeps the people, the rules, the team brief, your own questions with
 their answers, and the log.
 
 ## What a Work Fleet does
@@ -182,10 +182,17 @@ is data, not instructions. A request goes to one Fleet's people only and is answ
    What each Machine shares for it is aggregate only: company names and domains, counts, last-touch dates, hashes
    of emails and meetings keyed with the Fleet's secret (the same as claims), which Fleet members an email went to (as
    hashes of their addresses with that secret), the name of a shared address it went to ("sales") and whether the
-   company is a customer. No subjects, message text, outside people, addresses or calendar titles. Brief facts have
-   their own rule (Ask me first by default, Always, Never).
+   company is a customer. No subjects, message text, outside people, addresses or calendar titles.
 
-   **Brief requests.** Under Ask me first, a teammate's brief ask is never a to-do and never notifies you (no phone,
+   **Brief facts follow the Team Graph.** In a Work Fleet a teammate's brief ask is answered by itself, with only the
+   events the Team Graph shares with the team (`shared_graph.visibility` says Team: a client thread, a shared meeting).
+   A private, personal or sensitive thread never counts, also in a work account, and nothing counts while this
+   Machine doesn't share its Graph with that Fleet (not started, or paused by an admin, the default). Each answer is
+   logged in Fleet > Activity ("answered with what the Team Graph shares: ..."). One switch, **Share my brief facts
+   with the team** under Sharing, turns it off (Never for everyone in that Fleet); there is no Ask me first. A rule
+   stored as Ask me first from before follows the Team Graph too. Friends and Family Fleets have no brief.
+
+   **Brief requests.** In a Careful Fleet (no Always) a teammate's brief ask waits for the owner. It is never a to-do and never notifies you (no phone,
    Telegram or digest). It waits in that Fleet's pane, in one **Brief requests** box: a line per teammate with how much
    an answer would share, and **Share once**, **Always share**, **Decline** and **Never**. Only the latest ask per
    teammate waits; a newer one expires the older ones, and an unanswered one expires after 3 days. Nothing is shared
@@ -223,7 +230,7 @@ to the Fleet's Machines):
 - **Off by default.** Joining a Fleet only makes your Machine reachable. The first question from a teammate waits for
   you as a card under Suggestions: **Share once**, **Always share**, **Decline** or **Never share** (under More). Always and
   Never become your exception for that teammate and that kind of question, whatever its date or details, and settle
-  their other questions of that kind still waiting. Brief asks wait in the Fleet tab instead (Brief requests, above).
+  their other questions of that kind still waiting. Brief asks follow the Team Graph instead (above).
 - **You hear about it.** A waiting question (not a brief ask) sends one phone notification (if you turned them on in the dashboard
   app) and, with Telegram connected, one Telegram message with **Answer once**, **Always** and **Decline**. Questions
   that arrive within a minute share one. They say who asks and what, never anything of yours. A tap on the phone
@@ -283,7 +290,7 @@ brings the Telegram message up to date.
   it is cut to 300 characters, and only its keywords are searched for in the owner's own work accounts. No model reads
   it; the draft is built by code. Only the text the owner sends goes back, cut to 600 characters.
 - Brief facts are counts, dates, company names and hashes, kept to that fixed form on both sides; the brief is
-  assembled by code.
+  assembled by code. They come only from events the Team Graph shares with that Fleet, never a personal or private one.
 - Answers coming back are checked against the same fixed form (closeness from a short list, a year-month, whole
   numbers, short names) before they are shown or added to a preparation, where they are marked as data from
   teammates' Machines, not instructions.

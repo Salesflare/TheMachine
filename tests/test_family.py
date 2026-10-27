@@ -85,7 +85,8 @@ class Family(unittest.TestCase):
         self.assertEqual({k: r['rule'] for k, r in group['rules'].items()}, {'availability': 'always', 'todo': 'ask', 'event': 'ask'})
         self.assertEqual(group['members'][0]['rules']['availability']['rule'], 'always')
         work = next(f for f in self.fleet.view()['fleets'] if f['id'] == WORK_ID)
-        self.assertTrue(all(r['rule'] == 'ask' for r in work['rules'].values()))  # Work stays Ask me first
+        # Work stays Ask me first, except brief facts: they follow the Team Graph's sharing
+        self.assertEqual({k: r['rule'] for k, r in work['rules'].items() if r['rule'] != 'ask'}, {'brief': 'always'})
         # free/busy by itself: busy blocks only, nothing of what or where
         self.assertEqual(self.family_ask('availability', {'start': self.day, 'days': 1}), 'answered')
         answer = self.answered()['answer']

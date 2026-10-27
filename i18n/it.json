@@ -2447,5 +2447,10 @@
  "Whose is {}?": "Di chi è {}?",
  "Looks like a team address": "Sembra un indirizzo del team",
  "Gmail sends as it, but not as an alias": "Gmail invia come questo indirizzo, ma non come alias",
- "Your own sign-in address is always yours": "Il tuo indirizzo di accesso è sempre tuo"
+ "Your own sign-in address is always yours": "Il tuo indirizzo di accesso è sempre tuo",
+ "Share my brief facts with the team": "Condividi i miei dati del brief con il team",
+ "{}: Share my brief facts with the team": "{}: Condividi i miei dati del brief con il team",
+ "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Numeri e date da ciò che il Graph del team condivide già. I thread privati e personali non contano mai.",
+ "Brief facts on.": "Dati del brief attivi.",
+ "Brief facts off. Nothing goes to their briefs.": "Dati del brief disattivati. Niente va nei loro brief."
 }

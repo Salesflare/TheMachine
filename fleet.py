@@ -65,6 +65,7 @@ import security_levels
 import shared_connectors
 import shared_graph
 import skills
+import fleet_trust
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -101,6 +102,9 @@ KIND_LABEL.update(brief='brief facts', anything='free questions')
 RULES = ('ask', 'always', 'never')
 # The rules a kind takes, when not all three: a free question is never answered without the owner.
 KIND_RULES = {'anything': ('ask', 'never')}
+# Brief facts in a Work Fleet follow the Team Graph's sharing (Fleet.brief_shares): answered by themselves with only
+# what the team already sees, unless the owner turned them off (Never). No Ask me first: nothing beyond the Team Graph goes.
+KIND_RULES['brief'] = ('always', 'never')
 NO_DETAILS = ('handling', 'brief', 'anything')  # kinds without a "how much they hear" choice
 QUIET = ('brief',)  # asks that wait in the Fleet tab only: no to-do, no badge, no phone, Telegram or digest; still nothing shared until the owner chooses
 BRIEF_BYTES = 30000  # under what the relay carries for a brief
@@ -617,6 +621,17 @@ def _work_last(db, node_id, accounts):
     return row[0] if row and row[0] else None
 
 
+def _shared_last(db, node_id, accounts, ok):
+    """The last contact with someone in a work account that the Team Graph shares (ok), else None."""
+    if not accounts:
+        return None
+    for row in db.execute('SELECT e.id,e.occurred_at,e.account_id,e.kind,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? '
+                          f'AND e.deleted=0 AND e.account_id IN ({",".join("?" * len(accounts))}) ORDER BY e.occurred_at DESC LIMIT 50', (node_id, *accounts)):
+        if ok(row):
+            return row['occurred_at']
+    return None
+
+
 def _person(db, address):
     address = address.lower()
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' AND (id=? OR info LIKE ?)", ('email:' + address, '%' + address + '%')):
@@ -828,7 +843,7 @@ def _tokens(address):
     return {t for t in re.split(r'[._+-]', address.split('@', 1)[0]) if len(t) > 1}
 
 
-def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine=()):
+def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine=(), allowed=None):
     """What this Machine adds to a teammate's brief: aggregate facts from the given (work) accounts only. Company
     names and domains, counts and dates, and hashes keyed by the Fleet's secret (an email's like a claim's, a meeting's
     of its calendar id), never a message, a subject, a person, an address or a calendar title.
@@ -839,8 +854,11 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
       `team`), which shared addresses of the team it went to ("sales" for sales@) and whether the company is a
       customer; replied: inbound from people the owner works with that was answered.
       Companies touched count only such people too, so receipts, newsletters and one-off vendor mail never reach it;
-    - meetings: meetings with outside people from `since` to a week ahead."""
+    - meetings: meetings with outside people from `since` to a week ahead.
+    allowed: in a Work Fleet, whether one event is something the Team Graph shares with the team (Fleet.brief_shares):
+    only those count, so a private, personal or sensitive thread never reaches a brief. None: every work event."""
     today = today or dt.datetime.now(dt.timezone.utc).date()
+    ok = (lambda row: True) if allowed is None else (lambda row: allowed({k: row[k] for k in ('id', 'account_id', 'kind', 'metadata')}))
     out = {'touched': [], 'quiet': [], 'unanswered': [], 'replied': [], 'meetings': []}
     if not accounts:
         return out
@@ -883,9 +901,12 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
             known[address] = bool(row and _engaged(row))
         return known[address]
     touched = {}
-    for node_id, event_id, at in db.execute(f"SELECT g.node_id,e.id,e.occurred_at FROM graph_events g JOIN events e ON e.id=g.event_id JOIN graph_nodes n ON n.id=g.node_id "
-                                            f"WHERE e.deleted=0 AND e.occurred_at>=? AND e.occurred_at<? AND e.account_id IN ({marks}) AND n.kind='person'",
-                                            (since, (today + dt.timedelta(days=1)).isoformat(), *accounts)):
+    for row in db.execute(f"SELECT g.node_id,e.id,e.occurred_at,e.account_id,e.kind,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id "
+                          f"JOIN graph_nodes n ON n.id=g.node_id WHERE e.deleted=0 AND e.occurred_at>=? AND e.occurred_at<? AND e.account_id IN ({marks}) "
+                          "AND n.kind='person'", (since, (today + dt.timedelta(days=1)).isoformat(), *accounts)):
+        node_id, event_id, at = row['node_id'], row['id'], row['occurred_at']
+        if not ok(row):
+            continue
         for domain in domains(node_id)[:1]:
             seen = touched.setdefault(domain, {'events': set(), 'last': ''})
             seen['events'].add(event_id)
@@ -894,7 +915,7 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
         out['touched'].append({'org': _org_name(db, domain), 'domain': domain, 'count': len(seen['events']), 'last': day(seen['last'])})
     quiet = {}
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' AND quiet=1 ORDER BY strength DESC LIMIT 200"):
-        last = _work_last(db, row['id'], accounts)
+        last = _work_last(db, row['id'], accounts) if allowed is None else _shared_last(db, row['id'], accounts, ok)
         for domain in domains(row['id'])[:1]:
             if last and domain not in touched:
                 quiet[domain] = max(quiet.get(domain, ''), str(last)[:10])
@@ -903,7 +924,7 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
     start = (today - dt.timedelta(days=UNANSWERED_DAYS)).isoformat()
     later = ("SELECT 1 FROM events r WHERE r.account_id=e.account_id AND r.kind='gmail.message' AND r.deleted=0 AND r.occurred_at>e.occurred_at "
              "AND instr(r.metadata,'\"SENT\"')>0 AND json_extract(r.metadata,'$.thread_id')=json_extract(e.metadata,'$.thread_id')")
-    for row in db.execute(f"SELECT e.id,e.occurred_at,e.metadata,EXISTS({later}) answered FROM events e WHERE e.kind='gmail.message' AND e.deleted=0 "
+    for row in db.execute(f"SELECT e.id,e.occurred_at,e.metadata,e.account_id,e.kind,EXISTS({later}) answered FROM events e WHERE e.kind='gmail.message' AND e.deleted=0 "
                           f"AND e.occurred_at>=? AND e.account_id IN ({marks}) AND instr(e.metadata,'\"SENT\"')=0 ORDER BY e.occurred_at DESC",
                           (start, *accounts)):
         m = json.loads(row['metadata'] or '{}')
@@ -912,7 +933,7 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
         if (not message_id or not sender or graph.bulk(sender) or graph.BULK_LABELS & set(m.get('labels') or ())
                 or not _outside(sender.rsplit('@', 1)[1], internal)):
             continue
-        if not real(sender, row['id']):
+        if not real(sender, row['id']) or not ok(row):
             continue
         key = _hash(secret, message_id)
         if row['answered']:
@@ -927,10 +948,10 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
             org = _org_known(db, domain)
             out['unanswered'].append({**item, **({'team': to} if to else {}), **({'shared': groups} if groups else {}), **({'known': org} if org else {})})
     ahead = (today + dt.timedelta(days=7)).isoformat()
-    for row in db.execute(f"SELECT source_id,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND account_id IN ({marks}) "
+    for row in db.execute(f"SELECT id,source_id,metadata,account_id,kind FROM events WHERE kind='calendar.event' AND deleted=0 AND account_id IN ({marks}) "
                           "AND occurred_at>=? AND occurred_at<=? ORDER BY occurred_at", (*accounts, since, ahead + 'T23:59:59')):
         m = json.loads(row['metadata'] or '{}')
-        if m.get('status') == 'cancelled':
+        if m.get('status') == 'cancelled' or not ok(row):
             continue
         start_at = m.get('start') if isinstance(m.get('start'), dict) else {}
         found = sorted({str(a.get('email') or '').lower().rsplit('@', 1)[-1] for a in m.get('attendees') or [] if isinstance(a, dict)
@@ -1739,7 +1760,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         row = (db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, member_id, kind)).fetchone()
                or db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, ALL, kind)).fetchone())
         found = (row['rule'], bool(row['details'])) if row else (self.default_rule(fleet, kind), False)
-        found = ('ask', found[1]) if found[0] not in KIND_RULES.get(kind, RULES) else found
+        found = ((self.default_rule(fleet, kind) if kind == 'brief' else 'ask'), found[1]) if found[0] not in KIND_RULES.get(kind, RULES) else found
         return found if raw else security_levels.clamp(self.level(fleet), *found)
 
     def level(self, fleet):
@@ -1748,6 +1769,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
 
     def default_rule(self, fleet, kind):
         """Ask me first, except in a Family: free/busy is answered by itself (busy blocks only), to-dos and plans wait."""
+        if kind == 'brief' and self.kind_of(fleet) == 'work':
+            return 'always'  # what the Team Graph shares (brief_shares); the owner can turn it off
         return family.DEFAULT_RULES.get(kind, 'ask') if self.kind_of(fleet) == family.KIND else 'ask'
 
     def scope(self, db, fleet, member_id, kind, raw=False):
@@ -1796,12 +1819,17 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                                            (ref, m, kind, value, now()))
                 db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (done, now()))
 
+    def shown_rule(self, ref, kind, rule):
+        """A stored rule as it reads now: one a kind no longer takes is Ask me first, or for brief facts (which follow
+        the Team Graph, no Ask me first) the Fleet's default."""
+        return rule if rule in KIND_RULES.get(kind, RULES) else self.default_rule(ref, kind) if kind == 'brief' else 'ask'
+
     def rules_view(self, ref, kind, rules, scopes):
         """A Fleet's rule per kind of question, and the teammates whose own choice differs (their exceptions)."""
         out, exceptions = {}, {}
         for k in RULE_KINDS.get(kind, ()):
             wide = rules.get((ref, ALL, k), {'rule': self.default_rule(ref, k), 'details': False})
-            out[k] = {**wide, 'rule': wide['rule'] if wide['rule'] in KIND_RULES.get(k, RULES) else 'ask'}
+            out[k] = {**wide, 'rule': self.shown_rule(ref, k, wide['rule'])}
             for m in self.teammates(ref):
                 own, own_scope = rules.get((ref, m['member_id'], k)), scopes.get(ref, {}).get(m['member_id'], {}).get(k)
                 if own or own_scope:
@@ -1860,7 +1888,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             secret = (self.fleets().get(self.ref(fleet or 'work')) or {}).get('secret') or ''
             team = [e for m in self.teammates(fleet or 'work') for e in m.get('emails', [])]
             return brief_facts(db, self.fleet_accounts(fleet or 'work'), question['since'], secret, self.internal(fleet or 'work'),
-                               team=team, mine=self.my_emails())
+                               team=team, mine=self.my_emails(), allowed=self.brief_shares(db, fleet or 'work'))
         if kind == 'availability':  # a friend's free/busy question: busy blocks only (friends.py)
             return friends.free_busy(db, self.config, question)
         if kind == 'relationships':
@@ -1869,6 +1897,34 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             mine = {e.lower() for e in account_emails(self.config)} | {str(a.get('email') or '').lower() for a in self.config.get('accounts', [])}
             question = {**question, 'emails': [e for e in question['emails'] if e not in mine]}
         return meeting(db, question['emails'], accounts, details, keep)
+
+    def brief_shares(self, db, fleet):
+        """Whether one event goes into this Machine's brief facts for a Work Fleet: only what the Team Graph shares with
+        the team (shared_graph.visibility says Team), and nothing while this Machine doesn't share its Graph with that
+        Fleet (not started, or paused by an admin, the default). Reads only, on the caller's connection."""
+        ref = self.ref(fleet)
+
+        def meta(key):
+            row = db.execute('SELECT value FROM fleet_meta WHERE key=?', (key,)).fetchone()
+            return json.loads(row[0]) if row else None
+        group = next((g for g in ((meta('directory') or {}).get('fleets') or []) if g.get('id') == ref and g.get('kind') == 'work'), None)
+        none = lambda event: False
+        if not group or not self._me_in(group):
+            return none
+        try:
+            sent = bool(db.execute('SELECT 1 FROM share_out WHERE fleet=? LIMIT 1', (ref,)).fetchone())
+        except Exception:  # noqa: BLE001 - no Team Graph tables yet: it never shared
+            sent = False
+        if not ((meta('graph_start:' + ref) or {}).get('started') or sent):
+            return none
+        trusted = fleet_trust.admins(group, meta('trust:' + ref))[0]
+        pause = fleet_trust.paused(group, trusted, meta('graph_pause:' + ref))
+        if (pause and pause.get('on')) or (not pause and not (meta('graph_legacy:' + ref) or sent)):
+            return none
+        scope = self.scopes(db).get(ref)
+        if not scope:
+            return none
+        return lambda event: shared_graph.label(shared_graph.visibility(db, scope, event)) == 'team'
 
     def take_ask(self, ask):
         """A teammate's question: answered by rule, declined, or kept for the owner. Never anything else."""
@@ -1909,7 +1965,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 elif rule == 'always':
                     body = self.compute(db, kind, question, details, fleet, scope)
                     status = 'answered'
-                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question), 'answered: ' + answer_text(kind, body))
+                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question),
+                             ('answered with what the Team Graph shares: ' if kind == 'brief' else 'answered: ') + answer_text(kind, body))
                 else:
                     draft = None
                     if kind == 'brief':  # what an answer would share, in counts, for the approval card
@@ -3192,7 +3249,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                         'joined_at': found.get('joined_at'),  # when the owner joined or made it: the Fleet tab's order
                         'people': [person(m) for m in found.get('members', [])], **self.rules_view(ref, kind, rules, scopes),
                         'members': [{'member_id': m['member_id'], 'name': label(m), 'machine': m.get('machine'),
-                                     'rules': {k: (lambda r: r if r['rule'] in KIND_RULES.get(k, RULES) else {**r, 'rule': 'ask'})(
+                                     'rules': {k: (lambda r: {**r, 'rule': self.shown_rule(ref, k, r['rule'])})(
                                          rules.get((ref, m['member_id'], k)) or rules.get((ref, ALL, k), {'rule': self.default_rule(ref, k), 'details': False})) for k in RULE_KINDS.get(kind, ())}}
                                     for m in self.teammates(ref)]})
         return {'on': True, 'off': self.off, 'fleets': out, 'friends': self.friends_view(), 'network': self.network_view(), 'family': self.family_view(), 'waiting': waiting, 'asked': asked, 'log': log, 'notices': notices,

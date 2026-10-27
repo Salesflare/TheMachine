@@ -2447,5 +2447,10 @@
  "Whose is {}?": "Whose is {}?",
  "Looks like a team address": "Looks like a team address",
  "Gmail sends as it, but not as an alias": "Gmail sends as it, but not as an alias",
- "Your own sign-in address is always yours": "Your own sign-in address is always yours"
+ "Your own sign-in address is always yours": "Your own sign-in address is always yours",
+ "Share my brief facts with the team": "Share my brief facts with the team",
+ "{}: Share my brief facts with the team": "{}: Share my brief facts with the team",
+ "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Counts and dates from what the Team Graph already shares. Private and personal threads never count.",
+ "Brief facts on.": "Brief facts on.",
+ "Brief facts off. Nothing goes to their briefs.": "Brief facts off. Nothing goes to their briefs."
 }

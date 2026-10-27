@@ -25,7 +25,11 @@ Ask "who knows someone at Acme?" from the Fleet tab, or **Ask the Fleet** on an 
 
 ## Brief requests
 
-A teammate with the team brief on asks your Machine for counts and dates each morning. That never becomes a to-do. It waits in the Fleet tab, in your Work Fleet's pane, under **Brief requests**: **Share once**, **Always share**, **Decline** or **Never**. Only the latest ask per teammate waits, and unanswered ones expire. Nothing is shared until you choose.
+A teammate with the team brief on asks your Machine for counts and dates each morning. In a Work Fleet your Machine answers by itself, with only what the [Team Graph](team-graph.md) already shares with your team. Private and personal threads never count, and nothing goes while your Fleet's Team Graph sharing is off. Each answer shows in the Fleet tab, under **Activity**. It never becomes a to-do or a notification.
+
+To stop, turn off **Share my brief facts with the team** in the Fleet tab, under **Sharing**. Their brief then lists you as not answered.
+
+In a Careful Fleet, asks wait for you in the Fleet tab under **Brief requests**: **Share once**, **Always share**, **Decline** or **Never**. Only the latest ask per teammate waits, and unanswered ones expire. Nothing is shared until you choose.
 
 ## Team Graph
 

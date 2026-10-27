@@ -66,6 +66,16 @@ class Friends(unittest.TestCase):
     def friend_ask(self, kind, question, ask_id='fq1'):
         return self.fleet.take_ask({'id': ask_id, 'fleet': 'friends', 'fleet_id': FR, 'from': 'fp_lou', 'kind': kind, 'question': question})
 
+    def test_brief_facts_follow_the_team_graph_in_work_fleets_only_friends_still_ask(self):
+        # A Work Fleet answers brief asks by itself (what the Team Graph shares); Friends have no brief, and what they
+        # ask still waits for the owner.
+        with self.store.connect() as db:
+            self.assertEqual(self.fleet.rule(db, WORK_ID, 'pat1', 'brief')[0], 'always')
+            self.assertEqual(self.fleet.rule(db, FR, 'fp_lou', 'relationships')[0], 'ask')
+        self.assertEqual(self.friend_ask('relationships', {'about': 'client.example'}), 'waiting')
+        self.assertNotEqual(self.friend_ask('brief', {'period': 'day', 'since': '2026-10-20'}, 'fq2'), 'answered')
+        self.assertFalse(any(c.get('answer') for c in self.relay.sent('/answer')))
+
     # -- one rule for all friends, exceptions per friend
     def add_friends(self, *names):
         group = self.relay.directory['fleets'][1]

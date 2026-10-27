@@ -2447,5 +2447,10 @@
  "Whose is {}?": "Van wie is {}?",
  "Looks like a team address": "Lijkt een teamadres",
  "Gmail sends as it, but not as an alias": "Gmail verstuurt ermee, maar niet als alias",
- "Your own sign-in address is always yours": "Je eigen inlogadres is altijd van jou"
+ "Your own sign-in address is always yours": "Je eigen inlogadres is altijd van jou",
+ "Share my brief facts with the team": "Mijn briefingfeiten delen met het team",
+ "{}: Share my brief facts with the team": "{}: Mijn briefingfeiten delen met het team",
+ "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Aantallen en datums uit wat de team-Graph al deelt. Privé- en persoonlijke threads tellen nooit mee.",
+ "Brief facts on.": "Briefingfeiten aan.",
+ "Brief facts off. Nothing goes to their briefs.": "Briefingfeiten uit. Er gaat niets naar hun briefings."
 }

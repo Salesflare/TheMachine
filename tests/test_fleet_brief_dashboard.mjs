@@ -90,5 +90,11 @@ try{
  assert.deepEqual(await waitCall(page,'fleet_brief'),{action:'fleet_brief',args:{every:'day'}});
  calls.length=0;await page.locator('#fleet-brief-tell').check();
  assert.deepEqual(await waitCall(page,'fleet_brief'),{action:'fleet_brief',args:{tell:true}});
+ // Brief facts follow the Team Graph: one switch, on by default; off is Never for everyone in that Fleet
+ const share=page.locator(`[data-fleet-brief-share="${FL}"]`);
+ assert.equal(await share.isChecked(),true);
+ assert.match(await share.locator('xpath=..').innerText(),/^Share my brief facts with the team\nCounts and dates from what the Team Graph already shares\. Private and personal threads never count\.$/);
+ calls.length=0;await share.uncheck();
+ assert.deepEqual(await waitCall(page,'fleet_rule'),{action:'fleet_rule',args:{fleet:FL,member_id:'*',kind:'brief',rule:'never'}});
  console.log('fleet brief dashboard: ok');
 }finally{await browser.close();server.close()}
