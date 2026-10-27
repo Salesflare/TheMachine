@@ -30,6 +30,8 @@ An admin can require everyone's **Work email** and **Work calendar** at the Flee
 - Work people, organizations and projects, with a short timeline.
 - On a Team board, a project's meetings, Zoom notes, Intercom conversations and chats too, by being on the board. Sensitive ones, such as deals, stay out.
 - Your counts and dates for a teammate's [team brief](fleet.md#brief-requests), from these only.
+- Answers to a teammate's who knows someone and meeting context, from these only. See [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+- [Team learnings](fleet.md#team-learnings): how the team works, written from these threads, with no names or customer details.
 
 ## Kept out of automatic sharing
 

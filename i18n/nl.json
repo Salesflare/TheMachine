@@ -2452,5 +2452,17 @@
  "{}: Share my brief facts with the team": "{}: Mijn briefingfeiten delen met het team",
  "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Aantallen en datums uit wat de team-Graph al deelt. Privé- en persoonlijke threads tellen nooit mee.",
  "Brief facts on.": "Briefingfeiten aan.",
- "Brief facts off. Nothing goes to their briefs.": "Briefingfeiten uit. Er gaat niets naar hun briefings."
+ "Brief facts off. Nothing goes to their briefs.": "Briefingfeiten uit. Er gaat niets naar hun briefings.",
+ "Answers use only what the Team Graph shares with the team. Never private or personal.": "Antwoorden gebruiken alleen wat de team-Graph met het team deelt. Nooit privé of persoonlijk.",
+ "Process": "Proces",
+ "Tool": "Tool",
+ "Style": "Stijl",
+ "Who handles what": "Wie doet wat",
+ "From team conversations": "Uit teamgesprekken",
+ "Shared by your Machine": "Gedeeld door je Machine",
+ "Nothing yet. Your Machine looks once a day.": "Nog niets. Je Machine kijkt één keer per dag.",
+ "Off. Turn it on in Settings, Security.": "Uit. Zet het aan in Instellingen, Beveiliging.",
+ "Team learnings": "Inzichten van het team",
+ "How the team works, from conversations the Team Graph shares. Never names or customer details.": "Hoe het team werkt, uit gesprekken die de team-Graph deelt. Nooit namen of klantgegevens.",
+ "Removed for the whole team.": "Verwijderd voor het hele team."
 }

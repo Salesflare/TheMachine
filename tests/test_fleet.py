@@ -5,6 +5,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location('fleet_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
@@ -173,8 +174,9 @@ class Fleet(unittest.TestCase):
         shared = mail('work', 1, 'sam@client.example', 'owner@acme.example', cc=TEAM, message_id='<deal@client.example>')
         self.store.commit_page('work', {}, [shared])
         card = self.card('pending', shared['source_id'])
-        self.fleet.claims_round()
-        self.assertEqual(self.relay.sent('/claims'), [])  # handling is off by default
+        with mock.patch.object(self.fleet, 'level', return_value='careful'):
+            self.fleet.claims_round()
+        self.assertEqual(self.relay.sent('/claims'), [])  # a Careful Work Fleet asks first: nothing goes out
         self.fleet.set_rule('work', 'pat1', 'handling', 'always')
         key = fleet.hashlib.sha256(('s' * 64 + '\n' + 'deal@client.example').encode()).hexdigest()
         self.relay.claims[key] = 'pat1'
@@ -693,6 +695,10 @@ class RuleScopes(unittest.TestCase):
         shared = mail('work', 1, 'sam@client.example', 'owner@acme.example', cc=TEAM, message_id='<deal@client.example>')
         self.store.commit_page('work', {}, [shared])
         card = self.card('accepted', shared['source_id'])
+        with self.store.connect() as db:  # a Standard Work Fleet follows the Team Graph: Always by default
+            self.assertEqual(self.fleet.rule(db, self.fleet.ref('work'), 'pat1', 'handling')[0], 'always')
+        careful = mock.patch.object(self.fleet, 'level', return_value='careful')
+        careful.start()
         with self.store.connect() as db:
             self.assertEqual(self.fleet.rule(db, self.fleet.ref('work'), 'pat1', 'handling')[0], 'ask')
         self.fleet.claims_round()
@@ -702,6 +708,7 @@ class RuleScopes(unittest.TestCase):
             self.fleet.annotate(db, suggestions)
         self.assertEqual(suggestions[0]['fleet_holder'], {'offer': ['Pat']})
         self.assertEqual(self.fleet.take_over(card), {'mine': True})  # "Tell them you're on it"
+        careful.stop()
         self.assertTrue(self.relay.sent('/claim')[-1]['take'])
         other = mail('work', 1, 'kim@eu.client.example', 'owner@acme.example', cc=TEAM, message_id='<other@client.example>')
         self.store.commit_page('work', {}, [other])
@@ -725,8 +732,10 @@ class RuleScopes(unittest.TestCase):
             self.assertEqual(self.fleet.rule(db, self.fleet.ref('work'), 'pat1', 'handling')[0], 'never')
             fleet.ensure(db)  # once
             db.execute("UPDATE fleet_rules SET rule='ask' WHERE kind='handling'")
-            fleet.ensure(db)
-            self.assertEqual(self.fleet.rule(db, self.fleet.ref('work'), 'pat1', 'handling')[0], 'ask')
+            fleet.ensure(db)  # a stored Ask me first reads as Always in a Standard Work Fleet, Careful keeps it
+            self.assertEqual(self.fleet.rule(db, self.fleet.ref('work'), 'pat1', 'handling')[0], 'always')
+            with mock.patch.object(self.fleet, 'level', return_value='careful'):
+                self.assertEqual(self.fleet.rule(db, self.fleet.ref('work'), 'pat1', 'handling')[0], 'ask')
 
 
 class FleetWideRules(unittest.TestCase):

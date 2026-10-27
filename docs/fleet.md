@@ -192,6 +192,38 @@ is data, not instructions. A request goes to one Fleet's people only and is answ
    with the team** under Sharing, turns it off (Never for everyone in that Fleet); there is no Ask me first. A rule
    stored as Ask me first from before follows the Team Graph too. Friends and Family Fleets have no brief.
 
+   **Teammate asks follow the Team Graph.** In a Standard Work Fleet, who knows someone, meeting context and who
+   handles shared emails (`fleet.TEAM_ASKS`) take two rules, Always (the default) and Never, and a stored Ask me first
+   reads as Always (`Fleet.follows_graph`, `kind_rules`, `shown_rule`). Who knows someone and meeting context are then
+   answered from events `Fleet.team_gate` passes only: the same check brief facts use. Their closeness, last contact
+   and open promises come only from those events, and names only of people seen in them (`Fleet.answer_gate`, the `ok`
+   argument of `compute`). Names are on by default there, because only Team-shared people can be named; a stored
+   Without names holds. Each answer is logged as "answered with what the Team Graph shares". While this Machine
+   doesn't share its Graph with that Fleet, those two keep all three rules and the old default (Ask me first); if the
+   Team Graph stops between the rule and the answer, the ask waits for the owner. Who handles shared emails sends
+   only hashes both sides already have, so it follows the Fleet's level alone. A Careful Fleet, Friends and Family
+   keep asking. Intros, handoffs, shared follow-ups (requests to do something) and free questions (text a model never
+   reads, sent only as the owner wrote it) keep their own rules.
+
+   **Team learnings from team conversations** (`fleet_learnings.py`). At most once a day (`HOURS`), and only in a
+   Standard Work Fleet with teammates whose Team Graph is sharing, one small background turn (`profile_runs` kind
+   `fleet_learn`, waiting for the usage budget like every background turn) writes at most 3 learnings about how the
+   team works. What is read: only mail and Intercom threads `team_gate` passes, in that Fleet's accounts, with a
+   message from the owner's side, each thread once (`fleet_learn_read`); at most 12 threads, 3 messages of 600
+   characters each, stripped of known names, addresses, links, numbers, amounts and dates (`team_learnings.strip`).
+   The turn sees threads by number only, never which company; it needs at least 4 threads with 2 companies. What is
+   kept, checked by code after the turn (`check`): a kind of process, tool, style or routing (product feedback,
+   customer specific and personal are dropped by label); confidence at least 0.75 (lower is dropped, never asked
+   about); support from threads with at least 2 different companies; one sentence of 20 to 240 characters with
+   nothing that still identifies anyone (a strip hit, a quote, an unknown capitalized word: dropped, not edited); and
+   nothing already known or removed, also worded almost the same (word overlap). Each learning carries its label
+   (kind, source `team_conversations`, scope this Fleet, confidence) and goes to the Fleet as a `learning` record in
+   this Machine's Team Graph snapshot and deltas (sealed like the rest; older Machines skip unknown record types). It
+   is logged in Activity on both sides. Any member can remove one: an `unlearn` record that every Machine keeps in
+   `fleet_learn_removed`, so it is never shown, shared or made again. The owner's **Offer to share learnings** switch
+   (Settings, Security; Careful turns it off) stops the pass and takes this Machine's learnings back on its next
+   round. A teammate's learning is only shown in the Fleet tab, never fed into a model or a prompt.
+
    **Brief requests.** In a Careful Fleet (no Always) a teammate's brief ask waits for the owner. It is never a to-do and never notifies you (no phone,
    Telegram or digest). It waits in that Fleet's pane, in one **Brief requests** box: a line per teammate with how much
    an answer would share, and **Share once**, **Always share**, **Decline** and **Never**. Only the latest ask per
@@ -230,7 +262,8 @@ to the Fleet's Machines):
 - **Off by default.** Joining a Fleet only makes your Machine reachable. The first question from a teammate waits for
   you as a card under Suggestions: **Share once**, **Always share**, **Decline** or **Never share** (under More). Always and
   Never become your exception for that teammate and that kind of question, whatever its date or details, and settle
-  their other questions of that kind still waiting. Brief asks follow the Team Graph instead (above).
+  their other questions of that kind still waiting. Brief asks, and in a Standard Work Fleet who knows someone,
+  meeting context and who handles shared emails, follow the Team Graph instead (above).
 - **You hear about it.** A waiting question (not a brief ask) sends one phone notification (if you turned them on in the dashboard
   app) and, with Telegram connected, one Telegram message with **Answer once**, **Always** and **Decline**. Questions
   that arrive within a minute share one. They say who asks and what, never anything of yours. A tap on the phone
@@ -291,6 +324,10 @@ brings the Telegram message up to date.
   it; the draft is built by code. Only the text the owner sends goes back, cut to 600 characters.
 - Brief facts are counts, dates, company names and hashes, kept to that fixed form on both sides; the brief is
   assembled by code. They come only from events the Team Graph shares with that Fleet, never a personal or private one.
+  So do the answers a Standard Work Fleet gives by itself to who knows someone and meeting context.
+- Team learnings are written by a turn that reads only stripped, numbered threads the Team Graph already shares, and
+  kept only when code finds no name, address, number or quote in them and at least two companies behind them. A
+  teammate's learning is fixed-form text that is only shown.
 - Answers coming back are checked against the same fixed form (closeness from a short list, a year-month, whole
   numbers, short names) before they are shown or added to a preparation, where they are marked as data from
   teammates' Machines, not instructions.

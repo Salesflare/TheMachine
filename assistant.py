@@ -74,6 +74,7 @@ import help_topics
 import team_learnings
 import authorship
 import learning_loop
+import fleet_learnings
 import google_api
 import ms_graph
 import signatures
@@ -524,7 +525,7 @@ class SourceError(Exception):
 # authenticated dashboard may record them; never the local CLI the agent can run.
 CONNECT_ACTIONS = ('connect_sources', 'connect_start', 'connect_poll', 'connect_answer', 'connect_cancel', 'connect_remove', 'connect_scope',
                    'connect_signin', 'connect_signin_state')
-OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'card_chat', 'recap_decide'}
+OWNER_ACTIONS = {*CONNECT_ACTIONS, 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget', 'decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role', 'graph_fact_unlink', 'project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_visibility', 'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit', 'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup', 'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_learning_remove', 'fleet_take', 'fleet_meetings', 'set_work_hours', 'connector_sync', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'model_usage_refresh', 'model_reset', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'card_chat', 'recap_decide'}
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {'fleet_intro', 'fleet_handoff_draft', 'fleet_handoff', 'fleet_handoff_email', 'fleet_handoff_mine', 'fleet_handoff_take_back', 'fleet_handoff_not_mine', 'fleet_split', 'fleet_split_dismiss',
                          'fleet_split_adjust', 'task_import', *task_pages.ACTIONS}
@@ -591,7 +592,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACT
                                'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit', 'project_visibility',
                                'graph_relation', 'graph_person_org', 'graph_warmup', 'graph_org_edit', 'graph_org_wrong', 'graph_person_edit',
                                'graph_person_delete', 'graph_new', 'graph_picture', 'graph_pictures_found', 'graph_org_delete', 'graph_same', 'graph_same_all', 'set_people_lookup',
-                               'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule',
+                               'own_address', 'security_level', 'security_setting', 'fleet_ask', 'fleet_decide', 'fleet_notice_decide', 'fleet_rule', 'fleet_learning_remove',
                                'fleet_take', 'fleet_meetings', 'fleet_free', 'fleet_brief', 'fleet_brief_hide', 'push_subscribe', 'push_unsubscribe',
                                'push_test', 'notify_set', 'notify_active', 'notify_preview', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
                                'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
@@ -5032,6 +5033,8 @@ class Store:
             return team_learnings.vote_page(evidence)
         if evidence.get('learnings'):  # a learnings run (team_learnings.py)
             return team_learnings.evidence_page(evidence, page)
+        if evidence.get('fleet_learn'):  # team learnings from team conversations (fleet_learnings.py): one short page
+            return fleet_learnings.page(evidence)
         if evidence.get('tune'):  # a learning pass (learning_loop.py): one short page
             return learning_loop.page(evidence)
         if 'people' in evidence:  # a roles or organizations run
@@ -5196,6 +5199,9 @@ class Store:
         if kind and kind['kind'] == 'tune':
             with self.connect() as db:
                 return learning_loop.save_draft(db, run_id, profile)
+        if kind and kind['kind'] == 'fleet_learn':
+            with self.connect() as db:
+                return fleet_learnings.save_draft(db, run_id, profile)
         if kind and kind['kind'] == 'team_votes':
             with self.connect() as db:
                 return team_learnings.save_votes(db, run_id, profile, {'accounts': self.accounts})
@@ -13889,6 +13895,8 @@ class App:
         if name == 'fleet_rule':
             return self.fleet.set_rule(args.get('fleet') or 'work', str(args.get('member_id') or ''), args.get('kind'),
                                        args.get('rule'), args.get('details'), args.get('scope'), bool(args.get('clear')))
+        if name == 'fleet_learning_remove':  # a team learning, gone for the whole Fleet (fleet_learnings.py)
+            return self.fleet.remove_learning(args.get('fleet') or 'work', str(args.get('fp') or ''))
         if name == 'fleet_take':
             return self.fleet.take_over(str(args.get('suggestion_id') or ''))
         if name in CONTACT_ACTIONS:  # node: a person's node id, or 'me' for the owner's own card
@@ -14452,6 +14460,7 @@ class App:
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
                 self.store.learnings_due()
                 self.team_votes_due()  # and other Machines' learnings come to be judged, when voting is on
+                self.fleet_learn_due()  # and team learnings from team conversations, in a Standard Work Fleet
         if self.fleet:
             self.help_topics_send()  # what Help was asked, as topics (help_topics.py)
             self.error_reports_step()
@@ -16170,6 +16179,7 @@ class App:
                                   voices_prompt(run['run_id'], first['counts'], first['pages']) if run.get('kind') == 'voices' else
                                   team_learnings.prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'learnings' else
                                   learning_loop.prompt(run['run_id']) if run.get('kind') == 'tune' else
+                                  fleet_learnings.prompt(run['run_id']) if run.get('kind') == 'fleet_learn' else
                                   team_learnings.vote_prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'team_votes' else
                                   profile_prompt(run['run_id'], first['counts'], run.get('room') or PROFILE_ROOM))
             with self.store.connect() as db:
@@ -16197,6 +16207,11 @@ class App:
             changed = self.store.apply_tune(run['run_id'])
             if changed:
                 LOG.info('learning pass changes=%s', changed)
+        if run.get('kind') == 'fleet_learn' and getattr(self, 'fleet', None):  # kept only once the run is ok, each one checked
+            with self.store.connect() as db:
+                kept = fleet_learnings.finish(db, run['run_id'], team_learnings.known_names(db, self.config), log=self.fleet.log)
+            if kept:
+                LOG.info('team learnings kept=%s', len(kept))
         if run.get('kind') == 'team_votes':  # sends only the votes, once the run is ok
             self.team_votes_send(run['run_id'])
         if run.get('kind') == 'voices':  # applies only once the run is ok
@@ -17447,6 +17462,38 @@ class App:
         except Exception as error:  # the Network or the control plane is away: next time
             LOG.warning('learning votes error=%s', type(error).__name__)
             return None
+
+    def fleet_learn_due(self, current=None):
+        """At most once a day, in a Standard Work Fleet that shares its Team Graph: one small background turn reads a few
+        threads the Team Graph already shares with the team and writes general team learnings (fleet_learnings.py).
+        Nothing is asked per learning; the owner's learnings switch turns it off. It waits for the usage budget like
+        every background turn. When too little is new, it looks again an hour later."""
+        current = current or dt.datetime.now(dt.timezone.utc)
+        if time.monotonic() - getattr(self, '_fleet_learn_tried', -3600) < 3600:
+            return None
+        self._fleet_learn_tried = time.monotonic()
+        try:
+            with self.store.connect() as db:
+                fleet_learnings.ensure(db)
+                if not fleet_learnings.due(db, current):
+                    return None
+                names = team_learnings.known_names(db, self.config)
+                for ref in self.fleet.work_fleets():
+                    inputs = self.fleet.learn_inputs(db, ref)
+                    evidence = inputs and fleet_learnings.evidence(db, ref, inputs['gate'], inputs['accounts'], inputs['team_side'],
+                                                                   inputs['company'], names, current)
+                    if not evidence:
+                        continue
+                    db.execute('BEGIN IMMEDIATE')
+                    if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone():
+                        return None
+                    run_id, started = uuid.uuid4().hex, now()
+                    db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'fleet_learn',1)",
+                               (run_id, started, started, json.dumps(evidence)))
+                    return run_id
+        except Exception as error:  # noqa: BLE001 - a Fleet directory or Graph not ready yet: next time
+            LOG.warning('team learnings error=%s', type(error).__name__)
+        return None
 
     def error_reports_step(self):
         """Every ten minutes, over the Network: the errors counted since the last batch, as signatures (error_feed.py).

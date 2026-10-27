@@ -464,8 +464,9 @@ class Requests(unittest.TestCase):
         with self.store.connect() as db:  # an alert only the owner got stays out
             db.execute("UPDATE events SET metadata=json_set(metadata,'$.from','vendor@vendor.example','$.to','owner@acme.example') "
                        'WHERE id=(SELECT value FROM json_each((SELECT event_ids FROM suggestions WHERE id=?)))', (mine,))
-        self.fleet.handled_round()
-        self.assertEqual(self.relay.sent('/claim'), [])  # Ask me first: nothing goes out
+        with patch.object(self.fleet, 'level', return_value='careful'):
+            self.fleet.handled_round()
+        self.assertEqual(self.relay.sent('/claim'), [])  # a Careful Work Fleet asks first: nothing goes out
         self.fleet.set_rule(self.ref, 'pat1', 'handling', 'always')
         for _ in range(3):
             self.fleet.handled_round()

@@ -30,6 +30,8 @@ Other Machines may vote on a tip you shared, without knowing who sent it. Your e
 
 To stop being asked, turn off **Offer to share learnings** in Settings, Security. See [Security levels](security-levels.md). It needs [The Machine Network](/network).
 
+The same switch turns off [team learnings](fleet.md#team-learnings) for your Work Fleet, and takes back the ones your Machine shared.
+
 ## Voting
 
 Tips other Machines shared come to yours too. Now and then a short check judges whether a tip would help you, and sends back only a vote: useful, not useful or not relevant, sometimes with a short general reason and a use case of its own, written and checked the same generic way. Nothing about you goes along. Your own tips are never sent back to you to vote on.

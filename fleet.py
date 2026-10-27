@@ -46,6 +46,7 @@ import re
 import secrets
 import socket
 import threading
+import time
 import traceback
 import urllib.error
 import urllib.parse
@@ -66,6 +67,7 @@ import shared_connectors
 import shared_graph
 import skills
 import fleet_trust
+import fleet_learnings
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -105,6 +107,11 @@ KIND_RULES = {'anything': ('ask', 'never')}
 # Brief facts in a Work Fleet follow the Team Graph's sharing (Fleet.brief_shares): answered by themselves with only
 # what the team already sees, unless the owner turned them off (Never). No Ask me first: nothing beyond the Team Graph goes.
 KIND_RULES['brief'] = ('always', 'never')
+# The same for a teammate's other asks in a Standard Work Fleet (Fleet.kind_rules): who knows someone and meeting context
+# are answered by themselves with only what the Team Graph shares (Fleet.team_gate), names only of people it shares; who
+# handles a shared email goes as a claim both already see. A Careful Fleet keeps Ask me first. Requests to do something
+# (intros, handoffs, follow-ups) and free questions are not answers from the Graph: they keep their own rules.
+TEAM_ASKS = ('relationships', 'meeting', 'handling')
 NO_DETAILS = ('handling', 'brief', 'anything')  # kinds without a "how much they hear" choice
 QUIET = ('brief',)  # asks that wait in the Fleet tab only: no to-do, no badge, no phone, Telegram or digest; still nothing shared until the owner chooses
 BRIEF_BYTES = 30000  # under what the relay carries for a brief
@@ -728,10 +735,12 @@ def scope_accounts(config, scope):
     return work_accounts(config) if scope is None or scope['work_only'] else [a['id'] for a in config.get('accounts', [])]
 
 
-def _view(db, row, accounts, details, keep=None):
+def _view(db, row, accounts, details, keep=None, ok=None):
+    """ok: in a Work Fleet answered by itself, whether one event is what the Team Graph shares (Fleet.team_gate): then
+    someone counts, and goes by name, only through such contact, so a person the team doesn't see never comes up."""
     if keep and not keep(db, row):
         return None
-    last = _work_last(db, row['id'], accounts)
+    last = _work_last(db, row['id'], accounts) if ok is None else _shared_last(db, row['id'], accounts, ok)
     if not last:
         return None
     out = {'closeness': graph.closeness(row['strength']), 'last_contact': month(last), '_strength': row['strength']}
@@ -740,7 +749,7 @@ def _view(db, row, accounts, details, keep=None):
     return out
 
 
-def relationships(db, about, accounts, details, keep=None):
+def relationships(db, about, accounts, details, keep=None, ok=None):
     about = clean(about, 120)
     lowered = about.lower()
     rows = []
@@ -771,7 +780,7 @@ def relationships(db, about, accounts, details, keep=None):
         if row['id'] in seen:
             continue
         seen.add(row['id'])
-        view = _view(db, row, accounts, details, keep)
+        view = _view(db, row, accounts, details, keep, ok)
         if view:
             people.append(view)
     if not people:
@@ -784,14 +793,30 @@ def relationships(db, about, accounts, details, keep=None):
     return out
 
 
-def meeting(db, emails, accounts, details, keep=None):
+def _shared_promises(db, node_id, accounts, ok, limit=3):
+    """Open promises with someone, as graph.open_between has them, but only from events the Team Graph shares (ok)."""
+    out = {'you_promised': [], 'they_promised': []}
+    if not accounts:
+        return out
+    for r in db.execute("SELECT p.direction,p.what,p.due,e.id,e.account_id,e.kind,e.metadata FROM promises p JOIN events e ON e.id=p.event_id "
+                        "LEFT JOIN suggestions s ON s.id=p.suggestion_id WHERE (p.status='open' OR (p.status='carded' AND s.status IN "
+                        "('pending','accepted','prepared','instructions','snoozed'))) AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) "
+                        f"AND e.deleted=0 AND e.account_id IN ({','.join('?' * len(accounts))}) ORDER BY coalesce(p.due,p.check_at) LIMIT ?",
+                        (node_id, *accounts, limit * 4)):
+        side = out['you_promised' if r['direction'] == 'mine' else 'they_promised']
+        if len(side) < limit and ok(r):
+            side.append({'what': r['what'], 'due': r['due']})
+    return out
+
+
+def meeting(db, emails, accounts, details, keep=None, ok=None):
     found = []
     for address in emails[:20]:
         row = _person(db, address)
-        view = row and _view(db, row, accounts, details, keep)
+        view = row and _view(db, row, accounts, details, keep, ok)
         if not view:
             continue
-        opened = graph.open_between(db, row['id'], limit=3)
+        opened = graph.open_between(db, row['id'], limit=3) if ok is None else _shared_promises(db, row['id'], accounts, ok)
         item = {'email': address, 'closeness': view['closeness'], 'last_contact': view['last_contact'],
                 'you_promised': len(opened.get('you_promised', [])), 'they_promised': len(opened.get('they_promised', []))}
         if details:
@@ -1672,6 +1697,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
     def set_meta(self, key, value):
         with self.connect() as db:
             db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (key, json.dumps(value)))
+        self._sharing = (0, {})  # whether the Team Graph is shared is read again (team_sharing)
 
     def directory(self, refresh=False, clock=None):
         import time
@@ -1759,9 +1785,27 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         In a Careful Work Fleet it applies without Always and without names (security_levels.py); raw is as stored."""
         row = (db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, member_id, kind)).fetchone()
                or db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, ALL, kind)).fetchone())
-        found = (row['rule'], bool(row['details'])) if row else (self.default_rule(fleet, kind), False)
-        found = ((self.default_rule(fleet, kind) if kind == 'brief' else 'ask'), found[1]) if found[0] not in KIND_RULES.get(kind, RULES) else found
+        found = (row['rule'], bool(row['details'])) if row else (self.default_rule(fleet, kind), self.default_details(fleet, kind))
+        found = (self.shown_rule(fleet, kind, found[0]), found[1])
         return found if raw else security_levels.clamp(self.level(fleet), *found)
+
+    def follows_graph(self, fleet, kind):
+        """Whether a teammate's ask (TEAM_ASKS) follows the Team Graph in this Fleet: a Standard Work Fleet, and for who
+        knows someone and meeting context while this Machine shares its Graph with it (there is nothing to answer from
+        otherwise, so they keep the rules they had). Who handles a shared email only says what both already got."""
+        if kind not in TEAM_ASKS or self.kind_of(fleet) != 'work' or self.level(fleet) == 'careful':
+            return False
+        return kind == 'handling' or self.team_sharing(fleet)
+
+    def kind_rules(self, fleet, kind):
+        """The rules a kind takes in one Fleet: an ask that follows the Team Graph takes Always or Never, no Ask me first;
+        anything else what the kind takes everywhere."""
+        return ('always', 'never') if self.follows_graph(fleet, kind) else KIND_RULES.get(kind, RULES)
+
+    def default_details(self, fleet, kind):
+        """Names in an answer by default: for who knows someone and meeting context that follow the Team Graph, only ever
+        of people it already shares with the team (team_gate). A Careful Fleet leaves names out whatever this says."""
+        return kind in ('relationships', 'meeting') and self.follows_graph(fleet, kind)
 
     def level(self, fleet):
         """A Fleet's security level, from the directory: Standard or Careful (Work Fleets only)."""
@@ -1771,6 +1815,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         """Ask me first, except in a Family: free/busy is answered by itself (busy blocks only), to-dos and plans wait."""
         if kind == 'brief' and self.kind_of(fleet) == 'work':
             return 'always'  # what the Team Graph shares (brief_shares); the owner can turn it off
+        if self.follows_graph(fleet, kind):
+            return 'always'  # what the Team Graph shares (team_gate); the owner can turn it off
         return family.DEFAULT_RULES.get(kind, 'ask') if self.kind_of(fleet) == family.KIND else 'ask'
 
     def scope(self, db, fleet, member_id, kind, raw=False):
@@ -1820,15 +1866,17 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (done, now()))
 
     def shown_rule(self, ref, kind, rule):
-        """A stored rule as it reads now: one a kind no longer takes is Ask me first, or for brief facts (which follow
-        the Team Graph, no Ask me first) the Fleet's default."""
-        return rule if rule in KIND_RULES.get(kind, RULES) else self.default_rule(ref, kind) if kind == 'brief' else 'ask'
+        """A stored rule as it reads now: one a kind no longer takes is Ask me first, or for brief facts and a Standard
+        Work Fleet's teammate asks (which follow the Team Graph, no Ask me first) the Fleet's default, Always."""
+        if rule in self.kind_rules(ref, kind):
+            return rule
+        return 'always' if kind == 'brief' or self.follows_graph(ref, kind) else 'ask'
 
     def rules_view(self, ref, kind, rules, scopes):
         """A Fleet's rule per kind of question, and the teammates whose own choice differs (their exceptions)."""
         out, exceptions = {}, {}
         for k in RULE_KINDS.get(kind, ()):
-            wide = rules.get((ref, ALL, k), {'rule': self.default_rule(ref, k), 'details': False})
+            wide = rules.get((ref, ALL, k), {'rule': self.default_rule(ref, k), 'details': self.default_details(ref, k)})
             out[k] = {**wide, 'rule': self.shown_rule(ref, k, wide['rule'])}
             for m in self.teammates(ref):
                 own, own_scope = rules.get((ref, m['member_id'], k)), scopes.get(ref, {}).get(m['member_id'], {}).get(k)
@@ -1882,8 +1930,12 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         db.execute('DELETE FROM fleet_log WHERE id NOT IN (SELECT id FROM fleet_log ORDER BY id DESC LIMIT 2000)')
 
     # -- questions from teammates
-    def compute(self, db, kind, question, details, fleet=None, scope=None, only=True):
+    def compute(self, db, kind, question, details, fleet=None, scope=None, only=True, ok=None):
+        """ok: who knows someone and meeting context answered by themselves in a Work Fleet, from only what the Team
+        Graph shares (team_gate), in the accounts that Fleet hears about."""
         accounts, keep = scope_accounts(self.config, scope), scope and scope_keep(scope, only)
+        if ok is not None:
+            accounts = [a for a in accounts if a in self.fleet_accounts(fleet or 'work')]
         if kind == 'brief':
             secret = (self.fleets().get(self.ref(fleet or 'work')) or {}).get('secret') or ''
             team = [e for m in self.teammates(fleet or 'work') for e in m.get('emails', [])]
@@ -1892,39 +1944,86 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         if kind == 'availability':  # a friend's free/busy question: busy blocks only (friends.py)
             return friends.free_busy(db, self.config, question)
         if kind == 'relationships':
-            return relationships(db, question['about'], accounts, details, keep)
+            return relationships(db, question['about'], accounts, details, keep, ok)
         if self.kind_of(fleet or 'work') == friends.KIND:  # a friend's meeting: never about the owner themselves
             mine = {e.lower() for e in account_emails(self.config)} | {str(a.get('email') or '').lower() for a in self.config.get('accounts', [])}
             question = {**question, 'emails': [e for e in question['emails'] if e not in mine]}
-        return meeting(db, question['emails'], accounts, details, keep)
+        return meeting(db, question['emails'], accounts, details, keep, ok)
 
     def brief_shares(self, db, fleet):
         """Whether one event goes into this Machine's brief facts for a Work Fleet: only what the Team Graph shares with
         the team (shared_graph.visibility says Team), and nothing while this Machine doesn't share its Graph with that
         Fleet (not started, or paused by an admin, the default). Reads only, on the caller's connection."""
+        return self.team_gate(db, fleet) or (lambda event: False)
+
+    def team_sharing(self, fleet, db=None):
+        """Whether this Machine shares its Graph with a Work Fleet now (started, not paused by an admin). Read at most
+        every few seconds."""
         ref = self.ref(fleet)
+        stamp, kept = getattr(self, '_sharing', (0, {}))
+        if time.monotonic() - stamp > 2:
+            stamp, kept = time.monotonic(), {}
+            self._sharing = (stamp, kept)
+        if ref not in kept:
+            if db is None:
+                with self.connect() as fresh:
+                    kept[ref] = self._graph_group(fresh, ref) is not None
+            else:
+                kept[ref] = self._graph_group(db, ref) is not None
+        return kept[ref]
+
+    def team_gate(self, db, fleet):
+        """Whether one event is something the Team Graph shares with this Work Fleet's team, or None while this Machine
+        doesn't share its Graph with that Fleet: what a teammate's ask may be answered from by itself (brief facts, who
+        knows someone, meeting context) and what team learnings are read from (fleet_learnings.py)."""
+        ref = self.ref(fleet)
+        if self._graph_group(db, ref) is None:
+            return None
+        scope = self.scopes(db).get(ref)
+        if not scope:
+            return None
+        return lambda event: shared_graph.label(shared_graph.visibility(db, scope, event)) == 'team'
+
+    def learn_inputs(self, db, fleet):
+        """What a team learnings pass reads for one Work Fleet (fleet_learnings.evidence), or None: only a Standard Work
+        Fleet with teammates, while this Machine shares its Graph with it, and only what the Team Graph shares there."""
+        ref = self.ref(fleet)
+        if self.kind_of(ref) != 'work' or self.level(ref) == 'careful' or not self.teammates(ref):
+            return None
+        gate, scope, accounts = self.team_gate(db, ref), self.scopes(db).get(ref), self.fleet_accounts(ref)
+        if gate is None or scope is None or not accounts:
+            return None
+        return {'gate': gate, 'accounts': accounts, 'team_side': scope.owner_side, 'company': scope.company}
+
+    def _graph_group(self, db, ref):
+        """The Work Fleet's directory entry while this Machine shares its Graph with it, else None."""
 
         def meta(key):
             row = db.execute('SELECT value FROM fleet_meta WHERE key=?', (key,)).fetchone()
             return json.loads(row[0]) if row else None
         group = next((g for g in ((meta('directory') or {}).get('fleets') or []) if g.get('id') == ref and g.get('kind') == 'work'), None)
-        none = lambda event: False
         if not group or not self._me_in(group):
-            return none
+            return None
         try:
             sent = bool(db.execute('SELECT 1 FROM share_out WHERE fleet=? LIMIT 1', (ref,)).fetchone())
         except Exception:  # noqa: BLE001 - no Team Graph tables yet: it never shared
             sent = False
         if not ((meta('graph_start:' + ref) or {}).get('started') or sent):
-            return none
+            return None
         trusted = fleet_trust.admins(group, meta('trust:' + ref))[0]
         pause = fleet_trust.paused(group, trusted, meta('graph_pause:' + ref))
         if (pause and pause.get('on')) or (not pause and not (meta('graph_legacy:' + ref) or sent)):
-            return none
-        scope = self.scopes(db).get(ref)
-        if not scope:
-            return none
-        return lambda event: shared_graph.label(shared_graph.visibility(db, scope, event)) == 'team'
+            return None
+        return group
+
+    def answer_gate(self, db, fleet, member_id, kind, rule):
+        """(rule, ok) for answering a teammate's ask by itself: who knows someone and meeting context that follow the
+        Team Graph come only from what it shares (ok, team_gate). Otherwise (ok None) as before: from the work accounts,
+        and only when the owner chose Always."""
+        if rule != 'always' or kind not in ('relationships', 'meeting') or not self.follows_graph(fleet, kind):
+            return rule, None
+        gate = self.team_gate(db, fleet)
+        return (rule, gate) if gate is not None else ('ask', None)
 
     def take_ask(self, ask):
         """A teammate's question: answered by rule, declined, or kept for the owner. Never anything else."""
@@ -1952,6 +2051,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 verdict = question_verdict(kind, question, scope) if scope else 'in'
                 if verdict == 'outside' and rule != 'ask':  # beyond Only about: the rule doesn't apply, so the owner is asked
                     rule = 'ask'
+                rule, gate = self.answer_gate(db, fleet, teammate['member_id'], kind, rule)
                 busy = kind == 'anything' and db.execute("SELECT COUNT(*) FROM fleet_in WHERE fleet=? AND member_id=? AND kind='anything' AND status='waiting'",
                                                          (fleet, teammate['member_id'])).fetchone()[0] >= FREE_OPEN
                 if rule == 'never' or verdict == 'never':
@@ -1963,10 +2063,10 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                     self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question),
                              f'declined: {FREE_OPEN} of their questions already wait for you')
                 elif rule == 'always':
-                    body = self.compute(db, kind, question, details, fleet, scope)
+                    body = self.compute(db, kind, question, details, fleet, scope, ok=gate)
                     status = 'answered'
                     self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question),
-                             ('answered with what the Team Graph shares: ' if kind == 'brief' else 'answered: ') + answer_text(kind, body))
+                             ('answered with what the Team Graph shares: ' if kind == 'brief' or gate else 'answered: ') + answer_text(kind, body))
                 else:
                     draft = None
                     if kind == 'brief':  # what an answer would share, in counts, for the approval card
@@ -2073,9 +2173,11 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 verdict = question_verdict(row['kind'], question, scope) if scope else 'in'
                 if verdict == 'outside' and rule != 'ask':
                     rule = 'ask'
+                rule, gate = self.answer_gate(db, row['fleet'], row['member_id'], row['kind'], rule)
                 if rule == 'always' and verdict != 'never':
-                    answer = self.compute(db, row['kind'], question, details, row['fleet'], scope)
-                    status, outcome = 'answered', 'shared automatically (your Always rule): ' + answer_text(row['kind'], answer)
+                    answer = self.compute(db, row['kind'], question, details, row['fleet'], scope, ok=gate)
+                    status, outcome = 'answered', ('answered with what the Team Graph shares: ' if gate
+                                                   else 'shared automatically (your Always rule): ') + answer_text(row['kind'], answer)
                 elif rule == 'never' or verdict == 'never':
                     answer, status, outcome = None, 'declined', 'declined automatically (your Never rule)'
                 else:
@@ -2278,8 +2380,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                 return {'rule': rule, 'details': details, 'scope': self.scope(db, fleet, member_id, kind)}
             current, current_details = self.rule(db, fleet, member_id, kind, raw=True)
             rule = current if rule is None else rule
-            if rule not in KIND_RULES.get(kind, RULES):
-                raise ValueError('A rule is ' + ' or '.join(KIND_RULES.get(kind, RULES)))
+            if rule not in self.kind_rules(fleet, kind):
+                raise ValueError('A rule is ' + ' or '.join(self.kind_rules(fleet, kind)))
             details = current_details if details is None else bool(details)
             db.execute('INSERT OR REPLACE INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,?,?,?,?,?)',
                        (fleet, member_id, kind, rule, int(details), now()))
@@ -3250,12 +3352,33 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
                         'people': [person(m) for m in found.get('members', [])], **self.rules_view(ref, kind, rules, scopes),
                         'members': [{'member_id': m['member_id'], 'name': label(m), 'machine': m.get('machine'),
                                      'rules': {k: (lambda r: {**r, 'rule': self.shown_rule(ref, k, r['rule'])})(
-                                         rules.get((ref, m['member_id'], k)) or rules.get((ref, ALL, k), {'rule': self.default_rule(ref, k), 'details': False})) for k in RULE_KINDS.get(kind, ())}}
-                                    for m in self.teammates(ref)]})
+                                         rules.get((ref, m['member_id'], k)) or rules.get((ref, ALL, k), {'rule': self.default_rule(ref, k), 'details': self.default_details(ref, k)})) for k in RULE_KINDS.get(kind, ())}}
+                                    for m in self.teammates(ref)],
+                        'kind_rules': {k: list(self.kind_rules(ref, k)) for k in RULE_KINDS.get(kind, ())},
+                        **({'learnings': self.learnings_view(ref)} if kind == 'work' else {})})
         return {'on': True, 'off': self.off, 'fleets': out, 'friends': self.friends_view(), 'network': self.network_view(), 'family': self.family_view(), 'waiting': waiting, 'asked': asked, 'log': log, 'notices': notices,
                 **self.requests_view(), 'ask_meetings': self.meetings_on(), 'kinds': KIND_LABEL, 'free': free, 'briefs': self.briefs(), 'brief': self.brief_settings(),
                 'kind_rules': {k: list(KIND_RULES.get(k, RULES)) for k in KIND_LABEL}, 'no_details': list(NO_DETAILS),
                 'scoped': list(SCOPED), 'scopes': scopes, 'sealing': self.relay.view() if isinstance(self.relay, network.Sealing) else None}
+
+    def learnings_view(self, ref):
+        """Team learnings from team conversations in this Work Fleet (fleet_learnings.py): what the Fleet tab shows."""
+        try:
+            with self.connect() as db:
+                return {'on': fleet_learnings.on(db), 'items': fleet_learnings.view(db, ref, {m['member_id']: label(m) for m in self.teammates(ref)})}
+        except Exception:  # noqa: BLE001 - a Machine without Team Graph tables yet
+            return {'on': False, 'items': []}
+
+    def remove_learning(self, fleet, fp):
+        """The owner removes a team learning, theirs or a teammate's: gone for the whole Fleet on the next Team Graph round."""
+        ref = self.ref(fleet)
+        if self.kind_of(ref) != 'work':
+            raise ValueError('Team learnings are in Work Fleets only')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            text = fleet_learnings.remove(db, ref, fp)
+            self.log(db, 'out', ref, None, 'your Fleet', 'learning', text, 'removed for the team')
+        return {'removed': True}
 
     def free_asked(self, db):
         """The owner's free questions to a Fleet, each with its teammates' answers as they arrive, attributed; "no

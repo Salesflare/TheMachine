@@ -1,7 +1,7 @@
 ---
 title: Fleets
 area: fleet
-summary: A Work Fleet for your team, a Family Fleet for home. Machines that help each other, with your yes on every answer.
+summary: A Work Fleet for your team, a Family Fleet for home. Machines that help each other, by your sharing rules.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
 site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
@@ -22,6 +22,24 @@ It shows once you're in a Fleet, with a pane for each Fleet, Family, Friends, Ne
 ## Ask your Fleet
 
 Ask "who knows someone at Acme?" from the Fleet tab, or **Ask the Fleet** on an organization in the [Graph](graph.md). Each teammate's Machine answers by their own sharing rules, and asks them first when the rule says so.
+
+## Answered by itself in a Work Fleet
+
+In a Standard Work Fleet, your Machine answers a teammate's **who knows someone**, **meeting context** ("who's this guest?") and **who handles shared emails** by itself. It uses only what the [Team Graph](team-graph.md) already shares with your team. Private, personal and sensitive threads never count, and names come only of people the Team Graph already shares. Each answer shows in the Fleet tab, under **Activity**.
+
+To stop one, set it to **Never** under **Sharing**. A rule saved as **Ask me first** now works as **Always**. While your Fleet's Team Graph sharing is off, who knows someone and meeting context keep asking you first.
+
+Careful Work Fleets, Friends and Family still ask you first. Warm intros, handoffs, shared follow-ups and free questions keep their own rules.
+
+## Team learnings
+
+Once a day at most, your Machine reads a few client threads the Team Graph already shares with your team, and writes down how the team works. For example: "Refund requests are answered from the support inbox with the refund template." They show in your Work Fleet's pane under **Team learnings**, for everyone in the Fleet, and each one is logged under **Activity**. Nobody is asked first.
+
+- Only threads someone on your team wrote in. Never private, personal or sensitive ones.
+- Only what holds across several customers: a process, a tool, a writing style, or who handles what. Never something about one customer, never feedback on your own product, and never names, addresses, numbers or quotes.
+- Each one has a label: what kind it is, that it came from team conversations, and that it's for this Fleet. Ones it isn't sure about are dropped.
+
+Anyone in the Fleet can **Remove** a learning. It's gone for everyone and isn't made again. To stop, turn off **Offer to share learnings** in Settings, Security. Careful Work Fleets get none.
 
 ## Brief requests
 

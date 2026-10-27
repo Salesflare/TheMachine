@@ -1866,6 +1866,153 @@ class SharedGraph(unittest.TestCase):
             section = self.mem.team_section(db, entry)
         self.assertEqual(len(section['timeline']), 1)  # the same fact from two teammates, once
 
+    # -- team learnings from team conversations (fleet_learnings.py), and asks answered from what the Team Graph shares
+    CLIENTS = [('Lee Park', 'lee', 'client.example'), ('Ana Ruiz', 'ana', 'buyer.example'), ('Tom Berg', 'tom', 'shop.example'),
+               ('Kim Ito', 'kim', 'store.example')]
+    GRADUATION = 'Congrats on the graduation of your daughter at Springfield High!'
+
+    def learn_mail(self):
+        """Four client threads about refunds, each with a reply from Olive, and a personal thread in the same work account."""
+        events, calls = [], []
+        for i, (name, first, domain) in enumerate(self.CLIENTS):
+            n = 60 + 2 * i
+            events += [mail('work', n, f'{name} <{first}@{domain}>', 'own1@acme.example', 'Refund request', f'Hi, can I get a refund for invoice 4471{i}? {name}', 3, f't-l{i}'),
+                       mail('work', n + 1, 'Olive <own1@acme.example>', f'{first}@{domain}', 'Re: Refund request',
+                            'Thanks for asking. Refunds go through the support inbox with the refund template.', 2, f't-l{i}')]
+            calls.append((f'work-{n}', 'client', f'{name.split()[0]} asked for a refund'))
+        events += [mail('work', 90, 'Kai Moss <kai@pal.example>', 'own1@acme.example', 'Your daughter', self.GRADUATION, 3, 't-pp'),
+                   mail('work', 91, 'Olive <own1@acme.example>', 'kai@pal.example', 'Re: Your daughter', 'Thank you so much!', 2, 't-pp')]
+        self.add(self.own, *events)
+        self.judge(self.own, *calls, ('work-90', 'personal', 'Kai wrote'))
+
+    def learn_evidence(self, box):
+        import fleet_learnings
+        import team_learnings
+        with box.connect() as db:
+            inputs = box.learn_inputs(db, FLEET)
+            names = team_learnings.known_names(db, box.config)
+            return (inputs and fleet_learnings.evidence(db, FLEET, inputs['gate'], inputs['accounts'], inputs['team_side'], inputs['company'], names)), names
+
+    def learn_run(self, box, evidence, names, learnings):
+        import fleet_learnings
+        run_id = a.uuid.uuid4().hex
+        with box.connect() as db:
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto,draft) VALUES(?,'ok',?,?,?,'fleet_learn',1,?)",
+                       (run_id, a.now(), a.now(), json.dumps(evidence), json.dumps({'learnings': learnings})))
+            return fleet_learnings.finish(db, run_id, names, log=box.log)
+
+    REFUNDS = {'kind': 'process', 'text': 'Refund requests are answered from the support inbox with the refund template.', 'confidence': 0.9, 'threads': [1, 2, 3]}
+
+    def test_team_learnings_read_only_shared_client_threads_keep_only_general_ones_and_reach_teammates(self):
+        self.learn_mail()
+        evidence, names = self.learn_evidence(self.own)
+        seen = json.dumps(evidence)
+        self.assertEqual(len(evidence['threads']), 4)  # the four client threads; the personal one is never read
+        for text in ('graduation', 'Springfield', 'Kai', 'pal.example', 'Lee Park', 'Ana', 'lee@client.example', 'client.example', '44710'):
+            self.assertNotIn(text, seen)
+        self.assertEqual(len(set(evidence['companies'].values())), 4)  # which company: only as a hash, for the check
+        kept = self.learn_run(self.own, evidence, names, [
+            self.REFUNDS,
+            {'kind': 'product_feedback', 'text': 'Customers find the invoice screen confusing and want it simpler.', 'confidence': 0.95, 'threads': [1, 2]},
+            {'kind': 'customer_specific', 'text': 'This customer always wants a refund in their own currency.', 'confidence': 0.9, 'threads': [1, 2]},
+            {'kind': 'style', 'text': 'Replies thank the customer for asking before anything else.', 'confidence': 0.9, 'threads': [1]},  # one company
+            {'kind': 'routing', 'text': 'Lee Park handles every refund request from the support inbox.', 'confidence': 0.9, 'threads': [1, 2]},
+            {'kind': 'tool', 'text': 'Refund requests are tracked in a shared spreadsheet every week.', 'confidence': 0.5, 'threads': [1, 2]}])
+        self.assertEqual([(k['kind'], k['text'], k['source']) for k in kept], [('process', self.REFUNDS['text'], 'team_conversations')])
+        self.assertTrue(any(l['kind'] == 'learning' and l['outcome'] == 'shared with the team, from team conversations' for l in self.own.view()['log']))
+        self.rounds()
+        for box in (self.adm, self.mem):
+            items = box.learnings_view(FLEET)['items']
+            self.assertEqual([(i['kind'], i['text'], i['from'], i['mine']) for i in items], [('process', self.REFUNDS['text'], 'Olive', False)])
+            self.assertTrue(any(l['kind'] == 'learning' and l['direction'] == 'in' for l in box.view()['log']))
+        self.assertNotIn('refund template', json.dumps(self.net.calls) + json.dumps(self.net.blobs))  # sealed like the rest
+        # the threads it read are read: the next pass doesn't see them again
+        with self.own.connect() as db:
+            db.execute("UPDATE profile_runs SET started_at=? WHERE kind='fleet_learn'", (ago(2),))
+        self.assertIsNone(self.learn_evidence(self.own)[0])
+
+    def test_a_teammate_removes_a_team_learning_for_everyone_and_it_stays_removed(self):
+        self.learn_mail()
+        evidence, names = self.learn_evidence(self.own)
+        self.learn_run(self.own, evidence, names, [self.REFUNDS])
+        self.rounds()
+        fp = self.adm.learnings_view(FLEET)['items'][0]['fp']
+        self.adm.remove_learning(FLEET, fp)
+        self.rounds(3)
+        for box in self.boxes:
+            self.assertEqual(box.learnings_view(FLEET)['items'], [], box.member_id)
+        self.assertTrue(any(l['outcome'] == 'removed for the team' for l in self.own.view()['log']))
+        # never made again, also not worded a little differently
+        again = dict(self.REFUNDS, text='Refund requests are answered from the support inbox using the refund template.')
+        self.assertEqual(self.learn_run(self.own, evidence, names, [again]), [])
+        with self.assertRaises(ValueError):
+            self.adm.remove_learning(FLEET, 'f' * 32)
+
+    def test_the_learnings_switch_turns_team_learnings_off_and_takes_back_what_went(self):
+        import security_levels
+        self.learn_mail()
+        evidence, names = self.learn_evidence(self.own)
+        self.learn_run(self.own, evidence, names, [self.REFUNDS])
+        self.rounds()
+        self.assertTrue(self.mem.learnings_view(FLEET)['items'])
+        with self.own.connect() as db:
+            security_levels.set_pref(db, 'learnings', 'off')  # Settings, Security, Offer to share learnings
+        self.rounds(3)
+        self.assertEqual(self.mem.learnings_view(FLEET)['items'], [])
+        with self.own.connect() as db:
+            db.execute("DELETE FROM profile_runs WHERE kind='fleet_learn'")
+            db.execute('DELETE FROM fleet_learn_read')
+        self.assertIsNone(self.learn_evidence(self.own)[0])  # nothing is read while it's off
+        self.assertFalse(self.own.learnings_view(FLEET)['on'])
+
+    def test_a_careful_fleet_or_a_team_graph_that_isnt_sharing_reads_nothing_for_team_learnings(self):
+        self.learn_mail()
+        self.own.graph_pause(FLEET, True)
+        self.rounds(1)
+        self.assertIsNone(self.learn_evidence(self.own)[0])
+        self.own.graph_pause(FLEET, False)
+        self.rounds(1)
+        self.assertTrue(self.learn_evidence(self.own)[0])
+        self.net.level = 'careful'
+        self.rounds(1)
+        self.assertIsNone(self.learn_evidence(self.own)[0])
+
+    def teammate_asks(self, box, about, ask_id):
+        calls = []  # the answer as it would be sealed for the teammate's Machine
+        with patch.object(box.relay, 'call', side_effect=lambda method, path, body=None, timeout=40: calls.append((path, body)) or {'ok': True}):
+            status = box.take_ask({'id': ask_id, 'fleet': FLEET, 'from': 'adm2', 'kind': 'relationships', 'question': {'about': about}})
+        self.sealed = json.dumps(calls)
+        sent = [body for path, body in calls if path == '/answer' and body['id'] == ask_id]
+        return status, (sent[-1].get('answer') if sent else None)
+
+    def test_who_knows_someone_is_answered_by_itself_from_what_the_team_graph_shares_never_a_personal_thread(self):
+        self.learn_mail()
+        status, answer = self.teammate_asks(self.own, 'client.example', 'q1')
+        self.assertEqual(status, 'answered')
+        self.assertTrue(answer['knows'])
+        status, answer = self.teammate_asks(self.own, 'pal.example', 'q2')  # the personal thread, in the same work account
+        self.assertEqual(status, 'answered')
+        self.assertFalse(answer['knows'])
+        self.assertNotIn('Kai', self.sealed)
+        self.assertTrue(any(l['outcome'].startswith('answered with what the Team Graph shares') for l in self.own.view()['log']))
+        with self.own.connect() as db:  # a stored Ask me first reads as Always in a Standard Work Fleet; Never holds
+            self.own.set_rule(FLEET, fleet.ALL, 'relationships', 'never')
+            self.assertEqual(self.own.rule(db, FLEET, 'adm2', 'relationships')[0], 'never')
+            db.execute("UPDATE fleet_rules SET rule='ask' WHERE kind='relationships'")
+        with self.own.connect() as db:
+            self.assertEqual(self.own.rule(db, FLEET, 'adm2', 'relationships')[0], 'always')
+        self.net.level = 'careful'  # a Careful Work Fleet keeps asking
+        self.rounds(1)
+        self.assertEqual(self.teammate_asks(self.own, 'client.example', 'q3')[0], 'waiting')
+
+    def test_while_the_team_graph_isnt_sharing_asks_keep_their_own_rules(self):
+        self.learn_mail()
+        self.own.graph_pause(FLEET, True)
+        self.rounds(1)
+        with self.own.connect() as db:
+            self.assertEqual(self.own.rule(db, FLEET, 'adm2', 'relationships')[0], 'ask')
+        self.assertEqual(self.teammate_asks(self.own, 'client.example', 'q1')[0], 'waiting')
+
 
 class StaticSql(unittest.TestCase):
     def test_the_shared_graph_builds_no_sql_from_strings(self):
@@ -1885,7 +2032,8 @@ class StaticSql(unittest.TestCase):
         db.executemany('INSERT INTO graph_events VALUES (?,?,?)', [(4, 'project:7', 0), (5, 'project:8', 1), (6, "project:7') OR 1=1 --", 0)])
         self.assertEqual(graph.project_event_ids(db, {7, 8}), {1, 2, 4})
         self.assertEqual(graph.project_event_ids(db, set()), set())
-        self.assertEqual(set(sg.FLEET_DELETE), {'team_records', 'team_mail', 'team_files', 'team_asks', 'team_sources', 'team_blobs', 'team_wants', 'share_out'})
+        self.assertEqual(set(sg.FLEET_DELETE), {'team_records', 'team_mail', 'team_files', 'team_asks', 'team_sources', 'team_blobs', 'team_wants', 'share_out',
+                                                'fleet_learnings', 'fleet_learn_seen', 'fleet_learn_read', 'fleet_learn_removed'})
 
 if __name__ == '__main__':
     unittest.main()

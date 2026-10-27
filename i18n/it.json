@@ -2452,5 +2452,17 @@
  "{}: Share my brief facts with the team": "{}: Condividi i miei dati del brief con il team",
  "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Numeri e date da ciò che il Graph del team condivide già. I thread privati e personali non contano mai.",
  "Brief facts on.": "Dati del brief attivi.",
- "Brief facts off. Nothing goes to their briefs.": "Dati del brief disattivati. Niente va nei loro brief."
+ "Brief facts off. Nothing goes to their briefs.": "Dati del brief disattivati. Niente va nei loro brief.",
+ "Answers use only what the Team Graph shares with the team. Never private or personal.": "Le risposte usano solo ciò che il Graph del team condivide con il team. Mai nulla di privato o personale.",
+ "Process": "Processo",
+ "Tool": "Strumento",
+ "Style": "Stile",
+ "Who handles what": "Chi si occupa di cosa",
+ "From team conversations": "Dalle conversazioni del team",
+ "Shared by your Machine": "Condiviso dalla tua Machine",
+ "Nothing yet. Your Machine looks once a day.": "Ancora niente. La tua Machine controlla una volta al giorno.",
+ "Off. Turn it on in Settings, Security.": "Disattivato. Attivalo in Impostazioni, Sicurezza.",
+ "Team learnings": "Apprendimenti del team",
+ "How the team works, from conversations the Team Graph shares. Never names or customer details.": "Come lavora il team, dalle conversazioni che il Graph del team condivide. Mai nomi o dettagli dei clienti.",
+ "Removed for the whole team.": "Rimosso per tutto il team."
 }

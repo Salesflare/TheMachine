@@ -31,6 +31,7 @@ import secrets
 import time
 
 import crm_fields
+import fleet_learnings
 import fleet_trust as ft
 import graph
 from i18n import t
@@ -87,6 +88,10 @@ FLEET_DELETE = {
     'team_blobs': 'DELETE FROM team_blobs WHERE fleet=?',
     'team_wants': 'DELETE FROM team_wants WHERE fleet=?',
     'share_out': 'DELETE FROM share_out WHERE fleet=?',
+    'fleet_learnings': 'DELETE FROM fleet_learnings WHERE fleet=?',  # team learnings (fleet_learnings.py)
+    'fleet_learn_seen': 'DELETE FROM fleet_learn_seen WHERE fleet=?',
+    'fleet_learn_read': 'DELETE FROM fleet_learn_read WHERE fleet=?',
+    'fleet_learn_removed': 'DELETE FROM fleet_learn_removed WHERE fleet=?',
 }
 MEMBER_ID = re.compile(r'[A-Za-z0-9_.:@-]{1,80}')  # a Fleet member's id, as crm.MEMBER
 ADDRESS = re.compile(r'[^@\s<>",;]+@[^@\s<>",;]+\.[^@\s<>",;]+')
@@ -1504,7 +1509,9 @@ class SharedGraph:
             return False
         with self.connect() as db:
             ensure(db)
-            for table in ('team_records', 'team_mail', 'team_files', 'team_blobs', 'team_sources', 'team_wants', 'share_out'):
+            fleet_learnings.ensure(db)
+            for table in ('team_records', 'team_mail', 'team_files', 'team_blobs', 'team_sources', 'team_wants', 'share_out',
+                          'fleet_learnings', 'fleet_learn_seen'):  # a removal holds, also after a purge
                 db.execute(FLEET_DELETE[table], (fleet,))
             db.execute('DELETE FROM fleet_meta WHERE key LIKE ?', ('graph_served:' + fleet + ':%',))
         for key in ('graph_out:', 'graph_chains:', 'graph_want:', 'graph_start:', 'graph_week:'):
@@ -1804,6 +1811,7 @@ class SharedGraph:
             went = {k for (kind, k) in before if kind == 'thread'}
             held = set()
             records, threads, stats, files = collect(db, scope, [key, *others], secret, held=held, kept=went)
+            records.update(fleet_learnings.records(db, fleet, lambda local: keyed(secret, 'record|' + local)))  # team learnings, the whole team's
             by_grant = collections.defaultdict(list)
             granted = grants(db, fleet)
             for m in to:
@@ -2199,12 +2207,33 @@ class SharedGraph:
         return [t for t in body.get('threads') or [] if isinstance(t, str) and HEX.fullmatch(t)][:MAX_THREADS]
 
     def _records(self, db, fleet, sender, records, header):
-        for r in (records or [])[:MAX_RECORDS]:
-            if not isinstance(r, dict) or r.get('t') not in ('person', 'org', 'project') or not HEX.fullmatch(str(r.get('r'))):
+        for r in (records or [])[:MAX_RECORDS + fleet_learnings.MAX_ACTIVE + 200]:
+            if not isinstance(r, dict) or not HEX.fullmatch(str(r.get('r'))):
+                continue
+            if r.get('t') in ('learning', 'unlearn'):  # team learnings (fleet_learnings.py): shown, never acted on
+                learned = fleet_learnings.clean_record(r)
+                if learned:
+                    db.execute('INSERT OR REPLACE INTO team_records(fleet,member,rid,kind,body,at) VALUES(?,?,?,?,?,?)',
+                               (fleet, sender, r['r'], r['t'], json.dumps(learned), header['at']))
+                    self._learning_taken(db, fleet, sender, learned)
+                continue
+            if r.get('t') not in ('person', 'org', 'project'):
                 continue
             r['kv'] = header.get('kv')
             db.execute('INSERT OR REPLACE INTO team_records(fleet,member,rid,kind,body,at) VALUES(?,?,?,?,?,?)',
                        (fleet, sender, r['r'], r['t'], json.dumps(_clean_record(r)), header['at']))
+
+    def _learning_taken(self, db, fleet, sender, learned):
+        """A teammate's team learning, or their removal of one: logged once in Activity; a removal holds here too."""
+        what = fleet_learnings.taken(db, fleet, sender, learned)
+        if not what:
+            return
+        member = next((m for m in self.teammates(fleet) if m.get('member_id') == sender), None) if hasattr(self, 'teammates') else None
+        name = (member or {}).get('name') or 'A teammate'
+        if what == 'new':
+            self.log(db, 'in', fleet, sender, name, 'learning', learned['text'], 'a team learning, from team conversations')
+        else:
+            self.log(db, 'in', fleet, sender, name, 'learning', 'A team learning of yours', 'removed for the team')
 
     def _graph_forget(self, groups):
         """A Fleet this Machine is no longer in: what it got from it goes. A teammate who left: kept (the Fleet's), marked."""
@@ -2213,7 +2242,9 @@ class SharedGraph:
             ensure(db)
             for (fleet,) in db.execute('SELECT DISTINCT fleet FROM team_sources').fetchall():
                 if fleet not in ids:
-                    for table in ('team_records', 'team_mail', 'team_files', 'team_asks', 'team_sources', 'team_blobs', 'team_wants', 'share_out'):
+                    fleet_learnings.ensure(db)
+                    for table in ('team_records', 'team_mail', 'team_files', 'team_asks', 'team_sources', 'team_blobs', 'team_wants', 'share_out',
+                                  'fleet_learnings', 'fleet_learn_seen', 'fleet_learn_read', 'fleet_learn_removed'):
                         db.execute(FLEET_DELETE[table], (fleet,))
                     for key in ('graph_keys:', 'graph_out:', 'graph_chains:', 'graph_members:', 'graph_off:', 'graph_off_ok:', 'graph_ask_sent:', 'graph_week:',
                                 'graph_want:', 'graph_confirmed:'):
