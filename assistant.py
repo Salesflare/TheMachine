@@ -13884,7 +13884,7 @@ class App:
                 request['message']+='\nThis continues the SAME session, with earlier work in context. Before changing anything in an app, read assistant_signals preparation_history (offset 0, then any next_offset): a compact list of earlier calls. Summaries are shortened: when reconciling a call, request preparation_history with its call_ref, offset 0 and any next_offset for exact saved parameters and receipts. If detail_complete=false, check the retained transcript or original app for the missing suffix. Do not repeat an external step that already happened; check uncertain ones against the app first. If the owner\'s latest note asks for something different (a rewrite, another approach), do that. Saving your result or a blocker is always allowed.'
             try:  # files the owner added to the message that started this run: images as images, all of them as files
                 with self.store.connect() as db:
-                    images,lines=chat_files.for_run(db,self.config,job.get('decision_id'),job['job_id'],WORKSPACE/'data'/'assistant-attachments')
+                    images,lines=chat_files.for_run(db,self.config,job.get('decision_id'),job['job_id'])
                 if images:request['attachments']=images
                 request['message']+=lines
             except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
@@ -14316,12 +14316,13 @@ class App:
                 d['to'] = [chat_name(t, names, about) for t in d['to']]
             results.setdefault(r['job_id'], []).append({'kind': 'reply', 'text': text, 'drafts': drafts, 'files': files,
                                                        'at': chat_ms(r['started_at'])})
-        # The chat's Stop: what the run had said so far stays (unless it had saved a result), then "Stopped"
+        # The chat's Stop: what the run had said so far stays (unless it had saved a result), cut off with "…" and
+        # marked Stopped on the reply itself (the dashboard's small note under it), also when it had said nothing yet
         for r in db.execute('SELECT job_id,text,at FROM chat_stops WHERE suggestion_id=? ORDER BY at', (suggestion_id,)):
-            at = chat_ms(r['at'])
-            if r['text'] and r['job_id'] not in results:
-                results[r['job_id']] = [{'kind': 'reply', 'text': r['text'], 'drafts': [], 'files': [], 'stopped': True, 'at': at - 1}]
-            owner.append({'kind': 'event', 'text': 'Stopped', 'mine': True, 'at': at})
+            if r['job_id'] not in results:
+                text = (r['text'] or '').rstrip()
+                results[r['job_id']] = [{'kind': 'reply', 'text': text + '…' if text and not text.endswith(('…', '...')) else text,
+                                         'drafts': [], 'files': [], 'stopped': True, 'at': chat_ms(r['at'])}]
         # Work handed to a coding agent (Hand to Claude Code / Codex): when it went, each change asked of it, and what came back
         jobs = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_jobs'").fetchone()  # only once agents are set up
         for r in db.execute('SELECT * FROM agent_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)) if jobs else []:

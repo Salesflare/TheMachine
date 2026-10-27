@@ -19,7 +19,7 @@ A question gets an answer and leaves the draft as it is. Approvals stay on the t
 
 ## Stop a reply
 
-While a reply is being written, the send button turns into **Stop**. Stop ends it right away and keeps what it wrote so far. Write a new message to carry on, or tap **Try again**.
+While a reply is being written, the send button turns into **Stop**. Stop ends it right away and keeps what it wrote so far, marked **Stopped**. Write a new message to carry on, or tap **Try again**.
 
 ## Add files
 
@@ -29,4 +29,4 @@ Tap the paperclip, paste a screenshot, or drop files on the chat. Each file show
 - PDFs, text, CSV, JSON and Office files up to 10 MB are files The Machine reads, and can attach to a draft.
 - Up to 5 files per message.
 
-Files stay on your Machine, in its data folder. Files you add but never send are removed after a day.
+Files stay on your Machine, in its data folder, encrypted like your messages. Files you add but never send are removed after a day.

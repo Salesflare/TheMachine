@@ -1,10 +1,11 @@
 """The card chat's Stop button and the files added to a message (chat_files.py): Stop ends the running reply at once
-and keeps what it said; files are checked, kept in the app's data folder, go with their message, and reach the run
-(images as images, every file in its attachments folder)."""
+and keeps what it said; files are checked, kept in the app's data folder (sealed with message protection on), go with
+their message, and reach the run (images as images, every file as a readable copy that goes once the run has ended)."""
 import base64
 import importlib.util
 import json
 from pathlib import Path
+import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -13,6 +14,8 @@ spec = importlib.util.spec_from_file_location('chat_stop_assistant', Path(__file
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 chat_files = a.chat_files
+mail_attachments = a.mail_attachments
+message_seal = a.message_seal
 
 PNG = b'\x89PNG\r\n\x1a\n' + b'\0' * 64
 PDF = b'%PDF-1.4\n' + b'x' * 64
@@ -20,17 +23,20 @@ b64 = lambda data: base64.b64encode(data).decode()
 
 
 class ChatStopFiles(unittest.TestCase):
+    protect = False
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.store = a.Store(self.root / 'events.sqlite')
+        self.store = a.Store(self.root / 'events.sqlite', protect=self.protect)
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
                                              'title': 'Evidence', 'body': 'Actual evidence', 'metadata': {}, 'deleted': False}], None)
         self.sid = self.store.suggest('task', 'Reply to the venue', 'I can draft this.', [1])['id']
         self.app = object.__new__(a.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [], 'database': str(self.root / 'events.sqlite')}
+        self.app.config = {'accounts': [], 'database': str(self.root / 'events.sqlite'), 'open_attachment_dir': str(self.root / 'open'),
+                           'attachment_root': str(self.root / 'workspace' / 'data' / 'assistant-attachments')}
         workspace = patch.object(a, 'WORKSPACE', self.root / 'workspace')
         workspace.start()
         self.addCleanup(workspace.stop)
@@ -75,7 +81,8 @@ class ChatStopFiles(unittest.TestCase):
             chat = self.app.card_chat(self.sid)
         self.assertFalse(chat['active'])
         said = [(i['kind'], i['text']) for i in chat['items']][-3:]
-        self.assertEqual(said, [('you', 'Make it shorter'), ('reply', 'Here is a shorter version: Dear venue'), ('event', 'Stopped')])
+        self.assertEqual(said[-2:], [('you', 'Make it shorter'), ('reply', 'Here is a shorter version: Dear venue…')])
+        self.assertTrue(chat['items'][-1]['stopped'])  # marked on the reply itself, no line of its own
         self.store.decide(self.sid, 'retry', '', 'retry-1', 'dashboard')
         self.assertEqual(self.job()['status'], 'queued')
 
@@ -89,7 +96,16 @@ class ChatStopFiles(unittest.TestCase):
                                  '__openclaw': {'runId': job['job_id']}}]}
         with patch.object(self.app, 'card_chat_gateway', return_value=history):
             chat = self.app.card_chat(self.sid)
-        self.assertEqual([i['text'] for i in chat['items'] if i['kind'] == 'reply'], ['Half an answer'])
+        self.assertEqual([i['text'] for i in chat['items'] if i['kind'] == 'reply'], ['Half an answer…'])
+
+    def test_a_stop_before_any_text_still_marks_the_reply(self):
+        self.say('Make it shorter')
+        self.run_turn()
+        with patch.object(self.app, 'card_chat_gateway', return_value={}):
+            self.app.chat_stop(self.sid)
+        with patch.object(self.app, 'card_chat_gateway', return_value={'messages': []}):
+            last = self.app.card_chat(self.sid)['items'][-1]
+        self.assertEqual((last['kind'], last['text'], last['stopped']), ('reply', '', True))
 
     def test_stop_after_the_reply_finished_changes_nothing(self):
         self.say('Make it shorter')
@@ -116,12 +132,12 @@ class ChatStopFiles(unittest.TestCase):
         doc = self.upload('../../Quote.pdf', PDF)
         self.assertEqual((image['type'], doc['name'], doc['type']), ('image/png', 'Quote.pdf', 'application/pdf'))
         stored = Path(self.app.config['database']).parent / 'chat-files' / image['id']
-        self.assertEqual(stored.read_bytes(), PNG)
+        self.assertTrue(message_seal.is_sealed_file(stored)) if self.protect else self.assertEqual(stored.read_bytes(), PNG)
         self.assertEqual(stored.stat().st_mode & 0o777, 0o600)
         self.say('What does this quote say?', [image['id'], doc['id']])
         start = self.run_turn()
         self.assertEqual(start['attachments'], [{'type': 'image', 'mimeType': 'image/png', 'fileName': 'screenshot.png', 'content': b64(PNG)}])
-        folder = self.root / 'workspace' / 'data' / 'assistant-attachments' / self.job()['job_id'] / 'from-owner'
+        folder = self.root / 'open' / self.job()['job_id']
         self.assertEqual((folder / 'Quote.pdf').read_bytes(), PDF)
         self.assertIn(str(folder / 'Quote.pdf'), start['message'])
         self.assertIn('attached these files', start['message'])
@@ -184,6 +200,48 @@ class ChatStopFiles(unittest.TestCase):
             self.assertIn(name, a.OWNER_ACTIONS)
             self.assertIn(name, a.DASHBOARD_ACTIONS)
         self.assertGreater(chat_files.REQUEST_BYTES, chat_files.FILE_BYTES * 4 // 3)
+
+
+class ChatFilesSealed(ChatStopFiles):
+    """The same, with message protection on: a file and its name are never readable off the disk."""
+    protect = True
+
+    def test_a_file_and_its_name_are_sealed_at_rest(self):
+        canary = b'CANARY-7f3a quarterly figures'
+        doc = self.upload('Secret plan CANARY-7f3a.txt', canary)
+        stored = Path(self.app.config['database']).parent / 'chat-files' / doc['id']
+        self.assertTrue(message_seal.is_sealed_file(stored))
+        self.assertNotIn(canary, stored.read_bytes())
+        with self.store.connect() as db:  # opened for the owner's preview
+            self.assertEqual(chat_files.read(db, self.app.config, doc['id']), (canary, 'text/plain', 'Secret plan CANARY-7f3a.txt'))
+        raw = sqlite3.connect(self.app.config['database'])
+        self.assertTrue(message_seal.is_sealed(raw.execute('SELECT name FROM chat_files').fetchone()[0]))
+        raw.close()
+        for path in self.root.glob('events.sqlite*'):
+            self.assertNotIn(b'CANARY-7f3a', path.read_bytes())
+        # Its run gets a readable copy, which goes once the run has ended
+        self.say('Read this', [doc['id']])
+        start = self.run_turn()
+        job = self.job()['job_id']
+        copy = self.root / 'open' / job / 'Secret plan CANARY-7f3a.txt'
+        self.assertEqual(copy.read_bytes(), canary)
+        self.assertIn(str(copy), start['message'])
+        with self.store.connect() as db:
+            db.execute('UPDATE preparation_runs SET finished_at=? WHERE job_id=?', (a.now(), job))
+        later = a.dt.datetime.now(a.dt.timezone.utc) + a.dt.timedelta(hours=3)
+        mail_attachments.sweep(self.store.connect, self.app.config, now=later)
+        self.assertFalse(copy.exists())
+        self.assertTrue(message_seal.is_sealed_file(stored))
+
+    def test_files_kept_before_protection_are_sealed_in_place(self):
+        with patch.object(chat_files, '_sealer', return_value=None):
+            doc = self.upload('a.txt', b'CANARY-plain')
+        stored = Path(self.app.config['database']).parent / 'chat-files' / doc['id']
+        self.assertEqual(stored.read_bytes(), b'CANARY-plain')
+        with self.store.connect() as db:
+            chat_files.sweep(db, self.app.config, a.now())
+            self.assertEqual(chat_files.read(db, self.app.config, doc['id'])[0], b'CANARY-plain')
+        self.assertTrue(message_seal.is_sealed_file(stored))
 
 
 if __name__ == '__main__':

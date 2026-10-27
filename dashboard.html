@@ -1438,7 +1438,7 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 #chat-log button.link,.chat-status button.link{display:inline;white-space:nowrap;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-accent);font:500 var(--chat-meta)/1.5 var(--sans);cursor:pointer}
 #chat-log button.link:hover,.chat-status button.link:hover{text-decoration:underline}
 .chat-more,.chat-source .read-original{margin:6px 14px 0 0!important}
-.chat-noted{margin:6px 0 0;font-size:var(--chat-meta);color:var(--chat-quiet)}.chat-files .chat-noted{margin:0 0 0 4px;align-self:center}
+.chat-noted{margin:6px 0 0;font-size:var(--chat-meta);color:var(--chat-quiet)}.chat-noted+.chat-noted{margin-left:8px}.chat-msg>.chat-stopped:first-child{margin-top:0}.chat-files .chat-noted{margin:0 0 0 4px;align-self:center}
 .chat-q{margin:0!important;font-weight:600}
 .chat-agent-name{margin:0 0 4px;font-size:var(--chat-meta);font-weight:600;color:var(--chat-quiet)}
 .chat-files{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.chat-files .agent-file{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;font-size:.82rem;line-height:1.5;color:var(--text);text-decoration:none;overflow-wrap:anywhere}.chat-files .agent-file:hover{background:var(--c-hover)}.chat-files button.agent-file{min-height:0;margin:0;background:none;box-shadow:none;font:inherit;font-size:.82rem;cursor:pointer}
@@ -3994,12 +3994,13 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    push(i,`<div class="chat-msg you">${show?`<div class="chat-to">to ${esc(to)}</div>`:''}${att}${i.text?`<div class="bubble">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}
   else if(i.kind==='reply'){const ds=i.drafts||[],h=headline(i.text);
    const tab=n===tabAt?`<a class="agent-file via-browser" href="${esc(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${esc(s.id)}">View in Machine browser</a>`:'';
-   const noted=i.noted?'<small class="chat-noted">Noted for next time</small>':'';
+   // A reply cut off by Stop: a small Stopped right under what it said so far, before the card's choices
+   const noted=(i.stopped?'<small class="chat-noted chat-stopped">Stopped</small>':'')+(i.noted?'<small class="chat-noted">Noted for next time</small>':'');
    // Without a headline the reply is plain text and its drafts are the result; with one, the headline and summary lead the result
    const fileOf=f=>`<button type="button" class="agent-file via-file" data-id="${esc(s.id)}" data-result="read" data-file="${esc(f.path)}" data-file-name="${esc(f.label)}">${esc(f.label)}<span aria-hidden="true"> ›</span></button>`;
    const copy=n===copyAt,files=(i.files||[]).filter(f=>!copy||f!==i.files[0]).map(fileOf).join('');
    const chips=tab||files?`<div class="chat-files">${tab}${files}</div>`:'';
-   if(!res||!h)push(i,`<div class="chat-msg machine"><div class="bubble">${chatMarkdown(i.text)}</div>${chips}${noted}${ds.length||copy?'':options(n,false)}${res?'':tm(i.at)}</div>`);
+   if(!res||!h)push(i,`<div class="chat-msg machine">${i.text||!i.stopped?`<div class="bubble">${chatMarkdown(i.text)}</div>`:''}${chips}${noted}${ds.length||copy?'':options(n,false)}${res?'':tm(i.at)}</div>`);
    if(!res)return;
    if(copy){const f=(i.files||[])[0]||{label:'Draft',path:(s.result_files||[]).find(f=>!/\.pdf$/i.test(f.name))?.path},key=s.id+'|'+f.path,text=chatFiles.get(key),fk=k+':file';
     const df=draftFile(text),src=rows.findLast(x=>x.kind==='source'&&!x.mine&&x.via),where=src?chatVia(src.via)+(src.note?' note':''):'';

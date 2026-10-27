@@ -6,7 +6,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The card chat's composer: Stop takes the place of Send while a reply runs (chat_stop, then the reply so far stays
-// with a "Stopped" line), and files join the next message from Add files, a paste or a drop. Each uploads at once
+// marked Stopped), and files join the next message from Add files, a paste or a drop. Each uploads at once
 // (chat_upload, X-Upload: chat-file), shows in a tray with its preview and a remove button, and goes with the message
 // (decide files). Too big or unknown files say so before anything uploads. The thread shows the files with the message.
 // SHOT_DIR=<folder> also saves screenshots; DASHBOARD=<file> runs another dashboard.html (for before shots).
@@ -31,7 +31,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/chat-file'){res.setHeader('Content-Type','image/png');res.end(PNG);return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body);actions.push({...r,upload:req.headers['x-upload']||null});
   if(r.action==='card_chat'){const list=[...items];
-   if(stopped)list.push({kind:'reply',text:'Here is a reply: Hi Sam, Tuesday',drafts:[],files:[],stopped:true,at:t0+2000},{kind:'event',text:'Stopped',mine:true,at:t0+2001});
+   if(stopped)list.push({kind:'reply',text:'Here is a reply: Hi Sam, Tuesday…',drafts:[],files:[],stopped:true,at:t0+2000});
    if(sent)list.push({kind:'you',text:sent.text,files:sent.files,at:t0+3000});
    res.end(JSON.stringify({session:true,status:running?'running':'blocked',active:running,cursor:null,items:list,live:running?{text:'Here is a reply: Hi Sam, Tuesday'}:null}));return}
   if(r.action==='chat_stop'){running=false;stopped=true;cards[0].preparation_status='blocked';cards[0].preparation_error='stopped';cards[0].preparation_reason='Stopped. Write what to do next, or tap Try again.';res.end('{"stopped":true}');return}
@@ -60,10 +60,14 @@ try{
   await page.locator('#chat-input').fill('wait');assert.ok(await page.locator('[data-chat-send]').isVisible());assert.ok(!(await page.locator('[data-chat-stop]').isVisible()));
   await page.locator('#chat-input').fill('');assert.ok(await page.locator('[data-chat-stop]').isVisible());
   await page.locator('[data-chat-stop]').click();
-  await page.locator('#chat-log .chat-event',{hasText:'Stopped'}).waitFor();
+  await page.locator('#chat-log .chat-stopped').waitFor();
   assert.deepEqual(actions.find(a=>a.action==='chat_stop').args,{suggestion_id:ID});
   assert.equal(await page.locator('#chat-log .chat-live').count(),0);
-  assert.ok((await page.locator('#chat-log .chat-msg.machine .bubble').allTextContents()).some(t=>t.includes('Here is a reply: Hi Sam, Tuesday')),'the reply so far stays');
+  assert.ok((await page.locator('#chat-log .chat-msg.machine .bubble').allTextContents()).some(t=>t.includes('Here is a reply: Hi Sam, Tuesday…')),'the reply so far stays, cut off');
+  // Stopped sits on the reply: right under its text and before the card's choices, not as a line of its own
+  const order=await page.locator('#chat-log .chat-stopped').evaluate(n=>{const m=n.closest('.chat-msg');return [...m.children].map(c=>c.className.split(' ')[0])});
+  assert.deepEqual(order.slice(0,2),['bubble','chat-noted'],order.join());assert.ok(order.indexOf('chat-options')<0||order.indexOf('chat-options')>1,order.join());
+  assert.equal(await page.locator('#chat-log .chat-event',{hasText:'Stopped'}).count(),0);
   assert.ok(await page.locator('[data-chat-send]').isVisible());assert.ok(!(await page.locator('[data-chat-stop]').isVisible()));
   await shot('stopped');
   // Add files: an image and a PDF upload at once and wait in the tray with a preview

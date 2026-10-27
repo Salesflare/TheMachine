@@ -2,10 +2,14 @@
 
 Each file is uploaded on its own as soon as it is added (`save`), kept in the app's data folder (chat-files/ next to the
 database, mode 700, one file per upload named by its ID), and bound to the message when it is sent (`bind`, in the
-same transaction as the message). The message's run gets them (`for_run`): images go to the model as images (the
-Gateway's `agent` attachments); every file is also copied into the run's attachments folder, so the agent can read a
-document with its own tools or attach a file to a draft. Files never sent go after a day, and a deleted card's go with
-it (`sweep`).
+same transaction as the message). With message protection on (message_seal.py) a file is kept sealed with the message
+key, as one sealed file (message_seal.FILE_MAGIC), and its name is sealed in the database (message_seal.DERIVED), like
+an email attachment (mail_attachments.py). A file is opened only for a preview (`read`) and for its run.
+
+The message's run gets them (`for_run`): images go to the model as images (the Gateway's `agent` attachments); every
+file also gets a readable copy in the runs' private folder (mail_attachments.open_root, in memory when there is one),
+so the agent can read a document with its own tools or attach a file to a draft. That copy goes once the run has ended
+(mail_attachments.sweep). Files never sent go after a day, and a deleted card's go with it (`sweep`).
 
 Only types the agent can use are taken, checked by extension and, for images and PDFs, by their first bytes, so a file
 is never served as something it is not. Images are at most IMAGE_BYTES (the Gateway takes up to 6 MB per image),
@@ -20,6 +24,9 @@ import os
 import re
 import secrets
 from pathlib import Path
+
+import mail_attachments
+import message_seal
 
 IMAGE_BYTES = 5 * 1024 * 1024
 FILE_BYTES = 10 * 1024 * 1024
@@ -52,6 +59,21 @@ def initialize(db):
 
 def folder(config):
     return Path(config['database']).expanduser().parent / 'chat-files'
+
+
+def _sealer(db):
+    """The message key's Sealer when this database is protected, else None."""
+    seal = getattr(db, 'sealer', None)
+    return seal if seal and message_seal.is_protected(db) else None
+
+
+def _open(db, data):
+    """A stored file's bytes, opened when sealed."""
+    if not message_seal.is_sealed_bytes(data):
+        return data
+    if not getattr(db, 'sealer', None):
+        raise message_seal.SealError(f'This file is encrypted and {message_seal.KEY_NAME} is missing')
+    return db.sealer.open_bytes(data)
 
 
 def human(size):
@@ -118,8 +140,9 @@ def save(db, config, suggestion_id, name, data_b64, stamp):
     file_id = 'cf_' + secrets.token_hex(10)
     path = root / file_id
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+    seal = _sealer(db)
     with os.fdopen(fd, 'wb') as out:
-        out.write(data)
+        out.write(seal.seal_bytes(data) if seal else data)
     db.execute('INSERT INTO chat_files(id,suggestion_id,decision_id,name,mime,size,created_at) VALUES(?,?,NULL,?,?,?,?)',
                (file_id, suggestion_id, name, mime, len(data), stamp))
     return {'id': file_id, 'name': name, 'type': mime, 'size': len(data)}
@@ -175,23 +198,26 @@ def read(db, config, file_id):
     row = db.execute('SELECT * FROM chat_files WHERE id=?', (str(file_id),)).fetchone() if ID.fullmatch(str(file_id or '')) else None
     if not row:
         raise ValueError('Unknown file')
-    return (folder(config) / row['id']).read_bytes(), row['mime'], row['name']
+    return _open(db, (folder(config) / row['id']).read_bytes()), row['mime'], row['name']
 
 
-def for_run(db, config, decision_id, job_id, attachments_root):
+def for_run(db, config, decision_id, job_id):
     """What a run gets of its message's files: (Gateway attachments for the images, the prompt's lines about all of
-    them). The files are copied into the run's attachments folder by their own names."""
+    them). Each file gets a readable copy by its own name in the run's private folder, removed once the run has ended."""
     rows = db.execute('SELECT * FROM chat_files WHERE decision_id=? ORDER BY rowid', (decision_id,)).fetchall() if decision_id else []
     if not rows:
         return [], ''
-    target = Path(attachments_root) / re.sub(r'[^A-Za-z0-9]', '', job_id)[:32] / 'from-owner'
-    target.mkdir(parents=True, exist_ok=True, mode=0o700)
+    base = mail_attachments.open_root(config, create=True)
+    if not base:
+        raise OSError('No private folder for the run')
+    target = base / re.sub(r'[^A-Za-z0-9_-]', '', job_id)[:80]
+    target.mkdir(exist_ok=True, mode=0o700)
     images, lines, names = [], [], set()
     for r in rows:
         source = folder(config) / r['id']
         try:
-            data = source.read_bytes()
-        except OSError:
+            data = _open(db, source.read_bytes())
+        except (OSError, message_seal.SealError):
             lines.append(f"- {r['name']}: this file is missing on this computer")
             continue
         name, n = r['name'], 1
@@ -215,12 +241,25 @@ def for_run(db, config, decision_id, job_id, attachments_root):
 
 
 def sweep(db, config, stamp):
-    """Uploads never sent (older than a day) and the files of cards that are gone."""
+    """Uploads never sent (older than a day) and the files of cards that are gone. Kept files follow message
+    protection: sealed in place once it is on, opened again once it is off."""
     cutoff = (dt.datetime.fromisoformat(stamp) - dt.timedelta(hours=UNSENT_HOURS)).isoformat()
     gone = [r['id'] for r in db.execute('SELECT id FROM chat_files WHERE (decision_id IS NULL AND created_at<?) '
                                         'OR NOT EXISTS(SELECT 1 FROM suggestions s WHERE s.id=chat_files.suggestion_id)', (cutoff,))]
     for file_id in gone:
         db.execute('DELETE FROM chat_files WHERE id=?', (file_id,))
         (folder(config) / file_id).unlink(missing_ok=True)
+    seal, key = _sealer(db), getattr(db, 'sealer', None)
+    if key:
+        for r in db.execute('SELECT id FROM chat_files').fetchall():
+            path = folder(config) / r['id']
+            try:
+                sealed = message_seal.is_sealed_file(path)
+                if seal and not sealed:
+                    mail_attachments._write(path, seal.seal_bytes(path.read_bytes()), scrub=True)
+                elif sealed and not seal:
+                    mail_attachments._write(path, key.open_bytes(path.read_bytes()))
+            except (OSError, message_seal.SealError):
+                pass
     return len(gone)
 

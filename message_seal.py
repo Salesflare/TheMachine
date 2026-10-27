@@ -71,6 +71,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
            'fleet_in': ('question', 'draft'), 'fleet_out': ('question', 'answer'), 'network_replies': ('body',),
            'task_pages': ('record',), 'recaps': ('text',), 'chat_stops': ('text',),  # a stopped chat reply's partial text
+           'chat_files': ('name',),  # a file's name the owner added to a chat message (chat_files.py)
            'recap_items': ('line', 'data'),
            'graph_imports': ('undo',),  # an import's Undo: what it changed, which can hold a project's notes
            'crm_values': ('value',),  # custom field values the owner typed on a record (crm_fields.py)
