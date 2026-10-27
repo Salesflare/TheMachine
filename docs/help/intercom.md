@@ -18,7 +18,7 @@ It reads conversations. With your own **Sign in with Intercom**, it can also rep
 
 A to-do from an Intercom conversation shows where it came from: **Read message** opens the conversation, with a link to it in Intercom, and the customer shows on the to-do. Its reply is an Intercom reply in that conversation, unless you ask for an email.
 
-When Intercom can't reply from your Machine (shared with you to read only, replies not turned on, or not connected), the draft goes by email instead. The to-do says why, and its review asks **Send by email instead?** Nothing goes out before you send it.
+When Intercom can't reply from your Machine (shared with you to read only, replies not turned on, or not connected), the draft goes by email instead. The to-do says why, and its review asks **Send by email instead?** To reply in Intercom yourself, tap **Connect your own Intercom** on the to-do and sign in. Nothing goes out before you send it.
 
 ## Connect it
 

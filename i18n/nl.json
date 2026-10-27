@@ -2409,5 +2409,6 @@
  "Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.": "Antwoorden via Intercom staan hier uit, dus dit gaat per e-mail. Log in met Intercom om daar te antwoorden.",
  "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom is niet gekoppeld op deze Machine, dus dit gaat per e-mail.",
  "Send by email instead?": "In plaats daarvan per e-mail versturen?",
- "Intercom from {} ·": "Intercom van {} ·"
+ "Intercom from {} ·": "Intercom van {} ·",
+ "Connect your own Intercom": "Koppel je eigen Intercom"
 }

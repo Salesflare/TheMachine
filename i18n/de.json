@@ -2409,5 +2409,6 @@
  "Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.": "Antworten über Intercom sind hier aus, deshalb geht das per E-Mail. Melde dich mit Intercom an, um dort zu antworten.",
  "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom ist auf dieser Machine nicht verbunden, deshalb geht das per E-Mail.",
  "Send by email instead?": "Stattdessen per E-Mail senden?",
- "Intercom from {} ·": "Intercom von {} ·"
+ "Intercom from {} ·": "Intercom von {} ·",
+ "Connect your own Intercom": "Eigenes Intercom verbinden"
 }

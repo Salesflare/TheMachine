@@ -26,7 +26,8 @@ const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
- if(url.pathname==='/api/action'){let b='';for await(const c of req)b+=c;const call=JSON.parse(b);calls.push(call);res.end(JSON.stringify({status:'queued'}));return}
+ if(url.pathname==='/api/action'){let b='';for await(const c of req)b+=c;const call=JSON.parse(b);calls.push(call);
+  res.end(JSON.stringify(call.action==='connect_sources'?{sources:[{name:'intercom',label:'Intercom',service:'intercom',signin:true,what:'Customer conversations'}],saveable:true,paired:true}:{status:'queued'}));return}
  res.statusCode=url.pathname.startsWith('/api/')?200:404;res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -68,7 +69,7 @@ try{
   assert.ok(!/\bYou (sent|replied)/.test(text));
   // The email fallback: the source links the conversation, the people are on it, and it says why it isn't an Intercom reply
   const mail=page.locator(`#task-${viaMail}`);
-  assert.equal(await mail.locator('.draft-why').textContent(),'Intercom is shared with you to read only, so this goes by email.');
+  assert.equal(await mail.locator('.draft-why').textContent(),'Intercom is shared with you to read only, so this goes by email. Connect your own Intercom');
   assert.match(await mail.locator('.read-original').textContent(),/Intercom from Casey Customer/);
   assert.equal(await mail.locator('a.chip.who').first().textContent(),'Casey CustomerCasey');
   assert.match(await mail.locator(`[data-smart="${mailRevision}"]`).textContent(),/Review and send by email/);
@@ -79,6 +80,13 @@ try{
   assert.equal(await page.locator('#send-fine').textContent(),'Intercom is shared with you to read only, so this goes by email.');
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);  // nothing before Send
   if(shots)await page.locator('#send-dialog').screenshot({path:`${shots}/fallback-dialog-${width}.png`});
+  // "Connect your own Intercom" opens Connections, + Add, at Intercom's sign-in; nothing starts before Continue
+  await page.locator('#send-cancel').click();
+  await mail.locator('.draft-why a[data-connect-open="intercom"]').click();
+  await page.locator('#connect-add .connect-signin').waitFor({state:'visible'});
+  assert.match(await page.locator('#connect-add').textContent(),/Replies only after you approve them/);
+  assert.deepEqual(calls.map(c=>c.action).filter(a=>a!=='connect_sources'&&a!=='confirm_action'&&!/^(seen|view)/.test(a)).filter(a=>/connect|signin/.test(a)),[]);
+  if(shots)await page.screenshot({path:`${shots}/fallback-connect-${width}.png`});
   await context.close();
  }
  assert.deepEqual(errors,[]);

@@ -2409,5 +2409,6 @@
  "Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.": "Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.",
  "Intercom isn’t connected on this Machine, so this goes by email.": "Intercom isn’t connected on this Machine, so this goes by email.",
  "Send by email instead?": "Send by email instead?",
- "Intercom from {} ·": "Intercom from {} ·"
+ "Intercom from {} ·": "Intercom from {} ·",
+ "Connect your own Intercom": "Connect your own Intercom"
 }
