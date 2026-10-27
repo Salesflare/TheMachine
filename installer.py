@@ -52,15 +52,24 @@ ROOT = Path(__file__).resolve().parent
 PLUGIN_ID = 'personal-assistant-bridge'
 UNIT_NAME = service.UNIT_NAME
 MIN_PYTHON = (3, 12)
-NODE_REQUIREMENT = '>=24.16.0 <25 or >=26.1.0 (OpenClaw 2026.10.5 or later)'
+# The Node.js an OpenClaw that is already set up runs The Machine with, and the one installing the pinned OpenClaw
+# needs (its package's engine range: from 2026.10.6 on only the Node releases with October 2026's TLS fixes).
+NODE_REQUIREMENT = '>=24.16.0 <25 or >=26.1.0'
+NODE_FLOORS = {24: (24, 16, 0), 26: (26, 1, 0)}
+OPENCLAW_NODE_REQUIREMENT = '>=24.22.1 <25 or >=26.12.1'
+OPENCLAW_NODE_FLOORS = {24: (24, 22, 1), 26: (26, 12, 1)}
 
 
 MACOS = service.manager() == 'launchd'
 
 
-def supported_node(version):
-    return bool(version and ((version >= (24, 16, 0) and version < (25, 0, 0))
-                             or version >= (26, 1, 0)))
+def supported_node(version, floors=NODE_FLOORS):
+    """Node 24 from its floor, Node 26 from its floor and anything newer; 22, 25 and older lines are not."""
+    if not version:
+        return False
+    if version[0] == 24:
+        return version >= floors[24]
+    return version >= floors[26]
 
 # Answers for --non-interactive (and defaults for the wizard).
 ENV = {
@@ -178,6 +187,8 @@ def check_prerequisites():
     node_version = version_tuple(run([node, '--version']).stdout) if node else None
     if node and supported_node(node_version):
         say(f'  ok    node {".".join(map(str, node_version))} ({node})')
+        if not supported_node(node_version, OPENCLAW_NODE_FLOORS):
+            say(f'  note  OpenClaw {required_openclaw()} needs Node.js {OPENCLAW_NODE_REQUIREMENT}: update Node.js before you update OpenClaw')
     else:
         ok = False
         say(f'  FAIL  need Node.js {NODE_REQUIREMENT}; install a supported version and rerun'
@@ -299,8 +310,8 @@ def offer_openclaw(ui):
     if not openclaw:
         node = resolve_tool(shutil.which('node'))
         npm = npm_beside(node)
-        if not (node and supported_node(version_tuple(run([node, '--version']).stdout)) and npm):
-            ui.say(f'\nThe Machine runs on OpenClaw, which is not installed here. It needs Node.js {NODE_REQUIREMENT} with npm first:\n'
+        if not (node and supported_node(version_tuple(run([node, '--version']).stdout), OPENCLAW_NODE_FLOORS) and npm):
+            ui.say(f'\nThe Machine runs on OpenClaw, which is not installed here. It needs Node.js {OPENCLAW_NODE_REQUIREMENT} with npm first:\n'
                    '  install it from https://nodejs.org or with a version manager (mise use -g node@24), then rerun ./install.sh')
             return
         command = openclaw_install_command(npm, want)

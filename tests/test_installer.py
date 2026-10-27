@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 STUB = '''#!/bin/sh
 echo "{name} $*" >> "{log}"
 if [ "$*" = "$ASSISTANT_TEST_FAIL" ]; then echo "Synthetic failure" >&2; exit 1; fi
-case "$*" in --version) echo "OpenClaw 2026.10.5 (test)";; *list-unit-files*) echo "openclaw-gateway.service enabled enabled";; esac
+case "$*" in --version) echo "OpenClaw 2026.10.7 (test)";; *list-unit-files*) echo "openclaw-gateway.service enabled enabled";; esac
 exit 0
 '''
 ANSWERS = {'ASSISTANT_OWNER_NAME': 'Alex Owner', 'ASSISTANT_TELEGRAM_OWNER': '1000001',
@@ -45,7 +45,7 @@ class InstallerTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), \
                 mock.patch.object(installer, 'say'):
             stamp = Path(tmp) / 'plugin-installed'
-            facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.10.5'}
+            facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.10.7'}
             self.assertTrue(installer.install_plugin(facts, stamp=stamp))
             self.assertIn(['plugins', 'reload'], calls)
             calls.clear()
@@ -98,7 +98,7 @@ class InstallerTest(unittest.TestCase):
                 mock.patch.object(installer, 'say', side_effect=said.append), \
                 mock.patch.object(installer.onboarding, 'gateway_units', return_value=[unit] if unit else []), \
                 mock.patch.dict(os.environ, {'ASSISTANT_GATEWAY_WAIT': '60'}):
-            ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.10.5'}, stamp=stamp)
+            ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.10.7'}, stamp=stamp)
         return ok, calls, '\n'.join(said), stamp.exists()
 
     def test_a_reload_without_a_running_gateway_starts_it_and_checks_the_bridge_loaded(self):
@@ -150,7 +150,7 @@ class InstallerTest(unittest.TestCase):
             path.chmod(0o755)
         package = self.tmp / 'lib/node_modules/openclaw'
         package.mkdir(parents=True)
-        (package / 'package.json').write_text(json.dumps({'name':'openclaw','version':'2026.10.5'}))
+        (package / 'package.json').write_text(json.dumps({'name':'openclaw','version':'2026.10.7'}))
         (self.bin / 'node').symlink_to(shutil.which('node'))
         self.data = self.home / '.local/share/personal-assistant'
         self.config = self.data / 'config.json'
@@ -324,7 +324,7 @@ class InstallerTest(unittest.TestCase):
         result = self.install('--no-start')
         self.assertEqual(result.returncode, 1)
         self.assertIn('FAIL  openclaw CLI not found', result.stdout)
-        self.assertIn('npm install -g openclaw@2026.10.5', result.stdout)
+        self.assertIn('npm install -g openclaw@2026.10.7', result.stdout)
         self.assertFalse(self.config.exists())
 
     def test_without_openclaw_it_offers_to_install_it_and_walks_through_its_setup(self):
@@ -344,7 +344,7 @@ class InstallerTest(unittest.TestCase):
             ran.append(args)
             name = Path(args[0]).name
             if name == 'node':
-                return subprocess.CompletedProcess(args, 0, 'v24.16.0\n', '')
+                return subprocess.CompletedProcess(args, 0, 'v24.22.1\n', '')
             if args[1:] == ['prefix', '-g']:
                 return subprocess.CompletedProcess(args, 0, f'{npm_prefix}\n', '')
             if args[1:3] == ['install', '-g']:
@@ -369,17 +369,17 @@ class InstallerTest(unittest.TestCase):
             self.assertIn('was not installed: the registry checksum does not match', '\n'.join(said))
             pinned.side_effect = None
             installer.offer_openclaw(UI([True, True]))
-            pinned.assert_called_with('2026.10.5')
+            pinned.assert_called_with('2026.10.7')
             self.assertIn(str(self.home / '.local/bin'), os.environ['PATH'])  # the rest of this run finds it
         local = self.home / '.local'
-        self.assertIn([str(self.bin / 'npm'), 'install', '-g', 'openclaw@2026.10.5', '--prefix', str(local)], ran)
+        self.assertIn([str(self.bin / 'npm'), 'install', '-g', 'openclaw@2026.10.7', '--prefix', str(local)], ran)
         # npm 11 held back the install scripts: exactly those run for this install.
         self.assertIn([str(self.bin / 'npm'), 'rebuild', '-g', '--prefix', str(local), '--allow-scripts=esbuild,koffi,openclaw'], ran)
         self.assertIn([str(local / 'bin/openclaw'), 'onboard', '--install-daemon'], ran)
         self.assertIn([str(local / 'bin/openclaw'), 'health'], ran)
         self.assertFalse(any('channels' in a for a in ran))  # the wizard already added the bot
         text = '\n'.join(said)
-        self.assertIn('Install OpenClaw 2026.10.5 now? (runs: npm install -g openclaw@2026.10.5 --prefix', text)
+        self.assertIn('Install OpenClaw 2026.10.7 now? (runs: npm install -g openclaw@2026.10.7 --prefix', text)
         self.assertIn('@BotFather', text)
         self.assertIn('Gateway: say yes to running it as a service', text)
 
@@ -469,10 +469,23 @@ class InstallerTest(unittest.TestCase):
 
 class WizardTest(unittest.TestCase):
     def test_node_versions_match_the_pinned_openclaw_engine_range(self):
-        for text, supported in [('22.13.0',False),('24.15.9',False),('24.16.0',True),
-                                ('25.8.0',False),('26.0.9',False),('26.1.0',True),('27.0.0',True)]:
+        for text, runs, installs in [('22.13.0',False,False),('24.15.9',False,False),('24.16.0',True,False),
+                                     ('24.22.0',True,False),('24.22.1',True,True),('25.8.0',False,False),
+                                     ('26.0.9',False,False),('26.1.0',True,False),('26.12.0',True,False),
+                                     ('26.12.1',True,True),('27.0.0',True,True)]:
             with self.subTest(version=text):
-                self.assertEqual(installer.supported_node(installer.version_tuple(text)), supported)
+                version = installer.version_tuple(text)
+                self.assertEqual(installer.supported_node(version), runs)
+                self.assertEqual(installer.supported_node(version, installer.OPENCLAW_NODE_FLOORS), installs)
+
+    def test_a_node_too_old_for_the_pinned_openclaw_is_not_offered_the_install(self):
+        said = []
+        ui = type('UI', (), {'say': lambda self, text: said.append(text), 'yes': lambda self, *a: self.fail('asked')})()
+        node = lambda args, **kwargs: subprocess.CompletedProcess(args, 0, 'v24.21.0\n', '')
+        with mock.patch.object(installer.shutil, 'which', side_effect=lambda name: '/usr/bin/' + name if name in ('node', 'npm') else None), \
+             mock.patch.object(installer, 'resolve_tool', side_effect=lambda binary: binary), mock.patch.object(installer, 'run', side_effect=node):
+            installer.offer_openclaw(ui)
+        self.assertIn('It needs Node.js >=24.22.1 <25 or >=26.12.1 with npm first', '\n'.join(said))
 
     def test_mise_shim_uses_the_installed_executable_and_package(self):
         with tempfile.TemporaryDirectory() as tmp:

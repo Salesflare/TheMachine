@@ -4,8 +4,8 @@ From installation to your first to-dos. Setup time depends on account sign-in, s
 
 ## Before you start
 
-- [ ] **OpenClaw** 2026.10.5 or later, with the Gateway running. Telegram is optional: with a bot, check that it answers you in Telegram; without one, to-dos reach you through the dashboard app (see Phone notifications below). No OpenClaw yet? Skip this one: the installer offers to install it and walks you through its setup (step 1).
-- [ ] **Node.js** 24.16+ (24.x) or 26.1+, and **Python 3.12+**.
+- [ ] **OpenClaw** 2026.10.7 or later, with the Gateway running. Telegram is optional: with a bot, check that it answers you in Telegram; without one, to-dos reach you through the dashboard app (see Phone notifications below). No OpenClaw yet? Skip this one: the installer offers to install it and walks you through its setup (step 1).
+- [ ] **Node.js** 24.22.1+ (24.x) or 26.12.1+, and **Python 3.12+**.
 - [ ] **Tailscale** on this machine and your phone, logged in (`sudo tailscale up`), for the dashboard.
 - [ ] Your own user account, not root. Linux: a systemd user session (a normal login; over SSH that works too). macOS: you are signed in to the desktop. Windows: see [Windows](#windows-beta).
 - [ ] Per source you want: `gog` for Gmail and Calendar, `wacli` for WhatsApp, the OpenClaw Android app paired as a node for phone notifications ([how](#pairing-your-android-phone)), a [Maton](https://maton.ai) Slack connection, a Salesflare API key, `gh` for GitHub. You can add any of them later.

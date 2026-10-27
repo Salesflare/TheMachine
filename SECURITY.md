@@ -4,7 +4,7 @@ The short version, for people deciding whether to install: [themachine.computer/
 
 ## Supported release
 
-Security fixes target the latest `main` revision and ship as signed releases: tags `release-YYYYMMDD-HHMM` signed with the key in `deploy/release-signers`. Update with `python3 scripts/release.py update`, which installs only a release whose signature checks out; hosted Machines check the same signature before every update. CI checks OpenClaw 2026.10.5 and a current release; future releases and older snapshots are not automatically certified by those tests.
+Security fixes target the latest `main` revision and ship as signed releases: tags `release-YYYYMMDD-HHMM` signed with the key in `deploy/release-signers`. Update with `python3 scripts/release.py update`, which installs only a release whose signature checks out; hosted Machines check the same signature before every update. CI checks OpenClaw 2026.10.7 and a current release; future releases and older snapshots are not automatically certified by those tests.
 This is an early release for one owner on a trusted machine, not a public multi-user service.
 
 ## Reporting a vulnerability

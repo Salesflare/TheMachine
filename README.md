@@ -77,8 +77,8 @@ The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.op
 
 - Your own user account, not root.
 - **Python 3.12+** (standard library only).
-- **Node.js 24.16+ within the 24.x series, or 26.1+** (`>=24.16.0 <25 || >=26.1.0`, matching OpenClaw's engine range). Node 22 and 25 are unsupported. The installer resolves mise/asdf shims and the installed npm package.
-- **OpenClaw 2026.10.5 or later**, with the Gateway running. Its Telegram channel (your bot) is optional: without it, to-dos reach you through the dashboard app. Without it, `./install.sh` in a terminal offers to install and set it up (below). CI tests 2026.10.5 and the latest release every week; see [Known limitations](#known-limitations).
+- **Node.js 24.22.1+ within the 24.x series, or 26.12.1+** (`>=24.22.1 <25 || >=26.12.1`, OpenClaw's engine range since 2026.10.6). With an older OpenClaw already set up, The Machine still runs on Node 24.16+ or 26.1+; update Node.js before you update OpenClaw. Node 22 and 25 are unsupported. The installer resolves mise/asdf shims and the installed npm package.
+- **OpenClaw 2026.10.7 or later**, with the Gateway running. Its Telegram channel (your bot) is optional: without it, to-dos reach you through the dashboard app. Without it, `./install.sh` in a terminal offers to install and set it up (below). CI tests 2026.10.7 and the latest release every week; see [Known limitations](#known-limitations).
 - Optional, per feature:
   - `gog` (Google Workspace CLI) for Gmail and Calendar (OAuth per account, file keyring on every OS, so the background service never waits on a Keychain prompt; `assistant connect gmail` signs you in).
   - Your own Microsoft Entra app registration for Outlook mail and calendar (`assistant connect outlook` signs you in with a device code).

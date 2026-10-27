@@ -4,7 +4,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "peerDependencies": {
-    "openclaw": "2026.10.5"
+    "openclaw": "2026.10.7"
   },
   "openclaw": {
     "extensions": [
@@ -15,8 +15,8 @@
       "minGatewayVersion": "2026.10.2"
     },
     "build": {
-      "openclawVersion": "2026.10.5",
-      "pluginSdkVersion": "2026.10.5"
+      "openclawVersion": "2026.10.7",
+      "pluginSdkVersion": "2026.10.7"
     }
   }
 }

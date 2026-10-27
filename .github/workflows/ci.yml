@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         # A pull request runs the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
-        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"python":"3.12","node":"24.16.0","openclaw":"2026.10.5"}]' || '[{"python":"3.12","node":"24.16.0","openclaw":"2026.10.5"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -91,13 +91,13 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '24.16.0'
+          node-version: '24.22.1'
       - name: Time zones for Python on Windows (Linux and macOS have them built in)
         if: runner.os == 'Windows'
         run: python -m pip install --quiet tzdata
       - name: Install OpenClaw and browser
         run: |
-          npm install --global openclaw@2026.10.5
+          npm install --global openclaw@2026.10.7
           npx --yes --package=playwright@1.63.0 playwright install chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
       - name: Install the pinned Node packages
