@@ -815,6 +815,8 @@ def mark(account, ui):
     without input, or a form that left it to a guess: ui.marks false)."""
     if getattr(ui, 'interactive', True) and getattr(ui, 'marks', True):
         account['boundary_by'] = 'owner'
+    else:
+        account['boundary_by'] = 'guess'  # shown as guessed until the owner picks; an account with neither just offers the choice
 
 
 def new_account(config, service, account_id=None, ui=None):
@@ -1752,7 +1754,7 @@ def connect_grant(config_path, provider, args):
             if account is None:
                 account = new_account(config, service, ui=AnswersUI({'part of your life': boundary, 'company': boundary, 'sign-in': email}))
                 account['boundary'] = boundary
-                account.pop('boundary_by', None)  # guessed from the address; Work or Personal stays the owner's to set
+                account['boundary_by'] = 'guess'  # guessed from the address; Work or Personal stays the owner's to set
             account = {**account, 'email': email, 'transport': 'broker'}
             account.pop('client', None)
             if service in ('calendar', 'outlook_calendar'):

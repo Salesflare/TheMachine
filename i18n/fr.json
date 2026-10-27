@@ -2325,5 +2325,28 @@
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Quand quelque chose casse, j’envoie ce qui a échoué et où dans le code. Jamais vos messages, noms ou adresses.",
  "I’ll send error reports.": "J’enverrai des rapports d’erreur.",
  "I won’t send error reports.": "Je n’enverrai pas de rapports d’erreur.",
- "Couldn’t load this page.": "Impossible de charger cette page."
+ "Couldn’t load this page.": "Impossible de charger cette page.",
+ "Running again. Its card shows how far it is.": "Relancé. Sa carte montre où il en est.",
+ "Taking longer than usual. Its card shows up here once it runs again.": "Cela prend plus de temps que d’habitude. Sa carte apparaît ici dès qu’il tourne à nouveau.",
+ "Open its card": "Ouvrir sa carte",
+ "Finding the accounts with recent emails and meetings…": "Recherche des comptes avec des e-mails et réunions récents…",
+ "Waiting for the first sync. It starts within a few minutes.": "En attente de la première synchro. Elle démarre d’ici quelques minutes.",
+ "Reading the last days again to fill a gap.": "Relit les derniers jours pour combler un trou.",
+ "First read: catching up on the last days.": "Première lecture : rattrape les derniers jours.",
+ "Caught up. Checks for new items every few minutes.": "À jour. Vérifie les nouveautés toutes les quelques minutes.",
+ "Read up to {}": "Lu jusqu’au {}",
+ "{} of {} conversations read at least once": "{} conversations sur {} lues au moins une fois",
+ "Synced": "Synchronisé",
+ "Synced, {} new or changed": "Synchronisé, {} nouveaux ou modifiés",
+ "Retry {}": "Nouvel essai {}",
+ "Last failure: {}, {}": "Dernier échec : {}, {}",
+ "No failed syncs in the last 24 hours.": "Aucune synchro échouée ces dernières 24 heures.",
+ "{} failed attempts in a row": {
+  "one": "{} tentative échouée d’affilée",
+  "other": "{} tentatives échouées d’affilée"
+ },
+ "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
+  "one": "{} synchro échouée ces dernières 24 heures. Les anciens échecs ne comptent pas pour une connexion rétablie.",
+  "other": "{} synchros échouées ces dernières 24 heures. Les anciens échecs ne comptent pas pour une connexion rétablie."
+ }
 }

@@ -330,6 +330,16 @@ if args[:2] == ["pairing", "list"]:
         self.assertEqual(unasked['boundary'], 'personal:whatsapp')
         self.assertNotIn('boundary_by', unasked)
 
+    def test_work_or_personal_nobody_answered_is_marked_a_guess(self):
+        # the dashboard says Guessed only for these; an account from before the mark just offers the choice
+        class Unasked(FakeUI):
+            marks = False
+        account = {}
+        onboarding.mark(account, Unasked())
+        self.assertEqual(account['boundary_by'], 'guess')
+        onboarding.mark(account, FakeUI())
+        self.assertEqual(account['boundary_by'], 'owner')
+
     def test_android_takes_the_only_paired_phone(self):
         nodes = {'pending': [], 'paired': [{'nodeId': 'linux-1', 'platform': 'linux'},
                                            {'nodeId': 'phone-1', 'platform': 'android', 'displayName': 'Pixel', 'connected': True}]}

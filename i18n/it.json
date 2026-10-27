@@ -2325,5 +2325,28 @@
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Quando qualcosa si rompe, invio cosa non ha funzionato e dove nel codice. Mai i tuoi messaggi, nomi o indirizzi.",
  "I’ll send error reports.": "Invierò segnalazioni di errore.",
  "I won’t send error reports.": "Non invierò segnalazioni di errore.",
- "Couldn’t load this page.": "Impossibile caricare questa pagina."
+ "Couldn’t load this page.": "Impossibile caricare questa pagina.",
+ "Running again. Its card shows how far it is.": "Di nuovo attivo. La sua scheda mostra a che punto è.",
+ "Taking longer than usual. Its card shows up here once it runs again.": "Ci vuole più del solito. La sua scheda compare qui appena torna attivo.",
+ "Open its card": "Apri la scheda",
+ "Finding the accounts with recent emails and meetings…": "Ricerca degli account con email e riunioni recenti…",
+ "Waiting for the first sync. It starts within a few minutes.": "In attesa della prima sincronizzazione. Parte entro pochi minuti.",
+ "Reading the last days again to fill a gap.": "Rilegge gli ultimi giorni per colmare un vuoto.",
+ "First read: catching up on the last days.": "Prima lettura: recupera gli ultimi giorni.",
+ "Caught up. Checks for new items every few minutes.": "In pari. Controlla le novità ogni pochi minuti.",
+ "Read up to {}": "Letto fino a {}",
+ "{} of {} conversations read at least once": "{} conversazioni su {} lette almeno una volta",
+ "Synced": "Sincronizzato",
+ "Synced, {} new or changed": "Sincronizzato, {} nuovi o modificati",
+ "Retry {}": "Nuovo tentativo {}",
+ "Last failure: {}, {}": "Ultimo errore: {}, {}",
+ "No failed syncs in the last 24 hours.": "Nessuna sincronizzazione fallita nelle ultime 24 ore.",
+ "{} failed attempts in a row": {
+  "one": "{} tentativo fallito di fila",
+  "other": "{} tentativi falliti di fila"
+ },
+ "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
+  "one": "{} sincronizzazione fallita nelle ultime 24 ore. I vecchi errori non contano per una connessione tornata attiva.",
+  "other": "{} sincronizzazioni fallite nelle ultime 24 ore. I vecchi errori non contano per una connessione tornata attiva."
+ }
 }

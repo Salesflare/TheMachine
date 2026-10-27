@@ -8,15 +8,15 @@ order: 1
 ---
 ## How they're doing
 
-The **Connections** tab groups your sources into **Mail and calendar**, **Chat** and **Other sources**. Each one says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. Open **Details** for **Recent syncs** and what to do.
+The **Connections** tab groups your sources into **Mail and calendar**, **Chat** and **Other sources**. Each one says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. Open **Details** for **Recent syncs**, where its sync is in plain words (like "Caught up" or "First read"), and what to do.
 
 ## Add one
 
-Open **+ Add** and pick a source. It asks what it needs, one question at a time. On a hosted Machine, Google and Microsoft link to your setup page. On your own computer, `assistant connect` does the same in a terminal.
+Open **+ Add** and pick a source. It asks what it needs, one question at a time. **Cancel** stops adding it. Once it is connected, your Machine restarts to start reading it, then opens the new card, which shows how its first sync goes. On a hosted Machine, Google and Microsoft link to your setup page. On your own computer, `assistant connect` does the same in a terminal.
 
 ## Work or personal
 
-Each source counts as work (for a company you name) or personal. Change it under **Details**. Work to-dos wait for your work days.
+Each source counts as work (for a company you name) or personal. Change it under **Details**. It says **Guessed** only when your Machine picked it from the address; once you pick, it's yours. Work to-dos wait for your work days.
 
 ## Remove one
 

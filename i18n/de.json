@@ -2325,5 +2325,28 @@
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Wenn etwas kaputtgeht, sende ich, was fehlschlug und wo im Code. Nie deine Nachrichten, Namen oder Adressen.",
  "I’ll send error reports.": "Ich sende Fehlerberichte.",
  "I won’t send error reports.": "Ich sende keine Fehlerberichte.",
- "Couldn’t load this page.": "Die Seite konnte nicht geladen werden."
+ "Couldn’t load this page.": "Die Seite konnte nicht geladen werden.",
+ "Running again. Its card shows how far it is.": "Läuft wieder. Die Karte zeigt, wie weit es ist.",
+ "Taking longer than usual. Its card shows up here once it runs again.": "Das dauert länger als sonst. Die Karte erscheint hier, sobald es wieder läuft.",
+ "Open its card": "Karte öffnen",
+ "Finding the accounts with recent emails and meetings…": "Accounts mit aktuellen E-Mails und Meetings werden gesucht…",
+ "Waiting for the first sync. It starts within a few minutes.": "Wartet auf die erste Synchronisierung. Sie startet in wenigen Minuten.",
+ "Reading the last days again to fill a gap.": "Liest die letzten Tage erneut, um eine Lücke zu füllen.",
+ "First read: catching up on the last days.": "Erstes Lesen: holt die letzten Tage nach.",
+ "Caught up. Checks for new items every few minutes.": "Auf dem neuesten Stand. Prüft alle paar Minuten auf Neues.",
+ "Read up to {}": "Gelesen bis {}",
+ "{} of {} conversations read at least once": "{} von {} Unterhaltungen mindestens einmal gelesen",
+ "Synced": "Synchronisiert",
+ "Synced, {} new or changed": "Synchronisiert, {} neu oder geändert",
+ "Retry {}": "Neuer Versuch {}",
+ "Last failure: {}, {}": "Letzter Fehler: {}, {}",
+ "No failed syncs in the last 24 hours.": "Keine fehlgeschlagenen Synchronisierungen in den letzten 24 Stunden.",
+ "{} failed attempts in a row": {
+  "one": "{} fehlgeschlagener Versuch in Folge",
+  "other": "{} fehlgeschlagene Versuche in Folge"
+ },
+ "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
+  "one": "{} fehlgeschlagene Synchronisierung in den letzten 24 Stunden. Alte Fehler zählen nicht für eine Verbindung, die wieder läuft.",
+  "other": "{} fehlgeschlagene Synchronisierungen in den letzten 24 Stunden. Alte Fehler zählen nicht für eine Verbindung, die wieder läuft."
+ }
 }

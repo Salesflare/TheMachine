@@ -2325,5 +2325,28 @@
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Cuando algo falla, envío qué falló y dónde en el código. Nunca tus mensajes, nombres ni direcciones.",
  "I’ll send error reports.": "Enviaré informes de errores.",
  "I won’t send error reports.": "No enviaré informes de errores.",
- "Couldn’t load this page.": "No se pudo cargar esta página."
+ "Couldn’t load this page.": "No se pudo cargar esta página.",
+ "Running again. Its card shows how far it is.": "Funcionando de nuevo. Su tarjeta muestra cuánto lleva.",
+ "Taking longer than usual. Its card shows up here once it runs again.": "Tarda más de lo normal. Su tarjeta aparece aquí en cuanto vuelva a funcionar.",
+ "Open its card": "Abrir su tarjeta",
+ "Finding the accounts with recent emails and meetings…": "Buscando las cuentas con correos y reuniones recientes…",
+ "Waiting for the first sync. It starts within a few minutes.": "Esperando la primera sincronización. Empieza en unos minutos.",
+ "Reading the last days again to fill a gap.": "Vuelve a leer los últimos días para cubrir un hueco.",
+ "First read: catching up on the last days.": "Primera lectura: se pone al día con los últimos días.",
+ "Caught up. Checks for new items every few minutes.": "Al día. Busca novedades cada pocos minutos.",
+ "Read up to {}": "Leído hasta {}",
+ "{} of {} conversations read at least once": "{} de {} conversaciones leídas al menos una vez",
+ "Synced": "Sincronizado",
+ "Synced, {} new or changed": "Sincronizado, {} nuevos o cambiados",
+ "Retry {}": "Reintento {}",
+ "Last failure: {}, {}": "Último fallo: {}, {}",
+ "No failed syncs in the last 24 hours.": "Ninguna sincronización fallida en las últimas 24 horas.",
+ "{} failed attempts in a row": {
+  "one": "{} intento fallido seguido",
+  "other": "{} intentos fallidos seguidos"
+ },
+ "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
+  "one": "{} sincronización fallida en las últimas 24 horas. Los fallos antiguos no afectan a una conexión que se recuperó.",
+  "other": "{} sincronizaciones fallidas en las últimas 24 horas. Los fallos antiguos no afectan a una conexión que se recuperó."
+ }
 }

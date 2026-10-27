@@ -2325,5 +2325,28 @@
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Als er iets misgaat, stuur ik wat er misging en waar in de code. Nooit je berichten, namen of adressen.",
  "I’ll send error reports.": "Ik stuur foutrapporten.",
  "I won’t send error reports.": "Ik stuur geen foutrapporten.",
- "Couldn’t load this page.": "Deze pagina kon niet laden."
+ "Couldn’t load this page.": "Deze pagina kon niet laden.",
+ "Running again. Its card shows how far it is.": "Draait weer. De kaart toont hoe ver het is.",
+ "Taking longer than usual. Its card shows up here once it runs again.": "Dit duurt langer dan normaal. De kaart verschijnt hier zodra het weer draait.",
+ "Open its card": "Kaart openen",
+ "Finding the accounts with recent emails and meetings…": "Accounts met recente e-mails en meetings zoeken…",
+ "Waiting for the first sync. It starts within a few minutes.": "Wacht op de eerste sync. Die start binnen enkele minuten.",
+ "Reading the last days again to fill a gap.": "Leest de laatste dagen opnieuw om een gat te vullen.",
+ "First read: catching up on the last days.": "Eerste keer lezen: haalt de laatste dagen in.",
+ "Caught up. Checks for new items every few minutes.": "Bij. Kijkt om de paar minuten of er iets nieuws is.",
+ "Read up to {}": "Gelezen tot {}",
+ "{} of {} conversations read at least once": "{} van {} gesprekken minstens één keer gelezen",
+ "Synced": "Gesynct",
+ "Synced, {} new or changed": "Gesynct, {} nieuw of gewijzigd",
+ "Retry {}": "Opnieuw {}",
+ "Last failure: {}, {}": "Laatste fout: {}, {}",
+ "No failed syncs in the last 24 hours.": "Geen mislukte syncs in de laatste 24 uur.",
+ "{} failed attempts in a row": {
+  "one": "{} mislukte poging na elkaar",
+  "other": "{} mislukte pogingen na elkaar"
+ },
+ "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
+  "one": "{} mislukte sync in de laatste 24 uur. Oude fouten tellen niet voor een koppeling die weer werkt.",
+  "other": "{} mislukte syncs in de laatste 24 uur. Oude fouten tellen niet voor een koppeling die weer werkt."
+ }
 }
