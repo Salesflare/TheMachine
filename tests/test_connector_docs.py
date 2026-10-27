@@ -259,6 +259,15 @@ class Microsoft(unittest.TestCase):
         self.assertEqual(docs.link_token("https://graph.microsoft.com/v1.0/me/drive/root/delta(token='abc')"), 'abc')
         self.assertEqual(docs.link_token('https://graph.microsoft.com/v1.0/me/drive/root/delta?token=xyz&$top=5'), 'xyz')
 
+    def test_a_word_file_with_a_dtd_or_entities_is_refused(self):
+        bomb = io.BytesIO()
+        with zipfile.ZipFile(bomb, 'w') as z:
+            z.writestr('word/document.xml', '<?xml version="1.0"?><!DOCTYPE d [<!ENTITY a "aaaaaaaa"><!ENTITY b "&a;&a;&a;&a;">]>'
+                       '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>&b;</w:t></w:r></w:p></w:body></w:document>')
+        self.assertEqual(docs.word_text(bomb.getvalue()), '')
+        with self.assertRaises(docs.ElementTree.ParseError):
+            docs.parse_xml(b'<!DOCTYPE x SYSTEM "file:///etc/passwd"><x/>')
+
     def test_downloads_only_from_microsofts_file_hosts(self):
         source = docs.Microsoft(self.config, ACCOUNT, helpers_for())
         for link in ('https://evil.example/f', 'http://acme-my.sharepoint.com/f', 'https://sharepoint.com.evil.example/f'):

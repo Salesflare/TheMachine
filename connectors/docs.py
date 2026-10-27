@@ -27,6 +27,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 from xml.etree import ElementTree
+from xml.parsers import expat
 
 KINDS = {'docs.comment': 'Doc comment', 'docs.mention': 'Doc mention', 'docs.suggestion': 'Suggested edit',
          'docs.shared': 'Shared doc'}
@@ -208,6 +209,11 @@ class Microsoft:
     def item(self, drive, item_id):
         return self.call('drives.item', {'drive': drive, 'id': item_id})
 
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        """A download link that redirects is refused: it could point away from Microsoft's hosts."""
+        def redirect_request(self, *args, **kwargs):
+            return None
+
     def download(self, item):
         """A file's bytes from its pre-signed download link (Microsoft's own file hosts only, no token sent along)."""
         link = str(item.get('@microsoft.graph.downloadUrl') or '')
@@ -217,7 +223,7 @@ class Microsoft:
         if int(item.get('size') or 0) > MAX_DOWNLOAD:
             raise self.helpers.SourceError('docs_file_too_large')
         try:
-            with urllib.request.urlopen(urllib.request.Request(link, method='GET'), timeout=60) as response:
+            with urllib.request.build_opener(self._NoRedirect).open(urllib.request.Request(link, method='GET'), timeout=60) as response:
                 data = response.read(MAX_DOWNLOAD + 1)
         except urllib.error.HTTPError as error:
             error.close()
@@ -312,6 +318,27 @@ def doc_suggestions(doc):
     return {k: v[:300] for k, v in found.items()}
 
 
+def parse_xml(raw):
+    """ElementTree from bytes, refusing any DTD (so no entity expansion or external entities), as defusedxml does.
+    A .docx comes from whoever shared it: untrusted. Same parser as connectors/rss.py."""
+    builder = ElementTree.TreeBuilder()
+    parser = expat.ParserCreate(namespace_separator='}')
+    name = lambda tag: '{' + tag if '}' in tag else tag  # expat's 'ns}tag' as ElementTree's '{ns}tag'
+
+    def refuse(*_):
+        raise ElementTree.ParseError('XML with a DTD or entities is refused')
+    parser.StartDoctypeDeclHandler = parser.EntityDeclHandler = parser.ExternalEntityRefHandler = refuse
+    parser.StartElementHandler = lambda tag, attrs: builder.start(name(tag), {name(k): v for k, v in attrs.items()})
+    parser.EndElementHandler = lambda tag: builder.end(name(tag))
+    parser.CharacterDataHandler = builder.data
+    parser.buffer_text = True
+    try:
+        parser.Parse(raw, True)
+    except expat.ExpatError as error:
+        raise ElementTree.ParseError(str(error)) from None
+    return builder.close()
+
+
 def _xml(data, name):
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as package:
@@ -320,7 +347,7 @@ def _xml(data, name):
             info = package.getinfo(name)
             if info.file_size > 50_000_000:
                 return None
-            return ElementTree.fromstring(package.read(name))
+            return parse_xml(package.read(name))
     except (zipfile.BadZipFile, ElementTree.ParseError, KeyError, OSError, ValueError):
         return None
 
