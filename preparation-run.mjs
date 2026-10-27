@@ -60,7 +60,10 @@ function failure(result,status){
   else if(/timeout|timed out/i.test(text)){error='runtime_timeout';}
   else if(/abort|cancel/i.test(text)){error='runtime_aborted';}
   if(['queue','provider','model','tool','gateway_draining'].includes(result?.timeoutPhase))phase=result.timeoutPhase;
-  return {error,error_phase:phase};
+  // A CLI runtime (Claude Code) fails a turn whose final answer is only NO_REPLY this way, after its tool calls ran.
+  // Background turns end exactly so: the service judges from what the turn saved (assistant.py review_step).
+  const silentEnd=status==='error'&&/^CLI backend returned an empty response\.?$/.test(String(result?.error??'').trim());
+  return {error,error_phase:phase,...(silentEnd?{silent_end:true}:{})};
 }
 try {
   let result;

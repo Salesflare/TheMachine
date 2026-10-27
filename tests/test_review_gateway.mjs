@@ -47,6 +47,11 @@ for(const [response,error,phase] of [
   assert.equal(r.result.error,error);assert.equal(r.result.error_phase,phase);
   assert.ok(!JSON.stringify(r.result).includes('private'));assert.ok(!JSON.stringify(r.result).includes('abc'));
 }
+// Claude Code's runtime fails a NO_REPLY-only final as an empty response: marked, so the service can judge by what was saved
+r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:'CLI backend returned an empty response.'}]);
+assert.deepEqual(r.result,{run_id:id,status:'error',error:'runtime_error',error_phase:'runtime',silent_end:true});
+r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:'CLI backend returned an empty response. private'}]);
+assert.equal(r.result.silent_end,undefined);
 // A sign-in's usage limit is its own category, with only the reset time kept (2026-10-25: retried every few minutes).
 {
   const t0=Math.round(Date.now()/1000);

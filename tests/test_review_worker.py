@@ -155,6 +155,24 @@ class ReviewWorker(unittest.TestCase):
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT status FROM analyses').fetchone()[0],'complete')
         self.assertEqual(self.store.events(['work'],pending=True),[])
 
+    def test_silent_end_on_a_cli_runtime_is_a_finished_review_once_its_batch_saved(self):
+        # Claude Code (claude-cli) fails the review's exact NO_REPLY ending as an empty response, after the work
+        # (a new Machine on a Claude plan, 2026-10-27): with its batch saved the run is ok, without it still an error.
+        silent={'status':'error','error':'runtime_error','error_phase':'runtime','silent_end':True}
+        self.step(Runner('admitted'),T)
+        run=self.runs()[0]['run_id'];session=a.REVIEW_SESSION_PREFIX+run
+        claim=self.store.begin_analysis(['work'],120,session,run)
+        self.store.finish_analysis(claim['analysis_id'],'Checked',session,run)
+        self.assertEqual(self.step(lambda request:silent,T+dt.timedelta(minutes=2)),'ok')
+        row=self.runs()[0]
+        self.assertEqual((row['status'],row['error'],row['error_phase'],row['last_error']),('ok',None,None,None))
+        with self.store.connect() as db:self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0],0)
+        self.store.commit_page('work',{},[{'account_id':'work','source_id':'two','kind':'gmail.message','occurred_at':a.now(),'title':'More','body':'Text','metadata':{},'deleted':False}])
+        self.step(Runner('admitted'),T+dt.timedelta(minutes=10))
+        run=self.runs()[1]['run_id'];self.store.begin_analysis(['work'],120,a.REVIEW_SESSION_PREFIX+run,run)  # claimed, never finished
+        self.assertEqual(self.step(lambda request:silent,T+dt.timedelta(minutes=12)),'error')
+        self.assertEqual((self.runs()[1]['status'],self.runs()[1]['error']),('error','runtime_error'))
+
     def test_failure_history_reports_unfinished_claim_without_raw_errors(self):
         self.step(Runner('admitted'),T)
         run=self.runs()[0]['run_id'];session=a.REVIEW_SESSION_PREFIX+run

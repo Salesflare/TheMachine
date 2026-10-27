@@ -16407,9 +16407,15 @@ class App:
                 db.execute("UPDATE review_runs SET status='running',updated_at=?,error=NULL,error_phase=NULL,retry_at=NULL,unavailable_since=NULL WHERE run_id=?", (now(), run['run_id']))
             elif result in REVIEW_TERMINAL:
                 getattr(self, 'model_usage_wake', threading.Event()).set()  # read the limits again after a run
+                # A review ends with exactly NO_REPLY. On a CLI runtime (Claude Code) OpenClaw fails that silent ending
+                # as an empty response, after the work: a run whose batch finish_analysis saved is a finished review.
+                if result == 'error' and receipt.get('silent_end') and db.execute(
+                        "SELECT 1 FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete' LIMIT 1",
+                        (run['run_id'], REVIEW_SESSION_PREFIX + run['run_id'])).fetchone():
+                    result = 'ok'
                 fallback = {'error':'runtime_error','timed_out':'runtime_timeout','aborted':'runtime_aborted','lost':'runtime_lost'}
                 error = (receipt.get('error') if receipt.get('error') in REVIEW_FAILURES else fallback.get(result)) if result!='ok' else None
-                phase = receipt.get('error_phase') if receipt.get('error_phase') in REVIEW_FAILURE_PHASES else 'runtime' if error else None
+                phase = (receipt.get('error_phase') if receipt.get('error_phase') in REVIEW_FAILURE_PHASES else 'runtime') if error else None
                 db.execute('UPDATE review_runs SET status=?,error=?,error_phase=?,last_error=coalesce(?,last_error),last_error_phase=coalesce(?,last_error_phase),error_at=CASE WHEN ? IS NOT NULL THEN ? ELSE error_at END,finished_at=?,updated_at=?,retry_at=NULL,unavailable_since=NULL WHERE run_id=?',
                            (result,error,phase,error,phase,error,now(),now(),now(),run['run_id']))
                 # Terminal runtime proof makes its unfinished claim immediately
