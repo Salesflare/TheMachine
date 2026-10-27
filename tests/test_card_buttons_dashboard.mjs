@@ -17,7 +17,9 @@ const cards=[{id:'p1',title:'Reply to Sam about pricing',body:'Sam asked for pri
  {id:'v1',title:'Come by the paint shop this afternoon for the order',body:'Promised Sam on Fri 23 Oct. Nothing shows it done yet.',status:'pending',scope:'personal',owner_step:1,due:now.slice(0,10),created_at:now,event_ids:[4]},
  {id:'v2',title:'Come by the paint shop this afternoon',body:'Added a calendar slot at 15:00.',status:'prepared',scope:'personal',owner_step:1,created_at:now,preparation_status:'done',event_ids:[5],
   outcome:JSON.stringify({state:'needs_you',needs:'go to the shop this afternoon'}),next_actions:[{kind:'open',revision:'o1',label:'Open in Maps',url:'https://www.google.com/maps/search/?api=1&query=paint+shop'}]}];
-const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]}});
+const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
+ // en-BE: English date words in the day-month order (a source date is shown in the region's order)
+ locale:{locale:'en-BE',region:'BE',language:'en',language_set:true,clock:'auto',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}

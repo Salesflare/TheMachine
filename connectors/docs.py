@@ -36,7 +36,7 @@ SETUP = {
     'account': {'id': 'docs', 'service': 'docs', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 900},
     # Word files only for now, hosted and self-hosted alike: Google Docs come through the token broker, which doesn't
     # offer their consent yet (docs/help/docs.md)
-    'what': 'Comments, mentions, tracked changes and shares on Word files in OneDrive and SharePoint. Google Docs come later.',
+    'what': 'Comments and shares on Word files in OneDrive and SharePoint.',
     'note': 'Uses the Microsoft sign-in this Machine already has for that address. Reading files needs its own consent: '
             'press Connect documents on your setup page, or Sign in with Microsoft here.',
     'ask': [('email', 'The Microsoft address that owns the files')],
