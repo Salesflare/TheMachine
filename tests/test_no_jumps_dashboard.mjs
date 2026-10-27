@@ -14,7 +14,7 @@ const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf
 const iso=d=>new Date(d).toISOString(),ago=m=>iso(Date.now()-m*60000),hex=(p,n)=>p+n.toString(16).padStart(15,'0');
 let tick=0;  // each refresh brings something new
 const long='A longer card text, so the list is taller than the screen. '.repeat(4);
-const job={id:'aj_0000000000000001',name:'Codex',tool:'codex',status:'result',app:'Open in Codex',url:'codex://threads/example',summary:'The change is in place across the pages, with the wording kept.',
+const job={id:'aj_0000000000000001',name:'Codex',tool:'codex',status:'result',app:'Open in Codex',app_name:'Codex',url:'codex://threads/example',summary:'The change is in place across the pages, with the wording kept.',
  files:[{path:'build.log',size:72214},{path:'notes.md',size:812}],has_diff:true,links:[],turns:1,can_follow_up:true,place:'local',created_at:ago(90),started_at:ago(80),finished_at:ago(60),updated_at:ago(60)};
 const card=(n,extra={})=>({id:hex('a',n),title:'Card number '+n,body:'Card '+n+'. '+long,status:n%3?'prepared':'pending',scope:'work',created_at:ago(n*30),event_ids:[n+1],...extra});
 const cards=()=>[...Array.from({length:tick},(_,i)=>card(900+i,{title:'Fresh card '+i,due:'2000-01-0'+(i+1)})),

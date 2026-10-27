@@ -5956,7 +5956,12 @@ const agentCancel=j=>`<div class="actions"><button class="ghost" data-agent-canc
 // A Codex thread opens on this computer: from the owner's other devices through the Codex app's remote connection (hostId).
 const onMachine=()=>['localhost','127.0.0.1','[::1]','::1'].includes(location.hostname);
 const agentHref=j=>j.url_elsewhere&&/^codex:\/\/threads\/[0-9a-f-]{36}\?hostId=/.test(j.url_elsewhere)&&!onMachine()?j.url_elsewhere:j.url;
-const agentLink=j=>j.url&&/^(https:\/\/|codex:\/\/threads\/)/.test(j.url)?`<a class="agent-app" href="${esc(agentHref(j))}" target="_blank" rel="noreferrer" aria-label="${esc(j.app||'Open')}"><span class="agent-app-long">${esc(j.app||'Open')}</span><span class="agent-app-short">Open</span> ↗</a>`:'';
+// Its label is built in the owner's language here (translate="no": the page doesn't read it again). While The Machine's
+// own Codex runs the turn the Codex app can't open the thread yet (it says it can't find it): the link says so instead.
+const agentApp=j=>j.app_name?t('Open in {}',j.app_name):t('Open');
+const AGENT_LATER='Codex is still on it here. It opens in the Codex app when it’s done.';
+const agentLink=j=>j.url&&/^(https:\/\/|codex:\/\/threads\/)/.test(j.url)?`<a class="agent-app" href="${esc(agentHref(j))}" target="_blank" rel="noreferrer" translate="no" aria-label="${esc(agentApp(j))}"${j.opens_later?` data-later title="${esc(t(AGENT_LATER))}"`:''}><span class="agent-app-long">${esc(agentApp(j))}</span><span class="agent-app-short">${esc(t('Open'))}</span> ↗</a>`:'';
+document.addEventListener('click',e=>{if(e.target.closest?.('a.agent-app[data-later]')){e.preventDefault();toast(t(AGENT_LATER))}});
 // A result's header keeps one row: when "Open in Codex" no longer fits next to the tool's name it reads "Open" (the
 // name is already on the left). Measured per header as its width changes, not at a fixed screen width.
 // A wider header tries the long label again; any other change (a late font, new text) only ever shortens it, so it can't flip back and forth.
@@ -5994,7 +5999,7 @@ function agentBlock(s){const j=s.agent_job;if(!j||['set_aside','again'].includes
  if(j.status==='waiting')return`<div class="agent-job"><p class="note">${esc(t('Sent. Waiting for {}.',j.device||t('your computer')))} ${agentLink(j)}</p>${agentCancel(j)}</div>`;
  if(j.status==='running')return`<div class="agent-job"><p class="note">${t(cloud?'{} is working on it in Codex cloud':'{} is working on it',who)} · <span class="elapsed" data-since="${esc(since)}">${elapsed(since)}</span> ${agentLink(j)}</p>${j.progress?`<p class="muted agent-progress">${esc(j.progress)}</p>`:''}${agentCancel(j)}</div>`;
  if(j.status==='failed'&&j.error_kind==='busy')return`<div class="agent-job"><p class="note">${esc(j.error)} ${agentLink(j)}</p>${closed(s)?'':agentTools2(s,j,true)}</div>`;
- if(j.status==='failed')return`<div class="agent-job"><p class="note failed">${t('{} stopped: {}',who,esc(j.error||t('it did not finish')))} ${agentLink(j)}</p>${closed(s)?'':agentTools2(s,j,true)}</div>`;
+ if(j.status==='failed')return`<div class="agent-job"><p class="note failed">${t('{} stopped: {}',who,`<span class="agent-error">${esc(j.error||t('it did not finish'))}</span>`)} ${agentLink(j)}</p>${closed(s)?'':agentTools2(s,j,true)}</div>`;
  if(j.status==='cancelled')return closed(s)?'':`<div class="agent-job"><p class="note">${t('{}: canceled.',who)}</p></div>`;
  const line=agentLine(j.summary),rest=String(j.summary||'').trim().length>line.length+2;
  const files=(j.files||[]).filter(f=>!(j.draft_updated&&f.path==='draft.md'));
@@ -8089,7 +8094,7 @@ actionAdd(
  {id:'card-handoff',group:'This to-do',label:'Hand off…',keywords:'teammate fleet delegate',review:true,when:c=>!!c.id&&!!document.querySelector(`#suggestions [data-fleet-handoff="${CSS.escape(c.id)}"]`),run:c=>document.querySelector(`#suggestions [data-fleet-handoff="${CSS.escape(c.id)}"]`).click()},
  // Hand to Codex / Claude Code: opens the brief sheet to read and edit; only its own Send there hands it over.
  {id:'card-agent',group:'This to-do',review:true,each:c=>c.card&&canAgent(c.card)?agentTools().map(t=>({id:'card-agent-'+t.id,label:'Hand to '+t.name+'…',keywords:'agent codex claude code',review:true,run:()=>agentHand(c.id,t.id)})):[]},
- {id:'card-agent-open',group:'This to-do',each:c=>{const j=c.card?.agent_job;return j?.url&&/^(https:\/\/|codex:\/\/threads\/)/.test(j.url)?[{id:'card-agent-open',label:j.app||'Open '+j.name,keywords:'codex claude open thread',run:()=>window.open(agentHref(j),'_blank','noopener,noreferrer')}]:[]}},
+ {id:'card-agent-open',group:'This to-do',each:c=>{const j=c.card?.agent_job;return j?.url&&/^(https:\/\/|codex:\/\/threads\/)/.test(j.url)?[{id:'card-agent-open',label:agentApp(j),keywords:'codex claude open thread',run:()=>j.opens_later?toast(t(AGENT_LATER)):window.open(agentHref(j),'_blank','noopener,noreferrer')}]:[]}},
  // Sends: only the Send dialog with the draft to read, its recipients and its own Send now.
  {id:'card-review-send',group:'This to-do',review:true,each:c=>c.card?.status==='prepared'?taskActions(c.card).filter(a=>SEND_KINDS.includes(a.kind)&&!a.state?.status).map(a=>({id:'card-review-'+a.kind,label:'Review '+(SEND_WORD[a.kind]||'the draft')+'…',keywords:'send draft review',review:true,run:()=>openSend(c.id,a.revision)})):[]});
 

@@ -24,6 +24,8 @@ folder, readable only by the owner's account. Config (`agents` in config.json, a
     {"claude": {"command": "claude", "place": "local", "config_dir": "~/.claude-other", "session": "<session id>", "device": "Laptop"},
      "codex": {"command": "codex", "place": "local", "env": "<Codex cloud environment id>"},
      "max_parallel": 2, "timeout_minutes": 30}
+`timeout_minutes`: how long a job may go on. A Codex turn in the app server is only stopped when Codex has done nothing
+for that long (a turn that keeps working runs on, up to RUN_MAX in all, over restarts of The Machine too).
 `config_dir` points the jobs' Claude Code at another config folder (CLAUDE_CONFIG_DIR, another account) and only them.
 `"agents": false` turns the card actions off. Without config, a CLI found on PATH (or in ~/.local/bin) shows its action.
 """
@@ -63,6 +65,8 @@ DIFF_MAX = 200_000
 FILES_MAX = 50
 TRANSCRIPT_MAX = 20 * 1024 * 1024
 DRAFT_FILE = 'draft.md'
+RUN_MAX = 6 * 3600  # the longest one turn may run in all, however busy it keeps
+QUEUED_FILE = 'queued.json'  # a follow-up the Codex app runs (it has the thread open): what this job follows there
 URL = re.compile(r'https?://[^\s<>()"\'`\]]+')
 SCHEMA = '''CREATE TABLE IF NOT EXISTS agent_jobs(id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,tool TEXT NOT NULL,place TEXT NOT NULL,
   status TEXT NOT NULL,brief TEXT NOT NULL,asks TEXT,session_id TEXT,url TEXT,progress TEXT,summary TEXT,diff TEXT,files TEXT,
@@ -792,7 +796,7 @@ def read_server(folder):
     return found
 
 
-def start_detached(server, job, work, folder, err, timeout):
+def start_detached(server, job, work, folder, err, timeout=RUN_MAX):
     """The app server in a systemd user unit of its own (systemd-run --user), outside The Machine's service, so a
     restart of The Machine (an update) doesn't stop the job: recover() connects to it again. The unit gets the
     service's own hardening and environment (names on the command line, values from systemd-run's own environment),
@@ -809,7 +813,7 @@ def start_detached(server, job, work, folder, err, timeout):
     os.chmod(out_path, 0o600)
     env = {**os.environ, 'NO_COLOR': '1'}
     argv = ['systemd-run', '--user', '--quiet', '--collect', f'--unit={unit}', f'--working-directory={work}',
-            f'--property=RuntimeMaxSec={int(timeout) + 120}', '--property=KillMode=control-group',
+            f'--property=RuntimeMaxSec={int(max(timeout, RUN_MAX)) + 120}', '--property=KillMode=control-group',
             f'--property=StandardOutput=append:{out_path}', f'--property=StandardError=append:{err}',
             *[f'--property={k}={v}' for k, v in sorted(props.items())],
             *[f'--setenv={k}' for k in sorted(env) if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', k) and not UNIT_ENV.fullmatch(k)],
@@ -845,6 +849,53 @@ def start_detached(server, job, work, folder, err, timeout):
     return None
 
 
+def epoch(value):
+    """An ISO time (a job's started_at) as seconds since the epoch, None when there is none."""
+    try:
+        return dt.datetime.fromisoformat(str(value)).timestamp() if value else None
+    except ValueError:
+        return None
+
+
+def minutes_text(seconds):
+    n = max(1, round(seconds / 60))
+    return 'a minute' if n == 1 else f'{n} minutes'
+
+
+class Watchdog:
+    """Stops a Codex turn that has done nothing for `idle` seconds, or that has run RUN_MAX in all since `started`
+    (epoch seconds, from the job's started_at, so a restart of The Machine doesn't reset it). Any message from Codex
+    counts as doing something (state['active']), so a turn that keeps working is never stopped for taking long.
+    `stop(kind)` ('idle' or 'cap') ends it."""
+    TICK = 5.0
+
+    def __init__(self, state, idle, started, stop):
+        self.state, self.idle, self.stop = state, max(1.0, float(idle)), stop
+        self.until = (started or time.time()) + max(RUN_MAX, self.idle)
+        self.done = threading.Event()
+        state['active'] = time.monotonic()
+        threading.Thread(target=self.watch, daemon=True, name='agent-watch').start()
+
+    def watch(self):
+        while not self.done.wait(min(self.TICK, self.idle)):
+            if time.time() >= self.until:
+                return self.stop('cap')
+            if time.monotonic() - self.state.get('active', 0) >= self.idle:
+                return self.stop('idle')
+
+    def cancel(self):
+        self.done.set()
+
+
+def same_text(item, digest):
+    """Whether a thread item is the owner's message with this text (its sha256)."""
+    if not isinstance(item, dict) or item.get('type') != 'userMessage':
+        return False
+    parts = item.get('content') if isinstance(item.get('content'), list) else [item]
+    text = ''.join(str(p.get('text') or '') for p in parts if isinstance(p, dict))
+    return hashlib.sha256(text.strip().encode()).hexdigest() == digest
+
+
 class AppServerCodex:
     """A turn through `codex app-server` (Codex's documented app-server protocol): the thread is an ordinary Codex
     thread named after the card, so it shows up in the Codex app next to the owner's own threads (and, with the app's
@@ -862,10 +913,13 @@ class AppServerCodex:
         self.server = server or command
         self.detach = detach
 
+    POLL = 2.0  # how often a turn the Codex app runs (a queued follow-up) is read again
+
     def run(self, job, prompt, resume, folder, transcript, timeout, on_progress, on_session, procs):
+        """`timeout`: how long the turn may go without doing anything (Watchdog)."""
         live = None
         if self.detach and job.get('id'):
-            live = start_detached(self.server, job, folder, Path(transcript).parent, str(transcript) + '.err', timeout)
+            live = start_detached(self.server, job, folder, Path(transcript).parent, str(transcript) + '.err')
         if live:
             return self.attached(job, live, transcript, timeout, procs,
                                  lambda chan, flags, log, state: self.talk(chan, flags, log, state, job, prompt, resume, folder, on_progress,
@@ -874,14 +928,12 @@ class AppServerCodex:
             proc = subprocess.Popen([self.server, 'app-server', '--listen', 'stdio://'], cwd=folder, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=err, start_new_session=True, env={**os.environ, 'NO_COLOR': '1'})
             procs[job['id']] = proc
-            timer = threading.Timer(timeout, lambda: (setattr(proc, 'timed_out', True), kill(proc)))
-            timer.daemon = True
-            timer.start()
             state = {'size': 0, 'n': 0, 'summary': '', 'error': '', 'status': None}
+            dog = Watchdog(state, timeout, epoch(job.get('started_at')), lambda kind: (setattr(proc, 'timed_out', kind), kill(proc)))
             try:
                 return self.talk(StdioLines(proc), proc, log, state, job, prompt, resume, folder, on_progress, on_session, timeout)
             finally:
-                timer.cancel()
+                dog.cancel()
                 procs.pop(job['id'], None)
                 kill(proc)
                 for pipe in (proc.stdin, proc.stdout):
@@ -902,15 +954,13 @@ class AppServerCodex:
             raise Stopped('failed', 'I could not reach the Codex app server I started') from None
         flags = Handle(lambda: (stop_unit(live['unit']), chan.close()))
         procs[job['id']] = flags
-        timer = threading.Timer(timeout, lambda: (setattr(flags, 'timed_out', True), stop_proc(flags)))
-        timer.daemon = True
-        timer.start()
         state = {'size': 0, 'n': 0, 'summary': '', 'error': '', 'status': None}
+        dog = Watchdog(state, timeout, epoch(job.get('started_at')), lambda kind: (setattr(flags, 'timed_out', kind), stop_proc(flags)))
         try:
             with open(transcript, 'ab') as log:
                 return work(chan, flags, log, state)
         finally:
-            timer.cancel()
+            dog.cancel()
             procs.pop(job['id'], None)
             chan.close()
             stop_unit(live['unit'])
@@ -935,6 +985,8 @@ class AppServerCodex:
                 found = json.loads(raw)
             except ValueError:
                 return {}
+            if isinstance(found, dict) and found.get('method'):
+                state['active'] = time.monotonic()  # Codex is doing something (Watchdog)
             return found if isinstance(found, dict) else {}
 
         def call(method, params):
@@ -954,8 +1006,12 @@ class AppServerCodex:
         def stopped():
             if getattr(flags, 'cancelled', False):
                 return Stopped('cancelled', 'Canceled')
-            if getattr(flags, 'timed_out', False):
-                return Stopped('timeout', f'It ran longer than its {round(timeout / 60)}-minute limit, so it was stopped')
+            kind = getattr(flags, 'timed_out', False)
+            if kind == 'cap':
+                return Stopped('timeout', f'It ran longer than its {max(1, round(RUN_MAX / 3600))}-hour limit, so it was stopped')
+            if kind:
+                # The limit as set, never what was left of it after a restart.
+                return Stopped('timeout', f'{name} did nothing for {minutes_text(timeout)}, so it was stopped')
             return None
 
         def until_done():
@@ -975,8 +1031,74 @@ class AppServerCodex:
                           state['error'] or ('It was interrupted' if state['status'] == 'interrupted' else 'Codex ended the turn without finishing it'))
         return thread_id, state['summary']
 
+    @staticmethod
+    def turns(call, thread_id):
+        """The thread's latest turns, newest first, as its rollout has them (thread/turns/list reads them without
+        holding the thread, so also while the Codex app has it open). None when this Codex can't list them."""
+        try:
+            found = call('thread/turns/list', {'threadId': thread_id, 'limit': 5, 'itemsView': 'full'})
+        except ValueError:
+            return None
+        return [t for t in found.get('data') or [] if isinstance(t, dict)]
+
+    def enqueue(self, call, thread_id, prompt, work, job_folder):
+        """The thread is open in the Codex app, which holds it while it is: the message goes into the app's own queue
+        for it (`codex queue`), so the app runs it next in the same conversation, where the owner sees it live. What
+        this job then follows there goes to QUEUED_FILE (no text: only its hash), so a restart of The Machine finds it
+        again. False when this Codex has no queue (or can't list turns): the follow-up then goes on in a copy."""
+        turns = self.turns(call, thread_id)
+        if turns is None:
+            return False
+        try:
+            done = subprocess.run([self.server, 'queue', '--thread', thread_id, '--message', prompt], cwd=work, capture_output=True,
+                                  text=True, timeout=60, stdin=subprocess.DEVNULL, env={**os.environ, 'NO_COLOR': '1'})
+        except (OSError, subprocess.SubprocessError):
+            return False
+        if done.returncode != 0:
+            LOG.info('agent job queue exit=%s', done.returncode)
+            return False
+        queued = {'thread': thread_id, 'after': str((turns[0] if turns else {}).get('id') or ''),
+                  'text': hashlib.sha256(prompt.strip().encode()).hexdigest()}
+        path = Path(job_folder) / QUEUED_FILE
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'w') as f:
+            json.dump(queued, f)
+        return queued
+
+    def in_app(self, call, state, stopped, thread_id, queued, on_progress):
+        """Follow the turn the Codex app runs for this job until it ends: read its turns every POLL seconds. A turn
+        another process runs reads as `interrupted` until it ends, so only completedAt says it did. New items count as
+        Codex doing something (Watchdog) and show as progress, as they do from a turn of its own."""
+        after, digest, seen = (queued or {}).get('after') or '', (queued or {}).get('text'), -1
+        while True:
+            if stopped():
+                raise stopped()
+            newer = []
+            for turn in self.turns(call, thread_id) or []:
+                if after and turn.get('id') == after:
+                    break
+                newer.append(turn)
+            items = lambda t: [i for i in t.get('items') or [] if isinstance(i, dict)]
+            mine = next((t for t in newer if digest and any(same_text(i, digest) for i in items(t))), newer[-1] if newer else None)
+            if mine:
+                got = items(mine)
+                if len(got) != seen:
+                    state['active'] = time.monotonic()
+                    for item in got[max(seen, 0):]:
+                        method = 'item/started' if item.get('type') == 'commandExecution' else 'item/completed'
+                        AppServerCodex.handle({'method': method, 'params': {'item': item}}, None, state, on_progress)
+                    seen = len(got)
+                if mine.get('completedAt'):
+                    state['status'] = str(mine.get('status') or 'completed')
+                    error = mine.get('error') if isinstance(mine.get('error'), dict) else {}
+                    state['error'] = str(error.get('message') or '')[:500]
+                    return
+            time.sleep(self.POLL)
+
     def talk(self, chan, flags, log, state, job, prompt, resume, folder, on_progress, on_session, timeout):
         read, call, stopped, until_done = self.rpc(chan, flags, log, state, on_progress, timeout)
+        job_folder = Path(log.name).parent
+        (job_folder / QUEUED_FILE).unlink(missing_ok=True)
         try:
             call('initialize', {'clientInfo': {'name': 'the_machine', 'title': 'The Machine', 'version': '1'}})
         except (EOFError, ValueError, OSError):
@@ -993,8 +1115,16 @@ class AppServerCodex:
                         raise Stopped('gone', 'Its Codex thread is gone, so it can’t carry on there. Hand it off again to start over.') from None
                     if 'active writer' not in str(error):
                         raise
-                    # The thread is open in the Codex app, which holds it while it is: carry on in a copy of it
-                    # (thread/fork copies its history into a new thread, which shows in the app too).
+                    # The thread is open in the Codex app, which holds it while it is: the app runs the message
+                    # next in the same conversation, and this follows it there.
+                    queued = self.enqueue(call, resume, prompt, folder, job_folder)
+                    if queued:
+                        on_session(resume)
+                        on_progress('Sent to the Codex app, where this conversation is open')
+                        self.in_app(call, state, stopped, resume, queued, on_progress)
+                        return self.outcome(state, stopped, resume)
+                    # A Codex without a queue: carry on in a copy of the thread (thread/fork copies its history into
+                    # a new thread, which shows in the app too).
                     try:
                         thread, forked = call('thread/fork', {'threadId': resume}), True
                     except ValueError:
@@ -1025,7 +1155,19 @@ class AppServerCodex:
         try:
             call('initialize', {'clientInfo': {'name': 'the_machine', 'title': 'The Machine', 'version': '1'}})
             chan.send({'jsonrpc': '2.0', 'method': 'initialized'})
-            thread = call('thread/resume', {'threadId': thread_id}).get('thread') or {}
+            try:
+                thread = call('thread/resume', {'threadId': thread_id}).get('thread') or {}
+            except ValueError as error:
+                if 'active writer' not in str(error):
+                    raise
+                # The Codex app runs this turn (a queued follow-up): follow it there again.
+                try:
+                    queued = json.loads((Path(log.name).parent / QUEUED_FILE).read_text())
+                except (OSError, ValueError):
+                    queued = None
+                on_progress('Carrying on after The Machine restarted')
+                self.in_app(call, state, stopped, thread_id, queued if isinstance(queued, dict) and queued.get('thread') == thread_id else None, on_progress)
+                return self.outcome(state, stopped, thread_id)
             turns = [t for t in thread.get('turns') or [] if isinstance(t, dict)]
             last = turns[-1] if turns else {}
             if str(last.get('status') or '') == 'inProgress':
@@ -1362,11 +1504,17 @@ class AgentJobs:
         out.update(name=TOOLS.get(row['tool'], row['tool']), files=files, has_diff=bool(row['diff']), url=url, url_elsewhere=elsewhere_link(url),
                    app=('Open in Codex' if url.startswith('codex://') else 'Open in Codex cloud' if row['place'] == 'cloud'
                         else 'Open in Claude' if 'claude.ai' in url else 'Open') if url else None,
+                   app_name=('Codex' if url.startswith('codex://') else 'Codex cloud' if row['place'] == 'cloud'
+                             else 'Claude' if 'claude.ai' in url else None) if url else None,
                    links=list(dict.fromkeys(URL.findall(row['summary'] or '')))[:10], ask=asks[-1]['text'] if asks else None)
         if row['place'] == 'remote':
             out['device'] = str(((settings(self.config) or {}).get('claude') or {}).get('device') or 'your computer')[:60]
         if row['place'] == 'device':
             out['device'], out['can_follow_up'] = device_label(self._where['found']), False
+        # While its own app server runs the turn, that server holds the thread: the Codex app can't open it until the
+        # turn ends (it says it can't find it). A follow-up the app runs itself (QUEUED_FILE) opens there any time.
+        out['opens_later'] = bool(url and url.startswith('codex://') and row['status'] == 'running' and row['place'] == 'local'
+                                  and not (self.folder(row['id']) / QUEUED_FILE).exists())
         return out
 
     def latest(self, db, suggestion_ids):
@@ -1819,10 +1967,10 @@ class AgentJobs:
                 runner = self.runner(row)
                 if not isinstance(runner, AppServerCodex):
                     raise Stopped('restart', RESTARTED)
-                started = dt.datetime.fromisoformat(row['started_at']).timestamp() if row['started_at'] else time.time()
-                left = max(60, self.timeout - (time.time() - started))
+                # The same limits as before the restart: the time it may do nothing (not what was left of it), and
+                # the cap counted from when the turn started (the job's started_at, which Watchdog reads).
                 transcript = self.folder(job_id) / f'turn-{row["turns"]}.jsonl'
-                session, summary = runner.rejoin(self.named(row), live, transcript, left, lambda line: self.progress(job_id, line, turn=row['turns']), self.procs)
+                session, summary = runner.rejoin(self.named(row), live, transcript, self.timeout, lambda line: self.progress(job_id, line, turn=row['turns']), self.procs)
             except Stopped as stop:
                 self.finish(job_id, 'cancelled' if stop.kind == 'cancelled' else 'failed', error=str(stop)[:500], error_kind=stop.kind, turn=row['turns'])
                 return

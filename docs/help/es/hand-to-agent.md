@@ -16,6 +16,12 @@ Luego la tarea muestra que está trabajando, y el resultado cuando termina, con 
 
 Un trabajo nunca envía nada por ti.
 
+## En la app de Codex
+
+- **Abrir en Codex** abre el hilo del trabajo en la app de Codex. Mientras Codex trabaja en él aquí, la app todavía no puede abrirlo. Se abre cuando termina.
+- **Cambiar** en un hilo abierto en la app de Codex sigue en esa misma conversación allí, y la tarea la sigue.
+- Un trabajo solo se detiene si Codex no hace nada durante 30 minutos, o tras 6 horas en total. Un reinicio de The Machine no lo detiene.
+
 ## Configúralo
 
 En **Ajustes**, **General**, en **Agentes de código**:

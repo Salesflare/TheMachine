@@ -16,6 +16,12 @@ Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fe
 
 Ein Auftrag sendet nie etwas für dich.
 
+## In der Codex-App
+
+- **In Codex öffnen** öffnet den Thread des Jobs in der Codex-App. Solange Codex hier daran arbeitet, kann die App ihn noch nicht öffnen. Er öffnet sich, sobald es fertig ist.
+- **Ändern** bei einem Thread, der in der Codex-App offen ist, geht in genau diesem Gespräch dort weiter, und die Aufgabe folgt ihm.
+- Ein Job stoppt nur, wenn Codex 30 Minuten lang nichts tut, oder nach insgesamt 6 Stunden. Ein Neustart von The Machine stoppt ihn nicht.
+
 ## Einrichten
 
 In **Einstellungen**, **Allgemein**, unter **Coding-Agents**:

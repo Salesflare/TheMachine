@@ -65,9 +65,22 @@ try{
  assert.match(await c.innerText(),/Write: summary\.md/);
  assert.equal(await c.locator('[data-agent-hand]').count(),0);  // one job at a time
  assert.equal(await c.locator('[data-agent-cancel]').count(),1);
+ // While this Machine runs the turn, the Codex app can't open the thread yet: Open in Codex says so instead of
+ // sending the app to a thread it can't find.
+ {const later='Codex is still on it here. It opens in the Codex app when it’s done.';
+  card.agent_job={...job,tool:'codex',name:'Codex',status:'running',url:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75',app_name:'Codex',opens_later:true};
+  const a=c.locator('a.agent-app');await a.waitFor({timeout:10000});
+  assert.equal(await a.getAttribute('title'),later);assert.equal(await a.getAttribute('aria-label'),'Open in Codex');
+  const opened=[];page.context().on('page',p=>opened.push(p));await a.click();await page.waitForTimeout(200);
+  assert.equal(opened.length,0);assert.match(await page.locator('#toast').innerText(),/still on it here/);
+  // A stop says which limit, in words that translate with the rest of the line.
+  card.agent_job={...card.agent_job,status:'failed',opens_later:false,error:'Codex did nothing for 30 minutes, so it was stopped'};
+  await c.locator('.agent-error').waitFor({timeout:10000});
+  assert.match(await c.locator('.agent-job .note.failed').innerText(),/^Codex stopped: Codex did nothing for 30 minutes, so it was stopped/);
+  card.agent_job={...job,status:'running',progress:'Write: summary.md'};await page.evaluate(()=>refresh());await c.locator('.agent-progress').waitFor({timeout:10000})}
  // The result comes back: the card follows it without a full refresh.
  const long='Rewrote the reply in [draft.md](/home/owner/.local/share/agent-jobs/aj_1/work/draft.md) and added [summary.md](/home/owner/.local/share/agent-jobs/aj_1/work/summary.md).\n\n## Details\n- Kept the tone of `/tmp/x/notes.txt`\n- Checked the numbers';
- card.agent_job={...job,status:'result',summary:long,url:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75',url_elsewhere:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75?hostId=remote-control%3Aenv_0123abcd',app:'Open in Codex',can_follow_up:true,draft_updated:true,
+ card.agent_job={...job,status:'result',summary:long,url:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75',url_elsewhere:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75?hostId=remote-control%3Aenv_0123abcd',app:'Open in Codex',app_name:'Codex',can_follow_up:true,draft_updated:true,
   files:[{path:'summary.md',size:20},{path:'draft.md',size:20}],has_diff:true,finished_at:new Date().toISOString()};
  await c.locator('.agent-result').waitFor({timeout:10000});
  const text=await c.locator('.agent-result').innerText();

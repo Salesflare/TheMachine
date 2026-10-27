@@ -101,10 +101,36 @@ print(json.dumps({'type': 'result', 'subtype': 'success', 'is_error': False, 're
 THREAD = '01a16539-9d4a-7d83-9620-9203de5acb75'
 FORK = '01a16590-3629-7943-9fcb-56c1b3647f45'
 FAKE_CODEX = r"""#!PYTHON
-import json, os, sys
+import json, os, sys, time
+from pathlib import Path
 args = sys.argv[1:]
 def log(**more):
     open(os.environ['AJ_LOG'], 'a').write(json.dumps({'tool': 'codex', 'args': args, 'cwd': os.getcwd(), **more}) + '\n')
+# The Codex app's queue for a thread it has open (`codex queue`): the app runs the message next in that thread, which
+# another app server reads with thread/turns/list (as `interrupted` without completedAt until it ends).
+queue = Path(os.environ['HOME']) / 'codex-queue.json'
+if args[:1] == ['queue']:
+    if os.environ.get('AJ_NO_QUEUE'):
+        sys.stderr.write("error: unrecognized subcommand 'queue'\n")
+        sys.exit(2)
+    log(thread=args[args.index('--thread') + 1], message=args[args.index('--message') + 1])
+    queue.write_text(json.dumps({'thread': args[args.index('--thread') + 1], 'text': args[args.index('--message') + 1], 'reads': 0}))
+    print('Queued message for thread ' + args[args.index('--thread') + 1] + '.')
+    sys.exit(0)
+def app_turns(thread):
+    base = {'id': 't0', 'status': 'completed', 'completedAt': 1, 'items': [{'type': 'agentMessage', 'text': 'Wrote out.txt.'}]}
+    if not queue.exists():
+        return [base]
+    q = json.loads(queue.read_text())
+    q['reads'] += 1
+    queue.write_text(json.dumps(q))
+    mine = {'id': 'tq', 'status': 'interrupted', 'completedAt': None, 'items': [{'type': 'userMessage', 'content': [{'type': 'text', 'text': q['text']}]}]}
+    if q['reads'] >= 2 and 'hang' not in q['text']:
+        mine['items'].append({'type': 'commandExecution', 'command': 'printf more > out.txt'})
+    if q['reads'] >= 3 and 'hang' not in q['text']:
+        mine['items'].append({'type': 'agentMessage', 'text': 'Changed it in the Codex app.'})
+        mine.update(status='completed', completedAt=2)
+    return [mine, base]
 if args[:1] == ['app-server']:
     if os.environ.get('AJ_NO_APPSERVER'):
         sys.exit(2)
@@ -129,11 +155,21 @@ if args[:1] == ['app-server']:
             out({'id': m['id'], 'error': {'code': -32600, 'message': 'no'}})
         elif method == 'thread/fork':
             out({'id': m['id'], 'result': {'thread': {'id': 'FORK_ID'}}})
+        elif method == 'thread/turns/list':
+            out({'id': m['id'], 'result': {'data': app_turns(params['threadId'])[:params.get('limit') or 5]}})
+            log(calls=calls)
         elif method == 'thread/resume':
             out({'id': m['id'], 'result': {'thread': {'id': params['threadId']}}})
         elif method == 'turn/start':
             prompt = params['input'][0]['text']
             out({'id': m['id'], 'result': {'turn': {'id': 't1', 'status': 'inProgress'}}})
+            if 'hang' in prompt:  # Codex says nothing more
+                log(calls=calls)
+                time.sleep(30)
+            if 'busy' in prompt:  # it keeps working, saying so, for longer than the time it may do nothing
+                for _ in range(int(os.environ.get('AJ_BUSY_STEPS') or 12)):
+                    out({'method': 'item/agentMessage/delta', 'params': {'delta': '.'}})
+                    time.sleep(0.15)
             if 'approve' in prompt:
                 out({'id': 99, 'method': 'item/commandExecution/requestApproval', 'params': {'command': 'rm -rf x'}})
                 calls.append({'answer': json.loads(sys.stdin.readline()).get('result')})
@@ -276,6 +312,11 @@ def job_session(jobs, job_id):
         return db.execute('SELECT session_id FROM agent_jobs WHERE id=?', (job_id,)).fetchone()[0]
 
 
+def job_row(jobs, job_id):
+    with jobs.connect() as db:
+        return db.execute('SELECT * FROM agent_jobs WHERE id=?', (job_id,)).fetchone()
+
+
 def wait(jobs, job_id, done=('result', 'failed', 'cancelled'), seconds=20):
     end = time.time() + seconds
     while time.time() < end:
@@ -383,9 +424,10 @@ class AgentJobs(unittest.TestCase):
         detach.start()
         self.addCleanup(detach.stop)
         agent_jobs._HOST.update(at=0.0, found=None)
-        poll = patch.object(agent_jobs.BackgroundClaude, 'POLL', 0.05)
-        poll.start()
-        self.addCleanup(poll.stop)
+        for obj, name in ((agent_jobs.BackgroundClaude, 'POLL'), (agent_jobs.AppServerCodex, 'POLL'), (agent_jobs.Watchdog, 'TICK')):
+            poll = patch.object(obj, name, 0.05)
+            poll.start()
+            self.addCleanup(poll.stop)
         self.revised, self.sent, self.tickets, self.reported = [], [], {}, []
         self.store = a.Store(root / 'events.sqlite', protect=True)
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': '2026-10-20T08:00:00+00:00',
@@ -804,14 +846,59 @@ class AgentJobs(unittest.TestCase):
         resume = [c for c in self.calls('codex')[1]['calls'] if c.get('method') == 'thread/resume']
         self.assertEqual(resume[0]['params']['threadId'], THREAD)
 
-    def test_a_follow_up_while_the_thread_is_open_in_the_codex_app_goes_on_in_a_copy(self):
+    def test_a_follow_up_while_the_thread_is_open_in_the_codex_app_goes_on_in_the_same_conversation_there(self):
+        jobs = self.jobs()
+        job = wait(jobs, jobs.start(self.sid, 'codex', 'Write out.txt')['id'])
+        self.assertFalse(job['opens_later'])  # done: the Codex app can open it
+        with patch.dict(os.environ, {'AJ_WRITER': '1'}):
+            job = wait(jobs, jobs.follow_up(job['id'], 'Make it longer')['id'])
+        self.assertEqual(job['status'], 'result', job)
+        self.assertEqual(job['summary'], 'Changed it in the Codex app.')
+        self.assertEqual(job['url'], 'codex://threads/' + THREAD)  # the same thread, not a copy
+        queued = self.calls('codex')
+        self.assertIn({'thread': THREAD, 'message': 'Make it longer'}, [{k: c.get(k) for k in ('thread', 'message')} for c in queued if c['args'][:1] == ['queue']])
+        methods = [c.get('method') for c in self.calls('codex')[-1]['calls'] if 'method' in c]
+        self.assertNotIn('thread/fork', methods)
+        self.assertNotIn('turn/start', methods)  # the Codex app runs it, in the conversation the owner has open
+        self.assertIn('thread/turns/list', methods)
+        self.assertNotIn('Make it longer', (Path(self.tmp.name) / 'agent-jobs' / job['id'] / agent_jobs.QUEUED_FILE).read_text())  # only its hash
+
+    def test_a_follow_up_the_codex_app_runs_is_followed_again_after_a_restart(self):
         jobs = self.jobs()
         job = wait(jobs, jobs.start(self.sid, 'codex', 'Write out.txt')['id'])
         with patch.dict(os.environ, {'AJ_WRITER': '1'}):
+            job = jobs.follow_up(job['id'], 'hang on, then stop')
+            folder = Path(self.tmp.name) / 'agent-jobs' / job['id']
+            for _ in range(200):
+                if (folder / agent_jobs.QUEUED_FILE).exists():
+                    break
+                time.sleep(0.05)
+            self.assertTrue(jobs.get(job['id'])['status'] == 'running' and not jobs.get(job['id'])['opens_later'])  # the Codex app can open it
+            # The Machine restarts: its new service follows the same turn in the Codex app, from its first read.
+            queued = json.loads((folder / agent_jobs.QUEUED_FILE).read_text())
+            again = self.jobs()
+            runner = agent_jobs.AppServerCodex(str(self.bin / 'codex'))
+            state = {'size': 0, 'n': 0, 'summary': '', 'error': '', 'status': None}
+            q = Path(os.environ['HOME']) / 'codex-queue.json'
+            q.write_text(json.dumps({**json.loads(q.read_text()), 'text': 'done now', 'reads': 1}))
+            import subprocess
+            proc = subprocess.Popen([str(self.bin / 'codex'), 'app-server'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            self.addCleanup(lambda: (proc.kill(), proc.wait(), proc.stdin.close(), proc.stdout.close()))
+            with open(folder / 'turn-x.jsonl', 'ab') as log:
+                session, summary = runner.follow(agent_jobs.StdioLines(proc), agent_jobs.Handle(lambda: None), log, state,
+                                                 dict(again.named(job_row(again, job['id'])), session_id=THREAD), lambda line: None, 60)
+            self.assertEqual((session, summary), (THREAD, 'Changed it in the Codex app.'))
+            self.assertEqual(queued['thread'], THREAD)
+            jobs.cancel(job['id'])
+
+    def test_a_follow_up_while_the_thread_is_open_in_an_older_codex_app_goes_on_in_a_copy(self):
+        jobs = self.jobs()
+        job = wait(jobs, jobs.start(self.sid, 'codex', 'Write out.txt')['id'])
+        with patch.dict(os.environ, {'AJ_WRITER': '1', 'AJ_NO_QUEUE': '1'}):
             job = wait(jobs, jobs.follow_up(job['id'], 'Again')['id'])
         self.assertEqual(job['status'], 'result', job)
         self.assertEqual(job['url'], 'codex://threads/' + FORK)  # the card opens the copy now
-        calls = self.calls('codex')[1]['calls']
+        calls = [c for c in self.calls('codex') if 'calls' in c][-1]['calls']
         self.assertIn({'method': 'thread/fork', 'params': {'threadId': THREAD}}, calls)
         self.assertIn({'method': 'thread/name/set', 'params': {'threadId': FORK, 'name': 'Sum up the quarterly numbers'}}, calls)
         self.assertEqual([c['params']['threadId'] for c in calls if c.get('method') == 'turn/start'], [FORK])
@@ -819,7 +906,7 @@ class AgentJobs(unittest.TestCase):
     def test_when_it_cannot_go_on_the_card_says_to_carry_on_in_codex(self):
         jobs = self.jobs()
         job = wait(jobs, jobs.start(self.sid, 'codex', 'Write out.txt')['id'])
-        with patch.dict(os.environ, {'AJ_WRITER': 'nofork'}):
+        with patch.dict(os.environ, {'AJ_WRITER': 'nofork', 'AJ_NO_QUEUE': '1'}):
             job = wait(jobs, jobs.follow_up(job['id'], 'Again')['id'])
         self.assertEqual((job['status'], job['error_kind']), ('failed', 'busy'))
         self.assertIn('open in the Codex app', job['error'])
@@ -907,6 +994,59 @@ class AgentJobs(unittest.TestCase):
         jobs.timeout = 1
         job = wait(jobs, jobs.start(self.sid, 'claude', 'sleep now')['id'])
         self.assertEqual((job['status'], job['error_kind']), ('failed', 'timeout'))
+
+    def test_codex_that_does_nothing_stops_with_the_limit_as_set(self):
+        jobs = self.jobs()
+        jobs.timeout = 1
+        job = wait(jobs, jobs.start(self.sid, 'codex', 'hang')['id'], seconds=30)
+        self.assertEqual((job['status'], job['error_kind']), ('failed', 'timeout'))
+        self.assertEqual(job['error'], 'Codex did nothing for a minute, so it was stopped')
+
+    def test_codex_that_keeps_working_past_its_limit_runs_on(self):
+        jobs = self.jobs()
+        jobs.timeout = 1
+        job = wait(jobs, jobs.start(self.sid, 'codex', 'busy with out.txt')['id'], seconds=30)  # 1.8 s of work, a 1 s limit
+        self.assertEqual((job['status'], job['summary']), ('result', 'Wrote out.txt.'), job)
+        with patch.object(agent_jobs, 'RUN_MAX', 1):  # and never past the cap in all
+            jobs.set_outcome(job['id'], 'done')
+            job = wait(jobs, jobs.start(self.sid, 'codex', 'busy with out.txt')['id'], seconds=30)
+        self.assertEqual((job['status'], job['error']), ('failed', 'It ran longer than its 1-hour limit, so it was stopped'))
+
+    def test_after_a_restart_codex_keeps_the_limit_it_had(self):
+        """The Machine restarted 27 minutes into a 30-minute limit: it follows the turn with the same limits, so it
+        neither says "2-minute limit" nor stops a turn that is still working (the cap counts from its start)."""
+        jobs = self.jobs()
+        jobs.timeout = 30 * 60
+        with patch.object(jobs, 'launch'):
+            job = jobs.start(self.sid, 'codex', 'Write out.txt')
+        started = (agent_jobs.dt.datetime.now(agent_jobs.dt.timezone.utc) - agent_jobs.dt.timedelta(minutes=27)).isoformat()
+        with self.store.connect() as db:
+            db.execute("UPDATE agent_jobs SET status='running',session_id=?,started_at=? WHERE id=?", (THREAD, started, job['id']))
+        seen = {}
+        class Runner(agent_jobs.AppServerCodex):
+            def rejoin(self, job, live, transcript, timeout, on_progress, procs):
+                seen.update(timeout=timeout, started=job['started_at'])
+                return THREAD, 'Done after the restart.'
+        with patch.object(jobs, 'runner', lambda row: Runner('codex')):
+            jobs.rejoin(job_row(jobs, job['id']), {'unit': 'u', 'port': 1, 'token': 't'})
+        self.assertEqual(seen, {'timeout': 30 * 60, 'started': started})
+        self.assertEqual(jobs.get(job['id'])['status'], 'result')
+        dog = agent_jobs.Watchdog({}, 30 * 60, agent_jobs.epoch(started), lambda kind: None)
+        dog.cancel()
+        self.assertAlmostEqual(dog.until, agent_jobs.epoch(started) + agent_jobs.RUN_MAX, delta=1)
+
+    def test_the_codex_app_cannot_open_a_thread_while_this_machine_runs_its_turn(self):
+        jobs = self.jobs()
+        job = jobs.start(self.sid, 'codex', 'hang')
+        for _ in range(200):
+            job = jobs.get(job['id'])
+            if job['url']:
+                break
+            time.sleep(0.05)
+        self.assertEqual((job['status'], job['url'], job['opens_later']), ('running', 'codex://threads/' + THREAD, True))
+        self.assertEqual((job['app'], job['app_name']), ('Open in Codex', 'Codex'))
+        jobs.cancel(job['id'])
+        self.assertFalse(wait(jobs, job['id'])['opens_later'])
 
     def test_codex_runs_in_a_unit_of_its_own_so_a_restart_of_the_machine_does_not_stop_it(self):
         def token_hash():

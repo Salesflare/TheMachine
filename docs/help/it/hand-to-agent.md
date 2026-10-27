@@ -16,6 +16,12 @@ L'attività mostra poi che ci sta lavorando, e il risultato quando ha finito, co
 
 Un lavoro non invia mai nulla per te.
 
+## Nell’app Codex
+
+- **Apri in Codex** apre il thread del lavoro nell’app Codex. Mentre Codex ci lavora qui, l’app non può ancora aprirlo. Si apre quando ha finito.
+- **Modifica** su un thread aperto nell’app Codex continua nella stessa conversazione lì, e l’attività la segue.
+- Un lavoro si ferma solo se Codex non fa nulla per 30 minuti, o dopo 6 ore in tutto. Un riavvio di The Machine non lo ferma.
+
 ## Configuralo
 
 In **Impostazioni**, **Generale**, sotto **Agenti di programmazione**:

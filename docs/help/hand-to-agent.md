@@ -16,6 +16,12 @@ The to-do then shows that it's working, and the result when it's done, with **Sh
 
 A job never sends anything for you.
 
+## In the Codex app
+
+- **Open in Codex** opens the job's thread in the Codex app. While Codex works on it here, the app can't open it yet. It opens once it's done.
+- **Change** on a thread that's open in the Codex app goes on in that same conversation there, and the to-do follows it.
+- A job only stops when Codex does nothing for 30 minutes, or after 6 hours in all. A restart of The Machine doesn't stop it.
+
 ## Set it up
 
 In **Settings**, **General**, under **Coding agents**:

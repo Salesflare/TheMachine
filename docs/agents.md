@@ -28,15 +28,20 @@ The CLIs keep their own sign-ins. The Machine never reads, copies or stores a Cl
 - **Codex** runs through the Codex app's own app server, so the job is a thread in the Codex app (named after the
   card), also from your phone through the app's remote access. **Open in Codex** opens it. Without the Codex app it
   uses `codex exec`, and the job only shows on the card. Nothing is approved for you: a command that needs approval is
-  declined. If the job's thread is open in the Codex app, a follow-up from the card goes on in a copy of the thread
-  (`thread/fork`), which shows in the app too. If even that is refused, the card says to carry on in Codex.
+  declined. If the job's thread is open in the Codex app, a follow-up from the card is queued there (`codex queue`),
+  so the app runs it in the same conversation and the card follows that turn (`thread/turns/list`). An older Codex
+  without `codex queue` goes on in a copy of the thread (`thread/fork`); if even that is refused, the card says to
+  carry on in Codex. While The Machine runs a turn itself, the app can't open the thread yet, so **Open in Codex**
+  says it opens when the turn is done.
 - **On your other devices**: with remote connections on in the Codex app on this computer, **Open in Codex** from
   another device opens the thread on this computer through that connection (`codex://threads/<id>?hostId=...`). The
   job keeps running here. A plain thread link would look for it on the device you clicked it on.
 - **Restarts**: on Linux, Codex's app server runs in a systemd user unit of its own. It keeps The Machine's own
   hardening (NoNewPrivileges, PrivateTmp, UMask) and environment, and it listens on loopback behind a token that only
   the job folder holds. An update that restarts The Machine doesn't stop the job: The Machine picks it up again when
-  it is back. Claude Code background sessions run on by themselves too.
+  it is back, also for a follow-up the Codex app is running. Claude Code background sessions run on by themselves too.
+- **Limits**: `timeout_minutes` is how long a Codex turn may go without any activity before it is stopped. A turn
+  that keeps working runs on, up to 6 hours in all, counted from when the job started, across restarts.
 - **Try again** carries on in the job's own thread or session, where it left off. It starts again from the brief only
   when that thread is gone. The card says in plain words why a job stopped.
 
