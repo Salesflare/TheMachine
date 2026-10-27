@@ -12071,7 +12071,7 @@ class App:
         return {**locale_prefs.view(), 'saveable': bool(getattr(self, 'config_path', None))}
 
     def set_locale(self, args):
-        """The owner's region and time format from the dashboard: checked, saved in config.json and in use at once."""
+        """The owner's language, region, time format and To-dos filter from the dashboard: checked, saved in config.json and in use at once."""
         if not getattr(self, 'config_path', None):
             raise ValueError('Region can only be changed in config.json here')
         if 'browser' in args:  # the dashboard's first load on a Machine without a region: the browser's, never over a choice

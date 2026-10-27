@@ -20,6 +20,8 @@ The **Suggestions** tab groups them:
 
 **All clear.** means nothing needs you now.
 
+**All**, **Work** and **Personal** above the list in the sidebar show all to-dos or only one kind. Your Machine keeps the choice, so your phone and computer show the same list. While Work or Personal is on, the top of the list says so, with **Show all** to go back.
+
 A to-do on a project shows the project's name as a chip; it opens the project. **▾** on the chip changes it. See [a project's to-dos](graph.md#a-projects-to-dos).
 
 ## The buttons

@@ -269,7 +269,9 @@ def not_ui():
 
 
 def missing(areas=MOVED):
-    keys, skip, out = set(catalog('en')), not_ui(), {}
+    en, skip, out = catalog('en'), not_ui(), {}
+    # a key, or a form of a plural entry (the English singular in t(['{} promise', '{} promises'], n))
+    keys = set(en) | {form for value in en.values() if isinstance(value, dict) for form in value.values()}
     source = DASHBOARD.read_text(encoding='utf-8')
     for area in areas:
         gone = [s for s in area_strings(area, source) if s not in keys and s not in skip]

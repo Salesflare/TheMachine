@@ -9,6 +9,9 @@ else English; the dashboard's first load sets it from the browser's languages (A
 dashboard's first load (guess: the country of the browser's time zone, else its language's region), and keeps US
 dates and a 24-hour clock until then.
 
+`todo_scope` is the To-dos filter (all, work or personal), kept here with the language so every device of the owner
+shows the same list; None until it is first set (a dashboard then brings the one its browser kept, once).
+
 The dashboard gets view() and formats with the same rules (dashboard.html, applyLocale)."""
 from __future__ import annotations
 
@@ -25,13 +28,14 @@ _CODES = {code.lower(): code for code in LANGUAGES}
 _BASES = {code.split('-')[0] for code in LANGUAGES}
 DEFAULT_REGION = 'US'  # dates without a locale
 CLOCKS = ('auto', '12h', '24h')
+SCOPES = ('all', 'work', 'personal')  # the To-dos filter
 # Regions whose people mostly read a 12-hour clock (CLDR's preferred hour cycle "h"); the rest read 24-hour.
 H12 = frozenset('US CA AU NZ IN PK BD PH MY SG HK TW KR EG SA AE JO KW QA BH OM IQ SY LB YE LY SD CO VE SV HN NI GT DO '
                 'PR GU AS VI MP UM'.split())
 # Regions that put the month first (Oct 24); the rest read the day first (24 Oct).
 MONTH_FIRST = frozenset('US CA PH PR GU AS VI MP UM FM MH PW'.split())
 
-_current = {'locale': None, 'clock': 'auto', 'language': None}
+_current = {'locale': None, 'clock': 'auto', 'language': None, 'todo_scope': None}
 
 
 def normalize(value):
@@ -115,8 +119,9 @@ def configure(config):
     """Use the owner's setting from config.json; a bad value is ignored (the defaults stand)."""
     tag = normalize((config or {}).get('locale'))
     clock = (config or {}).get('clock')
+    scope = (config or {}).get('todo_scope')
     _current.update(locale=tag or None, clock=clock if clock in CLOCKS else 'auto', language=language_of(config),
-                    chosen=code((config or {}).get('language')) is not None)
+                    chosen=code((config or {}).get('language')) is not None, todo_scope=scope if scope in SCOPES else None)
 
 
 def view(config=None):
@@ -124,9 +129,11 @@ def view(config=None):
     if config is not None:
         tag, clock = normalize(config.get('locale')) or None, config.get('clock') if config.get('clock') in CLOCKS else 'auto'
         language, chosen = language_of(config), code(config.get('language')) is not None
+        scope = config.get('todo_scope') if config.get('todo_scope') in SCOPES else None
     else:
         tag, clock, language, chosen = _current['locale'], _current['clock'], _current['language'] or 'en', _current.get('chosen', False)
-    return {'locale': tag, 'region': region(tag), 'language': language, 'language_set': chosen, 'clock': clock,
+        scope = _current.get('todo_scope')
+    return {'locale': tag, 'region': region(tag), 'language': language, 'language_set': chosen, 'clock': clock, 'todo_scope': scope,
             'hour12': hour12(tag, clock), 'auto_hour12': hour12(tag), 'date_locale': date_locale(tag, language), 'languages': LANGUAGES}
 
 
@@ -164,7 +171,7 @@ def guess(zone, language=''):
 
 
 def settings(changes):
-    """{'locale', 'clock'} from the dashboard, checked; a ValueError says what is wrong."""
+    """{'language', 'locale', 'clock', 'todo_scope'} from the dashboard, checked; a ValueError says what is wrong."""
     out = {}
     if 'language' in changes:
         if not code(changes.get('language')):
@@ -179,6 +186,10 @@ def settings(changes):
         if changes.get('clock') not in CLOCKS:
             raise ValueError('The time format is auto, 12h or 24h')
         out['clock'] = changes['clock']
+    if 'todo_scope' in changes:
+        if changes.get('todo_scope') not in SCOPES:
+            raise ValueError('Show all, work or personal to-dos')
+        out['todo_scope'] = changes['todo_scope']
     if not out:
         raise ValueError('Nothing to change')
     return out

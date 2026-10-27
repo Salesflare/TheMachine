@@ -2268,5 +2268,23 @@
  },
  "Waiting for you: {}": "Te espera: {}",
  "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "Recibes esto cuando algo te espera y no lo has visto en el panel. Cámbialo en Ajustes, Notificaciones.",
- "Work days at {}": "Días laborables a las {}"
+ "Work days at {}": "Días laborables a las {}",
+ "{} ready for you": {
+  "one": "{} lista para ti",
+  "other": "{} listas para ti"
+ },
+ "{} to decide": "{} por decidir",
+ "{} preparing": "{} en preparación",
+ "{} coming back later": {
+  "one": "{} vuelve más tarde",
+  "other": "{} vuelven más tarde"
+ },
+ "{} promises kept track of": {
+  "one": "{} promesa en seguimiento",
+  "other": "{} promesas en seguimiento"
+ },
+ "Work only": "Solo trabajo",
+ "Personal only": "Solo personal",
+ "No work to-dos": "No hay tareas de trabajo",
+ "No personal to-dos": "No hay tareas personales"
 }

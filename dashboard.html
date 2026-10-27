@@ -1699,6 +1699,11 @@ body main{padding-top:0}
 .page-avatar{width:40px;height:40px;flex:none;object-fit:contain}
 .page-sub{margin:4px 0 0;color:var(--side-quiet);font-size:var(--fs-sm)}
 #inbox #suggestion-summary,#inbox #suggestion-stats{display:none}
+/* A To-dos filter that is on says so at the top of the list (scopeNote) */
+.scope-note{margin:0 0 12px;color:var(--muted);font-size:var(--fs-sm)}
+.scope-note span{color:var(--text);font-weight:var(--fw-medium,500)}
+.scope-note button.link{padding:0;min-height:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.scope-note button.link:hover{color:var(--text)}
 /* All clear: the title's line says it, so the block below is only the robot and its line */
 #suggestions .all-clear:not(.first-look-empty){padding-top:24px}#suggestions .all-clear:not(.first-look-empty)>div>strong{display:none}
 .chat-layout{grid-template-columns:minmax(0,1fr)}.chat-layout>.chat-side{display:none}
@@ -3656,10 +3661,26 @@ $('#facts').addEventListener('submit',async e=>{const form=e.target.closest('[da
 document.addEventListener('keydown',e=>{const f=e.target;if(e.key!=='Enter'||!(e.ctrlKey||e.metaKey)||e.isComposing||e.defaultPrevented||!f.matches?.('textarea,input:not([type]),input[type=text],input[type=email],input[type=search],input[type=url],input[type=tel],input[type=number]')||!f.value.trim())return;const shown=b=>b.getClientRects().length>0;for(let box=f.parentElement;box&&box!==document.body;box=box.parentElement){const b=[...box.querySelectorAll('button.primary')].find(shown);if(b){e.preventDefault();if(!b.disabled)b.click();return}if(box.matches('form,dialog,article'))return}});
 $('#suggestions').addEventListener('keydown',e=>{const h=e.target.closest('.section-head[data-fold]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleSection(h.dataset.fold)}});
 $('#suggestions').addEventListener('toggle',e=>{if(e.target.id==='later-list')$('[data-fold-tile="later"]')?.setAttribute('aria-expanded',e.target.open)},true);
-let scopeFilter=['work','personal'].includes(localStorage.getItem('scope-filter'))?localStorage.getItem('scope-filter'):'all';
+// The To-dos filter (All, Work, Personal) is kept on the Machine with the language (locale_prefs.todo_scope), so every
+// device shows the same list. A filter this browser kept from before goes to the Machine once, then this browser forgets
+// it; a Machine that can't save it (no config.json) keeps it on this device. A card link may show All for a while
+// (openCardLink); a change from another device comes in with the next refresh.
+const scopeLegacy=(()=>{try{const v=localStorage.getItem('scope-filter');return ['work','personal'].includes(v)?v:null}catch{return null}})();
+let scopeFilter=scopeLegacy||'all',scopeSynced,scopeSaving=0,scopeMigrated=false;
+function scopeSave(v){scopeSaving++;
+ return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_locale',args:{todo_scope:v}})})
+  .then(l=>{if(l&&'todo_scope' in l){state.locale=l;scopeSynced=l.todo_scope}try{localStorage.removeItem('scope-filter')}catch{}})
+  .catch(()=>{try{localStorage.setItem('scope-filter',v)}catch{}}).finally(()=>{scopeSaving--})}
+function scopeSync(l){if(!l||!('todo_scope' in l)||scopeSaving)return;const v=l.todo_scope;
+ if(v==null){if(scopeLegacy&&l.saveable&&!scopeMigrated){scopeMigrated=true;scopeSave(scopeLegacy)}return}
+ if(v!==scopeSynced){scopeSynced=v;scopeFilter=v}}
+function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCardId=null;scopeFilter=v;scopeSynced=v;scopeSave(v);render()}
+// When a filter is on, the list says so at its top, with the way back to All.
+const scopeNote=empty=>scopeFilter==='all'?'':`<p class="scope-note" role="status"><span>${scopeFilter==='work'?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="all">Show all</button></p>`;
+$('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
 let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});
-$('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('[data-scope]');if(!b)return;linkedCardId=null;scopeFilter=b.dataset.scope;localStorage.setItem('scope-filter',scopeFilter);render()});
+$('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('[data-scope]');if(b)scopeSet(b.dataset.scope)});
 // Promises from your messages, both ways. A still-open one becomes a card when it's due.
 function promisesList(open){const items=(state.promises||[]).filter(p=>['open','card'].includes(p.state));if(!items.length)return '';
 const row=p=>`<div class="promise"><span class="grow">${p.together?'With':p.direction==='mine'?'To':'From'} <b>${esc(p.who)}</b>: <a class="promise-link" href="${promiseHref(p)}">${esc(p.what)}</a><small>${esc(p.direction==='mine'?'You said it':'Said')} ${esc(new Date(p.made_at).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}))}${p.state==='card'?' · a to-do now':p.due?'':' · no date, checked '+esc(new Date(p.check_at).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}))}</small></span>${dueChip(p)}${p.state==='open'?`<button type="button" class="quiet" data-promise="${p.id}" data-close="kept" aria-label="Done: ${esc(p.what)}">Done</button><button type="button" class="quiet" data-promise="${p.id}" data-close="dropped" aria-label="Not needed: ${esc(p.what)}">Drop</button>`:''}</div>`;
@@ -3717,7 +3738,7 @@ const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newe
 if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended
 if((!running&&reviewWasLive)||fresh){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive()}catch(e){}},5000);
 const SKELETON=$('#suggestions .skeleton')?.outerHTML||'';
-function render(){applyLocale(state.locale);renderNeedsYou();renderNotify();
+function render(){scopeSync(state.locale);applyLocale(state.locale);renderNeedsYou();renderNotify();
 const finishedOpen=$('#finished-list')?.open||false,laterOpen=$('#later-list')?.open||false,promisesOpen=$('#promises-list')?.open||false;
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
@@ -3740,7 +3761,7 @@ $('#badge-inbox').textContent=(outstanding.length+(fleetData?fleetCards.length:s
 if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)))}catch{}
 const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestions').toggleAttribute('aria-busy',loading);
 const foldsBack=foldsKeep($('#suggestions'));
-if(!chatOpen())$('#suggestions').innerHTML=(outstanding.length||fleetCards.length?'':loading?SKELETON:firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||'I’ll add something when it’s useful.')}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+[[ready,'Ready for you','ready'],[needs,'Needs your decision','needs'],[preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
+if(!chatOpen())$('#suggestions').innerHTML=scopeNote(!outstanding.length&&!fleetCards.length&&!loading)+(outstanding.length||fleetCards.length?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||'I’ll add something when it’s useful.')}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+[[ready,'Ready for you','ready'],[needs,'Needs your decision','needs'],[preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes.
 +(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary><span>Done / dismissed</span><span class="count">${doneTotal}</span></summary>${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
 sideCounts={ready:ready.length,needs:needs.length,preparing:preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[ready,'Ready','ready'],[needs.filter(x=>typeof x!=='string'),'To decide','needs'],[preparing,'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]);
@@ -4394,7 +4415,7 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const layout=e.target.closest('.chat-layout');if(e.target===layout&&chatDrawer){chatDrawer=false;layout.classList.remove('drawer');return}
  if(e.target.closest('[data-chat-drawer]')){e.target.closest('details')?.removeAttribute('open');drawerOpen();return}
  if(e.target.closest('.chat-menu-list button'))setTimeout(()=>$('#chat-menu')?.removeAttribute('open'));
- const scope=e.target.closest('.chat-side [data-scope]');if(scope){e.stopPropagation();scopeFilter=scope.dataset.scope;localStorage.setItem('scope-filter',scopeFilter);render();return}
+ const scope=e.target.closest('.chat-side [data-scope]');if(scope){e.stopPropagation();scopeSet(scope.dataset.scope);return}
  const lg=e.target.closest('[data-learned-go],[data-learned-edit]');if(lg){e.stopPropagation();const v=lg.dataset.learnedGo;lg.dataset.learnedEdit?learnedShow(Number(lg.dataset.learnedEdit),'fact',true):learnedShow(Number(v)||null,lg.dataset.what);return}
  const lu=e.target.closest('[data-learned-undo]');if(lu){e.stopPropagation();lu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'forget_fact',args:{id:Number(lu.dataset.learnedUndo)}})});toast('Removed from what I’ve learned.');if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){lu.disabled=false;toast(err.message,true)}return}
  const un=e.target.closest('[data-unclamp]');if(un){e.stopPropagation();const k=un.dataset.unclamp;chatOpenSet.has(k)?chatOpenSet.delete(k):chatOpenSet.add(k);paintChat();return}
@@ -4530,7 +4551,7 @@ $('#side-find').addEventListener('input',()=>sideCards());
 $('#side-find').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';sideCards()}if(e.key==='Enter'){const a=$('#side-cards a');if(a)a.click()}});
 $('#side-cards').addEventListener('click',e=>{const f=e.target.closest('[data-side-fold]');
  if(f){const k=f.dataset.sideFold;sideFolded.has(k)?sideFolded.delete(k):sideFolded.add(k);delete sideShown[k];sideStore.set('side-folded',JSON.stringify([...sideFolded]));sideCards();return}
- const sc=e.target.closest('[data-scope]');if(sc){linkedCardId=null;scopeFilter=sc.dataset.scope;sideStore.set('scope-filter',scopeFilter);render();return}
+ const sc=e.target.closest('[data-scope]');if(sc){scopeSet(sc.dataset.scope);return}
  const a=e.target.closest('a[href^="#chat="]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();const id=a.getAttribute('href').slice(6);
  if(id===chatId){showTab('inbox');return}chatGo(id)});
 // Suggestions in the sidebar while a chat is open goes back to the overview
@@ -4994,7 +5015,7 @@ function docTitle(tab=[...document.querySelectorAll('main>section')].find(x=>!x.
 function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox';helpLink(tab);docTitle(tab);needsYouPlace();
  if(tab==='inbox'&&chatId){h.hidden=true;return}
  // A Graph page (person, org, project, promise) keeps the section's head; its breadcrumb under it leads back to the list
- const c=sideCounts,busy=[[c.ready,'ready for you'],[c.needs,'to decide'],[c.preparing,'preparing']].filter(([k])=>k).map(([k,t])=>k+' '+t),known=!!state.suggestions&&!(shownCached&&!busy.length),sub=!known?'':(busy.length?busy:['All clear',c.later&&c.later+' coming back later',c.promises&&c.promises+(c.promises===1?' promise':' promises')+' kept track of'].filter(Boolean)).join(' · ');
+ const c=sideCounts,busy=[[c.ready,'{} ready for you'],[c.needs,'{} to decide'],[c.preparing,'{} preparing']].filter(([k])=>k).map(([k,key])=>t(key,k)),known=!!state.suggestions&&!(shownCached&&!busy.length),sub=!known?'':(busy.length?busy:[t('All clear'),c.later&&t('{} coming back later',c.later),c.promises&&t(['{} promise kept track of','{} promises kept track of'],c.promises)].filter(Boolean)).join(' · ');
  const html=tab==='inbox'?`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${esc($('#tagline').textContent)}</h2>${sub?`<p class="page-sub">${esc(sub)}</p>`:''}</div>`:tab==='people'?(()=>{try{return graphHead()}catch{return '<h2 class="page-title">Graph</h2>'}})():tab==='calendar'?calHead():`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
  h.classList.toggle('greet',tab==='inbox');h.classList.toggle('busy',tab==='inbox'&&busy.length>0);
  // A mascot mid-blink is the same head: comparing it as open keeps it (a rebuild would cut its blink short)

@@ -75,7 +75,7 @@ const filter=page.locator('.scope-filter');await scopeClick(page,'Personal');
 assert.equal(await page.locator('#task-'+ids[0]).count(),0);await page.locator('#task-'+ids[2]+' .chip.scope').getByText('Personal',{exact:true}).waitFor();
 await scopeClick(page,'Work');assert.equal(await page.locator('#task-'+ids[2]).count(),0);
 await page.locator('#task-'+ids[0]+' .chip.scope').getByText('Work',{exact:true}).waitFor();
-assert.equal(await page.evaluate(()=>localStorage.getItem('scope-filter')),'work');
+assert.deepEqual(posts.filter(p=>p&&'todo_scope' in p).at(-1),{todo_scope:'work'});  // kept on the Machine, for every device
 await scopeClick(page,'All');await page.locator('#task-'+ids[2]).waitFor();await page.screenshot({path:'/tmp/261012-scope-filter.png'});}
 {// Notification links reveal the destination without changing saved device preferences.
 const filter=()=>page.locator('.scope-filter');
@@ -83,7 +83,7 @@ await scopeClick(page,'Personal');
 await page.evaluate(id=>location.hash='#card='+id,ids[0]);
 await page.locator('#task-'+ids[0]).waitFor({state:'visible'});
 await page.waitForFunction(()=>location.hash==='');
-assert.equal(await page.evaluate(()=>localStorage.getItem('scope-filter')),'personal');
+assert.deepEqual(posts.filter(p=>p&&'todo_scope' in p).at(-1),{todo_scope:'personal'});
 await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[0]).isVisible(),true);
 // An explicit filter selection ends the temporary reveal.
 await scopeClick(page,'Personal');

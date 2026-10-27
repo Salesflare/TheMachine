@@ -116,6 +116,18 @@ class SettingTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.app.set_locale({'locale': 'nowhere'})
 
+    def test_the_todos_filter_is_kept_with_the_language_for_every_device(self):
+        # None until set: a dashboard then brings the filter its browser kept before (dashboard.html, scopeSync)
+        self.assertIsNone(self.app.locale_view()['todo_scope'])
+        self.assertEqual(self.app.set_locale({'todo_scope': 'personal'})['todo_scope'], 'personal')
+        self.assertEqual(json.loads(self.path.read_text())['todo_scope'], 'personal')
+        self.assertEqual(locale_prefs.view()['todo_scope'], 'personal')  # what the next status shows on any device
+        self.assertEqual(locale_prefs.view({'todo_scope': 'work'})['todo_scope'], 'work')
+        self.assertIsNone(locale_prefs.view({'todo_scope': 'everything'})['todo_scope'])  # a bad value is ignored
+        with self.assertRaises(ValueError):
+            self.app.set_locale({'todo_scope': 'family'})
+        self.assertEqual(self.app.set_locale({'todo_scope': 'all'})['todo_scope'], 'all')
+
     def test_a_machine_without_a_region_takes_the_browsers_once_never_over_a_choice(self):
         self.assertEqual(locale_prefs.guess('Europe/Brussels', 'en-US'), 'en-BE')  # where they are counts first, as at signup
         self.assertEqual(locale_prefs.guess('UTC', 'en-GB'), 'en-GB')

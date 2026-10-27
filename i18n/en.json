@@ -2268,5 +2268,23 @@
  "Waiting for you: {}": "Waiting for you: {}",
  "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.": "You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.",
  "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.",
- "Work days at {}": "Work days at {}"
+ "Work days at {}": "Work days at {}",
+ "{} ready for you": {
+  "one": "{} ready for you",
+  "other": "{} ready for you"
+ },
+ "{} to decide": "{} to decide",
+ "{} preparing": "{} preparing",
+ "{} coming back later": {
+  "one": "{} coming back later",
+  "other": "{} coming back later"
+ },
+ "{} promises kept track of": {
+  "one": "{} promise kept track of",
+  "other": "{} promises kept track of"
+ },
+ "Work only": "Work only",
+ "Personal only": "Personal only",
+ "No work to-dos": "No work to-dos",
+ "No personal to-dos": "No personal to-dos"
 }
