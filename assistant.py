@@ -25,6 +25,7 @@ import os
 from pathlib import Path
 from decimal import Decimal
 import random
+import socket
 import re
 import secrets
 import shlex
@@ -2447,12 +2448,48 @@ class Slack:
         self.limited_reads = {'conversations.history', 'conversations.replies'}
         self.read_seconds = max(65, int(config.get('slack_read_seconds', 180)))
         self.last_limited = time.monotonic()
+        # Machines on one workspace (a team's hosted servers, an own install) share that one read a minute. Each reads
+        # in its own minute of a round, on the clock: a slot picked from this Machine and connection. A 429 means
+        # another Machine reads in that minute or the round is too short for all of them: the round grows by a minute
+        # (up to SLACK_ROUND_MAX) and this one takes another slot; after SLACK_CALM reads without one it shrinks again.
+        self.round, self.calm = self.read_seconds, 0
+        self.slots = self.round // 60
+        self.slot = int(hashlib.sha256(f"{socket.gethostname()}|{account.get('connection_id') or account.get('id')}".encode()).hexdigest(), 16) % self.slots
+
+    SLOT_OPEN = 20  # seconds into its minute a read may still start
+    SLACK_ROUND_MAX = 600  # ten Machines on one workspace, each a read every ten minutes
+    SLACK_CALM = 30
+
+    def slot_wait(self, at):
+        """Seconds from `at` (epoch) until this Machine's minute of the round, 0 within its first SLOT_OPEN seconds."""
+        if self.slots < 2:
+            return 0
+        into = (at - self.slot * 60) % self.round
+        return 0 if into < self.SLOT_OPEN else self.round - into
+
+    def read_went(self, limited):
+        """After a history or replies read: Slack refused it for the rate limit (limited) or took it."""
+        if limited:
+            self.round, self.calm = max(self.round, min(max(self.SLACK_ROUND_MAX, self.read_seconds), self.round + 60)), 0
+            before, self.slots = self.slot, self.round // 60
+            if self.slots > 1:
+                self.slot = random.choice([n for n in range(self.slots) if n != before])
+        elif self.round > self.read_seconds:
+            self.calm += 1
+            if self.calm >= self.SLACK_CALM:
+                self.round, self.calm = max(self.read_seconds, self.round - 60), 0
+                self.slots = self.round // 60
+                self.slot %= self.slots
 
     def pace(self, method):
         stamp = time.monotonic()
         delay = max(0, 2 - (stamp - self.last_call))
         if method in self.limited_reads:
-            delay = max(delay, self.read_seconds - (stamp - self.last_limited))
+            if self.slots < 2:
+                delay = max(delay, self.round - (stamp - self.last_limited))
+            else:  # never two reads within Slack's minute, then this Machine's own minute (after a restart too)
+                delay = max(delay, 65 - (stamp - self.last_limited))
+                delay += self.slot_wait(time.time() + delay)
         if self.stop is not None:
             if self.stop.wait(delay):
                 raise SourceError('collector_stopped')
@@ -2490,6 +2527,8 @@ class Slack:
             if error.code == 429:
                 # Spread out computers that share the connection, so they don't all retry at once.
                 retry_after += random.randint(5, 60)
+                if method in self.limited_reads:
+                    self.read_went(True)
             raise SourceError('slack:' + method, error.code, retry_after) from None
         except (urllib.error.URLError, TimeoutError) as error:
             # Keep only the exception class and an allowlisted read method,
@@ -2505,8 +2544,12 @@ class Slack:
             label = data.get('error') if isinstance(data, dict) else None
             known = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found',
                      'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked'}
+            if label == 'ratelimited' and method in self.limited_reads:
+                self.read_went(True)
             raise SourceError('slack_' + (label if label in known else 'invalid_response') + ':' + method,
                               retry_after=60 if label == 'ratelimited' else None)
+        if method in self.limited_reads:
+            self.read_went(False)
         return data
 
     def profile(self):
