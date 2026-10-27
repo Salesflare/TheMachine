@@ -2224,6 +2224,8 @@ function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.lengt
  if(Object.prototype.hasOwnProperty.call(cat,s)){const v=cat[s];out=typeof v==='object'?(v.one&&I18N.en[s]?.one===s?v.one:v.other):v}
  else for(const p of I18N.pats){if(p.head&&!s.startsWith(p.head))continue;const m=p.re.exec(s);if(!m)continue;
   const args=m.slice(1).map(a=>i18nLookup(a)??a);out=i18nFill(i18nPick(cat[p.key],m.slice(1),I18N.lang),args);break}
+ // a row of parts joined by ' · ' (sources, plan, usage): each part on its own
+ if(out==null&&s.includes(' · ')){const parts=s.split(' · '),tr=parts.map(x=>i18nLookup(x));if(tr.some(x=>x!=null))out=parts.map((x,i)=>tr[i]??x).join(' · ')}
  if(I18N.memo.size>20000)I18N.memo.clear();I18N.memo.set(s,out);return out}
 function i18nText(node){const cur=node.nodeValue;if(I18N.shown.get(node)!==cur)I18N.orig.set(node,cur);
  const en=I18N.orig.get(node);let out=en;if(I18N.cat){const tr=i18nLookup(en);if(tr!=null){const m=/^(\s*)[\s\S]*?(\s*)$/.exec(en);out=m[1]+tr+m[2]}}

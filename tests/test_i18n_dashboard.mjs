@@ -8,7 +8,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Languages (i18n/, the i18n script in dashboard.html): a Machine whose language was never chosen takes the browser's on
 // the first load and saves it once; Settings, General, Language switches the whole page at once, text that renders later
 // included, and back to English without a reload. Words around filled-in parts ("{} · {} today") and plurals read
-// translated too; t() is the same lookup for code. English is untouched when the language is English.
+// translated too, and rows of parts joined by " · " part by part; t() is the same lookup for code. English is untouched when the language is English.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const cats={};for(const l of ['en','nl','fr','de','es'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const languages={en:'English',nl:'Nederlands',fr:'Français',de:'Deutsch',es:'Español'};
@@ -53,8 +53,8 @@ try{
  // Text rendered later, with filled-in parts and plurals, and t() for code.
  const later=await page.evaluate(()=>{const p=document.createElement('p');p.textContent='Forgot 1 saved sign-in.';document.body.append(p);
   const q=document.createElement('p');q.textContent='Forgot 3 saved sign-ins.';document.body.append(q);
-  return new Promise(r=>setTimeout(()=>r([p.textContent,q.textContent,t('Language'),t('Forgot {} saved sign-ins.',2),t('Not in a catalog {}',4)]),50))});
- assert.deepEqual(later,['1 identifiant enregistré oublié.','3 identifiants enregistrés oubliés.','Langue','2 identifiants enregistrés oubliés.','Not in a catalog 4']);
+  return new Promise(r=>setTimeout(()=>r([p.textContent,q.textContent,t('Language'),t('Forgot {} saved sign-ins.',2),t('Not in a catalog {}',4),i18nLookup('Connected account · Your calendar · alex@example.com')]),50))});
+ assert.deepEqual(later,['1 identifiant enregistré oublié.','3 identifiants enregistrés oubliés.','Langue','2 identifiants enregistrés oubliés.','Not in a catalog 4','Compte connecté · Votre agenda · alex@example.com']);
  await page.locator('#locale-language').selectOption('en');
  await page.waitForFunction(()=>document.documentElement.lang==='en');
  assert.equal((await settingsLabel(page)).trim(),'Settings');
