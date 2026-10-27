@@ -1697,11 +1697,9 @@ def page_ids(db, name, filters):
     import crm
     if name not in PAGED:
         raise ValueError('list is one of ' + ', '.join(PAGED))
-    where, args = _paged_where(db, name)
-    extra_where, extra_args, _ = crm.list_query(db, name, crm.clean_filters(filters), '')
-    if extra_where:
-        where, args = '(' + where + ') AND ' + extra_where, (*args, *extra_args)
-    return {'ids': [r[0] for r in db.execute('SELECT id FROM graph_nodes WHERE ' + where, args)]}
+    # The List's own query (crm.page_rows) with no limit (-1): no second place that puts SQL together from the request
+    rows, _ = crm.page_rows(db, name, crm.clean_filters(filters), 'name', -1, 0)
+    return {'ids': [r['id'] for r in rows]}
 
 
 def list_counts(db):

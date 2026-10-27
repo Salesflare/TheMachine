@@ -874,6 +874,21 @@ class Boards(unittest.TestCase):
             graph.set_stage(db, node, graph.STALLED, 'owner', NOW.isoformat())  # Stalled never counts
             self.assertEqual(graph.waiting_ids(db, later), set())
             self.assertEqual(graph.page_ids(db, 'projects', {'waiting': '1'}), {'ids': []})
+            # The Board's ids come from the List's own query: an unknown list or owner is refused, a tag is only ever a value
+            with self.assertRaisesRegex(ValueError, 'list is one of'):
+                graph.page_ids(db, "projects' OR 1=1 --", {})
+            with self.assertRaisesRegex(ValueError, 'Owner'):
+                graph.page_ids(db, 'projects', {'owner': "x' OR 1=1 --"})
+            self.assertEqual(graph.page_ids(db, 'projects', {'tag': "x' OR 1=1 --"}), {'ids': []})
+
+    def test_page_ids_puts_no_sql_together_itself(self):
+        """The Projects board's ids (graph.page_ids, from the request's filters) go through crm.page_rows, the List's
+        query: no second execute that adds SQL text to a string."""
+        import ast
+        import inspect
+        tree = ast.parse(inspect.getsource(graph.page_ids).strip())
+        calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and getattr(n.func, 'attr', '') in ('execute', 'executemany')]
+        self.assertEqual(calls, [])
 
     def test_finish_analysis_moves_only_from_its_own_batch(self):
         asked, agreed, _ = self.mails()
