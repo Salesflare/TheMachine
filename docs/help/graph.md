@@ -29,6 +29,8 @@ Meetings still to come sit apart on top under **Coming up**, soonest first; **Sh
 
 An organization's timeline has its people's messages and the Intercom conversations from its domain. Your timelines are yours: the team's Graph shows only what your sharing rules allow.
 
+If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps saying so, use **Something's wrong?** at the bottom of the page.
+
 ## Filter and sort
 
 **Filter**, next to the tabs on People, Organizations and Projects, narrows the list by owner, tag, board, stage, organization, value and expected close date. People and organizations match through their open projects.

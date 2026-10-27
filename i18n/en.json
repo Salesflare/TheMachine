@@ -1346,6 +1346,10 @@
  "Let The Machine team read this Machine’s logs and settings to fix a problem. Read-only, never your messages or keys.": "Let The Machine team read this Machine’s logs and settings to fix a problem. Read-only, never your messages or keys.",
  "Ends by itself after 24 hours.": "Ends by itself after 24 hours.",
  "Allow for 24 hours": "Allow for 24 hours",
+ "The Machine team: read the server status": "The Machine team: read the server status",
+ "The Machine team: read the logs": "The Machine team: read the logs",
+ "The Machine team: read the settings": "The Machine team: read the settings",
+ "The Machine team: read the error reports": "The Machine team: read the error reports",
  "Can’t check right now": "Can’t check right now",
  "On until": "On until",
  "Read-only. Turn it off any time.": "Read-only. Turn it off any time.",
@@ -2325,5 +2329,6 @@
  "Send error reports": "Send error reports",
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.",
  "I’ll send error reports.": "I’ll send error reports.",
- "I won’t send error reports.": "I won’t send error reports."
+ "I won’t send error reports.": "I won’t send error reports.",
+ "Couldn’t load this page.": "Couldn’t load this page."
 }

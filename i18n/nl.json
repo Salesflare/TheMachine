@@ -1346,6 +1346,10 @@
  "Let The Machine team read this Machine’s logs and settings to fix a problem. Read-only, never your messages or keys.": "Laat het team van The Machine de logs en instellingen van deze Machine lezen om een probleem op te lossen. Alleen lezen, nooit je berichten of sleutels.",
  "Ends by itself after 24 hours.": "Stopt vanzelf na 24 uur.",
  "Allow for 24 hours": "Toestaan voor 24 uur",
+ "The Machine team: read the server status": "Team van The Machine: serverstatus gelezen",
+ "The Machine team: read the logs": "Team van The Machine: logs gelezen",
+ "The Machine team: read the settings": "Team van The Machine: instellingen gelezen",
+ "The Machine team: read the error reports": "Team van The Machine: foutrapporten gelezen",
  "Can’t check right now": "Kan nu niet nakijken",
  "On until": "Aan tot",
  "Read-only. Turn it off any time.": "Alleen lezen. Zet het uit wanneer je wilt.",
@@ -2325,5 +2329,6 @@
  "Send error reports": "Foutrapporten sturen",
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Als er iets misgaat, stuur ik wat er misging en waar in de code. Nooit je berichten, namen of adressen.",
  "I’ll send error reports.": "Ik stuur foutrapporten.",
- "I won’t send error reports.": "Ik stuur geen foutrapporten."
+ "I won’t send error reports.": "Ik stuur geen foutrapporten.",
+ "Couldn’t load this page.": "Deze pagina kon niet laden."
 }

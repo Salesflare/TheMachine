@@ -1346,6 +1346,10 @@
  "Let The Machine team read this Machine’s logs and settings to fix a problem. Read-only, never your messages or keys.": "Autorisez l’équipe The Machine à lire les journaux et paramètres de cette Machine pour régler un problème. Lecture seule, jamais vos messages ni vos clés.",
  "Ends by itself after 24 hours.": "Prend fin tout seul après 24 heures.",
  "Allow for 24 hours": "Autoriser pendant 24 heures",
+ "The Machine team: read the server status": "Équipe The Machine : état du serveur lu",
+ "The Machine team: read the logs": "Équipe The Machine : journaux lus",
+ "The Machine team: read the settings": "Équipe The Machine : paramètres lus",
+ "The Machine team: read the error reports": "Équipe The Machine : rapports d’erreurs lus",
  "Can’t check right now": "Vérification impossible pour le moment",
  "On until": "Activé jusqu’au",
  "Read-only. Turn it off any time.": "Lecture seule. Désactivable à tout moment.",
@@ -2325,5 +2329,6 @@
  "Send error reports": "Envoyer des rapports d’erreur",
  "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Quand quelque chose casse, j’envoie ce qui a échoué et où dans le code. Jamais vos messages, noms ou adresses.",
  "I’ll send error reports.": "J’enverrai des rapports d’erreur.",
- "I won’t send error reports.": "Je n’enverrai pas de rapports d’erreur."
+ "I won’t send error reports.": "Je n’enverrai pas de rapports d’erreur.",
+ "Couldn’t load this page.": "Impossible de charger cette page."
 }

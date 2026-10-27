@@ -3,7 +3,7 @@ title: Get support
 area: troubleshooting
 summary: Report a bug from your dashboard, write to us, or let our team look at your Machine for a day.
 covers: support-bundle, support-access
-code: support.py, cli.py, dashboard.html
+code: support.py, cli.py, dashboard.html, fleet.py
 site: Report a problem
 order: 9
 ---
@@ -29,9 +29,9 @@ If a report can't go out right away (you're offline, or you sent many in a short
 
 ## Support access
 
-On a hosted Machine, our team can look at it for you, but only once you allow it. In **Settings**, **Security**, **Support access**, tap **Allow for 24 hours**.
+Our team can look at your Machine for you, but only once you allow it. In **Settings**, **Security**, **Support access**, tap **Allow for 24 hours**. On your own computer, it needs your Machine [paired with your account](friends.md).
 
-- Read-only: logs and settings, scrubbed like the support report. Never your messages, keys or passwords.
+- Read-only: logs, settings, versions, how each connection syncs and recent errors, scrubbed like the support report. Never your messages, keys, passwords or who your contacts are.
 - It ends by itself after 24 hours. **Turn off** ends it now.
 - Every look is listed under it, with when.
 

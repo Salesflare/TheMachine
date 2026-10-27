@@ -165,6 +165,143 @@ def report(config_path, doctor=None, lines=1000):
     return {'parts': parts, 'settings': scrub_value(_unhomed(_settings(scrub_config(config))))}
 
 
+# Support access (Settings, Security, Support access; the control plane's cloud/support_access.py): while the owner
+# allows it, The Machine team reads snapshot() and report() of this Machine. Values under these keys say who someone is
+# (an allow list of chat ids, an owner's id), so they go whatever their type; booleans stay.
+WHO_KEY = re.compile(r'allow|from|owner|chat|user|peer|account|phone|contact|recipient|sender|member|people|person|handle|number|'
+                     r'name|login|title|terms?$|keyword|channel|alias|public|_id$', re.I)
+# A connection in config.json as support access shows it: only these, by label (gmail#2), never its id or address
+ACCOUNT_KEEP = ('service', 'transport', 'scope', 'client', 'enabled', 'disabled', 'paused', 'region', 'unit')
+FAILURE_DAYS = 7
+FAILURE_ROWS = 40
+# The runs whose failures support sees: their state, an error code and when; never what they worked on
+FAILURE_TABLES = {'review_runs': ('review', 'run_id', 'updated_at'), 'profile_runs': ('profile', 'run_id', 'updated_at'),
+                  'preparations': ('preparation', 'job_id', 'updated_at'), 'agent_jobs': ('coding agent', 'id', 'updated_at')}
+
+
+def _unwho(value, key=''):
+    if isinstance(value, dict):
+        return {k: _unwho(v, k) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_unwho(v, key) for v in value]
+    if WHO_KEY.search(key or '') and not isinstance(value, bool) and value not in (None, '', '*'):
+        return '<redacted>'
+    return value
+
+
+def clean_settings(value):
+    """A settings file as support access shows it: no secret, address, name, id of a person or anything someone wrote."""
+    return scrub_value(_unhomed(_settings(_unwho(scrub_config(value)))))
+
+
+def account_labels(config):
+    """{account id: 'gmail#2'}: how support access names each connection, the same in settings and connections."""
+    accounts = [a for a in (config or {}).get('accounts') or [] if isinstance(a, dict)]
+    return {str(a.get('id') or n): f"{a.get('service') or a.get('transport') or 'source'}#{n}" for n, a in enumerate(accounts, 1)}
+
+
+def _account(account, label):
+    out = {'source': label, **{k: account[k] for k in ACCOUNT_KEEP if isinstance(account.get(k), (str, bool, int)) and k in account}}
+    if isinstance(account.get('boundary'), str):
+        out['boundary'] = account['boundary'].split(':')[0]  # work, personal, owner: never the name after it
+    if isinstance(account.get('retired'), dict):
+        out['retired_at'] = account['retired'].get('at')
+    filters = sum(len(v) for k, v in account.items() if isinstance(v, list) and ('exclude' in k or 'terms' in k))
+    if filters:
+        out['filters'] = filters  # how many, never what they say
+    return clean_settings(out)
+
+
+def config_settings(config):
+    """config.json for support access: clean_settings, with connections as _account."""
+    labels = account_labels(config)
+    accounts = [a for a in (config or {}).get('accounts') or [] if isinstance(a, dict)]
+    return {**clean_settings({k: v for k, v in (config or {}).items() if k != 'accounts'}),
+            'accounts': [_account(a, labels[str(a.get('id') or n)]) for n, a in enumerate(accounts, 1)]}
+
+
+def _database(config):
+    import sqlite3
+    path = Path(config.get('database') or Path.home() / '.local/share/personal-assistant/events.sqlite').expanduser()
+    if not path.exists():
+        return None
+    db = sqlite3.connect(f'file:{path}?mode=ro', uri=True, timeout=5)
+    db.row_factory = sqlite3.Row
+    return db
+
+
+def _connections(db, labels):
+    """Each source's sync state, by its label in settings (gmail#2), never its id or address."""
+    try:
+        rows = db.execute('SELECT account_id,last_success,error,error_at,failures FROM checkpoints ORDER BY account_id').fetchall()
+    except Exception:  # an older or empty database
+        return []
+    return sorted(({'source': labels.get(str(r['account_id'] or '')) or f'unlisted#{n}', 'last_read': r['last_success'],
+                    'error': scrub_line(r['error'] or '')[:160] or None, 'error_at': r['error_at'], 'failures': r['failures']}
+                   for n, r in enumerate(rows, 1)), key=lambda c: int(c['source'].rsplit('#', 1)[1]))
+
+
+def _failures(db, days=FAILURE_DAYS):
+    cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat(timespec='seconds')[:19]
+    out = []
+    for table, (kind, key, at) in FAILURE_TABLES.items():
+        try:
+            columns = {row[1] for row in db.execute(f'PRAGMA table_info({table})')}
+            if not columns:
+                continue
+            code = 'error_kind' if 'error_kind' in columns else 'NULL'
+            rows = db.execute(f"SELECT {key} AS id,status,error,{code} AS code,{at} AS at FROM {table} WHERE error IS NOT NULL "
+                              f"AND error!='' AND replace({at},' ','T')>=? ORDER BY {at} DESC LIMIT ?", (cutoff, FAILURE_ROWS)).fetchall()
+        except Exception:
+            continue
+        out += [{'kind': kind, 'id': str(r['id'] or '')[:12], 'status': scrub_line(r['status'])[:40],
+                 'error': scrub_line(r['error'])[:160], **({'code': scrub_line(r['code'])[:40]} if r['code'] else {}), 'at': r['at']} for r in rows]
+    return sorted(out, key=lambda f: str(f['at'] or ''), reverse=True)[:FAILURE_ROWS]
+
+
+def _errors(db):
+    try:
+        import error_feed
+    except ImportError:
+        return None
+    try:
+        return scrub_value({**error_feed.view(db), 'recent': error_feed.example(db, 20)})
+    except Exception as error:  # read-only: an empty feed has no table yet
+        return {'not_read': type(error).__name__}
+
+
+def snapshot(config_path, doctor=None):
+    """This Machine's settings and state for support access: versions, config.json and OpenClaw's config (scrubbed as
+    clean_settings), each source's sync state, the runs that failed in the last FAILURE_DAYS (state and error code)
+    and its error reports' signatures. Never message content, secrets, addresses or who someone is."""
+    try:
+        config = json.loads(Path(config_path).expanduser().read_text())
+    except (OSError, ValueError):
+        config = {}
+    out = {'versions': [scrub_line(_unhomed(scrub(line))) for line in versions(config).splitlines()],
+           'settings': config_settings(config)}
+    try:
+        import onboarding
+        out['openclaw'] = clean_settings(onboarding.json5((onboarding.openclaw_dir() / 'openclaw.json').read_text()))
+    except (OSError, ValueError, ImportError) as error:
+        out['openclaw'] = {'not_read': type(error).__name__}
+    if doctor:
+        try:
+            out['doctor'] = [scrub_line(_unhomed(scrub(f'{mark} {text}' + (f' (fix: {fix})' if fix else '')))) for mark, text, fix in doctor(config_path)]
+        except Exception as error:
+            out['doctor'] = [f'doctor failed: {type(error).__name__}']
+    db = _database(config)
+    if db:
+        try:
+            out['connections'], out['failures'] = _connections(db, account_labels(config)), _failures(db)
+            errors = _errors(db)
+            if errors is not None:
+                out['errors'] = errors
+        finally:
+            db.close()
+    return out
+
+
 def _run(args, timeout=60):
     try:
         result = subprocess.run(args, capture_output=True, text=True, timeout=timeout, errors='replace')
