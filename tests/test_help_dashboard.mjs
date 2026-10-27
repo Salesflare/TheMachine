@@ -13,6 +13,7 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
   if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
   res.setHeader('Content-Type','application/json');
   if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');actions.push({action,args,upload:req.headers['x-upload']});
+   if(action==='help_ask'&&/comes back/.test(args.question)){res.end(JSON.stringify({answer:'Try a reload.',bug:'I snoozed a to-do until tomorrow.\nI expected it to stay away.\nIt came back within a minute.',sources:[]}));return}
    if(action==='help_ask'){setTimeout(()=>res.end(JSON.stringify({answer:'Press **Snooze**, then pick a time.\n\n- See [Snooze](https://themachine.computer/help/snooze)\n- Not [this](https://evil.example/y)',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]})),300);return}
    if(action==='bug_preview'){res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true}));return}
    if(action==='bug_send'){res.end(JSON.stringify({sent:true,id:'s_1'}));return}}
@@ -43,6 +44,15 @@ try{
   const links=await page.$$eval('.help-log .chat-files a',as=>as.map(a=>[a.href,a.target,a.rel]));
   assert.deepEqual(links,[['https://themachine.computer/help/snooze#snooze-a-to-do','_blank','noopener']],'only help and code links show');
   assert.equal(actions[0].action,'help_ask');
+  assert.equal(await page.$('#help-log [data-help-bug]'),null,'a how-to answer offers no bug report');
+  // A bug: the answer ends with Report this bug, which prefills Report a bug to edit; nothing goes before Send
+  await page.fill('#help-q','My snoozed to-do comes back at once');await page.press('#help-q','Enter');
+  await page.waitForSelector('#help-log [data-help-bug]');assert.equal(await page.$$eval('#help-log [data-help-bug]',b=>b.length),1);
+  await page.click('#help-log [data-help-bug]');assert.equal(await page.isHidden('#help-ask-pane'),true);
+  assert.equal(await page.inputValue('#bug-what'),'I snoozed a to-do until tomorrow.\nI expected it to stay away.\nIt came back within a minute.');
+  assert.equal(await page.isChecked('#bug-diag'),true,'the support report is in by default');
+  assert.deepEqual(actions.map(a=>a.action),['help_ask','help_ask'],'nothing sent from the chat');
+  await page.fill('#bug-what','');await page.click('[data-help-tab="ask"]');actions.length=1;
   // Report a bug: a click on the tab works (the panel doesn't move under it), Review shows all, nothing goes before Send
   await page.click('[data-help-tab="bug"]');assert.equal(await page.isHidden('#help-ask-pane'),true);
   await page.fill('#bug-what','The Calendar shows yesterday.');await page.click('#bug-next');

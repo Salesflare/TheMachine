@@ -100,6 +100,17 @@ class Retrieval(unittest.TestCase):
             with self.assertRaises(help_chat.Unavailable):
                 self.ask('snooze?')
 
+    def test_a_bug_comes_back_as_a_write_up_for_report_a_bug_and_a_question_does_not(self):
+        _, prompt = self.ask('How do I snooze a to-do?')
+        self.assertIn('not from the words they use', prompt)  # the model judges what they mean
+        out, _ = self.ask('Snoozed to-dos come back at once', answer='Try a reload [1].\n\nBUG:\nI snoozed a to-do until tomorrow.\n'
+                          'I expected it to stay away until then.\nIt came back within a minute [1].')
+        self.assertEqual(out['answer'], 'Try a reload.')
+        self.assertEqual(out['bug'], 'I snoozed a to-do until tomorrow.\nI expected it to stay away until then.\nIt came back within a minute.')
+        out, _ = self.ask('How do I snooze a to-do?')
+        self.assertNotIn('bug', out)
+        self.assertEqual(help_chat.split_bug('Reload.\n**BUG:**\n'), ('Reload.', None))
+
     def test_the_model_runs_as_a_one_shot_turn_through_the_gateway(self):
         class Done:
             returncode, stdout = 0, json.dumps({'ok': True, 'outputs': [{'text': 'Hi [1]'}]})

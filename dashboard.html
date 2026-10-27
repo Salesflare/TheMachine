@@ -7466,22 +7466,28 @@ const HELP_SRC=/^https:\/\/(themachine\.computer\/help\/|github\.com\/Salesflare
 function helpTab(t){for(const b of helpBox.querySelectorAll('[data-help-tab]'))b.setAttribute('aria-selected',String(b.dataset.helpTab===t));$('#help-ask-pane').hidden=t!=='ask';$('#help-bug-pane').hidden=t!=='bug'}
 function helpOpen(t='ask',about=''){helpTab(t);{const q=$('#help-q'),w=$('#bug-what');q.placeholder=window.t('How do I snooze a to-do?');q.ariaLabel=window.t('Your question');w.placeholder=window.t('What you did, what you expected, what happened')}  /* text areas: the page's translation leaves them alone */if(t==='bug')bugReset(about);else helpRender();if(!helpBox.open)helpBox.showModal();(t==='ask'?$('#help-q'):$('#bug-what')).focus();ncKeyboard()}
 $('#open-help').onclick=()=>helpOpen();
-helpBox.addEventListener('click',e=>{const t=e.target.closest('[data-help-tab]');if(t){helpOpen(t.dataset.helpTab);return}if(e.target.closest('[data-help-close]'))helpBox.close()});
+helpBox.addEventListener('click',e=>{const t=e.target.closest('[data-help-tab]');if(t){helpOpen(t.dataset.helpTab);return}const r=e.target.closest('[data-help-bug]');if(r){helpReport(helpChat[+r.dataset.helpBug]?.bug);return}if(e.target.closest('[data-help-close]'))helpBox.close()});
 document.addEventListener('click',e=>{if(!e.target.closest('#toast [data-bug-report]'))return;const t=$('#toast'),said=(t.firstChild?.nodeType===3?t.firstChild.textContent:'').trim();t.classList.remove('show');helpOpen('bug',said)});
 // The answer as the card chat shows it: markdown, with links only to the help pages and the app's code (any other link
 // keeps its words). The thread is what people wrote, so the page's translation leaves it alone (translate="no").
 const helpMarkdown=v=>chatMarkdown(String(v||'').replace(TEXT_LINK,(m,label,url)=>url&&!HELP_SRC.test(url)?label:m));
 function helpRender(){const log=$('#help-log'),src=m=>(m.sources||[]).filter(s=>HELP_SRC.test(s.url));
- log.innerHTML=(helpChat.length?'':'<p class="help-intro">Ask how anything in The Machine works. Answers come from the help pages, with links.</p>')+helpChat.map(m=>m.role==='user'
+ log.innerHTML=(helpChat.length?'':'<p class="help-intro">Ask how anything in The Machine works. Answers come from the help pages, with links.</p>')+helpChat.map((m,i)=>m.role==='user'
   ?`<div class="chat-msg you"><div class="bubble" translate="no">${esc(m.text)}</div></div>`
   :m.busy?`<div class="chat-msg machine"><div class="bubble typing" role="status" aria-label="Looking it up…"><i></i><i></i><i></i></div></div>`
-  :`<div class="chat-msg machine${m.error?' err':''}"><div class="bubble" translate="no">${m.error?esc(m.text):helpMarkdown(m.text)}</div>${src(m).length?`<div class="chat-files">${src(m).map(s=>`<a class="agent-file" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.kind==='code'?t('Code: {}',s.title):s.title)}</a>`).join('')}</div>`:''}</div>`).join('');
+  :`<div class="chat-msg machine${m.error?' err':''}"><div class="bubble" translate="no">${m.error?esc(m.text):helpMarkdown(m.text)}</div>${src(m).length?`<div class="chat-files">${src(m).map(s=>`<a class="agent-file" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.kind==='code'?t('Code: {}',s.title):s.title)}</a>`).join('')}</div>`:''}${m.bug?`<div class="chat-options"><button type="button" class="ghost" data-help-bug="${i}">Report this bug</button></div>`:''}</div>`).join('');
  log.scrollTop=log.scrollHeight}
+// When Help judged the question describes a bug (help_chat.split_bug): Report a bug, prefilled with its write-up and the
+// support report ticked, to edit there. It goes only through Review and Send, as any report. A text the owner already
+// wrote there stays, with the write-up under it.
+let helpDraft='';
+function helpReport(draft){if(!draft)return;const w=$('#bug-what'),cur=w.value.trim();
+ helpOpen('bug');w.value=!cur||cur===helpDraft?draft:cur+'\n\n'+draft;helpDraft=draft;$('#bug-diag').checked=true;w.style.height='';w.style.height=Math.min(200,Math.max(104,w.scrollHeight+4))+'px';w.setSelectionRange(0,0);w.scrollTop=0}  // the whole write-up in view
 const helpGrow=()=>{const q=$('#help-q');q.style.height='34px';q.style.height=Math.min(140,Math.max(34,q.scrollHeight))+'px';$('#help-go').disabled=helpBusy||!q.value.trim()};
 $('#help-form').onsubmit=async e=>{e.preventDefault();const q=$('#help-q').value.trim();if(!q||helpBusy)return;helpBusy=true;
  const history=helpChat.filter(m=>!m.busy&&!m.error).slice(-4).map(m=>({role:m.role,text:m.text})),wait={role:'assistant',text:'Looking it up…',busy:true};
  helpChat.push({role:'user',text:q},wait);$('#help-q').value='';helpGrow();helpRender();
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'help_ask',args:{question:q,history}})});Object.assign(wait,{text:r.answer,sources:r.sources||[],busy:false})}
+ try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'help_ask',args:{question:q,history}})});Object.assign(wait,{text:r.answer,sources:r.sources||[],bug:typeof r.bug==='string'&&r.bug.trim()?r.bug.trim():null,busy:false})}
  catch(err){Object.assign(wait,{text:err.message||t('Help can’t answer right now.'),busy:false,error:true})}
  finally{helpBusy=false;helpGrow();helpRender();$('#help-q').focus()}};
 $('#help-q').addEventListener('input',helpGrow);
@@ -7524,7 +7530,7 @@ $('#bug-send').onclick=async()=>{const b=$('#bug-send'),out=$('#bug-error2');b.d
  try{if(bugHosted()){const r=await fetch('/_machine/bug',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'same-origin',redirect:'manual'});
    if(!r.ok){let m='';try{m=(await r.json()).error}catch{}throw Error(m||'The report didn’t go out. Try again.')}}
   else await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'X-Upload':'bug-report'},body:JSON.stringify({action:'bug_send',args:body})});
-  $('#bug-review').hidden=true;$('#bug-done').hidden=false;$('#bug-what').value='';bugShot=bugReport=null;bugShotShow()}
+  $('#bug-review').hidden=true;$('#bug-done').hidden=false;$('#bug-what').value='';$('#bug-what').style.height='';bugShot=bugReport=null;bugShotShow()}
  catch(err){out.textContent=err.message}finally{b.disabled=false;b.textContent='Send'}};
 SETTINGS_OF['settings-support']='security';
 {const d=document.createElement('div');d.id='settings-support';d.hidden=true;

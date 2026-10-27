@@ -18,4 +18,6 @@ It runs on your Machine's own model as a short, separate chat. Only your questio
 
 Help answers questions. It can't see your data, and it changes nothing: it tells you where to tap instead.
 
-When something looks broken, open **Report a bug** in the same panel. See [Get support](get-support.md#report-a-bug).
+When what you describe sounds like something broken rather than a how-to question, the answer ends with **Report this bug**. It opens **Report a bug** with a short write-up of what you did, what you expected and what happened, and the support report ticked. Change anything you like there. Nothing goes until you press **Review**, then **Send**.
+
+**Report a bug** is also its own tab in the same panel. See [Get support](get-support.md#report-a-bug).

@@ -23,6 +23,8 @@ SECTIONS, SNIPPETS = 4, 2          # what goes in: the best help sections, then 
 SECTION_CHARS, SNIPPET_CHARS = 1400, 700
 QUESTION_CHARS, HISTORY_TURNS, TURN_CHARS = 600, 4, 600
 PER_HOUR = 30
+BUG = re.compile(r'^[ \t]*\**BUG:?\**[ \t]*$', re.M)  # the model's own line before a bug write-up
+BUG_CHARS = 1500
 TIMEOUT = 120
 CODE_FILES = ('*.py', 'connectors/*.py')  # the app's own modules; never config, data or tests
 STOP = set('a an and are as at be by can do does for from has have how i if in is it its me my of on or so that the this '
@@ -186,7 +188,10 @@ def prompt(question, history, sections, snippets):
              "it, say so and suggest Report a bug or support@themachine.computer. You can't see or change the person's Machine, "
              "settings or data, and you take no actions: tell them where to click instead. Reply in at most 120 words, short "
              "sentences, in light markdown: **bold** for what to click, a - list for steps, no headings, no em dashes. Mark "
-             "each fact with the number of its source, like [1].", '']
+             "each fact with the number of its source, like [1]. Judge from what they mean, not from the words they use, "
+             "whether they describe something in The Machine not working as it should (a bug, not a how-to question). Only then, "
+             "after your answer, add a line that is just BUG: and below it a short report for The Machine team, in their "
+             "language: what they did, what they expected and what happened, one line each, from what they said only.", '']
     n = 0
     for s in sections:
         n += 1
@@ -240,7 +245,21 @@ def ask(question, history=(), run=None, config=None, model=None, folder=HELP, ro
     if limited():
         raise Unavailable('That’s a lot of questions for one hour. Try again a bit later.')
     answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets), model)
+    answer, bug = split_bug(answer)
     used = sources(sections, snippets)
     cited = {int(n) for n in re.findall(r'\[(\d{1,2})\]', answer)}
     shown = re.sub(r'[ \t]?\[\d{1,2}\](?:\[\d{1,2}\])*', '', answer).strip()  # the links show the sources
-    return {'answer': shown[:4000], 'sources': [s for i, s in enumerate(used, 1) if not cited or i in cited] or used}
+    out = {'answer': shown[:4000], 'sources': [s for i, s in enumerate(used, 1) if not cited or i in cited] or used}
+    if bug:
+        out['bug'] = bug  # the dashboard offers Report this bug, prefilled with it; nothing is sent from here
+    return out
+
+
+def split_bug(answer):
+    """(answer, bug write-up or None): the model ends a reply with a BUG: line and a short report when it judged the
+    person describes a bug. The write-up only prefills Report a bug, where the owner edits, reviews and sends it."""
+    m = BUG.search(answer or '')
+    if not m:
+        return answer, None
+    bug = re.sub(r'[ \t]?\[\d{1,2}\](?:\[\d{1,2}\])*', '', answer[m.end():]).strip()[:BUG_CHARS]
+    return answer[:m.start()].rstrip(), bug or None
