@@ -39,6 +39,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut.
 | digest | overzicht | récap | Zusammenfassung | resumen | riepilogo | resumo |
 | promise | belofte, beloftes, beloofd | promesse, promesses, promis | Versprechen, versprochen | promesa, promesas, prometido, prometiste, prometió, prometieron | promessa, promesse, promesso, promessi | promessa, promessas, prometeu, prometido, prometi, prometeram |
 | learning | inzicht, inzichten | apprentissage, apprentissages | Erkenntnis, Erkenntnisse | aprendizaje, aprendizajes | apprendimento, apprendimenti | aprendizado, aprendizados |
+| error report | foutrapport, foutrapporten | rapport d’erreur, rapports d’erreur | Fehlerbericht, Fehlerberichte | informe de errores, informes de errores | segnalazione di errore, segnalazioni di errore | relatório de erro, relatórios de erro |
 
 ## Exceptions
 

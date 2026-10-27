@@ -60,6 +60,7 @@ import enrichment
 import fleet
 import shared_graph
 import agent_jobs
+import error_feed
 import mimetypes
 import work_removal
 import retention
@@ -566,7 +567,7 @@ AGENT_ACTIONS = {'agent_draft', 'agent_send', 'agent_follow_up', 'agent_retry', 
 OWNER_ACTIONS |= AGENT_ACTIONS
 # Learnings for The Machine team (team_learnings.py): sharing, Not now, Never ask and the Settings switch are the owner's
 # own, from their dashboard only. Nothing is sent without their Send on exactly what they saw.
-LEARNING_ACTIONS = {'learnings_share', 'learnings_later', 'learnings_never', 'set_learnings_offer', 'set_learnings_vote'}
+LEARNING_ACTIONS = {'learnings_share', 'learnings_later', 'learnings_never', 'set_learnings_offer', 'set_learnings_vote', 'set_error_reports'}
 OWNER_ACTIONS |= LEARNING_ACTIONS
 # The Graph as a CRM (crm.py, crm_import.py): who owns a record, one organization with several websites, and a
 # spreadsheet imported; the owner's own, from their dashboard only.
@@ -591,7 +592,7 @@ DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACT
                                'push_test', 'notify_set', 'notify_active', 'notify_preview', 'browser_focus', 'browser_login_open', 'browser_login_pages', 'browser_login_fill',
                                'browser_login_choose', 'browser_logins', 'browser_login_forget', 'model_usage_refresh', 'model_reset',
                                'set_work_hours', 'connector_sync', 'set_signature', 'detect_signature', 'set_voice', 'unmerge_fact', 'learning_undo', 'calendar_write', 'set_locale',
-                               'browser_show'})
+                               'browser_show', 'client_error'})
 UPLOAD_ACTIONS, UPLOAD_REQUEST_BYTES = {'skill_import_upload', 'skill_import_report', 'skills_found', 'graph_import_preview', 'graph_import_run', 'graph_import_ai', 'bug_send', 'bug_later'}, 9 * 1024 * 1024
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
 # its code version records an error within AUTO_UNDO_NEW, or the fault it fixed comes back.
@@ -2685,6 +2686,7 @@ class Store:
     owner_user_ids = set()  # The owner's own chat user IDs (Slack), set by App from config
     accounts = []  # configured accounts with their boundaries, set by App (Work/Personal labels)
     config = {}  # the service's config, set by App (browser and dashboard addresses for a card waiting on a sign-in)
+    code_version = None  # the running code's version, set by watch_faults (error reports carry it)
 
     def __init__(self, path, protect=None):
         """`protect`: seal message contents (True), open them again (False), or keep what the database has (None).
@@ -2940,6 +2942,7 @@ class Store:
                        'updated_at TEXT NOT NULL,PRIMARY KEY(action_id,operation))')
             db.execute(task_pages.SCHEMA)  # task pages offered or shared from handoffs by email (task_pages.py)
             team_learnings.ensure(db)  # learnings for The Machine team (team_learnings.py), with their use cases
+            error_feed.ensure(db)  # error reports for The Machine team: signatures only (error_feed.py)
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             # Promises the owner made and promises made to them, from reviewed messages. Each is
             # checked when due: still open, it becomes a card (status carded, suggestion_id).
@@ -3505,6 +3508,14 @@ class Store:
             db.execute('DELETE FROM faults WHERE day<?', ((dt.datetime.fromisoformat(stamp) - dt.timedelta(days=30)).date().isoformat(),))
             db.execute('DELETE FROM fault_versions WHERE day<?', ((dt.datetime.fromisoformat(stamp) - dt.timedelta(days=30)).date().isoformat(),))
 
+    def record_error(self, source, kind, message, file, function, line=None):
+        """Count an error for the error reports (error_feed.py): a signature only. Never raises."""
+        try:
+            with self.connect() as db:
+                return error_feed.record(db, source, kind, message, file, function, line, self.code_version)
+        except Exception:
+            return None  # recording an error must never cause one
+
     def unreported_faults(self):
         """Faults worth a (new) signal: the first one of a day, then again at 3, 10, 30, 100… occurrences."""
         with self.connect() as db:
@@ -3520,6 +3531,12 @@ class Store:
         with self.connect() as db:
             retry_at = (dt.datetime.fromisoformat(now()) + dt.timedelta(seconds=error.retry_after)).isoformat() if error.retry_after else None
             self.record_sync_activity(db, account, 'failed', error=str(error), retry_at=retry_at)
+            try:  # the error reports: the source's service and the error type, never the account (error_feed.py)
+                service_name = str(account).split(':')[0]
+                if re.fullmatch(r'[a-z0-9_-]{1,24}', service_name):
+                    error_feed.record(db, 'sync', type(error).__name__, str(error), 'sync', service_name, None, self.code_version)
+            except Exception:
+                pass
             db.execute('INSERT INTO checkpoints(account_id,state,error,error_at,failures,retry_at) VALUES(?,?,?,?,1,?) ON CONFLICT(account_id) DO UPDATE SET error=excluded.error,error_at=excluded.error_at,failures=failures+1,retry_at=excluded.retry_at',
                        (account, '{}', str(error), now(), retry_at))
 
@@ -7863,6 +7880,8 @@ class FaultLog(logging.Handler):
             kind = type(error).__name__
             fingerprint = hashlib.sha256(json.dumps([kind] + [[f['file'], f['function']] for f in frames[-3:]]).encode()).hexdigest()[:16]
             self.store.record_fault(fingerprint, kind, frames, location[:120], self.version, fault_message(error), fault_origin(error))
+            if hasattr(self.store, 'record_error'):  # and a signature for the error reports (error_feed.py)
+                self.store.record_error('service', kind, str(error), frames[-1]['file'], frames[-1]['function'], frames[-1]['line'])
         except Exception:
             pass  # recording an error must never cause one
 
@@ -7870,6 +7889,7 @@ class FaultLog(logging.Handler):
 def watch_faults(store, root=APP_ROOT):
     """Record the service's own errors: logged ones and threads that die of one."""
     log = FaultLog(store, code_version(root), root)
+    store.code_version = log.version
     LOG.addHandler(log)
     previous = threading.excepthook
 
@@ -12853,6 +12873,9 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner deletes someone permanently, on their page in the dashboard')
             return self.delete_person(str(args.get('node_id') or ''))
+        if name == 'client_error':  # the dashboard's own errors, as signatures for the error reports (error_feed.py)
+            with self.store.connect() as db:
+                return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version)}
         if name in LEARNING_ACTIONS:
             if not owner_dashboard:
                 raise ValueError('Only the owner shares learnings, from the dashboard')
@@ -12865,6 +12888,8 @@ class App:
                     team_learnings.never(db, str(args.get('id') or '') or None)
                 elif name == 'set_learnings_vote':
                     team_learnings.set_vote(db, args.get('on') is not False)
+                elif name == 'set_error_reports':
+                    error_feed.set_on(db, args.get('on') is not False)
                 else:
                     team_learnings.set_offer(db, args.get('on') is not False)
             return {'team_learnings': self.learnings_view()}
@@ -14164,6 +14189,8 @@ class App:
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
                 self.store.learnings_due()
                 self.team_votes_due()  # and other Machines' learnings come to be judged, when voting is on
+        if self.fleet:
+            self.error_reports_step()
         self.apply_skill_clusters()  # a Create skill tapped on Telegram
         if seeded or learned:
             LOG.info('style learned voices=%s replies=%s', seeded, learned)
@@ -15440,7 +15467,8 @@ class App:
                 # transferable. No event is marked reviewed by this recovery.
                 db.execute("UPDATE analyses SET status='retryable',last_error=coalesce(last_error,'run_interrupted'),error_at=? WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
                            (now(), REVIEW_SESSION_PREFIX + run['run_id'], run['run_id']))
-                if error:
+                if error:  # the error reports: its error code and phase, both from fixed lists (error_feed.py)
+                    error_feed.record(db, 'review', error, phase or '', 'assistant.py', 'review_step', None, self.store.code_version)
                     saved = db.execute("SELECT count(*) FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete'",
                                        (run['run_id'],REVIEW_SESSION_PREFIX+run['run_id'])).fetchone()[0]
                     LOG.warning('review runtime outcome=%s error=%s phase=%s saved_claims=%s',result,error,phase,saved)
@@ -16978,7 +17006,7 @@ class App:
         """Feedback, Share learnings with The Machine team, and its Settings switch (team_learnings.py)."""
         try:
             with self.store.connect() as db:
-                return team_learnings.view(db, network=bool(getattr(self, 'fleet', None)))
+                return {**team_learnings.view(db, network=bool(getattr(self, 'fleet', None))), 'errors': error_feed.on(db)}
         except sqlite3.Error:
             return None
 
@@ -17010,6 +17038,18 @@ class App:
         except Exception as error:  # the Network or the control plane is away: next time
             LOG.warning('learning votes error=%s', type(error).__name__)
             return None
+
+    def error_reports_step(self):
+        """Every ten minutes, over the Network: the errors counted since the last batch, as signatures (error_feed.py).
+        The names this Machine knows are taken out once more first."""
+        def names():
+            with self.store.connect() as db:
+                return [name for name, _ in team_learnings.known_names(db, self.config)]
+        try:
+            return error_feed.send(self.store.connect, self.fleet.relay.call, names)
+        except Exception as error:  # the Network or the control plane is away: next time
+            LOG.warning('error reports error=%s', type(error).__name__)
+            return 0
 
     def team_votes_send(self, run_id):
         with self.store.connect() as db:
@@ -17626,6 +17666,7 @@ class App:
         server = http.server.ThreadingHTTPServer(('127.0.0.1', self.config.get('port', 8787)), Handler)
         watch_faults(self.store)
         if getattr(self, 'agents', None):
+            self.agents.version = self.store.code_version  # failed jobs in the error reports carry it
             try:
                 self.agents.recover()  # a job that ran when the service stopped, or one still waiting for a slot
             except Exception as error:  # noqa: BLE001 - never stops the service

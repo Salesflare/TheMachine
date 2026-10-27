@@ -64,6 +64,7 @@ FEATURES = {
     'support-bundle': ('cli.py', "'support-bundle'"),
     'keyboard': ('dashboard.html', 'Search and commands'),
     'share-learnings': ('team_learnings.py', 'def '),
+    'error-reports': ('error_feed.py', 'def '),
     'team-graph': ('shared_graph.py', 'def overview'),
     'share-contact': ('contact_share.py', 'def contact_send'),
     'help-chat': ('dashboard.html', "helpBox.id='help-panel'"),

@@ -2316,5 +2316,9 @@
  "A file is gone. Add it again.": "Een bestand is weg. Voeg het opnieuw toe.",
  "The images are too big together. A to-do can carry up to {} of images.": "De afbeeldingen zijn samen te groot. Een to-do kan tot {} aan afbeeldingen bevatten.",
  "Drop to add to the to-do": "Loslaten om aan de to-do toe te voegen",
- "A to-do can carry up to {} files.": "Een to-do kan tot {} bestanden bevatten."
+ "A to-do can carry up to {} files.": "Een to-do kan tot {} bestanden bevatten.",
+ "Send error reports": "Foutrapporten sturen",
+ "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Als er iets misgaat, stuur ik wat er misging en waar in de code. Nooit je berichten, namen of adressen.",
+ "I’ll send error reports.": "Ik stuur foutrapporten.",
+ "I won’t send error reports.": "Ik stuur geen foutrapporten."
 }

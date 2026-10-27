@@ -45,6 +45,8 @@ import threading
 import time
 import urllib.parse
 
+import error_feed
+
 LOG = logging.getLogger('personal-assistant')
 TOOLS = {'claude': 'Claude Code', 'codex': 'Codex'}
 PLACES = {'claude': ('local', 'remote'), 'codex': ('local', 'cloud')}
@@ -1260,6 +1262,8 @@ def elsewhere_link(url, host=None):
 # ------------------------------------------------------------------ the jobs
 
 class AgentJobs:
+    version = None  # the running code's version, set by the service (failed jobs in the error reports carry it)
+
     def __init__(self, connect, config, root, card=None, close_card=None, revise=None, network=None):
         """`connect`: the Store's connection. `root`: where job folders go. `card(suggestion_id)` gives what a brief is
         made of ({card, drafts, links, files, messages, task, note, about, history}); `close_card(suggestion_id)` marks the card done;
@@ -1706,8 +1710,14 @@ class AgentJobs:
     def finish(self, job_id, status, error=None, error_kind=None, only_if=None, turn=None):
         with self.connect() as db:
             where = f" AND status IN ({','.join('?' * len(only_if))})" if only_if else ''
-            db.execute(f'UPDATE agent_jobs SET status=?,error=?,error_kind=?,progress=NULL,updated_at=?,finished_at=? WHERE id=?{where} AND (? IS NULL OR turns=?)',
-                       (status, error, error_kind, now(), now(), job_id, *(only_if or ()), turn, turn))
+            changed = db.execute(f'UPDATE agent_jobs SET status=?,error=?,error_kind=?,progress=NULL,updated_at=?,finished_at=? WHERE id=?{where} AND (? IS NULL OR turns=?)',
+                                 (status, error, error_kind, now(), now(), job_id, *(only_if or ()), turn, turn)).rowcount
+            if changed and status == 'failed':  # the error reports: the tool and its error kind, never the job's text (error_feed.py)
+                try:
+                    row = db.execute('SELECT tool FROM agent_jobs WHERE id=?', (job_id,)).fetchone()
+                    error_feed.record(db, 'job', error_kind or 'failed', '', 'agent_jobs.py', row[0] if row else 'job', None, self.version)
+                except Exception:
+                    pass  # recording an error must never cause one
 
     def recover(self):
         """After a restart: a local job that was running has stopped with the service; one still waiting for a slot

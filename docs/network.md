@@ -38,6 +38,11 @@ how messages stay reliable, and where it's going.
   what they saw. `POST /api/fleet/learnings` gets the team's public keys (checked against the fingerprint pinned in the code; any other key sends nothing)
   and then the learnings sealed for them, signed by a key for learnings only, so the control plane sees a made-up name
   unless the owner adds their email.
+- **Error reports for The Machine team** (error_feed.py, docs/help/error-reports.md): on unless the owner turns off
+  **Send error reports**. `POST /api/fleet/errors` takes a batch of signatures at most every 10 minutes: an error's type,
+  its message normalized to a strict shape (numbers, ids, quotes, addresses, links, paths and unknown capitalized words
+  taken out), file:function:line in The Machine's own code, the app version, a count and first and last seen. Never
+  message content, names, addresses or tokens. The control plane keeps them 30 days per Machine and signature.
 - **Sealed only.** The Network carries nothing else: a question or answer that isn't sealed is refused there and
   dropped by your Machine. A teammate or friend whose Machine has no keys yet (one from before end-to-end encryption)
   can't be asked until it updates; asking everyone skips it, asking that person by name says so.

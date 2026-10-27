@@ -2316,5 +2316,9 @@
  "A file is gone. Add it again.": "Un fichier a disparu. Ajoutez-le à nouveau.",
  "The images are too big together. A to-do can carry up to {} of images.": "Les images sont trop volumineuses ensemble. Une tâche peut contenir jusqu’à {} d’images.",
  "Drop to add to the to-do": "Déposez pour ajouter à la tâche",
- "A to-do can carry up to {} files.": "Une tâche peut contenir jusqu’à {} fichiers."
+ "A to-do can carry up to {} files.": "Une tâche peut contenir jusqu’à {} fichiers.",
+ "Send error reports": "Envoyer des rapports d’erreur",
+ "When something breaks, I send what failed and where in the code. Never your messages, names or addresses.": "Quand quelque chose casse, j’envoie ce qui a échoué et où dans le code. Jamais vos messages, noms ou adresses.",
+ "I’ll send error reports.": "J’enverrai des rapports d’erreur.",
+ "I won’t send error reports.": "Je n’enverrai pas de rapports d’erreur."
 }
