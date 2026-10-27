@@ -2215,12 +2215,13 @@ const I18N_ATTRS=['placeholder','aria-label','title','alt'],I18N_SKIP='[translat
 const i18nPlural=(n,lang)=>{try{return new Intl.PluralRules(lang).select(Math.abs(+n))}catch{return +n===1?'one':'other'}};
 function i18nFill(s,args){let i=0;return String(s).replace(/\{(\d*)\}/g,(m,d)=>{const k=d===''?i++:+d;return k<args.length?String(args[k]):m})}
 function i18nPick(v,args,lang){if(v&&typeof v==='object'){const n=args.find(a=>a!==''&&!isNaN(+a));return v[i18nPlural(n??0,lang)]||v.other||''}return v}
-// t('Save'), t('{} of {} ready',2,5): in the owner's language, English (the key, or en.json's plural) when there is none
-function t(key,...args){const tr=I18N.cat&&I18N.cat[key];return i18nFill(i18nPick(tr!=null?tr:(I18N.en[key]??key),args,tr!=null?I18N.lang:'en'),args)}
+// t('Save'), t('{} of {} ready',2,5): in the owner's language, English (the key, or en.json's plural) when there is none.
+// A count with its English forms, t(['{} guest','{} guests'],n), reads right in English before any catalog is loaded.
+function t(key,...args){if(Array.isArray(key))key=I18N.cat?.[key[1]]!=null||I18N.en[key[1]]?key[1]:args.find(a=>!isNaN(+a))==1?key[0]:key[1];const tr=I18N.cat&&I18N.cat[key];return i18nFill(i18nPick(tr!=null?tr:(I18N.en[key]??key),args,tr!=null?I18N.lang:'en'),args)}
 function i18nPatterns(cat){const out=[],esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  for(const key of Object.keys(cat)){const forms=I18N.en[key]&&typeof I18N.en[key]==='object'?Object.values(I18N.en[key]):[key];
   for(const f of forms){if(!/\{\d*\}/.test(f))continue;const parts=f.split(/\{\d*\}/);const head=parts[0];
-   out.push({head,key,re:new RegExp('^'+parts.map(esc).join('(.+?)')+'$','s')})}}
+   out.push({head,key,re:new RegExp('^'+parts.map(esc).join('((?:(?! · ).)+?)')+'$','s')})}}
  return out.sort((a,b)=>b.head.length-a.head.length)}
 function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.length>400||!/[A-Za-z]/.test(s))return null;
  if(I18N.memo.has(s))return I18N.memo.get(s);let out=null;const cat=I18N.cat;
@@ -2262,7 +2263,9 @@ function i18nApply(l){let lang=l.language||'en';
  if(l.language_set===false&&l.saveable&&!i18nAsked){i18nAsked=true;lang=i18nBrowser(l.languages||{en:1});
   request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_locale',args:{language:lang}})})
    .then(v=>{if(v?.language){state.locale=v;render()}}).catch(()=>{})}
- i18nLoad(lang).then(changed=>{if(changed&&typeof render==='function')render()})}
+ i18nLoad(lang).then(changed=>{if(changed)i18nRerender()})}
+// Text code builds in the language (date ranges, t()) builds again once the language changes; the rest the page swaps itself
+function i18nRerender(){if(typeof render==='function')render();if(typeof calRender==='function'&&!$('#calendar')?.hidden)calRender()}
 // Settings, General, Language: each language in its own name.
 function i18nLanguages(l){const sel=document.getElementById('locale-language');if(!sel)return;const langs=l.languages||{en:'English'},cur=l.language||'en',key=cur+Object.keys(langs).join();
  if(sel.dataset.for!==key){sel.innerHTML=Object.entries(langs).map(([c,n])=>`<option value="${c}"${c===cur?' selected':''}>${esc(n)}</option>`).join('');sel.dataset.for=key}
@@ -2388,7 +2391,7 @@ const calendarDate=v=>new Date(v+'T12:00:00').toLocaleDateString(DL,{month:'shor
 const humanDay=d=>{const t=new Date(),k=localDay(d),off=n=>{const x=new Date(t);x.setDate(t.getDate()+n);return localDay(x)};return k===off(0)?'Today':k===off(-1)?'Yesterday':k===off(1)?'Tomorrow':d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==t.getFullYear()?{year:'numeric'}:{})})};
 const humanHM=d=>fmtHM(d);
 const humanTime=v=>{const d=new Date(v);return !v||isNaN(d)?'':humanDay(d)+' '+humanHM(d)};
-const when=e=>{if(e.kind!=='calendar.event')return humanTime(e.occurred_at);if(e.metadata.all_day)return humanDay(new Date(e.metadata.start.date+'T12:00:00'))+' · All day';const a=new Date(e.occurred_at),b=new Date(e.metadata.end_at);return humanTime(e.occurred_at)+(isNaN(b)?'':' to '+(localDay(a)===localDay(b)?humanHM(b):humanTime(e.metadata.end_at)))};
+const when=e=>{if(e.kind!=='calendar.event')return humanTime(e.occurred_at);if(e.metadata.all_day)return humanDay(new Date(e.metadata.start.date+'T12:00:00'))+' · All day';const a=new Date(e.occurred_at),b=new Date(e.metadata.end_at);return isNaN(b)?humanTime(e.occurred_at):rangeText(humanTime(e.occurred_at),localDay(a)===localDay(b)?humanHM(b):humanTime(e.metadata.end_at))};
 // Card text: [words](https://...) and bare web addresses become links (a long one shows its domain), only http(s) and
 // mailto; everything else stays escaped text. format also highlights **values**; linkText is for technical text.
 const TEXT_LINK=/\[([^\[\]\n]{1,200})\]\(((?:https?:\/\/|mailto:)[^\s()<>]{1,2000})\)|\bhttps?:\/\/[^\s<>()\[\]"'`]{1,2000}/gi;
@@ -2769,7 +2772,7 @@ function renderLocale(){const l=state.locale,box=$('#settings-locale');box.hidde
  for(const el of [reg,clk,$('#locale-language')])el.disabled=!l.saveable}
 $('#settings-locale').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select')||!el.value)return;const l=state.locale||{};
  const args=el.id==='locale-language'?{language:el.value}:el.id==='locale-region'?{locale:(l.language||'en').split('-')[0]+'-'+el.value}:{clock:el.value};el.disabled=true;
- try{state.locale=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_locale',args})});await i18nLoad(state.locale.language);render();notice(t('Saved.'))}
+ try{state.locale=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_locale',args})});await i18nLoad(state.locale.language);i18nRerender();notice(t('Saved.'))}
  catch(err){notice(err.message);renderLocale()}finally{el.disabled=!state.locale?.saveable}});
 // Coding agents (agent_remote.py): the Claude Code session a card goes to and the Codex cloud environment.
 function renderAgents(){const f=$('#agents-settings'),a=state.agents_settings;f.hidden=!a;if(!a||agentsDirty)return;
@@ -4630,21 +4633,23 @@ const calWords=v=>calNorm(v).split(/[^\p{L}\p{N}]+/u).filter(w=>w.length>1);
 // The promise's person is in the meeting: named in its title, or a guest (by name or address)
 function calWith(p,m){const who=calWords(p.who);if(!who.length)return false;const full=who.join(' ');
  return [m.title,...(m.people||[])].some(t=>{const w=calWords(t);return w.join(' ').includes(full)||w.includes(who[0])&&who[0].length>2})}
-const calSaid=p=>p.together?'With '+p.who:p.direction==='mine'?'Promised to '+p.who:p.who+' promised';
+const calSaid=p=>p.together?t('With {}',p.who):p.direction==='mine'?t('Promised to {}',p.who):t('{} promised',p.who);
 const CAL_CARD={prepared:['Prep ready','mint'],accepted:['Preparing','lavender'],instructions:['Preparing','lavender'],pending:['To-do','amber'],snoozed:['To-do','muted']};
 const calShort=k=>{const d=new Date(k+'T12:00');return d.toLocaleDateString(DL,{weekday:'short'})+' '+d.getDate()};  // Sat 24
+// "09:45 to 10:30" in English; in another language a dash, as its calendars write it (09:45–10:30, ma 26 – wo 28)
+const rangeText=(a,b)=>I18N.lang==='en'?a+' to '+b:a+(/\s/.test(a+b)?' – ':'–')+b;
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
  if(it.kind==='meeting'){const m=it.m,c=it.s&&CAL_CARD[it.s.status],a=new Date(m.start),b=new Date(m.end),
-   when=it.allDay?(it.span?calShort(it.span[0])+' to '+calShort(it.span[1]):''):!(b>a)?'':hm(a)+' to '+(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b);
-  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,m.guests?m.guests+(m.guests===1?' guest':' guests'):''].filter(Boolean).join(' · '),
+   when=it.allDay?(it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''):!(b>a)?'':rangeText(hm(a),(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b));
+  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,m.guests?t(['{} guest','{} guests'],m.guests):''].filter(Boolean).join(' · '),
    said:(it.promises||[]).map(p=>calSaid(p)+': '+p.what),
    href:it.s?'#chat='+it.s.id:'',url:!it.s&&!m.edit&&m.url||'',edit:!it.s&&m.edit?m.id:'',badge:c?chip(c[0],c[1]):'',prep:c?c[0]:'',tone:m.shared?'theirs':it.s?'prep t-'+(c?c[1]:'muted'):'meeting'}}
  if(it.kind==='promise'){const p=it.p;return {time:late?calShort(p.due):'Due',title:p.what,sub:calSaid(p),href:promiseHref(p),tone:late?'late':'promise'}}
- const s=it.s;if(it.kind==='checkin')return {time:hm(s.snoozed_until),title:'Check in with '+s.handoff_wait.name,sub:'If no answer · '+s.title,href:'#chat='+s.id,tone:'back'};
+ const s=it.s;if(it.kind==='checkin')return {time:hm(s.snoozed_until),title:t('Check in with {}',s.handoff_wait.name),sub:t('If no answer')+' · '+s.title,href:'#chat='+s.id,tone:'back'};
  if(it.kind==='back')return {time:hm(s.snoozed_until),title:s.title,sub:'Comes back',href:'#chat='+s.id,tone:'back'};
  return {time:late?calShort(s.due):'Due',title:s.title,sub:calCardWho(s),href:'#chat='+s.id,tone:late?'late':'due'}}
 // Who a due card is with, never its status: the person it waits on, or the promise it came from
-function calCardWho(s){let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}const name=s.handoff_wait?.name||w.name;if(name)return 'Waiting on '+name;
+function calCardWho(s){let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}const name=s.handoff_wait?.name||w.name;if(name)return t('Waiting on {}',name);
  const p=(state.promises||[]).find(p=>p.suggestion_id===s.id);return p?calSaid(p):''}
 function calRow(it){const x=calParts(it),tag=x.href||x.url||x.edit?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.url?` href="${esc(x.url)}" target="_blank" rel="noopener"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:'';
  return `<${tag} class="cal-item k-${x.tone}${it.past?' past':''}"${attrs}><span class="cal-time">${esc(x.time)}</span><span class="cal-dot" aria-hidden="true"></span><span class="cal-main"><span class="cal-title">${x.owner?`<span class="cal-owner">${esc(x.owner)}</span> `:''}${esc(x.title)}</span>${x.sub||x.prep?`<span class="cal-sub">${x.prep?`<span class="cal-prep">${esc(x.prep)}${x.sub?' · ':''}</span>`:''}${esc(x.sub)}</span>`:''}${(x.said||[]).map(t=>`<span class="cal-sub cal-said">${esc(t)}</span>`).join('')}</span><span class="cal-end">${x.badge||''}${x.url?'<span class="cal-go" aria-label="Opens in its calendar">↗</span>':x.href||x.edit?'<span class="cal-go" aria-hidden="true">›</span>':''}</span></${tag}>`}
@@ -4654,6 +4659,7 @@ const calDate=k=>calOf(k).toLocaleDateString(DL,{weekday:'short',day:'numeric',m
 const calMon=d=>d.toLocaleDateString(DL,{month:'short'}).replace(/\.$/,'');
 // A run of days as "Oct 26 – Nov 1, 2026" (the year once, or on both sides when it changes)
 function calSpan(a,n=7){const b=calAdd(a,n-1),y=', '+b.getFullYear();
+ if(I18N.lang!=='en')try{return new Intl.DateTimeFormat(DL,{day:'numeric',month:'short',year:'numeric'}).formatRange(a,b)}catch{}
  return a.getFullYear()!==b.getFullYear()?`${calMon(a)} ${a.getDate()}, ${a.getFullYear()} – ${calMon(b)} ${b.getDate()}, ${b.getFullYear()}`:
   a.getMonth()!==b.getMonth()?`${calMon(a)} ${a.getDate()} – ${calMon(b)} ${b.getDate()}${y}`:`${calMon(b)} ${a.getDate()} – ${b.getDate()}${y}`}
 const calMonthName=m=>m.toLocaleDateString(DL,{month:'long',year:'numeric'});
@@ -4698,7 +4704,7 @@ function calLay(list,k,abreast=1){const ev=list.map(it=>{let s,e;if(it.kind==='m
 // A block: its start time, then its title, on as many lines as it has room for (two at least)
 function calBlock(b){const x=calParts(b.it),tag=x.href||x.url||x.edit?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.url?` href="${esc(x.url)}" target="_blank" rel="noopener"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:'',h=(b.ve-b.s)*CAL_HOUR/60-2,off=b.ind*12,rail=b.rail?(DESK.matches?26:20):0;
  return `<${tag} class="cal-blk k-${x.tone}${b.it.past?' past':''}${b.n>1?' side':''}"${attrs} style="top:${b.s*CAL_HOUR/60}px;height:${h}px;left:calc(${b.col} * (100% - ${rail}px) / ${b.n} + ${off}px);width:calc((100% - ${rail}px) / ${b.n} - ${3+off}px);z-index:${1+b.ind};--lines:${Math.max(2,Math.floor((h-4)/14))}" title="${esc([x.time,x.owner,x.title].filter(Boolean).join(' ')+(x.sub?' · '+x.sub:'')+(x.said||[]).map(t=>' · '+t).join(''))}"><span class="c"><span class="t">${esc(x.time)}</span> <span class="n">${x.owner?esc(x.owner)+' ':''}${esc(x.title)}</span></span></${tag}>`}
-const calMoreBlock=(m,k)=>`<button type="button" class="cal-tg-more" data-cal-open="${k}" style="top:${m.s*CAL_HOUR/60}px" aria-label="${m.n} more, open the day">+${m.n}</button>`;
+const calMoreBlock=(m,k)=>`<button type="button" class="cal-tg-more" data-cal-open="${k}" style="top:${m.s*CAL_HOUR/60}px" aria-label="${esc(t('{} more, open the day',m.n))}">+${m.n}</button>`;
 // How many overlapping items sit side by side in a day's column: each keeps a third of the column and at least 56px
 function calAbreast(n){if(!DESK.matches)return 1;const box=$('#calendar-view');let w=box?.clientWidth||0;if(!w)w=innerWidth-($('#app-side')?.offsetWidth||0)-112;
  return Math.max(1,Math.min(3,Math.floor((w-48)/n/56)))}
@@ -4716,7 +4722,7 @@ function calMonthGrid(days,byDay,today){const m=calMonth.getMonth(),phone=!DESK.
  const head=`<div class="cal-mg-head">${days.slice(0,7).map(k=>`<span>${esc(calWeekday(k))}</span>`).join('')}</div>`;
  const cells=days.map(k=>{const d=calOf(k),list=byDay(k),cls=`cal-mday${d.getMonth()!==m?' out':''}${k===today?' today':''}${k<today?' gone':''}`;
   if(phone)return `<button type="button" class="${cls}${k===calPick?' picked':''}" data-cal-pick="${k}" aria-label="${esc(calDate(k)+(list.length?', '+list.length:''))}" aria-pressed="${k===calPick}"><b>${d.getDate()}</b><span class="cal-dots">${list.slice(0,3).map(i=>`<i class="k-${calParts(i).tone}"></i>`).join('')}</span></button>`;
-  return `<div class="${cls}" data-day="${k}"><button type="button" class="cal-mnum" data-cal-open="${k}" aria-label="${esc(calDate(k))}">${d.getDate()}</button>${list.slice(0,3).map(calChip).join('')}${list.length>3?`<button type="button" class="cal-mmore" data-cal-open="${k}">+${list.length-3} more</button>`:''}</div>`}).join('');
+  return `<div class="${cls}" data-day="${k}"><button type="button" class="cal-mnum" data-cal-open="${k}" aria-label="${esc(calDate(k))}">${d.getDate()}</button>${list.slice(0,3).map(calChip).join('')}${list.length>3?`<button type="button" class="cal-mmore" data-cal-open="${k}">${esc(t('+{} more',list.length-3))}</button>`:''}</div>`}).join('');
  return `<div class="cal-mg${phone?' dots':''}">${head}<div class="cal-mg-days">${cells}</div></div>`+(phone?calDayBlock(calPick,byDay(calPick),'',''):'')}
 function calRender(){const box=$('#calendar-view');if(!box||!state)return;const list=calList(),[from,to]=calRange(),{days,items}=calItems(from,to),byDay=k=>items.filter(i=>i.day===k),late=byDay('overdue'),today=localDay(new Date());
  $('#calendar').classList.toggle('week',!list);
@@ -6357,7 +6363,7 @@ const graphEvents=(n,title='Timeline')=>{const soon=Date.now(),tl=n.timeline,all
   if(e.type&&e.type!=='event'){h+=tlRow(n,e,later);return}
   const chat=e.dm||e.title===n.name&&e.from,src=SOURCE_NAME[graphSource(e.kind)]||'';
   if(e.thread&&(run.length>1||chat||e.title!==n.name)){  /* a conversation, newest first: e is the last message, run.at(-1) the first */
-   const first=new Date(run.at(-1).occurred_at),many=run.length>1,span=graphTime(first)===graphTime(d)?graphTime(d):graphTime(first)+' to '+graphTime(d);
+   const first=new Date(run.at(-1).occurred_at),many=run.length>1,span=graphTime(first)===graphTime(d)?graphTime(d):rangeText(graphTime(first),graphTime(d));
    const own=chat&&!e.place&&n.kind==='person';  /* one to one with this page's person: no title, the page says who */
    const with_=`${src||'Chat'} with ${shortName(n.kind==='person'?n:{kind:'person',name:e.from_me?run.find(m=>!m.from_me)?.from||e.title:e.from||e.title})}`,head=e.place||(chat?with_:e.title);
    const said=m=>`<b>${esc(m.from_me?'You':shortName({kind:'person',name:m.from||(n.kind==='person'?n.name:'')})||'Them')}: </b>${esc(m.preview||'')}`,lines=run.slice(0,2).reverse().map(m=>`<li>${said(m)}</li>`).join('');

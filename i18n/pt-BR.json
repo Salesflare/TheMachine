@@ -1824,5 +1824,97 @@
  "Code:": "Código:",
  "Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.": "Sua conta adiciona seu endereço de e-mail e o que já sabe do seu servidor: status, versões, memória e disco.",
  "Your account adds your email address, so we can answer.": "Sua conta adiciona seu endereço de e-mail, para podermos responder.",
- "No emails match.": "Nenhum e-mail corresponde."
+ "No emails match.": "Nenhum e-mail corresponde.",
+ "With {}": "Com {}",
+ "Check in with {}": "Fazer follow-up com {}",
+ "If no answer": "Se não houver resposta",
+ "Waiting on {}": "Aguardando {}",
+ "Waiting on {}: {}": "Aguardando {}: {}",
+ "Answers only. It can’t see your data or change anything.": "Só respostas. Não vê seus dados nem muda nada.",
+ "All help pages": "Todas as páginas de ajuda",
+ "What went wrong?": "O que deu errado?",
+ "Take a screenshot": "Tirar uma captura de tela",
+ "Attach an image": "Anexar uma imagem",
+ "Include the support report": "Incluir o relatório de suporte",
+ "Versions, checks and recent errors. No messages, keys or addresses.": "Versões, verificações e erros recentes. Sem mensagens, chaves ou endereços.",
+ "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "Isto é tudo o que vai para a equipe do The Machine. Nada é enviado até você tocar em Enviar.",
+ "Sent. We’ll answer by email.": "Enviado. Vamos responder por e-mail.",
+ "{} more, open the day": "Mais {}, abrir o dia",
+ "+{} more": "+{} mais",
+ "{} signals": {
+  "one": "{} sinal",
+  "other": "{} sinais"
+ },
+ "{} notes": {
+  "one": "{} nota",
+  "other": "{} notas"
+ },
+ "{} threads": {
+  "one": "{} conversa",
+  "other": "{} conversas"
+ },
+ "{} messages": {
+  "one": "{} mensagem",
+  "other": "{} mensagens"
+ },
+ "{} projects": {
+  "one": "{} projeto",
+  "other": "{} projetos"
+ },
+ "{} days": {
+  "one": "{} dia",
+  "other": "{} dias"
+ },
+ "{} promises": {
+  "one": "{} promessa",
+  "other": "{} promessas"
+ },
+ "{} fixes": {
+  "one": "{} correção",
+  "other": "{} correções"
+ },
+ "{} rows": {
+  "one": "{} linha",
+  "other": "{} linhas"
+ },
+ "{} skills": {
+  "one": "{} habilidade",
+  "other": "{} habilidades"
+ },
+ "{} scripts": {
+  "one": "{} script",
+  "other": "{} scripts"
+ },
+ "{} matches": {
+  "one": "{} resultado",
+  "other": "{} resultados"
+ },
+ "{} references": {
+  "one": "{} referência",
+  "other": "{} referências"
+ },
+ "{} other files": {
+  "one": "{} outro arquivo",
+  "other": "{} outros arquivos"
+ },
+ "{} lines": {
+  "one": "{} linha",
+  "other": "{} linhas"
+ },
+ "{} start attempts": {
+  "one": "{} tentativa de início",
+  "other": "{} tentativas de início"
+ },
+ "{} client threads": {
+  "one": "{} conversa com clientes",
+  "other": "{} conversas com clientes"
+ },
+ "Checked {} things": {
+  "one": "{} item verificado",
+  "other": "{} itens verificados"
+ },
+ "{} need a look": {
+  "one": "{} precisa de atenção",
+  "other": "{} precisam de atenção"
+ }
 }

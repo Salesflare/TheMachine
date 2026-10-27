@@ -1825,7 +1825,12 @@
  "Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.": "Je account voegt je e-mailadres toe en wat het al weet over je server: status, versies, geheugen en schijf.",
  "Your account adds your email address, so we can answer.": "Je account voegt je e-mailadres toe, zodat we kunnen antwoorden.",
  "No emails match.": "Geen e-mails gevonden.",
- "It can’t see or change your data.": "Het ziet of wijzigt je gegevens niet.",
+ "With {}": "Met {}",
+ "Check in with {}": "Navragen bij {}",
+ "If no answer": "Als er geen antwoord komt",
+ "Waiting on {}": "Wacht op {}",
+ "Waiting on {}: {}": "Wacht op {}: {}",
+ "Answers only. It can’t see your data or change anything.": "Alleen antwoorden. Het ziet je gegevens niet en verandert niets.",
  "All help pages": "Alle helppagina's",
  "What went wrong?": "Wat ging er mis?",
  "Take a screenshot": "Screenshot maken",
@@ -1834,6 +1839,85 @@
  "Versions, checks and recent errors. No messages, keys or addresses.": "Versies, controles en recente fouten. Geen berichten, sleutels of adressen.",
  "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "Dit is alles wat naar het team van The Machine gaat. Er wordt niets verstuurd tot je op Versturen drukt.",
  "Sent. We’ll answer by email.": "Verstuurd. We antwoorden per e-mail.",
+ "{} more, open the day": "Nog {}, open de dag",
+ "+{} more": "+{} meer",
+ "{} signals": {
+  "one": "{} signaal",
+  "other": "{} signalen"
+ },
+ "{} notes": {
+  "one": "{} notitie",
+  "other": "{} notities"
+ },
+ "{} threads": {
+  "one": "{} gesprek",
+  "other": "{} gesprekken"
+ },
+ "{} messages": {
+  "one": "{} bericht",
+  "other": "{} berichten"
+ },
+ "{} projects": {
+  "one": "{} project",
+  "other": "{} projecten"
+ },
+ "{} days": {
+  "one": "{} dag",
+  "other": "{} dagen"
+ },
+ "{} promises": {
+  "one": "{} belofte",
+  "other": "{} beloftes"
+ },
+ "{} fixes": {
+  "one": "{} correctie",
+  "other": "{} correcties"
+ },
+ "{} rows": {
+  "one": "{} rij",
+  "other": "{} rijen"
+ },
+ "{} skills": {
+  "one": "{} skill",
+  "other": "{} skills"
+ },
+ "{} scripts": {
+  "one": "{} script",
+  "other": "{} scripts"
+ },
+ "{} matches": {
+  "one": "{} treffer",
+  "other": "{} treffers"
+ },
+ "{} references": {
+  "one": "{} referentie",
+  "other": "{} referenties"
+ },
+ "{} other files": {
+  "one": "{} ander bestand",
+  "other": "{} andere bestanden"
+ },
+ "{} lines": {
+  "one": "{} regel",
+  "other": "{} regels"
+ },
+ "{} start attempts": {
+  "one": "{} startpoging",
+  "other": "{} startpogingen"
+ },
+ "{} client threads": {
+  "one": "{} klantgesprek",
+  "other": "{} klantgesprekken"
+ },
+ "Checked {} things": {
+  "one": "{} ding nagekeken",
+  "other": "{} dingen nagekeken"
+ },
+ "{} need a look": {
+  "one": "{} vraagt aandacht",
+  "other": "{} vragen aandacht"
+ },
+ "It can’t see or change your data.": "Het ziet of wijzigt je gegevens niet.",
  "How do I snooze a to-do?": "Hoe snooze ik een to-do?",
  "Your question": "Je vraag",
  "What you did, what you expected, what happened": "Wat je deed, wat je verwachtte, wat er gebeurde",

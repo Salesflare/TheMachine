@@ -1825,7 +1825,12 @@
  "Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.": "Votre compte ajoute votre adresse e-mail et ce qu’il sait déjà de votre serveur : état, versions, mémoire et disque.",
  "Your account adds your email address, so we can answer.": "Votre compte ajoute votre adresse e-mail, pour que nous puissions répondre.",
  "No emails match.": "Aucun e-mail ne correspond.",
- "It can’t see or change your data.": "Elle ne voit ni ne modifie vos données.",
+ "With {}": "Avec {}",
+ "Check in with {}": "Relancer {}",
+ "If no answer": "Sans réponse",
+ "Waiting on {}": "En attente de {}",
+ "Waiting on {}: {}": "En attente de {} : {}",
+ "Answers only. It can’t see your data or change anything.": "Des réponses uniquement. Il ne voit pas vos données et ne change rien.",
  "All help pages": "Toute l’aide",
  "What went wrong?": "Qu’est-ce qui n’a pas marché ?",
  "Take a screenshot": "Faire une capture d’écran",
@@ -1834,6 +1839,85 @@
  "Versions, checks and recent errors. No messages, keys or addresses.": "Versions, vérifications et erreurs récentes. Aucun message, clé ou adresse.",
  "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "Voici tout ce qui part à l’équipe The Machine. Rien n’est envoyé avant que vous appuyiez sur Envoyer.",
  "Sent. We’ll answer by email.": "Envoyé. Nous répondrons par e-mail.",
+ "{} more, open the day": "{} de plus, ouvrir la journée",
+ "+{} more": "+{} de plus",
+ "{} signals": {
+  "one": "{} signal",
+  "other": "{} signaux"
+ },
+ "{} notes": {
+  "one": "{} note",
+  "other": "{} notes"
+ },
+ "{} threads": {
+  "one": "{} conversation",
+  "other": "{} conversations"
+ },
+ "{} messages": {
+  "one": "{} message",
+  "other": "{} messages"
+ },
+ "{} projects": {
+  "one": "{} projet",
+  "other": "{} projets"
+ },
+ "{} days": {
+  "one": "{} jour",
+  "other": "{} jours"
+ },
+ "{} promises": {
+  "one": "{} promesse",
+  "other": "{} promesses"
+ },
+ "{} fixes": {
+  "one": "{} correction",
+  "other": "{} corrections"
+ },
+ "{} rows": {
+  "one": "{} ligne",
+  "other": "{} lignes"
+ },
+ "{} skills": {
+  "one": "{} compétence",
+  "other": "{} compétences"
+ },
+ "{} scripts": {
+  "one": "{} script",
+  "other": "{} scripts"
+ },
+ "{} matches": {
+  "one": "{} résultat",
+  "other": "{} résultats"
+ },
+ "{} references": {
+  "one": "{} référence",
+  "other": "{} références"
+ },
+ "{} other files": {
+  "one": "{} autre fichier",
+  "other": "{} autres fichiers"
+ },
+ "{} lines": {
+  "one": "{} ligne",
+  "other": "{} lignes"
+ },
+ "{} start attempts": {
+  "one": "{} tentative de démarrage",
+  "other": "{} tentatives de démarrage"
+ },
+ "{} client threads": {
+  "one": "{} conversation client",
+  "other": "{} conversations clients"
+ },
+ "Checked {} things": {
+  "one": "{} point vérifié",
+  "other": "{} points vérifiés"
+ },
+ "{} need a look": {
+  "one": "{} à vérifier",
+  "other": "{} à vérifier"
+ },
+ "It can’t see or change your data.": "Elle ne voit ni ne modifie vos données.",
  "How do I snooze a to-do?": "Comment mettre une tâche en attente ?",
  "Your question": "Votre question",
  "What you did, what you expected, what happened": "Ce que vous avez fait, ce que vous attendiez, ce qui s’est passé",

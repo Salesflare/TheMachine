@@ -1825,7 +1825,12 @@
  "Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.": "Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.",
  "Your account adds your email address, so we can answer.": "Your account adds your email address, so we can answer.",
  "No emails match.": "No emails match.",
- "It can’t see or change your data.": "It can’t see or change your data.",
+ "With {}": "With {}",
+ "Check in with {}": "Check in with {}",
+ "If no answer": "If no answer",
+ "Waiting on {}": "Waiting on {}",
+ "Waiting on {}: {}": "Waiting on {}: {}",
+ "Answers only. It can’t see your data or change anything.": "Answers only. It can’t see your data or change anything.",
  "All help pages": "All help pages",
  "What went wrong?": "What went wrong?",
  "Take a screenshot": "Take a screenshot",
@@ -1834,6 +1839,85 @@
  "Versions, checks and recent errors. No messages, keys or addresses.": "Versions, checks and recent errors. No messages, keys or addresses.",
  "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "This is everything that goes to The Machine team. Nothing is sent until you press Send.",
  "Sent. We’ll answer by email.": "Sent. We’ll answer by email.",
+ "{} more, open the day": "{} more, open the day",
+ "+{} more": "+{} more",
+ "{} signals": {
+  "one": "{} signal",
+  "other": "{} signals"
+ },
+ "{} notes": {
+  "one": "{} note",
+  "other": "{} notes"
+ },
+ "{} threads": {
+  "one": "{} thread",
+  "other": "{} threads"
+ },
+ "{} messages": {
+  "one": "{} message",
+  "other": "{} messages"
+ },
+ "{} projects": {
+  "one": "{} project",
+  "other": "{} projects"
+ },
+ "{} days": {
+  "one": "{} day",
+  "other": "{} days"
+ },
+ "{} promises": {
+  "one": "{} promise",
+  "other": "{} promises"
+ },
+ "{} fixes": {
+  "one": "{} fix",
+  "other": "{} fixes"
+ },
+ "{} rows": {
+  "one": "{} row",
+  "other": "{} rows"
+ },
+ "{} skills": {
+  "one": "{} skill",
+  "other": "{} skills"
+ },
+ "{} scripts": {
+  "one": "{} script",
+  "other": "{} scripts"
+ },
+ "{} matches": {
+  "one": "{} match",
+  "other": "{} matches"
+ },
+ "{} references": {
+  "one": "{} reference",
+  "other": "{} references"
+ },
+ "{} other files": {
+  "one": "{} other file",
+  "other": "{} other files"
+ },
+ "{} lines": {
+  "one": "{} line",
+  "other": "{} lines"
+ },
+ "{} start attempts": {
+  "one": "{} start attempt",
+  "other": "{} start attempts"
+ },
+ "{} client threads": {
+  "one": "{} client thread",
+  "other": "{} client threads"
+ },
+ "Checked {} things": {
+  "one": "Checked {} thing",
+  "other": "Checked {} things"
+ },
+ "{} need a look": {
+  "one": "{} needs a look",
+  "other": "{} need a look"
+ },
+ "It can’t see or change your data.": "It can’t see or change your data.",
  "How do I snooze a to-do?": "How do I snooze a to-do?",
  "Your question": "Your question",
  "What you did, what you expected, what happened": "What you did, what you expected, what happened",

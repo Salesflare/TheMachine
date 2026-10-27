@@ -1824,5 +1824,97 @@
  "Code:": "Codice:",
  "Your account adds your email address and what it already knows of your server: its status, versions, memory and disk.": "Il tuo account aggiunge il tuo indirizzo email e ciò che sa già del tuo server: stato, versioni, memoria e disco.",
  "Your account adds your email address, so we can answer.": "Il tuo account aggiunge il tuo indirizzo email, così possiamo risponderti.",
- "No emails match.": "Nessuna email corrisponde."
+ "No emails match.": "Nessuna email corrisponde.",
+ "With {}": "Con {}",
+ "Check in with {}": "Ricontatta {}",
+ "If no answer": "Se non risponde",
+ "Waiting on {}": "In attesa di {}",
+ "Waiting on {}: {}": "In attesa di {}: {}",
+ "Answers only. It can’t see your data or change anything.": "Solo risposte. Non vede i tuoi dati e non cambia nulla.",
+ "All help pages": "Tutte le pagine di aiuto",
+ "What went wrong?": "Cosa è andato storto?",
+ "Take a screenshot": "Fai uno screenshot",
+ "Attach an image": "Allega un’immagine",
+ "Include the support report": "Includi il report per il supporto",
+ "Versions, checks and recent errors. No messages, keys or addresses.": "Versioni, controlli ed errori recenti. Nessun messaggio, chiave o indirizzo.",
+ "This is everything that goes to The Machine team. Nothing is sent until you press Send.": "Questo è tutto ciò che arriva al team di The Machine. Non viene inviato nulla finché non premi Invia.",
+ "Sent. We’ll answer by email.": "Inviato. Ti risponderemo via email.",
+ "{} more, open the day": "Altri {}, apri il giorno",
+ "+{} more": "+{} altri",
+ "{} signals": {
+  "one": "{} segnale",
+  "other": "{} segnali"
+ },
+ "{} notes": {
+  "one": "{} nota",
+  "other": "{} note"
+ },
+ "{} threads": {
+  "one": "{} conversazione",
+  "other": "{} conversazioni"
+ },
+ "{} messages": {
+  "one": "{} messaggio",
+  "other": "{} messaggi"
+ },
+ "{} projects": {
+  "one": "{} progetto",
+  "other": "{} progetti"
+ },
+ "{} days": {
+  "one": "{} giorno",
+  "other": "{} giorni"
+ },
+ "{} promises": {
+  "one": "{} promessa",
+  "other": "{} promesse"
+ },
+ "{} fixes": {
+  "one": "{} correzione",
+  "other": "{} correzioni"
+ },
+ "{} rows": {
+  "one": "{} riga",
+  "other": "{} righe"
+ },
+ "{} skills": {
+  "one": "{} skill",
+  "other": "{} skill"
+ },
+ "{} scripts": {
+  "one": "{} script",
+  "other": "{} script"
+ },
+ "{} matches": {
+  "one": "{} risultato",
+  "other": "{} risultati"
+ },
+ "{} references": {
+  "one": "{} riferimento",
+  "other": "{} riferimenti"
+ },
+ "{} other files": {
+  "one": "{} altro file",
+  "other": "{} altri file"
+ },
+ "{} lines": {
+  "one": "{} riga",
+  "other": "{} righe"
+ },
+ "{} start attempts": {
+  "one": "{} tentativo di avvio",
+  "other": "{} tentativi di avvio"
+ },
+ "{} client threads": {
+  "one": "{} conversazione con clienti",
+  "other": "{} conversazioni con clienti"
+ },
+ "Checked {} things": {
+  "one": "{} cosa controllata",
+  "other": "{} cose controllate"
+ },
+ "{} need a look": {
+  "one": "{} da controllare",
+  "other": "{} da controllare"
+ }
 }

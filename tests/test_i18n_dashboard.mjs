@@ -83,6 +83,19 @@ try{
  await page.reload();
  assert.equal(await page.evaluate(()=>document.documentElement.lang),'nl');  // before any state arrives
  await context.close();
+ // Calendar text built in code: a week range in the language's own order, a time range with a dash, counts by its
+ // plural rules, and a row of parts (" · ") part by part, never one count swallowing the rest.
+ const cal={nl:['26 okt – 1 nov 2026','26–30 okt 2026','1 gast','3 gasten','Wren · 1 gast'],
+  fr:['26 oct. – 1 nov. 2026','26–30 oct. 2026','1 invité','3 invités','Wren · 1 invité'],
+  de:['26. Okt. – 1. Nov. 2026','26.–30. Okt. 2026','1 Gast','3 Gäste','Wren · 1 Gast']};
+ for(const [lang,want] of Object.entries(cal)){locale=view(lang);
+  [context,page]=await open('en-US');await page.waitForFunction(l=>document.documentElement.lang===l,lang);
+  assert.deepEqual(await page.evaluate(()=>[calSpan(new Date(2026,9,26)),calSpan(new Date(2026,9,26),5),t(['{} guest','{} guests'],1),t(['{} guest','{} guests'],3),i18nLookup('Wren · 1 guest')]),want,lang);
+  assert.equal(await page.evaluate(()=>rangeText('09:45','10:30')),'09:45–10:30',lang);
+  await context.close()}
+ locale=view('en');[context,page]=await open('en-US');
+ assert.deepEqual(await page.evaluate(()=>[calSpan(new Date(2026,9,26)),rangeText('09:45','10:30'),t(['{} guest','{} guests'],1),t(['{} guest','{} guests'],3)]),['Oct 26 – Nov 1, 2026','09:45 to 10:30','1 guest','3 guests']);
+ await context.close();
  assert.deepEqual(errors,[]);
  console.log('i18n dashboard: ok');
 }finally{await browser?.close();server.close()}
