@@ -20,6 +20,12 @@ are.
 Any Fleet, and any friend, can also share **skills**: how-tos your Machine follows, which the other person reads and
 installs themselves (see [Skills](skills.md)). A skill is instructions only and never changes your rules here.
 
+They can also share a **contact** (contact_share.py): from a person's page or About you, the owner picks one teammate,
+friend or Family member and the fields that go (name, then any emails, phones, organization, role and a note), sees the
+exact card, and sends it, sealed like every ask. A Personal or private contact needs one more confirm. The receiving
+Machine keeps it under People, Shared with you, until its owner adds it (made, or merged into the person they already
+have, adding only what is new) or dismisses it. The relay must list `contact` in that group's asks.
+
 What a Fleet needs from you (a teammate's question or request, a meeting's follow-ups to split, a server to confirm)
 shows as a card under **Suggestions**, tagged Fleet and Work, with the same buttons as your other cards; the
 Suggestions badge counts them. The Fleet tab keeps the people, the rules, the team brief, your own questions with

@@ -93,12 +93,12 @@ class Network:
             if kind in self.groups:
                 group = self.net[kind]
                 fleets.append({'id': group['id'], 'kind': kind, 'name': group['name'], 'asks': ['relationships', 'meeting', 'brief', 'anything',
-                               'intro', 'handoff', 'followup', 'skill'] if kind == 'work' else ['availability', 'todo', 'event', 'skill'], 'me': {'member_id': self.net['owner']['member_id'], 'role': 'owner'},
+                               'intro', 'handoff', 'followup', 'skill', 'contact'] if kind == 'work' else ['availability', 'todo', 'event', 'skill', 'contact'], 'me': {'member_id': self.net['owner']['member_id'], 'role': 'owner'},
                                'members': [self.me()] + [self.member(m) for m in group['team']],
                                **({'trust': list(self.trust)} if kind == 'work' else {})})
         if 'friends' in self.groups:
             fleets.append({'id': self.net['friends']['id'], 'kind': 'friends', 'name': 'Friends', 'username': self.net['owner']['username'],
-                           'asks': ['availability', 'skill'], 'me': {'member_id': self.net['owner']['member_id'], 'role': 'owner'},
+                           'asks': ['availability', 'skill', 'contact'], 'me': {'member_id': self.net['owner']['member_id'], 'role': 'owner'},
                            'members': [self.me()] + [{'member_id': f['member_id'], 'name': f['name'], 'role': 'friend', 'emails': [], 'machine': True,
                                                       'label': f['name'] + ' (@' + f['username'] + ')', 'keys': nc.public_keys(self.peer(f['member_id']))}
                                                      for f in self.friends],
@@ -121,6 +121,8 @@ class Network:
             return {'text': ['Not that I know of. Tomasz met them in September, I think.', 'Yes, I spoke to their ops lead on Monday.'][index % 2]}
         if kind in ('intro', 'handoff', 'followup'):
             return {'stage': 'accepted'}
+        if kind == 'contact':
+            return {'stage': 'added'}
         if kind in ('todo', 'event'):
             return {'stage': 'accepted'} if index == 0 else None
         if kind == 'availability':  # the first one busy most mornings, from tomorrow

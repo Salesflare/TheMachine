@@ -56,6 +56,7 @@ import locale_prefs
 import ms_graph
 import fleet_requests
 import family
+import contact_share
 import friends
 import discovery
 import network
@@ -151,6 +152,11 @@ NO_DETAILS += family.REQUESTS
 # Skills (skills.py): a teammate or friend shares a skill; the owner reads it and installs or declines it. Never by rule.
 for _kind in ('work', 'family', 'friends'):
     ASKS[_kind] = ASKS[_kind] + ('skill',)
+# A shared contact (contact_share.py): one teammate, friend or Family member gets a name and the fields picked; their
+# owner adds or dismisses it. Never by rule. Offered only where the Network says it carries them (the directory's asks).
+for _kind in ('work', 'family', 'friends'):
+    ASKS[_kind] = ASKS[_kind] + (contact_share.KIND,)
+KIND_LABEL.update(contact='shared contacts')
 KIND_LABEL.update(skill='skills')
 
 
@@ -301,6 +307,7 @@ def ensure(db):
     db.executescript(SCHEMA)
     fleet_requests.ensure(db)
     discovery.ensure(db)
+    contact_share.ensure(db)
     have = {r[1] for r in db.execute('PRAGMA table_info(fleet_in)')}
     for column in ('notified_at TEXT', 'telegram_message_id TEXT', 'choice TEXT'):  # added 2026-10-20
         if column.split()[0] not in have:
@@ -992,6 +999,8 @@ def parse_question(kind, question):
         return friends.parse_availability(question)
     if kind == 'skill':
         return skills.parse_share(question)
+    if kind == contact_share.KIND:
+        return contact_share.parse(question)
     if not isinstance(question, dict):
         return None
     if kind == 'relationships':
@@ -1065,6 +1074,8 @@ def clean_answer(kind, answer):
         return friends.clean_availability(answer)
     if kind == 'skill':
         return skills.clean_answer(answer)
+    if kind == contact_share.KIND:
+        return contact_share.clean_answer(answer)
     if not isinstance(answer, dict):
         return None
     def level(v):
@@ -1113,6 +1124,8 @@ def question_text(kind, question):
         return friends.question_text(question)
     if kind == 'skill':
         return skills.question_text(question)
+    if kind == contact_share.KIND:
+        return contact_share.question_text(question)
     if kind == 'relationships':
         return 'Who knows someone at ' + question.get('about', '?') + '?'
     if kind == 'meeting':
@@ -1274,6 +1287,8 @@ def answer_text(kind, answer):
         return friends.answer_text(answer)
     if kind == 'skill':
         return skills.answer_text(answer)
+    if kind == contact_share.KIND:
+        return contact_share.answer_text(answer)
     if not answer:
         return 'no answer'
     if kind == 'brief':
@@ -1556,7 +1571,7 @@ def brief_text(view, today=None, hidden=()):
 
 # ---------------------------------------------------------------- the Fleet on this Machine
 
-class Fleet(fleet_requests.Requests, friends.Friends, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
+class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
             shared_graph.SharedGraph):
     def __init__(self, connect, config, token, relay=None):
         self.connect, self.config = connect, config
@@ -1834,6 +1849,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, discovery.Discovery, famil
             return self.take_request(ask, teammate, fleet, kind, question, name)
         if kind == 'skill':  # a shared skill: kept for the owner to read (skills.py), never installed by itself
             return self.take_skill(ask, teammate, fleet, name)
+        if kind == contact_share.KIND:  # a shared contact: kept for the owner's Add or Dismiss (contact_share.py)
+            return self.take_contact(ask, teammate, fleet, name)
         if kind == 'connector':  # a Fleet admin's shared connector (shared_connectors.py): checked, never shown or asked
             return self.take_connector(ask)
         with self.connect() as db:

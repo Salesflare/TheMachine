@@ -527,6 +527,11 @@ def build(profile):
             {'id': 'fa_sandbox0004', 'fleet': 'work', 'from': 'm_team_ines', 'kind': 'intro', 'question': {'about': 'kestrelenergy.example', 'note': 'They are expanding to the Nordics'}},
             {'id': 'fa_sandbox0005', 'fleet': 'family', 'from': 'm_fam_robin', 'kind': 'todo', 'question': {'title': 'Pick up the kids from football', 'due': '2026-10-23', 'note': 'I have the dentist at 4'}},
             {'id': 'fa_sandbox0006', 'fleet': 'family', 'from': 'm_fam_jules', 'kind': 'event', 'question': {'title': 'Sunday lunch at grandma’s', 'start': '2026-10-25T12:30', 'place': 'Grandma’s'}},
+            {'id': 'fa_sandbox0007', 'fleet': 'work', 'from': 'm_team_priya', 'kind': 'contact',  # a shared contact (contact_share.py)
+             'question': {'name': 'Noor Halvorsen', 'emails': ['noor@brightwater.example'], 'org': 'Brightwater Studio', 'role': 'Head of Partnerships',
+                          'note': 'She wants a CRM partner for her agency clients'}},
+            {'id': 'fa_sandbox0008', 'fleet': 'family', 'from': 'm_fam_robin', 'kind': 'contact',
+             'question': {'name': 'Lena Ortiz', 'emails': ['lena@ortizdental.example'], 'role': 'Dentist', 'note': 'Our dentist. She takes new patients'}},
         ],
         'notices': [
             {'id': 'fn_5a4db0c0ffee0004', 'kind': 'seat_request', 'fleet': 'work', 'fleet_id': 'fl_5a4db0c0ffee0001', 'fleet_name': 'Lumen Labs', 'status': 'open', 'version': 1,

@@ -8196,6 +8196,35 @@
      "start": "2026-10-25T12:30",
      "place": "Grandma’s"
     }
+   },
+   {
+    "id": "fa_sandbox0007",
+    "fleet": "work",
+    "from": "m_team_priya",
+    "kind": "contact",
+    "question": {
+     "name": "Noor Halvorsen",
+     "emails": [
+      "noor@brightwater.example"
+     ],
+     "org": "Brightwater Studio",
+     "role": "Head of Partnerships",
+     "note": "She wants a CRM partner for her agency clients"
+    }
+   },
+   {
+    "id": "fa_sandbox0008",
+    "fleet": "family",
+    "from": "m_fam_robin",
+    "kind": "contact",
+    "question": {
+     "name": "Lena Ortiz",
+     "emails": [
+      "lena@ortizdental.example"
+     ],
+     "role": "Dentist",
+     "note": "Our dentist. She takes new patients"
+    }
    }
   ],
   "notices": [

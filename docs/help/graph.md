@@ -81,6 +81,8 @@ Your own addresses and numbers, aliases too, are always you, never someone in yo
 
 About you lists your addresses with where each came from; change them in **Settings**, under Account. A person made from your own address before goes into About you by itself, with a backup kept on your Machine.
 
+To send your own card to a teammate or friend, pick **Share my contact**. See [Share a contact](share-contact.md).
+
 ## Picture
 
 Click the picture on a person's or organization's page to change it: **Upload a picture**, pick one found for them, or **Remove picture**. It stays on your Machine.

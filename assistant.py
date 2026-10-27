@@ -533,6 +533,10 @@ GRAPH_SHARE_ACTIONS = {'graph_share', 'graph_remove', 'graph_private', 'graph_op
 OWNER_ACTIONS |= GRAPH_SHARE_ACTIONS
 FRIEND_ACTIONS = {'fleet_friend', 'fleet_availability', 'fleet_network'}  # fleet_network: finding people on the Network (discovery.py)
 OWNER_ACTIONS |= FRIEND_ACTIONS
+# Sharing a contact (contact_share.py): what can go, the exact preview, Send, and Add or Dismiss on one shared here.
+# The owner's own, from their dashboard only.
+CONTACT_ACTIONS = {'fleet_contact_options', 'fleet_contact_preview', 'fleet_contact_send', 'fleet_contact_decide'}
+OWNER_ACTIONS |= CONTACT_ACTIONS
 # Family (family.py): asking when everyone is free, proposing a to-do or a plan. The owner's own, from their dashboard.
 FAMILY_ACTIONS = {'family_free', 'family_todo', 'family_event'}
 OWNER_ACTIONS |= FAMILY_ACTIONS
@@ -571,7 +575,7 @@ SUPPORT_ACTIONS = {'help_ask', 'bug_preview', 'bug_send'}
 OWNER_ACTIONS |= SUPPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
-DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACTIONS, *GRAPH_SHARE_ACTIONS, *FRIEND_ACTIONS, *FAMILY_ACTIONS, *LEARNING_ACTIONS,
+DASHBOARD_ACTIONS = frozenset({*FLEET_REQUEST_ACTIONS, *CHAT_ACTIONS, *SHARE_ACTIONS, *GRAPH_SHARE_ACTIONS, *FRIEND_ACTIONS, *CONTACT_ACTIONS, *FAMILY_ACTIONS, *LEARNING_ACTIONS,
                                *CARD_ACTIONS, *SKILL_ACTIONS, *CONNECT_ACTIONS, *AGENT_ACTIONS, *CRM_ACTIONS, *SUPPORT_ACTIONS, 'decide', 'confirm_action',
                                'undo_merge', 'card_chat', 'revise_draft', 'forget_fact', 'edit_fact', 'promise_close', 'promise_due', 'graph_role',
                                'graph_fact_unlink', 'graph_rename', 'graph_stage', 'board_save', 'board_delete', 'board_dismiss', 'project_save',
@@ -11459,6 +11463,8 @@ class App:
                                            ) if agent_jobs.settings(config) is not None else None
         if self.fleet:
             self.fleet.skills = self.skills
+            self.fleet.graph_build = self.graph_build  # a shared contact the owner adds (contact_share.py)
+            self.fleet.about_you = self.about_you  # Share my contact: the owner's own addresses and numbers
 
     MESSAGE_CACHE = 40  # source emails kept in memory for the dashboard, newest used last
     MESSAGE_TTL = 600  # seconds
@@ -13345,6 +13351,16 @@ class App:
                                        args.get('rule'), args.get('details'), args.get('scope'), bool(args.get('clear')))
         if name == 'fleet_take':
             return self.fleet.take_over(str(args.get('suggestion_id') or ''))
+        if name in CONTACT_ACTIONS:  # node: a person's node id, or 'me' for the owner's own card
+            source, pick, note = str(args.get('node') or ''), args.get('pick'), str(args.get('note') or '')
+            if name == 'fleet_contact_options':
+                return {**self.fleet.contact_options(source), 'sent': self.fleet.contact_sent(source)}
+            if name == 'fleet_contact_preview':
+                return self.fleet.contact_preview(source, pick, note, str(args.get('fleet') or ''), str(args.get('member_id') or ''))
+            if name == 'fleet_contact_send':  # shown: the preview's digest; confirmed: the extra OK for a Personal or private contact
+                return self.fleet.contact_send(source, pick, note, str(args.get('fleet') or ''), str(args.get('member_id') or ''),
+                                               str(args.get('shown') or ''), args.get('confirmed') is True)
+            return self.fleet.contact_decide(str(args.get('id') or ''), str(args.get('choice') or ''))
         if name == 'fleet_friend':  # add by username; withdraw, accept, decline or block a request; remove, block or unblock a friend
             return self.fleet.friend_action(str(args.get('do') or ''), str(args.get('username') or ''), str(args.get('id') or ''),
                                             str(args.get('member_id') or ''))
@@ -16338,6 +16354,13 @@ class App:
         with self.store.connect() as db:
             return graph.about_you(db, self.config, self.own_addresses_view().get('yours'))
 
+    def contact_shareable(self):
+        """Whether a contact can go to anyone: a teammate, friend or Family member the Network carries contacts to."""
+        try:
+            return bool(self.fleet and self.fleet.contact_targets())
+        except (fleet.Off, sqlite3.Error, OSError, ValueError, KeyError, TypeError):
+            return False
+
     def slack_links(self, found):
         """Where 'Also on Slack' goes: each Slack user of theirs in the workspace it is from (its profile, which opens a
         message to them), else the newest Slack thread with them."""
@@ -16978,7 +17001,7 @@ class App:
                         elif query.strip():
                             self.output(200, app.graph_find(query, urllib.parse.parse_qs(path.query).get('cursor', ['0'])[0] or 0))
                         elif node and app.about_you_node(node):  # the owner's own record, also by one of their addresses
-                            self.output(200, app.about_you())
+                            self.output(200, {**app.about_you(), 'can_share': app.contact_shareable()})  # Share my contact
                         elif node:
                             found = app.graph_action({'node_id': node, 'limit': 10, 'events': 120})  # a run of chat messages is one row
                             found['owners'] = app.owner_choices()
@@ -16987,6 +17010,13 @@ class App:
                             found['timeline'] = app.graph_timeline(found['id'])
                             found['recent'] = found['timeline'].pop('items')
                             found['slack_links'] = app.slack_links(found)
+                            if app.fleet and found.get('kind') == 'person':  # sharing a contact (contact_share.py)
+                                try:
+                                    with app.store.connect() as db:
+                                        found['shared_by'] = app.fleet.contact_mark(db, found['id'])
+                                    found['can_share'] = app.contact_shareable()
+                                except (fleet.Off, sqlite3.Error, OSError, ValueError, KeyError, TypeError) as error:
+                                    LOG.info('contact share detail error=%s', type(error).__name__)
                             if app.fleet:  # the Shared Graph: Keep private, what teammates know
                                 try:
                                     with app.store.connect() as db:
@@ -17013,6 +17043,10 @@ class App:
                                 found['tags'] = crm_fields.tags_in_use(db)  # for the filter sheet
                                 found['currency'] = app.currency()  # project values are in it
                                 if app.fleet:
+                                    try:  # contacts teammates, friends and Family shared here, waiting for Add or Dismiss (contact_share.py)
+                                        found['contacts_in'] = app.fleet.contacts_in()
+                                    except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
+                                        LOG.info('contacts in error=%s', type(error).__name__)
                                     try:
                                         found['sharing'] = app.fleet.sharing()  # the Shared Graph: Mine or Team, and when sharing starts
                                         names = app.fleet.member_names()
