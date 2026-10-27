@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
+import html
 import json
 import re
 
@@ -84,6 +85,18 @@ def on(db):
 
 def words(text):
     return [w for w in re.findall(r'[a-z0-9]+', str(text or '').lower()) if len(w) > 2]
+
+
+TAG = re.compile(r'<[^>]*>|[<>]')
+
+
+def plain(text):
+    """Plain words only: markup the model wrote (tags, entities, stray angle brackets) is taken out, never kept."""
+    out = str(text or '')
+    for _ in range(2):  # an escaped tag (&lt;b&gt;) is a tag once unescaped
+        out = TAG.sub(' ', html.unescape(out))
+    out = ' '.join(out.split())
+    return re.sub(r'\s+([,.;:!?])', r'\1', out)
 
 
 def fingerprint(text):
@@ -216,7 +229,7 @@ def check(raw, evidence, names, known=(), gone=()):
         return None, 'confidence'
     if not confidence >= MIN_CONFIDENCE:
         return None, 'low_confidence'
-    text = ' '.join(str(raw.get('text') or '').split())
+    text = plain(raw.get('text'))
     if not TEXT_MIN <= len(text) <= TEXT_MAX:
         return None, 'length'
     cited = {str(n) for n in raw.get('threads') or [] if isinstance(n, (int, str))} if isinstance(raw.get('threads'), list) else set()
@@ -287,7 +300,7 @@ def clean_record(r):
         return None
     if r.get('t') == 'unlearn':
         return {'r': r['r'], 't': 'unlearn', 'fp': fp}
-    text = ' '.join(str(r.get('text') or '').split())[:TEXT_MAX]
+    text = plain(r.get('text'))[:TEXT_MAX]
     kind = r.get('kind') if r.get('kind') in KINDS else None
     try:
         confidence = round(min(max(float(r.get('confidence')), 0.0), 1.0), 2)

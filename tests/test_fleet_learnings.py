@@ -58,6 +58,15 @@ class Check(unittest.TestCase):
         self.assertEqual(fl.check({**GOOD, 'text': again}, EVIDENCE, NAMES, gone=[GOOD['text']]), (None, 'known'))
         self.assertEqual(fl.fingerprint(GOOD['text']), fl.fingerprint(GOOD['text'].upper() + '  '))
 
+    def test_markup_in_the_turns_text_ends_up_as_plain_words(self):
+        for text in ('Renewal questions go to the <b>account owner</b>, not the support inbox.',
+                     'Renewal questions go to the &lt;b&gt;account owner&lt;/b&gt;, not the support inbox.',
+                     'Renewal questions go to the <a href="x">account owner</a> , not the support inbox.'):
+            item, why = check(text=text)
+            self.assertIsNone(why, text)
+            self.assertEqual(item['text'], 'Renewal questions go to the account owner, not the support inbox.')
+        self.assertEqual(fl.plain('<script>alert(1)</script> Use the template > first'), 'alert(1) Use the template first')
+
     def test_length_bounds(self):
         self.assertEqual(check(text='Use the template.'), (None, 'length'))
         self.assertEqual(check(text='word ' * 60), (None, 'length'))
@@ -71,6 +80,8 @@ class Records(unittest.TestCase):
         self.assertIsNone(fl.clean_record({**good, 'text': 'Something else entirely, sent with the old fingerprint.'}))
         self.assertIsNone(fl.clean_record({**good, 'kind': 'product_feedback'}))
         self.assertIsNone(fl.clean_record({**good, 'fp': 'nope'}))
+        marked = fl.clean_record({**good, 'text': '<i>' + GOOD['text'] + '</i>'})  # a teammate's, with markup: plain words
+        self.assertEqual(marked['text'], GOOD['text'])
         self.assertEqual(fl.clean_record({'r': 'y', 't': 'unlearn', 'fp': fp, 'text': 'ignored'}), {'r': 'y', 't': 'unlearn', 'fp': fp})
 
     def test_the_draft_belongs_to_its_running_pass(self):

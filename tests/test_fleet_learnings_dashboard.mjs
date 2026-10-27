@@ -21,7 +21,7 @@ const view={on:true,kinds:{relationships:'who knows someone',meeting:'meeting co
   kind_rules:{relationships:two,meeting:two,handling:two,brief:['ask','always','never'],anything:['ask','never']},
   learnings:{on:true,items:[
    {fp:FP,kind:'process',text:'Refund requests are answered from the support inbox with the refund template.',confidence:0.9,source:'team_conversations',mine:true,at:'2026-10-26'},
-   {fp:'c'.repeat(32),kind:'routing',text:'Renewal questions go to the <b>account owner</b>, not the support inbox.',confidence:0.8,source:'team_conversations',mine:false,from:'Pat',at:'2026-10-24'},
+   {fp:'c'.repeat(32),kind:'routing',text:'Renewal questions go to the account owner, not the support inbox.',confidence:0.8,source:'team_conversations',mine:false,from:'Pat',at:'2026-10-24'},
    {fp:'d'.repeat(32),kind:'style',text:'Replies to new customers open with one line on who the team is.',confidence:0.85,source:'team_conversations',mine:false,from:null,at:'2026-10-20'}]}}],
  waiting:[],asked:[],notices:[],
  log:[{at:'2026-10-26T09:00:00+00:00',direction:'out',fleet:FL,name:'your Fleet',kind:'learning',what:'Refund requests are answered from the support inbox with the refund template.',outcome:'shared with the team, from team conversations'}]};
@@ -53,8 +53,7 @@ try{
   const first=await box.locator('article').first().innerText();
   assert.match(first,/^Process\s+Refund requests are answered/);
   assert.match(first,/From team conversations · Shared by your Machine · Oct 26\n/);
-  assert.match(await box.locator('article').nth(1).innerText(),/Who handles what\s+Renewal questions go to the <b>account owner<\/b>/);  // text, never markup
-  assert.equal(await box.locator('b').count(),0);
+  assert.match(await box.locator('article').nth(1).innerText(),/Who handles what\s+Renewal questions go to the account owner/);
   assert.match(await box.locator('article').nth(1).innerText(),/· Pat ·/);
   assert.match(await box.locator('article').nth(2).innerText(),/· A teammate ·/);
   const scroll=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
@@ -73,6 +72,14 @@ try{
   assert.match(await page.locator('.fleet-graph-note').innerText(),/Answers use only what the Team Graph shares with the team/);
   if(shots){await page.locator('.fleet-rules-head').first().scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/${tag}-sharing-${w}x${h}.png`})}
   assert.deepEqual(errors,[]);
+  await page.context().close()}
+ // Text that got past the server with markup still shows as text, never markup
+ view.fleets[0].learnings.items[0].text='Use the <b onmouseover="window.pwned=1">refund</b> template.';
+ {const page=await (await browser.newContext({viewport:{width:1000,height:900}})).newPage();
+  await page.goto('http://127.0.0.1:'+server.address().port);
+  await navClick(page.locator('nav [data-tab="fleet"]'));const box=page.locator('.fleet-learn-box');await box.waitFor();
+  assert.equal(await box.locator('b').count(),0);
+  assert.match(await box.locator('article').first().innerText(),/Use the <b onmouseover/);
   await page.context().close()}
  // Off: one line says where the switch is
  view.fleets[0].learnings={on:false,items:[]};
