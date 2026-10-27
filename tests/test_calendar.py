@@ -49,12 +49,21 @@ class Calendar(unittest.TestCase):
             odd])
         self.week = ('2026-10-22T22:00:00.000Z', '2026-10-29T23:00:00.000Z')  # Brussels midnight to midnight, seven days
 
+    def test_who_it_is_with_by_name_from_the_graph_and_the_address_when_unknown(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:sam@client.example','person','Sam Client',1,0,'{}')")
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:kim@client.example','person','kim@client.example',1,0,'{}')")
+        pilot = self.store.calendar(['cal'], *self.week)[1]
+        self.assertEqual(pilot['with'], [{'name': 'Sam Client', 'email': 'sam@client.example'}, {'name': '', 'email': 'kim@client.example'}])
+        self.assertEqual(pilot['people'], ['Sam Client', 'kim@client.example'])
+
     def test_the_week_is_slim_rows_soonest_first(self):
         rows = self.store.calendar(['cal'], *self.week)
         self.assertEqual([r['title'] for r in rows], ['Late call', 'Pilot review', 'Odd link', 'Team offsite'])
         pilot = rows[1]
-        self.assertEqual(set(pilot), {'id', 'account_id', 'title', 'start', 'end', 'all_day', 'location', 'guests', 'people', 'url', 'shared'})
+        self.assertEqual(set(pilot), {'id', 'account_id', 'title', 'start', 'end', 'all_day', 'location', 'guests', 'people', 'with', 'url', 'shared'})
         self.assertEqual((pilot['people'], pilot['shared']), (['sam@client.example', 'kim@client.example'], None))
+        self.assertEqual(pilot['with'], [{'name': '', 'email': 'sam@client.example'}, {'name': '', 'email': 'kim@client.example'}])
         self.assertEqual((pilot['start'], pilot['end'], pilot['location'], pilot['guests']),
                          ('2026-10-23T16:00:00+00:00', '2026-10-23T16:45:00+00:00', 'Zoom', 2))
         self.assertTrue(pilot['url'].startswith('https://calendar.google.com/'))

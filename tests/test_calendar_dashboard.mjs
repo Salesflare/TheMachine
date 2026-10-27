@@ -19,7 +19,7 @@ const iso=d=>d.toISOString(),now=iso(new Date());
 const meetings=[
  {id:101,account_id:'cal',title:'Team standup',start:iso(at(0,0,0)),end:iso(at(0,0,1)),all_day:false,location:'',guests:6,url:'https://calendar.google.com/calendar/event?eid=standup'},
  {id:102,account_id:'cal',title:'Pilot review with Northwind',start:iso(soon),end:iso(new Date(soon.getTime()+45*6e4)),all_day:false,location:'Zoom',guests:3,url:'https://calendar.google.com/calendar/event?eid=pilot'},
- {id:103,account_id:'cal',title:'Quarterly planning',start:iso(at(1,14)),end:iso(at(1,15,30)),all_day:false,location:'Room 2',guests:8,url:'https://calendar.google.com/calendar/event?eid=planning'},
+ {id:103,account_id:'cal',title:'Quarterly planning',start:iso(at(1,14)),end:iso(at(1,15,30)),all_day:false,location:'Room 2',guests:8,with:[{name:'Andrea',email:'andrea@client.example'},{name:'',email:'kim@client.example'}],url:'https://calendar.google.com/calendar/event?eid=planning'},
  {id:104,account_id:'cal',title:'Team offsite',start:iso(at(3,0)),end:iso(at(5,0)),all_day:true,location:'Lakeside',guests:0,url:null},
  {id:105,account_id:'cal',title:'Intro call with Example Ltd',start:iso(at(4,11)),end:iso(at(4,11,30)),all_day:false,location:'',guests:1,url:'https://calendar.google.com/calendar/event?eid=intro'},
  {id:106,account_id:'cal',title:'Dentist',start:iso(at(6,8,30)),end:iso(at(6,8,30)),all_day:false,location:'',guests:0,url:null},  // no end time: ends when it starts
@@ -116,7 +116,10 @@ try{
   const pages=context.pages().length;await ext.click();const view=page.locator('#cal-view');await view.waitFor();
   assert.equal(await page.locator('#cal-v-title').textContent(),'Quarterly planning');
   const vrows=await page.locator('#cal-v-rows div').evaluateAll(els=>els.map(e=>e.querySelector('dt').textContent+': '+e.querySelector('dd').textContent));
-  assert.ok(vrows.some(r=>r.startsWith('Where: Room 2')),vrows.join(' / '));assert.ok(vrows.some(r=>r==='With: 8 guests'),vrows.join(' / '));
+  assert.ok(vrows.some(r=>r.startsWith('Where: Room 2')),vrows.join(' / '));assert.ok(!vrows.some(r=>r==='With: 8 guests'),vrows.join(' / '));
+  const who=await page.locator('#cal-v-rows .cal-v-who').evaluateAll(n=>n.map(e=>[e.textContent,e.title]));
+  assert.deepEqual(who,[['Andrea andrea@client.example','andrea@client.example'],['kim@client.example','kim@client.example'],['and 6 more','']]);
+  if(process.env.CALENDAR_SHOT)await page.screenshot({path:`${process.env.CALENDAR_SHOT}/calendar-1440-detail.png`});
   assert.ok(vrows.some(r=>/^When: \w+, /.test(r)),vrows.join(' / '));
   const gopen=page.locator('#cal-v-open');assert.equal(await gopen.textContent(),'Open in Google Calendar ↗');assert.equal(await gopen.getAttribute('target'),'_blank');
   assert.match(await gopen.getAttribute('href'),/^https:\/\/calendar\.google\.com\//);assert.equal(context.pages().length,pages,'looking opens nothing');

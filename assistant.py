@@ -3620,17 +3620,39 @@ class Store:
             theirs = not calendar_owned(m, owner)
             url = m.get('source_url')
             people = [str(a.get('displayName') or a.get('email') or '')[:80] for a in attendees if a is not me and (a.get('displayName') or a.get('email'))]
+            met = [{'name': str(a.get('displayName') or '')[:80], 'email': str(a.get('email') or '')[:120]}
+                   for a in attendees if a is not me and (a.get('displayName') or a.get('email'))]
             organizer = m.get('organizer') or {}
             if organizer.get('displayName') and str(organizer.get('email') or '').lower() not in mine and not (organizer.get('self') and not shared):
                 people.append(str(organizer['displayName'])[:80])
+                met.append({'name': str(organizer['displayName'])[:80], 'email': str(organizer.get('email') or '')[:120]})
             found.append((theirs, shared, calendar_keys(m, r['title'], r['occurred_at'], m.get('end_at')), {
                 'id': r['id'], 'account_id': r['account_id'], 'title': str(r['title'])[:300], 'start': r['occurred_at'],
                 'end': m.get('end_at') or r['occurred_at'], 'all_day': bool(m.get('all_day')),
                 'location': str(m.get('location') or '')[:200], 'guests': sum(1 for a in attendees if a is not me),
-                'people': list(dict.fromkeys(people))[:20], 'shared': ((names or {}).get(r['account_id']) or calendar_owner_name(m)) if theirs else None,
+                'people': list(dict.fromkeys(people))[:20], 'with': met, 'shared': ((names or {}).get(r['account_id']) or calendar_owner_name(m)) if theirs else None,
                 'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
                 **({'edit': dict(zip(('start', 'end', 'all_day'), calendar_edit_times(m)))}
                    if r['account_id'] in writable and not calendar_guests(m, owner) else {})}))
+        # Who it's with, by name: the invite's name, else the Graph's for that address, else the address
+        unnamed = {w['email'].lower() for f in found for w in f[3]['with'] if not w['name'] and w['email']}
+        known = {}
+        if unnamed:
+            try:
+                with self.connect() as db:
+                    known = {r[0][6:]: r[1] for r in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person' AND id IN (SELECT 'email:' || value FROM json_each(?))",
+                                                                (json.dumps(sorted(unnamed)),)) if r[1] and '@' not in r[1]}
+            except sqlite3.OperationalError:
+                known = {}
+        for f in found:
+            row, keys, out = f[3], set(), []
+            for w in row['with']:
+                key = w['email'].lower() or w['name']
+                if key not in keys:
+                    keys.add(key)
+                    out.append({**w, 'name': w['name'] or known.get(w['email'].lower(), '')})
+            row['with'] = out[:20]
+            row['people'] = list(dict.fromkeys(w['name'] or w['email'] for w in out))[:20]
         # The owner's own copy first, so a meeting on their calendar and a shared one shows once, as theirs
         seen, result = set(), []
         for theirs, shared, keys, row in sorted(found, key=lambda f: (f[0], f[1])):

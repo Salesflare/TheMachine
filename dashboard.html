@@ -1891,7 +1891,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 #cal-dialog{width:min(480px,calc(100vw - 24px))}#cal-dialog [hidden]{display:none}
 #cal-view{width:min(440px,calc(100vw - 24px))}#cal-view [hidden]{display:none}#cal-view .snooze-heading{margin-bottom:10px;align-items:flex-start;gap:12px}#cal-view h2{margin:0;font-size:1.2rem;overflow-wrap:anywhere}
 #cal-view .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
-.cal-v-rows{margin:0;display:grid;gap:10px}.cal-v-rows div{display:grid;grid-template-columns:84px 1fr;gap:10px}.cal-v-rows dt{color:var(--faint);font-size:.88rem;padding-top:1px}.cal-v-rows dd{margin:0;color:var(--text);overflow-wrap:anywhere}
+.cal-v-rows{margin:0;display:grid;gap:10px}.cal-v-rows div{display:grid;grid-template-columns:84px 1fr;gap:10px}.cal-v-rows dt{color:var(--faint);font-size:.88rem;padding-top:1px}.cal-v-rows dd{margin:0;color:var(--text);overflow-wrap:anywhere}.cal-v-with{display:grid;gap:4px}.cal-v-mail{color:var(--faint);font-size:.86rem}
 #cal-view .send-act{display:flex;margin-top:16px}#cal-view .send-act button{flex:1 1 0;min-height:46px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
 #cal-dialog .snooze-heading{margin-bottom:12px}#cal-dialog h2{margin:0;font-size:1.2rem}
 #cal-dialog .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
@@ -4998,9 +4998,13 @@ function calView(m){const a=new Date(m.start),b0=new Date(m.end),b=isNaN(b0)||b0
  const allDay=m.all_day||b-a>=864e5,last=new Date(b-1),when=allDay?(localDay(last)!==localDay(a)?rangeText(long(a),long(last)):long(a))+' · '+t('All day')
   :long(a)+', '+rangeText(humanHM(a),(localDay(b)!==localDay(a)?long(b)+', ':'')+humanHM(b));
  const rows=[['When',when],...(m.location?[['Where',m.location]]:[]),...(m.shared?[['Calendar',t('{}’s calendar',m.shared)]]:[]),
-  ...(m.people?.length?[['With',m.people.join(', ')+(m.guests>m.people.length?' '+t('and {} more',m.guests-m.people.length):'')]]:m.guests?[['With',t(['{} guest','{} guests'],m.guests)]]:[])];
+  ...(m.guests&&!(m.with||m.people)?.length?[['With',t(['{} guest','{} guests'],m.guests)]]:[])];
+ // With: the name (from the invite or the Graph) with its address muted beside it, or the address alone
+ const met=(m.with||(m.people||[]).map(p=>p.includes('@')?{name:'',email:p}:{name:p,email:''})).slice(0,6),more=Math.max(m.guests||0,(m.with||m.people||[]).length)-met.length;
+ const withHtml=met.map(w=>`<span class="cal-v-who"${w.email?` title="${esc(w.email)}"`:''}>${w.name?esc(w.name)+(w.email?` <span class="cal-v-mail">${esc(w.email)}</span>`:''):esc(w.email)}</span>`).join('')
+  +(more>0?`<span class="cal-v-who cal-v-mail">${esc(t('and {} more',more))}</span>`:'');
  $('#cal-v-title').textContent=m.title||t('(No title)');
- $('#cal-v-rows').innerHTML=rows.map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${esc(v)}</dd></div>`).join('');
+ $('#cal-v-rows').innerHTML=rows.map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${esc(v)}</dd></div>`).join('')+(met.length?`<div><dt>${esc(t('With'))}</dt><dd class="cal-v-with">${withHtml}</dd></div>`:'');
  const open=$('#cal-v-open');open.hidden=!m.url;if(m.url){open.href=m.url;open.textContent=t(calOpenLabel(m.url))}
  $('#cal-view').showModal()}
 for(const b of document.querySelectorAll('#cal-view [data-cal-close]'))b.onclick=()=>$('#cal-view').close();
