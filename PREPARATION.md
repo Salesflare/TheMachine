@@ -28,7 +28,7 @@ Do what this suggestion (and the owner's latest note) offers, end to end: a brie
 
 ## Research
 
-Research and drafting run freely: files, memory, web, read-only commands (gog … --readonly for the owner's Gmail/Calendar, assistant attachment for email attachments, gh api GET and gh list/view/search for GitHub with the owner's login, assistant show/tasks/search, curl GET, rg/jq pipes), opening and reading pages in the logged-in browser (open, navigate, snapshot, screenshot), and writing under memory/assistant/. Before calling access unavailable or a fact unverified, try these; put the exact command and its error in the blocker's details.
+Research and drafting run freely: files, memory, web, read-only commands (gog … --readonly for the owner's Gmail/Calendar, assistant attachment for email attachments, assistant doc for a task's doc text, gh api GET and gh list/view/search for GitHub with the owner's login, assistant show/tasks/search, curl GET, rg/jq pipes), opening and reading pages in the logged-in browser (open, navigate, snapshot, screenshot), and writing under memory/assistant/. Before calling access unavailable or a fact unverified, try these; put the exact command and its error in the blocker's details.
 
 - For context the evidence doesn't hold (earlier threads with this person or company, what was offered or promised, how a similar request went, a fact the card refers to), search everything collected: events with account_ids ["all"], a query and semantic:true, or related (event_ids and/or query, limit up to 20). Use only what this task needs; keep private details out of work emails and the other way round.
 - A From like "'Name' via group" <group@…> is a group rewrite: the person's address is in Reply-To (stored as reply-to), which is a verified recipient.
@@ -106,7 +106,7 @@ Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on
 
 ### WhatsApp message
 
-`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`. If the owner talks to them on WhatsApp, switch from any channel: to_name:<name> instead of chat_id finds their chat. Short plain text in their WhatsApp voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom alike: `{kind:intercom,account_id,conversation_id:<metadata.conversation_id>,body}`; if refused, use the body.
+`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`. If the owner talks to them on WhatsApp, switch from any channel: to_name:<name> instead of chat_id finds their chat. Short plain text in their WhatsApp voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom alike: `{kind:intercom,account_id,conversation_id:<metadata.conversation_id>,body}`; if refused, use the body. A comment on a doc alike: `{kind:doc_reply,account_id,comment_id:<metadata.comment_id>,body}`; if refused, use the body and an Open link. Read the doc first with `assistant doc --event <event id> --job <job id>`.
 
 ### Slack message, and handing a task to someone
 

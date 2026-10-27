@@ -253,6 +253,17 @@ def cmd_attachment(config, args):
         print('No attachments.')
 
 
+def cmd_doc(config, args):
+    result = call(config, 'doc_text', {'event_id': args.event, 'job_id': args.job})
+    if args.json:
+        return out_json(result)
+    print(f"{result.get('title') or 'Untitled document'}" + (f"  {result['url']}" if result.get('url') else ''))
+    print()
+    print(result.get('text') or '')
+    if result.get('truncated'):
+        print('\n[cut: the doc is longer]')
+
+
 def cmd_sources(config, args):
     connectors = call(config, 'status', {'full': True})['connectors']
     if args.json:
@@ -866,6 +877,9 @@ def parser():
     c.add_argument('--save', help='attachment id or name to save')
     c.add_argument('--job', help='the preparation job id: saves under its attachments folder')
     c.add_argument('--open', help='a readable copy of an encrypted attachment saved earlier (with --job)')
+    c = add('doc', "A doc's text (Google Docs or Word), read-only, for a preparation of the task it belongs to", cmd_doc)
+    c.add_argument('--event', type=int, required=True, help="the doc event's id (a comment, mention, suggestion or share)")
+    c.add_argument('--job', required=True, help='the preparation job id')
     add('sources', 'Connection health per source', cmd_sources)
     add('busy', 'What is running now (agent jobs, sends, preparations); exit status 3 while something runs, for scripts', cmd_busy)
     c = add('reviews', 'Review backlog and recent review runs', cmd_reviews)

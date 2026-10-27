@@ -126,7 +126,7 @@ def attachment_bytes(record, config):
 
 
 # Owner-approved sends: each needs the Send review and Send now (Telegram) or the dashboard dialog.
-SEND_KINDS = ('email', 'email_demo', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom')
+SEND_KINDS = ('email', 'email_demo', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')
 # Owner-approved changes to The Machine's own code: Merge reviews the fix, Merge now applies it.
 APPROVE_KINDS = SEND_KINDS + ('merge', 'calendar')
 # The last step of a task taken up to it (a filled-in form, a cart, a payment): the owner reviews
@@ -136,7 +136,7 @@ FINISH_VERBS = ('Submit', 'Pay', 'Book', 'Confirm', 'Order', 'Buy', 'Publish', '
                 'Approve', 'Create', 'Delete', 'Cancel', 'Register', 'Renew', 'File', 'Upload', 'Schedule', 'Reserve',
                 'Apply', 'Transfer', 'Deploy', 'Send', 'Request', 'Unsubscribe', 'Close', 'Archive', 'Invite',
                 'Share', 'Update', 'Save', 'Claim', 'Return', 'Refund', 'Reply')
-TEXT_KINDS = ('linkedin', 'slack', 'x', 'whatsapp', 'intercom')  # a message without a subject
+TEXT_KINDS = ('linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')  # a message without a subject
 LINKEDIN_INBOX = Path(__file__).resolve().parent / 'integrations/linkedin_inbox.py'
 X_INBOX = Path(__file__).resolve().parent / 'integrations/x_inbox.py'
 X_URLISH = re.compile(r'(?:https?://)?(?:[\w-]+\.)+[a-zA-Z]{2,}(?:/\S*)?')
@@ -188,7 +188,7 @@ def label(value):
         return 'Reply on X' if value.get('reply_to') else 'Send'
     if value['kind'] == 'calendar':
         return calendar_writes.label(value)
-    return value.get('label') or {'email':'Send','email_demo':'Send','linkedin':'Send','slack':'Send','whatsapp':'Send','intercom':'Send reply','merge':'Merge fix','prepare':'Prepare next step','open':'Open original','handoff':'Hand off'}.get(value['kind'],'Continue')
+    return value.get('label') or {'email':'Send','email_demo':'Send','linkedin':'Send','slack':'Send','whatsapp':'Send','intercom':'Send reply','doc_reply':'Post reply','merge':'Merge fix','prepare':'Prepare next step','open':'Open original','handoff':'Hand off'}.get(value['kind'],'Continue')
 
 
 def preview(value):
@@ -208,6 +208,8 @@ def preview(value):
         return 'WhatsApp message to ' + value['to_name'] + '\n\n' + value['body']
     if value['kind'] == 'intercom':
         return 'Intercom reply to ' + value['to_name'] + ', as ' + value['as_name'] + '\n\n' + value['body']
+    if value['kind'] == 'doc_reply':
+        return 'Reply to ' + value['to_name'] + '’s comment on “' + value['doc_title'] + '”\n\n' + value['body']
     if value['kind'] == 'handoff':
         return 'Hand off to ' + value['to_name'] + ' through The Machine\n\n' + value['body']
     if value['kind'] == 'slack':
@@ -252,13 +254,13 @@ def delegation(value, result, name=None):
 
 
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
-             intercom_conversations=None, calendar_events=None):
+             intercom_conversations=None, calendar_events=None, doc_comments=None):
     if value is None:
         return None
     if isinstance(value,list):
         if not 1<=len(value)<=3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
         if any(not isinstance(item,dict) for item in value):raise ValueError('Each next action must be one concrete choice')
-        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events) for item in value]
+        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
             raise ValueError('Next actions must be distinct concrete choices')
         return {'kind':'menu','actions':choices}
@@ -545,6 +547,32 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if not isinstance(body, str) or not body.strip() or len(body) > 10000 or '\x00' in body:
             raise ValueError('Provide the concrete Intercom reply, at most 10000 characters')
         result['body'] = body.strip()
+    elif value.get('kind') == 'doc_reply':
+        # A reply to a comment on a Google Doc from this task's own doc events (connectors/docs.py), as the owner, posted
+        # only after their Post on this exact text, and only with the separate reply consent. Word comments can't be
+        # answered through Microsoft Graph: there the reply stays text for the owner to post.
+        if set(value) - {'kind', 'label', 'account_id', 'comment_id', 'body'}:
+            raise ValueError('Unsupported doc reply fields; a plain reply to one comment only')
+        account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'docs'), None)
+        if not account or account['id'] not in allowed_accounts:
+            raise ValueError('Use the Docs account belonging to this task')
+        comment = (doc_comments or {}).get(str(value.get('comment_id') or ''))
+        if not comment or comment.get('account_id') != account['id']:
+            raise ValueError('Reply only to a comment from this task’s own doc events (comment_id is its metadata.comment_id)')
+        if not comment.get('replies'):
+            raise ValueError('Posting doc replies is not on for this account (Google needs its separate reply consent; Word '
+                             'comments can’t be answered from here). Give the reply text in the body and an Open link instead.')
+        result = {'kind': 'doc_reply', 'account_id': account['id'], 'comment_id': str(value['comment_id']),
+                  'file_id': str(comment['file_id']), 'to_name': comment.get('name') or 'the commenter',
+                  'doc_title': comment.get('doc_title') or 'the doc', 'max_length': 4000}
+        if value.get('label'):
+            if not re.match(r'(?:Post|Reply|Send)\b', value['label']):
+                raise ValueError('Doc reply button labels say Post, Reply or Send, such as Post reply')
+            result['label'] = value['label']
+        body = value.get('body')
+        if not isinstance(body, str) or not body.strip() or len(body) > 4000 or '\x00' in body:
+            raise ValueError('Provide the concrete reply, at most 4000 characters')
+        result['body'] = body.strip()
     elif value.get('kind') == 'handoff':
         # Hand the task to a teammate in the owner's Work Fleet, through The Machine (docs/fleet.md): their
         # Machine gets it as a handoff to accept. Nothing goes by itself: the button opens the Fleet handoff
@@ -633,7 +661,7 @@ def revise(action, subject=None, body=None):
         result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
         return result
     if action['kind'] not in ('email',) + TEXT_KINDS:
-        raise ValueError('Only email, LinkedIn, Slack, X, WhatsApp and Intercom drafts and final steps can be edited')
+        raise ValueError('Only email, LinkedIn, Slack, X, WhatsApp, Intercom and doc reply drafts and final steps can be edited')
     result = {k: v for k, v in action.items() if k != 'revision'}
     if body is not None:
         if (not isinstance(body, str) or not body.strip() or '\x00' in body
@@ -1651,13 +1679,70 @@ print('MACHINE_PROOF='+json.dumps({'ran':result.testsRun,'failed':result.failed,
         return {'message_id':'merge:'+action['head'][:12],'commit':action['head'],'below':action['base']} if self.merged(action) else {}
 
 
+class DocReplyTransport:
+    """Posts one owner-approved reply to a comment on a Google Doc from the task's own doc events, as the owner, through
+    the connector's one allowed write (connectors/docs.py Replier). Drive has no idempotency key: an unclear outcome is
+    looked for in the comment's replies afterwards and never posted again."""
+
+    def __init__(self, config, connector, helpers):
+        self.config, self.connector, self.helpers = config, connector, helpers
+
+    def replier(self, action):
+        account = next((a for a in self.config['accounts'] if a['id'] == action['account_id'] and a.get('service') == 'docs'), None)
+        if not account:
+            raise ValueError('That Docs account is no longer connected. Nothing was posted.')
+        if not self.connector.replies_on(self.config, account, self.helpers):
+            raise ValueError('Posting doc replies needs the reply permission for this account. Nothing was posted.')
+        try:
+            return self.connector.Replier(self.config, account, self.helpers)
+        except self.helpers.SourceError:
+            raise ValueError('Doc replies are off for this account. Nothing was posted.') from None
+
+    def preflight(self, action):
+        if action['kind'] != 'doc_reply':
+            raise ValueError('Only an owner-approved doc reply can use the Docs transport')
+        replier = self.replier(action)
+        try:
+            found = replier.comment(action['file_id'], action['comment_id'])
+        except self.helpers.SourceError:
+            raise ValueError('I couldn’t reach the doc. Nothing was posted; tap Post again.') from None
+        if not isinstance(found, dict) or found.get('deleted'):
+            raise ValueError('That comment is gone from the doc. Nothing was posted.')
+        action['proof'] = {'doc_before_ids': [part for part, _, _ in replier.mine(found)]}
+
+    def find(self, replier, action, comment):
+        text = ' '.join(action['body'].split())
+        before = set((action.get('proof') or {}).get('doc_before_ids') or [])
+        found = [part for part, _, said in replier.mine(comment) if part not in before and said == text]
+        return {'message_id': f"doc:{action['comment_id']}:{found[0]}"} if len(found) == 1 else {}
+
+    def send(self, action, job):
+        replier = self.replier(action)
+        try:
+            posted = replier.reply(action['file_id'], action['comment_id'], action['body'])
+        except self.helpers.SourceError as error:
+            if error.status == 429:
+                return {'not_sent': True}
+            if error.status in (400, 401, 403, 404):
+                return {'rejected': error.status}
+            return {}  # Unknown outcome: never post again; reconcile reads the comment.
+        return {'message_id': f"doc:{action['comment_id']}:{posted['id']}"} if isinstance(posted, dict) and posted.get('id') else {}
+
+    def reconcile(self, action, job):
+        try:
+            replier = self.replier(action)
+            return self.find(replier, action, replier.comment(action['file_id'], action['comment_id']))
+        except (ValueError, self.helpers.SourceError):
+            return {}
+
+
 class ActionTransport:
     """Routes an approved send to Gmail, LinkedIn, Slack, X, WhatsApp or Intercom, a calendar change to Google Calendar,
     or a fix to The Machine itself, by its kind."""
 
-    def __init__(self, email, linkedin, slack=None, x=None, merge=None, whatsapp=None, intercom=None, calendar=None):
+    def __init__(self, email, linkedin, slack=None, x=None, merge=None, whatsapp=None, intercom=None, calendar=None, docs=None):
         self.email, self.linkedin, self.slack, self.x, self.merge, self.whatsapp = email, linkedin, slack, x, merge, whatsapp
-        self.intercom, self.calendar = intercom, calendar
+        self.intercom, self.calendar, self.docs = intercom, calendar, docs
 
     def pick(self, action):
         if action['kind'] == 'calendar':
@@ -1684,6 +1769,10 @@ class ActionTransport:
             if not self.intercom:
                 raise ValueError('Intercom replies aren’t set up. Nothing was sent.')
             return self.intercom
+        if action['kind'] == 'doc_reply':
+            if not self.docs:
+                raise ValueError('Doc replies aren’t set up. Nothing was posted.')
+            return self.docs
         return self.linkedin if action['kind'] == 'linkedin' else self.email
 
     def preflight(self, action):

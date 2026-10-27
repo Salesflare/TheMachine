@@ -596,7 +596,7 @@ AUTO_UNDO_NEW = dt.timedelta(hours=1)
 # A message send whose outcome is unknown keeps its lock while the service checks the conversation
 # (it never resends by itself). After this long with no sign of it, the owner may send it again.
 SEND_RETRY_AFTER = dt.timedelta(minutes=30)
-MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom')
+MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')
 
 
 def send_retry_ok(job, kind):
@@ -6460,7 +6460,7 @@ class Store:
                     raise ValueError('This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
             action=next_actions.selected(row['next_action'],revision) if row else None
-            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','intercom','finish'):
+            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','intercom','doc_reply','finish'):
                 raise ValueError('This draft changed or is no longer ready. Use its current buttons.')
             lock=send_lock(db,suggestion_id,revision,action['kind'])
             if lock:raise ValueError(lock)
@@ -6497,7 +6497,7 @@ class Store:
             done=db.execute("SELECT status FROM action_jobs WHERE suggestion_id=? AND revision=? AND status IN ('sent','done')",(suggestion_id,revision)).fetchone() if row and row['status']=='completed' else None
             if done:
                 return {'status':done['status'],'duplicate':True}
-            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','intercom','merge','prepare','finish','calendar'):
+            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','intercom','doc_reply','merge','prepare','finish','calendar'):
                 raise ValueError('This result changed or is no longer ready. Use its current buttons.')
             if action.get('to_options'):
                 # The owner picked who gets it, only from the addresses the service found in the thread.
@@ -6956,6 +6956,8 @@ class Store:
                     channel_health = {'salesflare': salesflare_progress(account, state)}
                 if account.get('service') == 'intercom':  # who a reply goes out as, after the owner's Send; none: it only reads
                     channel_health = {'replies_as': (account.get('reply_admin_name') or 'you') if next_actions.intercom_replies_on(account) else ''}
+                if account.get('service') == 'docs':  # Google or Microsoft, and whether an approved reply can be posted
+                    channel_health = docs_health(self.config, account, state)
                 activity = [dict(r) for r in db.execute('SELECT at,status,signals,error,retry_at FROM sync_activity WHERE account_id=? ORDER BY at DESC,rowid DESC LIMIT 12',(account['id'],))]
                 last_failure = db.execute("SELECT at,error FROM sync_activity WHERE account_id=? AND status='failed' ORDER BY at DESC,rowid DESC LIMIT 1",(account['id'],)).fetchone()
                 failures_24h = db.execute("SELECT count(*) FROM sync_activity WHERE account_id=? AND status='failed' AND at>=?",(account['id'],cutoff)).fetchone()[0]
@@ -7951,6 +7953,39 @@ def connector_services():
     return sorted(p.stem for p in CONNECTORS.glob('*.py') if re.fullmatch(r'[a-z][a-z0-9_]{0,30}', p.stem))
 
 
+def docs_transport(config):
+    """Doc comment replies, when the connector is here (connectors/docs.py Replier: the one write it allows)."""
+    plugin = load_connector('docs')
+    return next_actions.DocReplyTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Replier') else None
+
+
+def docs_health(config, account, state):
+    """A Docs connection on its card: its provider, and whether approved replies post (state.replies, from its syncs)."""
+    plugin = load_connector('docs')
+    kind = plugin.provider(config, account) if plugin else 'google'
+    return {'docs_provider': kind, 'docs_replies': bool(state.get('replies')) and kind == 'google'}
+
+
+def doc_comments(config, db, event_ids):
+    """The comments a doc_reply may answer: those of this task's own doc events, {comment_id: {account_id, file_id,
+    name, doc_title, replies}}. replies: the connection may post one (Google, with the reply consent)."""
+    found = {}
+    for r in db.execute("SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id "
+                        "WHERE e.kind IN ('docs.comment','docs.mention') ORDER BY e.occurred_at", (event_ids,)):
+        m = json.loads(r[1])
+        if m.get('comment_id') and m.get('file_id'):
+            found[str(m['comment_id'])] = {'account_id': r[0], 'file_id': str(m['file_id']), 'doc_title': m.get('doc_title'),
+                                           'name': m.get('from_name') or m.get('from') or 'the commenter', 'provider': m.get('provider')}
+    if found:
+        plugin = load_connector('docs')
+        accounts = {a['id']: a for a in config.get('accounts', [])}
+        on = {aid: bool(plugin and aid in accounts and plugin.replies_on(config, accounts[aid], CONNECTOR_HELPERS))
+              for aid in {c['account_id'] for c in found.values()}}
+        for c in found.values():
+            c['replies'] = on.get(c['account_id'], False) and c.get('provider') == 'google'
+    return found
+
+
 def intercom_transport(config):
     """Intercom replies, when the connector is here (connectors/intercom.py Replier: the one write it allows)."""
     plugin = load_connector('intercom')
@@ -8507,7 +8542,7 @@ CHAT_UNDONE = {('complete', 'reopen'), ('reject', 'reopen'), ('snooze', 'unsnooz
 # A conversation event's parts, one per line: "<unix time> · <author> · <part kind>: <text>"
 CHAT_PART = re.compile(r'^(\d{9,11}) · ([^·\n]{1,120}) · ([\w.-]{1,60}):[ \t]?(.*)$', re.M)
 CHAT_AGENTS = {'claude': 'Claude Code', 'codex': 'Codex'}
-CHAT_SENT = {'email': 'email', 'email_demo': 'email', 'linkedin': 'message', 'slack': 'message', 'x': 'post', 'whatsapp': 'message', 'intercom': 'reply'}
+CHAT_SENT = {'email': 'email', 'email_demo': 'email', 'linkedin': 'message', 'slack': 'message', 'x': 'post', 'whatsapp': 'message', 'intercom': 'reply', 'doc_reply': 'reply'}
 CHAT_SECRETS = (
     (re.compile(r'-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----'), '[redacted private key]'),
     (re.compile(r'\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'), '[redacted token]'),
@@ -8677,7 +8712,7 @@ def chat_person(name):
 
 # A raw chat handle is never shown: a channel ("#DM", "#general"), a Slack or WhatsApp ID, or both together
 CHAT_HANDLE = re.compile(r'(?:#[\w.-]*|[CDGUW][A-Z0-9]{8,})(?:\s+[UW][A-Z0-9]{8,})?|\d{6,}@(?:s\.whatsapp\.net|g\.us|lid)')
-CHAT_ON = {'slack': ' on Slack', 'whatsapp': ' on WhatsApp', 'linkedin': ' on LinkedIn', 'x': ' on X', 'intercom': ' in Intercom'}
+CHAT_ON = {'slack': ' on Slack', 'whatsapp': ' on WhatsApp', 'linkedin': ' on LinkedIn', 'x': ' on X', 'intercom': ' in Intercom', 'doc_reply': ' in the doc'}
 
 
 def chat_plain_name(name):
@@ -9261,7 +9296,7 @@ def card(row):
         status={'queued':'Testing the fix. It merges by itself if every check passes.' if auto else 'Testing and merging the fix…' if merging else 'Sending your approved draft…','sending':'Testing and merging the fix…' if merging else 'Sending your approved draft…',
                 'sent':(('Merged by itself and restarted. You can undo it for 24 hours; it undoes itself if the error comes back.' if auto else 'Merged. The Machine restarts with the fix.')
                         +(' '+action_state['error'] if action_state.get('error') else '')) if merging else
-                ('✓ '+('LinkedIn message sent' if str(action_state.get('message_id') or '').startswith(('urn:li:','linkedin:')) else 'Slack message sent' if str(action_state.get('message_id') or '').startswith('slack:') else 'Reply posted on X' if str(action_state.get('message_id') or '').startswith('x:') else 'X message sent' if str(action_state.get('message_id') or '').startswith('xdm:') else 'WhatsApp message sent' if str(action_state.get('message_id') or '').startswith('whatsapp:') else 'Sent as '+' '.join(str(sent.get('as_name') or 'your Intercom admin').split())+' in Intercom' if str(action_state.get('message_id') or '').startswith('intercom:') else 'Email sent')+to_at+'.'+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(' Tap Merge fix to merge it anyway.' if auto else ''),'failed':action_state.get('error'),
+                ('✓ '+('LinkedIn message sent' if str(action_state.get('message_id') or '').startswith(('urn:li:','linkedin:')) else 'Slack message sent' if str(action_state.get('message_id') or '').startswith('slack:') else 'Reply posted on X' if str(action_state.get('message_id') or '').startswith('x:') else 'X message sent' if str(action_state.get('message_id') or '').startswith('xdm:') else 'WhatsApp message sent' if str(action_state.get('message_id') or '').startswith('whatsapp:') else 'Sent as '+' '.join(str(sent.get('as_name') or 'your Intercom admin').split())+' in Intercom' if str(action_state.get('message_id') or '').startswith('intercom:') else 'Reply posted in the doc' if str(action_state.get('message_id') or '').startswith('doc:') else 'Email sent')+to_at+'.'+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(' Tap Merge fix to merge it anyway.' if auto else ''),'failed':action_state.get('error'),
                 'undoing':'Undoing the merge…','undone':action_state.get('error') or 'Merge undone.'}.get(action_state['status'],status)
     try:
         handed = json.loads(row['awaiting']) if row.get('awaiting') else {}
@@ -9292,7 +9327,7 @@ def card(row):
     return ('**' + title + '**\n\n' + body + source + ('\n\n' + status if status else '')).strip()
 
 
-CARD_DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom')
+CARD_DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')
 ACTION_BUSY = ('queued', 'sending', 'sent', 'uncertain', 'local_preparation', 'paused', 'undoing', 'undone')
 # What is really working right now, for tools and for a check before a restart or an update (`assistant busy`).
 # A confirmed step whose preparation stopped (blocked, timed out, canceled by a snooze or close) is 'paused', not here.
@@ -9396,6 +9431,8 @@ def card_draft(row):
         head = ['Reply on X to @' + a.get('to_screen_name', '') if a.get('reply_to') else 'X message to ' + a.get('to_name', '')]
     elif a['kind'] == 'intercom':
         head = ['Intercom reply to ' + a.get('to_name', '') + ', as ' + a.get('as_name', '')]
+    elif a['kind'] == 'doc_reply':
+        head = ['Reply to ' + a.get('to_name', '') + ' on “' + a.get('doc_title', '') + '”']
     else:
         head = [{'linkedin': 'LinkedIn', 'slack': 'Slack', 'whatsapp': 'WhatsApp'}[a['kind']] + ' message to ' + a.get('to_name', '')]
     tail = []
@@ -9627,7 +9664,7 @@ def controls(row, root=''):
         for action in actions:
             state=action.get('state') or row.get('action_status',{})
             if action['kind']=='finish' and state.get('status')=='done':continue
-            if action['kind'] in ('email','email_demo','linkedin','slack','x','whatsapp','intercom','merge','prepare','finish') and not action_busy(state):
+            if action['kind'] in ('email','email_demo','linkedin','slack','x','whatsapp','intercom','doc_reply','merge','prepare','finish') and not action_busy(state):
                 if shown and shown['full'] and shown['action']['revision']==action['revision']:
                     # The card shows this draft in full: Send confirms it, Edit opens it in the dashboard editor.
                     buttons.append({'label':next_actions.label(action),'action':{'type':'callback','value':f"assistant:{row['id']}:confirm_{action['revision']}"}})
@@ -11322,6 +11359,8 @@ def reconnect_help(account, manage):
         return {'shared_by': str(shared.get('fleet_name') or 'your Fleet')}
     if shared:
         return {'connect_name': 'crm' if service == 'salesflare' else service, 'shared_with': str(shared.get('fleet_name') or 'your Fleet')}
+    if manage and service == 'docs':  # its Connect Google Docs or Connect Microsoft documents consent, on the account page
+        return {'account_page': urllib.parse.urljoin(manage, '#docs')}
     if manage and account.get('transport') == 'broker':
         return {'account_page': urllib.parse.urljoin(manage, '#microsoft' if service in MICROSOFT_SERVICES else '#source-zoom' if service == 'zoom' else '#google')}
     return {'connect_name': 'crm' if service == 'salesflare' else service}
@@ -11532,7 +11571,7 @@ class App:
             return False
         current = json.loads(row['next_action'])
         actions = current.get('actions') if current.get('kind') == 'menu' else [current]
-        editable = [a for a in actions or [] if isinstance(a, dict) and a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom') and a.get('revision')]
+        editable = [a for a in actions or [] if isinstance(a, dict) and a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply') and a.get('revision')]
         if len(editable) != 1:
             return False
         return self.store.revise_draft(str(suggestion_id), editable[0]['revision'], 'agent', None, text, agent_job=job).get('status') == 'revised'
@@ -11777,6 +11816,33 @@ class App:
         saved = mail_attachments.save(self.config, folder / job, name, data)
         return saved | {'name': name, 'mime': found['mime'], 'size': len(data)}
 
+    def doc_text(self, args):
+        """A doc's text for a run the owner started (Do it, or a card chat's run), read-only: only a doc of one of that
+        task's own doc events, through its Docs connection (connectors/docs.py). Never kept: the run reads it once."""
+        job, event_id = str(args.get('job_id') or ''), args.get('event_id')
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job) or not str(event_id or '').isdigit():
+            raise ValueError('Give the event_id of the doc event and the job_id of this preparation')
+        with self.store.connect() as db:
+            run = db.execute("SELECT s.event_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
+                             "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
+            if not run:
+                raise ValueError('Docs are read only for a running preparation of the task the owner started')
+            row = db.execute("SELECT account_id,metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN "
+                             "(SELECT value FROM json_each(?))", (int(event_id), run['event_ids'])).fetchone()
+        if not row:
+            raise ValueError('That doc is not one of this task’s own doc events')
+        account = next((a for a in self.config['accounts'] if a['id'] == row['account_id'] and a.get('service') == 'docs'), None)
+        file_id = json.loads(row['metadata']).get('file_id')
+        plugin = load_connector('docs')
+        if not account or not file_id or not plugin:
+            raise ValueError('That Docs connection is no longer here')
+        try:
+            return plugin.read_text(self.config, account, str(file_id), CONNECTOR_HELPERS)
+        except SourceError as error:
+            raise ValueError({'docs_not_connected': 'Reading docs is not allowed for this account yet (Connect Google Docs or Microsoft documents)',
+                              'docs_text_unsupported': 'That file has no text to read here (open it in the browser instead)'}.get(
+                                  error.category, f'The doc could not be read ({error.category})')) from None
+
     def gmail_attachments(self, account, message_id, save=None):
         """A Gmail message's real attachments, read live with gmail.readonly: the list, or (`save`: its part id or
         name) that one and its bytes."""
@@ -12016,6 +12082,8 @@ class App:
             raise ValueError('Choose explicit configured account_ids (or ["all"] to search every account with events or related); cross-account reads must be intentional')
         if name == 'mail_attachment':
             return self.mail_attachment({k: v for k, v in args.items() if k != '_folder'})
+        if name == 'doc_text':
+            return self.doc_text(args)
         if name == 'status':
             result = self.store.snapshot(self.config['accounts'])
             # `manage_url`: where this install is set up when that is a web page (a hosted machine); the dashboard links to it.
@@ -12249,10 +12317,11 @@ class App:
                 intercom_conversations={m['conversation_id']:{'account_id':r[0],'name':m.get('from_name') or m.get('from') or 'Intercom conversation'} for r in db.execute(
                     "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='intercom.conversation' ORDER BY e.occurred_at",(row['event_ids'],))
                     for m in (json.loads(r[1]),) if m.get('conversation_id')}
+                docs=doc_comments(self.config,db,row['event_ids'])
                 # The owner talks to this person on WhatsApp although the task came in another way: their existing chat.
                 whatsapp_chats.update(owner_whatsapp_chats(self.config,db,args.get('next_actions',args.get('next_action')),whatsapp_chats))
                 calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
-            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events)
+            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs)
             for item in next_actions.actions(action):
                 if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
                     raise ValueError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')
@@ -13652,7 +13721,7 @@ class App:
                 LOG.error('delivery error=%s', type(error).__name__)
 
     def action_step(self,transport=None):
-        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_self),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read))
+        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_self),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config))
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             for candidate in db.execute("SELECT j.id,j.revision,s.status,s.next_action FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id WHERE j.status IN ('queued','blocked')").fetchall():
@@ -13676,7 +13745,7 @@ class App:
                 else:
                     # Keep checking Sent mail, every five minutes for a day, then hourly.
                     wait=dt.timedelta(minutes=5 if dt.datetime.fromisoformat(job['created_at'])>dt.datetime.fromisoformat(now())-dt.timedelta(days=1) else 60)
-                    db.execute("UPDATE action_jobs SET status='uncertain',error=?,retry_at=? WHERE id=? AND status IN ('sending','uncertain')",('I couldn’t confirm whether the fix was merged. I’m checking the code; I won’t merge it again.' if action['kind']=='merge' else 'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.' if action['kind']=='calendar' else 'I couldn’t confirm whether this X '+('reply' if action.get('reply_to') else 'message')+' was sent. I’m checking X; I won’t send it again.' if action['kind']=='x' else 'I couldn’t confirm whether this WhatsApp message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='whatsapp' else 'I couldn’t confirm whether this Intercom reply was sent. I’m checking the conversation; I won’t send it again.' if action['kind']=='intercom' else 'I couldn’t confirm whether this '+('LinkedIn' if action['kind']=='linkedin' else 'Slack')+' message was sent. I’m checking the conversation; I won’t send it again.' if action['kind'] in ('linkedin','slack') else 'I couldn’t confirm whether this email was sent. I’m checking Sent mail; I won’t send it again.',(dt.datetime.fromisoformat(now())+wait).isoformat(),job['id']))
+                    db.execute("UPDATE action_jobs SET status='uncertain',error=?,retry_at=? WHERE id=? AND status IN ('sending','uncertain')",('I couldn’t confirm whether the fix was merged. I’m checking the code; I won’t merge it again.' if action['kind']=='merge' else 'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.' if action['kind']=='calendar' else 'I couldn’t confirm whether this X '+('reply' if action.get('reply_to') else 'message')+' was sent. I’m checking X; I won’t send it again.' if action['kind']=='x' else 'I couldn’t confirm whether this WhatsApp message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='whatsapp' else 'I couldn’t confirm whether this Intercom reply was sent. I’m checking the conversation; I won’t send it again.' if action['kind']=='intercom' else 'I couldn’t confirm whether this doc reply was posted. I’m checking the comment; I won’t post it again.' if action['kind']=='doc_reply' else 'I couldn’t confirm whether this '+('LinkedIn' if action['kind']=='linkedin' else 'Slack')+' message was sent. I’m checking the conversation; I won’t send it again.' if action['kind'] in ('linkedin','slack') else 'I couldn’t confirm whether this email was sent. I’m checking Sent mail; I won’t send it again.',(dt.datetime.fromisoformat(now())+wait).isoformat(),job['id']))
             if result.get('message_id') and action['kind']=='merge':
                 self.merge_effect(job,action,result,'merge',transport.pick(action) if hasattr(transport,'pick') else transport)
             return
@@ -13687,7 +13756,7 @@ class App:
                 db.execute("UPDATE action_jobs SET retry_at=?,updated_at=? WHERE id=? AND status='queued'",((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=2)).isoformat(),now(),job['id']))
             return 'waiting'
         except Exception as error:
-            reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','intercom':'Intercom'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
+            reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','intercom':'Intercom','doc_reply':'The doc'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
             with self.store.connect() as db:
                 db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id=? AND status='queued'",(reason,now(),job['id']))
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
@@ -13712,7 +13781,7 @@ class App:
             return 'waiting'
         with self.store.connect() as db:
             status='sent' if result.get('message_id') else 'failed' if result.get('rejected') else 'uncertain'
-            what,where={'linkedin':('this LinkedIn message','LinkedIn'),'slack':('this Slack message','Slack'),'x':('this X '+('reply' if action.get('reply_to') else 'message'),'X'),'whatsapp':('this WhatsApp message','WhatsApp'),'intercom':('this Intercom reply','Intercom')}.get(action['kind'],('this email',mailbox_name(self.config,action)))
+            what,where={'linkedin':('this LinkedIn message','LinkedIn'),'slack':('this Slack message','Slack'),'x':('this X '+('reply' if action.get('reply_to') else 'message'),'X'),'whatsapp':('this WhatsApp message','WhatsApp'),'intercom':('this Intercom reply','Intercom'),'doc_reply':('this doc reply','The doc')}.get(action['kind'],('this email',mailbox_name(self.config,action)))
             error={'sent':None,'failed':f"Last attempt failed: {where} refused {what} (error {result.get('rejected')}). Nothing was sent; change it or try again.",
                    'uncertain':f'I couldn’t confirm whether {what} was sent. I won’t resend it.'}[status]
             if action['kind']=='calendar':

@@ -22,6 +22,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+import types
 import unicodedata
 import urllib.error
 import urllib.parse
@@ -659,6 +660,15 @@ def connect_name(account, config=None):
 def missing(config, account):
     """Why this account cannot sync yet ('' when it is filled in). Nothing is contacted."""
     if account.get('service', 'gmail') == 'gateway':
+        return ''
+    if account.get('service') == 'docs':  # it signs in as the owner's own Google or Microsoft connection on that address
+        if not account.get('email'):
+            return 'email is not set'
+        docs = plugin('docs')
+        try:
+            docs and docs.signin(config, account, types.SimpleNamespace(SourceError=SetupError))
+        except SetupError:
+            return 'no Google or Microsoft sign-in for this address yet'
         return ''
     for key, value in PLACEHOLDERS.items():
         if account.get(key) == value:

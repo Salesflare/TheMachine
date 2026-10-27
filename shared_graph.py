@@ -67,14 +67,14 @@ MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'salesflar
 # A project's timeline beyond its email threads: meetings and their notes, Intercom conversations and chats. On a board
 # the team sees, or one shared with chosen teammates, they count as shared by being on it (visibility).
 ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'intercom.conversation', 'whatsapp.message', 'slack.message',
-              'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')
-ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'email': 'Email'}
+              'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', *graph.DOC_KINDS)
+ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'email': 'Email', 'docs': 'Doc'}
 
 
 def _source(kind):
     """What a shared item is, for its label: meetings, intercom, chats or email."""
     return ('meetings' if kind in ('calendar.event', 'salesflare.meeting', 'zoom.summary') else 'intercom' if kind == 'intercom.conversation'
-            else 'email' if kind in MAIL_KINDS else 'chats')
+            else 'email' if kind in MAIL_KINDS else 'docs' if kind in graph.DOC_KINDS else 'chats')
 HEX = re.compile(r'[a-f0-9]{32}')
 # One fixed statement per table that holds a Fleet's shared Graph: what goes when a Fleet's sharing is purged or left.
 FLEET_DELETE = {

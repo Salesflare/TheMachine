@@ -51,7 +51,8 @@ SCOPES_READ = ('User.Read', 'Mail.Read', 'Calendars.Read')
 SCOPES_SEND = ('Mail.ReadWrite', 'Mail.Send')
 # An ask for the scope on the left is answered by any one on the right.
 ANSWERS = {'User.Read': {'User.Read'}, 'Mail.Read': {'Mail.Read', 'Mail.ReadWrite'}, 'Mail.ReadWrite': {'Mail.ReadWrite'},
-           'Mail.Send': {'Mail.Send'}, 'Calendars.Read': {'Calendars.Read', 'Calendars.ReadWrite'}}
+           'Mail.Send': {'Mail.Send'}, 'Calendars.Read': {'Calendars.Read', 'Calendars.ReadWrite'},
+           'Files.Read.All': {'Files.Read.All', 'Files.ReadWrite.All'}}
 
 # name -> (verb, path, scope)
 READ = {
@@ -69,6 +70,11 @@ READ = {
     'calendar.delta': ('GET', '/me/calendarView/delta', 'Calendars.Read'),
     'calendars.view': ('GET', '/me/calendars/{id}/calendarView', 'Calendars.Read'),
     'calendars.delta': ('GET', '/me/calendars/{id}/calendarView/delta', 'Calendars.Read'),
+    # Word, OneDrive and SharePoint documents (connectors/docs.py), with Files.Read.All from its own Connect consent
+    'drive.get': ('GET', '/me/drive', 'Files.Read.All'),
+    'drive.delta': ('GET', '/me/drive/root/delta', 'Files.Read.All'),
+    'drive.shared': ('GET', '/me/drive/sharedWithMe', 'Files.Read.All'),
+    'drives.item': ('GET', '/drives/{drive}/items/{id}', 'Files.Read.All'),
 }
 WRITE = {
     'messages.create': ('POST', '/me/messages', 'Mail.ReadWrite'),        # a draft from MIME (never sent by itself)

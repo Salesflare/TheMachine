@@ -37,6 +37,14 @@ READ = {
     'calendar.events.list': ('GET', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events'),
     'calendar.events.get': ('GET', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}'),
     'calendar.calendarList.get': ('GET', 'https://www.googleapis.com/calendar/v3/users/me/calendarList/{calendarId}'),
+    # Google Docs and Drive (connectors/docs.py), with drive.readonly from its own Connect Google Docs consent
+    'drive.about.get': ('GET', 'https://www.googleapis.com/drive/v3/about'),
+    'drive.files.list': ('GET', 'https://www.googleapis.com/drive/v3/files'),
+    'drive.files.get': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}'),
+    'drive.files.export': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/export'),
+    'drive.comments.list': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments'),
+    'drive.comments.get': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments/{commentId}'),
+    'docs.documents.get': ('GET', 'https://docs.googleapis.com/v1/documents/{documentId}'),
 }
 WRITE = {
     'gmail.users.messages.send': ('POST', 'https://gmail.googleapis.com/gmail/v1/users/{userId}/messages/send'),
@@ -46,10 +54,12 @@ WRITE = {
     'calendar.events.insert': ('POST', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events'),
     'calendar.events.patch': ('PATCH', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}'),
     'calendar.events.delete': ('DELETE', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}'),
+    # An owner-approved reply to a comment on a Google Doc (connectors/docs.py Replier), only with the separate reply consent
+    'drive.replies.create': ('POST', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments/{commentId}/replies'),
 }
 # Where requests may go: Google's API hosts, over HTTPS. A URL built from a method template and its parameters is
 # checked once more before it's opened, and the broker's address must be HTTPS too (it gets this machine's token).
-GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com'})
+GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com', 'docs.googleapis.com'})
 _tokens: dict = {}
 _lock = threading.Lock()
 
@@ -135,8 +145,8 @@ def url_for(method, params, write=False):
     return verb, google_url(template + ('?' + query if query else ''))
 
 
-def call(config, credential, account, method, params, scope, body=None, write=False, timeout=60):
-    """One Google API call as the account's owner; the parsed JSON answer."""
+def call(config, credential, account, method, params, scope, body=None, write=False, timeout=60, raw=False, limit=None):
+    """One Google API call as the account's owner; the parsed JSON answer, or with raw=True the bytes (at most `limit`)."""
     verb, url = url_for(method, params, write)
     for attempt in (0, 1):
         access = token(config, credential, account, scope, fresh=bool(attempt))
@@ -145,6 +155,11 @@ def call(config, credential, account, method, params, scope, body=None, write=Fa
                                                   **({'Content-Type': 'application/json'} if body is not None else {})})
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
+                if raw:
+                    data = response.read(limit + 1 if limit else -1)
+                    if limit and len(data) > limit:
+                        raise BrokerError('response_too_large')
+                    return data
                 return json.loads(response.read() or b'{}')
         except urllib.error.HTTPError as error:
             error.close()

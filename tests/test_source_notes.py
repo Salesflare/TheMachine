@@ -11,7 +11,7 @@ a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 T=dt.datetime(2026,10,11,8,0,tzinfo=dt.timezone.utc)
 # Services a Machine can have, as config.json names them; every note file belongs to one.
 SERVICES={'gmail','outlook','calendar','outlook_calendar','slack','salesflare','android','whatsapp','gateway','linkedin','x',
-          'github','stripe','intercom','zoom','trello','shortcut','rss'}
+          'github','stripe','intercom','zoom','trello','shortcut','rss','docs'}
 
 
 class SourceNotes(unittest.TestCase):

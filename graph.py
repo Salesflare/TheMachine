@@ -135,6 +135,7 @@ DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'r
 PROBABLE = 0.72
 UNNAMED = 0.75
 UNNAMED_DAYS = 45
+DOC_KINDS = ('docs.comment', 'docs.mention', 'docs.suggestion', 'docs.shared')
 UNNAMED_KINDS = {'gmail.message', 'calendar.event', 'salesflare.email', 'salesflare.meeting', 'intercom.conversation', 'github.notification'}
 OPEN_CARD = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
 # Boards: projects of one kind (partner listings, buyers, onboardings) in stages. Every board ends in this row too.
@@ -443,6 +444,14 @@ def _touches(kind, m, owner, wrote_to):
     if kind == 'intercom.conversation':
         found = addresses(m.get('from'))
         return [('email:' + found[0][1], None, 0.05, 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
+    if kind in DOC_KINDS:
+        # Docs (connectors/docs.py): who commented, @mentioned the owner, suggested edits or shared a doc with them.
+        # Drive shows an author's address only when they let it; without one there is nobody to link.
+        found = addresses(m.get('from'))
+        if not found or owner.mine(found[0][1]) or bulk(found[0][1]):
+            return []
+        weight = {'docs.mention': WEIGHTS['them'], 'docs.comment': 0.2, 'docs.suggestion': 0.15}.get(kind, 0.1)
+        return [('email:' + found[0][1], found[0][0] or m.get('from_name'), weight, 'them' if kind != 'docs.shared' else 'seen')]
     if kind == 'stripe.event':
         found = addresses(m.get('from'))
         return [('email:' + found[0][1], None, 0.05, 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
@@ -479,6 +488,8 @@ def thread_key(kind, m):
         return 'gh:' + str(m['repo']) + '#' + str(m['number']), True
     if kind == 'calendar.event' and m.get('recurring_event_id'):
         return 'cal:' + str(m['recurring_event_id']), True
+    if kind in ('docs.comment', 'docs.mention') and m.get('file_id') and m.get('comment_id'):
+        return 'doc:' + str(m['file_id']) + ':' + str(m['comment_id']), True
     return None, False
 
 
