@@ -161,10 +161,10 @@ try{
   {action:'graph_role',args:{node_id:'email:b@y.example',role:'partner at Y'}}]);
  for(let i=0;i<100&&await list.locator('.whos').count();i++)await page.waitForTimeout(20);
  assert.equal(await list.locator('.whos').count(),0);
- // Warm-up domains a review hid: their own tab on Organizations, with its count, each with Undo; the tab goes when empty.
+ // Warm-up domains a review hid: their own tab on Organizations (no count: nothing there needs the owner), each with Undo; the tab goes when empty.
  await navClick(page.locator('.side-sub a[data-graph-sub="orgs"]'));
  const warm=list.locator('[data-graph-panel="orgs"] [data-graph-list="warmup"]');
- assert.equal((await warm.textContent()).replace(/\s+/g,' ').trim(),'Warm up 1');
+ assert.equal((await warm.textContent()).replace(/\s+/g,' ').trim(),'Warm up');
  await warm.click();
  const beforeUndo=calls.length;
  await list.locator('[data-warmup-undo="warmup-pool.example"]').click();

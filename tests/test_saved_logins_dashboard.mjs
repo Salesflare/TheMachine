@@ -43,7 +43,7 @@ try{
    await page.goto('about:blank');await page.goto(base+'/#connections=signins');  // a fresh load each time, not just a hash change
    await page.locator('#saved-logins-block').waitFor();
    if(n)await page.locator('#saved-logins .saved-login').nth(n-1).waitFor();else await page.locator('#saved-logins.empty').waitFor();
-   await page.locator('#health-tabs [role=tab][aria-selected="true"]').filter({hasText:n?new RegExp(`^Sign-ins\\s+${n}$`):/^Sign-ins$/}).waitFor();
+   await page.locator('#health-tabs [role=tab][aria-selected="true"]').filter({hasText:/^Sign-ins$/})  /* a saved sign-in needs nothing: no count */.waitFor();
    const shown=await text(page);
    assert.match(shown,/sign it back in with one tap/);assert.match(shown,/encrypted on this Machine/);
    const html=await page.content();
