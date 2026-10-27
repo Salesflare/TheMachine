@@ -15,7 +15,7 @@ const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
 const sf={id:'work-crm',service:'salesflare',email:'owner@acme.example',display_name:'CRM',boundary:'work:Acme',last_success:ago(0.05),total:12,signals_24h:2,pending:0,
  salesflare:{stopped:null,synced_until:ago(5),round:{since:ago(170),started:ago(3),accounts:42,done:12,stuck:true,failing:1},slow_accounts:2,no_access:0,keys_url:'https://app.salesflare.com/#/settings/apikeys'}};
 const decisions=[1,2,3].map(i=>({suggestion_id:'c'+i,choice:'complete',source:'dashboard',created_at:ago(i)}));
-const state={suggestions:[1,2,3].map(i=>({id:'c'+i,title:'To-do '+i,status:'completed',scope:'work',created_at:ago(i)})),promises:[],connectors:[sf],suggestion_counts:{},decisions,analyses:[],deliveries:[],
+const state={suggestions:[1,2,3].map(i=>({id:'c'+i,title:'To-do '+i,body:'Made-up.',status:'completed',scope:'work',created_at:ago(i)})),promises:[],connectors:[sf],suggestion_counts:{},decisions,analyses:[],deliveries:[],
  review_health:{},review_runs:[],locale:{locale:'en-BE',region:'BE',language:'en',clock:'auto',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}};
 const calls=[];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://x.invalid');res.setHeader('Content-Type','application/json');

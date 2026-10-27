@@ -80,10 +80,11 @@ def _x25519_py(k, u):
         if swap:
             x2, x3, z2, z3 = x3, x2, z3, z2
         swap = bit
-        a, b = (x2 + z2) % P, (x2 - z2) % P
+        # sums and differences go into a product unreduced: the product's own reduction covers them
+        a, b = x2 + z2, x2 - z2
         aa, bb = a * a % P, b * b % P
-        e = (aa - bb) % P
-        c, d = (x3 + z3) % P, (x3 - z3) % P
+        e = aa - bb
+        c, d = x3 + z3, x3 - z3
         da, cb = d * a % P, c * b % P
         x3 = (da + cb) ** 2 % P
         z3 = x1 * (da - cb) ** 2 % P
@@ -109,7 +110,14 @@ def x25519(private, public):
 def x25519_public(private):
     if _cx:
         return _cx.X25519PrivateKey.from_private_bytes(private).public_key().public_bytes(_cser.Encoding.Raw, _cser.PublicFormat.Raw)
-    return _x25519_py(private, (9).to_bytes(32, 'little'))
+    # The X25519 base point (u = 9) is the Ed25519 base point under the birational map u = (1 + y) / (1 - y), so the
+    # fixed-base table below gives the same public key as the ladder in a fraction of the time
+    k = bytearray(private)
+    k[0] &= 248
+    k[31] &= 127
+    k[31] |= 64
+    point = _mul_base(int.from_bytes(k, 'little'))
+    return ((point[2] + point[1]) * pow(point[2] - point[1], P - 2, P) % P).to_bytes(32, 'little')
 
 
 # ---------------------------------------------------------------- Ed25519 (RFC 8032, section 6)
@@ -132,14 +140,62 @@ def _add(p, q):
     return (e * f % Q, g * h % Q, f * g % Q, e * h % Q)
 
 
+def _double(p):
+    """2p (RFC 8032, section 5.1.4): cheaper than _add(p, p), the same point."""
+    a, b = p[0] * p[0] % Q, p[1] * p[1] % Q
+    c = 2 * p[2] * p[2] % Q
+    h = a + b
+    e = h - (p[0] + p[1]) ** 2
+    g = a - b
+    f = c + g
+    return (e * f % Q, g * h % Q, f * g % Q, e * h % Q)
+
+
+_ZERO = (0, 1, 1, 0)
+
+
 def _mul(s, p):
-    out = (0, 1, 1, 0)
+    """s * p by doubling and adding (for a small s: the small-order check). Larger multiples use a _table."""
+    out = _ZERO
     while s > 0:
         if s & 1:
             out = _add(out, p)
-        p = _add(p, p)
+        p = _double(p)
         s >>= 1
     return out
+
+
+def _table(point):
+    """j * 16^i * point for every four bits i of a 256-bit scalar and j up to 15: about a thousand point additions
+    once, then a multiple of that point is at most 64 additions and no doubling."""
+    rows, row_base = [], point
+    for _ in range(64):
+        row = [_ZERO, row_base]
+        for _ in range(14):
+            row.append(_add(row[-1], row_base))
+        rows.append(row)
+        row_base = _add(row[15], row_base)  # 16 * this row's base
+    return rows
+
+
+def _mul_table(rows, s):
+    """s * the point of `rows` (a _table), for 0 <= s < 2^256."""
+    out = _ZERO
+    for row in rows:
+        if nibble := s & 15:
+            out = _add(out, row[nibble])
+        s >>= 4
+    return out
+
+
+@functools.cache
+def _base_table():
+    return _table(G)
+
+
+def _mul_base(s):
+    """s * G: every signature and public key, half of a check."""
+    return _mul_table(_base_table(), s)
 
 
 def _equal(p, q):
@@ -195,26 +251,40 @@ def ed25519_public(secret):
     if _ced:
         return _ced.Ed25519PrivateKey.from_private_bytes(secret).public_key().public_bytes(_cser.Encoding.Raw, _cser.PublicFormat.Raw)
     a, _ = _secret_expand(secret)
-    return _compress(_mul(a, G))
+    return _compress(_mul_base(a))
 
 
 def ed25519_sign(secret, message):
     if _ced:
         return _ced.Ed25519PrivateKey.from_private_bytes(secret).sign(message)
     a, prefix = _secret_expand(secret)
-    public = _compress(_mul(a, G))
+    public = _compress(_mul_base(a))
     r = int.from_bytes(_sha512(prefix + message), 'little') % L
-    rs = _compress(_mul(r, G))
+    rs = _compress(_mul_base(r))
     h = int.from_bytes(_sha512(rs + public + message), 'little') % L
     return rs + int.to_bytes((r + h * a) % L, 32, 'little')
+
+
+@functools.lru_cache(maxsize=256)
+def _key_point(public):
+    """A signing key as a point, or None when it isn't one or has small order: small-order keys cannot establish a
+    sender identity, even if a library accepts them."""
+    point = _decompress(public)
+    if point is None or _equal(_mul(8, point), _ZERO):
+        return None
+    return point
+
+
+@functools.lru_cache(maxsize=32)
+def _key_table(public):
+    """A teammate's or friend's key signs many messages: its own table makes each check a few times faster."""
+    return _table(_key_point(public))
 
 
 def ed25519_verify(public, message, signature):
     if len(public) != 32 or len(signature) != 64:
         return False
-    # Small-order keys cannot establish a sender identity, even if a library accepts them.
-    point = _decompress(public)
-    if point is None or _equal(_mul(8, point), (0, 1, 1, 0)):
+    if _key_point(bytes(public)) is None:
         return False
     if _ced:
         try:
@@ -222,15 +292,14 @@ def ed25519_verify(public, message, signature):
             return True
         except (_CInvalid, ValueError):
             return False
-    a = _decompress(public)
     rp = _decompress(signature[:32])
-    if not a or not rp:
+    if not rp:
         return False
     s = int.from_bytes(signature[32:], 'little')
     if s >= L:
         return False
     h = int.from_bytes(_sha512(signature[:32] + public + message), 'little') % L
-    return _equal(_mul(s, G), _add(rp, _mul(h, a)))
+    return _equal(_mul_base(s), _add(rp, _mul_table(_key_table(bytes(public)), h)))
 
 
 # ---------------------------------------------------------------- keys

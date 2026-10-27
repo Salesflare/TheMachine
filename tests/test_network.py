@@ -4,6 +4,7 @@ clear (a Machine without keys gets nothing, and anything unsealed is dropped), t
 for the control plane; no network."""
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 import urllib.error
@@ -124,6 +125,47 @@ class Crypto(unittest.TestCase):
         finally:
             nc._cx = fast
         self.assertEqual(nc.open_sealed(env, B, nc.public_keys(A), ctx), {'emails': ['sam@client.example']})
+
+    def test_the_fast_tables_give_the_reference_answers(self):
+        """x25519_public from the Ed25519 fixed-base table equals the RFC 7748 ladder from u = 9; signatures and checks
+        through the tables match RFC 8032's test vectors; plain doubling and adding gives the same multiples."""
+        for _ in range(20):
+            k = os.urandom(32)
+            self.assertEqual(nc.x25519_public(k) if not nc._cx else nc._x25519_py(k, (9).to_bytes(32, 'little')),
+                             nc._x25519_py(k, (9).to_bytes(32, 'little')))
+            fast, nc._cx = nc._cx, None
+            try:
+                self.assertEqual(nc.x25519_public(k), nc._x25519_py(k, (9).to_bytes(32, 'little')))
+            finally:
+                nc._cx = fast
+        vectors = [  # RFC 8032 section 7.1, TEST 1 and TEST 3 (TEST 2 is in test_rfc_vectors)
+            ('9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60', 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
+             '', 'e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b'),
+            ('c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7', 'fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025',
+             'af82', '6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a'),
+        ]
+        fast, nc._ced = nc._ced, None
+        try:
+            for secret, public, message, signature in vectors:
+                sk, msg, sig = bytes.fromhex(secret), bytes.fromhex(message), bytes.fromhex(signature)
+                self.assertEqual(nc.ed25519_public(sk).hex(), public)
+                self.assertEqual(nc.ed25519_sign(sk, msg), sig)
+                for _ in range(2):  # the key's own table: made on the first check, used on the next
+                    self.assertTrue(nc.ed25519_verify(bytes.fromhex(public), msg, sig))
+                    self.assertFalse(nc.ed25519_verify(bytes.fromhex(public), msg + b'x', sig))
+                    self.assertFalse(nc.ed25519_verify(bytes.fromhex(public), msg, sig[:40] + bytes([sig[40] ^ 4]) + sig[41:]))
+        finally:
+            nc._ced = fast
+        point = nc._decompress(bytes.fromhex(vectors[0][1]))
+        def plain(s, p):  # RFC 8032's own double-and-add, with the general addition only
+            out = nc._ZERO
+            while s:
+                out, p, s = (nc._add(out, p) if s & 1 else out), nc._add(p, p), s >> 1
+            return out
+        for s in (1, 2, 7, 8, 15, 16, 17, 255, 4097, nc.L - 1, 2 ** 256 - 1, int.from_bytes(os.urandom(32), 'little')):
+            self.assertTrue(nc._equal(nc._mul_table(nc._table(point), s), plain(s, point)))
+            self.assertTrue(nc._equal(nc._mul_base(s), plain(s, nc.G)))
+            self.assertTrue(nc._equal(nc._mul(s, point), plain(s, point)))
 
     def test_seal_binds_who_what_and_which(self):
         A, B, C = nc.new_keys(), nc.new_keys(), nc.new_keys()

@@ -18,6 +18,7 @@ a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 fleet = a.fleet
 import fleet_trust as ft
 import network_crypto as nc
+from kept_connections import kept_connections
 
 FLEET = 'fl_' + '2' * 16
 TOKEN = 'fixture-intercom-token'
@@ -118,7 +119,8 @@ class Shared(unittest.TestCase):
             config['accounts'].append({'id': 'intercom', 'service': 'intercom', 'transport': 'api', 'boundary': 'work:Acme', 'credential': 'intercom',
                                        'workspace_id': 'abc123', 'workspace_name': 'Acme Support', 'region': 'us', 'admin_id': '7'})
         store = a.Store(root / 'events.sqlite')
-        box = fleet.Fleet(store.connect, config, lambda: 'token', relay=FakeRelay(self.net, me))
+        # connections kept for the next call (kept_connections.py): a fresh one reads the whole schema, and a round asks for hundreds
+        box = fleet.Fleet(kept_connections(store, self.addCleanup), config, lambda: 'token', relay=FakeRelay(self.net, me))
         box.member_id = me
         return box
 

@@ -604,10 +604,14 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         self.assertEqual(message_seal.plain_leaks(event(1, 'x'), {'last': 'the zanzibarquill contract is ready'}), ['cursor'])
 
     def test_every_connector_keeps_message_text_in_the_sealed_fields(self):
-        """The connector suites again, with commit_page refusing any event whose text shows in a plain field."""
-        suites = ['test_connectors', 'test_new_connectors', 'test_x', 'test_linkedin', 'test_whatsapp', 'test_ms_graph',
-                  'test_salesflare', 'test_connector_trello', 'test_github_stripe', 'test_connector_shortcut', 'test_email_bodies',
-                  'test_gmail_exclusions', 'test_android_coalescing', 'test_gateway', 'test_ingestion_recovery']
+        """The connector suites again, with commit_page refusing any event whose text shows in a plain field. The test
+        runner (scripts/test.py) runs them so itself, so there this would only run them twice."""
+        spec = importlib.util.spec_from_file_location('test_runner', ROOT / 'scripts' / 'test.py')
+        runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(runner)
+        suites = list(runner.SEAL_AUDIT)
+        self.assertTrue(all((ROOT / 'tests' / f'{suite}.py').exists() for suite in suites), suites)
+        if os.environ.get('THE_MACHINE_SEAL_AUDITED', '').split(',') == suites:
+            self.skipTest('scripts/test.py runs the connector suites with MESSAGE_SEAL_AUDIT=1 itself')
         result = subprocess.run([sys.executable, '-m', 'unittest', *suites], cwd=ROOT, capture_output=True, text=True, timeout=900,
                                 env={**os.environ, 'MESSAGE_SEAL_AUDIT': '1'})
         self.assertNotIn('keeps message text in the clear', result.stderr)

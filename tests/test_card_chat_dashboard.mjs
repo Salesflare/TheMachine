@@ -312,8 +312,9 @@ try{
  await page.locator('h2.chat-title',{hasText:'Reply to the venue'}).waitFor();
  await page.evaluate(()=>{location.hash=''});await page.locator('#suggestions .chat-layout').waitFor({state:'detached'});
  // A Change sent from the card stays on the card: the chat never opens by itself
- await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').click().catch(async()=>{
-  await page.locator('#task-c2c2c2c2c2c2c2c2 .more-actions summary').click();await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').click()});
+ // Change sits in the card's More menu when the card has no room for it (a click on it hidden waited out 30 s)
+ if(!await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').isVisible())await page.locator('#task-c2c2c2c2c2c2c2c2 .more-actions summary').click();
+ await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').click();
  await page.locator('#feedback-c2c2c2c2c2c2c2c2').fill('Use the new address');
  await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="other"]').click();
  await page.locator('#feedback-c2c2c2c2c2c2c2c2').waitFor({state:'detached'});

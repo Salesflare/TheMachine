@@ -46,7 +46,7 @@ try{
    const b=document.querySelector(`#calendar-view .cal-block[data-day="${day}"]`);return {y:Math.round(scrollY),top:b&&Math.round(b.getBoundingClientRect().top)}});
   await page.locator('nav [data-tab="calendar"]').click();await page.locator('#calendar-view .cal-block').first().waitFor();await page.waitForTimeout(300);
   const first=await at();assert.ok(first.top!==null,'today is in the agenda');await shot(page,`agenda-first-${tag}`);
-  for(const v of ['week','month']){await page.locator(`#page-head [data-cal-mode="${v}"]`).click();await page.locator('#calendar-view .cal-tg-body, #calendar-view .cal-month, #calendar-view .cal-mgrid').first().waitFor().catch(()=>{});await page.waitForTimeout(300);
+  for(const v of ['week','month']){await page.locator(`#page-head [data-cal-mode="${v}"]`).click();await page.locator(v==='week'?'#calendar-view .cal-tg-body':'#calendar-view .cal-mg').first().waitFor();await page.waitForTimeout(300);
    await page.locator('#page-head [data-cal-mode="agenda"]').click();await page.waitForTimeout(500);
    assert.deepEqual(await at(),first,`${tag}: Agenda after ${v} sits where it opened`)}
   await shot(page,`agenda-back-${tag}`);

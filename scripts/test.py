@@ -53,6 +53,16 @@ WINDOWS_NATIVE = {
 IN_WSL2 = 'on Windows The Machine runs inside WSL2 (Linux), which the Linux jobs test'
 
 
+# The connector suites run with MESSAGE_SEAL_AUDIT=1: commit_page refuses any event whose message text shows in a plain
+# field, and a file whose output says so fails. test_message_seal runs them so itself when run on its own.
+SEAL_AUDIT = (
+    'test_connectors', 'test_new_connectors', 'test_x', 'test_linkedin', 'test_whatsapp', 'test_ms_graph', 'test_salesflare',
+    'test_connector_trello', 'test_github_stripe', 'test_connector_shortcut', 'test_email_bodies', 'test_gmail_exclusions',
+    'test_android_coalescing', 'test_gateway', 'test_ingestion_recovery',
+)
+SEAL_LEAK = 'keeps message text in the clear'
+
+
 def skipped(file):
     if sys.platform == 'win32' and file.name not in WINDOWS_NATIVE:
         return IN_WSL2
@@ -103,6 +113,7 @@ def main():
         browser = os.environ.get('CHROMIUM_PATH') or next((found for found in browsers() if Path(found).exists()), None)
         if browser:
             env['CHROMIUM_PATH'] = browser
+        env['THE_MACHINE_SEAL_AUDITED'] = ','.join(SEAL_AUDIT)  # test_message_seal: these run audited here already
         chosen = sys.argv[1:]
         files = [TESTS / Path(name).name for name in chosen] if chosen else sorted(TESTS.glob('test_*.py')) + sorted(TESTS.glob('test_*.mjs'))
         jobs = max(1, int(os.environ.get('THE_MACHINE_TEST_JOBS') or min(os.cpu_count() or 2, 8)))
@@ -121,11 +132,14 @@ def main():
             started = time.monotonic()
             own = Path(home) / file.name
             own.mkdir()
+            audit = {'MESSAGE_SEAL_AUDIT': '1'} if file.stem in SEAL_AUDIT else {}
             try:
                 # Windows finds the home folder through USERPROFILE, not HOME.
-                result = subprocess.run(command, cwd=ROOT, env={**env, 'HOME': str(own), 'USERPROFILE': str(own)}, timeout=limit,
+                result = subprocess.run(command, cwd=ROOT, env={**env, **audit, 'HOME': str(own), 'USERPROFILE': str(own)}, timeout=limit,
                                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace')
                 ok, output = result.returncode == 0, result.stdout
+                if audit and SEAL_LEAK in output:
+                    ok, output = False, output + f'\nA connector {SEAL_LEAK} (MESSAGE_SEAL_AUDIT)'
             except subprocess.TimeoutExpired as timeout:
                 out = timeout.output or ''
                 ok, output = False, (out.decode(errors='replace') if isinstance(out, bytes) else out) + f'\nTimed out after {limit} s'
