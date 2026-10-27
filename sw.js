@@ -100,7 +100,8 @@ self.addEventListener('notificationclick', event => {
   event.waitUntil((async () => {
     const open = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
     const client = open.find(c => c.url.startsWith(self.registration.scope));
-    if (client) { await client.focus(); return client.navigate(url).catch(() => client.postMessage({open: url})); }
+    // An open dashboard shows the link itself (only its # part changes): never navigate it, which reloads the page.
+    if (client) { client.postMessage({open: url}); return client.focus().catch(() => {}); }
     return self.clients.openWindow(url);
   })());
 });

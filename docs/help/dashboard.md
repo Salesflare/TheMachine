@@ -20,6 +20,10 @@ order: 4
 
 **Browser**, at the bottom of the sidebar, shows your Machine's own browser. On a computer it opens beside the sidebar, at the size of the space it has, and so do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. On a phone it opens in a new tab. On a short screen the whole sidebar scrolls.
 
+## New versions
+
+When a new version of the dashboard is ready, it never reloads while you're using it. It loads once the window is in the background, or after a few minutes without input, and never while something is typed or a dialog is open. **Update ready**, at the top, loads it right away. A restart of your Machine only reconnects.
+
 ## Events
 
 Search everything that came in, by meaning or by words, across all accounts or one. Each result opens in a reader, with a link to open it where it came from.
