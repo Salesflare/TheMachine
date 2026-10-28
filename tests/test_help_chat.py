@@ -332,6 +332,29 @@ class BugReports(unittest.TestCase):
             self.assertNotIn(personal, text)
         self.assertIn('300', text)
 
+    def test_the_report_gathers_its_parts_side_by_side_within_a_budget(self):
+        import threading
+        import time
+        release = threading.Event()
+
+        def slow_doctor(path):
+            release.wait(5)
+            return [('ok', 'late check', '')]
+        with patch.object(support.service, 'available', return_value=False), patch.object(support, 'versions', return_value='app: x'), \
+                patch.object(support.shutil, 'which', return_value=None):
+            started = time.monotonic()
+            out = support.report(str(self.config), doctor=slow_doctor, budget=0.3)
+            took = time.monotonic() - started
+        release.set()
+        self.assertLess(took, 2, 'a stuck check never holds the report up')
+        self.assertEqual(out['parts']['doctor'], ['not ready within 0.3 s'])
+        self.assertEqual(out['parts']['versions'], ['app: x'])
+        with patch.object(support.service, 'available', return_value=False), patch.object(support, 'versions', side_effect=OSError('x')), \
+                patch.object(support.shutil, 'which', return_value=None):
+            out = support.report(str(self.config), doctor=lambda path: [('ok', 'fine', '')], budget=5)
+        self.assertEqual(out['parts']['versions'], ['versions failed: OSError'], 'one part failing never stops the report')
+        self.assertEqual(out['parts']['doctor'], ['ok fine'])
+
     def test_the_report_scrubs_lines_as_the_control_plane_does(self):
         line = 'WARN reply "hi Sam, call +32 470 12 34 56" to sam@example.org failed key=abc'
         self.assertEqual(support.scrub_line(line), 'WARN reply "…" to [email] failed key=[redacted]')

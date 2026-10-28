@@ -823,8 +823,9 @@ CRM_ACTIONS = {
 }
 OWNER_ACTIONS |= CRM_ACTIONS
 # Help (help_chat.py) and Report a bug (support.report): the owner's own, from their dashboard only. help_ask answers
-# and changes nothing; help_article reads one public help article in the owner's language; bug_send sends only what
-# bug_preview showed, after the owner's tap.
+# and changes nothing; help_article reads one public help article in the owner's language; bug_send sends what the
+# owner wrote, after their tap, with the scrubbed support report (bug_preview, the same report) only when they left
+# Include a support report ticked.
 # support_access: the owner's switch for Support access on a paired self-hosted Machine (fleet.Fleet.support_access).
 SUPPORT_ACTIONS = {
     'bug_fixed',
@@ -17546,7 +17547,7 @@ class App:
         self.bug_queue_wake = getattr(self, 'bug_queue_wake', None) or threading.Event()
         while not self.stop.is_set():
             try:
-                bug_queue.flush(self.config, self.fleet.bug_report)
+                bug_queue.flush(self.config, self.bug_with_report)
             except Exception as error:  # noqa: BLE001 - never stops the service
                 LOG.error('bug queue error=%s', type(error).__name__)
             self.bug_queue_wake.wait(30)
@@ -18380,6 +18381,23 @@ class App:
 
     BUG_SHOT_BYTES = 2 * 1024 * 1024
     BUG_TEXT = 4000
+    REPORT_BUDGET = 20  # seconds the support report may take; a part not ready by then goes without (support.report)
+
+    def bug_with_report(self, body):
+        """A kept report sent (bug_queue.flush): one whose owner ticked Include a support report gets it now, scrubbed
+        and built within REPORT_BUDGET. When the report can't be built, what the owner wrote still goes, with why."""
+        import onboarding
+        import support
+        body = dict(body)
+        if body.pop('diagnostics', False) and body.get('report') is None:
+            path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
+            try:
+                found = support.report(path, doctor=onboarding.doctor, budget=self.REPORT_BUDGET)
+                body['report'] = support.scrub_value({'parts': found['parts'], 'settings': found['settings']})
+            except Exception as error:  # noqa: BLE001 - the bug report goes whatever happens to the support report
+                LOG.warning('support report not built error=%s', type(error).__name__)
+                body['report'] = {'parts': {'report': [f'not built: {type(error).__name__}']}}
+        return self.fleet.bug_report(body)
 
     def support_action(self, name, args):
         """Help's question (help_chat.ask, on this Machine's own model, a one-shot turn without tools) and Report a
@@ -18429,7 +18447,7 @@ class App:
                     return {'until': self.fleet.support_until(), 'hours': self.fleet.SUPPORT_HOURS, 'accesses': [], 'error': True}
                 raise ValueError('Can’t reach your account right now. Try again.') from None
         if name == 'bug_preview':
-            return {**support.report(path, doctor=onboarding.doctor), 'paired': bool(getattr(self, 'fleet', None))}
+            return {**support.report(path, doctor=onboarding.doctor, budget=self.REPORT_BUDGET), 'paired': bool(getattr(self, 'fleet', None))}
         if name == 'bug_fixed':  # a bug the owner reported, fixed and running here now (fleet.Fleet.fixed); seen closes one
             if not getattr(self, 'fleet', None):
                 return {'fixed': []}
@@ -18457,6 +18475,13 @@ class App:
                 'report': support.scrub_value(report) if report is not None else None}
         # Sent now, or kept here and sent by itself later when the control plane can't take it now (bug_queue.py):
         # bug_later is a hosted dashboard's report its control plane refused for now, kept the same way
+        # Include a support report ticked, on a self-hosted Machine: kept here at once (it is never lost) and sent by the
+        # worker right away, with the report built there; the dashboard doesn't wait for the checks and logs.
+        if name == 'bug_send' and args.get('diagnostics') and report is None:
+            item = bug_queue.add(self.config, {**body, 'diagnostics': True}, now=True)
+            if getattr(self, 'bug_queue_wake', None):
+                self.bug_queue_wake.set()
+            return {'sent': True, 'id': item['id']}
         retry_after = 0
         if name == 'bug_later':
             try:

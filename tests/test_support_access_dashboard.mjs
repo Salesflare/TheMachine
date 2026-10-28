@@ -4,9 +4,9 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Support access on a self-hosted Machine: given where it's needed, as a box in Report a bug (off unless ticked, and only
-// after Send), through the app; Settings, Security shows it only while it's on, with each look and Turn off. Hidden
-// when the Machine isn't paired (the app refuses).
+// Support access on a self-hosted Machine: given where it's needed, with the support report in Report a bug (one box,
+// ticked by default; unticked gives nothing), through the app and only after Send; Settings, Security shows it only
+// while it's on, with each look and Turn off. Not offered when the Machine isn't paired (the app refuses).
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 let paired=true,until=null;const actions=[];
@@ -36,23 +36,22 @@ try{
   // Off: nothing in Settings
   await page.evaluate(()=>showSettings('security'));await page.waitForFunction(()=>saData&&!saData.error);
   assert.ok(await page.$eval('#settings-support',el=>el.hidden),'no standing switch while it is off');
-  // Report a bug: the box, off by default; sending without it gives no access
-  await page.evaluate(()=>{document.querySelector('#settings').hidden=true;helpOpen('bug')});await page.waitForSelector('#bug-sa-row:not([hidden])');
-  assert.equal(await page.isChecked('#bug-sa'),false);
-  await page.fill('#bug-what','The list is empty');await page.uncheck('#bug-diag');await page.click('#bug-next');await page.waitForSelector('#bug-review:not([hidden])');
-  assert.ok(!(await page.textContent('#bug-sent')).includes('Support access'));await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
+  // Report a bug: one box, ticked by default; unticked, sending gives no access
+  await page.evaluate(()=>{document.querySelector('#settings').hidden=true;helpOpen('bug')});await page.waitForFunction(()=>/24 hours/.test(document.querySelector('#bug-diag-fine').textContent));
+  assert.equal(await page.isChecked('#bug-diag'),true);
+  await page.fill('#bug-what','The list is empty');await page.uncheck('#bug-diag');await page.click('#bug-send');await page.waitForSelector('#toast.show');
   assert.equal(actions.filter(a=>a.action==='support_access'&&a.args.allow!==undefined).length,0,'no access unless ticked');
-  // Ticked: the review says so, and it turns on only after Send
-  await page.evaluate(()=>helpOpen('bug'));await page.waitForSelector('#bug-sa-row:not([hidden])');
-  await page.fill('#bug-what','Still empty');await page.uncheck('#bug-diag');await page.check('#bug-sa');if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-ask-${width}x${height}.png`});await page.click('#bug-next');await page.waitForSelector('#bug-review:not([hidden])');
-  assert.ok((await page.textContent('#bug-sent')).includes('Support access'));assert.equal(until,null,'nothing before Send');
-  await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
+  // Ticked: it turns on only after Send, and the Sent line says until when, quietly
+  await page.evaluate(()=>{document.querySelector('#toast').classList.remove('show');helpOpen('bug')});
+  await page.fill('#bug-what','Still empty');assert.equal(await page.isChecked('#bug-diag'),true);if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-ask-${width}x${height}.png`});
+  assert.equal(until,null,'nothing before Send');
+  await page.click('#bug-send');await page.waitForSelector('#toast .toast-fine');
   assert.deepEqual(actions.filter(a=>a.action==='support_access'&&a.args.allow!==undefined).map(a=>a.args),[{allow:true}],'through the app, after Send');
-  assert.ok(actions.findIndex(a=>a.action==='bug_send')<actions.findIndex(a=>a.args?.allow===true));
-  assert.match(await page.textContent('#bug-done-text'),/Support can look until /);
+  assert.ok(actions.findIndex(a=>a.action==='bug_send'&&a.args.diagnostics)<actions.findIndex(a=>a.args?.allow===true));
+  assert.match(await page.textContent('#toast .toast-fine'),/^Support can look until /);
   if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-sent-${width}x${height}.png`});
   // While it's on: no box in Report a bug; Settings shows it with each look and Turn off
-  await page.evaluate(()=>helpOpen('bug'));await page.waitForTimeout(150);assert.ok(await page.$eval('#bug-sa-row',el=>el.hidden));
+  await page.evaluate(()=>helpOpen('bug'));await page.waitForTimeout(150);assert.equal(await page.textContent('#bug-diag-fine'),'Versions, checks and recent errors. No messages, keys or addresses.','already on: the box adds only the report');
   await page.evaluate(()=>{document.querySelector('#help-panel').close();showSettings('security')});
   await page.waitForSelector('#settings-support:not([hidden])');
   assert.equal(await page.textContent('#sa-toggle'),'Turn off');

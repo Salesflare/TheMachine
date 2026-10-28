@@ -7,6 +7,7 @@ looks at the file and passes it on.
 `report()` is the same report for Help, Report a bug in the dashboard: the parts as lines and fields, scrubbed the
 way the control plane scrubs a support report (cloud/support.py; a control plane test keeps LINE_SCRUB equal), so
 what the owner sees before sending is exactly what arrives."""
+import concurrent.futures
 import datetime as dt
 import io
 import json
@@ -141,26 +142,47 @@ def _unhomed(value):
     return value
 
 
-def report(config_path, doctor=None, lines=1000):
+def report(config_path, doctor=None, lines=1000, budget=None):
     """The support report for Report a bug: {'parts': {name: [lines]}, 'settings': {...}}, scrubbed and capped.
-    The same sources as the bundle; only warnings, errors and lifecycle lines of the service's log."""
+    The same sources as the bundle; only warnings, errors and lifecycle lines of the service's log. The parts are
+    gathered side by side (the checks and OpenClaw's log each take seconds); with a `budget` in seconds, a part not
+    ready by then says so and the report goes without it, so a slow or stuck check never holds a bug report up."""
     try:
         config = json.loads(Path(config_path).expanduser().read_text())
     except (OSError, ValueError):
         config = {}
-    raw = {'versions': versions(config).splitlines(),
-           'service-status': (service.status_text() if service.available() else f'no service manager ({service.manager()})').splitlines()[:20]}
-    if service.available():
-        raw['service-log'] = [line for line in (service.logs(lines=lines) or '').splitlines() if TROUBLE.search(line)]
-    if doctor:
+
+    def checks():
         try:
-            raw['doctor'] = [f'{mark} {text}' + (f' (fix: {fix})' if fix else '') for mark, text, fix in doctor(config_path)]
+            return [f'{mark} {text}' + (f' (fix: {fix})' if fix else '') for mark, text, fix in doctor(config_path)]
         except Exception as error:  # the report is most needed when things are broken
-            raw['doctor'] = [f'doctor failed: {type(error).__name__}']
+            return [f'doctor failed: {type(error).__name__}']
+
     openclaw = config.get('openclaw') or shutil.which('openclaw')
+    jobs = {'versions': lambda: versions(config).splitlines(),
+            'service-status': lambda: (service.status_text() if service.available() else f'no service manager ({service.manager()})').splitlines()[:20]}
+    if service.available():
+        jobs['service-log'] = lambda: [line for line in (service.logs(lines=lines) or '').splitlines() if TROUBLE.search(line)]
+    if doctor:
+        jobs['doctor'] = checks
     if openclaw:
-        raw['openclaw-log'] = [line for line in _run([openclaw, 'logs', '--limit', '1500', '--plain'], 60).splitlines()
-                               if re.search(r'\s(warn|error|fatal)\s', line) and '[agent:' not in line]
+        jobs['openclaw-log'] = lambda: [line for line in _run([openclaw, 'logs', '--limit', '1500', '--plain'], 60).splitlines()
+                                        if re.search(r'\s(warn|error|fatal)\s', line) and '[agent:' not in line]
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=len(jobs), thread_name_prefix='support-report')
+    try:
+        running = {name: pool.submit(job) for name, job in jobs.items()}
+        concurrent.futures.wait(running.values(), timeout=budget)
+    finally:
+        pool.shutdown(wait=False)  # a part still running finishes on its own (each command has its own timeout)
+    raw = {}
+    for name, future in running.items():
+        if not future.done():
+            raw[name] = [f'not ready within {budget:g} s']
+            continue
+        try:
+            raw[name] = future.result()
+        except Exception as error:  # noqa: BLE001 - one part's trouble never stops the report
+            raw[name] = [f'{name} failed: {type(error).__name__}']
     parts = {name: [scrub_line(_unhomed(scrub(line))) for line in items if str(line).strip()][-REPORT_LINES.get(name, 40):] for name, items in raw.items()}
     while sum(len(line) for items in parts.values() for line in items) > REPORT_CHARS:
         max(parts.values(), key=lambda items: sum(map(len, items))).pop(0)

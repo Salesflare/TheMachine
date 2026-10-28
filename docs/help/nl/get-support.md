@@ -19,12 +19,10 @@ Open **Help** en dan **Een bug melden**. Een foutmelding heeft ook een knop **Ee
 
 1. Zeg wat er misging.
 2. Voeg een screenshot toe als dat helpt: **Screenshot maken** van het dashboard, of **Afbeelding toevoegen**.
-3. Laat **Supportrapport meesturen** aanstaan, tenzij je dat liever niet doet: versies, controles en recente fouten, zonder berichten, sleutels of adressen.
-   Moeten we misschien beter kijken, vink dan ook **Laat support 24 uur meekijken** aan. Zie [Toegang voor support](get-support.md#support-access).
-4. Tik op **Nakijken**. Je ziet alles wat er weggaat, precies zoals het weggaat.
-5. Tik op **Versturen**. Daarvoor wordt er niets verstuurd.
+3. Laat **Supportrapport meesturen** aanstaan, tenzij je dat liever niet doet. Het voegt versies, controles en recente fouten toe, zonder berichten, sleutels of adressen, en laat ons team 24 uur lang de logs en instellingen van je Machine lezen. Zie [Toegang voor support](get-support.md#support-access). Zonder vinkje gaan alleen je tekst en je screenshot mee.
+4. Tik op **Versturen**. Het formulier sluit meteen. Je Machine voegt het supportrapport zelf toe; een trage controle houdt je melding nooit op.
 
-We antwoorden per e-mail. Een zelf gehoste Machine kan er een versturen als hij op het Network zit; schrijf ons anders.
+Vanaf dan nemen wij het over. Een zelf gehoste Machine kan er een versturen als hij op het Network zit; schrijf ons anders.
 
 Als we een bug oplossen die je meldde en je Machine de oplossing heeft, laten we het je één keer weten: een korte regel op je dashboard (**Begrepen** sluit hem) en een korte e-mail. Een zelf gehoste Machine hoort het als hij op het Network zit.
 
@@ -32,7 +30,7 @@ Kan een bugmelding niet meteen weg (je bent offline, of je stuurde er veel in ko
 
 ## Toegang voor support
 
-Ons team kan voor je naar je Machine kijken, maar alleen als je dat toestaat. Vink bij een bugmelding **Laat support 24 uur meekijken** aan. Het gaat aan als je op **Versturen** drukt. Op je eigen computer moet je Machine daarvoor [aan je account gekoppeld zijn](friends.md).
+Ons team kan voor je naar je Machine kijken, maar alleen als je dat toestaat. Meld je een bug met **Supportrapport meesturen** aan, dan gaat het aan als je op **Versturen** drukt. Op je eigen computer moet je Machine daarvoor [aan je account gekoppeld zijn](friends.md).
 
 - Alleen lezen: logboeken, instellingen, versies, hoe elke koppeling synct en recente fouten, opgeschoond zoals het supportrapport. Nooit je berichten, sleutels, wachtwoorden of wie je contacten zijn.
 - Het stopt vanzelf na 24 uur. Zolang het aanstaat, toont **Instellingen**, **Beveiliging** het: **Uitzetten** stopt het nu.

@@ -58,17 +58,18 @@ def _save(config, items):
     os.replace(temp, file)
 
 
-def add(config, body, retry_after=0, clock=None):
-    """Keeps the report to send later. Returns it ({'id', 'next_at', ...}); Full when too many wait already."""
+def add(config, body, retry_after=0, clock=None, now=False):
+    """Keeps the report to send later, or with `now` as soon as the worker wakes (a report whose support report is
+    still to be built). Returns it ({'id', 'next_at', ...}); Full when too many wait already."""
     clock = clock or time.time
     with _LOCK:
         items = load(config)
         if len(items) >= MOST:
             raise Full('Too many reports are waiting to go out. Email support@themachine.computer.')
         item = {'id': 'bq_' + secrets.token_hex(6), 'body': body, 'tries': 0, 'queued_at': int(clock()),
-                'next_at': int(clock()) + wait(0, retry_after)}
+                'next_at': int(clock()) + (0 if now else wait(0, retry_after))}
         _save(config, items + [item])
-    LOG.info('bug report kept to send later wait=%d', item['next_at'] - item['queued_at'])
+    LOG.info('bug report kept to send %s wait=%d', 'now' if now else 'later', item['next_at'] - item['queued_at'])
     return item
 
 

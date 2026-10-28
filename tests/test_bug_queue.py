@@ -66,6 +66,45 @@ class BugQueue(unittest.TestCase):
     def flush(self, cp):
         return bug_queue.flush(self.app.config, cp.bug_report, clock=self.clock)
 
+    def test_with_the_support_report_it_is_kept_at_once_and_the_worker_adds_the_report(self):
+        cp = ControlPlane()
+        self.app.fleet = cp
+        built = []
+
+        def report(path, doctor=None, budget=None):
+            built.append(budget)
+            return {'parts': {'service-log': ['ERROR token=sk-abcdefghijklmnopqrstuvwxyz0123']}, 'settings': {'model': 'm'}}
+        with patch.object(__import__('support'), 'report', side_effect=report) as made:
+            out = self.app.support_action('bug_send', {'description': 'Slow checks', 'diagnostics': True})
+            self.assertEqual(out['sent'], True)
+            self.assertEqual(made.call_count, 0, 'the dashboard never waits for the support report')
+            self.assertEqual(cp.sent, [])
+            self.assertEqual([i['what'] for i in bug_queue.view(self.app.config)], ['Slow checks'], 'kept before anything goes')
+            self.assertEqual(bug_queue.flush(self.app.config, self.app.bug_with_report, clock=self.clock), 1, 'due now')
+        self.assertEqual(built, [a.App.REPORT_BUDGET], 'built within the time budget')
+        self.assertEqual(cp.sent[0]['description'], 'Slow checks')
+        self.assertNotIn('diagnostics', cp.sent[0])
+        self.assertEqual(cp.sent[0]['report']['settings'], {'model': 'm'})
+        self.assertNotIn('sk-abcdef', json.dumps(cp.sent))
+        self.assertEqual(bug_queue.view(self.app.config), [])
+
+    def test_a_support_report_that_fails_never_loses_the_bug_report(self):
+        cp = ControlPlane()
+        self.app.fleet = cp
+        with patch.object(__import__('support'), 'report', side_effect=RuntimeError('stuck')):
+            self.app.support_action('bug_send', {'description': 'Broken', 'diagnostics': True})
+            self.assertEqual(bug_queue.flush(self.app.config, self.app.bug_with_report, clock=self.clock), 1)
+        self.assertEqual(cp.sent[0]['description'], 'Broken')
+        self.assertEqual(cp.sent[0]['report'], {'parts': {'report': ['not built: RuntimeError']}})
+
+    def test_unticked_it_goes_at_once_without_a_report(self):
+        cp = ControlPlane()
+        self.app.fleet = cp
+        with patch.object(__import__('support'), 'report') as made:
+            self.assertEqual(self.app.support_action('bug_send', {'description': 'Plain', 'diagnostics': False}), {'sent': True, 'id': 's_1'})
+        made.assert_not_called()
+        self.assertEqual(cp.sent, [{'description': 'Plain', 'screenshot': None, 'report': None}])
+
     def test_a_429_with_retry_after_is_kept_and_sent_then(self):
         cp = ControlPlane(limited(900))
         out = self.send(cp)
