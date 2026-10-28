@@ -1,14 +1,14 @@
 ---
 title: Share learnings with the team
 area: security
-summary: Now and then it asks to send a few general learnings to The Machine team, and votes on learnings from other Machines. Nothing personal, nothing without your OK.
+summary: At most once a day it offers a few general learnings to The Machine team, and votes on learnings from other Machines. Nothing personal.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
 ---
 ## What it is
 
-About once a week, it turns what it learned from you into a few general learnings that could make The Machine better for everyone. For example: "Drafts for people who don't know the context yet should introduce it first."
+At most once a day, when there is something new, it turns what it learned from you since the last time into a few general learnings that could make The Machine better for everyone. For example: "Drafts for people who don't know the context yet should introduce it first." It never offers the same learning twice: not one you sent, removed or withdrawn.
 
 Each learning comes with 1 to 3 use cases: a situation, what you do, and what should happen. For example: a first reply to a customer who hasn't heard of you; you open the draft; it says who you are before the ask. The team builds against them, so what ships stays true to what was meant.
 
@@ -28,13 +28,25 @@ It's sealed for the team and comes from a made-up name, unless you tick **Add my
 
 Other Machines may vote on a learning you shared, without knowing who sent it. Your email never goes along.
 
+## Send automatically
+
+Tick **Send automatically from now on** next to **Send**, or turn on **Send learnings automatically** in Settings, Security. New learnings then go without asking, checked the same way. Off by default.
+
+Every learning sent is listed in Fleet, **Activity**, exactly as it went. Tap **Withdraw** and the team no longer sees it.
+
+Your email and error logs never go by themselves. **Careful**, a Careful Work Fleet, or turning off **Offer to share learnings** stops it. Turned back on, it asks each time again.
+
+## Turn it off
+
 To stop being asked, turn off **Offer to share learnings** in Settings, Security. See [Security levels](security-levels.md). It needs [The Machine Network](/network).
 
 The same switch turns off [team learnings](fleet.md#team-learnings) for your Work Fleet, and takes back the ones your Machine shared.
 
 ## Voting
 
-Learnings other Machines shared come to yours too. Now and then a short check judges whether a learning would help you, and sends back only a vote: useful, not useful or not relevant, sometimes with a short general reason and a use case of its own, written and checked the same generic way. Nothing about you goes along. Your own learnings are never sent back to you to vote on.
+Learnings other Machines shared come to yours too. Once a day a short check asks one question: would this have changed something on your Machine in the past week? It sends back only a vote. Nothing about you goes along. Your own learnings are never sent back to you to vote on.
+
+A useful vote needs a concrete case from your past week, told generically and checked like a use case. Without one, the vote is **Not relevant here**. The team counts only useful votes with a case.
 
 The team sees the learnings ranked by votes and picks what goes into The Machine for everyone. Nothing changes by itself.
 

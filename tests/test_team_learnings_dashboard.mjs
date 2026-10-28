@@ -86,7 +86,7 @@ try{
    assert.deepEqual(posts,[],'nothing sent before Send');
    await box.locator('[data-share="send"]').click();
    await page.locator('#toast',{hasText:'Sent 2 learnings. Thank you.'}).waitFor({state:'attached'});
-   assert.deepEqual(posts,[{action:'learnings_share',args:{id:'tl_1',named:false,items:[
+   assert.deepEqual(posts,[{action:'learnings_share',args:{id:'tl_1',named:false,auto:false,items:[
     {n:1,text:'Drafts for new contacts should introduce the context first.',example:ask().items[0].example,log:false,use_cases:[{...C1,then:'the draft introduces the owner first'}]},
     {n:3,text:ask().items[2].text,example:'',log:true,use_cases:[C3]}]}}]);
    await card.waitFor({state:'detached'});

@@ -1124,6 +1124,7 @@ strong.nb{white-space:nowrap}
 .fleet-never{margin:0 0 4px;font-size:.85rem}.fleet-rule-kind small{display:block;margin-top:2px;font-weight:400;font-size:.8rem;color:var(--muted)}
 .fleet-pane>.fleet-settings{margin-top:22px}.fleet-pane-sub{margin:-6px 0 14px;font-size:.9rem}.fleet-fine{margin:6px 0 0;font-size:.85rem}.fleet-box .fleet-people li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}.fleet-box .fleet-people li .actions{margin:0 0 0 auto}.fleet-people li.fp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 12px}.fleet-people li.fp-row .actions{margin:0;flex-wrap:nowrap}.fp-who{min-width:0}@media(max-width:620px){.fleet-people li.fp-wrap{grid-template-columns:minmax(0,1fr)}.fleet-people li.fp-wrap .actions{flex-wrap:wrap}}.fleet-box ul.list,.fleet-box ul.fleet-log{list-style:none;padding:0;margin:0}
 .fleet-box .list{border:0;background:none;box-shadow:none;border-radius:0;display:grid;gap:8px}.fleet-box .list>article{margin:0;padding:10px 14px;border-radius:10px;background:var(--sunken);box-shadow:none}.fleet-box .list>article p{margin:0}.fleet-box .list>article p+p{margin-top:4px}
+.tl-shared .fleet-learn-meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin-top:6px}.tl-shared .tl-case{margin:4px 0 0;font-size:var(--fs-sm);color:var(--muted)}.tl-shared .withdrawn>p:first-child{text-decoration:line-through;color:var(--muted)}.share-auto-fine{margin:-4px 0 10px 26px;font-size:var(--fs-sm);color:var(--muted)}
 .fleet-box .list>li{border:0;padding:6px 0;border-top:1px solid var(--border)}.fleet-box .list>li:first-child{border-top:0}
 .fleet-pane>.fleet-brief{margin:0 0 14px;padding:16px 20px;box-shadow:none}.fleet-pane>.fleet-brief>p:first-child{margin-top:0}.fleet-discover:empty{display:none}
 @media(max-width:600px){.fleet-box{padding:14px 14px}.fleet-legend{gap:4px 14px}:is(.fleet-tabs,.sub-tabs){gap:4px}:is(.fleet-tabs,.sub-tabs) button{padding:6px 11px;font-size:.85rem}}
@@ -2556,7 +2557,8 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><div id="settings-lookups" hidden><div class="section-head"><h2>Graph</h2></div><div class="list settings-list"><div><span class="grow"><strong>Look up work contacts</strong><small>Job title, photo and location of people with a company address. <a class="learn" href="https://themachine.computer/help/graph#job-title-and-photo" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="lookup-people" class="lookup-switch" role="switch" aria-checked="true" aria-label="Look up work contacts"></button></div></div></div
 ><div id="settings-share" hidden><div class="section-head"><h2>The Machine team</h2></div><div class="list settings-list"><div><span class="grow"><strong>Offer to share learnings</strong><small>Now and then I ask before sending a few general learnings. Nothing personal. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></small></span
-><button type="button" id="share-offer" class="lookup-switch" role="switch" aria-checked="true" aria-label="Offer to share learnings"></button></div><div class="share-vote-row"><span class="grow"><strong>Vote on learnings from other Machines</strong><small>Now and then I check if another Machine’s learning would help you, and send back only a vote. <a class="learn" href="https://themachine.computer/help/share-learnings#voting" target="_blank" rel="noopener">Learn more</a></small
+><button type="button" id="share-offer" class="lookup-switch" role="switch" aria-checked="true" aria-label="Offer to share learnings"></button></div><div id="share-auto-row" hidden><span class="grow"><strong>Send learnings automatically</strong><small id="share-auto-note">New learnings go without asking. See or withdraw them in Fleet, Activity. <a class="learn" href="https://themachine.computer/help/share-learnings#send-automatically" target="_blank" rel="noopener">Learn more</a></small></span
+><button type="button" id="share-auto" class="lookup-switch" role="switch" aria-checked="false" aria-label="Send learnings automatically"></button></div><div class="share-vote-row"><span class="grow"><strong>Vote on learnings from other Machines</strong><small>Now and then I check if another Machine’s learning would help you, and send back only a vote. <a class="learn" href="https://themachine.computer/help/share-learnings#voting" target="_blank" rel="noopener">Learn more</a></small
 ><span class="seg share-vote-seg" id="share-vote" role="radiogroup" aria-label="Vote on learnings from other Machines"><label><input type="radio" name="share-vote" value="on" checked><span>On</span></label><label><input type="radio" name="share-vote" value="ask"><span>Ask first</span></label><label><input type="radio" name="share-vote" value="off"><span>Off</span></label></span
 ><small id="share-vote-note"></small></span></div><div><span class="grow"><strong>Share what Help is asked</strong><small>Only the topic of each question, like “snooze a to-do”. Never your words. <a class="learn" href="https://themachine.computer/help/help-chat#what-the-team-sees" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="share-help" class="lookup-switch" role="switch" aria-checked="true" aria-label="Share what Help is asked"></button></div><div><span class="grow"><strong>Send error reports</strong><small>When something breaks, I send what failed and where in the code. Never your messages, names or addresses. <a class="learn" href="https://themachine.computer/help/error-reports" target="_blank" rel="noopener">Learn more</a></small></span
@@ -3567,7 +3569,7 @@ $('#lookup-people').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute(
 // Feedback, Share learnings with The Machine team (team_learnings.py): a quiet card, then exactly what would be sent, item
 // by item, to edit or remove. An item's error log goes only when ticked (off by default), the owner's email only when
 // ticked. Send, Not now and Never ask; the Settings switch turns the asking on or off. A refresh keeps what is typed.
-let shareOpen=false,shareKey='';const shareDraft={id:'',items:{},named:false};
+let shareOpen=false,shareKey='';const shareDraft={id:'',items:{},named:false,auto:false};
 const sharePost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 const shareKept=a=>a.items.filter(i=>!shareDraft.items[i.n]?.removed);
 const shareCount=n=>n===1?'1 learning':n+' learnings';
@@ -3580,7 +3582,7 @@ function shareCaseHtml(i,d){const cases=shareCases(i,d);if(!cases.length)return 
    +(kept>1?`<button type="button" class="quiet" data-case-remove>${esc(t('Remove use case'))}</button>`:'')+'</div>').join('')+'</div>'}
 function renderShare(force){const a=state.team_learnings?.ask,box=$('#share-learnings');if(!box)return;
  if(!a){box.innerHTML='';shareKey='';shareOpen=false;return}
- if(shareDraft.id!==a.id){shareDraft.id=a.id;shareDraft.items={};shareDraft.named=!!a.pending?.named;shareOpen=false;
+ if(shareDraft.id!==a.id){shareDraft.id=a.id;shareDraft.items={};shareDraft.named=!!a.pending?.named;shareDraft.auto=false;shareOpen=false;
   if(a.pending){const keep=new Map(a.pending.items.map(i=>[i.n,i]));for(const i of a.items)shareDraft.items[i.n]=keep.get(i.n)||{removed:true}}}
  const key=[a.id,shareOpen,Object.keys(shareDraft.items).filter(k=>shareDraft.items[k].removed).join(','),Object.entries(shareDraft.items).map(([n,d])=>n+':'+Object.keys(d.cases||{}).filter(k=>d.cases[k].removed).join('.')).join(','),a.error||''].join('|');
  if(key===shareKey&&!force)return;shareKey=key;
@@ -3595,6 +3597,7 @@ function renderShare(force){const a=state.team_learnings?.ask,box=$('#share-lear
    +(i.log?`<label class="share-log"><input type="checkbox" data-share-log${d.log?' checked':''}> Add the error log</label><details class="share-log-text"><summary>See the log</summary><pre>${esc(i.log)}</pre></details>`:'')
    +`<div class="share-foot">${i.taken?`<small>${esc(i.taken)}</small>`:''}<button type="button" class="quiet" data-share-remove>Remove</button></div></li>`};
  box.innerHTML=head+`<div class="share-panel" role="region" aria-label="What would be sent"><p class="fine">This is exactly what would be sent. Edit or remove anything.</p><ol class="share-items">${a.items.map(item).join('')}</ol>`
+  +(state.team_learnings?.auto_careful?'':`<label class="share-named share-auto"><input type="checkbox" id="share-auto-tick"${shareDraft.auto?' checked':''}> ${esc(t('Send automatically from now on'))}</label><p class="fine share-auto-fine">${esc(t('New learnings go without asking. See or withdraw them in Fleet, Activity. Your email never goes by itself.'))}</p>`)
   +`<label class="share-named"><input type="checkbox" id="share-named"${shareDraft.named?' checked':''}> Add my email so the team can reply</label>`
   +'<p class="fine">Sealed for the team. Without your email it comes from a made-up name. Other Machines may vote on a learning, without knowing who sent it. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></p>'
   +(a.error?'<p class="share-error" role="status">Delivery isn’t confirmed yet. Try again to confirm the same items, without duplicates.</p>':'')
@@ -3602,7 +3605,7 @@ function renderShare(force){const a=state.team_learnings?.ask,box=$('#share-lear
 $('#share-learnings').addEventListener('input',e=>{const li=e.target.closest('.share-item'),a=state.team_learnings?.ask;if(!li||!a)return;const d=shareDraft.items[li.dataset.n]??={};
  if(e.target.dataset.shareField)d[e.target.dataset.shareField]=e.target.value;if(e.target.matches('[data-share-log]'))d.log=e.target.checked;
  if(e.target.dataset.shareCase){const k=e.target.closest('.share-case').dataset.k;((d.cases??={})[k]??={})[e.target.dataset.shareCase]=e.target.value}});
-$('#share-learnings').addEventListener('change',e=>{if(e.target.id==='share-named')shareDraft.named=e.target.checked;else if(e.target.matches('[data-share-log]')){const li=e.target.closest('.share-item');(shareDraft.items[li.dataset.n]??={}).log=e.target.checked}});
+$('#share-learnings').addEventListener('change',e=>{if(e.target.id==='share-named')shareDraft.named=e.target.checked;else if(e.target.id==='share-auto-tick')shareDraft.auto=e.target.checked;else if(e.target.matches('[data-share-log]')){const li=e.target.closest('.share-item');(shareDraft.items[li.dataset.n]??={}).log=e.target.checked}});
 $('#share-learnings').addEventListener('click',async e=>{const a=state.team_learnings?.ask;if(!a)return;const li=e.target.closest('.share-item');
  if(e.target.closest('[data-share-remove]')){(shareDraft.items[li.dataset.n]??={}).removed=true;renderShare();$('#share-learnings [data-share="send"]')?.focus();return}
  const cs=e.target.closest('[data-case-remove],[data-case-undo]');if(cs){const d=shareDraft.items[li.dataset.n]??={},k=cs.closest('.share-case').dataset.k;((d.cases??={})[k]??={}).removed=cs.hasAttribute('data-case-remove');renderShare(true);return}
@@ -3612,12 +3615,14 @@ $('#share-learnings').addEventListener('click',async e=>{const a=state.team_lear
  b.disabled=true;
  try{let r;
   if(what==='send'){const items=shareKept(a).map(i=>{const d=shareDraft.items[i.n]||{};return {n:i.n,text:d.text??i.text,example:d.example??i.example??'',log:!!d.log,...(i.use_cases?.length?{use_cases:shareCases(i,d).filter(c=>!c.removed).map(c=>({given:c.given,when:c.when,then:c.then}))}:{})}});
-   r=await sharePost('learnings_share',{id:a.id,items,named:shareDraft.named});toast(`Sent ${shareCount(r.count||items.length)}. Thank you.`)}
+   const auto=!!shareDraft.auto&&!state.team_learnings?.auto_careful;r=await sharePost('learnings_share',{id:a.id,items,named:shareDraft.named,auto});toast(auto?t(['Sent {} learning. New ones go automatically now.','Sent {} learnings. New ones go automatically now.'],r.count||items.length):`Sent ${shareCount(r.count||items.length)}. Thank you.`)}
   else if(what==='later'){r=await sharePost('learnings_later',{id:a.id});toast('Not now. I’ll ask again another week.')}
   else if(what==='never'){r=await sharePost('learnings_never',{id:a.id});toast('I won’t ask again. Turn it back on in Settings.')}
   if(r?.team_learnings)state.team_learnings=r.team_learnings;renderShare(true);renderShareOffer()}
  catch(err){b.disabled=false;toast(err.message,true)}});
-function renderShareOffer(){const t=state.team_learnings;$('#settings-share').hidden=!t?.network;$('#share-offer').setAttribute('aria-checked',String(!!t?.offer));const vm=t?.vote_mode||(t?.vote===false?'off':'on');for(const r of document.querySelectorAll('#share-vote input'))r.checked=r.value===vm;$('#share-vote-note').textContent=vm==='ask'?'Each vote waits for you on the Feedback page.':'';$('#share-help').setAttribute('aria-checked',String(t?.help_topics!==false));$('#share-errors').setAttribute('aria-checked',String(t?.errors!==false))}
+function renderShareOffer(){const t=state.team_learnings;$('#settings-share').hidden=!t?.network;$('#share-offer').setAttribute('aria-checked',String(!!t?.offer));
+ $('#share-auto-row').hidden=!t?.offer;$('#share-auto').setAttribute('aria-checked',String(!!t?.auto&&!t?.auto_careful));$('#share-auto').disabled=!!t?.auto_careful;
+ {const n=$('#share-auto-note');n._html??=n.innerHTML;if(t?.auto_careful)n.textContent=window.t('A Careful Work Fleet keeps asking each time.');else if(n.innerHTML!==n._html)n.innerHTML=n._html}const vm=t?.vote_mode||(t?.vote===false?'off':'on');for(const r of document.querySelectorAll('#share-vote input'))r.checked=r.value===vm;$('#share-vote-note').textContent=vm==='ask'?'Each vote waits for you on the Feedback page.':'';$('#share-help').setAttribute('aria-checked',String(t?.help_topics!==false));$('#share-errors').setAttribute('aria-checked',String(t?.errors!==false))}
 $('#share-help').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_help_topics',{on});state.team_learnings=r.team_learnings;renderShareOffer();secLocal('help_topics',on?'on':'off');notice(on?'Help topics go to the team, never your words.':'Help topics won’t go to the team.')}catch(err){notice(err.message)}finally{b.disabled=false}};
 // Vote on learnings from other Machines: On (votes by itself), Ask first (each vote waits on the Feedback page) or Off.
@@ -3627,7 +3632,7 @@ $('#share-vote').addEventListener('change',async e=>{const mode=e.target.value,a
  catch(err){notice(err.message);renderShareOffer()}finally{for(const r of all)r.disabled=false}});
 // Feedback, under Ask first: the votes waiting for the owner, in one quiet box (never a to-do each, never a notification).
 // Review shows each tip and the vote as it would go; Send or Skip one, or all at once.
-let votesOpen=false,votesKey='';const VOTE_LABEL={useful:'Useful',not_useful:'Not useful',not_relevant:'Not relevant'};
+let votesOpen=false,votesKey='';const VOTE_LABEL={useful:'Useful',not_useful:'Not useful',not_relevant:'Not relevant here'};
 function renderVotes(force){const tl=state.team_learnings,box=$('#share-votes');if(!box)return;const list=tl?.vote_mode==='ask'?tl.votes_waiting||[]:[];
  if(!list.length){box.innerHTML='';votesKey='';votesOpen=false;return}
  const key=votesOpen+'|'+list.map(v=>v.id).join(',');if(key===votesKey&&!force)return;votesKey=key;
@@ -3648,6 +3653,8 @@ $('#share-votes').addEventListener('click',async e=>{const list=state.team_learn
  catch(err){b.disabled=false;toast(err.message,true)}});
 $('#share-errors').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_error_reports',{on});state.team_learnings=r.team_learnings;renderShareOffer();notice(on?'I’ll send error reports.':'I won’t send error reports.')}catch(err){notice(err.message)}finally{b.disabled=false}};
+$('#share-auto').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
+ try{const r=await sharePost('set_learnings_auto',{on});state.team_learnings=r.team_learnings;renderShareOffer();renderShare(true);notice(on?t('New learnings go automatically. They’re listed in Fleet, Activity.'):t('I’ll ask before sending learnings.'))}catch(err){notice(err.message)}finally{b.disabled=!!state.team_learnings?.auto_careful}};
 $('#share-offer').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_learnings_offer',{on});state.team_learnings=r.team_learnings;renderShareOffer();renderShare(true);secLocal('learnings',on?'on':'off');notice(on?'I’ll offer learnings to share now and then.':'I won’t offer learnings to share.')}catch(err){notice(err.message)}finally{b.disabled=false}};
 function renderSignatures(){const list=state.signatures||[],box=$('#settings-signatures');box.hidden=!list.length;if(!list.length||sigDirty.size)return;
@@ -6458,6 +6465,20 @@ function fleetBriefShare(f){const works=(f.fleets||[]).filter(x=>x.kind==='work'
  return works.map(w=>`<label class="fleet-option"><input type="checkbox" data-fleet-brief-share="${esc(w.id)}"${w.rules?.brief?.rule==='never'?'':' checked'}><span>${several?`${esc(w.name)}: `:''}Share my brief facts with the team<small class="muted">Counts and dates from what the Team Graph already shares. Private and personal threads never count.</small></span></label>`).join('')}
 // Team learnings from team conversations (fleet_learnings.py): shared by themselves, removable by anyone in the Fleet.
 const FLEET_LEARN_KIND={process:'Process',tool:'Tool',style:'Style',routing:'Who handles what'};
+// Fleet, Activity: every learning sent to The Machine team lately, exactly as it went (team_learnings.shared), with
+// Withdraw: the team no longer sees it. Sent automatically or after the owner's OK, with the email or log only if they went.
+function teamShared(){const list=state.team_learnings?.shared||[];if(!list.length)return'';
+ const day=at=>at?esc(new Date(at).toLocaleDateString(DL,{month:'short',day:'numeric'})):'';
+ const item=i=>`<article class="tl-sent${i.withdrawn_at?' withdrawn':''}"><p>${esc(i.text)}</p>${i.example?`<p class="muted">${esc(t('Example: {}',i.example))}</p>`:''}`
+  +(i.use_cases||[]).map(c=>`<p class="fine tl-case">${esc([c.given,c.when,c.then].filter(Boolean).join(' · '))}</p>`).join('')
+  +(i.log?`<details class="share-log-text"><summary>${esc(t('Error log'))}</summary><pre>${esc(i.log)}</pre></details>`:'')
+  +`<p class="fleet-learn-meta"><small class="muted">${[day(i.at),i.auto?t('Sent automatically'):t('Sent after your OK'),i.named?t('With your email'):'',i.withdrawn_at?t('Withdrawn {}',day(i.withdrawn_at)):''].filter(Boolean).map(x=>`<span>${x}</span>`).join(' · ')}</small>`
+  +(i.withdrawn_at?'':`<button type="button" class="ghost" data-tl-withdraw="${esc(i.id)}" data-n="${i.n}">${esc(t('Withdraw'))}</button>`)+'</p></article>';
+ return `<div class="fleet-box tl-shared"><h3>${esc(t('Sent to The Machine team'))}</h3><p class="sub">${esc(t('Exactly what was sent. Withdraw one and the team no longer sees it.'))} <a class="learn" href="${HELP}share-learnings#send-automatically" target="_blank" rel="noopener">${esc(t('Learn more'))}</a></p><div class="list">${list.map(item).join('')}</div></div>`}
+$('#fleet-view').addEventListener('click',async e=>{const b=e.target.closest('[data-tl-withdraw]');if(!b)return;
+ if(!confirm(t('Withdraw this learning? The team no longer sees it.')))return;b.disabled=true;
+ try{const r=await sharePost('learnings_withdraw',{id:b.dataset.tlWithdraw,n:+b.dataset.n});if(r?.team_learnings)state.team_learnings=r.team_learnings;toast(t('Withdrawn. The team no longer sees it.'));fleetView(false,true)}
+ catch(err){b.disabled=false;toast(err.message,true)}});
 function fleetLearnings(work){const L=work.learnings;if(!L)return'';const items=L.items||[];
  const list=items.length?`<div class="list fleet-learnings">${items.map(i=>`<article><p><span class="chip"><span class="ct">${esc(FLEET_LEARN_KIND[i.kind]||i.kind)}</span></span> ${esc(i.text)}</p><p class="fleet-learn-meta"><small class="muted"><span>From team conversations</span> · <span>${i.mine?'Shared by your Machine':i.from?esc(i.from):'A teammate'}</span>${i.at?' · '+esc(new Date(i.at+'T12:00:00').toLocaleDateString(DL,{month:'short',day:'numeric'})):''}</small><button type="button" class="ghost" data-fleet-learn-remove="${esc(i.fp)}" data-fleet="${esc(work.id)}">Remove</button></p></article>`).join('')}</div>`
   :`<p class="muted">${L.on?'Nothing yet. Your Machine looks once a day.':'Off. Turn it on in Settings, Security.'}</p>`;
@@ -6948,6 +6969,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
   h+=box('Meetings and brief','',`<label class="fleet-option"><input type="checkbox" id="fleet-meetings"${f.ask_meetings?' checked':''}><span>${esc(rulesOf.length?t(several?(friendsToo?'Ask my Work Fleets, and a friend who is in the meeting, about the outside people in my meetings this week':'Ask my Work Fleets about the outside people in my meetings this week'):(friendsToo?'Ask my Work Fleet, and a friend who is in the meeting, about the outside people in my meetings this week':'Ask my Work Fleet about the outside people in my meetings this week')):t('Ask a friend who is in one of my meetings this week about the other people in it'))}<small class="muted">They see those email addresses.</small></span></label>${rulesOf.length?fleetBriefSettings(f):''}`,'fleet-settings');
   panes.push({id:'sharing',label:'Sharing',html:h})}
  panes.push({id:'activity',label:'Activity',html:(told.length?box('Lately','Who joined, asked for a server, had one started, or left.',`<div class="list">${told.map(noticeCard).join('')}</div>`):'')
+  +teamShared()
   +box('Log','Every question asked or answered, both ways.',`<ul class="fleet-log list">${f.log.map(l=>`<li><small class="mono">${esc(fmtDHM(l.at,{day:'numeric',month:'short'}))}</small> ${l.direction==='in'?'From':'To'} ${esc(l.name||'')}: ${esc(l.what)} · <span class="muted">${esc(l.outcome)}</span></li>`).join('')||'<li class="muted">Nothing yet.</li>'}</ul>`)});
  const current=panes.some(p=>p.id===fleetPane)?fleetPane:panes[0].id;
  let html=f.off?pageNotice('The Network is off for now. Nothing is asked or answered.'):'';
