@@ -3189,6 +3189,7 @@
  "That connector cannot be checked here": "Ese conector no se puede comprobar aquí",
  "That did nothing. Please use the dashboard.": "Eso no hizo nada. Usa el panel, por favor.",
  "That didn’t go through.": "No se pudo completar.",
+ "That didn’t go through. Reload the page and try again.": "No se pudo completar. Vuelve a cargar la página e inténtalo de nuevo.",
  "That didn’t work": "Eso no funcionó",
  "That didn’t work. Try again.": "Eso no funcionó. Inténtalo de nuevo.",
  "That doc is not one of this task’s own doc events": "Ese documento no es uno de los eventos de documento de esta tarea",

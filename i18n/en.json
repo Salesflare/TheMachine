@@ -3189,6 +3189,7 @@
  "That connector cannot be checked here": "That connector cannot be checked here",
  "That did nothing. Please use the dashboard.": "That did nothing. Please use the dashboard.",
  "That didn’t go through.": "That didn’t go through.",
+ "That didn’t go through. Reload the page and try again.": "That didn’t go through. Reload the page and try again.",
  "That didn’t work": "That didn’t work",
  "That didn’t work. Try again.": "That didn’t work. Try again.",
  "That doc is not one of this task’s own doc events": "That doc is not one of this task’s own doc events",
