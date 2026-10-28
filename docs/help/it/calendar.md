@@ -31,6 +31,8 @@ Nella griglia, gli eventi alla stessa ora stanno affiancati finché restano legg
 
 Fai clic su una riga per aprire la chat della sua attività, la promessa o la riunione nel suo calendario. In una riunione, chi il tuo Graph conosce, e le organizzazioni e i progetti di cui tratta, sono link alla loro pagina. Guardare non cambia nulla.
 
+Una sala riunioni prenotata compare nel luogo, mai come persona né nel tuo Graph.
+
 ## Note della riunione
 
 I dettagli di una riunione mostrano le sue note. **Aggiungi note** per incollare note o una trascrizione, oppure **Carica file** per un file Markdown o di testo. **Modifica** le cambia e **Rimuovi** le toglie (tocca due volte). Su una riunione che puoi modificare, **Aggiungi note** è sotto il suo modulo.

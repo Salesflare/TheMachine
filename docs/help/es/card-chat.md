@@ -21,7 +21,7 @@ En un ordenador, Enter o Ctrl+Enter (Cmd+Enter en un Mac) envía, y Mayús+Enter
 
 ## Modelo y razonamiento
 
-Debajo del cuadro de mensaje, el chat muestra su modelo y su nivel de razonamiento, como "GPT-6.1 Sol" y "Razonamiento bajo". Toca cualquiera de los dos para elegir otro solo para este chat. Los chats nuevos usan lo que pusiste en **Ajustes**, **Modelo** (consulta [Modelo](model.md)).
+Debajo del cuadro de mensaje, el chat muestra su modelo y su nivel de razonamiento, como "GPT-6.1 Sol" y "Razonamiento bajo". Toca cualquiera de los dos para elegir otro solo para este chat. Los modelos aparecen bajo su proveedor. Los chats nuevos usan lo que pusiste en **Ajustes**, **Modelo** (consulta [Modelo](model.md)).
 
 ## Detén una respuesta
 

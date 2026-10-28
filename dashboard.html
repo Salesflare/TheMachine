@@ -1611,7 +1611,10 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .cm-menu [aria-checked="true"] .cm-check{visibility:visible}
 .cm-menu [role="menuitemradio"]:is(:hover,:focus-visible){outline:0;box-shadow:none;background:var(--tile)}
 .cm-menu [role="menuitemradio"]:focus{outline:0}
-.cm-menu .cm-group{margin:6px 10px 2px 34px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem)}
+/* A provider: a section heading above its models, a line between providers */
+.cm-menu .cm-section{display:flex;flex-direction:column;gap:1px}
+.cm-menu .cm-section+.cm-section,.cm-menu [role="menuitemradio"]+.cm-section{margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
+.cm-menu .cm-group{margin:0;padding:6px 10px 3px 9px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);letter-spacing:.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(pointer:coarse){.cm-menu [role="menuitemradio"]{min-height:44px}}
 @media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .settings-list>div{flex-wrap:wrap}#model-chats .grow{flex-basis:100%}#model-chats .select-like{width:100%}}
 .chat-status:not(:empty){margin:0 0 12px}
@@ -2833,7 +2836,9 @@ function cmCurrent(kind){const cm=state.chat_model;if(kind==='default')return cm
 // A picker is a button that opens the app's menu (cmMenu) with what it can pick: [{value,label,hint,group}]
 function cmChoices(which,cur){if(which==='think')return (cmEntry(cur.model)?.levels||[]).map(l=>({value:l,label:THINKING[l]||l,hint:THINK_HINT[l]}));
  const ms=state.chat_model?.models||[],many=new Set(ms.map(m=>m.ref.split('/')[0])).size>1,one=ref=>({value:ref,label:modelName(ref),group:many?ref.split('/')[0]:'',name:true});
- return [...(cur.model&&!cmEntry(cur.model)?[{...one(cur.model),group:''}]:[]),...ms.map(m=>one(m.ref))]}
+ // Each provider once, its models under it, in the order the Gateway first lists each provider
+ const order=[...new Set(ms.map(m=>m.ref.split('/')[0]))],sorted=[...ms].sort((a,b)=>order.indexOf(a.ref.split('/')[0])-order.indexOf(b.ref.split('/')[0]));
+ return [...(cur.model&&!cmEntry(cur.model)?[{...one(cur.model),group:''}]:[]),...sorted.map(m=>one(m.ref))]}
 const cmTrigger=(kind,which,label,cls,extra='')=>`<button type="button" class="${cls}" data-cm-pick="${which}" data-cm-kind="${kind}" aria-haspopup="menu" aria-expanded="false"${extra}><span>${esc(label)}</span>${CHEV}</button>`;
 // The pill: "Model  Thinking", each part a quiet button over the menu
 function cmPill(kind){const cm=state.chat_model,cur=cmCurrent(kind);if(!cm?.known||!cm.models.length||!cur?.model)return '';const levels=cmEntry(cur.model)?.levels||[];
@@ -2858,8 +2863,12 @@ async function cmSave(kind,which,value){const cur=cmCurrent(kind)||{};
 // The menu: one at a time, a popover above the page and Help's dialog, below the trigger or above it when that has more room;
 // arrows, Home and End move, Enter or a tap picks, Escape or Tab closes, and the focus goes back to the trigger.
 let cmOpen=null;
-function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6,below=innerHeight-r.bottom-gap-8,above=r.top-gap-8,up=m.offsetHeight>below&&above>below;
- m.style.minWidth=Math.max(200,Math.round(r.width))+'px';m.style.maxHeight=Math.max(120,Math.floor(up?above:below))+'px';
+// Below when it fits there or there's fair room (it scrolls); else above, in a dialog under the dialog's title when that
+// leaves fair room; else wherever there's more room
+function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6,h=m.offsetHeight,fair=Math.min(h,160),below=innerHeight-r.bottom-gap-8,above=r.top-gap-8,
+  head=b.closest('dialog[open]')?.querySelector('h2,h3')?.parentElement,under=r.top-gap-Math.max(8,head?head.getBoundingClientRect().bottom+4:8),
+  up=below<fair&&(under>=fair||above>below),room=!up?below:under>=fair?under:above;
+ m.style.minWidth=Math.max(200,Math.round(r.width))+'px';m.style.maxHeight=Math.max(120,Math.floor(room))+'px';
  if(up)m.style.bottom=Math.round(innerHeight-r.top+gap)+'px';else m.style.top=Math.round(r.bottom+gap)+'px';
  m.style.left=Math.round(Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8)))+'px'}
 const CM_CHECK='<svg class="cm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -2869,8 +2878,10 @@ function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,c
  let m=$('#cm-menu');if(!m){m=document.createElement('div');m.id='cm-menu';m.className='fact-menu-list cm-menu';m.setAttribute('role','menu');m.hidden=true;if(m.showPopover)m.popover='manual'}
  // In the trigger's dialog (outside a modal dialog nothing takes the focus), as a popover so the dialog never clips it
  const host=b.closest('dialog[open]')||document.body;if(m.parentNode!==host)host.append(m);m.setAttribute('aria-label',which==='model'?'Model':'Thinking');
- let group=null;m.innerHTML=cmChoices(which,cur).map(c=>(c.group&&c.group!==group?`<p class="cm-group" role="presentation" translate="no">${esc(group=c.group)}</p>`:'')
-  +`<button type="button" role="menuitemradio" aria-checked="${c.value===sel}" data-cm-value="${esc(c.value)}"${c.name?' translate="no"':''}>${CM_CHECK}<span>${esc(c.label)}</span>${c.hint?`<small>${esc(c.hint)}</small>`:''}</button>`).join('');
+ // A provider's models sit in a group under its heading, so a heading never reads as the line under the model above it
+ const item=c=>`<button type="button" role="menuitemradio" aria-checked="${c.value===sel}" data-cm-value="${esc(c.value)}"${c.name?' translate="no"':''}>${CM_CHECK}<span>${esc(c.label)}</span>${c.hint?`<small>${esc(c.hint)}</small>`:''}</button>`;
+ const groups=[];for(const c of cmChoices(which,cur)){const g=groups.at(-1);if(g&&g.name===c.group)g.items.push(c);else groups.push({name:c.group,items:[c]})}
+ m.innerHTML=groups.map((g,i)=>g.name?`<div class="cm-section" role="group" aria-labelledby="cm-g-${i}"><p class="cm-group" id="cm-g-${i}" translate="no">${esc(g.name)}</p>${g.items.map(item).join('')}</div>`:g.items.map(item).join('')).join('');
  cmOpen={box,kind,which};b.setAttribute('aria-expanded','true');m.hidden=false;if(m.showPopover&&!m.matches(':popover-open'))m.showPopover();cmPlace(m,b);
  const items=[...m.querySelectorAll('[role=menuitemradio]')];(last?items.at(-1):items.find(i=>i.getAttribute('aria-checked')==='true')||items[0])?.focus({preventScroll:true})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cm-pick]');
@@ -5580,7 +5591,7 @@ const rangeText=(a,b)=>I18N.lang==='en'?a+' to '+b:a+(/\s/.test(a+b)?' – ':'�
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
  if(it.kind==='meeting'){const m=it.m,c=it.s&&CAL_CARD[it.s.status],a=new Date(m.start),b=new Date(m.end),
    when=it.allDay?(it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''):!(b>a)?'':rangeText(hm(a),(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b));
-  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):''].filter(Boolean).join(' · '),
+  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,...(m.rooms||[]),m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):''].filter(Boolean).join(' · '),
    said:(it.promises||[]).map(p=>calSaid(p)+': '+p.what),
    href:it.s?'#chat='+it.s.id:'',edit:!it.s&&m.edit?m.id:'',view:!it.s&&!m.edit?m.id:'',badge:c?chip(c[0],c[1]):'',prep:c?c[0]:'',tone:m.shared?'theirs':it.s?'prep t-'+(c?c[1]:'muted'):'meeting'}}
  if(it.kind==='promise'){const p=it.p;return {time:late?calShort(p.due):'Due',title:p.what,sub:calSaid(p),href:promiseHref(p),tone:late?'late':'promise'}}
@@ -5782,7 +5793,8 @@ const calOpenLabel=url=>{let h='';try{h=new URL(url).hostname}catch{}return /(^|
 function calView(m){const a=new Date(m.start),b0=new Date(m.end),b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0,long=d=>d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'});
  const allDay=m.all_day||b-a>=864e5,last=new Date(b-1),when=allDay?(localDay(last)!==localDay(a)?rangeText(long(a),long(last)):long(a))+' · '+t('All day')
   :long(a)+', '+rangeText(humanHM(a),(localDay(b)!==localDay(a)?long(b)+', ':'')+humanHM(b));
- const rows=[['When',when],...(m.location?[['Where',m.location]]:[]),...(m.shared?[['Calendar',t('{}’s calendar',m.shared)]]:[]),
+ const where=[m.location,...(m.rooms||[])].filter(Boolean).join(' · ');  // a booked meeting room is where, not who
+ const rows=[['When',when],...(where?[['Where',where]]:[]),...(m.shared?[['Calendar',t('{}’s calendar',m.shared)]]:[]),
   ...(m.guests&&!(m.with||m.people)?.length?[['With',t(['{} guest','{} guests'],m.guests)]]:[])];
  // With: the name (from the invite or the Graph) with its address muted beside it, or the address alone
  const met=(m.with||(m.people||[]).map(p=>p.includes('@')?{name:'',email:p}:{name:p,email:''})).slice(0,6),more=Math.max(m.guests||0,(m.with||m.people||[]).length)-met.length;

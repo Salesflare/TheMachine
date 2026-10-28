@@ -717,28 +717,52 @@ class StatedOrganisations(unittest.TestCase):
         invite = {'account_id': 'work', 'source_id': f'c{n}', 'kind': 'calendar.event', 'occurred_at': at(1), 'title': 'Board meeting', 'body': '',
                   'deleted': False, 'metadata': {'organizer': {'email': 'sam@acme.com', 'self': True}, 'attendees': [
                       {'email': 'sam@acme.com', 'self': True}, {'email': 'kim@client.com', 'responseStatus': 'accepted'},
-                      {'email': 'falcon_room@venue.example', 'responseStatus': 'accepted'},  # booked by an outside organizer: no flag
+                      {'email': 'falcon@venue.example', 'responseStatus': 'accepted'},  # booked by an outside organizer: no flag, no room in its address
                       {'email': 'c_123@resource.calendar.google.com', 'displayName': 'Desk 4', 'resource': True}]}}
         note = mail(2, 'Kim <kim@client.com>', 'sam@acme.com')
         self.add(invite, note)
         self.build()
         invite_id, note_id = self.ids([invite['source_id'], note['source_id']])
         self.assertIsNone(self.node('email:c_123@resource.calendar.google.com'))  # the calendar's own flag: never a person
-        self.assertIsNotNone(self.node('email:falcon_room@venue.example'))
+        self.assertIsNotNone(self.node('email:falcon@venue.example'))
         with self.assertRaisesRegex(ValueError, 'meeting invite'):
-            self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True})
+            self.app.graph_action({'node_id': 'email:falcon@venue.example', 'resource': True})
         with self.assertRaisesRegex(ValueError, 'meeting invite'):
-            self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True, 'event_id': note_id})
-        self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True, 'event_id': invite_id})
-        self.assertIsNone(self.node('email:falcon_room@venue.example'))
+            self.app.graph_action({'node_id': 'email:falcon@venue.example', 'resource': True, 'event_id': note_id})
+        self.app.graph_action({'node_id': 'email:falcon@venue.example', 'resource': True, 'event_id': invite_id})
+        self.assertIsNone(self.node('email:falcon@venue.example'))
         self.assertIsNone(self.node('org:venue.example'))  # nor an organization made from it
         self.assertIsNotNone(self.node('email:kim@client.com'))
         # The owner's undo stays: a later review can't make it a room again
-        self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': False}, source='owner')
-        self.assertIsNotNone(self.node('email:falcon_room@venue.example'))
-        said = self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True, 'event_id': invite_id})
-        self.assertIsNotNone(self.node('email:falcon_room@venue.example'))
+        self.app.graph_action({'node_id': 'email:falcon@venue.example', 'resource': False}, source='owner')
+        self.assertIsNotNone(self.node('email:falcon@venue.example'))
+        said = self.app.graph_action({'node_id': 'email:falcon@venue.example', 'resource': True, 'event_id': invite_id})
+        self.assertIsNotNone(self.node('email:falcon@venue.example'))
         self.assertNotIn('changed', said)
+
+    def test_a_room_by_its_address_or_name_never_becomes_a_person(self):
+        """An outside organization's room comes as a plain guest: "falconheavy_room@", or a name like "Falcon Heavy Meeting
+        Room". Neither becomes a person (nor an organization from it), also not a person made before; Kim stays."""
+        n = next(counter)
+        invite = {'account_id': 'work', 'source_id': f'c{n}', 'kind': 'calendar.event', 'occurred_at': at(1), 'title': 'Board meeting', 'body': '',
+                  'deleted': False, 'metadata': {'organizer': {'email': 'sam@acme.com', 'self': True}, 'attendees': [
+                      {'email': 'sam@acme.com', 'self': True}, {'email': 'kim@client.com', 'responseStatus': 'accepted'},
+                      {'email': 'falconheavy_room@venue.example', 'responseStatus': 'accepted'},
+                      {'email': 'atlas@hall.example', 'displayName': 'Atlas Conference Room', 'responseStatus': 'accepted'},
+                      {'email': 'vega@hall.example', 'responseStatus': 'accepted'}]}}
+        self.add(invite)
+        self.build()
+        self.assertIsNone(self.node('email:falconheavy_room@venue.example'))
+        self.assertIsNone(self.node('org:venue.example'))
+        self.assertIsNone(self.node('email:atlas@hall.example'))
+        self.assertIsNotNone(self.node('email:kim@client.com'))
+        self.assertIsNotNone(self.node('email:vega@hall.example'))
+        # A person made before, whose kept name says it is a room, leaves at the next build
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_names(node_id,name,created_at) VALUES('email:vega@hall.example','Vega Meeting Room',?)", (at(0),))
+        self.build()
+        self.assertIsNone(self.node('email:vega@hall.example'))
+        self.assertIsNotNone(self.node('email:kim@client.com'))
 
     def test_the_owner_word_stays_and_a_work_address_wins_over_a_review(self):
         first, _, later = self.robin()

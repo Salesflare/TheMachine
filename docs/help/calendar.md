@@ -31,6 +31,8 @@ In the grid, events at the same time sit side by side while each stays readable.
 
 Click a row to open its to-do's chat, the promise, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. Someone your Graph knows, and the organizations and projects the meeting is on, are links to their page. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
 
+A meeting room booked on a meeting shows under where, never as a person or in your Graph.
+
 ## Meeting notes
 
 A meeting's details show its notes. **Add notes** to paste notes or a transcript, or **Upload file** for a Markdown or text file. **Edit** changes them, and **Remove** takes them off (tap twice). On a meeting you can change, **Add notes** is under its form.

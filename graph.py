@@ -864,6 +864,10 @@ def _build(db, config, now, team=()):
 
     warmup = hidden(db)  # addresses there are a warm-up tool's traffic: nobody in the graph
     rooms = resources(db)  # meeting rooms and other things booked on invites: never people
+    people_kept = not_resources(db)
+    # A room by its address, or by the name kept for it (graph_names): its person leaves the graph at this build
+    named_rooms = {r[0] for r in db.execute('SELECT node_id,name FROM graph_names') if str(r[0]).startswith('email:') and room_like('', r[1])}
+    rooms |= {i for i in named_rooms if i not in people_kept}
     gone = forgotten(db)  # people the owner deleted permanently: never added again
 
     # Who: identifiers per signal, joined into people.
@@ -896,7 +900,8 @@ def _build(db, config, now, team=()):
                 domain = addr.rsplit('@', 1)[1]
                 if kind == 'stripe.event' and m.get('customer_name') and domain not in FREEMAIL:
                     paying_names.setdefault(domain, str(m['customer_name']))
-        found = [t for t in touches(kind, m, owner, wrote_to) if not (t[0].startswith('email:') and t[0].rsplit('@', 1)[1] in warmup) and t[0] not in rooms and not gone(t[0])]
+        found = [t for t in touches(kind, m, owner, wrote_to) if not (t[0].startswith('email:') and t[0].rsplit('@', 1)[1] in warmup) and t[0] not in rooms and not gone(t[0])
+                 and not (t[0].startswith('email:') and t[0] not in people_kept and room_like(t[0][6:], t[1]))]
         if not found:
             continue
         if kind == 'linkedin.message' and isinstance(m.get('headline'), str) and m['headline'].strip() and not m.get('group'):
@@ -2305,6 +2310,31 @@ def hide_warmup(db, node_id, warmup, source, now, event_id=None):
     db.execute('INSERT OR REPLACE INTO hidden_domains(domain,hidden,source,event_id,name,created_at) VALUES(?,?,?,?,?,?)',
                (domain, int(bool(warmup)), source, event_id, row['name'] if row else current['name'], now))
     return {'warmup': bool(warmup), 'domain': domain}
+
+
+# A meeting room by its address or its name on the invite, for one an outside organization's calendar booked (Google and
+# Outlook flag their own rooms as resources, another organization's room comes as a plain guest): "boardroom@",
+# "falconheavy_room@", "Room 2.14", "Falcon Heavy Meeting Room", "Vergaderzaal Noord". Rooms on Google Workspace use
+# addresses at resource.calendar.google.com.
+ROOM_ADDRESS = re.compile(r'(?:^|[._+-])(?:rooms?|(?:meeting|conference|conf|board|huddle)[._-]?rooms?|vergader(?:zaal|ruimte|lokaal)|'
+                          r'(?:besprechungs|konferenz|sitzungs)raum)(?:[._+-]|\d|@)|@(?:[\w-]+\.)*resource\.calendar\.google\.com$', re.I)
+ROOM_NAME = re.compile(r'\b(?:meeting|conference|conf|board|huddle)[\s-]*rooms?\b|^\s*rooms?\s+\S|\brooms?\s*[\d.]+\s*$|\bvergader(?:zaal|ruimte|lokaal)\b|'
+                       r'\bsalle\s+de\s+(?:r[ée]union|conf[ée]rence)s?\b|\bsala\s+(?:de\s+)?(?:reuni[oó]n(?:es)?|reuni[ãa]o|riunioni|conferencias?)\b|'
+                       r'\b(?:besprechungs|konferenz|sitzungs)raum\b', re.I)
+
+
+def room_like(address, name=None):
+    """Whether an invite's guest is a meeting room by its address or name (see ROOM_ADDRESS): never a person."""
+    address = str(address or '').strip().lower()
+    return bool(('@' in address and ROOM_ADDRESS.search(address)) or (name and '@' not in str(name) and ROOM_NAME.search(str(name))))
+
+
+def not_resources(db):
+    """Identifiers the owner said are no meeting room (graph resource false): a room-like address or name stays a person."""
+    try:
+        return {r[0] for r in db.execute("SELECT identifier FROM graph_resources WHERE resource=0 AND source='owner'")}
+    except sqlite3.OperationalError:
+        return set()
 
 
 def resources(db):

@@ -31,6 +31,8 @@ In het raster staan afspraken op hetzelfde tijdstip naast elkaar, zolang elke af
 
 Klik op een rij om de chat van de to-do, de belofte of de afspraak in de eigen agenda te openen. Bij een afspraak zijn iemand die je Graph kent, en de organisaties en projecten waar de afspraak over gaat, links naar hun pagina. Kijken verandert niets.
 
+Een geboekte vergaderzaal staat bij de plaats, nooit als persoon of in je Graph.
+
 ## Vergadernotities
 
 De details van een vergadering tonen de notities. **Notities toevoegen** om notities of een transcript te plakken, of **Bestand uploaden** voor een Markdown- of tekstbestand. **Bewerken** past ze aan, en **Verwijderen** haalt ze weg (tik twee keer). Bij een vergadering die je kunt wijzigen staat **Notities toevoegen** onder het formulier.

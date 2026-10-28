@@ -31,6 +31,8 @@ Dans la grille, les événements à la même heure se placent côte à côte tan
 
 Cliquez sur une ligne pour ouvrir le chat de sa tâche, la promesse, ou la réunion dans son propre agenda. Dans une réunion, une personne que votre Graph connaît, ainsi que les organisations et projets dont parle la réunion, sont des liens vers leur page. Regarder ne change rien.
 
+Une salle de réunion réservée apparaît dans le lieu, jamais comme une personne ni dans votre Graph.
+
 ## Notes de réunion
 
 Les détails d’une réunion affichent ses notes. **Ajouter des notes** pour coller des notes ou une transcription, ou **Importer un fichier** pour un fichier Markdown ou texte. **Modifier** les modifie, et **Retirer** les retire (touchez deux fois). Sur une réunion que vous pouvez modifier, **Ajouter des notes** se trouve sous son formulaire.

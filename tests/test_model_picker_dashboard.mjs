@@ -101,6 +101,47 @@ try{
   await page.waitForFunction(()=>document.querySelector('#help-model').textContent.includes('Ultra thinking'));
   assert.equal(posts.length,before,'Help keeps its pick for its own chat');assert.deepEqual(await page.evaluate(()=>helpModel),{model:'openai/example-sol',thinking:'ultra'});
   await context.close()}
+ // Many providers, listed by the Gateway out of order (one provider twice): each provider is one section, its heading
+ // above its models and a line between sections, so a heading never reads as the line under the model above it. In
+ // Help the menu opens below its trigger when there's room there (it scrolls), and never over Help's title.
+ const PROVIDERS=[['openai',['example-sol']],['claude-work',['example-haiku']],['local',['example-small']],['local-cloud',['example-oss']],
+  ['openai',['example-astra','example-luna','example-nova']],['router-home',['example-flash']],['router-team',['example-flash']],
+  ['anthropic-team',['example-fable','example-opus']],['openai-team',['example-nova','example-astra','example-luna','example-sol']]];
+ const many=PROVIDERS.flatMap(([p,ms])=>ms.map(x=>({ref:p+'/'+x,name:x,levels:['low','medium'],default:'low'})));
+ const order=[...new Set(PROVIDERS.map(p=>p[0]))];
+ for(const [w,h,phone] of [[1440,900,false],[1440,700,false],[390,844,true]])for(const scheme of ['dark','light']){
+  chatModel={models:many,known:true,main:{model:'openai/example-sol',thinking:'low'},default:{model:'openai/example-sol',thinking:'low'},saved:{}};own=null;
+  const context=await browser.newContext({viewport:{width:w,height:h},isMobile:phone,hasTouch:phone,deviceScaleFactor:phone?2:1,colorScheme:scheme,locale:'en-US',timezoneId:'Europe/Brussels'});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  await context.addInitScript(s=>{try{localStorage.setItem('theme',s)}catch{}},scheme);
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'#chat='+id);await page.locator('#chat-model [data-cm-pick="model"]').waitFor();await page.waitForTimeout(300);
+  const tag=`${w}x${h}-${scheme}`;
+  const sections=()=>page.evaluate(()=>[...document.querySelectorAll('#cm-menu .cm-section')].map(s=>{const g=s.querySelector('.cm-group'),gr=g.getBoundingClientRect(),
+   first=s.querySelector('[role=menuitemradio] span').getBoundingClientRect(),cs=getComputedStyle(s);
+   return {name:g.textContent,label:document.getElementById(s.getAttribute('aria-labelledby'))?.textContent,models:[...s.querySelectorAll('[role=menuitemradio]')].map(b=>b.dataset.cmValue),
+    above:gr.bottom<=first.top+1,flush:gr.left<first.left-8,line:cs.borderTopStyle!=='none'&&parseFloat(cs.borderTopWidth)>0,bold:parseInt(getComputedStyle(g).fontWeight)>=600}}));
+  const check=async where=>{const ss=await sections();
+   assert.deepEqual(ss.map(x=>x.name),order,where+': each provider once, in the order first listed');
+   for(const x of ss){assert.equal(x.label,x.name);assert.deepEqual(x.models,many.filter(m=>m.ref.startsWith(x.name+'/')).map(m=>m.ref),where+': '+x.name+' holds its own models');
+    assert.ok(x.above&&x.flush&&x.bold,where+': '+x.name+' is a heading above its models: '+JSON.stringify(x))}
+   assert.deepEqual(ss.map(x=>x.line),order.map((_,i)=>i>0),where+': a line between providers')};
+  await page.locator('#chat-model [data-cm-pick="model"]').click();await check('chat');
+  let m=await menu(page);assert.ok(m.top>=8&&m.bottom<=h-8&&m.left>=8&&m.right<=w-8,`the chat menu fits the screen: ${JSON.stringify(m)}`);
+  if(SHOTS)await page.screenshot({path:`${SHOTS}/groups-chat-${tag}.png`});
+  await page.keyboard.press('Escape');
+  await page.evaluate(()=>helpOpen('ask'));const hm=page.locator('#help-model [data-cm-pick="model"]');await hm.waitFor();await page.waitForTimeout(300);
+  await hm.click();await check('help');m=await menu(page);
+  const title=await page.evaluate(()=>document.querySelector('#help-title').parentElement.getBoundingClientRect().bottom),tb=await hm.boundingBox();
+  assert.ok(m.top>=title&&m.top>=8&&m.bottom<=h-8,`the Help menu stays on the screen and off Help's title: ${JSON.stringify({m,title})}`);
+  if(h-(tb.y+tb.height)>=260)assert.ok(m.top>=tb.y+tb.height,`room below: the Help menu opens below its trigger: ${JSON.stringify({m,tb})}`);
+  if(SHOTS)await page.screenshot({path:`${SHOTS}/groups-help-${tag}.png`});
+  // The thinking menu in Help: short, so it fits whole, also off the title
+  await page.keyboard.press('Escape');await page.locator('#help-model [data-cm-pick="think"]').click();m=await menu(page);
+  assert.ok(m.top>=title&&m.bottom<=h-8,`the Help thinking menu stays off the title: ${JSON.stringify({m,title})}`);
+  assert.equal(await page.evaluate(()=>document.querySelectorAll('#cm-menu .cm-group').length),0,'no headings in the thinking menu');
+  if(SHOTS)await page.screenshot({path:`${SHOTS}/groups-help-think-${tag}.png`});
+  await context.close()}
  assert.deepEqual(errors,[]);
  console.log('model picker dashboard ok');
 }finally{await browser?.close();server.close()}
