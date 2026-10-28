@@ -1,11 +1,26 @@
 // The installed dashboard app: push notifications, and a copy of the page itself (the app shell) so the app opens at
 // once. The shell holds no data and never its CSRF token; the last cards, chats and Graph lists are kept by the page,
-// encrypted (docs/architecture.md, "On the device"). Brand images are kept too. Nothing else is cached.
+// encrypted (docs/architecture.md, "On the device"). Brand images and fonts are kept too, all of them up front. Nothing else is cached.
 const SHELL = 'tm-shell-2', ASSETS = 'tm-assets-1', SHELL_AGE = 7 * 864e5;
 // The server no longer puts the token in the page (api/session has it); an older page still may, and it is taken out.
 const CSRF = /(\bconst csrf=')(?:[0-9a-f]{64})?(')/;
 const scopeUrl = () => new URL(self.registration.scope);
 
+// Every brand image and font the page can show (assistant.py BRAND_ASSETS), kept up front, so the app offline looks the
+// same as online: the robot, its moods and the typefaces, also ones this device hasn't shown yet.
+const BRAND = ['avatar.png', 'avatar-blink.png', 'favicon-32.png', 'favicon-512.png', 'sleepy.webp', 'sad.webp', 'thinking.webp', 'wave.webp',
+  'laugh.webp', 'party.webp', 'app-icon-192.png', 'app-icon-maskable-192.png', 'app-icon-maskable-512.png', 'app-icon-badge-96.png', 'serif.woff2', 'sans.woff2'];
+const brandOk = r => r.status === 200 && r.type === 'basic' && /^(image|font)\//.test(r.headers.get('Content-Type') || '');
+async function warm() {
+  const cache = await caches.open(ASSETS);
+  await Promise.all(BRAND.map(async name => {
+    const href = new URL('brand/' + name, scopeUrl()).href;
+    if (await cache.match(href)) return;
+    try { const r = await fetch(href, {credentials: 'same-origin', signal: AbortSignal.timeout(15e3)}); if (brandOk(r)) await cache.put(href, r); } catch {}
+  }));
+}
+
+// The page asks for warm() once this worker is ready: a slow brand file never holds up the install.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil((async () => {
   for (const name of await caches.keys()) if (name.startsWith('tm-') && ![SHELL, ASSETS].includes(name)) await caches.delete(name);
@@ -55,7 +70,7 @@ async function asset(event, name) {
   const href = new URL('brand/' + name, scopeUrl()).href;
   const cache = await caches.open(ASSETS), cached = await cache.match(href);
   const fresh = fetch(href, {credentials: 'same-origin'}).then(r => {
-    if (r.status === 200 && r.type === 'basic' && /^(image|font)\//.test(r.headers.get('Content-Type') || '')) return cache.put(href, r.clone()).then(() => r);
+    if (brandOk(r)) return cache.put(href, r.clone()).then(() => r);
     return r;
   });
   if (cached) { event.waitUntil(fresh.catch(() => {})); return cached; }
@@ -72,9 +87,10 @@ self.addEventListener('fetch', event => {
   if (name && /^(fonts\/)?[\w.-]+\.(png|svg|webp|jpg|woff2?)$/.test(name)) return event.respondWith(asset(event, name));
 });
 
-// The page asks: drop the shell (a new release, or signing out).
+// The page asks: drop the shell (a new release, or signing out), or keep the brand files (each start, after a sign-out dropped them).
 self.addEventListener('message', event => {
   if (event.data?.cache === 'drop') event.waitUntil(Promise.all([caches.delete(SHELL), caches.delete(ASSETS)]));
+  if (event.data?.cache === 'warm') event.waitUntil(warm().catch(() => {}));
 });
 
 self.addEventListener('push', event => {
