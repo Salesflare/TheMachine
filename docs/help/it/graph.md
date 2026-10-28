@@ -155,7 +155,7 @@ Oppure gestiscili a mano, come le trattative in un CRM:
 
 ### Le attività di un progetto
 
-Un'attività può appartenere a un progetto. La tua Machine lo sceglie quando il suo thread o le persone che riguarda sono su un unico progetto aperto, e l'attività lo mostra come chip. Tocca **▾** sul chip, o **Metti su un progetto** nel menu dei comandi (Ctrl K), per cambiarlo o toglierlo. La tua scelta resta.
+Un'attività può appartenere a un progetto. La tua Machine lo sceglie quando il suo thread o le persone che riguarda sono su un unico progetto aperto, e l'attività ne mostra il nome sotto il titolo. **Cambia progetto** in **Altro** dell'attività, o **Metti su un progetto** nel menu dei comandi (Ctrl K), lo cambia o lo toglie. La tua scelta resta.
 
 La pagina di un progetto elenca le sue attività sotto **Attività**, prima quelle aperte, e la sua scheda sulla bacheca dice quante sono aperte. Collegare un'attività a un progetto condiviso non condivide nulla in più: il tuo team vede comunque solo quello che viene da messaggi condivisi.
 

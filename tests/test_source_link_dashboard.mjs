@@ -24,8 +24,9 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-z1').waitFor();
- await page.locator('#task-w1 .card-foot .read-original').tap();
- const look=id=>page.locator(`#task-${id} .card-foot .read-original`).evaluate(e=>{
+ for(const id of ['w1','z1'])await page.locator(`#task-${id} .card-foot [data-details]`).tap();
+ await page.locator('#task-w1 .card-details .read-original').tap();
+ const look=id=>page.locator(`#task-${id} .card-details .read-original`).evaluate(e=>{
   const r=e.getBoundingClientRect(),a=e.querySelector('span[aria-hidden]').getBoundingClientRect(),cs=getComputedStyle(e),icon=getComputedStyle(e,'::before');
   return {lines:Math.round(r.height/parseFloat(cs.lineHeight||'0')||r.height/20),bg:cs.backgroundColor,underline:cs.textDecorationLine,
    iconTop:parseFloat(icon.marginTop),arrowTop:Math.round(a.top-r.top),arrowFirstLine:a.bottom-r.top<=r.height/2+1}});

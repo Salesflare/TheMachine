@@ -22,7 +22,7 @@ La scheda **Suggerimenti** le raggruppa:
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro.
 
-Un'attività su un progetto mostra il nome del progetto come etichetta; toccala per aprire il progetto. **▾** sull'etichetta lo cambia. Vedi [le attività di un progetto](graph.md#a-projects-to-dos).
+Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo, che apre il progetto. **Cambia progetto** in **Altro** lo cambia (su un'attività fatta, in **Dettagli**). Vedi [le attività di un progetto](graph.md#a-projects-to-dos).
 
 ## I pulsanti
 
@@ -36,7 +36,9 @@ Una nuova attività ha **Fallo**, **Segna come fatto**, **Posticipa**, **Fallo d
 
 Un'attività chiusa può tornare con **Riapri**. Torna anche da sola quando succede qualcosa di nuovo, come un nuovo messaggio dall'altra persona. La tua risposta non la fa tornare.
 
-Un'attività su una persona mostra il suo nome in alto, con accanto la sua organizzazione. Tocca uno dei due per aprirne la pagina nel Graph. **Leggi il messaggio** apre la conversazione.
+Ogni attività inizia con il suo titolo. La riga sotto dice chi riguarda, la sua organizzazione, il progetto, Lavoro o Personale (sotto **Tutti**) e quando è arrivata, più a che punto è quando il suo gruppo non lo dice già. Tocca un nome per aprirne la pagina nel Graph.
+
+**Dettagli** mostra il messaggio da cui viene (toccalo per leggere la conversazione), la tua ultima nota e il risultato di un agente di codice. **Chat ›** alla fine di quella riga apre la chat. Un'attività fatta resta breve: il titolo, una riga e cosa è partito.
 
 Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo ultimo messaggio a quella persona, quello a cui aspetti risposta: "Email a Pat · mar".
 

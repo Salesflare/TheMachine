@@ -22,7 +22,7 @@ A aba **Sugestões** agrupa as tarefas:
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar.
 
-Uma tarefa de um projeto mostra o nome do projeto em uma etiqueta, que abre o projeto. **▾** na etiqueta troca o projeto. Veja [as tarefas de um projeto](graph.md#a-projects-to-dos).
+Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título, que abre o projeto. **Mudar projeto** em **Mais** troca o projeto (numa tarefa concluída, em **Detalhes**). Veja [as tarefas de um projeto](graph.md#a-projects-to-dos).
 
 ## Os botões
 
@@ -36,7 +36,9 @@ Uma tarefa nova tem **Fazer**, **Marcar como feita**, **Adiar**, **Fazer de outr
 
 Uma tarefa fechada pode voltar com **Reabrir**. Ela também volta sozinha quando acontece algo novo, como uma nova mensagem da pessoa. Uma resposta sua não faz a tarefa voltar.
 
-Uma tarefa sobre uma pessoa mostra o nome dela no topo, e a organização dela ao lado. Toque em qualquer um dos dois para abrir a página no Graph. **Ler mensagem** abre a conversa.
+Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização, o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph.
+
+**Detalhes** mostra a mensagem de onde ela veio (toque para ler a conversa), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado.
 
 Uma tarefa "Aguardando" (alguém prometeu algo a você) traz um link para a sua última mensagem para a pessoa, aquela que espera resposta: "E-mail para Pat · ter".
 

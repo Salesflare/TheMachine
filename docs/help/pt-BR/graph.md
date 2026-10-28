@@ -155,7 +155,7 @@ Ou gerencie os projetos à mão, como negócios em um CRM:
 
 ### As tarefas de um projeto
 
-Uma tarefa pode pertencer a um projeto. Sua Machine escolhe o projeto quando a conversa da tarefa ou as pessoas de quem ela trata estão em um único projeto aberto, e a tarefa o mostra como um chip. Toque em **▾** no chip, ou em **Colocar em um projeto** no menu de comandos (Ctrl K), para mudar ou tirar. Sua escolha fica.
+Uma tarefa pode pertencer a um projeto. Sua Machine escolhe o projeto quando a conversa da tarefa ou as pessoas de quem ela trata estão em um único projeto aberto, e a tarefa mostra o nome dele abaixo do título. **Mudar projeto** em **Mais** da tarefa, ou **Colocar em um projeto** no menu de comandos (Ctrl K), muda ou tira o projeto. Sua escolha fica.
 
 A página de um projeto lista as tarefas em **Tarefas**, as abertas primeiro, e o card dele no quadro diz quantas estão abertas. Ligar uma tarefa a um projeto compartilhado não compartilha nada a mais: sua equipe continua vendo só o que veio de mensagens compartilhadas.
 

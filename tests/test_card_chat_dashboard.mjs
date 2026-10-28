@@ -78,10 +78,10 @@ try{
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-c1c1c1c1c1c1c1c1').waitFor();
  const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/${n}.png`})};
- // The small Chat link on the card's top row opens the chat (on a computer a click on the title renames the card;
+ // The small Chat link at the end of the Details row opens the chat (on a computer a click on the title renames the card;
  // a tap on a phone opens the chat)
- assert.equal(await page.locator('#task-c1c1c1c1c1c1c1c1 .meta a.card-chat-link[href="#chat=c1c1c1c1c1c1c1c1"]').count(),1);
- await page.locator('#task-c1c1c1c1c1c1c1c1 .meta a.card-chat-link').click();
+ assert.equal(await page.locator('#task-c1c1c1c1c1c1c1c1 .card-foot a.card-chat-link[href="#chat=c1c1c1c1c1c1c1c1"]').count(),1);
+ await page.locator('#task-c1c1c1c1c1c1c1c1 .card-foot a.card-chat-link').click();
  await page.locator('.chat-layout .chat-head').waitFor();
  assert.equal(new URL(page.url()).hash,'#chat=c1c1c1c1c1c1c1c1');
  // The header: back, the title and a ⋯ menu with the card's other actions
@@ -307,7 +307,8 @@ try{
  await page.locator('#suggestions .chat-layout').waitFor({state:'detached'});
  assert.ok(await page.locator('#task-c3c3c3c3c3c3c3c3').count()===1);
  assert.ok(await page.locator('#page-head').isVisible(),'the overview and its title come back');
- // The "Asked" note opens the chat too
+ // The "Asked" note (behind Details) opens the chat too
+ await page.locator('#task-c1c1c1c1c1c1c1c1 .card-foot [data-details]').click();
  // (a tap right after a scroll is the one that stops a fling, never an open: scroll first, then tap)
  await page.locator('#task-c1c1c1c1c1c1c1c1 .saved-feedback').scrollIntoViewIfNeeded();await page.waitForTimeout(400);
  await page.locator('#task-c1c1c1c1c1c1c1c1 .saved-feedback').click();

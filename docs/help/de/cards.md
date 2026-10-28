@@ -22,7 +22,7 @@ Der Tab **Vorschläge** gruppiert sie:
 
 **Alle**, **Arbeit** und **Privat** über der Liste in der Seitenleiste zeigen alle Aufgaben oder nur eine Art. Deine Machine merkt sich die Wahl, sodass Handy und Computer dieselbe Liste zeigen. Wenn Arbeit oder Privat aktiv ist, steht das oben in der Liste, mit **Alle anzeigen** zum Zurückgehen.
 
-Eine Aufgabe in einem Projekt zeigt den Projektnamen als Chip. Er öffnet das Projekt. **▾** auf dem Chip ändert es. Siehe [Aufgaben eines Projekts](graph.md#a-projects-to-dos).
+Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt ändern** unter **Mehr** ändert es (bei einer erledigten Aufgabe unter **Details**). Siehe [Aufgaben eines Projekts](graph.md#a-projects-to-dos).
 
 ## Die Buttons
 
@@ -36,7 +36,9 @@ Eine neue Aufgabe hat **Ausführen**, **Als erledigt markieren**, **Zurückstell
 
 Eine geschlossene Aufgabe kommt mit **Wieder öffnen** zurück. Sie kommt auch von selbst zurück, wenn etwas Neues passiert, etwa eine neue Nachricht von der Person. Deine eigene Antwort holt sie nicht zurück.
 
-Eine Aufgabe zu einer Person zeigt oben ihren Namen und daneben ihre Organisation. Tippe auf eins davon, um die jeweilige Seite im Graph zu öffnen. **Nachricht lesen** öffnet den Verlauf.
+Jede Aufgabe beginnt mit ihrem Titel. Die Zeile darunter zeigt, um wen es geht, deren Organisation, das Projekt, Arbeit oder Privat (unter **Alle**) und wann sie kam, dazu ihren Stand, wenn ihre Gruppe ihn nicht schon nennt. Tippe auf einen Namen, um seine Seite im Graph zu öffnen.
+
+**Details** zeigt die Nachricht, aus der sie stammt (tippe darauf, um den Verlauf zu lesen), deine letzte Notiz und das Ergebnis eines Coding-Agenten. **Chat ›** am Ende dieser Zeile öffnet den Chat. Eine erledigte Aufgabe bleibt kurz: ihr Titel, eine Zeile und was rausging.
 
 Eine „Wartet auf“-Aufgabe (jemand hat dir etwas versprochen) verlinkt deine eigene letzte Nachricht an die Person, die, auf die du eine Antwort erwartest: „E-Mail an Pat · Di“.
 

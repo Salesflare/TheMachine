@@ -50,6 +50,7 @@ await navClick(page.locator('nav [data-tab="inbox"]'));
 
 {suggestions[0].source_line='Source: email from Ann Example · Sun 11 Oct';suggestions[2].source_line='Source: WhatsApp from Cara · Sat 10 Oct';await page.evaluate(()=>refresh());
 const card=page.locator('#task-'+ids[0]);assert.equal(await card.locator('.original-body,.email-frame').count(),0);
+await card.locator('.card-foot [data-details]').click();  // the source sits behind Details
 await card.getByRole('button',{name:'Read email',exact:true}).click();const dialog=page.locator('#email-dialog');await dialog.waitFor({state:'visible'});
 await dialog.getByText('Ann Example',{exact:true}).waitFor();
 {const link=dialog.locator('a.attachment');assert.equal(await link.count(),1);assert.equal(await link.getAttribute('href'),'api/attachment?id='+ids[0]+'&event=7&part=1');assert.match(await link.textContent(),/Board <deck>\.pdf1006 KB/);}
@@ -72,11 +73,11 @@ await page.screenshot({path:'/tmp/261012-email-dialog.png'});
 await dialog.getByRole('button',{name:'Close email'}).click();await dialog.waitFor({state:'hidden'});
 {suggestions[0].scope='work';suggestions[1].scope='work';suggestions[2].scope='personal';await page.evaluate(()=>refresh());
 const filter=page.locator('.scope-filter');await scopeClick(page,'Personal');
-assert.equal(await page.locator('#task-'+ids[0]).count(),0);await page.locator('#task-'+ids[2]+' .chip.scope').getByText('Personal',{exact:true}).waitFor();
+assert.equal(await page.locator('#task-'+ids[0]).count(),0);await page.locator('#task-'+ids[2]).waitFor();assert.equal(await page.locator('#task-'+ids[2]+' .chip.scope').count(),0);  // the filter says Personal
 await scopeClick(page,'Work');assert.equal(await page.locator('#task-'+ids[2]).count(),0);
-await page.locator('#task-'+ids[0]+' .chip.scope').getByText('Work',{exact:true}).waitFor();
+await page.locator('#task-'+ids[0]).waitFor();assert.equal(await page.locator('#task-'+ids[0]+' .chip.scope').count(),0);
 assert.deepEqual(posts.filter(p=>p&&'todo_scope' in p).at(-1),{todo_scope:'work'});  // kept on the Machine, for every device
-await scopeClick(page,'All');await page.locator('#task-'+ids[2]).waitFor();await page.screenshot({path:'/tmp/261012-scope-filter.png'});}
+await scopeClick(page,'All');await page.locator('#task-'+ids[2]+' .chip.scope').getByText('Personal',{exact:true}).waitFor();await page.locator('#task-'+ids[0]+' .chip.scope').getByText('Work',{exact:true}).waitFor();await page.screenshot({path:'/tmp/261012-scope-filter.png'});}
 {// Notification links reveal the destination without changing saved device preferences.
 const filter=()=>page.locator('.scope-filter');
 await scopeClick(page,'Personal');
@@ -175,9 +176,9 @@ await page.locator('#section-ready').click();assert.equal(await page.locator('#t
 await later.locator(':scope>summary').getByText('Coming back later').waitFor();await later.locator(':scope>summary').click();await page.locator('#task-'+ids[3]).waitFor();
 await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[3]).isVisible(),true);
 await later.locator(':scope>summary').click();await page.locator('#task-'+ids[3]).waitFor({state:'hidden'});await page.waitForTimeout(300);await page.screenshot({path:'/tmp/261012-later-folded.png'});}
-await page.locator('#task-'+ids[2]).getByRole('button',{name:'Read message',exact:true}).waitFor();
+await page.locator('#task-'+ids[2]).getByRole('button',{name:'Read message',exact:true,includeHidden:true}).waitFor({state:'attached'});
 suggestions[2].source_line=undefined;suggestions[2].event_ids='[3]';suggestions[2].original_urls=['https://mail.google.com/mail/u/?authuser=x#all/1'];await page.evaluate(()=>refresh());
-await page.locator('#task-'+ids[2]).getByRole('button',{name:'Read email',exact:true}).waitFor();
+await page.locator('#task-'+ids[2]).getByRole('button',{name:'Read email',exact:true,includeHidden:true}).waitFor({state:'attached'});
 suggestions[0].source_line=undefined;suggestions[2].source_line=undefined;await page.evaluate(()=>refresh());}
 // The longest relative time, set right here: 59 minutes at the start of the run turns into a short "1 hour ago" on a slow run
 suggestions[0].created_at=new Date(Date.now()-45*60000).toISOString();await page.evaluate(()=>refresh());await page.locator('#task-'+ids[0]+' .meta time',{hasText:'45 minutes ago'}).waitFor();

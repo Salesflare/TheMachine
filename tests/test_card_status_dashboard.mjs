@@ -49,8 +49,8 @@ try{
   assert.equal(await page.locator('#task-d1 [data-result="copy"]').count(),0);assert.equal(await page.locator('#task-a1 [data-result="copy"]').count(),1);
   // The other card, named by its title, links to it
   assert.equal(await page.locator('#task-d1 a.card-link').getAttribute('href'),'#card=f1');
-  // The status line sits right under the title, above the body
-  assert.equal(await page.locator('#task-d1 h3 + .status-line').count(),1);
+  // The status line sits right under the title and its meta line, above the body
+  assert.equal(await page.locator('#task-d1 h3 + .meta + .status-line').count(),1);
   // Handled wins over the result's needs line; the long body folds
   assert.deepEqual(await notes('n1'),['Looks handled: You replied to Kim and closed the conversation']);
   assert.equal(await page.locator('#task-n1 .body.clamp').count(),1);
