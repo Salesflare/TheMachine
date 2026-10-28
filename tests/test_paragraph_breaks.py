@@ -16,7 +16,8 @@ SLACK = {'id': 'slack', 'service': 'slack', 'transport': 'maton', 'boundary': 'w
          'credential_variable': 'KEY', 'connection_id': 'conn-1', 'user_id': 'UOWNER1'}
 WA = {'id': 'wa', 'service': 'whatsapp', 'transport': 'wacli-local', 'store': '/tmp/wa-store', 'boundary': 'personal:whatsapp'}
 CHAT = '32470000000@s.whatsapp.net'
-CONFIG = {'wacli': '/opt/wacli', 'accounts': [GMAIL, SLACK, WA]}
+TG = {'id': 'tg', 'service': 'telegram', 'store': '/tmp/tg-store', 'boundary': 'personal:telegram'}
+CONFIG = {'wacli': '/opt/wacli', 'accounts': [GMAIL, SLACK, WA, TG]}
 # As a model or a pasted edit can write it: Windows line ends, and blank lines that hold a space or a tab.
 DRAFT = 'Hi Sam,\r\n\r\nThe plan is ready.\r\nIt covers both teams.\r\n \r\nCan we talk Friday?\n\t\nCheers,\n\nAlex'
 SHOWN = 'Hi Sam,\n\nThe plan is ready.\nIt covers both teams.\n\nCan we talk Friday?\n\nCheers,\n\nAlex'
@@ -74,6 +75,13 @@ class ParagraphBreaks(unittest.TestCase):
         with patch.object(n.subprocess, 'run', side_effect=run):
             n.WhatsAppTransport(CONFIG).send(action, {'id': 'J1'})
         self.assertEqual(seen[0][seen[0].index('--message') + 1], SHOWN)
+
+
+    def test_telegram_queues_the_blank_lines(self):
+        # The Telegram mirror sends the approved body as it is: it must already hold the breaks the card showed.
+        action = n.validate({'kind': 'telegram', 'account_id': 'tg', 'chat_id': '42', 'body': DRAFT}, CONFIG, ['tg'],
+                            telegram_chats={'42': {'account_id': 'tg', 'name': 'Sam'}})
+        self.assertEqual(action['body'], SHOWN)
 
 
 if __name__ == '__main__':

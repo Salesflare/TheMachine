@@ -57,6 +57,25 @@ class HonestStatus(unittest.TestCase):
         self.save(body='Looked it up: paid on Monday.', outcome='done')
         self.assertIn('Finished. Mark it done if it looks right.', a.card(self.row()))
 
+    def test_a_step_already_approved_or_carried_out_is_not_waiting(self):
+        self.decide('accept')
+        self.save(next_actions=[self.DRAFT], outcome='needs_you', needs='check the draft and send it')
+        draft = n.actions(self.row()['next_action'])[0]
+        # The owner approved this exact draft: a later result that lists it again may say done.
+        with self.store.connect() as db:
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
+                       "VALUES('j1',?,?,'{}','sent','t','t','ok','dashboard','<r@x>')", (self.sid, draft['revision']))
+        self.assertEqual(self.store.waiting_steps(self.sid, n.validate(self.DRAFT, self.app().config, ['work'])), [])
+        # One that failed to go out still waits.
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET status='failed' WHERE id='j1'")
+        self.assertEqual(len(self.store.waiting_steps(self.sid, n.validate(self.DRAFT, self.app().config, ['work']))), 1)
+        # A final step this run carried out (finish_state:completed) is done, not waiting.
+        step = n.validate({'kind': 'finish', 'label': 'Submit claim', 'instructions': 'Press Submit on the claim page.', 'preview': 'Claim of 40 EUR'},
+                          self.app().config, ['work'])
+        self.assertEqual(self.store.waiting_steps(self.sid, step, 'completed'), [])
+        self.assertEqual(len(self.store.waiting_steps(self.sid, step, 'uncertain')), 1)
+
     def test_an_older_done_with_a_waiting_draft_reads_as_ready_not_finished(self):
         self.decide('accept')
         self.save(next_actions=[self.DRAFT], outcome='needs_you', needs='check the draft and send it')

@@ -6975,6 +6975,19 @@ class Store:
                 if not last or last['ref'] != digest:
                     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'file',?,?)", (now(), name + (' edited' if last else ' tracked'), digest))
 
+    def waiting_steps(self, suggestion_id, action, finish_state=None):
+        """The steps in a result that still wait for the owner: a send, merge, calendar change, final click or handoff
+        they haven't approved yet. One they already approved (an action job for that exact revision that didn't fail)
+        or a final step this run carried out (finish_state:completed) is not waiting any more."""
+        steps = [a for a in next_actions.actions(action) if a['kind'] in next_actions.WAITING_KINDS
+                 and not (a['kind'] in next_actions.FINISH_KINDS and finish_state == 'completed')]
+        if not steps:
+            return []
+        with self.connect() as db:
+            taken = {r['revision'] for r in db.execute("SELECT revision FROM action_jobs WHERE suggestion_id=? AND status NOT IN "
+                                                       "('failed','blocked','undone','needs_input','not_sent','retryable')", (suggestion_id,))}
+        return [a for a in steps if a.get('revision') not in taken]
+
     def looks_handled(self, suggestion_id, reason, event_ids):
         """A later signal suggests an open card is already done. Only a hint: the owner still closes it."""
         reason = ' '.join(str(reason or '').split())
@@ -13942,7 +13955,7 @@ class App:
                     # The owner wants this card itself back later: the card's own snooze, not a separate reminder.
                     outcome={'state':'snoozed','until':asked_snooze_time(args.get('snooze_until'))}
                 else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option>")
-            if outcome and outcome['state']=='done' and args.get('send_now') is not True and any(a['kind'] in next_actions.WAITING_KINDS for a in next_actions.actions(action)):
+            if outcome and outcome['state']=='done' and args.get('send_now') is not True and self.store.waiting_steps(args['suggestion_id'],action,args.get('finish_state')):
                 # Prepared is not done: a draft, review or final click still waits for the owner.
                 raise ValueError("Not done yet: a step in next_actions still waits for the owner (a draft to send, a change to approve, a final click). "
                                  "Save outcome:'needs_you' with needs:<what they do, e.g. check the draft and send it>, or outcome:'your_step' for a final click, "
