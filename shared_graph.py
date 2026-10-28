@@ -47,6 +47,7 @@ RELAYED = ('snapshot', 'delta', 'mail', 'file')  # what a teammate's Machine pas
 KEEP_DAYS = 30              # the Network keeps a blob nobody took this long, then drops it
 WANT_DAYS = 7               # a Machine asks its teammates for what it missed this long
 SERVE_BATCH = 40            # blobs this Machine passes on per round, for one teammate who asked
+SERVE_SETTLE = 900          # records sent to a teammate after their want reach them directly: passed on only if still missing after this
 VERDICTS = ('client', 'sensitive', 'internal', 'personal', 'unsure', 'other')
 # unsure: the review can't confidently call it client Work, so it stays with the owner and, when someone outside is on it,
 # waits in "Share these?" for their own Share or Keep private. other: not a conversation with a client (notifications,
@@ -130,6 +131,10 @@ PENDING_DAYS = 7           # a blob from a teammate this Machine doesn't know as
 
 class Later(ValueError):
     """Not now: from a teammate whose confirmation this Machine hasn't seen yet. Kept and tried again."""
+
+
+class Had(ValueError):
+    """Already here: a second copy (the publisher's own and one passed on), or older than what this Machine has."""
 
 
 def ensure(db):
@@ -1750,6 +1755,16 @@ class SharedGraph:
                                  (self._public(group, p) or {}).get('sign') if p in found else signs.get(p))
             allowed = {r['member'] for r in rows if (r['member'] in found or (r['member'] not in members and me['member_id'] in trusted))
                        and sign_of(r['member'])}
+            # Records sent to them after they asked reach them directly: passed on only when their want, which moves as
+            # they take them, still says they lack them a while later (a gap in the chain), not again each round.
+            settled = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=SERVE_SETTLE)).isoformat()
+
+            def direct(r):
+                header = json.loads(r['header'])
+                at = str(header.get('at') or '')
+                return who in (header.get('to') or []) and at > str(body['at']) and at > settled
+
+            rows = [r for r in rows if r['kind'] not in ('snapshot', 'delta') or not direct(r)]
             out = []
             for p in sorted(allowed):  # the records: the last snapshot and the deltas since, or only the deltas it lacks
                 snaps = [r for r in rows if r['member'] == p and r['kind'] == 'snapshot']
@@ -2023,7 +2038,7 @@ class SharedGraph:
                                    (str((item.get('header') or {}).get('id')) + ':' + str(item.get('by')), json.dumps(item), now()))
                 except (nc.SealError, ValueError, KeyError, TypeError) as error:  # a catch-up from two teammates: one is enough
                     relayed = item.get('by') not in (None, (item.get('header') or {}).get('from'))
-                    LOG.log(logging.INFO if relayed else logging.WARNING, 'shared graph blob dropped member=%s by=%s reason=%s',
+                    LOG.log(logging.DEBUG if isinstance(error, Had) else logging.INFO if relayed else logging.WARNING, 'shared graph blob dropped member=%s by=%s reason=%s',
                             (item.get('header') or {}).get('from'), item.get('by'), error)
                 cursor = max(cursor, int(item.get('cursor') or 0))
                 if HEX.fullmatch(str((item.get('header') or {}).get('id'))):
@@ -2138,7 +2153,7 @@ class SharedGraph:
                 return
             if kind == 'snapshot':
                 if seq <= row['snapshot']:
-                    raise ValueError('an older snapshot')
+                    raise Had('an older snapshot')
                 db.execute('DELETE FROM team_records WHERE fleet=? AND member=?', (fleet, sender))
                 self._records(db, fleet, sender, body.get('records'), header)
                 db.execute('UPDATE team_sources SET snapshot=?,seq=?,threads=?,at=? WHERE fleet=? AND member=?',
@@ -2154,7 +2169,9 @@ class SharedGraph:
                         db.execute('DELETE FROM team_files WHERE fleet=? AND member=? AND tag=?', (fleet, sender, r['tag']))
                         db.execute("DELETE FROM team_blobs WHERE fleet=? AND member=? AND kind='file' AND tag=?", (fleet, sender, r['tag']))
             elif kind == 'delta':
-                if body.get('prev') != row['seq'] or seq <= row['seq']:
+                if seq <= row['seq']:
+                    raise Had('a delta it has already')
+                if body.get('prev') != row['seq']:
                     raise ValueError('a delta out of order: waits for the next snapshot')
                 self._records(db, fleet, sender, body.get('records'), header)
                 for rid in body.get('removed') or []:

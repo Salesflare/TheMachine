@@ -423,7 +423,7 @@ class AgentJobs(unittest.TestCase):
         detach = patch.object(agent_jobs, 'can_detach', lambda: False)  # never a real systemd unit (DetachedCodex tests fake one)
         detach.start()
         self.addCleanup(detach.stop)
-        agent_jobs._HOST.update(at=0.0, found=None)
+        agent_jobs._HOST.update(at=None, found=None)
         for obj, name in ((agent_jobs.BackgroundClaude, 'POLL'), (agent_jobs.AppServerCodex, 'POLL'), (agent_jobs.Watchdog, 'TICK')):
             poll = patch.object(obj, name, 0.05)
             poll.start()
@@ -693,11 +693,11 @@ class AgentJobs(unittest.TestCase):
         laptop = agent_jobs.AgentJobs(laptop_store.connect, {'database': str(Path(self.tmp.name) / 'laptop.sqlite'), 'accounts': [], 'agents': {'timeout_minutes': 1}},
                                       Path(self.tmp.name) / 'laptop-jobs', network=net.laptop)
         signed_in = lambda argv, *rest: (0, 'Logged in using ChatGPT') if argv[1:] == ['login', 'status'] else (1, '')
-        agent_remote._ready.update(at=0.0)
+        agent_remote._ready.update(at=None)
         self.assertEqual(agent_remote.serve_once(laptop, signed_in), 0)
         self.assertEqual({k: v for k, v in net.sent[-1][1].items() if k != 'keys'}, {'action': 'jobs', 'tools': ['codex']})
         self.assertEqual(set(net.sent[-1][1]['keys']), {'v', 'box', 'sign', 'sig'})  # public halves only
-        home._where['at'] = 0.0
+        home._where['at'] = None
         self.assertEqual(home.tools(wait=True), [{'id': 'codex', 'name': 'Codex', 'place': 'device', 'device': 'Laptop'}])
         with patch.object(agent_remote, 'watch', lambda jobs: None):
             job = wait(home, home.start(self.sid, 'codex', 'Fix the typo in README')['id'], done=('waiting', 'failed'))
@@ -754,11 +754,11 @@ class AgentJobs(unittest.TestCase):
         laptop_store = a.Store(Path(self.tmp.name) / 'laptop.sqlite', protect=True)
         laptop = agent_jobs.AgentJobs(laptop_store.connect, {'database': str(Path(self.tmp.name) / 'laptop.sqlite'), 'accounts': [], 'agents': {}},
                                       Path(self.tmp.name) / 'lj', network=net.laptop)
-        agent_remote._ready.update(at=0.0)
+        agent_remote._ready.update(at=None)
         net.jobs['f' * 64] = {'sealed': {}, 'job': 'aj_1'}
         self.assertEqual(agent_remote.serve_once(laptop, lambda *a: (1, 'Not logged in')), 0)
         self.assertEqual(net.sent[-1][1]['tools'], [])
-        agent_remote._ready.update(at=0.0)
+        agent_remote._ready.update(at=None)
         laptop.config['agents'] = {'codex': {'serve': False}}
         self.assertFalse(agent_remote.codex_ready(laptop, lambda *a: (0, 'Logged in')))
 
@@ -770,7 +770,7 @@ class AgentJobs(unittest.TestCase):
         laptop = agent_jobs.AgentJobs(laptop_store.connect, {'database': str(Path(self.tmp.name) / 'laptop.sqlite'), 'accounts': [], 'agents': {}},
                                       Path(self.tmp.name) / 'lj', network=net.laptop)
         signed_in = lambda argv, *rest: (0, 'Logged in') if argv[1:] == ['login', 'status'] else (1, '')
-        agent_remote._ready.update(at=0.0)
+        agent_remote._ready.update(at=None)
         agent_remote.serve_once(laptop, signed_in)
         mine = net.keys['dev_1']
         hosted, other_computer, stranger = nc.new_keys(), nc.new_keys(), nc.new_keys()
@@ -876,6 +876,10 @@ class AgentJobs(unittest.TestCase):
             self.assertTrue(jobs.get(job['id'])['status'] == 'running' and not jobs.get(job['id'])['opens_later'])  # the Codex app can open it
             # The Machine restarts: its new service follows the same turn in the Codex app, from its first read.
             queued = json.loads((folder / agent_jobs.QUEUED_FILE).read_text())
+            # The old service is gone first: its follower would otherwise read the same queue and end the turn itself.
+            jobs.cancel(job['id'])
+            [t.join(10) for t in threading.enumerate() if t.name == 'agent-job']
+            self.assertEqual(jobs.get(job['id'])['status'], 'cancelled')
             again = self.jobs()
             runner = agent_jobs.AppServerCodex(str(self.bin / 'codex'))
             state = {'size': 0, 'n': 0, 'summary': '', 'error': '', 'status': None}
@@ -889,7 +893,6 @@ class AgentJobs(unittest.TestCase):
                                                  dict(again.named(job_row(again, job['id'])), session_id=THREAD), lambda line: None, 60)
             self.assertEqual((session, summary), (THREAD, 'Changed it in the Codex app.'))
             self.assertEqual(queued['thread'], THREAD)
-            jobs.cancel(job['id'])
 
     def test_a_follow_up_while_the_thread_is_open_in_an_older_codex_app_goes_on_in_a_copy(self):
         jobs = self.jobs()
@@ -984,7 +987,7 @@ class AgentJobs(unittest.TestCase):
             db.execute('CREATE TABLE remote_control_enrollments(websocket_url TEXT, account_id TEXT, app_server_client_name TEXT, server_id TEXT, '
                        'environment_id TEXT, server_name TEXT, updated_at INTEGER, remote_control_enabled INTEGER)')
             db.execute("INSERT INTO remote_control_enrollments VALUES('wss://x', 'acct', 'Codex Desktop', 'srv', 'env_0123abcd', 'desk', 1, 1)")
-        agent_jobs._HOST.update(at=0.0, found=None)
+        agent_jobs._HOST.update(at=None, found=None)
         job = jobs.get(job['id'])
         self.assertEqual(job['url'], 'codex://threads/' + THREAD)  # on this computer itself
         self.assertEqual(job['url_elsewhere'], 'codex://threads/' + THREAD + '?hostId=remote-control%3Aenv_0123abcd')

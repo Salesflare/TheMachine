@@ -1384,13 +1384,13 @@ def app_link(runner, session):
 
 
 APP_LINK = re.compile(r'(https://\S+|codex://threads/[0-9a-f-]{36})')
-_HOST = {'at': 0.0, 'found': None}
+_HOST = {'at': None, 'found': None}  # at: time.monotonic() of the last look, None for never (monotonic may start near 0 at boot)
 
 
 def codex_host_id(home=None):
     """This computer as the Codex app on the owner's other devices knows it, when the Codex app here has remote
     connections on: `remote-control:<environment id>` from the app's own state (read only). None otherwise."""
-    if home is None and time.monotonic() - _HOST['at'] < 60:
+    if home is None and _HOST['at'] is not None and time.monotonic() - _HOST['at'] < 60:
         return _HOST['found']
     base = Path(home or os.environ.get('CODEX_HOME') or Path.home() / '.codex')
     found = None
@@ -1435,7 +1435,7 @@ class AgentJobs:
         self.limit = threading.BoundedSemaphore(max(1, min(int(own.get('max_parallel') or 2), 8)))
         self.timeout = max(60, min(int(float(own.get('timeout_minutes') or 30) * 60), 6 * 3600))
         self.procs, self.lock = {}, threading.Lock()
-        self._where = {'at': 0.0, 'found': None, 'going': False}
+        self._where = {'at': None, 'found': None, 'going': False}  # at: None until first asked
         with self.connect() as db:
             db.executescript(SCHEMA)
             have = {r[1] for r in db.execute('PRAGMA table_info(agent_jobs)')}
@@ -1467,7 +1467,7 @@ class AgentJobs:
         if not self.hosted_codex():
             return None
         state = self._where
-        fresh = time.monotonic() - state['at'] < self.WHERE_TTL
+        fresh = state['at'] is not None and time.monotonic() - state['at'] < self.WHERE_TTL
         if wait and not fresh:
             self.refresh_where()
         elif not fresh and not state['going']:

@@ -330,7 +330,7 @@ class DeviceCodex:
 
 RELAY_SCHEMA = """CREATE TABLE IF NOT EXISTS agent_relayed(ticket_hash TEXT PRIMARY KEY,job_id TEXT NOT NULL,
   reported INTEGER NOT NULL DEFAULT 0,progress TEXT,created_at TEXT NOT NULL)"""
-_ready = {'at': 0.0, 'ok': False}
+_ready = {'at': None, 'ok': False}  # at: time.monotonic() of the last check, None for never (monotonic may start near 0 at boot)
 
 
 def codex_ready(jobs, run=None):
@@ -339,7 +339,7 @@ def codex_ready(jobs, run=None):
     own = (aj.settings(jobs.config) or {}).get('codex')
     if own is False or (isinstance(own, dict) and own.get('serve') is False):
         return False
-    if time.monotonic() - _ready['at'] < READY_TTL:
+    if _ready['at'] is not None and time.monotonic() - _ready['at'] < READY_TTL:
         return _ready['ok']
     command = aj.find('codex', own.get('command') if isinstance(own, dict) else None)
     ok = False

@@ -1104,6 +1104,60 @@ class SharedGraph(unittest.TestCase):
         source = next(r for r in self.team(self.mem, 'team_sources') if r['member'] == 'own1')
         self.assertEqual(source['seq'], previous['seq'])
 
+    def test_records_sent_after_a_want_are_passed_on_only_when_still_missing(self):
+        group, mem_group = self.own._group(FLEET), self.mem._group(FLEET)
+        me, mem_me = self.own._me_in(group), self.mem._me_in(mem_group)
+        asked = ago(1)  # mem3 asked a day ago and is back: what goes to it now reaches it directly
+
+        def want():  # as _graph_want_round: what mem3 has of each teammate now, under the same ask
+            snap = {r['member']: r['seq'] for r in self.team(self.mem, 'team_sources')}
+            self.mem._put(mem_group, mem_me, 'want', {'at': asked, 'snap': snap, 'got': {}}, ['adm2'], tag='b' * 32)
+            self.adm.graph_fetch()
+
+        def serve():
+            self.adm.set_meta('graph_puts', [])
+            adm_group = self.adm._group(FLEET)
+            found, trusted, _ = self.adm.confirmed(adm_group)
+            self.adm._graph_serve(adm_group, self.adm._me_in(adm_group), found, trusted)
+            self.mem.graph_fetch()
+
+        def passed_on():
+            return [c for c in self.relays('mem3') if c[3]['blob']['header']['from'] == 'own1' and c[3]['blob']['header']['kind'] in ('snapshot', 'delta')]
+
+        def seq():
+            return next(r for r in self.team(self.mem, 'team_sources') if r['member'] == 'own1')['seq']
+
+        want()
+        previous = self.own._put(group, me, 'snapshot', {'records': [], 'threads': []}, ['adm2', 'mem3'])
+        for _ in range(2):
+            previous = self.own._put(group, me, 'delta', {'prev': previous['seq'], 'records': [], 'threads': []}, ['adm2', 'mem3'])
+        self.adm.graph_fetch()
+        self.mem.graph_fetch()
+        self.assertEqual(seq(), previous['seq'])
+        with self.assertNoLogs('personal-assistant', level='INFO'):
+            serve()  # mem3 took them itself: not passed on again, so no second copy to drop
+        self.assertEqual(passed_on(), [])
+        want()
+        last = self.own._put(group, me, 'delta', {'prev': previous['seq'], 'records': [], 'threads': []}, ['adm2', 'mem3'])
+        self.adm.graph_fetch()
+        self.net.expire('mem3')  # lost on the way to mem3: a gap in its chain
+        serve()
+        self.assertEqual(passed_on(), [])  # not yet: it may still come directly
+        with patch.object(sg, 'SERVE_SETTLE', 0):  # a while later, the want still says it lacks it
+            serve()
+        self.assertEqual([c[3]['blob']['header']['seq'] for c in passed_on()], [last['seq']])
+        self.assertEqual(seq(), last['seq'])
+
+    def test_a_second_copy_of_a_delta_is_dropped_quietly(self):
+        group = self.own._group(FLEET)
+        me = self.own._me_in(group)
+        had = next(r for r in self.team(self.mem, 'team_sources') if r['member'] == 'own1')['seq']
+        header = self.own._put(group, me, 'delta', {'prev': had, 'records': [], 'threads': []}, ['mem3'])
+        item = next(i for i in self.net.graph_get('mem3', 0)['items'] if i['header']['id'] == header['id'])
+        self.mem.graph_take(item)
+        with self.assertRaises(sg.Had):
+            self.mem.graph_take(item)
+
     def test_a_temporary_attachment_listing_failure_is_retried_without_new_mail(self):
         self.olive_mail()
         self.files(self.own)

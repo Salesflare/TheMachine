@@ -4116,6 +4116,7 @@
  "Zzz… no poking.": "Zzz… nada de toques.",
  "Zzz… oh, it’s you.": "Zzz… ah, eres tú.",
  "a customer": "un cliente",
+ "a delta it has already": "un delta ya recibido",
  "a delta out of order: waits for the next snapshot": "un delta fuera de orden: espera a la siguiente instantánea",
  "a file over the limit": "un archivo por encima del límite",
  "a file without a tag": "un archivo sin etiqueta",
