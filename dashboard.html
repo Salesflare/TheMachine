@@ -6816,7 +6816,7 @@ const GRAPH_TABS={people:{label:'People',tabs:[['people','All'],['quiet','Gone q
  orgs:{label:'Organizations',tabs:[['orgs','All'],['warmup','Warm up']],sorts:[['closest','Closest'],['last','Last contact'],['name','Name A–Z'],['value','Value'],['close','Close date']],
   notes:{orgs:'The ones you are most in touch with first.',warmup:'Mail from email warm-up tools, kept out of your graph.'},empty:'No organizations yet.'},
  projects:{label:'Projects',tabs:[['projects','Open'],['projects_done','Done']],sorts:[['last','Last activity'],['name','Name A–Z'],['stage','Stage'],['value','Value'],['close','Close date']],
-  notes:{projects:'Named by the reviews and your to-dos. Heat fades over about three weeks.',projects_done:'Closed projects.'},empty:'No projects yet.'}};
+  notes:{projects:'Named by the reviews and your to-dos. Busier or quieter compares the last two weeks.',projects_done:'Closed projects.'},empty:'No projects yet.'}};
 // A Graph page with nothing on it yet still opens: a short line says how it fills, and its head keeps + New.
 const graphEmpty=(pane,team)=>{const [title,how]={people:['Nothing mapped yet.','People appear as messages and meetings come in.'],orgs:['No organizations yet.','They come from the people you’re in touch with.'],projects:['No projects yet.','Reviews name them from your messages and to-dos.']}[pane];
  return `<div class="empty all-clear graph-empty"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>${title}</strong>${team?'':`<span class="poke-line">${how}</span>`}</div></div>`};
