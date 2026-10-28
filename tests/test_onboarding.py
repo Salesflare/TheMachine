@@ -700,6 +700,22 @@ elif args[:2] == ["api", "call"]:
         text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
         self.assertIn('✓ OpenClaw bridge plugin loaded', text)
 
+    def test_doctor_reads_a_failed_plugin_list_as_unknown_not_missing(self):
+        # A hosted Machine's service: the CLI refuses (another PID namespace) while the Gateway runs the plugin
+        self.stub('openclaw', 'print("Failed to read config: cannot verify Gateway ownership from this process", file=sys.stderr); sys.exit(1)')
+        (self.home / '.openclaw').mkdir()
+        settings = self.home / '.openclaw/openclaw.json'
+        settings.write_text(json.dumps({'plugins': {'installs': {'personal-assistant-bridge': {}},
+                                                    'entries': {'personal-assistant-bridge': {'enabled': True, 'hooks': {'allowConversationAccess': True}}}}}))
+        self.config(openclaw=str(self.bin / 'openclaw'))
+        text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
+        self.assertNotIn('not installed', text)
+        self.assertIn('✓ OpenClaw bridge plugin installed', text)
+        self.assertIn('! could not ask OpenClaw which plugins loaded: Failed to read config: cannot verify Gateway ownership', text)
+        settings.write_text(json.dumps({'plugins': {}}))
+        text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
+        self.assertIn('✗ OpenClaw bridge plugin not installed | ./install.sh', text)
+
     def test_only_the_service_that_reads_this_config_is_restarted(self):
         self.stub('systemctl', f'''
 if "is-active" in args: print("active")

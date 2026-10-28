@@ -2409,19 +2409,37 @@ def doctor(config_path, workspace=None):
     if not openclaw:
         add('✗', 'openclaw CLI not found', 'install OpenClaw and rerun ./install.sh')
     else:
+        listed = run([openclaw, 'plugins', 'list', '--json'], timeout=60)
         try:
-            plugins = json.loads(run([openclaw, 'plugins', 'list', '--json'], timeout=60).stdout or '{}').get('plugins', [])
+            plugins = json.loads(listed.stdout).get('plugins', []) if listed.returncode == 0 else None
         except (ValueError, AttributeError):
             plugins = None
         bridge = next((p for p in plugins or [] if p.get('id') == 'personal-assistant-bridge'), None)
+        settings = openclaw_settings()
         if plugins is None:
-            add('!', 'could not list OpenClaw plugins', 'openclaw plugins list')
+            # The CLI failed (on a hosted Machine OpenClaw 2026.10.7 refuses it from another PID namespace): an empty
+            # answer is not "not installed". openclaw.json says what is installed; the Gateway log says what loaded.
+            reason = next((line.strip() for line in (listed.stderr or listed.stdout or '').splitlines() if line.strip()), '')[:160]
+            plugin = settings.get('plugins') or {}
+            entry = (plugin.get('entries') or {}).get('personal-assistant-bridge')
+            if entry is None and 'personal-assistant-bridge' not in (plugin.get('installs') or {}):
+                add('✗', 'OpenClaw bridge plugin not installed', './install.sh')
+            elif (entry or {}).get('enabled') is False:
+                add('✗', 'OpenClaw bridge plugin disabled',
+                    'openclaw plugins enable personal-assistant-bridge && openclaw plugins reload personal-assistant-bridge --wait')
+            elif not hooks_allowed(settings):
+                add('✗', 'OpenClaw skips the bridge plugin\'s review hooks, so reviews never finish',
+                    'openclaw config set plugins.entries.personal-assistant-bridge.hooks.allowConversationAccess true --strict-json'
+                    ' && openclaw plugins reload personal-assistant-bridge --wait')
+            else:
+                add('✓', 'OpenClaw bridge plugin installed')
+            add('!', 'could not ask OpenClaw which plugins loaded' + (f': {reason}' if reason else ''), 'openclaw plugins list')
         elif not bridge:
             add('✗', 'OpenClaw bridge plugin not installed', './install.sh')
         elif not bridge.get('enabled') or bridge.get('status') not in (None, 'loaded'):
             add('✗', f'OpenClaw bridge plugin {"disabled" if not bridge.get("enabled") else bridge.get("status")}',
                 'openclaw plugins enable personal-assistant-bridge && openclaw plugins reload personal-assistant-bridge --wait')
-        elif not hooks_allowed(openclaw_settings()):
+        elif not hooks_allowed(settings):
             add('✗', 'OpenClaw skips the bridge plugin\'s review hooks, so reviews never finish',
                 'openclaw config set plugins.entries.personal-assistant-bridge.hooks.allowConversationAccess true --strict-json'
                 ' && openclaw plugins reload personal-assistant-bridge --wait')

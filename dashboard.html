@@ -6808,6 +6808,9 @@ const GRAPH_TABS={people:{label:'People',tabs:[['people','All'],['quiet','Gone q
   notes:{orgs:'The ones you are most in touch with first.',warmup:'Mail from email warm-up tools, kept out of your graph.'},empty:'No organizations yet.'},
  projects:{label:'Projects',tabs:[['projects','Open'],['projects_done','Done']],sorts:[['last','Last activity'],['name','Name A–Z'],['stage','Stage'],['value','Value'],['close','Close date']],
   notes:{projects:'Named by the reviews and your to-dos. Heat fades over about three weeks.',projects_done:'Closed projects.'},empty:'No projects yet.'}};
+// A Graph page with nothing on it yet still opens: a short line says how it fills, and its head keeps + New.
+const graphEmpty=(pane,team)=>{const [title,how]={people:['Nothing mapped yet.','People appear as messages and meetings come in.'],orgs:['No organizations yet.','They come from the people you’re in touch with.'],projects:['No projects yet.','Reviews name them from your messages and to-dos.']}[pane];
+ return `<div class="empty all-clear graph-empty"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>${title}</strong>${team?'':`<span class="poke-line">${how}</span>`}</div></div>`};
 const TEAM_NOTES={people:'Everyone your team shares, the closest first.',orgs:'The ones your team is most in touch with.',projects:'Your team’s open projects.'};
 const graphPick=(pane,what,fallback)=>{try{return localStorage.getItem(`graph-${what}-${pane}`)||fallback}catch{return fallback}};
 const graphKeep=(pane,what,v)=>{try{localStorage.setItem(`graph-${what}-${pane}`,v)}catch{}};
@@ -7000,7 +7003,7 @@ const teamEmpty=b=>{const v=teamPick(b);return v!=='all'&&!b.projects.some(p=>te
 // Which board shows: the Team view keeps its own, so it opens on the board with most of the owner's projects (listed first)
 const boardKey=()=>graphBoards[0]?.team?'team-board-shown':'board-shown';
 const projectsPane=g=>{graphBoards=g.boards||[];boardShown=sideStore.get(boardKey())||'';graphSuggest=g.board_suggestions||[];graphProjNames=g.project_names||[];if(!g.team){graphMineBoards=graphBoards;graphPeopleNames=g.person_names||graphPeopleNames}const v=projView();
- if(!graphBoards.length){const list=graphTabs('projects');return list||graphSuggest.length?suggestBox()+(graphSuggest.length?'':'<p class="board-start"><button type="button" class="ghost" data-board-new>Start a board</button></p>')+list:''}  /* no projects yet: no Projects pane */
+ if(!graphBoards.length){const list=graphTabs('projects');return list||graphSuggest.length?suggestBox()+(graphSuggest.length?'':'<p class="board-start"><button type="button" class="ghost" data-board-new>Start a board</button></p>')+list:graphEmpty('projects',g.team)}  /* no projects yet: the pane still opens */
  return suggestBox()+`<div class="proj-list"${v==='list'?'':' hidden'}>${graphTabs('projects')}</div><div class="proj-board"${v==='board'?'':' hidden'}>${boardView()}</div>`};
 function boardRedraw(){const el=$('#people-view .proj-board');if(el){const x=el.querySelector('.pboard')?.scrollLeft||0;el.innerHTML=boardView();const nb=el.querySelector('.pboard');if(nb)nb.scrollLeft=x;tabsShow(el.querySelector('.stage-tabs'))}}
 function projectsViewSet(v){sideStore.set('projects-view',v);const view=$('#people-view');view.querySelector('.proj-list')?.toggleAttribute('hidden',v!=='list');view.querySelector('.proj-board')?.toggleAttribute('hidden',v!=='board');pageHead();tabsShow(view.querySelector('.stage-tabs'))}
@@ -7631,12 +7634,12 @@ async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=
  if(team||graphListsTeam||JSON.stringify(lc)!==JSON.stringify(graphLists)||!g.list_counts){pagerDrop('graph');graphLists=lc}graphListsTeam=team;
  const panes=team?[{id:'people',label:'People',html:start+(graphTabs('people')||'<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing from the team yet.</strong></div></div>')},
   {id:'projects',label:'Projects',html:projectsPane(g)},
-  {id:'orgs',label:'Organizations',html:graphTabs('orgs')},
+  {id:'orgs',label:'Organizations',html:graphTabs('orgs')||graphEmpty('orgs',true)},
   {id:'roles',label:'Who’s who',badge:waiting,html:whosWho(g.whos_who,waiting)},
   ...(g.held?.length||graphPane==='held'?[{id:'held',label:'Held back',html:heldPane(g.held)}]:[])].filter(p=>p.html)
- :[{id:'people',label:'People',html:sameList(g.same_person)+graphTabs('people')},
+ :[{id:'people',label:'People',html:sameList(g.same_person)+(graphTabs('people')||graphEmpty('people'))},
   {id:'projects',label:'Projects',html:projectsPane(g)},
-  {id:'orgs',label:'Organizations',html:orgDoubles(g.org_doubles)+graphTabs('orgs')},
+  {id:'orgs',label:'Organizations',html:orgDoubles(g.org_doubles)+(graphTabs('orgs')||graphEmpty('orgs'))},
   {id:'roles',label:'Who’s who',badge:waiting,html:whosWho(g.whos_who,waiting)}].filter(p=>p.html);
  const current=(panes.find(p=>p.id===graphPane)||panes.find(p=>p.id==='people')||panes[0])?.id;graphCountsSet(g.counts);if(version===graphRequest){graphShown=current||'';graphHashSync();graphSubSync()}
  // A refresh that starts the lists over loads as many rows as were there before it draws, so the page keeps its height
