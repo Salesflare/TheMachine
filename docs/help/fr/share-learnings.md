@@ -1,14 +1,14 @@
 ---
 title: Partager des apprentissages avec l’équipe
 area: security
-summary: De temps en temps, elle propose d’envoyer quelques apprentissages généraux à l’équipe The Machine, et vote sur les apprentissages d’autres Machines. Rien de personnel, rien sans votre accord.
+summary: Au plus une fois par jour, elle propose quelques apprentissages généraux à l’équipe The Machine, et vote sur les apprentissages d’autres Machines. Rien de personnel.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
 ---
 ## De quoi il s’agit
 
-Environ une fois par semaine, elle transforme ce qu’elle a appris de vous en quelques apprentissages généraux qui pourraient améliorer The Machine pour tout le monde. Par exemple : « Les brouillons pour des personnes qui ne connaissent pas encore le contexte devraient d’abord le présenter. »
+Au plus une fois par jour, quand il y a du nouveau, elle transforme ce qu’elle a appris de vous depuis la dernière fois en quelques apprentissages généraux qui pourraient améliorer The Machine pour tout le monde. Par exemple : « Les brouillons pour des personnes qui ne connaissent pas encore le contexte devraient d’abord le présenter. » Elle ne propose jamais deux fois le même : ni un apprentissage envoyé, supprimé ou retiré.
 
 Chaque apprentissage est accompagné de 1 à 3 cas d’usage : une situation, ce que vous faites, et ce qui devrait se passer. Par exemple : une première réponse à un client qui n’a jamais entendu parler de vous ; vous ouvrez le brouillon ; il dit qui vous êtes avant la demande. L’équipe s’appuie sur eux, pour que ce qui sort reste fidèle à l’intention.
 
@@ -28,11 +28,23 @@ C’est scellé pour l’équipe et envoyé sous un nom inventé, sauf si vous c
 
 D’autres Machines peuvent voter sur un apprentissage que vous avez partagé, sans savoir qui l’a envoyé. Votre e-mail n’est jamais transmis.
 
+## Envoyer automatiquement
+
+Cochez **Envoyer automatiquement désormais** à côté de **Envoyer**, ou activez **Envoyer les apprentissages automatiquement** dans Paramètres, Sécurité. Les nouveaux apprentissages partent alors sans demander, vérifiés de la même façon. Désactivé par défaut.
+
+Chaque apprentissage envoyé figure dans Fleet, **Activité**, exactement comme il est parti. Touchez **Retirer** et l’équipe ne le voit plus.
+
+Votre e-mail et les journaux d’erreurs ne partent jamais tout seuls. **Prudent**, une Work Fleet Prudente, ou la désactivation de **Proposer de partager des apprentissages** l’arrête. Réactivé, elle demande à nouveau à chaque fois.
+
+## Désactiver
+
 Pour ne plus être sollicité, désactivez **Proposer de partager des apprentissages** dans Paramètres, Sécurité. Voir [Niveaux de sécurité](security-levels.md). Cela nécessite [The Machine Network](/network).
 
 ## Votes
 
-Les apprentissages partagés par d’autres Machines arrivent aussi sur la vôtre. De temps en temps, une courte vérification juge si un apprentissage vous aiderait, et renvoie seulement un vote : utile, pas utile ou pas pertinent, parfois avec une courte raison générale et un cas d’usage à elle, rédigé et vérifié de la même façon générique. Rien sur vous n’est transmis. Vos propres apprentissages ne vous sont jamais renvoyés pour un vote.
+Les apprentissages partagés par d’autres Machines arrivent aussi sur la vôtre. Une fois par jour, une courte vérification pose une question : est-ce que cela aurait changé quelque chose sur votre Machine la semaine passée ? Elle renvoie seulement un vote. Rien sur vous n’est transmis. Vos propres apprentissages ne vous sont jamais renvoyés pour un vote.
+
+Un vote utile demande un cas concret de votre semaine passée, raconté de façon générique et vérifié comme un cas d’usage. Sans cas, le vote devient **Pas pertinent ici**. L’équipe ne compte que les votes utiles avec un cas.
 
 L’équipe voit les apprentissages classés par votes et choisit ce qui entre dans The Machine pour tout le monde. Rien ne change tout seul.
 

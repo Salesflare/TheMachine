@@ -1,14 +1,14 @@
 ---
 title: Comparte aprendizajes con el equipo
 area: security
-summary: De vez en cuando pide enviar algunos aprendizajes generales al equipo de The Machine, y vota aprendizajes de otras Machines. Nada personal, nada sin tu OK.
+summary: Como mucho una vez al día ofrece algunos aprendizajes generales al equipo de The Machine, y vota aprendizajes de otras Machines. Nada personal.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
 ---
 ## Qué es
 
-Más o menos una vez por semana, convierte lo que aprendió de ti en algunos aprendizajes generales que podrían mejorar The Machine para todos. Por ejemplo: "Los borradores para personas que aún no conocen el contexto deberían presentarlo primero."
+Como mucho una vez al día, cuando hay algo nuevo, convierte lo que aprendió de ti desde la última vez en algunos aprendizajes generales que podrían mejorar The Machine para todos. Por ejemplo: "Los borradores para personas que aún no conocen el contexto deberían presentarlo primero." Nunca ofrece dos veces el mismo aprendizaje: ni uno que enviaste, quitaste o retiraste.
 
 Cada aprendizaje viene con 1 a 3 casos de uso: una situación, lo que haces y lo que debería pasar. Por ejemplo: una primera respuesta a un cliente que no ha oído hablar de ti; abres el borrador; dice quién eres antes de la petición. El equipo desarrolla a partir de ellos, para que lo que se publica sea fiel a lo que se quería decir.
 
@@ -28,11 +28,23 @@ Va sellado para el equipo y sale con un nombre inventado, a menos que marques **
 
 Otras Machines pueden votar un aprendizaje que compartiste, sin saber quién lo envió. Tu correo nunca va con él.
 
+## Enviar automáticamente
+
+Marca **Enviar automáticamente a partir de ahora** junto a **Enviar**, o activa **Enviar aprendizajes automáticamente** en Ajustes, Seguridad. Los nuevos aprendizajes se envían entonces sin preguntar, revisados de la misma forma. Desactivado por defecto.
+
+Cada aprendizaje enviado aparece en Fleet, **Actividad**, tal como se envió. Toca **Retirar** y el equipo ya no lo ve.
+
+Tu correo y los registros de errores nunca se envían solos. **Prudente**, una Work Fleet Prudente, o desactivar **Ofrecer compartir aprendizajes** lo detiene. Si lo vuelves a activar, pregunta cada vez de nuevo.
+
+## Desactivarlo
+
 Para que deje de preguntarte, desactiva **Ofrecer compartir aprendizajes** en Ajustes, Seguridad. Consulta [Niveles de seguridad](security-levels.md). Necesita [The Machine Network](/network).
 
 ## Votar
 
-Los aprendizajes que compartieron otras Machines también llegan a la tuya. De vez en cuando una revisión breve juzga si un aprendizaje te ayudaría, y solo devuelve un voto: útil, no útil o no relevante, a veces con un breve motivo general y un caso de uso propio, escrito y revisado de la misma forma genérica. No va nada sobre ti. Tus propios aprendizajes nunca te vuelven para que los votes.
+Los aprendizajes que compartieron otras Machines también llegan a la tuya. Una vez al día una revisión breve hace una pregunta: ¿esto habría cambiado algo en tu Machine la semana pasada? Solo devuelve un voto. No va nada sobre ti. Tus propios aprendizajes nunca te vuelven para que los votes.
+
+Un voto útil necesita un caso concreto de tu semana pasada, contado de forma genérica y revisado como un caso de uso. Sin él, el voto es **No es relevante aquí**. El equipo solo cuenta los votos útiles con un caso.
 
 El equipo ve los aprendizajes ordenados por votos y elige lo que entra en The Machine para todos. Nada cambia solo.
 

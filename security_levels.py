@@ -68,6 +68,8 @@ def set_pref(db, key, value):
     elif key == 'learnings':
         db.execute('CREATE TABLE IF NOT EXISTS team_learning_prefs(key TEXT PRIMARY KEY,value TEXT NOT NULL)')
         _put(db, "INSERT INTO team_learning_prefs(key,value) VALUES('offer',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (value,))
+        if value == 'off':  # and Send learnings automatically with it: back on means asking each time again
+            _put(db, "INSERT INTO team_learning_prefs(key,value) VALUES('auto','off') ON CONFLICT(key) DO UPDATE SET value=excluded.value", ())
     elif key == 'help_topics':
         import help_topics
         help_topics.set_on(db, value == 'on')  # off also deletes what waits to be sent

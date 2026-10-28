@@ -1,14 +1,14 @@
 ---
 title: Inzichten delen met het team
 area: security
-summary: Af en toe vraagt hij om een paar algemene inzichten naar het team van The Machine te sturen, en stemt hij op inzichten van andere Machines. Niets persoonlijks, niets zonder je OK.
+summary: Hoogstens één keer per dag biedt hij een paar algemene inzichten aan het team van The Machine aan, en stemt hij op inzichten van andere Machines. Niets persoonlijks.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
 ---
 ## Wat het is
 
-Ongeveer één keer per week maakt hij van wat hij van jou leerde een paar algemene inzichten die The Machine voor iedereen beter kunnen maken. Bijvoorbeeld: "Concepten voor mensen die de context nog niet kennen, moeten die eerst uitleggen."
+Hoogstens één keer per dag, als er iets nieuws is, maakt hij van wat hij sinds de vorige keer van jou leerde een paar algemene inzichten die The Machine voor iedereen beter kunnen maken. Bijvoorbeeld: "Concepten voor mensen die de context nog niet kennen, moeten die eerst uitleggen." Hij biedt nooit twee keer hetzelfde inzicht aan: niet een dat je verstuurde, verwijderde of introk.
 
 Elk inzicht komt met 1 tot 3 use cases: een situatie, wat je doet, en wat er moet gebeuren. Bijvoorbeeld: een eerste antwoord aan een klant die nog nooit van je gehoord heeft; je opent het concept; het zegt wie je bent voor de vraag. Het team bouwt ertegen, zodat wat uitgebracht wordt trouw blijft aan wat bedoeld was.
 
@@ -28,11 +28,23 @@ Het is verzegeld voor het team en komt van een verzonnen naam, tenzij je **Voeg 
 
 Andere Machines kunnen stemmen op een inzicht dat je deelde, zonder te weten wie het stuurde. Je e-mailadres gaat nooit mee.
 
+## Automatisch versturen
+
+Vink **Voortaan automatisch versturen** aan naast **Versturen**, of zet **Inzichten automatisch versturen** aan in Instellingen, Beveiliging. Nieuwe inzichten gaan dan zonder te vragen, op dezelfde manier gecontroleerd. Standaard uit.
+
+Elk verstuurd inzicht staat in Fleet, **Activiteit**, precies zoals het ging. Tik op **Intrekken** en het team ziet het niet meer.
+
+Je e-mail en foutlogs gaan nooit vanzelf mee. **Voorzichtig**, een Voorzichtige Work Fleet, of **Aanbieden om inzichten te delen** uitzetten stopt het. Zet je het weer aan, dan vraagt hij weer elke keer.
+
+## Uitzetten
+
 Wil je het niet meer gevraagd worden, zet dan **Aanbieden om inzichten te delen** uit in Instellingen, Beveiliging. Zie [Beveiligingsniveaus](security-levels.md). Het heeft [The Machine Network](/network) nodig.
 
 ## Stemmen
 
-Inzichten die andere Machines deelden, komen ook bij de jouwe. Af en toe beoordeelt een korte controle of een inzicht jou zou helpen, en stuurt hij alleen een stem terug: nuttig, niet nuttig of niet relevant, soms met een korte algemene reden en een eigen use case, op dezelfde algemene manier geschreven en gecontroleerd. Er gaat niets over jou mee. Je eigen inzichten worden nooit naar je teruggestuurd om op te stemmen.
+Inzichten die andere Machines deelden, komen ook bij de jouwe. Eén keer per dag stelt een korte controle één vraag: had dit de afgelopen week iets veranderd op jouw Machine? Hij stuurt alleen een stem terug. Er gaat niets over jou mee. Je eigen inzichten worden nooit naar je teruggestuurd om op te stemmen.
+
+Een nuttige stem heeft een concreet geval uit jouw afgelopen week nodig, algemeen verteld en gecontroleerd zoals een use case. Zonder dat wordt de stem **Hier niet relevant**. Het team telt alleen nuttige stemmen met een geval.
 
 Het team ziet de inzichten gerangschikt op stemmen en kiest wat er voor iedereen in The Machine komt. Er verandert niets vanzelf.
 

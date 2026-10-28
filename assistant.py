@@ -802,14 +802,17 @@ AGENT_ACTIONS = {
 }
 OWNER_ACTIONS |= AGENT_ACTIONS
 # Learnings for The Machine team (team_learnings.py): sharing, Not now, Never ask and the Settings switch are the owner's
-# own, from their dashboard only. Nothing is sent without their Send on exactly what they saw.
+# own, from their dashboard only. Nothing is sent without their Send on exactly what they saw, or their choice to send
+# automatically from now on; withdrawing a sent one is theirs too.
 LEARNING_ACTIONS = {
     'learnings_later',
     'learnings_never',
     'learnings_share',
     'learnings_votes_decide',
+    'learnings_withdraw',
     'set_error_reports',
     'set_help_topics',
+    'set_learnings_auto',
     'set_learnings_offer',
     'set_learnings_vote',
 }
@@ -6731,8 +6734,9 @@ class Store:
         return self.voice_study_start(auto=True)
 
     def learnings_due(self, current=None):
-        """About once a week, when the owner wants to be offered: one turn distils what was learned into a few general
-        learnings for The Machine team (team_learnings.py). Nothing is sent: the owner is asked first."""
+        """At most once a day, with new material, when the owner wants to be offered: one cheap turn distils what was
+        learned since the last one into a few general learnings for The Machine team (team_learnings.py). Nothing is
+        sent here: the owner is asked first, unless they chose to send automatically (team_learnings.auto_send)."""
         current = current or dt.datetime.fromisoformat(now())
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -14275,6 +14279,8 @@ class App:
                 raise ValueError('Only the owner shares learnings, from the dashboard')
             if name == 'learnings_share':
                 return {**self.learnings_share(args), 'team_learnings': self.learnings_view()}
+            if name == 'learnings_withdraw':
+                return {**self.learnings_withdraw(args), 'team_learnings': self.learnings_view()}
             with self.store.connect() as db:
                 if name == 'learnings_later':
                     team_learnings.later(db, str(args.get('id') or ''))
@@ -14288,6 +14294,8 @@ class App:
                     help_topics.set_on(db, args.get('on') is not False)
                 elif name == 'set_error_reports':
                     error_feed.set_on(db, args.get('on') is not False)
+                elif name == 'set_learnings_auto':  # Send learnings automatically, off unless chosen
+                    team_learnings.set_auto(db, args.get('on') is True)
                 else:
                     team_learnings.set_offer(db, args.get('on') is not False)
             return {'team_learnings': self.learnings_view()}
@@ -15670,6 +15678,7 @@ class App:
                 self.team_votes_due()  # and other Machines' learnings come to be judged, when voting is on
                 self.fleet_learn_due()  # and team learnings from team conversations, in a Standard Work Fleet
         if self.fleet:
+            self.learnings_auto_send()  # Send learnings automatically: a batch that couldn't get through yet
             self.help_topics_send()  # what Help was asked, as topics (help_topics.py)
             self.error_reports_step()
             self.pacing_send()  # how often background work paced, counts only (pacing.py)
@@ -17530,8 +17539,10 @@ class App:
                     self.skills_find_done(run, status)
         if run.get('kind') == 'learnings':  # asks the owner only once the run is ok
             with self.store.connect() as db:
-                if team_learnings.finish(db, run['run_id']):
-                    LOG.info('learnings ready to ask about')
+                batch = team_learnings.finish(db, run['run_id'])
+            if batch:
+                LOG.info('learnings ready')
+                self.learnings_auto_send()  # sent at once when the owner chose Send automatically
         if run.get('kind') == 'tune':  # applies only once the run is ok; each change can be undone
             changed = self.store.apply_tune(run['run_id'])
             if changed:
@@ -19002,8 +19013,34 @@ class App:
     def learnings_share(self, args):
         if not getattr(self, 'fleet', None):
             raise ValueError('Sharing needs The Machine Network. Nothing was sent.')
-        return team_learnings.share(self.store.connect, self.config, str(args.get('id') or ''), args.get('items'), args.get('named') is True,
-                                    self.fleet.relay.call, code_version())
+        if args.get('auto') is True:  # "Send automatically from now on", ticked in the offer: checked before anything goes
+            with self.store.connect() as db:
+                if team_learnings.careful_floor(db):
+                    raise ValueError('A Careful Work Fleet keeps asking each time.')
+        result = team_learnings.share(self.store.connect, self.config, str(args.get('id') or ''), args.get('items'), args.get('named') is True,
+                                      self.fleet.relay.call, code_version())
+        if args.get('auto') is True:
+            with self.store.connect() as db:
+                team_learnings.set_auto(db, True)
+        return result
+
+    def learnings_auto_send(self):
+        """Send learnings automatically (team_learnings.auto_send), when the owner chose it; quiet when the Network is away."""
+        if not getattr(self, 'fleet', None):
+            return None
+        try:
+            result = team_learnings.auto_send(self.store.connect, self.config, self.fleet.relay.call, code_version())
+        except Exception as error:  # noqa: BLE001 - the next step tries again
+            LOG.warning('learnings auto send error=%s', type(error).__name__)
+            return None
+        if result:
+            LOG.info('learnings sent automatically count=%s', result.get('count'))
+        return result
+
+    def learnings_withdraw(self, args):
+        if not getattr(self, 'fleet', None):
+            raise ValueError('Withdrawing needs The Machine Network.')
+        return team_learnings.withdraw(self.store.connect, self.config, str(args.get('id') or ''), args.get('n'), self.fleet.relay.call)
 
     def graph_fleet_marks(self, db):
         """Who in the graph is in the owner's Fleets, Family or Friends: from the Network directory this Machine keeps,
