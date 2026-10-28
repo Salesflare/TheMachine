@@ -27,6 +27,23 @@ LIMIT_WAIT = 1800  # a usage limit without any reset time known: look again afte
 LIMIT_WAIT_MAX = 8 * DAY  # a reset further out than a week is not believed
 
 
+def provider_of(model):
+    provider = str(model or '').split('/', 1)[0].lower()
+    if provider in ('claude-cli', 'anthropic'):
+        return 'anthropic'
+    if provider in ('openai', 'openai-codex', 'codex'):
+        return 'openai'
+    return provider if '/' in str(model or '') else None
+
+
+def for_model(usage, model):
+    """Only the selected runtime's quota. Unknown selection retains the conservative existing behavior."""
+    provider = provider_of(model)
+    if not provider:
+        return usage
+    return [p for p in usage or [] if provider_of(str(p.get('provider') or '') + '/') == provider]
+
+
 def window_kind(label):
     """'short' for the 5-hour window, 'week' for the weekly one (OpenClaw labels them 5h and Week; 168h and 7d too)."""
     text = re.sub(r'[\s_-]+', '', str(label or '').lower())

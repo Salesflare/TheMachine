@@ -441,5 +441,24 @@ class Notifications(unittest.TestCase):
         self.assertEqual([line.split(':', 2)[2] for line in logs.output], ['notify mail error=OSError', 'notify mail status=429', 'notify mail not taken'])
 
 
+class DurableQueue(Notifications):
+    def test_failed_delivery_survives_restart_and_keeps_its_batch(self):
+        clock = [10000.0]
+        at = lambda: clock[0]
+        with self.store.connect() as db:
+            notify.hold(db, 'email', 'todo', 'Original', 1, clock=at)
+            _, first = notify.take_due(db, clock=at)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM notify_queue').fetchone()[0], 1)
+            self.assertEqual(notify.take_due(db, clock=at)[1], [])  # claimed, not lost
+        clock[0] += 61
+        with self.store.connect() as db:
+            notify.hold(db, 'email', 'todo', 'New', 1, clock=at)
+            _, retry = notify.take_due(db, clock=at)
+            self.assertEqual(retry, first)  # new mail cannot change the retry's body or key
+            notify.delivered(db, retry)
+            self.assertEqual(db.execute('SELECT title FROM notify_queue').fetchone()[0], 'New')
+
+
 if __name__ == '__main__':
     unittest.main()

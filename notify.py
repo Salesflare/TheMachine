@@ -25,6 +25,7 @@ import json
 import logging
 import threading
 import time
+import uuid
 import urllib.error
 import urllib.request
 
@@ -56,6 +57,12 @@ def ensure(db):
     db.execute(SCHEMA)
     db.execute(DIGESTS)
     db.execute(QUEUE)
+    columns = {r[1] for r in db.execute('PRAGMA table_info(notify_queue)')}
+    for name, definition in (('delivery', 'TEXT'), ('batch', 'TEXT'), ('claimed_until', 'REAL NOT NULL DEFAULT 0')):
+        if name not in columns:
+            db.execute(f'ALTER TABLE notify_queue ADD COLUMN {name} {definition}')
+    for row in db.execute('SELECT id FROM notify_queue WHERE delivery IS NULL').fetchall():
+        db.execute('UPDATE notify_queue SET delivery=? WHERE id=?', (uuid.uuid4().hex, row[0]))
 
 
 def prefs(db):
@@ -145,22 +152,23 @@ def push_now(clock=wall):
 def hold(db, channel, kind, title, due, ref=None, payload=None, show=True, clock=wall):
     """Queue a push (channel 'push', its payload) or an email line (channel 'email') to go at `due` unless seen."""
     ensure(db)
-    db.execute('INSERT INTO notify_queue(channel,kind,ref,title,payload,show,created,due) VALUES(?,?,?,?,?,?,?,?)',
-               (channel, kind, ref, title[:200], json.dumps(payload) if payload is not None else None, 1 if show else 0, clock(), due))
+    db.execute('INSERT INTO notify_queue(channel,kind,ref,title,payload,show,created,due,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
+               (channel, kind, ref, title[:200], json.dumps(payload) if payload is not None else None, 1 if show else 0, clock(), due, uuid.uuid4().hex))
 
 
 def take_due(db, still_open=lambda ref: True, clock=wall):
     """What goes now: (pushes [{payload, kind}], email lines [{title, show, kind}]). Drops what the owner saw (touched a
     dashboard after it came in), what no longer waits for them (still_open) and email lines past EMAIL_STALE. Pushes go
     when push_now; email lines together once the oldest is due and the last email is EMAIL_EVERY ago, never while a
-    dashboard is in use."""
+    dashboard is in use. Selected rows are leased for 60 seconds, not deleted; delivered() removes them only after
+    a successful receipt. A failed email keeps the same batch so a lost HTTP response cannot create another send."""
     ensure(db)
     at, seen = clock(), last_seen(clock)
     # Why a waiting email never went, in the log (seen on a dashboard, too old, handled), so "no email" can be checked
     dropped = {'seen': db.execute("SELECT count(*) FROM notify_queue WHERE channel='email' AND created<=?", (seen,)).fetchone()[0]}
     db.execute('DELETE FROM notify_queue WHERE created<=?', (seen,))
     dropped['stale'] = db.execute("DELETE FROM notify_queue WHERE channel='email' AND created<?", (at - EMAIL_STALE,)).rowcount
-    rows = [dict(r) for r in db.execute('SELECT * FROM notify_queue ORDER BY created,id')]
+    rows = [dict(r) for r in db.execute('SELECT * FROM notify_queue WHERE claimed_until<=? ORDER BY created,id', (at,))]
     gone = [r['id'] for r in rows if r['ref'] and not still_open(r['ref'])]
     dropped['handled'] = sum(r['channel'] == 'email' for r in rows if r['id'] in gone)
     if any(dropped.values()):
@@ -172,11 +180,20 @@ def take_due(db, still_open=lambda ref: True, clock=wall):
         mails = [r for r in rows if r['channel'] == 'email']
         last = float(dict(db.execute("SELECT key,value FROM notify_prefs WHERE key='_mail_last'").fetchall()).get('_mail_last') or 0)
         if mails and mails[0]['due'] <= at and at - last >= EMAIL_EVERY:
-            lines = mails
-    gone += [r['id'] for r in pushes + lines]
+            batch = mails[0]['batch'] or uuid.uuid4().hex
+            lines = [r for r in mails if r['batch'] == batch] if mails[0]['batch'] else [r for r in mails if not r['batch']]
+            for r in lines:
+                r['batch'] = batch
+                db.execute('UPDATE notify_queue SET batch=? WHERE id=?', (batch, r['id']))
     db.executemany('DELETE FROM notify_queue WHERE id=?', [(i,) for i in gone])
-    return ([{'payload': json.loads(r['payload'] or '{}'), 'kind': r['kind']} for r in pushes],
-            [{'title': r['title'], 'show': bool(r['show']), 'kind': r['kind']} for r in lines])
+    db.executemany('UPDATE notify_queue SET claimed_until=? WHERE id=?', [(at + 60, r['id']) for r in pushes + lines])
+    return ([{'payload': json.loads(r['payload'] or '{}'), 'kind': r['kind'], 'delivery': r['delivery']} for r in pushes],
+            [{'title': r['title'], 'show': bool(r['show']), 'kind': r['kind'], 'delivery': r['delivery'], 'batch': r['batch']} for r in lines])
+
+
+def delivered(db, items):
+    """Remove only the exact queue entries with a successful delivery receipt."""
+    db.executemany('DELETE FROM notify_queue WHERE delivery=?', [(r['delivery'],) for r in items])
 
 
 def take_handoffs(db, clock=wall):
@@ -187,10 +204,10 @@ def take_handoffs(db, clock=wall):
     at = clock()
     if active(clock):
         return []
-    rows = [dict(r) for r in db.execute("SELECT * FROM notify_queue WHERE channel='handoff' AND due<=? ORDER BY created,id", (at,))]
-    db.executemany('DELETE FROM notify_queue WHERE id=?', [(r['id'],) for r in rows])
+    rows = [dict(r) for r in db.execute("SELECT * FROM notify_queue WHERE channel='handoff' AND due<=? AND claimed_until<=? ORDER BY created,id", (at, at))]
+    db.executemany('UPDATE notify_queue SET claimed_until=? WHERE id=?', [(at + 60, r['id']) for r in rows])
     return [{'title': r['title'], 'show': bool(r['show']), 'name': json.loads(r['payload'] or '{}').get('name') or '',
-             'id': (r['ref'] or '').partition(':')[2]} for r in rows]
+             'id': (r['ref'] or '').partition(':')[2], 'delivery': r['delivery']} for r in rows]
 
 
 def handoff_mail(item, root=''):
@@ -283,12 +300,12 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
 
 
 # -- email, through the control plane (hosted and paired Machines)
-def mail(url, token, subject, text, opener=urllib.request.urlopen):
+def mail(url, token, subject, text, opener=urllib.request.urlopen, delivery=None):
     """Hand one email (the digest, or what still waits) to the control plane for the account's own address. True when it took it."""
     if not url or not token:
         return False
     request = urllib.request.Request(url.rstrip('/') + '/notify-mail', method='POST',
-                                     data=json.dumps({'subject': subject[:MAIL_SUBJECT], 'text': text[:MAIL_TEXT]}).encode(),
+                                     data=json.dumps({'subject': subject[:MAIL_SUBJECT], 'text': text[:MAIL_TEXT], **({'delivery': delivery} if delivery else {})}).encode(),
                                      headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
     try:
         with opener(request, timeout=30) as response:

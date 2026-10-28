@@ -2731,6 +2731,7 @@
  "Saved. It goes out by itself at {}.": "Saved. It goes out by itself at {}.",
  "Saved. Restart the service to use it.": "Saved. Restart the service to use it.",
  "Saved. Restarting…": "Saved. Restarting…",
+ "Saved. Sending…": "Saved. Sending…",
  "Saving…": "Saving…",
  "Say how it relates to {} in one short line: relation=<up to {} characters>": "Say how it relates to {} in one short line: relation=<up to {} characters>",
  "Say how you write there.": "Say how you write there.",

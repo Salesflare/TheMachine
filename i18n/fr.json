@@ -2731,6 +2731,7 @@
  "Saved. It goes out by itself at {}.": "Enregistré. Il part tout seul à {}.",
  "Saved. Restart the service to use it.": "Enregistré. Redémarrez le service pour l’utiliser.",
  "Saved. Restarting…": "Enregistré. Redémarrage…",
+ "Saved. Sending…": "Enregistré. Envoi en cours…",
  "Saving…": "Enregistrement…",
  "Say how it relates to {} in one short line: relation=<up to {} characters>": "Dites en une ligne courte comment elle se rattache à {} : relation=<jusqu’à {} caractères>",
  "Say how you write there.": "Dites comment vous y écrivez.",

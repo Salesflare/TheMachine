@@ -376,5 +376,24 @@ class Dashboard(unittest.TestCase):
                 self.app.action('gbrain_on', {'consent': True}, owner_dashboard=True)
 
 
+class Catchup(Base):
+    def test_default_pull_drains_45_empty_pages_across_restart(self):
+        for i in range(45):
+            node(self.db, f'email:batch{i}@example.org', 'person', f'Batch Person {i}', side='personal')
+        while gbrain.push(self.db, self.config, self.brain, limit=40)['left']:
+            pass
+        total = self.db.execute("SELECT count(*) FROM gbrain_pages WHERE node_id!='the-machine:learnings'").fetchone()[0]
+        self.assertGreater(total, 40)
+        self.assertEqual(gbrain.pull(self.db, self.brain), 40)
+        self.assertIsNone(gbrain.meta(self.db, 'pulled_at'))
+        self.db.commit()
+        self.db.close()
+        self.db = sqlite3.connect(Path(self.tmp.name) / 'db.sqlite')
+        self.db.row_factory = sqlite3.Row
+        self.assertEqual(gbrain.pull(self.db, self.brain), total - 40)
+        self.assertIsNotNone(gbrain.meta(self.db, 'pulled_at'))
+        self.assertIsNone(gbrain.meta(self.db, 'pull_pending'))
+
+
 if __name__ == '__main__':
     unittest.main()

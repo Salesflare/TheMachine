@@ -2731,6 +2731,7 @@
  "Saved. It goes out by itself at {}.": "Guardado. Sale solo a las {}.",
  "Saved. Restart the service to use it.": "Guardado. Reinicia el servicio para usarlo.",
  "Saved. Restarting…": "Guardado. Reiniciando…",
+ "Saved. Sending…": "Guardado. Enviando…",
  "Saving…": "Guardando…",
  "Say how it relates to {} in one short line: relation=<up to {} characters>": "Di cómo se relaciona con {} en una línea corta: relation=<hasta {} caracteres>",
  "Say how you write there.": "Di cómo escribes allí.",

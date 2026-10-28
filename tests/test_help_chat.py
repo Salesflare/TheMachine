@@ -140,7 +140,7 @@ class Retrieval(unittest.TestCase):
 
 
 class Personal(unittest.TestCase):
-    """Jeroen asked "how can I personalize this perfectly", then "I'd like to have it write like I do", and was told to
+    """An owner asked "how can I personalize this perfectly", then "I'd like to have it write like I do", and was told to
     make a skill: no help page said "personalize", and "write" didn't find Writing. Now the built-in ways come first."""
 
     def setUp(self):

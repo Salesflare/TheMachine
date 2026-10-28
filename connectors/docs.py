@@ -123,7 +123,7 @@ class Google:
         while len(found) < limit:
             params = {'q': query, 'orderBy': order, 'pageSize': min(100, limit), 'spaces': 'drive',
                       'includeItemsFromAllDrives': True, 'supportsAllDrives': True, 'corpora': 'allDrives',
-                      'fields': 'nextPageToken,files(' + fields + ')'}
+                      'fields': 'nextPageToken,incompleteSearch,files(' + fields + ')'}
             if token:
                 params['pageToken'] = token
             page = self.call('drive.files.list', params)
@@ -132,6 +132,17 @@ class Google:
             if not token:
                 break
         return found[:limit]
+
+    def files_page(self, query, order, limit, fields, token=None):
+        params = {'q': query, 'orderBy': order, 'pageSize': limit, 'spaces': 'drive',
+                  'includeItemsFromAllDrives': True, 'supportsAllDrives': True, 'corpora': 'allDrives',
+                  'fields': 'nextPageToken,incompleteSearch,files(' + fields + ')'}
+        if token:
+            params['pageToken'] = token
+        page = self.call('drive.files.list', params)
+        if page.get('incompleteSearch'):
+            raise self.helpers.SourceError('docs_incomplete_search')
+        return [f for f in page.get('files') or [] if isinstance(f, dict) and f.get('id')], page.get('nextPageToken')
 
     def comments(self, file_id, since):
         found, token = [], ''
@@ -475,19 +486,27 @@ def sync_google(store, config, account, helpers, state, now):
     owner = str(account['email']).lower()
     since = stamp(state.get('since'))
     start = (since - dt.timedelta(hours=OVERLAP_HOURS)) if since else now - dt.timedelta(days=int(config.get('bootstrap_days', 7)))
-    window = zulu(now - dt.timedelta(days=LOOKBACK_DAYS))
+    cycle = dict(state.get('google_cycle') or {'at': now.isoformat()})
+    if since is None:
+        start = stamp(cycle['at']) - dt.timedelta(days=int(config.get('bootstrap_days', 7)))
+    window = zulu(stamp(cycle['at']) - dt.timedelta(days=LOOKBACK_DAYS))
     seen, marks = dict(state.get('seen') or {}), dict(state.get('suggested') or {})
     events = []
     fields = 'id,name,mimeType,webViewLink,modifiedTime,sharedWithMeTime,sharingUser(displayName,emailAddress,me),owners(displayName,emailAddress,me),lastModifyingUser(displayName,emailAddress,me)'
-    for f in source.files("sharedWithMe = true and trashed = false", 'sharedWithMeTime desc', MAX_SHARED, fields):
+    shared, next_shared = ([], None) if cycle.get('shared_done') else source.files_page(
+        "sharedWithMe = true and trashed = false", 'sharedWithMeTime desc', MAX_SHARED, fields, cycle.get('shared'))
+    cycle.update(shared=next_shared, shared_done=not next_shared)
+    for f in shared:
         at = stamp(f.get('sharedWithMeTime'))
         key = short_id(f['id'], 'shared')
         if at and at >= start and key not in seen and not (f.get('sharingUser') or {}).get('me'):
             seen[key] = 'shared'
             events.append(shared_event(account, owner, 'google', f['id'], f.get('name'), at.isoformat(),
                                        person(f.get('sharingUser') or (f.get('owners') or [{}])[0]), f.get('webViewLink'), f.get('mimeType')))
-    recent = source.files(f"trashed = false and modifiedTime > '{window}' and ('me' in owners or sharedWithMe = true)",
-                          'modifiedTime desc', MAX_FILES, fields)
+    recent, next_recent = ([], None) if cycle.get('recent_done') else source.files_page(
+        f"trashed = false and modifiedTime > '{window}' and ('me' in owners or sharedWithMe = true)",
+        'modifiedTime desc', MAX_FILES, fields, cycle.get('recent'))
+    cycle.update(recent=next_recent, recent_done=not next_recent)
     for f in recent:
         events += google_comment_events(account, owner, f, source.comments(f['id'], start), start, seen)
         owned = any(o.get('me') for o in f.get('owners') or [] if isinstance(o, dict))
@@ -502,7 +521,9 @@ def sync_google(store, config, account, helpers, state, now):
             if new and since is not None and not editor.get('me'):  # the first run only learns what is already there
                 events.append(suggestion_event(account, owner, 'google', f['id'], f.get('name'), changed.isoformat(), new,
                                                person(editor), f.get('webViewLink')))
-    return events, {'seen': trim(seen), 'suggested': dict(list(marks.items())[-200:])}
+    more = not (cycle['shared_done'] and cycle['recent_done'])
+    return events, {'seen': trim(seen), 'suggested': dict(list(marks.items())[-200:]),
+                    'google_cycle': cycle if more else None, 'more': more, 'caught_up_at': cycle['at']}
 
 
 def sync_microsoft(store, config, account, helpers, state, now):
@@ -513,7 +534,7 @@ def sync_microsoft(store, config, account, helpers, state, now):
     seen, marks = dict(state.get('seen') or {}), dict(state.get('suggested') or {})
     events = []
     shared_docs = []
-    for item in source.shared()[:MAX_SHARED * 2]:
+    for item in ([] if state.get('word_pending') else source.shared()[:MAX_SHARED * 2]):
         remote = item.get('remoteItem') if isinstance(item.get('remoteItem'), dict) else item
         share = (remote.get('shared') or {}) if isinstance(remote.get('shared'), dict) else {}
         drive = str((remote.get('parentReference') or {}).get('driveId') or '')
@@ -531,10 +552,11 @@ def sync_microsoft(store, config, account, helpers, state, now):
         changed = stamp(remote.get('lastModifiedDateTime'))
         if str(remote.get('name') or '').lower().endswith(WORD) and changed and changed >= start:
             shared_docs.append((drive, str(remote['id']), False))
-    changes, token = source.delta(state.get('delta'))
+    changes, token = ([], state.get('word_next')) if state.get('word_pending') else source.delta(state.get('delta'))
     own = [(str((i.get('parentReference') or {}).get('driveId') or ''), str(i['id']), True) for i in changes
            if i.get('id') and 'deleted' not in i and str(i.get('name') or '').lower().endswith(WORD)]
-    for drive, item_id, owned in (own + shared_docs)[:MAX_FILES]:
+    pending = list(state.get('word_pending') or own + shared_docs)
+    for drive, item_id, owned in pending[:MAX_FILES]:
         try:
             item = source.item(drive, item_id)
             data = source.download(item)
@@ -572,7 +594,12 @@ def sync_microsoft(store, config, account, helpers, state, now):
                 changed = stamp(item.get('lastModifiedDateTime')) or now
                 events.append(suggestion_event(account, owner, 'microsoft', file_id, title, changed.isoformat(), new,
                                                editor if editor[0] or editor[1] else (', '.join(sorted(authors))[:120], ''), link))
-    return events, {'seen': trim(seen), 'suggested': dict(list(marks.items())[-200:]), 'delta': token}
+    remaining = pending[MAX_FILES:]
+    cycle_at = state.get('word_cycle_at') or now.isoformat()
+    return events, {'seen': trim(seen), 'suggested': dict(list(marks.items())[-200:]),
+                    'delta': state.get('delta') if remaining else token, 'word_pending': remaining,
+                    'word_next': token if remaining else None, 'word_cycle_at': cycle_at if remaining else None,
+                    'more': bool(remaining), 'caught_up_at': cycle_at}
 
 
 def sync(store, config, account, helpers):
@@ -580,8 +607,12 @@ def sync(store, config, account, helpers):
     now = stamp(helpers.now())
     kind = provider(config, account)
     events, kept = (sync_microsoft if kind == 'microsoft' else sync_google)(store, config, account, helpers, state, now)
-    state.update(kept, since=now.isoformat(), provider=kind, coverage_complete=True, replies=replies_on(config, account, helpers),
-                 coverage=('Word and OneDrive' if kind == 'microsoft' else 'Google Docs') + ' caught up.')
+    more = kept.pop('more', False)
+    caught_up_at = kept.pop('caught_up_at', now.isoformat())
+    state.update(kept, provider=kind, coverage_complete=not more, replies=replies_on(config, account, helpers),
+                 coverage=('Word and OneDrive' if kind == 'microsoft' else 'Google Docs') + (' catching up.' if more else ' caught up.'))
+    if not more:
+        state['since'] = caught_up_at
     store.commit_page(account['id'], state, events)
     return {'mode': 'incremental', 'events': len(events)}
 

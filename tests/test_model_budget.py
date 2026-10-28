@@ -222,5 +222,14 @@ class Checks(unittest.TestCase):
         self.assertTrue(self.app.background_pause(owner=True)['limited'])
 
 
+class ProviderIsolation(unittest.TestCase):
+    def test_unused_full_provider_does_not_hold_selected_openai(self):
+        usage = [{'provider': 'anthropic', 'windows': [{'label': '5h', 'used': 100, 'reset': NOW + 3600}]},
+                 {'provider': 'openai-codex', 'windows': [{'label': '5h', 'used': 10, 'reset': NOW + 3600}]}]
+        self.assertIsNone(b.pause(b.for_model(usage, 'openai/gpt-6.1-sol'), NOW))
+        self.assertTrue(b.pause(b.for_model(usage, 'claude-cli/opus'), NOW))
+        self.assertEqual(b.for_model(usage, None), usage)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -373,8 +373,16 @@ def serve_once(jobs, run=None):
     reply = jobs.network(ask) or {}
     taken = 0
     for job in reply.get('jobs') or []:
-        if ready and isinstance(job, dict) and take(jobs, job, private, str(reply.get('me') or '')):
-            taken += 1
+        if ready and isinstance(job, dict):
+            if take(jobs, job, private, str(reply.get('me') or '')):
+                taken += 1
+            digest = str(job.get('ticket_hash') or '')
+            with jobs.connect() as db:
+                saved = db.execute('SELECT 1 FROM agent_relayed WHERE ticket_hash=?', (digest,)).fetchone()
+            if saved:
+                # The brief and ticket are committed locally before the relay can discard them. A lost ack is
+                # retried on redelivery; take()'s unique ticket prevents a second launch.
+                jobs.network({'action': 'received', 'ticket_hash': digest})
     for digest in reply.get('cancelled') or []:
         with jobs.connect() as db:
             row = db.execute('SELECT job_id FROM agent_relayed WHERE ticket_hash=?', (str(digest),)).fetchone()

@@ -14454,17 +14454,22 @@ class App:
         went = []
         for item in pushes:
             if subscriptions and self.config.get('dashboard_host') and push_send(self.store, self.config, subscriptions, item['payload'], 'held', push, kind=item['kind'], held=True):
+                with self.store.connect() as db:
+                    notify.delivered(db, [item])
                 went.append('push')
         target = (lines or handoffs) and self.notify_mail_target()
         if target:
             root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
             for item in handoffs:  # each its own email, once
                 message = notify.handoff_mail(item, root)
-                if (mail or notify.mail)(target[0], target[1], message['subject'], message['text']):
+                if (mail(*target, message['subject'], message['text']) if mail else notify.mail(*target, message['subject'], message['text'], delivery=item['delivery'])):
+                    with self.store.connect() as db:
+                        notify.delivered(db, [item])
                     went.append('email')
             message = notify.waiting_mail(lines, root) if lines else None
-            if message and (mail or notify.mail)(target[0], target[1], message['subject'], message['text']):
+            if message and (mail(*target, message['subject'], message['text']) if mail else notify.mail(*target, message['subject'], message['text'], delivery=lines[0]['batch'])):
                 with self.store.connect() as db:
+                    notify.delivered(db, lines)
                     notify.mailed(db)
                 went.append('email')
         if went:
@@ -17780,11 +17785,12 @@ class App:
         provider named, else the window's), instead of trying again every few minutes."""
         if not isinstance(receipt, dict) or receipt.get('error') != 'usage_limited':
             return None
-        until = model_budget.limit_until(receipt.get('retry_at'), getattr(self, 'model_usage', None))
+        model = openclaw_model(self.config)
+        until = model_budget.limit_until(receipt.get('retry_at'), model_budget.for_model(getattr(self, 'model_usage', None), model))
         known = getattr(self, 'usage_limit', None)
         if not known or known['until'] < until:
             LOG.warning('usage limit reached until=%s', dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(timespec='minutes'))
-        self.usage_limit = {'until': until, 'at': int(time.time())}
+        self.usage_limit = {'until': until, 'at': int(time.time()), 'provider': model_budget.provider_of(model)}
         getattr(self, 'model_usage_wake', threading.Event()).set()
         return until
 
@@ -17794,9 +17800,10 @@ class App:
         first look and its first draft, `signals` for a review of new signals (the week holds it only at WEEK_CAP). A sign-in that reports no usage windows (an API key) is never paused here.
         Each budget check is counted (pacing.py): how often background work paces, how long, how many jobs (`job`,
         an id that stays here) waited."""
-        now_s, usage = time.time(), getattr(self, 'model_usage', None)
+        model = openclaw_model(self.config)
+        now_s, usage = time.time(), model_budget.for_model(getattr(self, 'model_usage', None), model)
         limit = getattr(self, 'usage_limit', None)
-        if limit and limit['until'] > now_s:
+        if limit and limit['until'] > now_s and limit.get('provider') in (None, model_budget.provider_of(model)):
             return {'window': 'limit', 'until': limit['until'], 'limited': True}
         full = [{'window': '5h' if model_budget.window_kind(w['label']) == 'short' else 'week', 'until': w.get('reset'), 'limited': True}
                 for p in usage or [] for w in p.get('windows') or [] if w.get('used', 0) >= 100 and (w.get('reset') or now_s + 1) > now_s]
@@ -17847,12 +17854,12 @@ class App:
     def history_paced(self):
         """A board's look through the history keeps the daily share of the week (model_budget.pause without `signals`),
         also when it rides along with a review of new signals. Not counted in pacing.py: the review's own check is."""
-        return bool(model_budget.pause(getattr(self, 'model_usage', None)))
+        return bool(model_budget.pause(model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config))))
 
     def model_room(self, most=80):
         """The model's limits have room for extra work (a board's look through the history): no window the sign-in reports
         is past `most` percent used. Unknown usage counts as room."""
-        return all(w['used'] < most for p in getattr(self, 'model_usage', None) or [] for w in p.get('windows') or [])
+        return all(w['used'] < most for p in model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config)) or [] for w in p.get('windows') or [])
 
     def backfill_scores(self, board, text):
         """How likely each counterpart belongs on the board by meaning, from local embeddings: its messages against the

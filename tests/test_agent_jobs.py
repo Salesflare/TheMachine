@@ -375,12 +375,16 @@ class FakeNetwork:
             self.device = self.device or 'codex' in body['tools']
             out = []
             for h, j in self.jobs.items():
-                if 'codex' in body['tools'] and not j.get('taken') and not j.get('cancelled'):
+                if 'codex' in body['tools'] and not j.get('received') and not j.get('cancelled'):
                     j['taken'] = True
-                    out.append({'ticket_hash': h, 'job': j['job'], 'tool': 'codex', 'sealed': j.pop('sealed'), 'from': 'm:hosted',
+                    out.append({'ticket_hash': h, 'job': j['job'], 'tool': 'codex', 'sealed': j['sealed'], 'from': 'm:hosted',
                                 'from_keys': self.keys.get('m:hosted')})
             return {'jobs': out, 'cancelled': [h for h, j in self.jobs.items() if j.get('taken') and j.get('cancelled')], 'me': 'dev_1'}
+        if what == 'received':
+            self.jobs[body['ticket_hash']]['received'] = True
+            return {'ok': True}
         if what == 'progress':
+            self.jobs[body['ticket_hash']]['received'] = True
             self.jobs[body['ticket_hash']]['running'] = body['progress']
             return {'ok': True}
         if what == 'done':

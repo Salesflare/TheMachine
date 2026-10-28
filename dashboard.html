@@ -8992,7 +8992,8 @@ $('#bug-form').onsubmit=async e=>{e.preventDefault();const out=$('#bug-error'),w
  helpBox.close();w.value='';w.style.height='';bugShot=null;bugShotShow();
  try{const r=bugHosted()?await bugHostedKeep(body,diag):await bugAction('bug_send',{...body,diagnostics:diag});  // access only once the report is in hand
   const on=access?await supportAccessSet(true).then(()=>saOn(),()=>{toast('Support access didn’t turn on. Report it again with the box ticked.',true);return null}):false;if(on===null)return;
-  toast(r?.queued?t('Saved. It goes out by itself at {}.',fmtHM(r.at*1000)):t('Sent, thanks. You’ll see it here when it’s fixed.'));
+  toast(r?.queued?t('Saved. It goes out by itself at {}.',fmtHM(r.at*1000)):r?.sending?t('Saved. Sending…'):t('Sent, thanks. You’ll see it here when it’s fixed.'));
+  if(r?.completed)r.completed.then(({sent,error})=>{if(error)bugUndo(text,shot,diag,error.message);else toast(sent?.queued?t('Saved. It goes out by itself at {}.',fmtHM(sent.at*1000)):t('Sent, thanks. You’ll see it here when it’s fixed.'))});
   if(on)$('#toast').insertAdjacentHTML('beforeend',`<small class="toast-fine">${esc(t('Support can look until {}.',fmtDHM(saData.until,{weekday:'short',month:'short',day:'numeric'})))}</small>`);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),6000)}
  catch(err){bugUndo(text,shot,diag,err.message)}};
 // A report that didn't go: back in the form, as it was, with why
@@ -9023,7 +9024,7 @@ const bugPageDrop=q=>{bugPage=bugPage.filter(x=>x!==q);bugPageKeep()};
 // Kept on this device first, then (not awaited by the form) the support report and the control plane; a report that
 // can't go now goes to the Machine (bug_later) or stays here, and one refused for good comes back to the form
 async function bugHostedKeep(body,diag){const q={id:'p'+Date.now(),body,...(diag?{diag:true}:{}),next_at:Math.floor(Date.now()/1000)};bugPage.push(q);bugPageKeep();
- bugHostedGo(q).then(r=>{if(r?.queued)toast(t('Saved. It goes out by itself at {}.',fmtHM(r.at*1000)))},err=>bugUndo(body.description,body.screenshot,diag,err.message));return {sent:true}}
+ const completed=bugHostedGo(q).then(sent=>({sent}),error=>({error}));return {sending:true,completed}}
 async function bugHostedGo(q){q.busy=true;let r;
  try{await bugPageReport(q);r=await bugPost(q.body)}catch(err){bugPageDrop(q);throw err}finally{q.busy=false}
  if(r.sent){bugPageDrop(q);return r}
