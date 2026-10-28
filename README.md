@@ -44,6 +44,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 | Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |
 | Optional GBrain agent memory | [GBrain](docs/gbrain.md) |
 | Voice input: the mic in message boxes, on the Machine or with OpenAI | [Voice input](docs/voice.md) |
+| Talk live: a spoken conversation about a to-do, with OpenAI's Realtime voice | [Talk live](docs/talk-live.md) |
 | Encryption, reliability and roadmap of the Network | [Network](docs/network.md) |
 | Add a connector | [Adding a source](docs/adding-a-source.md) |
 | Sandbox, screenshots and layout checks | [Development](docs/development.md) |
@@ -60,7 +61,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 - Carries out owner-requested work, with useful task-specific Send, Submit or Merge actions where appropriate.
 - Shows health, review history and the same tasks on the dashboard and Telegram.
 - Hands a to-do to [Claude Code or Codex](docs/agents.md) when you ask; the job shows in their apps and never sends anything itself.
-- Lets you talk instead of type: [voice input](docs/voice.md) writes what you say into the box, turned into text on your own Machine, and never sends it.
+- Lets you talk instead of type: [voice input](docs/voice.md) writes what you say into the box, turned into text by OpenAI or on your own Machine, and never sends it; with OpenAI set up, [talk live](docs/talk-live.md) with The Machine about a to-do.
 - Follows your [skills](docs/skills.md): plain OpenClaw skills you write, approve or get from your Fleet or a friend; instructions only, never more permissions.
 
 ## The Machine and OpenClaw

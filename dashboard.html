@@ -1702,6 +1702,22 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 /* over the box's own border; a long message grows it upward rather than cutting it off */
 .mic-bar{position:absolute;left:-1px;right:-1px;bottom:-1px;z-index:2;display:flex;align-items:center;gap:6px;box-sizing:border-box;min-height:calc(100% + 2px);padding:6px 10px 6px 6px;border:1px solid var(--c-line-strong);border-radius:inherit;background:var(--surface)}
 .mic-wrap>.mic-bar{border-radius:12px}
+.chat-mic.chat-talk{-webkit-tap-highlight-color:transparent;background:var(--c-accent);color:var(--c-accent-ink,#fff)}.chat-talk svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.talk{display:grid;gap:6px;margin:0 0 8px}
+.talk-bar{display:flex;align-items:center;gap:8px;min-height:48px;box-sizing:border-box;padding:6px 6px 6px 14px;border:1px solid var(--c-line-strong);border-radius:24px;background:var(--surface)}
+.talk-live{flex:none;display:flex;align-items:center;gap:8px;font:500 .95rem/1.3 var(--sans);color:var(--text)}.talk-live.near .talk-time{color:var(--orange);font-weight:600}
+.talk-dot{width:10px;height:10px;border-radius:50%;background:var(--c-red,#d93025);animation:mic-pulse 1.4s ease-in-out infinite}.talk-dot.wait{background:var(--muted);animation:none}
+.talk-time{min-width:2.4em;font-variant-numeric:tabular-nums;color:var(--muted)}
+.talk-hint{flex:1;min-width:0;overflow:hidden;color:var(--muted);font:400 .9rem/1.3 var(--sans);text-overflow:ellipsis;white-space:nowrap}
+.talk-mute,.talk-end,.talk-send{flex:none;width:auto;min-height:36px;margin:0;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .88rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
+.talk-mute{margin-left:auto}.talk-mute[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.talk-end{border-color:transparent;background:var(--c-red,#d93025);color:#fff}
+.talk-err{border-color:var(--orange)}.talk-err .grow{color:var(--orange);font:600 .88rem/1.3 var(--sans)}.talk-err .talk-end{background:none;border-color:var(--c-line-strong);color:var(--text)}
+.talk-cost{padding:0 14px;color:var(--muted);font-size:.8rem}
+.talk-prop{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border:1px dashed var(--c-line-strong);border-radius:14px;background:var(--surface)}
+.talk-prop-text{flex:1;min-width:0;color:var(--text);font:400 .92rem/1.35 var(--sans)}
+.talk-send{background:var(--c-accent);border-color:transparent;color:var(--on-accent,#fff)}
+@media (max-width:520px){.talk-hint{display:none}}
 .mic-x{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--chat-quiet);font:400 24px/1 var(--sans);cursor:pointer}
 .mic-x:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}
 .mic-live{flex:1;min-width:0;display:flex;align-items:center;gap:10px;color:var(--text);font:500 .95rem/1.3 var(--sans)}
@@ -1717,7 +1733,7 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 @keyframes mic-pulse{50%{opacity:.3}}
 @keyframes mic-busy{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
 @media(max-width:420px){.mic-wave~.mic-hint{display:none}}
-@media(prefers-reduced-motion:reduce){.mic-dot,.mic-prog.busy i{animation:none}}
+@media(prefers-reduced-motion:reduce){.talk-dot,.mic-dot,.mic-prog.busy i{animation:none}}
 .chat-tray{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.chat-tray[hidden]{display:none}
 .chat-att{position:relative;display:flex;align-items:center;gap:8px;max-width:240px;height:52px;padding:0 30px 0 6px;border:1px solid var(--c-line-strong);border-radius:14px;background:var(--surface);font-size:.82rem;line-height:1.3}
 .chat-att.img{width:52px;padding:0;overflow:hidden}.chat-att.img img{width:100%;height:100%;object-fit:cover;display:block}.chat-att.img .chat-att-name{display:none}
@@ -3557,17 +3573,23 @@ let dictation={at:0,busy:false,timer:null};
 async function loadDictation(force){if(dictation.busy||(!force&&Date.now()-dictation.at<30000))return;dictation.busy=true;if(!state.dictation)renderDictation();
  try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_status',args:{settings:true}})});dictation.at=Date.now()}catch{}
  finally{dictation.busy=false}renderDictation()}
-function dictationNote(d){const l=d.local||{};if(d.engine==='openai')return t('Faster on a small server. Your recording goes to OpenAI, with your key.');
- return l.state==='ready'?t('Ready. Your recordings never leave this Machine.'):l.state==='preparing'?(l.step==='model'&&l.total?t('Getting voice ready… {}%',Math.min(99,Math.round(100*l.done/l.total))):t('Getting voice ready…'))
-  :l.state==='failed'?(l.error||t('Getting voice ready failed. Try again later.')):t('It sets itself up the first time you use the mic: a one-time download of about 600 MB.')}
+// One short line: which engine is in use, and how this Machine's own is getting on
+function dictationNote(d){const l=d.local||{},auto=d.engine==='auto';
+ if(d.in_use==='openai')return t('In use: OpenAI. Your recordings go to OpenAI.');
+ if(l.state==='ready')return t('In use: this Machine. Your recordings never leave it.');
+ if(l.state==='failed')return l.error||t('Getting voice ready failed. Try again later.');
+ if(l.state==='preparing')return t(auto?'Getting ready (in the background). Until then, your browser writes it down.':'Getting ready (in the background).');
+ return t(auto?'This Machine gets ready in the background when it’s quiet. Until then, your browser writes it down.':'This Machine gets ready in the background when it’s quiet.')}
 function renderDictation(){const d=state.dictation,box=$('#settings-dictation'),list=$('#dictation-list');box.hidden=false;
  if(!d||d.demo){list.innerHTML=`<div><span class="grow"><small>${esc(t(d?MIC_DEMO:'Loading…'))}</small></span></div>`;return}
  const opt=(v,label,on,off)=>`<option value="${v}"${on?' selected':''}${off?' disabled':''}>${esc(t(label))}</option>`,l=d.local||{};
- list.innerHTML=`<div><span class="grow"><strong>${esc(t('Turned into text'))}</strong><small id="dictation-note">${esc(dictationNote(d))}${l.state==='failed'&&d.engine==='local'?` <button type="button" class="quiet" data-dictation-retry>${esc(t('Try again'))}</button>`:''}</small></span><select id="dictation-engine" aria-label="${esc(t('Turned into text'))}">${opt('local','On this Machine',d.engine==='local')}${opt('openai',d.openai===null?'With OpenAI (checking…)':'With OpenAI',d.engine==='openai',!d.openai&&d.engine!=='openai')}</select></div>`
-  +(d.openai===false?`<div class="dictation-fine"><small>${esc(t('Using OpenAI needs an OpenAI API key in OpenClaw. A ChatGPT sign-in doesn’t include it.'))}</small></div>`:'')
-  +(d.engine==='local'?`<div><span class="grow"><strong>${esc(t('Accuracy'))}</strong><small>${esc(t(d.model==='base'?'Quicker, but it gets more words wrong.':'Best for most languages. Slower on a small server.'))}</small></span><select id="dictation-model" aria-label="${esc(t('Accuracy'))}">${opt('small','More accurate',d.model==='small')}${opt('base','Faster',d.model==='base')}</select></div>`:'')
-  +`<div><span class="grow"><strong>${esc(t('Language'))}</strong><small>${esc(t('Detect works for every app language. Picking yours is a little faster.'))}</small></span><select id="dictation-language" aria-label="${esc(t('Voice input language'))}"><option value=""${d.language?'':' selected'}>${esc(t('Detect'))}</option>${MIC_LANGS.map(([c,n])=>`<option value="${c}" translate="no"${d.language===c?' selected':''}>${n}</option>`).join('')}</select></div>`;
- clearTimeout(dictation.timer);if(l.state==='preparing'&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
+ list.innerHTML=`<div><span class="grow"><strong>${esc(t('Turned into text'))}</strong><small id="dictation-note">${esc(dictationNote(d))}${l.state==='failed'&&d.in_use==='local'?` <button type="button" class="quiet" data-dictation-retry>${esc(t('Try again'))}</button>`:''}</small></span><select id="dictation-engine" aria-label="${esc(t('Turned into text'))}">${opt('auto','Automatic',d.engine==='auto')}${opt('local','On this Machine',d.engine==='local')}${opt('openai',d.openai===null?'With OpenAI (checking…)':'With OpenAI',d.engine==='openai',!d.openai&&d.engine!=='openai')}</select></div>`
+  +(d.openai===false&&d.engine!=='local'?`<div class="dictation-fine"><small>${esc(t('OpenAI needs OpenAI set up in OpenClaw: an API key, or a ChatGPT sign-in that allows audio.'))}</small></div>`:'')
+  +(d.in_use==='local'?`<div><span class="grow"><strong>${esc(t('Accuracy'))}</strong><small>${esc(t(d.model==='base'?'Quicker, but it gets more words wrong.':'Best for most languages. Slower on a small server.'))}</small></span><select id="dictation-model" aria-label="${esc(t('Accuracy'))}">${opt('small','More accurate',d.model==='small')}${opt('base','Faster',d.model==='base')}</select></div>`:'')
+  +`<div><span class="grow"><strong>${esc(t('Language'))}</strong><small>${esc(t('Detect works for every app language. Picking yours is a little faster.'))}</small></span><select id="dictation-language" aria-label="${esc(t('Voice input language'))}"><option value=""${d.language?'':' selected'}>${esc(t('Detect'))}</option>${MIC_LANGS.map(([c,n])=>`<option value="${c}" translate="no"${d.language===c?' selected':''}>${n}</option>`).join('')}</select></div>`
+  +(d.talk?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t(d.talk.ready==null?'Checking…':d.talk.ready?'Ready. Tap the wave in a to-do’s chat to talk with The Machine.':'Needs OpenAI set up in OpenClaw: a ChatGPT sign-in, or an API key.'))}</small></span></div>`:'');
+ // Still preparing, or the Machine still asking OpenClaw what OpenAI can do here (it answers at once, and fills that in later)
+ clearTimeout(dictation.timer);if((l.state==='preparing'||d.openai==null||d.talk&&d.talk.ready==null)&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
 $('#settings-dictation').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select'))return;const key={'dictation-engine':'engine','dictation-model':'model','dictation-language':'language'}[el.id];if(!key)return;el.disabled=true;
  try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prefs',args:{[key]:el.value}})});micPrepped=false;notice(t('Saved.'))}catch(err){errCaught(err);notice(err.message)}renderDictation()});
 $('#settings-dictation').addEventListener('click',async e=>{if(!e.target.closest('[data-dictation-retry]'))return;try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prepare',args:{}})})}catch(err){errCaught(err);notice(err.message)}renderDictation()});
@@ -5527,12 +5549,14 @@ function chatView(s,groups){const p=chatParts(s);
  return `<div class="chat-layout${chatDrawer?' drawer':''}" data-chat="${s.id}">${side}<div class="chat-main"><header class="chat-head"><a class="chat-back" href="#card=${s.id}" data-chat-back aria-label="Back to the to-do" title="Back to the to-do">${BACK}</a><h2 class="chat-title" title="${esc(s.title)}" translate="no">${esc(s.title)}</h2>
   <details class="chat-menu" id="chat-menu"><summary aria-label="More actions" title="More actions">${DOTS}</summary><div class="chat-menu-list" role="group" aria-label="More actions">${p.rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button></div></details></header>
  <article id="task-${s.id}" class="chat-panel">${p.panel}</article><div class="chat-log" id="chat-log" aria-live="polite">${chatLog(s)}</div>
- <div class="chat-compose"><div class="offline-bar chat-offline" id="chat-offline" role="status"${netShown()?'':' hidden'}>${netShown()?netHtml():''}</div><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':' hidden'}>${chatPicks(s)}</div><p class="chat-drop-hint">Drop to add to your message</p><p class="chat-file-error" id="chat-file-error" role="alert" hidden></p><div class="chat-tray" id="chat-tray"${chatPending.length?'':' hidden'}>${chatTrayHTML()}</div><div class="chat-box"><button type="button" class="chat-attach" data-chat-attach aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="chat-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="${esc(window.t('Ask or change something'))}" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span>${micBtn()}<button type="button" class="chat-send chat-stop" data-chat-stop aria-label="Stop" title="Stop"${chat?.active?'':' hidden'}>${STOP}</button><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send"${chat?.active?' hidden':''} disabled>${SEND}</button></div></div><div class="chat-model" id="chat-model">${cmPill('chat')}</div></div></div></div>`}
+ <div class="chat-compose"><div class="offline-bar chat-offline" id="chat-offline" role="status"${netShown()?'':' hidden'}>${netShown()?netHtml():''}</div><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':' hidden'}>${chatPicks(s)}</div><p class="chat-drop-hint">Drop to add to your message</p><p class="chat-file-error" id="chat-file-error" role="alert" hidden></p><div class="chat-tray" id="chat-tray"${chatPending.length?'':' hidden'}>${chatTrayHTML()}</div><div class="chat-box"><button type="button" class="chat-attach" data-chat-attach aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="chat-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="${esc(window.t('Ask or change something'))}" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span>${micBtn()}${talkBtn()}<button type="button" class="chat-send chat-stop" data-chat-stop aria-label="Stop" title="Stop"${chat?.active?'':' hidden'}>${STOP}</button><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send"${chat?.active?' hidden':''} disabled>${SEND}</button></div></div><div class="chat-model" id="chat-model">${cmPill('chat')}</div></div></div></div>`}
 function chatGrow(t){if(!t)return;t.style.height='34px';t.style.height=Math.min(160,Math.max(34,t.scrollHeight))+'px';chatSendState()}
 // While a reply runs, Stop takes the place of Send until something is typed or added (sending then replaces the run).
 function chatSendState(){const t=$('#chat-input'),b=$('[data-chat-send]'),x=$('[data-chat-stop]');if(!t||!b)return;
  const has=!!t.value.trim()||chatPending.length>0,ready=chatPending.every(f=>f.state==='ok'),stop=!!chat?.active&&!has;
- b.disabled=!has||!ready;b.hidden=stop;if(x){x.hidden=!stop;if(!stop)x.disabled=false}}
+ // With Talk live here, an empty box shows the wave where Send goes (as Send has nothing to send then)
+ const w=$('.chat-compose [data-talk]'),talkHere=!!w&&talkOk();if(w)w.hidden=!talkHere||has||stop;
+ b.disabled=!has||!ready;b.hidden=stop||talkHere&&!has;if(x){x.hidden=!stop;if(!stop)x.disabled=false}}
 // Files the owner added (chat_files.py), on their message or on the to-do they made: images as pictures, the rest as chips
 function chatAttHTML(fs){fs=fs||[];if(!fs.length)return '';const imgs=fs.filter(f=>/^image\//.test(f.type)),docs=fs.filter(f=>!/^image\//.test(f.type)),url=f=>'api/chat-file?id='+encodeURIComponent(f.id);
  return `<div class="chat-you-files">${imgs.map(f=>`<a class="chat-you-img" href="${url(f)}" target="_blank" rel="noopener" title="${esc(f.name)}"><img src="${url(f)}" alt="${esc(f.name)}" loading="lazy"></a>`).join('')}${docs.length?`<div class="chat-files">${docs.map(f=>`<a class="agent-file via-file" href="${url(f)}" target="_blank" rel="noopener" download="${esc(f.name)}">${esc(f.name)}</a>`).join('')}</div>`:''}</div>`}
@@ -5576,29 +5600,43 @@ const MIC='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="
 const CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const MIC_MAX=120,MIC_HOLD=600;
 const micBtn=()=>`<button type="button" class="chat-mic" data-mic aria-label="Talk" title="Talk">${MIC}</button>`;
-let mic=null,micPrepped=false,micDemo=false;  // the one recording at a time; whether this page asked the Machine to get voice ready; the site's demo (it answers {demo:true})
+let mic=null,micPrepped=false,micDemo=false,micUse='';  // the one recording at a time; whether this page asked the Machine; the site's demo (it answers {demo:true}); what a tap does now (voice_view's use)
 const MIC_DEMO='Voice input works on your own Machine. This demo can’t listen.';
 const micOk=()=>!!(window.isSecureContext&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder&&window.OfflineAudioContext);
 const micClock=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const micPost=(action,args={},upload=false)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,...(upload?{'X-Upload':'voice'}:{})},body:JSON.stringify({action,args})});
 // The first tap gets the Machine's own engine ready while the owner talks (a download the first time only).
-async function micPrep(){if(micPrepped)return;micPrepped=true;try{const s=await micPost('voice_status');if(s.demo)micDemo=true;else if(s.engine==='local'&&['missing','failed'].includes(s.local?.state))await micPost('voice_prepare')}catch{micPrepped=false}}
+// What a tap does is asked once: OpenAI or this Machine; on Automatic while this Machine's own isn't ready yet, the
+// browser's own speech recognition (it never waits on a download); with On this Machine picked, the recording waits.
+async function micPrep(){if(micPrepped)return;micPrepped=true;try{const s=await micPost('voice_status');if(s.demo)micDemo=true;micUse=s.use||''}catch{micPrepped=false}}
+const micSR=()=>window.SpeechRecognition||window.webkitSpeechRecognition;
+const MIC_BCP={de:'de-DE',en:'en-US',es:'es-ES',fr:'fr-FR',it:'it-IT',nl:'nl-NL',pt:'pt-BR'};
+// The browser's own speech recognition, while this Machine's own engine isn't ready: what it hears is kept as it goes
+function micBrowser(v){const SR=micSR(),sr=new SR(),code=(state.dictation?.language||document.documentElement.lang||'en').slice(0,2);
+ Object.assign(sr,{lang:MIC_BCP[code]||'en-US',continuous:true,interimResults:true});v.sr=sr;v.heard=[];v.interim='';v.browser=true;
+ sr.onresult=e=>{let now='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)v.heard.push(r[0].transcript.trim());else now+=r[0].transcript}v.interim=now.trim()};
+ sr.onerror=e=>{if(mic!==v||e.error==='no-speech'||e.error==='aborted')return;v.srFailed=e.error==='not-allowed'||e.error==='service-not-allowed'?'blocked':'other'};
+ // Chrome stops after a pause: it goes on until Done, the cross or 2 minutes
+ sr.onend=()=>{if(mic!==v)return;if(v.state==='rec'&&!v.srFailed){try{sr.start()}catch{}return}
+  if(v.state==='work'){const text=[...v.heard,v.interim].filter(Boolean).join(' ');v.sr=null;
+   if(!text&&v.srFailed){micFail(v,v.srFailed==='blocked'?t('The microphone is blocked. Allow it for this site in your browser’s settings.'):t('Your browser’s speech recognition didn’t answer. Try again.'));return}micDone(v,text)}}
+ sr.start()}
 function micPaint(v){if(!v.box.isConnected){const box=document.getElementById(v.input)?.closest('.chat-box,.mic-wrap');if(!box){micCancel();return}v.box=box}
  let bar=v.box.querySelector(':scope>.mic-bar');if(!bar){bar=document.createElement('div');bar.className='mic-bar';bar.setAttribute('role','status');v.box.append(bar)}v.box.classList.add('mic-on');
  const x=`<button type="button" class="mic-x" data-mic-cancel aria-label="Cancel" title="Cancel">×</button>`,rec=v.state==='rec'||v.state==='start';
  // Drawn once per state, so a button never changes under a finger; the clock, the level and the progress update in place
  const key=v.state+'|'+(v.error||'')+'|'+!!v.wav+'|'+!!v.capped;
- if(bar.dataset.k!==key){bar.dataset.k=key;bar.innerHTML=rec?`${x}<span class="mic-live"><i class="mic-dot" aria-hidden="true"></i><span class="mic-time">0:00</span><span class="mic-wave" aria-hidden="true">${'<i></i>'.repeat(v.levels.length)}</span><span class="mic-hint">${esc(t(v.state==='start'?'Starting the microphone…':'Listening…'))}</span></span><button type="button" class="chat-send mic-done" data-mic-stop aria-label="Done" title="Done"${v.state==='start'?' disabled':''}>${CHECK}</button>`
+ if(bar.dataset.k!==key){bar.dataset.k=key;bar.innerHTML=rec?`${x}<span class="mic-live"><i class="mic-dot" aria-hidden="true"></i><span class="mic-time">0:00</span><span class="mic-wave" aria-hidden="true">${'<i></i>'.repeat(v.levels.length)}</span><span class="mic-hint">${esc(t(v.state==='start'?'Starting the microphone…':v.browser?'Your browser writes this one down.':'Listening…'))}</span></span><button type="button" class="chat-send mic-done" data-mic-stop aria-label="Done" title="Done"${v.state==='start'?' disabled':''}>${CHECK}</button>`
   :v.state==='error'?`${x}<span class="mic-live mic-err">${esc(v.error)}</span>${v.wav?`<button type="button" class="mic-retry" data-mic-retry>${esc(t('Try again'))}</button>`:''}`
   :`${x}<span class="mic-live"><i class="mic-spin" aria-hidden="true"></i><span class="mic-hint"></span></span><span class="mic-prog" aria-hidden="true"${v.state==='prep'?'':' hidden'}><i></i></span>`}
  if(rec){const left=MIC_MAX-v.secs,near=v.state==='rec'&&left<=15,live=bar.querySelector('.mic-live');live.classList.toggle('near',near);
   bar.querySelector('.mic-time').textContent=near?t('{} left',micClock(Math.ceil(left))):micClock(v.secs);
   bar.querySelectorAll('.mic-wave i').forEach((el,i)=>{el.style.height=Math.round(3+v.levels[i]*19)+'px'})}
- else if(v.state!=='error'){bar.querySelector('.mic-hint').textContent=v.state==='wait'?t('Kept until you’re back online.'):v.state==='prep'?(v.pct!=null?t('Getting voice ready… {}%',v.pct):t('Getting voice ready…')):v.capped?t('Stopped at 2 minutes. Writing it down…'):t('Writing it down…');
+ else if(v.state!=='error'){bar.querySelector('.mic-hint').textContent=v.state==='wait'?t('Kept until you’re back online.'):v.state==='prep'?(v.left!=null?(v.left<=1?t('Getting voice ready… about a minute left'):t('Getting voice ready… about {} minutes left',v.left)):v.pct!=null?t('Getting voice ready… {}%',v.pct):t('Getting voice ready… This takes a few minutes.')):v.capped?t('Stopped at 2 minutes. Writing it down…'):t('Writing it down…');
   const p=bar.querySelector('.mic-prog');p.hidden=v.state!=='prep';p.firstChild.style.width=(v.pct||0)+'%';p.classList.toggle('busy',v.pct==null)}}
 function micClose(v){if(v.box){v.box.classList.remove('mic-on');v.box.querySelector(':scope>.mic-bar')?.remove()}if(mic===v)mic=null}
 function micRelease(v){clearInterval(v.tick);v.tick=null;try{v.stream?.getTracks().forEach(x=>x.stop())}catch{}try{v.meter?.close()}catch{}v.meter=null}
-function micCancel(){const v=mic;if(!v)return;mic=null;if(v.rec){v.rec.onstop=null;try{if(v.rec.state!=='inactive')v.rec.stop()}catch{}}micRelease(v);micClose(v);document.getElementById(v.input)?.focus({preventScroll:true})}
+function micCancel(){const v=mic;if(!v)return;mic=null;if(v.sr){try{v.sr.abort()}catch{}v.sr=null}if(v.rec){v.rec.onstop=null;try{if(v.rec.state!=='inactive')v.rec.stop()}catch{}}micRelease(v);micClose(v);document.getElementById(v.input)?.focus({preventScroll:true})}
 function micFail(v,msg){v.state='error';v.error=msg;micRelease(v);micPaint(v)}
 async function micStart(btn,down){if(mic)return;const box=btn.closest('.chat-box,.mic-wrap'),input=box?.querySelector('textarea');if(!input)return;
  const v=mic={box,input:input.id,state:'start',chunks:[],levels:Array(18).fill(0),secs:0,down};
@@ -5609,16 +5647,19 @@ async function micStart(btn,down){if(mic)return;const box=btn.closest('.chat-box
  catch(e){await prep;if(mic!==v)return;micFail(v,micDemo?t(MIC_DEMO):e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(mic!==v){stream.getTracks().forEach(x=>x.stop());return}  // canceled while the browser asked
+ await prep;if(mic!==v){stream.getTracks().forEach(x=>x.stop());return}
+ if(micUse==='browser'&&micSR()){try{micBrowser(v)}catch{v.browser=false}
+  if(v.browser){Object.assign(v,{stream,state:'rec',t0:Date.now()});micMeter(v,stream);v.tick=setInterval(()=>micTick(v),100);micPaint(v);return}}
  const type=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'].find(x=>MediaRecorder.isTypeSupported?.(x))||'';
  let rec;try{rec=new MediaRecorder(stream,type?{mimeType:type,audioBitsPerSecond:32000}:{})}catch{micFail(v,t('The microphone couldn’t start. Try again.'));stream.getTracks().forEach(x=>x.stop());return}
  Object.assign(v,{stream,rec,state:'rec',t0:Date.now()});
  rec.ondataavailable=e=>{if(e.data?.size)v.chunks.push(e.data)};rec.onstop=()=>micStopped(v);rec.start(1000);
- try{const ac=new (window.AudioContext||window.webkitAudioContext)(),an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(stream).connect(an);v.meter=ac;v.analyser=an;v.wave=new Uint8Array(an.fftSize)}catch{}
- v.tick=setInterval(()=>micTick(v),100);micPaint(v)}
+ micMeter(v,stream);v.tick=setInterval(()=>micTick(v),100);micPaint(v)}
+function micMeter(v,stream){try{const ac=new (window.AudioContext||window.webkitAudioContext)(),an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(stream).connect(an);v.meter=ac;v.analyser=an;v.wave=new Uint8Array(an.fftSize)}catch{}}
 function micTick(v){if(mic!==v||v.state!=='rec')return;v.secs=(Date.now()-v.t0)/1000;
  if(v.analyser){v.analyser.getByteTimeDomainData(v.wave);let sum=0;for(const x of v.wave)sum+=((x-128)/128)**2;v.levels=[...v.levels.slice(1),Math.min(1,Math.sqrt(sum/v.wave.length)*4)]}
  if(v.secs>=MIC_MAX){v.capped=true;micStop();return}micPaint(v)}
-function micStop(){const v=mic;if(!v||v.state!=='rec')return;v.state='work';micRelease(v);try{v.rec.stop()}catch{micStopped(v)}micPaint(v)}
+function micStop(){const v=mic;if(!v||v.state!=='rec')return;v.state='work';micRelease(v);if(v.sr){try{v.sr.stop()}catch{v.sr.onend?.()}micPaint(v);return}try{v.rec.stop()}catch{micStopped(v)}micPaint(v)}
 async function micStopped(v){if(mic!==v)return;const blob=new Blob(v.chunks,{type:v.rec?.mimeType||'audio/webm'});v.chunks=[];
  if((Date.now()-v.t0)<500||!blob.size){micFail(v,t('That was too short. Talk a little longer.'));return}
  try{v.wav=await micWav(blob)}catch{if(mic===v)micFail(v,t('That recording couldn’t be read. Try again.'));return}micSend(v)}
@@ -5645,7 +5686,10 @@ function micResume(){try{if(mic?.state==='wait')micSend(mic)}catch{}}
 async function micReady(v,s){for(;;){if(mic!==v)return;const l=s?.local||{};
   if(l.state==='ready')return;if(l.state==='failed')throw Error(l.error||t('Getting voice ready failed. Try again later.'));
   if(l.state==='missing')await micPost('voice_prepare');
-  v.state='prep';v.pct=l.step==='model'&&l.total?Math.min(99,Math.round(100*l.done/l.total)):null;micPaint(v);
+  v.state='prep';v.pct=l.step==='model'&&l.total?Math.min(99,Math.round(100*l.done/l.total)):null;
+  // Minutes left from the download's own pace (once it has gone a few seconds), plus about a minute to start it
+  if(l.step==='model'&&l.total){const now=Date.now();v.seen=v.seen||{at:now,done:l.done};const secs=(now-v.seen.at)/1000,rate=secs>=4?(l.done-v.seen.done)/secs:0;
+   v.left=rate>0?Math.max(1,Math.ceil(((l.total-l.done)/rate+60)/60)):null}else v.left=null;micPaint(v);
   await new Promise(r=>setTimeout(r,1500));s=await micPost('voice_status')}}
 function micDone(v,text){const input=document.getElementById(v.input);micClose(v);if(!input)return;text=text.trim();
  if(!text){toast(t('I didn’t catch anything. Try again.'),true);return}
@@ -5659,6 +5703,84 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-mic],[data
  if(b.hasAttribute('data-mic-stop'))micStop();else if(b.hasAttribute('data-mic-cancel'))micCancel();else if(mic?.wav)micSend(mic)},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mic){e.preventDefault();e.stopPropagation();micCancel()}},true);  // before a dialog closes on it
 document.addEventListener('close',e=>{if(mic&&e.target.contains?.(mic.box))micCancel()},true);
+// Talk live (talk_live.py): a spoken conversation with The Machine about the open to-do, with OpenAI's Realtime voice.
+// The Machine starts the session (the OpenAI sign-in and the session's secret never come here) and hands on this page's
+// WebRTC offer; the audio then goes directly between this page and OpenAI. The voice gets this page's tools: two that
+// read, through the Machine, and `propose`, which only shows a request here. It goes to the chat only on a tap, and what
+// the chat drafts waits for Approve as always: a spoken yes never sends anything. What both sides say goes into the
+// chat. At most 10 minutes, with a warning a minute before.
+const WAVE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>';
+let talk=null,talkInfo={at:0,ready:null,busy:false};  // the one open conversation; whether this Machine can talk live (asked every 10 minutes)
+const talkOk=()=>talkInfo.ready===true&&!!(window.RTCPeerConnection&&navigator.mediaDevices?.getUserMedia);
+const talkBtn=()=>`<button type="button" class="chat-mic chat-talk" data-talk aria-label="Talk live" title="Talk live"${talkOk()?'':' hidden'}>${WAVE}</button>`;
+async function talkLoad(){if(talkInfo.busy||Date.now()-talkInfo.at<600000)return;talkInfo.busy=true;
+ let later=false;try{const r=await micPost('talk_status');talkInfo.ready=r.demo?false:r.ready===true;later=!r.demo&&r.ready==null}catch{}finally{talkInfo.busy=false;talkInfo.at=later?0:Date.now()}
+ if(later&&!talkInfo.retry)talkInfo.retry=setTimeout(()=>{talkInfo.retry=null;if(chatOpen())talkLoad()},3000);  // the Machine is still asking OpenClaw
+ chatSendState()}
+function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector('.chat-compose');if(!box){talkEnd();return}
+ let bar=box.querySelector(':scope>.talk');if(!bar){bar=document.createElement('div');bar.className='talk';box.insertBefore(bar,box.querySelector('.chat-box'))}
+ const key=v.state+'|'+v.muted+'|'+v.props.length+'|'+(v.error||'');
+ if(bar.dataset.k!==key){bar.dataset.k=key;
+  const props=v.props.map((p,i)=>`<div class="talk-prop"><span class="talk-prop-text">${esc(p)}</span><button type="button" class="talk-send" data-talk-send="${i}">${esc(t('Send to chat'))}</button></div>`).join('');
+  bar.innerHTML=v.state==='error'?`<div class="talk-bar talk-err" role="alert"><span class="grow">${esc(v.error)}</span><button type="button" class="talk-end" data-talk-close>${esc(t('Close'))}</button></div>`
+   :`${props}<div class="talk-bar" role="status"><span class="talk-live"><i class="talk-dot${v.state==='live'?'':' wait'}" aria-hidden="true"></i><strong>${esc(t(v.state==='live'?'Live':'Connecting…'))}</strong><span class="talk-time"></span></span><span class="talk-hint"></span>`
+   +`<button type="button" class="talk-mute" data-talk-mute aria-pressed="${v.muted}"${v.state==='live'?'':' disabled'}>${esc(t(v.muted?'Unmute':'Mute'))}</button><button type="button" class="talk-end" data-talk-end>${esc(t('End'))}</button></div>`
+   +(v.per_use?`<small class="talk-cost">${esc(t('OpenAI charges your API key per minute of talk.'))}</small>`:'')}
+ if(v.state==='error')return;
+ const left=v.limit-v.secs,near=v.state==='live'&&left<=v.limit-v.warn;
+ bar.querySelector('.talk-time').textContent=near?t('{} left',micClock(Math.max(0,Math.ceil(left)))):v.state==='live'?micClock(v.secs):'';
+ bar.querySelector('.talk-hint').textContent=v.muted?t('Muted'):v.state==='live'?t('Talk, then listen. Nothing is sent.'):'';
+ bar.querySelector('.talk-live').classList.toggle('near',near)}
+function talkFail(v,msg){if(talk!==v)return;talkClose(v);v.state='error';v.error=msg;talk=v;talkPaint()}
+function talkClose(v){clearInterval(v.tick);try{v.dc?.close()}catch{}try{v.pc?.close()}catch{}try{v.stream?.getTracks().forEach(x=>x.stop())}catch{}
+ if(v.audio){v.audio.srcObject=null;v.audio.remove()}if(v.id&&!v.ended){v.ended=true;micPost('talk_end',{id:v.id}).catch(()=>{})}}
+function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove()}
+async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
+ const v=talk={sid:s.id,state:'start',props:[],muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set()};talkPaint();
+ try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
+ catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
+  :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
+ if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
+ try{const r=await micPost('talk_start',{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.propose_note||''});talkPaint();
+  const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
+  pc.ontrack=e=>{v.audio.srcObject=e.streams[0]};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
+  pc.onconnectionstatechange=()=>{if(talk===v&&['failed','disconnected'].includes(pc.connectionState))talkFail(v,t('Talk live lost its connection. Start it again to go on.'))};
+  const dc=v.dc=pc.createDataChannel('oai-events');dc.onopen=()=>talkReady(v);dc.onmessage=e=>talkEvent(v,e.data);
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+  const a=await micPost('talk_offer',{id:v.id,sdp:offer.sdp});if(talk!==v)return;await pc.setRemoteDescription({type:'answer',sdp:a.sdp})}
+ catch(err){if(err.offline)netSet(true,err.restarting);talkFail(v,err.offline?t('Offline. Start it again when you’re back online.'):err.message||t('Talk live couldn’t start. Try again.'))}}
+// The voice's own setup: this page's instructions and tools (never the Gateway's agent), and what the owner says written down
+function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'}}}}}));
+ v.tick=setInterval(()=>talkTick(v),250);talkPaint()}
+function talkTick(v){if(talk!==v)return;if(chatOpen()?.id!==v.sid){talkEnd();return}v.secs=(Date.now()-v.t0)/1000;
+ if(v.secs>=v.limit){talkEnd();toast(t('Talk live ends after 10 minutes. Start it again to go on.'));return}talkPaint()}
+async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)}catch{return}
+ if(e.type==='conversation.item.input_audio_transcription.completed')talkLine(v,'user',e.transcript,e.item_id);
+ else if(e.type==='response.output_audio_transcript.done')talkLine(v,'assistant',e.transcript,e.item_id);
+ else if(e.type==='response.function_call_arguments.done')talkTool(v,e)}
+// What one side said goes into the chat as an ordinary message (and is kept by the Machine, talk_line)
+function talkLine(v,role,text,item){text=String(text||'').trim();const key=role+':'+(item||text);if(!text||v.said.has(key))return;v.said.add(key);
+ micPost('talk_line',{id:v.id,role,text}).catch(()=>{});
+ if(chat&&chatOpen()?.id===v.sid){chat={...chat,items:[...(chat.items||[]),{kind:role==='user'?'you':'reply',text,via:'live',at:Date.now()}]};paintChat();chatToEnd()}}
+async function talkTool(v,e){let args={},output;try{args=JSON.parse(e.arguments||'{}')}catch{}
+ if(e.name==='propose'){const req=String(args.request||'').trim().slice(0,2000);if(req&&!v.props.includes(req)){v.props=[...v.props.slice(-2),req];talkPaint()}
+  output={shown:!!req,note:v.note}}
+ else try{output=(await micPost('talk_tool',{id:v.id,name:e.name,args})).output}catch(err){output={error:err.message}}
+ if(talk!==v||v.dc?.readyState!=='open')return;
+ v.dc.send(JSON.stringify({type:'conversation.item.create',item:{type:'function_call_output',call_id:e.call_id,output:JSON.stringify(output)}}));
+ v.dc.send(JSON.stringify({type:'response.create'}))}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-end],[data-talk-close],[data-talk-mute],[data-talk-send]');if(!b)return;e.preventDefault();
+ if(b.hasAttribute('data-talk')){if(talk)talkEnd();else talkStart();return}
+ if(b.hasAttribute('data-talk-end')||b.hasAttribute('data-talk-close')){talkEnd();return}
+ const v=talk;if(!v)return;
+ if(b.hasAttribute('data-talk-mute')){v.muted=!v.muted;v.stream?.getAudioTracks().forEach(x=>{x.enabled=!v.muted});talkPaint();return}
+ // The owner's tap: the proposal goes into the chat as their message, the normal way (decideOrWait)
+ const req=v.props[+b.dataset.talkSend],input=$('#chat-input');if(!req||!input)return;v.props=v.props.filter(p=>p!==req);talkPaint();
+ // (what the owner had typed already stays: then the proposal joins it in the box, for them to send)
+ if(input.value.trim()){input.value=input.value.trimEnd()+' '+req;chatGrow(input);chatSendState();input.focus();return}
+ input.value=req;chatGrow(input);chatSendState();chatSubmit()});
 // On open: the latest at the bottom, nothing cut off under the header; a short chat just sits under the header.
 // The thread scrolls in its own box (on a phone too, so the message box never moves); a page without that layout scrolls itself.
 const chatScroller=()=>{const l=$('#chat-log');return l&&getComputedStyle(l).overflowY!=='visible'?l:null};
@@ -5737,7 +5859,7 @@ async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
 let chatPushed=false;
 function openChatLink(){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
- if(id===chatId)return;const was=chatId;chatId=id;chat=null;chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
+ if(id===chatId)return;const was=chatId;chatId=id;chat=null;if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
  if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatDraftBack(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;

@@ -15,26 +15,53 @@ functions in `dashboard.html`.
 3. The service checks the WAV (`voice_input.pcm`) and turns it into text with the engine the owner picked, and the
    dashboard puts the text in the box at the cursor.
 
-The browser's own speech recognition (`SpeechRecognition`) is never used: in Chrome it sends the audio to Google, and
-Firefox doesn't have it. A clip is only in memory on the Machine (for the OpenAI engine, also in a private file for
+The browser's own speech recognition (`SpeechRecognition`) is used in one case only: on **Automatic**, without OpenAI,
+while the Machine's own engine isn't ready yet (`voice_status`'s `use` is `browser`), and the box says so ("Your browser
+writes this one down."). In Chrome it sends the audio to Google, so it's never used with **On this Machine** picked, and
+where a browser doesn't have it (Firefox) the clip waits for the Machine instead. A clip is only in memory on the Machine (for the OpenAI engine, also in a private file for
 the seconds the call takes), never stored, and the log has only its length.
 
 ## Engines
 
-- **On this Machine** (the default): [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 1.2.1 on CTranslate2,
+Settings, Voice input, **Turned into text** (`voice_input.ENGINES`), with one short line saying which one is in use
+(`voice_status`'s `in_use`):
+
+- **Automatic** (the default): OpenAI when the Machine has OpenAI access that can transcribe, else this Machine.
+  `voice_input.engine_for` decides. OpenAI access is checked at start and every 5 minutes (kept 10 minutes), so OpenAI
+  connected later switches to it by itself, and a Machine with OpenAI never downloads the local model. When OpenAI
+  refuses a clip (a ChatGPT plan without audio), the service stops offering it for an hour and uses this Machine.
+- **On this Machine**: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 1.2.1 on CTranslate2,
   int8 on the CPU, in `voice_worker.py`. The service starts the worker on the first clip and stops it after 5 minutes
   without one, so its memory is free again. The worker and the package install run at a lower priority (`nice -n 10`,
-  below-normal priority on Windows), so reviews and the rest of the Machine come first. Clips go through it one at a time. The language is the one picked in
-  Settings, or detected among the app's seven languages.
-- **With OpenAI**: the owner's own OpenAI API key in OpenClaw, through `openclaw infer audio transcribe` with
-  `gpt-4o-transcribe`. Offered only when `openclaw infer audio providers` says OpenAI is configured with a key. A
-  ChatGPT (Codex) sign-in doesn't give access to OpenAI's audio API.
+  below-normal priority on Windows), so reviews and the rest of the Machine come first. Clips go through it one at a
+  time. The language is the one picked in Settings, or detected among the app's seven languages.
+- **With OpenAI**: through `openclaw infer audio transcribe` with `gpt-4o-transcribe`. Offered when
+  `openclaw infer audio providers` says OpenAI is configured. That's an OpenAI API key, or the ChatGPT (Codex) sign-in:
+  OpenClaw's docs say its batch transcription can use the ChatGPT OAuth profile "when the account permits it". OpenAI's
+  own Sign in with ChatGPT docs only describe the Responses API, so a plan without audio gets a clear error and
+  **Automatic** falls back to this Machine.
 
-## First use, sizes and speed
+## Getting ready ahead of time
 
-Nothing is added to the install or the prebuilt images, so installs are as fast as before. The first tap on the mic
-prepares the local engine in the background while the dashboard shows "Getting voice ready…" with its progress, and the
-clip is written down when it's done:
+Nothing is added to the install, setup or the prebuilt images, so a new Machine sets up as fast as before. The local
+engine is prepared ahead of time by `voice_warm_worker`, never during setup:
+
+- only when the Machine will use it: **On this Machine** picked, or **Automatic** without OpenAI access;
+- only once the Machine is live: its first full review finished;
+- only when it has been quiet for 15 minutes (3 checks, 5 minutes apart, with no review or preparation running and a
+  load average under half the cores), on a Standard server as on a desktop;
+- only when the disk check passes (2 GB free); after a failure it waits 6 hours before trying again;
+- at a lower priority (`nice -n 10`). A release that changes `voice-requirements.txt` prepares the packages again the
+  same way.
+
+Settings shows "Getting ready (in the background)" while it runs. A tap on the mic never waits on it when there's
+another way: OpenAI when available, else on **Automatic** the browser's own speech recognition where it has one. Only
+with **On this Machine** picked (or a browser without speech recognition) does the clip wait, with "Getting voice
+ready…" and the time left, estimated from the download's pace.
+
+## Sizes and speed
+
+What the local engine downloads, once:
 
 | Step | Download | On disk |
 |---|---|---|

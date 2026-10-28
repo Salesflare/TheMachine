@@ -15,19 +15,29 @@ While it listens, the box shows a timer. Tap the cross to stop without keeping a
 
 What you said lands in the box, where your cursor was. Nothing is sent: read it, change what you like, and send it yourself.
 
-## The first time
-
-The first time you tap the mic, your Machine gets voice ready. It downloads the speech model once, 150 to 500 MB, and says "Getting voice ready…" with how far it is. That takes a few minutes. Your recording waits and is written down as soon as it's ready.
-
 ## Where your voice goes
 
-By default your recording is turned into text on your Machine itself. It never leaves it, and it is deleted as soon as the text is back. Your browser's own speech recognition isn't used, because in some browsers that sends your voice to the browser maker.
+In **Settings**, **General**, under **Voice input**, one short line says which one is in use.
 
-In **Settings**, **General**, under **Voice input**, you can choose:
+- **Automatic** (the default): when OpenAI is set up in OpenClaw, your recording is turned into text by OpenAI. That's an API key, or a ChatGPT sign-in where your plan allows audio. Without OpenAI, it's turned into text on your Machine itself and never leaves it.
+- **On this Machine**: always on your Machine, even when OpenAI is set up.
+- **With OpenAI**: always OpenAI.
 
-- **Turned into text**: **On this Machine**, or **With OpenAI**. OpenAI is faster on a small server, but your recording goes to OpenAI with your own key. It needs an OpenAI API key in OpenClaw. A ChatGPT sign-in doesn't include it.
-- **Accuracy**: **More accurate** works best for most languages. **Faster** is quicker but gets more words wrong. On a Standard server, which has less memory, **Faster** is the default.
+A recording is deleted as soon as the text is back.
+
+## Getting ready
+
+To turn speech into text itself, your Machine needs a speech model, 150 to 500 MB. It downloads it in the background, at a low priority, once it's set up, its first review is done and it has been quiet for a while. Settings says **Getting ready (in the background)** meanwhile. It never does this when OpenAI is in use.
+
+Until it's ready, **Automatic** uses your browser's own speech recognition where your browser has one, and says so under the box. Some browsers send that to their maker. With **On this Machine** picked, your recording waits, and the box shows "Getting voice ready…" with the time left.
+
+## Settings
+
+- **Turned into text**: **Automatic**, **On this Machine** or **With OpenAI**.
+- **Accuracy** (on your Machine only): **More accurate** works best for most languages. **Faster** is quicker but gets more words wrong. On a Standard server, which has less memory, **Faster** is the default.
 - **Language**: **Detect** works for every app language. Picking yours is a little faster.
+
+To talk with The Machine instead, out loud, see [Talk live](talk-live.md).
 
 ## When it doesn't work
 

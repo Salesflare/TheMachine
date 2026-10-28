@@ -15,19 +15,29 @@ Mientras escucha, el cuadro muestra un temporizador. Toca la cruz para parar sin
 
 Lo que dijiste aparece en el cuadro, donde estaba tu cursor. No se envía nada: léelo, cambia lo que quieras y envíalo tú.
 
-## La primera vez
-
-La primera vez que tocas el micro, tu Machine prepara la voz. Descarga el modelo de voz una sola vez, entre 150 y 500 MB, y muestra "Preparando la voz…" con el progreso. Tarda unos minutos. Tu grabación espera y se escribe en cuanto todo está listo.
-
 ## Adónde va tu voz
 
-Por defecto, tu grabación se pasa a texto en tu propia Machine. Nunca sale de ella y se borra en cuanto vuelve el texto. No se usa el reconocimiento de voz de tu navegador, porque algunos navegadores envían tu voz a su fabricante.
+En **Ajustes**, **General**, bajo **Entrada de voz**, una línea corta dice cuál se usa.
 
-En **Ajustes**, **General**, bajo **Entrada de voz**, puedes elegir:
+- **Automático** (por defecto): cuando OpenAI está configurado en OpenClaw, OpenAI pasa tu grabación a texto. Eso es una clave de API, o un inicio de sesión de ChatGPT si tu plan permite audio. Sin OpenAI, se pasa a texto en tu propia Machine y nunca sale de ella.
+- **En esta Machine**: siempre en tu Machine, aunque OpenAI esté configurado.
+- **Con OpenAI**: siempre OpenAI.
 
-- **Pasado a texto**: **En esta Machine**, o **Con OpenAI**. OpenAI es más rápido en un servidor pequeño, pero tu grabación va a OpenAI, con tu propia clave. Necesita una clave API de OpenAI en OpenClaw. Un inicio de sesión de ChatGPT no la incluye.
-- **Precisión**: **Más preciso** funciona mejor para la mayoría de los idiomas. **Más rápido** va más deprisa, pero se equivoca en más palabras. En un servidor Standard, que tiene menos memoria, **Más rápido** es la opción predeterminada.
-- **Idioma**: **Detectar** funciona con todos los idiomas de la app. Elegir el tuyo es un poco más rápido.
+Una grabación se borra en cuanto vuelve el texto.
+
+## Preparación
+
+Para pasar la voz a texto ella misma, tu Machine necesita un modelo de voz de 150 a 500 MB. Lo descarga en segundo plano, con prioridad baja, cuando ya está configurada, terminó su primera revisión y lleva un rato tranquila. Mientras tanto, Ajustes muestra **Preparándose (en segundo plano)**. Nunca lo hace cuando se usa OpenAI.
+
+Hasta que esté lista, **Automático** usa el reconocimiento de voz de tu navegador si tiene uno, y lo dice bajo el cuadro. Algunos navegadores lo envían a su fabricante. Con **En esta Machine** elegido, tu grabación espera y el cuadro muestra "Preparando la voz…" con el tiempo que falta.
+
+## Ajustes
+
+- **Pasado a texto**: **Automático**, **En esta Machine** o **Con OpenAI**.
+- **Precisión** (solo en tu Machine): **Más preciso** funciona mejor para la mayoría de los idiomas. **Más rápido** va más rápido pero se equivoca en más palabras. En un servidor Standard, que tiene menos memoria, **Más rápido** es el valor por defecto.
+- **Idioma**: **Detectar** funciona para todos los idiomas de la app. Elegir el tuyo es un poco más rápido.
+
+Para hablar en voz alta con The Machine, mira [Hablar en vivo](talk-live.md).
 
 ## Si no funciona
 

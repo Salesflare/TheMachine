@@ -15,19 +15,29 @@ Enquanto ela ouve, a caixa mostra um cronômetro. Toque no X para parar sem guar
 
 O que você disse aparece na caixa, onde estava o seu cursor. Nada é enviado: leia, mude o que quiser e envie.
 
-## Na primeira vez
-
-Na primeira vez que você toca no microfone, sua Machine prepara a voz. Ela baixa o modelo de voz uma vez só, de 150 a 500 MB, e mostra "Preparando a voz…" com o progresso. Isso leva alguns minutos. Sua gravação espera e é escrita assim que tudo estiver pronto.
-
 ## Para onde vai a sua voz
 
-Por padrão, sua gravação vira texto na sua própria Machine. Ela nunca sai dela e é apagada assim que o texto volta. O reconhecimento de voz do seu navegador não é usado, porque alguns navegadores mandam a sua voz para o fabricante.
+Em **Configurações**, **Geral**, em **Entrada por voz**, uma linha curta diz qual está em uso.
 
-Em **Configurações**, **Geral**, em **Entrada por voz**, você pode escolher:
+- **Automático** (o padrão): quando a OpenAI está configurada no OpenClaw, sua gravação é transcrita pela OpenAI. Isso é uma chave de API, ou um login do ChatGPT quando seu plano permite áudio. Sem a OpenAI, ela é transcrita na sua própria Machine e nunca sai dela.
+- **Nesta Machine**: sempre na sua Machine, mesmo com a OpenAI configurada.
+- **Com a OpenAI**: sempre a OpenAI.
 
-- **Transcrito**: **Nesta Machine**, ou **Com a OpenAI**. A OpenAI é mais rápida em um servidor pequeno, mas sua gravação vai para a OpenAI, com a sua própria chave. Precisa de uma chave de API da OpenAI no OpenClaw. Um login do ChatGPT não inclui isso.
-- **Precisão**: **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas erra mais palavras. Em um servidor Standard, que tem menos memória, **Mais rápido** é o padrão.
+Uma gravação é apagada assim que o texto volta.
+
+## Preparação
+
+Para transcrever a fala sozinha, sua Machine precisa de um modelo de voz de 150 a 500 MB. Ela o baixa em segundo plano, com baixa prioridade, depois de configurada, quando a primeira revisão termina e ela fica tranquila por um tempo. Enquanto isso, as configurações mostram **Preparando (em segundo plano)**. Ela nunca faz isso quando a OpenAI está em uso.
+
+Até ficar pronta, **Automático** usa o reconhecimento de voz do seu navegador, se ele tiver um, e avisa embaixo da caixa. Alguns navegadores enviam isso ao fabricante. Com **Nesta Machine** escolhido, sua gravação espera e a caixa mostra "Preparando a voz…" com o tempo restante.
+
+## Configurações
+
+- **Transcrito**: **Automático**, **Nesta Machine** ou **Com a OpenAI**.
+- **Precisão** (só na sua Machine): **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas erra mais palavras. Em um servidor Standard, que tem menos memória, **Mais rápido** é o padrão.
 - **Idioma**: **Detectar** funciona para todos os idiomas do app. Escolher o seu é um pouco mais rápido.
+
+Para conversar em voz alta com a The Machine, veja [Falar ao vivo](talk-live.md).
 
 ## Quando não funciona
 

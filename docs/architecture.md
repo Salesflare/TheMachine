@@ -42,7 +42,8 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | `embeddings.py` | Optional related signals by meaning, through a local embedding server |
 | `graph.py` | People and projects: a living graph rebuilt from signals, card decisions, project labels and merges |
 | `crm.py`, `crm_import.py`, `crm_fixes.py` | The Graph as a CRM: owners, change history, filters and sorts done on the Machine, merged organizations with several websites, and CSV import with undo, easy fixes shown before and after, and a check by the owner's model (an `import` agent run that sees headers, a few values and unclear cells) |
-| `voice_input.py`, `voice_worker.py`, `voice-requirements.txt` | [Voice input](voice.md): the mic in the dashboard's message boxes; speech to text on the Machine (faster-whisper in its own virtualenv, prepared on first use) or with the owner's OpenAI key |
+| `voice_input.py`, `voice_worker.py`, `voice-requirements.txt` | [Voice input](voice.md): the mic in the dashboard's message boxes; speech to text with OpenAI when the Machine has it, else on the Machine (faster-whisper in its own virtualenv, prepared ahead of time once the Machine is live and quiet) |
+| `talk_live.py`, `talk-live-run.mjs` | [Talk live](talk-live.md): a spoken conversation in a to-do's chat with OpenAI's Realtime voice, started by the Gateway (ChatGPT sign-in or API key); read-only tools, proposals that need a tap, the transcript kept in the chat |
 | `crm_fields.py` | Custom fields per record type (text, number, date, choice; values sealed at rest) and tags, kept through rebuilds and merges |
 | `deploy/` | Example systemd units (the service, an optional local embedding server) and Caddyfile |
 | `tests/` | Offline tests (`test_*.py`, `test_*.mjs`), run by `scripts/test.py` from the repository root |

@@ -77,6 +77,7 @@ FEATURES = {
     'gbrain': ('gbrain.py', 'def '),
     'voice-input': ('voice_input.py', 'def pcm'),
     'follow-ups': ('follow_ups.py', 'def schedule'),
+    'talk-live': ('talk_live.py', 'def lines'),
 }
 # Features that exist in the code but have no article yet, each with the reason. Keep this short.
 PENDING = {

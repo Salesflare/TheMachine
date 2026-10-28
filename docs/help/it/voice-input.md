@@ -15,19 +15,29 @@ Mentre ascolta, la casella mostra un timer. Tocca la croce per fermarti senza te
 
 Quello che hai detto finisce nella casella, dove c’era il cursore. Non viene inviato niente: leggilo, cambia quello che vuoi e invialo tu.
 
-## La prima volta
-
-La prima volta che tocchi il microfono, la tua Machine prepara la voce. Scarica il modello vocale una volta sola, da 150 a 500 MB, e mostra "Preparazione della voce…" con l’avanzamento. Ci vuole qualche minuto. La tua registrazione aspetta e viene trascritta appena tutto è pronto.
-
 ## Dove va la tua voce
 
-Di base la tua registrazione viene trascritta sulla tua Machine stessa. Non la lascia mai e viene cancellata appena il testo è pronto. Il riconoscimento vocale del browser non viene usato, perché alcuni browser mandano la tua voce al loro produttore.
+In **Impostazioni**, **Generale**, sotto **Input vocale**, una riga breve dice quale è in uso.
 
-In **Impostazioni**, **Generale**, sotto **Input vocale**, puoi scegliere:
+- **Automatico** (predefinito): quando OpenAI è configurato in OpenClaw, la registrazione viene trascritta da OpenAI. Cioè una chiave API, o un accesso ChatGPT se il tuo piano consente l’audio. Senza OpenAI, viene trascritta sulla tua Machine stessa e non la lascia mai.
+- **Su questa Machine**: sempre sulla tua Machine, anche quando OpenAI è configurato.
+- **Con OpenAI**: sempre OpenAI.
 
-- **Trascritto**: **Su questa Machine**, oppure **Con OpenAI**. OpenAI è più veloce su un server piccolo, ma la tua registrazione va a OpenAI, con la tua chiave. Serve una chiave API di OpenAI in OpenClaw. Un accesso con ChatGPT non la include.
-- **Precisione**: **Più preciso** funziona meglio per la maggior parte delle lingue. **Più veloce** è più rapido, ma sbaglia più parole. Su un server Standard, che ha meno memoria, **Più veloce** è l’impostazione predefinita.
+Una registrazione viene eliminata appena torna il testo.
+
+## Preparazione
+
+Per trascrivere la voce da sola, la tua Machine ha bisogno di un modello vocale da 150 a 500 MB. Lo scarica in background, a bassa priorità, quando è configurata, la sua prima revisione è finita ed è tranquilla da un po’. Nel frattempo le impostazioni mostrano **In preparazione (in background)**. Non lo fa mai quando si usa OpenAI.
+
+Finché non è pronta, **Automatico** usa il riconoscimento vocale del browser, se ne ha uno, e lo dice sotto la casella. Alcuni browser lo inviano al loro produttore. Con **Su questa Machine** scelto, la registrazione aspetta e la casella mostra "Preparazione della voce…" con il tempo rimanente.
+
+## Impostazioni
+
+- **Trascritto**: **Automatico**, **Su questa Machine** o **Con OpenAI**.
+- **Precisione** (solo sulla tua Machine): **Più preciso** funziona meglio per la maggior parte delle lingue. **Più veloce** è più rapido ma sbaglia più parole. Su un server Standard, che ha meno memoria, **Più veloce** è il predefinito.
 - **Lingua**: **Rileva** funziona per tutte le lingue dell’app. Scegliere la tua è un po’ più veloce.
+
+Per parlare invece ad alta voce con The Machine, vedi [Parla dal vivo](talk-live.md).
 
 ## Se non funziona
 
