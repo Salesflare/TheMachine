@@ -22,7 +22,7 @@ Kwam een to-do binnen via e-mail maar praat je met die persoon op WhatsApp, zeg 
 
 Op een gehoste Machine:
 
-1. Open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen** en open WhatsApp.
+1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies WhatsApp.
 2. Druk op **Toon de QR-code**.
 3. Open op je telefoon in WhatsApp Instellingen, Gekoppelde apparaten, Apparaat koppelen, en scan de QR-code.
 

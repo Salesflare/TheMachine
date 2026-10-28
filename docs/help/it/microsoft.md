@@ -37,7 +37,7 @@ Con la tua app: apri **Usa la tua app** lì, oppure esegui `assistant connect ou
 
 ## Rimuovilo
 
-- Su una Machine ospitata: premi **Disconnetti** accanto all'account nella tua pagina di configurazione. Nella dashboard, **Riconnetti o disconnetti ↗** in Connessioni ti porta lì.
+- Su una Machine ospitata: premi **Disconnetti** accanto all'account nella tua pagina di configurazione. Nella dashboard, **Disconnetti ↗** in Connessioni ti porta lì. **Riconnetti** lì ti fa accedere di nuovo senza lasciare la dashboard.
 - Sul tuo computer: **Connessioni**, apri l'account, **Dettagli**, poi **Disconnetti**.
 
 ## Disinstallalo su Microsoft

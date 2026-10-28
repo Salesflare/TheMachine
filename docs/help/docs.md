@@ -34,7 +34,7 @@ If that OK is taken back later, the Docs card says **Waiting for your OK to read
 
 Connect Outlook for the address first. Then:
 
-- Hosted Machine: on your setup page, open **Docs** under **More sources** and press **Connect documents** next to that address. Microsoft asks you to allow reading your files.
+- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Docs** and press **Sign in with Microsoft**. Microsoft asks you to allow reading your files, then you come back to the dashboard.
 - Your own computer, paired with your account: open **Connections**, **+ Add**, pick **Docs** and press **Sign in with Microsoft**.
 
 It checks that the sign-in may read docs. Without that OK it isn't added.

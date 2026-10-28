@@ -34,7 +34,7 @@ Wordt die OK later ingetrokken, dan zegt de kaart van Docs **Wacht op je OK om d
 
 Koppel eerst Outlook voor het adres. Dan:
 
-- Gehoste Machine: open op je setuppagina **Documenten** onder **Meer bronnen** en druk op **Documenten koppelen** naast dat adres. Microsoft vraagt je om het lezen van je bestanden toe te staan.
+- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Documenten** en druk op **Inloggen met Microsoft**. Microsoft vraagt je om het lezen van je bestanden toe te staan, daarna kom je terug in het dashboard.
 - Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Documenten** en druk op **Inloggen met Microsoft**.
 
 Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd.

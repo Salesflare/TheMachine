@@ -38,7 +38,7 @@ Puede que un administrador de Google Workspace tenga que permitir antes la app, 
 
 ## Quítalo
 
-- En una Machine alojada: pulsa **Desconectar** junto a la dirección en tu página de configuración. Eso quita Gmail y Calendar para esa dirección y revoca el inicio de sesión en Google. En el panel, **Reconectar o desconectar ↗** en Conexiones te lleva ahí.
+- En una Machine alojada: pulsa **Desconectar** junto a la dirección en tu página de configuración. Eso quita Gmail y Calendar para esa dirección y revoca el inicio de sesión en Google. En el panel, **Desconectar ↗** en Conexiones te lleva ahí. **Reconectar** ahí vuelve a iniciar sesión sin salir del panel.
 - En tu propio ordenador: **Conexiones**, abre Gmail, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda. Cuando nada más usa ese inicio de sesión de Google, se revoca en Google.
 
 ## Desinstálalo en Google

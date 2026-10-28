@@ -404,7 +404,9 @@ class ReconnectDisconnectTest(unittest.TestCase):
 
     def test_hosted_google_and_microsoft_sign_in_and_out_on_the_account_page_and_no_terminal_shows(self):
         manage = 'https://cp.example.org/setup'
-        self.assertEqual(assistant.reconnect_help(self.app.config['accounts'][2], manage), {'account_page': 'https://cp.example.org/setup#microsoft'})
+        # Reconnect: the sign-in form on the dashboard, which comes back there; Disconnect: the account page, which holds the grant
+        self.assertEqual(assistant.reconnect_help(self.app.config['accounts'][2], manage),
+                         {'account_page': 'https://cp.example.org/setup#microsoft', 'hosted_signin': 'microsoft'})
         self.assertEqual(assistant.reconnect_help(self.app.config['accounts'][1], manage), {'connect_name': 'slack'})
         self.assertEqual(assistant.reconnect_help(self.app.config['accounts'][2], None), {'connect_name': 'outlook'})
         self.app.config['manage_url'] = manage

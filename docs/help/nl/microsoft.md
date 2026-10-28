@@ -37,7 +37,7 @@ Met je eigen app: open daar **Je eigen app gebruiken**, of voer `assistant conne
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Ontkoppelen** naast het account op je setuppagina. In het dashboard brengt **Opnieuw koppelen of ontkoppelen ↗** op Koppelingen je daarheen.
+- Op een gehoste Machine: druk op **Ontkoppelen** naast het account op je setuppagina. In het dashboard brengt **Ontkoppelen ↗** op Koppelingen je daarheen. **Opnieuw verbinden** daar logt opnieuw in zonder het dashboard te verlaten.
 - Op je eigen computer: **Koppelingen**, open het account, **Details**, dan **Ontkoppelen**.
 
 ## Verwijderen bij Microsoft

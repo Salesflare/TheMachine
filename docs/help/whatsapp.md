@@ -22,7 +22,7 @@ If a to-do came in by email but you talk to that person on WhatsApp, say so in t
 
 On a hosted Machine:
 
-1. Open your setup page at app.themachine.computer/setup, go to **More sources** and open WhatsApp.
+1. In the dashboard, open **Connections**, then **+ Add**, and pick WhatsApp.
 2. Press **Show the QR code**.
 3. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, and scan the QR code.
 

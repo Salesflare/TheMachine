@@ -19,7 +19,7 @@ Nada no seu celular. Ele só lê notificações.
 Em uma Machine hospedada:
 
 1. Instale o app OpenClaw no seu celular.
-2. Na sua página de configuração, vá em **Mais fontes**, abra Notificações do Android e toque em **Mostrar um código de configuração**.
+2. No painel, abra **Conexões**, depois **+ Adicionar**, escolha Celular Android e toque em **Mostrar um código de configuração**.
 3. Escaneie o código no app OpenClaw e toque em **Aprovar** para o pareamento.
 4. No app OpenClaw, ative Forward Notification Events e permita o acesso às notificações quando o Android pedir.
 

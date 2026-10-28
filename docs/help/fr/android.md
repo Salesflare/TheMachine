@@ -19,7 +19,7 @@ Rien sur votre téléphone. Il se contente de lire les notifications.
 Sur une Machine hébergée :
 
 1. Installez l’app OpenClaw sur votre téléphone.
-2. Sur votre page de configuration, allez dans **Plus de sources**, ouvrez Notifications Android et appuyez sur **Afficher un code de configuration**.
+2. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, choisissez Téléphone Android et appuyez sur **Afficher un code de configuration**.
 3. Scannez-le dans l’app OpenClaw, puis appuyez sur **Approuver** pour l’association.
 4. Dans l’app OpenClaw, activez Forward Notification Events, et autorisez l’accès aux notifications quand Android le demande.
 

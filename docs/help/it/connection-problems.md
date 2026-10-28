@@ -19,7 +19,7 @@ Il numero su **Connessioni** conta solo le fonti a cui serve il tuo aiuto.
 
 ## Soluzioni comuni
 
-- "deve accedere di nuovo": premi **Riconnetti** e accedi. Su una Machine in hosting, Google e Microsoft si riconnettono dalla tua pagina di configurazione.
+- "deve accedere di nuovo": premi **Riconnetti** e accedi. Su una Machine in hosting, accedi direttamente lì e torni alla dashboard.
 - Microsoft sta ancora configurando l'accesso: riprova da sola.
 - Slack: controlla la tua chiave API di Maton e la connessione Slack in Maton.
 - Android: apri l'app OpenClaw sul telefono e dalle l'accesso alle notifiche.

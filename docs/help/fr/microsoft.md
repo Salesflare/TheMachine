@@ -37,7 +37,7 @@ Avec votre propre app : ouvrez **Utiliser votre propre app** à cet endroit, ou 
 
 ## Le retirer
 
-- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté du compte sur votre page de configuration. Dans le tableau de bord, **Reconnecter ou déconnecter ↗** dans Connexions vous y emmène.
+- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté du compte sur votre page de configuration. Dans le tableau de bord, **Déconnecter ↗** dans Connexions vous y emmène. **Reconnecter** à cet endroit vous reconnecte sans quitter le tableau de bord.
 - Sur votre propre ordinateur : **Connexions**, ouvrez le compte, **Détails**, puis **Déconnecter**.
 
 ## Le désinstaller chez Microsoft

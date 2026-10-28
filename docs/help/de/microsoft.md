@@ -37,7 +37,7 @@ Mit deiner eigenen App: Öffne dort **Eigene App nutzen** oder führe `assistant
 
 ## Entfernen
 
-- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite neben dem Konto auf **Trennen**. Im Dashboard bringt dich **Neu verbinden oder trennen ↗** unter Verbindungen dorthin.
+- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite neben dem Konto auf **Trennen**. Im Dashboard bringt dich **Trennen ↗** unter Verbindungen dorthin. **Neu verbinden** dort meldet dich erneut an, ohne das Dashboard zu verlassen.
 - Auf deinem eigenen Computer: **Verbindungen**, das Konto öffnen, **Details**, dann **Trennen**.
 
 ## Bei Microsoft deinstallieren

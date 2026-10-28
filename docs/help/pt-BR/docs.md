@@ -34,7 +34,7 @@ Se esse OK for retirado depois, o cartão do Docs mostra **Aguardando seu OK par
 
 Conecte primeiro o Outlook desse endereço. Depois:
 
-- Machine hospedada: na sua página de configuração, abra **Docs** em **Mais fontes** e clique em **Conectar documentos** ao lado desse endereço. A Microsoft pede para você permitir a leitura dos seus arquivos.
+- Machine hospedada: no painel, abra **Conexões**, **+ Adicionar**, escolha **Documentos** e clique em **Entrar com a Microsoft**. A Microsoft pede para você permitir a leitura dos seus arquivos, e você volta para o painel.
 - Seu próprio computador, pareado com sua conta: abra **Conexões**, **+ Adicionar**, escolha **Documentos** e clique em **Entrar com a Microsoft**.
 
 Ela confere se o login pode ler documentos. Sem esse OK, Docs não é adicionado.

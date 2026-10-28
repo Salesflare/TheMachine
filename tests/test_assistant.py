@@ -1172,7 +1172,7 @@ class NeedsYou(unittest.TestCase):
             config = {'manage_url': 'https://app.example.com/setup', 'needs_you_file': str(notes), 'credentials': {},
                       'accounts': [{'id': 'work-slack', 'service': 'slack', 'credential': 'maton', 'display_name': 'Work Slack'}]}
             items = assistant.needs_you(config)
-        self.assertEqual(items[0]['url'], 'https://app.example.com/setup#sources')
+        self.assertEqual(items[0]['url'], '#connections=add')  # + Add on the dashboard itself, never away to the account
         self.assertIn('Work Slack is not fully set up yet', items[0]['text'])
         self.assertEqual(items[1], {'id': 'connector-linear', 'text': 'Your Linear connector is ready.',
                                     'url': 'https://app.example.com/setup#source-linear', 'action': 'Connect it'})

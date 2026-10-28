@@ -22,7 +22,7 @@ Si una tarea llegó por correo pero con esa persona hablas por WhatsApp, dilo en
 
 En una Machine alojada:
 
-1. Abre tu página de configuración en app.themachine.computer/setup, ve a **Más fuentes** y abre WhatsApp.
+1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige WhatsApp.
 2. Pulsa **Mostrar el código QR**.
 3. En tu teléfono, en WhatsApp, abre Ajustes, Dispositivos vinculados, Vincular un dispositivo, y escanea el código QR.
 

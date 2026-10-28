@@ -125,13 +125,15 @@ class FormTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.app.action('connect_site_signin', {'site': 'linkedin'})  # not from the dashboard
 
-    def test_hosted_whatsapp_and_the_phone_link_to_their_own_tile(self):
+    def test_hosted_github_whatsapp_and_the_phone_sign_in_on_the_dashboard_itself(self):
         self.app.config['manage_url'] = 'https://cp.example.org/setup'
         sources = {s['name']: s for s in self.act('connect_sources', {})['sources']}
-        self.assertEqual((sources['whatsapp'].get('account_page'), sources['android'].get('account_page'), sources['linkedin'].get('account_page')),
-                         ('source-whatsapp', 'source-android', None))
-        # GitHub signs in on the dashboard itself: its code shows in + Add's form, never a link away to the account
-        self.assertEqual((sources['github'].get('hosted_signin'), sources['github'].get('account_page')), ('github', None))
+        # their code (GitHub's, WhatsApp's QR or pairing code, the phone app's setup code) shows in + Add's form, never a
+        # link away to the account
+        for name in ('github', 'whatsapp', 'android'):
+            with self.subTest(name):
+                self.assertEqual((sources[name].get('hosted_signin'), sources[name].get('account_page')), (name, None))
+        self.assertFalse(sources['linkedin'].get('account_page') or sources['linkedin'].get('hosted_signin'))
 
     def test_a_rerun_fix_reads_as_try_again(self):
         def connect(path, name, ui, account_id=None, restart=True):

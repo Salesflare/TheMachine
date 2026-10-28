@@ -19,7 +19,7 @@ El número en **Conexiones** solo cuenta las fuentes que necesitan tu ayuda.
 
 ## Soluciones habituales
 
-- "necesita que vuelvas a iniciar sesión": pulsa **Reconectar** e inicia sesión. En una Machine alojada, Google y Microsoft se reconectan desde tu página de configuración.
+- "necesita que vuelvas a iniciar sesión": pulsa **Reconectar** e inicia sesión. En una Machine alojada, inicias sesión ahí mismo y vuelves al panel.
 - Microsoft aún configurando el acceso: lo vuelve a intentar sola.
 - Slack: revisa tu clave de API de Maton y la conexión de Slack en Maton.
 - Android: abre la app OpenClaw en el teléfono y dale acceso a las notificaciones.

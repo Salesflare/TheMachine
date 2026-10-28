@@ -12,7 +12,9 @@ Het tabblad **Koppelingen** groepeert je bronnen in **Mail en agenda**, **Chat**
 
 ## Een bron toevoegen
 
-Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Zodra hij gekoppeld is, herstart je Machine om hem te gaan lezen, en opent dan de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub toont zijn code meteen in dit formulier. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
+Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Zodra hij gekoppeld is, herstart je Machine om hem te gaan lezen, en opent dan de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Documenten, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub, WhatsApp en je Android-telefoon tonen hun code meteen in dit formulier.
+
+**Opnieuw verbinden** op een bron en in **Wacht op jou** opent hetzelfde formulier. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
 
 ## Werk of privé
 
@@ -20,7 +22,7 @@ Elke bron telt als werk (voor een bedrijf dat je noemt) of als privé. Wijzig he
 
 ## Een bron verwijderen
 
-Open de bron, **Details**, dan **Ontkoppelen**. Hij stopt met lezen. Wat al binnengehaald is, blijft. Op een gehoste Machine tonen Google en Microsoft **Opnieuw koppelen of ontkoppelen ↗**, dat je setuppagina opent.
+Open de bron, **Details**, dan **Ontkoppelen**. Hij stopt met lezen. Wat al binnengehaald is, blijft. Op een gehoste Machine tonen Google, Microsoft, Documenten, Zoom en Stripe **Ontkoppelen ↗**, dat je setuppagina opent.
 
 **Onlangs ontkoppeld** toont de logins bij Google, Microsoft en Zoom die je verwijderd hebt. **Verwijderd, bevestigd** betekent dat Google het uitloggen bevestigd heeft, of voor Microsoft en Zoom dat er geen kopie meer over is. **In behandeling** zegt waarom, en je Machine blijft het proberen.
 

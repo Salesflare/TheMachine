@@ -38,7 +38,7 @@ Un admin Google Workspace devra peut-être d’abord autoriser l’app, dans la 
 
 ## Le retirer
 
-- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté de l’adresse sur votre page de configuration. Cela retire Gmail et l’agenda pour cette adresse et révoque la connexion chez Google. Dans le tableau de bord, **Reconnecter ou déconnecter ↗** dans Connexions vous y emmène.
+- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté de l’adresse sur votre page de configuration. Cela retire Gmail et l’agenda pour cette adresse et révoque la connexion chez Google. Dans le tableau de bord, **Déconnecter ↗** dans Connexions vous y emmène. **Reconnecter** à cet endroit vous reconnecte sans quitter le tableau de bord.
 - Sur votre propre ordinateur : **Connexions**, ouvrez Gmail, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste. Quand plus rien n’utilise cette connexion Google, elle est révoquée chez Google.
 
 ## Le désinstaller chez Google

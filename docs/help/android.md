@@ -19,7 +19,7 @@ Nothing on your phone. It only reads notifications.
 On a hosted Machine:
 
 1. Install the OpenClaw app on your phone.
-2. On your setup page, go to **More sources**, open Android notifications and press **Show a setup code**.
+2. In the dashboard, open **Connections**, then **+ Add**, pick Android phone and press **Show a setup code**.
 3. Scan it in the OpenClaw app, then press **Approve** for the pairing.
 4. In the OpenClaw app, turn on Forward Notification Events, and allow notification access when Android asks.
 

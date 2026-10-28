@@ -16,7 +16,9 @@ Open **+ Add** and pick a source. It shows one short form, like your setup page:
 
 **Cancel** stops adding it. Once it is connected, your Machine restarts to start reading it, then opens the new card, which shows how its first sync goes.
 
-On a hosted Machine, Google, Microsoft, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal**, press **Sign in**, and you come back to this form, which shows how connecting goes, or why it didn't work. GitHub shows its code right in this form. WhatsApp opens on your setup page. On your own computer, `assistant connect` does the same in a terminal.
+On a hosted Machine, Google, Microsoft, Docs, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal**, press **Sign in**, and you come back to this form, which shows how connecting goes, or why it didn't work. GitHub, WhatsApp and your Android phone show their code right in this form.
+
+**Reconnect** on a source and in **Needs you** opens the same form. On your own computer, `assistant connect` does the same in a terminal.
 
 ## Work or personal
 
@@ -24,7 +26,7 @@ Each source counts as work (for a company you name) or personal. Change it under
 
 ## Remove one
 
-Open the source, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. On a hosted Machine, Google and Microsoft show **Reconnect or disconnect ↗**, which opens your setup page.
+Open the source, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. On a hosted Machine, Google, Microsoft, Docs, Zoom and Stripe show **Disconnect ↗**, which opens your setup page.
 
 **Disconnected lately** lists Google, Microsoft and Zoom sign-ins you removed. **Removed, confirmed** means Google confirmed the sign-out, or for Microsoft and Zoom that no copy is left. **Pending** says why, and your Machine keeps trying.
 

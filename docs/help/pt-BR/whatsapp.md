@@ -22,7 +22,7 @@ Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo WhatsApp, d
 
 Em uma Machine hospedada:
 
-1. Abra sua página de configuração em app.themachine.computer/setup, vá em **Mais fontes** e abra WhatsApp.
+1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha WhatsApp.
 2. Toque em **Mostrar o QR code**.
 3. No seu celular, no WhatsApp, abra Configurações, Dispositivos conectados, Conectar um dispositivo, e escaneie o QR code.
 
