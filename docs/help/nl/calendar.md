@@ -33,13 +33,17 @@ Klik op een rij om de chat van de to-do, de belofte of de afspraak in de eigen a
 
 Een geboekte vergaderzaal staat bij de plaats, nooit als persoon of in je Graph.
 
-## Vergadernotities
+## Vergadernotities en transcript
 
-De details van een vergadering tonen de notities. **Notities toevoegen** om notities of een transcript te plakken, of **Bestand uploaden** voor een Markdown- of tekstbestand. **Bewerken** past ze aan, en **Verwijderen** haalt ze weg (tik twee keer). Bij een vergadering die je kunt wijzigen staat **Notities toevoegen** onder het formulier.
+De details van een vergadering hebben twee delen. **Notities** is de samenvatting: beslissingen en actiepunten. **Transcript** is wat er gezegd is, woord voor woord. Het staat dichtgeklapt, met hoe lang het duurt; **Tonen** opent het.
 
-The Machine kan ze ook toevoegen. Vraag het op een to-do, zoals "zet dit transcript bij de bestuursvergadering van vandaag". Een vergadering met notities toont **Notities** in de agenda, en de Zoom-samenvatting staat eronder.
+Elk heeft zijn eigen **Notities toevoegen** of **Transcript toevoegen**, **Bestand uploaden** voor een Markdown- of tekstbestand, **Bewerken** en **Verwijderen** (tik twee keer). Wat in het ene staat, blijft daar. Bij een vergadering die je kunt wijzigen opent **Notities** onder het formulier ze.
 
-The Machine leest ze zoals Zoom-notities, voor de opvolging van de vergadering. Ze zijn Werk of Persoonlijk zoals de vergadering, en gaan alleen naar je team als de vergadering dat doet.
+Met [Zoom](zoom.md) gekoppeld staat de samenvatting in Notities en het transcript in Transcript, met **Van Zoom** erbij. Zoom vervangt nooit wat jij toevoegde: staan ze er allebei, dan zie je ze allebei.
+
+The Machine kan ze ook toevoegen. Vraag het op een to-do, zoals "zet dit transcript bij de bestuursvergadering van vandaag". Een transcript komt in Transcript, een samenvatting in Notities. Een vergadering met een van beide toont **Notities** of **Transcript** in de agenda.
+
+The Machine leest ze allebei voor de opvolging van de vergadering. Ze zijn Werk of Persoonlijk zoals de vergadering, en gaan alleen naar je team als de vergadering dat doet.
 
 ## Een afspraak toevoegen of wijzigen
 

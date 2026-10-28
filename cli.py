@@ -809,7 +809,7 @@ def cmd_support_bundle(config, args):
 
 
 def cmd_meeting_notes(config, args):
-    """Notes on a calendar meeting: list a day's meetings, read one's notes, or add them from a Markdown file."""
+    """A calendar meeting's Notes and Transcript: list a day's meetings, read one's, or add one from a Markdown file."""
     if args.event is None:
         if args.file or args.remove:
             raise CliError('Pick the meeting with --event (list a day\'s meetings with --day)')
@@ -819,31 +819,38 @@ def cmd_meeting_notes(config, args):
         if not found['meetings']:
             print(f"No meetings on {found['day']}" + (f' with "{args.query}"' if args.query else '') + '.')
         for m in found['meetings']:
-            print(f"  {m['event_id']:<8} {local(m['start'])}  {m['title']}" + ('  (has notes)' if m['has_notes'] else ''))
+            has = [w for w, on in (('notes', m['has_notes']), ('transcript', m.get('has_transcript'))) if on]
+            print(f"  {m['event_id']:<8} {local(m['start'])}  {m['title']}" + (f"  (has {' and '.join(has)})" if has else ''))
         return
     if args.file or args.remove:
         text = '' if args.remove else (sys.stdin.read() if args.file == '-' else Path(args.file).read_text())
-        saved = call(config, 'meeting_notes', {'event_id': args.event, **({'remove': True} if args.remove else {'text': text}),
+        saved = call(config, 'meeting_notes', {'event_id': args.event, 'field': args.field, **({'remove': True} if args.remove else {'text': text}),
                                                **({'append': True} if args.append else {})}, upload='meeting-notes')
         if args.json:
             return out_json(saved)
+        word = 'Transcript' if args.field == 'transcript' else 'Notes'
         if saved.get('removed') is not None:
-            print(f"Notes removed from {saved['title']}." if saved['removed'] else f"{saved['title']} had no notes.")
+            print(f"{word} removed from {saved['title']}." if saved['removed'] else f"{saved['title']} had no {word.lower()}.")
         else:
-            print(f"Notes on {saved['title']}: {saved['chars']:,} characters" + (' (unchanged)' if saved.get('unchanged') else '') + '.')
+            print(f"{word} on {saved['title']}: {saved['chars']:,} characters" + (' (unchanged)' if saved.get('unchanged') else '') + '.')
         return
     found = call(config, 'meeting_notes', {'event_id': args.event})
     if args.json:
         return out_json(found)
     print(found['title'])
-    if found['notes']:
-        print(found['notes']['text'])
-        if found['notes']['next_offset']:
-            print(f"[{found['notes']['chars']:,} characters in all; read the rest with --json and offset]")
-    elif found['zoom']:
-        print(found['zoom']['text'])
-    else:
-        print('No notes yet.')
+    zoom = found.get('zoom') or {}
+    for key, word in (('notes', 'Notes'), ('transcript', 'Transcript')):
+        mine, theirs = found.get(key), zoom.get(key)
+        print(f'\n## {word}')
+        for part, label in ((mine, ''), (theirs, ' (from Zoom)')):
+            if part:
+                if label:
+                    print(label.strip())
+                print(part['text'])
+                if part.get('next_offset'):
+                    print(f"[{part['chars']:,} characters in all; read the rest with --json and offset]")
+        if not mine and not theirs:
+            print(f'No {word.lower()} yet.')
 
 
 def cmd_raw(config, args):
@@ -925,13 +932,15 @@ def parser():
     c.add_argument('--limit', type=int, default=10)
     c = add('feedback', 'Recent owner decisions and written feedback', cmd_feedback)
     c.add_argument('--limit', type=int, default=20)
-    c = add('meeting-notes', "Notes or a transcript on a calendar meeting: a day's meetings, one's notes, or add them from a Markdown file", cmd_meeting_notes)
+    c = add('meeting-notes', "A calendar meeting's Notes or Transcript: a day's meetings, one's notes and transcript, or add one from a Markdown file", cmd_meeting_notes)
     c.add_argument('--day', help='YYYY-MM-DD: list that day\'s meetings (default today)')
     c.add_argument('--query', help='only meetings whose title has these words')
     c.add_argument('--event', type=int, help="the meeting's event id")
-    c.add_argument('--file', help='Markdown file with the notes to add, or - for stdin (replaces notes it has)')
-    c.add_argument('--append', action='store_true', help='add below the notes it has')
-    c.add_argument('--remove', action='store_true', help='take its notes off')
+    c.add_argument('--field', choices=('notes', 'transcript'), default='notes',
+                   help='notes: a summary, decisions, action items; transcript: what was said, word for word (default notes)')
+    c.add_argument('--file', help='Markdown file to add, or - for stdin (replaces what that field has)')
+    c.add_argument('--append', action='store_true', help='add below what that field has')
+    c.add_argument('--remove', action='store_true', help='take that field off')
     c = add('prepare', 'Save a short preparation (max 1000 chars) on an accepted task', cmd_prepare)
     c.add_argument('id')
     c.add_argument('--next-action', help='JSON file containing an exact email draft or original-page link; prepares only')

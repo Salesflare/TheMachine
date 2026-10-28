@@ -3523,6 +3523,11 @@ class Store:
             # judgment. The card offers Done and help around it (Plan it), never Do it.
             if 'owner_step' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN owner_step INTEGER NOT NULL DEFAULT 0')
+            # Notes saved before a meeting's Notes and Transcript were apart: a transcript among them becomes the meeting's
+            # Transcript, once (what each row was is kept in meeting_moves)
+            moved = self.move_meeting_transcripts(db)
+            if moved:
+                LOG.info('Moved %d meeting transcript(s) out of Notes into Transcript: %s', len(moved), moved)
         self.clean_protection_leftovers()
         try:
             self.message_protection(True if protect is None and os.environ.get('MESSAGE_PROTECTION_TEST') else protect)
@@ -4114,6 +4119,19 @@ class Store:
                 row['metadata']['app_name'] = android_app_name(row['metadata'].get('package_name', 'Unknown app'))
         return rows
 
+    def move_meeting_transcripts(self, db):
+        """Make what meeting_notes.transcript_moves says, in the caller's transaction, first keeping each row's old kind
+        and source_id in meeting_moves (to put it back by hand). [moved event ids]"""
+        db.execute(meeting_notes.MOVES)
+        moved = []
+        for event_id, old_source, new_source, metadata in meeting_notes.transcript_moves(db):
+            db.execute('INSERT OR REPLACE INTO meeting_moves VALUES(?,?,?,?,?,?)',
+                       (event_id, meeting_notes.NOTES, old_source, meeting_notes.TRANSCRIPT, new_source, now()))
+            db.execute('UPDATE events SET kind=?,source_id=?,metadata=? WHERE id=? AND kind=?',
+                       (meeting_notes.TRANSCRIPT, new_source, metadata, event_id, meeting_notes.NOTES))
+            moved.append(event_id)
+        return moved
+
     def save_meeting_notes(self, db, write):
         """Make what meeting_notes.plan says, in the caller's transaction: notes on a meeting are a signal like any other."""
         if write[0] == 'remove':
@@ -4198,14 +4216,13 @@ class Store:
             row['with'] = out[:20]
             row['people'] = list(dict.fromkeys(w['name'] or w['email'] for w in out))[:20]
         self._calendar_links([f[3] for f in found])
-        try:  # a meeting with notes added to it says so (by whom, when): its details show them
+        try:  # a meeting with notes or a transcript added to it says so (by whom, when): its details show them
             with self.connect() as db:
                 noted = meeting_notes.added_for(db, [f[3]['id'] for f in found])
         except sqlite3.OperationalError:
             noted = {}
         for f in found:
-            if f[3]['id'] in noted:
-                f[3]['notes'] = noted[f[3]['id']]
+            f[3].update(noted.get(f[3]['id'], {}))
         for f in found:
             for w in f[3]['with']:
                 w.pop('declined', None)
@@ -9820,10 +9837,13 @@ def meeting_notes_prompt(config):
     """The preparation's line about notes on a meeting, when the owner has a calendar connected."""
     if not any(a.get('service') in CALENDAR_SERVICES for a in (config or {}).get('accounts') or ()):
         return ''
-    return ("\n- Notes or a transcript of a meeting (pasted, sent to the owner, or a file) also go on that meeting in The Machine, where the "
-            "Calendar shows them and reviews use them like Zoom notes: assistant_signals meeting_notes args day=<YYYY-MM-DD> (and query=<words "
-            "of its title>) lists that day's meetings with their event_id; then meeting_notes args event_id, text=<the notes as Markdown, "
-            "whole> (append:true adds below notes it has; event_id alone reads them). For a long file: assistant meeting-notes --event <id> --file <path>.")
+    return ("\n- A meeting has two fields in The Machine: Notes (a summary, decisions, action items) and Transcript (what was said, word for "
+            "word, like timestamped speaker turns). Notes or a transcript of a meeting (pasted, sent to the owner, or a file) go on that meeting, "
+            "in the field that fits what the text is; a summary you write of a transcript goes in Notes, the transcript itself in Transcript. The "
+            "Calendar shows them and reviews use them like Zoom's: assistant_signals meeting_notes args day=<YYYY-MM-DD> (and query=<words "
+            "of its title>) lists that day's meetings with their event_id; then meeting_notes args event_id, field=notes or transcript, text=<it as "
+            "Markdown, whole> (append:true adds below what that field has; event_id alone reads both). For a long file: assistant meeting-notes "
+            "--event <id> --field transcript --file <path>.")
 
 
 def chat_prompt(job, config=None):
@@ -12412,7 +12432,7 @@ Team: when begin_analysis lists team (Work messages, shared with the owner's Wor
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
 Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
 When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
-Meeting notes (a Zoom summary or transcript) are that meeting's own record: use them for follow-ups on it, its next steps and who took them on, with the notes and the calendar event as evidence.
+Meeting notes and transcripts (Zoom's, or added to the meeting: meeting.notes, meeting.transcript) are that meeting's own record: use them for follow-ups on it, its next steps and who took them on, with the notes and the calendar event as evidence.
 Promises: when a message in this batch commits the owner to doing something for someone, or someone to doing something for the owner, record it with promise (direction, event_id, who, what: the promised action alone, without who confirmed it or how, due when a date was said, owner_step as above). Judge what a message means between these people in its conversation, not its wording: most commitments are never spelled out (agreeing to a request, taking on something the owner asked, accepting a plan), and the same reply can commit one person and be politeness from another, depending on language, habits and the relationship. Read earlier_in_conversation for what was asked. It is not a card; the service checks it when due. When a signal shows an open promise below kept, canceled or moved, update it with promise and its id.
 Messages are disabled in this turn. Do not work on anything else. End with exactly NO_REPLY.''' + sources + (f'''
 
@@ -13270,11 +13290,12 @@ class App:
         return row[0] if row and row[0] else None
 
     def meeting_notes(self, args, owner_dashboard=False, limit=meeting_notes.READ_CHARS):
-        """Notes on a meeting (meeting_notes.py). Without event_id: the meetings of a day (day, YYYY-MM-DD, today when
-        left out; query narrows them by title), to find the one. With event_id: its notes, added ones and Zoom's (offset
-        reads on). With text: add them (append:true below the ones it has), or remove:true. The owner adds them on the
-        meeting in the Calendar, a Do it run or the owner's chat with its tool; a signal review only reads them, since
-        what it reads can't tell it what to write."""
+        """A meeting's Notes and Transcript (meeting_notes.py). Without event_id: the meetings of a day (day, YYYY-MM-DD,
+        today when left out; query narrows them by title), to find the one. With event_id: both, added ones and Zoom's
+        (field reads only one, offset reads on). With text: add to field (notes when left out; append:true below what it
+        has), or remove:true. Saving never moves text to the other field. The owner adds them on the meeting in the
+        Calendar, a Do it run or the owner's chat with its tool; a signal review only reads them, since what it reads
+        can't tell it what to write."""
         writes = 'text' in args or args.get('remove') is True
         session = str(args.get('_notes_session') or '')
         if writes and not owner_dashboard and re.match(r'agent:main:assistant-review-(?!preparation-)', session):
@@ -13296,12 +13317,14 @@ class App:
                     offset = max(0, int(args.get('offset') or 0))
                 except (TypeError, ValueError):
                     raise ValueError('offset is a number') from None
-                return meeting_notes.read(db, event['id'], offset, limit)
+                return meeting_notes.read(db, event['id'], offset, limit, args.get('field') or None)
+            field = args.get('field') or 'notes'
+            meeting_notes.field_kind(field)
             text = '' if args.get('remove') is True else args.get('text')
             if not isinstance(text, str) or (not text.strip() and args.get('remove') is not True):
-                raise ValueError('text is the notes, as Markdown; remove:true takes them off')
+                raise ValueError('text is the notes or transcript, as Markdown; remove:true takes them off')
             db.execute('BEGIN IMMEDIATE')
-            saved, write = meeting_notes.plan(db, event['id'], text, 'owner' if owner_dashboard else 'machine', now(), args.get('append') is True)
+            saved, write = meeting_notes.plan(db, event['id'], text, 'owner' if owner_dashboard else 'machine', now(), args.get('append') is True, field)
             if write:
                 saved.update(self.store.save_meeting_notes(db, write))
         if getattr(self, 'graph_dirty', None):

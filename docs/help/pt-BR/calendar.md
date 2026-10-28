@@ -33,13 +33,17 @@ Clique em uma linha para abrir o chat da tarefa, a promessa ou a reunião na pr�
 
 Uma sala de reunião reservada aparece no local, nunca como pessoa nem no seu Graph.
 
-## Notas da reunião
+## Notas e transcrição da reunião
 
-Os detalhes de uma reunião mostram as notas dela. **Adicionar notas** para colar notas ou uma transcrição, ou **Enviar arquivo** para um arquivo Markdown ou de texto. **Editar** muda as notas, e **Remover** tira elas (toque duas vezes). Numa reunião que você pode mudar, **Adicionar notas** fica embaixo do formulário.
+Os detalhes de uma reunião têm duas partes. **Notas** é o resumo: decisões e ações. **Transcrição** é o que foi dito, palavra por palavra. Ela começa recolhida, com a duração; **Mostrar** abre.
 
-A The Machine também pode adicioná-las. Peça numa tarefa, como "adicione esta transcrição à reunião do conselho de hoje". Uma reunião com notas mostra **Notas** no calendário, e o resumo do Zoom aparece embaixo.
+Cada uma tem seu próprio **Adicionar notas** ou **Adicionar transcrição**, **Enviar arquivo** para um arquivo Markdown ou de texto, **Editar** e **Remover** (toque duas vezes). O que vai numa fica nela. Numa reunião que você pode mudar, **Notas** embaixo do formulário abre as duas.
 
-A The Machine lê as notas como as do Zoom, para os próximos passos da reunião. Elas são Trabalho ou Pessoal como a reunião, e só vão para sua equipe quando a reunião vai.
+Com o [Zoom](zoom.md) conectado, o resumo dele aparece em Notas e a transcrição em Transcrição, marcados **Do Zoom**. O Zoom nunca substitui o que você adicionou: quando os dois existem, os dois aparecem.
+
+A The Machine também pode adicioná-las. Peça numa tarefa, como "adicione esta transcrição à reunião do conselho de hoje". Uma transcrição vai em Transcrição, um resumo em Notas. Uma reunião com elas mostra **Notas** ou **Transcrição** no calendário.
+
+A The Machine lê as duas para os próximos passos da reunião. Elas são Trabalho ou Pessoal como a reunião, e só vão para sua equipe quando a reunião vai.
 
 ## Adicionar ou mudar um evento
 

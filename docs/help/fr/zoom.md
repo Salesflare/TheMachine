@@ -14,7 +14,7 @@ Les résumés demandent un forfait Zoom payant, AI Companion activé pendant la 
 
 ## Ce qu’il en fait
 
-Chaque résumé est rattaché à la réunion dans votre agenda. Vos revues s’en servent ensuite pour les suivis de cette réunion, et une répartition des suivis dans la Fleet arrive déjà remplie avec qui fait quoi. Vous la vérifiez et la modifiez d’abord ; rien ne part avant que vous l’envoyiez.
+Chaque résumé est rattaché à la réunion dans votre agenda. Le résumé apparaît dans les **Notes** de cette réunion et la transcription dans sa **Transcription**, marqués **De Zoom**, à côté de ce que vous y avez ajouté, sans jamais le remplacer. Vos revues s’en servent ensuite pour les suivis de cette réunion, et une répartition des suivis dans la Fleet arrive déjà remplie avec qui fait quoi. Vous la vérifiez et la modifiez d’abord ; rien ne part avant que vous l’envoyiez.
 
 ## Ce qu’il peut faire
 

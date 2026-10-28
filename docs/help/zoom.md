@@ -14,7 +14,7 @@ Summaries need a paid Zoom plan, AI Companion turned on during the meeting, and 
 
 ## What it does with them
 
-Each summary is matched to the meeting in your calendar. Your reviews then use it for that meeting's follow-ups, and a Fleet follow-up split comes filled in with who does what. You check and edit it first; nothing is sent until you send it.
+Each summary is matched to the meeting in your calendar. The summary shows in that meeting's **Notes** and the transcript in its **Transcript**, marked **From Zoom**, next to anything you added there; it never replaces it. Your reviews then use it for that meeting's follow-ups, and a Fleet follow-up split comes filled in with who does what. You check and edit it first; nothing is sent until you send it.
 
 ## What it can do
 

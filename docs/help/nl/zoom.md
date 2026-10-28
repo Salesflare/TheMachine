@@ -14,7 +14,7 @@ Voor samenvattingen heb je een betaald Zoom-abonnement nodig, AI Companion aan t
 
 ## Wat het ermee doet
 
-Elke samenvatting wordt gekoppeld aan de afspraak in je agenda. Je reviews gebruiken hem dan voor de opvolging van die afspraak, en een verdeling van de opvolging in je Fleet komt ingevuld binnen met wie wat doet. Je controleert en bewerkt hem eerst; er wordt niets verstuurd tot je het verstuurt.
+Elke samenvatting wordt gekoppeld aan de afspraak in je agenda. De samenvatting staat in de **Notities** van die afspraak en het transcript in zijn **Transcript**, met **Van Zoom** erbij, naast wat jij daar toevoegde; hij vervangt het nooit. Je reviews gebruiken hem dan voor de opvolging van die afspraak, en een verdeling van de opvolging in je Fleet komt ingevuld binnen met wie wat doet. Je controleert en bewerkt hem eerst; er wordt niets verstuurd tot je het verstuurt.
 
 ## Wat het kan doen
 

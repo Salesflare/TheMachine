@@ -33,13 +33,17 @@ Click a row to open its to-do's chat, the promise, or the meeting. A meeting you
 
 A meeting room booked on a meeting shows under where, never as a person or in your Graph.
 
-## Meeting notes
+## Meeting notes and transcript
 
-A meeting's details show its notes. **Add notes** to paste notes or a transcript, or **Upload file** for a Markdown or text file. **Edit** changes them, and **Remove** takes them off (tap twice). On a meeting you can change, **Add notes** is under its form.
+A meeting's details have two parts. **Notes** is the summary: decisions and action items. **Transcript** is what was said, word for word. It starts folded, with how long it runs; **Show** opens it.
 
-The Machine can add them too. Ask on a to-do, like "add this transcript to today's board meeting". A meeting with notes says **Notes** in the Calendar, and its Zoom summary shows under them.
+Each has its own **Add notes** or **Add transcript**, **Upload file** for a Markdown or text file, **Edit** and **Remove** (tap twice). What goes in one stays there. On a meeting you can change, **Notes** under its form opens them.
 
-The Machine reads them like Zoom notes, for the meeting's follow-ups. They are Work or Personal like the meeting, and go to your team only when the meeting does.
+With [Zoom](zoom.md) connected, its summary shows in Notes and its transcript in Transcript, marked **From Zoom**. Zoom never replaces what you added: when both are there, both show.
+
+The Machine can add them too. Ask on a to-do, like "add this transcript to today's board meeting". A transcript goes in Transcript, a summary in Notes. A meeting with them says **Notes** or **Transcript** in the Calendar.
+
+The Machine reads both for the meeting's follow-ups. They are Work or Personal like the meeting, and go to your team only when the meeting does.
 
 ## Add or change an event
 
