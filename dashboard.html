@@ -2391,14 +2391,14 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 ><div id="cal-v-notes-form" hidden><textarea id="cal-v-notes-text" rows="9" aria-label="Notes"></textarea><p id="cal-v-notes-error" class="cal-v-error" role="status"></p></div
 ><div class="cal-v-nact"><button type="button" id="cal-v-notes-add">Add notes</button><button type="button" id="cal-v-notes-edit">Edit</button><button type="button" id="cal-v-notes-remove">Remove</button
 ><button type="button" id="cal-v-notes-save" class="primary">Save</button><label id="cal-v-notes-file" class="cal-v-file">Upload file<input type="file" accept=".md,.markdown,.txt,.vtt,text/markdown,text/plain,text/vtt"></label><button type="button" id="cal-v-notes-cancel">Cancel</button></div
-><div id="cal-v-notes-zoom" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Zoom</span><a id="cal-v-notes-zoom-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Zoom ↗</a></div><div id="cal-v-notes-zoom-body" class="cal-v-nb"></div><button type="button" id="cal-v-notes-zoom-more" class="cal-v-more" hidden>Show all</button></div></div></section
+><div id="cal-v-notes-zoom" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Zoom</span><a id="cal-v-notes-zoom-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Zoom ↗</a></div><div id="cal-v-notes-zoom-body" class="cal-v-nb"></div><button type="button" id="cal-v-notes-zoom-more" class="cal-v-more" hidden>Show all</button></div><div id="cal-v-notes-meet" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Google Meet</span><a id="cal-v-notes-meet-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Google Docs ↗</a></div><div id="cal-v-notes-meet-body" class="cal-v-nb"></div><button type="button" id="cal-v-notes-meet-more" class="cal-v-more" hidden>Show all</button></div></div></section
 ><section id="cal-v-tr" class="cal-v-notes" aria-labelledby="cal-v-tr-h"><div class="cal-v-nh"><h3><button type="button" id="cal-v-tr-toggle" class="cal-v-toggle" aria-expanded="false" aria-controls="cal-v-tr-in"><span id="cal-v-tr-h">Transcript</span><span id="cal-v-tr-show" class="cal-v-show">Show</span></button></h3><span id="cal-v-tr-by" class="cal-v-mail"></span></div
 ><div id="cal-v-tr-in" class="cal-v-in"><div id="cal-v-tr-body" class="cal-v-nb" hidden></div><button type="button" id="cal-v-tr-more" class="cal-v-more" hidden>Show all</button
 ><p id="cal-v-tr-none" class="cal-v-mail" hidden>No transcript yet.</p
 ><div id="cal-v-tr-form" hidden><textarea id="cal-v-tr-text" rows="9" aria-label="Transcript"></textarea><p id="cal-v-tr-error" class="cal-v-error" role="status"></p></div
 ><div class="cal-v-nact"><button type="button" id="cal-v-tr-add">Add transcript</button><button type="button" id="cal-v-tr-edit">Edit</button><button type="button" id="cal-v-tr-remove">Remove</button
 ><button type="button" id="cal-v-tr-save" class="primary">Save</button><label id="cal-v-tr-file" class="cal-v-file">Upload file<input type="file" accept=".md,.markdown,.txt,.vtt,text/markdown,text/plain,text/vtt"></label><button type="button" id="cal-v-tr-cancel">Cancel</button></div
-><div id="cal-v-tr-zoom" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Zoom</span><a id="cal-v-tr-zoom-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Zoom ↗</a></div><div id="cal-v-tr-zoom-body" class="cal-v-nb"></div><button type="button" id="cal-v-tr-zoom-more" class="cal-v-more" hidden>Show all</button></div></div></section
+><div id="cal-v-tr-zoom" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Zoom</span><a id="cal-v-tr-zoom-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Zoom ↗</a></div><div id="cal-v-tr-zoom-body" class="cal-v-nb"></div><button type="button" id="cal-v-tr-zoom-more" class="cal-v-more" hidden>Show all</button></div><div id="cal-v-tr-meet" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Google Meet</span><a id="cal-v-tr-meet-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Google Docs ↗</a></div><div id="cal-v-tr-meet-body" class="cal-v-nb"></div><button type="button" id="cal-v-tr-meet-more" class="cal-v-more" hidden>Show all</button></div></div></section
 ><div class="actions send-act"><button type="button" data-cal-close>Close</button></div
 ><a id="cal-v-open" class="cal-f-open" target="_blank" rel="noopener" hidden>Open in its calendar ↗</a></dialog
 ><p id="notice" role="status"></p
@@ -5867,7 +5867,7 @@ function calView(m){const a=new Date(m.start),b0=new Date(m.end),b=isNaN(b0)||b0
  calNotesOpen(m);$('#cal-view').showModal();calNotesFit()}
 // A meeting's two records (meeting_notes.py): Notes (a summary, decisions, action items) first and open, then its
 // Transcript (what was said), folded until opened. Each is the one added to the meeting, by the owner here (pasted, or a
-// file) or by a Do it run, and Zoom's that matches it, marked From Zoom: both show when both are there, and neither
+// file) or by a Do it run, and the meeting app's that matches it, marked From Zoom or From Google Meet: both show when both are there, and neither
 // replaces the other. Reading is a GET; Save and Remove change only that field, never the other, and reviews use them
 // for the meeting's follow-ups. Remove asks twice.
 let calNote=null;
@@ -5886,20 +5886,24 @@ async function calNotesOpen(m){const me={m,data:null,editing:{notes:false,tr:fal
  for(const f in CAL_FIELDS){$('#cal-v-'+f+'-text').value='';$('#cal-v-'+f+'-error').textContent=''}calNotesShow();
  try{me.data=await request('api/meeting-notes?event='+encodeURIComponent(m.id))}catch{me.failed=true}if(calNote===me){calNotesShow();calNotesFit()}}
 // A transcript reads as it was written, line by line; notes are Markdown
+// The meeting apps whose notes and transcripts match a meeting: the block's id, and its key in the API
+const CAL_APPS=[['zoom','zoom'],['meet','google_meet']];
 const calNotesHtml=(f,text)=>f==='tr'?esc(text):chatMarkdown(text);
 function calNotesShow(){const n=calNote,d=n?.data,ready=!!d;
- for(const [f,c] of Object.entries(CAL_FIELDS)){const added=d?.[c.api],zoom=d?.zoom?.[c.api],editing=!!n?.editing[f],q=id=>$('#cal-v-'+f+'-'+id);
+ for(const [f,c] of Object.entries(CAL_FIELDS)){const added=d?.[c.api],editing=!!n?.editing[f],q=id=>$('#cal-v-'+f+'-'+id);
   q('by').textContent=added&&!editing?t(added.by==='owner'?'Added by you · {}':'Added by The Machine · {}',t(humanDay(new Date(added.at)))):'';
   const body=q('body');body.hidden=!added||editing;body.classList.remove('all','cut');body.classList.toggle('plain',f==='tr');body.innerHTML=added&&!editing?calNotesHtml(f,added.text):'';q('more').hidden=true;
-  // Zoom's under the owner's own and its buttons; alone, above Add
-  const z=q('zoom'),zb=q('zoom-body'),nact=q('in').querySelector('.cal-v-nact');if(added)nact.after(z);else nact.before(z);z.hidden=!zoom||editing;zb.classList.remove('all','cut');zb.classList.toggle('plain',f==='tr');zb.innerHTML=zoom&&!editing?calNotesHtml(f,zoom.text):'';q('zoom-more').hidden=true;
-  const zl=q('zoom-open'),url=d?.zoom?.url;zl.hidden=!url;if(url)zl.href=url;
-  const none=q('none');none.hidden=editing||!!added||!!zoom||!(ready||n?.failed);none.textContent=t(n?.failed?c.failed:c.empty);
+  // The meeting app's (Zoom, Google Meet) under the owner's own and its buttons; alone, above Add
+  const nact=q('in').querySelector('.cal-v-nact');let after=nact,app=null;
+  for(const [k,api] of CAL_APPS){const x=d?.[api]?.[c.api],z=q(k),zb=q(k+'-body');app=app||x;if(added){after.after(z);after=z}else nact.before(z);
+   z.hidden=!x||editing;zb.classList.remove('all','cut');zb.classList.toggle('plain',f==='tr');zb.innerHTML=x&&!editing?calNotesHtml(f,x.text):'';q(k+'-more').hidden=true;
+   const zl=q(k+'-open'),url=x?.url||d?.[api]?.url;zl.hidden=!url;if(url)zl.href=url}
+  const none=q('none');none.hidden=editing||!!added||!!app||!(ready||n?.failed);none.textContent=t(n?.failed?c.failed:c.empty);
   q('form').hidden=!editing;
   for(const [id,on] of [['add',ready&&!added&&!editing],['edit',!!added&&!editing],['remove',!!added&&!editing],['save',editing],['file',ready&&!added&&!editing||editing],['cancel',editing]])q(id).hidden=!on;
   const rm=q('remove');rm.classList.remove('sure');rm.textContent=t('Remove');
   if(f==='tr'){// Folded while it has something to show: its title says how long it runs
-   const has=!!(added||zoom),open=!has||editing||!!n?.open,min=added?.minutes||zoom?.minutes;
+   const has=!!(added||app),open=!has||editing||!!n?.open,min=added?.minutes||app?.minutes;
    q('h').textContent=has&&min?t('Transcript · {}',calRunTime(min)):t('Transcript');
    const tg=q('toggle');tg.setAttribute('aria-expanded',String(open));tg.disabled=!has||editing;q('show').hidden=!has||editing;q('show').textContent=t(open?'Hide':'Show');
    q('in').hidden=!open;if(!open)q('by').textContent=''}}}

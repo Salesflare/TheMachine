@@ -39,7 +39,7 @@ Os detalhes de uma reunião têm duas partes. **Notas** é o resumo: decisões e
 
 Cada uma tem seu próprio **Adicionar notas** ou **Adicionar transcrição**, **Enviar arquivo** para um arquivo Markdown ou de texto, **Editar** e **Remover** (toque duas vezes). O que vai numa fica nela. Numa reunião que você pode mudar, **Notas** embaixo do formulário abre as duas.
 
-Com o [Zoom](zoom.md) conectado, o resumo dele aparece em Notas e a transcrição em Transcrição, marcados **Do Zoom**. O Zoom nunca substitui o que você adicionou: quando os dois existem, os dois aparecem.
+Com o [Zoom](zoom.md) ou o [Google Meet](google-meet.md) conectado, as notas dele aparecem em Notas e a transcrição em Transcrição, marcadas **Do Zoom** ou **Do Google Meet**. Eles nunca substituem o que você adicionou: quando os dois existem, os dois aparecem.
 
 A The Machine também pode adicioná-las. Peça numa tarefa, como "adicione esta transcrição à reunião do conselho de hoje". Uma transcrição vai em Transcrição, um resumo em Notas. Uma reunião com elas mostra **Notas** ou **Transcrição** no calendário.
 

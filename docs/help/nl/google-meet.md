@@ -12,6 +12,8 @@ Transcripts en Gemini-notities van Google Meet-meetings die je organiseerde, zod
 
 Meet maakt ze alleen als transcripts of Gemini-notities aanstonden tijdens de meeting.
 
+Elk wordt gekoppeld aan de meeting in je agenda op hetzelfde moment. De Gemini-notities staan in Notities van die meeting en het transcript in Transcript, met **Van Google Meet** erbij, naast wat jij er toevoegde; ze vervangen het nooit.
+
 ## Wat het kan doen
 
 Niets in Meet of Drive. Het leest alleen, en zet zelf nooit transcripts aan.

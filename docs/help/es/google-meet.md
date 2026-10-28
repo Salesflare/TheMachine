@@ -12,6 +12,8 @@ Las transcripciones y notas de Gemini de las reuniones de Google Meet que organi
 
 Meet solo las crea si las transcripciones o las notas de Gemini estaban activadas durante la reunión.
 
+Cada una se asocia a la reunión de tu calendario a la misma hora. Las notas de Gemini aparecen en Notas de esa reunión y la transcripción en Transcripción, marcadas **De Google Meet**, junto a lo que añadiste ahí; nunca lo reemplazan.
+
 ## Qué puede hacer
 
 Nada en Meet ni en Drive. Solo lee y nunca activa las transcripciones por su cuenta.

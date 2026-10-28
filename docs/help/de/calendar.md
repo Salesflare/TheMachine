@@ -39,7 +39,7 @@ Die Details eines Termins haben zwei Teile. **Notizen** ist die Zusammenfassung:
 
 Jeder Teil hat sein eigenes **Notizen hinzufügen** oder **Transkript hinzufügen**, **Datei hochladen** für eine Markdown- oder Textdatei, **Bearbeiten** und **Entfernen** (zweimal tippen). Was in einem Teil steht, bleibt dort. Bei einem Termin, den du ändern kannst, öffnet **Notizen** unter seinem Formular sie.
 
-Ist [Zoom](zoom.md) verbunden, steht seine Zusammenfassung in Notizen und sein Transkript in Transkript, markiert mit **Von Zoom**. Zoom ersetzt nie, was du hinzugefügt hast: Gibt es beides, siehst du beides.
+Ist [Zoom](zoom.md) oder [Google Meet](google-meet.md) verbunden, stehen seine Notizen in Notizen und sein Transkript in Transkript, markiert mit **Von Zoom** oder **Von Google Meet**. Sie ersetzen nie, was du hinzugefügt hast: Gibt es beides, siehst du beides.
 
 The Machine kann sie auch hinzufügen. Frag sie bei einer Aufgabe, etwa "füge dieses Transkript zur heutigen Vorstandssitzung hinzu". Ein Transkript kommt in Transkript, eine Zusammenfassung in Notizen. Ein Termin damit zeigt **Notizen** oder **Transkript** im Kalender.
 

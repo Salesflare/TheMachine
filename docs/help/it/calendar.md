@@ -39,7 +39,7 @@ I dettagli di una riunione hanno due parti. **Note** è il riepilogo: decisioni 
 
 Ognuna ha il suo **Aggiungi note** o **Aggiungi trascrizione**, **Carica file** per un file Markdown o di testo, **Modifica** e **Rimuovi** (tocca due volte). Quello che va in una resta lì. Su una riunione che puoi modificare, **Note** sotto il suo modulo le apre.
 
-Con [Zoom](zoom.md) collegato, il suo riepilogo compare in Note e la sua trascrizione in Trascrizione, segnati **Da Zoom**. Zoom non sostituisce mai ciò che hai aggiunto: quando ci sono entrambi, si vedono entrambi.
+Con [Zoom](zoom.md) o [Google Meet](google-meet.md) collegato, le sue note compaiono in Note e la sua trascrizione in Trascrizione, segnate **Da Zoom** o **Da Google Meet**. Non sostituiscono mai ciò che hai aggiunto: quando ci sono entrambi, si vedono entrambi.
 
 Anche The Machine può aggiungerle. Chiediglielo su un’attività, come "aggiungi questa trascrizione al consiglio di amministrazione di oggi". Una trascrizione va in Trascrizione, un riepilogo in Note. Una riunione che le ha mostra **Note** o **Trascrizione** nel calendario.
 

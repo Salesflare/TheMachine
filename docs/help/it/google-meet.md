@@ -12,6 +12,8 @@ Trascrizioni e note di Gemini delle riunioni Google Meet che hai organizzato, ap
 
 Meet le crea solo se trascrizioni o note di Gemini erano attive durante la riunione.
 
+Ognuna viene abbinata alla riunione del tuo calendario alla stessa ora. Le note di Gemini compaiono in Note di quella riunione e la trascrizione in Trascrizione, segnate **Da Google Meet**, accanto a ciò che hai aggiunto lì; non lo sostituiscono mai.
+
 ## Cosa può fare
 
 Niente in Meet o Drive. Legge soltanto e non attiva mai le trascrizioni da solo.

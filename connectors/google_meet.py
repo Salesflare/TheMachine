@@ -6,6 +6,8 @@ The credential is an OAuth access token, not an API key. It must be renewed
 externally when it expires; no refresh token or write scope is used here.
 Each poll replays the recent window to catch delayed artifacts and edited Docs.
 Meet conference records expire after 30 days, even though Docs can live longer.
+The calendar meeting at the same time shows them (meeting_notes.py): Gemini's notes under Notes, the transcript
+under Transcript, marked From Google Meet, next to anything the owner added there and never in its place.
 """
 import copy
 import datetime as dt
@@ -35,6 +37,8 @@ SETUP = {
 PAGE_SIZE = 10
 PAGES = 20
 MAX_BYTES = 10_000_000
+NOTES_CHARS = 40_000
+TRANSCRIPT_CHARS = 400_000  # a long meeting's full transcript fits, as from Zoom
 ID = r'[A-Za-z0-9_-]+'
 CONFERENCE = r'conferenceRecords/' + ID
 
@@ -135,14 +139,17 @@ def artifact_event(source, account, conference, item, collection):
     body = re.sub(r'(?i)\b(password|passcode|one[- ]time code|verification code|otp)\s*[:=]\s*\S+',
                   r'\1: [omitted]', body)
     notes = collection == 'smartNotes'
+    cap = NOTES_CHARS if notes else TRANSCRIPT_CHARS
+    # The conference's own times, so the calendar meeting is matched by when the call ran
+    span = {'start_at': conference['startTime'], **({'end_at': conference['endTime']} if conference.get('endTime') else {})}
     return {'account_id': account['id'], 'source_id': hashlib.sha256(name.encode()).hexdigest(),
             'kind': 'google_meet.notes' if notes else 'google_meet.transcript',
             'occurred_at': occurred, 'title': ('Meeting notes' if notes else 'Meeting transcript') + ' · ' + occurred[:10],
-            'body': body[:40000], 'deleted': False,
+            'body': body[:cap], 'deleted': False,
             'metadata': {'source_url': 'https://docs.google.com/document/d/' + document + '/edit',
                          'thread_id': hashlib.sha256(conference['name'].encode()).hexdigest(),
                          'conference': conference['name'], 'artifact': name,
-                         'truncated': len(body) > 40000, 'body_chars': len(body)}}
+                         'truncated': len(body) > cap, 'body_chars': len(body), **span}}
 
 
 def window(now, days, since=None):
@@ -172,8 +179,10 @@ def collect_page(source, account, current):
             if not isinstance(name, str) or not re.fullmatch(CONFERENCE, name):
                 raise source.helpers.SourceError('google_meet_invalid_conference')
             start = timestamp(record.get('startTime'), source.helpers).isoformat()
+            # endTime is there once the call has ended
+            end = timestamp(record['endTime'], source.helpers).isoformat() if record.get('endTime') else None
             if after <= timestamp(start, source.helpers) <= before:
-                pending.append({'name': name, 'startTime': start})
+                pending.append({'name': name, 'startTime': start, **({'endTime': end} if end else {})})
         current.update(pending=pending, conference_token=token, conferences_done=not token)
         return []
     conference, collection = current['pending'][0], current['collection']

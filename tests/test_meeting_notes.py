@@ -187,6 +187,31 @@ class MeetingNotes(unittest.TestCase):
         self.assertEqual((read['transcript']['text'], read['zoom']['transcript']['text'][:5]), (TURNS, 'Dana:'))
         self.assertIsNone(self.app.action('meeting_notes', {'event_id': self.ids['standup']})['zoom'])  # another meeting gets none
 
+    def test_google_meet_puts_its_notes_in_notes_and_its_transcript_in_transcript_matched_by_time(self):
+        meet = {'id': 'google-meet', 'service': 'google_meet', 'boundary': 'work:Example'}
+        self.app.config['accounts'].append(meet)
+        span = {'start_at': '2026-10-28T13:02:00+00:00', 'end_at': '2026-10-28T14:47:00+00:00', 'truncated': False}
+        doc = lambda d: {'source_url': 'https://docs.google.com/document/d/' + d + '/edit', **span}
+        self.store.commit_page('google-meet', {}, [  # as connectors/google_meet.py writes them: no meeting ID, only times
+            {'account_id': 'google-meet', 'source_id': 'a' * 64, 'kind': 'google_meet.notes', 'occurred_at': '2026-10-28T13:04:00+00:00',
+             'title': 'Meeting notes · 2026-10-28', 'body': 'Summary: the board approved the plan.', 'metadata': doc('notes-doc'), 'deleted': False},
+            {'account_id': 'google-meet', 'source_id': 'b' * 64, 'kind': 'google_meet.transcript', 'occurred_at': '2026-10-28T13:04:00+00:00',
+             'title': 'Meeting transcript · 2026-10-28', 'body': 'Dana: Shall we start?\nOwner: Yes.', 'metadata': doc('tr-doc'), 'deleted': False}])
+        self.app.action('meeting_notes', {'event_id': self.ids['board'], 'text': 'My own notes'}, owner_dashboard=True)
+        read = self.app.action('meeting_notes', {'event_id': self.ids['board']})
+        self.assertEqual(read['notes']['text'], 'My own notes')  # the owner's stays, the app's shows next to it
+        self.assertIsNone(read['transcript'])
+        self.assertIsNone(read['zoom'])
+        got = read['google_meet']
+        self.assertEqual((got['notes']['text'], got['notes']['url']), ('Summary: the board approved the plan.', 'https://docs.google.com/document/d/notes-doc/edit'))
+        self.assertEqual((got['transcript']['text'], got['transcript']['url'], got['transcript']['minutes']),
+                         ('Dana: Shall we start?\nOwner: Yes.', 'https://docs.google.com/document/d/tr-doc/edit', 105))
+        self.assertEqual(self.app.action('meeting_notes', {'event_id': self.ids['board'], 'field': 'transcript'})['google_meet']['notes'], None)
+        self.assertIsNone(self.app.action('meeting_notes', {'event_id': self.ids['standup']})['google_meet'])  # another meeting gets none
+        self.app.action('meeting_notes', {'event_id': self.ids['board'], 'text': 'Newer notes'}, owner_dashboard=True)  # saving again leaves Meet's alone
+        read = self.app.action('meeting_notes', {'event_id': self.ids['board']})
+        self.assertEqual((read['notes']['text'], read['google_meet']['notes']['text']), ('Newer notes', 'Summary: the board approved the plan.'))
+
     def test_notes_saved_before_the_split_that_are_a_transcript_move_to_transcript_once(self):
         board, standup, dinner = self.ids['board'], self.ids['standup'], self.ids['dinner']
         def legacy(account, meeting, body):  # as saved before Notes and Transcript were apart: no field

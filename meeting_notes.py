@@ -1,8 +1,9 @@
 """A meeting's two records, kept apart: its Notes (a summary, decisions, action items; written by a person or an AI) and
-its Transcript (the verbatim record of what was said). Each comes from Zoom (connectors/zoom.py: the AI Companion
-summary is Notes, the transcript is Transcript) or is added to the meeting itself (pasted or uploaded by the owner on
-the meeting in the Calendar, or saved by a Do it run). The owner's and Zoom's never replace each other: when both are
-there, both show, each with its source.
+its Transcript (the verbatim record of what was said). Each comes from the meeting app (connectors/zoom.py: the AI
+Companion summary is Notes, the transcript is Transcript; connectors/google_meet.py: Gemini's notes are Notes, the
+transcript is Transcript) or is added to the meeting itself (pasted or uploaded by the owner on the meeting in the
+Calendar, or saved by a Do it run). The owner's and the app's never replace each other: when both are there, both
+show, each with its source.
 
 Added ones are a signal each (kind meeting.notes, meeting.transcript) on the meeting's own calendar account, so they
 are Work or Personal as the meeting is, are reviewed like other notes, and go to the team only as the meeting does
@@ -11,8 +12,8 @@ are Work or Personal as the meeting is, are reviewed like other notes, and go to
 below it. Text is never moved from one to the other on its own, except once for notes saved before the two were apart
 (transcript_moves, at the start).
 
-Zoom's are matched by plain code, never by a model: the Zoom meeting ID in the calendar event (its join link or "Meeting ID" in the
-location or description) at about the same time; else the time alone (start within a few minutes, or mostly
+The app's are matched by plain code, never by a model: the Zoom meeting ID in the calendar event (its join link or "Meeting ID" in the
+location or description) at about the same time; else the time alone, all Google Meet gives (start within a few minutes, or mostly
 overlapping), preferring the event the notes' host was in. Two events that fit equally well match neither: no notes is
 better than another meeting's notes. What the notes say is read by the review, which judges it by meaning."""
 from __future__ import annotations
@@ -27,8 +28,11 @@ ADDED = NOTES
 FIELDS = {'notes': NOTES, 'transcript': TRANSCRIPT}  # the field's name in the API, and its kind
 PREFIX = {NOTES: 'notes:', TRANSCRIPT: 'transcript:'}
 ZOOM = {'notes': 'zoom.summary', 'transcript': 'zoom.transcript'}
-KINDS = (NOTES, TRANSCRIPT, 'zoom.summary')  # a meeting's record for its follow-ups, in this order (for_event)
-SOURCE = {'zoom.summary': 'Zoom', 'zoom.transcript': 'Zoom', NOTES: 'Meeting', TRANSCRIPT: 'Meeting'}
+GOOGLE_MEET = {'notes': 'google_meet.notes', 'transcript': 'google_meet.transcript'}
+SOURCES = {'zoom': ZOOM, 'google_meet': GOOGLE_MEET}  # a meeting app's records of each field, by its key in read()
+KINDS = (NOTES, TRANSCRIPT, 'zoom.summary', 'google_meet.notes')  # a meeting's record for its follow-ups, in this order (for_event)
+SOURCE = {'zoom.summary': 'Zoom', 'zoom.transcript': 'Zoom', 'google_meet.notes': 'Google Meet', 'google_meet.transcript': 'Google Meet',
+          NOTES: 'Meeting', TRANSCRIPT: 'Meeting'}
 MAX_CHARS = 400_000  # a long meeting's full transcript fits
 READ_CHARS = 20_000  # one read of a field for a tool result; the rest with offset
 SAME_ID_HOURS = 3  # a recurring Zoom meeting keeps its ID: the same ID only counts at about the same time
@@ -269,8 +273,8 @@ def _page(body, offset, limit):
 
 def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
     """A meeting and its two records: notes and transcript, each the one added to it ({text, by, at, chars,
-    next_offset}; the transcript also with minutes, how long it runs) or None, and Zoom's that match it under zoom
-    ({notes, transcript, url}, or None). field ('notes' or 'transcript') reads only that one, from offset."""
+    next_offset}; the transcript also with minutes, how long it runs) or None, and the meeting app's that match it
+    under zoom and google_meet ({notes, transcript, url}, each item with its own url, or None). field ('notes' or 'transcript') reads only that one, from offset."""
     event = meeting(db, event_id)
     if not event:
         raise ValueError('No meeting with that event_id')
@@ -278,7 +282,7 @@ def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
     offset = max(0, int(offset or 0))
     em = json.loads(event['metadata'] or '{}')
     out = {'event_id': event['id'], 'title': event['title'], 'start': event['occurred_at'], 'end': em.get('end_at') or event['occurred_at'],
-           'notes': None, 'transcript': None, 'zoom': None}
+           'notes': None, 'transcript': None, 'zoom': None, 'google_meet': None}
     meeting_minutes = _minutes(dict(event))
     for kind, key in ((NOTES, 'notes'), (TRANSCRIPT, 'transcript')):
         if only and kind != only:
@@ -289,29 +293,32 @@ def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
             out[key] = {'id': row['id'], **_page(body, offset, limit), 'by': m.get('added_by') or 'owner', 'at': m.get('added_at') or row['ingested_at'],
                         **({'minutes': spoken_minutes(body) or meeting_minutes} if kind == TRANSCRIPT else {})}
     start = stamp(event['occurred_at'])
-    if start:
-        zoom, url = {}, None
-        for key, kind in ZOOM.items():
+    for name, kinds in SOURCES.items():
+        if not start:
+            break
+        found_any, url = {}, None
+        for key, kind in kinds.items():
             if only and FIELDS[key] != only:
                 continue
             found = for_event(db, event['id'], start.date().isoformat(), (kind,))
             if not found:
                 continue
-            zm = found['metadata'] if isinstance(found['metadata'], dict) else json.loads(found['metadata'] or '{}')
+            sm = found['metadata'] if isinstance(found['metadata'], dict) else json.loads(found['metadata'] or '{}')
             body = str(found.get('body') or '')
             if not body.strip():
                 continue
-            link = zm.get('source_url')
-            url = url or (link if isinstance(link, str) and link.startswith('https://') else None)
-            zoom[key] = {'id': found['id'], 'title': found['title'], **_page(body, offset, limit),
-                         **({'minutes': spoken_minutes(body) or _zoom_minutes(zm) or meeting_minutes, 'truncated': bool(zm.get('truncated'))}
-                            if key == 'transcript' else {})}
-        if zoom:
-            out['zoom'] = {'notes': zoom.get('notes'), 'transcript': zoom.get('transcript'), 'url': url}
+            link = sm.get('source_url')
+            link = link if isinstance(link, str) and link.startswith('https://') else None
+            url = url or link
+            found_any[key] = {'id': found['id'], 'title': found['title'], 'url': link, **_page(body, offset, limit),
+                              **({'minutes': spoken_minutes(body) or _span_minutes(sm) or meeting_minutes, 'truncated': bool(sm.get('truncated'))}
+                                 if key == 'transcript' else {})}
+        if found_any:
+            out[name] = {'notes': found_any.get('notes'), 'transcript': found_any.get('transcript'), 'url': url}
     return out
 
 
-def _zoom_minutes(m):
+def _span_minutes(m):
     start, end = stamp(m.get('start_at')), stamp(m.get('end_at'))
     return round((end - start).total_seconds() / 60) if start and end and end > start else None
 

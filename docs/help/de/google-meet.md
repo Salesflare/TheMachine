@@ -12,6 +12,8 @@ Transkripte und Gemini-Notizen von Google-Meet-Meetings, die du organisiert hast
 
 Meet erstellt sie nur, wenn Transkripte oder Gemini-Notizen während des Meetings eingeschaltet waren.
 
+Jedes wird dem Meeting in deinem Kalender zur selben Zeit zugeordnet. Die Gemini-Notizen stehen in den Notizen dieses Meetings und das Transkript in Transkript, markiert mit **Von Google Meet**, neben dem, was du dort hinzugefügt hast; sie ersetzen es nie.
+
 ## Was es tun kann
 
 Nichts in Meet oder Drive. Es liest nur und schaltet nie selbst Transkripte ein.
