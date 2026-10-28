@@ -4,7 +4,7 @@ area: connections
 summary: Outlook-Mails und Meetings, für Microsoft 365 und Outlook.com. Sendet eine E-Mail erst, nachdem du sie freigegeben hast.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, onboarding.py
-site: Connect Microsoft, Copy link for your admin, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
+site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
 ## Was es liest
@@ -27,9 +27,9 @@ Auf einer gehosteten Machine:
 
 1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup.
 2. Tippe auf **Microsoft verbinden** und melde dich an.
-3. Wenn Microsoft nach einer Admin-Freigabe fragt, tippe auf **Link für deinen Admin kopieren**, oder auf **Ich bin der Admin: jetzt freigeben**, wenn du das bist.
+3. Wenn Microsoft nach einer Admin-Freigabe fragt, schick deinem Microsoft 365 Admin diesen Link: themachine.computer/m365-admin-consent. **Link kopieren** kopiert ihn. Sobald der Admin freigibt, können sich alle in deiner Organisation verbinden. Bist du der Admin, tippe auf **Ich bin der Admin: jetzt freigeben**.
 
-Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Danach bist du zurück im Dashboard.
+Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Danach bist du zurück im Dashboard. Brauchst du die Freigabe deines Admins? Derselbe Link steht unter dem Button, mit **Link kopieren**.
 
 Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](fleet.md) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Mail und Kalender werden zusammen verbunden.
 

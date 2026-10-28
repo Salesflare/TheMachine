@@ -4,7 +4,7 @@ area: connections
 summary: E-mails e reuniões do Outlook, para Microsoft 365 e Outlook.com. Só envia um e-mail depois que você aprova.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, onboarding.py
-site: Connect Microsoft, Copy link for your admin, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
+site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
 ## O que ele lê
@@ -27,9 +27,9 @@ Em uma Machine hospedada:
 
 1. Abra sua página de configuração em app.themachine.computer/setup.
 2. Clique em **Conectar Microsoft** e entre.
-3. Se a Microsoft pedir aprovação de um admin, clique em **Copiar link para seu admin**, ou em **Sou o admin: aprovar agora** se for você.
+3. Se a Microsoft pedir aprovação de um admin, envie este link ao administrador do seu Microsoft 365: themachine.computer/m365-admin-consent. **Copiar link** copia o link. Assim que ele aprovar, todos na sua organização podem se conectar. Se for você, clique em **Sou o admin: aprovar agora**.
 
-Ou no painel: **Conexões**, **+ Adicionar**, escolha Outlook e clique em **Entrar com Microsoft**. Quando terminar, você volta para o painel.
+Ou no painel: **Conexões**, **+ Adicionar**, escolha Outlook e clique em **Entrar com Microsoft**. Quando terminar, você volta para o painel. Precisa da aprovação do seu administrador? O mesmo link fica embaixo do botão, com **Copiar link**.
 
 No seu próprio computador, depois que ele estiver [pareado com sua conta](fleet.md): abra **Conexões**, depois **+ Adicionar**, escolha Outlook e clique em **Entrar com Microsoft**. E-mail e agenda se conectam juntos.
 
