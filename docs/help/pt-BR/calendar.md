@@ -3,7 +3,7 @@ title: Calendário
 area: calendar
 summary: A semana em um só lugar: reuniões, tarefas com prazo, tarefas adiadas e promessas.
 covers: tab:calendar
-code: dashboard.html
+code: dashboard.html, meeting_notes.py
 order: 1
 ---
 ## O que ele mostra
@@ -30,6 +30,14 @@ Na grade, eventos no mesmo horário ficam lado a lado, e cada um continua legív
 ## Abrir algo
 
 Clique em uma linha para abrir o chat da tarefa, a promessa ou a reunião na própria agenda. Em uma reunião, quem o seu Graph conhece, e as organizações e projetos de que ela trata, são links para a página deles. Só olhar não muda nada.
+
+## Notas da reunião
+
+Os detalhes de uma reunião mostram as notas dela. **Adicionar notas** para colar notas ou uma transcrição, ou **Enviar arquivo** para um arquivo Markdown ou de texto. **Editar** muda as notas, e **Remover** tira elas (toque duas vezes). Numa reunião que você pode mudar, **Adicionar notas** fica embaixo do formulário.
+
+A The Machine também pode adicioná-las. Peça numa tarefa, como "adicione esta transcrição à reunião do conselho de hoje". Uma reunião com notas mostra **Notas** no calendário, e o resumo do Zoom aparece embaixo.
+
+A The Machine lê as notas como as do Zoom, para os próximos passos da reunião. Elas são Trabalho ou Pessoal como a reunião, e só vão para sua equipe quando a reunião vai.
 
 ## Adicionar ou mudar um evento
 

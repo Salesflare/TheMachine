@@ -81,6 +81,7 @@ The service keeps track of its own bugs and can fix them. Small fixes that prove
 | `assistant busy` | What runs right now: agent jobs, sends, confirmed steps and preparations being worked on. Exits 3 while something runs, 0 when a restart or update cuts nothing off. A run that stopped (Stuck, Needs your help, snoozed) isn't running |
 | `assistant feedback` | Recent decisions and written feedback |
 | `assistant prepare <id> --file brief.md` | Save a preparation on an accepted task |
+| `assistant meeting-notes --event <id> --file notes.md` | Put notes or a transcript (Markdown) on a calendar meeting, where the Calendar shows them and reviews use them; `--append` adds below the ones it has, `--remove` takes them off. `--day 2026-10-28 --query board` lists a day's meetings with their ids; `--event <id>` alone prints its notes |
 | `assistant preview` | Before activation: one review of the last 7 days; prints the to-dos, sends nothing |
 | `assistant roles` | Your agent reads the first and latest messages with your closest people and notes what each is to you in the graph (also the last step of `assistant profile`; `--again` to run it again right away) |
 | `assistant profile` | Your agent drafts how you write and what matters to you from your own messages, and notes what your closest people are to you in the graph; the draft is saved to `USER.md` only after your yes, within the 4,000 characters OpenClaw loads (`--again` for a fresh draft, `--all` to keep every line) |

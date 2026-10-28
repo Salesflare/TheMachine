@@ -3,7 +3,7 @@ title: Kalender
 area: calendar
 summary: Die kommende Woche an einem Ort: Meetings, fällige Aufgaben, zurückgestellte Aufgaben und Versprechen.
 covers: tab:calendar
-code: dashboard.html
+code: dashboard.html, meeting_notes.py
 order: 1
 ---
 ## Was er zeigt
@@ -30,6 +30,14 @@ Im Raster stehen Termine zur selben Zeit nebeneinander, solange jeder lesbar ble
 ## Etwas öffnen
 
 Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting in seinem eigenen Kalender zu öffnen. Bei einem Meeting sind Personen, die dein Graph kennt, und die Organisationen und Projekte, um die es geht, Links zu ihrer Seite. Ansehen ändert nichts.
+
+## Besprechungsnotizen
+
+Die Details eines Termins zeigen seine Notizen. **Notizen hinzufügen**, um Notizen oder ein Transkript einzufügen, oder **Datei hochladen** für eine Markdown- oder Textdatei. **Bearbeiten** ändert sie, und **Entfernen** nimmt sie weg (zweimal tippen). Bei einem Termin, den du ändern kannst, steht **Notizen hinzufügen** unter seinem Formular.
+
+The Machine kann sie auch hinzufügen. Frag sie bei einer Aufgabe, etwa "füge dieses Transkript zur heutigen Vorstandssitzung hinzu". Ein Termin mit Notizen zeigt **Notizen** im Kalender, und seine Zoom-Zusammenfassung steht darunter.
+
+The Machine liest sie wie Zoom-Notizen, für die nächsten Schritte nach dem Termin. Sie sind Arbeit oder Privat wie der Termin und gehen nur an dein Team, wenn der Termin es tut.
 
 ## Termin hinzufügen oder ändern
 

@@ -3,7 +3,7 @@ title: Calendario
 area: calendar
 summary: La semana que viene en un solo sitio: reuniones, tareas que vencen, tareas pospuestas y promesas.
 covers: tab:calendar
-code: dashboard.html
+code: dashboard.html, meeting_notes.py
 order: 1
 ---
 ## Qué muestra
@@ -30,6 +30,14 @@ En la cuadrícula, los eventos a la misma hora se colocan uno al lado del otro y
 ## Abre algo
 
 Haz clic en una fila para abrir el chat de su tarea, la promesa o la reunión en su propio calendario. En una reunión, alguien que tu Graph conoce, y las organizaciones y proyectos de los que trata, son enlaces a su página. Mirar no cambia nada.
+
+## Notas de reunión
+
+Los detalles de una reunión muestran sus notas. **Añadir notas** para pegar notas o una transcripción, o **Subir archivo** para un archivo Markdown o de texto. **Editar** las cambia, y **Quitar** las quita (toca dos veces). En una reunión que puedes cambiar, **Añadir notas** está debajo de su formulario.
+
+The Machine también puede añadirlas. Pídeselo en una tarea, como "añade esta transcripción a la reunión del consejo de hoy". Una reunión con notas muestra **Notas** en el calendario, y su resumen de Zoom aparece debajo.
+
+The Machine las lee como las notas de Zoom, para los siguientes pasos de la reunión. Son de Trabajo o Personales como la reunión, y solo van a tu equipo cuando la reunión va.
 
 ## Añade o cambia un evento
 

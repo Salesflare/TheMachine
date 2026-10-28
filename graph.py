@@ -1804,7 +1804,7 @@ def detail(db, node_id, events=12):
 # cards and promises that came from their signals, and their projects' moves. The owner's own view only: the team's
 # Graph (shared_graph.py) never reads it.
 TIMELINE_SOURCES = (('email', ('gmail.message', 'salesflare.email')),
-                    ('meetings', ('calendar.event', 'salesflare.meeting', 'zoom.summary')),
+                    ('meetings', ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes')),
                     ('intercom', ('intercom.conversation',)),
                     ('chats', ('whatsapp.message', 'slack.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')))
 TIMELINE_GROUPS = ('email', 'meetings', 'intercom', 'chats', 'cards', 'projects', 'other')
@@ -1892,6 +1892,12 @@ def timeline(db, node_id, source='', cursor=0, limit=40, now=None):
                 at = parse_time(r['occurred_at'])
                 if any(abs(at - m) <= ZOOM_NEAR for m in meetings):
                     add(r['id'], r['occurred_at'], 'zoom.summary')
+    # Notes added to one of their meetings (meeting_notes.py)
+    cal = sorted(e for e, (_, k, _) in signals.items() if k == 'calendar.event')
+    if cal:
+        for r in db.execute("SELECT n.id,n.occurred_at FROM events n JOIN events m ON m.id IN (SELECT value FROM json_each(?)) AND n.account_id=m.account_id "
+                            "AND n.source_id='notes:' || m.id WHERE n.kind='meeting.notes' AND n.deleted=0", (json.dumps(cal),)):
+            add(r['id'], r['occurred_at'], 'meeting.notes')
     ids = list(signals)
     copies = _meeting_copies(db, [e for e, (_, k, _) in signals.items() if k == 'calendar.event'])
     items = [{'type': 'event', 'id': e, 'at': at, 'source': timeline_source(k), 'kind': k, 'probable': bool(p),

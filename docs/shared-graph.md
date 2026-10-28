@@ -99,7 +99,7 @@ Only-you project ids).
 `graph_board_share`; `boards.visibility` 'people', the people in `share_people`), or one thread
 (**Share with…** on its label, `graph_thread_share`). For those teammates only (`grants`, `Scope.granted`) the board's
 open projects go with their full timelines: every thread linked to them, sensitive ones (deals, M&A) too, and their
-meetings, Zoom notes, Intercom conversations and chats (`ITEM_KINDS`, `Scope.board_items`), which count as shared by
+meetings, their notes (Zoom's, and notes added to the meeting), Intercom conversations and chats (`ITEM_KINDS`, `Scope.board_items`), which count as shared by
 being on the board, without a review. Each project record carries its timeline (`TIMELINE_PROJECT` lines: a line per
 signal, its moves and its cards; a move or card only when every signal it came from goes). A thread shared by hand goes
 whatever the review said. Never personal threads, people kept private or marked Personal, threads with only colleagues, or accounts

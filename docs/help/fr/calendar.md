@@ -3,7 +3,7 @@ title: Agenda
 area: calendar
 summary: La semaine à venir en un seul endroit : réunions, tâches à échéance, tâches en attente et promesses.
 covers: tab:calendar
-code: dashboard.html
+code: dashboard.html, meeting_notes.py
 order: 1
 ---
 ## Ce qu’il affiche
@@ -30,6 +30,14 @@ Dans la grille, les événements à la même heure se placent côte à côte tan
 ## Ouvrir un élément
 
 Cliquez sur une ligne pour ouvrir le chat de sa tâche, la promesse, ou la réunion dans son propre agenda. Dans une réunion, une personne que votre Graph connaît, ainsi que les organisations et projets dont parle la réunion, sont des liens vers leur page. Regarder ne change rien.
+
+## Notes de réunion
+
+Les détails d’une réunion affichent ses notes. **Ajouter des notes** pour coller des notes ou une transcription, ou **Importer un fichier** pour un fichier Markdown ou texte. **Modifier** les modifie, et **Retirer** les retire (touchez deux fois). Sur une réunion que vous pouvez modifier, **Ajouter des notes** se trouve sous son formulaire.
+
+The Machine peut aussi les ajouter. Demandez-le sur une tâche, par exemple "ajoute cette transcription au conseil d’administration d’aujourd’hui". Une réunion avec des notes affiche **Notes** dans le calendrier, et son résumé Zoom apparaît en dessous.
+
+The Machine les lit comme les notes Zoom, pour les suites de la réunion. Elles sont Travail ou Personnel comme la réunion, et ne vont à votre équipe que si la réunion y va.
 
 ## Ajouter ou modifier un événement
 

@@ -3,7 +3,7 @@ title: Calendar
 area: calendar
 summary: The week ahead in one place: meetings, to-dos that are due, snoozed to-dos and promises.
 covers: tab:calendar
-code: dashboard.html
+code: dashboard.html, meeting_notes.py
 order: 1
 ---
 ## What it shows
@@ -30,6 +30,14 @@ In the grid, events at the same time sit side by side while each stays readable.
 ## Open something
 
 Click a row to open its to-do's chat, the promise, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. Someone your Graph knows, and the organizations and projects the meeting is on, are links to their page. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
+
+## Meeting notes
+
+A meeting's details show its notes. **Add notes** to paste notes or a transcript, or **Upload file** for a Markdown or text file. **Edit** changes them, and **Remove** takes them off (tap twice). On a meeting you can change, **Add notes** is under its form.
+
+The Machine can add them too. Ask on a to-do, like "add this transcript to today's board meeting". A meeting with notes says **Notes** in the Calendar, and its Zoom summary shows under them.
+
+The Machine reads them like Zoom notes, for the meeting's follow-ups. They are Work or Personal like the meeting, and go to your team only when the meeting does.
 
 ## Add or change an event
 

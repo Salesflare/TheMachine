@@ -1950,10 +1950,22 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
  .cal-mode button{padding:0 10px}}
 [data-cal-edit],[data-cal-view]{cursor:pointer}
 #cal-dialog{width:min(480px,calc(100vw - 24px))}#cal-dialog [hidden]{display:none}
-#cal-view{width:min(440px,calc(100vw - 24px))}#cal-view [hidden]{display:none}#cal-view .snooze-heading{margin-bottom:10px;align-items:flex-start;gap:12px}#cal-view h2{margin:0;font-size:1.2rem;overflow-wrap:anywhere}
+#cal-view{width:min(560px,calc(100vw - 24px))}#cal-view [hidden]{display:none}#cal-view .snooze-heading{margin-bottom:10px;align-items:flex-start;gap:12px}#cal-view h2{margin:0;font-size:1.2rem;overflow-wrap:anywhere}
 #cal-view .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
 .cal-v-rows{margin:0;display:grid;gap:10px}.cal-v-rows div{display:grid;grid-template-columns:84px 1fr;gap:10px}.cal-v-rows dt{color:var(--faint);font-size:.88rem;padding-top:1px}.cal-v-rows dd{margin:0;color:var(--text);overflow-wrap:anywhere}.cal-v-with{display:grid;gap:4px}.cal-v-mail{color:var(--faint);font-size:.86rem}.cal-v-known{display:flex;min-width:0}
 .cal-v-links{display:flex;flex-wrap:wrap;gap:6px}.cal-v-links .chip,.cal-v-known .chip{max-width:100%;font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);padding:1px 9px 1px 8px;min-height:0}
+/* A meeting's notes: added on the meeting (by the owner or a Do it run), and Zoom's summary of it */
+.cal-v-notes{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}.cal-v-nh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.cal-v-nh h3{margin:0;font-size:1rem}#cal-v-zoom{margin-top:14px}
+.cal-v-nb{position:relative;max-height:220px;overflow:hidden;padding:10px 12px;border-radius:10px;background:var(--sunken);color:var(--text);font-size:.92rem;line-height:1.5;overflow-wrap:anywhere}
+.cal-v-nb.all{max-height:none}.cal-v-nb.cut::after{content:"";position:absolute;inset:auto 0 0;height:48px;background:linear-gradient(transparent,var(--sunken))}
+.cal-v-nb p{margin:0 0 8px}.cal-v-nb :is(ul,ol){margin:0 0 8px;padding-left:20px}.cal-v-nb>:last-child{margin-bottom:0}
+.cal-v-more{margin:6px 0 0;padding:0;min-height:0;border:0;background:none;color:var(--c-text-2);font-size:.9rem;text-decoration:underline}
+#cal-v-notes-none{margin:0}
+#cal-v-notes-text{display:block;width:100%;box-sizing:border-box;min-height:180px;max-height:50dvh;resize:vertical;padding:10px 12px;background:var(--sunken);border:1px solid var(--border);border-radius:10px;color:var(--text);font:.92rem/1.5 var(--sans)}
+#cal-v-notes-error{margin:6px 0 0;color:var(--danger,#e5484d);font-size:.9rem}#cal-v-notes-error:empty{display:none}
+.cal-v-nact{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.cal-v-nact :is(button,.cal-v-file){display:inline-flex;align-items:center;min-height:36px;margin:0;padding:0 14px;border:0;border-radius:10px;background:var(--tile);color:var(--text);font-size:.92rem;font-weight:600;cursor:pointer}
+.cal-v-nact .primary{background:var(--mint);color:var(--charcoal)}.cal-v-nact .sure{background:var(--danger,#e5484d);color:#fff}.cal-v-file input{display:none}
 #cal-view .send-act{display:flex;margin-top:16px}#cal-view .send-act button{flex:1 1 0;min-height:46px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
 #cal-dialog .snooze-heading{margin-bottom:12px}#cal-dialog h2{margin:0;font-size:1.2rem}
 #cal-dialog .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
@@ -1965,7 +1977,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 #cal-dialog .send-act{display:flex;gap:6px;margin-top:12px}
 #cal-dialog .send-act button{flex:1 1 0;min-height:46px;padding:8px 6px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
 #cal-dialog .send-act button.primary{background:var(--mint);color:var(--charcoal)}#cal-dialog .send-act button.sure{background:var(--danger,#e5484d);color:#fff}
-.cal-f-open{display:block;margin-top:12px;text-align:center;color:var(--c-text-2);font-size:.9rem}
+.cal-f-open{display:block;margin-top:12px;text-align:center;color:var(--c-text-2);font-size:.9rem}.cal-f-notes{width:100%;min-height:0;padding:0;border:0;background:none;text-decoration:underline;cursor:pointer}
 /* Where and Invite: suggestions under the field (the owner's own first), and who gets an invite as chips */
 .cal-sug{margin:-4px 0 10px;padding:4px;border:1px solid var(--border);border-radius:10px;background:var(--surface);list-style:none}.cal-sug:empty,.cal-sug[hidden]{display:none}
 .cal-sug li{margin:0}.cal-sug button{display:flex;flex-direction:column;align-items:stretch;gap:1px;width:100%;min-height:40px;margin:0;padding:6px 10px;border:0;border-radius:7px;background:none;box-shadow:none;color:var(--text);text-align:left;font:400 .95rem/1.25 var(--sans);cursor:pointer}
@@ -2353,10 +2365,18 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 ><p id="cal-f-error" role="status"></p><div class="actions send-act"
 ><button type="submit" class="primary" id="cal-f-save">Add</button
 ><button type="button" id="cal-f-delete" hidden>Delete</button><button type="button" data-cal-close>Cancel</button></div
-><a id="cal-f-open" class="cal-f-open" target="_blank" rel="noopener" hidden>Open in its calendar ↗</a></form></dialog
+><button type="button" id="cal-f-notes" class="cal-f-open cal-f-notes" hidden>Notes</button><a id="cal-f-open" class="cal-f-open" target="_blank" rel="noopener" hidden>Open in its calendar ↗</a></form></dialog
 ><dialog id="cal-view" aria-labelledby="cal-v-title"><div class="snooze-heading"
 ><h2 id="cal-v-title">Event</h2><button type="button" data-cal-close aria-label="Close">×</button></div
-><dl id="cal-v-rows" class="cal-v-rows"></dl><div class="actions send-act"><button type="button" data-cal-close>Close</button></div
+><dl id="cal-v-rows" class="cal-v-rows"></dl
+><section id="cal-v-notes" class="cal-v-notes" aria-labelledby="cal-v-notes-h"><div class="cal-v-nh"><h3 id="cal-v-notes-h">Notes</h3><span id="cal-v-notes-by" class="cal-v-mail"></span></div
+><div id="cal-v-notes-body" class="cal-v-nb" hidden></div><button type="button" id="cal-v-notes-more" class="cal-v-more" hidden>Show all</button
+><p id="cal-v-notes-none" class="cal-v-mail" hidden>No notes yet.</p
+><div id="cal-v-notes-form" hidden><textarea id="cal-v-notes-text" rows="9" aria-label="Notes"></textarea><p id="cal-v-notes-error" role="status"></p></div
+><div class="cal-v-nact"><button type="button" id="cal-v-notes-add">Add notes</button><button type="button" id="cal-v-notes-edit">Edit</button><button type="button" id="cal-v-notes-remove">Remove</button
+><button type="button" id="cal-v-notes-save" class="primary">Save</button><label id="cal-v-notes-file" class="cal-v-file">Upload file<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain"></label><button type="button" id="cal-v-notes-cancel">Cancel</button></div
+><div id="cal-v-zoom" hidden><div class="cal-v-nh"><h3>Zoom summary</h3><a id="cal-v-zoom-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Zoom ↗</a></div><div id="cal-v-zoom-body" class="cal-v-nb"></div></div></section
+><div class="actions send-act"><button type="button" data-cal-close>Close</button></div
 ><a id="cal-v-open" class="cal-f-open" target="_blank" rel="noopener" hidden>Open in its calendar ↗</a></dialog
 ><p id="notice" role="status"></p
 ><p class="stale-note" id="stale-note" role="status" hidden></p
@@ -2948,7 +2968,7 @@ const closed=s=>['completed','rejected'].includes(s.status);
 const ICONS={x:'<path d="M4 4l16 16M20 4L4 20"/>',plugin:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/>',gateway:'<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>',gmail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',slack:'<path d="M10 3 8 21M16 3l-2 18M4 9h16M3.5 15h16"/>',salesflare:'<path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-5h6v5M9 11h.01M15 11h.01"/>',android:'<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18h2"/>',whatsapp:'<path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.2-4.2A8 8 0 1 1 20 12z"/>',linkedin:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10v7M8 7h.01M12 17v-7M12 13a3 3 0 0 1 6 0v4"/>',github:'<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M18 10.2c0 4-6 3-10.5 6.3"/>',stripe:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>'};
 ICONS.docs='<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/>';ICONS.outlook=ICONS.gmail;ICONS.outlook_calendar=ICONS.calendar;ICONS.zoom='<rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 10.5 5-3v9l-5-3"/>';
 const icon=s=>`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONS[s]||ICONS.plugin}</svg></span>`;
-const kindService=k=>({'calendar.event':'calendar','slack.message':'slack','android.notification':'android','whatsapp.message':'whatsapp','salesflare.email':'salesflare','salesflare.meeting':'salesflare','gateway.alert':'gateway'}[k]||(/^[a-z][a-z0-9_]*\./.test(k)&&k!=='gmail.message'?k.split('.')[0]:'gmail'));
+const kindService=k=>({'calendar.event':'calendar','meeting.notes':'calendar','slack.message':'slack','android.notification':'android','whatsapp.message':'whatsapp','salesflare.email':'salesflare','salesflare.meeting':'salesflare','gateway.alert':'gateway'}[k]||(/^[a-z][a-z0-9_]*\./.test(k)&&k!=='gmail.message'?k.split('.')[0]:'gmail'));
 const changing=new Set(),dismissing=new Set();
 const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>['email','email_demo','linkedin','slack','x','whatsapp','intercom','doc_reply','merge','finish','handoff','calendar'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
 // Handed to someone: the card waits for their reply and closes when they answer.
@@ -5517,7 +5537,7 @@ const rangeText=(a,b)=>I18N.lang==='en'?a+' to '+b:a+(/\s/.test(a+b)?' – ':'�
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
  if(it.kind==='meeting'){const m=it.m,c=it.s&&CAL_CARD[it.s.status],a=new Date(m.start),b=new Date(m.end),
    when=it.allDay?(it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''):!(b>a)?'':rangeText(hm(a),(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b));
-  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,m.guests?t(['{} guest','{} guests'],m.guests):''].filter(Boolean).join(' · '),
+  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):''].filter(Boolean).join(' · '),
    said:(it.promises||[]).map(p=>calSaid(p)+': '+p.what),
    href:it.s?'#chat='+it.s.id:'',edit:!it.s&&m.edit?m.id:'',view:!it.s&&!m.edit?m.id:'',badge:c?chip(c[0],c[1]):'',prep:c?c[0]:'',tone:m.shared?'theirs':it.s?'prep t-'+(c?c[1]:'muted'):'meeting'}}
  if(it.kind==='promise'){const p=it.p;return {time:late?calShort(p.due):'Due',title:p.what,sub:calSaid(p),href:promiseHref(p),tone:late?'late':'promise'}}
@@ -5733,9 +5753,46 @@ function calView(m){const a=new Date(m.start),b0=new Date(m.end),b=isNaN(b0)||b0
   +[['Organization','Organizations','org',m.orgs],['Project','Projects','project',m.projects]].filter(r=>r[3]?.length).map(([one,many,icon,list])=>
    `<div><dt>${esc(t(list.length>1?many:one))}</dt><dd class="cal-v-links">${list.map(n=>`<a class="chip scope who" href="${esc(graphHash(n.node_id))}">${CHIP_ICON[icon]}<span>${esc(n.name)}</span></a>`).join('')}</dd></div>`).join('');
  const open=$('#cal-v-open');open.hidden=!m.url;if(m.url){open.href=m.url;open.textContent=t(calOpenLabel(m.url))}
- $('#cal-view').showModal()}
+ calNotesOpen(m);$('#cal-view').showModal();calNotesFit()}
+// A meeting's notes (meeting_notes.py): ones added to it, by the owner here (pasted, or a Markdown file) or by a Do it run,
+// and the Zoom summary that matches it. Reading is a GET; Save and Remove change only the notes, and reviews use them
+// like Zoom's for the meeting's follow-ups. Remove asks twice.
+let calNote=null;
+const CAL_NOTES_FILE=2e6;
+async function calNotesOpen(m){const me={m,data:null,editing:false,failed:false};calNote=me;$('#cal-v-notes-text').value='';$('#cal-v-notes-error').textContent='';calNotesShow();
+ try{me.data=await request('api/meeting-notes?event='+encodeURIComponent(m.id))}catch{me.failed=true}if(calNote===me){calNotesShow();calNotesFit()}}
+function calNotesShow(){const n=calNote,d=n?.data,added=d?.notes,editing=!!n?.editing,ready=!!d,zoom=d?.zoom;
+ $('#cal-v-notes-by').textContent=added&&!editing?t(added.by==='owner'?'Added by you · {}':'Added by The Machine · {}',t(humanDay(new Date(added.at)))):'';
+ const body=$('#cal-v-notes-body');body.hidden=!added||editing;body.classList.remove('all','cut');body.innerHTML=added&&!editing?chatMarkdown(added.text):'';$('#cal-v-notes-more').hidden=true;
+ const none=$('#cal-v-notes-none');none.hidden=editing||added||!(ready||n?.failed);none.textContent=t(n?.failed?'Notes couldn’t load.':'No notes yet.');
+ $('#cal-v-notes-form').hidden=!editing;
+ for(const [id,on] of [['add',ready&&!added&&!editing],['edit',!!added&&!editing],['remove',!!added&&!editing],['save',editing],['file',ready&&!added&&!editing||editing],['cancel',editing]])$('#cal-v-notes-'+id).hidden=!on;
+ const rm=$('#cal-v-notes-remove');rm.classList.remove('sure');rm.textContent=t('Remove');
+ $('#cal-v-zoom').hidden=!zoom;if(zoom){$('#cal-v-zoom-body').innerHTML=chatMarkdown(zoom.text);const z=$('#cal-v-zoom-open');z.hidden=!zoom.url;if(zoom.url)z.href=zoom.url}}
+// Long notes show their start, with Show all
+function calNotesFit(){const b=$('#cal-v-notes-body');if(b.hidden||b.classList.contains('all'))return;const cut=b.scrollHeight>b.clientHeight+4;b.classList.toggle('cut',cut);$('#cal-v-notes-more').hidden=!cut}
+$('#cal-v-notes-more').onclick=()=>{$('#cal-v-notes-body').classList.add('all');$('#cal-v-notes-body').classList.remove('cut');$('#cal-v-notes-more').hidden=true};
+function calNotesEdit(text){if(!calNote?.data)return;calNote.editing=true;calNotesShow();const box=$('#cal-v-notes-text');box.placeholder=t('Paste notes or a transcript. Markdown works.');box.value=text??(calNote.data.notes?.text||'');$('#cal-v-notes-error').textContent='';box.focus()}
+$('#cal-v-notes-add').onclick=()=>calNotesEdit('');
+$('#cal-v-notes-edit').onclick=async()=>{const n=calNote?.data?.notes;if(n&&n.next_offset!=null){try{calNote.data=await request('api/meeting-notes?event='+encodeURIComponent(calNote.m.id))}catch{}}calNotesEdit()};
+$('#cal-v-notes-cancel').onclick=()=>{if(!calNote)return;calNote.editing=false;calNotesShow();calNotesFit()};
+$('#cal-v-notes-file').querySelector('input').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f||!calNote)return;
+ if(f.size>CAL_NOTES_FILE){toast('That file is too big for notes.',true);return}let text='';try{text=await f.text()}catch{toast('That file couldn’t be read.',true);return}
+ if(calNote.editing){const box=$('#cal-v-notes-text');box.value=box.value.trim()?box.value.replace(/\s+$/,'')+'\n\n'+text:text}else calNotesEdit(text)};
+async function calNotesSend(args){const n=calNote;if(!n)return null;
+ return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'X-Upload':'meeting-notes'},body:JSON.stringify({action:'meeting_notes',args:{event_id:n.m.id,...args}})})}
+function calNotesMark(m,notes){m.notes=notes||undefined;for(const w of calWeeks.values())for(const x of w.meetings||[])if(x.id===m.id)x.notes=m.notes;calRender()}
+$('#cal-v-notes-save').onclick=async e=>{const n=calNote,text=$('#cal-v-notes-text').value;if(!n)return;if(!text.trim()){$('#cal-v-notes-error').textContent=t('Write or paste the notes first.');return}
+ const b=e.currentTarget;b.disabled=true;try{await calNotesSend({text});n.data=await request('api/meeting-notes?event='+encodeURIComponent(n.m.id));n.editing=false;
+  calNotesMark(n.m,n.data.notes&&{by:n.data.notes.by,at:n.data.notes.at,chars:n.data.notes.chars});if(calNote===n){calNotesShow();calNotesFit()}toast('Notes saved.')}
+ catch(err){$('#cal-v-notes-error').textContent=err.message||t('Couldn’t save the notes. Try again.')}finally{b.disabled=false}};
+$('#cal-v-notes-remove').onclick=async e=>{const n=calNote,b=e.currentTarget;if(!n)return;if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent=t('Remove notes?');return}
+ b.disabled=true;try{await calNotesSend({remove:true});n.data={...n.data,notes:null};calNotesMark(n.m,null);if(calNote===n)calNotesShow();toast('Notes removed.')}
+ catch(err){toast(err.message||'Couldn’t remove the notes. Try again.',true)}finally{b.disabled=false}};
 for(const b of document.querySelectorAll('#cal-view [data-cal-close]'))b.onclick=()=>$('#cal-view').close();
 $('#cal-v-rows').addEventListener('click',e=>{if(e.target.closest('a[href^="#graph"]'))$('#cal-view').close()});
+// An event the owner can change opens its form; its notes are one tap away from there
+$('#cal-f-notes').onclick=()=>{const m=calEdit?.m;if(!m)return;$('#cal-dialog').close();calView(m)};
 function calOpen(el){if(el.dataset.calEdit){calEditor(Number(el.dataset.calEdit));return}const m=(calMeetings||[]).find(x=>x.id===Number(el.dataset.calView));if(m)calView(m)}
 function calEditor(id){const m=id?(calMeetings||[]).find(x=>x.id===id):null;if(id&&!m?.edit)return;
  const sel=$('#cal-f-cal'),mine=m?calCals.filter(c=>c.id===m.account_id):calCals;if(!mine.length){toast('That calendar can’t be changed here.',true);return}
@@ -5744,6 +5801,7 @@ function calEditor(id){const m=id?(calMeetings||[]).find(x=>x.id===id):null;if(i
  calEdit={id:m?.id||null,m,request:crypto.randomUUID(),sure:false};calGuests.length=0;$('#cal-f-invite').value='';calWhere.close();calInvite.close();
  $('#cal-dlg-title').textContent=m?'Change event':'New event';$('#cal-f-save').textContent=m?'Save':'Add';$('#cal-f-delete').hidden=!m;$('#cal-f-delete').textContent='Delete';$('#cal-f-delete').classList.remove('sure');
  $('#cal-f-title').value=m?m.title:'';$('#cal-f-where').value=m?m.location||'':'';$('#cal-f-notes').value='';$('#cal-f-notes-label').hidden=!!m;$('#cal-f-error').textContent='';
+ $('#cal-f-notes').hidden=!m;$('#cal-f-notes').textContent=t(m?.notes?'See notes':'Add notes');
  $('#cal-f-open').hidden=!m?.url;if(m?.url){$('#cal-f-open').href=m.url;$('#cal-f-open').textContent=t(calOpenLabel(m.url))}
  if(m&&m.edit.all_day){$('#cal-f-date').value=m.edit.start;$('#cal-f-until').value=m.edit.end;$('#cal-f-start').value='09:00';$('#cal-f-end').value='10:00';calAllDay(true)}
  else{const now=new Date(),a=m?new Date(m.edit.start):new Date(now.getFullYear(),now.getMonth(),now.getDate()+(now.getHours()>=22?1:0),now.getHours()>=22?9:now.getHours()+1),b=m?new Date(m.edit.end):new Date(a.getTime()+36e5);
@@ -7395,7 +7453,7 @@ const graphEvents=(n,title='Timeline')=>{const soon=Date.now(),tl=n.timeline,all
    const meta=`<span class="ge-meta"><time datetime="${esc(first.toISOString())}">${many?`${run.length} messages · `:''}${esc(span)}</time></span>`;
    h+=`<article class="graph-event" data-event="${e.id}"${many?` data-events="${run.map(m=>m.id).reverse().join(',')}" data-title="${esc(head)}" data-src="${esc(src)}"${own?'':' data-group'}`:''} tabindex="0" aria-label="${esc(own?with_:(src?t(src)+': ':'')+t(head))}${many?', '+esc(t(['{} message','{} messages'],run.length)):''}"${later}>${sourceIcon(e.kind)}<div class="ge-main"><div class="ge-head">${own?'':`<h4 title="${esc(e.title)}">${esc(head)}</h4>`}${meta}${shareChip(e)}</div>${many?`<ul class="ge-lines">${lines}</ul>`:e.preview?`<p class="ge-preview">${said(e)}</p>`:''}${run.some(m=>m.probable)?'<p class="ge-note">Probably part of it</p>':''}</div></article>`;return}
   const head=e.place||(chat?(e.from_me?'You':e.from||(n.kind==='person'?n.name:e.title)):e.title);
-  const by=!chat&&e.from&&!['calendar.event','zoom.summary'].includes(e.kind)?(e.from_me?'You':e.from)+': ':'';
+  const by=!chat&&e.from&&!['calendar.event','zoom.summary','meeting.notes'].includes(e.kind)?(e.from_me?'You':e.from)+': ':'';
   const state=e.state?`<span class="chip ge-state" style="--c:var(${e.state==='open'?'--mint':'--faint'})">${e.state==='open'?'Open':'Closed'}</span>`:'';
   h+=`<article class="graph-event" data-event="${e.id}" tabindex="0" aria-label="${esc(src?t(src)+': ':'')}${esc(t(head))}"${later}>${sourceIcon(e.kind)}<div class="ge-main"><div class="ge-head"><h4 title="${esc(e.title)}">${esc(head)}</h4>${state}<time datetime="${esc(e.occurred_at)}">${esc(e.all_day?'All day':graphTime(d))}</time>${shareChip(e)}</div>${e.preview?`<p class="ge-preview">${by?`<b>${esc(by)}</b>`:''}${esc(e.preview)}</p>`:''}${tlLink(e)?`<p class="ge-note">${tlLink(e)}</p>`:''}${e.probable?'<p class="ge-note">Probably part of it</p>':''}</div></article>`});
  const more=runs.length>shown||tl?.next;

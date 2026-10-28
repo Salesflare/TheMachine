@@ -70,14 +70,14 @@ TIMELINE_PROJECT = 40       # lines per project: its full timeline (messages, me
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'intercom.conversation')
 # A project's timeline beyond its email threads: meetings and their notes, Intercom conversations and chats. On a board
 # the team sees, or one shared with chosen teammates, they count as shared by being on it (visibility).
-ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'intercom.conversation', 'whatsapp.message', 'slack.message',
+ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'intercom.conversation', 'whatsapp.message', 'slack.message',
               'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', *graph.DOC_KINDS)
 ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'email': 'Email', 'docs': 'Doc'}
 
 
 def _source(kind):
     """What a shared item is, for its label: meetings, intercom, chats or email."""
-    return ('meetings' if kind in ('calendar.event', 'salesflare.meeting', 'zoom.summary') else 'intercom' if kind == 'intercom.conversation'
+    return ('meetings' if kind in ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes') else 'intercom' if kind == 'intercom.conversation'
             else 'email' if kind in MAIL_KINDS else 'docs' if kind in graph.DOC_KINDS else 'chats')
 HEX = re.compile(r'[a-f0-9]{32}')
 # One fixed statement per table that holds a Fleet's shared Graph: what goes when a Fleet's sharing is purged or left.
@@ -374,11 +374,18 @@ def grants(db, fleet):
 
 
 def _items(db, event_ids):
-    """The meetings, Intercom conversations and chats among these signals."""
+    """The meetings, Intercom conversations and chats among these signals, and the notes added to those meetings
+    (meeting_notes.py): they go as their meeting does."""
     if not event_ids:
         return set()
-    return {r[0] for r in db.execute('SELECT id FROM events WHERE deleted=0 AND id IN (SELECT value FROM json_each(?)) AND kind IN (SELECT value FROM json_each(?))',
-                                     (json.dumps(sorted(event_ids)), json.dumps(ITEM_KINDS)))}
+    found = {r[0]: r[1] for r in db.execute('SELECT id,kind FROM events WHERE deleted=0 AND id IN (SELECT value FROM json_each(?)) AND kind IN (SELECT value FROM json_each(?))',
+                                            (json.dumps(sorted(event_ids)), json.dumps(ITEM_KINDS)))}
+    meetings = sorted(i for i, k in found.items() if k == 'calendar.event')
+    if meetings:
+        found.update((r[0], 'meeting.notes') for r in db.execute(
+            "SELECT n.id FROM events n JOIN events m ON m.id IN (SELECT value FROM json_each(?)) AND n.account_id=m.account_id "
+            "AND n.source_id='notes:' || m.id WHERE n.kind='meeting.notes' AND n.deleted=0", (json.dumps(meetings),)))
+    return set(found)
 
 
 def _threads_of(db, event_ids):
@@ -730,7 +737,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     if scope.granted_projects or on_boards:
         for e in _events(db, sorted(scope.accounts), ''):
             if views.get(e['id']) == 'team' and (scope.granted_projects or e['id'] in on_boards):
-                word = 'Meeting notes' if e['kind'] == 'zoom.summary' else ITEM_WORDS.get(_source(e['kind']), 'Note')
+                word = 'Meeting notes' if e['kind'] in ('zoom.summary', 'meeting.notes') else ITEM_WORDS.get(_source(e['kind']), 'Note')
                 titles[e['id']] = _line(word + ': ' + str(e['title'] or '(no subject)'))
     out_threads, files = {}, {}
     newest = sorted(threads.items(), key=lambda t: t[1][-1]['occurred_at'], reverse=True)[:MAX_THREADS]
