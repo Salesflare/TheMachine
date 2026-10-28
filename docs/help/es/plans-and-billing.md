@@ -16,12 +16,12 @@ Tu plan de IA lo factura tu proveedor, como OpenAI. Nosotros no le añadimos nad
 
 ## En la Network
 
-- Amigos y Familia: gratis, con cualquier Machine.
+- Amigos y Familia: gratis, con cualquier Machine. En un Fleet familiar, las Machines alojadas cuestan {price.family_pair} las dos primeras juntas y luego {price.family_seat} cada una, sin IVA.
 - Work Fleet: {price.seat} por puesto al mes, o {price.seat_big} con un servidor Más grande, sin IVA. Un compañero que gestiona su propia Machine cuesta {price.network} al mes, y uno que ya está alojado es gratis. Cada Fleet tiene su propia tarjeta y sus facturas, y el propietario confirma cada importe antes de que se cobre.
 
 Todos los precios son al mes, sin IVA. Consulta [Precios](/pricing).
 
-Los precios alojado y de puesto de trabajo son precios early adopter, antes {price.standard_list} y {price.seat_list}. Los early adopters los mantienen mientras su suscripción siga activa.
+Los precios alojado, de puesto de trabajo y de Fleet familiar son precios early adopter, antes {price.standard_list}, {price.seat_list} y {price.family_pair_list}. Los early adopters los mantienen mientras su suscripción siga activa.
 
 ## Tarjeta y facturas
 

@@ -16,12 +16,12 @@ Votre abonnement IA est facturé par votre fournisseur, comme OpenAI. Nous n’y
 
 ## Sur le Network
 
-- Amis et Famille : gratuit, avec n’importe quelle Machine.
+- Amis et Famille : gratuit, avec n’importe quelle Machine. Dans une Fleet Famille, les Machines hébergées coûtent {price.family_pair} pour les deux premières ensemble, puis {price.family_seat} chacune, HT.
 - Fleet Travail : {price.seat} par place et par mois, ou {price.seat_big} avec un serveur plus grand, HT. Un coéquipier qui fait tourner sa propre Machine coûte {price.network} par mois, et un coéquipier déjà hébergé est gratuit. Chaque Fleet a sa propre carte et ses propres factures, et le propriétaire confirme chaque montant avant qu’il soit prélevé.
 
 Tous les prix sont mensuels, HT. Voir [Tarifs](/pricing).
 
-Les prix hébergé et place Travail sont des tarifs early adopter, au lieu de {price.standard_list} et {price.seat_list}. Les early adopters les gardent tant que leur abonnement reste actif.
+Les prix hébergé, place Travail et Fleet Famille sont des tarifs early adopter, au lieu de {price.standard_list}, {price.seat_list} et {price.family_pair_list}. Les early adopters les gardent tant que leur abonnement reste actif.
 
 ## Carte et factures
 

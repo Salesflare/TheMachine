@@ -16,12 +16,12 @@ Deinen KI-Tarif rechnet dein Anbieter ab, etwa OpenAI. Wir schlagen nichts drauf
 
 ## Im Network
 
-- Freunde und Familie: kostenlos, mit jeder Machine.
+- Freunde und Familie: kostenlos, mit jeder Machine. In einer Familien-Fleet kosten gehostete Machines {price.family_pair} für die ersten zwei zusammen, dann {price.family_seat} pro Stück, zzgl. MwSt.
 - Work Fleet: {price.seat} pro Platz und Monat, oder {price.seat_big} mit einem größeren Server, zzgl. MwSt. Ein Teammitglied, das seine eigene Machine betreibt, kostet {price.network} im Monat, und eins, das schon gehostet ist, ist kostenlos. Jede Fleet hat ihre eigene Karte und eigene Rechnungen, und der Owner bestätigt jeden Betrag, bevor er abgebucht wird.
 
 Alle Preise gelten pro Monat, zzgl. MwSt. Siehe [Preise](/pricing).
 
-Die Preise für gehostet und Arbeitsplätze sind Early-Adopter-Preise, statt {price.standard_list} und {price.seat_list}. Early Adopter behalten sie, solange ihr Abo aktiv bleibt.
+Die Preise für gehostet, Arbeitsplätze und Familien-Fleets sind Early-Adopter-Preise, statt {price.standard_list}, {price.seat_list} und {price.family_pair_list}. Early Adopter behalten sie, solange ihr Abo aktiv bleibt.
 
 ## Karte und Rechnungen
 
