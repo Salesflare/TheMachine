@@ -47,7 +47,8 @@ let browser;
 const open=async(width,height,scheme='dark',hash='')=>{const mobile=width<600;
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-GB',timezoneId:'Europe/Brussels',colorScheme:scheme});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
- const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));await page.goto(base+hash);await page.locator('#task-'+cards[0].id).waitFor();return {context,page}};
+ // Midday today, so the now line test doesn't depend on when the suite runs (late evening it fell off the grid)
+ const page=await context.newPage();await page.clock.setFixedTime(at(0,12));page.on('pageerror',e=>errors.push(width+': '+e.message));await page.goto(base+hash);await page.locator('#task-'+cards[0].id).waitFor();return {context,page}};
 const go=async(page,hash)=>{await page.evaluate(h=>{location.hash=h},hash);await page.waitForFunction(h=>location.hash===h&&!document.querySelector('#calendar').hidden,hash)};
 const range=page=>page.locator('.cal-range').textContent();
 // Where the time grid opens: the first timed meeting (or 08:00 when earlier) with a little room above, and the now
