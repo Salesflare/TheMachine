@@ -10,6 +10,8 @@ order: 2
 
 **Fallo** chiede alla tua Machine di preparare l'attività: scrivere la bozza della risposta, cercare informazioni, compilare un modulo. Lavora con i tuoi account e con il suo browser, come faresti tu.
 
+Prima di scrivere un sollecito o passare qualcosa a qualcun altro, controlla la conversazione per risposte più recenti, anche di un collega. Se è già fatto, l'attività lo dice. Quando ha creato o modificato un documento o una pagina, l'attività porta dritto lì.
+
 ## Niente parte prima del tuo sì
 
 - Una risposta torna come bozza. **Rivedi e invia** la apre pronta da modificare; parte solo quando premi **Invia ora**.
@@ -18,6 +20,7 @@ order: 2
 - Una risposta risponde all'email più recente della sua conversazione, e la fonte dell'attività apre quell'email.
 - Un passo che impegna qualcosa, come inviare un modulo, pagare o prenotare, si ferma e aspetta la tua conferma.
 - Nella chat di un'attività, una bozza non viene mai inviata nello stesso messaggio che l'ha scritta.
+- Finché non approvi, l'attività dice **Pronta da approvare** o **Tocca a te**, mai finita. Dice che una bozza è partita solo quando è partita davvero.
 
 Cosa può inviare dipende dalla fonte: un'email, un messaggio diretto su Slack, un messaggio WhatsApp, Telegram, LinkedIn o X. L'articolo di ogni connessione dice cosa può inviare.
 
@@ -33,3 +36,4 @@ Cosa può inviare dipende dalla fonte: un'email, un messaggio diretto su Slack, 
 - "Non si può inviare da qui." vuol dire che copi la bozza con **Copia bozza** e la invii tu.
 - **Serve il tuo aiuto** vuol dire che ti chiede qualcosa: **Rispondi**. **Bloccata** vuol dire che si è fermata senza una domanda, o è andata avanti troppo ed è stata fermata; l'attività dice perché.
 - **Riprova** la esegue un'altra volta. **Cambia** chiede qualcos'altro.
+- Un codice inviato al tuo telefono, o un permesso che manca, la ferma. L'attività dice in una riga cosa serve, come il codice nel suo browser o l'accesso a un file, poi **Continua** o **Riprova**.
