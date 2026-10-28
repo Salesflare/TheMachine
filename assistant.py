@@ -955,6 +955,8 @@ UPLOAD_ACTIONS = {
     'skills_found',
 }
 UPLOAD_REQUEST_BYTES = 9 * 1024 * 1024
+# What the dashboard says when an action fails on something other than a ValueError (which says what to do itself)
+ACTION_FAILED = 'That didn’t go through. Reload the page and try again.'
 # A merged fix to The Machine can be undone this long; one it merged by itself undoes itself when
 # its code version records an error within AUTO_UNDO_NEW, or the fault it fixed comes back.
 UNDO_MERGE = dt.timedelta(hours=24)
@@ -19166,6 +19168,7 @@ class App:
                 if not internal and not dashboard:
                     self.output(403, {'error': 'Unauthorized'})
                     return
+                request = None
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
                     upload = self.headers.get('X-Upload') in ('skill-import', 'graph-import', 'bug-report', 'meeting-notes')
@@ -19195,7 +19198,12 @@ class App:
                         request.setdefault('args', {})['source'] = 'dashboard'
                     self.output(200, app.action(request['action'], request.get('args', {}), owner_dashboard=bool(dashboard)))
                 except (ValueError, KeyError, TypeError, sqlite3.OperationalError, sqlite3.IntegrityError) as error:
-                    self.output(400, {'error': str(error) if isinstance(error, ValueError) else 'Invalid request'})
+                    if not isinstance(error, ValueError):
+                        # A request this action can't read (a page from before, a button that sent the wrong action) or a
+                        # busy database: what to do about it, never "Invalid request"; the log says which action and why
+                        LOG.warning('action failed action=%s error=%s', str(request.get('action') if isinstance(request, dict) else '')[:60],
+                                    type(error).__name__)
+                    self.output(400, {'error': str(error) if isinstance(error, ValueError) else ACTION_FAILED})
 
         server = http.server.ThreadingHTTPServer(('127.0.0.1', self.config.get('port', 8787)), Handler)
         watch_faults(self.store)

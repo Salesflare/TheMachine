@@ -272,6 +272,21 @@ class OwnerBoundary(unittest.TestCase):
         self.assertNotEqual(status, 403, body)  # through the real allowlist (no config file here: it says so instead)
         self.assertIn(b'config.json', body)
 
+    def test_an_action_the_server_cant_read_says_what_to_do(self):
+        # A Fleet card's Share once also sent a to-do decision without a to-do (decide, no suggestion_id): a KeyError the
+        # dashboard showed as "Invalid request". Such a failure says what to do, and the log names the action.
+        port = self.serve()
+        csrf = a.hmac.new(self.app.token.encode(), self.app.config['tailscale_owner'].encode(), a.hashlib.sha256).hexdigest()
+        owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com',
+                 'Origin': 'https://machine.example:8443', 'X-CSRF-Token': csrf}
+        with self.assertLogs(a.LOG, 'WARNING') as logs:
+            status, body = self.post(port, {'action': 'decide', 'args': {'choice': 'yes', 'feedback': ''}}, owner)
+        self.assertEqual(status, 400)
+        self.assertEqual(json.loads(body)['error'], a.ACTION_FAILED)
+        self.assertNotIn(b'Invalid request', body)
+        self.assertIn('action=decide error=KeyError', '\n'.join(logs.output))
+        self.assertEqual(self.decisions(), [])
+
     def test_dashboard_page_session_and_etag(self):
         # The page carries the device-cache scope but never the CSRF token (so it may go compressed); a repeat with its
         # ETag is a 304; api/session gives the token and scope to the page, and only to the owner.

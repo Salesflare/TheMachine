@@ -3189,6 +3189,7 @@
  "That connector cannot be checked here": "Die connector kan hier niet gecontroleerd worden",
  "That did nothing. Please use the dashboard.": "Dat deed niets. Gebruik het dashboard.",
  "That didn’t go through.": "Dat is niet gelukt.",
+ "That didn’t go through. Reload the page and try again.": "Dat lukte niet. Laad de pagina opnieuw en probeer het nog eens.",
  "That didn’t work": "Dat lukte niet",
  "That didn’t work. Try again.": "Dat lukte niet. Probeer het opnieuw.",
  "That doc is not one of this task’s own doc events": "Dat document is geen van de eigen documentevents van deze taak",

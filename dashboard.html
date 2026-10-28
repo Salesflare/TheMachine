@@ -5971,7 +5971,8 @@ if(b.dataset.unmerge){b.disabled=true;try{await request('api/action',{method:'PO
 if(b.dataset.smart){const a=taskActions(state.suggestions.find(s=>s.id===id)).find(a=>a.revision===b.dataset.smart);if(!a){toast('That result changed. Use its current buttons.',true);return}if(['email','email_demo','linkedin','slack','x','whatsapp','intercom','doc_reply','merge','finish','calendar'].includes(a.kind)){openSend(id,b.dataset.smart);return}b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision:b.dataset.smart,approval_id:crypto.randomUUID()}})});toast('I’ll prepare that next.');await refresh()}catch(e){toast(e.message,true)}finally{b.disabled=false}return}
 if(b.dataset.original){openEmail(id).catch(e=>toast(e.message,true));return}
 if(b.dataset.result){try{if(b.dataset.result==='copy')await copyResult(id);else await openResult(id,b.dataset.file?{name:b.dataset.fileName||'',path:b.dataset.file}:undefined)}catch(e){toast(e.message,true)}return}
-if(!b.dataset.choice)return;const choice=b.dataset.choice;
+// A Fleet item among the to-dos (Share, Not now: data-choice too) is not a to-do: its own handler (fleetOn) answers it
+if(!b.dataset.choice||b.closest('.fleet-card'))return;const choice=b.dataset.choice;
 if(choice==='send'){openSend(id);return}
 if(choice==='pick'){const s=state.suggestions.find(x=>x.id===id),q=s?.preparation_questions?.[+b.dataset.q];if(!q)return;
  if(!changing.has(id)){changing.add(id);dismissing.delete(id);render()}
