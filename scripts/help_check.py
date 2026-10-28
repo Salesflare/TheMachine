@@ -86,7 +86,7 @@ SITE_PAGES = ('/', '/how-it-works', '/demo', '/network', '/pricing', '/open-sour
               '/dpa', '/licenses', '/support', '/help', '/compare')
 FIELDS = {'title', 'area', 'summary', 'covers', 'code', 'site', 'order', 'keywords'}  # keywords: words people search with (help_chat.py)
 # Values the site fills in from the hosted service's own settings, so a price or a number of days is never out of date
-TOKENS = {'{price.standard}', '{price.big}', '{price.seat}', '{price.seat_big}', '{price.network}', '{trial_days}', '{grace_days}'}
+TOKENS = {'{price.standard}', '{price.big}', '{price.seat}', '{price.seat_big}', '{price.network}', '{price.standard_list}', '{price.seat_list}', '{trial_days}', '{grace_days}'}
 
 
 def front(text):

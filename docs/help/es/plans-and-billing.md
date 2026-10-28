@@ -21,6 +21,8 @@ Tu plan de IA lo factura tu proveedor, como OpenAI. Nosotros no le añadimos nad
 
 Todos los precios son al mes, sin IVA. Consulta [Precios](/pricing).
 
+Los precios alojado y de puesto de trabajo son precios early adopter, antes {price.standard_list} y {price.seat_list}. Los early adopters los mantienen mientras su suscripción siga activa.
+
 ## Tarjeta y facturas
 
 En la página de tu cuenta, abre Facturación y pulsa **Gestionar suscripción**. Se abre Stripe, donde cambias tu tarjeta y descargas las facturas. Los datos de tu tarjeta nunca nos llegan.

@@ -21,6 +21,8 @@ Il tuo piano AI viene fatturato dal tuo fornitore, come OpenAI. Noi non aggiungi
 
 Tutti i prezzi sono al mese, IVA esclusa. Vedi [Prezzi](/pricing).
 
+I prezzi in hosting e per posto di lavoro sono prezzi early adopter, invece di {price.standard_list} e {price.seat_list}. Gli early adopter li mantengono finché l’abbonamento resta attivo.
+
 ## Carta e fatture
 
 Nella pagina del tuo account, apri Fatturazione e premi **Gestisci abbonamento**. Si apre Stripe, dove cambi la carta e scarichi le fatture. I dati della tua carta non arrivano mai a noi.

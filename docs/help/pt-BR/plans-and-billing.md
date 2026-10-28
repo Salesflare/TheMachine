@@ -21,6 +21,8 @@ Seu plano de IA é cobrado pelo seu provedor, como a OpenAI. Não acrescentamos 
 
 Todos os preços são por mês, sem IVA. Veja [Preços](/pricing).
 
+Os preços hospedado e de vaga de Trabalho são preços early adopter, antes {price.standard_list} e {price.seat_list}. Os early adopters mantêm esses preços enquanto a assinatura continuar ativa.
+
 ## Cartão e faturas
 
 Na página da sua conta, abra Cobrança e clique em **Gerenciar assinatura**. Isso abre o Stripe, onde você troca o cartão e baixa as faturas. Os dados do seu cartão nunca chegam até nós.

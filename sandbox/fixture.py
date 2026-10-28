@@ -535,7 +535,7 @@ def build(profile):
         ],
         'notices': [
             {'id': 'fn_5a4db0c0ffee0004', 'kind': 'seat_request', 'fleet': 'work', 'fleet_id': 'fl_5a4db0c0ffee0001', 'fleet_name': 'Lumen Labs', 'status': 'open', 'version': 1,
-             'text': 'Ines Calloway wants a Standard server in your Fleet', 'detail': '€30 a month, on your Fleet’s bill.', 'key': 'k1',
+             'text': 'Ines Calloway wants a Standard server in your Fleet', 'detail': '€15 a month, on your Fleet’s bill.', 'key': 'k1',
              'buttons': [{'choice': 'confirm', 'label': 'Confirm'}, {'choice': 'decline', 'label': 'Decline'}]},
         ],
         # A card this Machine handed to a teammate whose Machine hasn't answered yet: its chat shows when it went
