@@ -21,6 +21,8 @@ Votre abonnement IA est facturé par votre fournisseur, comme OpenAI. Nous n’y
 
 Tous les prix sont mensuels, HT. Voir [Tarifs](/pricing).
 
+Les prix hébergé et place Travail sont des tarifs early adopter, au lieu de {price.standard_list} et {price.seat_list}. Les early adopters les gardent tant que leur abonnement reste actif.
+
 ## Carte et factures
 
 Sur la page de votre compte, ouvrez Facturation et appuyez sur **Gérer l’abonnement**. Cela ouvre Stripe, où vous changez de carte et téléchargez vos factures. Les données de votre carte ne nous parviennent jamais.
