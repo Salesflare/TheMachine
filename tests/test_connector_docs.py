@@ -420,6 +420,7 @@ class Hosted(unittest.TestCase):
             return next(c for c in app.action('status', {'full': True})['connectors'] if c['id'] == 'acme-docs')
         hosted = {**self.hosted, 'accounts': [OUTLOOK, ACCOUNT], 'docs_consent': ['microsoft']}
         self.assertEqual(card(hosted)['account_page'], 'https://cp.example/account#docs')  # its account page's Docs tile
+        self.assertEqual(card(hosted)['hosted_signin'], 'microsoft_docs')  # Connect: the sign-in form on the dashboard itself
         self.assertNotIn('account_page', card({**hosted, 'accounts': [GMAIL, ACCOUNT]}))  # Google Docs: not offered there
         own = {k: v for k, v in hosted.items() if k not in ('manage_url', 'docs_consent')}
         self.assertEqual((card(own)['connect_name'], card(own)['signin']), ('docs', 'microsoft_docs'))  # self-hosted: Sign in with Microsoft

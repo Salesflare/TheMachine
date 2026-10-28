@@ -19,7 +19,7 @@ Niets op je telefoon. Het leest alleen meldingen.
 Op een gehoste Machine:
 
 1. Installeer de OpenClaw-app op je telefoon.
-2. Ga op je setuppagina naar **Meer bronnen**, open Android-meldingen en druk op **Toon een setupcode**.
+2. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, kies Android-telefoon en druk op **Toon een instelcode**.
 3. Scan hem in de OpenClaw-app en druk dan op **Goedkeuren** om te koppelen.
 4. Zet in de OpenClaw-app Forward Notification Events aan, en sta toegang tot meldingen toe als Android erom vraagt.
 

@@ -19,7 +19,7 @@ Die Zahl bei **Verbindungen** zählt nur Quellen, die deine Hilfe brauchen.
 
 ## Häufige Lösungen
 
-- „needs you to sign in again“: Tippe auf **Neu verbinden** und melde dich an. Auf einer gehosteten Machine verbindest du Google und Microsoft über deine Einrichtungsseite neu.
+- „needs you to sign in again“: Tippe auf **Neu verbinden** und melde dich an. Auf einer gehosteten Machine meldest du dich direkt dort an und kommst zurück zum Dashboard.
 - Microsoft richtet den Zugriff noch ein: Es versucht es von selbst erneut.
 - Slack: Prüfe deinen Maton-API-Schlüssel und die Slack-Verbindung in Maton.
 - Android: Öffne die OpenClaw-App auf dem Handy und erlaube ihr den Zugriff auf Benachrichtigungen.

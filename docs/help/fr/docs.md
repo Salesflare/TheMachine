@@ -34,7 +34,7 @@ Si cet accord est retiré plus tard, la carte Docs indique **En attente de votre
 
 Connectez d’abord Outlook pour cette adresse. Ensuite :
 
-- Machine hébergée : sur votre page de configuration, ouvrez **Documents** sous **Plus de sources** et appuyez sur **Connecter les documents** à côté de cette adresse. Microsoft vous demande d’autoriser la lecture de vos fichiers.
+- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter**, choisissez **Documents** et appuyez sur **Se connecter avec Microsoft**. Microsoft vous demande d’autoriser la lecture de vos fichiers, puis vous revenez au tableau de bord.
 - Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **+ Ajouter**, choisissez **Documents** et appuyez sur **Se connecter avec Microsoft**.
 
 Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’est pas ajouté.

@@ -19,7 +19,7 @@ The number on **Connections** only counts sources that need your help.
 
 ## Common fixes
 
-- "needs you to sign in again": press **Reconnect** and sign in. On a hosted Machine, Google and Microsoft reconnect from your setup page.
+- "needs you to sign in again": press **Reconnect** and sign in. On a hosted Machine, you sign in right there and come back to the dashboard.
 - Microsoft still setting up access: it tries again by itself.
 - Slack: check your Maton API key and the Slack connection in Maton.
 - Android: open the OpenClaw app on the phone, and allow it notification access.

@@ -19,7 +19,7 @@ Het getal bij **Koppelingen** telt alleen bronnen die je hulp nodig hebben.
 
 ## Veelvoorkomende oplossingen
 
-- "moet opnieuw inloggen": druk op **Opnieuw verbinden** en log in. Op een gehoste Machine koppel je Google en Microsoft opnieuw vanaf je setuppagina.
+- "moet opnieuw inloggen": druk op **Opnieuw verbinden** en log in. Op een gehoste Machine log je daar meteen in en kom je terug in het dashboard.
 - Microsoft is de toegang nog aan het instellen: hij probeert het zelf opnieuw.
 - Slack: controleer je Maton API-sleutel en de Slack-koppeling in Maton.
 - Android: open de OpenClaw-app op de telefoon en geef hem toegang tot meldingen.

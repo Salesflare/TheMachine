@@ -34,7 +34,7 @@ Wird dieses OK später zurückgenommen, zeigt die Docs-Karte **Wartet auf dein O
 
 Verbinde zuerst Outlook für die Adresse. Dann:
 
-- Gehostete Machine: Öffne auf deiner Einrichtungsseite **Dokumente** unter **Weitere Quellen** und tippe neben dieser Adresse auf **Dokumente verbinden**. Microsoft bittet dich, das Lesen deiner Dateien zu erlauben.
+- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **+ Hinzufügen**, wähle **Dokumente** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
 - Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **+ Hinzufügen**, wähle **Dokumente** und tippe auf **Mit Microsoft anmelden**.
 
 Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt.

@@ -22,7 +22,7 @@ Kam eine Aufgabe per E-Mail rein, aber du schreibst mit der Person über WhatsAp
 
 Auf einer gehosteten Machine:
 
-1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup, geh zu **Weitere Quellen** und öffne WhatsApp.
+1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle WhatsApp.
 2. Tippe auf **QR-Code zeigen**.
 3. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, und scanne den QR-Code.
 

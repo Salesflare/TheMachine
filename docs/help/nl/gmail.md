@@ -38,7 +38,7 @@ Een beheerder van Google Workspace moet de app misschien eerst toestaan, in de A
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Ontkoppelen** naast het adres op je setuppagina. Dat verwijdert Gmail en Agenda voor dat adres en trekt de login bij Google in. In het dashboard brengt **Opnieuw koppelen of ontkoppelen ↗** op Koppelingen je daarheen.
+- Op een gehoste Machine: druk op **Ontkoppelen** naast het adres op je setuppagina. Dat verwijdert Gmail en Agenda voor dat adres en trekt de login bij Google in. In het dashboard brengt **Ontkoppelen ↗** op Koppelingen je daarheen. **Opnieuw verbinden** daar logt opnieuw in zonder het dashboard te verlaten.
 - Op je eigen computer: **Koppelingen**, open Gmail, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft. Gebruikt niets anders die Google-login nog, dan wordt hij bij Google ingetrokken.
 
 ## Verwijderen bij Google

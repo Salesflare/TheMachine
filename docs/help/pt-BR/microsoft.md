@@ -37,7 +37,7 @@ Com seu próprio app: abra **Usar seu próprio app** ali, ou execute `assistant 
 
 ## Remover
 
-- Em uma Machine hospedada: clique em **Desconectar** ao lado da conta na sua página de configuração. No painel, **Reconectar ou desconectar ↗** em Conexões leva você até lá.
+- Em uma Machine hospedada: clique em **Desconectar** ao lado da conta na sua página de configuração. No painel, **Desconectar ↗** em Conexões leva você até lá. **Reconectar** ali entra de novo sem sair do painel.
 - No seu próprio computador: **Conexões**, abra a conta, **Detalhes** e depois **Desconectar**.
 
 ## Desinstalar na Microsoft

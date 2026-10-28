@@ -19,7 +19,7 @@ Le nombre sur **Connexions** ne compte que les sources qui attendent votre aide.
 
 ## Solutions courantes
 
-- « doit être reconnecté » : appuyez sur **Reconnecter** et connectez-vous. Sur une Machine hébergée, Google et Microsoft se reconnectent depuis votre page de configuration.
+- « doit être reconnecté » : appuyez sur **Reconnecter** et connectez-vous. Sur une Machine hébergée, vous vous connectez sur place et revenez au tableau de bord.
 - Microsoft prépare encore l’accès : il réessaie de lui-même.
 - Slack : vérifiez votre clé API Maton et la connexion Slack dans Maton.
 - Android : ouvrez l’app OpenClaw sur le téléphone, et autorisez-lui l’accès aux notifications.

@@ -37,7 +37,7 @@ Con tu propia app: abre ahí **Usar tu propia app**, o ejecuta `assistant connec
 
 ## Quítalo
 
-- En una Machine alojada: pulsa **Desconectar** junto a la cuenta en tu página de configuración. En el panel, **Reconectar o desconectar ↗** en Conexiones te lleva ahí.
+- En una Machine alojada: pulsa **Desconectar** junto a la cuenta en tu página de configuración. En el panel, **Desconectar ↗** en Conexiones te lleva ahí. **Reconectar** ahí vuelve a iniciar sesión sin salir del panel.
 - En tu propio ordenador: **Conexiones**, abre la cuenta, **Detalles** y luego **Desconectar**.
 
 ## Desinstálalo en Microsoft

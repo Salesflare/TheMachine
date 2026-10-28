@@ -38,7 +38,7 @@ Um administrador do Google Workspace pode precisar liberar o app antes, no Admin
 
 ## Remover
 
-- Em uma Machine hospedada: toque em **Desconectar** ao lado do endereço na sua página de configuração. Isso remove o Gmail e o Calendário desse endereço e revoga o login no Google. No painel, **Reconectar ou desconectar ↗** em Conexões leva você até lá.
+- Em uma Machine hospedada: toque em **Desconectar** ao lado do endereço na sua página de configuração. Isso remove o Gmail e o Calendário desse endereço e revoga o login no Google. No painel, **Desconectar ↗** em Conexões leva você até lá. **Reconectar** ali entra de novo sem sair do painel.
 - No seu próprio computador: **Conexões**, abra Gmail, **Detalhes** e depois **Desconectar**. Ele para de ler. O que já foi trazido fica. Quando nada mais usa esse login do Google, ele é revogado no Google.
 
 ## Desinstalar no Google

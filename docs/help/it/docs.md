@@ -34,7 +34,7 @@ Se in seguito quell’OK viene revocato, la scheda Docs dice **In attesa del tuo
 
 Collega prima Outlook per quell’indirizzo. Poi:
 
-- Machine in hosting: nella tua pagina di configurazione, apri **Documenti** sotto **Altre fonti** e premi **Collega documenti** accanto a quell’indirizzo. Microsoft ti chiede di consentire la lettura dei tuoi file.
+- Machine in hosting: nella dashboard, apri **Connessioni**, **+ Aggiungi**, scegli **Documenti** e premi **Accedi con Microsoft**. Microsoft ti chiede di consentire la lettura dei tuoi file, poi torni alla dashboard.
 - Il tuo computer, abbinato al tuo account: apri **Connessioni**, **+ Aggiungi**, scegli **Documenti** e premi **Accedi con Microsoft**.
 
 Verifica che l’accesso possa leggere i documenti. Senza quell’OK non viene aggiunto.

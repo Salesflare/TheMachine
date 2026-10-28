@@ -38,7 +38,7 @@ Un admin di Google Workspace potrebbe dover prima consentire l'app, nella Consol
 
 ## Rimuovilo
 
-- Su una Machine in hosting: premi **Disconnetti** accanto all'indirizzo nella tua pagina di configurazione. Così rimuovi Gmail e Calendar per quell'indirizzo e revochi l'accesso su Google. Nella dashboard, **Riconnetti o disconnetti ↗** in Connessioni ti porta lì.
+- Su una Machine in hosting: premi **Disconnetti** accanto all'indirizzo nella tua pagina di configurazione. Così rimuovi Gmail e Calendar per quell'indirizzo e revochi l'accesso su Google. Nella dashboard, **Disconnetti ↗** in Connessioni ti porta lì. **Riconnetti** lì ti fa accedere di nuovo senza lasciare la dashboard.
 - Sul tuo computer: **Connessioni**, apri Gmail, **Dettagli**, poi **Disconnetti**. Smette di leggere. Ciò che ha già importato resta. Quando nient'altro usa quell'accesso Google, viene revocato su Google.
 
 ## Disinstallalo su Google

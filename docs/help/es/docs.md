@@ -34,7 +34,7 @@ Si más tarde se retira ese OK, la tarjeta de Docs dice **Esperando tu OK para l
 
 Conecta primero Outlook para esa dirección. Luego:
 
-- Machine alojada: en tu página de configuración, abre **Docs** en **Más fuentes** y pulsa **Conectar documentos** junto a esa dirección. Microsoft te pide permitir que lea tus archivos.
+- Machine alojada: en el panel, abre **Conexiones**, **+ Añadir**, elige **Documentos** y pulsa **Iniciar sesión con Microsoft**. Microsoft te pide permitir que lea tus archivos y luego vuelves al panel.
 - Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **+ Añadir**, elige **Documentos** y pulsa **Iniciar sesión con Microsoft**.
 
 Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añade.

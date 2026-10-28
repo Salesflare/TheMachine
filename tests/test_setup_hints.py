@@ -39,7 +39,7 @@ class SetupHints(unittest.TestCase):
         self.mail('github.com', 1)
         [hint] = a.setup_hints(self.store, self.config)
         self.assertEqual(hint, {'id': 'source-github', 'title': 'Connect GitHub?', 'text': 'GitHub mails you often. Connected, I read it directly.',
-                                'href': MANAGE + '#source-github', 'button': 'Connect'})
+                                'href': '#connect=github', 'button': 'Connect'})  # + Add's own form, on the dashboard
         self.mail('mail.intercom.io', 3, when='2020-01-01T00:00:00+00:00')  # long ago: not now
         self.assertEqual(self.ids(), ['source-github'])
         connected = dict(self.config, accounts=[*self.config['accounts'], {'id': 'acme-github', 'service': 'github'}])
@@ -59,6 +59,7 @@ class SetupHints(unittest.TestCase):
     def test_only_a_hosted_machine_gets_hints(self):
         self.mail('slack.com', 5)
         self.assertEqual(self.ids(), ['source-slack'])
+        self.assertEqual(a.setup_hints(self.store, self.config)[0]['href'], '#connections=add')  # + Add on the dashboard, never away
         self.assertEqual(a.setup_hints(self.store, {'accounts': []}), [])
 
 

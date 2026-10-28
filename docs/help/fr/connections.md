@@ -12,7 +12,9 @@ L’onglet **Connexions** regroupe vos sources en **Mail et agenda**, **Chat** e
 
 ## En ajouter une
 
-Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Une fois la source connectée, votre Machine redémarre pour commencer à la lire, puis ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google, Microsoft, Zoom, Stripe et Intercom se connectent ici : choisissez **Travail** ou **Perso**, connectez-vous et vous revenez à ce formulaire, qui montre où en est la connexion. Sur votre propre ordinateur, `assistant connect` fait la même chose dans un terminal.
+Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Une fois la source connectée, votre Machine redémarre pour commencer à la lire, puis ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google, Microsoft, Documents, Zoom, Stripe et Intercom se connectent ici : choisissez **Travail** ou **Perso**, connectez-vous et vous revenez à ce formulaire, qui montre où en est la connexion. GitHub, WhatsApp et votre téléphone Android affichent leur code directement dans ce formulaire.
+
+**Reconnecter** sur une source et dans **Vous attend** ouvre le même formulaire. Sur votre propre ordinateur, `assistant connect` fait la même chose dans un terminal.
 
 ## Travail ou perso
 
@@ -20,7 +22,7 @@ Chaque source compte comme travail (pour une entreprise que vous nommez) ou comm
 
 ## En retirer une
 
-Ouvrez la source, **Détails**, puis **Déconnecter**. Elle arrête de lire. Ce qu’elle a déjà récupéré reste. Sur une Machine hébergée, Google et Microsoft affichent **Reconnecter ou déconnecter ↗**, qui ouvre votre page de configuration.
+Ouvrez la source, **Détails**, puis **Déconnecter**. Elle arrête de lire. Ce qu’elle a déjà récupéré reste. Sur une Machine hébergée, Google, Microsoft, Documents, Zoom et Stripe affichent **Déconnecter ↗**, qui ouvre votre page de configuration.
 
 **Déconnecté récemment** liste les connexions Google, Microsoft et Zoom que vous avez retirées. **Supprimé, confirmé** signifie que Google a confirmé la déconnexion, ou pour Microsoft et Zoom qu’il ne reste aucune copie. **En attente** indique pourquoi, et votre Machine continue d’essayer.
 

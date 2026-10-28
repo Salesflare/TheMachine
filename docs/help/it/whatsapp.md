@@ -22,7 +22,7 @@ Se un'attività è arrivata via email ma con quella persona parli su WhatsApp, d
 
 Su una Machine ospitata:
 
-1. Apri la tua pagina di configurazione su app.themachine.computer/setup, vai su **Altre fonti** e apri WhatsApp.
+1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli WhatsApp.
 2. Premi **Mostra il codice QR**.
 3. Sul telefono, in WhatsApp, apri Impostazioni, Dispositivi collegati, Collega un dispositivo, e scansiona il codice QR.
 

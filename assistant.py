@@ -549,11 +549,12 @@ CONNECT_ACTIONS = (
     'connect_sources',
     'connect_start',
 )
-# Connections, + Add: where a hosted Machine's setup page signs in or links a source the dashboard can't (its tile id)
-HOSTED_TILES = {'github': 'source-github', 'whatsapp': 'source-whatsapp', 'android': 'source-android'}
-# The sign-ins a hosted Machine's dashboard starts itself (+ Add): the control plane's own OAuth flow, as on its setup
-# page, through POST /_machine/connect on the dashboard's host, and back to the dashboard when it is done
-HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom'}
+# The sign-ins a hosted Machine's dashboard starts itself (+ Add, Reconnect): the control plane's own OAuth flow, as on
+# its setup page, through POST /_machine/connect on the dashboard's host, and back to the dashboard when it is done.
+# GitHub, WhatsApp and the phone have no provider page: the control plane starts them there and the dashboard's form
+# shows their code (GitHub's device code, WhatsApp's QR or pairing code, the phone app's setup code).
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'github', 'whatsapp', 'android', 'microsoft_docs'}
+ON_DASHBOARD = ('github', 'whatsapp', 'android')
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
 CONNECT_SIGNIN_WAIT = 600
@@ -11290,9 +11291,10 @@ def setup_hints(store, config, now=None):
                                f"AND occurred_at>=? AND ({like}) LIMIT {HINT_MAILS})",
                                (since, *[f'%@%{d}%' for d in domains])).fetchone()[0]
             if found >= HINT_MAILS:
+                # one that signs in from + Add (HOSTED_SIGNINS) opens its form there, any other + Add: on the dashboard itself
                 hints.append({'id': 'source-' + service, 'title': f'Connect {label}?',
                               'text': f'{label} mails you often. Connected, I read it directly.',
-                              'href': f'{manage}#source-{service}', 'button': 'Connect'})
+                              'href': f'#connect={service}' if service in HOSTED_SIGNINS else '#connections=add', 'button': 'Connect'})
         snoozed = db.execute("SELECT 1 FROM decisions WHERE choice='snooze' LIMIT 1").fetchone()
     channels = reminder_channels(store, config)
     if snoozed and not channels['telegram'] and not channels['push']:
@@ -12484,10 +12486,16 @@ def reconnect_help(account, manage, docs_consent=False):
         return {'shared_by': str(shared.get('fleet_name') or 'your Fleet')}
     if shared:
         return {'connect_name': 'crm' if service == 'salesflare' else service, 'shared_with': str(shared.get('fleet_name') or 'your Fleet')}
-    if manage and service == 'docs':  # its Connect Google Docs or Microsoft documents consent, once the account page offers it
-        return {'account_page': urllib.parse.urljoin(manage, '#docs')} if docs_consent else {}
+    # A hosted Machine: Reconnect is the sign-in form under + Add (`hosted_signin`, the control plane's own sign-in, which
+    # comes back to it); Disconnect stays on the account page, which holds the grant
+    if manage and service == 'docs':  # its Connect Microsoft documents consent, once the account page offers it
+        return {'account_page': urllib.parse.urljoin(manage, '#docs'), 'hosted_signin': 'microsoft_docs'} if docs_consent else {}
     if manage and account.get('transport') == 'broker':
-        return {'account_page': urllib.parse.urljoin(manage, '#microsoft' if service in MICROSOFT_SERVICES else '#source-' + service if service in ('zoom', 'stripe') else '#google')}
+        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe') else 'google'
+        return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),
+                'hosted_signin': provider}
+    if manage and service in ON_DASHBOARD:  # GitHub, WhatsApp, the phone: their code on the dashboard; Disconnect here
+        return {'connect_name': service, 'hosted_signin': service}
     return {'connect_name': 'crm' if service == 'salesflare' else service}
 
 
@@ -12507,7 +12515,7 @@ def needs_you(config):
             continue
         if why:
             items.append({'id': 'setup-' + account['id'], 'text': f'{name} is not fully set up yet ({why}).',
-                          'url': manage + '#sources' if manage else None, 'action': 'Finish it' if manage else 'Run: assistant connect'})
+                          'url': '#connections=add' if manage else None, 'action': 'Finish it' if manage else 'Run: assistant connect'})
     # The main model can't run (no sign-in or key for its provider): nothing gets reviewed, the first look neither
     model = main_model()
     if model and model_ready(config) is False:
@@ -15797,14 +15805,12 @@ class App:
             found = {'sources': onboarding.catalog(self.config), 'manage_url': manage if hosted else None,
                      'saveable': bool(getattr(self, 'config_path', None))}
             if hosted:
-                # signed in or linked by the hosted setup page itself (GitHub's sign-in, WhatsApp's QR code, the phone's
-                # pairing): + Add links to that source's own tile there
+                # Google, Microsoft, Zoom, Stripe, Intercom, Docs, GitHub, WhatsApp and the phone: signed in from + Add
+                # itself, by the control plane, which comes back to this form
                 for source in found['sources']:
-                    if source['service'] in HOSTED_TILES and 'account_page' not in source:
-                        source['account_page'] = HOSTED_TILES[source['service']]
-                    # Google, Microsoft, Zoom, Stripe and Intercom: signed in from + Add itself, by the control plane
-                    if fleet.SIGNIN_OF.get(source['service']) in HOSTED_SIGNINS:
-                        source['hosted_signin'] = fleet.SIGNIN_OF[source['service']]
+                    signin = source['service'] if source['service'] in ON_DASHBOARD else fleet.SIGNIN_OF.get(source['service'])
+                    if signin in HOSTED_SIGNINS:
+                        source['hosted_signin'] = signin
             if not hosted:
                 # Sign in with <provider> through The Machine's own app (fleet.py connect_start), once this Machine is
                 # paired with an account; pasting a token stays as the fallback

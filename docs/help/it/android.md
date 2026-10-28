@@ -19,7 +19,7 @@ Niente sul tuo telefono. Legge solo le notifiche.
 Su una Machine in hosting:
 
 1. Installa l’app OpenClaw sul telefono.
-2. Nella tua pagina di configurazione, vai su **Altre fonti**, apri Notifiche Android e premi **Mostra un codice di configurazione**.
+2. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, scegli Telefono Android e premi **Mostra un codice di configurazione**.
 3. Scansionalo nell’app OpenClaw, poi premi **Approva** per l’abbinamento.
 4. Nell’app OpenClaw, attiva Forward Notification Events e consenti l’accesso alle notifiche quando Android lo chiede.
 

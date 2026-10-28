@@ -12,7 +12,9 @@ Der Tab **Verbindungen** gruppiert deine Quellen in **Mail und Kalender**, **Cha
 
 ## Eine hinzufügen
 
-Öffne **+ Hinzufügen** und wähle eine Quelle. Sie fragt nach dem, was sie braucht, eine Frage nach der anderen. **Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft. Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, melde dich an, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft. Auf deinem eigenen Computer macht `assistant connect` dasselbe im Terminal.
+Öffne **+ Hinzufügen** und wähle eine Quelle. Sie fragt nach dem, was sie braucht, eine Frage nach der anderen. **Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft. Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Dokumente, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, melde dich an, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft. GitHub, WhatsApp und dein Android-Handy zeigen ihren Code direkt in diesem Formular.
+
+**Neu verbinden** bei einer Quelle und in **Braucht dich** öffnet dasselbe Formular. Auf deinem eigenen Computer macht `assistant connect` dasselbe im Terminal.
 
 ## Arbeit oder privat
 
@@ -20,7 +22,7 @@ Jede Quelle zählt als Arbeit (für eine Firma, die du nennst) oder als privat. 
 
 ## Eine entfernen
 
-Öffne die Quelle, **Details**, dann **Trennen**. Sie hört auf zu lesen. Was sie schon reingebracht hat, bleibt. Auf einer gehosteten Machine zeigen Google und Microsoft **Neu verbinden oder trennen ↗**, das deine Einrichtungsseite öffnet.
+Öffne die Quelle, **Details**, dann **Trennen**. Sie hört auf zu lesen. Was sie schon reingebracht hat, bleibt. Auf einer gehosteten Machine zeigen Google, Microsoft, Dokumente, Zoom und Stripe **Trennen ↗**, das deine Einrichtungsseite öffnet.
 
 **Kürzlich getrennt** listet Anmeldungen bei Google, Microsoft und Zoom, die du entfernt hast. **Entfernt, bestätigt** heißt, dass Google die Abmeldung bestätigt hat, oder bei Microsoft und Zoom, dass keine Kopie mehr übrig ist. **Ausstehend** sagt, warum, und deine Machine versucht es weiter.
 

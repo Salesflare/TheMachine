@@ -37,7 +37,7 @@ With your own app: open **Use your own app** there, or run `assistant connect ou
 
 ## Remove it
 
-- On a hosted Machine: press **Disconnect** next to the account on your setup page. In the dashboard, **Reconnect or disconnect ↗** on Connections takes you there.
+- On a hosted Machine: press **Disconnect** next to the account on your setup page. In the dashboard, **Disconnect ↗** on Connections takes you there. **Reconnect** there signs in again without leaving the dashboard.
 - On your own computer: **Connections**, open the account, **Details**, then **Disconnect**.
 
 ## Uninstall it on Microsoft
