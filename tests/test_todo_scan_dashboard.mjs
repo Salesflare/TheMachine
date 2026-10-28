@@ -19,6 +19,7 @@ const cards=[
   next_actions:[{kind:'email',revision:'e1',label:'Send reply',to:['robin@example.com'],subject:'Re: listing',body:'Hi Robin,\n\nBoth listings are live.\n\nAlex',reply:true}]},
  {id:'b1b1b1b1b1b1b1b1',title:'Sam wants a call about the renewal',body:'Sam asks for a 30-minute call next week about the renewal terms and a bigger team plan. Their contract ends on November 15, so the call should be before then.',status:'pending',scope:'personal',created_at:ago(26),event_ids:[2],
   source_line:'Source: email from Sam · Tue 27 Oct'},
+ {id:'c1c1c1c1c1c1c1c1',title:'Compare the three quotes',body:'Reading the quotes now.',status:'accepted',scope:'personal',origin:'owner',created_at:ago(1),event_ids:[4],preparation_status:'running'},
  {id:'d1d1d1d1d1d1d1d1',title:'Both listings are live; reply to Robin',body:'Both listings are live. The reply to Robin shares the guide, where the listing appears before the others in the comparison table.',status:'completed',scope:'work',created_at:ago(72),closed_at:ago(2),event_ids:[3],
   people:who,project_node:project,project:project.name,source_line:'Source: email from Robin Example · Wed 28 Oct (+1 more)',source_url:'https://mail.example/x',
   latest_feedback:{choice:'other',feedback:'Then write an email to Robin.',created_at:ago(1)},
@@ -84,6 +85,12 @@ try{
   {const [h,lh]=await done.locator('.body').evaluate(e=>[e.getBoundingClientRect().height,parseFloat(getComputedStyle(e).lineHeight)]);if(width<600)assert.ok(h>lh*1.5,'Details shows the whole body')}
   // Details stays open across a refresh
   await page.evaluate(()=>render());assert.ok(await done.locator('.card-details .saved-feedback').isVisible());
+  // Preparing is one line: Preparing… and its clock, then the latest step, with no empty box held for steps to come
+  {const prep=page.locator('#task-c1c1c1c1c1c1c1c1'),one=()=>prep.locator('.prep-main').evaluate(e=>{const n=e.querySelector('.note');return e.getBoundingClientRect().height<=n.getBoundingClientRect().height+1});
+   assert.ok(await one(),'one line before any step');
+   await page.evaluate(()=>{steps.set('c1c1c1c1c1c1c1c1',[{title:'Opened the first quote'},{title:'Reading the second quote, a long step title that runs past the edge on a phone'}]);render()});
+   assert.match(await prep.locator('.prep .steps li').innerText(),/Reading the second quote/);assert.equal(await prep.locator('.prep .steps li').count(),1);
+   assert.ok(await one(),'still one line with a long step')}
   // Under Work the Work word goes: the filter says it
   await page.evaluate(()=>document.querySelector('[data-scope="work"]').click());await page.waitForTimeout(200);
   assert.equal(await page.locator('#task-a1a1a1a1a1a1a1a1 span.chip.scope').count(),0);

@@ -102,15 +102,15 @@ try{
   assert.ok(await form.locator('input[value="f1|m2"]').isChecked(),'the form starts on someone who does not have it yet');
   await k1.getByText('Take it back from Kim').waitFor();
   assert.ok(await k1.locator('input[name="replace"]').isChecked());await k1.scrollIntoViewIfNeeded();await shot(page,'reassign',width);
-  // Preparing: it stays in its section, and its steps keep one height from the start
+  // Preparing: it stays in its section, and its one step line keeps one height from the start (the latest step only)
   Object.assign(cards[2],{status:'accepted',preparation_status:'running',preparation_started_at:now});
-  await page.evaluate(()=>refresh());await page.locator('#task-p1 .prep .steps').waitFor();
+  await page.evaluate(()=>refresh());await page.locator('#task-p1 .prep .steps').waitFor({state:'attached'});
   assert.ok(await page.evaluate(()=>!document.getElementById('section-preparing')&&!!(document.getElementById('section-needs').compareDocumentPosition(document.getElementById('task-p1'))&Node.DOCUMENT_POSITION_FOLLOWING)),
    'it stays under Needs your decision while it prepares');
   const tall=()=>page.locator('#task-p1').evaluate(n=>Math.round(n.getBoundingClientRect().height));
   const before=await tall();
   steps=[{title:'Checking the venue’s calendar'},{title:'Reading the contract, a long step title that would wrap onto a second line on a phone'},{title:'Drafting the reply'}];
-  await page.waitForFunction(()=>document.querySelectorAll('#task-p1 .steps li').length===3,null,{timeout:10000});
+  await page.waitForFunction(()=>document.querySelector('#task-p1 .steps li')?.textContent==='Drafting the reply',null,{timeout:10000});
   await page.waitForTimeout(200);await page.locator('#task-p1').scrollIntoViewIfNeeded();await shot(page,'preparing',width);assert.equal(await tall(),before,'the to-do keeps its height while steps come in');
   Object.assign(cards[2],{status:'prepared',preparation_status:'done'});
   await page.evaluate(()=>refresh());
