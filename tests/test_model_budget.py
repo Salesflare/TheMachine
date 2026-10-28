@@ -230,6 +230,18 @@ class ProviderIsolation(unittest.TestCase):
         self.assertTrue(b.pause(b.for_model(usage, 'claude-cli/opus'), NOW))
         self.assertEqual(b.for_model(usage, None), usage)
 
+    def test_app_checks_only_the_current_provider_and_releases_a_previous_provider_hold(self):
+        app = object.__new__(a.App); app.config = {}; app.model_usage = [
+            {'provider': 'anthropic', 'windows': [{'label': '5h', 'used': 100, 'reset': time.time()+3600}]},
+            {'provider': 'openai-codex', 'windows': [{'label': '5h', 'used': 10, 'reset': time.time()+3600}]}]
+        app.usage_limit = {'provider': 'anthropic', 'until': time.time()+3600}
+        with patch.object(a, 'openclaw_model', return_value='openai/gpt-6.1-sol'):
+            self.assertIsNone(app.background_pause(owner=True))
+            self.assertIsNone(app.model_pause())
+            self.assertIsNone(app.background_pause(signals=True))
+        with patch.object(a, 'openclaw_model', return_value='claude-cli/opus'):
+            self.assertTrue(app.background_pause(owner=True)['limited'])
+
 
 if __name__ == '__main__':
     unittest.main()

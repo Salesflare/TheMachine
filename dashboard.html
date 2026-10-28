@@ -3667,7 +3667,7 @@ const localCache=(()=>{const DB='tm-cache',MAX_AGE=7*864e5,MAX_BYTES=8e6,MAX_ITE
  const aad=name=>new TextEncoder().encode(CACHE_SCOPE+'\n'+name);  // a copy only opens under its own name and owner
  const SECRET=/^(csrf|token|secret|password|passcode|api_?key|private_?key|cookie|authorization)$|_(token|secret|password|key)$/i;
  const scrub=v=>Array.isArray(v)?v.map(scrub):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).filter(([k])=>!SECRET.test(k)).map(([k,x])=>[k,scrub(x)])):v;
- let opened=null,db=null,last=0;
+ let opened=null,db=null,last=0,blocked=false;const writes=new Map(),durable=name=>['outbox','chat-drafts'].includes(name);
  const open=()=>opened||(opened=(async()=>{db=await new Promise((ok,no)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{r.result.createObjectStore('meta');r.result.createObjectStore('data')};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);r.onblocked=()=>no(Error('blocked'))});
   db.onversionchange=()=>{db.close();db=null;opened=null};
   let meta=await req(store(db,'meta').get('key'));
@@ -3675,15 +3675,20 @@ const localCache=(()=>{const DB='tm-cache',MAX_AGE=7*864e5,MAX_BYTES=8e6,MAX_ITE
    await req(store(db,'data','readwrite').clear());meta={scope:CACHE_SCOPE,key:await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt'])};await req(store(db,'meta','readwrite').put(meta,'key'))}
   return meta.key})().catch(e=>{opened=null;throw e}));
  async function trim(){const rows=[];await new Promise(ok=>{const c=store(db,'data').openCursor();c.onsuccess=()=>{const x=c.result;if(!x)return ok();rows.push([x.key,x.value.at,x.value.ct.byteLength]);x.continue()};c.onerror=ok});
-  rows.sort((a,b)=>b[1]-a[1]);let total=0;const out=store(db,'data','readwrite');for(const [k,at,size] of rows){total+=size;if(total>MAX_BYTES||Date.now()-at>MAX_AGE)out.delete(k)}}
- async function put(name,value){if(!on)return;try{const key=await open(),text=JSON.stringify(scrub(value));if(text.length>MAX_ITEM)return;
-  const iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(name)},key,new TextEncoder().encode(text));
-  await req(store(db,'data','readwrite').put({iv,ct,at:Date.now()},name));if(Date.now()-last>6e4){last=Date.now();trim()}}catch{}}
- async function read(name){if(!on)return null;try{const key=await open(),row=await req(store(db,'data').get(name));if(!row)return null;
-  if(Date.now()-row.at>MAX_AGE||row.at>Date.now()+6e5){store(db,'data','readwrite').delete(name);return null}
+  rows.sort((a,b)=>b[1]-a[1]);let total=0;const out=store(db,'data','readwrite');for(const [k,at,size] of rows){total+=size;if(!durable(k)&&(total>MAX_BYTES||Date.now()-at>MAX_AGE))out.delete(k)}}
+ // Snapshot at the call, serialize writes per name, and acknowledge the transaction's commit, not just its request.
+ function put(name,value){if(!on||blocked)return Promise.resolve(false);let text;
+  try{text=JSON.stringify(scrub(value));if(text.length>MAX_ITEM)return Promise.resolve(false)}catch{return Promise.resolve(false)}
+  const writing=(writes.get(name)||Promise.resolve()).then(async()=>{if(blocked)return false;const key=await open();if(blocked)return false;
+   const iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(name)},key,new TextEncoder().encode(text));
+   if(blocked)return false;await new Promise((ok,no)=>{const tx=db.transaction('data','readwrite');tx.oncomplete=ok;tx.onerror=tx.onabort=()=>no(tx.error);tx.objectStore('data').put({iv,ct,at:Date.now()},name)});
+   if(Date.now()-last>6e4){last=Date.now();await trim()}return true}).catch(()=>false);
+  writes.set(name,writing);writing.finally(()=>{if(writes.get(name)===writing)writes.delete(name)});return writing}
+ async function read(name){if(!on||blocked)return null;try{await writes.get(name);if(blocked)return null;const key=await open(),row=await req(store(db,'data').get(name));if(!row)return null;
+  if(!durable(name)&&(Date.now()-row.at>MAX_AGE||row.at>Date.now()+6e5)){store(db,'data','readwrite').delete(name);return null}
   return {value:JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:row.iv,additionalData:aad(name)},key,row.ct))),at:row.at}}catch{return null}}
  // Everything this device kept: the data, its key, the skeleton's count and the service worker's copy of the page.
- async function wipe(){try{await opened}catch{}opened=null;try{db?.close()}catch{}db=null;
+ async function wipe(){blocked=true;await Promise.allSettled([...writes.values()]);try{await opened}catch{}opened=null;try{db?.close()}catch{}db=null;
   try{localStorage.removeItem('skeleton-cards')}catch{}
   await Promise.all([new Promise(ok=>{try{const r=indexedDB.deleteDatabase(DB);r.onsuccess=r.onerror=r.onblocked=()=>ok()}catch{ok()}}),
    (async()=>{try{for(const k of await caches.keys())if(k.startsWith('tm-'))await caches.delete(k)}catch{}})()])}
@@ -3716,11 +3721,11 @@ let netDown=false,netRestarting=false;
 const decidePost=(sid,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:sid,...args}})});
 const outboxLoaded=localCache.read('outbox').then(hit=>{const kept=Array.isArray(hit?.value)?hit.value.filter(x=>x&&x.id&&x.sid&&Array.isArray(x.steps)&&x.steps.length):[];
  for(const x of kept)if(!outbox.items.some(y=>y.id===x.id))outbox.items.push({...x,sending:false});if(kept.length){netPaint();outboxFlush()}}).catch(()=>{});
-function outboxSave(){localCache.put('outbox',outbox.items.map(({sending,...x})=>x));netPaint();if(state?.suggestions)focusKept(render)}
+async function outboxSave(){const saved=await localCache.put('outbox',outbox.items.map(({sending,...x})=>x));netPaint();if(state?.suggestions)focusKept(render);return saved}
 // A decision on a to-do: sent now, or, when the Machine can't be reached, kept to go later (true). Anything else
 // (a clear refusal) is thrown as before. Behind changes already waiting it waits too, so the order stays the owner's.
-async function decideOrWait(sid,steps,kind){steps=steps.map(a=>({...a,decision_id:a.decision_id||crypto.randomUUID()}));
- const queue=rest=>{outbox.items.push({id:crypto.randomUUID(),sid,kind,steps:rest,text:kind==='other'?rest.at(-1).feedback:'',at:Date.now()});outboxSave();outboxRetry();return {waiting:true}};
+async function decideOrWait(sid,steps,kind){await outboxLoaded;steps=steps.map(a=>({...a,decision_id:a.decision_id||crypto.randomUUID()}));
+ const queue=async rest=>{outbox.items.push({id:crypto.randomUUID(),sid,kind,steps:rest,text:kind==='other'?rest.at(-1).feedback:'',at:Date.now()});const persistent=await outboxSave();if(!persistent)toast(t('Keep this page open. This device couldn’t save your waiting changes.'),true);outboxRetry();return {waiting:true,persistent}};
  if(outbox.items.length||navigator.onLine===false||netDown&&!csrfLive)return queue(steps);
  let r;for(let n=0;n<steps.length;n++){try{r=await decidePost(sid,steps[n])}catch(e){if(e.offline){netSet(true,e.restarting);return queue(steps.slice(n))}throw e}}return r}
 const outboxWaits=sid=>outbox.items.filter(x=>x.sid===sid);
@@ -3728,12 +3733,12 @@ const outboxWaits=sid=>outbox.items.filter(x=>x.sid===sid);
 // some jitter so many devices don't come back at once). A change the Machine refuses (the to-do is gone) is dropped and said.
 function outboxRetry(){clearTimeout(outbox.timer);if(!outbox.items.length)return;outbox.wait=Math.min(6e4,(outbox.wait||1e3)*2);outbox.timer=setTimeout(outboxFlush,outbox.wait*(.8+Math.random()*.4))}
 function outboxFlush(){return outbox.busy||(outbox.busy=(async()=>{await outboxLoaded;let saved=0;clearTimeout(outbox.timer);
- try{while(outbox.items.length){const it=outbox.items[0];it.sending=true;netPaint();
-   try{while(it.steps.length){await decidePost(it.sid,it.steps[0]);it.steps.shift();if(it.steps.length)outboxSave()}}
+ try{while(outbox.items.length){const it=outbox.items[0];let accepted=true;it.sending=true;netPaint();
+   try{while(it.steps.length){await decidePost(it.sid,it.steps[0]);it.steps.shift();if(it.steps.length)await outboxSave()}}
    catch(e){it.sending=false;if(e.offline){netSet(true,e.restarting);outboxRetry();return}
     if(e.sessionGone||e.status===401||e.status===403){netPaint();return}
-    toast(t('A waiting change couldn’t be saved: {}',e.message),true)}
-   if(outbox.items[0]===it)outbox.items.shift();saved++;outboxSave()}
+    accepted=false;if(it.kind==='other'&&it.text)chatDraftKeep(it.sid,it.text);toast(t('A waiting change couldn’t be saved: {}',e.message),true)}
+   if(outbox.items[0]===it)outbox.items.shift();if(accepted)saved++;await outboxSave()}
   outbox.wait=0}
  finally{outbox.busy=null;netPaint();if(saved){toast(t('Back online. Your waiting changes are saved.'));refresh().catch(()=>{});if(chatId)chatPoll()}}})())}
 function outboxCancel(id){const i=outbox.items.findIndex(x=>x.id===id);if(i<0||outbox.items[i].sending)return false;const [it]=outbox.items.splice(i,1);outboxSave();
@@ -3764,12 +3769,12 @@ addEventListener('offline',()=>netSet(true));
 addEventListener('online',()=>{outbox.wait=0;outboxFlush()});
 // A chat message being typed stays on the device until it is sent (encrypted with the rest), so a reload, a crash or a
 // lost connection never loses it. In memory too, for a device that keeps nothing.
-const chatDrafts=new Map();let chatDraftTimer=null;
-function chatDraftKeep(id,text){if(!id)return;text=String(text||'');if(text.trim())chatDrafts.set(id,text);else chatDrafts.delete(id);clearTimeout(chatDraftTimer);
+const chatDrafts=new Map(),chatDraftTouched=new Set();let chatDraftTimer=null;
+function chatDraftKeep(id,text){if(!id)return;chatDraftTouched.add(id);text=String(text||'');if(text.trim())chatDrafts.set(id,text);else chatDrafts.delete(id);clearTimeout(chatDraftTimer);
  chatDraftTimer=setTimeout(chatDraftsSave,250)}
-function chatDraftsSave(){clearTimeout(chatDraftTimer);chatDraftTimer=null;localCache.put('chat-drafts',Object.fromEntries(chatDrafts))}
+function chatDraftsSave(){clearTimeout(chatDraftTimer);chatDraftTimer=null;return localCache.put('chat-drafts',Object.fromEntries(chatDrafts))}
 addEventListener('pagehide',()=>{if(chatDraftTimer)chatDraftsSave()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&chatDraftTimer)chatDraftsSave()});
-const chatDraftsLoaded=localCache.read('chat-drafts').then(hit=>{for(const [k,v] of Object.entries(hit?.value||{}))if(typeof v==='string'&&!chatDrafts.has(k))chatDrafts.set(k,v)}).catch(()=>{});
+const chatDraftsLoaded=localCache.read('chat-drafts').then(hit=>{for(const [k,v] of Object.entries(hit?.value||{}))if(typeof v==='string'&&!chatDraftTouched.has(k)&&!chatDrafts.has(k))chatDrafts.set(k,v)}).catch(()=>{});
 async function chatDraftBack(id){await chatDraftsLoaded;const text=chatDrafts.get(id),input=$('#chat-input');if(!text||id!==chatId||!input||input.value.trim())return;input.value=text;chatGrow(input);chatSendState()}
 
 // Skills (skills.py): the owner's how-tos, written to OpenClaw's workspace; shared ones are read here and installed by the owner.

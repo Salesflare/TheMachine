@@ -713,8 +713,18 @@ class AgentJobs(unittest.TestCase):
         self.assertNotIn('Fix the typo', json.dumps(net.sent))  # the Network only ever saw it sealed
         self.assertNotIn('Fix the typo', json.dumps(waiting))
         # The laptop takes it, runs it with its own Codex, and reports back
-        self.assertEqual(agent_remote.serve_once(laptop, signed_in), 1)
+        original_network = laptop.network
+        def lost_receipt(body):
+            if body['action'] == 'received':
+                raise OSError('Synthetic lost receipt before relay acknowledgment')
+            return original_network(body)
+        laptop.network = lost_receipt
+        with self.assertRaises(OSError):
+            agent_remote.serve_once(laptop, signed_in)
+        laptop.network = original_network
+        self.assertEqual(agent_remote.serve_once(laptop, signed_in), 0)  # same durable ticket, not another launch
         with laptop_store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM agent_jobs').fetchone()[0], 1)
             local = db.execute('SELECT * FROM agent_jobs').fetchone()
         self.assertEqual((local['place'], local['token_hash'], local['suggestion_id'][:4]), ('local', ticket, 'net:'))
         wait(laptop, local['id'])
