@@ -26,7 +26,7 @@ When the to-dos don't fit, the whole sidebar scrolls as one column, to-dos inclu
 
 ## New versions
 
-When a new version of the dashboard is ready, it never reloads while you're using it. It loads once the window is in the background, or after a few minutes without input, and never while something is typed or a dialog is open. **Update ready**, at the top, loads it right away. A restart of your Machine only reconnects.
+When a new version of the dashboard is ready, it never reloads while you're using it. Opening or reloading the app loads the newest version. An open window loads it once the window is in the background, or after a few minutes without input, and never while something is typed or a dialog is open. **Update ready**, at the top, loads it right away. A restart of your Machine only reconnects.
 
 ## Events
 

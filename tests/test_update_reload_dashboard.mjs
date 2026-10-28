@@ -37,14 +37,16 @@ try{
  const open=async()=>{await page.goto(base);await page.locator(`#suggestions article[id="task-${id}"]`).waitFor({timeout:8000}).catch(async e=>{console.log(errors,(await page.locator("#suggestions").innerHTML()).slice(0,1500));throw e})};
  const mark=()=>page.evaluate(()=>{window.__same=1});const same=()=>page.evaluate(()=>window.__same===1).catch(()=>false);
  const wiggle=async()=>{await page.mouse.move(400+Math.random()*200,300);await page.mouse.move(700,320)};
+ // Doing something on the page: a key (the pointer only passing over it is not use, see 9.)
+ const use=async()=>{await wiggle();await page.keyboard.press('Shift')};
  const refreshNow=()=>page.evaluate(()=>refresh());
 
  // 1. Someone is reading: the release shows the pill, the page stays as it is (also minutes later while they use it)
- await open();await mark();await wiggle();
+ await open();await mark();await use();
  release('v2');await refreshNow();
  assert.ok(await page.locator('#update-ready').isVisible(),'the Update ready pill shows');
  assert.equal(await page.locator('#update-ready').innerText(),'Update ready');
- for(let i=0;i<6;i++){await page.clock.fastForward(40e3);await wiggle();await refreshNow()}  // 4 minutes of use
+ for(let i=0;i<6;i++){await page.clock.fastForward(40e3);await use();await refreshNow()}  // 4 minutes of use
  assert.ok(await same(),'no reload while the page is in use');
 
  // 2. A data refresh keeps the place on the page, the typed text and the focus; a draft holds the update back, also idle and hidden
@@ -118,8 +120,22 @@ try{
  await until(()=>page.evaluate(()=>location.hash==='#events'||!document.querySelector('#events')?.hidden),'the link opened');
  assert.ok(await same(),'a notification link does not reload');assert.equal(hits.page,before);
 
- // 9. An older copy the app opened with (nobody touched it yet): it takes the new version at once
+ // 9. A window in the background (a desktop app's window while another one has the focus): the pointer passing over it
+ // is not use, and the new version loads once nobody did anything in it for 45 s
+ await page.evaluate(()=>{location.hash='';document.querySelector('nav button[data-tab="inbox"]').click()});await page.locator(`#suggestions article[id="task-${id}"]`).waitFor();
+ await draft.evaluate(t=>{t.value='';t.dispatchEvent(new Event('input',{bubbles:true}))});  // nothing typed (7. was sent)
+ await mark();await use();await page.evaluate(()=>{document.hasFocus=()=>false});
+ release('v5a');await refreshNow();assert.ok(await same(),'not at once');
+ await page.clock.fastForward(20e3);await wiggle();await page.clock.runFor(16e3);assert.ok(await same(),'not within 45 s of the last use');
+ const away=page.waitForEvent('load');await page.clock.fastForward(20e3);await wiggle();await page.clock.runFor(16e3);await away;
+ assert.equal(await page.evaluate(()=>UI_VERSION),'v5a','a background window loads the new version');
+ // in front, the same pointer moves keep it (the case of someone reading): see 1.
+ await page.locator(`#suggestions article[id="task-${id}"]`).waitFor();
+
+ // 10. An older copy the app opened with (nobody did anything in it yet): it takes the new version at once, also as the
+ // window opens under the pointer and gets the focus (a desktop app's window)
  const fresh=await context.newPage();fresh.on('pageerror',e=>errors.push(e.message));staleOnce='v5';release('v6');
+ await fresh.addInitScript(()=>addEventListener('DOMContentLoaded',()=>{dispatchEvent(new Event('focus'));document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true}))}));
  await fresh.goto(base);await fresh.waitForURL(base);await until(()=>fresh.evaluate(()=>UI_VERSION).then(v=>v==='v6').catch(()=>false),'just opened: updates at once');
  await fresh.close();
  assert.deepEqual(errors,[]);

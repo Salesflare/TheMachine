@@ -24,7 +24,7 @@ A janela da frente do navegador aparece no meio e o resto da tela fica escuro. U
 
 ## Novas versões
 
-Quando uma nova versão do painel fica pronta, ele nunca recarrega enquanto você está usando. Ela carrega quando a janela vai para segundo plano, ou depois de alguns minutos sem uso, e nunca enquanto há algo digitado ou uma caixa de diálogo aberta. **Atualização pronta**, no topo, carrega na hora. Reiniciar a sua Machine só reconecta.
+Quando uma nova versão do painel fica pronta, ele nunca recarrega enquanto você está usando. Abrir ou recarregar o app carrega a versão mais nova. Uma janela aberta carrega a nova versão quando a janela vai para segundo plano, ou depois de alguns minutos sem uso, e nunca enquanto há algo digitado ou uma caixa de diálogo aberta. **Atualização pronta**, no topo, carrega na hora. Reiniciar a sua Machine só reconecta.
 
 ## Eventos
 

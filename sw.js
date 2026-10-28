@@ -1,7 +1,7 @@
 // The installed dashboard app: push notifications, and a copy of the page itself (the app shell) so the app opens at
 // once. The shell holds no data and never its CSRF token; the last cards, chats and Graph lists are kept by the page,
 // encrypted (docs/architecture.md, "On the device"). Brand images are kept too. Nothing else is cached.
-const SHELL = 'tm-shell-1', ASSETS = 'tm-assets-1', SHELL_AGE = 7 * 864e5;
+const SHELL = 'tm-shell-2', ASSETS = 'tm-assets-1', SHELL_AGE = 7 * 864e5;
 // The server no longer puts the token in the page (api/session has it); an older page still may, and it is taken out.
 const CSRF = /(\bconst csrf=')(?:[0-9a-f]{64})?(')/;
 const scopeUrl = () => new URL(self.registration.scope);
@@ -29,27 +29,25 @@ async function signedOut() {
   for (const c of await self.clients.matchAll({type: 'window', includeUncontrolled: true})) c.postMessage({cache: 'signed-out'});
 }
 
-// After the app opened from its copy, ask for the page again: a 304 when nothing changed, a new copy for the next start.
-async function revalidate(cached) {
-  await new Promise(r => setTimeout(r, 4000));  // not while the page is still loading its first data
-  try {
-    const etag = cached.headers.get('ETag'), r = await fetch(scopeUrl().href, {headers: etag ? {'If-None-Match': etag} : {}, redirect: 'manual', cache: 'no-store', credentials: 'same-origin'});
-    if (r.type === 'opaqueredirect' || r.status === 401 || r.status === 403) return signedOut();
-    if (r.status === 200) await keepShell(r);
-  } catch {}
-}
-
+// Open the app: ask the Machine for the page first, with the kept copy's ETag, and wait a moment for its answer. Not
+// changed (304): the kept copy. A new page (a release): that page, kept for next time, so the first start after an
+// update is already the new version, never the old one again. No answer in time (offline, a slow link): the kept copy
+// at once, and the answer, when it comes, replaces it (the page then sees the new release and loads it).
+const SHELL_WAIT = 1500;
 async function shell(event) {
   const cached = await (await caches.open(SHELL)).match(scopeUrl().href);
-  if (cached && Date.now() - +cached.headers.get('X-Shell-At') < SHELL_AGE) {
-    event.waitUntil(revalidate(cached));
-    return cached;
-  }
+  const fresh = cached && Date.now() - +cached.headers.get('X-Shell-At') < SHELL_AGE ? cached : null;
+  const etag = fresh?.headers.get('ETag');
   // Always the page itself on this origin (the scope), never another address.
-  const r = await fetch(scopeUrl().href, {redirect: 'manual', credentials: 'same-origin'});
-  if (r.status === 200) event.waitUntil(keepShell(r.clone()).catch(() => {}));
-  else if (r.type === 'opaqueredirect' || r.status === 401 || r.status === 403) event.waitUntil(signedOut());
-  return r;
+  const asked = fetch(scopeUrl().href, {headers: etag ? {'If-None-Match': etag} : {}, redirect: 'manual', cache: 'no-store', credentials: 'same-origin'});
+  event.waitUntil(asked.then(r => {
+    if (r.type === 'opaqueredirect' || r.status === 401 || r.status === 403) return signedOut();
+    if (r.status === 200) return keepShell(r.clone());
+  }).catch(() => {}));
+  if (!fresh) return asked;
+  if (self.navigator.onLine === false) return fresh;
+  const r = await Promise.race([asked.catch(() => null), new Promise(ok => setTimeout(ok, SHELL_WAIT, null))]);
+  return r && r.status !== 304 && r.status < 500 ? r : fresh;
 }
 
 async function asset(event, name) {
