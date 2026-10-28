@@ -3,7 +3,7 @@ title: Error reports
 area: security
 summary: When something breaks, your Machine tells The Machine team what failed and where in the code. Never your messages, names or addresses.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## What it is
@@ -28,7 +28,8 @@ What your messages, to-dos, drafts or chats say. Names, email addresses, phone n
 ## Where errors come from
 
 - the service and its jobs: reviews, preparing to-dos, chat, connections and syncs;
-- the dashboard in your browser;
+- the dashboard in your browser, also errors it caught and showed you, and its app copy on your device;
+- calls from the dashboard to your Machine that fail or time out: which call, never what it asked or sent;
 - Claude Code and Codex jobs that fail: the tool and the kind of failure only.
 
 The same error counts once, with a count. At most a batch every 10 minutes. The team keeps them 30 days.

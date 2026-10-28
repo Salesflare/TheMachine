@@ -37,6 +37,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   res.end(JSON.stringify({counts:{person:2,org:0,project:0},list_counts:{people:2,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},whos_who:[],waiting:0}));return}
  if(url.pathname==='/api/graph/list'){if(graphDown){res.statusCode=502;res.end('{}');return}
   res.end(JSON.stringify({items:url.searchParams.get('list')==='people'?[{id:'person:1',kind:'person',name:'Robin Example',strength:2,last_at:now,signals:4,ids:[]}]:[],next:null,total:1}));return}
+ if(url.pathname==='/api/action'&&/"action":"client_error"/.test(body)){res.end('{"ok":true,"counted":0}');return}  // an error report (test_client_errors_dashboard.mjs), not a change
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');posts.push({action:r.action,csrf:req.headers['x-csrf-token']});
   if(r.action==='card_chat'){if(mode==='down'){res.statusCode=502;res.end('{}');return}res.end(JSON.stringify({session:true,status:'ok',active:false,cursor:'k1',items:[{kind:'reply',text:'Drafted the numbers for Robin.',at:Date.now()}]}));return}
   res.end('{}');return}

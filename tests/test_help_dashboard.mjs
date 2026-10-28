@@ -15,6 +15,7 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
   if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
   res.setHeader('Content-Type','application/json');
   if(url.pathname==='/_machine/bug'){actions.push({action:'cp',args:JSON.parse(body)});if(cpOk){res.end('{"id":"r_1"}');return}res.writeHead(429,{'Retry-After':'900'});res.end('{"error":"You sent a few reports just now.","retry_after":900}');return}
+  if(url.pathname==='/api/action'&&/"action":"client_error"/.test(body)){res.end('{"ok":true,"counted":0}');return}  // an error report (test_client_errors_dashboard.mjs), not a change
   if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');if(action==='bug_queued'){res.end(JSON.stringify({queued}));return}actions.push({action,args,upload:req.headers['x-upload']});
    const later=Math.floor(Date.UTC(2030,0,1,10,55)/1000);
    if(action==='bug_later'||action==='bug_send'&&limit){queued=[{id:'bq_1',what:args.description,next_at:later}];res.end(JSON.stringify({sent:false,queued:true,at:later}));return}

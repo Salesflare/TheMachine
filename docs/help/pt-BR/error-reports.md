@@ -3,7 +3,7 @@ title: Relatórios de erro
 area: security
 summary: Quando algo quebra, sua Machine conta para a equipe de The Machine o que falhou e onde no código. Nunca suas mensagens, nomes ou endereços.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## O que é
@@ -28,7 +28,8 @@ O que dizem suas mensagens, tarefas, rascunhos ou chats. Nomes, endereços de e-
 ## De onde vêm os erros
 
 - o serviço e as tarefas dele: revisões, preparo de tarefas, chat, conexões e sincronizações;
-- o painel no seu navegador;
+- o painel no seu navegador, também erros que ele capturou e mostrou para você, e a cópia do app no seu dispositivo;
+- chamadas do painel para a sua Machine que falham ou demoram demais: qual chamada, nunca o que ela pediu ou enviou;
 - trabalhos do Claude Code e do Codex que falham: só a ferramenta e o tipo de falha.
 
 O mesmo erro conta uma vez, com uma contagem. No máximo um lote a cada 10 minutos. A equipe guarda os erros por 30 dias.

@@ -9,8 +9,11 @@ signatures only:
 - how often: a count, first and last seen.
 
 Never: message content, names, addresses, tokens or values. Errors come from the service's own code (assistant.FaultLog:
-logged errors and threads that die of one), the dashboard (window errors and unhandled rejections, posted by the page),
-failed reviews and coding-agent jobs (their error codes) and syncs that fail (the source's service and the error type).
+logged errors and threads that die of one), the dashboard (window errors, unhandled rejections and bugs in its code a
+try caught and showed, posted by the page), its service worker (source sw: its own errors and a failed shell update,
+passed on by the page), failed API calls the dashboard saw (source api: the endpoint and an action's name, a 5xx or a
+timeout, never the query or what was sent), failed reviews and coding-agent jobs (their error codes) and syncs that
+fail (the source's service and the error type).
 
 Locally deduplicated by signature (a repeat only counts), at most MAX_SIGNATURES kept, at most BATCH sent at a time and
 SEND_EVERY apart, DAY_CAP a day; what was sent goes again only when its count grew. Kept 30 days. Sent over the Network
@@ -26,7 +29,7 @@ import json
 import re
 import uuid
 
-SOURCES = ('service', 'dashboard', 'job', 'review', 'sync')
+SOURCES = ('service', 'dashboard', 'sw', 'api', 'job', 'review', 'sync')
 MAX_SIGNATURES = 300
 BATCH = 50
 SEND_EVERY = 600       # seconds between batches
@@ -34,7 +37,8 @@ DAY_CAP = 500          # signatures sent a day at most
 KEEP_DAYS = 30
 MESSAGE_MAX = 160
 CLIENT_MAX = 10        # errors one dashboard post may carry
-CLIENT_FILES = ('dashboard.html', 'sw.js')  # the dashboard's own code; an extension's or another page's errors are not ours
+CLIENT_FILES = {'dashboard.html': 'dashboard', 'sw.js': 'sw'}  # the dashboard's own code; an extension's or another page's errors are not ours
+SEGMENT = re.compile(r'[a-z][a-z_-]{0,30}')  # an endpoint's part as the code names it; anything else (an id) is <id>
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS error_feed(id TEXT PRIMARY KEY,source TEXT NOT NULL,kind TEXT NOT NULL,message TEXT NOT NULL,
@@ -117,6 +121,8 @@ foreign check integrity image malformed attempt gateway bad internal unauthorize
 unprocessable entity rate limited later upstream proxy gaierror sqlite3 subprocess returned nonzero exit status
 when while during into than as if then else only all any some more less same other one first last
 '''.split())
+# and a browser's (the dashboard, sw.js): "Failed to execute 'querySelector'", "Invalid time value", "Failed to register a ServiceWorker"
+SAFE_WORDS |= set('''execute valid selector constant time match pattern register fetching date'''.split())
 SAFE_CODES = {'android_feed_unavailable', 'delivery_outcome_unknown', 'conversations.history', 'HTTP_'}
 # The services a source error names (SourceError categories: salesflare:HTTP_401, trello_http, google_meet_invalid_page)
 SERVICES = set('''gmail calendar outlook slack salesflare hubspot pipedrive intercom stripe zoom trello shortcut github google
@@ -291,15 +297,35 @@ def record(db, source, kind, message, file, function, line=None, version=None, a
     return sid
 
 
-def record_client(db, errors, version=None):
-    """What the dashboard posted: [{kind, message, file, function, line}], at most CLIENT_MAX, each normalized here
-    again (the page is never trusted). Returns how many were counted."""
+def endpoint(api, action='', actions=()):
+    """A failed call's place: api/graph/node/4f2c?q=… is graph.node.<id>, api/action with the action's name (one of
+    `actions`, the dashboard's own, else other) is action.<name>. None when it isn't one of ours."""
+    parts = [p for p in str(api or '').split('?')[0].split('#')[0].split('/') if p][:4]
+    if not parts or not SEGMENT.fullmatch(parts[0]):
+        return None
+    out = '.'.join(p if SEGMENT.fullmatch(p) else '<id>' for p in parts)
+    if out == 'action':
+        out += '.' + (action if action in actions else 'other')
+    return out[:60]
+
+
+def record_client(db, errors, version=None, actions=()):
+    """What the dashboard posted, at most CLIENT_MAX: its own errors and its service worker's as {kind, message, file,
+    function, line}, each normalized here again (the page is never trusted), and failed API calls as {api, action,
+    status}: a 5xx or 'timeout', kept as the endpoint and HTTP5xx or Timeout, no message. Returns how many were counted."""
     counted = 0
     for item in (errors if isinstance(errors, list) else [])[:CLIENT_MAX]:
-        if not isinstance(item, dict) or str(item.get('file') or '') not in CLIENT_FILES:
+        if not isinstance(item, dict):
             continue
-        if record(db, 'dashboard', str(item.get('kind') or '')[:60], str(item.get('message') or '')[:1000], item.get('file'),
-                  str(item.get('function') or '')[:60] or '<anonymous>', item.get('line'), version):
+        if 'api' in item:
+            status, place = item.get('status'), endpoint(item.get('api'), str(item.get('action') or ''), actions)
+            kind = 'Timeout' if status == 'timeout' else f'HTTP{status}' if isinstance(status, int) and 500 <= status <= 599 else None
+            if kind and place and record(db, 'api', kind, '', 'api', place, None, version):
+                counted += 1
+            continue
+        source = CLIENT_FILES.get(str(item.get('file') or ''))
+        if source and record(db, source, str(item.get('kind') or '')[:60], str(item.get('message') or '')[:1000], item.get('file'),
+                             str(item.get('function') or '')[:60] or '<anonymous>', item.get('line'), version):
             counted += 1
     return counted
 

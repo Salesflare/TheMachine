@@ -180,7 +180,7 @@ try{
   if(process.env.CALENDAR_SHOT)await page.screenshot({path:`${process.env.CALENDAR_SHOT}/calendar-390-dark-empty.png`});
   empty=false;await context.close()}
  // Read-only: viewing, switching views and opening rows sent nothing but the chat's own read
- assert.deepEqual(calls.filter(c=>!c.includes('"card_chat"')),[]);
+ assert.deepEqual(calls.filter(c=>!c.includes('"card_chat"')&&!c.includes('"client_error"')),[]);  // the error report of the 500 above is not a change
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({calendar_requests:calendarAsks.length,posts:calls.length,page_errors:errors}));
 }finally{await browser?.close();server.close()}
