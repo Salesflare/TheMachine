@@ -2811,15 +2811,15 @@ function reviewBanner(p){if(!p)return '';const when=pauseWhen(p.until),name=p.na
  return `<span>${esc(line)}</span><button type="button" class="head-link" data-review-now>${esc(t('Review now'))}</button>`}
 // A bug the owner reported, fixed and running here now: the control plane says so once this Machine runs the fix (its
 // cloud/support_fixes.py; hosted through /_machine/fixed with the owner's sign-in, self-hosted through the Network,
-// bug_fixed). One quiet line each, until Got it, which closes it on every Machine of theirs. Looked at every 15 minutes.
-let fixedList=[],fixedAt=0;
-async function fixedLoad(){if(Date.now()-fixedAt<9e5)return;fixedAt=Date.now();
- try{if(state.manage_url){const r=await fetch('/_machine/fixed',{credentials:'same-origin',redirect:'manual'});if(!r.ok)return;fixedList=(await r.json()).fixed||[]}
-  else if(state.fleet)fixedList=(await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_fixed',args:{}})})).fixed||[];
-  else fixedList=[]}catch{return}renderFixed()}
+// state.fixed, which the Fleet's hourly look keeps). One quiet line each, until Got it, which closes it on every Machine
+// of theirs. Hosted: looked at every 15 minutes.
+let fixedList=[],fixedAt=0,fixedGone=new Set();
+async function fixedLoad(){if(!state.manage_url){fixedList=(Array.isArray(state.fixed)?state.fixed:[]).filter(f=>f&&f.id&&!fixedGone.has(f.id));renderFixed();return}
+ if(Date.now()-fixedAt<9e5)return;fixedAt=Date.now();
+ try{const r=await fetch('/_machine/fixed',{credentials:'same-origin',redirect:'manual'});if(!r.ok)return;fixedList=((await r.json()).fixed||[]).filter(f=>!fixedGone.has(f.id))}catch{return}renderFixed()}
 function renderFixed(){const b=$('#fixed-notice');if(!b)return;const html=fixedList.map(f=>`<div class="notice-card fixed-notice"><span>${esc(f.text)}</span><button type="button" class="head-link" data-fixed="${esc(f.id)}">${esc(t('Got it'))}</button></div>`).join('');
  if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-fixed]');if(!b)return;const id=b.dataset.fixed;fixedList=fixedList.filter(f=>f.id!==id);renderFixed();
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-fixed]');if(!b)return;const id=b.dataset.fixed;fixedGone.add(id);fixedList=fixedList.filter(f=>f.id!==id);renderFixed();
  try{if(state.manage_url)await fetch('/_machine/fixed',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({seen:id})});
   else await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_fixed',args:{seen:id}})})}catch{}});
 function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause)||reviewBanner(state.review_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}

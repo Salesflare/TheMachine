@@ -3279,19 +3279,22 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
     # cloud/support_fixes.py). Asking says the release this Machine runs and its language; the dashboard shows the lines.
     FIXED_EVERY = 3600
     release = language = None  # set by the app: () -> the release this code is (assistant.running_release), the UI language
+    fixed_now = ()  # the last answer, for the dashboard's state (no call of its own)
 
     def fixed(self, seen=None):
         """The fixed bugs to show, [{id, text, at}] (text in the owner's language, from the control plane); seen
         closes one, on every Machine of theirs."""
         import time
         if seen:
+            self.fixed_now = [f for f in self.fixed_now if f['id'] != seen]
             found = self.relay.call('POST', '/fixed', {'seen': str(seen)[:40]}, timeout=20) or {}
         else:
             ask = {'release': (self.release and self.release()) or '', 'lang': (self.language and self.language()) or ''}
             found = self.relay.call('GET', '/fixed?' + urllib.parse.urlencode(ask), timeout=20) or {}
             self.last['fixed'] = time.monotonic()
-        return [{'id': i['id'][:40], 'text': str(i.get('text') or '')[:300], 'at': str(i.get('at') or '')[:40]}
-                for i in (found.get('fixed') or [])[:5] if isinstance(i, dict) and isinstance(i.get('id'), str)]
+        self.fixed_now = [{'id': i['id'][:40], 'text': str(i.get('text') or '')[:300], 'at': str(i.get('at') or '')[:40]}
+                          for i in (found.get('fixed') or [])[:5] if isinstance(i, dict) and isinstance(i.get('id'), str)]
+        return self.fixed_now
 
     def fixed_round(self):
         """Says what this Machine runs once an hour, so the owner hears of a fix (by email too) without opening the dashboard."""

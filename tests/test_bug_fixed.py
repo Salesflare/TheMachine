@@ -45,10 +45,13 @@ class Fixed(unittest.TestCase):
                                   'at': '2026-10-28T15:00:00+00:00'})
         self.assertEqual(len(got), 3)  # the first 5 looked at, the odd ones dropped
         self.assertTrue(all(len(item['text']) <= 300 for item in got))
+        self.assertEqual(f.fixed_now, got)  # what the dashboard's state shows, without a call of its own
 
     def test_seen_closes_one(self):
         f = paired({'fixed': []})
+        f.fixed_now = [{'id': 's_045cc20be4f1c3e6', 'text': 'Fixed: x.', 'at': ''}]
         self.assertEqual(f.fixed('s_045cc20be4f1c3e6'), [])
+        self.assertEqual(f.fixed_now, [])
         self.assertEqual(f.relay.calls, [('POST', '/fixed', {'seen': 's_045cc20be4f1c3e6'})])
 
     def test_the_round_asks_once_an_hour_and_never_fails(self):
@@ -65,6 +68,8 @@ class Fixed(unittest.TestCase):
         page = (ROOT / 'dashboard.html').read_text()
         self.assertIn('<div id="fixed-notice" role="status" hidden></div>', page)
         self.assertIn("action:'bug_fixed'", page)
+        self.assertIn('state.fixed', page)  # self-hosted: from the state, no call of its own on each render
+        self.assertIn("'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ())", (ROOT / 'assistant.py').read_text())
         self.assertIn("'/_machine/fixed'", page)
 
 

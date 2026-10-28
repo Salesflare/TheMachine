@@ -18869,7 +18869,7 @@ class App:
                     self.output(200, {'csrf': dashboard_csrf(app.token, app.config['tailscale_owner']),
                                       'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner'])})
                 elif path.path == '/api/status':
-                    self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'ui_version': dashboard_version(), 'source_url': source_url(), 'browser_link': browser_link(app.config),
+                    self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'ui_version': dashboard_version(), 'source_url': source_url(), 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                                       'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})
                     try:
                         app.store.note_card_shown()
