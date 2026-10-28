@@ -65,6 +65,9 @@ try{
   assert.ok(!await shown(page,'#cal-v-notes-none'));
   // The transcript folded: its length in the title, Show opens it, its lines kept as written
   assert.equal(await page.locator('#cal-v-tr-h').textContent(),'Transcript · 2h 03m');
+  // Other languages write the short units: 30 min, not 30 m
+  assert.deepEqual(await page.evaluate(()=>{const was=DL,out=[];for(const l of ['nl-NL','de-DE','fr-FR','es-ES','it-IT','pt-BR'])DL=l,out.push(calRunTime(30));DL='nl-NL';out.push(calRunTime(124));DL=was;return out.map(x=>x.replace(/\s/g,' '))}),
+   ['30 min','30 Min.','30 min','30 min','30 min','30 min','2 uur 04 min']);
   assert.equal(await page.locator('#cal-v-tr-toggle').getAttribute('aria-expanded'),'false');
   assert.ok(!await shown(page,'#cal-v-tr-body'));assert.equal(await page.locator('#cal-v-tr-show').textContent(),'Show');
   assert.ok(!await shown(page,'#cal-v-tr-edit'));
