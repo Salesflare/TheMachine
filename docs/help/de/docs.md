@@ -12,7 +12,7 @@ Docs liest Word-Dateien in OneDrive und SharePoint, mit der Microsoft-Anmeldung,
 
 - Dokumente, die jemand mit dir teilt.
 - Kommentare und Antworten in Dokumenten, die dir gehören, und Kommentare, die dich erwähnen.
-- Änderungsvorschläge in Google Docs, die dir gehören, und nachverfolgte Änderungen in Word-Dateien, die dir gehören.
+- Nachverfolgte Änderungen in Word-Dateien, die dir gehören.
 
 Die erste Synchronisierung schaut 30 Tage zurück. Daraus wird jeweils ein Termin, verknüpft mit den Personen und Projekten in deinem [Graph](graph.md). Wenn ein Kommentar dich braucht, wird daraus eine Aufgabe.
 
@@ -20,16 +20,13 @@ Die erste Synchronisierung schaut 30 Tage zurück. Daraus wird jeweils ein Termi
 
 Wenn eine Aufgabe den Text eines Dokuments braucht, liest deine Machine genau dieses Dokument, und nur, solange sie an dieser Aufgabe arbeitet.
 
-Es kann eine Antwort auf einen Kommentar entwerfen. Bei Google Docs wartet die Antwort bei der Aufgabe: Tippe auf **Prüfen und posten**, sieh sie dir an und dann auf **Jetzt posten**. Vorher wird nichts gepostet. Word-Dateien bieten keinen Weg, von außerhalb von Word zu antworten. Diese Antworten bleiben also Entwürfe, die du in Word kopierst.
+Es kann eine Antwort auf einen Kommentar entwerfen. Word-Dateien bieten keinen Weg, von außerhalb von Word zu antworten. Die Antwort bleibt also ein Entwurf, den du in Word kopierst.
 
 Es bearbeitet nie ein Dokument, nimmt keine Vorschläge an, löst keine Kommentare auf und teilt keine Dateien.
 
 ## Worum es fragt
 
-Das Lesen von Dokumenten braucht ein eigenes OK, getrennt von deiner Mail-Anmeldung. Dein Zugriff auf Gmail und Kalender bleibt, wie er ist.
-
-- Google: Lesezugriff auf deine Drive-Dateien und Kommentare. Antworten posten braucht ein weiteres OK, das du auslassen kannst.
-- Microsoft: Lesezugriff auf deine Dateien, auch auf die, die in OneDrive und SharePoint mit dir geteilt sind.
+Das Lesen von Dokumenten braucht ein eigenes OK, getrennt von deiner Mail-Anmeldung: Microsoft bittet dich, das Lesen deiner Dateien zu erlauben, auch der Dateien, die in OneDrive und SharePoint mit dir geteilt sind. Dein Zugriff auf Mail und Kalender bleibt, wie er ist.
 
 Wird dieses OK später zurückgenommen, zeigt die Docs-Karte **Wartet auf dein OK, um Dokumente zu lesen**.
 

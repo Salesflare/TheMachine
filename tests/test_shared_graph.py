@@ -1290,6 +1290,16 @@ class SharedGraph(unittest.TestCase):
         self.rounds()
         self.assertNotIn(BODY, self.received(self.mem))
 
+    def test_a_connection_replaced_by_a_new_one_to_the_same_place_is_listed_once(self):
+        # Intercom reconnected: the old account stays in the config, retired into the new one; What's shared lists one
+        self.olive_mail()
+        self.own.config['accounts'] += [{'id': 'old-intercom', 'service': 'intercom', 'email': 'olive@acme.example', 'boundary': 'work:Acme',
+                                         'retired': {'into': 'new-intercom', 'at': '2026-10-24T03:38:08+00:00'}},
+                                        {'id': 'new-intercom', 'service': 'intercom', 'email': 'olive@acme.example', 'boundary': 'work:Acme'}]
+        ids = [c['id'] for c in self.own.sharing()[0]['connections'] if c['service'] == 'intercom']
+        self.assertEqual(ids, ['new-intercom'])
+        self.assertNotIn('old-intercom', self.own.graph_accounts(FLEET))
+
     def test_another_persons_calendar_read_through_the_owners_sign_in_is_named_for_that_calendar(self):
         # a partner's calendar read through the work sign-in is its own personal connection, not a second copy of the
         # work calendar: named for the calendar it reads, and the work calendar keeps its own label and switch

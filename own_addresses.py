@@ -379,11 +379,19 @@ def clean_domain(value):
     return text if DOMAIN.match(text) else ''
 
 
+def email_domain(value):
+    """The domain of an email address (sam@acme.co: acme.co), else '': an X handle (@acme), a WhatsApp label or a
+    name without a dot is no domain anyone's mail comes from."""
+    text = str(value or '').strip().lower()
+    domain = text.rsplit('@', 1)[1] if ADDRESS.match(text) else ''
+    return domain if DOMAIN.match(domain) else ''
+
+
 def detected_domains(db, config):
-    """The owner's company domains the Machine found by itself: those of their own addresses, never a free mail one."""
+    """The owner's company domains the Machine found by itself: those of their own email addresses, never a free mail one."""
     import graph
     emails = {str(a.get('email') or '').lower() for a in own_accounts(config)} | (yours(db, config) if db is not None else configured(config)[0])
-    return {e.rsplit('@', 1)[1] for e in emails if '@' in e} - graph.FREEMAIL
+    return {email_domain(e) for e in emails} - {''} - graph.FREEMAIL
 
 
 def domains(db):

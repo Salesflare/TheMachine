@@ -319,7 +319,8 @@ class CalendarSync(Base):
             {'value': [{'id': 'e1', 'subject': 'Demo with Bo', 'start': {'dateTime': '2099-01-03T09:00:00.0000000', 'timeZone': 'UTC'},
                         'end': {'dateTime': '2099-01-03T10:00:00.0000000', 'timeZone': 'UTC'}, 'isAllDay': False,
                         'organizer': {'emailAddress': {'address': 'alex@acme.test', 'name': 'Alex'}},
-                        'attendees': [{'emailAddress': {'address': 'Bo@client.test', 'name': 'Bo'}, 'status': {'response': 'accepted'}}],
+                        'attendees': [{'emailAddress': {'address': 'Bo@client.test', 'name': 'Bo'}, 'status': {'response': 'accepted'}},
+                                      {'type': 'resource', 'emailAddress': {'address': 'room4@acme.test', 'name': 'Room 4'}, 'status': {'response': 'accepted'}}],
                         'webLink': 'https://outlook.office365.com/owa/?itemid=e1', 'lastModifiedDateTime': '2099-01-01T00:00:00Z'}],
              '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=one'},
             {'value': [{'id': 'e1', '@removed': {'reason': 'deleted'}}], '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=two'}]
@@ -330,6 +331,7 @@ class CalendarSync(Base):
             meta = json.loads(row['metadata'])
             self.assertEqual((row['kind'], row['occurred_at'], meta['end_at']), ('calendar.event', '2099-01-03T09:00:00+00:00', '2099-01-03T10:00:00+00:00'))
             self.assertEqual(meta['attendees'][0], {'email': 'bo@client.test', 'displayName': 'Bo', 'responseStatus': 'accepted'})
+            self.assertTrue(meta['attendees'][1]['resource'])  # a booked room: never a person on the Graph or in Calendar
             self.assertEqual(meta['source_url'], 'https://outlook.office365.com/owa/?itemid=e1')
             self.assertEqual(self.store.checkpoint(self.cal['id'])['sync_token'], G + '/me/calendarView/delta?$deltatoken=one')
             a.sync_calendar(self.store, self.config, self.cal)

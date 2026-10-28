@@ -712,6 +712,34 @@ class StatedOrganisations(unittest.TestCase):
                 graph.hide_warmup(db, 'org:named:globex', True, 'agent', NOW.isoformat())
             db.execute('ROLLBACK')
 
+    def test_a_meeting_room_on_an_invite_is_judged_not_a_person_and_leaves_the_graph(self):
+        n = next(counter)
+        invite = {'account_id': 'work', 'source_id': f'c{n}', 'kind': 'calendar.event', 'occurred_at': at(1), 'title': 'Board meeting', 'body': '',
+                  'deleted': False, 'metadata': {'organizer': {'email': 'sam@acme.com', 'self': True}, 'attendees': [
+                      {'email': 'sam@acme.com', 'self': True}, {'email': 'kim@client.com', 'responseStatus': 'accepted'},
+                      {'email': 'falcon_room@venue.example', 'responseStatus': 'accepted'},  # booked by an outside organizer: no flag
+                      {'email': 'c_123@resource.calendar.google.com', 'displayName': 'Desk 4', 'resource': True}]}}
+        note = mail(2, 'Kim <kim@client.com>', 'sam@acme.com')
+        self.add(invite, note)
+        self.build()
+        invite_id, note_id = self.ids([invite['source_id'], note['source_id']])
+        self.assertIsNone(self.node('email:c_123@resource.calendar.google.com'))  # the calendar's own flag: never a person
+        self.assertIsNotNone(self.node('email:falcon_room@venue.example'))
+        with self.assertRaisesRegex(ValueError, 'meeting invite'):
+            self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True})
+        with self.assertRaisesRegex(ValueError, 'meeting invite'):
+            self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True, 'event_id': note_id})
+        self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True, 'event_id': invite_id})
+        self.assertIsNone(self.node('email:falcon_room@venue.example'))
+        self.assertIsNone(self.node('org:venue.example'))  # nor an organization made from it
+        self.assertIsNotNone(self.node('email:kim@client.com'))
+        # The owner's undo stays: a later review can't make it a room again
+        self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': False}, source='owner')
+        self.assertIsNotNone(self.node('email:falcon_room@venue.example'))
+        said = self.app.graph_action({'node_id': 'email:falcon_room@venue.example', 'resource': True, 'event_id': invite_id})
+        self.assertIsNotNone(self.node('email:falcon_room@venue.example'))
+        self.assertNotIn('changed', said)
+
     def test_the_owner_word_stays_and_a_work_address_wins_over_a_review(self):
         first, _, later = self.robin()
         sig = mail(3, 'Ann Bell <ann.bell@gmail.com>', 'sam@acme.com', title='Hello')

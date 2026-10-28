@@ -219,6 +219,15 @@ class CompanyDomains(unittest.TestCase):
         oa.set_domain(self.db, 'acme-three.example', False, NOW, CONFIG)
         self.assertEqual(oa.domains(self.db), {'acme-two.example'})
 
+    def test_only_email_domains_never_an_x_handle_or_a_label(self):
+        # The owner's X accounts carry their handle (@acme) where a mail account has its address: no domain in that
+        config = {**CONFIG, 'accounts': [*CONFIG['accounts'], {'id': 'x-work', 'service': 'x', 'email': '@AcmeHQ', 'boundary': 'work:Acme'},
+                                         {'id': 'x-me', 'service': 'x', 'email': '@SamTest'}, {'id': 'wa', 'service': 'whatsapp', 'email': 'Personal WhatsApp'}]}
+        self.assertEqual([d['domain'] for d in oa.view(self.db, config)['domains']], ['acme.test', 'sideco.test'])
+        self.assertEqual(oa.detected_domains(None, config), {'acme.test', 'sideco.test'})
+        self.assertNotIn('acmehq', tg.a.company_domains(config))
+        self.assertEqual((oa.email_domain('Sam@Acme.Test'), oa.email_domain('@acmehq'), oa.email_domain('sam@localhost')), ('acme.test', '', ''))
+
     def test_never_a_free_mail_domain_or_nonsense(self):
         for bad in ('gmail.com', 'not a domain', '', 'x@', 'localhost'):
             with self.assertRaises(ValueError):

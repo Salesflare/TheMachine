@@ -1459,8 +1459,8 @@ class SharedGraph:
         chosen = self.meta('graph_conn:' + fleet) or {}
         out = []
         for a in self.config.get('accounts', []):
-            if not a.get('id'):
-                continue
+            if not a.get('id') or a.get('retired'):
+                continue  # one replaced by a new connection to the same place (it moved its messages there): listed once, as the new one
             kind = self._account_kind(a)
             personal = str(a.get('boundary') or '').startswith('personal:') or a['id'] not in any_work
             required = a['id'] in company and kind in require

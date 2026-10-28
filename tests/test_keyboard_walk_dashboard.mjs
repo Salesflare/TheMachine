@@ -97,6 +97,24 @@ try{
   assert.equal(await focus(page),'section-ready','the head keeps focus after it opens');
   await press(page,'ArrowDown');assert.equal(await focus(page),'task-a1a1a1a1a1a1a1a1');
   await press(page,'ArrowUp','ArrowLeft');await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor({state:'detached'});assert.equal(await focus(page),'section-ready');
+  // A to-do in Coming back later (the owner's page: all clear, one snoozed): open the list, its to-do, its chat. One Esc
+  // in the empty box closes the chat, and the list is still open with focus back on that to-do, not on the page.
+  for(let i=0;i<6&&await focus(page)!=='later-head';i++)await press(page,'j');assert.equal(await focus(page),'later-head');
+  await press(page,'Enter');assert.equal(await page.locator('#later-list').evaluate(d=>d.open),true);
+  await press(page,'ArrowDown');assert.equal(await focus(page),'task-c1c1c1c1c1c1c1c1');
+  await press(page,'Enter');await page.waitForFunction(()=>document.activeElement?.id==='chat-input');
+  assert.equal(await page.locator('#later-list').count(),0,'the chat stands in for the lists');
+  await press(page,'Escape');await page.locator('#chat-input').waitFor({state:'detached'});
+  await page.waitForFunction(()=>document.activeElement?.id==='task-c1c1c1c1c1c1c1c1');
+  assert.equal(await page.locator('#later-list').evaluate(d=>d.open),true,'Coming back later stays open');
+  assert.ok(await ring(page),'back on the to-do, with the ring');
+  if(process.env.SHOT_DIR)await page.screenshot({path:process.env.SHOT_DIR+'/keys-later-esc.png'});
+  // With words in the box: the first Esc leaves the box (the chat stays), the next closes it, same landing
+  await press(page,'Enter');await page.waitForFunction(()=>document.activeElement?.id==='chat-input');
+  await page.keyboard.type('half a thought');await press(page,'Escape');
+  assert.equal(await focus(page),'body');assert.ok(await page.locator('#chat-input').isVisible(),'still in the chat');
+  await press(page,'Escape');await page.waitForFunction(()=>document.activeElement?.id==='task-c1c1c1c1c1c1c1c1');
+  assert.equal(await page.locator('#later-list').evaluate(d=>d.open),true);
  });
  assert.deepEqual(actions.filter(a=>/confirm|send|decide/.test(a)),[],'nothing sent or decided from a key');
  assert.deepEqual(errors,[]);

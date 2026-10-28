@@ -626,7 +626,8 @@ def calendar_item(raw, owner):
         address = (a.get('emailAddress') or {})
         attendees.append({'email': str(address.get('address') or '').lower(), 'displayName': address.get('name') or '',
                           'responseStatus': RESPONSES.get((a.get('status') or {}).get('response'), 'needsAction'),
-                          **({'self': True} if str(address.get('address') or '').lower() == owner else {})})
+                          **({'self': True} if str(address.get('address') or '').lower() == owner else {}),
+                          **({'resource': True} if a.get('type') == 'resource' else {})})  # a room or equipment Outlook booked
     item = {'id': raw['id'], 'summary': raw.get('subject') or '(untitled event)', 'start': _when(raw.get('start'), all_day),
             'end': _when(raw.get('end'), all_day), 'status': 'cancelled' if raw.get('isCancelled') else 'confirmed',
             'updated': raw.get('lastModifiedDateTime'), 'location': ((raw.get('location') or {}).get('displayName') or None),

@@ -12,7 +12,7 @@ Docs leest Word-bestanden in OneDrive en SharePoint, met de Microsoft-login die 
 
 - Documenten die iemand met je deelt.
 - Reacties en antwoorden op documenten van jou, en reacties die jou vermelden.
-- Voorgestelde wijzigingen in Google Docs van jou, en bijgehouden wijzigingen in Word-bestanden van jou.
+- Bijgehouden wijzigingen in Word-bestanden van jou.
 
 De eerste sync kijkt 30 dagen terug. Elk item wordt een gebeurtenis, gekoppeld aan de personen en projecten in je [Graph](graph.md). Als een reactie jou nodig heeft, wordt ze een to-do.
 
@@ -20,16 +20,13 @@ De eerste sync kijkt 30 dagen terug. Elk item wordt een gebeurtenis, gekoppeld a
 
 Als een to-do de tekst van een document nodig heeft, leest je Machine dat ene document, en alleen terwijl hij aan die to-do werkt.
 
-Hij kan een antwoord op een reactie schrijven. Bij Google Docs wacht het antwoord op de to-do: druk op **Nakijken en plaatsen**, controleer het en dan **Nu plaatsen**. Er wordt niets geplaatst tot je dat doet. Bij Word-bestanden kan een antwoord niet van buiten Word geplaatst worden, dus die antwoorden blijven concepten die je zelf naar Word kopieert.
+Hij kan een antwoord op een reactie schrijven. Bij Word-bestanden kan een antwoord niet van buiten Word geplaatst worden, dus het antwoord blijft een concept dat je zelf naar Word kopieert.
 
 Hij bewerkt nooit een document, aanvaardt nooit een suggestie, sluit nooit een reactie af en deelt nooit een bestand.
 
 ## Waar het om vraagt
 
-Documenten lezen heeft een eigen OK nodig, los van je login voor mail. Je toegang tot Gmail en je agenda blijft zoals ze is.
-
-- Google: alleen-lezentoegang tot je bestanden en reacties in Drive. Antwoorden plaatsen vraagt nog een OK, die je kunt overslaan.
-- Microsoft: leestoegang tot je bestanden, ook die met je gedeeld zijn in OneDrive en SharePoint.
+Documenten lezen heeft een eigen OK nodig, los van je login voor mail: Microsoft vraagt je om het lezen van je bestanden toe te staan, ook die met je gedeeld zijn in OneDrive en SharePoint. Je toegang tot je mail en je agenda blijft zoals ze is.
 
 Wordt die OK later ingetrokken, dan zegt de kaart van Docs **Wacht op je OK om documenten te lezen**.
 

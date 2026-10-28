@@ -12,7 +12,7 @@ Docs lê arquivos do Word no OneDrive e no SharePoint, com o login da Microsoft 
 
 - Documentos que alguém compartilha com você.
 - Comentários e respostas em documentos seus, e comentários que mencionam você.
-- Sugestões de edição em documentos do Google Docs seus, e alterações controladas em arquivos do Word seus.
+- Alterações controladas em arquivos do Word seus.
 
 A primeira sincronização olha 30 dias para trás. Cada item vira um evento, ligado às pessoas e aos projetos do seu [Graph](graph.md). Quando um comentário precisa de você, ele vira uma tarefa.
 
@@ -20,16 +20,13 @@ A primeira sincronização olha 30 dias para trás. Cada item vira um evento, li
 
 Quando uma tarefa precisa do texto de um documento, sua Machine lê só esse documento, e só enquanto trabalha nessa tarefa.
 
-Ela pode escrever o rascunho de uma resposta a um comentário. No Google Docs, a resposta espera na tarefa: clique em **Revisar e publicar**, confira e depois clique em **Publicar agora**. Nada é publicado até você fazer isso. Arquivos do Word não permitem publicar uma resposta de fora do Word, então essas respostas ficam como rascunhos para você copiar no Word.
+Ela pode escrever o rascunho de uma resposta a um comentário. Arquivos do Word não permitem publicar uma resposta de fora do Word, então a resposta fica como rascunho para você copiar no Word.
 
 Ela nunca edita um documento, aceita uma sugestão, resolve um comentário ou compartilha um arquivo.
 
 ## O que ela pede
 
-Ler documentos precisa de um OK próprio, separado do login do seu e-mail. Seu acesso ao Gmail e à agenda continua como está.
-
-- Google: acesso só de leitura aos seus arquivos do Drive e aos comentários. Publicar respostas precisa de mais um OK, que você pode pular.
-- Microsoft: acesso de leitura aos seus arquivos, incluindo os compartilhados com você no OneDrive e no SharePoint.
+Ler documentos precisa de um OK próprio, separado do login do seu e-mail: a Microsoft pede para você permitir a leitura dos seus arquivos, incluindo os compartilhados com você no OneDrive e no SharePoint. Seu acesso ao e-mail e à agenda continua como está.
 
 Se esse OK for retirado depois, o cartão do Docs mostra **Aguardando seu OK para ler documentos**.
 

@@ -87,6 +87,8 @@ CREATE TABLE IF NOT EXISTS owner_numbers(number TEXT PRIMARY KEY,source TEXT NOT
 CREATE TABLE IF NOT EXISTS self_record_backups(id INTEGER PRIMARY KEY,identifier TEXT NOT NULL,rows TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS hidden_domains(domain TEXT PRIMARY KEY,hidden INTEGER NOT NULL,source TEXT NOT NULL,event_id INTEGER,
   name TEXT,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS graph_resources(identifier TEXT PRIMARY KEY,resource INTEGER NOT NULL,source TEXT NOT NULL,event_id INTEGER,
+  name TEXT,created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS person_orgs(identifier TEXT PRIMARY KEY,org TEXT NOT NULL,org_id TEXT,source TEXT NOT NULL,via TEXT,event_id INTEGER,
   quote TEXT,said_at TEXT,created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS graph_org_asks(identifier TEXT PRIMARY KEY,run_id TEXT,asked_at TEXT NOT NULL);
@@ -241,7 +243,7 @@ class Owner:
         self.team = own_addresses.team(db, config) if db is not None else set()
         if db is not None:
             self.emails |= own_addresses.yours(db, config)
-        self.domains = {e.rsplit('@', 1)[1] for e in self.emails} - FREEMAIL
+        self.domains = {own_addresses.email_domain(e) for e in self.emails} - {''} - FREEMAIL  # an X handle (@acme) is no domain
         if db is not None:  # and the ones the owner added as their company's too (acme.co next to acme.com)
             self.domains |= own_addresses.domains(db) - FREEMAIL
         self.slack = {a['user_id'] for a in accounts if a.get('service') == 'slack' and a.get('user_id')}
@@ -860,6 +862,7 @@ def _build(db, config, now, team=()):
             wrote_to |= {a for _, a in addresses(m.get('to')) + addresses(m.get('cc'))}
 
     warmup = hidden(db)  # addresses there are a warm-up tool's traffic: nobody in the graph
+    rooms = resources(db)  # meeting rooms and other things booked on invites: never people
     gone = forgotten(db)  # people the owner deleted permanently: never added again
 
     # Who: identifiers per signal, joined into people.
@@ -892,7 +895,7 @@ def _build(db, config, now, team=()):
                 domain = addr.rsplit('@', 1)[1]
                 if kind == 'stripe.event' and m.get('customer_name') and domain not in FREEMAIL:
                     paying_names.setdefault(domain, str(m['customer_name']))
-        found = [t for t in touches(kind, m, owner, wrote_to) if not (t[0].startswith('email:') and t[0].rsplit('@', 1)[1] in warmup) and not gone(t[0])]
+        found = [t for t in touches(kind, m, owner, wrote_to) if not (t[0].startswith('email:') and t[0].rsplit('@', 1)[1] in warmup) and t[0] not in rooms and not gone(t[0])]
         if not found:
             continue
         if kind == 'linkedin.message' and isinstance(m.get('headline'), str) and m['headline'].strip() and not m.get('group'):
@@ -2285,6 +2288,45 @@ def hide_warmup(db, node_id, warmup, source, now, event_id=None):
     db.execute('INSERT OR REPLACE INTO hidden_domains(domain,hidden,source,event_id,name,created_at) VALUES(?,?,?,?,?,?)',
                (domain, int(bool(warmup)), source, event_id, row['name'] if row else current['name'], now))
     return {'warmup': bool(warmup), 'domain': domain}
+
+
+def resources(db):
+    """Identifiers (email:…) of meeting rooms and other things booked on invites: never people in the graph."""
+    try:
+        return {r[0] for r in db.execute('SELECT identifier FROM graph_resources WHERE resource=1')}
+    except sqlite3.OperationalError:
+        return set()
+
+
+def mark_resource(db, node_id, resource, source, now, event_id=None):
+    """Say a "person" is a meeting room, a desk, a car or another thing booked on invites, not a person: its addresses
+    leave the graph, so meetings no longer list it as someone they're with (nor its organization). A review judges it
+    from the invites it is on (a room an outside organizer booked carries no flag of its own); the owner's word stays,
+    and the owner can undo it with resource false."""
+    if not db.in_transaction:
+        db.execute('BEGIN IMMEDIATE')
+    node_id = str(node_id or '')
+    row = db.execute("SELECT name,info FROM graph_nodes WHERE id=? AND kind='person'", (node_id,)).fetchone()
+    ids = [node_id] if node_id.startswith('email:') else []
+    if row:
+        ids = sorted({*ids, *(i for i in (json.loads(row['info'] or '{}').get('identifiers') or ()) if str(i).startswith('email:'))})
+    current = {r['identifier']: r for r in db.execute(
+        f"SELECT * FROM graph_resources WHERE identifier IN ({','.join('?' for _ in ids) or 'NULL'})", ids)}
+    if not ids or (not row and not (source == 'owner' and current)):
+        raise ValueError('resource needs a person node_id with an email address from graph results')
+    if source != 'owner' and any(r['source'] == 'owner' for r in current.values()):
+        return {'resource': bool(next(r['resource'] for r in current.values() if r['source'] == 'owner')),
+                'kept': 'The owner decided about this one; it stays.'}
+    if source != 'owner':
+        if event_id is None or not db.execute(
+                f"SELECT 1 FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.event_id=? AND e.kind='calendar.event' "
+                f"AND g.node_id=?", (int(event_id), node_id)).fetchone():
+            raise ValueError('event_id must be a meeting invite it is on (see graph node_id)')
+    name = row['name'] if row else next(iter(current.values()))['name']
+    for identifier in ids:
+        db.execute('INSERT OR REPLACE INTO graph_resources(identifier,resource,source,event_id,name,created_at) VALUES(?,?,?,?,?,?)',
+                   (identifier, int(bool(resource)), source, event_id if source != 'owner' else None, name, now))
+    return {'resource': bool(resource), 'node_id': node_id}
 
 
 def folded_words(text):

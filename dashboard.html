@@ -4386,8 +4386,11 @@ const SKELETON=$('#suggestions .skeleton')?.outerHTML||'';
 // Where a decision came from, in the page's language ("on the dashboard", not "via dashboard"). Unknown sources: "via <source>".
 const DECISION_VIA={dashboard:'on the dashboard',telegram:'on Telegram',assistant:'automatically',fleet:'from the Fleet','owner-chat':'in the chat',signed_in:'after a sign-in',agent:'by an agent',elsewhere:'elsewhere'};
 const decisionVia=source=>DECISION_VIA[source]?t(DECISION_VIA[source]):t('via {}',source);
+// Whether Coming back later, Promises and Done are open, kept while a chat stands in for the lists, so closing the chat
+// brings back the list the to-do is in as it was (Esc from a to-do in Coming back later lands on that to-do, list open).
+const listOpenKept={};const listOpen=id=>{const d=document.getElementById(id);if(d)listOpenKept[id]=d.open;return !!listOpenKept[id]};
 function render(){scopeSync(state.locale);applyLocale(state.locale);renderNeedsYou();renderNotify();
-const finishedOpen=$('#finished-list')?.open||false,laterOpen=$('#later-list')?.open||false,promisesOpen=$('#promises-list')?.open||false;
+const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
 const shown=state.suggestions.filter(s=>scopeFilter==='all'||s.scope===scopeFilter);
@@ -5138,7 +5141,7 @@ let chatPushed=false;
 function openChatLink(){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
  if(id===chatId)return;const was=chatId;chatId=id;chat=null;chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
- if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
+ if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;
 addEventListener('scroll',()=>{chatScrolledAt=Date.now()},{passive:true});

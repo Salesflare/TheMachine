@@ -12,7 +12,7 @@ Docs lee archivos de Word en OneDrive y SharePoint, con el inicio de sesión de 
 
 - Documentos que alguien comparte contigo.
 - Comentarios y respuestas en documentos tuyos, y comentarios que te mencionan.
-- Sugerencias de edición en documentos de Google Docs tuyos, y control de cambios en archivos de Word tuyos.
+- Control de cambios en archivos de Word tuyos.
 
 La primera sincronización mira 30 días atrás. Cada cosa se convierte en un evento, vinculado a las personas y proyectos de tu [Graph](graph.md). Cuando un comentario te necesita, se convierte en una tarea.
 
@@ -20,16 +20,13 @@ La primera sincronización mira 30 días atrás. Cada cosa se convierte en un ev
 
 Cuando una tarea necesita el texto de un documento, tu Machine lee ese documento, y solo mientras trabaja en esa tarea.
 
-Puede redactar una respuesta a un comentario. En Google Docs, la respuesta espera en la tarea: pulsa **Revisar y publicar**, revísala y luego **Publicar ahora**. No se publica nada hasta que lo hagas. Los archivos de Word no permiten publicar una respuesta desde fuera de Word, así que esas respuestas se quedan como borradores para que las copies en Word.
+Puede redactar una respuesta a un comentario. Los archivos de Word no permiten publicar una respuesta desde fuera de Word, así que la respuesta se queda como borrador para que la copies en Word.
 
 Nunca edita un documento, acepta una sugerencia, resuelve un comentario ni comparte un archivo.
 
 ## Qué pide
 
-Leer documentos necesita su propio OK, aparte del inicio de sesión de tu correo. Tu acceso a Gmail y al calendario se queda como está.
-
-- Google: acceso de solo lectura a tus archivos y comentarios de Drive. Publicar respuestas necesita un OK más, que puedes omitir.
-- Microsoft: acceso de lectura a tus archivos, incluidos los que se comparten contigo en OneDrive y SharePoint.
+Leer documentos necesita su propio OK, aparte del inicio de sesión de tu correo: Microsoft te pide permitir que lea tus archivos, incluidos los que se comparten contigo en OneDrive y SharePoint. Tu acceso al correo y al calendario se queda como está.
 
 Si más tarde se retira ese OK, la tarjeta de Docs dice **Esperando tu OK para leer documentos**.
 

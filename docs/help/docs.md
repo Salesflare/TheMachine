@@ -12,7 +12,7 @@ Docs reads Word files in OneDrive and SharePoint, with the Microsoft sign-in you
 
 - Docs someone shares with you.
 - Comments and replies on docs you own, and comments that mention you.
-- Suggested edits on Google Docs you own, and tracked changes in Word files you own.
+- Tracked changes in Word files you own.
 
 The first sync looks back 30 days. Each one becomes an event, linked to the people and projects in your [Graph](graph.md). When a comment needs you, it becomes a to-do.
 
@@ -20,16 +20,13 @@ The first sync looks back 30 days. Each one becomes an event, linked to the peop
 
 When a to-do needs a doc's text, your Machine reads that one doc, and only while it works on that to-do.
 
-It can draft a reply to a comment. On Google Docs, the reply waits on the to-do: press **Review and post**, check it, then **Post now**. Nothing is posted until you do. Word files have no way to post a reply from outside Word, so those replies stay drafts for you to copy into Word.
+It can draft a reply to a comment. Word files have no way to post a reply from outside Word, so the reply stays a draft for you to copy into Word.
 
 It never edits a doc, accepts a suggestion, resolves a comment or shares a file.
 
 ## What it asks for
 
-Reading docs needs its own OK, apart from your mail sign-in. Your Gmail and calendar access stay as they are.
-
-- Google: read-only access to your Drive files and comments. Posting replies needs one more OK, which you can skip.
-- Microsoft: read access to your files, including the ones shared with you in OneDrive and SharePoint.
+Reading docs needs its own OK, apart from your mail sign-in: Microsoft asks to let it read your files, including the ones shared with you in OneDrive and SharePoint. Your mail and calendar access stay as they are.
 
 If that OK is taken back later, the Docs card says **Waiting for your OK to read docs**.
 

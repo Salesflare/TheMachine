@@ -78,6 +78,44 @@ class Calendar(unittest.TestCase):
         self.assertEqual(pilot['projects'], [{'node_id': 'project:1', 'name': 'Pilot'}, {'node_id': 'project:3', 'name': 'Rollout'}])
         self.assertNotIn('orgs', week[0])
 
+    def test_a_meeting_lists_people_once_never_rooms_and_only_projects_it_is_about(self):
+        """The board meeting as it showed: a booked room as a guest, one person on two addresses (one declined), and a
+        cofounder who is on every project. Rooms go, the person shows once, and only an outside guest's project ties in."""
+        self.store.commit_page('cal', {}, [meeting('board', {'dateTime': '2026-10-28T10:00:00+01:00'}, {'dateTime': '2026-10-28T12:00:00+01:00'}, 'Board Q3',
+            attendees=[{'email': 'owner@example.com', 'self': True, 'responseStatus': 'accepted'},
+                       {'email': 'lee@example.com', 'displayName': 'Lee Cofounder', 'responseStatus': 'accepted'},
+                       {'email': 'falcon_room@venue.example', 'responseStatus': 'accepted'},
+                       {'email': 'c_9@resource.calendar.google.com', 'displayName': 'Desk 4', 'resource': True},
+                       {'email': 'bo@investor.example', 'responseStatus': 'needsAction'},
+                       {'email': 'bo@fund.example', 'displayName': 'Bo (fund)', 'responseStatus': 'declined'},
+                       {'email': 'ida@investor.example', 'responseStatus': 'accepted'}])])
+        with self.store.connect() as db:
+            board_id = db.execute("SELECT id FROM events WHERE title='Board Q3'").fetchone()[0]
+            db.executemany('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,1,0,?)', [
+                ('email:lee@example.com', 'person', 'Lee Cofounder', json.dumps({'identifiers': ['email:lee@example.com'], 'colleague': True})),
+                ('email:falcon_room@venue.example', 'person', 'Falcon Meeting Room', json.dumps({'identifiers': ['email:falcon_room@venue.example'], 'org': 'org:venue.example'})),
+                ('org:venue.example', 'org', 'Venue Co', '{}'),
+                ('email:bo@investor.example', 'person', 'Bo Investor', json.dumps({'identifiers': ['email:bo@investor.example', 'email:bo@fund.example'], 'org': 'org:investor.example'})),
+                ('org:investor.example', 'org', 'Investor', '{}'),
+                ('email:ida@investor.example', 'person', 'Ida Investor', json.dumps({'identifiers': ['email:ida@investor.example'], 'org': 'org:investor.example'}))])
+            db.executemany('INSERT INTO projects(id,name,created_at,closed_at) VALUES(?,?,?,NULL)',
+                           [(5, 'Refund', '2026-10-01'), (8, 'Home internet', '2026-10-01'), (9, 'Series A', '2026-10-01')])
+            db.executemany("INSERT INTO graph_links(a,b,kind,strength) VALUES(?,?,'project',1)",
+                           [('email:lee@example.com', 'project:5'), ('email:lee@example.com', 'project:8'), ('email:lee@example.com', 'project:9'),
+                            ('email:ida@investor.example', 'project:9')])
+            db.executemany('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)',
+                           [(n, board_id, '2026-10-28') for n in ('email:lee@example.com', 'email:falcon_room@venue.example', 'email:bo@investor.example',
+                                                                  'email:ida@investor.example')])
+            db.execute("INSERT INTO graph_resources(identifier,resource,source,event_id,name,created_at) "
+                       "VALUES('email:falcon_room@venue.example',1,'review',?,'Falcon Meeting Room','2026-10-27')", (board_id,))
+        board = next(m for m in self.store.calendar(['cal'], *self.week, owner={'owner@example.com'}) if m['title'] == 'Board Q3')
+        self.assertEqual([w['email'] for w in board['with']], ['lee@example.com', 'bo@investor.example', 'ida@investor.example'])
+        self.assertEqual(board['people'], ['Lee Cofounder', 'Bo Investor', 'Ida Investor'])
+        self.assertEqual(board['guests'], 3)
+        self.assertEqual(board['orgs'], [{'node_id': 'org:investor.example', 'name': 'Investor'}])  # not the room's venue
+        self.assertEqual(board['projects'], [{'node_id': 'project:9', 'name': 'Series A'}])  # an outside guest's, not the cofounder's every project
+        self.assertNotIn('declined', json.dumps(board))
+
     def test_the_week_is_slim_rows_soonest_first(self):
         rows = self.store.calendar(['cal'], *self.week)
         self.assertEqual([r['title'] for r in rows], ['Late call', 'Pilot review', 'Odd link', 'Team offsite'])

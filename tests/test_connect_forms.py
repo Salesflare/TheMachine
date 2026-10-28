@@ -88,14 +88,21 @@ class FormTest(unittest.TestCase):
                 self.act('connect_start', {'name': 'rss', 'form': True, 'answers': {'url': 'https://feed.example/rss'}, **bad})
 
     def test_linkedin_waits_for_the_sign_in_the_dashboard_offers_then_goes_on_by_itself(self):
-        checks = iter(['linkedin_signed_out', 'linkedin_signed_out', None])
-        with patch.object(onboarding, 'check', side_effect=lambda config, account: next(checks)), patch.object(onboarding, 'SIGNIN_EVERY', 0.1):
-            view = self.act('connect_start', {'name': 'linkedin', 'form': True, 'scope': 'work', 'company': 'Acme'})
-            view = self.finish(view, lambda v: v.get('signin') or v['state'] != 'running')
-            self.assertEqual((view['state'], view['signin'], view['question']), ('running', 'linkedin', None))
-            view = self.finish(view)
-        self.assertEqual((view['state'], view['signin']), ('done', None))
-        self.assertFalse(any('openclaw' in line for line in view['lines']), view['lines'])
+        # also on a hosted Machine: its form signs in right there, and "not signed in" never shows before they could
+        for manage in (None, 'https://cp.example.org/setup'):
+            with self.subTest(hosted=bool(manage)):
+                self.app.config['manage_url'] = manage
+                source = next(s for s in self.act('connect_sources', {})['sources'] if s['name'] == 'linkedin')
+                self.assertFalse(source.get('account_page') or source.get('hosted_signin'))  # + Add's own form, not a link away
+                checks = iter(['linkedin_signed_out', 'linkedin_signed_out', None])
+                with patch.object(onboarding, 'check', side_effect=lambda config, account: next(checks)), patch.object(onboarding, 'SIGNIN_EVERY', 0.1):
+                    view = self.act('connect_start', {'name': 'linkedin', 'form': True, 'scope': 'work', 'company': 'Acme'})
+                    view = self.finish(view, lambda v: v.get('signin') or v['state'] != 'running')
+                    self.assertEqual((view['state'], view['signin'], view['question'], view['error']), ('running', 'linkedin', None, None))
+                    view = self.finish(view)
+                self.assertEqual((view['state'], view['signin']), ('done', None))
+                self.assertFalse(any('openclaw' in line for line in view['lines']), view['lines'])
+                self.path.write_text(json.dumps({**json.loads(self.path.read_text()), 'accounts': ACCOUNTS}))  # connect it anew
 
     def test_cancel_stops_a_sign_in_wait(self):
         with patch.object(onboarding, 'check', return_value='x_signed_out'), patch.object(onboarding, 'SIGNIN_EVERY', 0.05):

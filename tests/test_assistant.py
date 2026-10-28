@@ -959,6 +959,28 @@ class SlackInvariants(unittest.TestCase):
         self.assertEqual(a.slot, again.slot)  # stable for a Machine and connection, so a restart keeps its minute
         self.assertEqual(others, {0, 1, 2})
 
+    def test_slack_rounds_survive_a_restart_and_longer_rounds_keep_out_of_shorter_ones(self):
+        # 2026-10-28: a release restarted a team's Machines together; each forgot the minute it had moved to after a
+        # 429 and went back to its first slot, so the same 429s came back right after every update.
+        account = {**self.account, 'credential': 'slack', 'credential_variable': 'KEY'}
+        config = {'database': str(Path(self.temp.name) / 'events.sqlite')}
+        client = assistant.Slack(config, account)
+        client.read_went(True)
+        learned = (client.round, client.slot)
+        restarted = assistant.Slack(config, account)
+        self.assertEqual((restarted.round, restarted.slot, restarted.slots), (*learned, learned[0] // 60))
+        self.assertEqual(oct(Path(self.temp.name, 'slack-rounds.json').stat().st_mode & 0o777), '0o600')
+        self.assertEqual(assistant.Slack({**config, 'slack_read_seconds': 120}, account).round, 120)  # another base: start over
+        Path(self.temp.name, 'slack-rounds.json').write_text('{"' + account['id'] + '": {"base": 180, "round": 300, "slot": 9}}')
+        self.assertEqual(assistant.Slack(config, account).round, 180)  # not a round it could have learned: ignored
+        # A Machine on a 3-minute round in slot 0 and one that moved to a 12-minute round, in a minute not 0 of 3:
+        # they never read in the same minute, whatever their round
+        short, long_ = assistant.Slack({}, account), assistant.Slack({}, account)
+        short.slot, long_.round, long_.slots, long_.slot = 0, 720, 12, 7
+        minutes = lambda c: {(t // 60) for t in range(0, 6 * 3600, 60) if c.slot_wait(t) == 0}
+        self.assertTrue(minutes(short) and minutes(long_))
+        self.assertFalse(minutes(short) & minutes(long_))
+
     def test_slack_wait_cancels_before_request_on_shutdown(self):
         import threading
         stop = threading.Event(); stop.set()
@@ -986,18 +1008,22 @@ class SlackInvariants(unittest.TestCase):
             with self.assertRaises(assistant.SourceError) as raised:client.get('conversations.replies')
         self.assertEqual(str(raised.exception),'slack:conversations.replies:HTTP_429')
         self.assertTrue(125 <= raised.exception.retry_after <= 180)  # Slack's wait plus a spread so computers sharing the connection don't retry together
-        self.assertEqual((client.round, client.slots), (240, 4))  # the round grew by a minute: room for one more Machine
+        self.assertEqual((client.round, client.slots), (360, 6))  # the round doubled: room for more Machines
         for _ in range(8):
             before = client.slot
             with patch.object(client,'pace'),patch.object(assistant,'credential',return_value='KEY=fake'),patch.object(assistant.urllib.request,'urlopen',side_effect=error):
                 with self.assertRaises(assistant.SourceError):client.get('conversations.history')
             self.assertNotEqual(client.slot, before)  # another Machine reads in this minute: this one takes another
             self.assertLess(client.slot, client.slots)
-        self.assertEqual(client.round, 600)  # ten minutes at most
+        self.assertEqual(client.round, 720)  # twelve minutes at most
         for _ in range(client.SLACK_CALM):
             client.read_went(False)
-        self.assertEqual((client.round, client.slots), (540, 9))  # calm for a while: a minute shorter again
-        self.assertLess(client.slot, 9)
+        self.assertEqual(client.round, 720)  # 30 calm reads right after a 429 are not calm enough: it stays put
+        client.limited_at -= client.SLACK_CALM_SECONDS
+        for _ in range(client.SLACK_CALM):
+            client.read_went(False)
+        self.assertEqual((client.round, client.slots), (360, 6))  # calm for half a day: half the round again
+        self.assertLess(client.slot, 6)
         calm = assistant.Slack({}, account)
         for _ in range(100):
             calm.read_went(False)

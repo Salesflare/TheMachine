@@ -130,7 +130,9 @@ class ZoomTests(unittest.TestCase):
         self.list_status = 403
         self.assertEqual(self.sync()['events'], 2)
         self.assertIn('/v2/past_meetings/81234567890/instances', self.calls)
-        self.assertEqual(self.store.checkpoint('zoom')['mode'], 'past_meetings')
+        self.assertEqual(self.store.checkpoint('zoom')['listed_by'], 'past_meetings')
+        # Caught up: the collector waits poll_seconds, not the few seconds of a catch-up (it read every 11 s, 2026-10-28)
+        self.assertEqual(self.store.checkpoint('zoom')['mode'], 'incremental')
 
     def test_without_the_instances_list_the_latest_instance_of_each_past_meeting_is_read(self):
         self.list_status, self.instances_status = 403, 400

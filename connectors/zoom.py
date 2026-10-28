@@ -314,9 +314,9 @@ def sync(store, config, account, helpers):
     since = stamp(state.get('since'))
     start = (since - dt.timedelta(hours=OVERLAP_HOURS)) if since else now - dt.timedelta(days=int(config.get('bootstrap_days', 7)))
     listed = source.listed(start, now)
-    mode = 'summaries'
+    listed_by = 'summaries'
     if listed is None:
-        listed, mode = source.past(start, now), 'past_meetings'
+        listed, listed_by = source.past(start, now), 'past_meetings'
     seen = dict(state.get('seen') or {})
     count = read = 0
     for uuid, edited in listed[:MAX_MEETINGS]:
@@ -338,7 +338,8 @@ def sync(store, config, account, helpers):
         store.commit_page(account['id'], {**state, 'seen': seen}, events)
         count += len(events)
     more = len(listed) > MAX_MEETINGS
-    state.update(seen=seen, mode=mode, coverage_complete=not more,
+    # The checkpoint's mode says caught up or not (any other mode reads again in seconds), so how it lists stays apart
+    state.update(seen=seen, mode='incremental', listed_by=listed_by, coverage_complete=not more,
                  coverage='Older Zoom summaries are still being read.' if more else 'Zoom summaries caught up.')
     if not more:
         state['since'] = now.isoformat()
