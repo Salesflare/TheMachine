@@ -34,7 +34,7 @@ Un admin può rendere obbligatorie per tutti l'**Email di lavoro** e il **Calend
 
 - Conversazioni sensibili: acquisto o vendita di un'azienda, investimenti, valutazioni, trattative, HR, assunzioni e recruiter, questioni legali, salute, denaro, sicurezza. Nemmeno il fatto che esistano.
 - Posta automatica: ricevute, fatture, avvisi, newsletter e le fatture della tua azienda con i suoi fornitori.
-- Conversazioni solo tra colleghi, posta personale e tutto ciò che arriva da un account personale. Ciò che è personale non viene mai condiviso, nemmeno se tocchi Team.
+- Conversazioni interne (solo tra colleghi), posta personale e tutto ciò che arriva da un account personale. Ciò che è personale non viene mai condiviso, nemmeno se tocchi Team.
 - Tutto ciò che hai segnato con **Mantieni privato**, e le bacheche e i progetti impostati su Solo tu.
 
 Ogni conversazione viene valutata da sola, in base al suo argomento. La classificazione può sbagliare; controlla cosa verrebbe condiviso e usa Mantieni privato per correggerla. La tua scelta esplicita di Team o una condivisione con colleghi specifici può prevalere su una classificazione sensibile; controlla i destinatari prima di condividere.

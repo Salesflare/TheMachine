@@ -34,7 +34,7 @@ Um admin pode exigir o **E-mail de trabalho** e o **Calendário de trabalho** de
 
 - Conversas sensíveis: compra ou venda de uma empresa, investimentos, avaliações, negociações, RH, contratações e recrutadores, jurídico, saúde, dinheiro, segurança. Nem mesmo a existência delas vai.
 - E-mails automáticos: recibos, faturas, alertas, newsletters e as contas da sua própria empresa com os fornecedores dela.
-- Conversas só entre colegas, e-mails pessoais e qualquer coisa de uma conta pessoal. O que é pessoal nunca vai, nem quando você toca em Equipe.
+- Conversas internas (só entre colegas), e-mails pessoais e qualquer coisa de uma conta pessoal. O que é pessoal nunca vai, nem quando você toca em Equipe.
 - Tudo o que você marcou com **Manter privado**, e quadros e projetos definidos como Só você.
 
 Cada conversa é avaliada sozinha, pelo assunto dela. A classificação pode errar: confira o que iria e use Manter privado para corrigir. Sua escolha explícita de Equipe ou um compartilhamento com colegas específicos pode passar por cima de uma classificação sensível. Confira os destinatários antes de compartilhar.

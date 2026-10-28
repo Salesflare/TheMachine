@@ -121,6 +121,42 @@ class Enrichment(unittest.TestCase):
                                 ({'name': 'No Site'}, 'nosite.com')):
             self.assertFalse(other(profile, domain), domain)
 
+    def test_a_shared_host_is_no_companys_domain_or_website(self):
+        # Seen on a hosted Machine: Gemini's meeting notes (gemini-notes@google.com) made google.com an organization, and
+        # the lead API, matching google.com by a company's sites.google.com page, answered with that company.
+        jsm = {'name': 'JSMNet', 'industry': 'Computer Networking Products', 'size': '2-10', 'location': 'Salvador, BA',
+               'linkedin_url': 'https://www.linkedin.com/company/jsmnet', 'website': 'https://sites.google.com/view/jsmnet/home'}
+        for domain in ('google.com', 'sites.google.com', 'gmail.com', 'googlemail.com', 'outlook.com', 'acme.notion.site', 'acme.github.io'):
+            self.assertTrue(enrichment.shared_host(domain), domain)
+            self.assertIsNone(enrichment.usable(domain, {**jsm, 'name': 'Google Sites Fans', 'website': 'https://google.com'}), domain)
+            self.assertEqual(enrichment.worth(domain, [{'identifiers': ['email:kim@' + domain], 'wrote': 3, 'heard': 3}]), 0)
+        for domain in ('globex.com', 'apple.com', 'jsmnet.com.br'):
+            self.assertFalse(enrichment.shared_host(domain), domain)
+        self.assertTrue(enrichment.another_company(jsm, 'google.com'))
+        # Its own domain keeps the facts, but a page on a shared host is not its website: the domain's own shows instead
+        self.assertEqual(enrichment.usable('jsmnet.com.br', jsm), {k: v for k, v in jsm.items() if k != 'website'})
+        # Saved answers are checked too, also one the hosting agent brings from the control plane's cache
+        with self.store.connect() as db:
+            enrichment.save(db, 'google.com', 'found', jsm, tg.NOW.isoformat())
+            self.assertEqual(tuple(db.execute("SELECT status,profile FROM org_profiles WHERE domain='google.com'").fetchone()), ('none', None))
+        # The graph: Gemini is no person with an organization; a Googler's google.com shows no other company's facts,
+        # also not from a row saved before this check
+        self.add(tg.mail(3, 'Gemini <gemini-notes@google.com>', 'sam@acme.com', title='Notes: weekly'),
+                 tg.mail(3, 'Pat Lee <pat@google.com>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Pat Lee <pat@google.com>', ('SENT',)))
+        with self.store.connect() as db:
+            db.execute("UPDATE org_profiles SET status='found',profile=? WHERE domain='google.com'", (json.dumps(jsm),))
+        self.build()
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM graph_nodes WHERE info LIKE '%gemini-notes@%' OR name='Gemini'").fetchone())
+        org = self.node('org:google.com')
+        self.assertEqual((org['name'], org['profile']), ('Google', {'website': 'https://google.com'}))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT status FROM org_profiles WHERE domain='google.com'").fetchone()[0], 'none')
+            self.assertEqual(enrichment.due(db, tg.NOW.isoformat(), 10), [])
+            # Added by hand with a Google Sites page: an organization by its name, not google.com
+            made = graph.create_record(db, 'org', {'name': 'JSMNet', 'website': 'https://sites.google.com/view/jsmnet/home'}, tg.NOW.isoformat())
+            self.assertEqual(made['node_id'], 'org:named:jsmnet')
+
     def test_fetch_sends_the_key_and_never_shows_it(self):
         cfg = enrichment.settings(self.config)
         self.assertEqual(enrichment.fetch(cfg, 'globex.com')['size'], '51-200')

@@ -11,7 +11,7 @@ order: 2
 - On a hosted Machine, organization details are looked up for you, at no cost.
 - On your own computer, it's off until you add a key for a look-up service you use, like Apollo, People Data Labs or Hunter. See the [configuration guide](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Only an organization's web address is sent, never your messages or who you know there. A few are looked up at a time, at most 50 a day, and refreshed every 90 days. People get their own look-up: see [Job title and photo](graph.md#job-title-and-photo).
+Only an organization's web address is sent, never your messages or who you know there. A few are looked up at a time, at most 50 a day, and refreshed every 90 days. People get their own look-up: see [Job title and photo](graph.md#job-title-and-photo). Shared hosts and mail providers, like google.com, sites.google.com or gmail.com, are never looked up: they're no one company's website.
 
 ## Fix a wrong one
 

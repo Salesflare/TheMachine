@@ -61,6 +61,32 @@ class Catalog(unittest.TestCase):
         self.assertEqual(len(catalog.refresh(self.config)), 3)
         self.assertEqual(len(catalog.refresh(self.config, force=True)), 3)
 
+    def test_the_main_models_levels_come_from_its_session_when_the_list_has_none(self):
+        # A hosted Gateway listed the main model without its levels: the chat showed the model but no thinking picker
+        bare = {'models': [{**REPLY['models'][0], 'thinkingLevels': [], 'thinkingDefault': None}, REPLY['models'][1]]}
+        session = {'sessions': [{'modelProvider': 'acme', 'model': 'lm-2', 'thinkingDefault': 'high',
+                                 'thinkingLevels': [{'id': x} for x in ('low', 'medium', 'high', 'ultra')]}]}
+        seen = []
+
+        def run(args, **kw):
+            seen.append(args[3])
+            return subprocess.CompletedProcess(args, 0, json.dumps(bare if args[3] == 'models.list' else session), '')
+        models = chat_model.read_catalog(self.config, run)
+        self.assertEqual(seen, ['models.list', 'sessions.list'])
+        self.assertEqual(models[0], {'ref': 'acme/lm-2', 'name': 'LM-2', 'levels': ['low', 'medium', 'high', 'ultra'], 'default': 'high'})
+        self.assertEqual(chat_model.resolve(self.config, models)['thinking'], 'medium')
+        # Not listed at all (no "available" yet), though every turn runs on it: it is offered with its session's levels
+        missing = {'models': [REPLY['models'][1]]}
+        run2 = lambda args, **kw: subprocess.CompletedProcess(args, 0, json.dumps(missing if args[3] == 'models.list' else session), '')
+        self.assertEqual([(m['ref'], len(m['levels'])) for m in chat_model.read_catalog(self.config, run2)], [('acme/lm-2', 4), ('acme/lm-2-mini', 3)])
+        # A session on another model fills nothing in; levels the list has are never asked again
+        other = {'sessions': [{**session['sessions'][0], 'model': 'lm-9'}]}
+        run3 = lambda args, **kw: subprocess.CompletedProcess(args, 0, json.dumps(bare if args[3] == 'models.list' else other), '')
+        self.assertEqual(chat_model.read_catalog(self.config, run3)[0]['levels'], [])
+        seen.clear()
+        chat_model.read_catalog(self.config, lambda args, **kw: (seen.append(args[3]), subprocess.CompletedProcess(args, 0, json.dumps(REPLY), ''))[1])
+        self.assertEqual(seen, ['models.list'])
+
     def test_resolving_and_what_a_turn_gets(self):
         models = chat_model.parse_catalog(REPLY, self.config)
         # Nothing picked: the turn goes as before, with nothing added

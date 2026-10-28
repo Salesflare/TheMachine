@@ -34,7 +34,7 @@ Un admin peut exiger l’**E-mail pro** et l’**Agenda pro** de chacun sur le d
 
 - Les fils sensibles : achat ou vente d’une entreprise, investissements, valorisations, négociations, RH, embauche et recruteurs, juridique, santé, argent, sécurité. Pas même le fait qu’ils existent.
 - Les e-mails automatiques : reçus, factures, alertes, newsletters, et les factures de votre entreprise avec ses fournisseurs.
-- Les fils entre collègues uniquement, les e-mails perso et tout ce qui vient d’un compte perso. Le perso ne part jamais, même si vous appuyez sur Équipe.
+- Les fils internes (entre collègues uniquement), les e-mails perso et tout ce qui vient d’un compte perso. Le perso ne part jamais, même si vous appuyez sur Équipe.
 - Tout ce que vous avez marqué **Garder privé**, ainsi que les tableaux et projets réglés sur Vous seul.
 
 Chaque fil est jugé séparément, selon son sujet. Le classement peut se tromper ; vérifiez ce qui partirait et utilisez Garder privé pour corriger. Votre choix explicite Équipe ou un partage avec des collègues nommés peut passer outre un classement sensible ; vérifiez les destinataires avant de partager.

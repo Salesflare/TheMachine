@@ -39,7 +39,7 @@ An admin can require everyone's **Work email** and **Work calendar** at the Flee
 
 - Sensitive threads: buying or selling a company, investments, valuations, deal talks, HR, hiring and recruiters, legal, health, money, security. Not even that they exist.
 - Automated mail: receipts, invoices, alerts, newsletters, and your company's own bills with its suppliers.
-- Threads with only colleagues, personal mail and anything from a personal account. Personal never goes, not even when you tap Team.
+- Internal threads (only colleagues on them), personal mail and anything from a personal account. Personal never goes, not even when you tap Team.
 - Anything you marked **Keep private**, and boards and projects set to Only you.
 
 Each thread is judged on its own, by what it is about. Classification can be wrong; review what would go and use Keep private to correct it. Your explicit Team choice or a share with named teammates can override a sensitive classification; check the recipients before sharing.

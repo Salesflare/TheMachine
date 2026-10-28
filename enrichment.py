@@ -167,14 +167,51 @@ def fetch(cfg, domain, timeout=15):
         profile = normalise(json.loads(body or b'null'), cfg.get('fields'))
     except ValueError:
         raise EnrichmentError('the answer was not JSON') from None
-    return None if profile and another_company(profile, domain) else profile
+    return usable(domain, profile) if profile else profile
+
+
+# Domains where anyone gets a site, a page or a mailbox: never a company's own domain or website. A service that matched
+# google.com by a company's sites.google.com page answered with that company (a Google Gemini mail made google.com an
+# organization, which then showed a small Brazilian network firm's facts).
+SHARED_HOSTS = {'google.com', 'sites.google.com', 'business.site', 'github.io', 'gitlab.io', 'notion.site', 'wixsite.com',
+                'wordpress.com', 'blogspot.com', 'weebly.com', 'squarespace.com', 'webflow.io', 'netlify.app', 'vercel.app',
+                'herokuapp.com', 'pages.dev', 'carrd.co', 'godaddysites.com', 'myshopify.com', 'jimdosite.com', 'substack.com',
+                'medium.com', 'linktr.ee', 'about.me', 'facebook.com', 'instagram.com', 'linkedin.com', 'x.com', 'twitter.com',
+                'youtube.com', 'bit.ly', 'framer.website', 'framer.ai', 'site123.me', 'strikingly.com', 'tumblr.com'}
+
+
+def host_of(text):
+    """The host in a domain or website address ("https://www.acme.com/about" is acme.com)."""
+    text = str(text or '').strip().lower()
+    return (urllib.parse.urlsplit(text if '://' in text else 'https://' + text).hostname or '').removeprefix('www.')
+
+
+def shared_host(domain):
+    """A domain (or website) on a shared host or a mail provider: no company's own (see SHARED_HOSTS, FREEMAIL)."""
+    import graph
+    host = host_of(domain)
+    return bool(host) and (host in SHARED_HOSTS or registrable(host) in SHARED_HOSTS or host in graph.FREEMAIL
+                           or registrable(host) in graph.FREEMAIL or bool(FREEMAIL.match(host)))
+
+
+def usable(domain, profile):
+    """A looked-up profile as it may be shown for this domain: None for a shared host's domain or an answer about
+    another company; a website on a shared host is left out (the domain's own website shows instead)."""
+    if not isinstance(profile, dict) or not profile or shared_host(domain) or another_company(profile, domain):
+        return None
+    if profile.get('website') and shared_host(profile['website']):
+        profile = {k: v for k, v in profile.items() if k != 'website'}
+    return profile
 
 
 def another_company(profile, domain):
     """True when the answer is about some other company: its website is not this domain's home page (a blog post, a
     form, a page on a hosting subdomain) and its name has nothing in common with the domain. Services match by the
     website a company page lists, so a one-person page that links to someone's article gets that company's domain.
-    A website on the home page, or a name that shares a word with the domain, is trusted."""
+    A website on the home page, or a name that shares a word with the domain, is trusted; never for a shared host's
+    domain (google.com is no company that has a sites.google.com page)."""
+    if shared_host(domain):
+        return True
     site = str(profile.get('website') or '').strip().lower()
     if not site:
         return False
@@ -206,7 +243,7 @@ def worth(domain, people):
     most, someone the owner only wrote to a little; an organization whose people only wrote in (cold outreach), were
     only copied or only send no-reply mail still gets looked up, last, within the day's budget."""
     import graph
-    if not domain or domain in graph.FREEMAIL or FREEMAIL.match(domain) or MARKETING.match(domain):
+    if not domain or domain in graph.FREEMAIL or FREEMAIL.match(domain) or MARKETING.match(domain) or shared_host(domain):
         return 0
     score = 0
     for info in people:
@@ -245,7 +282,7 @@ def due(db, now, limit):
     ranked = []
     for org, domain, strength, paying in rows:
         score = worth(domain, people.get(org, []))
-        if paying and domain and not FREEMAIL.match(domain):
+        if paying and domain and not FREEMAIL.match(domain) and not shared_host(domain):
             score += 3
         if score:
             ranked.append((-score, -(strength or 0), domain))
@@ -253,7 +290,11 @@ def due(db, now, limit):
 
 
 def save(db, domain, status, profile, now):
-    """Stores a look-up. A domain the owner marked as the wrong company keeps that mark."""
+    """Stores a look-up. A domain the owner marked as the wrong company keeps that mark. Every answer is checked here
+    (usable), also one the hosting agent brings from the control plane's cache."""
+    if status == 'found':
+        profile = usable(domain, profile)
+        status = 'found' if profile else 'none'
     db.execute('INSERT INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,?,?,?) '
                "ON CONFLICT(domain) DO UPDATE SET status=excluded.status,profile=CASE WHEN excluded.status='error' THEN org_profiles.profile ELSE excluded.profile END,fetched_at=excluded.fetched_at "
                "WHERE org_profiles.status!='wrong'",

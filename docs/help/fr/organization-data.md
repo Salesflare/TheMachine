@@ -11,7 +11,7 @@ order: 2
 - Sur une Machine hébergée, les détails des organisations sont recherchés pour vous, gratuitement.
 - Sur votre propre ordinateur, c’est désactivé jusqu’à ce que vous ajoutiez une clé pour un service de recherche que vous utilisez, comme Apollo, People Data Labs ou Hunter. Voir le [guide de configuration](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Seule l’adresse web d’une organisation est envoyée, jamais vos messages ni les personnes que vous y connaissez. Quelques-unes sont recherchées à la fois, 50 par jour au maximum, et actualisées tous les 90 jours. Les personnes ont leur propre recherche : voir [Poste et photo](graph.md#job-title-and-photo).
+Seule l’adresse web d’une organisation est envoyée, jamais vos messages ni les personnes que vous y connaissez. Quelques-unes sont recherchées à la fois, 50 par jour au maximum, et actualisées tous les 90 jours. Les personnes ont leur propre recherche : voir [Poste et photo](graph.md#job-title-and-photo). Les hébergeurs partagés et les fournisseurs de messagerie, comme google.com, sites.google.com ou gmail.com, ne sont jamais recherchés : ce n’est le site d’aucune entreprise en particulier.
 
 ## Corriger une erreur
 

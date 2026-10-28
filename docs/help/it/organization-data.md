@@ -11,7 +11,7 @@ order: 2
 - Su una Machine in hosting, i dettagli delle organizzazioni vengono cercati per te, senza costi.
 - Sul tuo computer, è disattivato finché non aggiungi una chiave per un servizio di ricerca che usi, come Apollo, People Data Labs o Hunter. Vedi la [guida alla configurazione](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Viene inviato solo l'indirizzo web dell'organizzazione, mai i tuoi messaggi o chi conosci lì. Ne vengono cercate poche alla volta, al massimo 50 al giorno, e aggiornate ogni 90 giorni. Le persone hanno una ricerca a parte: vedi [Qualifica e foto](graph.md#job-title-and-photo).
+Viene inviato solo l'indirizzo web dell'organizzazione, mai i tuoi messaggi o chi conosci lì. Ne vengono cercate poche alla volta, al massimo 50 al giorno, e aggiornate ogni 90 giorni. Le persone hanno una ricerca a parte: vedi [Qualifica e foto](graph.md#job-title-and-photo). Hosting condivisi e provider di posta, come google.com, sites.google.com o gmail.com, non vengono mai cercati: non sono il sito di una singola azienda.
 
 ## Correggi un dettaglio sbagliato
 

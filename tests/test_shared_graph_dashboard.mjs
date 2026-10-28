@@ -169,7 +169,7 @@ try{
   const pane=page.locator('[data-shared-fleet="'+FL+'"]');
   await pane.locator('.shared-tile').first().waitFor();
   assert.match(await pane.locator('.shared-status .sub').innerText(),/^Starts within the hour\. Keep anything private first\.$/);
-  assert.deepEqual(await pane.locator('.shared-tile span').allInnerTexts(),['Client','Sensitive','Not sure','Personal','Only colleagues','Not client','Not sorted yet','Sent']);
+  assert.deepEqual(await pane.locator('.shared-tile span').allInnerTexts(),['Client','Sensitive','Not sure','Personal','Internal','Not client','Not sorted yet','Sent']);
   assert.match(await pane.locator('.shared-tile').first().innerText(),/1,113|1\.113|1113/);
   assert.match(await pane.locator('.shared-first').innerText(),/1,?113 client threads with these organizations go to the team\. Keep any private first\.[\s\S]*Share now\s+It goes by itself within the hour\. Nothing to confirm\.$/);
   assert.equal(await pane.locator('.shared-how').getAttribute('open'),'');

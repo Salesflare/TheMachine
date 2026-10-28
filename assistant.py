@@ -11863,10 +11863,10 @@ def recap_graph_lines(store, since=None):
     except sqlite3.Error:
         return []
     out, t = [], i18n.t
-    for state, label in (('heating up', 'Heating up'), ('active', 'Active'), ('cooling', 'Cooling')):
+    for state, line in (('heating up', 'Busier lately: {}'), ('active', 'Steady: {}'), ('cooling', 'Quieter lately: {}')):
         names = [recap_escape(p['name']) for p in view['projects'] if p['state'] == state][:3]
         if names:
-            out.append('• ' + t(label + ': {}', ', '.join(names)))
+            out.append('• ' + t(line, ', '.join(names)))
 
     def who(p):
         org, org_role = orgs.get(p.get('org'), (None, None))
