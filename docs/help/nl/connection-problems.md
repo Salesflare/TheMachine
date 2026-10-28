@@ -14,6 +14,8 @@ Open **Koppelingen**. Elke bron laat zien hoe het ermee gaat:
 - **Wacht op eerste sync**: net gekoppeld. Geef hem een paar minuten.
 - **Heeft je hulp nodig**: open **Details**. Daar staat wat er misging en wat je moet doen.
 
+Het getal bij **Koppelingen** telt alleen bronnen die je hulp nodig hebben.
+
 ## Veelvoorkomende oplossingen
 
 - "moet opnieuw inloggen": druk op **Opnieuw verbinden** en log in. Op een gehoste Machine koppel je Google en Microsoft opnieuw vanaf je setuppagina.

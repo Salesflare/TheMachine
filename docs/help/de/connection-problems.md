@@ -14,6 +14,8 @@ order: 1
 - **Wartet auf die erste Synchronisierung**: gerade verbunden. Gib ihr ein paar Minuten.
 - **Braucht deine Hilfe**: Öffne **Details**. Dort steht, was schiefging und was zu tun ist.
 
+Die Zahl bei **Verbindungen** zählt nur Quellen, die deine Hilfe brauchen.
+
 ## Häufige Lösungen
 
 - „needs you to sign in again“: Tippe auf **Neu verbinden** und melde dich an. Auf einer gehosteten Machine verbindest du Google und Microsoft über deine Einrichtungsseite neu.

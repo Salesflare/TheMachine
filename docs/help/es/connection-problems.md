@@ -14,6 +14,8 @@ Abre **Conexiones**. Cada fuente indica cómo va:
 - **Esperando la primera sincronización**: recién conectada. Dale unos minutos.
 - **Necesita tu ayuda**: abre **Detalles**. Dice qué falló y qué hacer.
 
+El número en **Conexiones** solo cuenta las fuentes que necesitan tu ayuda.
+
 ## Soluciones habituales
 
 - "necesita que vuelvas a iniciar sesión": pulsa **Reconectar** e inicia sesión. En una Machine alojada, Google y Microsoft se reconectan desde tu página de configuración.

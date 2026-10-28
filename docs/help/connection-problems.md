@@ -14,6 +14,8 @@ Open **Connections**. Each source says how it's doing:
 - **Waiting for first sync**: just connected. Give it a few minutes.
 - **Needs your help**: open **Details**. It says what went wrong and what to do.
 
+The number on **Connections** only counts sources that need your help.
+
 ## Common fixes
 
 - "needs you to sign in again": press **Reconnect** and sign in. On a hosted Machine, Google and Microsoft reconnect from your setup page.

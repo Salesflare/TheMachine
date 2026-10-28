@@ -14,6 +14,8 @@ Ouvrez **Connexions**. Chaque source indique son état :
 - **En attente de la première synchro** : tout juste connectée. Laissez-lui quelques minutes.
 - **Attend votre aide** : ouvrez **Détails**. Elle dit ce qui n’a pas marché et quoi faire.
 
+Le nombre sur **Connexions** ne compte que les sources qui attendent votre aide.
+
 ## Solutions courantes
 
 - « doit être reconnecté » : appuyez sur **Reconnecter** et connectez-vous. Sur une Machine hébergée, Google et Microsoft se reconnectent depuis votre page de configuration.

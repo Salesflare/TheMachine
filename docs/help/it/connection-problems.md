@@ -14,6 +14,8 @@ Apri **Connessioni**. Ogni fonte dice come sta andando:
 - **In attesa della prima sincronizzazione**: appena collegata. Aspetta qualche minuto.
 - **Serve il tuo aiuto**: apri **Dettagli**. Spiega cosa è andato storto e cosa fare.
 
+Il numero su **Connessioni** conta solo le fonti a cui serve il tuo aiuto.
+
 ## Soluzioni comuni
 
 - "deve accedere di nuovo": premi **Riconnetti** e accedi. Su una Machine in hosting, Google e Microsoft si riconnettono dalla tua pagina di configurazione.
