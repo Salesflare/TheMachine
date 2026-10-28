@@ -1586,22 +1586,33 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .chat-compose{position:sticky;bottom:0;z-index:5;align-self:center;width:min(100%,var(--chat-col));padding:14px 0 calc(max(12px,env(safe-area-inset-bottom)) + 8px);background:var(--bg)}
 /* No fade above the box: a message passing under it must never look cut off */.chat-compose::before{content:none}
 .chat-status{display:flex;flex-wrap:wrap;gap:0 6px;align-items:baseline;justify-content:center;text-align:center;font-size:var(--chat-meta);color:var(--chat-quiet);line-height:1.5}.chat-status:empty{display:none}
-/* The model and thinking level of a chat (chat_model.py): one quiet line under the message box, each part a native picker */
-.chat-model{display:flex;align-items:center;gap:0 2px;min-width:0;margin:6px 0 0 10px;font-size:var(--chat-meta,.75rem);line-height:1.5;color:var(--chat-quiet,var(--muted))}
+/* The model and thinking level of a chat (chat_model.py): one quiet line under the message box, each part opens the app's own menu (cmMenu) */
+.chat-model{display:flex;align-items:center;gap:0 2px;min-width:0;margin:6px 0 0 4px;font-size:var(--chat-meta,.75rem);line-height:1.5;color:var(--chat-quiet,var(--muted))}
 .chat-model:empty{display:none}
-.chat-model>span{flex:none}
-.model-pick{position:relative;display:inline-flex;align-items:center;gap:2px;min-width:0;padding:1px 6px;border-radius:999px;white-space:nowrap;cursor:pointer}
-.model-pick:hover,.model-pick:focus-within{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}
+.chat-model .model-pick{display:inline-flex;align-items:center;gap:3px;min-width:0;height:24px;min-height:0;margin:0;padding:0 7px 0 8px;border:0;border-radius:999px;background:none;box-shadow:none;color:inherit;font:inherit;white-space:nowrap;cursor:pointer}
+.chat-model .model-pick:is(:hover,[aria-expanded="true"]){color:var(--text);background:var(--c-hover)}
+.chat-model .model-pick:focus-visible{outline:0;color:var(--text);background:var(--c-hover);box-shadow:inset 0 0 0 1px var(--border-strong)}
 .model-pick>span{overflow:hidden;text-overflow:ellipsis}
-.model-pick svg{flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.model-pick select{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;font-size:16px;cursor:pointer}
-.model-pick:has(select:focus-visible){outline:2px solid var(--c-accent,var(--mint));outline-offset:1px}
+:is(.model-pick,.select-like) svg{flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:is(.model-pick,.select-like)[aria-expanded="true"] svg{transform:rotate(180deg)}
 #model-chats .grow{min-width:0}
-/* Settings' pickers look like a select but show the short name; the list itself can say more (Ultra's cost) */
-.select-like{position:relative;flex:none;display:inline-flex;align-items:center;min-width:200px;max-width:100%;border:1px solid var(--border-strong);border-radius:10px;padding:8px 34px 8px 14px;white-space:nowrap;cursor:pointer;background:var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23a7aaa4' stroke-width='1.8'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center}
-.select-like>span{overflow:hidden;text-overflow:ellipsis}
-.select-like select{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;font-size:16px;cursor:pointer}
-.select-like:focus-within{outline:2px solid var(--amber);outline-offset:2px}
+/* Settings' pickers look like a select and open the same menu */
+.select-like{flex:none;display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-width:200px;max-width:100%;min-height:0;margin:0;border:1px solid var(--border-strong);border-radius:10px;padding:8px 12px 8px 14px;white-space:nowrap;cursor:pointer;background:var(--surface-2);box-shadow:none;color:var(--text);font:inherit;text-align:left}
+.select-like:is(:hover,[aria-expanded="true"]){background:var(--surface-2);border-color:var(--c-line-strong,var(--border-strong))}
+.select-like:focus-visible{outline:0;border-color:var(--c-accent,var(--mint));box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 18%,transparent)}
+.select-like svg{color:var(--muted)}
+/* The menu a picker opens: the app's menu (.fact-menu-list), fixed to the screen, up when the trigger is low */
+.fact-menu-list.cm-menu{position:fixed;inset:auto;margin:0;color:var(--text);z-index:90;gap:1px;min-width:200px;max-width:calc(100vw - 16px);overflow-y:auto;overscroll-behavior:contain;box-shadow:var(--shadow-pop,0 12px 30px #0005)}
+.fact-menu-list.cm-menu[hidden]{display:none}
+.cm-menu [role="menuitemradio"]{grid-template-columns:16px minmax(0,1fr);column-gap:8px;align-items:center;padding:7px 14px 7px 9px;font-weight:var(--fw-medium,500);white-space:nowrap}
+.cm-menu [role="menuitemradio"]>span{grid-column:2;overflow:hidden;text-overflow:ellipsis}
+.cm-menu [role="menuitemradio"]>small{grid-column:2;white-space:normal}
+.cm-menu .cm-check{grid-column:1;grid-row:1;width:16px;height:16px;fill:none;stroke:var(--c-accent,var(--mint));stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
+.cm-menu [aria-checked="true"] .cm-check{visibility:visible}
+.cm-menu [role="menuitemradio"]:is(:hover,:focus-visible){outline:0;box-shadow:none;background:var(--tile)}
+.cm-menu [role="menuitemradio"]:focus{outline:0}
+.cm-menu .cm-group{margin:6px 10px 2px 34px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem)}
+@media(pointer:coarse){.cm-menu [role="menuitemradio"]{min-height:44px}}
 @media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .settings-list>div{flex-wrap:wrap}#model-chats .grow{flex-basis:100%}#model-chats .select-like{width:100%}}
 .chat-status:not(:empty){margin:0 0 12px}
 .chat-picks{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.chat-picks::-webkit-scrollbar{display:none}.chat-picks:empty,.chat-picks[hidden]{display:none}
@@ -2787,8 +2798,8 @@ function renderModelPanel(){const m=state.model_status,box=$('#settings-model');
 // The model and thinking level chats use (chat_model.py): Settings, Model sets the default; the pill under a to-do
 // chat's or Help's message box sets that chat's own. Only what the sign-in offers, each model with its own levels.
 const THINKING={off:'No thinking',minimal:'Minimal thinking',low:'Low thinking',medium:'Medium thinking',high:'High thinking',xhigh:'Extra high thinking',adaptive:'Adaptive thinking',max:'Max thinking',ultra:'Ultra thinking'};
-// In the lists only: Ultra runs helpers alongside, so it says what it costs
-const THINK_OPTION={ultra:'Ultra thinking (slower, uses more of your plan)'};
+// In the menu only, as a second line: Ultra runs helpers alongside, so it says what it costs
+const THINK_HINT={ultra:'Slower, uses more of your plan'};
 const LEVEL_ORDER=Object.keys(THINKING),CHEV='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>';
 const cmEntry=ref=>(state.chat_model?.models||[]).find(m=>m.ref===ref);
 // The supported level nearest the one asked for (OpenClaw maps the same way)
@@ -2799,29 +2810,61 @@ function cmResolve(own){const cm=state.chat_model;if(!cm)return null;const p={..
  let model=p.model||cm.main?.model;if(cm.known&&!cmEntry(model))model=cm.main?.model;const e=cmEntry(model);
  return {model,thinking:cmNearest(p.thinking||cm.main?.thinking||e?.default,e?.levels)}}
 function cmCurrent(kind){const cm=state.chat_model;if(kind==='default')return cm?.default;if(kind==='help')return helpModel?cmResolve(helpModel):cm?.help||cm?.default;return cmResolve(chat?.model)}
-function cmModelOptions(sel){const groups={};for(const m of state.chat_model?.models||[])(groups[m.ref.split('/')[0]]||=[]).push(m);
- const opt=ref=>`<option value="${esc(ref)}"${ref===sel?' selected':''}>${esc(modelName(ref))}</option>`,many=Object.keys(groups).length>1;
- return (sel&&!cmEntry(sel)?opt(sel):'')+Object.entries(groups).map(([p,ms])=>many?`<optgroup label="${esc(p)}">${ms.map(m=>opt(m.ref)).join('')}</optgroup>`:ms.map(m=>opt(m.ref)).join('')).join('')}
-const cmThinkOptions=(ref,sel)=>(cmEntry(ref)?.levels||[]).map(l=>`<option value="${l}"${l===sel?' selected':''}>${esc(THINK_OPTION[l]||THINKING[l]||l)}</option>`).join('');
-// The pill: "Model · Thinking", each part a native picker over its label (so phones get their own picker)
+// A picker is a button that opens the app's menu (cmMenu) with what it can pick: [{value,label,hint,group}]
+function cmChoices(which,cur){if(which==='think')return (cmEntry(cur.model)?.levels||[]).map(l=>({value:l,label:THINKING[l]||l,hint:THINK_HINT[l]}));
+ const ms=state.chat_model?.models||[],many=new Set(ms.map(m=>m.ref.split('/')[0])).size>1,one=ref=>({value:ref,label:modelName(ref),group:many?ref.split('/')[0]:'',name:true});
+ return [...(cur.model&&!cmEntry(cur.model)?[{...one(cur.model),group:''}]:[]),...ms.map(m=>one(m.ref))]}
+const cmTrigger=(kind,which,label,cls,extra='')=>`<button type="button" class="${cls}" data-cm-pick="${which}" data-cm-kind="${kind}" aria-haspopup="menu" aria-expanded="false"${extra}><span>${esc(label)}</span>${CHEV}</button>`;
+// The pill: "Model  Thinking", each part a quiet button over the menu
 function cmPill(kind){const cm=state.chat_model,cur=cmCurrent(kind);if(!cm?.known||!cm.models.length||!cur?.model)return '';const levels=cmEntry(cur.model)?.levels||[];
- return `<label class="model-pick" title="${esc(cur.model)}"><span translate="no">${esc(modelName(cur.model))}</span>${CHEV}<select data-cm-model="${kind}" aria-label="Model" translate="no">${cmModelOptions(cur.model)}</select></label>`
-  +(levels.length>1&&cur.thinking?`<span aria-hidden="true">·</span><label class="model-pick"><span>${esc(THINKING[cur.thinking]||cur.thinking)}</span>${CHEV}<select data-cm-think="${kind}" aria-label="Thinking">${cmThinkOptions(cur.model,cur.thinking)}</select></label>`:'')}
-// Repainted with the state and the chat, never while one of its pickers is open
-function cmPaint(kind){const box=$(kind==='help'?'#help-model':'#chat-model');if(!box||box.contains(document.activeElement))return;const h=cmPill(kind);if(box.dataset.html!==h){box.dataset.html=h;box.innerHTML=h}}
-function renderChatModel(){const cm=state.chat_model,box=$('#model-chats');if(!box||box.contains(document.activeElement))return;box.hidden=!cm?.known||!cm.models.length;if(box.hidden)return;
+ return cmTrigger(kind,'model',modelName(cur.model),'model-pick',` title="${esc(cur.model)}" translate="no"`)
+  +(levels.length>1&&cur.thinking?cmTrigger(kind,'think',THINKING[cur.thinking]||cur.thinking,'model-pick'):'')}
+// Repainted with the state and the chat, never while its menu is open; a focused picker keeps the focus
+function cmSwap(box,h){if(cmOpen?.box===box||box.dataset.html===h)return;const f=document.activeElement?.closest?.('[data-cm-pick]'),had=f&&box.contains(f)?f.dataset.cmPick:null;
+ box.dataset.html=h;box.innerHTML=h;if(had)box.querySelector(`[data-cm-pick="${had}"]`)?.focus({preventScroll:true})}
+function cmPaint(kind){const box=$(kind==='help'?'#help-model':'#chat-model');if(box)cmSwap(box,cmPill(kind))}
+function renderChatModel(){const cm=state.chat_model,box=$('#model-chats');if(!box||cmOpen?.box===box)return;box.hidden=!cm?.known||!cm.models.length;if(box.hidden)return;
  const cur=cm.default||{},levels=cmEntry(cur.model)?.levels||[];
- const h=`<div class="section-head"><h3>Chats</h3><p>What to-do chats and Help use. Each chat can pick its own under its message box.</p></div><div class="list settings-list"><div><span class="grow"><strong>Model</strong><small>Only models your sign-in offers.</small></span><label class="select-like" translate="no"><span>${esc(modelName(cur.model))}</span><select data-cm-model="default" aria-label="Model">${cmModelOptions(cur.model)}</select></label></div>`
-  +(levels.length>1?`<div><span class="grow"><strong>Thinking</strong><small>More thinking is slower and uses more of your plan.</small></span><label class="select-like"><span>${esc(THINKING[cur.thinking]||cur.thinking||'')}</span><select data-cm-think="default" aria-label="Thinking">${cmThinkOptions(cur.model,cur.thinking)}</select></label></div>`:'')+'</div>';
- if(box.dataset.html!==h){box.dataset.html=h;box.innerHTML=h}}
-document.addEventListener('change',async e=>{const el=e.target.closest('[data-cm-model],[data-cm-think]');if(!el)return;const kind=el.dataset.cmModel||el.dataset.cmThink,cur=cmCurrent(kind)||{};
- const next=el.dataset.cmModel?{model:el.value,thinking:cmNearest(cur.thinking,cmEntry(el.value)?.levels)}:{model:cur.model,thinking:el.value};
+ cmSwap(box,`<div class="section-head"><h3>Chats</h3><p>What to-do chats and Help use. Each chat can pick its own under its message box.</p></div><div class="list settings-list"><div><span class="grow"><strong>Model</strong><small>Only models your sign-in offers.</small></span>${cmTrigger('default','model',modelName(cur.model),'select-like',' translate="no"')}</div>`
+  +(levels.length>1?`<div><span class="grow"><strong>Thinking</strong><small>More thinking is slower and uses more of your plan.</small></span>${cmTrigger('default','think',THINKING[cur.thinking]||cur.thinking||'','select-like')}</div>`:'')+'</div>')}
+// Saves a pick: Settings' default, Help's own (for this Help chat only) or the open to-do chat's own
+async function cmSave(kind,which,value){const cur=cmCurrent(kind)||{};
+ const next=which==='model'?{model:value,thinking:cmNearest(cur.thinking,cmEntry(value)?.levels)}:{model:cur.model,thinking:value};
  const post=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
- el.blur();
  try{if(kind==='help'){helpModel=next;cmPaint('help');return}
   if(kind==='default'){state.chat_model=await post('chat_model_default',next);renderChatModel();cmPaint('chat');notice(t('Saved.'));return}
   const s=chatOpen();if(!s)return;const r=await post('chat_model_set',{suggestion_id:s.id,...next});if(chat)chat.model=r.model;cmPaint('chat')}
- catch(err){toast(err.message,true);renderChatModel();cmPaint(kind==='help'?'help':'chat')}});
+ catch(err){toast(err.message,true);renderChatModel();cmPaint(kind==='help'?'help':'chat')}}
+// The menu: one at a time, a popover above the page and Help's dialog, below the trigger or above it when that has more room;
+// arrows, Home and End move, Enter or a tap picks, Escape or Tab closes, and the focus goes back to the trigger.
+let cmOpen=null;
+function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6,below=innerHeight-r.bottom-gap-8,above=r.top-gap-8,up=m.offsetHeight>below&&above>below;
+ m.style.minWidth=Math.max(200,Math.round(r.width))+'px';m.style.maxHeight=Math.max(120,Math.floor(up?above:below))+'px';
+ if(up)m.style.bottom=Math.round(innerHeight-r.top+gap)+'px';else m.style.top=Math.round(r.bottom+gap)+'px';
+ m.style.left=Math.round(Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8)))+'px'}
+const CM_CHECK='<svg class="cm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function cmMenuClose(focus){const m=$('#cm-menu');if(!m||m.hidden)return;if(m.matches?.(':popover-open'))m.hidePopover();m.hidden=true;const o=cmOpen;cmOpen=null;if(!o)return;
+ const b=o.box.querySelector(`[data-cm-pick="${o.which}"]`);b?.setAttribute('aria-expanded','false');if(focus)b?.focus({preventScroll:true})}
+function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,cur=cmCurrent(kind)||{},sel=which==='model'?cur.model:cur.thinking,box=b.closest('#chat-model,#help-model,#model-chats');
+ let m=$('#cm-menu');if(!m){m=document.createElement('div');m.id='cm-menu';m.className='fact-menu-list cm-menu';m.setAttribute('role','menu');m.hidden=true;if(m.showPopover)m.popover='manual'}
+ // In the trigger's dialog (outside a modal dialog nothing takes the focus), as a popover so the dialog never clips it
+ const host=b.closest('dialog[open]')||document.body;if(m.parentNode!==host)host.append(m);m.setAttribute('aria-label',which==='model'?'Model':'Thinking');
+ let group=null;m.innerHTML=cmChoices(which,cur).map(c=>(c.group&&c.group!==group?`<p class="cm-group" role="presentation" translate="no">${esc(group=c.group)}</p>`:'')
+  +`<button type="button" role="menuitemradio" aria-checked="${c.value===sel}" data-cm-value="${esc(c.value)}"${c.name?' translate="no"':''}>${CM_CHECK}<span>${esc(c.label)}</span>${c.hint?`<small>${esc(c.hint)}</small>`:''}</button>`).join('');
+ cmOpen={box,kind,which};b.setAttribute('aria-expanded','true');m.hidden=false;if(m.showPopover&&!m.matches(':popover-open'))m.showPopover();cmPlace(m,b);
+ const items=[...m.querySelectorAll('[role=menuitemradio]')];(last?items.at(-1):items.find(i=>i.getAttribute('aria-checked')==='true')||items[0])?.focus({preventScroll:true})}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-cm-pick]');
+ if(b){e.preventDefault();const same=cmOpen&&cmOpen.box.contains(b)&&cmOpen.which===b.dataset.cmPick;cmMenuClose(false);if(!same)cmMenuOpen(b);return}
+ const it=e.target.closest('#cm-menu [data-cm-value]');if(it){e.preventDefault();const o=cmOpen,v=it.dataset.cmValue,was=it.getAttribute('aria-checked')==='true';cmMenuClose(true);if(o&&!was)cmSave(o.kind,o.which,v);return}
+ if(cmOpen&&!e.target.closest('#cm-menu'))cmMenuClose(false)});
+document.addEventListener('keydown',e=>{const b=e.target.closest?.('[data-cm-pick]');
+ if(b&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();cmMenuClose(false);cmMenuOpen(b,e.key==='ArrowUp');return}
+ const m=$('#cm-menu');if(!cmOpen||!m||m.hidden||!m.contains(e.target))return;const items=[...m.querySelectorAll('[role=menuitemradio]')],i=items.indexOf(document.activeElement);
+ if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cmMenuClose(true);return}
+ if(e.key==='Tab'){cmMenuClose(true);return}
+ const to={ArrowDown:(i+1)%items.length,ArrowUp:(i-1+items.length)%items.length,Home:0,End:items.length-1}[e.key];if(to!==undefined){e.preventDefault();items[to].focus()}},true);
+addEventListener('resize',()=>cmMenuClose(false));// A thread that scrolls under the box (a reply streaming in) moves the menu along with its trigger
+document.addEventListener('scroll',e=>{const m=$('#cm-menu');if(!cmOpen||!m||m.contains(e.target))return;const b=cmOpen.box.querySelector(`[data-cm-pick="${cmOpen.which}"]`);if(b?.isConnected)cmPlace(m,b);else cmMenuClose(false)},true);
 async function modelAction(action,args){try{const d=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args:args||{}})});
  if(d.model_status)state.model_status=d.model_status;if(d.model_usage)state.model_usage=d.model_usage;renderModelUsage();return d}catch(err){notice(err.message,true)}}
 document.addEventListener('click',async e=>{

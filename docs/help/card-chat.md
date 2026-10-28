@@ -21,7 +21,7 @@ On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter st
 
 ## Model and thinking
 
-Under the message box, the chat shows its model and thinking level, like "GPT-6.1 Sol · Low thinking". Tap either to pick another for this chat only. New chats use what you set in **Settings**, **Model** (see [Model](model.md)).
+Under the message box, the chat shows its model and thinking level, like "GPT-6.1 Sol" and "Low thinking". Tap either to pick another for this chat only. New chats use what you set in **Settings**, **Model** (see [Model](model.md)).
 
 ## Stop a reply
 
