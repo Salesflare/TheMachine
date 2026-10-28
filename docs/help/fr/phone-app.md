@@ -48,6 +48,15 @@ Si les notifications sont bloquées, la ligne indique où les autoriser à nouve
 
 L’app s’ouvre tout de suite avec vos dernières tâches, puis les met à jour. Sans connexion, elle affiche ce qu’elle avait, marqué **Hors ligne** avec l’heure de la dernière mise à jour. Cette copie reste sur l’appareil 7 jours au plus, chiffrée, et disparaît quand vous vous déconnectez.
 
+## Hors ligne et Wi-Fi capricieux
+
+Dans un avion ou un train, le tableau de bord continue de fonctionner. Une barre en haut indique **Hors ligne** et l’heure de la dernière mise à jour de ce que vous voyez. Vos tâches, leurs chats, l’Agenda et les listes du Graph s’ouvrent depuis l’appareil.
+
+- **Mettre en attente**, **Pas nécessaire**, **Marquer comme fait**, **Rouvrir** et les notes ou messages de chat à The Machine attendent sur l’appareil. La tâche indique que ce sera enregistré dès votre retour en ligne, avec **Annuler** d’ici là. Dès que votre Machine répond de nouveau, ils partent d’eux-mêmes, dans l’ordre, une seule fois chacun.
+- Les messages à d’autres personnes n’attendent jamais. **Envoyer** indique que vous êtes hors ligne : renvoyez une fois de retour.
+- Ce que vous tapez dans un chat reste sur l’appareil jusqu’à l’envoi, même après un rechargement.
+- L’app réessaie d’elle-même, un peu plus tard à chaque fois. **Essayer maintenant** réessaie tout de suite.
+
 ## Plus d’appareils
 
 Connectez-vous sur chaque appareil de la même façon. Sur une Machine hébergée, une clé d’accès par appareil rend la connexion plus rapide : ajoutez-en une sous Sécurité, sur la page de votre compte.

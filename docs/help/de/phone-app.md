@@ -48,6 +48,15 @@ Wenn Benachrichtigungen blockiert sind, sagt die Zeile, wo du sie wieder erlaubs
 
 Die App öffnet sich sofort mit deinen letzten Aufgaben und aktualisiert sie dann. Ohne Verbindung zeigt sie, was sie hatte, markiert mit **Offline** und dem Zeitpunkt der letzten Aktualisierung. Diese Kopie bleibt höchstens 7 Tage verschlüsselt auf dem Gerät und verschwindet, wenn du dich abmeldest.
 
+## Offline und wackliges WLAN
+
+Im Flugzeug oder im Zug arbeitet das Dashboard weiter. Eine Leiste oben zeigt **Offline** und wann das Angezeigte zuletzt aktualisiert wurde. Deine Aufgaben, ihre Chats, der Kalender und die Listen im Graph öffnen sich vom Gerät.
+
+- **Zurückstellen**, **Nicht nötig**, **Als erledigt markieren**, **Wieder öffnen** und Notizen oder Chatnachrichten an The Machine warten auf dem Gerät. Die Aufgabe zeigt, dass es gespeichert wird, sobald du wieder online bist, mit **Abbrechen** bis dahin. Sobald deine Machine wieder antwortet, gehen sie von selbst raus, der Reihe nach, jede nur einmal.
+- Nachrichten an andere warten nie. **Senden** sagt, dass du offline bist: sende erneut, wenn du zurück bist.
+- Was du in einem Chat tippst, bleibt bis zum Senden auf dem Gerät, auch nach einem Neuladen.
+- Die App versucht es von selbst erneut, jedes Mal etwas später. **Jetzt versuchen** versucht es sofort.
+
 ## Weitere Geräte
 
 Melde dich auf jedem Gerät genauso an. Auf einer gehosteten Machine macht ein Passkey pro Gerät die Anmeldung schneller: Füge auf deiner Kontoseite unter Sicherheit einen hinzu.

@@ -48,6 +48,15 @@ Se as notificações estiverem bloqueadas, a linha diz onde permitir de novo: no
 
 O app abre na hora com suas últimas tarefas e depois as atualiza. Sem conexão, ele mostra o que tinha, marcado como **Offline** com o horário da última atualização. Essa cópia fica no dispositivo por no máximo 7 dias, criptografada, e é apagada quando você sai.
 
+## Offline e wi-fi instável
+
+No avião ou no trem, o painel continua funcionando. Uma barra no topo diz **Offline** e quando o que você vê foi atualizado pela última vez. Suas tarefas, os chats delas, o Calendário e as listas do Graph abrem a partir do dispositivo.
+
+- **Adiar**, **Não precisa**, **Marcar como feita**, **Reabrir** e notas ou mensagens de chat para a The Machine esperam no dispositivo. A tarefa diz que será salvo quando você voltar a ficar online, com **Cancelar** até lá. Assim que sua Machine responde de novo, eles vão sozinhos, em ordem, uma vez cada.
+- Mensagens para outras pessoas nunca esperam. **Enviar** diz que você está offline: envie de novo quando voltar.
+- O que você digita em um chat fica no dispositivo até você enviar, mesmo depois de recarregar.
+- O app tenta de novo sozinho, um pouco mais tarde a cada vez. **Tentar agora** tenta na hora.
+
 ## Mais dispositivos
 
 Entre em cada dispositivo do mesmo jeito. Em uma Machine hospedada, uma chave de acesso por dispositivo deixa o login mais rápido: adicione uma em Segurança, na página da sua conta.

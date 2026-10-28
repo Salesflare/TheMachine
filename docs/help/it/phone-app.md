@@ -48,6 +48,15 @@ Se le notifiche sono bloccate, la riga dice dove riattivarle: su un computer, fa
 
 L’app si apre subito con le tue ultime attività, poi le aggiorna. Senza connessione mostra quello che aveva, segnato **Offline** con l’ora dell’ultimo aggiornamento. Quella copia resta sul dispositivo al massimo 7 giorni, cifrata, e sparisce quando esci.
 
+## Offline e wifi instabile
+
+In aereo o in treno la dashboard continua a funzionare. Una barra in alto dice **Offline** e quando è stato aggiornato l’ultima volta quello che vedi. Le tue attività, le loro chat, il Calendario e le liste del Graph si aprono dal dispositivo.
+
+- **Posticipa**, **Non serve**, **Segna come fatto**, **Riapri** e le note o i messaggi in chat a The Machine aspettano sul dispositivo. L’attività dice che verrà salvato quando tornerai online, con **Annulla** fino ad allora. Appena la tua Machine risponde di nuovo partono da soli, in ordine, una volta ciascuno.
+- I messaggi ad altre persone non aspettano mai. **Invia** dice che sei offline: invia di nuovo quando torni online.
+- Quello che scrivi in una chat resta sul dispositivo finché non lo invii, anche dopo un ricaricamento.
+- L’app riprova da sola, ogni volta un po’ più tardi. **Prova ora** riprova subito.
+
 ## Altri dispositivi
 
 Accedi allo stesso modo su ogni dispositivo. Su una Machine in hosting, una passkey per dispositivo rende l’accesso più rapido: aggiungine una sotto Sicurezza nella pagina del tuo account.
