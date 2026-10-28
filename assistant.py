@@ -1300,9 +1300,16 @@ PREVIEW_DAYS = 7  # what `assistant preview` reviews on a new install
 GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organization profiles
 # The first look (App.first_look): starts once no new signal came in for this long, tried at most this often, this far apart
 FIRST_LOOK_SETTLE_SECONDS, FIRST_LOOK_TRIES, FIRST_LOOK_RETRY_SECONDS = 180, 3, 1800
-# Before it, a quick first look: the newest signals only, as soon as the first page of mail is in, so the first cards come
-# within minutes. A failed try is retried after this long, doubling per failure up to FIRST_LOOK_RETRY_SECONDS.
-QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS, FIRST_LOOK_RETRY_MIN_SECONDS = 48, 20, 120
+# Before it, a quick first look: as soon as the first page of mail is in, the QUICK_LOOK_SIGNALS of the week that most
+# likely need the owner (Store.most_promising: newest first, whatever their age within the week), so the first cards
+# come within minutes. A failed try is retried after this long, doubling per failure up to FIRST_LOOK_RETRY_SECONDS.
+QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS, FIRST_LOOK_RETRY_MIN_SECONDS = PREVIEW_DAYS * 24, 20, 120
+# The first review keeps digging, a batch of QUICK_LOOK_SIGNALS at a time (most promising first, each to-do shown as it is
+# saved), until one of these: FIRST_DIG_CARDS to-dos; nothing of the week left to review; or it used FIRST_DIG_USAGE
+# percent of the 5-hour window (a sign-in without usage windows, like an API key: FIRST_DIG_SIGNALS signals reviewed,
+# about the same work).
+FIRST_DIG_CARDS, FIRST_DIG_USAGE, FIRST_DIG_SIGNALS = 3, 60, 200
+FIRST_DIG_HOURS = 24  # a first review that started longer ago than this digs no more (an install from before it dug)
 # The first profile on an install without the interactive installer (hosted): tries, and the wait between them.
 FIRST_PROFILE_TRIES, FIRST_PROFILE_RETRY_SECONDS = 3, 6 * 3600
 PREPARATION_INTERRUPTED_TRIES = 4  # starts of one card's preparation that a Gateway restart may cut off before it counts
@@ -1374,6 +1381,8 @@ def first_cards_report(db, accounts=(), current=None):
         cards = sum(rows('SELECT count(*) FROM suggestions WHERE created_at>=? AND created_at<=?', (r[2], r[3] or current.isoformat()))[0][0] for r in part)
         out[name] = {'started_at': part[0][2], 'finished_at': part[-1][3], 'status': part[-1][1], 'reason': part[-1][4],
                      'tries': len(part), 'planned': part[-1][6], 'cards': cards}
+    if marks.get('first_dig_done'):
+        out['dig'] = marks['first_dig_done'][1]  # why the first review stopped digging: cards, covered or usage (App.first_dig)
     first = rows('SELECT min(created_at),count(*) FROM suggestions')[0]
     out['cards'] = first[1]
     out['first_card_at'] = first[0] if first[0] and first[0] >= since else None
@@ -1494,9 +1503,9 @@ VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
 
 # One heartbeat may claim this many signals, in a single begin_analysis call if it likes.
 RUN_SIGNAL_BUDGET = 120
-# After the quick first look, the next review (the full first look, or the first regular one) takes this many of the
-# most promising signals; the backlog after it goes in the regular reviews, spread out under the usage budget.
-FIRST_LOOK_NEXT_SIGNALS = 60
+# While the first review digs (App.first_dig), each next review takes this many of the most promising signals of the
+# week; the backlog after it goes in the regular reviews, spread out under the usage budget.
+FIRST_LOOK_NEXT_SIGNALS = QUICK_LOOK_SIGNALS
 # Background turns beyond the first look (profile, voices, roles, organizations, drafts prepared ahead) start at most
 # one per this many seconds, and only once the first card was shown, so the first cards come first and a new
 # install's usage is spread out instead of spent in its first minutes.
@@ -4413,10 +4422,10 @@ class Store:
                             'note': f'Catch-up is bounded to {budget} signals per heartbeat. Continue on the next existing heartbeat.'}
                 limit = min(int(limit), budget - claimed)
             limit = min(max(int(limit), 1), budget)
-            # A preview reviews the last week only, a quick first look (also the first review once reviews are on) its last
-            # hours; older backlog waits for the regular reviews.
+            # A preview, a quick first look (also the first review once reviews are on) and the first review's next batches
+            # (promising) review the last week only; older backlog waits for the regular reviews.
             since = ((dt.datetime.fromisoformat(now()) - dt.timedelta(hours=scope['window_hours'] or PREVIEW_DAYS * 24)).isoformat()
-                     if scope and (scope['preview'] or scope['window_hours']) else '')
+                     if scope and (scope['preview'] or scope['window_hours'] or scope['promising']) else '')
             # A quick first look takes what most likely needs the owner first (most_promising); other reviews share the
             # budget out over the sources
             quick = bool(scope and (scope['window_hours'] or scope['promising']))
@@ -16703,7 +16712,7 @@ class App:
                 if not running:
                     self.store.note_first_look(db, look)
             # One usage check before every background turn (model_budget); the quick look, the first magic, may go further
-            due = due and not self.background_pause(first=bool(look.get('quick')), job='first_look')
+            due = due and not self.background_pause(first=True, job='first_look')  # the whole first look: the first magic
             if not running and not due:
                 return None
             if due:
@@ -16738,6 +16747,9 @@ class App:
                         break
                     failed += 1
                 retry = min(settings.get('retry_seconds', 60) * 2 ** max(failed - 1, 0), settings.get('max_retry_seconds', 1800))
+                # The first review digs on (first_dig): its next batch right away, after a failure within the backoff above
+                dig = None if recovery else self.first_dig(db, stamp)
+                dig = dig if dig and 'left' in dig else None
                 # Projects the owner just put on a board are sorted within minutes, with or without new signals
                 sort_due = bool(graph.unsorted_projects(db, 1)) or graph.fit_due(db, now())
                 # A new board looks through the history in rounds a few minutes apart, while the model's limits have room
@@ -16748,6 +16760,8 @@ class App:
                 sort_due = sort_due or backfill_due
                 if last and last['status'] == 'ok' and last['window_hours'] and not recovery:
                     gap = min(gap, 60)  # after the quick first review, the rest follows right away
+                if dig and not failed:
+                    gap = 0
                 if last and (stamp - dt.datetime.fromisoformat(last['finished_at'])).total_seconds() < gap and not asked:
                     return None
                 # Leave a review claimed elsewhere (a manual run) alone until it ends or expires.
@@ -16759,13 +16773,14 @@ class App:
                 quick = 0 if recovery else self.quick_first_review(db)
                 # One usage check before every background turn (model_budget). New signals are not paced per day, only
                 # at the week's WEEK_CAP and the 5-hour window; the owner's Review now goes like their own chat.
-                self.review_paused = self.background_pause(first=bool(quick), owner=asked, job='review', db=db, signals=True)
+                self.review_paused = self.background_pause(first=bool(quick or dig), owner=asked, job='review', db=db, signals=True)
                 if self.review_paused:
                     return None
                 if quick:
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
                     db.execute('INSERT INTO review_runs(run_id,status,started_at,updated_at,planned,auto,window_hours,budget) VALUES(?,?,?,?,?,1,?,?)',
                                (run['run_id'], 'starting', run['started_at'], run['started_at'], quick, QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS))
+                    self.note_dig_start(db)
                 else:
                     # Each run has a fixed cost (instructions, status, context), so wait for a batch:
                     # enough signals, or the oldest one has waited long enough.
@@ -16775,19 +16790,18 @@ class App:
                     # A new mailbox: its first review starts as soon as its first import is in, as one review, not one
                     # halfway through the import and another after it (never past the usual longest wait).
                     mail = self.mail_backfill(db) if not recovery else {'filling': [], 'fresh': []}
-                    if mail['filling'] and young and not sort_due:
+                    # While the first review digs, its next batch goes at once: no waiting for a batch or for the rest of the import
+                    nxt = bool(dig and dig['left'])
+                    if mail['filling'] and young and not sort_due and not nxt:
                         return None
-                    if not recovery and not mail['fresh'] and not sort_due and (not waiting or (waiting < settings.get('min_signals', 40) and young and not asked)):
+                    if not recovery and not mail['fresh'] and not sort_due and not nxt and (not waiting or (waiting < settings.get('min_signals', 40) and young and not asked)):
                         return None
                     if not waiting and not recovery and not sort_due:
                         return None
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
-                    # Right after the quick first look: the most promising FIRST_LOOK_NEXT_SIGNALS next, the rest after it
-                    nxt = not recovery and not db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND window_hours IS NULL LIMIT 1").fetchone() \
-                        and bool(db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND window_hours IS NOT NULL LIMIT 1").fetchone())
                     budget = FIRST_LOOK_NEXT_SIGNALS if nxt else RUN_SIGNAL_BUDGET
                     db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,planned,budget,promising) VALUES(?,?,?,?,?,?,?)",
-                               (run['run_id'], 'starting', run['started_at'], run['started_at'], min(waiting, budget), budget if nxt else None, int(nxt)))
+                               (run['run_id'], 'starting', run['started_at'], run['started_at'], min(dig['left'] if nxt else waiting, budget), budget if nxt else None, int(nxt)))
                     self.review_asked = 0
             if run['status'] == 'starting':
                 db.execute('UPDATE review_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
@@ -16934,9 +16948,10 @@ class App:
 
     def first_look(self, db, current=None):
         """The first look: on a new install with reviews still off, previews start by itself once a model and a source
-        are connected. First a quick one: the newest signals (QUICK_LOOK_HOURS back, at most QUICK_LOOK_SIGNALS) as soon
-        as the first page of mail is in, so the first cards come within minutes. Then the full one over the last week,
-        once the first import has settled; what the quick one reviewed is not reviewed again, so no card comes twice.
+        are connected. First a quick one: the QUICK_LOOK_SIGNALS of the week that most likely need the owner, as soon
+        as the first page of mail is in, so the first cards come within minutes. Then it digs on, a batch at a time, until
+        first_dig stops it; what one batch reviewed is not reviewed again, so no card comes twice. A failed try comes back
+        within FIRST_LOOK_RETRY_SECONDS, however often it failed.
         Read-only like any preview: its cards show on the dashboard, nothing is sent, nothing is prepared while reviews
         are off (Store.prepare_first_look, after), nothing is done in any account; turning reviews on stays the owner's choice. None when it is not (or no longer) for this
         install, else its state: 'due' (with `quick` for the quick one), or 'waiting' with why (model, sources,
@@ -16945,13 +16960,17 @@ class App:
         if settings.get('enabled') or settings.get('first_look') is False:
             return None
         runs = [dict(r) for r in db.execute('SELECT status,auto,finished_at,error,window_hours FROM review_runs ORDER BY started_at')]
-        quick_runs, full_runs = [r for r in runs if r['window_hours']], [r for r in runs if not r['window_hours']]
-        if any(not r['auto'] for r in runs) or any(r['status'] == 'ok' for r in full_runs) or first_look_spent(full_runs):
-            return None  # reviewed before, or the owner ran their own preview; or tried enough
+        quick_runs = [r for r in runs if r['window_hours']]
+        if any(not r['auto'] for r in runs):
+            return None  # the owner ran their own preview
         if any(r['status'] in ('starting', 'running', 'recovering') for r in runs):
             return None
-        quick_done = any(r['status'] == 'ok' for r in quick_runs) or first_look_spent(quick_runs)
         current = current or dt.datetime.fromisoformat(now())
+        dig = self.first_dig(db, current)
+        if (dig and 'done' in dig) or (not dig and any(r['status'] == 'ok' for r in runs)):
+            return None  # the first look found enough, looked through the week or used its share; or reviewed before
+        digging = bool(dig)
+        quick_done = any(r['status'] == 'ok' for r in quick_runs) or first_look_spent(quick_runs)
         sources = [a['id'] for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES]
         since = (current - dt.timedelta(days=PREVIEW_DAYS)).isoformat()
         marks = ','.join('?' for _ in sources)
@@ -16973,12 +16992,13 @@ class App:
                 return {**quick, 'state': 'waiting', 'why': 'retry', 'retry_at': retry} if retry else {**quick, 'state': 'due'}
             if first_page:
                 return {**out, 'state': 'waiting', 'why': 'mail'}
-        if mail['filling'] and (not waiting or newest > (current - dt.timedelta(minutes=settings.get('max_wait_minutes', 60))).isoformat()):
+        if mail['filling'] and (not waiting or newest > (current - dt.timedelta(minutes=settings.get('max_wait_minutes', 60))).isoformat()) \
+                and not (digging and waiting):
             return {**out, 'state': 'waiting', 'why': 'mail'}
         if not waiting:
             # After a quick look that left nothing of the week to review, the first look is done
             return None if any(r['status'] == 'ok' for r in quick_runs) else {**out, 'state': 'waiting', 'why': 'sources'}
-        if (waiting < RUN_SIGNAL_BUDGET and not mail['fresh'] and
+        if (waiting < RUN_SIGNAL_BUDGET and not mail['fresh'] and not digging and
                 newest > (current - dt.timedelta(seconds=FIRST_LOOK_SETTLE_SECONDS)).isoformat()):
             return {**out, 'state': 'waiting', 'why': 'settling'}
         retry = first_look_retry_at(runs, current)  # also after a failed quick look: a rate limit holds for both
@@ -17012,9 +17032,9 @@ class App:
                 'first': first}
 
     def quick_first_review(self, db):
-        """How many signals the first review after reviews turned on looks at, quickly: the newest mail (the last
-        QUICK_LOOK_HOURS, at most QUICK_LOOK_SIGNALS). 0 once any review or look finished well, or after
-        FIRST_LOOK_TRIES tries, so an install that has reviewed before never gets one."""
+        """How many signals the first review after reviews turned on looks at, quickly: the week's most promising (the
+        last QUICK_LOOK_HOURS, at most QUICK_LOOK_SIGNALS). 0 once any review or look finished well, or after
+        FIRST_LOOK_TRIES tries (first_dig carries on from there), so an install that has reviewed before never gets one."""
         if db.execute("SELECT 1 FROM review_runs WHERE status='ok'").fetchone():
             return 0
         tries = [dict(r) for r in db.execute('SELECT status FROM review_runs WHERE preview=0 AND window_hours IS NOT NULL')]
@@ -17024,6 +17044,64 @@ class App:
         recent = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<? AND occurred_at>=?',
                             (SET_ASIDE_AFTER, since)).fetchone()[0]
         return min(recent, QUICK_LOOK_SIGNALS)
+
+    def first_dig(self, db, current=None):
+        """The first review digging on until it has something to show (FIRST_DIG_CARDS etc.). None when this install
+        had no quick first review (it reviewed before); {'done': why} once it stopped, for good: 'cards' (FIRST_DIG_CARDS
+        to-dos since it started), 'covered' (nothing of the last PREVIEW_DAYS left to review), 'usage' (first_dig_spent) or
+        'expired' (it started more than FIRST_DIG_HOURS ago); else {'cards', 'left'}: it digs on, next with the most promising of the `left` signals of the week."""
+        done = db.execute("SELECT detail FROM milestones WHERE name='first_dig_done'").fetchone()
+        if done:
+            return {'done': done[0]}
+        start = db.execute('SELECT min(started_at) FROM review_runs WHERE window_hours IS NOT NULL').fetchone()[0]
+        if not start:
+            return None
+        current = current or dt.datetime.fromisoformat(now())
+        cards = db.execute('SELECT count(*) FROM suggestions WHERE created_at>=?', (start,)).fetchone()[0]
+        sources = [a['id'] for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES]
+        left = db.execute(f"SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<? AND occurred_at>=? "
+                          f"AND account_id IN ({','.join('?' for _ in sources)})",
+                          (SET_ASIDE_AFTER, (current - dt.timedelta(days=PREVIEW_DAYS)).isoformat(), *sources)).fetchone()[0] if sources else 0
+        why = 'cards' if cards >= FIRST_DIG_CARDS else 'usage' if self.first_dig_spent(db, start) else \
+            'expired' if start < (current - dt.timedelta(hours=FIRST_DIG_HOURS)).isoformat() else None
+        if not why and not left and not self.mail_backfill(db)['filling']:  # a mailbox still importing may bring more
+            why = 'covered'
+        if why:
+            db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_dig_done',?,?)", (now(), why))
+            LOG.info('first review done why=%s cards=%s', why, cards)
+            return {'done': why}
+        return {'cards': cards, 'left': left}
+
+    def short_window(self):
+        """The main model's 5-hour usage window as last read (model_usage): {'used', 'reset'}, or None (an API key, a
+        sign-in that reports no windows, or nothing read yet)."""
+        usage = model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config))
+        found = [w for p in usage or [] for w in p.get('windows') or []
+                 if model_budget.window_kind(w.get('label')) == 'short' and isinstance(w.get('used'), (int, float))]
+        if not found:
+            return None
+        window = max(found, key=lambda w: w['used'])
+        return {'used': window['used'], 'reset': window.get('reset')}
+
+    def note_dig_start(self, db):
+        """Where the 5-hour window stood when the first review started, so first_dig_spent counts only its own share."""
+        db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_dig',?,?)", (now(), encoded(self.short_window() or {})))
+
+    def first_dig_spent(self, db, start):
+        """The first review used its share: FIRST_DIG_USAGE percent of the 5-hour window since it started (all of the
+        window's use when it reset since), or FIRST_DIG_SIGNALS signals on a sign-in without usage windows."""
+        window = self.short_window()
+        if window:
+            row = db.execute("SELECT detail FROM milestones WHERE name='first_dig'").fetchone()
+            try:
+                before = json.loads(row[0] or '{}') if row else {}
+            except ValueError:
+                before = {}
+            same = before.get('used') is not None and (before.get('reset') == window['reset'] or (
+                isinstance(before.get('reset'), (int, float)) and isinstance(window['reset'], (int, float)) and abs(before['reset'] - window['reset']) < 600))
+            return window['used'] - (before['used'] if same else 0) >= FIRST_DIG_USAGE
+        planned = db.execute('SELECT coalesce(sum(planned),0) FROM review_runs WHERE started_at>=?', (start,)).fetchone()[0]
+        return planned >= FIRST_DIG_SIGNALS
 
     def review_live(self):
         """What the dashboard shows of reviews while they happen: runs in progress, the next one, the first look."""
@@ -17045,7 +17123,7 @@ class App:
             raise ValueError('Reviews are already on: new suggestions arrive by themselves. See assistant tasks or the dashboard.')
         accounts = [a['id'] for a in self.config['accounts']]
         hours = QUICK_LOOK_HOURS if quick else PREVIEW_DAYS * 24
-        # The first look by itself: after the quick one, the most promising FIRST_LOOK_NEXT_SIGNALS of the week
+        # The first look by itself: after the quick one, it digs on with the most promising FIRST_LOOK_NEXT_SIGNALS of the week
         nxt = auto and not quick
         budget = QUICK_LOOK_SIGNALS if quick else FIRST_LOOK_NEXT_SIGNALS if nxt else RUN_SIGNAL_BUDGET
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(hours=hours)).isoformat()
@@ -17064,6 +17142,8 @@ class App:
             run_id, started = uuid.uuid4().hex, now()
             db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,preview,auto,planned,window_hours,budget,promising) VALUES(?,'starting',?,?,1,?,?,?,?,?)",
                        (run_id, started, started, int(auto), min(waiting, budget), QUICK_LOOK_HOURS if quick else None, budget if quick or nxt else None, int(nxt)))
+            if quick:
+                self.note_dig_start(db)
         return {'run_id': run_id, 'started_at': started, 'waiting': waiting, 'signals': min(waiting, budget)}
 
     def recap_push(self, message, week):

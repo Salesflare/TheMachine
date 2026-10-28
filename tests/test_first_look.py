@@ -45,20 +45,21 @@ class FirstLook(unittest.TestCase):
         self.assertEqual(self.state(10)['why'], 'sources')  # The Machine's own log is not a source
         with patch.object(a, 'has_model', return_value=False):
             self.assertEqual(self.state(10)['why'], 'model')
-        self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)] + [signal('old', days_ago=20)])  # nothing for a quick look
-        self.assertEqual(self.state()['why'], 'settling')  # signals still coming in
-        self.assertEqual(self.state(4), {'state': 'due', 'waiting': 30, 'days': 7})
+        self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)] + [signal('old', days_ago=20)])
+        # The quick look takes the week's most promising at once, whatever their age within the week
+        self.assertEqual(self.state(), {'state': 'due', 'quick': True, 'waiting': a.QUICK_LOOK_SIGNALS, 'hours': 168, 'days': 7})
         runner = Runner('admitted')
         with self.later(4):
             self.assertEqual(self.app.review_step(runner), 'admitted')
         run = self.runs()[0]
-        self.assertEqual((run['preview'], run['auto'], run['planned']), (1, 1, 31))  # the last week (and its log), never the 20-day-old one
+        self.assertEqual((run['preview'], run['auto'], run['planned']), (1, 1, a.QUICK_LOOK_SIGNALS))  # bounded, never the 20-day-old one
         self.assertEqual(runner.requests[0]['action'], 'start')
         self.assertEqual(self.app.config['review_worker'], {'enabled': False})  # reviews stay off: that is the owner's choice
         self.assertIsNone(self.state(5))  # running: nothing new
         with self.store.connect() as db:
             db.execute("UPDATE review_runs SET status='ok',finished_at=?", (a.now(),))
-        self.assertIsNone(self.state(60))  # once is enough
+            db.execute("UPDATE events SET analyzed_version=version WHERE occurred_at>=?", ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat(),))
+        self.assertIsNone(self.state(60))  # the week looked through: done
         self.assertIsNone(self.app.review_step(Runner()))
 
     def test_a_review_prompt_over_the_runner_limit_ends_the_run_visibly_instead_of_retrying_as_unavailable(self):
@@ -75,17 +76,18 @@ class FirstLook(unittest.TestCase):
         runner = open(a.ROOT / 'preparation-run.mjs').read()
         self.assertIn(f'request.message.length>{a.PROMPT_LIMIT})', runner)
 
-    def test_a_failed_first_look_is_tried_again_later_at_most_three_times(self):
+    def test_a_failed_first_look_keeps_coming_back_at_most_half_an_hour_apart(self):
         self.store.commit_page('work', {}, [signal('m1', days_ago=3)])
         for attempt in range(a.FIRST_LOOK_TRIES):
             with self.later(5 + attempt * 40):
                 self.assertEqual(self.app.review_step(Runner('admitted')), 'admitted')
             with self.later(5 + attempt * 40), self.store.connect() as db:
                 db.execute("UPDATE review_runs SET status='error',finished_at=? WHERE finished_at IS NULL", (a.now(),))
-            if attempt < a.FIRST_LOOK_TRIES - 1:
-                self.assertEqual(self.state(6 + attempt * 40)['why'], 'retry')
-        self.assertIsNone(self.state(500))
-        self.assertEqual(len(self.runs()), a.FIRST_LOOK_TRIES)
+            self.assertEqual(self.state(6 + attempt * 40)['why'], 'retry')
+        # Never given up on (2026-10-27: a first look that failed three times never came back): every half hour at most
+        self.assertEqual(self.state(5 + 2 * 40 + 7)['why'], 'retry')  # 2, 4, 8… minutes after a failure, at most 30
+        self.assertEqual(self.state(5 + 2 * 40 + 9)['state'], 'due')
+        self.assertEqual(self.state(500)['state'], 'due')
 
     def test_a_first_look_a_gateway_restart_cut_off_is_not_a_try(self):
         self.store.commit_page('work', {}, [signal('m1', days_ago=3)])
@@ -94,9 +96,8 @@ class FirstLook(unittest.TestCase):
                 self.assertEqual(self.app.review_step(Runner('admitted')), 'admitted')
             with self.later(5 + attempt * 40), self.store.connect() as db:
                 db.execute("UPDATE review_runs SET status=?,finished_at=? WHERE finished_at IS NULL", ('aborted' if attempt < 4 else 'error', a.now()))
-            if attempt < 2 * a.FIRST_LOOK_TRIES - 1:
-                self.assertEqual(self.state(6 + attempt * 40)['why'], 'retry')
-        self.assertIsNone(self.state(500))  # and never more than twice as many runs in all
+            self.assertEqual(self.state(6 + attempt * 40)['why'], 'retry')
+        self.assertEqual(self.state(500)['state'], 'due')  # and still not given up on
 
     def test_never_after_the_owners_own_preview_after_reviews_were_on_or_when_turned_off(self):
         self.store.commit_page('work', {}, [signal('m1')])

@@ -66,27 +66,30 @@ class FastFirstLook(unittest.TestCase):
         self.store.commit_page('work', bootstrap, [], record_sync=False)
         self.assertEqual(self.state()['why'], 'mail')  # not even the first page yet
         self.store.commit_page('work', {**bootstrap, 'page_token': 'p2'}, [signal(f'new{n}') for n in range(30)])
-        self.assertEqual(self.state(), {'state': 'due', 'quick': True, 'waiting': a.QUICK_LOOK_SIGNALS, 'hours': 48, 'days': 7})
+        self.assertEqual(self.state(), {'state': 'due', 'quick': True, 'waiting': a.QUICK_LOOK_SIGNALS, 'hours': 168, 'days': 7})
         self.assertEqual(self.step(Runner('admitted')), 'admitted')  # at once: no waiting for the rest of the mail
         run = self.runs()[0]
-        self.assertEqual((run['preview'], run['auto'], run['window_hours'], run['budget'], run['planned']), (1, 1, 48, 20, 20))
+        self.assertEqual((run['preview'], run['auto'], run['window_hours'], run['budget'], run['planned']), (1, 1, 168, 20, 20))
         quick = self.claim(run['run_id'])
         self.assertEqual(len(quick), a.QUICK_LOOK_SIGNALS)  # bounded
         self.assertEqual(self.step(Runner('ok'), 3), 'ok')
-        # The rest of the mail, older too, comes in; the full look waits for it, then starts at once
+        # The rest of the mail, older too, comes in; the first look digs on at once (no to-do yet), without waiting for
+        # the rest of the import
         self.store.commit_page('work', {**bootstrap, 'page_token': 'p3'}, [signal(f'old{n}', hours_ago=24 * 4) for n in range(10)])
-        self.assertEqual(self.state(4)['why'], 'mail')
-        self.store.commit_page('work', {'mode': 'incremental', 'history_id': '2', 'after': 0, 'backfilled_at': a.now()}, [])
-        self.assertEqual(self.state(5), {'state': 'due', 'waiting': 20, 'days': 7})
+        self.assertEqual(self.state(4), {'state': 'due', 'waiting': 20, 'days': 7})
         self.assertEqual(self.step(Runner('admitted'), 5), 'admitted')
         full = self.runs()[1]
-        # Then the most promising of the week, not all of it at once
+        # Then the most promising of the week, a batch at a time
         self.assertEqual((full['window_hours'], full['budget'], full['promising']), (None, a.FIRST_LOOK_NEXT_SIGNALS, 1))
         rest = self.claim(full['run_id'])
         self.assertEqual(len(rest), 20)
         self.assertFalse(set(quick) & set(rest))  # nothing reviewed twice, so no card twice
         self.assertEqual(self.step(Runner('ok'), 9), 'ok')
-        self.assertIsNone(self.state(10))
+        self.assertEqual(self.state(10)['why'], 'mail')  # nothing left, but a mailbox still importing may bring more
+        self.store.commit_page('work', {'mode': 'incremental', 'history_id': '2', 'after': 0, 'backfilled_at': a.now()}, [])
+        self.assertIsNone(self.state(10))  # the week looked through: done
+        with self.store.connect() as db:
+            self.assertEqual(a.first_cards_report(db, self.app.config['accounts'])['dig'], 'covered')
 
     def test_after_a_quick_look_that_left_nothing_the_first_look_is_done(self):
         self.store.commit_page('work', {}, [signal('m1')])
@@ -176,7 +179,7 @@ class FastFirstLook(unittest.TestCase):
         self.store.commit_page('work', bootstrap, [signal(f'new{n}') for n in range(25)] + [signal(f'old{n}', hours_ago=24 * 4) for n in range(5)])
         self.assertEqual(self.step(Runner('admitted')), 'admitted')  # mail still coming in, only 30 signals: still at once
         run = self.runs()[0]
-        self.assertEqual((run['preview'], run['auto'], run['window_hours'], run['budget'], run['planned']), (0, 1, 48, 20, 20))
+        self.assertEqual((run['preview'], run['auto'], run['window_hours'], run['budget'], run['planned']), (0, 1, 168, 20, 20))
         quick = self.claim(run['run_id'])
         self.assertEqual(len(quick), 20)
         with self.store.connect() as db:
