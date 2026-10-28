@@ -3,7 +3,7 @@ title: Foutrapporten
 area: security
 summary: Als er iets stukgaat, vertelt je Machine het team van The Machine wat er misging en waar in de code. Nooit je berichten, namen of adressen.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## Wat het is
@@ -28,7 +28,8 @@ Wat er in je berichten, to-do's, concepten of chats staat. Namen, e-mailadressen
 ## Waar fouten vandaan komen
 
 - de service en zijn taken: reviews, to-do's voorbereiden, chat, koppelingen en syncs;
-- het dashboard in je browser;
+- het dashboard in je browser, ook fouten die het opving en je liet zien, en de app-kopie ervan op je toestel;
+- oproepen van het dashboard naar je Machine die mislukken of te lang duren: welke oproep, nooit wat die vroeg of stuurde;
 - taken van Claude Code en Codex die mislukken: alleen de tool en het soort fout.
 
 Dezelfde fout telt één keer, met een aantal. Hooguit één batch per 10 minuten. Het team bewaart ze 30 dagen.

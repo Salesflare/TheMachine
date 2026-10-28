@@ -29,6 +29,7 @@ const state=()=>({suggestions:cards,promises:[],connectors:[{id:'cal',service:'c
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(brand[url.pathname]){res.setHeader('Content-Type',url.pathname.endsWith('.png')?'image/png':'font/woff2');res.end(await readFile(new URL('../'+brand[url.pathname],import.meta.url)));return}
+ if(url.pathname==='/api/action'&&/"action":"client_error"/.test(body)){res.end('{"ok":true,"counted":0}');return}  // an error report (test_client_errors_dashboard.mjs), not a change
  if(req.method!=='GET')calls.push(url.pathname+' '+body);
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/calendar'){const a=new Date(url.searchParams.get('from')),b=new Date(url.searchParams.get('to'));asks.push([a,b]);

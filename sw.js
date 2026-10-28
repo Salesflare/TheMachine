@@ -20,6 +20,34 @@ async function warm() {
   }));
 }
 
+// Error reports (error_feed.py): this worker's own errors and a failed shell update go to an open dashboard page, which
+// sends them on with its own (source "sw"): the type, the message (normalized again by the service) and the place, never
+// a page's address or what it holds. At most 10 wait for a page; with none open they wait in memory and are lost when the
+// worker stops. Not a failed update: no answer at all (offline) or a sign-in, which is the session, not a bug.
+const swErrors = [];
+function swPlace(stack) {
+  for (const l of String(stack || '').split('\n')) {
+    const m = l.match(/^\s*(?:at\s+(?:(.*?)\s+\()?|(.*?)@)(\S+?):(\d+):\d+\)?\s*$/);
+    if (m && /\/sw\.js(?:[?#]|$)/.test(m[3]) && m[3].startsWith(self.location.origin)) return {function: String(m[1] || m[2] || '<anonymous>').split(/[\s.]/).pop().slice(0, 60) || '<anonymous>', line: +m[4]};
+  }
+  return null;
+}
+async function swFlush() {
+  if (!swErrors.length) return;
+  const pages = await self.clients.matchAll({type: 'window'});
+  if (pages.length) for (const item of swErrors.splice(0)) pages[0].postMessage({swError: item});
+}
+function swError(kind, message, place) {
+  if (!place || swErrors.length >= 10) return;
+  swErrors.push({kind: String(kind || 'Error').slice(0, 60), message: String(message || '').slice(0, 500), ...place});
+  swFlush().catch(() => {});
+}
+function swReport(e, where) {
+  try { if (e instanceof Error && e.name !== 'AbortError') swError(e.name, e.message, swPlace(e.stack) || (where ? {function: where, line: 0} : null)); } catch {}
+}
+self.addEventListener('error', e => swReport(e.error));
+self.addEventListener('unhandledrejection', e => swReport(e.reason));
+
 // The page asks for warm() once this worker is ready: a slow brand file never holds up the install.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil((async () => {
@@ -57,7 +85,8 @@ async function shell(event) {
   const asked = fetch(scopeUrl().href, {headers: etag ? {'If-None-Match': etag} : {}, redirect: 'manual', cache: 'no-store', credentials: 'same-origin'});
   event.waitUntil(asked.then(r => {
     if (r.type === 'opaqueredirect' || r.status === 401 || r.status === 403) return signedOut();
-    if (r.status === 200) return keepShell(r.clone());
+    if (r.status >= 500) return swError('ShellUpdateFailed', 'HTTP ' + r.status, {function: 'shell', line: 0});
+    if (r.status === 200) return keepShell(r.clone()).catch(e => swReport(e, 'keepShell'));
   }).catch(() => {}));
   if (!fresh) return asked;
   if (self.navigator.onLine === false) return fresh;
@@ -91,6 +120,7 @@ self.addEventListener('fetch', event => {
 self.addEventListener('message', event => {
   if (event.data?.cache === 'drop') event.waitUntil(Promise.all([caches.delete(SHELL), caches.delete(ASSETS)]));
   if (event.data?.cache === 'warm') event.waitUntil(warm().catch(() => {}));
+  if (event.data?.errors === 'flush') event.waitUntil(swFlush().catch(() => {}));
 });
 
 self.addEventListener('push', event => {
@@ -104,7 +134,7 @@ self.addEventListener('push', event => {
     data: {url: new URL(data.url || '.', self.registration.scope).href},
     // Fleet questions: Answer once and Decline open the dashboard at the question, which asks to confirm.
     actions: Array.isArray(data.actions) ? data.actions.slice(0, 2) : [],
-  }));
+  }).catch(e => swReport(e, 'push')));
 });
 
 self.addEventListener('notificationclick', event => {

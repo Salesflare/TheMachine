@@ -50,6 +50,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/result'){res.end(JSON.stringify({text:'# Acme: draft internal answer for Andrea\n\n> Each person who uses the CRM needs their own seat;\n>\n> the mailbox count alone does not.\n\n## Verification\n- [Pricing](https://example.com/pricing): per user.'}));return}
+ if(url.pathname==='/api/action'&&/"action":"client_error"/.test(body)){res.end('{"ok":true,"counted":0}');return}  // an error report (test_client_errors_dashboard.mjs), not a change
  if(url.pathname==='/api/action'){const r=JSON.parse(body);actions.push({...r,csrf:req.headers['x-csrf-token']});
   if(r.action==='card_chat'){
    if(r.args.suggestion_id==='c6c6c6c6c6c6c6c6'){res.end(JSON.stringify({session:true,status:'ok',active:false,cursor:'k6',items:[{kind:'source',from:'Andrea',via:'intercom',note:true,text:'We need to ask J.',mine:false,at:t0-1000},{kind:'reply',text:'Drafted your note for Andrea. Nothing sent.',drafts:[],files:[{label:'Draft and sources',path:'memory/assistant/note.md'}],at:t0}]}));return}

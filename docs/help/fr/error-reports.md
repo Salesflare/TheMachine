@@ -3,7 +3,7 @@ title: Rapports d’erreur
 area: security
 summary: Quand quelque chose casse, votre Machine indique à l’équipe The Machine ce qui a échoué et où dans le code. Jamais vos messages, noms ou adresses.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## Ce que c’est
@@ -28,7 +28,8 @@ Le contenu de vos messages, tâches, brouillons ou chats. Les noms, adresses e-m
 ## D’où viennent les erreurs
 
 - le service et ses traitements : revues, préparation des tâches, chat, connexions et synchros ;
-- le tableau de bord dans votre navigateur ;
+- le tableau de bord dans votre navigateur, y compris les erreurs qu’il a interceptées et affichées, et sa copie d’app sur votre appareil ;
+- les appels du tableau de bord à votre Machine qui échouent ou expirent : quel appel, jamais ce qu’il a demandé ou envoyé ;
 - les traitements Claude Code et Codex qui échouent : seulement l’outil et le type d’échec.
 
 La même erreur compte une fois, avec un nombre. Au plus un lot toutes les 10 minutes. L’équipe les garde 30 jours.

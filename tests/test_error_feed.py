@@ -299,6 +299,30 @@ class Sources(Base):
         self.assertEqual([tuple(r) for r in rows],
                          [('dashboard', 'TypeError', 'Cannot read properties of undefined (reading "…")', 'dashboard.html:renderCard:4021', 4)])
 
+    def test_the_service_worker_and_failed_calls_get_their_own_sources(self):
+        app = types_app(self.path)
+        out = app.action('client_error', {'errors': [
+            {'kind': 'ShellUpdateFailed', 'message': 'HTTP 502', 'file': 'sw.js', 'function': 'shell', 'line': 0},
+            {'api': 'graph/node/4f2c9a?q=sam.lee@globex.example', 'action': '', 'status': 500},
+            {'api': 'action', 'action': 'decide', 'status': 'timeout'},
+            {'api': 'action', 'action': 'Sam Lee', 'status': 503},     # not an action of the dashboard's: other
+            {'api': 'status', 'status': 404},                           # a refusal, not a failed call
+            {'api': 'status', 'status': 'HTTP 500 for Sam'},
+            {'api': '../../etc', 'status': 500},
+        ]})
+        self.assertEqual(out['counted'], 4)
+        with app.store.connect() as db:
+            rows = sorted(tuple(r) for r in db.execute('SELECT source,kind,message,location FROM error_feed'))
+        self.assertEqual(rows, [('api', 'HTTP500', '', 'api:graph.node.<id>'), ('api', 'HTTP503', '', 'api:action.other'),
+                                ('api', 'Timeout', '', 'api:action.decide'), ('sw', 'ShellUpdateFailed', 'HTTP bad gateway', 'sw.js:shell')])
+
+    def test_a_browser_error_keeps_its_words(self):
+        for message, kept in (("foo is not defined", '<word> is not defined'),
+                              ("Failed to execute 'put' on 'Cache': Quota exceeded.", 'Failed to execute "…" on "…": Quota exceeded.'),
+                              ("Cannot access 'Sam' before initialization", 'Cannot access "…" before initialization'),
+                              ('Sam Lee is not defined.', '<word> is not defined.')):
+            self.assertEqual(ef.normalize(message), kept)
+
     def test_service_errors_come_through_the_fault_log(self):
         store = a.Store(self.path)
         log = a.FaultLog(store, 'abc123def456')

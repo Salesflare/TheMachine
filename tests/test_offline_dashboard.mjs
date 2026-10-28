@@ -33,6 +33,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/session'){res.end(JSON.stringify({csrf:CSRF,cache_scope:SCOPE}));return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(status()));return}
  if(url.pathname==='/api/calendar'){res.end(JSON.stringify({calendars:[{id:'cal',name:'Work'}],meetings:[{id:'m1',title:'Plan review with Robin',start:meetingAt.toISOString(),end:new Date(+meetingAt+36e5).toISOString(),account_id:'cal'}]}));return}
+ if(url.pathname==='/api/action'&&/"action":"client_error"/.test(body)){res.end('{"ok":true,"counted":0}');return}  // an error report (test_client_errors_dashboard.mjs), not a change
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');posts.push({action:r.action,csrf:req.headers['x-csrf-token'],args:r.args});
   // A spotty link: the answer is lost on the way back after the Machine saved it, so the same change comes again
   if(r.action==='decide'){const id=r.args.decision_id;if(!decided.has(id)){decided.set(id,r.args);order.push(r.args.choice+':'+r.args.suggestion_id)}

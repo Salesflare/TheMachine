@@ -3,7 +3,7 @@ title: Informes de errores
 area: security
 summary: Cuando algo falla, tu Machine le dice al equipo de The Machine qué falló y en qué parte del código. Nunca tus mensajes, nombres ni direcciones.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## Qué es
@@ -28,7 +28,8 @@ Lo que dicen tus mensajes, tareas, borradores o chats. Nombres, direcciones de c
 ## De dónde vienen los errores
 
 - el servicio y sus trabajos: revisiones, preparación de tareas, chat, conexiones y sincronizaciones;
-- el panel en tu navegador;
+- el panel en tu navegador, también los errores que detectó y te mostró, y su copia de la app en tu dispositivo;
+- las llamadas del panel a tu Machine que fallan o tardan demasiado: qué llamada, nunca lo que pidió o envió;
 - los trabajos de Claude Code y Codex que fallan: solo la herramienta y el tipo de fallo.
 
 El mismo error cuenta una vez, con un recuento. Como mucho, un lote cada 10 minutos. El equipo los guarda 30 días.

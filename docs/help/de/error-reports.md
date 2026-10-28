@@ -3,7 +3,7 @@ title: Fehlerberichte
 area: security
 summary: Wenn etwas kaputtgeht, sagt deine Machine dem Team von The Machine, was fehlgeschlagen ist und wo im Code. Nie deine Nachrichten, Namen oder Adressen.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## Was es ist
@@ -28,7 +28,8 @@ Was in deinen Nachrichten, Aufgaben, Entwürfen oder Chats steht. Namen, E-Mail-
 ## Woher Fehler kommen
 
 - der Dienst und seine Jobs: Prüfungen, Aufgaben vorbereiten, Chat, Verbindungen und Syncs;
-- das Dashboard in deinem Browser;
+- das Dashboard in deinem Browser, auch Fehler, die es abgefangen und dir gezeigt hat, und seine App-Kopie auf deinem Gerät;
+- Aufrufe vom Dashboard an deine Machine, die fehlschlagen oder zu lange dauern: welcher Aufruf, nie was er gefragt oder gesendet hat;
 - fehlgeschlagene Jobs von Claude Code und Codex: nur das Tool und die Art des Fehlers.
 
 Derselbe Fehler zählt einmal, mit einer Anzahl. Höchstens ein Paket alle 10 Minuten. Das Team bewahrt sie 30 Tage auf.

@@ -3,7 +3,7 @@ title: Segnalazioni di errore
 area: security
 summary: Quando qualcosa si rompe, la tua Machine dice al team di The Machine cosa non ha funzionato e in che punto del codice. Mai i tuoi messaggi, nomi o indirizzi.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html
+code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## Cos'è
@@ -28,7 +28,8 @@ Cosa dicono i tuoi messaggi, le attività, le bozze o le chat. Nomi, indirizzi e
 ## Da dove vengono gli errori
 
 - il servizio e i suoi job: revisioni, preparazione delle attività, chat, connessioni e sincronizzazioni;
-- la dashboard nel tuo browser;
+- la dashboard nel tuo browser, anche gli errori che ha intercettato e ti ha mostrato, e la sua copia dell’app sul tuo dispositivo;
+- le chiamate dalla dashboard alla tua Machine che falliscono o scadono: quale chiamata, mai cosa ha chiesto o inviato;
 - i job di Claude Code e Codex che falliscono: solo lo strumento e il tipo di errore.
 
 Lo stesso errore conta una volta, con un conteggio. Al massimo un invio ogni 10 minuti. Il team li conserva 30 giorni.

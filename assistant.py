@@ -14351,7 +14351,7 @@ class App:
             return self.delete_person(str(args.get('node_id') or ''))
         if name == 'client_error':  # the dashboard's own errors, as signatures for the error reports (error_feed.py)
             with self.store.connect() as db:
-                return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version)}
+                return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version, DASHBOARD_ACTIONS)}
         if name in LEARNING_ACTIONS:
             if not owner_dashboard:
                 raise ValueError('Only the owner shares learnings, from the dashboard')
