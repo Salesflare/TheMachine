@@ -18,7 +18,7 @@ Het tabblad **Suggesties** groepeert ze:
 - **Komt later terug**: gesnoozed.
 - **Gedaan / afgewezen**: elke afgeronde to-do, nieuwste eerst, 30 tegelijk terwijl je scrolt.
 
-**Alles is rustig.** betekent dat er nu niets op je wacht.
+**Alles is rustig.** betekent dat er nu niets op je wacht. De regel eronder zegt wanneer je Machine voor het laatst heeft gekeken.
 
 **Alle**, **Werk** en **Privé** boven de lijst in de zijbalk tonen alle to-do's of maar één soort. Je Machine onthoudt de keuze, zodat je telefoon en computer dezelfde lijst tonen. Staat Werk of Privé aan, dan staat dat bovenaan de lijst, met **Alles tonen** om terug te gaan.
 

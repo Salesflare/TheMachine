@@ -527,6 +527,7 @@
  "Check who gets an invite and tap again. Nothing was sent.": "Check who gets an invite and tap again. Nothing was sent.",
  "Check-in moved": "Check-in moved",
  "Checked by your model. Change anything below.": "Checked by your model. Change anything below.",
+ "Checked in {}. Back to my nap.": "Checked in {}. Back to my nap.",
  "Checked {} things": {
   "one": "Checked {} thing",
   "other": "Checked {} things"
@@ -1436,6 +1437,7 @@
  "Last phone check: {}": "Last phone check: {}",
  "Last run {} {}; it retries.": "Last run {} {}; it retries.",
  "Last signal {}": "Last signal {}",
+ "Last snooped around {}. Nothing to report.": "Last snooped around {}. Nothing to report.",
  "Last sync": "Last sync",
  "Last sync {}": "Last sync {}",
  "Last sync: {} failed": "Last sync: {} failed",
@@ -2231,6 +2233,7 @@
  "Paste the new access token": "Paste the new access token",
  "Paste the session link from claude.ai/code": "Paste the session link from claude.ai/code",
  "Paste the whole task link, with the part after the #": "Paste the whole task link, with the part after the #",
+ "Peeked at everything {}. All quiet.": "Peeked at everything {}. All quiet.",
  "Pending: {} hasn’t confirmed. Retrying": "Pending: {} hasn’t confirmed. Retrying",
  "People": "People",
  "People (G then P)": "People (G then P)",
@@ -2407,10 +2410,6 @@
  "Read the message": "Read the message",
  "Read the thread": "Read the thread",
  "Read up to {}": "Read up to {}",
- "Read {} signals so far, the last review {}.": {
-  "one": "Read {} signal so far, the last review {}.",
-  "other": "Read {} signals so far, the last review {}."
- },
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Read-only logs and settings, scrubbed like the report. It ends by itself.",
  "Read-only. Turn it off any time.": "Read-only. Turn it off any time.",
  "Reading docs needs its own OK": "Reading docs needs its own OK",
@@ -4641,10 +4640,6 @@
   "other": "{} more like this wait. Always shares them too."
  },
  "{} more like this {}. Always shares {} too.": "{} more like this {}. Always shares {} too.",
- "{} more wait for the next one.": {
-  "one": "{} more waits for the next one.",
-  "other": "{} more wait for the next one."
- },
  "{} more, open the day": "{} more, open the day",
  "{} moves to Stalled or declined": "{} moves to Stalled or declined",
  "{} moves to {}": "{} moves to {}",

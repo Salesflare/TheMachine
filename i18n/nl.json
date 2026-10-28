@@ -527,6 +527,7 @@
  "Check who gets an invite and tap again. Nothing was sent.": "Controleer wie een uitnodiging krijgt en tik opnieuw. Er is niets verstuurd.",
  "Check-in moved": "Opvolging verplaatst",
  "Checked by your model. Change anything below.": "Gecontroleerd door je model. Wijzig hieronder wat je wilt.",
+ "Checked in {}. Back to my nap.": "Even gecheckt, {}. Terug naar mijn dutje.",
  "Checked {} things": {
   "one": "{} ding nagekeken",
   "other": "{} dingen nagekeken"
@@ -1436,6 +1437,7 @@
  "Last phone check: {}": "Laatste telefooncheck: {}",
  "Last run {} {}; it retries.": "Laatste run {} {}; wordt opnieuw geprobeerd.",
  "Last signal {}": "Laatste signaal {}",
+ "Last snooped around {}. Nothing to report.": "Laatst rondgesnuffeld: {}. Niets te melden.",
  "Last sync": "Laatste sync",
  "Last sync {}": "Laatste sync {}",
  "Last sync: {} failed": "Laatste sync: {} mislukt",
@@ -2231,6 +2233,7 @@
  "Paste the new access token": "Plak het nieuwe toegangstoken",
  "Paste the session link from claude.ai/code": "Plak de sessielink van claude.ai/code",
  "Paste the whole task link, with the part after the #": "Plak de volledige taaklink, met het deel na de #",
+ "Peeked at everything {}. All quiet.": "Overal even gekeken, {}. Alles rustig.",
  "Pending: {} hasn’t confirmed. Retrying": "In afwachting: {} heeft nog niet bevestigd. Opnieuw proberen",
  "People": "Personen",
  "People (G then P)": "Personen (G dan P)",
@@ -2407,10 +2410,6 @@
  "Read the message": "Bericht lezen",
  "Read the thread": "Lees de thread",
  "Read up to {}": "Gelezen tot {}",
- "Read {} signals so far, the last review {}.": {
-  "one": "{} signaal gelezen tot nu toe, de laatste review {}.",
-  "other": "{} signalen gelezen tot nu toe, de laatste review {}."
- },
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Alleen lezen: logs en instellingen, opgeschoond zoals het rapport. Het stopt vanzelf.",
  "Read-only. Turn it off any time.": "Alleen lezen. Zet het uit wanneer je wilt.",
  "Reading docs needs its own OK": "Documenten lezen vraagt een eigen OK",
@@ -4641,10 +4640,6 @@
   "other": "Er wachten nog {} zoals deze. Altijd deelt die ook."
  },
  "{} more like this {}. Always shares {} too.": "Nog {} zoals deze {}. Altijd deelt ook {}.",
- "{} more wait for the next one.": {
-  "one": "Nog {} wacht op de volgende.",
-  "other": "Nog {} wachten op de volgende."
- },
  "{} more, open the day": "Nog {}, open de dag",
  "{} moves to Stalled or declined": "{} gaat naar Vastgelopen of afgewezen",
  "{} moves to {}": "{} gaat naar {}",

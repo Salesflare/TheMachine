@@ -527,6 +527,7 @@
  "Check who gets an invite and tap again. Nothing was sent.": "Confira quem recebe um convite e toque de novo. Nada foi enviado.",
  "Check-in moved": "Follow-up movido",
  "Checked by your model. Change anything below.": "Verificado pelo seu modelo. Altere o que quiser abaixo.",
+ "Checked in {}. Back to my nap.": "Conferi tudo {}. De volta à minha soneca.",
  "Checked {} things": {
   "one": "{} item verificado",
   "other": "{} itens verificados"
@@ -1436,6 +1437,7 @@
  "Last phone check: {}": "Última verificação do celular: {}",
  "Last run {} {}; it retries.": "Última execução {} {}; tenta de novo.",
  "Last signal {}": "Último sinal {}",
+ "Last snooped around {}. Nothing to report.": "Última bisbilhotada {}. Nada a relatar.",
  "Last sync": "Última sincronização",
  "Last sync {}": "Última sincronização {}",
  "Last sync: {} failed": "Última sincronização: {} com falha",
@@ -2231,6 +2233,7 @@
  "Paste the new access token": "Cole o novo token de acesso",
  "Paste the session link from claude.ai/code": "Cole o link da sessão de claude.ai/code",
  "Paste the whole task link, with the part after the #": "Cole o link de tarefa inteiro, com a parte depois do #",
+ "Peeked at everything {}. All quiet.": "Dei uma espiada em tudo {}. Tudo tranquilo.",
  "Pending: {} hasn’t confirmed. Retrying": "Pendente: {} não confirmou. Tentando de novo",
  "People": "Pessoas",
  "People (G then P)": "Pessoas (G e depois P)",
@@ -2407,10 +2410,6 @@
  "Read the message": "Ler a mensagem",
  "Read the thread": "Ler a conversa",
  "Read up to {}": "Lido até {}",
- "Read {} signals so far, the last review {}.": {
-  "one": "{} sinal lido até agora, a última revisão {}.",
-  "other": "{} sinais lidos até agora, a última revisão {}."
- },
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Só leitura: logs e configurações, limpos como o relatório. Termina sozinho.",
  "Read-only. Turn it off any time.": "Só leitura. Desative quando quiser.",
  "Reading docs needs its own OK": "Ler documentos precisa de um OK próprio",
@@ -4641,10 +4640,6 @@
   "other": "Mais {} como esta aguardam. Sempre compartilha também."
  },
  "{} more like this {}. Always shares {} too.": "Mais {} como este {}. Sempre compartilha {} também.",
- "{} more wait for the next one.": {
-  "one": "Mais {} espera a próxima.",
-  "other": "Mais {} esperam a próxima."
- },
  "{} more, open the day": "Mais {}, abrir o dia",
  "{} moves to Stalled or declined": "{} passa para Parado ou recusado",
  "{} moves to {}": "{} passa para {}",

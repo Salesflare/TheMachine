@@ -18,7 +18,7 @@ Der Tab **Vorschläge** gruppiert sie:
 - **Kommt später zurück**: zurückgestellt.
 - **Erledigt / verworfen**: jede abgeschlossene Aufgabe, die neueste zuerst, 30 auf einmal beim Scrollen.
 
-**Alles erledigt** heißt, dass dich gerade nichts braucht.
+**Alles erledigt** heißt, dass dich gerade nichts braucht. Die Zeile darunter sagt, wann deine Machine zuletzt nachgesehen hat.
 
 **Alle**, **Arbeit** und **Privat** über der Liste in der Seitenleiste zeigen alle Aufgaben oder nur eine Art. Deine Machine merkt sich die Wahl, sodass Handy und Computer dieselbe Liste zeigen. Wenn Arbeit oder Privat aktiv ist, steht das oben in der Liste, mit **Alle anzeigen** zum Zurückgehen.
 

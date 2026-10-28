@@ -18,7 +18,7 @@ A aba **Sugestões** agrupa as tarefas:
 - **Volta mais tarde**: adiada.
 - **Feito / dispensado**: todas as tarefas concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola.
 
-**Tudo em dia.** significa que nada precisa de você agora.
+**Tudo em dia.** significa que nada precisa de você agora. A linha abaixo diz quando sua Machine olhou pela última vez.
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar.
 

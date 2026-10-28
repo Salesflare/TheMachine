@@ -18,7 +18,7 @@ La scheda **Suggerimenti** le raggruppa:
 - **Torna più tardi**: posticipate.
 - **Fatte / ignorate**: tutte le attività concluse, dalla più recente, 30 alla volta mentre scorri.
 
-**Tutto a posto.** significa che ora niente ha bisogno di te.
+**Tutto a posto.** significa che ora niente ha bisogno di te. La riga sotto dice quando la tua Machine ha controllato l’ultima volta.
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro.
 

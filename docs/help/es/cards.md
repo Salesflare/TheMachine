@@ -18,7 +18,7 @@ La pestaña **Sugerencias** las agrupa:
 - **Vuelve más tarde**: pospuesta.
 - **Hecho / descartado**: cada tarea terminada, las más recientes primero, de 30 en 30 según te desplazas.
 
-**Todo al día.** significa que ahora nada te necesita.
+**Todo al día.** significa que ahora nada te necesita. La línea de abajo dice cuándo tu Machine revisó por última vez.
 
 **Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver.
 

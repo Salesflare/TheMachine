@@ -18,7 +18,7 @@ L’onglet **Suggestions** les regroupe :
 - **Revient plus tard** : mise en attente.
 - **Fait / écarté** : toutes les tâches terminées, les plus récentes d’abord, 30 à la fois quand vous faites défiler.
 
-**Tout est à jour.** veut dire que rien n’a besoin de vous pour l’instant.
+**Tout est à jour.** veut dire que rien n’a besoin de vous pour l’instant. La ligne en dessous indique quand votre Machine a regardé pour la dernière fois.
 
 **Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir.
 

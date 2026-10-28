@@ -527,6 +527,7 @@
  "Check who gets an invite and tap again. Nothing was sent.": "Prüf, wer eine Einladung bekommt, und tippe erneut. Nichts wurde gesendet.",
  "Check-in moved": "Nachhaken verschoben",
  "Checked by your model. Change anything below.": "Von deinem Modell geprüft. Ändere unten, was du willst.",
+ "Checked in {}. Back to my nap.": "Habe {} nachgesehen. Jetzt wieder Nickerchen.",
  "Checked {} things": {
   "one": "{} Sache geprüft",
   "other": "{} Sachen geprüft"
@@ -1436,6 +1437,7 @@
  "Last phone check: {}": "Letzte Telefonprüfung: {}",
  "Last run {} {}; it retries.": "Letzter Lauf {} {}; es wird erneut versucht.",
  "Last signal {}": "Letztes Signal {}",
+ "Last snooped around {}. Nothing to report.": "Zuletzt {} herumgeschnüffelt. Nichts zu melden.",
  "Last sync": "Letzter Sync",
  "Last sync {}": "Letzter Sync {}",
  "Last sync: {} failed": "Letzter Sync: {} fehlgeschlagen",
@@ -2231,6 +2233,7 @@
  "Paste the new access token": "Füge das neue Zugriffstoken ein",
  "Paste the session link from claude.ai/code": "Füge den Sitzungslink von claude.ai/code ein",
  "Paste the whole task link, with the part after the #": "Füge den ganzen Aufgabenlink ein, mit dem Teil nach dem #",
+ "Peeked at everything {}. All quiet.": "Habe {} überall reingeschaut. Alles ruhig.",
  "Pending: {} hasn’t confirmed. Retrying": "Ausstehend: {} hat nicht bestätigt. Neuer Versuch",
  "People": "Personen",
  "People (G then P)": "Personen (G dann P)",
@@ -2407,10 +2410,6 @@
  "Read the message": "Nachricht lesen",
  "Read the thread": "Thread lesen",
  "Read up to {}": "Gelesen bis {}",
- "Read {} signals so far, the last review {}.": {
-  "one": "Bisher {} Signal gelesen, die letzte Prüfung {}.",
-  "other": "Bisher {} Signale gelesen, die letzte Prüfung {}."
- },
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Nur lesen: Logs und Einstellungen, bereinigt wie der Bericht. Es endet von selbst.",
  "Read-only. Turn it off any time.": "Nur lesend. Jederzeit abschaltbar.",
  "Reading docs needs its own OK": "Dokumente lesen braucht ein eigenes OK",
@@ -4641,10 +4640,6 @@
   "other": "{} weitere wie diese warten. Immer teilt sie auch."
  },
  "{} more like this {}. Always shares {} too.": "{} weitere wie diese {}. Immer teilt auch {}.",
- "{} more wait for the next one.": {
-  "one": "{} weiteres wartet auf die nächste.",
-  "other": "{} weitere warten auf die nächste."
- },
  "{} more, open the day": "{} weitere, Tag öffnen",
  "{} moves to Stalled or declined": "{} wechselt zu „Ins Stocken geraten oder abgelehnt“",
  "{} moves to {}": "{} wechselt zu {}",

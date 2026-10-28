@@ -845,6 +845,7 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .section-head[data-fold]{cursor:pointer;user-select:none}.section-head[data-fold]::before{content:"";align-self:center;width:7px;height:7px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:rotate(45deg) translate(-2px,-1px);transition:transform .15s;margin-right:2px}.section-head[data-fold][aria-expanded="false"]::before{transform:rotate(-45deg)}
 .all-clear{flex-direction:column;justify-content:center;text-align:center;gap:6px;padding:34px 16px 18px;border:0}
 .all-clear img.sleepy,.all-clear img.sticker{width:76px;height:76px;opacity:1}
+.all-clear .poke-line{display:block;text-wrap:balance}
 /* Inbox zero: poke the sleeping robot, or play a round of Catch the Zzz. */
 .poke{background:none;border:0;padding:0;min-height:0;box-shadow:none;border-radius:50%}.poke:hover,.poke:active{background:none;transform:none}
 /* No gray tap rectangle on Android; keyboard focus still gets a round ring. */
@@ -4170,10 +4171,12 @@ function poke(){if(pokes<POKES.length)pokeLine=POKES[pokes];else{let next;do nex
 const img=$('#suggestions .all-clear img.sleepy'),line=$('#suggestions .poke-line');if(line)line.textContent=pokeLine;if(img){img.src='brand/wave.webp';img.classList.remove('wobble');void img.offsetWidth;img.classList.add('wobble')}
 clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';const i=$('#suggestions .all-clear img.sleepy'),l=$('#suggestions .poke-line');if(i)i.src='brand/sleepy.webp';if(l)l.textContent=clearLine()},6000)}
 // All clear says what was read and what's next, so an empty list reads as quiet, not stuck: a quiet mailbox has little to do
-function clearLine(){const rh=state?.review_health||{},pend=rh.pending||0,read=(rh.total||0)-pend;
- if(!rh.last_completed||read<1)return t('I’ll add something when it’s useful.');
- return t(['Read {} signal so far, the last review {}.','Read {} signals so far, the last review {}.'],read.toLocaleString(DL),ago(rh.last_completed))+' '
-  +(pend?t(['{} more waits for the next one.','{} more wait for the next one.'],pend.toLocaleString(DL)):t('I’ll add something when it’s useful.'))}
+// One short line in the robot's voice: when it last looked. The wording changes per day, not per render.
+const CLEAR_LINES=['Peeked at everything {}. All quiet.','Last snooped around {}. Nothing to report.','Checked in {}. Back to my nap.'];
+function clearLine(){const done=state?.review_health?.last_completed;
+ if(!done)return t('I’ll add something when it’s useful.');
+ const now=new Date(),day=Math.floor((now-now.getTimezoneOffset()*6e4)/864e5);
+ return t(CLEAR_LINES[day%CLEAR_LINES.length],ago(done))}
 // Until the first poke, the robot sometimes mumbles a hint, so people find out they can;
 // not on a fresh install, where "all clear" only means nothing has come in yet. Once you've poked
 // three times (counted on this device), it hints at most once a week.

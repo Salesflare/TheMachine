@@ -18,7 +18,7 @@ The **Suggestions** tab groups them:
 - **Coming back later**: snoozed.
 - **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll.
 
-**All clear.** means nothing needs you now.
+**All clear.** means nothing needs you now. The line under it says when your Machine last looked.
 
 **All**, **Work** and **Personal** above the list in the sidebar show all to-dos or only one kind. Your Machine keeps the choice, so your phone and computer show the same list. While Work or Personal is on, the top of the list says so, with **Show all** to go back.
 

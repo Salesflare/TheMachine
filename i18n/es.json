@@ -527,6 +527,7 @@
  "Check who gets an invite and tap again. Nothing was sent.": "Comprueba quién recibe una invitación y vuelve a tocar. No se envió nada.",
  "Check-in moved": "Seguimiento movido",
  "Checked by your model. Change anything below.": "Revisado por tu modelo. Cambia lo que quieras abajo.",
+ "Checked in {}. Back to my nap.": "Revisé todo {}. Vuelvo a mi siesta.",
  "Checked {} things": {
   "one": "{} cosa revisada",
   "other": "{} cosas revisadas"
@@ -1436,6 +1437,7 @@
  "Last phone check: {}": "Última comprobación del teléfono: {}",
  "Last run {} {}; it retries.": "Última ejecución {} {}; lo reintenta.",
  "Last signal {}": "Última señal {}",
+ "Last snooped around {}. Nothing to report.": "Husmeé por última vez {}. Nada que reportar.",
  "Last sync": "Última sincronización",
  "Last sync {}": "Última sincronización {}",
  "Last sync: {} failed": "Última sincronización: {} con error",
@@ -2231,6 +2233,7 @@
  "Paste the new access token": "Pega el nuevo token de acceso",
  "Paste the session link from claude.ai/code": "Pega el enlace de la sesión de claude.ai/code",
  "Paste the whole task link, with the part after the #": "Pega el enlace de tarea entero, con la parte después del #",
+ "Peeked at everything {}. All quiet.": "Le eché un vistazo a todo {}. Todo tranquilo.",
  "Pending: {} hasn’t confirmed. Retrying": "Pendiente: {} no ha confirmado. Reintentando",
  "People": "Personas",
  "People (G then P)": "Personas (G luego P)",
@@ -2407,10 +2410,6 @@
  "Read the message": "Leer el mensaje",
  "Read the thread": "Leer el hilo",
  "Read up to {}": "Leído hasta {}",
- "Read {} signals so far, the last review {}.": {
-  "one": "{} señal leída hasta ahora, la última revisión {}.",
-  "other": "{} señales leídas hasta ahora, la última revisión {}."
- },
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Solo lectura: registros y ajustes, limpiados como el informe. Termina solo.",
  "Read-only. Turn it off any time.": "Solo lectura. Desactívalo cuando quieras.",
  "Reading docs needs its own OK": "Leer documentos necesita su propio OK",
@@ -4641,10 +4640,6 @@
   "other": "{} más como esta esperan. Siempre las comparte también."
  },
  "{} more like this {}. Always shares {} too.": "{} más como esto {}. Siempre comparte también {}.",
- "{} more wait for the next one.": {
-  "one": "{} más espera a la siguiente.",
-  "other": "{} más esperan a la siguiente."
- },
  "{} more, open the day": "{} más, abrir el día",
  "{} moves to Stalled or declined": "{} pasa a Estancado o rechazado",
  "{} moves to {}": "{} pasa a {}",
