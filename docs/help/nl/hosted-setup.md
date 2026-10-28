@@ -3,7 +3,7 @@ title: Een gehoste Machine instellen
 area: getting-started
 summary: Log in, start je gratis dagen, koppel je mail en kies je model. Het duurt een paar minuten.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard
+site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
 order: 1
 ---
 Een gehoste Machine draait op een eigen privéserver in de EU. Wij houden hem draaiend en up-to-date.
@@ -25,6 +25,10 @@ Je server start, en daarna leidt de setuppagina je door de rest, stap voor stap:
 Onder **Voeg later meer toe** staan de optionele: **Meer bronnen** zoals Slack, WhatsApp of GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) en de koppeling met je browser. Geen ervan is nodig om te beginnen. Je dashboard stelt ze voor als ze helpen, bijvoorbeeld GitHub zodra er mail van blijft binnenkomen.
 
 Zodra je Machine klaar is, staat **Open je dashboard** bovenaan de pagina. Zet het op het beginscherm van je telefoon voor meldingen: zie [De app installeren en meldingen aanzetten](phone-app.md).
+
+## Vraag een bron aan
+
+Mis je een bron? Vul bij **Connectors**, onder **Vraag een bron aan**, de dienst in en wat er gelezen moet worden, en druk op **Bouwen**. Je eigen model schrijft en test hem op je server. Deel je hem, dan opent The Machine er een pull request voor op GitHub, vanuit een branch in de eigen repository van The Machine. Een GitHub-account is niet nodig; [verbind GitHub](github.md) om als co-auteur genoemd te worden.
 
 ## Later terugkomen
 

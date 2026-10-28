@@ -3,7 +3,7 @@ title: Eine gehostete Machine einrichten
 area: getting-started
 summary: Melde dich an, starte deine kostenlosen Tage, verbinde deine Mail und wähle dein Modell. Das dauert ein paar Minuten.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard
+site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
 order: 1
 ---
 Eine gehostete Machine läuft auf einem eigenen privaten Server in der EU. Wir halten ihn am Laufen und aktuell.
@@ -25,6 +25,10 @@ Dein Server startet, dann führt dich die Einrichtungsseite Schritt für Schritt
 Unter **Jederzeit mehr hinzufügen** stehen die optionalen: **Weitere Quellen** wie Slack, WhatsApp oder GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) und die Verbindung deines Browsers. Keine davon ist zum Start nötig. Dein Dashboard schlägt sie vor, wenn sie helfen, etwa GitHub, sobald dessen Mails regelmäßig reinkommen.
 
 Sobald deine Machine bereit ist, steht **Dashboard öffnen** oben auf der Seite. Füge es für Benachrichtigungen zum Startbildschirm deines Handys hinzu: siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
+
+## Eine Quelle anfragen
+
+Fehlt dir eine Quelle? Gib unter **Connectors** bei **Eine Quelle anfragen** den Dienst an und was gelesen werden soll, und tippe auf **Bauen**. Dein eigenes Modell schreibt und testet sie auf deinem Server. Wenn du sie teilst, öffnet The Machine dafür einen Pull Request auf GitHub, aus einem Branch im eigenen Repository von The Machine. Ein GitHub-Konto brauchst du nicht; [verbinde GitHub](github.md), um als Co-Autor genannt zu werden.
 
 ## Später zurückkommen
 

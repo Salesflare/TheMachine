@@ -3,7 +3,7 @@ title: Set up a hosted Machine
 area: getting-started
 summary: Sign in, start your free days, connect your mail and pick your model. It takes a few minutes.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard
+site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
 order: 1
 ---
 A hosted Machine runs on a private server of its own in the EU. We keep it running and updated.
@@ -25,6 +25,10 @@ Your server starts, then the setup page walks you through the rest, one step at 
 Under **Add more any time** are the optional ones: **More sources** such as Slack, WhatsApp or GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) and your browser's connection. None are needed to start. Your dashboard suggests them when they help, for example GitHub once its mail keeps coming in.
 
 As soon as your Machine is ready, **Open your dashboard** shows at the top of the page. Add it to your phone's home screen for notifications: see [Install the app and turn on notifications](phone-app.md).
+
+## Ask for a source
+
+Missing a source? On **Connectors**, under **Ask for a source**, name the service and what to read, then press **Build it**. Your own model writes and tests it on your server. If you share it, The Machine opens a pull request for it on GitHub, from a branch in The Machine's own repository. You don't need a GitHub account; [connect GitHub](github.md) to be named as co-author.
 
 ## Come back later
 

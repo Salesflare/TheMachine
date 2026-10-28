@@ -3,7 +3,7 @@ title: Configura una Machine ospitata
 area: getting-started
 summary: Accedi, inizia i tuoi giorni gratuiti, collega la posta e scegli il modello. Bastano pochi minuti.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard
+site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
 order: 1
 ---
 Una Machine ospitata gira su un server privato tutto suo nell'UE. Pensiamo noi a tenerlo attivo e aggiornato.
@@ -25,6 +25,10 @@ Il server si avvia, poi la pagina di configurazione ti guida nel resto, un passo
 Sotto **Aggiungi altro quando vuoi** ci sono quelle facoltative: **Altre fonti** come Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) e la connessione del tuo browser. Nessuna serve per iniziare. La dashboard te le suggerisce quando sono utili, per esempio GitHub quando continua ad arrivarti la sua posta.
 
 Appena la tua Machine è pronta, **Apri la tua dashboard** compare in cima alla pagina. Aggiungila alla schermata Home del telefono per le notifiche: vedi [Installa l'app e attiva le notifiche](phone-app.md).
+
+## Richiedi una fonte
+
+Ti manca una fonte? In **Connettori**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. Il tuo modello la scrive e la testa sul tuo server. Se la condividi, The Machine apre una pull request su GitHub, da un branch nel repository di The Machine stesso. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
 
 ## Torna più tardi
 

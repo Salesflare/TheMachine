@@ -22,9 +22,11 @@ concurrency:
 # docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual runs stay on GitHub's.
 # To fall back to GitHub's runners for pull requests too, set the repository variable CI_PR_RUNNER to "ubuntu-24.04"
 # (with the quotes); unset it to go back.
+# A contrib/ branch (a connector shared from a hosted Machine, opened by The Machine's cloud) is code nobody reviewed yet
+# that, unlike a fork, needs no approval to run: it always runs on GitHub's runners, never ours.
 jobs:
   tests:
-    runs-on: ${{ github.event_name == 'pull_request' && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -63,7 +65,7 @@ jobs:
   help:
     # The help articles (docs/help/, the help at themachine.computer/help) against the code: every connector, dashboard
     # tab and Settings tab has one, and each names only buttons, routes and commands that still exist.
-    runs-on: ${{ github.event_name == 'pull_request' && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -126,7 +128,7 @@ jobs:
         run: ./install.ps1 -DryRun
 
   secrets:
-    runs-on: ${{ github.event_name == 'pull_request' && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
