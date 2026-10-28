@@ -8814,11 +8814,15 @@ const kbKeyed=()=>kbInput!=='pointer';var kbLanded=false;
 function kbFocus(el,scroll=true){if(!el)return;if(kbKeyed()){kbPick(el,scroll);return}if(!el.hasAttribute('tabindex'))el.tabIndex=-1;el.focus({preventScroll:true})}
 // A page's first focus, from the keyboard: the first to-do (else a folded list's head) on Suggestions, the first row of
 // a list page, else the page's open tab or first button. Never over a dialog, an open chat or something already focused.
-function kbLand(n=0){const a=document.activeElement,sec=[...document.querySelectorAll('main>section')].find(s=>!s.hidden);
+// A retry for a list that is still loading belongs to its page: it stops once another page shows or a newer landing starts,
+// so it never takes focus on a page it wasn't for.
+var kbLandSeq=0;
+function kbLand(n=0,seq=++kbLandSeq,from=null){const a=document.activeElement,sec=[...document.querySelectorAll('main>section')].find(s=>!s.hidden);
+ if(n&&(seq!==kbLandSeq||sec!==from))return;
  if(!sec||!kbKeyed()||!matchMedia('(pointer:fine)').matches||document.querySelector('dialog[open]')||chatId&&sec.id==='inbox')return;
  if(a&&a!==document.body&&!(a.closest?.('nav,.app-side')))return;
  const xs=kbItems(),first=xs.find(x=>x.matches('article'))||xs[0];if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
- if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1),200);return}  // the list is still loading
+ if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1,seq,sec),200);return}  // the list is still loading
  const shown=x=>x.getClientRects().length&&!x.disabled;
  const t=[...sec.querySelectorAll('[role="tab"][aria-selected="true"]')].find(shown)||[...sec.querySelectorAll('button,a[href],summary,[tabindex="0"]')].find(shown);
  if(t){t.focus({preventScroll:true})}}

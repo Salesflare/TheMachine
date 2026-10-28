@@ -127,8 +127,8 @@ try{
   for(let i=0;i<8&&await page.evaluate(()=>document.activeElement.id)!=='task-'+id(1);i++)await page.keyboard.press('j');await page.keyboard.press('s');await page.locator('#snooze-dialog').waitFor();await page.keyboard.press('Escape');await page.locator('#snooze-dialog').waitFor({state:'hidden'});
   assert.equal(sent('decide').length,0,'S only opens the picker');
   await page.locator('#task-'+id(1)).focus();await page.keyboard.press('e');await page.locator('.rename-box input').waitFor();await page.keyboard.press('Escape');
-  await page.locator('#task-'+id(1)).focus();await page.keyboard.press('d');await page.waitForFunction(()=>true);
-  for(let i=0;i<40&&!sent('decide').length;i++)await page.waitForTimeout(50);
+  // the done to-do leaves the list before J walks on: from where it was, J only goes down and never reaches the one above
+  await page.locator('#task-'+id(1)).focus();await page.keyboard.press('d');await page.locator('#task-'+id(1)).waitFor({state:'hidden'});
   assert.deepEqual([sent('decide')[0].args.suggestion_id,sent('decide')[0].args.choice],[id(1),'complete']);
   // Send-type actions: no key, and from the palette only the Send dialog opens; nothing is confirmed or sent
   await page.locator('#task-'+id(2)).waitFor();await page.locator('body').click({position:{x:700,y:5}});
