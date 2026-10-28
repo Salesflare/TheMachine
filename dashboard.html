@@ -2288,7 +2288,11 @@ article.kb-on,article.kb-on:focus{outline:2px solid color-mix(in srgb,var(--c-ac
 .skeleton .sk-card,.skeleton .sk-head{animation:sk-breathe 1.8s ease-in-out infinite}@keyframes sk-breathe{50%{opacity:.55}}
 @media(prefers-reduced-motion:reduce){.skeleton .sk-card,.skeleton .sk-head{animation:none}}
 .stale-note{margin:var(--sp-2) 0 0;color:var(--c-text-3);font-size:var(--fs-xs);text-align:center}.stale-note::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:6px;vertical-align:1px}
-@media(min-width:1024px){.stale-note{display:none}}
+@media(min-width:1024px){.stale-note{display:none}}.stale-note.covered{display:none}
+.offline-bar{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin:0 0 var(--sp-3);padding:8px 12px;border-radius:var(--r-md);background:color-mix(in srgb,var(--orange) 12%,transparent);color:var(--text);font-size:var(--fs-sm);line-height:1.4}.offline-bar[hidden]{display:none}
+.offline-bar .offline-text::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:8px;vertical-align:1px}:is(.offline-bar,.outbox-wait) button.link{min-height:0;height:auto;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-weight:600;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.offline-bar button.link{margin-left:auto}
+.outbox-wait{color:var(--c-text-3)}.outbox-wait::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:8px;vertical-align:1px}.outbox-wait .nowrap{white-space:nowrap}.outbox-wait button.link{margin-left:8px}
+.chat-msg.outbox-msg .bubble{opacity:.7}.chat-msg .outbox-note{display:block;text-align:right}.chat-msg .outbox-note .link{font-size:inherit}
 /* Checkboxes, radios and range sliders in the app green, both themes, never the browser blue */
 input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:var(--c-accent)}
 /* Help (help_chat.py): ask how The Machine works, and Report a bug, which shows everything before it goes */
@@ -2408,6 +2412,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 ><a id="cal-v-open" class="cal-f-open" target="_blank" rel="noopener" hidden>Open in its calendar ↗</a></dialog
 ><p id="notice" role="status"></p
 ><p class="stale-note" id="stale-note" role="status" hidden></p
+><div class="offline-bar" id="offline-bar" role="status" hidden></div
 ><section id="inbox"
 ><div id="suggestion-summary"></div
 ><div id="suggestion-stats" aria-live="polite"></div
@@ -3253,7 +3258,7 @@ const viewIn=s.browser_view&&!smart.some(a=>a.browser)?[{kind:'open',browser:tru
 const smartButtons=s.status==='prepared'?[...smart,...viewIn].map(a=>a.kind==='handoff'?(canHandoff(s)||redirect(s)?`<button class="primary" data-fleet-handoff="${esc(s.id)}">${esc(a.to_name?'Review handoff to '+String(a.to_name).split(' ')[0]:a.label||'Hand off')}</button>`:''):a.kind==='open'&&a.browser?`<a class="open${finalStep(s)?' primary':''}" href="${esc(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${esc(s.id)}"${a.site?` title="${esc(a.site)}, in your Machine’s browser"`:''}>${esc(a.label)} ↗</a>`:a.kind==='open'?`<a class="open" href="${esc(safeURL(a.url))}" target="_blank" rel="noreferrer">${esc(a.label)} ↗</a>`:!(a.kind==='finish'&&(a.state||s.action_status)?.status==='done')&&!sendBusy(a.state||s.action_status)?`<button class="primary" data-id="${s.id}" data-smart="${a.revision}">${esc(sendLabel(a)||(a.kind==='prepare'?'Prepare next step':'Review and send'))}</button>`:'').join(''):'';
 // A merged fix stays reversible for a day.
 const unmerge=['prepared','completed'].includes(s.status)&&smart.some(a=>a.kind==='merge'&&Date.parse((a.state||s.action_status)?.undo_until||'')>Date.now())?`<button data-id="${s.id}" data-unmerge="1">Undo merge</button>`:'';
-return `<article id="task-${s.id}" class="card t-${tone(s.status)}" data-status="${esc(s.status)}"><div class="meta"><div class="card-badges">${status!==section?chip(status,tone(s.status)):''}${dueChip(s)}${s.scope?`<span class="chip scope">${s.scope==='work'?'Work':'Personal'}</span>`:''}${whoChip(s)}${projectChip(s)}${s.status==='pending'&&s.deliver_after&&new Date(s.deliver_after)>new Date()?chip(deliveryLabel(s.deliver_after),'muted'):''}</div><span class="meta-side">${s.origin==='owner'?'<span class="added-by">Added by you</span>':''}${time(s.created_at,true)}${section==='Chat'?'':chatLink(s)}</span></div><h3>${section==='Chat'?`<span translate="no">${esc(s.title)}</span>`:`<a class="title-link" href="#chat=${s.id}" title="Open the chat"><span translate="no">${esc(s.title)}</span></a>`}</h3>${mergeOffer(s)}${statusLine}${tpSent&&s.task_page.lead?`<p class="tp-lead" translate="no">${esc(s.task_page.lead)}</p>`:cardBody(s,section)}${cardFiles(s)}${handedNote(s)}${skillHintNote(s)}${fleetNote(s)}${agentBlock(s)}${s.status==='prepared'?drafts.map(a=>draftBox(s,a,drafts.length>1?a.label:'')).join(''):''}${tpSent?taskPageSentLine(s,tpSent):''}${taskPageBlock(s)}${s.latest_feedback?`<div class="saved-feedback" data-chat-open="${s.id}" title="Open the chat"><div class="row"><strong>Your note</strong>${time(s.latest_feedback.created_at,true)}<a class="see-chat" href="#chat=${s.id}">See in chat ›</a></div><blockquote>${format(s.latest_feedback.feedback)}</blockquote></div>`:''}${['queued','starting','running','blocked'].includes(s.preparation_status)&&!closed(s)&&s.status!=='snoozed'?preparationNote(s,ask):''}${s.change_prompt?.status==='uncertain'&&!closed(s)&&s.status!=='snoozed'?'<p class="note">I couldn’t confirm the Change prompt. If it arrived, reply to it; otherwise use Ask for changes here.</p>':''}${s.status==='prepared'||s.status==='completed'?notes.filter(x=>s.status==='prepared'||x.state?.status==='sent').map(x=>{const st=x.state?.status;return `<p class="note${st==='sent'?' sent-ok':''}">${smart.length>1?esc(x.action.label)+': ':''}${esc(actionNote(x.action.kind==='intercom'?{...x.state,as_name:x.action.as_name}:x.state,x.action.kind,x.action))}</p>${['queued','sending'].includes(st)?'<div class="send-progress" aria-hidden="true"><i></i></div>':''}`}).join(''):''}${foot}${closed(s)?`<div class="actions">${undo&&s.status!=='completed'?`<button class="ghost" data-id="${s.id}" data-choice="undo">Undo Not needed</button>`:''}${s.status==='completed'?`<button class="ghost" data-id="${s.id}" data-choice="reopen">Reopen</button>`:''}</div>`:`${changing.has(s.id)?`<div class="change-editor${ask?' answer-editor':''}"><label for="feedback-${s.id}">${ask?'Your answer':s.status==='pending'?'How should I do it instead?':'What should I change?'}</label><textarea id="feedback-${s.id}" placeholder="${ask?'Type it here (Ctrl+Enter sends)':'Tell me what to change (Ctrl+Enter saves)'}"></textarea><div class="actions"><button class="primary" data-id="${s.id}" data-choice="other"${ask?' data-answer="1"':''}>${ask?'Send answer':'Save changes'}</button>${ask?'':(smartButtons.match(/<button class="primary" data-id="[^"]+" data-smart="[^"]+">[^<]*<\/button>/g)||[]).map(b=>b.replace('class="primary"','class="ghost"')).join('')}<button class="ghost" data-id="${s.id}" data-choice="cancel-change">Cancel</button></div></div>`:''}${handoffEditor(s)}${agentEditor(s)}${agentAskEditor(s)}${dismissing.has(s.id)?`<div class="change-editor dismiss-editor"><p class="dismiss-q" id="dismiss-q-${s.id}">Why isn’t this needed? <small>Optional</small></p><div class="reason-chips" role="group" aria-labelledby="dismiss-q-${s.id}">${['Not relevant','Wrong facts','Already handled'].map(r=>`<button type="button" class="reason" aria-pressed="false" data-id="${s.id}" data-choice="dismiss-pick" data-reason="${r}">${r}</button>`).join('')}</div><textarea id="dismiss-${s.id}" rows="1" aria-label="Note (optional)" placeholder="Add a note (optional)"></textarea><div class="actions"><button class="primary" data-id="${s.id}" data-choice="dismiss-typed">Confirm not needed</button><button class="ghost" data-id="${s.id}" data-choice="cancel-dismiss">Cancel</button></div></div>`:''}${changing.has(s.id)||dismissing.has(s.id)||handingOff.has(s.id)||agentEditing.has(s.id)||agentAsking.has(s.id)||pageApprove.has(s.id)?'':s.fleet_handoff?.back&&s.status!=='snoozed'&&!ask?handoffBackActions(s):cardActions(s,choices,smartButtons,unmerge,hint,smart)}`}</article>`;
+return `<article id="task-${s.id}" class="card t-${tone(s.status)}" data-status="${esc(s.status)}"><div class="meta"><div class="card-badges">${status!==section?chip(status,tone(s.status)):''}${dueChip(s)}${s.scope?`<span class="chip scope">${s.scope==='work'?'Work':'Personal'}</span>`:''}${whoChip(s)}${projectChip(s)}${s.status==='pending'&&s.deliver_after&&new Date(s.deliver_after)>new Date()?chip(deliveryLabel(s.deliver_after),'muted'):''}</div><span class="meta-side">${s.origin==='owner'?'<span class="added-by">Added by you</span>':''}${time(s.created_at,true)}${section==='Chat'?'':chatLink(s)}</span></div><h3>${section==='Chat'?`<span translate="no">${esc(s.title)}</span>`:`<a class="title-link" href="#chat=${s.id}" title="Open the chat"><span translate="no">${esc(s.title)}</span></a>`}</h3>${mergeOffer(s)}${statusLine}${outboxLine(s)}${tpSent&&s.task_page.lead?`<p class="tp-lead" translate="no">${esc(s.task_page.lead)}</p>`:cardBody(s,section)}${cardFiles(s)}${handedNote(s)}${skillHintNote(s)}${fleetNote(s)}${agentBlock(s)}${s.status==='prepared'?drafts.map(a=>draftBox(s,a,drafts.length>1?a.label:'')).join(''):''}${tpSent?taskPageSentLine(s,tpSent):''}${taskPageBlock(s)}${s.latest_feedback?`<div class="saved-feedback" data-chat-open="${s.id}" title="Open the chat"><div class="row"><strong>Your note</strong>${time(s.latest_feedback.created_at,true)}<a class="see-chat" href="#chat=${s.id}">See in chat ›</a></div><blockquote>${format(s.latest_feedback.feedback)}</blockquote></div>`:''}${['queued','starting','running','blocked'].includes(s.preparation_status)&&!closed(s)&&s.status!=='snoozed'?preparationNote(s,ask):''}${s.change_prompt?.status==='uncertain'&&!closed(s)&&s.status!=='snoozed'?'<p class="note">I couldn’t confirm the Change prompt. If it arrived, reply to it; otherwise use Ask for changes here.</p>':''}${s.status==='prepared'||s.status==='completed'?notes.filter(x=>s.status==='prepared'||x.state?.status==='sent').map(x=>{const st=x.state?.status;return `<p class="note${st==='sent'?' sent-ok':''}">${smart.length>1?esc(x.action.label)+': ':''}${esc(actionNote(x.action.kind==='intercom'?{...x.state,as_name:x.action.as_name}:x.state,x.action.kind,x.action))}</p>${['queued','sending'].includes(st)?'<div class="send-progress" aria-hidden="true"><i></i></div>':''}`}).join(''):''}${foot}${closed(s)?`<div class="actions">${undo&&s.status!=='completed'?`<button class="ghost" data-id="${s.id}" data-choice="undo">Undo Not needed</button>`:''}${s.status==='completed'?`<button class="ghost" data-id="${s.id}" data-choice="reopen">Reopen</button>`:''}</div>`:`${changing.has(s.id)?`<div class="change-editor${ask?' answer-editor':''}"><label for="feedback-${s.id}">${ask?'Your answer':s.status==='pending'?'How should I do it instead?':'What should I change?'}</label><textarea id="feedback-${s.id}" placeholder="${ask?'Type it here (Ctrl+Enter sends)':'Tell me what to change (Ctrl+Enter saves)'}"></textarea><div class="actions"><button class="primary" data-id="${s.id}" data-choice="other"${ask?' data-answer="1"':''}>${ask?'Send answer':'Save changes'}</button>${ask?'':(smartButtons.match(/<button class="primary" data-id="[^"]+" data-smart="[^"]+">[^<]*<\/button>/g)||[]).map(b=>b.replace('class="primary"','class="ghost"')).join('')}<button class="ghost" data-id="${s.id}" data-choice="cancel-change">Cancel</button></div></div>`:''}${handoffEditor(s)}${agentEditor(s)}${agentAskEditor(s)}${dismissing.has(s.id)?`<div class="change-editor dismiss-editor"><p class="dismiss-q" id="dismiss-q-${s.id}">Why isn’t this needed? <small>Optional</small></p><div class="reason-chips" role="group" aria-labelledby="dismiss-q-${s.id}">${['Not relevant','Wrong facts','Already handled'].map(r=>`<button type="button" class="reason" aria-pressed="false" data-id="${s.id}" data-choice="dismiss-pick" data-reason="${r}">${r}</button>`).join('')}</div><textarea id="dismiss-${s.id}" rows="1" aria-label="Note (optional)" placeholder="Add a note (optional)"></textarea><div class="actions"><button class="primary" data-id="${s.id}" data-choice="dismiss-typed">Confirm not needed</button><button class="ghost" data-id="${s.id}" data-choice="cancel-dismiss">Cancel</button></div></div>`:''}${changing.has(s.id)||dismissing.has(s.id)||handingOff.has(s.id)||agentEditing.has(s.id)||agentAsking.has(s.id)||pageApprove.has(s.id)?'':s.fleet_handoff?.back&&s.status!=='snoozed'&&!ask?handoffBackActions(s):cardActions(s,choices,smartButtons,unmerge,hint,smart)}`}</article>`;
 }
 // Success notices clear themselves after a few seconds; errors stay until the next notice.
 let noticeTimer;const notice=(text,error=false)=>{const n=$('#notice');n.textContent=text;n.className=error?'error':'';clearTimeout(noticeTimer);if(text&&!error)noticeTimer=setTimeout(()=>{if(n.textContent===text)n.textContent=''},4500)};
@@ -3638,7 +3643,9 @@ const offline=e=>Object.assign(Error('Can’t reach your Machine right now. Try 
 let csrfLive=csrf,csrfSet=null;const csrfReady=csrf?Promise.resolve():new Promise(r=>csrfSet=r);
 const sessionGone=()=>Object.assign(Error('Signed out. Sign in again to see your Machine.'),{sessionGone:true});
 async function request(path,options){let r;
- if(options?.headers&&'X-CSRF-Token' in options.headers&&!options.headers['X-CSRF-Token']){await csrfReady;options={...options,headers:{...options.headers,'X-CSRF-Token':csrfLive}}}
+ if(options?.headers&&'X-CSRF-Token' in options.headers&&!options.headers['X-CSRF-Token']){if(!csrfLive&&navigator.onLine===false)throw offline();
+  // The Machine away: wait a little for api/session, then say offline (a change that may wait then waits, decideOrWait)
+  await(netDown?Promise.race([csrfReady,new Promise((ok,no)=>setTimeout(()=>no(offline()),8000))]):csrfReady);options={...options,headers:{...options.headers,'X-CSRF-Token':csrfLive}}}
  try{r=await fetch(path,options)}catch(e){throw offline(e)}
  // The sign-in gate in front of a hosted Machine answers with a redirect to its sign-in page (seen with redirect:'manual')
  if(r.type==='opaqueredirect')throw sessionGone();
@@ -3692,10 +3699,78 @@ async function cachedGet(path,fresh){if(!localCache.on)return request(path);
  catch(e){if(e.offline){const hit=await localCache.read('get:'+path);if(hit){staleMark(hit.at);return hit.value}}throw e}}
 const hhmm=t=>fmtHM(t);
 // What the screen shows is older than now: "Offline · updated 10:42", quietly at the foot of the sidebar
-function staleMark(at){staleLine(t('Offline · updated {}',hhmm(at)))}
+let staleAt=0;function staleMark(at){staleAt=at;staleLine(t('Offline · updated {}',hhmm(at)))}
 // On a phone the sidebar's line is in the drawer, so the same words show quietly over the cards there too
-function staleLine(text){$('#live').classList.add('stale');$('#updated').textContent=text;const n=$('#stale-note');n.textContent=text;n.hidden=false}
+function staleLine(text){$('#live').classList.add('stale');$('#updated').textContent=text;const n=$('#stale-note');n.textContent=text;n.hidden=false;if(typeof netPaint==='function')netPaint()}
 let shownAt=0,shownCached=false;  // when the cards on screen were read, and whether they came from the device
+// Offline or on a spotty link (a train, a plane): the owner keeps working. The banner says what is going on, the owner's
+// own decisions on a to-do wait on the device and go by themselves, in order, once the Machine answers again, and a
+// typed chat message is never lost. docs/architecture.md, "On the device".
+// What may wait: Snooze, Not needed, Mark done, Reopen and a note or chat message to The Machine. Each carries its
+// decision_id, so a change sent twice (the answer lost on the way back) is saved once. Never a send to other people:
+// Send needs the Machine to answer while the owner looks, and says it is offline instead. Waiting changes are kept with
+// the rest of the device's copy (encrypted, wiped with it), each shown on its to-do with Cancel until it goes.
+const OUTBOX_CHOICES=['snooze','reject','complete','reopen','undo','other'];
+const outbox={items:[],busy:null,timer:null,wait:0};
+let netDown=false,netRestarting=false;
+const decidePost=(sid,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:sid,...args}})});
+const outboxLoaded=localCache.read('outbox').then(hit=>{const kept=Array.isArray(hit?.value)?hit.value.filter(x=>x&&x.id&&x.sid&&Array.isArray(x.steps)&&x.steps.length):[];
+ for(const x of kept)if(!outbox.items.some(y=>y.id===x.id))outbox.items.push({...x,sending:false});if(kept.length){netPaint();outboxFlush()}}).catch(()=>{});
+function outboxSave(){localCache.put('outbox',outbox.items.map(({sending,...x})=>x));netPaint();if(state?.suggestions)focusKept(render)}
+// A decision on a to-do: sent now, or, when the Machine can't be reached, kept to go later (true). Anything else
+// (a clear refusal) is thrown as before. Behind changes already waiting it waits too, so the order stays the owner's.
+async function decideOrWait(sid,steps,kind){steps=steps.map(a=>({...a,decision_id:a.decision_id||crypto.randomUUID()}));
+ const queue=rest=>{outbox.items.push({id:crypto.randomUUID(),sid,kind,steps:rest,text:kind==='other'?rest.at(-1).feedback:'',at:Date.now()});outboxSave();outboxRetry();return {waiting:true}};
+ if(outbox.items.length||navigator.onLine===false||netDown&&!csrfLive)return queue(steps);
+ let r;for(let n=0;n<steps.length;n++){try{r=await decidePost(sid,steps[n])}catch(e){if(e.offline){netSet(true,e.restarting);return queue(steps.slice(n))}throw e}}return r}
+const outboxWaits=sid=>outbox.items.filter(x=>x.sid===sid);
+// Send the waiting changes, oldest first. Offline again: try later, a little later each time (2 s up to a minute, with
+// some jitter so many devices don't come back at once). A change the Machine refuses (the to-do is gone) is dropped and said.
+function outboxRetry(){clearTimeout(outbox.timer);if(!outbox.items.length)return;outbox.wait=Math.min(6e4,(outbox.wait||1e3)*2);outbox.timer=setTimeout(outboxFlush,outbox.wait*(.8+Math.random()*.4))}
+function outboxFlush(){return outbox.busy||(outbox.busy=(async()=>{await outboxLoaded;let saved=0;clearTimeout(outbox.timer);
+ try{while(outbox.items.length){const it=outbox.items[0];it.sending=true;netPaint();
+   try{while(it.steps.length){await decidePost(it.sid,it.steps[0]);it.steps.shift();if(it.steps.length)outboxSave()}}
+   catch(e){it.sending=false;if(e.offline){netSet(true,e.restarting);outboxRetry();return}
+    if(e.sessionGone||e.status===401||e.status===403){netPaint();return}
+    toast(t('A waiting change couldn’t be saved: {}',e.message),true)}
+   if(outbox.items[0]===it)outbox.items.shift();saved++;outboxSave()}
+  outbox.wait=0}
+ finally{outbox.busy=null;netPaint();if(saved){toast(t('Back online. Your waiting changes are saved.'));refresh().catch(()=>{});if(chatId)chatPoll()}}})())}
+function outboxCancel(id){const i=outbox.items.findIndex(x=>x.id===id);if(i<0||outbox.items[i].sending)return false;const [it]=outbox.items.splice(i,1);outboxSave();
+ // A chat message that didn't go comes back into the box, so nothing typed is lost
+ if(it.kind==='other'&&it.text&&chatId===it.sid){const input=$('#chat-input');if(input&&!input.value.trim()){input.value=it.text;chatGrow(input);chatSendState()}}
+ return true}
+const OUTBOX_LINE={snooze:'Snooze saves when you’re back online.',reject:'Not needed saves when you’re back online.',complete:'Done saves when you’re back online.',
+ reopen:'Reopen saves when you’re back online.',undo:'Reopen saves when you’re back online.',other:'Your note sends when you’re back online.'};
+const outboxNote=x=>t(OUTBOX_LINE[x.kind]||OUTBOX_LINE.other);
+// On the to-do: what waits, and Cancel while it hasn't gone yet
+// (its last word and Cancel never part, so Cancel never sits alone on a phone's line)
+const outboxLine=s=>outboxWaits(s.id).filter(x=>x.kind!=='other'||chatId!==s.id).map(x=>{const text=x.sending?t('Saving…'):outboxNote(x),cut=text.lastIndexOf(' ')+1;
+ return `<p class="note outbox-wait" data-outbox="${esc(x.id)}"><span>${esc(text.slice(0,cut))}<span class="nowrap">${esc(text.slice(cut))}${x.sending?'':`<button type="button" class="link" data-outbox-cancel="${esc(x.id)}">${esc(t('Cancel'))}</button>`}</span></span></p>`}).join('');
+// In the chat: a message that waits shows as sent by the owner, marked, with Cancel (which puts it back in the box)
+const outboxChat=s=>outboxWaits(s.id).filter(x=>x.kind==='other').map(x=>`<div class="chat-msg you outbox-msg" data-outbox="${esc(x.id)}"><div class="bubble" translate="no">${chatMarkdown(x.text)}</div><small class="chat-noted outbox-note">${esc(x.sending?t('Sending…'):t('Sends when you’re back online'))}${x.sending?'':` · <button type="button" class="link" data-outbox-cancel="${esc(x.id)}">${esc(t('Cancel'))}</button>`}</small></div>`).join('');
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-outbox-cancel]');if(!b)return;e.preventDefault();e.stopPropagation();
+ if(outboxCancel(b.dataset.outboxCancel))toast(t('Canceled.'));if(chatId)paintChat()},true);
+// The banner over every view: offline (or the Machine restarting), since when the screen is from, and what waits.
+function netSet(down,restarting=false){const was=netDown;netDown=!!down;netRestarting=!!down&&!!restarting;if(down)liveLine();if(!down&&was&&outbox.items.length){outbox.wait=0;outboxFlush()}netPaint()}
+// The sidebar's line (and the phone's) says the same while offline: "Offline · updated 10:42", with the bar's dot
+function liveLine(){if(netRestarting){staleLine(t('Restarting · retrying'));return}const at=shownAt||staleAt;staleLine(at?t('Offline · updated {}',hhmm(at)):t('Offline.'))}
+function netPaint(){const bar=$('#offline-bar');if(!bar)return;const n=outbox.items.length,show=netDown||n>0;bar.hidden=!show;$('#stale-note')?.classList.toggle('covered',show);if(!show)return;
+ const head=!netDown?'':netRestarting?t('Your Machine is restarting.'):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
+ const waits=n?t(['{} change waits to send.','{} changes wait to send.'],n):'';
+ const html=`<span class="offline-text">${esc([head,waits].filter(Boolean).join(' '))}</span><button type="button" class="link" data-net-retry>${esc(t('Try now'))}</button>`;if(bar.innerHTML!==html)bar.innerHTML=html}
+$('#offline-bar')?.addEventListener('click',e=>{if(!e.target.closest('[data-net-retry]'))return;outbox.wait=0;if(outbox.items.length)outboxFlush();retryIn=0;refreshWhenReady()});
+addEventListener('offline',()=>netSet(true));
+addEventListener('online',()=>{outbox.wait=0;outboxFlush()});
+// A chat message being typed stays on the device until it is sent (encrypted with the rest), so a reload, a crash or a
+// lost connection never loses it. In memory too, for a device that keeps nothing.
+const chatDrafts=new Map();let chatDraftTimer=null;
+function chatDraftKeep(id,text){if(!id)return;text=String(text||'');if(text.trim())chatDrafts.set(id,text);else chatDrafts.delete(id);clearTimeout(chatDraftTimer);
+ chatDraftTimer=setTimeout(chatDraftsSave,250)}
+function chatDraftsSave(){clearTimeout(chatDraftTimer);chatDraftTimer=null;localCache.put('chat-drafts',Object.fromEntries(chatDrafts))}
+addEventListener('pagehide',()=>{if(chatDraftTimer)chatDraftsSave()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&chatDraftTimer)chatDraftsSave()});
+const chatDraftsLoaded=localCache.read('chat-drafts').then(hit=>{for(const [k,v] of Object.entries(hit?.value||{}))if(typeof v==='string'&&!chatDrafts.has(k))chatDrafts.set(k,v)}).catch(()=>{});
+async function chatDraftBack(id){await chatDraftsLoaded;const text=chatDrafts.get(id),input=$('#chat-input');if(!text||id!==chatId||!input||input.value.trim())return;input.value=text;chatGrow(input);chatSendState()}
 
 // Skills (skills.py): the owner's how-tos, written to OpenClaw's workspace; shared ones are read here and installed by the owner.
 let skillsKey='',skillEditing=null,skillSharing=null;
@@ -4633,7 +4708,7 @@ return `<div>${chip(label,saved?'mint':active?'amber':r.pending_count?'orange':'
 renderReviewLive();$('#analyses').innerHTML=clipList('analyses',state.analyses.filter(a=>a.status!=='running'||!(state.review_live?.runs||[]).length).map(a=>{const id='review-'+esc(a.started_at),complete=a.status==='complete',running=a.status==='running',recovered=!complete&&a.remaining_count===0;const count=complete?(a.checked_count??JSON.parse(a.items||'[]').length):JSON.parse(a.items||'[]').length;const status=complete?'Reviewed':running?'Reviewing':recovered?'Recovered':'Retry needed';const detail=complete?(a.summary||'Review saved.'):`${a.last_error?reviewError(a.last_error):running?'Review in progress.':reviewError(null)} ${recovered?'These signals were reviewed in a later run.':!running?`${a.remaining_count??count} still waiting; the review worker will retry them.`:''}`;return `<div>${chip(status,complete||recovered?'mint':running?'amber':'orange')}<span class="grow">${complete?t('{} signals checked',count):running?t('{} signals being reviewed',count):t('{} signals in the original review',count)}</span>${time(a.started_at)}${a.attempts>1?`<small>${esc(t(['Resumed {} time','Resumed {} times'],a.attempts-1))}</small>`:''}${complete&&a.last_error?`<small>${esc(reviewError(a.last_error))} Review recovered and saved.</small>`:''}<details id="${id}" ${expandedReview.has(id)?'open':''}><summary>Review notes</summary><p>${esc(detail)}</p></details></div>`}),$('#review-live').innerHTML?'':'<div class="muted no-reviews">No reviews yet.</div>');
 const deliveryTone=s=>({sent:'mint',delivered:'mint',queued:'lavender',pending:'lavender',uncertain:'amber',failed:'orange'}[s]||'muted');
 $('#deliveries').innerHTML=clipList('deliveries',state.deliveries.map(d=>`<div>${chip(({sent:'Sent',queued:'Waiting to send',uncertain:'Checking delivery',cancelled:'Canceled',previewed:'Preview, not sent'})[d.status]||d.status,deliveryTone(d.status))}<span class="grow">${esc(state.suggestions.find(s=>s.id===d.suggestion_id)?.title||d.suggestion_id)}</span>${time(d.updated_at)}${d.error?`<small class="error">${esc(({gateway_preflight_failed:'OpenClaw unavailable. It retries.',delivery_not_admitted:'OpenClaw blocked this send. It retries.',delivery_outcome_unknown:'Not sure it arrived. Checking before it resends.',interrupted_delivery:'Send interrupted. Checking before it resends.'})[d.error]||d.error)}</small>`:''}${d.needs_edit?'<small>Telegram update pending</small>':''}</div>`),'<div class="muted">No deliveries yet.</div>');renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderShareOffer();renderVoices();renderSkills();
-if(!shownCached){lastOk=Date.now();$('#live').classList.remove('stale');$('#stale-note').hidden=true}if(!shownCached&&!kbLanded){kbLanded=true;requestAnimationFrame(()=>kbLand())}/* the page's first focus, once the to-dos are in */$('#updated').innerHTML='<span class="lbl">Updated </span>'+esc(hhmm(shownAt||Date.now()));
+if(!shownCached&&!netDown){lastOk=Date.now();$('#live').classList.remove('stale');$('#stale-note').hidden=true}if(!shownCached&&!kbLanded){kbLanded=true;requestAnimationFrame(()=>kbLand())}/* the page's first focus, once the to-dos are in */if(netDown||shownCached&&staleAt)liveLine();else $('#updated').innerHTML='<span class="lbl">Updated </span>'+esc(hhmm(shownAt||Date.now()));
 for(const c of state.connectors.filter(c=>![...$('#account').options].some(o=>o.value===c.id))){let o=new Option((c.display_name||c.email)+' · '+service(c.service),c.id);$('#account').add(o)}
 }
 let resultId=null,resultText='';
@@ -4824,7 +4899,7 @@ if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await reque
   if(r.body.trim()!==body.trim()){if(mail)mailLoad(r.body);else $('#send-body').value=plainDraft(r.body);$('#send-error').textContent=t('Saved with a small change. Check the message, then send.');b.disabled=false;return}}}}
 await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:sendTask,revision:sendRevision,approval_id:crypto.randomUUID(),...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})}})});
 $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':'Sending your approved draft…');await refresh();
-}catch(e){$('#send-error').textContent=e.message;b.disabled=false}};
+}catch(e){$('#send-error').textContent=e.offline?t('Offline. Send again when you’re back online.'):e.message;b.disabled=false}};
 function openSnoozeLink(){const link=/^#snooze(-custom)?=([a-f0-9]{16})$/.exec(location.hash);if(link&&state.suggestions){if(state.suggestions.some(s=>s.id===link[2]&&!closed(s))){if($('#snooze-dialog').open)$('#snooze-dialog').close();openSnooze(link[2],!!link[1])}history.replaceState(null,'',location.pathname)}}
 // This device: the app installed and notifications on. A quiet nudge at the top of Suggestions (one at a time, install
 // first) and the controls in Settings, General, This device. Every browser prompt comes from the owner's own tap, and a
@@ -5182,6 +5257,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    push(i,result(n,i,head+parts+(ds.length?options(n,true):h?options(n,false):''),!h&&ds.length===1))}});
  // A result with files: its links under the last reply
  if(p.links&&!drafts.length&&s?.status==='prepared'&&!p.copy)out.push(`<div class="chat-links">${p.links}</div>`);
+ if(s)out.push(outboxChat(s));
  if(chat.active)out.push(chat.live?.text?`<div class="chat-msg machine chat-live"><div class="bubble" translate="no">${chatMarkdown(chat.live.text)}</div></div>`:'<div class="chat-msg machine chat-live"><div class="bubble typing" role="status" aria-label="Working"><i></i><i></i><i></i></div></div>');
  // The run's side of the chat couldn't be read (the Gateway was slow or away) and nothing of it was loaded before:
  // said once the run is over, never as an aside under the typing dots; the next ask (a few seconds) tries again.
@@ -5312,7 +5388,7 @@ function paintChat(){const log=$('#chat-log'),s=chatOpen();if(!log||!s)return;ch
  const picks=$('#chat-picks');if(picks){const ph=chatPicks(s);if(picks.innerHTML!==ph)picks.innerHTML=ph;picks.hidden=!chatPicksShown()}
  chatSendState();chatFades();chatPreviews();cmPaint('chat')}
 // The chat this device kept for the card: shown at once while the live one loads (that one replaces it in place)
-async function chatKept(id){const hit=await localCache.read('chat:'+id);if(!hit||id!==chatId||chat)return;chat={...hit.value,cursor:null,active:false};paintChat();requestAnimationFrame(chatScrollStart)}
+async function chatKept(id){const hit=await localCache.read('chat:'+id);if(!hit||id!==chatId||chat&&!(chat.unavailable&&!chat.items?.length))return;chat={...hit.value,cursor:null,active:false};paintChat();requestAnimationFrame(chatScrollStart)}
 async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
  if(!document.hidden&&!$('#inbox').hidden)try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_chat',args:{suggestion_id:id,...(chat?.cursor&&chat.items?{cursor:chat.cursor}:{})}})});
   if(id!==chatId)return;const was=chat?.active,first=!chat;
@@ -5326,7 +5402,7 @@ let chatPushed=false;
 function openChatLink(){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
  if(id===chatId)return;const was=chatId;chatId=id;chat=null;chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
- if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
+ if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatDraftBack(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;
 addEventListener('scroll',()=>{chatScrolledAt=Date.now()},{passive:true});
@@ -5341,7 +5417,7 @@ $('#suggestions').addEventListener('click',e=>{const a=e.target.closest('a[href^
  if(href.startsWith('#chat=')){if(chatRealTap(e)||chatId)chatGo(href.slice(6));return}
  location.hash=href});
 $('#suggestions').addEventListener('toggle',e=>{const k=e.target.dataset?.foldKey;if(k==null||!e.target.closest('#chat-log'))return;e.target.open?chatOpenSet.add(k):chatOpenSet.delete(k)},true);
-$('#suggestions').addEventListener('input',e=>{if(e.target.id==='chat-input')chatGrow(e.target)});
+$('#suggestions').addEventListener('input',e=>{if(e.target.id==='chat-input'){chatGrow(e.target);chatDraftKeep(chatId,e.target.value)}});
 $('#suggestions').addEventListener('focusin',e=>{if(e.target.id!=='chat-input')return;chatAtEnd=chatEndNow();if($('#chat-picks'))$('#chat-picks').hidden=false;chatKeyboard();setTimeout(chatKeyboard,350)});
 $('#suggestions').addEventListener('focusout',e=>{if(e.target.id!=='chat-input')return;setTimeout(chatKeyboard,0);setTimeout(()=>{const p=$('#chat-picks');if(p&&!p.contains(document.activeElement))p.hidden=!chatPicksShown()},150)});
 // Enter sends with a keyboard; on a touch screen Enter is a new line and the button sends.
@@ -5362,11 +5438,13 @@ $('#suggestions').addEventListener('keydown',e=>{if(e.target.id!=='chat-input'||
 // Sends what's in the message box (and its files): the bubble shows and the box empties once the Machine has it
 async function chatSubmit(){const b=$('[data-chat-send]'),input=$('#chat-input');if(!b||b.disabled)return;const s=chatOpen(),text=input?.value.trim(),sending=chatPending.filter(f=>f.state==='ok'&&f.sid===s?.id);
  if(!s||!text&&!sending.length||chatPending.some(f=>f.state==='up')){input?.focus();return}b.disabled=true;
- const decide=args=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:s.id,...args}})});
- try{if(s.status==='completed')await decide({choice:'reopen',feedback:'',decision_id:crypto.randomUUID()});
-  await decide({choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID(),...(sending.length?{files:sending.map(f=>f.id)}:{})});
+ const decide=args=>decidePost(s.id,args);
+ // Without files a message can wait on the device while offline (decideOrWait); with files it needs the Machine now
+ const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID()}];
+ try{if(!sending.length){const r=await decideOrWait(s.id,steps,'other');if(r?.waiting){input.value='';chatGrow(input);chatDraftKeep(s.id,'');b.disabled=false;chatSendState();paintChat();chatToEnd();return}}
+  else{for(const a of steps.slice(0,-1))await decide(a);await decide({...steps.at(-1),files:sending.map(f=>f.id)})}
   const files=sending.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}));chatDropFiles();chatTray();chatFileError('');
-  input.value='';chatGrow(input);chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text,at:Date.now(),...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
+  input.value='';chatGrow(input);chatDraftKeep(s.id,'');chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text,at:Date.now(),...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
  catch(err){toast(err.message,true);b.disabled=false}}
 $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const layout=e.target.closest('.chat-layout');if(e.target===layout&&chatDrawer){chatDrawer=false;layout.classList.remove('drawer');return}
@@ -5427,7 +5505,7 @@ for(const ev of ['pointerdown','keydown','wheel','touchstart','input'])addEventL
 // the page drew there
 const TYPED='textarea,input:not([type]),input[type=text],input[type=search],input[type=email],input[type=url],input[type=tel],input[type=number]';
 const typedSomewhere=()=>[...document.querySelectorAll(TYPED)].some(t=>t.value&&t.value!==t.defaultValue)||[...document.querySelectorAll('[contenteditable=""],[contenteditable=true]')].some(t=>t.textContent.trim());
-const pageInUse=()=>typedSomewhere()||!!document.querySelector('dialog[open]')||placeBusy();
+const pageInUse=()=>typedSomewhere()||!localCache.on&&outbox.items.length>0||!!document.querySelector('dialog[open]')||placeBusy();
 // Safe to load the new version now: nothing typed or open, and the page is hidden, idle for a few minutes, only just
 // opened (an older copy the app started with, before anything was done on it), or a window in the background (another
 // window has the focus, as a desktop app's window often does for days) that nobody did anything in for a bit
@@ -5469,7 +5547,7 @@ async function sessionCheck(){if(sessionAsked||!localCache.on&&csrfLive)return;s
  catch(e){sessionAsked=false;if(e.sessionGone||e.status===401||e.status===403)await cacheGone(!!e.sessionGone)}}
 async function refresh(){refreshes++;try{const edits=localEdits,next=wakeSnoozed(await request('api/status',{redirect:'manual'}));if(edits!==localEdits)return await refresh();
  sessionCheck();shownCached=false;shownAt=Date.now();if(localCache.on){const sig=(next.suggestions||[]).map(x=>x.id+x.status).join();if(sig!==statusSig||Date.now()-statusSaved>15000){statusSaved=Date.now();statusSig=sig;localCache.put('status',next)}}
- state=next;cardsMerge();browserPill(state);if(state.source_url)$('#source-code').href=state.source_url;if(uiVersionCheck())return;focusKept(render);deviceRender();sendWatch();openChatLink();openSnoozeLink();openResultLink();openSendLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink();if(!$('#people').hidden)await people(graphNode,true);try{if(!$('#calendar').hidden)calendarView();else calBadge()}catch(e){console.error(e)}if(refreshFailed){notice('');refreshFailed=false}retryIn=0;clearTimeout(retryTimer);return true}catch(e){refreshFailed=true;if(e.sessionGone||e.status===401||e.status===403)await cacheGone(!!e.sessionGone);if(e.offline){notice('');clearTimeout(retryTimer);retryIn=e.retryAfter||Math.min(30000,(retryIn||2500)*2);retryTimer=setTimeout(refreshWhenReady,retryIn)}else notice(e.message,true);staleLine(e.restarting?'Restarting · retrying':shownAt?t('Offline · updated {}',hhmm(shownAt)):'Unavailable');if(!state?.suggestions)$('#suggestions').innerHTML='<div class="empty all-clear"><img class="sticker" src="brand/sad.webp" alt=""><div><strong>I can’t reach the assistant.</strong>I’ll keep trying every 30 seconds.</div></div>',notice('');return false}finally{refreshes--}}
+ state=next;netSet(false);cardsMerge();browserPill(state);if(state.source_url)$('#source-code').href=state.source_url;if(uiVersionCheck())return;focusKept(render);deviceRender();sendWatch();openChatLink();openSnoozeLink();openResultLink();openSendLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink();if(!$('#people').hidden)await people(graphNode,true);try{if(!$('#calendar').hidden)calendarView();else calBadge()}catch(e){console.error(e)}if(refreshFailed){notice('');refreshFailed=false}retryIn=0;clearTimeout(retryTimer);if(outbox.items.length)outboxFlush();return true}catch(e){refreshFailed=true;if(e.sessionGone||e.status===401||e.status===403)await cacheGone(!!e.sessionGone);if(e.offline){notice('');clearTimeout(retryTimer);retryIn=e.retryAfter||Math.min(30000,(retryIn||2500)*2);retryTimer=setTimeout(refreshWhenReady,e.retryAfter?retryIn:retryIn*(.8+Math.random()*.4));netSet(true,e.restarting)}else notice(e.message,true);staleLine(e.restarting?'Restarting · retrying':shownAt?t('Offline · updated {}',hhmm(shownAt)):'Unavailable');if(!state?.suggestions)$('#suggestions').innerHTML='<div class="empty all-clear"><img class="sticker" src="brand/sad.webp" alt=""><div><strong>I can’t reach the assistant.</strong>I’ll keep trying every 30 seconds.</div></div>',notice('');return false}finally{refreshes--}}
 $('nav').onclick=e=>{const t=e.target.closest('button');if(!t?.dataset.tab)return;for(const b of document.querySelectorAll('nav button[data-tab]')){b.classList.toggle('active',b===t);b.setAttribute('aria-current',b===t?'page':'false')}for(const s of document.querySelectorAll('main>section'))s.hidden=s.id!==t.dataset.tab;if(t.dataset.tab==='people'&&!graphSkip)people(graphNode,!!$('#people-view').innerHTML&&$('#people-view').dataset.mode!=='loading');graphSkip=false;if(t.dataset.tab==='health')savedLogins();if(t.dataset.tab==='events'&&!$('#results').innerHTML){$('#results').innerHTML='<p class="muted">Loading…</p>';search()}if(t.dataset.tab==='fleet')fleetShown=fleetView(true);requestAnimationFrame(()=>{document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsShow);kbLand()})};
 // The desktop sidebar (from 1024px): the cards as a quiet list under the tabs, by section, each section folds (Done
 // starts folded) and the fold is remembered; a filter on the titles; the whole sidebar folds to icons.
@@ -5630,8 +5708,12 @@ const calMondays=(from,to)=>{const out=[];for(let d=calMonday(from);d<to;d=calAd
 function calFetchWeek(mon,force){const k=localDay(mon),w=calWeeks.get(k);if(w?.loading)return w.loading;
  if(w&&!w.failed&&!force&&Date.now()-w.at<60000)return Promise.resolve();
  const q='from='+encodeURIComponent(mon.toISOString())+'&to='+encodeURIComponent(calAdd(mon,7).toISOString());
- const loading=request('api/calendar?'+q).then(r=>{if(Array.isArray(r?.calendars))calCals=r.calendars;calWeeks.set(k,{meetings:Array.isArray(r?.meetings)?r.meetings:[],failed:false,at:Date.now()})})
-  .catch(()=>{calWeeks.set(k,{meetings:w?.meetings||[],failed:true,at:Date.now()})}).finally(calUnion);
+ // Each week read is kept on the device too (encrypted, like the cards), so the Calendar opens offline with what it had
+ const loading=request('api/calendar?'+q).then(r=>{if(Array.isArray(r?.calendars))calCals=r.calendars;calWeeks.set(k,{meetings:Array.isArray(r?.meetings)?r.meetings:[],failed:false,at:Date.now()});localCache.put('cal:'+k,r)})
+  .catch(async e=>{if(e?.offline){const mine=w?.meetings&&!w.failed,hit=mine?null:await localCache.read('cal:'+k);
+   if(mine||hit){if(hit){if(Array.isArray(hit.value?.calendars)&&!calCals?.length)calCals=hit.value.calendars;staleMark(hit.at)}
+    calWeeks.set(k,{meetings:mine?w.meetings:Array.isArray(hit.value?.meetings)?hit.value.meetings:[],failed:false,at:0});return}}
+   calWeeks.set(k,{meetings:w?.meetings||[],failed:true,at:Date.now()})}).finally(calUnion);
  calWeeks.set(k,{meetings:w?.meetings||null,failed:!!w?.failed,at:w?.at||0,loading});return loading}
 // Every loaded week's meetings, each once (one that runs over a Monday comes in both weeks)
 function calUnion(){const seen=new Set(),all=[];let any=false;for(const w of calWeeks.values()){if(!w.meetings)continue;any=true;for(const m of w.meetings)if(!seen.has(m.id)){seen.add(m.id);all.push(m)}}calMeetings=any?all:null}
@@ -6086,8 +6168,10 @@ function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('m
 {const o=new MutationObserver(()=>graphSubSync());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
 $('#suggestions').oninput=e=>{if(e.target.tagName==='TEXTAREA')e.target.classList.toggle('filled',!!e.target.value)};
 async function saveDecision(id,choice,feedback='',answer=false){
-let saved;try{saved=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:id,choice,feedback,decision_id:crypto.randomUUID()}})})}
+let saved;try{const args={choice,feedback,decision_id:crypto.randomUUID()};saved=OUTBOX_CHOICES.includes(choice)?await decideOrWait(id,[args],choice):await decidePost(id,args)}
 catch(err){await refresh().catch(()=>{});throw err}  // the card was drawn before something changed it: show it as it is now
+// Offline: it waits on the device and says so on the to-do; the typed note is on its way, so the editor closes
+if(saved?.waiting){changing.delete(id);dismissing.delete(id);focusKept(render);return}
 changing.delete(id);await refresh();
 // Try again or Continue on a card drawn before it carried on by itself (its sign-in was seen): nothing new, say so.
 if(saved?.already){toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.');return}
@@ -8133,7 +8217,7 @@ function remindBack(until){const r=state.reminders||{},tg=!!r.telegram,push=(r.p
 // A toast with one device action (Turn on notifications), kept up long enough to tap.
 function toastAct(text,act){toast(text);if(!act)return;const t=$('#toast'),b=document.createElement('button');b.type='button';b.dataset.toastDevice=act.id;b.textContent=act.label;
  b.onclick=()=>{t.classList.remove('show');deviceRun(act.id)};t.append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),12000)}
-async function saveSnooze(option){try{let args={suggestion_id:snoozeId,choice:'snooze',feedback:'',decision_id:crypto.randomUUID()};if(option)args.snooze_option=option;else{const input=$('#snooze-time');if(!input.reportValidity())return;const selected=new Date(snoozeDay+'T'+input.value);if(localDay(selected)!==snoozeDay||selected.getHours()!==Number(input.value.slice(0,2))){throw Error('That time is skipped by the clock change. Choose another time.')}args.snoozed_until=selected.toISOString()}const done=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args})});$('#snooze-dialog').close();const back=remindBack(done?.snoozed_until||args.snoozed_until);toastAct(t('Snoozed.')+' '+back.line,back.act);await refresh()}catch(e){$('#snooze-error').textContent=e.message}}
+async function saveSnooze(option){try{let args={suggestion_id:snoozeId,choice:'snooze',feedback:'',decision_id:crypto.randomUUID()};if(option)args.snooze_option=option;else{const input=$('#snooze-time');if(!input.reportValidity())return;const selected=new Date(snoozeDay+'T'+input.value);if(localDay(selected)!==snoozeDay||selected.getHours()!==Number(input.value.slice(0,2))){throw Error('That time is skipped by the clock change. Choose another time.')}args.snoozed_until=selected.toISOString()}const {suggestion_id,...rest}=args,done=await decideOrWait(suggestion_id,[rest],'snooze');$('#snooze-dialog').close();if(done?.waiting)return;const back=remindBack(done?.snoozed_until||args.snoozed_until);toastAct(t('Snoozed.')+' '+back.line,back.act);await refresh()}catch(e){$('#snooze-error').textContent=e.message}}
 $('#snooze-dialog').onclick=e=>{if(e.target.dataset.snooze)saveSnooze(e.target.dataset.snooze);if(e.target.dataset.day){snoozeDay=e.target.dataset.day;renderMonth()}};
 $('#month-prev').onclick=()=>{snoozeMonth=new Date(snoozeMonth.getFullYear(),snoozeMonth.getMonth()-1,1);renderMonth()};
 $('#month-next').onclick=()=>{snoozeMonth=new Date(snoozeMonth.getFullYear(),snoozeMonth.getMonth()+1,1);renderMonth()};
@@ -8347,7 +8431,7 @@ addEventListener('pageshow',refreshWhenReady);addEventListener('online',refreshW
 sessionCheck();
 if(localCache.on)localCache.read('status').then(hit=>{if(!hit||state.suggestions)return;state=wakeSnoozed(hit.value);shownCached=true;shownAt=hit.at;
  try{cardsMerge();render();openChatLink();openTabLink()}catch(e){console.error(e)}});
-refresh().then(()=>{newTagline();updateViewBack();if(localCache.on&&'serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})});setInterval(refreshWhenReady,30000);
+refresh().then(()=>{newTagline();updateViewBack();if(localCache.on&&'serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>r.active?.postMessage({cache:'warm'})).catch(()=>{})});setInterval(refreshWhenReady,30000);
 // Sign out clears this device first; the service worker says when the Machine no longer knows this session
 document.addEventListener('submit',e=>{const f=e.target;if(!f.matches?.('form[action$="/_machine/logout"]')||f.dataset.wiped)return;e.preventDefault();f.dataset.wiped='1';localCache.wipe().finally(()=>f.submit())},true);
 navigator.serviceWorker?.addEventListener('message',e=>{if(e.data?.cache==='signed-out')cacheGone(false)});

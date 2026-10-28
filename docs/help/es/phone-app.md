@@ -48,6 +48,15 @@ Si las notificaciones están bloqueadas, la fila dice dónde volver a permitirla
 
 La app se abre al momento con tus últimas tareas y luego las actualiza. Sin conexión muestra lo que tenía, marcado como **Sin conexión** con la hora de la última actualización. Esa copia se queda en el dispositivo como mucho 7 días, cifrada, y se borra cuando cierras sesión.
 
+## Sin conexión y wifi inestable
+
+En un avión o un tren el panel sigue funcionando. Una barra arriba dice **Sin conexión** y cuándo se actualizó por última vez lo que ves. Tus tareas, sus chats, el Calendario y las listas del Graph se abren desde el dispositivo.
+
+- **Posponer**, **No hace falta**, **Marcar como hecha**, **Reabrir** y las notas o mensajes de chat a The Machine esperan en el dispositivo. La tarea dice que se guarda cuando vuelvas a estar en línea, con **Cancelar** hasta entonces. En cuanto tu Machine responde de nuevo, se envían solos, en orden, una vez cada uno.
+- Los mensajes a otras personas nunca esperan. **Enviar** dice que no tienes conexión: vuelve a enviarlo cuando estés en línea.
+- Lo que escribes en un chat se queda en el dispositivo hasta que lo envías, también al recargar.
+- La app vuelve a intentarlo sola, cada vez un poco más tarde. **Probar ahora** lo intenta al momento.
+
 ## Más dispositivos
 
 Inicia sesión en cada dispositivo de la misma forma. En una Machine alojada, una llave de acceso por dispositivo hace más rápido iniciar sesión: añade una en Seguridad, en la página de tu cuenta.
