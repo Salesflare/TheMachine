@@ -4,7 +4,7 @@ area: connections
 summary: Outlook mail and meetings, for Microsoft 365 and Outlook.com. Sends an email only after you approve it.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, onboarding.py
-site: Connect Microsoft, Copy link for your admin, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
+site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
 ## What it reads
@@ -27,9 +27,9 @@ On a hosted Machine:
 
 1. Open your setup page at app.themachine.computer/setup.
 2. Press **Connect Microsoft** and sign in.
-3. If Microsoft asks for admin approval, press **Copy link for your admin**, or **I'm the admin: approve now** if that's you.
+3. If Microsoft asks for admin approval, send your Microsoft 365 admin this link: themachine.computer/m365-admin-consent. **Copy link** copies it. Once they approve, everyone in your organization can connect. If that's you, press **I'm the admin: approve now**.
 
-Or in the dashboard: **Connections**, **+ Add**, pick Outlook and press **Sign in with Microsoft**. When you're done, you're back in the dashboard.
+Or in the dashboard: **Connections**, **+ Add**, pick Outlook and press **Sign in with Microsoft**. When you're done, you're back in the dashboard. Need your admin's approval? The same link is right under the button, with **Copy link**.
 
 On your own computer, once it's [paired with your account](fleet.md): open **Connections**, then **+ Add**, pick Outlook and press **Sign in with Microsoft**. Mail and calendar connect together.
 

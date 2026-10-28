@@ -4,7 +4,7 @@ area: connections
 summary: Mail en afspraken in Outlook, voor Microsoft 365 en Outlook.com. Verstuurt een e-mail pas nadat je hem goedkeurt.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, onboarding.py
-site: Connect Microsoft, Copy link for your admin, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
+site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
 ## Wat het leest
@@ -27,9 +27,9 @@ Op een gehoste Machine:
 
 1. Open je setuppagina op app.themachine.computer/setup.
 2. Druk op **Microsoft koppelen** en log in.
-3. Vraagt Microsoft om goedkeuring van een beheerder, druk dan op **Link kopiëren voor je beheerder**, of op **Ik ben de beheerder: nu goedkeuren** als jij dat bent.
+3. Vraagt Microsoft om goedkeuring van een beheerder, stuur de beheerder van je Microsoft 365 dan deze link: themachine.computer/m365-admin-consent. **Link kopiëren** kopieert hem. Zodra die goedkeurt, kan iedereen in je organisatie koppelen. Ben jij de beheerder, druk dan op **Ik ben de beheerder: nu goedkeuren**.
 
-Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Outlook en druk op **Inloggen met Microsoft**. Als je klaar bent, ben je terug in het dashboard.
+Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Outlook en druk op **Inloggen met Microsoft**. Als je klaar bent, ben je terug in het dashboard. Goedkeuring van je beheerder nodig? Dezelfde link staat onder de knop, met **Link kopiëren**.
 
 Op je eigen computer, zodra hij [aan je account gekoppeld is](fleet.md): open **Koppelingen**, dan **+ Toevoegen**, kies Outlook en druk op **Inloggen met Microsoft**. Mail en agenda worden samen gekoppeld.
 
