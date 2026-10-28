@@ -14,7 +14,7 @@ Os resumos precisam de um plano pago do Zoom, do AI Companion ativado durante a 
 
 ## O que ele faz com eles
 
-Cada resumo é associado à reunião na sua agenda. Suas revisões então usam o resumo para os follow-ups dessa reunião, e uma divisão de follow-ups no Fleet já vem preenchida com quem faz o quê. Você confere e edita primeiro. Nada é enviado até você enviar.
+Cada resumo é associado à reunião na sua agenda. O resumo aparece nas **Notas** dessa reunião e a transcrição na **Transcrição** dela, marcados **Do Zoom**, ao lado do que você adicionou ali, sem nunca substituir. Suas revisões então usam o resumo para os follow-ups dessa reunião, e uma divisão de follow-ups no Fleet já vem preenchida com quem faz o quê. Você confere e edita primeiro. Nada é enviado até você enviar.
 
 ## O que ele pode fazer
 

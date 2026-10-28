@@ -33,13 +33,17 @@ Cliquez sur une ligne pour ouvrir le chat de sa tâche, la promesse, ou la réun
 
 Une salle de réunion réservée apparaît dans le lieu, jamais comme une personne ni dans votre Graph.
 
-## Notes de réunion
+## Notes et transcription de réunion
 
-Les détails d’une réunion affichent ses notes. **Ajouter des notes** pour coller des notes ou une transcription, ou **Importer un fichier** pour un fichier Markdown ou texte. **Modifier** les modifie, et **Retirer** les retire (touchez deux fois). Sur une réunion que vous pouvez modifier, **Ajouter des notes** se trouve sous son formulaire.
+Les détails d’une réunion ont deux parties. **Notes** est le résumé : décisions et actions. **Transcription** est ce qui a été dit, mot pour mot. Elle est d’abord repliée, avec sa durée ; **Afficher** l’ouvre.
 
-The Machine peut aussi les ajouter. Demandez-le sur une tâche, par exemple "ajoute cette transcription au conseil d’administration d’aujourd’hui". Une réunion avec des notes affiche **Notes** dans le calendrier, et son résumé Zoom apparaît en dessous.
+Chacune a son propre **Ajouter des notes** ou **Ajouter une transcription**, **Importer un fichier** pour un fichier Markdown ou texte, **Modifier** et **Retirer** (touchez deux fois). Ce qui est dans l’une y reste. Sur une réunion que vous pouvez modifier, **Notes** sous son formulaire les ouvre.
 
-The Machine les lit comme les notes Zoom, pour les suites de la réunion. Elles sont Travail ou Personnel comme la réunion, et ne vont à votre équipe que si la réunion y va.
+Avec [Zoom](zoom.md) connecté, son résumé apparaît dans Notes et sa transcription dans Transcription, marqués **De Zoom**. Zoom ne remplace jamais ce que vous avez ajouté : quand les deux existent, les deux s’affichent.
+
+The Machine peut aussi les ajouter. Demandez-le sur une tâche, par exemple "ajoute cette transcription au conseil d’administration d’aujourd’hui". Une transcription va dans Transcription, un résumé dans Notes. Une réunion qui en a affiche **Notes** ou **Transcription** dans le calendrier.
+
+The Machine lit les deux pour les suites de la réunion. Elles sont Travail ou Personnel comme la réunion, et ne vont à votre équipe que si la réunion y va.
 
 ## Ajouter ou modifier un événement
 

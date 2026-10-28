@@ -33,13 +33,17 @@ Haz clic en una fila para abrir el chat de su tarea, la promesa o la reunión en
 
 Una sala de reuniones reservada aparece en el lugar, nunca como persona ni en tu Graph.
 
-## Notas de reunión
+## Notas y transcripción de la reunión
 
-Los detalles de una reunión muestran sus notas. **Añadir notas** para pegar notas o una transcripción, o **Subir archivo** para un archivo Markdown o de texto. **Editar** las cambia, y **Quitar** las quita (toca dos veces). En una reunión que puedes cambiar, **Añadir notas** está debajo de su formulario.
+Los detalles de una reunión tienen dos partes. **Notas** es el resumen: decisiones y tareas. **Transcripción** es lo que se dijo, palabra por palabra. Empieza plegada, con su duración; **Mostrar** la abre.
 
-The Machine también puede añadirlas. Pídeselo en una tarea, como "añade esta transcripción a la reunión del consejo de hoy". Una reunión con notas muestra **Notas** en el calendario, y su resumen de Zoom aparece debajo.
+Cada una tiene su propio **Añadir notas** o **Añadir transcripción**, **Subir archivo** para un archivo Markdown o de texto, **Editar** y **Quitar** (toca dos veces). Lo que va en una se queda ahí. En una reunión que puedes cambiar, **Notas** debajo de su formulario las abre.
 
-The Machine las lee como las notas de Zoom, para los siguientes pasos de la reunión. Son de Trabajo o Personales como la reunión, y solo van a tu equipo cuando la reunión va.
+Con [Zoom](zoom.md) conectado, su resumen aparece en Notas y su transcripción en Transcripción, marcados **De Zoom**. Zoom nunca reemplaza lo que añadiste: cuando están los dos, se ven los dos.
+
+The Machine también puede añadirlas. Pídeselo en una tarea, como "añade esta transcripción a la reunión del consejo de hoy". Una transcripción va en Transcripción, un resumen en Notas. Una reunión con ellas muestra **Notas** o **Transcripción** en el calendario.
+
+The Machine lee las dos para los siguientes pasos de la reunión. Son de Trabajo o Personales como la reunión, y solo van a tu equipo cuando la reunión va.
 
 ## Añade o cambia un evento
 

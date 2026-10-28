@@ -14,7 +14,7 @@ Zusammenfassungen brauchen einen bezahlten Zoom-Tarif, eingeschaltetes AI Compan
 
 ## Was es damit macht
 
-Jede Zusammenfassung wird dem Meeting in deinem Kalender zugeordnet. Deine Prüfungen nutzen sie dann für die Nachbereitung dieses Meetings, und eine Aufteilung der Nachbereitung in der Fleet kommt schon ausgefüllt, mit wer was macht. Du prüfst und bearbeitest sie zuerst. Nichts wird gesendet, bis du es sendest.
+Jede Zusammenfassung wird dem Meeting in deinem Kalender zugeordnet. Die Zusammenfassung steht in den **Notizen** dieses Termins und das Transkript in seinem **Transkript**, markiert mit **Von Zoom**, neben allem, was du dort hinzugefügt hast; sie ersetzt es nie. Deine Prüfungen nutzen sie dann für die Nachbereitung dieses Meetings, und eine Aufteilung der Nachbereitung in der Fleet kommt schon ausgefüllt, mit wer was macht. Du prüfst und bearbeitest sie zuerst. Nichts wird gesendet, bis du es sendest.
 
 ## Was es tun kann
 

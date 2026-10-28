@@ -1,5 +1,7 @@
 """Zoom meeting notes: the AI Companion summary of each meeting the owner hosted, and its transcript when Zoom has one.
-Read only: GET requests to api.zoom.us, nothing is ever written to Zoom.
+Read only: GET requests to api.zoom.us, nothing is ever written to Zoom. The matching calendar meeting shows the summary
+in its Notes and the transcript in its Transcript, marked From Zoom, next to anything the owner added there, never over
+it (meeting_notes.py).
 
 The sign-in is the owner's own (user-level OAuth, a Zoom Marketplace general app), never an account-wide
 Server-to-Server app: it reads one person's meetings, not their whole company's. The app and its secret live with a token
@@ -45,6 +47,7 @@ PAGE = 300
 OVERLAP_HOURS = 24  # a summary is made, or edited, a while after its meeting: reread a day back each time
 MAX_MEETINGS = 60  # per run, at most this many summaries are read (the rest next run)
 TRANSCRIPT_BYTES = 2_000_000
+TRANSCRIPT_CHARS = 400_000  # a long meeting's whole transcript: the meeting's Transcript (meeting_notes.py)
 SEEN_KEEP = 500
 _tokens = {}
 _lock = threading.Lock()
@@ -301,9 +304,9 @@ def events_for(account, found, transcript, helpers):
             'metadata': meta, 'deleted': False}]
     if transcript:
         out.append({'account_id': account['id'], 'source_id': source_id('transcript', uuid), 'kind': 'zoom.transcript',
-                    'occurred_at': begun.isoformat(), 'title': topic[:1000], 'body': transcript[:40000],
+                    'occurred_at': begun.isoformat(), 'title': topic[:1000], 'body': transcript[:TRANSCRIPT_CHARS],
                     'metadata': {**{k: meta[k] for k in ('meeting_id', 'start_at', 'end_at', 'host_email')},
-                                 'truncated': len(transcript) > 40000}, 'deleted': False})
+                                 'truncated': len(transcript) > TRANSCRIPT_CHARS}, 'deleted': False})
     return out
 
 

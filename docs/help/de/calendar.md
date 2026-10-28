@@ -33,13 +33,17 @@ Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting 
 
 Ein gebuchter Besprechungsraum steht beim Ort, nie als Person oder in deinem Graph.
 
-## Besprechungsnotizen
+## Besprechungsnotizen und Transkript
 
-Die Details eines Termins zeigen seine Notizen. **Notizen hinzufügen**, um Notizen oder ein Transkript einzufügen, oder **Datei hochladen** für eine Markdown- oder Textdatei. **Bearbeiten** ändert sie, und **Entfernen** nimmt sie weg (zweimal tippen). Bei einem Termin, den du ändern kannst, steht **Notizen hinzufügen** unter seinem Formular.
+Die Details eines Termins haben zwei Teile. **Notizen** ist die Zusammenfassung: Entscheidungen und Aufgaben. **Transkript** ist, was gesagt wurde, Wort für Wort. Es ist zuerst eingeklappt, mit seiner Länge; **Anzeigen** öffnet es.
 
-The Machine kann sie auch hinzufügen. Frag sie bei einer Aufgabe, etwa "füge dieses Transkript zur heutigen Vorstandssitzung hinzu". Ein Termin mit Notizen zeigt **Notizen** im Kalender, und seine Zoom-Zusammenfassung steht darunter.
+Jeder Teil hat sein eigenes **Notizen hinzufügen** oder **Transkript hinzufügen**, **Datei hochladen** für eine Markdown- oder Textdatei, **Bearbeiten** und **Entfernen** (zweimal tippen). Was in einem Teil steht, bleibt dort. Bei einem Termin, den du ändern kannst, öffnet **Notizen** unter seinem Formular sie.
 
-The Machine liest sie wie Zoom-Notizen, für die nächsten Schritte nach dem Termin. Sie sind Arbeit oder Privat wie der Termin und gehen nur an dein Team, wenn der Termin es tut.
+Ist [Zoom](zoom.md) verbunden, steht seine Zusammenfassung in Notizen und sein Transkript in Transkript, markiert mit **Von Zoom**. Zoom ersetzt nie, was du hinzugefügt hast: Gibt es beides, siehst du beides.
+
+The Machine kann sie auch hinzufügen. Frag sie bei einer Aufgabe, etwa "füge dieses Transkript zur heutigen Vorstandssitzung hinzu". Ein Transkript kommt in Transkript, eine Zusammenfassung in Notizen. Ein Termin damit zeigt **Notizen** oder **Transkript** im Kalender.
+
+The Machine liest beides für die nächsten Schritte nach dem Termin. Sie sind Arbeit oder Privat wie der Termin und gehen nur an dein Team, wenn der Termin es tut.
 
 ## Termin hinzufügen oder ändern
 

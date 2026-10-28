@@ -14,7 +14,7 @@ Los resúmenes necesitan un plan de pago de Zoom, AI Companion activado durante 
 
 ## Qué hace con ellos
 
-Cada resumen se empareja con la reunión de tu calendario. Tus revisiones lo usan luego para el seguimiento de esa reunión, y un reparto de seguimiento del Fleet llega ya rellenado con quién hace qué. Tú lo revisas y lo editas primero; no se envía nada hasta que lo envíes.
+Cada resumen se empareja con la reunión de tu calendario. El resumen aparece en las **Notas** de esa reunión y la transcripción en su **Transcripción**, marcados **De Zoom**, junto a lo que añadiste ahí; nunca lo reemplaza. Tus revisiones lo usan luego para el seguimiento de esa reunión, y un reparto de seguimiento del Fleet llega ya rellenado con quién hace qué. Tú lo revisas y lo editas primero; no se envía nada hasta que lo envíes.
 
 ## Qué puede hacer
 

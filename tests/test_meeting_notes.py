@@ -1,7 +1,8 @@
-"""Notes added to a meeting (meeting_notes.py): pasted or uploaded by the owner on the meeting in the Calendar, or saved
-by a Do it run (a transcript someone sent). They live on the meeting's own calendar account as a meeting.notes signal,
-are reviewed and used like Zoom's notes, show on the meeting, and go to the team only as the meeting does. A signal
-review only reads them. No live calls."""
+"""A meeting's Notes and Transcript (meeting_notes.py): two fields, each pasted or uploaded by the owner on the meeting in
+the Calendar, or saved by a Do it run. They live on the meeting's own calendar account as meeting.notes and
+meeting.transcript signals, are reviewed and used like Zoom's, show on the meeting next to Zoom's (never over them), and
+go to the team only as the meeting does. A signal review only reads them. Notes saved before the two were apart move
+to Transcript once when they are one. No live calls."""
 import importlib.util
 import json
 from pathlib import Path
@@ -14,6 +15,8 @@ a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 import meeting_notes  # noqa: E402
 import shared_graph  # noqa: E402
+
+TURNS = '\n'.join(f'[{m // 60}:{m % 60:02d}:00] Speaker {m % 2 + 1}: we went through item {m}.' for m in range(0, 124, 3))
 
 WORK = {'id': 'cal', 'email': 'owner@example.com', 'service': 'calendar', 'boundary': 'work:Example'}
 HOME = {'id': 'home-cal', 'email': 'owner@home.example', 'service': 'calendar', 'boundary': 'personal:Home'}
@@ -123,8 +126,111 @@ class MeetingNotes(unittest.TestCase):
             self.assertEqual(shared_graph._items(db, {self.ids['standup']}), {self.ids['standup']})
         self.assertEqual(shared_graph._source('meeting.notes'), 'meetings')
 
+    def test_notes_and_transcript_are_two_fields_each_saved_and_removed_on_its_own(self):
+        board = self.ids['board']
+        self.app.action('meeting_notes', {'event_id': board, 'text': '## Decisions\n\n- Hire two engineers'}, owner_dashboard=True)
+        saved = self.app.action('meeting_notes', {'event_id': board, 'field': 'transcript', 'text': TURNS})
+        self.assertEqual((saved['field'], saved['chars']), ('transcript', len(TURNS)))
+        read = self.app.action('meeting_notes', {'event_id': board})
+        self.assertEqual(read['notes']['text'], '## Decisions\n\n- Hire two engineers')
+        self.assertEqual((read['transcript']['text'], read['transcript']['by'], read['transcript']['minutes']), (TURNS, 'machine', 123))
+        self.assertIsNone(read['zoom'])
+        with self.store.connect() as db:
+            row = db.execute("SELECT * FROM events WHERE kind='meeting.transcript'").fetchone()
+        self.assertEqual((row['source_id'], row['account_id'], row['analyzed_version']), (f'transcript:{board}', 'cal', 0))  # the review reads it
+        self.assertEqual(json.loads(row['metadata'])['field'], 'transcript')
+        self.assertIn('dana@board.example', shared_graph.item_people(json.loads(row['metadata'])))  # judged by the meeting's own people
+        # Only the field asked for: a transcript-looking text the owner puts in Notes stays in Notes
+        self.app.action('meeting_notes', {'event_id': board, 'text': TURNS, 'append': True}, owner_dashboard=True)
+        self.assertTrue(self.app.action('meeting_notes', {'event_id': board, 'field': 'notes'})['notes']['text'].endswith(TURNS))
+        only = self.app.action('meeting_notes', {'event_id': board, 'field': 'transcript', 'offset': 10})
+        self.assertIsNone(only['notes'])
+        self.assertEqual(only['transcript']['text'], TURNS[10:])
+        rows = {r['title']: r for r in self.store.calendar(['cal'], '2026-10-27T23:00:00Z', '2026-10-28T23:00:00Z')}
+        self.assertEqual((rows['Board meeting Q4']['notes']['by'], rows['Board meeting Q4']['transcript']['by']), ('owner', 'machine'))
+        day = {m['title']: m for m in self.app.action('meeting_notes', {'day': '2026-10-28'})['meetings']}
+        self.assertEqual((day['Board meeting Q4']['has_notes'], day['Board meeting Q4']['has_transcript'], day['Standup']['has_transcript']), (True, True, False))
+        with self.store.connect() as db:  # on a board, the transcript goes with its meeting too
+            ids = shared_graph._items(db, {board})
+            self.assertIn(row['id'], ids)
+            self.assertEqual(meeting_notes.for_event(db, board, '2026-10-28')['kind'], 'meeting.notes')  # follow-ups read the notes first
+        self.assertTrue(self.app.action('meeting_notes', {'event_id': board, 'field': 'transcript', 'remove': True}, owner_dashboard=True)['removed'])
+        read = self.app.action('meeting_notes', {'event_id': board})
+        self.assertIsNone(read['transcript'])
+        self.assertIsNotNone(read['notes'])
+        with self.assertRaisesRegex(ValueError, 'field is notes'):
+            self.app.action('meeting_notes', {'event_id': board, 'field': 'summary', 'text': 'x'})
+        with self.assertRaisesRegex(ValueError, 'A transcript can be up to'):
+            self.app.action('meeting_notes', {'event_id': board, 'field': 'transcript', 'text': 'x' * (meeting_notes.MAX_CHARS + 1)})
+        self.assertEqual(shared_graph._source('meeting.transcript'), 'meetings')
+
+    def test_zoom_puts_its_summary_in_notes_and_its_transcript_in_transcript_next_to_the_owners(self):
+        zoom = {'id': 'zoom', 'service': 'zoom', 'email': 'owner@example.com', 'boundary': 'work:Example'}
+        self.app.config['accounts'].append(zoom)
+        meta = {'meeting_id': '123456789', 'start_at': '2026-10-28T13:01:00+00:00', 'end_at': '2026-10-28T15:05:00+00:00',
+                'host_email': 'owner@example.com', 'source_url': 'https://us02web.zoom.us/doc/abc'}
+        self.store.commit_page('zoom', {}, [
+            {'account_id': 'zoom', 'source_id': 'summary:1', 'kind': 'zoom.summary', 'occurred_at': '2026-10-28T13:01:00+00:00',
+             'title': 'Board meeting Q4', 'body': '## Next steps\n\n- Dana sends the deck', 'metadata': meta, 'deleted': False},
+            {'account_id': 'zoom', 'source_id': 'transcript:1', 'kind': 'zoom.transcript', 'occurred_at': '2026-10-28T13:01:00+00:00',
+             'title': 'Board meeting Q4', 'body': 'Dana: I will send the deck.\nOwner: Thanks.', 'metadata': {**meta, 'truncated': False}, 'deleted': False}])
+        read = self.app.action('meeting_notes', {'event_id': self.ids['board']})
+        self.assertEqual((read['notes'], read['transcript']), (None, None))  # nothing added: Zoom's alone
+        self.assertEqual(read['zoom']['notes']['text'], '## Next steps\n\n- Dana sends the deck')
+        self.assertEqual((read['zoom']['transcript']['text'], read['zoom']['transcript']['minutes']), ('Dana: I will send the deck.\nOwner: Thanks.', 124))
+        self.assertEqual(read['zoom']['url'], 'https://us02web.zoom.us/doc/abc')
+        # The owner's own never replaces Zoom's, nor the other way round: both show, each with its source
+        self.app.action('meeting_notes', {'event_id': self.ids['board'], 'text': 'My own notes'}, owner_dashboard=True)
+        self.app.action('meeting_notes', {'event_id': self.ids['board'], 'field': 'transcript', 'text': TURNS}, owner_dashboard=True)
+        read = self.app.action('meeting_notes', {'event_id': self.ids['board']})
+        self.assertEqual((read['notes']['text'], read['zoom']['notes']['text']), ('My own notes', '## Next steps\n\n- Dana sends the deck'))
+        self.assertEqual((read['transcript']['text'], read['zoom']['transcript']['text'][:5]), (TURNS, 'Dana:'))
+        self.assertIsNone(self.app.action('meeting_notes', {'event_id': self.ids['standup']})['zoom'])  # another meeting gets none
+
+    def test_notes_saved_before_the_split_that_are_a_transcript_move_to_transcript_once(self):
+        board, standup, dinner = self.ids['board'], self.ids['standup'], self.ids['dinner']
+        def legacy(account, meeting, body):  # as saved before Notes and Transcript were apart: no field
+            with self.store.connect() as db:
+                db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) "
+                           "VALUES(?,?,'meeting.notes','2026-10-28T13:00:00+00:00','m',?,?,'h',?)",
+                           (account, f'notes:{meeting}', body, json.dumps({'event_id': meeting, 'added_by': 'machine'}), a.now()))
+        legacy('cal', board, '# Board\n\n' + TURNS + '\nand a line that runs on')
+        legacy('cal', standup, '## Summary\n\n- At 10:30 we agreed on the plan\n- Next call 14:00\n\nDecisions: ship it.')
+        legacy('home-cal', dinner, 'Bring wine')
+        with self.store.connect() as db:
+            moved = self.store.move_meeting_transcripts(db)
+            self.assertEqual(len(moved), 1)
+            row = db.execute('SELECT * FROM events WHERE id=?', (moved[0],)).fetchone()
+            self.assertEqual((row['kind'], row['source_id']), ('meeting.transcript', f'transcript:{board}'))
+            self.assertEqual(json.loads(row['metadata'])['moved_from'], 'notes')
+            self.assertEqual(dict(db.execute('SELECT old_kind,old_source_id FROM meeting_moves').fetchone()), {'old_kind': 'meeting.notes', 'old_source_id': f'notes:{board}'})
+            self.assertEqual(self.store.move_meeting_transcripts(db), [])  # once: nothing more the second time
+        read = self.app.action('meeting_notes', {'event_id': board})
+        self.assertIsNone(read['notes'])
+        self.assertTrue(read['transcript']['text'].startswith('# Board'))
+        self.assertEqual(self.app.action('meeting_notes', {'event_id': standup})['notes']['text'][:10], '## Summary')
+        # What the owner puts in Notes from now on stays there, also over a restart
+        self.app.action('meeting_notes', {'event_id': standup, 'text': TURNS}, owner_dashboard=True)
+        a.Store(self.store.path)
+        self.assertEqual(self.app.action('meeting_notes', {'event_id': standup})['notes']['text'], TURNS)
+
+    def test_a_transcript_is_told_by_its_structure_not_its_words(self):
+        looks = meeting_notes.looks_like_transcript
+        self.assertTrue(looks(TURNS))
+        self.assertTrue(looks('\n'.join(f'00:0{i}:15 Dana: point {i}' for i in range(8))))
+        self.assertTrue(looks('\n\n'.join(f'Speaker {i % 2}  {i}:05\nWords said in turn {i}.' for i in range(6))))  # name and time, words below
+        self.assertTrue(looks('\n'.join(f'- Dana ({i}:05): said {i}' for i in range(6))))
+        self.assertTrue(looks('WEBVTT\n\n' + '\n\n'.join(f'{i}\n00:00:0{i}.000 --> 00:00:0{i}.900\nDana: hi {i}' for i in range(6))))
+        self.assertFalse(looks('# Board meeting\n\n## Transcript summary\n\nSpeaker 1 said the numbers are good. Speaker 2 agreed.'))
+        self.assertFalse(looks('Dana: I will send the deck.\nOwner: Thanks.\n' * 5))  # turns without times: not the structure asked for
+        self.assertFalse(looks('## Agenda\n\n- [0:05] Intro\n- [0:20] Numbers\n\n' + 'A long paragraph of decisions. ' * 40 + '\n'
+                               + '\n'.join(f'[{i}:00] Dana: aside {i}' for i in range(5))))  # a few quoted turns in a summary
+        self.assertEqual(meeting_notes.spoken_minutes(TURNS), 123)
+        self.assertIsNone(meeting_notes.spoken_minutes('No times here'))
+
     def test_do_it_is_told_where_meeting_notes_go_when_a_calendar_is_connected(self):
         self.assertIn('meeting_notes', a.meeting_notes_prompt(self.app.config))
+        self.assertIn('field=notes or transcript', a.meeting_notes_prompt(self.app.config))
         self.assertEqual(a.meeting_notes_prompt({'accounts': [{'id': 'mail', 'service': 'gmail'}]}), '')
         job = {'job_id': 'j' * 32, 'suggestion_id': 's' * 16}
         self.assertIn('assistant meeting-notes --event', a.preparation_prompt(job, config=self.app.config))
@@ -133,6 +239,7 @@ class MeetingNotes(unittest.TestCase):
         self.assertNotIn('meeting_notes', a.OWNER_ACTIONS)  # Do it and the CLI add them too
         plugin = (Path(__file__).parent.parent / 'openclaw-plugin' / 'index.ts').read_text()
         self.assertIn("'meeting_notes'", plugin)
+        self.assertIn('field transcript is what was said', plugin)
         self.assertIn("args._notes_session = key", plugin)  # the host says which session it is, never the model
 
 

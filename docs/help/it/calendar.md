@@ -33,13 +33,17 @@ Fai clic su una riga per aprire la chat della sua attività, la promessa o la ri
 
 Una sala riunioni prenotata compare nel luogo, mai come persona né nel tuo Graph.
 
-## Note della riunione
+## Note e trascrizione della riunione
 
-I dettagli di una riunione mostrano le sue note. **Aggiungi note** per incollare note o una trascrizione, oppure **Carica file** per un file Markdown o di testo. **Modifica** le cambia e **Rimuovi** le toglie (tocca due volte). Su una riunione che puoi modificare, **Aggiungi note** è sotto il suo modulo.
+I dettagli di una riunione hanno due parti. **Note** è il riepilogo: decisioni e azioni. **Trascrizione** è ciò che è stato detto, parola per parola. All’inizio è chiusa, con la sua durata; **Mostra** la apre.
 
-Anche The Machine può aggiungerle. Chiediglielo su un’attività, come "aggiungi questa trascrizione al consiglio di amministrazione di oggi". Una riunione con note mostra **Note** nel calendario, e il suo riepilogo Zoom compare sotto.
+Ognuna ha il suo **Aggiungi note** o **Aggiungi trascrizione**, **Carica file** per un file Markdown o di testo, **Modifica** e **Rimuovi** (tocca due volte). Quello che va in una resta lì. Su una riunione che puoi modificare, **Note** sotto il suo modulo le apre.
 
-The Machine le legge come le note di Zoom, per i passi successivi della riunione. Sono Lavoro o Personali come la riunione, e vanno al tuo team solo quando ci va la riunione.
+Con [Zoom](zoom.md) collegato, il suo riepilogo compare in Note e la sua trascrizione in Trascrizione, segnati **Da Zoom**. Zoom non sostituisce mai ciò che hai aggiunto: quando ci sono entrambi, si vedono entrambi.
+
+Anche The Machine può aggiungerle. Chiediglielo su un’attività, come "aggiungi questa trascrizione al consiglio di amministrazione di oggi". Una trascrizione va in Trascrizione, un riepilogo in Note. Una riunione che le ha mostra **Note** o **Trascrizione** nel calendario.
+
+The Machine le legge entrambe per i passi successivi della riunione. Sono Lavoro o Personali come la riunione, e vanno al tuo team solo quando ci va la riunione.
 
 ## Aggiungi o modifica un evento
 

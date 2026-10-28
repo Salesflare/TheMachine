@@ -14,7 +14,7 @@ I riepiloghi richiedono un piano Zoom a pagamento, AI Companion attivo durante l
 
 ## Cosa ne fa
 
-Ogni riepilogo viene abbinato alla riunione nel tuo calendario. Le tue revisioni lo usano poi per i follow-up di quella riunione, e la suddivisione dei follow-up per la Fleet arriva già compilata con chi fa cosa. Prima la controlli e la modifichi; non parte nulla finché non la invii tu.
+Ogni riepilogo viene abbinato alla riunione nel tuo calendario. Il riepilogo compare nelle **Note** di quella riunione e la trascrizione nella sua **Trascrizione**, segnati **Da Zoom**, accanto a ciò che hai aggiunto lì, senza mai sostituirlo. Le tue revisioni lo usano poi per i follow-up di quella riunione, e la suddivisione dei follow-up per la Fleet arriva già compilata con chi fa cosa. Prima la controlli e la modifichi; non parte nulla finché non la invii tu.
 
 ## Cosa può fare
 
