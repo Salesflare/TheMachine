@@ -36,6 +36,7 @@ import fleet_trust as ft
 import graph
 from i18n import t
 import network_crypto as nc
+import own_addresses
 import security_levels
 
 LOG = logging.getLogger('personal-assistant')
@@ -1427,7 +1428,7 @@ class SharedGraph:
         """This Fleet's own company's Work connections: an address on one of the Fleet's domains (fleet_domains). A
         connection of another company (a second company of the owner's, connected as Work too) is not one, whatever it
         is named: it starts off, and the Fleet can't require it. One without an email address (a code host, a social
-        account) counts when it is named for the Fleet (boundary work:<Fleet name>)."""
+        account, an X handle) counts when it is named for the Fleet (boundary work:<Fleet name>)."""
         work = self.fleet_accounts(fleet)
         found = self.fleets().get(self.ref(fleet)) or {}
         name = str(found.get('name') or '').strip().casefold()
@@ -1436,9 +1437,9 @@ class SharedGraph:
         for a in self.config.get('accounts', []):
             if a.get('id') not in work:
                 continue
-            email = str(a.get('email') or '').lower()
-            if '@' in email:
-                if email.rsplit('@', 1)[1] in domains:
+            domain = own_addresses.email_domain(a.get('email'))  # an X handle (@acme) is no address: judged by its name
+            if domain:
+                if domain in domains:
                     out.add(a['id'])
             elif name and str(a.get('boundary') or '').strip().casefold() == 'work:' + name:
                 out.add(a['id'])

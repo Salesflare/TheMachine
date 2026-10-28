@@ -1300,6 +1300,16 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual(ids, ['new-intercom'])
         self.assertNotIn('old-intercom', self.own.graph_accounts(FLEET))
 
+    def test_an_x_account_named_for_the_company_is_its_work_even_with_a_handle_for_an_address(self):
+        # an X account's address is its handle (@acme): no email domain, so it's the company's when it's named for the
+        # Fleet, and another company's only when it's named for another one
+        self.olive_mail()
+        self.own.config['accounts'] += [{'id': 'acme-x', 'service': 'x', 'email': '@acme', 'boundary': 'work:Acme'},
+                                        {'id': 'side-x', 'service': 'x', 'email': '@SideProject', 'boundary': 'work:Side Project'}]
+        conns = {c['id']: c for c in self.own.sharing()[0]['connections']}
+        self.assertEqual((conns['acme-x']['company'], conns['acme-x']['on']), (True, True))
+        self.assertEqual((conns['side-x']['company'], conns['side-x']['on']), (False, False))
+
     def test_another_persons_calendar_read_through_the_owners_sign_in_is_named_for_that_calendar(self):
         # a partner's calendar read through the work sign-in is its own personal connection, not a second copy of the
         # work calendar: named for the calendar it reads, and the work calendar keeps its own label and switch
