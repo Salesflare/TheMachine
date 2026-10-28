@@ -17,7 +17,7 @@ O que você disse aparece na caixa, onde estava o seu cursor. Nada é enviado: l
 
 ## Na primeira vez
 
-Na primeira vez que você toca no microfone, sua Machine prepara a voz. Ela baixa o modelo de voz uma vez só, cerca de 600 MB, e mostra "Preparando a voz…" com o progresso. Isso leva alguns minutos. Sua gravação espera e é escrita assim que tudo estiver pronto.
+Na primeira vez que você toca no microfone, sua Machine prepara a voz. Ela baixa o modelo de voz uma vez só, de 150 a 500 MB, e mostra "Preparando a voz…" com o progresso. Isso leva alguns minutos. Sua gravação espera e é escrita assim que tudo estiver pronto.
 
 ## Para onde vai a sua voz
 
@@ -26,12 +26,12 @@ Por padrão, sua gravação vira texto na sua própria Machine. Ela nunca sai de
 Em **Configurações**, **Geral**, em **Entrada por voz**, você pode escolher:
 
 - **Transcrito**: **Nesta Machine**, ou **Com a OpenAI**. A OpenAI é mais rápida em um servidor pequeno, mas sua gravação vai para a OpenAI, com a sua própria chave. Precisa de uma chave de API da OpenAI no OpenClaw. Um login do ChatGPT não inclui isso.
-- **Precisão**: **Mais preciso** funciona melhor para a maioria dos idiomas e, em um servidor pequeno, leva mais ou menos o tempo que você falou. **Mais rápido** é mais ágil, mas erra mais palavras.
+- **Precisão**: **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas erra mais palavras. Em um servidor Standard, que tem menos memória, **Mais rápido** é o padrão.
 - **Idioma**: **Detectar** funciona para todos os idiomas do app. Escolher o seu é um pouco mais rápido.
 
 ## Quando não funciona
 
 - **O microfone está bloqueado**: permita o microfone para este site nas configurações do seu navegador. No app do celular, fica nas permissões do app.
 - **Nenhum microfone encontrado**: conecte um e tente de novo.
-- **Não consigo acessar sua Machine**: sua gravação fica guardada. Toque em **Tentar de novo** quando sua Machine voltar.
+- **Não consigo acessar sua Machine**: sua gravação fica guardada e é escrita quando sua Machine voltar. Para tentar antes, toque em **Tentar agora**.
 - **Não entendi nada**: fale um pouco mais perto do microfone, ou por mais tempo.

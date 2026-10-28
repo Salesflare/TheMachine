@@ -17,7 +17,7 @@ Lo que dijiste aparece en el cuadro, donde estaba tu cursor. No se envía nada: 
 
 ## La primera vez
 
-La primera vez que tocas el micro, tu Machine prepara la voz. Descarga el modelo de voz una sola vez, unos 600 MB, y muestra "Preparando la voz…" con el progreso. Tarda unos minutos. Tu grabación espera y se escribe en cuanto todo está listo.
+La primera vez que tocas el micro, tu Machine prepara la voz. Descarga el modelo de voz una sola vez, entre 150 y 500 MB, y muestra "Preparando la voz…" con el progreso. Tarda unos minutos. Tu grabación espera y se escribe en cuanto todo está listo.
 
 ## Adónde va tu voz
 
@@ -26,12 +26,12 @@ Por defecto, tu grabación se pasa a texto en tu propia Machine. Nunca sale de e
 En **Ajustes**, **General**, bajo **Entrada de voz**, puedes elegir:
 
 - **Pasado a texto**: **En esta Machine**, o **Con OpenAI**. OpenAI es más rápido en un servidor pequeño, pero tu grabación va a OpenAI, con tu propia clave. Necesita una clave API de OpenAI en OpenClaw. Un inicio de sesión de ChatGPT no la incluye.
-- **Precisión**: **Más preciso** funciona mejor para la mayoría de los idiomas y, en un servidor pequeño, tarda más o menos lo que hablaste. **Más rápido** va más deprisa, pero se equivoca en más palabras.
+- **Precisión**: **Más preciso** funciona mejor para la mayoría de los idiomas. **Más rápido** va más deprisa, pero se equivoca en más palabras. En un servidor Standard, que tiene menos memoria, **Más rápido** es la opción predeterminada.
 - **Idioma**: **Detectar** funciona con todos los idiomas de la app. Elegir el tuyo es un poco más rápido.
 
 ## Si no funciona
 
 - **El micro está bloqueado**: permite el micro para este sitio en los ajustes de tu navegador. En la app del teléfono, está en los permisos de la app.
 - **No se encontró ningún micro**: conecta uno e inténtalo de nuevo.
-- **No se puede conectar con tu Machine**: tu grabación se guarda. Toca **Reintentar** cuando tu Machine vuelva.
+- **No se puede conectar con tu Machine**: tu grabación se guarda y se escribe cuando tu Machine vuelva. Para intentarlo antes, toca **Probar ahora**.
 - **No entendí nada**: habla un poco más cerca del micro, o durante más tiempo.

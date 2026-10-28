@@ -17,7 +17,7 @@ What you said lands in the box, where your cursor was. Nothing is sent: read it,
 
 ## The first time
 
-The first time you tap the mic, your Machine gets voice ready. It downloads the speech model once, about 600 MB, and says "Getting voice ready…" with how far it is. That takes a few minutes. Your recording waits and is written down as soon as it's ready.
+The first time you tap the mic, your Machine gets voice ready. It downloads the speech model once, 150 to 500 MB, and says "Getting voice ready…" with how far it is. That takes a few minutes. Your recording waits and is written down as soon as it's ready.
 
 ## Where your voice goes
 
@@ -26,12 +26,12 @@ By default your recording is turned into text on your Machine itself. It never l
 In **Settings**, **General**, under **Voice input**, you can choose:
 
 - **Turned into text**: **On this Machine**, or **With OpenAI**. OpenAI is faster on a small server, but your recording goes to OpenAI with your own key. It needs an OpenAI API key in OpenClaw. A ChatGPT sign-in doesn't include it.
-- **Accuracy**: **More accurate** works best for most languages and takes about as long as you talked on a small server. **Faster** is quicker but gets more words wrong.
+- **Accuracy**: **More accurate** works best for most languages. **Faster** is quicker but gets more words wrong. On a Standard server, which has less memory, **Faster** is the default.
 - **Language**: **Detect** works for every app language. Picking yours is a little faster.
 
 ## When it doesn't work
 
 - **The microphone is blocked**: allow the microphone for this site in your browser's settings. In the phone app, it's under the app's permissions.
 - **No microphone found**: connect one and try again.
-- **Can’t reach your Machine**: your recording is kept. Tap **Try again** when your Machine is back.
+- **Can’t reach your Machine**: your recording is kept and written down when your Machine is back. To try sooner, tap **Try now**.
 - **I didn’t catch anything**: talk a little closer to the mic, or longer.

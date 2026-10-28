@@ -50,8 +50,8 @@ LANGUAGES = ('de', 'en', 'es', 'fr', 'it', 'nl', 'pt')   # the app's languages (
 ENGINES = ('local', 'openai')
 OPENAI_MODEL = 'openai/gpt-4o-transcribe'
 HF = 'https://huggingface.co/{repo}/resolve/{revision}/{name}'
-# The models, at a fixed revision, each file with its size and SHA-256. "small" is the default: it gets Dutch, German
-# and the rest right where "base" garbles them, and runs at about real time or better on two cores (docs/voice.md).
+# The models, at a fixed revision, each file with its size and SHA-256. "small" gets Dutch, German and the rest right
+# where "base" garbles them more often; "base" is about three times faster and needs half the memory (docs/voice.md).
 MODELS = {
     'small': {'repo': 'Systran/faster-whisper-small', 'revision': '536b0662742c02347bc0e980a01041f333bce120', 'files': {
         'config.json': (2370, 'b55496ac7940a7ae47d2c01eab40edfd8701feec1229d9cce3b40014383fb828'),
@@ -64,7 +64,29 @@ MODELS = {
         'vocabulary.txt': (459861, '34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913'),
         'model.bin': (145217532, 'd01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9')}},
 }
-DEFAULT_MODEL = 'small'
+SMALL_SERVER = 6 * 1024 ** 3   # below this much memory, "base" is the default: a Standard server has 4 GB and 2 cores
+NICE = 10                      # transcription and its preparation yield to reviews and the rest of the Machine
+
+
+def memory_bytes():
+    try:
+        return os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+    except (AttributeError, ValueError, OSError):
+        return 0
+
+
+def default_model():
+    """"small" where there's room (desktops, Bigger servers), "base" on small servers, where "small" pushes into swap."""
+    memory = memory_bytes()
+    return 'base' if 0 < memory < SMALL_SERVER else 'small'
+
+
+def lowered(command):
+    """The command and its keyword arguments, so it runs at a lower priority than the Machine's own work."""
+    if os.name == 'nt':
+        return command, {'creationflags': subprocess.BELOW_NORMAL_PRIORITY_CLASS}
+    nice = shutil.which('nice')
+    return ([nice, '-n', str(NICE), *command] if nice else command), {}
 
 
 class NotReady(Exception):
@@ -79,7 +101,7 @@ def prefs(db):
     """The owner's choices in Settings, Voice input: engine, model and language ('' detects it)."""
     kept = dict(db.execute('SELECT key,value FROM voice_prefs').fetchall())
     engine = kept.get('engine') if kept.get('engine') in ENGINES else 'local'
-    model = kept.get('model') if kept.get('model') in MODELS else DEFAULT_MODEL
+    model = kept.get('model') if kept.get('model') in MODELS else default_model()
     language = kept.get('language') if kept.get('language') in LANGUAGES else ''
     return {'engine': engine, 'model': model, 'language': language}
 
@@ -178,17 +200,27 @@ class Voice:
         with self.lock:
             if self.preparing or self.ready(model):
                 pass
+            elif not self.room():   # said before anything downloads
+                self.failed = 'There isn’t enough free disk space for voice (it needs about 2 GB).'
             else:
                 self.failed = None
                 self.preparing = {'model': model, 'step': 'packages', 'done': 0, 'total': 0}
                 threading.Thread(target=self._prepare, args=(model,), name='voice-prepare', daemon=True).start()
         return self.status(model)
 
+    def room(self):
+        """Free disk space for the packages and a model, measured where they go (or the nearest folder that exists)."""
+        place = self.root
+        while not place.exists() and place != place.parent:
+            place = place.parent
+        try:
+            return shutil.disk_usage(place).free >= FREE_BYTES
+        except OSError:
+            return True   # can't tell: the download says it if it runs out
+
     def _prepare(self, model):
         try:
             self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
-            if shutil.disk_usage(self.root).free < FREE_BYTES:
-                raise RuntimeError('There isn’t enough free disk space for voice (it needs about 2 GB).')
             key = requirements_key()
             try:
                 done = json.loads(self.ready_file().read_text())
@@ -222,9 +254,9 @@ class Voice:
                         capture_output=True, text=True, timeout=300)
         if made.returncode:
             raise RuntimeError('Python can’t make a virtual environment here. Install python3-venv, then try again.')
-        got = self.run([str(python_in(self.env)), '-m', 'pip', 'install', '--disable-pip-version-check', '--no-input',
-                        '--no-cache-dir', '--only-binary=:all:', '--require-hashes', '-r', str(REQUIREMENTS)],
-                       capture_output=True, text=True, timeout=1800)
+        command, low = lowered([str(python_in(self.env)), '-m', 'pip', 'install', '--disable-pip-version-check', '--no-input',
+                                '--no-cache-dir', '--only-binary=:all:', '--require-hashes', '-r', str(REQUIREMENTS)])
+        got = self.run(command, capture_output=True, text=True, timeout=1800, **low)
         if got.returncode:
             shutil.rmtree(self.env, ignore_errors=True)
             raise RuntimeError('The voice packages couldn’t be installed. Check the internet connection, then try again.')
@@ -282,8 +314,9 @@ class Voice:
             return self.worker[0]
         self.stop()
         threads = max(1, min(4, (os.cpu_count() or 2)))
-        process = self.popen([str(python_in(self.env)), str(ROOT / 'voice_worker.py'), str(self.model_dir(model)), str(threads)],
-                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, cwd=str(self.root))
+        command, low = lowered([str(python_in(self.env)), str(ROOT / 'voice_worker.py'), str(self.model_dir(model)), str(threads)])
+        process = self.popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                             cwd=str(self.root), **low)
         self.worker = (process, model)
         try:
             if not self._line(process, 120).get('ready'):

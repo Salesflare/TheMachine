@@ -17,7 +17,7 @@ Ce que vous avez dit arrive dans la zone, là où était votre curseur. Rien n�
 
 ## La première fois
 
-La première fois que vous touchez le micro, votre Machine prépare la voix. Elle télécharge le modèle vocal une seule fois, environ 600 Mo, et affiche "Préparation de la voix…" avec l’avancement. Cela prend quelques minutes. Votre enregistrement attend et est transcrit dès que tout est prêt.
+La première fois que vous touchez le micro, votre Machine prépare la voix. Elle télécharge le modèle vocal une seule fois, de 150 à 500 Mo, et affiche "Préparation de la voix…" avec l’avancement. Cela prend quelques minutes. Votre enregistrement attend et est transcrit dès que tout est prêt.
 
 ## Où va votre voix
 
@@ -26,12 +26,12 @@ Par défaut, votre enregistrement est transcrit sur votre Machine elle-même. Il
 Dans **Paramètres**, **Général**, sous **Saisie vocale**, vous pouvez choisir :
 
 - **Transcrit** : **Sur cette Machine**, ou **Avec OpenAI**. OpenAI est plus rapide sur un petit serveur, mais votre enregistrement part chez OpenAI, avec votre propre clé. Il faut une clé API OpenAI dans OpenClaw. Une connexion ChatGPT ne suffit pas.
-- **Précision** : **Plus précis** fonctionne le mieux pour la plupart des langues et prend, sur un petit serveur, à peu près le temps pendant lequel vous avez parlé. **Plus rapide** va plus vite, mais se trompe sur plus de mots.
+- **Précision** : **Plus précis** fonctionne le mieux pour la plupart des langues. **Plus rapide** va plus vite, mais se trompe sur plus de mots. Sur un serveur Standard, qui a moins de mémoire, **Plus rapide** est le choix par défaut.
 - **Langue** : **Détecter** fonctionne pour toutes les langues de l’app. Choisir la vôtre est un peu plus rapide.
 
 ## Quand ça ne marche pas
 
 - **Le micro est bloqué** : autorisez le micro pour ce site dans les paramètres de votre navigateur. Dans l’app sur téléphone, c’est dans les autorisations de l’app.
 - **Aucun micro trouvé** : branchez-en un et réessayez.
-- **Impossible de joindre votre Machine** : votre enregistrement est gardé. Touchez **Réessayer** quand votre Machine est de retour.
+- **Impossible de joindre votre Machine** : votre enregistrement est gardé et transcrit quand votre Machine est de retour. Pour essayer plus tôt, touchez **Essayer maintenant**.
 - **Je n’ai rien compris** : parlez un peu plus près du micro, ou plus longtemps.

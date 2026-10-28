@@ -17,7 +17,7 @@ Quello che hai detto finisce nella casella, dove c’era il cursore. Non viene i
 
 ## La prima volta
 
-La prima volta che tocchi il microfono, la tua Machine prepara la voce. Scarica il modello vocale una volta sola, circa 600 MB, e mostra "Preparazione della voce…" con l’avanzamento. Ci vuole qualche minuto. La tua registrazione aspetta e viene trascritta appena tutto è pronto.
+La prima volta che tocchi il microfono, la tua Machine prepara la voce. Scarica il modello vocale una volta sola, da 150 a 500 MB, e mostra "Preparazione della voce…" con l’avanzamento. Ci vuole qualche minuto. La tua registrazione aspetta e viene trascritta appena tutto è pronto.
 
 ## Dove va la tua voce
 
@@ -26,12 +26,12 @@ Di base la tua registrazione viene trascritta sulla tua Machine stessa. Non la l
 In **Impostazioni**, **Generale**, sotto **Input vocale**, puoi scegliere:
 
 - **Trascritto**: **Su questa Machine**, oppure **Con OpenAI**. OpenAI è più veloce su un server piccolo, ma la tua registrazione va a OpenAI, con la tua chiave. Serve una chiave API di OpenAI in OpenClaw. Un accesso con ChatGPT non la include.
-- **Precisione**: **Più preciso** funziona meglio per la maggior parte delle lingue e, su un server piccolo, ci mette più o meno quanto hai parlato. **Più veloce** è più rapido, ma sbaglia più parole.
+- **Precisione**: **Più preciso** funziona meglio per la maggior parte delle lingue. **Più veloce** è più rapido, ma sbaglia più parole. Su un server Standard, che ha meno memoria, **Più veloce** è l’impostazione predefinita.
 - **Lingua**: **Rileva** funziona per tutte le lingue dell’app. Scegliere la tua è un po’ più veloce.
 
 ## Se non funziona
 
 - **Il microfono è bloccato**: consenti il microfono per questo sito nelle impostazioni del browser. Nell’app sul telefono, è nei permessi dell’app.
 - **Nessun microfono trovato**: collegane uno e riprova.
-- **Impossibile raggiungere la tua Machine**: la registrazione resta. Tocca **Riprova** quando la tua Machine è di nuovo raggiungibile.
+- **Impossibile raggiungere la tua Machine**: la registrazione resta e viene trascritta quando la tua Machine torna raggiungibile. Per provare prima, tocca **Prova ora**.
 - **Non ho capito niente**: parla un po’ più vicino al microfono, o più a lungo.

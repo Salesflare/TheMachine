@@ -13,10 +13,11 @@ const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf
 const now=new Date().toISOString(),id='c1c1c1c1c1c1c1c1';
 const cards=[{id,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
-const actions=[];let local={state:'ready'},hold=null,drop=0,demo=false,said='Tell her Thursday after two works.';
+const actions=[];let local={state:'ready'},hold=null,down=false,demo=false,said='Tell her Thursday after two works.';
 const voiceView=()=>({engine:'local',model:'small',language:'',local,openai:false,max_seconds:120,languages:['de','en','es','fr','it','nl','pt'],models:['small','base']});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
+ if(down&&url.pathname.startsWith('/api/')){res.statusCode=502;res.setHeader('Content-Type','text/html');res.end('<h1>502</h1>');return}  // the Machine can't be reached (its proxy answers)
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body);actions.push({...r,upload:req.headers['x-upload']||''});
   if(demo&&r.action.startsWith('voice_')){res.end(JSON.stringify({ok:true,demo:true}));return}  // the site's demo answers what it doesn't know so
@@ -24,12 +25,13 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(r.action==='voice_prepare'){if(local.state!=='ready')local={state:'preparing',step:'packages',done:0,total:0};res.end(JSON.stringify(voiceView()));return}
   if(r.action==='voice_prefs'){res.end(JSON.stringify({...voiceView(),...r.args}));return}
   if(r.action==='voice_transcribe'){
-   if(drop>0){drop--;res.statusCode=502;res.setHeader('Content-Type','text/html');res.end('<h1>502</h1>');return}  // the Machine can't be reached (its proxy answers)
    if(hold)await hold;
    if(local.state!=='ready'){res.end(JSON.stringify({pending:true,voice:voiceView()}));return}
    res.end(JSON.stringify({text:said,language:'en'}));return}
   res.end(JSON.stringify(r.action==='card_chat'?{session:true,status:'done',active:false,cursor:'k',items:[{kind:'reply',text:'Lotte asked when the order can be picked up. Want me to answer her?',at:Date.now()-60000}]}:{}));return}
- res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
+ // brand/avatar.png is the app icon, as assistant.py serves it
+ if(/^\/brand\/[\w.-]+\.(png|webp|woff2|svg)$/.test(url.pathname)){try{const f=await readFile(new URL('..'+(url.pathname==='/brand/avatar.png'?'/brand/app-icon-192.png':url.pathname),import.meta.url));res.setHeader('Content-Type',{png:'image/png',webp:'image/webp',woff2:'font/woff2',svg:'image/svg+xml'}[url.pathname.split('.').pop()]);res.end(f)}catch{res.statusCode=404;res.end()}return}
+ res.statusCode=200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const SHOTS=process.env.SHOT_DIR;
 
@@ -113,11 +115,15 @@ try{
    assert.equal(await page.locator('#chat-input').inputValue(),said,'then it writes it');
 
    // The Machine can't be reached: the clip is kept and Try again sends it
-   await page.locator('#chat-input').fill('');drop=1;
+   await page.locator('#chat-input').fill('');down=true;
    await tap(mic);await page.waitForSelector(box+' .mic-time');await page.waitForTimeout(600);await tap(box+' [data-mic-stop]');
-   await page.waitForSelector(box+' .mic-err');assert.match(await page.locator(box+' .mic-err').textContent(),/Can’t reach your Machine/);
-   await shot('5-offline');
-   await tap(box+' [data-mic-retry]');await page.waitForFunction(()=>document.querySelector('#chat-input').value.length>0);
+   // Offline: the clip waits in the box, the offline bar says so with Try now, and it goes when the Machine answers
+   await page.waitForFunction(()=>/Kept until you’re back online/.test(document.querySelector('.chat-compose .mic-hint')?.textContent||''));
+   await page.waitForSelector('#chat-offline:not([hidden]) [data-net-retry]');
+   assert.ok(await page.locator('#chat-offline [data-net-retry]').isVisible(),'the offline bar shows in the chat');
+   await shot('5-offline');down=false;
+   await tap('#chat-offline [data-net-retry]');await page.waitForFunction(()=>document.querySelector('#chat-input').value.length>0);
+   await page.waitForSelector('#chat-offline[hidden]',{state:'attached'});
    assert.equal(await page.locator('#chat-input').inputValue(),said);
 
    // The microphone is blocked, or there is none: it says so, and × closes it
@@ -166,6 +172,7 @@ try{
   // Settings, General, Voice input
   await page.evaluate(()=>showSettings('general'));await page.waitForSelector('#settings-dictation:not([hidden]) #dictation-engine');
   assert.equal(await page.locator('#dictation-engine option[value="openai"]').isDisabled(),true,'With OpenAI needs a key');
+  assert.ok(await page.evaluate(()=>{const dev=[...document.querySelectorAll('#settings h2')].find(h=>h.textContent==='This device');return dev.getBoundingClientRect().top<document.querySelector('#settings-dictation').getBoundingClientRect().top}),'Voice input sits below This device');
   await page.locator('#settings-dictation').scrollIntoViewIfNeeded();await shot('11-settings');
   actions.length=0;await page.selectOption('#dictation-language','nl');await page.waitForFunction(()=>true);
   await page.waitForTimeout(200);assert.deepEqual(actions.find(a=>a.action==='voice_prefs')?.args,{language:'nl'});

@@ -6,6 +6,9 @@ import http.client
 import importlib.util
 import io
 import json
+import os
+import shutil
+import sqlite3
 import subprocess
 import tempfile
 import threading
@@ -166,10 +169,35 @@ class Preparation(unittest.TestCase):
         self.assertIn('internet connection', self.wait(voice)['error'])
         self.assertFalse(voice.env.exists())
 
+    def test_too_little_disk_says_so_before_anything_downloads(self):
+        self.commands.clear()
         with patch.object(v.shutil, 'disk_usage', return_value=v.shutil._ntuple_diskusage(10 ** 10, 9 * 10 ** 9, 10 ** 9)):
             voice = self.voice()
-            voice.prepare('tiny')
-            self.assertIn('2 GB', self.wait(voice)['error'])
+            self.assertEqual(voice.prepare('tiny'), {'state': 'failed', 'error': 'There isn’t enough free disk space for voice (it needs about 2 GB).'})
+        self.assertEqual((self.commands, self.urls), ([], []))
+        self.assertEqual(voice.prepare('tiny')['state'], 'preparing')   # room again: the next tap prepares
+        self.assertEqual(self.wait(voice), {'state': 'ready'})
+
+    def test_installs_run_at_a_lower_priority(self):
+        voice = self.voice()
+        voice.prepare('tiny'), self.wait(voice)
+        pip = next(c for c in self.commands if 'pip' in c)
+        if os.name != 'nt' and shutil.which('nice'):
+            self.assertEqual(pip[1:3], ['-n', str(v.NICE)])
+
+
+class DefaultModel(unittest.TestCase):
+    def test_small_servers_get_base_and_the_rest_small(self):
+        for memory, model in ((4 * 1024 ** 3, 'base'), (8 * 1024 ** 3, 'small'), (32 * 1024 ** 3, 'small'), (0, 'small')):
+            with patch.object(v, 'memory_bytes', return_value=memory):
+                self.assertEqual(v.default_model(), model, memory)
+
+    def test_the_default_follows_the_server_until_the_owner_picks(self):
+        db = sqlite3.connect(':memory:')
+        v.initialize(db)
+        with patch.object(v, 'memory_bytes', return_value=4 * 1024 ** 3):
+            self.assertEqual(v.prefs(db)['model'], 'base')
+            self.assertEqual(v.set_prefs(db, {'model': 'small'}, False)['model'], 'small')
 
 
 class FakeWorker:
@@ -229,7 +257,10 @@ class Worker(unittest.TestCase):
             self.assertEqual(self.voice.transcribe(frames, 'small', '', 60), {'text': 'Hallo daar', 'language': 'nl'})
             self.voice.transcribe(frames, 'small', 'de', 60)
         self.assertEqual(len(self.started), 1)
-        self.assertTrue(self.started[0][1].endswith('voice_worker.py'))
+        command = self.started[0]
+        self.assertTrue(command[-3].endswith('voice_worker.py'))
+        if os.name != 'nt' and shutil.which('nice'):
+            self.assertEqual(command[1:3], ['-n', str(v.NICE)])   # yields to reviews
         (first, sent), (second, _) = self.worker.requests
         self.assertEqual(sent, frames)
         self.assertEqual(first, {'bytes': len(frames), 'language': None, 'languages': list(v.LANGUAGES)})
