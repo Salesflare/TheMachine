@@ -21,7 +21,7 @@ No computador, Enter ou Ctrl+Enter (Cmd+Enter no Mac) envia, e Shift+Enter come�
 
 ## Modelo e raciocínio
 
-Abaixo da caixa de mensagem, o chat mostra o modelo e o nível de raciocínio, como "GPT-6.1 Sol · Raciocínio baixo". Toque em um deles para escolher outro só para este chat. Chats novos usam o que você definiu em **Configurações**, **Modelo** (veja [Modelo](model.md)).
+Abaixo da caixa de mensagem, o chat mostra o modelo e o nível de raciocínio, como "GPT-6.1 Sol" e "Raciocínio baixo". Toque em um deles para escolher outro só para este chat. Chats novos usam o que você definiu em **Configurações**, **Modelo** (veja [Modelo](model.md)).
 
 ## Parar uma resposta
 

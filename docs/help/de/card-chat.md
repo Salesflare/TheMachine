@@ -21,7 +21,7 @@ Auf einem Computer sendet Enter oder Strg+Enter (Cmd+Enter auf dem Mac), und Ums
 
 ## Modell und Nachdenken
 
-Unter dem Nachrichtenfeld zeigt der Chat sein Modell und seine Nachdenkstufe, etwa „GPT-6.1 Sol · Wenig Nachdenken“. Tippe auf eins davon, um nur für diesen Chat etwas anderes zu wählen. Neue Chats nutzen, was du in **Einstellungen**, **Modell** festgelegt hast (siehe [Modell](model.md)).
+Unter dem Nachrichtenfeld zeigt der Chat sein Modell und seine Nachdenkstufe, etwa „GPT-6.1 Sol“ und „Wenig Nachdenken“. Tippe auf eins davon, um nur für diesen Chat etwas anderes zu wählen. Neue Chats nutzen, was du in **Einstellungen**, **Modell** festgelegt hast (siehe [Modell](model.md)).
 
 ## Eine Antwort stoppen
 

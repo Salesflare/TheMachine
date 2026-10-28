@@ -21,7 +21,7 @@ Op een computer verstuurt Enter of Ctrl+Enter (Cmd+Enter op een Mac) je bericht,
 
 ## Model en denkwerk
 
-Onder het berichtvak toont de chat zijn model en denkniveau, zoals "GPT-6.1 Sol · Weinig denkwerk". Tik op een van beide om een ander te kiezen, alleen voor deze chat. Nieuwe chats gebruiken wat je instelde in **Instellingen**, **Model** (zie [Model](model.md)).
+Onder het berichtvak toont de chat zijn model en denkniveau, zoals "GPT-6.1 Sol" en "Weinig denkwerk". Tik op een van beide om een ander te kiezen, alleen voor deze chat. Nieuwe chats gebruiken wat je instelde in **Instellingen**, **Model** (zie [Model](model.md)).
 
 ## Een antwoord stoppen
 

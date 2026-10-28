@@ -21,7 +21,7 @@ Sur ordinateur, Entrée ou Ctrl+Entrée (Cmd+Entrée sur Mac) envoie, et Maj+Ent
 
 ## Modèle et réflexion
 
-Sous la zone de message, le chat affiche son modèle et son niveau de réflexion, comme « GPT-6.1 Sol · Réflexion faible ». Appuyez sur l’un ou l’autre pour en choisir un autre pour ce chat seulement. Les nouveaux chats utilisent ce que vous avez réglé dans **Paramètres**, **Modèle** (voir [Modèle](model.md)).
+Sous la zone de message, le chat affiche son modèle et son niveau de réflexion, comme « GPT-6.1 Sol » et « Réflexion faible ». Appuyez sur l’un ou l’autre pour en choisir un autre pour ce chat seulement. Les nouveaux chats utilisent ce que vous avez réglé dans **Paramètres**, **Modèle** (voir [Modèle](model.md)).
 
 ## Arrêter une réponse
 
