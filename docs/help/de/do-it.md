@@ -10,6 +10,8 @@ order: 2
 
 **Ausführen** bittet deine Machine, die Aufgabe vorzubereiten: die Antwort entwerfen, Dinge nachschlagen, ein Formular ausfüllen. Sie arbeitet mit deinen eigenen Konten und ihrem eigenen Browser, so wie du es tun würdest.
 
+Bevor sie eine Nachfrage entwirft oder etwas übergibt, prüft sie den Verlauf auf neuere Antworten, auch von Teammitgliedern. Ist es schon erledigt, sagt die Aufgabe das stattdessen. Hat sie ein Dokument oder eine Seite erstellt oder geändert, verlinkt die Aufgabe direkt darauf.
+
 ## Nichts geht raus vor deinem Ja
 
 - Eine Antwort kommt als Entwurf zurück. **Prüfen und senden** öffnet ihn, bereit zum Bearbeiten. Er geht erst raus, wenn du auf **Jetzt senden** tippst.
@@ -18,6 +20,7 @@ order: 2
 - Eine Antwort antwortet auf die neueste E-Mail des Verlaufs, und die Quelle der Aufgabe öffnet diese E-Mail.
 - Ein Schritt, der etwas verbindlich macht, etwa absenden, bezahlen oder buchen, hält an und wartet auf deine Bestätigung.
 - Im Chat einer Aufgabe wird ein Entwurf nie in derselben Nachricht gesendet, die ihn geschrieben hat.
+- Bis du freigibst, steht in der Aufgabe **Bereit zur Freigabe** oder **Braucht dich**, nie fertig. Dass ein Entwurf rausging, steht dort erst, wenn er raus ist.
 
 Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnachricht, eine Nachricht über WhatsApp, Telegram, LinkedIn oder X. Der Artikel jeder Verbindung sagt, was sie senden kann.
 
@@ -33,3 +36,4 @@ Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnac
 - „Das kann nicht von hier gesendet werden.“ heißt, dass du den Entwurf mit **Entwurf kopieren** kopierst und selbst sendest.
 - **Braucht deine Hilfe** heißt, dass sie dich etwas fragt: **Antworten**. **Hängt fest** heißt, dass sie ohne Frage angehalten hat oder zu lange lief und gestoppt wurde. Die Aufgabe sagt, warum.
 - **Erneut versuchen** führt sie noch einmal aus. **Ändern** bittet um etwas anderes.
+- Ein Code auf deinem Handy oder eine fehlende Berechtigung hält sie an. Die Aufgabe sagt in einer Zeile, was sie braucht, etwa den Code in ihrem Browser oder Zugriff auf eine Datei, dann **Weiter** oder **Erneut versuchen**.

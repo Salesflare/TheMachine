@@ -10305,6 +10305,59 @@ def owner_last_word(db, watch, owner_slack_ids=()):
     return found
 
 
+NEWER_KINDS = ('gmail.message', 'slack.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
+
+
+def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=5):
+    """Messages already synced into a to-do's own conversations (its email thread, Slack thread or DM, chat) after its
+    newest evidence: someone may have answered or handled it since. Only who and when, from what is stored; no model
+    call and no message text. Newest last, at most `limit`, each {'id', 'at', 'channel', 'who'}."""
+    ids = [i for i in event_ids or [] if isinstance(i, int)]
+    if not ids:
+        return []
+    rows = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchall()
+    found, seen = [], set(ids)
+    teammates = {str(e).lower(): name for e, name in dict(teammates).items()} if teammates else {}
+    for row in rows:
+        if row['kind'] not in NEWER_KINDS:
+            continue
+        m = json.loads(row['metadata'] or '{}')
+        key = conversation_of(row['kind'], m)
+        if not key or row['kind'] == 'slack.message' and not m.get('thread_ts') and not key.startswith('D'):
+            continue  # a channel message outside a thread: the channel holds many other matters
+        field = 'thread_id' if row['kind'] == 'gmail.message' else 'channel_id' if row['kind'] == 'slack.message' else 'chat_id' if m.get('chat_id') else 'conversation_id'
+        latest = max(r['occurred_at'] for r in rows if r['account_id'] == row['account_id'])
+        for e in db.execute(f"SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE account_id=? AND kind=? AND deleted=0 AND occurred_at>? "
+                            f"AND json_extract(metadata,'$.{field}')=? ORDER BY occurred_at LIMIT 50", (row['account_id'], row['kind'], latest, key)):
+            if e['id'] in seen:
+                continue
+            em = json.loads(e['metadata'] or '{}')
+            # A Slack channel holds many matters: only the same thread counts there (a DM is one conversation).
+            if row['kind'] == 'slack.message' and m.get('thread_ts') and em.get('thread_ts') != m['thread_ts'] and em.get('ts') != m['thread_ts']:
+                continue
+            seen.add(e['id'])
+            address = _address(em.get('from'))
+            if own_message(dict(e), owner_slack_ids):
+                who = 'the owner'
+            elif address and address in teammates:
+                who = f"{teammates[address] or address} (a teammate)"
+            elif address and own_addresses.email_domain(address) in domains:
+                who = f"{address} (same company)"
+            else:
+                who = address or str(em.get('sender_name') or em.get('user_name') or em.get('from') or 'someone else')[:80]
+            found.append({'id': e['id'], 'at': e['occurred_at'], 'channel': e['kind'].split('.')[0], 'who': who})
+    return sorted(found, key=lambda x: x['at'])[-limit:]
+
+
+def newer_activity_lines(found):
+    """The newer messages in a to-do's conversations, for a preparation: read them before a follow-up or handoff."""
+    if not found:
+        return ''
+    return ('\n\nNewer in this to-do\'s conversations than its evidence (already synced; read them with events before a follow-up, nudge or '
+            'handoff: if someone already answered or handled it, save outcome:\'already_done\' instead):\n'
+            + '\n'.join(f"- event {x['id']}: {x['channel']}, {x['at'][:16].replace('T', ' ')} UTC, from {x['who']}" for x in found))
+
+
 def promise_closed_at(db, card):
     """When a closed to-do was last marked done or not needed."""
     return db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('complete','reject')", (card['id'],)).fetchone()[0]
@@ -10535,6 +10588,9 @@ def card(row):
     if row.get('early') and row['status'] == 'prepared' and not outcome.get('needs') and outcome.get('state') != 'already_done' and any(
             a.get('kind') != 'open' for a in row.get('next_actions') or []):
         status = t('Ready to approve. Nothing goes out until you do.')
+    elif row['status'] == 'prepared' and outcome.get('state') in (None, 'done') and any(
+            a.get('kind') in next_actions.WAITING_KINDS for a in row.get('next_actions') or []):
+        status = t('Ready to approve. Nothing goes out until you do.')  # prepared, not done: a step still waits for them
     if row.get('handled_hint') and row['status'] not in ('completed','rejected') and outcome.get('state') != 'already_done':
         try:
             hint = json.loads(row['handled_hint'])
@@ -11955,6 +12011,10 @@ For this job:
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{meeting_notes_prompt(config)}
 - Save the result with assistant_signals prepare args suggestion_id={sid}, job_id={j}, body=<short result>, next_actions=[...], outcome, and send_now:true only when the owner's latest message approves sending a draft they already saw on the card, unchanged (the service refuses any other). A draft you write or change in this turn is saved without send_now and shown to them: they read it and tap Send (outcome:'needs_you', needs:'check the draft and send it'), also when their note only says what to do ("email Sam now").
 - outcome:'done' only when the task itself is complete and nothing is left for the owner but to check it; outcome:'answered' when you only answered their question, explained or planned, and the task itself is still to do (the card then offers Do it again); outcome:'already_done' with no next_actions when it turns out to be done already or no longer needed; outcome:'your_step' with step:'submit' (or pay, book, sign, confirm, order, apply) when everything is ready but that final click is left for them, e.g. a form you filled in and didn't submit (the card says so and links to the page in this Machine's browser by itself; no link of your own needed); outcome:'needs_you' with needs:<the one thing they have to do, in a few words> otherwise (approve the send, sign in, choose); when that is a question for them, write needs as the question itself, ending in "?" (the card then leads with Answer). The card shows that status line itself, so the body doesn't repeat it. Finish what you can first: don't stop to ask about steps the rules already let you do.
+- Keep prepared, sent and done apart, in the body and the title too: never call something done, sent, applied or fixed while a draft, a review or a step only they can do is still open; say what is ready and what is left. The service refuses outcome:'done' while a next action still waits for them.
+- Before a follow-up, nudge or handoff, check the conversation for newer activity by anyone else: their reply, a teammate's send or answer, or a teammate's Machine that handled it (the Work Fleet lines). Read the newer messages listed below first when there are any. When it's handled, save outcome:'already_done' saying who did it and when, instead of drafting.
+- When the result is a document, sheet, page or record you made or changed that has its own address (a Google Doc, a live page, a CRM record), add {{kind:open,label:'Open <what it is>',url:<its exact address>}} so the to-do opens it in one tap.
+- When a login code, a two-step code or a missing permission stops a step, record a blocker whose reason says exactly what is needed in one short line, with where to do it, e.g. "Enter the code Acme texted you in your Machine's browser, then tap Continue" or "Give this Machine edit access to the Q3 budget sheet, then tap Try again". Never stop without saying what is needed.
 - When the card's title no longer says where things stand after this result (the situation changed, not just the wording), add title=<a new short title for now, under 90 characters>; otherwise leave title out.
 - When latest_feedback is a Change note, also give note_kind: style (how it was written), fact (something you didn't know), continue (keep going or finish the job) or new_ask (something else to do). A style note that holds beyond this card (how they write on a channel or with this kind of person: length, tone, greeting, sign-off, language, capitals, punctuation, links, formatting; "always…", "next time…", or what they asked on an earlier card) updates that channel's voice: assistant_signals remember_fact args kind=voice, channel=<the channel it is about: Email, Slack, WhatsApp, Telegram, LinkedIn, X DM, another channel's name, or All when it holds everywhere>, text=<that channel's whole voice block (up to {VOICE_LINES} short lines, at most {VOICE_CHARS} characters): the current block with the note worked in, everything else kept, only what it contradicts dropped>, decision_id=<that note's decision>. {VOICE_PRECISE} How a kind of task is done (what to include, where things go) is a draft rule instead: remember_fact kind=draft, text=<the rule, general>. A fact note that holds beyond this card goes in remember_fact as a fact. A note about how to do a kind of task next time ("next time keep it open for me") is a draft rule, also when it is not about writing. The card's chat shows what remember_fact saved, with Undo: the body never says you noted, saved or will remember something, and never claims it when nothing was saved.
 - When the owner's note means they want this task itself back later (remind me about it next week, later, on Tuesday), that is this card's snooze, not a reminder: save with outcome:'snoozed' and snooze_until:<their local date and time, e.g. 2026-10-27T09:00, or a date alone for their morning>, and a one-line body. The card leaves their list and comes back then. Do not also add an automation, cron job or reminder for it. A separate reminder about something else, or a recurring one, stays an automation. Their time zone is {getattr(local_tz(),'key','UTC')}; it is now {dt.datetime.fromisoformat(now()).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')} there.
@@ -13882,6 +13942,11 @@ class App:
                     # The owner wants this card itself back later: the card's own snooze, not a separate reminder.
                     outcome={'state':'snoozed','until':asked_snooze_time(args.get('snooze_until'))}
                 else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option>")
+            if outcome and outcome['state']=='done' and args.get('send_now') is not True and any(a['kind'] in next_actions.WAITING_KINDS for a in next_actions.actions(action)):
+                # Prepared is not done: a draft, review or final click still waits for the owner.
+                raise ValueError("Not done yet: a step in next_actions still waits for the owner (a draft to send, a change to approve, a final click). "
+                                 "Save outcome:'needs_you' with needs:<what they do, e.g. check the draft and send it>, or outcome:'your_step' for a final click, "
+                                 'with a body that says what is ready and what is left, never that it is done, sent or applied.')
             if args.get('send_now') is True:
                 # Only a draft the owner already had in front of them, approved in a later message of theirs. A draft
                 # written or changed in this turn is saved and shown first: the owner reads it and taps Send.
@@ -15920,6 +15985,14 @@ class App:
                     lines=self.graph_lines(job['suggestion_id'])
                     if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('graph lines error=%s',type(error).__name__)
+                try:  # someone may have answered since: what is already synced, no model call
+                    with self.store.connect() as db:
+                        row=db.execute('SELECT event_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
+                        found=newer_activity(db,json.loads(row['event_ids'] or '[]') if row else [],self.store.owner_user_ids,
+                                             {x['email']:x['name'] for x in self.teammate_addresses()},company_domains(self.config))
+                    lines=newer_activity_lines(found)
+                    if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                except Exception as error:LOG.error('newer activity error=%s',type(error).__name__)
                 if getattr(self, 'fleet', None):
                     try:
                         lines=self.fleet.lines(job['suggestion_id'])

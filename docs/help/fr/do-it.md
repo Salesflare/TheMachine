@@ -10,6 +10,8 @@ order: 2
 
 **Faire** demande à votre Machine de préparer la tâche : rédiger la réponse, chercher des informations, remplir un formulaire. Elle utilise vos propres comptes et son propre navigateur, comme vous le feriez.
 
+Avant de rédiger une relance ou de passer la main, elle vérifie la conversation pour des réponses plus récentes, y compris d’un collègue. Si c’est déjà réglé, la tâche le dit. Quand elle a créé ou modifié un document ou une page, la tâche y mène directement.
+
 ## Rien ne part sans votre accord
 
 - Une réponse revient sous forme de brouillon. **Vérifier et envoyer** l’ouvre, prête à modifier ; elle ne part que quand vous appuyez sur **Envoyer maintenant**.
@@ -18,6 +20,7 @@ order: 2
 - Une réponse répond au dernier e-mail du fil, et la source de la tâche ouvre cet e-mail.
 - Une étape qui engage quelque chose, comme valider, payer ou réserver, s’arrête et attend votre confirmation.
 - Dans le chat d’une tâche, un brouillon n’est jamais envoyé dans le message qui l’a rédigé.
+- Tant que vous n’avez pas approuvé, la tâche dit **Prêt à approuver** ou **À vous**, jamais terminé. Elle dit qu’un brouillon est parti seulement une fois qu’il l’est.
 
 Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Slack, un message WhatsApp, Telegram, LinkedIn ou X. L’article de chaque connexion dit ce qu’elle peut envoyer.
 
@@ -33,3 +36,4 @@ Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Sl
 - « Ceci ne peut pas être envoyé d’ici. » veut dire que vous copiez le brouillon avec **Copier le brouillon** et l’envoyez vous-même.
 - **Attend votre aide** veut dire qu’elle vous pose une question : **Répondre**. **Bloqué** veut dire qu’elle s’est arrêtée sans question, ou qu’elle a tourné trop longtemps et a été arrêtée ; la tâche dit pourquoi.
 - **Réessayer** la relance une fois. **Modifier** demande autre chose.
+- Un code envoyé sur votre téléphone, ou une autorisation qui manque, l’arrête. La tâche dit en une ligne ce qu’il faut, comme le code dans son navigateur ou l’accès à un fichier, puis **Continuer** ou **Réessayer**.
