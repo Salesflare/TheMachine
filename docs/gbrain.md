@@ -7,7 +7,7 @@
 On a self-hosted Machine: **Connections**, **+ Add**, **GBrain**.
 
 1. Install GBrain if it isn't there yet: `bun install -g github:garrytan/gbrain`. The Machine finds `gbrain` from `gbrain.bin` in `config.json`, `GBRAIN_BIN`, `~/.bun/bin/gbrain` or `PATH`.
-2. Read the consent step and check **I agree to this**. Nothing goes into GBrain before that.
+2. Read the consent step and check **I agree**. Nothing goes into GBrain before that.
 3. **Connect GBrain**. The Machine adds GBrain to OpenClaw as an MCP server (`openclaw mcp add gbrain ... serve`) with only its read tools. When GBrain is already set up in OpenClaw (as an MCP server or its OpenClaw plugin), The Machine uses that one and never changes or removes it.
 
 Settings live under `gbrain` in `config.json`: `on`, `consent_at`, `work`, `linked` (`machine` or `existing`) and `bin`.

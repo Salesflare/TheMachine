@@ -59,7 +59,10 @@ try{
 
   // consent: what goes in, AI providers, Connect only after agreeing
   const text=await pane.innerText();
-  assert.match(text,/Never message text/);assert.match(text,/its own AI providers/);
+  assert.match(text,/Message text never goes in\./);assert.match(text,/GBrain may send this to its own AI providers\./);
+  assert.ok(text.indexOf('better to-dos')<text.indexOf('What goes into GBrain'),'the benefit comes first');
+  assert.ok(text.indexOf('never goes in')<text.indexOf('AI providers'));
+  assert.doesNotMatch(await pane.locator('.gbrain-list').innerText(),/message text/i,'the list is only what goes in');
   assert.equal(await pane.locator('[data-gbrain-on]').isDisabled(),true);
   await clean();await shot('consent');
   await pane.locator('[data-gbrain-work-pick]').check();await pane.locator('[data-gbrain-consent]').check();
