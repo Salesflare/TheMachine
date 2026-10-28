@@ -3275,9 +3275,43 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             done.append(item['id'])
         return done
 
+    # -- a bug the owner reported, fixed: the control plane tells them once this Machine runs the fix (its
+    # cloud/support_fixes.py). Asking says the release this Machine runs and its language; the dashboard shows the lines.
+    FIXED_EVERY = 3600
+    release = language = None  # set by the app: () -> the release this code is (assistant.running_release), the UI language
+
+    def fixed(self, seen=None):
+        """The fixed bugs to show, [{id, text, at}] (text in the owner's language, from the control plane); seen
+        closes one, on every Machine of theirs."""
+        import time
+        if seen:
+            found = self.relay.call('POST', '/fixed', {'seen': str(seen)[:40]}, timeout=20) or {}
+        else:
+            ask = {'release': (self.release and self.release()) or '', 'lang': (self.language and self.language()) or ''}
+            found = self.relay.call('GET', '/fixed?' + urllib.parse.urlencode(ask), timeout=20) or {}
+            self.last['fixed'] = time.monotonic()
+        return [{'id': i['id'][:40], 'text': str(i.get('text') or '')[:300], 'at': str(i.get('at') or '')[:40]}
+                for i in (found.get('fixed') or [])[:5] if isinstance(i, dict) and isinstance(i.get('id'), str)]
+
+    def fixed_round(self):
+        """Says what this Machine runs once an hour, so the owner hears of a fix (by email too) without opening the dashboard."""
+        import time
+        last = self.last.get('fixed')
+        if last is not None and time.monotonic() - last < self.FIXED_EVERY:
+            return
+        self.last['fixed'] = time.monotonic()
+        try:
+            self.fixed()
+        except (Off, Unavailable, OSError, ValueError) as error:
+            LOG.info('fixed reports not read error=%s', type(error).__name__)
+
     def run(self, stop):
         backoff = away = 0
         while not stop.is_set():
+            try:
+                self.fixed_round()
+            except Exception as error:  # noqa: BLE001 - never stops the Fleet
+                LOG.error('fixed round error=%s', type(error).__name__)
             try:
                 self.removals_round()
             except Exception as error:  # noqa: BLE001 - never stops the Fleet

@@ -26,6 +26,8 @@ Abra **Ajuda** e depois **Relatar um bug**. Uma mensagem de erro também tem um 
 
 Respondemos por e-mail. Uma Machine auto-hospedada pode enviar um relatório quando está na Network. Se não estiver, escreva para nós.
 
+Quando corrigimos um bug que você relatou e sua Machine já tem a correção, avisamos uma vez: uma linha curta no seu painel (**Entendi** fecha) e um e-mail curto. Uma Machine auto-hospedada fica sabendo quando está na Network.
+
 Se um relatório não puder sair na hora (você está offline ou enviou muitos em pouco tempo), ele não se perde. A sua Machine guarda o relatório, avisa quando ele vai sair e envia sozinha. Relatórios que ainda estão esperando aparecem em **Aguardando envio**.
 
 ## Acesso de suporte

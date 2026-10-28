@@ -2127,7 +2127,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .browser-pane{display:none}
 html:has(#browser-pane:not([hidden])){scrollbar-gutter:auto;overflow:hidden}
 body:has(#browser-pane:not([hidden])) main{max-width:none;height:100dvh;padding:0;display:flex;flex-direction:column}
-body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-banner),body:has(#browser-pane:not([hidden])) .site-footer{display:none}  /* banners wait for the other views */
+body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-banner,#fixed-notice),body:has(#browser-pane:not([hidden])) .site-footer{display:none}  /* banners wait for the other views */
 .browser-pane:not([hidden]){display:flex;flex-direction:column;flex:1 1 0;min-height:0}
 @media(max-width:1023px){body:has(#browser-pane:not([hidden])) main{height:calc(100dvh - 52px - env(safe-area-inset-top))}}
 :root[data-bp-full] .browser-pane:not([hidden]){position:fixed;inset:0;z-index:80;background:var(--bg)}
@@ -2217,6 +2217,7 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .device-nudge{gap:10px 14px;color:var(--muted)}
 .device-nudge[hidden],body.chat-open .device-nudge{display:none}
 /* A usage limit reached (state.model_pause), or reviews waiting for the budget (state.review_pause): the same quiet notice card, with an amber dot, at the top of every view. */
+#fixed-notice{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}#fixed-notice .notice-card{margin:0}.fixed-notice::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--mint)}
 .limit-banner{flex-wrap:nowrap;align-items:flex-start}.limit-banner::before{content:"";flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--amber)}
 .nudge-icon{flex:none;width:36px;height:36px;border-radius:9px}
 .nudge-text{flex:1 1 240px;min-width:0}.nudge-text>span{display:block}
@@ -2338,7 +2339,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 ><button data-tab="fleet" id="tab-fleet" hidden><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><path d="M15.5 5.8a3 3 0 0 1 0 5.4M17.5 14.6c1.6.6 2.6 2.2 3 4.4"/></svg><span class="nl">Fleet</span> <span class="badge" id="badge-fleet"></span></button><button data-tab="feedback"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20.5V16.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"/><path d="M12 13.2l-2.4-2.3a1.5 1.5 0 0 1 2.1-2.1l.3.3.3-.3a1.5 1.5 0 0 1 2.1 2.1z"/></svg><span class="nl">Feedback</span></button><button data-tab="health"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5v4M15 3.5v4M6.5 7.5h11v3.5a5.5 5.5 0 0 1-11 0z"/><path d="M12 16.5v4"/></svg><span class="nl">Connections</span> <span class="badge warn" id="badge-health"></span></button></nav
 ><div class="side-cards" id="side-cards"></div></aside><main
 ><div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div id="limit-banner" class="notice-card limit-banner" role="status" hidden></div><div id="needs-you" role="status" hidden></div><div class="page-head" id="page-head" hidden></div>
+<div id="limit-banner" class="notice-card limit-banner" role="status" hidden></div><div id="fixed-notice" role="status" hidden></div><div id="needs-you" role="status" hidden></div><div class="page-head" id="page-head" hidden></div>
 <dialog id="send-dialog" aria-labelledby="send-title"><form method="dialog"><div class="snooze-heading"
 ><h2 id="send-title">Send this email?</h2><button aria-label="Cancel send">×</button></div></form
 ><fieldset id="send-recipients" hidden><legend>Who should get this?</legend><div></div></fieldset
@@ -2808,6 +2809,19 @@ function limitBanner(p){if(!p)return '';const when=pauseWhen(p.until),
 function reviewBanner(p){if(!p)return '';const when=pauseWhen(p.until),name=p.name||'AI',week=p.window==='week';
  const line=when?t(week?'Reviews wait until {} to save your {} week.':'Reviews wait until {} to save your {} 5-hour limit.',when,name):t(week?'Reviews wait to save your {} week.':'Reviews wait to save your {} 5-hour limit.',name);
  return `<span>${esc(line)}</span><button type="button" class="head-link" data-review-now>${esc(t('Review now'))}</button>`}
+// A bug the owner reported, fixed and running here now: the control plane says so once this Machine runs the fix (its
+// cloud/support_fixes.py; hosted through /_machine/fixed with the owner's sign-in, self-hosted through the Network,
+// bug_fixed). One quiet line each, until Got it, which closes it on every Machine of theirs. Looked at every 15 minutes.
+let fixedList=[],fixedAt=0;
+async function fixedLoad(){if(Date.now()-fixedAt<9e5)return;fixedAt=Date.now();
+ try{if(state.manage_url){const r=await fetch('/_machine/fixed',{credentials:'same-origin',redirect:'manual'});if(!r.ok)return;fixedList=(await r.json()).fixed||[]}
+  else if(state.fleet)fixedList=(await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_fixed',args:{}})})).fixed||[];
+  else fixedList=[]}catch{return}renderFixed()}
+function renderFixed(){const b=$('#fixed-notice');if(!b)return;const html=fixedList.map(f=>`<div class="notice-card fixed-notice"><span>${esc(f.text)}</span><button type="button" class="head-link" data-fixed="${esc(f.id)}">${esc(t('Got it'))}</button></div>`).join('');
+ if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-fixed]');if(!b)return;const id=b.dataset.fixed;fixedList=fixedList.filter(f=>f.id!==id);renderFixed();
+ try{if(state.manage_url)await fetch('/_machine/fixed',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({seen:id})});
+  else await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_fixed',args:{seen:id}})})}catch{}});
 function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause)||reviewBanner(state.review_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
@@ -4555,7 +4569,7 @@ const decisionVia=source=>DECISION_VIA[source]?t(DECISION_VIA[source]):t('via {}
 // Whether Coming back later, Promises and Done are open, kept while a chat stands in for the lists, so closing the chat
 // brings back the list the to-do is in as it was (Esc from a to-do in Coming back later lands on that to-do, list open).
 const listOpenKept={};const listOpen=id=>{const d=document.getElementById(id);if(d)listOpenKept[id]=d.open;return !!listOpenKept[id]};
-function render(){scopeSync(state.locale);applyLocale(state.locale);renderNeedsYou();renderNotify();
+function render(){scopeSync(state.locale);applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open

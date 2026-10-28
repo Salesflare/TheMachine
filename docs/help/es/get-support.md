@@ -26,6 +26,8 @@ Abre **Ayuda** y luego **Informar de un error**. Un mensaje de error también ti
 
 Respondemos por correo. Una Machine autoalojada puede enviar uno cuando está en la Network; si no, escríbenos.
 
+Cuando corregimos un error que reportaste y tu Machine ya tiene la corrección, te lo decimos una vez: una línea corta en tu panel (**Entendido** la cierra) y un correo corto. Una Machine autoalojada se entera cuando está en la Network.
+
 Si un informe no puede salir enseguida (no tienes conexión o enviaste muchos en poco tiempo), no se pierde. Tu Machine lo guarda, te dice cuándo sale y lo envía sola. Los informes que aún esperan aparecen en **Esperando para salir**.
 
 ## Acceso de soporte

@@ -26,6 +26,8 @@ Open **Help** en dan **Een bug melden**. Een foutmelding heeft ook een knop **Ee
 
 We antwoorden per e-mail. Een zelf gehoste Machine kan er een versturen als hij op het Network zit; schrijf ons anders.
 
+Als we een bug oplossen die je meldde en je Machine de oplossing heeft, laten we het je één keer weten: een korte regel op je dashboard (**Begrepen** sluit hem) en een korte e-mail. Een zelf gehoste Machine hoort het als hij op het Network zit.
+
 Kan een bugmelding niet meteen weg (je bent offline, of je stuurde er veel in korte tijd), dan gaat ze niet verloren. Je Machine bewaart ze, zegt wanneer ze weggaat en verstuurt ze vanzelf. Bugmeldingen die nog wachten, staan onder **Wacht op verzending**.
 
 ## Toegang voor support

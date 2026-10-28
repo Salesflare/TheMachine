@@ -215,6 +215,12 @@ class Network:
             return {'mine': not body.get('release')}
         if method == 'POST' and path == '/friends':
             return self.friend(body)
+        if path == '/fixed':  # a bug the owner reported, fixed and running here: one line until Got it (cloud support_fixes)
+            fixed = self.__dict__.setdefault('fixed', [{'id': 's_sandboxfixed01', 'at': now(),
+                                                        'text': 'Fixed: the Projects tab now opens when it’s empty. Thanks for reporting it.'}])
+            if method == 'POST':
+                self.fixed = [f for f in fixed if f['id'] != body.get('seen')]
+            return {'fixed': self.fixed}
         if method == 'POST' and path == '/bug':  # Help, Report a bug: kept here, never sent on
             self.__dict__.setdefault('bugs', []).append(body)
             return {'id': 's_sandbox' + secrets.token_hex(4)}

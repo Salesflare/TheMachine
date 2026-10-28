@@ -827,6 +827,7 @@ OWNER_ACTIONS |= CRM_ACTIONS
 # bug_preview showed, after the owner's tap.
 # support_access: the owner's switch for Support access on a paired self-hosted Machine (fleet.Fleet.support_access).
 SUPPORT_ACTIONS = {
+    'bug_fixed',
     'bug_later',
     'bug_preview',
     'bug_queued',
@@ -8584,8 +8585,15 @@ def source_url(root=APP_ROOT):
     """Where this Machine's code can be read (AGPL-3.0 section 13): the release tag it runs, else the latest release its
     code contains, else the release its last port names ("(OSS #12, release-…)"), else the repo. Never a local commit,
     which GitHub doesn't have."""
+    ref = running_release(root)
+    return f'{SOURCE_REPO}/tree/{ref}' if ref else SOURCE_REPO
+
+
+def running_release(root=APP_ROOT):
+    """The release this Machine's code is (or contains, or its last port names), or None: what source_url links and
+    what the control plane compares with a fix's release before it tells the owner a bug they reported is fixed."""
     if 'url' in _SOURCE_URL and _SOURCE_URL['at'] > time.monotonic() - 600:
-        return _SOURCE_URL['url']
+        return _SOURCE_URL['ref']
     git = lambda *args: subprocess.run(['git', '-C', str(root), *args], capture_output=True, text=True, timeout=10)
     ref = None
     try:
@@ -8600,9 +8608,8 @@ def source_url(root=APP_ROOT):
             ref = ported and ported.group(0)
     except (OSError, subprocess.TimeoutExpired):
         pass
-    url = f'{SOURCE_REPO}/tree/{ref}' if ref else SOURCE_REPO
-    _SOURCE_URL.update(at=time.monotonic(), url=url)
-    return url
+    _SOURCE_URL.update(at=time.monotonic(), url=True, ref=ref)
+    return ref
 
 
 class FaultLog(logging.Handler):
@@ -12619,6 +12626,8 @@ class App:
             self.fleet.soon = lambda fn: threading.Thread(target=fn, name='graph-after-ok', daemon=True).start()  # Share: the heavy round after the tap
             self.fleet.retell = lambda message_id: threading.Thread(target=self.fleet_retell, args=(message_id,), daemon=True).start()
             self.fleet.notify_notice = self.fleet_notify_notice
+            self.fleet.release = running_release  # said when it asks whether a bug the owner reported is fixed here
+            self.fleet.language = lambda: locale_prefs.language_of(self.config)
             self.fleet.make_card, self.fleet.tell = self.fleet_card, self.fleet_tell  # Fleet requests (fleet_requests.py)
             self.fleet.task_pages = self.task_pages.round
             self.fleet.mail_files = self.share_files  # a shared client thread's attachments, read-only (shared_graph.py)
@@ -18399,6 +18408,14 @@ class App:
                 raise ValueError('Can’t reach your account right now. Try again.') from None
         if name == 'bug_preview':
             return {**support.report(path, doctor=onboarding.doctor), 'paired': bool(getattr(self, 'fleet', None))}
+        if name == 'bug_fixed':  # a bug the owner reported, fixed and running here now (fleet.Fleet.fixed); seen closes one
+            if not getattr(self, 'fleet', None):
+                return {'fixed': []}
+            try:
+                return {'fixed': self.fleet.fixed(args.get('seen') or None)}
+            except (fleet.Off, fleet.Unavailable, OSError, ValueError) as error:
+                LOG.info('fixed reports not read error=%s', type(error).__name__)
+                return {'fixed': [], 'error': True}
         if name == 'bug_queued':  # the reports still waiting to go out (bug_queue.py)
             return {'queued': bug_queue.view(self.config)}
         text = str(args.get('description') or '').strip()[:self.BUG_TEXT]
