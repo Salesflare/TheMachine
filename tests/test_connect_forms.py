@@ -125,11 +125,13 @@ class FormTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.app.action('connect_site_signin', {'site': 'linkedin'})  # not from the dashboard
 
-    def test_hosted_github_whatsapp_and_the_phone_link_to_their_own_tile(self):
+    def test_hosted_whatsapp_and_the_phone_link_to_their_own_tile(self):
         self.app.config['manage_url'] = 'https://cp.example.org/setup'
-        pages = {s['name']: s.get('account_page') for s in self.act('connect_sources', {})['sources']}
-        self.assertEqual((pages['github'], pages['whatsapp'], pages['android'], pages['linkedin']),
-                         ('source-github', 'source-whatsapp', 'source-android', None))
+        sources = {s['name']: s for s in self.act('connect_sources', {})['sources']}
+        self.assertEqual((sources['whatsapp'].get('account_page'), sources['android'].get('account_page'), sources['linkedin'].get('account_page')),
+                         ('source-whatsapp', 'source-android', None))
+        # GitHub signs in on the dashboard itself: its code shows in + Add's form, never a link away to the account
+        self.assertEqual((sources['github'].get('hosted_signin'), sources['github'].get('account_page')), ('github', None))
 
     def test_a_rerun_fix_reads_as_try_again(self):
         def connect(path, name, ui, account_id=None, restart=True):

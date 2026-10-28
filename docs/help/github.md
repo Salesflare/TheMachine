@@ -18,9 +18,11 @@ Nothing on GitHub. Every call it makes is a read.
 
 On a hosted Machine:
 
-1. Open your setup page at app.themachine.computer/setup and go to **More sources**.
-2. Open GitHub and press **Sign in with GitHub**.
-3. Type the code it shows at GitHub, on your phone or computer.
+1. In the dashboard, open **Connections**, then **+ Add**, and pick GitHub.
+2. Pick **Work** or **Personal** and press **Sign in with GitHub**.
+3. It shows a code. Press **Open GitHub ↗**, enter the code and allow it. It goes on by itself.
+
+Your setup page at app.themachine.computer/setup has the same sign-in under **More sources**.
 
 On your own computer:
 

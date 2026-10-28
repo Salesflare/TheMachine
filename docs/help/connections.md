@@ -16,7 +16,7 @@ Open **+ Add** and pick a source. It shows one short form, like your setup page:
 
 **Cancel** stops adding it. Once it is connected, your Machine restarts to start reading it, then opens the new card, which shows how its first sync goes.
 
-On a hosted Machine, Google, Microsoft, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal**, press **Sign in**, and you come back to this form, which shows how connecting goes. GitHub and WhatsApp open on your setup page. On your own computer, `assistant connect` does the same in a terminal.
+On a hosted Machine, Google, Microsoft, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal**, press **Sign in**, and you come back to this form, which shows how connecting goes, or why it didn't work. GitHub shows its code right in this form. WhatsApp opens on your setup page. On your own computer, `assistant connect` does the same in a terminal.
 
 ## Work or personal
 

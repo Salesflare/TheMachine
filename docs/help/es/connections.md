@@ -12,7 +12,7 @@ La pestaña **Conexiones** agrupa tus fuentes en **Correo y calendario**, **Chat
 
 ## Añade una
 
-Abre **+ Añadir** y elige una fuente. Te pregunta lo que necesita, una pregunta cada vez. **Cancelar** deja de añadirla. Cuando ya está conectada, tu Machine se reinicia para empezar a leerla y luego abre la tarjeta nueva, que muestra cómo va su primera sincronización. En una Machine alojada, Google, Microsoft, Zoom, Stripe e Intercom inician sesión aquí: elige **Trabajo** o **Personal**, inicia sesión y vuelves a este formulario, que muestra cómo va la conexión. En tu propio ordenador, `assistant connect` hace lo mismo en un terminal.
+Abre **+ Añadir** y elige una fuente. Te pregunta lo que necesita, una pregunta cada vez. **Cancelar** deja de añadirla. Cuando ya está conectada, tu Machine se reinicia para empezar a leerla y luego abre la tarjeta nueva, que muestra cómo va su primera sincronización. En una Machine alojada, Google, Microsoft, Zoom, Stripe e Intercom inician sesión aquí: elige **Trabajo** o **Personal**, inicia sesión y vuelves a este formulario, que muestra cómo va la conexión. GitHub muestra su código en este mismo formulario. En tu propio ordenador, `assistant connect` hace lo mismo en un terminal.
 
 ## Trabajo o personal
 

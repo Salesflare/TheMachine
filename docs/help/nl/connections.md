@@ -12,7 +12,7 @@ Het tabblad **Koppelingen** groepeert je bronnen in **Mail en agenda**, **Chat**
 
 ## Een bron toevoegen
 
-Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Zodra hij gekoppeld is, herstart je Machine om hem te gaan lezen, en opent dan de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
+Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Zodra hij gekoppeld is, herstart je Machine om hem te gaan lezen, en opent dan de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub toont zijn code meteen in dit formulier. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
 
 ## Werk of privé
 

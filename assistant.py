@@ -550,10 +550,11 @@ CONNECT_ACTIONS = (
     'connect_start',
 )
 # Connections, + Add: where a hosted Machine's setup page signs in or links a source the dashboard can't (its tile id)
-HOSTED_TILES = {'github': 'source-github', 'whatsapp': 'source-whatsapp', 'android': 'source-android'}
+HOSTED_TILES = {'whatsapp': 'source-whatsapp', 'android': 'source-android'}
 # The sign-ins a hosted Machine's dashboard starts itself (+ Add): the control plane's own OAuth flow, as on its setup
-# page, through POST /_machine/connect on the dashboard's host, and back to the dashboard when it is done
-HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom'}
+# page, through POST /_machine/connect on the dashboard's host, and back to the dashboard when it is done. GitHub's
+# sign-in is a code to type at GitHub: the control plane starts it there and the dashboard's form shows the code.
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'github'}
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
 CONNECT_SIGNIN_WAIT = 600
@@ -11290,9 +11291,10 @@ def setup_hints(store, config, now=None):
                                f"AND occurred_at>=? AND ({like}) LIMIT {HINT_MAILS})",
                                (since, *[f'%@%{d}%' for d in domains])).fetchone()[0]
             if found >= HINT_MAILS:
+                # one that signs in from + Add (HOSTED_SIGNINS) opens its form there, on the dashboard itself
                 hints.append({'id': 'source-' + service, 'title': f'Connect {label}?',
                               'text': f'{label} mails you often. Connected, I read it directly.',
-                              'href': f'{manage}#source-{service}', 'button': 'Connect'})
+                              'href': f'#connect={service}' if service in HOSTED_SIGNINS else f'{manage}#source-{service}', 'button': 'Connect'})
         snoozed = db.execute("SELECT 1 FROM decisions WHERE choice='snooze' LIMIT 1").fetchone()
     channels = reminder_channels(store, config)
     if snoozed and not channels['telegram'] and not channels['push']:
@@ -15803,8 +15805,9 @@ class App:
                     if source['service'] in HOSTED_TILES and 'account_page' not in source:
                         source['account_page'] = HOSTED_TILES[source['service']]
                     # Google, Microsoft, Zoom, Stripe and Intercom: signed in from + Add itself, by the control plane
-                    if fleet.SIGNIN_OF.get(source['service']) in HOSTED_SIGNINS:
-                        source['hosted_signin'] = fleet.SIGNIN_OF[source['service']]
+                    signin = 'github' if source['service'] == 'github' else fleet.SIGNIN_OF.get(source['service'])
+                    if signin in HOSTED_SIGNINS:
+                        source['hosted_signin'] = signin
             if not hosted:
                 # Sign in with <provider> through The Machine's own app (fleet.py connect_start), once this Machine is
                 # paired with an account; pasting a token stays as the fallback

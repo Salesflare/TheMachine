@@ -4017,6 +4017,7 @@ async function connectSetup(form){const name=form.dataset.connectSetup,err=form.
 const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. Replies only after you approve them, as yourself. Never assigns or closes.',other:'Or paste an access token',how:'From an app in Intercom’s Developer Hub.',go:'Paste a token'},
  google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up'},
  microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up'},
+ github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Reads only.'},
  zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up'},
  microsoft_docs:{label:'Microsoft',title:'Docs',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
  stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key'}};
@@ -4024,9 +4025,14 @@ const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.ho
  return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
 // Pasting a key or token stays on the account page's tile.
-const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',intercom:'#source-intercom'};
+const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',intercom:'#source-intercom',github:'#source-github'};
+// GitHub has no provider page to come back from: gh on the Machine gets a code, shown right here, to type at GitHub
+const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
 function hostedSigninBody(s,copy,back){const scope=s.provider==='intercom'?'':'<fieldset class="connect-scope"><legend>Work or personal?</legend><label><input type="radio" name="signin-scope" value="work" checked> Work</label><label><input type="radio" name="signin-scope" value="personal"> Personal</label></fieldset>';
- if(s.state==='connecting')return '<p class="muted">Signed in. Connecting it now.</p>';
+ if(s.state==='checking')return '<p class="muted">Working…</p>';
+ if(s.state==='starting')return '<p class="muted">Getting a sign-in code from GitHub…</p>';
+ if(s.state==='code'&&GITHUB_DEVICE.test(s.url||''))return connectCodeHTML({code:s.code,url:s.url});
+ if(s.state==='connecting'||s.state==='code')return '<p class="muted">Signed in. Connecting it now.</p>';
  if(s.state==='done')return `<p class="note sent-ok"><span>Connected.</span> <span>Restarting to start reading it…</span></p><div class="actions">${back}</div>`;
  if(s.state==='failed'||s.state==='stopped')return `<p class="alert">${esc(s.state==='stopped'?'That sign-in didn’t finish.':s.error||'Not connected.')}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>`;
  const other=copy.other&&s.own&&connectList?.manage_url?`<p class="fine"><a href="${esc(connectList.manage_url+HOSTED_TILE[s.provider])}" target="_blank" rel="noopener"><span>${esc(copy.other)}</span> ↗</a></p>`:'';
@@ -4036,14 +4042,16 @@ function hostedSigninGo(s){const form=document.createElement('form'),box=$('#con
  if(s.provider!=='intercom'){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
  if(s.provider==='intercom'&&s.another)add('another','1');
  document.body.append(form);form.submit()}
-function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hosted||s.state!=='connecting'||!s.command)return;
+const HOSTED_GOING=['checking','starting','code','connecting'];
+function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hosted||!HOSTED_GOING.includes(s.state)||!s.command)return;
  signinTimer=setTimeout(async()=>{try{const r=await request('/_machine/connect-state?s='+encodeURIComponent(s.provider)+'&c='+encodeURIComponent(s.command));if(connectSignin!==s)return;
-  connectSignin={...s,state:r.state,error:r.error};$('#connect-add').dataset.sig='';renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}hostedPoll()},2500)}
+  connectSignin={...s,state:r.state,error:r.error,code:r.code,url:r.url};$('#connect-add').dataset.sig='';renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}hostedPoll()},s.state==='checking'?0:2500)}
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
-async function openConnectLink(){const m=/^#connect=(google|microsoft|zoom|stripe|intercom)(?:\/(c_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+// c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
+async function openConnectLink(){const m=/^#connect=(google|microsoft|zoom|stripe|intercom|github)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const x=connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
- connectSignin=signinOf(x,command?'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();$('#connect-add').scrollIntoView({block:'start'})}
+ connectSignin=signinOf(x,command.startsWith('f_')?'checking':command?m[1]==='github'?'starting':'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();$('#connect-add').scrollIntoView({block:'start'})}
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
  const back='<button type="button" data-connect-back>Back</button>';let body;
  const copy=SIGNIN_COPY[s.provider]||{};
@@ -4056,7 +4064,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
   :`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><a class="btn-link primary" href="${esc(connectList.pair_url)}" target="_blank" rel="noopener">Pair this Machine first ↗</a>${back}</div>`);
  const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button" data-connect="${esc(s.source)}">${esc(copy.go||'')}</button></div></details>`;
  const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}</div>`;
- const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
+ const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;
  signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.source});if(!connectSignin)return;
   if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}signinPoll()},2500)}
@@ -4836,7 +4844,7 @@ const nudgeBox=(()=>{const el=document.createElement('div');el.id='device-nudge'
  $('#inbox').prepend(el);el.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const k=el.dataset.kind;
   if(b.matches('[data-nudge-later]')){nudgeLater(nudgeKey(k));return}
   // a setup hint opens its step on the setup page; it rests a day, and goes for good once that step is done
-  if(b.matches('[data-hint-open]')){const h=hintOf(k);if(h&&/^https:\/\//.test(h.href))window.open(h.href,'_blank','noopener');devStore.set('nudge-'+nudgeKey(k),JSON.stringify({...nudgeState(nudgeKey(k)),until:Date.now()+NUDGE_REST}));devStore.set('nudge-rest',String(Date.now()+NUDGE_REST));deviceRender();return}
+  if(b.matches('[data-hint-open]')){const h=hintOf(k);if(h&&/^https:\/\//.test(h.href))window.open(h.href,'_blank','noopener');else if(h&&/^#connect=[a-z]+$/.test(h.href))location.hash=h.href;devStore.set('nudge-'+nudgeKey(k),JSON.stringify({...nudgeState(nudgeKey(k)),until:Date.now()+NUDGE_REST}));devStore.set('nudge-rest',String(Date.now()+NUDGE_REST));deviceRender();return}
   // A closed prompt counts as Not now, so it doesn't come straight back.
   b.disabled=true;try{const ok=await deviceRun(b.dataset.device);if(!ok&&(k==='push'?devicePush.perm==='default':true))nudgeLater(k==='push'?'push':'install')}finally{b.disabled=false;deviceRender()}};return el})();
 // Settings, General, This device: App, Notifications (with Send a test), Light mode.
