@@ -22,7 +22,7 @@ The **Suggestions** tab groups them:
 
 **All**, **Work** and **Personal** above the list in the sidebar show all to-dos or only one kind. Your Machine keeps the choice, so your phone and computer show the same list. While Work or Personal is on, the top of the list says so, with **Show all** to go back.
 
-A to-do on a project shows the project's name as a chip; it opens the project. **▾** on the chip changes it. See [a project's to-dos](graph.md#a-projects-to-dos).
+A to-do on a project shows the project's name in the line under its title; it opens the project. **Change project** under **More** changes it (on a done to-do, under **Details**). See [a project's to-dos](graph.md#a-projects-to-dos).
 
 ## The buttons
 
@@ -36,7 +36,9 @@ A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and 
 
 A closed to-do can come back with **Reopen**. It also comes back by itself when something new happens, like a new message from them. Your own reply doesn't bring it back.
 
-A to-do about a person shows their name at the top, and their organization next to it. Tap either to open its page in the Graph. **Read message** opens the thread.
+Each to-do starts with its title. The line under it says who it's about, their organization, the project, Work or Personal (under **All**) and when it came in, plus where it stands when its group doesn't say so. Tap a name to open its page in the Graph.
+
+**Details** shows the message it came from (tap it to read the thread), your last note and a coding agent's result. **Chat ›** at the end of that row opens the chat. A done to-do stays short: its title, one line and what went out.
 
 A "Waiting on" to-do (someone promised you something) links your own last message to them, the one you're waiting on an answer to: "Email to Pat · Tue".
 

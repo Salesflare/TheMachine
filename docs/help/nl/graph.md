@@ -155,7 +155,7 @@ Of beheer ze met de hand, zoals deals in een CRM:
 
 ### De to-do's van een project
 
-Een to-do kan bij één project horen. Je Machine kiest het als de thread of de personen waar het over gaat bij één open project horen, en de to-do toont het als label. Tik op **▾** op het label, of op **Aan een project koppelen** in het opdrachtmenu (Ctrl K), om het te wijzigen of weg te halen. Je keuze blijft.
+Een to-do kan bij één project horen. Je Machine kiest het als de thread of de personen waar het over gaat bij één open project horen, en de to-do toont de naam onder de titel. **Project wijzigen** onder **Meer** op de to-do, of **Aan een project koppelen** in het opdrachtmenu (Ctrl K), wijzigt het of haalt het weg. Je keuze blijft.
 
 De pagina van een project toont de to-do's onder **To-do’s**, open to-do's eerst, en de kaart op het bord zegt hoeveel er open zijn. Een to-do koppelen aan een gedeeld project deelt verder niets: je team ziet nog altijd alleen wat uit gedeelde berichten kwam.
 

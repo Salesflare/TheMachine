@@ -22,7 +22,7 @@ L’onglet **Suggestions** les regroupe :
 
 **Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir.
 
-Une tâche liée à un projet affiche le nom du projet dans une pastille, qui ouvre le projet. **▾** sur la pastille permet de le changer. Voir [les tâches d’un projet](graph.md#a-projects-to-dos).
+Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Changer de projet** dans **Plus** le change (sur une tâche terminée, dans **Détails**). Voir [les tâches d’un projet](graph.md#a-projects-to-dos).
 
 ## Les boutons
 
@@ -36,7 +36,9 @@ Une nouvelle tâche a **Faire**, **Marquer comme fait**, **Mettre en attente**, 
 
 Une tâche fermée peut revenir avec **Rouvrir**. Elle revient aussi d’elle-même quand il se passe quelque chose de nouveau, comme un nouveau message de la personne. Votre propre réponse ne la fait pas revenir.
 
-Une tâche liée à une personne affiche son nom en haut, et son organisation à côté. Appuyez sur l’un ou l’autre pour ouvrir sa page dans le Graph. **Lire le message** ouvre le fil.
+Chaque tâche commence par son titre. La ligne en dessous indique la personne concernée, son organisation, le projet, Travail ou Perso (sous **Tout**) et quand elle est arrivée, ainsi que son état quand son groupe ne le dit pas déjà. Appuyez sur un nom pour ouvrir sa page dans le Graph.
+
+**Détails** montre le message d’origine (appuyez dessus pour lire le fil), votre dernière note et le résultat d’un agent de code. **Chat ›** au bout de cette ligne ouvre le chat. Une tâche terminée reste courte : son titre, une ligne et ce qui est parti.
 
 Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie vers votre dernier message à cette personne, celui auquel vous attendez une réponse : « E-mail à Pat · mar. ».
 

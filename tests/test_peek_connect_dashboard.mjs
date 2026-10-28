@@ -68,7 +68,7 @@ try{
   const seen=Object.keys(hits.email)[0];
   // Only the opened card counts: reading ahead may still pick up a card that scrolled into view.
   const of=id=>JSON.stringify([hits.originals[id],hits.email[id]]),before=of(seen);
-  await page.locator(`#task-${seen} .read-original`).click();
+  await page.locator(`#task-${seen} .card-foot [data-details]`).click();await page.locator(`#task-${seen} .read-original`).click();
   await page.frameLocator('#email-dialog iframe').locator('#hello').waitFor();
   assert.equal(of(seen),before,'opened from what was read ahead');
   await page.keyboard.press('Escape');

@@ -118,6 +118,8 @@ try{
   assert.deepEqual(sent('card_rename')[0].args.title,'Contract for Sam');assert.equal(await page.locator('#task-'+id(1)+' h3').textContent(),'Contract for Sam');
   await row(3).click({button:'right'});await page.locator('.row-menu [data-row-rename]').click();await page.locator('.rename-box input').press('Escape');
   assert.equal(sent('card_rename').length,1,'Esc cancels');
+  // From the top of the page: the double click's first click opens the chat at the top, and a page scrolled down would move the row from under the second
+  await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(100);
   await row(3).dblclick();await renameTo(page,'   ');assert.equal(sent('card_rename').length,1,'empty keeps the old title');assert.equal(await row(3).textContent(),'Book the dentist');
   await row(3).dblclick();await renameTo(page,'<img src=x onerror=alert(1)> & co');await until(()=>sent('card_rename').length===2,'markup rename');
   assert.equal(await row(3).textContent(),'<img src=x onerror=alert(1)> & co');assert.equal(await page.locator('#side-cards img,#suggestions h3 img').count(),0,'markup stays text');

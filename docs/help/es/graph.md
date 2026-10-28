@@ -155,7 +155,7 @@ O gestiónalos a mano, como las oportunidades en un CRM:
 
 ### Las tareas de un proyecto
 
-Una tarea puede pertenecer a un proyecto. Tu Machine lo elige cuando su hilo o las personas de las que trata están en un único proyecto abierto, y la tarea lo muestra como una etiqueta. Toca **▾** en la etiqueta, o **Asignar a un proyecto** en el menú de comandos (Ctrl K), para cambiarlo o quitarlo. Tu elección se queda.
+Una tarea puede pertenecer a un proyecto. Tu Machine lo elige cuando su hilo o las personas de las que trata están en un único proyecto abierto, y la tarea muestra su nombre bajo el título. **Cambiar proyecto** en **Más** de la tarea, o **Asignar a un proyecto** en el menú de comandos (Ctrl K), lo cambia o lo quita. Tu elección se queda.
 
 La página de un proyecto lista sus tareas en **Tareas**, las abiertas primero, y su tarjeta en el tablero dice cuántas hay abiertas. Vincular una tarea a un proyecto compartido no comparte nada más: tu equipo sigue viendo solo lo que salió de mensajes compartidos.
 

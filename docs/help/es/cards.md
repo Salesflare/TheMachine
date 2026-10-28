@@ -22,7 +22,7 @@ La pestaña **Sugerencias** las agrupa:
 
 **Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver.
 
-Una tarea de un proyecto muestra el nombre del proyecto como etiqueta; abre el proyecto. **▾** en la etiqueta lo cambia. Consulta [las tareas de un proyecto](graph.md#a-projects-to-dos).
+Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Cambiar proyecto** en **Más** lo cambia (en una tarea hecha, en **Detalles**). Consulta [las tareas de un proyecto](graph.md#a-projects-to-dos).
 
 ## Los botones
 
@@ -36,7 +36,9 @@ Una tarea nueva tiene **Hazlo**, **Marcar como hecha**, **Posponer**, **Hazlo de
 
 Una tarea cerrada puede volver con **Reabrir**. También vuelve sola cuando pasa algo nuevo, como un mensaje nuevo de esa persona. Tu propia respuesta no la hace volver.
 
-Una tarea sobre una persona muestra su nombre arriba, y su organización al lado. Toca cualquiera de los dos para abrir su página en el Graph. **Leer mensaje** abre el hilo.
+Cada tarea empieza por su título. La línea de debajo dice de quién trata, su organización, el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph.
+
+**Detalles** muestra el mensaje del que viene (tócalo para leer el hilo), tu última nota y el resultado de un agente de código. **Chat ›** al final de esa línea abre el chat. Una tarea hecha se queda corta: su título, una línea y lo que se envió.
 
 Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a esa persona, el que espera respuesta: "Email a Pat · mar".
 

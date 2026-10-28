@@ -22,7 +22,7 @@ Het tabblad **Suggesties** groepeert ze:
 
 **Alle**, **Werk** en **Privé** boven de lijst in de zijbalk tonen alle to-do's of maar één soort. Je Machine onthoudt de keuze, zodat je telefoon en computer dezelfde lijst tonen. Staat Werk of Privé aan, dan staat dat bovenaan de lijst, met **Alles tonen** om terug te gaan.
 
-Een to-do bij een project toont de naam van het project als label; dat opent het project. **▾** op het label wijzigt het. Zie [de to-do's van een project](graph.md#a-projects-to-dos).
+Een to-do bij een project toont de naam van het project in de regel onder de titel; die opent het project. **Project wijzigen** onder **Meer** wijzigt het (bij een afgeronde to-do onder **Details**). Zie [de to-do's van een project](graph.md#a-projects-to-dos).
 
 ## De knoppen
 
@@ -36,7 +36,9 @@ Een nieuwe to-do heeft **Doe het**, **Markeer als gedaan**, **Snoozen**, **Doe h
 
 Een gesloten to-do kan terugkomen met **Heropenen**. Hij komt ook vanzelf terug als er iets nieuws gebeurt, zoals een nieuw bericht van de ander. Je eigen antwoord brengt hem niet terug.
 
-Een to-do over een persoon toont bovenaan de naam, met de organisatie ernaast. Tik op een van beide om de pagina ervan in de Graph te openen. **Bericht lezen** opent de thread.
+Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, hun organisatie, het project, Werk of Privé (onder **Alle**) en wanneer hij binnenkwam, en waar hij staat als de groep dat niet al zegt. Tik op een naam om de pagina in de Graph te openen.
+
+**Details** toont het bericht waar hij uit komt (tik erop om de thread te lezen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is.
 
 Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste bericht aan die persoon, het bericht waarop je een antwoord verwacht: "E-mail aan Pat · di".
 

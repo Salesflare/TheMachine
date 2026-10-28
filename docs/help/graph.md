@@ -155,7 +155,7 @@ Or run them by hand, like deals in a CRM:
 
 ### A project's to-dos
 
-A to-do can belong to one project. Your Machine picks it when its thread or the people it's about are on a single open project, and the to-do shows it as a chip. Tap **▾** on the chip, or **Put on a project** in the command menu (Ctrl K), to change it or take it off. Your choice stays.
+A to-do can belong to one project. Your Machine picks it when its thread or the people it's about are on a single open project, and the to-do shows its name under the title. **Change project** under the to-do's **More**, or **Put on a project** in the command menu (Ctrl K), changes it or takes it off. Your choice stays.
 
 A project's page lists its to-dos under **To-dos**, open ones first, and its card on the board says how many are open. Linking a to-do to a shared project shares nothing more: your team still sees only what came from shared messages.
 

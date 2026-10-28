@@ -155,7 +155,7 @@ Oder führe sie von Hand, wie Deals in einem CRM:
 
 ### Aufgaben eines Projekts
 
-Eine Aufgabe kann zu einem Projekt gehören. Deine Machine wählt es, wenn ihr Thread oder die Personen, um die es geht, zu genau einem offenen Projekt gehören, und die Aufgabe zeigt es als Chip. Tippe auf **▾** auf dem Chip oder auf **Einem Projekt zuordnen** im Befehlsmenü (Ctrl K), um es zu ändern oder zu entfernen. Deine Wahl bleibt.
+Eine Aufgabe kann zu einem Projekt gehören. Deine Machine wählt es, wenn ihr Thread oder die Personen, um die es geht, zu genau einem offenen Projekt gehören, und die Aufgabe zeigt seinen Namen unter dem Titel. **Projekt ändern** unter **Mehr** der Aufgabe oder **Einem Projekt zuordnen** im Befehlsmenü (Ctrl K) ändert oder entfernt es. Deine Wahl bleibt.
 
 Die Seite eines Projekts listet seine Aufgaben unter **Aufgaben**, die offenen zuerst, und seine Karte auf dem Board sagt, wie viele offen sind. Eine Aufgabe mit einem geteilten Projekt zu verknüpfen teilt nichts weiter: Dein Team sieht weiterhin nur, was aus geteilten Nachrichten kam.
 
