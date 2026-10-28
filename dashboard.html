@@ -5886,8 +5886,9 @@ const CAL_FIELDS={
  tr:{api:'transcript',empty:'No transcript yet.',failed:'The transcript couldn’t load.',hint:'Paste the transcript: what was said, word for word.',
   write:'Write or paste the transcript first.',saved:'Transcript saved.',removed:'Transcript removed.',sure:'Remove the transcript?',
   saveErr:'Couldn’t save the transcript. Try again.',removeErr:'Couldn’t remove the transcript. Try again.',big:'That file is too big for a transcript.'}};
-// How long a transcript runs, in the page's language: 2h 04m, or 45m
-function calRunTime(min){const f=(unit,v,o={})=>new Intl.NumberFormat(DL,{style:'unit',unit,unitDisplay:'narrow',...o}).format(v),h=Math.floor(min/60);
+// How long a transcript runs, in the page's language: 2h 04m or 45m in English; elsewhere the short units (30 min,
+// 2 uur 04 min), since the narrow ones read as meters there (30 m)
+function calRunTime(min){const d=/^en\b/i.test(DL)?'narrow':'short',f=(unit,v,o={})=>new Intl.NumberFormat(DL,{style:'unit',unit,unitDisplay:d,...o}).format(v),h=Math.floor(min/60);
  return h?f('hour',h)+' '+f('minute',min%60,{minimumIntegerDigits:2}):f('minute',min)}
 async function calNotesOpen(m){const me={m,data:null,editing:{notes:false,tr:false},open:false,failed:false};calNote=me;
  for(const f in CAL_FIELDS){$('#cal-v-'+f+'-text').value='';$('#cal-v-'+f+'-error').textContent=''}calNotesShow();
