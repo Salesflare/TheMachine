@@ -72,7 +72,7 @@ const settings=async page=>{await page.evaluate(()=>showSettings('general'));awa
   return {help:['#device-app','#device-push'].map(id=>document.querySelector(id+' a.learn')?.href),app:row('#device-app'),push:row('#device-push'),toggle:vis('#push-toggle'),test:vis('#push-test'),theme:vis('#theme-toggle'),
    order:[...document.querySelector('#device-app').parentElement.children].map(e=>e.id||e.querySelector('[id]')?.id)}})};
 const shot=async(page,name,sel)=>{if(!shots)return;if(sel)await page.locator(sel).evaluate(e=>scrollTo(0,Math.max(0,e.getBoundingClientRect().top+scrollY-120)));else await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(150);await page.screenshot({path:`${shots}/${name}.png`})};
-const actionNames=()=>actions.map(a=>a.action);
+const actionNames=()=>actions.map(a=>a.action).filter(n=>n!=='voice_status');  // Settings, General reads voice input's state
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // The command palette's actions, in one place.

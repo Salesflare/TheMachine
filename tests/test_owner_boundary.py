@@ -261,7 +261,7 @@ class OwnerBoundary(unittest.TestCase):
         # A save the dashboard makes that the allowlist lacks fails with "Operation is not available here" (Region did).
         html = (Path(__file__).parent.parent.joinpath('dashboard.html')).read_text()
         posted = set(re.findall(r"action:'([a-z_]+)'", html))
-        posted |= set(re.findall(r"\b(?:sharePost|sigPost|skillCall|fleetPost|agentPost|graphPost|crmUpload|signinPost|modelAction)\('([a-z_]+)'", html))
+        posted |= set(re.findall(r"\b(?:sharePost|sigPost|skillCall|fleetPost|agentPost|graphPost|crmUpload|signinPost|modelAction|micPost)\('([a-z_]+)'", html))
         self.assertIn('set_locale', posted)
         self.assertEqual(sorted(posted - a.DASHBOARD_ACTIONS), [])
         port = self.serve()
