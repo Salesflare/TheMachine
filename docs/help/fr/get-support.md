@@ -26,6 +26,8 @@ Ouvrez **Aide**, puis **Signaler un bug**. Un message d’erreur a aussi un bout
 
 Nous répondons par e-mail. Une Machine auto-hébergée peut en envoyer un quand elle est sur le Network ; sinon, écrivez-nous.
 
+Quand nous corrigeons un bug que vous avez signalé et que votre Machine a le correctif, nous vous le disons une fois : une courte ligne sur votre tableau de bord (**Compris** la ferme) et un court e-mail. Une Machine auto-hébergée l'apprend quand elle est sur le Network.
+
 Si un signalement ne peut pas partir tout de suite (vous êtes hors ligne, ou vous en avez envoyé beaucoup en peu de temps), il n’est pas perdu. Votre Machine le garde, indique quand il partira et l’envoie d’elle-même. Les signalements encore en attente s’affichent sous **En attente d’envoi**.
 
 ## Accès du support

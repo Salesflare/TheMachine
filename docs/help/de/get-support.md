@@ -26,6 +26,8 @@ Auf einer gehosteten Machine steht in der Fußzeile des Dashboards „Stimmt etw
 
 Wir antworten per E-Mail. Eine selbst gehostete Machine kann einen Bericht senden, wenn sie im Network ist. Sonst schreib uns.
 
+Wenn wir einen Bug beheben, den du gemeldet hast, und deine Machine die Korrektur hat, sagen wir es dir einmal: eine kurze Zeile in deinem Dashboard (**Verstanden** schließt sie) und eine kurze E-Mail. Eine selbst gehostete Machine erfährt es, wenn sie im Network ist.
+
 Wenn ein Bericht nicht sofort rausgehen kann (du bist offline oder hast in kurzer Zeit viele gesendet), geht er nicht verloren. Deine Machine behält ihn, sagt, wann er rausgeht, und sendet ihn von selbst. Berichte, die noch warten, stehen unter **Wartet auf den Versand**.
 
 ## Support-Zugriff

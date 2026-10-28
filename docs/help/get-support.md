@@ -26,6 +26,8 @@ Open **Help**, then **Report a bug**. An error message has a **Report a bug** bu
 
 We answer by email. A self-hosted Machine can send one when it's on the Network; otherwise write to us.
 
+Once we fix a bug you reported and your Machine runs the fix, we tell you once: a short line on your dashboard (**Got it** closes it) and a short email. A self-hosted Machine hears of it when it's on the Network.
+
 If a report can't go out right away (you're offline, or you sent many in a short time), it isn't lost. Your Machine keeps it, says when it goes out, and sends it by itself. Reports still waiting show under **Waiting to go out**.
 
 ## Support access

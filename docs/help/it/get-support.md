@@ -26,6 +26,8 @@ Apri **Aiuto**, poi **Segnala un bug**. Anche un messaggio di errore ha un pulsa
 
 Rispondiamo via email. Una Machine self-hosted può inviarne una quando è nel Network; altrimenti scrivici.
 
+Quando correggiamo un bug che hai segnalato e la tua Machine ha la correzione, te lo diciamo una volta: una breve riga nella tua dashboard (**Ho capito** la chiude) e una breve email. Una Machine self-hosted lo sa quando è nel Network.
+
 Se una segnalazione non può partire subito (sei offline, o ne hai inviate molte in poco tempo), non va persa. La tua Machine la conserva, ti dice quando parte e la invia da sola. Le segnalazioni ancora in attesa compaiono sotto **In attesa di invio**.
 
 ## Accesso per l’assistenza

@@ -314,6 +314,10 @@ class BugReports(unittest.TestCase):
                 self.app.support_action('bug_send', bad)
         self.assertEqual(len(sent), 1)
 
+    def test_fixed_bugs_need_the_network(self):
+        self.app.fleet = None  # not paired: nothing to ask (paired: fleet.Fleet.fixed, tests/test_bug_fixed.py)
+        self.assertEqual(self.app.support_action('bug_fixed', {}), {'fixed': []})
+
     def test_the_actions_are_the_owners_dashboard_only(self):
         for name in a.SUPPORT_ACTIONS:
             self.assertIn(name, a.DASHBOARD_ACTIONS)
