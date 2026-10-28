@@ -55,7 +55,7 @@ WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Yo
         'salesflare': 'Accounts, contacts and deals, so it knows who matters.',
         'android': 'The notifications on your Android phone, through the OpenClaw app.',
         'whatsapp': 'Your WhatsApp chats, as a linked device.',
-        'telegram': 'Your Telegram chats and small groups, as a logged-in device.', 'gateway': "Your server's own log, so The Machine spots its own trouble."}
+        'telegram': 'Your Telegram chats and small groups.', 'gateway': "Your server's own log, so The Machine spots its own trouble."}
 # Microsoft 365 and Outlook.com (ms_graph.py): your own app registration and a device-code sign-in. A hosted control
 # plane adds them with "transport": "broker" instead.
 MICROSOFT = {'outlook': {'id': 'work-outlook', 'service': 'outlook', 'transport': 'graph', 'email': 'alex@example.com',
@@ -314,10 +314,10 @@ WEB_NOTES = {
     'linkedin': 'Next, you sign in to LinkedIn on your Machine, right here.',
     'x': 'Next, you sign in to X on your Machine, right here.',
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
-    'telegram': 'Reads your chats through Telegram’s API, as a device of your own account. Separate from to-dos sent '
-                'to you in Telegram. Next, you scan a QR code in Telegram.',
+    'telegram': 'Next, you scan a QR code in Telegram.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it',
 }
+WEB_LEARN = {'telegram': 'telegram-chats'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key'}
 WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']]}
 TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b')
@@ -337,11 +337,11 @@ def web_form(config, service):
     secret = WEB_SECRETS.get(service) or setup.get('secret')
     if service == 'telegram' and not telegram_has_app(config):  # a self-hosted Machine: the owner's own app ID
         ask, secret = ask + TELEGRAM_ASKS, TELEGRAM_SECRET
-        note = note + ' First create a Telegram app ID at https://my.telegram.org, API development tools.'
+        note = 'First, create an app ID at https://my.telegram.org, under API development tools. ' + note
     scope = service not in NO_SCOPE and setup.get('boundary') != 'workspace'
     works = [b.split(':', 1)[1] for b in boundaries(config, service) if b.startswith('work:')]
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
-    return {'ask': ask, 'secret': secret, 'note': None if TERMINAL_NOTE.search(note) else note or None,
+    return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
             'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else ''}
 
 
@@ -1609,7 +1609,6 @@ def step_telegram(config, account, ui):
         telegram_release.install(telegram_base(config) / 'telegram-lib')
     except (OSError, RuntimeError) as error:
         raise SetupError(f'Could not install the Telegram libraries ({str(error)[:200]})', 'check the connection and add Telegram again')
-    ui.say(f'  Telegram: Telethon {telegram_release.version()} ready')
     telegram_store.private_dir(account['store'])
     state = telegram_state(account)
     session = (Path(account['store']) / telegram_store.SESSION_NAME).exists()
