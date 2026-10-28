@@ -312,7 +312,7 @@ joined, a member's server started, someone left or was removed, a member's serve
 with Telegram connected, as a Telegram message. Most only have **Open**.
 
 A member asking for a server waits for you, as a card under Suggestions. The message says what it costs, for example "Ann wants a Standard server in
-Acme: €30/month, new total €60/month." with **Confirm · €30/month** and **Decline**; in a Fleet that is free for now it
+Acme: €15/month, new total €30/month." with **Confirm · €15/month** and **Decline**; in a Fleet that is free for now it
 says "free, because this Fleet is comped" with **Start it · free**. A tap is your confirmation of exactly what that
 message showed, and it only counts for you as the Fleet's owner, while the request is still open, on those terms. A
 tap on an old message, a request the member withdrew, someone who left, or terms that changed since (the Fleet got

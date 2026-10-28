@@ -21,6 +21,8 @@ Je AI-abonnement wordt gefactureerd door je provider, zoals OpenAI. Wij rekenen 
 
 Alle prijzen zijn per maand, excl. btw. Zie [Prijzen](/pricing).
 
+De prijzen voor gehost en Werk-plaatsen zijn early-adopterprijzen, verlaagd van {price.standard_list} en {price.seat_list}. Early adopters houden ze zolang hun abonnement actief blijft.
+
 ## Kaart en facturen
 
 Open Facturatie op je accountpagina en druk op **Abonnement beheren**. Dat opent Stripe, waar je je kaart wijzigt en facturen downloadt. Je kaartgegevens komen nooit bij ons.

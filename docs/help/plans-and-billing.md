@@ -21,6 +21,8 @@ Your AI plan is billed by your provider, like OpenAI. We add nothing to it.
 
 All prices are per month, excl. VAT. See [Pricing](/pricing).
 
+Hosted and Work seat prices are early adopter prices, down from {price.standard_list} and {price.seat_list}. Early adopters keep them while their subscription stays active.
+
 ## Card and invoices
 
 On your account page, open Billing and press **Manage subscription**. It opens Stripe, where you change your card and download invoices. Your card details never reach us.
