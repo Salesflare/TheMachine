@@ -141,6 +141,38 @@ class Google(unittest.TestCase):
         self.assertIn('1 new suggested edit on “Q4 plan”, by Robin Reviewer', suggestion[0]['body'])
         self.assertIn('Add: and week 4', suggestion[0]['body'])
 
+    def test_google_pages_beyond_40_are_not_skipped(self):
+        original = self.fake.respond
+        def pages(request, data=None, timeout=None):
+            url = urllib.parse.urlsplit(request.full_url)
+            q = dict(urllib.parse.parse_qsl(url.query))
+            if url.path == '/drive/v3/files':
+                if 'sharedWithMe = true and trashed' in q['q']:
+                    result = {'files': []}
+                else:
+                    start = int(q.get('pageToken', '0'))
+                    result = {'files': [dict(OWNED, id=f'page{i}') for i in range(start, min(start + 40, 45))]}
+                    if start == 0:
+                        result['nextPageToken'] = '40'
+                return Response(json.dumps(result).encode())
+            if url.path.startswith('/v1/documents/page'):
+                return Response(b'{}')
+            if url.path.startswith('/drive/v3/files/page') and url.path.endswith('/comments'):
+                return Response(json.dumps({'comments': [comment('c1', ROBIN, f'Check {url.path}')] }).encode())
+            return original(request, data, timeout)
+        with patch('urllib.request.OpenerDirector.open', side_effect=pages):
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for())
+            state = self.store.checkpoint(ACCOUNT['id'])
+            self.assertFalse(state['coverage_complete'])
+            self.assertNotIn('since', state)
+            self.assertEqual(len(self.events()), 40)
+            self.store = a.Store(Path(self.config['database']))  # collector restart, same committed checkpoint
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T10:15:00+00:00'))
+        self.assertEqual(len(self.events()), 45)
+        state = self.store.checkpoint(ACCOUNT['id'])
+        self.assertTrue(state['coverage_complete'])
+        self.assertEqual(state['since'], NOW)
+
     def test_without_the_docs_consent_it_says_to_connect_google_docs(self):
         self.fake.granted = {'https://www.googleapis.com/auth/gmail.readonly'}
         with self.assertRaises(a.SourceError) as caught:
@@ -236,6 +268,23 @@ class Microsoft(unittest.TestCase):
     def events(self):
         with self.store.connect() as db:
             return [dict(r) | {'metadata': json.loads(r['metadata'])} for r in db.execute('SELECT * FROM events ORDER BY id')]
+
+    def test_word_delta_waits_until_all_45_items_are_processed(self):
+        changes = [{'id': f'i{i}', 'name': 'SOW.docx', 'parentReference': {'driveId': 'd1'}} for i in range(45)]
+        with patch.object(docs.Microsoft, 'shared', return_value=[]), patch.object(docs.Microsoft, 'delta', return_value=(changes, 'next-token')) as delta, \
+             patch.object(docs.Microsoft, 'item', return_value={'name': 'SOW.docx', 'lastModifiedDateTime': '2026-10-27T09:30:00Z'}), \
+             patch.object(docs.Microsoft, 'download', return_value=self.file):
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for())
+            state = self.store.checkpoint(ACCOUNT['id'])
+            self.assertFalse(state['coverage_complete'])
+            self.assertIsNone(state['delta'])
+            self.assertEqual(len(state['word_pending']), 5)
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T10:15:00+00:00'))
+            self.assertEqual(delta.call_count, 1)
+        state = self.store.checkpoint(ACCOUNT['id'])
+        self.assertEqual(state['delta'], 'next-token')
+        self.assertTrue(state['coverage_complete'])
+        self.assertEqual(len([e for e in self.events() if e['kind'] == 'docs.comment']), 45)
 
     def test_shares_comments_and_tracked_changes_with_files_read_all_only(self):
         docs.sync(self.store, self.config, ACCOUNT, helpers_for())

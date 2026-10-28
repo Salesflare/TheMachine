@@ -22,7 +22,7 @@ JWT = '.'.join(['eyJ' + 'hbGciOiJIUzI1NiJ9', 'eyJ' + 'zdWIiOiIxMjM0NTY3ODkwIn0',
 NOW = dt.datetime(2026, 10, 27, 9, 0, tzinfo=dt.timezone.utc)
 SECRETS = ('sam.lee@globex.example', 'ghp_abcdefghijklmnopqrstuvwxyz0123456789', 'sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWxYz',
            JWT, 'Hi Sam, the contract is attached',
-           '/home/jeroen', 'jeroen', 'Globex', 'Sam', 'Lee', 'C:\\Users\\Marie', 'Marie', '+32 470 12 34 56', '4111111111111111',
+           '/home/example-owner', 'example-owner', 'Globex', 'Sam', 'Lee', 'C:\\Users\\Marie', 'Marie', '+32 470 12 34 56', '4111111111111111',
            'https://globex.example/deal/42?token=abc', 'globex.example', 'hunter2', 'Müller', 'Zoë')
 ATTEMPTS = (
     'Failed to send to sam.lee@globex.example: 550 rejected',
@@ -31,7 +31,7 @@ ATTEMPTS = (
     f'bad jwt {JWT}',
     'could not parse reply "Hi Sam, the contract is attached" from the draft',
     "KeyError on 'Hi Sam, the contract is attached'",
-    'No such file or directory: /home/jeroen/.openclaw/workspace/memory/2026-10-27.md',
+    'No such file or directory: /home/example-owner/.openclaw/workspace/memory/2026-10-27.md',
     'cannot open C:\\Users\\Marie\\AppData\\Local\\x.db',
     'person Sam Lee at Globex has no email',
     'Müller and Zoë have no role',
@@ -92,7 +92,7 @@ class Scrub(Base):
     def test_nothing_private_survives(self):
         for attempt in ATTEMPTS:
             with self.subTest(attempt=attempt):
-                out = ef.normalize(attempt, names=['Sam', 'Lee', 'Globex', 'jeroen'])
+                out = ef.normalize(attempt, names=['Sam', 'Lee', 'Globex', 'example-owner'])
                 self.assertTrue(ef.allowed(out), out)
                 for secret in SECRETS:
                     self.assertNotIn(secret.lower(), out.lower(), f'{secret!r} leaked from {attempt!r}: {out!r}')
@@ -119,17 +119,25 @@ class Scrub(Base):
         self.assertEqual(a.fault_message(RuntimeError('feed failed error=android_feed_unavailable')), 'feed failed error=android_feed_unavailable')
         self.assertEqual(a.fault_message(RuntimeError('bad ABCdefGHIjklMNOpqrSTUvwxYZ012345')), 'bad <secret>')
 
+    def test_arbitrary_lowercase_content_and_custom_names_are_redacted(self):
+        for text in ('contract for riverbrook laboratory project maple', 'private_customer_error', 'RiverbrookError'):
+            self.assertFalse(ef.allowed(text))
+            cleaned = ef.normalize(text)
+            self.assertTrue(ef.allowed(cleaned))
+            for word in ('riverbrook', 'laboratory', 'maple', 'private_customer', 'RiverbrookError'):
+                self.assertNotIn(word, cleaned)
+
     def test_the_shape_check_refuses_anything_else(self):
         for bad in ('Sam’s card', 'naïve', 'a' * 200, 'x\ny', "it's"):
             self.assertFalse(ef.allowed(bad), bad)
 
     def test_only_a_place_in_our_code(self):
-        self.assertIsNone(ef.where('/home/jeroen/app/assistant.py', 'f', 1))
+        self.assertIsNone(ef.where('/home/example-owner/app/assistant.py', 'f', 1))
         self.assertIsNone(ef.where('../etc/passwd', 'f', 1))
         self.assertIsNone(ef.where('C:\\Users\\Marie\\x.py', 'f', 1))
         self.assertEqual(ef.where('connectors/gmail.py', 'sync', 40), 'connectors/gmail.py:sync:40')
         with self.connect() as db:
-            self.assertIsNone(ef.record(db, 'service', 'KeyError', 'x', '/home/jeroen/a.py', 'f', 1))
+            self.assertIsNone(ef.record(db, 'service', 'KeyError', 'x', '/home/example-owner/a.py', 'f', 1))
 
 
 class Dedupe(Base):
@@ -185,7 +193,7 @@ class Dedupe(Base):
     def test_names_this_machine_knows_go_before_sending(self):
         self.rec(message='lookup failed for globex')
         self.send(names=lambda: ['Globex'])
-        self.assertEqual(self.net.sent[0]['signatures'][0]['message'], 'lookup failed for <name>')
+        self.assertEqual(self.net.sent[0]['signatures'][0]['message'], 'lookup failed for <word>')
 
     def test_what_is_sent_is_only_the_signature(self):
         self.rec(message=ATTEMPTS[0])
@@ -253,7 +261,7 @@ class Sources(Base):
             {'kind': 'TypeError', 'message': "Cannot read properties of undefined (reading 'sam@globex.example')", 'file': 'dashboard.html',
              'function': 'renderCard', 'line': 4021},
             {'kind': 'TypeError', 'message': 'x', 'file': 'chrome-extension://abc/content.js', 'function': 'f', 'line': 1},
-            {'kind': 'Error', 'message': 'x', 'file': '/home/jeroen/x.js', 'function': 'f', 'line': 1},
+            {'kind': 'Error', 'message': 'x', 'file': '/home/example-owner/x.js', 'function': 'f', 'line': 1},
         ] * 5})
         self.assertEqual(out['counted'], 4)  # the first CLIENT_MAX of 15 looked at, only the dashboard's own
         with app.store.connect() as db:

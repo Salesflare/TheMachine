@@ -102,7 +102,7 @@ These are collection/retrieval fixes, not additional approval requirements. Norm
 ## Known limitations
 
 - **Change prompt and OpenClaw versions.** The native Telegram reply prompt (`openclaw-plugin/change-prompt.ts`) uses the Telegram extension API and a bridge for three client helpers. It resolves them from the installed build's export table, without a version pin or hardcoded content hashes, so it avoids a hardcoded build hash; compatibility still needs checking after updates. CI loads the real transport modules of 2026.10.7 and of the latest release. If a release removes or renames a helper, Change falls back to a plain prompt before sending (replies still work); an uncertain send never triggers that fallback. The Gateway SDK entry points used elsewhere (`plugin-sdk/gateway-runtime`, `system-event-runtime`, `plugin-entry`) are public but experimental; check them when upgrading OpenClaw.
-- **Telegram or the dashboard app** for delivery (no email or SMS); the dashboard needs Tailscale (or your own reverse proxy that sets the same identity headers).
+- **Telegram, dashboard push or notification email** for delivery (no SMS); the dashboard needs Tailscale (or your own reverse proxy that sets the same identity headers).
 - **Gmail and Calendar need `gog`** or a token broker you run, Slack needs Maton; Google setup invokes gog OAuth, or uses the configured broker. The app does not run a separate Google token issuer.
 - **Not realtime.** Sources poll (five minutes by default; Slack can take hours on a large workspace), and reviews batch signals.
 - **Android and WhatsApp are best effort**: notifications cleared during a gap are lost; WhatsApp depends on `wacli` staying synced.
@@ -166,3 +166,21 @@ Sealed metadata is recognized by its encoded envelope, not by the word `mc1_seal
 Work-account removal saves a private pending-cleanup record before changing configuration. Startup completes that cleanup after interruptions, excluding accounts still configured. Do not clear `work-removal-pending.json` before it settles; it contains private account and credential-path references. The normal seven-day rollback backup remains. Preserve personal sources, shared credentials, message keys and newer owner feedback.
 
 Broker-token rotations replace only the exact login that made the request, never a later reconnect or a removed account. Hosted agent 98 records the exact encrypted mail handoff locally before acknowledging it; retries preserve that receipt across token rotation. These are recovery fixes, not new restrictions or approval requirements.
+
+## Bounded catch-up and delivery receipts
+
+- Docs examines at most 40 changed documents per round. Google page tokens and Word's pending IDs persist until the
+  captured window is drained; only then does its completed checkpoint advance. Google incomplete searches are a
+  visible sync failure, not claimed as complete. Existing source lookback windows still apply.
+- GBrain keeps its captured pending slugs, including pages with no owner notes. Each note and the progress marker
+  commit together; a restart continues with the unread pages. Capped discovery falls back to the mapped pages.
+- Held notification email stays queued until a receipt. The same captured bundle uses the same delivery ID on retry.
+  The control plane keeps a content hash and delivery status for 30 days, not the email body. Known rejections can
+  retry; an uncertain provider send is held for reconciliation, never blindly resent. Existing seen/stale rules apply.
+- A paired computer acknowledges a Codex brief only after committing its local ticket and job. Lost responses
+  redeliver the same ticket without another launch; pending local jobs are recovered on restart.
+- Usage pacing applies to the selected provider, not another connected provider's quota. These changes add no
+  permissions or approval tiers. Error messages use a finite technical vocabulary, with unfamiliar words removed.
+
+Rollback uses a reviewed source revert, preserving SQLite and receipts. Old notification/catch-up code does not
+provide these guarantees; reverting it must not discard pending entries or replay uncertain sends.

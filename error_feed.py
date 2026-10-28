@@ -47,6 +47,10 @@ def ensure(db):
     for statement in SCHEMA.split(';'):
         if statement.strip():
             db.execute(statement)
+    if not db.execute("SELECT 1 FROM error_feed_prefs WHERE key='lexical_v2'").fetchone():
+        for sid, message in db.execute('SELECT id,message FROM error_feed').fetchall():
+            db.execute('UPDATE error_feed SET message=? WHERE id=?', (normalize(message), sid))
+        db.execute("INSERT INTO error_feed_prefs VALUES('lexical_v2','on')")
 
 
 def now():
@@ -94,6 +98,14 @@ TYPES = {'str', 'int', 'float', 'bool', 'bytes', 'dict', 'list', 'tuple', 'set',
          'number', 'string', 'boolean', 'symbol', 'bigint', 'Array', 'Object', 'Promise', 'Response', 'Element', 'HTMLElement',
          'Node', 'Window', 'Document'}
 TYPE_NAME = re.compile(r'[A-Z][A-Za-z0-9]*(?:Error|Exception|Warning|Interrupt|Exit|Iteration|Type)')
+SAFE_WORDS = {w.lower() for w in WORDS | TYPES} | set('''such attribute properties reading after s person email lookup delivery status android feed jwt parse reply draft rejected open cannot send see role has no name known next failed down gone error unavailable request response local at remote retry code result received returned does did not exist is was are been have network reach body text get set null sent timeout connection refused deprecation validation sync unknown outcome exceeded exception quota limit read write pending range invalid empty function expected dict list index key and or of the a an to from for in on with without by it its this that too many client server call file os errno'''.split())
+SAFE_CODES = {'android_feed_unavailable', 'delivery_outcome_unknown', 'conversations.history', 'HTTP_'}
+SAFE_TYPES = set('''Error Exception Warning BaseException RuntimeError ValueError TypeError KeyError IndexError AttributeError NameError ImportError ModuleNotFoundError SyntaxError ReferenceError RangeError AbortError TimeoutError ConnectionError ConnectionResetError ConnectionRefusedError BrokenPipeError FileNotFoundError PermissionError OSError IOError EOFError UnicodeError UnicodeDecodeError UnicodeEncodeError RecursionError OverflowError MemoryError ZeroDivisionError AssertionError LookupError StopIteration SystemExit KeyboardInterrupt NotImplementedError OperationalError DatabaseError IntegrityError HttpError SourceError BrokerError'''.split())
+
+
+def safe_word(word):
+    return word.lower() in SAFE_WORDS or word in SAFE_CODES or word in SAFE_TYPES
+
 SECRETISH = (
     (re.compile(r'(?i)\b(bearer|basic)\s+\S+'), r'\1 <secret>'),
     (re.compile(r'(?i)\b(token|secret|password|passwd|passphrase|api[_-]?key|authorization|cookie|session|code|sig|signature)'
@@ -127,10 +139,7 @@ def _word(token, names):
         return '<word>'
     if names and any(part in names for part in token.lower().split('.')):
         return '<name>'
-    head = token.split('.')[0]
-    if head[:1].islower() or head[:1] == '_':
-        return token  # code words: an attribute, a function, a key (a name the Machine knows went above)
-    if token in WORDS or token in TYPES or TYPE_NAME.fullmatch(token) or (token.isupper() and len(token) <= 5):
+    if safe_word(token):
         return token
     return '<word>'
 
@@ -174,7 +183,8 @@ def normalize(message, names=()):
 
 
 def allowed(message):
-    return isinstance(message, str) and len(message) <= MESSAGE_MAX and bool(SHAPE.fullmatch(message))
+    return (isinstance(message, str) and len(message) <= MESSAGE_MAX and bool(SHAPE.fullmatch(message))
+            and all(safe_word(w) for w in re.findall(r'[A-Za-z_][A-Za-z0-9_$.]*', re.sub(r'<[a-z]{1,8}>', ' ', message))))
 
 
 KIND = re.compile(r'[A-Za-z][A-Za-z0-9_.]{0,59}')
@@ -271,8 +281,10 @@ def batch(db, current=None, names=()):
     lowered = {str(n).lower() for n in (names() if callable(names) else names) if n}
     out = []
     for sid, source, kind, message, location, version, count, done, first_at, last_at in rows:
-        if lowered:
-            message = normalize(message, lowered)  # names this Machine knows, taken out once more
+        scrubbed = normalize(message, lowered)
+        if scrubbed != message:
+            db.execute('UPDATE error_feed SET message=? WHERE id=?', (scrubbed, sid))
+        message = scrubbed
         if not allowed(message) or not where(*(location.split(':') + [None])[:3]) or not KIND.fullmatch(kind):
             db.execute('UPDATE error_feed SET sent=count WHERE id=?', (sid,))  # never goes: not offered again
             continue

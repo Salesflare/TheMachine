@@ -588,27 +588,43 @@ def pull(db, call, limit=MAX_PULLS):
     mapped = {r['slug']: r['node_id'] for r in db.execute("SELECT slug,node_id FROM gbrain_pages WHERE state!='gone'") if r['node_id'] != 'the-machine:learnings'}
     if not mapped:
         return 0
-    since, started, changed = meta(db, 'pulled_at'), dt.datetime.now(dt.timezone.utc).isoformat(), []
-    if since:
-        for prefix in PREFIX.values():
-            found = call('list_pages', {'slug_prefix': prefix, 'updated_after': since, 'limit': 100})
-            pages = found.get('pages') if isinstance(found, dict) else found
-            changed += [p.get('slug') for p in pages or [] if isinstance(p, dict) and p.get('slug') in mapped]
-    else:
-        done = {r[0] for r in db.execute('SELECT slug FROM gbrain_notes')}
-        changed = [slug for slug in mapped if slug not in done]
+    pending = json.loads(meta(db, 'pull_pending') or 'null')
+    if pending is None:
+        since, started, changed = meta(db, 'pulled_at'), dt.datetime.now(dt.timezone.utc).isoformat(), []
+        if since:
+            for prefix in PREFIX.values():
+                found = call('list_pages', {'slug_prefix': prefix, 'updated_after': since, 'limit': 100})
+                pages = found.get('pages') if isinstance(found, dict) else found
+                pages = pages or []
+                # A capped list cannot prove the rest unchanged. Read our mapped pages instead, still in bounded rounds.
+                changed += (list(mapped) if len(pages) >= 100 else
+                            [p.get('slug') for p in pages if isinstance(p, dict) and p.get('slug') in mapped])
+        else:
+            changed = list(mapped)  # empty notes must count as examined too
+        pending = {'at': started, 'slugs': list(dict.fromkeys(changed))}
+        set_meta(db, 'pull_pending', json.dumps(pending))
+        db.commit()
+    started, changed = pending['at'], pending['slugs']
     read = 0
     for slug in changed[:limit]:
+        if slug not in mapped:  # withdrawn while this captured batch waited
+            pending['slugs'] = pending['slugs'][1:]
+            set_meta(db, 'pull_pending', json.dumps(pending))
+            db.commit()
+            continue
         content, _ = page_content(call('get_page', {'slug': slug, 'include_content': True}))
         note = owner_part(content) if content else ''
         if note:
             db.execute('INSERT OR REPLACE INTO gbrain_notes(node_id,slug,text,at) VALUES(?,?,?,?)', (mapped[slug], slug, note, started))
         else:
             db.execute('DELETE FROM gbrain_notes WHERE node_id=?', (mapped[slug],))
-        db.commit()
+        pending['slugs'] = pending['slugs'][1:]
+        set_meta(db, 'pull_pending', json.dumps(pending))
+        db.commit()  # the note and continuation advance together
         read += 1
-    if len(changed) <= limit:
+    if not pending['slugs']:
         set_meta(db, 'pulled_at', started)
+        db.execute("DELETE FROM gbrain_meta WHERE key='pull_pending'")
     return read
 
 
@@ -647,4 +663,4 @@ def forget(db):
     """Turned off: what came back from GBrain goes from this Machine (the brain and its pages stay as they are)."""
     ensure(db)
     db.execute('DELETE FROM gbrain_notes')
-    db.execute("DELETE FROM gbrain_meta WHERE key IN ('pulled_at','last_error')")
+    db.execute("DELETE FROM gbrain_meta WHERE key IN ('pulled_at','pull_pending','last_error')")

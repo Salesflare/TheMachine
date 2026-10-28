@@ -104,13 +104,14 @@ try{
   assert.match(await page.inputValue('#bug-what'),/Couldn’t save that/);
   await page.evaluate(()=>toast('Saved.'));assert.equal(await page.$('#toast [data-bug-report]'),null,'only errors offer it');
   await page.fill('#bug-what','');
-  // Hosted: kept on this device first; Sent shows before the support report is in (slow here), which goes with it after
-  cpOk=true;previewMs=1500;actions.length=0;await page.evaluate(()=>{state.manage_url='https://app.example/setup';localStorage.removeItem('bug-later');bugPage=[];document.querySelector('#toast').classList.remove('show')});
+  // Hosted: kept on this device first; Sending shows before the slow support report, Sent only after the receipt
+  cpOk=true;previewMs=4000;actions.length=0;await page.evaluate(()=>{state.manage_url='https://app.example/setup';localStorage.removeItem('bug-later');bugPage=[];document.querySelector('#toast').classList.remove('show')});
   await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Hosted report.');const t1=Date.now();await page.click('#bug-send');
-  await page.waitForSelector('#toast.show');assert.ok(Date.now()-t1<800,'Sent before the support report is built');
-  assert.equal(await page.textContent('#toast'),'Sent, thanks. You’ll see it here when it’s fixed.');
+  await page.waitForFunction(()=>document.querySelector('#toast.show')?.textContent==='Saved. Sending…');
+  assert.ok(!actions.some(a=>a.action==='cp'),'not called Sent before the report and provider receipt');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bug-later')).length),1,'kept on the device until it is out');
   await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('bug-later')||'[]').length);
+  await page.waitForFunction(()=>document.querySelector('#toast')?.textContent==='Sent, thanks. You’ll see it here when it’s fixed.');
   sent=actions.find(a=>a.action==='cp');assert.equal(sent.args.description,'Hosted report.');assert.deepEqual(sent.args.report.settings,{model:'openai/gpt-5'});
   assert.equal(sent.args.diag,undefined);
   // The support report fails: what the owner wrote still goes, saying so

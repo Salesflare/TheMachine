@@ -375,12 +375,16 @@ class FakeNetwork:
             self.device = self.device or 'codex' in body['tools']
             out = []
             for h, j in self.jobs.items():
-                if 'codex' in body['tools'] and not j.get('taken') and not j.get('cancelled'):
+                if 'codex' in body['tools'] and not j.get('received') and not j.get('cancelled'):
                     j['taken'] = True
-                    out.append({'ticket_hash': h, 'job': j['job'], 'tool': 'codex', 'sealed': j.pop('sealed'), 'from': 'm:hosted',
+                    out.append({'ticket_hash': h, 'job': j['job'], 'tool': 'codex', 'sealed': j['sealed'], 'from': 'm:hosted',
                                 'from_keys': self.keys.get('m:hosted')})
             return {'jobs': out, 'cancelled': [h for h, j in self.jobs.items() if j.get('taken') and j.get('cancelled')], 'me': 'dev_1'}
+        if what == 'received':
+            self.jobs[body['ticket_hash']]['received'] = True
+            return {'ok': True}
         if what == 'progress':
+            self.jobs[body['ticket_hash']]['received'] = True
             self.jobs[body['ticket_hash']]['running'] = body['progress']
             return {'ok': True}
         if what == 'done':
@@ -709,8 +713,18 @@ class AgentJobs(unittest.TestCase):
         self.assertNotIn('Fix the typo', json.dumps(net.sent))  # the Network only ever saw it sealed
         self.assertNotIn('Fix the typo', json.dumps(waiting))
         # The laptop takes it, runs it with its own Codex, and reports back
-        self.assertEqual(agent_remote.serve_once(laptop, signed_in), 1)
+        original_network = laptop.network
+        def lost_receipt(body):
+            if body['action'] == 'received':
+                raise OSError('Synthetic lost receipt before relay acknowledgment')
+            return original_network(body)
+        laptop.network = lost_receipt
+        with self.assertRaises(OSError):
+            agent_remote.serve_once(laptop, signed_in)
+        laptop.network = original_network
+        self.assertEqual(agent_remote.serve_once(laptop, signed_in), 0)  # same durable ticket, not another launch
         with laptop_store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM agent_jobs').fetchone()[0], 1)
             local = db.execute('SELECT * FROM agent_jobs').fetchone()
         self.assertEqual((local['place'], local['token_hash'], local['suggestion_id'][:4]), ('local', ticket, 'net:'))
         wait(laptop, local['id'])
