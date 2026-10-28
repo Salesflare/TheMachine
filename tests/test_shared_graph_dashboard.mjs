@@ -220,6 +220,8 @@ try{
   // a subject opens the owner's own message, in Share these? and in what went
   for(const list of ['.shared-ask','.shared-out']){const title=pane.locator(list+' [data-shared-read]').first();if(!await title.count())continue;
    const id=await title.getAttribute('data-shared-read');await title.click();await page.locator('#email-dialog[open]').waitFor();
+   // the dialog opens before it asks for the message: wait for the answer, not just the dialog
+   await page.locator('#email-content',{hasText:'The original is no longer available.'}).waitFor();
    assert.equal(opened.at(-1),id);await page.keyboard.press('Escape');await page.locator('#email-dialog[open]').waitFor({state:'detached'})}
   assert.ok(opened.length>=1);
   await pane.locator('.shared-out [data-shared-set="51"]').click();

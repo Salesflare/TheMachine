@@ -48,6 +48,15 @@ If notifications are blocked, the row says where to allow them again: on a compu
 
 The app opens with your last to-dos right away, then updates them. Without a connection it shows what it had, marked **Offline** with the time it was last updated. That copy stays on the device for at most 7 days, encrypted, and goes when you sign out.
 
+## Offline and spotty wifi
+
+On a plane or a train the dashboard keeps working. A bar at the top says **Offline** and when what you see was last updated. Your to-dos, their chats, the Calendar and the Graph lists open from the device.
+
+- **Snooze**, **Not needed**, **Mark done**, **Reopen** and notes or chat messages to The Machine wait on the device. The to-do says it saves when you're back online, with **Cancel** until then. Once your Machine answers again they go by themselves, in order, each once.
+- Messages to other people never wait. **Send** says you're offline: send again when you're back.
+- What you type in a chat stays on the device until you send it, also through a reload.
+- The app tries again by itself, a little later each time. **Try now** tries at once.
+
 ## More devices
 
 Sign in on each device the same way. On a hosted Machine, a passkey per device makes signing in quicker: add one under Security on your account page.

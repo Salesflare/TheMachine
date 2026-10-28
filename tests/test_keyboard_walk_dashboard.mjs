@@ -65,9 +65,10 @@ try{
   await press(page,'Escape');await page.locator('#chat-input').waitFor({state:'detached'});
   await page.waitForFunction(()=>document.activeElement?.id==='task-b1b1b1b1b1b1b1b1');
   assert.ok(await ring(page),'back on the to-do, with the ring');
-  // With an empty box one Esc closes the chat
+  // What was typed is still there when the chat opens again (kept on the device); with an empty box one Esc closes the chat
   await press(page,'Enter');await page.waitForFunction(()=>document.activeElement?.id==='chat-input');
-  await press(page,'Escape');await page.waitForFunction(()=>document.activeElement?.id==='task-b1b1b1b1b1b1b1b1');
+  await page.waitForFunction(()=>document.querySelector('#chat-input')?.value==='half a thought');
+  await page.fill('#chat-input','');await press(page,'Escape');await page.waitForFunction(()=>document.activeElement?.id==='task-b1b1b1b1b1b1b1b1');
   // New to-do (C), the shortcut sheet (?) and the palette (Ctrl K) close on Esc and give focus back
   await press(page,'c');await page.locator('#new-card[open]').waitFor();assert.equal(await focus(page),'nc-text');
   await press(page,'Escape');await page.locator('#new-card').waitFor({state:'hidden'});assert.equal(await focus(page),'task-b1b1b1b1b1b1b1b1');

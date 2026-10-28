@@ -48,6 +48,15 @@ Zijn meldingen geblokkeerd, dan zegt de rij waar je ze weer toestaat: klik op ee
 
 De app opent meteen met je laatste to-do's en werkt ze daarna bij. Zonder verbinding toont hij wat hij had, gemarkeerd als **Offline** met het tijdstip van de laatste update. Die kopie blijft maximaal 7 dagen op het apparaat, versleuteld, en verdwijnt als je uitlogt.
 
+## Offline en wankele wifi
+
+In het vliegtuig of de trein blijft het dashboard werken. Een balk bovenaan zegt **Offline** en wanneer wat je ziet het laatst is bijgewerkt. Je to-do's, hun chats, de Agenda en de lijsten in de Graph openen vanaf het apparaat.
+
+- **Snoozen**, **Niet nodig**, **Markeer als gedaan**, **Heropenen** en notities of chatberichten aan The Machine wachten op het apparaat. De to-do zegt dat het wordt opgeslagen zodra je weer online bent, met **Annuleren** tot dan. Zodra je Machine weer antwoordt, gaan ze vanzelf, in volgorde, elk één keer.
+- Berichten aan anderen wachten nooit. **Versturen** zegt dat je offline bent: verstuur opnieuw als je terug bent.
+- Wat je in een chat typt, blijft op het apparaat tot je het verstuurt, ook na herladen.
+- De app probeert het zelf opnieuw, telkens iets later. **Nu proberen** probeert het meteen.
+
 ## Meer apparaten
 
 Log op elk apparaat op dezelfde manier in. Op een gehoste Machine maakt een passkey per apparaat het inloggen sneller: voeg er een toe onder Beveiliging op je accountpagina.
