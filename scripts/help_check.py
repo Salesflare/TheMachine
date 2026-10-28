@@ -74,6 +74,7 @@ FEATURES = {
     'help-chat': ('dashboard.html', "helpBox.id='help-panel'"),
     'support-access': ('dashboard.html', 'Support access'),
     'chat-model': ('chat_model.py', 'def turn_args'),
+    'gbrain': ('gbrain.py', 'def '),
 }
 # Features that exist in the code but have no article yet, each with the reason. Keep this short.
 PENDING = {

@@ -42,6 +42,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 | Family Fleets: free times, to-dos and plans | [Family](docs/family.md) |
 | Skills: write, approve and share them | [Skills](docs/skills.md) |
 | Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |
+| Optional GBrain agent memory | [GBrain](docs/gbrain.md) |
 | Encryption, reliability and roadmap of the Network | [Network](docs/network.md) |
 | Add a connector | [Adding a source](docs/adding-a-source.md) |
 | Sandbox, screenshots and layout checks | [Development](docs/development.md) |
