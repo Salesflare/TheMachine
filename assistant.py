@@ -68,6 +68,7 @@ import mimetypes
 import work_removal
 import retention
 import chat_files
+import voice_input
 import security_levels
 import skills
 import task_invites
@@ -750,6 +751,15 @@ CHAT_ACTIONS = {
     'chat_upload',
 }
 OWNER_ACTIONS |= CHAT_ACTIONS
+# Voice input (voice_input.py): the owner's mic in the dashboard's message boxes, and its choices in Settings. The text
+# lands in the box; it never sends anything.
+VOICE_ACTIONS = {
+    'voice_prefs',
+    'voice_prepare',
+    'voice_status',
+    'voice_transcribe',
+}
+OWNER_ACTIONS |= VOICE_ACTIONS
 # Skills (skills.py): writing, sharing and installing them is the owner's own, from the dashboard. The agent can only
 # propose one (skill_propose), which waits for the owner's Approve.
 # Everything else OpenClaw has (skill_installed*, skill_hub_*): shown read-only; OpenClaw's own on/off and ClawHub install, on the owner's tap.
@@ -865,6 +875,7 @@ DASHBOARD_ACTIONS = frozenset({
     *SHARE_ACTIONS,
     *SKILL_ACTIONS,
     *SUPPORT_ACTIONS,
+    *VOICE_ACTIONS,
     'board_default',
     'board_delete',
     'board_dismiss',
@@ -3504,6 +3515,7 @@ class Store:
             retention.initialize(db)
             chat_files.initialize(db)
             chat_model.initialize(db)
+            voice_input.initialize(db)
             db.execute('CREATE TABLE IF NOT EXISTS chat_stops(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,text TEXT NOT NULL,at TEXT NOT NULL)')
         os.chmod(self.path, 0o600)
         self.ensure_monotonic_event_ids()
@@ -14273,6 +14285,10 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner picks the model, on the dashboard')
             return self.chat_model_default(args) if name == 'chat_model_default' else self.chat_model_set(args)
+        if name in VOICE_ACTIONS:
+            if not owner_dashboard:
+                raise ValueError('Only the owner uses voice input, on the dashboard')
+            return self.voice_action(name, args)
         if name in ('chat_upload', 'chat_file_remove'):
             # A New to-do form's files upload before the to-do exists, under the form's own draft key
             sid = 'new:' + str(args['draft']) if args.get('draft') is not None else str(args.get('suggestion_id') or '')
@@ -18566,6 +18582,54 @@ class App:
         except sqlite3.Error:
             return None
 
+    @property
+    def dictation(self):
+        """Voice input's local engine (voice_input.py), next to the database."""
+        if getattr(self, '_voice', None) is None:
+            self._voice = voice_input.Voice(Path(self.config['database']).expanduser().parent / 'voice', self.config)
+        return self._voice
+
+    def voice_openai(self, check=False):
+        """Whether OpenClaw has an OpenAI key that can transcribe: asked on Settings' Voice input (it takes OpenClaw a few
+        seconds) and kept 10 minutes; None until asked."""
+        kept = getattr(self, '_voice_openai', None)
+        if check and (not kept or kept[0] < time.monotonic()):
+            kept = self._voice_openai = (time.monotonic() + 600, voice_input.openai_ready(self.config))
+        return kept[1] if kept else None
+
+    def voice_view(self, prefs, check=False):
+        return {**prefs, 'local': self.dictation.status(prefs['model']), 'openai': self.voice_openai(check),
+                'max_seconds': voice_input.MAX_SECONDS, 'languages': list(voice_input.LANGUAGES),
+                'models': list(voice_input.MODELS)}
+
+    def voice_action(self, name, args):
+        """Settings, Voice input, and the mic in the dashboard's message boxes. A clip is only ever in memory here, and the
+        log has only its length (voice_input.py)."""
+        with self.store.connect() as db:
+            prefs = (voice_input.set_prefs(db, args, self.voice_openai(True) if args.get('engine') == 'openai' else False)
+                     if name == 'voice_prefs' else voice_input.prefs(db))
+        if name in ('voice_status', 'voice_prefs'):
+            return self.voice_view(prefs, check=bool(args.get('settings')) or name == 'voice_prefs')
+        if name == 'voice_prepare':
+            if prefs['engine'] == 'local':
+                self.dictation.prepare(prefs['model'])
+            return self.voice_view(prefs)
+        try:
+            data = base64.b64decode(str(args.get('data') or ''), validate=True)
+        except (ValueError, TypeError) as error:
+            raise ValueError('That recording couldn’t be read. Try again.') from error
+        frames, seconds = voice_input.pcm(data)
+        if prefs['engine'] == 'openai':
+            heard = voice_input.openai_transcribe(self.config, self.dictation.root / 'clips', frames, prefs['language'])
+        else:
+            try:
+                heard = self.dictation.transcribe(frames, prefs['model'], prefs['language'], voice_input.timeout_for(seconds))
+            except voice_input.NotReady:
+                self.dictation.prepare(prefs['model'])
+                return {'pending': True, 'voice': self.voice_view(prefs)}
+        LOG.info('voice clip seconds=%.0f engine=%s', seconds, prefs['engine'])
+        return {'text': voice_input.clean(heard['text']), 'language': heard.get('language')}
+
     def lookups_view(self):
         """Settings, Look up work contacts: whether this Machine can look people up, and whether the owner has it on."""
         available = enrichment.people_available(self.config)
@@ -19316,7 +19380,12 @@ class App:
                     size = int(self.headers.get('Content-Length', '0'))
                     upload = self.headers.get('X-Upload') in ('skill-import', 'graph-import', 'bug-report', 'meeting-notes')
                     chat_file = self.headers.get('X-Upload') == 'chat-file'  # one file added to a chat message
-                    if not 0 < size <= (UPLOAD_REQUEST_BYTES if upload else chat_files.REQUEST_BYTES if chat_file else 65536):
+                    voice = self.headers.get('X-Upload') == 'voice'  # one recording for voice input (voice_input.py)
+                    if not 0 < size <= (UPLOAD_REQUEST_BYTES if upload else chat_files.REQUEST_BYTES if chat_file
+                                        else voice_input.REQUEST_BYTES if voice else 65536):
+                        if voice and size > 0:
+                            self.close_connection = True
+                            raise ValueError(f'Recordings can be up to {voice_input.MAX_SECONDS // 60} minutes.')
                         if chat_file and size > 0:
                             self.close_connection = True
                             raise ValueError(f'That file is too big. Files can be up to {chat_files.human(chat_files.FILE_BYTES)}.')
@@ -19326,7 +19395,8 @@ class App:
                     except OSError:
                         self.close_connection = True  # stalled or dropped client
                         return
-                    if (upload and request.get('action') not in UPLOAD_ACTIONS) or (chat_file and request.get('action') != 'chat_upload'):
+                    if ((upload and request.get('action') not in UPLOAD_ACTIONS) or (chat_file and request.get('action') != 'chat_upload')
+                            or (voice and request.get('action') != 'voice_transcribe')):
                         raise ValueError('Invalid request size')
                     if self.path != '/api/action' or (not internal and request['action'] not in DASHBOARD_ACTIONS):
                         self.output(403, {'error': 'Operation is not available here'})
