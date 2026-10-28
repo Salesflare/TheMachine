@@ -22,8 +22,8 @@ concurrency:
 # docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual runs stay on GitHub's.
 # To fall back to GitHub's runners for pull requests too, set the repository variable CI_PR_RUNNER to "ubuntu-24.04"
 # (with the quotes); unset it to go back.
-# A contrib/ branch (a connector shared from a hosted Machine, opened by The Machine's cloud) is code nobody reviewed yet
-# that, unlike a fork, needs no approval to run: it always runs on GitHub's runners, never ours.
+# A contrib/ branch (a connector shared from a hosted Machine, opened by The Machine's cloud from its contributions fork)
+# is model-written code nobody reviewed yet: after its fork approval it runs on GitHub's runners, never ours.
 jobs:
   tests:
     runs-on: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}

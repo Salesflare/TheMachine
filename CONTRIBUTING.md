@@ -57,9 +57,10 @@ and explain why they are needed. The dashboard is plain HTML, CSS and JavaScript
   Never include real emails, chats, credentials, task exports, browser sessions or databases.
 - Keep personal preferences in the OpenClaw workspace's `USER.md`, outside the checkout.
 
-A connector built and shared from a hosted Machine arrives as a pull request on a `contrib/` branch of this repository,
-opened by The Machine's cloud for its owner (never from a fork, and their Machine holds no GitHub credential for it).
-Its CI runs on GitHub's own runners. Review it like any outside contribution. On your own computer, contribute the usual
+A connector built and shared from a hosted Machine arrives as a pull request from The Machine's contributions fork, on a
+`contrib/` branch, opened by The Machine's cloud for its owner (their own GitHub account gets no fork, and their Machine
+holds no GitHub credential for it). Like any fork's, its checks wait for a maintainer's approval and get no secrets;
+they then run on GitHub's own runners. Review it like any outside contribution before approving its checks. On your own computer, contribute the usual
 way: fork the repository and open a pull request from your fork.
 
 Merged changes reach installs only through a signed release (`python3 scripts/release.py cut`, by the release key holder; see [Operations](docs/operations.md#releases)).

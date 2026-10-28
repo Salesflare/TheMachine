@@ -28,7 +28,7 @@ Sobald deine Machine bereit ist, steht **Dashboard öffnen** oben auf der Seite.
 
 ## Eine Quelle anfragen
 
-Fehlt dir eine Quelle? Gib unter **Connectors** bei **Eine Quelle anfragen** den Dienst an und was gelesen werden soll, und tippe auf **Bauen**. Dein eigenes Modell schreibt und testet sie auf deinem Server. Wenn du sie teilst, öffnet The Machine dafür einen Pull Request auf GitHub, aus einem Branch im eigenen Repository von The Machine. Ein GitHub-Konto brauchst du nicht; [verbinde GitHub](github.md), um als Co-Autor genannt zu werden.
+Fehlt dir eine Quelle? Gib unter **Connectors** bei **Eine Quelle anfragen** den Dienst an und was gelesen werden soll, und tippe auf **Bauen**. Dein eigenes Modell schreibt und testet sie auf deinem Server. Wenn du sie teilst, öffnet The Machine dafür einen Pull Request auf GitHub für dich. Ein GitHub-Konto brauchst du nicht; [verbinde GitHub](github.md), um als Co-Autor genannt zu werden.
 
 ## Später zurückkommen
 

@@ -28,7 +28,7 @@ As soon as your Machine is ready, **Open your dashboard** shows at the top of th
 
 ## Ask for a source
 
-Missing a source? On **Connectors**, under **Ask for a source**, name the service and what to read, then press **Build it**. Your own model writes and tests it on your server. If you share it, The Machine opens a pull request for it on GitHub, from a branch in The Machine's own repository. You don't need a GitHub account; [connect GitHub](github.md) to be named as co-author.
+Missing a source? On **Connectors**, under **Ask for a source**, name the service and what to read, then press **Build it**. Your own model writes and tests it on your server. If you share it, The Machine opens a pull request for it on GitHub for you. You don't need a GitHub account; [connect GitHub](github.md) to be named as co-author.
 
 ## Come back later
 

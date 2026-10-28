@@ -28,7 +28,7 @@ Appena la tua Machine è pronta, **Apri la tua dashboard** compare in cima alla 
 
 ## Richiedi una fonte
 
-Ti manca una fonte? In **Connettori**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. Il tuo modello la scrive e la testa sul tuo server. Se la condividi, The Machine apre una pull request su GitHub, da un branch nel repository di The Machine stesso. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
+Ti manca una fonte? In **Connettori**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. Il tuo modello la scrive e la testa sul tuo server. Se la condividi, The Machine apre una pull request su GitHub per te. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
 
 ## Torna più tardi
 

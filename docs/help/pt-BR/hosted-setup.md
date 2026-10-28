@@ -28,7 +28,7 @@ Assim que sua Machine estiver pronta, **Abrir seu painel** aparece no topo da p�
 
 ## Pedir uma fonte
 
-Falta uma fonte? Em **Conectores**, em **Pedir uma fonte**, diga o serviço e o que ler, e toque em **Criar**. Seu próprio modelo a escreve e testa no seu servidor. Se você compartilhar, The Machine abre um pull request no GitHub, a partir de um branch no próprio repositório de The Machine. Você não precisa de uma conta no GitHub; [conecte o GitHub](github.md) para aparecer como coautor.
+Falta uma fonte? Em **Conectores**, em **Pedir uma fonte**, diga o serviço e o que ler, e toque em **Criar**. Seu próprio modelo a escreve e testa no seu servidor. Se você compartilhar, The Machine abre um pull request no GitHub por você. Você não precisa de uma conta no GitHub; [conecte o GitHub](github.md) para aparecer como coautor.
 
 ## Voltar depois
 

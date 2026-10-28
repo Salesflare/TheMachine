@@ -28,7 +28,7 @@ Dès que votre Machine est prête, **Ouvrir votre tableau de bord** apparaît en
 
 ## Demander une source
 
-Une source vous manque ? Dans **Connecteurs**, sous **Demander une source**, indiquez le service et ce qu’il faut lire, puis appuyez sur **Le construire**. Votre propre modèle l’écrit et la teste sur votre serveur. Si vous la partagez, The Machine ouvre une pull request sur GitHub, depuis une branche du dépôt de The Machine lui-même. Pas besoin de compte GitHub ; [connectez GitHub](github.md) pour être cité comme coauteur.
+Une source vous manque ? Dans **Connecteurs**, sous **Demander une source**, indiquez le service et ce qu’il faut lire, puis appuyez sur **Le construire**. Votre propre modèle l’écrit et la teste sur votre serveur. Si vous la partagez, The Machine ouvre une pull request sur GitHub pour vous. Pas besoin de compte GitHub ; [connectez GitHub](github.md) pour être cité comme coauteur.
 
 ## Revenir plus tard
 

@@ -28,7 +28,7 @@ Zodra je Machine klaar is, staat **Open je dashboard** bovenaan de pagina. Zet h
 
 ## Vraag een bron aan
 
-Mis je een bron? Vul bij **Connectors**, onder **Vraag een bron aan**, de dienst in en wat er gelezen moet worden, en druk op **Bouwen**. Je eigen model schrijft en test hem op je server. Deel je hem, dan opent The Machine er een pull request voor op GitHub, vanuit een branch in de eigen repository van The Machine. Een GitHub-account is niet nodig; [verbind GitHub](github.md) om als co-auteur genoemd te worden.
+Mis je een bron? Vul bij **Connectors**, onder **Vraag een bron aan**, de dienst in en wat er gelezen moet worden, en druk op **Bouwen**. Je eigen model schrijft en test hem op je server. Deel je hem, dan opent The Machine er een pull request voor op GitHub voor je. Een GitHub-account is niet nodig; [verbind GitHub](github.md) om als co-auteur genoemd te worden.
 
 ## Later terugkomen
 
