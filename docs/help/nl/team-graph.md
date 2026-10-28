@@ -51,7 +51,15 @@ Privéthreads en threads met alleen collega's blijven erbuiten, net als mensen u
 
 ## Niet zeker? Dan wacht hij
 
-Is je Machine niet zeker, dan deelt hij niet. Die threads wachten onder **Deze delen?** tot je **Delen met het team** of **Privé houden** kiest.
+Is je Machine niet zeker, dan deelt hij niet. Die threads wachten onder **Deze delen?**, gegroepeerd naar wat ze zijn (zoals "Partner- en vermeldingsruil"), elke groep met een voorgestelde keuze:
+
+- **Delen met team** gaat naar iedereen in de Fleet.
+- **Delen met…** gaat alleen naar de teamgenoten die je kiest, bijvoorbeeld een bestuurslid voor gesprekken met investeerders. De rest van het team krijgt het niet.
+- **Privé houden** houdt het bij jou.
+
+Eén tik beslist voor een hele groep. Open een groep om de threads te zien en vink uit wat je apart wilt beslissen.
+
+Gesprekken over het kopen, verkopen of investeren in een bedrijf en bestuurszaken tellen als gevoelig, dus die wachten hier niet. Vermeldingen, integraties en ander gewoon werk met een partnerbedrijf zijn klantwerk.
 
 ## Voor de eerste deling
 

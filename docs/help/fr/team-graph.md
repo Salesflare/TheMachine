@@ -51,7 +51,15 @@ Les fils perso et ceux entre collègues uniquement restent exclus, de même que 
 
 ## Pas sûr ? Ça attend
 
-Quand votre Machine n’est pas sûre, elle ne partage pas. Ces fils attendent sous **Partager ceux-ci ?** jusqu’à ce que vous choisissiez **Partager avec l’équipe** ou **Garder privé**.
+Quand votre Machine n’est pas sûre, elle ne partage pas. Ces fils attendent sous **Partager ceux-ci ?**, groupés selon ce qu’ils sont (comme « Échanges de partenaires et de listings »), chaque groupe avec un choix suggéré :
+
+- **Partager avec l’équipe** envoie à toute la Fleet.
+- **Partager avec…** envoie seulement aux coéquipiers que vous choisissez, par exemple un membre du conseil pour des discussions avec des investisseurs. Le reste de l’équipe ne le reçoit pas.
+- **Garder privé** le garde chez vous.
+
+Un seul appui décide pour tout un groupe. Ouvrez un groupe pour voir ses fils et décochez ceux que vous voulez décider à part.
+
+Les discussions sur l’achat, la vente ou l’investissement dans une entreprise, et les sujets du conseil, comptent comme sensibles : elles n’attendent donc pas ici. Les listings, les intégrations et le reste du travail courant avec une entreprise partenaire sont du travail client.
 
 ## Avant le premier partage
 

@@ -25,8 +25,12 @@ const sharing=[{fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:nu
 const T=(id,title,company,why,view='team')=>({event_id:id,title,with:company,company,at,view,share:'team',why});
 const overview={sorted:{client:1113,sensitive:265,internal:41,personal:262,unsure:12,other:138},unsorted:4,shared:1100,waiting:3,held:265,sent:0,more:0,
  threads:[T(51,'Renewal quote for 40 seats','Northwind','Goes within the hour: client thread with Northwind'),T(52,'Onboarding call notes','Globex','Goes within the hour: client thread with Globex','wait')],
- unsure:[T(61,'Quick question about invoices','Umbrella','Only you: not sure it\'s client work','ask'),T(62,'Intro via a mutual friend','Hooli','Only you: not sure it\'s client work','ask')],unsure_more:0,
- by_hand:[{...T(71,'Board pack draft','Vandelay','Only you: you chose this','private'),share:'only_you'}],records:[{node_id:'org:initech',name:'Initech',kind:'org'}],
+ unsure:[{...T(61,'Listy x Umbrella','Umbrella','Only you: not sure it\'s client work','ask'),group:'Partner and listing exchanges',suggest:'team'},
+  {...T(62,'Rankr x Umbrella','Hooli','Only you: not sure it\'s client work','ask'),group:'Partner and listing exchanges',suggest:'team'},
+  {...T(63,'Quick catch-up','Northfund','Only you: not sure it\'s client work','ask'),group:'Investors and buyers',suggest:'people'}],unsure_more:0,
+ groups:[{name:'Partner and listing exchanges',suggest:'team',count:2},{name:'Investors and buyers',suggest:'people',count:1}],
+ teammates:[{fleet:FL,member:'m_kim',name:'Kim Lee'},{fleet:FL,member:'m_tom',name:'Tom Ray'}],
+ by_hand:[{...T(71,'Board pack draft','Vandelay','Only you: you chose this','private'),share:'only_you',shared_with:['Kim Lee']}],records:[{node_id:'org:initech',name:'Initech',kind:'org'}],
  rules:[{key:'@stark.example',choice:'private',name:'Stark',at}],preview:{threads:1113,orgs:[{name:'Northwind',key:'@northwind.example',threads:84},{name:'Globex',key:'@globex.example',threads:61},{name:'Umbrella',key:'@umbrella.example',threads:12}],more:212}};
 let noTeam=false;  // nobody OK'd yet: nothing from the team, and nothing goes
 const TID=FL+':m_ada:'+'e'.repeat(32),FILE='f'.repeat(32);
@@ -180,11 +184,39 @@ try{
   await pane.locator('.shared-first [data-shared-rule]').first().click();
   await new Promise(r=>setTimeout(r,300));
   assert.deepEqual(calls.filter(c=>c.action==='graph_rule').at(-1),{action:'graph_rule',args:{key:'@northwind.example',choice:'private',name:'Northwind'}});
-  assert.equal(await pane.locator('[data-shared-many="team"]').isDisabled(),true);
-  await pane.locator('[data-shared-pick]').first().check();
-  await pane.locator('[data-shared-many="team"]').click();
-  await new Promise(r=>setTimeout(r,300));
+  // Share these?: one group per kind of thread, the review's suggestion first; plain Share is the whole team, Share with… chosen people
+  const groups=pane.locator('.shared-group');
+  assert.deepEqual(await groups.locator('.shared-group-head strong').allInnerTexts(),['Partner and listing exchanges','Investors and buyers']);
+  assert.match(await pane.locator('.shared-ask').innerText(),/Share with team goes to everyone in the Fleet\. Share with… goes only to the teammates you pick\./);
+  assert.deepEqual(await groups.nth(0).locator('.actions button').allInnerTexts(),['Share with team','Share with…','Keep private']);
+  assert.deepEqual(await groups.nth(1).locator('.actions button').allInnerTexts(),['Share with…','Share with team','Keep private']);
+  assert.equal(await groups.nth(1).locator('.actions button.primary').innerText(),'Share with…');
+  assert.match(await groups.nth(1).innerText(),/Suggested: Share with…/);
+  assert.equal(await groups.nth(0).locator('[data-shared-pick]').first().isVisible(),false);  // closed: one tap decides the whole group
+  await groups.nth(0).locator('summary').click();
+  assert.equal(await groups.nth(0).locator('summary').innerText(),'Show 2 threads');
+  for(const colorScheme of ['light','dark']){await page.emulateMedia({colorScheme});await shot(pane.locator('.shared-ask'),(process.env.SHOTS||'/tmp')+'/share-these-'+width+'-'+colorScheme+'.png')}
+  await page.emulateMedia({colorScheme:'light'});
+  for(const x of await groups.nth(0).locator('[data-shared-pick]').all())await x.uncheck();
+  assert.equal(await groups.nth(0).locator('[data-shared-many="team"]').isDisabled(),true);
+  assert.equal(await groups.nth(1).locator('[data-shared-many="team"]').isDisabled(),false);  // each group on its own
+  await groups.nth(0).locator('[data-shared-pick][value="61"]').check();
+  await groups.nth(0).locator('[data-shared-many="team"]').click();
+  await page.locator('#toast',{hasText:'Shared 1 with your team.'}).waitFor();
   assert.deepEqual(calls.find(c=>c.action==='graph_share_many'),{action:'graph_share_many',args:{event_ids:[61],share:'team'}});
+  await new Promise(r=>setTimeout(r,500));
+  assert.equal(await pane.locator('.shared-group').nth(0).locator('details').getAttribute('open'),'');  // still open after the reload
+  await pane.locator('.shared-group').nth(1).locator('[data-shared-many="people"]').click();
+  const sheet=page.locator('#share-people[open]');await sheet.waitFor();
+  assert.equal(await sheet.locator('h2').innerText(),'Share 1 thread with…');
+  assert.deepEqual(await sheet.locator('.sp-people label').allInnerTexts(),['Kim Lee','Tom Ray']);
+  await sheet.locator('.sp-people input').first().check();
+  assert.equal(await sheet.locator('.sp-line').innerText(),'Goes to Kim Lee only, also if sensitive. Not to the rest of the team.');
+  if(width===390)await shot(sheet,(process.env.SHOTS||'/tmp')+'/share-these-people-390.png');
+  await sheet.locator('button.primary').click();
+  await page.locator('#toast',{hasText:'Shared 1 thread with Kim Lee only.'}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='graph_share_many').at(-1),{action:'graph_share_many',args:{event_ids:[63],share:'people',people:[{fleet:FL,member:'m_kim'}]}});
+  assert.match(await pane.locator('.shared-kept').innerText(),/Board pack draft\s+Only you and Kim Lee/);
   // a subject opens the owner's own message, in Share these? and in what went
   for(const list of ['.shared-ask','.shared-out']){const title=pane.locator(list+' [data-shared-read]').first();if(!await title.count())continue;
    const id=await title.getAttribute('data-shared-read');await title.click();await page.locator('#email-dialog[open]').waitFor();

@@ -574,7 +574,9 @@
  "Choose team or private": "Kies team of private",
  "Choose team, private or none": "Kies team, private of none",
  "Choose teammates whose Machines are confirmed in your Work Fleet": "Kies teamgenoten van wie de Machine bevestigd is in je Werk-Fleet",
+ "Choose threads": "Kies gesprekken",
  "Choose who gets it.": "Kies wie het krijgt.",
+ "Choose who gets them": "Kies wie ze krijgt",
  "Choose who gets this email from the addresses offered.": "Kies wie deze e-mail krijgt uit de aangeboden adressen.",
  "Choose yes or no": "Kies ja of nee",
  "Choose your username on your account page first.": "Kies eerst je gebruikersnaam op je accountpagina.",
@@ -603,6 +605,7 @@
  "Click to rename": "Klik om te hernoemen",
  "Clicking “{}” on the page…": "Klikken op “{}” op de pagina…",
  "Client": "Klant",
+ "Client and partner work": "Klant- en partnerwerk",
  "Client threads with {} go to the team.": "Klantthreads met {} gaan naar het team.",
  "Close": "Sluiten",
  "Close (a closeness)": "Hecht",
@@ -1137,6 +1140,7 @@
  "Goes along": "Gaat mee",
  "Goes out at {}": "Wordt om {} verstuurd",
  "Goes to the {} job": "Gaat naar de {}-job",
+ "Goes to {} only, also if sensitive. Not to the rest of the team.": "Gaat alleen naar {}, ook als het gevoelig is. Niet naar de rest van het team.",
  "Goes when you start": "Gaat wanneer je start",
  "Goes when you start: client thread": "Gaat wanneer je start: klantthread",
  "Goes when you start: client thread with {}": "Gaat wanneer je start: klantthread met {}",
@@ -2157,6 +2161,7 @@
  "Only this event goes. Nobody gets an update.": "Alleen deze afspraak verdwijnt. Niemand krijgt een update.",
  "Only what needs you, where you want it.": "Alleen wat jou nodig heeft, waar je het wilt.",
  "Only you": "Alleen jij",
+ "Only you and {}": "Alleen jij en {}",
  "Only you see this and its threads.": "Alleen jij ziet dit en de threads ervan.",
  "Only you see this project now.": "Alleen jij ziet dit project nu.",
  "Only you: kept private": "Alleen jij: privé gehouden",
@@ -2262,6 +2267,7 @@
  "Other company, shared": "Ander bedrijf, gedeeld",
  "Other reason…": "Andere reden…",
  "Other sources": "Andere bronnen",
+ "Other threads": "Andere gesprekken",
  "Outlook": "Outlook",
  "Outlook Calendar": "Outlook-agenda",
  "Outlook alias": "Outlook-alias",
@@ -2864,10 +2870,16 @@
  "Share what Help is asked": "Delen wat aan Help gevraagd wordt",
  "Share with all {}": "Delen met alle {}",
  "Share with one of your Work Fleets": "Deel met een van je Werk-Fleets",
+ "Share with team": "Delen met team",
+ "Share with team goes to everyone in the Fleet. Share with… goes only to the teammates you pick.": "Delen met team gaat naar iedereen in de Fleet. Delen met… gaat alleen naar de teamgenoten die je kiest.",
  "Share with the team": "Delen met het team",
  "Share with the team again": "Opnieuw delen met het team",
  "Share with…": "Delen met…",
  "Share {}": "{} delen",
+ "Share {} threads with…": {
+  "one": "{} gesprek delen met…",
+  "other": "{} gesprekken delen met…"
+ },
  "Share {} with The Machine team?": "{} delen met het team van The Machine?",
  "Share {} with {}'s Machine?": "{} delen met de Machine van {}?",
  "Share “{}”": "“{}” delen",
@@ -2896,6 +2908,10 @@
  "Shared with {} {}.": "Gedeeld met {} {}.",
  "Shared with {}, sealed to their Machines.": "Gedeeld met {}, versleuteld voor hun Machines.",
  "Shared with {}.": "Gedeeld met {}.",
+ "Shared {} threads with {} only.": {
+  "one": "{} gesprek alleen met {} gedeeld.",
+  "other": "{} gesprekken alleen met {} gedeeld."
+ },
  "Shared {} threads with {} this week, {} held back.": {
   "one": "Deze week {} thread gedeeld met {}, {} achtergehouden.",
   "other": "Deze week {} threads gedeeld met {}, {} achtergehouden."
@@ -2943,6 +2959,10 @@
  "Show what a to-do says on your lock screen.": "Toon wat een to-do zegt op je vergrendelscherm.",
  "Show what changed": "Toon wat er veranderd is",
  "Show {} more": "Nog {} tonen",
+ "Show {} threads": {
+  "one": "{} gesprek tonen",
+  "other": "{} gesprekken tonen"
+ },
  "Showing what’s in so far. More can still come in.": "Dit is wat er tot nu toe binnen is. Er kan nog meer komen.",
  "Sign in": "Inloggen",
  "Sign in again": "Opnieuw inloggen",
@@ -3120,6 +3140,7 @@
  "Suggested by": "Voorgesteld door",
  "Suggested edit": "Voorgestelde wijziging",
  "Suggested for your to-dos": "Voorgesteld voor je to-do's",
+ "Suggested: {}": "Voorstel: {}",
  "Suggestions": "Suggesties",
  "Suggestions (G then S)": "Suggesties (G dan S)",
  "Summary": "Samenvatting",

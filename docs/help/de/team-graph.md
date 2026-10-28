@@ -51,7 +51,15 @@ Private Threads und solche nur unter Kolleginnen und Kollegen bleiben draußen, 
 
 ## Unsicher? Es wartet
 
-Wenn deine Machine unsicher ist, teilt sie nicht. Diese Threads warten unter **Diese teilen?**, bis du **Mit dem Team teilen** oder **Privat halten** wählst.
+Wenn deine Machine unsicher ist, teilt sie nicht. Diese Threads warten unter **Diese teilen?**, gruppiert nach dem, was sie sind (etwa „Partner- und Listing-Tausch“), jede Gruppe mit einer vorgeschlagenen Wahl:
+
+- **Mit Team teilen** geht an alle in der Fleet.
+- **Teilen mit…** geht nur an die Teammitglieder, die du wählst, zum Beispiel ein Mitglied des Boards für Gespräche mit Investoren. Der Rest des Teams bekommt es nicht.
+- **Privat halten** behält es bei dir.
+
+Ein Tippen entscheidet für eine ganze Gruppe. Öffne eine Gruppe, um ihre Threads zu sehen, und entferne den Haken bei denen, die du einzeln entscheiden willst.
+
+Gespräche über Kauf, Verkauf oder Investitionen in eine Firma und Board-Themen gelten als sensibel und warten deshalb nicht hier. Listings, Integrationen und andere alltägliche Arbeit mit einer Partnerfirma sind Kundenarbeit.
 
 ## Vor dem ersten Teilen
 

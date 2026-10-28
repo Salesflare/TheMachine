@@ -51,7 +51,15 @@ Le conversazioni personali e quelle solo tra colleghi restano fuori, e così le 
 
 ## Non è sicura? Aspetta
 
-Quando la tua Machine non è sicura, non condivide. Quelle conversazioni aspettano in **Condividerle?** finché non scegli **Condividi con il team** o **Mantieni privato**.
+Quando la tua Machine non è sicura, non condivide. Quelle conversazioni aspettano in **Condividerle?**, raggruppate per tipo (come «Scambi con partner e listing»), ogni gruppo con una scelta suggerita:
+
+- **Condividi con il team** arriva a tutti nella Fleet.
+- **Condividi con…** arriva solo ai colleghi che scegli, per esempio un membro del consiglio per i colloqui con investitori. Il resto del team non lo riceve.
+- **Mantieni privato** lo tiene a te.
+
+Un tocco decide per tutto il gruppo. Apri un gruppo per vedere le sue conversazioni e togli la spunta a quelle da decidere a parte.
+
+Le conversazioni sull'acquisto, la vendita o l'investimento in un'azienda e le questioni del consiglio contano come riservate, quindi non aspettano qui. Listing, integrazioni e il resto del lavoro di tutti i giorni con un'azienda partner sono lavoro per clienti.
 
 ## Prima della prima condivisione
 

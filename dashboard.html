@@ -563,6 +563,7 @@ span.share-chip{cursor:default}.share-chip.on{color:var(--text);border-color:col
 .fleet-learnings article p{margin:0}.fleet-learnings article p+p{margin-top:4px}.fleet-learn-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.fleet-learn-meta button{padding:2px 10px;font-size:.85rem}.fleet-learnings .chip{margin-right:4px;vertical-align:1px}.fleet-graph-note{margin:4px 0 0}
 .shared-row{display:flex;align-items:center;gap:10px;min-width:0}.shared-row .grow{display:flex;flex-direction:column;min-width:0;flex:1}.shared-row .ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.shared-row small{font-size:var(--fs-xs)}.shared-row button{flex:none}
 .shared-pick{flex-direction:row!important;align-items:center;gap:10px}.shared-pick input,.shared-all input{flex:none;margin:0}.shared-read{all:unset;cursor:pointer;display:block;max-width:100%;box-sizing:border-box}.shared-read:hover{text-decoration:underline}.shared-read:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:4px}.shared-all{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted);margin:2px 0 0}
+.shared-group{border-top:1px solid var(--border);padding:12px 0 2px;display:flex;flex-direction:column;gap:8px}.shared-group:first-of-type{border-top:0}.shared-group-head{display:flex;align-items:baseline;gap:8px;min-width:0}.shared-group-head strong{min-width:0}.shared-group .actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}.shared-suggest{font-size:var(--fs-xs)}.shared-group-list summary{cursor:pointer;color:var(--muted);font-size:.88rem;width:max-content}.shared-group-list[open] summary{margin-bottom:6px}
 .shared-how>summary{cursor:pointer;list-style:none}.shared-how>summary::-webkit-details-marker{display:none}.shared-how>summary h3{display:inline;margin:0;font-size:1rem}
 .shared-facts{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:12px 0 0;font-size:.9rem}.shared-facts div{display:contents}.shared-facts dt{font-weight:650}.shared-facts dd{margin:0;color:var(--muted)}
 .fleet-box h3 .count{font-weight:400;color:var(--muted);font-size:.9rem;margin-left:4px}
@@ -6343,16 +6344,31 @@ function sharedHTML(work,g,d){const n=x=>Number(x||0).toLocaleString(DL),fleet=e
   ['Shared boards','The people you pick get each project\'s full timeline: email, meetings, Intercom, chats, to-dos and moves.'],
   ['Who sees it',t('Confirmed Machines in {}. The Network can\'t read it.',work.name)],
   ['Someone leaves','They get nothing new. What they had stays.']].map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${esc(t(v))}</dd></div>`).join('')}</dl><p class="fleet-fine"><a class="learn" href="${HELP}team-graph" target="_blank" rel="noopener">Learn more</a></p></details>`;
- if(d.unsure.length)h+=`<div class="fleet-box shared-ask"><h3>Share these?</h3><p class="sub">Not sure these are client work. They stay with you until you choose.</p><label class="shared-all"><input type="checkbox" data-shared-pick-all> ${esc(t('All {}',d.unsure.length+(d.unsure_more||0)))}</label><ul class="list shared-list">${d.unsure.map(x=>`<li class="shared-row shared-pick"><input type="checkbox" value="${esc(x.event_id)}" data-shared-pick aria-label="${esc(x.title||'(no subject)')}"><span class="grow">${sharedTitle(x)}<small class="muted">${esc([x.company||x.with,shortDay(x.at)].filter(Boolean).join(' · '))}</small></span></li>`).join('')}</ul><div class="actions"><button type="button" class="primary" data-shared-many="team" disabled>Share</button><button type="button" class="ghost" data-shared-many="private" disabled>Keep private</button></div></div>`;
+ if(d.unsure.length)h+=sharedAskHTML(d);
  const shown=sharedShown[work.id]||20,list=d.threads;
  h+=`<div class="fleet-box shared-out"><h3>${g?.started?'Shared':'Goes within the hour'} <span class="count">${n(d.shared+d.waiting)}</span></h3>${list.length?`<ul class="list shared-list">${list.slice(0,shown).map(x=>sharedRow(x,`<button type="button" class="ghost" data-shared-set="${x.event_id}" data-share="only_you"${g?.started?'':' data-before="1"'}>${g?.started?'Unshare':'Keep private'}</button>`)).join('')}</ul>${list.length>shown||d.more?`<button type="button" class="quiet" data-shared-more="${fleet}">Show more</button>`:''}`:'<p class="muted">Nothing yet.</p>'}</div>`;
  const rules=d.rules.map(r=>`<li class="shared-row"><span class="grow"><span class="ell">${esc(r.name||r.key)}</span><small class="muted">${r.choice==='private'?'Always only you':'Always share client threads'} · ${esc(r.key)}</small></span><button type="button" class="ghost" data-shared-rule="${esc(r.key)}" data-choice="none">Remove</button></li>`).join('');
  const recs=d.records.map(r=>`<li class="shared-row"><span class="grow"><span class="ell">${esc(r.name)}</span><small class="muted">${esc(({org:'Organization',person:'Person',project:'Project'})[r.kind]||'Record')} and its threads</small></span><button type="button" class="ghost" data-shared-record="${esc(r.node_id)}">Share again</button></li>`).join('');
- const hand=d.by_hand.map(x=>sharedRow(x,`<button type="button" class="ghost" data-shared-set="${x.event_id}" data-share="team">Share</button>`)).join('');
+ const hand=d.by_hand.map(x=>sharedRow(x.shared_with?.length?{...x,why:t('Only you and {}',namesLine(x.shared_with))}:x,`<button type="button" class="ghost" data-shared-set="${x.event_id}" data-share="team">Share</button>`)).join('');
  h+=`<div class="fleet-box shared-kept"><h3>Kept private</h3>${rules||recs||hand?`<ul class="list shared-list">${rules}${recs}${hand}</ul>`:'<p class="muted">Nothing yet. Tap Team or Only you on any thread in the Graph.</p>'}</div>`;
  const ST={sharing:'Sharing',not_started:'Not shared yet',off:'Stopped, with an admin\'s OK',removed:'Taken out'};
  if(g?.admin)h+=`<div class="fleet-box shared-people"><h3>Teammates</h3><p class="sub">Who shares with ${esc(work.name)}. Only an admin sees this.</p>${(g.people||[]).length?`<ul class="list shared-list">${g.people.map(p=>`<li class="shared-row"><span class="grow"><span class="ell">${esc(p.name)}</span><small class="muted">${ST[p.state]||''}</small></span>${p.state==='removed'?`<button type="button" class="ghost" data-graph-remove="${esc(p.member)}" data-back="1">Share again</button>`:`<button type="button" class="ghost" data-graph-remove="${esc(p.member)}">Take out</button>`}</li>`).join('')}</ul>`:''}</div>`;
  return h}
+// Share these?: what the review was unsure of, in groups of the same kind (shared_graph.unsure_groups), each with the
+// choice the review suggests first. One tap decides a group; open it to leave threads out and choose for them later.
+// Share with team goes to everyone in the Fleet; Share with… only to the teammates picked (sensitive ones too).
+const SHARE_PICK={team:'Share with team',people:'Share with…',private:'Keep private'},sharedGroupOpen=new Set();  // groups the owner opened stay open through a reload
+document.addEventListener('toggle',e=>{const d=e.target;if(d?.classList?.contains('shared-group-list')){const k=d.closest('.shared-group')?.dataset.sharedGroup??'';d.open?sharedGroupOpen.add(k):sharedGroupOpen.delete(k)}},true);
+function sharedAskHTML(d){const who=(d.teammates||[]).length,groups=d.groups?.length?d.groups:[{name:'',suggest:null,count:d.unsure.length}];
+ return `<div class="fleet-box shared-ask"><h3>Share these?</h3><p class="sub">Not sure these are client work. They stay with you until you choose.</p><p class="fleet-fine muted">Share with team goes to everyone in the Fleet. Share with… goes only to the teammates you pick.</p>${groups.map(g=>{
+  const rows=d.unsure.filter(x=>(x.group||'')===g.name);if(!rows.length)return '';
+  const order=[...(g.suggest?[g.suggest]:[]),...['team','people','private'].filter(k=>k!==g.suggest)].filter(k=>k!=='people'||who);
+  return `<section class="shared-group" data-shared-group="${esc(g.name)}"><div class="shared-group-head"><strong class="ell">${esc(g.name||t('Other threads'))}</strong><span class="count">${Number(g.count).toLocaleString(DL)}</span></div>${g.suggest?`<small class="muted shared-suggest">${esc(t('Suggested: {}',t(SHARE_PICK[g.suggest])))}</small>`:''}<div class="actions">${order.map(k=>`<button type="button" class="${k===g.suggest?'primary':'ghost'}" data-shared-many="${k}">${esc(t(SHARE_PICK[k]))}</button>`).join('')}</div><details class="shared-group-list"${sharedGroupOpen.has(g.name)?' open':''}><summary>${esc(t(['Show {} thread','Show {} threads'],rows.length))}</summary><ul class="list shared-list">${rows.map(x=>`<li class="shared-row shared-pick"><input type="checkbox" checked value="${esc(x.event_id)}" data-shared-pick aria-label="${esc(x.title||'(no subject)')}"><span class="grow">${sharedTitle(x)}<small class="muted">${esc([x.company||x.with,shortDay(x.at)].filter(Boolean).join(' · '))}</small></span></li>`).join('')}</ul></details></section>`}).join('')}</div>`}
+// Share with… for the picked threads of one group: the teammates chosen get them, nobody else on the team.
+function sharedPeopleOpen(fleet,ids){const people=sharedData[fleet]?.teammates||[];
+ spOpen({title:t(['Share {} thread with…','Share {} threads with…'],ids.length),action:'graph_share_many',args:{event_ids:ids,share:'people'},chosen:[],people,
+  line:who=>t('Goes to {} only, also if sensitive. Not to the rest of the team.',who),
+  done:who=>t(['Shared {} thread with {} only.','Shared {} threads with {} only.'],ids.length,who),after:()=>sharedLoad(fleet,true)})}
 async function sharedLoad(fleet,quiet){const el=$('#fleet-view').querySelector(`[data-shared-fleet="${CSS.escape(fleet)}"]`);if(!el)return;
  const work=(fleetData?.fleets||[]).find(x=>x.id===fleet),g=(fleetData?.shared?.graph||[]).find(s=>s.fleet===fleet);
  const paint=()=>{el.innerHTML=sharedHTML(work,g,sharedData[fleet])};
@@ -6388,7 +6404,9 @@ fleetOn('click',async e=>{const go=e.target.closest('[data-shared-go]');if(go){e
  b.disabled=true;
  try{let msg='Saved.';
   if(b.dataset.sharedSet){const to=b.dataset.share;const r=await graphPost('graph_share',{event_id:Number(b.dataset.sharedSet),share:to});msg=to==='team'?'Shared with your team.':b.dataset.before?'Kept private. It won\'t go.':'Unshared. Teammates\' Machines delete their copy. Someone may have read it already.';const s=r?.suggest||r?.result?.suggest;if(s)sharePopSuggest(b,s)}
-  else if(b.dataset.sharedMany){const ids=[...pane.querySelectorAll('[data-shared-pick]:checked')].map(i=>Number(i.value));const team=b.dataset.sharedMany==='team';await graphPost('graph_share_many',{event_ids:ids,share:team?'team':'only_you'});msg=team?`Shared ${ids.length} with your team.`:`Kept ${ids.length} private.`}
+  else if(b.dataset.sharedMany){const ids=[...(b.closest('.shared-group')||pane).querySelectorAll('[data-shared-pick]:checked')].map(i=>Number(i.value));const to=b.dataset.sharedMany;
+   if(to==='people'){b.disabled=false;sharedPeopleOpen(fleet,ids);return}
+   await graphPost('graph_share_many',{event_ids:ids,share:to==='team'?'team':'only_you'});msg=to==='team'?t('Shared {} with your team.',ids.length):t('Kept {} private.',ids.length)}
   else if(b.dataset.sharedRule){const c=b.dataset.choice;await graphPost('graph_rule',{key:b.dataset.sharedRule,choice:c,name:b.dataset.name||''});msg=c==='none'?'Rule removed.':`Threads with ${b.dataset.name||b.dataset.sharedRule} stay with you.`}
   else if(b.dataset.sharedRecord){await graphPost('graph_private',{node_id:b.dataset.sharedRecord,private:false});msg='Shared with your team again.'}
   else if(b.dataset.graphStart){await graphPost('graph_start',{fleet});msg='Shared. Client threads go to the team now.'}
@@ -6408,9 +6426,8 @@ fleetOn('change',async e=>{const t=e.target;if(!t.matches?.('[data-graph-require
    `Only accounts on ${name}'s own domains. As an admin, you confirm ${name} has told its people.`,'Require it')){t.checked=false;return}}
  const require=[...box.querySelectorAll('[data-graph-require]:checked')].map(i=>i.dataset.graphRequire);
  try{await graphPost('graph_policy',{fleet,require});toast(require.length?'Required for everyone in the Fleet.':'Nothing required.');await sharedLoad(fleet,true)}catch(err){t.checked=!t.checked;toast(err.message,true)}});
-fleetOn('change',e=>{const t=e.target,pane=t.closest?.('[data-shared-fleet]');if(!pane||!t.matches('[data-shared-pick],[data-shared-pick-all]'))return;
- if(t.matches('[data-shared-pick-all]'))for(const i of pane.querySelectorAll('[data-shared-pick]'))i.checked=t.checked;
- const any=!!pane.querySelector('[data-shared-pick]:checked');for(const x of pane.querySelectorAll('[data-shared-many]'))x.disabled=!any});
+fleetOn('change',e=>{const t=e.target,box=t.closest?.('.shared-group');if(!box||!t.matches('[data-shared-pick]'))return;
+ const any=!!box.querySelector('[data-shared-pick]:checked');for(const x of box.querySelectorAll('[data-shared-many]'))x.disabled=!any});
 // A thread's marker opens why it is or isn't shared, the switch, and a way to What's shared. After a switch that repeats
 // itself with one company, it asks once whether to make that a rule.
 function sharePopClose(){$('#share-pop')?.remove()}
@@ -7062,9 +7079,9 @@ function toastFitUndo(text,token,board){toast(text);if(token){$('#toast').insert
 // Share board… and Share with… on a thread: chosen teammates of the Work Fleet get it, sealed to their Machines only.
 // Personal, other companies' accounts and automated mail never go, also on a shared board (shared_graph.Scope.granted).
 let sp=null;
-function spDraw(){const f=$('#share-people-form'),key=p=>p.fleet+'|'+p.member,names=graphTeammates.filter(p=>sp.on.has(key(p))).map(p=>p.name);
+function spDraw(){const f=$('#share-people-form'),key=p=>p.fleet+'|'+p.member,team=sp.people||graphTeammates,names=team.filter(p=>sp.on.has(key(p))).map(p=>p.name);
  f.innerHTML=`<div class="snooze-heading"><h2 id="share-people-title">${esc(sp.title)}</h2><button type="button" data-sp-close aria-label="Close">×</button></div>`
-  +`<fieldset class="sp-people"><legend>Who gets it</legend>${graphTeammates.map(p=>`<label><input type="checkbox" value="${esc(key(p))}"${sp.on.has(key(p))?' checked':''}> ${esc(p.name)}</label>`).join('')}</fieldset>`
+  +`<fieldset class="sp-people"><legend>Who gets it</legend>${team.map(p=>`<label><input type="checkbox" value="${esc(key(p))}"${sp.on.has(key(p))?' checked':''}> ${esc(p.name)}</label>`).join('')}</fieldset>`
   +`<p class="sp-line" role="status">${esc(names.length?sp.line(namesLine(names),names.length>1):sp.was?'Nobody else. It goes back to Only you.':'Choose who gets it.')}</p>`
   +'<p class="fleet-fine">Sealed to their Machines only. Taking someone off removes it from their Machine.</p>'
   +`<p class="ed-note warn" data-sp-error role="alert" hidden></p><div class="ed-actions"><span class="grow"></span><button type="button" class="ghost" data-sp-close>Cancel</button><button class="primary"${names.length||sp.was?'':' disabled'}>${names.length||!sp.was?'Share':'Stop sharing'}</button></div>`}
@@ -7079,8 +7096,8 @@ function threadShareOpen(eventId,people){spOpen({title:'Share this thread',actio
 $('#share-people-form').addEventListener('change',e=>{const i=e.target;if(!sp||i.type!=='checkbox')return;i.checked?sp.on.add(i.value):sp.on.delete(i.value);spDraw();$('#share-people-form').querySelector(`input[value="${CSS.escape(i.value)}"]`)?.focus()});
 $('#share-people-form').addEventListener('click',e=>{if(e.target.closest('[data-sp-close]'))$('#share-people').close()});
 $('#share-people-form').addEventListener('submit',async e=>{e.preventDefault();if(!sp)return;const btn=e.submitter||$('#share-people-form button.primary'),err=$('#share-people-form [data-sp-error]');
- const chosen=[...sp.on].map(k=>{const [fleet,member]=k.split('|');return {fleet,member}}),who=namesLine(graphTeammates.filter(p=>sp.on.has(p.fleet+'|'+p.member)).map(p=>p.name));btn.disabled=true;
- try{await graphPost(sp.action,{...sp.args,people:chosen});const msg=sp.done(who);$('#share-people').close();toast(msg);await people(graphNode,true)}catch(x){err.textContent=x.message;err.hidden=false}finally{btn.disabled=false}});
+ const chosen=[...sp.on].map(k=>{const [fleet,member]=k.split('|');return {fleet,member}}),who=namesLine((sp.people||graphTeammates).filter(p=>sp.on.has(p.fleet+'|'+p.member)).map(p=>p.name)),after=sp.after;btn.disabled=true;
+ try{await graphPost(sp.action,{...sp.args,people:chosen});const msg=sp.done(who);$('#share-people').close();toast(msg);await (after?after():people(graphNode,true))}catch(x){err.textContent=x.message;err.hidden=false}finally{btn.disabled=false}});
 $('#share-people').addEventListener('close',()=>{sp=null});
 const backfillNote=f=>f.state==='running'?'<span class="backfill-run">Looking through your history…</span>':f.added?`${f.added} added from your history${f.review?` · ${f.review} to review`:''}`:f.review?`${f.review} from your history to review`:'Nothing more in your history';
 // A board's stage filter: the stages it shows, kept per board on this device; none picked shows them all.

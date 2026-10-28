@@ -574,7 +574,9 @@
  "Choose team or private": "Escolha equipe ou privado",
  "Choose team, private or none": "Escolha equipe, privado ou nenhum",
  "Choose teammates whose Machines are confirmed in your Work Fleet": "Escolha colegas cujas Machines estão confirmadas no seu Fleet de Trabalho",
+ "Choose threads": "Escolha conversas",
  "Choose who gets it.": "Escolha quem recebe.",
+ "Choose who gets them": "Escolha quem recebe",
  "Choose who gets this email from the addresses offered.": "Escolha quem recebe este e-mail entre os endereços oferecidos.",
  "Choose yes or no": "Escolha sim ou não",
  "Choose your username on your account page first.": "Escolha primeiro seu nome de usuário na página da sua conta.",
@@ -603,6 +605,7 @@
  "Click to rename": "Clique para renomear",
  "Clicking “{}” on the page…": "Clicando em “{}” na página…",
  "Client": "Cliente",
+ "Client and partner work": "Trabalho com clientes e parceiros",
  "Client threads with {} go to the team.": "Conversas com clientes com {} vão para a equipe.",
  "Close": "Fechar",
  "Close (a closeness)": "Próximo",
@@ -1137,6 +1140,7 @@
  "Goes along": "Vai junto",
  "Goes out at {}": "Sai às {}",
  "Goes to the {} job": "Vai para o trabalho de {}",
+ "Goes to {} only, also if sensitive. Not to the rest of the team.": "Vai só para {}, mesmo se for sensível. Não para o resto da equipe.",
  "Goes when you start": "Vai quando você começar",
  "Goes when you start: client thread": "Vai quando você começar: conversa com cliente",
  "Goes when you start: client thread with {}": "Vai quando você começar: conversa com cliente com {}",
@@ -2157,6 +2161,7 @@
  "Only this event goes. Nobody gets an update.": "Só este evento sai. Ninguém recebe atualização.",
  "Only what needs you, where you want it.": "Só o que precisa de você, onde você quiser.",
  "Only you": "Só você",
+ "Only you and {}": "Só você e {}",
  "Only you see this and its threads.": "Só você vê isto e as conversas dele.",
  "Only you see this project now.": "Agora só você vê este projeto.",
  "Only you: kept private": "Só você: mantido privado",
@@ -2262,6 +2267,7 @@
  "Other company, shared": "Outra empresa, compartilhado",
  "Other reason…": "Outro motivo…",
  "Other sources": "Outras fontes",
+ "Other threads": "Outras conversas",
  "Outlook": "Outlook",
  "Outlook Calendar": "Outlook Calendar",
  "Outlook alias": "Alias do Outlook",
@@ -2864,10 +2870,16 @@
  "Share what Help is asked": "Compartilhar o que se pergunta à ajuda",
  "Share with all {}": "Compartilhar com todos os {}",
  "Share with one of your Work Fleets": "Compartilhe com um dos seus Fleets de Trabalho",
+ "Share with team": "Compartilhar com a equipe",
+ "Share with team goes to everyone in the Fleet. Share with… goes only to the teammates you pick.": "Compartilhar com a equipe vai para todos na Fleet. Compartilhar com… vai só para quem você escolher.",
  "Share with the team": "Compartilhar com a equipe",
  "Share with the team again": "Compartilhar com a equipe de novo",
  "Share with…": "Compartilhar com…",
  "Share {}": "Compartilhar {}",
+ "Share {} threads with…": {
+  "one": "Compartilhar {} conversa com…",
+  "other": "Compartilhar {} conversas com…"
+ },
  "Share {} with The Machine team?": "Compartilhar {} com a equipe de The Machine?",
  "Share {} with {}'s Machine?": "Compartilhar {} com a Machine de {}?",
  "Share “{}”": "Compartilhar “{}”",
@@ -2896,6 +2908,10 @@
  "Shared with {} {}.": "Compartilhado com {} {}.",
  "Shared with {}, sealed to their Machines.": "Compartilhado com {}, selado nas Machines dessas pessoas.",
  "Shared with {}.": "Compartilhado com {}.",
+ "Shared {} threads with {} only.": {
+  "one": "{} conversa compartilhada só com {}.",
+  "other": "{} conversas compartilhadas só com {}."
+ },
  "Shared {} threads with {} this week, {} held back.": {
   "one": "{} conversa compartilhada com {} esta semana; ficaram de fora: {}.",
   "other": "{} conversas compartilhadas com {} esta semana; ficaram de fora: {}."
@@ -2943,6 +2959,10 @@
  "Show what a to-do says on your lock screen.": "Mostrar o que uma tarefa diz na tela de bloqueio.",
  "Show what changed": "Mostrar o que mudou",
  "Show {} more": "Mostrar mais {}",
+ "Show {} threads": {
+  "one": "Ver {} conversa",
+  "other": "Ver {} conversas"
+ },
  "Showing what’s in so far. More can still come in.": "Mostrando o que chegou até agora. Ainda pode chegar mais.",
  "Sign in": "Entrar",
  "Sign in again": "Entrar de novo",
@@ -3120,6 +3140,7 @@
  "Suggested by": "Sugerido por",
  "Suggested edit": "Edição sugerida",
  "Suggested for your to-dos": "Sugeridas para suas tarefas",
+ "Suggested: {}": "Sugerido: {}",
  "Suggestions": "Sugestões",
  "Suggestions (G then S)": "Sugestões (G e depois S)",
  "Summary": "Resumo",

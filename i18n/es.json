@@ -574,7 +574,9 @@
  "Choose team or private": "Elige team o private",
  "Choose team, private or none": "Elige team, private o none",
  "Choose teammates whose Machines are confirmed in your Work Fleet": "Elige compañeros cuyas Machines estén confirmadas en tu Fleet de Trabajo",
+ "Choose threads": "Elige conversaciones",
  "Choose who gets it.": "Elige quién lo recibe.",
+ "Choose who gets them": "Elige quién las recibe",
  "Choose who gets this email from the addresses offered.": "Elige quién recibe este correo entre las direcciones ofrecidas.",
  "Choose yes or no": "Elige sí o no",
  "Choose your username on your account page first.": "Elige primero tu nombre de usuario en la página de tu cuenta.",
@@ -603,6 +605,7 @@
  "Click to rename": "Haz clic para renombrar",
  "Clicking “{}” on the page…": "Haciendo clic en “{}” en la página…",
  "Client": "Cliente",
+ "Client and partner work": "Trabajo con clientes y socios",
  "Client threads with {} go to the team.": "Los hilos con clientes con {} van al equipo.",
  "Close": "Cerrar",
  "Close (a closeness)": "Cercano",
@@ -1137,6 +1140,7 @@
  "Goes along": "Va incluido",
  "Goes out at {}": "Sale a las {}",
  "Goes to the {} job": "Va al trabajo de {}",
+ "Goes to {} only, also if sensitive. Not to the rest of the team.": "Va solo a {}, aunque sea sensible. No al resto del equipo.",
  "Goes when you start": "Se comparte cuando empieces",
  "Goes when you start: client thread": "Se comparte cuando empieces: hilo de cliente",
  "Goes when you start: client thread with {}": "Se comparte cuando empieces: hilo de cliente con {}",
@@ -2157,6 +2161,7 @@
  "Only this event goes. Nobody gets an update.": "Solo se elimina este evento. Nadie recibe aviso.",
  "Only what needs you, where you want it.": "Solo lo que te necesita, donde lo quieras.",
  "Only you": "Solo tú",
+ "Only you and {}": "Solo tú y {}",
  "Only you see this and its threads.": "Solo tú ves esto y sus hilos.",
  "Only you see this project now.": "Ahora solo tú ves este proyecto.",
  "Only you: kept private": "Solo tú: se mantiene privado",
@@ -2262,6 +2267,7 @@
  "Other company, shared": "Otra empresa, compartido",
  "Other reason…": "Otro motivo…",
  "Other sources": "Otras fuentes",
+ "Other threads": "Otras conversaciones",
  "Outlook": "Outlook",
  "Outlook Calendar": "Calendario de Outlook",
  "Outlook alias": "Alias de Outlook",
@@ -2864,10 +2870,16 @@
  "Share what Help is asked": "Compartir lo que se pregunta a la ayuda",
  "Share with all {}": "Compartir con los {}",
  "Share with one of your Work Fleets": "Comparte con uno de tus Fleets de Trabajo",
+ "Share with team": "Compartir con el equipo",
+ "Share with team goes to everyone in the Fleet. Share with… goes only to the teammates you pick.": "Compartir con el equipo llega a todos en la Fleet. Compartir con… llega solo a quienes elijas.",
  "Share with the team": "Compartir con el equipo",
  "Share with the team again": "Volver a compartir con el equipo",
  "Share with…": "Compartir con…",
  "Share {}": "Compartir {}",
+ "Share {} threads with…": {
+  "one": "Compartir {} conversación con…",
+  "other": "Compartir {} conversaciones con…"
+ },
  "Share {} with The Machine team?": "¿Compartir {} con el equipo de The Machine?",
  "Share {} with {}'s Machine?": "¿Compartir {} con la Machine de {}?",
  "Share “{}”": "Compartir “{}”",
@@ -2896,6 +2908,10 @@
  "Shared with {} {}.": "Compartido con {} {}.",
  "Shared with {}, sealed to their Machines.": "Compartido con {}, cifrado solo para sus Machines.",
  "Shared with {}.": "Compartido con {}.",
+ "Shared {} threads with {} only.": {
+  "one": "{} conversación compartida solo con {}.",
+  "other": "{} conversaciones compartidas solo con {}."
+ },
  "Shared {} threads with {} this week, {} held back.": {
   "one": "{} hilo compartido con {} esta semana, {} retenidos.",
   "other": "{} hilos compartidos con {} esta semana, {} retenidos."
@@ -2943,6 +2959,10 @@
  "Show what a to-do says on your lock screen.": "Muestra lo que dice una tarea en tu pantalla de bloqueo.",
  "Show what changed": "Mostrar qué cambió",
  "Show {} more": "Mostrar {} más",
+ "Show {} threads": {
+  "one": "Ver {} conversación",
+  "other": "Ver {} conversaciones"
+ },
  "Showing what’s in so far. More can still come in.": "Mostrando lo que hay hasta ahora. Aún puede llegar más.",
  "Sign in": "Iniciar sesión",
  "Sign in again": "Volver a iniciar sesión",
@@ -3120,6 +3140,7 @@
  "Suggested by": "Sugerido por",
  "Suggested edit": "Edición sugerida",
  "Suggested for your to-dos": "Sugerida para tus tareas",
+ "Suggested: {}": "Sugerido: {}",
  "Suggestions": "Sugerencias",
  "Suggestions (G then S)": "Sugerencias (G luego S)",
  "Summary": "Resumen",
