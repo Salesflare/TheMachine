@@ -19,12 +19,10 @@ Open **Help**, then **Report a bug**. An error message has a **Report a bug** bu
 
 1. Say what went wrong.
 2. Add a screenshot if it helps: **Take a screenshot** of the dashboard, or **Attach an image**.
-3. Keep **Include the support report** on, unless you'd rather not: versions, checks and recent errors, without messages, keys or addresses.
-   If we may need a closer look, tick **Let support look for 24 hours** too. See [Support access](get-support.md#support-access).
-4. Tap **Review**. It shows everything that goes, exactly as it goes.
-5. Tap **Send**. Nothing is sent before that.
+3. Keep **Include a support report** on, unless you'd rather not. It adds versions, checks and recent errors, without messages, keys or addresses, and lets our team read your Machine's logs and settings for 24 hours. See [Support access](get-support.md#support-access). Unticked, only what you wrote and your screenshot go.
+4. Tap **Send**. The form closes at once. Your Machine adds the support report on its own; a slow check never holds your report up.
 
-We answer by email. A self-hosted Machine can send one when it's on the Network; otherwise write to us.
+We take it from there. A self-hosted Machine can send one when it's on the Network; otherwise write to us.
 
 Once we fix a bug you reported and your Machine runs the fix, we tell you once: a short line on your dashboard (**Got it** closes it) and a short email. A self-hosted Machine hears of it when it's on the Network.
 
@@ -32,7 +30,7 @@ If a report can't go out right away (you're offline, or you sent many in a short
 
 ## Support access
 
-Our team can look at your Machine for you, but only once you allow it. When you report a bug, tick **Let support look for 24 hours**. It turns on when you press **Send**. On your own computer, it needs your Machine [paired with your account](friends.md).
+Our team can look at your Machine for you, but only once you allow it. When you report a bug with **Include a support report** on, it turns on when you press **Send**. On your own computer, it needs your Machine [paired with your account](friends.md).
 
 - Read-only: logs, settings, versions, how each connection syncs and recent errors, scrubbed like the support report. Never your messages, keys, passwords or who your contacts are.
 - It ends by itself after 24 hours. While it's on, **Settings**, **Security** shows it: **Turn off** ends it now.

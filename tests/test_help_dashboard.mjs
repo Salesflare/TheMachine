@@ -5,14 +5,16 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Help: Ask shows the answer with links to the help pages it used (only themachine.computer/help and the app's code);
-// Report a bug shows everything that goes before anything goes, and sends only on Send; an error toast opens it.
+// Report a bug sends on Send at once: the form closes and a quiet line says so, while the Machine adds the support
+// report (one box, ticked by default) without the owner waiting for it; nothing is lost when it is slow or fails. An
+// error toast opens it.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-const actions=[];let limit=false,queued=[];  // limit: the control plane said 429, so the Machine keeps the report
+const actions=[];let limit=false,queued=[],cpOk=false,previewMs=0,previewFails=false;  // limit: the control plane said 429, so the Machine keeps the report
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');let body='';
  req.on('data',c=>body+=c);req.on('end',()=>{
   if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
   res.setHeader('Content-Type','application/json');
-  if(url.pathname==='/_machine/bug'){actions.push({action:'cp',args:JSON.parse(body)});res.writeHead(429,{'Retry-After':'900'});res.end('{"error":"You sent a few reports just now.","retry_after":900}');return}
+  if(url.pathname==='/_machine/bug'){actions.push({action:'cp',args:JSON.parse(body)});if(cpOk){res.end('{"id":"r_1"}');return}res.writeHead(429,{'Retry-After':'900'});res.end('{"error":"You sent a few reports just now.","retry_after":900}');return}
   if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');if(action==='bug_queued'){res.end(JSON.stringify({queued}));return}actions.push({action,args,upload:req.headers['x-upload']});
    const later=Math.floor(Date.UTC(2030,0,1,10,55)/1000);
    if(action==='bug_later'||action==='bug_send'&&limit){queued=[{id:'bq_1',what:args.description,next_at:later}];res.end(JSON.stringify({sent:false,queued:true,at:later}));return}
@@ -20,8 +22,10 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
    if(action==='help_ask'){setTimeout(()=>res.end(JSON.stringify({answer:'Press **Snooze**, then pick a time.\n\n- See [Snooze](https://themachine.computer/help/snooze)\n- Not [this](https://evil.example/y)',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]})),300);return}
    if(action==='help_article'){res.end(JSON.stringify(args.slug==='gmail'?{slug:'gmail',title:'Gmail',summary:'',body:'## Gmail koppelen\n\nOpen Koppelingen.',anchors:['connect-gmail'],lang:'nl'}
     :{slug:'snooze',title:'Snoozen',summary:'Zet een to-do weg.',body:'Intro.\n\n## Een to-do snoozen\n\nDruk op **Snoozen**. Zie [Gmail](gmail.md#connect-gmail) of [x](javascript:alert(1)).\n\n## Wanneer hij terugkomt\n\n- Op Telegram\n- Als melding',anchors:['snooze-a-to-do','when-it-comes-back'],lang:'nl'}));return}
-   if(action==='bug_preview'){res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true}));return}
+   if(action==='bug_preview'&&previewFails){res.statusCode=500;res.end('{"error":"boom"}');return}
+   if(action==='bug_preview'){setTimeout(()=>res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true})),previewMs);return}
    if(action==='bug_send'){res.end(JSON.stringify({sent:true,id:'s_1'}));return}}
+  if(url.pathname==='/api/status'){res.end(JSON.stringify({fleet:{on:false}}));return}  // paired with the Network
   res.end(url.pathname==='/api/events'?'[]':'{}')})});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
@@ -68,46 +72,63 @@ try{
   await page.click('#help-log [data-help-bug]');assert.equal(await page.isHidden('#help-ask-pane'),true);
   assert.equal(await page.inputValue('#bug-what'),'I snoozed a to-do until tomorrow.\nI expected it to stay away.\nIt came back within a minute.');
   assert.equal(await page.isChecked('#bug-diag'),true,'the support report is in by default');
-  assert.deepEqual(actions.map(a=>a.action),['help_ask','help_ask'],'nothing sent from the chat');
+  assert.deepEqual(actions.map(a=>a.action).filter(a=>a!=='support_access'),['help_ask','help_ask'],'nothing sent from the chat');
   await page.fill('#bug-what','');await page.click('[data-help-tab="ask"]');actions.length=1;
-  // Report a bug: a click on the tab works (the panel doesn't move under it), Review shows all, nothing goes before Send
+  // Report a bug: a click on the tab works (the panel doesn't move under it); one box, ticked, says what it gives
   await page.click('[data-help-tab="bug"]');assert.equal(await page.isHidden('#help-ask-pane'),true);
-  await page.fill('#bug-what','The Calendar shows yesterday.');await page.click('#bug-next');
-  await page.waitForSelector('#bug-review:not([hidden])');
-  const shown=await page.textContent('#bug-sent');
-  assert.ok(shown.includes('The Calendar shows yesterday.'));
-  assert.deepEqual(await page.$$eval('.bug-parts li',l=>l.map(x=>x.textContent)),['Recent app errors (1 line)','Settings, without keys or what anyone wrote'],'a short summary');
-  assert.equal(await page.isVisible('.bug-all pre'),false,'the full text waits behind Show everything');
-  await page.click('.bug-all summary');const all=await page.textContent('.bug-all pre');
-  for(const part of ['token=[redacted]','openai/gpt-5'])assert.ok(all.includes(part),'everything shows '+part);
-  assert.deepEqual(actions.map(a=>a.action),['help_ask','bug_preview'],'nothing sent before Send');
-  await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
-  const sent=actions.at(-1);
+  assert.equal(await page.$$eval('#bug-form input[type=checkbox]',b=>b.length),1,'one box for the support report and the 24 hours');
+  assert.equal(await page.isChecked('#bug-diag'),true);
+  assert.match(await page.textContent('#bug-diag-fine'),/read-only logs for 24 hours/);
+  // Send: the form closes at once and says Sent; the self-hosted Machine keeps it and adds the support report itself
+  await page.fill('#bug-what','The Calendar shows yesterday.');const t0=Date.now();await page.click('#bug-send');
+  await page.waitForSelector('#help-panel:not([open])',{state:'attached',timeout:1000});await page.waitForSelector('#toast.show');
+  assert.ok(Date.now()-t0<1000,'no waiting for the support report');
+  assert.equal(await page.textContent('#toast'),'Sent, thanks. You’ll see it here when it’s fixed.');
+  let sent=actions.find(a=>a.action==='bug_send');
   assert.equal(sent.action,'bug_send');assert.equal(sent.upload,'bug-report');
-  assert.equal(sent.args.description,'The Calendar shows yesterday.');assert.deepEqual(sent.args.report.settings,{model:'openai/gpt-5'});
-  await page.keyboard.press('Escape');
-  // Unticked, the report stays home
+  assert.equal(sent.args.description,'The Calendar shows yesterday.');assert.equal(sent.args.diagnostics,true);assert.equal(sent.args.report,undefined);
+  assert.ok(!actions.some(a=>a.action==='bug_preview'),'the page doesn’t build it');
+  assert.equal(await page.inputValue('#bug-what'),'','the form starts empty next time');
+  // Unticked: no support report and no access
   await page.evaluate(()=>document.querySelector('#open-help').click());await page.click('[data-help-tab="bug"]');
-  await page.fill('#bug-what','Again.');await page.uncheck('#bug-diag');await page.click('#bug-next');await page.waitForSelector('#bug-review:not([hidden])');
-  await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
-  assert.equal(actions.at(-1).args.report??null,null,'no report when unticked');
+  actions.length=0;await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));await page.fill('#bug-what','Again.');await page.uncheck('#bug-diag');await page.click('#bug-send');await page.waitForSelector('#help-panel:not([open])',{state:'attached'});
+  await page.waitForFunction(n=>document.querySelector('#toast.show'),null);
+  assert.equal(actions.find(a=>a.action==='bug_send').args.diagnostics,false,'no report when unticked');
+  assert.ok(!actions.some(a=>a.action==='support_access'&&a.args.allow!==undefined),'no access when unticked');
+  // A new report has the box ticked again
+  await page.evaluate(()=>document.querySelector('#open-help').click());await page.click('[data-help-tab="bug"]');assert.equal(await page.isChecked('#bug-diag'),true);
   await page.keyboard.press('Escape');
   // An error toast offers it, with what it said
   await page.evaluate(()=>toast('Couldn’t save that. Try again.',true));await page.click('#toast [data-bug-report]');
   await page.waitForSelector('#help-panel[open]');
   assert.match(await page.inputValue('#bug-what'),/Couldn’t save that/);
   await page.evaluate(()=>toast('Saved.'));assert.equal(await page.$('#toast [data-bug-report]'),null,'only errors offer it');
+  await page.fill('#bug-what','');
+  // Hosted: kept on this device first; Sent shows before the support report is in (slow here), which goes with it after
+  cpOk=true;previewMs=1500;actions.length=0;await page.evaluate(()=>{state.manage_url='https://app.example/setup';localStorage.removeItem('bug-later');bugPage=[];document.querySelector('#toast').classList.remove('show')});
+  await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Hosted report.');const t1=Date.now();await page.click('#bug-send');
+  await page.waitForSelector('#toast.show');assert.ok(Date.now()-t1<800,'Sent before the support report is built');
+  assert.equal(await page.textContent('#toast'),'Sent, thanks. You’ll see it here when it’s fixed.');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bug-later')).length),1,'kept on the device until it is out');
+  await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('bug-later')||'[]').length);
+  sent=actions.find(a=>a.action==='cp');assert.equal(sent.args.description,'Hosted report.');assert.deepEqual(sent.args.report.settings,{model:'openai/gpt-5'});
+  assert.equal(sent.args.diag,undefined);
+  // The support report fails: what the owner wrote still goes, saying so
+  previewMs=0;previewFails=true;actions.length=0;
+  await page.evaluate(()=>document.querySelector('#open-help').click());await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Report without its report.');await page.click('#bug-send');
+  await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('bug-later')||'[]').length);
+  sent=actions.find(a=>a.action==='cp');assert.equal(sent.args.description,'Report without its report.');assert.deepEqual(sent.args.report,{parts:{report:['not built']}});
+  previewFails=false;cpOk=false;
   // At the control plane's limit (or offline) the report is never lost: kept on the Machine, said plainly, shown as waiting
   const goesAt=await page.evaluate(()=>fmtHM(Date.UTC(2030,0,1,10,55)));
   for(const hosted of [false,true]){limit=true;queued=[];actions.length=0;await page.evaluate(h=>{state.manage_url=h?'https://app.example/setup':null},hosted);
-   await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Fourth report.');await page.click('#bug-next');await page.waitForSelector('#bug-review:not([hidden])');
-   await page.click('#bug-send');await page.waitForSelector('#bug-done:not([hidden])');
-   assert.equal(await page.textContent('#bug-done-text'),`Saved. It goes out by itself at ${goesAt}.`);
-   assert.equal(await page.textContent('#bug-error2'),'','no error');
-   assert.deepEqual(actions.map(a=>a.action).filter(a=>a!=='bug_preview'),hosted?['cp','bug_later']:['bug_send']);
+   await page.evaluate(()=>{document.querySelector('#toast').classList.remove('show');document.querySelector('#open-help').click()});
+   await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Fourth report.');await page.click('#bug-send');
+   await page.waitForFunction(at=>document.querySelector('#toast.show')?.textContent===`Saved. It goes out by itself at ${at}.`,goesAt);
+   assert.deepEqual(actions.map(a=>a.action).filter(a=>a!=='bug_preview'&&a!=='support_access'),hosted?['cp','bug_later']:['bug_send']);
    if(hosted)assert.equal(actions.at(-1).args.retry_after,900,'the control plane’s Retry-After goes with it');
-   await page.click('[data-help-tab="bug"]');await page.waitForSelector('#bug-queued:not([hidden])');
-   assert.equal(await page.textContent('#bug-queued li'),`Fourth report. · Goes out at ${goesAt}`)}
+   await page.evaluate(()=>document.querySelector('#open-help').click());await page.click('[data-help-tab="bug"]');await page.waitForSelector('#bug-queued:not([hidden])');
+   assert.equal(await page.textContent('#bug-queued li'),`Fourth report. · Goes out at ${goesAt}`);await page.keyboard.press('Escape')}
   // In another language a help link anywhere opens the article here, in that language, at its heading; a link in it to
   // another article opens that one; Back returns to Ask. Only in English it opens the site.
   await page.evaluate(()=>{I18N.lang='nl';helpBox.close();const a=document.createElement('a');a.href='https://themachine.computer/help/snooze#when-it-comes-back';a.id='help-link-test';a.textContent='Help';document.body.append(a);a.click()});

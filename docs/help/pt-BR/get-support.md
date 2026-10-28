@@ -19,12 +19,10 @@ Abra **Ajuda** e depois **Relatar um bug**. Uma mensagem de erro também tem um 
 
 1. Diga o que deu errado.
 2. Adicione uma captura de tela, se ajudar: **Tirar uma captura de tela** do painel, ou **Anexar uma imagem**.
-3. Deixe **Incluir o relatório de suporte** ativado, a menos que prefira não incluir: versões, verificações e erros recentes, sem mensagens, chaves ou endereços.
-   Se pudermos precisar olhar mais de perto, marque também **Deixe o suporte olhar por 24 horas**. Veja [Acesso de suporte](get-support.md#support-access).
-4. Toque em **Revisar**. Aparece tudo o que vai ser enviado, exatamente como vai.
-5. Toque em **Enviar**. Nada é enviado antes disso.
+3. Deixe **Incluir um relatório de suporte** ativado, a menos que prefira não incluir. Ele adiciona versões, verificações e erros recentes, sem mensagens, chaves ou endereços, e deixa nossa equipe ler os logs e as configurações da sua Machine por 24 horas. Veja [Acesso de suporte](get-support.md#support-access). Desmarcado, só vão o que você escreveu e o seu screenshot.
+4. Toque em **Enviar**. O formulário fecha na hora. A sua Machine adiciona o relatório de suporte sozinha; uma verificação lenta nunca segura o seu relato.
 
-Respondemos por e-mail. Uma Machine auto-hospedada pode enviar um relatório quando está na Network. Se não estiver, escreva para nós.
+A partir daí é com a gente. Uma Machine auto-hospedada pode enviar um relatório quando está na Network. Se não estiver, escreva para nós.
 
 Quando corrigimos um bug que você relatou e sua Machine já tem a correção, avisamos uma vez: uma linha curta no seu painel (**Entendi** fecha) e um e-mail curto. Uma Machine auto-hospedada fica sabendo quando está na Network.
 
@@ -32,7 +30,7 @@ Se um relatório não puder sair na hora (você está offline ou enviou muitos e
 
 ## Acesso de suporte
 
-Nossa equipe pode olhar a sua Machine por você, mas só depois que você permitir. Quando você relatar um bug, marque **Deixe o suporte olhar por 24 horas**. Ele é ativado quando você toca em **Enviar**. No seu próprio computador, a sua Machine precisa estar [pareada com a sua conta](friends.md).
+Nossa equipe pode olhar a sua Machine por você, mas só depois que você permitir. Quando você relata um bug com **Incluir um relatório de suporte** ativado, ele é ativado quando você toca em **Enviar**. No seu próprio computador, a sua Machine precisa estar [pareada com a sua conta](friends.md).
 
 - Só leitura: logs, configurações, versões, como cada conexão sincroniza e erros recentes, limpos como no relatório de suporte. Nunca suas mensagens, chaves, senhas ou quem são seus contatos.
 - Termina sozinho depois de 24 horas. Enquanto está ativo, **Configurações**, **Segurança** mostra o acesso: **Desativar** termina agora.

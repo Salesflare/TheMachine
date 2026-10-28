@@ -19,12 +19,10 @@ Abre **Ayuda** y luego **Informar de un error**. Un mensaje de error también ti
 
 1. Cuenta qué falló.
 2. Añade una captura si ayuda: **Hacer una captura** del panel, o **Adjuntar una imagen**.
-3. Deja activado **Incluir el informe de soporte**, salvo que prefieras que no: versiones, comprobaciones y errores recientes, sin mensajes, claves ni direcciones.
-   Si podemos necesitar mirar más de cerca, marca también **Deja que soporte mire durante 24 horas**. Consulta [Acceso de soporte](get-support.md#support-access).
-4. Toca **Revisar**. Muestra todo lo que se envía, tal como se envía.
-5. Toca **Enviar**. No se envía nada antes.
+3. Deja activado **Incluir un informe de soporte**, salvo que prefieras que no. Añade versiones, comprobaciones y errores recientes, sin mensajes, claves ni direcciones, y deja que nuestro equipo lea los registros y ajustes de tu Machine durante 24 horas. Consulta [Acceso de soporte](get-support.md#support-access). Sin marcar, solo se envía lo que escribiste y tu captura.
+4. Toca **Enviar**. El formulario se cierra al instante. Tu Machine añade el informe de soporte por su cuenta; una comprobación lenta nunca retrasa tu informe.
 
-Respondemos por correo. Una Machine autoalojada puede enviar uno cuando está en la Network; si no, escríbenos.
+Desde ahí nos encargamos nosotros. Una Machine autoalojada puede enviar uno cuando está en la Network; si no, escríbenos.
 
 Cuando corregimos un error que reportaste y tu Machine ya tiene la corrección, te lo decimos una vez: una línea corta en tu panel (**Entendido** la cierra) y un correo corto. Una Machine autoalojada se entera cuando está en la Network.
 
@@ -32,7 +30,7 @@ Si un informe no puede salir enseguida (no tienes conexión o enviaste muchos en
 
 ## Acceso de soporte
 
-Nuestro equipo puede revisar tu Machine por ti, pero solo cuando lo permitas. Cuando informes de un error, marca **Deja que soporte mire durante 24 horas**. Se activa cuando pulsas **Enviar**. En tu propio ordenador, tu Machine tiene que estar [vinculada a tu cuenta](friends.md).
+Nuestro equipo puede revisar tu Machine por ti, pero solo cuando lo permitas. Cuando informas de un error con **Incluir un informe de soporte** activado, se activa al pulsar **Enviar**. En tu propio ordenador, tu Machine tiene que estar [vinculada a tu cuenta](friends.md).
 
 - Solo lectura: registros, ajustes, versiones, cómo se sincroniza cada conexión y errores recientes, limpiados como el informe de soporte. Nunca tus mensajes, claves, contraseñas ni quiénes son tus contactos.
 - Termina solo a las 24 horas. Mientras está activo, **Ajustes**, **Seguridad** lo muestra: **Desactivar** lo termina ahora.

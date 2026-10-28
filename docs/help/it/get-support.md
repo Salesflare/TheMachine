@@ -19,12 +19,10 @@ Apri **Aiuto**, poi **Segnala un bug**. Anche un messaggio di errore ha un pulsa
 
 1. Spiega cosa è andato storto.
 2. Aggiungi uno screenshot se aiuta: **Fai uno screenshot** della dashboard, oppure **Allega un’immagine**.
-3. Lascia attivo **Includi il report per il supporto**, a meno che tu non preferisca di no: versioni, controlli ed errori recenti, senza messaggi, chiavi o indirizzi.
-   Se potremmo dover guardare più da vicino, spunta anche **Lascia guardare l’assistenza per 24 ore**. Vedi [Accesso per l’assistenza](get-support.md#support-access).
-4. Tocca **Rivedi**. Mostra tutto quello che parte, esattamente com’è.
-5. Tocca **Invia**. Prima non parte nulla.
+3. Lascia attivo **Includi un report per il supporto**, a meno che tu non preferisca di no. Aggiunge versioni, controlli ed errori recenti, senza messaggi, chiavi o indirizzi, e permette al nostro team di leggere log e impostazioni della tua Machine per 24 ore. Vedi [Accesso per l’assistenza](get-support.md#support-access). Senza spunta partono solo il tuo testo e il tuo screenshot.
+4. Tocca **Invia**. Il modulo si chiude subito. La tua Machine aggiunge da sola il report per il supporto; un controllo lento non blocca mai la tua segnalazione.
 
-Rispondiamo via email. Una Machine self-hosted può inviarne una quando è nel Network; altrimenti scrivici.
+Da lì ci pensiamo noi. Una Machine self-hosted può inviarne una quando è nel Network; altrimenti scrivici.
 
 Quando correggiamo un bug che hai segnalato e la tua Machine ha la correzione, te lo diciamo una volta: una breve riga nella tua dashboard (**Ho capito** la chiude) e una breve email. Una Machine self-hosted lo sa quando è nel Network.
 
@@ -32,7 +30,7 @@ Se una segnalazione non può partire subito (sei offline, o ne hai inviate molte
 
 ## Accesso per l’assistenza
 
-Il nostro team può dare un’occhiata alla tua Machine per te, ma solo dopo che l’hai permesso. Quando segnali un bug, spunta **Lascia guardare l’assistenza per 24 ore**. Si attiva quando premi **Invia**. Sul tuo computer, la tua Machine deve essere [associata al tuo account](friends.md).
+Il nostro team può dare un’occhiata alla tua Machine per te, ma solo dopo che l’hai permesso. Quando segnali un bug con **Includi un report per il supporto** attivo, si attiva quando premi **Invia**. Sul tuo computer, la tua Machine deve essere [associata al tuo account](friends.md).
 
 - Sola lettura: log, impostazioni, versioni, come si sincronizza ogni connessione ed errori recenti, ripuliti come il report per il supporto. Mai i tuoi messaggi, chiavi, password o chi sono i tuoi contatti.
 - Termina da solo dopo 24 ore. Finché è attivo, **Impostazioni**, **Sicurezza** lo mostra: **Disattiva** lo termina subito.
