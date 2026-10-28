@@ -195,7 +195,7 @@ def match(db, kind, rec):
                     return r['id'], 'Same name and organization'
         return None, None
     if kind == 'org':
-        domain = graph.website_domain(rec.get('website')) if rec.get('website') else None
+        domain = graph.own_website_domain(rec.get('website')) if rec.get('website') else None
         if domain:
             found = db.execute("SELECT id FROM graph_nodes WHERE id=? AND kind='org'", (crm.canonical(db, 'org:' + domain),)).fetchone()
             if found:
@@ -233,7 +233,7 @@ def _same_key(kind, rec):
     if kind == 'person':
         return rec.get('email') or ('name', (rec.get('name') or '').casefold(), (rec.get('org') or '').casefold())
     if kind == 'org':
-        return graph.website_domain(rec.get('website')) if rec.get('website') else ('name', (rec.get('name') or '').casefold())
+        return graph.own_website_domain(rec.get('website')) or ('name', (rec.get('name') or '').casefold())
     return (rec.get('name') or '').casefold()
 
 

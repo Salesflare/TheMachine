@@ -85,18 +85,60 @@ def parse_catalog(reply, config=None):
     return out
 
 
-def read_catalog(config, run=subprocess.run):
-    """The Gateway's model list (a short RPC client, no model call), parsed; None when it can't be read."""
+def gateway_call(config, method, params, run=subprocess.run):
+    """One read-only Gateway RPC (a short client, no model call); its JSON reply, or None."""
     try:
-        result = run([str((config or {}).get('openclaw') or 'openclaw'), 'gateway', 'call', 'models.list', '--json',
-                      '--timeout', '30000', '--params', json.dumps({'view': 'configured'})],
+        result = run([str((config or {}).get('openclaw') or 'openclaw'), 'gateway', 'call', method, '--json',
+                      '--timeout', '30000', '--params', json.dumps(params)],
                      capture_output=True, text=True, timeout=60)
         reply = json.loads(result.stdout)
     except (OSError, ValueError, subprocess.TimeoutExpired):
         return None
-    if result.returncode != 0 or not isinstance(reply, dict) or not isinstance(reply.get('models'), list):
+    return reply if result.returncode == 0 and isinstance(reply, dict) else None
+
+
+def session_levels(reply):
+    """(model ref, levels, default) of the latest session in a `sessions.list` reply, or None without levels."""
+    sessions = (reply or {}).get('sessions')
+    session = sessions[0] if isinstance(sessions, list) and sessions and isinstance(sessions[0], dict) else {}
+    ref = f"{session.get('modelProvider') or ''}/{session.get('model') or ''}"
+    levels = {x.get('id') for x in session.get('thinkingLevels') or [] if isinstance(x, dict)}
+    levels = [x for x in LEVELS if x in levels]
+    if not REF.fullmatch(ref) or len(levels) < 2:
         return None
-    return parse_catalog(reply, config)
+    return ref, levels, session.get('thinkingDefault') if session.get('thinkingDefault') in levels else levels[0]
+
+
+def fill_levels(models, config, session):
+    """The model list with the main model's thinking levels filled in from its session when the list has none for it.
+    Some Gateways list a model without its levels (or not at all, while it is the one every turn runs on), though a
+    session on it has them: without this a chat showed the model but no thinking picker."""
+    if not session:
+        return models
+    ref, levels, default = session
+    if ref != main(config)[0] and ref not in {m['ref'] for m in models}:
+        return models
+    for entry in models:
+        if entry['ref'] == ref:
+            if len(entry['levels']) < 2:
+                entry.update(levels=levels, default=default)
+            return models
+    if allowed(config, ref):
+        models.insert(0, {'ref': ref, 'name': ref.split('/', 1)[1][:80], 'levels': levels, 'default': default})
+    return models
+
+
+def read_catalog(config, run=subprocess.run):
+    """The Gateway's model list, parsed; None when it can't be read. When the main model is missing or comes without
+    its thinking levels, the latest session says them (fill_levels)."""
+    reply = gateway_call(config, 'models.list', {'view': 'configured'}, run)
+    if not reply or not isinstance(reply.get('models'), list):
+        return None
+    models = parse_catalog(reply, config)
+    main_model = main(config)[0]
+    if main_model and not any(m['ref'] == main_model and len(m['levels']) > 1 for m in models):
+        models = fill_levels(models, config, session_levels(gateway_call(config, 'sessions.list', {'limit': 1}, run)))
+    return models
 
 
 class Catalog:

@@ -123,8 +123,9 @@ HORIZON_DAYS = 400      # older signals have faded far below the floor anyway
 EVENTS_PER_NODE = 40
 BULK_LABELS = {'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS', 'CATEGORY_UPDATES'}
 BULK = re.compile(r'(?:^|[._+-])(?:no[._-]?reply|do[._-]?not[._-]?reply|notifications?|notify|newsletters?|news|mailer-daemon|mailer|bounces?|postmaster|'
-                  r'marketing|digest|alerts?|automated|receipts?|invoices?|billing)(?:[._+-]|@)|@(?:[\w-]+\.)*(?:mcsv\.net|mcdlv\.net|'
-                  r'sendgrid\.net|amazonses\.com|mailgun\.org|bounces?\.[\w.-]+|calendar\.google\.com|resource\.calendar\.google\.com)$', re.I)
+                  r'marketing|digest|alerts?|automated|receipts?|invoices?|billing|notetaker)(?:[._+-]|@)|@(?:[\w-]+\.)*(?:mcsv\.net|mcdlv\.net|'
+                  r'sendgrid\.net|amazonses\.com|mailgun\.org|bounces?\.[\w.-]+|calendar\.google\.com|resource\.calendar\.google\.com)$'
+                  r'|^(?:gemini|meet|calendar|drive|docs|forms|workspace)[\w.+-]*@google\.com$', re.I)  # Gemini's notes, Meet, Drive shares
 FREEMAIL = {'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.be', 'outlook.com', 'outlook.be', 'live.com', 'live.be', 'msn.com',
             'yahoo.com', 'yahoo.fr', 'icloud.com', 'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'telenet.be', 'skynet.be',
             'gmx.com', 'gmx.de', 'web.de', 'aol.com', 'pandora.be', 'scarlet.be', 'proximus.be', 'yandex.com', 'zoho.com'}
@@ -1149,7 +1150,15 @@ def _build(db, config, now, team=()):
     role_rows = {r['identifier']: dict(r) for r in db.execute('SELECT * FROM person_roles')}
     said = {i: (r['role'] or None, 'owner' if r['source'] == 'owner' else 'review') for i, r in role_rows.items()}
     related = db.execute("SELECT a,b,relation,source FROM graph_relations ORDER BY source='owner',created_at").fetchall()
-    profiles = {r['domain']: json.loads(r['profile']) for r in db.execute("SELECT domain,profile FROM org_profiles WHERE profile IS NOT NULL AND status!='wrong'")}
+    profiles, unusable = {}, []
+    for r in db.execute("SELECT domain,profile,status FROM org_profiles WHERE profile IS NOT NULL AND status!='wrong'").fetchall():
+        found = enrichment.usable(r['domain'], json.loads(r['profile']))
+        if found:
+            profiles[r['domain']] = found
+        elif r['status'] == 'found':
+            unusable.append(r['domain'])  # saved before the check (a shared host's domain, another company): dropped
+    for domain in unusable:
+        db.execute("UPDATE org_profiles SET status='none',profile=NULL WHERE domain=? AND status='found'", (domain,))
     wrong = {r[0] for r in db.execute("SELECT domain FROM org_profiles WHERE status='wrong'")}
     looked_up = {r['identifier']: r['profile'] for r in db.execute("SELECT identifier,profile FROM person_profiles WHERE status='found' AND profile IS NOT NULL")}
     photos = {r['identifier']: r['key'] for r in db.execute('SELECT identifier,key FROM person_photos')}
@@ -1181,7 +1190,9 @@ def _build(db, config, now, team=()):
             last_day[node] = talk[-1]
         since = (current.astimezone(tz).date() - last_day[node]).days if node in last_day else None
         quiet = bool(usual and len(roles[node]['owner']) >= 2 and since is not None and max(14, 3 * usual) < since < 365)
-        domains = sorted({i.split('@', 1)[1] for i in group if i.startswith('email:')} - FREEMAIL - owner.domains)
+        # Automated senders (a no-reply, Gemini's meeting notes) are no one's colleague: their domain makes no organization
+        domains = sorted({i.split('@', 1)[1] for i in group if i.startswith('email:') and not bulk(i[6:]) and not relay(i[6:])}
+                         - FREEMAIL - owner.domains)
         said_org = max((stated_rows[i] for i in group if i in stated_rows),
                        key=lambda r: (r['source'] == 'owner', r['said_at'] or '', r['created_at'], r['identifier'] == node), default=None)
         if said_org and said_org['source'] != 'owner' and domains:
@@ -2454,6 +2465,13 @@ def website_domain(text):
     return host if ORG_DOMAIN.fullmatch(host) else None
 
 
+def own_website_domain(text):
+    """website_domain, but None for a page on a shared host (sites.google.com/view/acme, acme.github.io): that host is
+    no one company's domain."""
+    domain = website_domain(text)
+    return None if domain and enrichment.shared_host(domain) and domain not in FREEMAIL else domain
+
+
 def create_record(db, kind, args, now, owner=None):
     """A person or organization the owner adds by hand, before (or without) any message from them. A person has a
     name, and optionally an email address and where they work; an organization a name and optionally its website.
@@ -2502,6 +2520,7 @@ def create_record(db, kind, args, now, owner=None):
             raise ValueError(f'{site} is not a website, like acme.com')
         if domain and personal_mail(db, domain):
             raise ValueError(f'{domain} is personal email, not an organization')
+        domain = own_website_domain(site)  # a page on a shared host: an organization by its name
         identifier = 'org:' + domain if domain else 'org:named:' + '-'.join(folded_words(name).split())[:80]
         if identifier == 'org:named:':
             raise ValueError('Give it a name with letters or digits')
