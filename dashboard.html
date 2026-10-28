@@ -1864,12 +1864,15 @@ body main{padding-top:0}
   /* Search on a phone: the search icon in the top bar opens the palette (cards, the Graph and commands in one field) */
   #side-search{display:none}
   #find-open{margin-left:auto}.topbar #find-open:not([hidden])~.new-card-top{margin-left:0}
-  .app-side{position:fixed;top:0;bottom:0;left:0;z-index:70;display:flex;flex-direction:column;width:min(88vw,380px);max-width:none;height:100dvh;margin:0;padding:calc(8px + env(safe-area-inset-top)) 12px calc(6px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-right:1px solid var(--c-line);background:var(--bg);box-shadow:var(--shadow-pop);overflow:hidden auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateX(-104%);visibility:hidden;transition:transform .26s var(--ease),visibility 0s linear .26s}
+  .app-side{position:fixed;top:0;bottom:0;left:0;z-index:70;display:flex;flex-direction:column;width:min(88vw,380px);max-width:none;height:100dvh;margin:0;padding:calc(4px + env(safe-area-inset-top)) 12px calc(6px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-right:1px solid var(--c-line);background:var(--bg);box-shadow:var(--shadow-pop);overflow:hidden auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateX(-104%);visibility:hidden;transition:transform .26s var(--ease),visibility 0s linear .26s}
   :root[data-drawer="open"] .app-side{transform:none;visibility:visible;transition:transform .26s var(--ease)}
   .app-side.dragging{transition:none!important}
   .drawer-scrim{display:block;position:fixed;inset:0;z-index:65;background:#0008;opacity:0;pointer-events:none;transition:opacity .26s var(--ease)}
   :root[data-drawer="open"] .drawer-scrim{opacity:1;pointer-events:auto}
-  :root[data-drawer="open"],:root[data-drawer="open"] body{overflow:hidden}
+  /* The page behind stays put: only the root stops scrolling. Hiding the body's overflow too made the body a scroll box of
+     its own, so the sticky top bar and page header jumped to the top of the page, out of sight when it was scrolled down */
+  :root[data-drawer="open"]{overflow:hidden}
+  .drawer-scrim{touch-action:none;overscroll-behavior:none}
   .app-side .brand{gap:4px;min-height:44px;padding:0}
   .app-side .avatar{display:none}
   .app-side h1{font-size:22px}
