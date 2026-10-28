@@ -24,7 +24,7 @@ La ventana delantera del navegador se muestra en el centro y el resto de la pant
 
 ## Versiones nuevas
 
-Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas. Se carga cuando la ventana pasa a segundo plano, o tras unos minutos sin actividad, y nunca mientras hay algo escrito o un diálogo abierto. **Actualización lista**, arriba, la carga al momento. Un reinicio de tu Machine solo vuelve a conectar.
+Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas. Al abrir o recargar la app se carga la versión más nueva. Una ventana abierta la carga cuando la ventana pasa a segundo plano, o tras unos minutos sin actividad, y nunca mientras hay algo escrito o un diálogo abierto. **Actualización lista**, arriba, la carga al momento. Un reinicio de tu Machine solo vuelve a conectar.
 
 ## Eventos
 

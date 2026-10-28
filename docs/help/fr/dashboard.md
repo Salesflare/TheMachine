@@ -24,7 +24,7 @@ La fenêtre au premier plan du navigateur s’affiche au milieu et le reste de l
 
 ## Nouvelles versions
 
-Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. Elle se charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais pendant qu’un texte est en cours de saisie ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.
+Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. L’ouverture ou le rechargement de l’app charge la version la plus récente. Une fenêtre ouverte la charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais pendant qu’un texte est en cours de saisie ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.
 
 ## Événements
 

@@ -13,15 +13,15 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // change waits for api/session, which has it.
 const raw=await readFile(new URL('../dashboard.html',import.meta.url),'utf8'),sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
 const CSRF='c'.repeat(64),S1='a1'.repeat(16),S2='b2'.repeat(16),now=new Date().toISOString();
-let scope=S1,mode='ok',cards=null,holdStatus=null;
+let scope=S1,mode='ok',cards=null,holdStatus=null,ver='v1',holdPage=null,pageDown=false;
 const card=(n,title)=>({id:String(n).repeat(16),title,body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:now,event_ids:[n]});
 const full=[card(1,'Reply to Robin about the plan'),card(2,'Book the venue')];
-const page=()=>raw.replace('__CSRF__','').replace('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__',scope);
+const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__',ver).replace('__BASE__','/').replace('__CACHE_SCOPE__',scope);
 const status=()=>({suggestions:cards??full,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
- connectors:[],fleet:{on:false},ui_version:'v1',csrf:CSRF,agents_settings:{session_token:'tok-never-kept',device:'Desk'}});
+ connectors:[],fleet:{on:false},ui_version:ver,csrf:CSRF,agents_settings:{session_token:'tok-never-kept',device:'Desk'}});
 const hits={page:0,notModified:0,status:0,session:0},posts=[];let graphDown=false;
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');
- if(url.pathname==='/'){const html=page(),etag='"'+html.length+scope+'"';if(req.headers['if-none-match']===etag){hits.notModified++;res.writeHead(304,{ETag:etag});res.end();return}
+ if(url.pathname==='/'){if(holdPage)await holdPage;if(pageDown){req.socket.destroy();return}const html=page(),etag='"'+html.length+scope+ver+'"';if(req.headers['if-none-match']===etag){hits.notModified++;res.writeHead(304,{ETag:etag});res.end();return}
   hits.page++;res.setHeader('Content-Type','text/html');res.setHeader('ETag',etag);res.end(html);return}
  if(url.pathname==='/sw.js'){res.setHeader('Content-Type','text/javascript');res.end(sw);return}
  if(url.pathname==='/bye'){res.setHeader('Content-Type','text/html');res.end('<p>Signed out</p>');return}
@@ -54,7 +54,7 @@ const kept=p=>p.evaluate(async()=>{const dbs=await indexedDB.databases();if(!dbs
  for(const k of keys){const row=await get('data',k);const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:row.iv,additionalData:new TextEncoder().encode(meta.scope+'\n'+k)},meta.key,row.ct).then(b=>new TextDecoder().decode(b),()=>null);
   out.rows[k]={rawHasText:new TextDecoder('latin1').decode(row.ct).includes('Robin'),isBuffer:row.ct instanceof ArrayBuffer,plain}}
  return out}finally{db.close()}});
-const shellCopy=p=>p.evaluate(async()=>{const c=await caches.open('tm-shell-1');const r=await c.match(location.origin+'/');return r?await r.text():null});
+const shellCopy=p=>p.evaluate(async()=>{const c=await caches.open('tm-shell-2');const r=await c.match(location.origin+'/');return r?await r.text():null});
 const until=async(p,fn,arg,label)=>{try{await p.waitForFunction(fn,arg,{timeout:15000})}catch{throw Error('timed out: '+label)}};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -87,7 +87,7 @@ try{
  assert.equal(k.rows.status.isBuffer,true);assert.equal(k.rows.status.rawHasText,false,'stored encrypted, not as text');
  const plain=JSON.parse(k.rows.status.plain);assert.equal(plain.suggestions.length,2);assert.equal(plain.csrf,undefined,'never the CSRF token');
  assert.equal(plain.agents_settings.session_token,undefined,'never a token');assert.equal(plain.agents_settings.device,'Desk');
- // The service worker keeps the page, never its CSRF token
+ // The app's page (the service worker's copy): asked for again on every start, so a release shows at once
  await tab.evaluate(()=>navigator.serviceWorker.ready);await tab.reload();await tab.locator('#suggestions article[id]').first().waitFor();
  await until(tab,()=>!!navigator.serviceWorker.controller,null,'the service worker controls the page');
  let shell;for(let i=0;i<50&&!(shell=await shellCopy(tab));i++)await tab.waitForTimeout(100);
@@ -108,6 +108,28 @@ try{
  mode='ok';await tab.evaluate(()=>refresh());await sent;
  assert.equal(posts.find(p=>p.action==='ping').csrf,CSRF);
  await until(tab,()=>/^Updated/.test(document.querySelector('#updated').textContent),null,'live again');
+
+ // 4b. A release while the app is closed: the next start (or reload) is the new page at once, never the old copy, and
+ // the copy is replaced; nothing changed: a short 304 and the copy
+ const at304=hits.notModified;await tab.goto(base+'bye');ver='v2';const fresh=hits.page;
+ await tab.goto(base);assert.equal(await tab.evaluate(()=>UI_VERSION),'v2','the first start after a release is the new page');
+ assert.equal(hits.page,fresh+1,'the page loaded once, no second reload');
+ for(let i=0;i<50&&!(await shellCopy(tab))?.includes("UI_VERSION='v2'");i++)await tab.waitForTimeout(100);
+ assert.ok((await shellCopy(tab)).includes("UI_VERSION='v2'"),'the copy is the new page now');
+ await tab.reload();assert.equal(await tab.evaluate(()=>UI_VERSION),'v2');assert.equal(hits.page,fresh+1,'unchanged: no page sent');assert.ok(hits.notModified>at304,'a 304');
+ // The Machine is slow to answer: the copy opens after a short wait, and the answer replaces it for the next start
+ let let_go,status_go;holdPage=new Promise(r=>let_go=r);holdStatus=new Promise(r=>status_go=r);ver='v3';const t0=Date.now();await tab.reload();
+ assert.equal(await tab.evaluate(()=>UI_VERSION),'v2','no answer in time: the copy');assert.ok(Date.now()-t0<5000,'the wait is short ('+(Date.now()-t0)+' ms)');
+ let_go();holdPage=null;
+ for(let i=0;i<50&&!(await shellCopy(tab).catch(()=>''))?.includes("UI_VERSION='v3'");i++)await tab.waitForTimeout(100);
+ assert.ok((await shellCopy(tab)).includes("UI_VERSION='v3'"),'the late answer replaced the copy');
+ // and the page, just opened and not touched yet, sees the release in the status and loads it by itself
+ status_go();holdStatus=null;
+ await until(tab,()=>typeof UI_VERSION!=='undefined'&&UI_VERSION==='v3',null,'the copy loads the new release by itself');
+ await tab.locator('#suggestions article[id]').first().waitFor();
+ // The Machine can't be reached at all (no page): the copy opens
+ pageDown=true;await tab.reload();assert.equal(await tab.evaluate(()=>UI_VERSION),'v3','offline: the copy');pageDown=false;
+ ver='v1';await tab.reload();await tab.locator('#suggestions article[id]').first().waitFor();
 
  // 5. The open card's chat and the Graph's lists open from the device too
  await tab.goto(base+'#chat='+'1'.repeat(16));await tab.locator('#chat-log',{hasText:'Drafted the numbers for Robin.'}).waitFor();

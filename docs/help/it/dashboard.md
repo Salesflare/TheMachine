@@ -24,7 +24,7 @@ La finestra in primo piano del browser compare al centro e il resto dello scherm
 
 ## Nuove versioni
 
-Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre la usi. Si carica quando la finestra passa in secondo piano, o dopo qualche minuto senza input, e mai mentre c'è qualcosa di scritto o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito. Un riavvio della tua Machine si limita a riconnettersi.
+Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre la usi. Aprire o ricaricare l’app carica la versione più recente. Una finestra aperta la carica quando la finestra passa in secondo piano, o dopo qualche minuto senza input, e mai mentre c'è qualcosa di scritto o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito. Un riavvio della tua Machine si limita a riconnettersi.
 
 ## Eventi
 

@@ -3358,7 +3358,8 @@ function renderAgents(){const f=$('#agents-settings'),a=state.agents_settings;f.
  $('#agents-codex-row').hidden=!onDevice;$('#agents-env-row').hidden=onDevice;$('#agents-branch-row').hidden=onDevice||!a.codex_env;
  $('#agents-codex-where').textContent=onDevice?t('Runs on {}, with the Codex signed in there.',a.codex_device):'';
  ch.hidden=!(onDevice&&a.codex_setup);if(a.codex_setup)ch.href=a.codex_setup;
- $('#agents-session').value=a.claude_session?'https://claude.ai/code/'+a.claude_session:'';$('#agents-env').value=a.codex_env;$('#agents-branch').value=a.codex_branch;
+ // drawn by the page (the default), so a saved link or ID is never taken for text typed and not saved yet
+ for(const [id,v] of [['agents-session',a.claude_session?'https://claude.ai/code/'+a.claude_session:''],['agents-env',a.codex_env||''],['agents-branch',a.codex_branch||'']]){const el=$('#'+id);el.value=el.defaultValue=v}
  $('#agents-connector').textContent=a.connector;$('#agents-connector-note').hidden=!a.claude_session;$('#agents-actions').hidden=true;
  for(const el of f.querySelectorAll('input,button'))el.disabled=!a.saveable;
  $('#agents-error').textContent=a.saveable?(a.claude_session&&!a.on_network?'Claude results need The Machine Network.':''):'Change these in config.json (agents) on this computer.'}
@@ -5340,17 +5341,22 @@ function focusKept(draw){const a=document.activeElement,id=a&&a!==document.body&
 // A release reaches pages that stayed open, but never under someone using the page: the new version waits until the
 // page is hidden, or nothing was touched for a few minutes with nothing typed and no dialog open. Until then a small
 // "Update ready" pill loads it at a press. A restart of the Machine alone serves the same page: it just reconnects.
-const UPDATE_IDLE=3*60e3,pageAt=Date.now();let lastInput=0,updateWaiting=false;
+const UPDATE_IDLE=3*60e3,UPDATE_AWAY=45e3,pageAt=Date.now();let lastInput=0,lastTouch=0,updateWaiting=false;
 // Coming back to the page counts too: the update never lands right as someone returns to it.
 for(const ev of ['pointerdown','pointermove','keydown','wheel','touchstart','input','scroll','focus'])addEventListener(ev,()=>{lastInput=Date.now()},{capture:true,passive:true});
+// Doing something on the page (a click, a key, a scroll by hand), unlike a window that opens under the pointer, gets
+// the focus, or has the pointer pass over it
+for(const ev of ['pointerdown','keydown','wheel','touchstart','input'])addEventListener(ev,()=>{lastTouch=Date.now()},{capture:true,passive:true});
 // Typed and not saved yet: any text field (also in a folded card, another tab or a closed panel) that differs from what
 // the page drew there
 const TYPED='textarea,input:not([type]),input[type=text],input[type=search],input[type=email],input[type=url],input[type=tel],input[type=number]';
 const typedSomewhere=()=>[...document.querySelectorAll(TYPED)].some(t=>t.value&&t.value!==t.defaultValue)||[...document.querySelectorAll('[contenteditable=""],[contenteditable=true]')].some(t=>t.textContent.trim());
 const pageInUse=()=>typedSomewhere()||!!document.querySelector('dialog[open]')||placeBusy();
-// Safe to load the new version now: nothing typed or open, and the page is hidden, idle for a few minutes, or only just
-// opened (an older copy the app started with, before anything was touched)
-function updateSafe(){if(pageInUse())return false;if(document.hidden)return true;if(!lastInput&&Date.now()-pageAt<20e3)return true;return Date.now()-Math.max(lastInput,pageAt)>=UPDATE_IDLE}
+// Safe to load the new version now: nothing typed or open, and the page is hidden, idle for a few minutes, only just
+// opened (an older copy the app started with, before anything was done on it), or a window in the background (another
+// window has the focus, as a desktop app's window often does for days) that nobody did anything in for a bit
+function updateSafe(){if(pageInUse())return false;if(document.hidden)return true;if(!lastTouch&&Date.now()-pageAt<20e3)return true;
+ if(!document.hasFocus()&&Date.now()-Math.max(lastTouch,pageAt)>=UPDATE_AWAY)return true;return Date.now()-Math.max(lastInput,pageAt)>=UPDATE_IDLE}
 function updateNow(){try{sessionStorage.setItem('tm-update-view',JSON.stringify({at:Date.now(),tab:document.querySelector('nav button[data-tab].active')?.dataset.tab||'',y:Math.round(scrollY)}))}catch{}
  shellDrop().finally(()=>location.reload())}
 // Never in a loop: when the page that came back is still not the server's (a copy kept somewhere on the way), only the pill
