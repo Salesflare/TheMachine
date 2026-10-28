@@ -4,7 +4,7 @@ area: connections
 summary: De meldingen op je Android-telefoon, via de OpenClaw-app. Het leest alleen.
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
-site: Show a setup code, Approve, More sources, Remove
+site: Show a setup code, Approve, Remove
 ---
 ## Wat het leest
 

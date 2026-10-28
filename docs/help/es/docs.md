@@ -4,7 +4,7 @@ area: connections
 summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint. Google Docs llegará más adelante.
 covers: connector:docs
 code: connectors/docs.py, next_actions.py, onboarding.py
-site: More sources, Connect documents, Sign in with Microsoft
+site: Sign in with Microsoft
 ---
 ## Qué lee
 

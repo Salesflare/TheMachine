@@ -4,7 +4,7 @@ area: connections
 summary: Suas conversas do WhatsApp, lidas como um dispositivo conectado. Só responde depois que você aprova.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py
-site: Show the QR code, Get a code, On your phone? Link with a code instead, More sources, Remove
+site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## O que ele lê
 
