@@ -4,7 +4,7 @@ area: connections
 summary: Deine WhatsApp-Chats, gelesen als verknüpftes Gerät. Antworten erst nach deiner Freigabe.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py
-site: Show the QR code, Get a code, On your phone? Link with a code instead, More sources, Remove
+site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## Was es liest
 

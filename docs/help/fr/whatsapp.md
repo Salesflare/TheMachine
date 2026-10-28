@@ -4,7 +4,7 @@ area: connections
 summary: Vos discussions WhatsApp, lues comme un appareil associé. Il ne répond qu’après votre accord.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py
-site: Show the QR code, Get a code, On your phone? Link with a code instead, More sources, Remove
+site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## Ce qu’il lit
 

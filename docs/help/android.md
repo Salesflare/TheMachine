@@ -4,7 +4,7 @@ area: connections
 summary: The notifications on your Android phone, through the OpenClaw app. It only reads.
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
-site: Show a setup code, Approve, More sources, Remove
+site: Show a setup code, Approve, Remove
 ---
 ## What it reads
 

@@ -4,7 +4,7 @@ area: connections
 summary: Las notificaciones de tu teléfono Android, a través de la app OpenClaw. Solo lee.
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
-site: Show a setup code, Approve, More sources, Remove
+site: Show a setup code, Approve, Remove
 ---
 ## Qué lee
 
