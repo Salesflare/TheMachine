@@ -186,10 +186,11 @@ try{
   const after=await page.evaluate(n=>{const l=document.querySelector('#chat-log');return {y:l.children[n].getBoundingClientRect().top,text:l.children[n].textContent.slice(0,40),scroll:l.scrollTop,open:[...l.querySelectorAll('.chat-more')].filter(b=>b.textContent==='Less').length}},before.n);
   assert.ok(Math.abs(after.y-before.y)<1&&after.text===before.text&&after.open===before.open,'the thread kept its place: '+JSON.stringify({before,after}));
   await page.setViewportSize({width:1280,height:900})}
- // On a computer the page stays put: the list and the thread scroll on their own, and a scroll past the end stays inside
- const box=await page.evaluate(()=>{const l=getComputedStyle(document.querySelector('#chat-log')),d=getComputedStyle(document.querySelector('#side-cards'));
-  return {page:document.documentElement.scrollHeight<=innerHeight+1,log:l.overflowY,logOver:l.overscrollBehaviorY,side:d.overflowY,sideOver:d.overscrollBehaviorY}});
- assert.deepEqual(box,{page:true,log:'auto',logOver:'contain',side:'auto',sideOver:'contain'});
+ // On a computer the page stays put: the thread and the whole sidebar (the list has no box of its own) scroll on their
+ // own, and a scroll past the end stays inside
+ const box=await page.evaluate(()=>{const l=getComputedStyle(document.querySelector('#chat-log')),d=getComputedStyle(document.querySelector('#app-side')),c=getComputedStyle(document.querySelector('#side-cards'));
+  return {page:document.documentElement.scrollHeight<=innerHeight+1,log:l.overflowY,logOver:l.overscrollBehaviorY,side:d.overflowY,sideOver:d.overscrollBehaviorY,list:c.overflowY}});
+ assert.deepEqual(box,{page:true,log:'auto',logOver:'contain',side:'auto',sideOver:'contain',list:'visible'});
  await shot('desktop');
  // Send (Enter with a keyboard): the Change path, then the reply grows while the run goes (polled with the cursor)
  await page.locator('#chat-input').fill('Shorter please, and say Tuesday');

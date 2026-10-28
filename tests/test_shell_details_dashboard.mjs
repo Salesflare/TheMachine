@@ -5,8 +5,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Small things in the dashboard's shell, measured the way they look. Week or Month and back to Agenda opens the agenda
-// where the Calendar opens from the nav (it sat 66px higher). On a short computer window the to-do list has no scroll
-// box of its own: the whole sidebar scrolls as one column, as the phone's drawer. A board's ⋯ sits on the middle of its
+// where the Calendar opens from the nav (it sat 66px higher). On a computer window of any height the to-do list has
+// no scroll box of its own: the whole sidebar scrolls as one column, as the phone's drawer. A board's ⋯ sits on the middle of its
 // name. A Feedback row keeps its text and Edit and Remove on one middle line, also when the text wraps. Opening a person
 // on the Graph keeps the head (its count, + New person) until the person's page is there. SHELL_SHOTS=<dir> saves shots.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
@@ -36,6 +36,25 @@ const open=async size=>{const context=await browser.newContext({viewport:size,lo
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base);await page.waitForFunction(()=>!/Connecting/.test(document.querySelector('#updated')?.textContent||'Connecting'));return page};
 const shot=async(page,name)=>{if(shotDir)await page.screenshot({path:`${shotDir}/${name}.png`})};
 const mid=r=>r.top+r.height/2;
+// The whole sidebar scrolls as one column, the to-do list without a box of its own, and its bottom (Help, Settings) comes
+// into view: on a short window, a laptop's app window (900 to 1000 high) and a tall one alike.
+const sideOneColumn=async size=>{const tag=size.width+'x'+size.height;
+ cards=Array.from({length:Math.ceil(size.height/16)},(_,i)=>card(i+1));const page=await open(size);await page.locator('#side-cards a').first().waitFor();
+ // Each group's Show more, so a tall window has more rows than fit
+ for(let i=0;i<4;i++){const more=page.locator('#side-cards button',{hasText:'Show more'});if(!await more.count())break;await more.first().click()}
+ const side=await page.evaluate(()=>{const s=document.querySelector('#app-side'),l=document.querySelector('#side-cards');
+  return {sideScrolls:s.scrollHeight>s.clientHeight+1,listScrolls:l.scrollHeight>l.clientHeight+1,listOverflow:getComputedStyle(l).overflowY}});
+ assert.equal(side.listScrolls,false,`${tag}: the to-do list has no scroll box of its own ${JSON.stringify(side)}`);
+ assert.equal(side.listOverflow,'visible',`${tag}: the to-do list never scrolls on its own`);
+ assert.equal(side.sideScrolls,true,`${tag}: the whole sidebar scrolls`);await shot(page,`side-top-${tag}`);
+ await page.mouse.move(120,size.height/2);await page.mouse.wheel(0,8000);await page.waitForTimeout(400);
+ const end=await page.evaluate(()=>{const h=document.querySelector('#help-link-side, .app-side .head-side>.settings-link:last-child, #open-settings')?.getBoundingClientRect();return {bottom:h&&h.bottom,vh:innerHeight,page:scrollY}});
+ assert.ok(end.bottom<=end.vh,`${tag}: the bottom of the sidebar comes into view ${JSON.stringify(end)}`);
+ assert.equal(end.page,0,`${tag}: scrolling the sidebar leaves the page where it was`);await shot(page,`side-scrolled-${tag}`);
+ // Folded to its icons, the hidden list takes no room: nothing to scroll
+ await page.evaluate(()=>{document.documentElement.dataset.side='collapsed'});await page.waitForTimeout(100);
+ assert.equal(await page.evaluate(()=>{const s=document.querySelector('#app-side');return s.scrollHeight>s.clientHeight+1}),false,`${tag}: the folded sidebar does not scroll`);
+ await page.context().close()};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage'],ignoreDefaultArgs:['--hide-scrollbars']});
  for(const size of [{width:1440,height:900},{width:1440,height:700},{width:1280,height:650}]){
@@ -55,16 +74,13 @@ try{
   assert.deepEqual(await at(),first,`${tag}: Back to Agenda sits where it opened`);
   await page.context().close();
 
-  // The sidebar with many to-dos: on a short window one column scrolls (no box of its own for the list)
-  cards=Array.from({length:40},(_,i)=>card(i+1));page=await open(size);await page.locator('#side-cards a').first().waitFor();
-  const side=await page.evaluate(()=>{const s=document.querySelector('#app-side'),l=document.querySelector('#side-cards');return {sideScrolls:s.scrollHeight>s.clientHeight+1,listScrolls:l.scrollHeight>l.clientHeight+1}});
-  if(size.height<=860){assert.equal(side.listScrolls,false,`${tag}: the to-do list has no scroll box of its own`);assert.equal(side.sideScrolls,true,`${tag}: the whole sidebar scrolls`);
-   await page.mouse.move(120,size.height/2);await page.mouse.wheel(0,5000);await page.waitForTimeout(400);
-   const end=await page.evaluate(()=>{const s=document.querySelector('#app-side').getBoundingClientRect(),h=document.querySelector('#help-link-side, .app-side .head-side>.settings-link:last-child, #open-settings')?.getBoundingClientRect();return {bottom:h&&h.bottom,vh:innerHeight}});
-   assert.ok(end.bottom<=end.vh,`${tag}: the bottom of the sidebar comes into view ${JSON.stringify(end)}`);await shot(page,`side-scrolled-${tag}`)}
-  else assert.equal(side.sideScrolls,false,`${tag}: a tall window keeps the list's own box`);
-  await page.context().close();
+  // The sidebar with many to-dos: at any window height one column scrolls (no box of its own for the list)
+  await sideOneColumn(size);
  }
+ // A laptop's app window and a tall window: the same one column. No display-mode rule may give the list its own box
+ // in the installed app, which opens in its own window.
+ for(const size of [{width:1280,height:1000},{width:1440,height:1300},{width:1100,height:600}])await sideOneColumn(size);
+ assert.doesNotMatch(dashboard,/@media[^{]*display-mode/,'the installed app has no layout of its own');
  // A board's ⋯ on the middle of its name; Feedback rows on one middle line; the Graph head until the person is there
  cards=[];const page=await open({width:1440,height:900});
  await page.evaluate(()=>document.querySelector('nav [data-tab="people"]').click());await page.locator('#people-view').waitFor({state:'attached'});

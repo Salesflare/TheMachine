@@ -1799,9 +1799,10 @@ body main{padding-top:0}
   body{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);grid-template-rows:1fr auto;min-height:100dvh}
   .app-side{grid-column:1;grid-row:1/3;position:sticky;top:0;align-self:start;z-index:20;display:flex;flex-direction:column;width:auto;max-width:none;height:100dvh;margin:0;padding:12px 10px 10px;border-right:1px solid var(--c-line);background:var(--side-bg);overflow:hidden auto;overscroll-behavior:contain;scrollbar-width:none}
   .app-side::-webkit-scrollbar{display:none}
-  .app-side .side-cards{min-height:120px}:root[data-side="collapsed"] .app-side .side-cards{min-height:0}
-  /* A short window: the to-do list has no box of its own; the whole sidebar scrolls as one column, as the phone's drawer */
-  @media(max-height:860px){.app-side{overscroll-behavior:auto}.app-side .side-cards{flex:none;min-height:auto;overflow:visible;overscroll-behavior:auto;scrollbar-gutter:auto}}
+  /* The to-do list has no box of its own at any window height: the whole sidebar scrolls as one column, as the phone's
+     drawer. The list grows to keep Browser, Help and Settings at the bottom; folded, the hidden list takes no room. */
+  .app-side .side-cards{flex:1 0 auto;min-height:0;overflow:visible;overscroll-behavior:auto;scrollbar-gutter:auto}
+  :root[data-side="collapsed"] .app-side .side-cards{flex:1 1 0;overflow:hidden}
   body main{grid-column:2;grid-row:1;width:100%;max-width:calc(var(--measure) + 112px);margin:0 auto;padding:44px 56px 64px}
   .site-footer{grid-column:2;grid-row:2;width:100%;max-width:calc(var(--measure) + 112px);padding-left:56px;padding-right:56px;background-size:calc(100% - 112px) 1px}
   /* A chat open: the list is in the sidebar, so the chat gets the whole main area */

@@ -22,7 +22,7 @@ order: 4
 
 The browser's front window shows in the middle and the rest of the screen is dark; a button in the corner shows the whole screen. The view fits again when the window changes size. **Full size** gives it the whole window; press it again to go back. The sign-in from a to-do has **Full size** too.
 
-On a short screen the whole sidebar scrolls as one column, to-dos included, like the menu on a phone.
+When the to-dos don't fit, the whole sidebar scrolls as one column, to-dos included, like the menu on a phone. The installed app does the same.
 
 ## New versions
 
