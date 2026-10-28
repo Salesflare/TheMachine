@@ -19,7 +19,7 @@ order: 2
 - A step that commits something, like submit, pay or book, stops and waits for your confirm.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
 
-What it can send depends on the source: an email, a Slack direct message, a WhatsApp, LinkedIn or X message. Each connection's article says what it can send.
+What it can send depends on the source: an email, a Slack direct message, a WhatsApp, Telegram, LinkedIn or X message. Each connection's article says what it can send.
 
 ## Editing an email
 

@@ -8,7 +8,7 @@ site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## Cosa fa
 
-Telegram è un modo per ricevere le tue attività, non qualcosa che The Machine legge. Il tuo bot invia ogni attività entro il tuo [orario di lavoro](work-hours.md), con gli stessi pulsanti della dashboard: **Fallo**, **Posticipa**, **Cambia**, **Segna come fatto**, **Non serve** e **Invia** per un messaggio preparato.
+Questo Telegram è un modo per ricevere le tue attività. Per far leggere a The Machine le tue chat di Telegram, vedi [Chat di Telegram](telegram-chats.md). Il tuo bot invia ogni attività entro il tuo [orario di lavoro](work-hours.md), con gli stessi pulsanti della dashboard: **Fallo**, **Posticipa**, **Cambia**, **Segna come fatto**, **Non serve** e **Invia** per un messaggio preparato.
 
 Telegram è facoltativo. La dashboard come app per il telefono invia le stesse attività come notifiche.
 

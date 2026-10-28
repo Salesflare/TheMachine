@@ -9,7 +9,7 @@ weighed by what they changed, never as if all of it were theirs.
 
 How a sent message is recognized, from the send jobs (action_jobs with status sent):
 - by its id: the Gmail Message-ID the send set (rfc_message_id) or the message id the channel returned (Gmail id,
-  Slack ts, WhatsApp, LinkedIn or X id), against the collected message's own ids;
+  Slack ts, WhatsApp, Telegram, LinkedIn or X id), against the collected message's own ids;
 - by its text, for a send whose id never came back: the collected message starts with the text that was sent (a
   signature or quoted history may follow). Only texts long enough to say something are matched, so a "Thanks!" the
   owner typed themselves still counts as theirs.

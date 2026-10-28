@@ -19,7 +19,7 @@ order: 2
 - Un passo che impegna qualcosa, come inviare un modulo, pagare o prenotare, si ferma e aspetta la tua conferma.
 - Nella chat di un'attività, una bozza non viene mai inviata nello stesso messaggio che l'ha scritta.
 
-Cosa può inviare dipende dalla fonte: un'email, un messaggio diretto su Slack, un messaggio WhatsApp, LinkedIn o X. L'articolo di ogni connessione dice cosa può inviare.
+Cosa può inviare dipende dalla fonte: un'email, un messaggio diretto su Slack, un messaggio WhatsApp, Telegram, LinkedIn o X. L'articolo di ogni connessione dice cosa può inviare.
 
 ## Modificare un’email
 

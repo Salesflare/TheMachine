@@ -23,7 +23,7 @@ As abas **Trabalho** e **Pessoal** listam só esses contatos. **Baixar CSV**, no
 
 ### Linha do tempo
 
-Toda página de pessoa e de organização tem uma, as mais recentes primeiro: e-mails, reuniões e os resumos do Zoom delas, conversas do Intercom (abertas ou fechadas, com **Abrir no Intercom**), chats do WhatsApp, Slack, LinkedIn e X, tarefas, promessas e mudanças em projetos. Os chips no topo mostram uma fonte por vez. **Mostrar mais** carrega as mais antigas.
+Toda página de pessoa e de organização tem uma, as mais recentes primeiro: e-mails, reuniões e os resumos do Zoom delas, conversas do Intercom (abertas ou fechadas, com **Abrir no Intercom**), chats do WhatsApp, Telegram, Slack, LinkedIn e X, tarefas, promessas e mudanças em projetos. Os chips no topo mostram uma fonte por vez. **Mostrar mais** carrega as mais antigas.
 
 As reuniões que ainda vão acontecer ficam separadas no topo, em **Em breve**, as mais próximas primeiro. **Mostrar todos os próximos** mostra o resto. Uma reunião que está em mais de uma das suas agendas aparece uma vez só.
 

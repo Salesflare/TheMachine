@@ -23,7 +23,7 @@ The **Work** and **Personal** tabs list only those contacts. **Download CSV**, u
 
 ### Timeline
 
-Every person and organization page has one, newest first: email, meetings and their Zoom summaries, Intercom conversations (open or closed, with **Open in Intercom**), WhatsApp, Slack, LinkedIn and X chats, to-dos, promises and project moves. The chips on top show one source at a time. **Show more** loads older ones.
+Every person and organization page has one, newest first: email, meetings and their Zoom summaries, Intercom conversations (open or closed, with **Open in Intercom**), WhatsApp, Telegram, Slack, LinkedIn and X chats, to-dos, promises and project moves. The chips on top show one source at a time. **Show more** loads older ones.
 
 Meetings still to come sit apart on top under **Coming up**, soonest first; **Show all upcoming** shows the rest. A meeting on more than one of your calendars shows once.
 

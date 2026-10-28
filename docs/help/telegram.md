@@ -8,7 +8,7 @@ site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## What it does
 
-Telegram is a way to get your to-dos, not something The Machine reads. Your own bot sends each to-do within your [work hours](work-hours.md), with the same buttons as the dashboard: **Do it**, **Snooze**, **Change**, **Mark done**, **Not needed**, and **Send** for a prepared message.
+This Telegram is a way to get your to-dos. To have The Machine read your own Telegram chats, see [Telegram chats](telegram-chats.md). Your own bot sends each to-do within your [work hours](work-hours.md), with the same buttons as the dashboard: **Do it**, **Snooze**, **Change**, **Mark done**, **Not needed**, and **Send** for a prepared message.
 
 Telegram is optional. The dashboard as a phone app sends the same to-dos as notifications.
 

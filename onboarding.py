@@ -39,12 +39,13 @@ ROOT = Path(__file__).resolve().parent
 UNIT_NAME = service.UNIT_NAME
 # Connector name -> account id in config.example.json.
 CONNECTORS = {'gmail': 'work-gmail', 'calendar': 'work-calendar', 'slack': 'work-slack',
-              'crm': 'work-crm', 'android': 'personal-android', 'whatsapp': 'personal-whatsapp', 'gateway': 'openclaw-gateway'}
+              'crm': 'work-crm', 'android': 'personal-android', 'whatsapp': 'personal-whatsapp', 'telegram': 'personal-telegram',
+              'gateway': 'openclaw-gateway'}
 SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'outlook_calendar': 'outlook_calendar',
             'outlook-calendar': 'outlook_calendar', 'slack': 'slack', 'crm': 'salesflare', 'salesflare': 'salesflare',
-            'android': 'android', 'whatsapp': 'whatsapp', 'gateway': 'gateway'}
+            'android': 'android', 'whatsapp': 'whatsapp', 'telegram': 'telegram', 'telegram-chats': 'telegram', 'gateway': 'gateway'}
 LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
-          'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'gateway': 'OpenClaw Gateway log'}
+          'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'gateway': 'OpenClaw Gateway log'}
 # What each built-in source brings in, in one short line (a connector's own is SETUP['what']). The dashboard's Add tab
 # and a hosted control plane's setup page show it under the name.
 WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Your meetings, so you go in prepared and follow up.',
@@ -53,7 +54,8 @@ WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Yo
         'slack': 'Your direct messages, mentions and the threads you are in.',
         'salesflare': 'Accounts, contacts and deals, so it knows who matters.',
         'android': 'The notifications on your Android phone, through the OpenClaw app.',
-        'whatsapp': 'Your WhatsApp chats, as a linked device.', 'gateway': "Your server's own log, so The Machine spots its own trouble."}
+        'whatsapp': 'Your WhatsApp chats, as a linked device.',
+        'telegram': 'Your Telegram chats and small groups.', 'gateway': "Your server's own log, so The Machine spots its own trouble."}
 # Microsoft 365 and Outlook.com (ms_graph.py): your own app registration and a device-code sign-in. A hosted control
 # plane adds them with "transport": "broker" instead.
 MICROSOFT = {'outlook': {'id': 'work-outlook', 'service': 'outlook', 'transport': 'graph', 'email': 'alex@example.com',
@@ -64,7 +66,7 @@ MICROSOFT = {'outlook': {'id': 'work-outlook', 'service': 'outlook', 'transport'
 # Values in config.example.json that mean "not filled in yet".
 PLACEHOLDERS = {'email': 'alex@example.com', 'connection_id': '00000000-0000-0000-0000-000000000000',
                 'team_id': 'T00000000', 'user_id': 'U00000000', 'node_id': 'replace-with-your-openclaw-node-id',
-                'identity_sha256': 'sha256-of-your-linked-whatsapp-jid'}
+                'identity_sha256': ('sha256-of-your-linked-whatsapp-jid', 'sha256-of-your-telegram-user-id')}
 # Per-account identity: never copied when a new account starts from one you already have.
 IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'team_id', 'user_id', 'slack_host', 'node_id',
             'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account', 'account_name', 'shared',
@@ -76,7 +78,7 @@ BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:mi
 # default: the phone app may also show inboxes or workspaces that nothing here reads.
 PHONE_APPS = {'gmail': ['com.google.android.gm'], 'calendar': ['com.google.android.calendar'],
               'outlook': ['com.microsoft.office.outlook'], 'outlook_calendar': ['com.microsoft.office.outlook'],
-              'whatsapp': ['com.whatsapp', 'com.whatsapp.w4b'], 'slack': ['com.Slack'], 'salesflare': ['org.salesflare.app'],
+              'whatsapp': ['com.whatsapp', 'com.whatsapp.w4b'], 'telegram': ['org.telegram.messenger', 'org.thunderdog.challegram'], 'slack': ['com.Slack'], 'salesflare': ['org.salesflare.app'],
               'linkedin': ['com.linkedin.android'], 'x': ['com.twitter.android'], 'github': ['com.github.android'],
               'stripe': ['com.stripe.android.dashboard']}
 # Redacted sync error labels -> what to do about them (first matching prefix wins).
@@ -104,6 +106,9 @@ HINTS = (
     ('salesflare:HTTP_401', 'Salesflare rejected the API key'),
     ('whatsapp_source_unavailable', 'wacli could not read its store; is it linked (wacli auth status)?'),
     ('whatsapp', 'wacli answered unexpectedly; try wacli doctor'),
+    ('telegram_app_blocked', 'Telegram stopped accepting this Machine’s app ID; add your own from my.telegram.org and connect Telegram again'),
+    ('telegram_logged_out', 'Telegram logged this Machine out; connect Telegram again'),
+    ('telegram_source_unavailable', 'the Telegram mirror has not written its store yet; is its service running?'),
     ('android_offline', 'the phone is not connected to OpenClaw right now; open the OpenClaw app on it'),
     ('android_notifications_unavailable', 'allow notification access for the OpenClaw app on the phone'),
     ('android_identity_mismatch', 'node_id is not a paired Android node; pick it again'),
@@ -309,8 +314,10 @@ WEB_NOTES = {
     'linkedin': 'Next, you sign in to LinkedIn on your Machine, right here.',
     'x': 'Next, you sign in to X on your Machine, right here.',
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
+    'telegram': 'Next, you scan a QR code in Telegram.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it',
 }
+WEB_LEARN = {'telegram': 'telegram-chats'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key'}
 WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']]}
 TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b')
@@ -327,11 +334,15 @@ def web_form(config, service):
         app = (salesflare_preset(config) or {}).get('app_base') or salesflare_app_base(SALESFLARE_API)
         note = f'In Salesflare, create an API key under Settings, API keys: {app}/#/settings/apikeys'
     ask = [[key, prompt] for key, prompt, *rest in setup.get('ask', []) if not rest and key not in (setup.get('detect') or {})] + WEB_ASKS.get(service, [])
+    secret = WEB_SECRETS.get(service) or setup.get('secret')
+    if service == 'telegram' and not telegram_has_app(config):  # a self-hosted Machine: the owner's own app ID
+        ask, secret = ask + TELEGRAM_ASKS, TELEGRAM_SECRET
+        note = 'First, create an app ID at https://my.telegram.org, under API development tools. ' + note
     scope = service not in NO_SCOPE and setup.get('boundary') != 'workspace'
     works = [b.split(':', 1)[1] for b in boundaries(config, service) if b.startswith('work:')]
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
-    return {'ask': ask, 'secret': WEB_SECRETS.get(service) or setup.get('secret'), 'note': None if TERMINAL_NOTE.search(note) else note or None,
-            'scope': scope, 'personal': service == 'whatsapp', 'browser': setup.get('browser'), 'company': company if scope else ''}
+    return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
+            'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else ''}
 
 
 def run(args, **kwargs):
@@ -756,7 +767,7 @@ def missing(config, account):
             return 'no Google or Microsoft sign-in for this address yet'
         return ''
     for key, value in PLACEHOLDERS.items():
-        if account.get(key) == value:
+        if account.get(key) in (value if isinstance(value, tuple) else (value,)):
             return f'{key} is still the example value'
     names = [account['credential']] if account.get('credential') else []
     if account.get('transport') == 'gog':
@@ -887,7 +898,7 @@ def set_boundary(config_path, account_id, boundary):
 def boundaries(config, service):
     """Boundaries a new account of this service could belong to, ones it does not cover yet first.
     Device and system boundaries (phone, WhatsApp, Gateway) are not offered for other sources."""
-    devices = {'android', 'whatsapp', 'gateway'}
+    devices = {'android', 'whatsapp', 'telegram', 'gateway'}
     known = [a['boundary'] for a in config.get('accounts', []) if a.get('boundary') and ':' in a['boundary']
              and not a['boundary'].startswith('owner:') and (a.get('service', 'gmail') not in devices or a.get('service') == service)]
     covered = {a.get('boundary') for a in siblings(config, service)}
@@ -930,13 +941,13 @@ def new_account(config, service, account_id=None, ui=None):
     account = expand(json.loads(json.dumps(account)), home())
     account.pop('exclude', None)  # example noise rules are not yours
     options = boundaries(config, service)
-    if service in ('android', 'whatsapp', 'gateway') and not same:
+    if service in ('android', 'whatsapp', 'telegram', 'gateway') and not same:
         # the example's device boundary, unless the owner picked Work or Personal for it (the setup page asks for
         # WhatsApp): then their pick, marked as theirs, so it never shows as guessed
-        if service == 'whatsapp' and getattr(ui, 'marks', False):
+        if service in ('whatsapp', 'telegram') and getattr(ui, 'marks', False):
             picked = ask_boundary(ui, account['boundary'])
             if not (picked.startswith('personal:') and str(account.get('boundary', '')).startswith('personal:')):
-                account['boundary'] = picked  # Personal keeps the example's personal:whatsapp
+                account['boundary'] = picked  # Personal keeps the example's personal:whatsapp (personal:telegram)
             mark(account, ui)
     elif setup_of(service).get('boundary') == 'workspace':
         account['boundary'] = 'work'  # its check names the company after the workspace it connects (work:<name>)
@@ -1030,6 +1041,8 @@ def check(config, account):
             a.Salesflare(config, account).profile()
         elif service == 'whatsapp':
             a.WhatsApp(config, account).profile()
+        elif service == 'telegram':
+            a.Telegram(config, account).profile()
         elif service == 'android':
             a.Android(config, account).snapshot()
         elif service == 'gateway':
@@ -1513,6 +1526,235 @@ def whatsapp_sync(wacli, account, ui):
     ui.say(f'  WhatsApp: synced by {unit.name}' if not started.returncode else f'  WhatsApp: start it with systemctl --user enable --now {unit.name}')
 
 
+# Telegram chats (telegram_mirror.py): the owner's own Telegram account, logged in as a device of theirs. Not the
+# Telegram bot that brings to-dos (assistant telegram): that one is OpenClaw's and stays as it is.
+TELEGRAM_APP = 'telegram_app'  # credentials name of the app ID file (TELEGRAM_API_ID=, TELEGRAM_API_HASH=)
+TELEGRAM_ASKS = [['telegram_api_id', 'Telegram app api_id']]
+TELEGRAM_SECRET = 'Telegram app api_hash'
+TELEGRAM_LOGIN = 900  # seconds a Telegram login waits for the owner
+
+
+def telegram_base(config):
+    return data_dir(config) if config.get('database') else home() / '.local/share/personal-assistant'
+
+
+def telegram_app_path(config):
+    """The app ID file: a hosted Machine's comes from its hosting, a self-hosted one's from the owner."""
+    named = (config.get('credentials') or {}).get(TELEGRAM_APP)
+    return Path(named).expanduser() if named else telegram_base(config) / 'telegram-app.env'
+
+
+def telegram_has_app(config):
+    import telegram_store
+    try:
+        return bool(telegram_store.read_app(telegram_app_path(config)))
+    except (KeyError, TypeError):
+        return False
+
+
+def telegram_app(config, ui, own=False):
+    """The app ID file. The owner's own api_id and api_hash when this Machine has none (self-hosted), or when Telegram
+    stopped accepting the one it has (`own`): kept in a file of their own, which a hosting never overwrites."""
+    import telegram_store
+    path = telegram_app_path(config)
+    if own or not telegram_store.read_app(path):
+        path = telegram_base(config) / 'telegram-app-own.env'
+        ui.say('  Telegram: this Machine needs a Telegram app ID of yours. Create one at https://my.telegram.org, API development tools.')
+        api_id = re.sub(r'\s', '', ui.ask(TELEGRAM_ASKS[0][1]))
+        api_hash = re.sub(r'\s', '', ui.secret(TELEGRAM_SECRET)).lower()
+        if not api_id.isdigit() or not re.fullmatch(r'[0-9a-f]{32}', api_hash):
+            raise SetupError('That is not a Telegram api_id and api_hash', 'copy both from my.telegram.org, API development tools')
+        write_private(path, f'TELEGRAM_API_ID={api_id}\nTELEGRAM_API_HASH={api_hash}\n')
+    config.setdefault('credentials', {})[TELEGRAM_APP] = str(path)
+    return path
+
+
+def telegram_command(config, account, command, *more):
+    import sys
+    parts = [sys.executable, str(ROOT / 'telegram_mirror.py'), '--store', str(account['store']), '--app', str(telegram_app_path(config)),
+             '--lib', str(telegram_base(config) / 'telegram-lib')]
+    if config.get('database'):
+        parts += ['--database', str(Path(config['database']).expanduser())]
+    if account.get('telegram_include'):
+        parts += ['--include', ','.join(str(c) for c in account['telegram_include'])]
+    return parts + [command, *more]
+
+
+def telegram_state(account):
+    """The mirror's state for this account's store, {} when it has none yet."""
+    import telegram_store
+    try:
+        with closing(telegram_store.connect(account['store'], readonly=True)) as db:
+            return telegram_store.get_state(db)
+    except (sqlite3.Error, OSError):
+        return {}
+
+
+def telegram_qr_text(matrix):
+    """A QR code for a terminal, two rows per line."""
+    rows = list(matrix) + ['0' * len(matrix[0])] if len(matrix) % 2 else list(matrix)
+    pick = {('1', '1'): '█', ('1', '0'): '▀', ('0', '1'): '▄', ('0', '0'): ' '}
+    return '\n'.join(''.join(pick[a, b] for a, b in zip(top, low)) for top, low in zip(rows[::2], rows[1::2]))
+
+
+def step_telegram(config, account, ui):
+    """Telegram chats: the pinned libraries, the app ID, a login (a QR code to scan in Telegram, Settings, Devices,
+    Link Desktop Device, or a code by phone), then the mirror as a user service. The cloud password goes straight
+    to the login and is never kept."""
+    import telegram_release
+    import telegram_store
+    account['store'] = str(Path(account.get('store') or telegram_base(config) / 'telegram' / slug(account['id'])).expanduser())
+    telegram_app(config, ui, own=Path(account['store'], telegram_store.DB_NAME).exists() and telegram_state(account).get('error') == 'app_blocked')
+    try:
+        telegram_release.install(telegram_base(config) / 'telegram-lib')
+    except (OSError, RuntimeError) as error:
+        raise SetupError(f'Could not install the Telegram libraries ({str(error)[:200]})', 'check the connection and add Telegram again')
+    telegram_store.private_dir(account['store'])
+    state = telegram_state(account)
+    session = (Path(account['store']) / telegram_store.SESSION_NAME).exists()
+    if not session or state.get('error'):
+        state = telegram_login(config, account, ui)
+    if not state.get('identity'):
+        raise SetupError('Telegram is not logged in', 'add Telegram again')
+    account['identity_sha256'] = state['identity']
+    account.pop('app', None)
+    ui.say('  Telegram: logged in')
+    telegram_follow(config, account, ui)
+
+
+def telegram_login(config, account, ui):
+    """One login through the mirror, which speaks JSON lines: what it shows goes to the dashboard (or the terminal),
+    and the code or password the owner types goes to its stdin and nowhere else."""
+    import telegram_store
+    unit = telegram_unit(account)
+    if service.available() and service.definition_path(unit, home()).exists():
+        service.stop(unit, run=run)  # the store has one writer: the login, until the mirror starts again with it
+    telegram_store.forget_session(account['store'])
+    by_phone = ui.choose('How do you log in to Telegram', [('qr', 'Scan a QR code in Telegram on your phone'),
+                                                          ('phone', 'Get a code in Telegram for your phone number')])
+    extra = []
+    if by_phone == 'phone':
+        phone = '+' + re.sub(r'[^\d]', '', ui.ask('Your Telegram phone number, with its country code (+32 470 12 34 56)'))
+        if not PHONE.fullmatch(phone[1:]):
+            raise SetupError('That is not a phone number with its country code', 'add Telegram again and type it like +32 470 12 34 56')
+        extra = ['--phone', phone]
+    try:
+        process = subprocess.Popen(telegram_command(config, account, 'login', *extra), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.DEVNULL, text=True)
+    except OSError as error:
+        raise SetupError(f'Could not start the Telegram login ({error.strerror})')
+    events, failed, done = [], [], threading.Event()
+
+    def reader():
+        for line in process.stdout:
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(event, dict):
+                events.append(event)
+        done.set()
+    threading.Thread(target=reader, daemon=True).start()
+
+    def answer(field, value):
+        try:
+            process.stdin.write(json.dumps({field: value}) + '\n')
+            process.stdin.flush()
+        except (OSError, ValueError):
+            pass
+    def hide():
+        if getattr(ui, 'web', False):
+            ui.show_code(None)
+    until, connected = time.monotonic() + TELEGRAM_LOGIN, None
+    try:
+        while not (done.is_set() and not events):
+            if getattr(ui, 'cancelled', False) or time.monotonic() > until:
+                raise SetupError('Stopped' if getattr(ui, 'cancelled', False) else 'The Telegram login took too long', 'add Telegram again')
+            if not events:
+                time.sleep(0.5)
+                continue
+            event = events.pop(0)
+            kind = event.get('event')
+            if kind == 'qr' and isinstance(event.get('matrix'), list):
+                if getattr(ui, 'web', False):
+                    ui.show_code({'kind': 'qr', 'matrix': [str(r)[:200] for r in event['matrix'][:200]], 'expires': str(event.get('expires') or '')})
+                else:
+                    ui.say(telegram_qr_text(event['matrix']))
+                ui.say('  In Telegram on your phone: Settings, Devices, Link Desktop Device, then scan this code.')
+            elif kind in ('code_sent', 'code_wrong'):
+                hide()
+                answer('code', ui.ask('The login code Telegram sent to your Telegram app' + (' (that one was wrong)' if kind == 'code_wrong' else '')))
+            elif kind in ('password', 'password_wrong'):
+                hide()
+                hint = str(event.get('hint') or '')[:60]
+                answer('password', ui.secret('Your Telegram cloud password' + (' (that one was wrong)' if kind == 'password_wrong' else '')
+                                             + (f', hint: {hint}' if hint else '')))
+            elif kind == 'connected':
+                connected = event
+            elif kind == 'error':
+                failed.append(str(event.get('code') or ''))
+        process.wait(30)
+    finally:
+        hide()
+        if process.poll() is None:
+            process.terminate()
+            process.wait(10)
+    if not connected:
+        why = failed[-1] if failed else ''
+        if why == 'app_blocked':
+            raise SetupError('Telegram does not accept this Machine’s app ID right now', 'add your own at my.telegram.org, then add Telegram again')
+        raise SetupError('Telegram was not logged in' + (f' ({why})' if why else ''), 'add Telegram again')
+    return telegram_state(account) or {'identity': connected.get('identity')}
+
+
+def telegram_unit(account):
+    return f"the-machine-telegram-{re.sub(r'[^A-Za-z0-9_-]', '-', account['id'])}.service"
+
+
+def telegram_follow(config, account, ui):
+    """The mirror only reads while it runs: one per account as a user service (systemd on Linux, launchd on macOS),
+    the store's single writer, which also sends what the owner approved. It never restarts after Telegram ends the
+    session, only after a network drop or a flood wait."""
+    name = telegram_unit(account)
+    unit = service.definition_path(name, home())
+    parts = telegram_command(config, account, 'follow')
+    if not service.available():
+        ui.say('  Telegram: keep it running yourself: ' + ' '.join(shlex.quote(p) for p in parts))
+        return
+    unit.parent.mkdir(parents=True, exist_ok=True)
+    if service.manager() == 'launchd':
+        unit.write_text(service.plist_text(parts, unit=name, base=home(), throttle=120))
+        started = service.enable(name, run=run)
+        ui.say(f'  Telegram: read by {service.label(name)}' if not started.returncode else f'  Telegram: start it with {service.hint("enable", name)}')
+        return
+    command = ' '.join(shlex.quote(str(part)) for part in parts)
+    unit.write_text('[Unit]\nDescription=The Machine: Telegram chats\nAfter=network-online.target\n\n'
+                    f'[Service]\nExecStart={command}\nRestart=on-failure\nRestartSec=120\nMemoryMax=512M\n\n[Install]\nWantedBy=default.target\n')
+    run(['systemctl', '--user', 'daemon-reload'], timeout=30)
+    started = run(['systemctl', '--user', 'enable', '--now', unit.name], timeout=60)
+    if not started.returncode:
+        service.restart(unit.name, run=run)  # a new login: a mirror still running would hold the old session
+    ui.say(f'  Telegram: read by {unit.name}' if not started.returncode else f'  Telegram: start it with systemctl --user enable --now {unit.name}')
+
+
+def telegram_remove(config, account):
+    """Disconnect: stop the mirror, log this device out at Telegram, and delete its store (messages, chats, session)."""
+    name = telegram_unit(account)
+    unit = service.definition_path(name, home())
+    if unit.exists():
+        if service.available():
+            service.disable_now(name, run=run)
+        unit.unlink(missing_ok=True)
+        if service.available():
+            service.reload(run=run)
+    store = account.get('store')
+    if not store or not Path(store).exists():
+        return
+    run(telegram_command(config, account, 'logout'), timeout=120)
+    if not any(a.get('store') == store for a in config.get('accounts', []) if a.get('id') != account.get('id')):
+        shutil.rmtree(store, ignore_errors=True)
+
+
 def step_android(config, account, ui):
     nodes = android_nodes(tool(config, 'openclaw'))
     if not nodes:
@@ -1687,12 +1929,12 @@ def step_microsoft(config, account, ui):
 
 
 STEPS = {'gmail': step_google, 'calendar': step_google, 'outlook': step_microsoft, 'outlook_calendar': step_microsoft, 'slack': step_slack, 'salesflare': step_salesflare,
-         'whatsapp': step_whatsapp, 'android': step_android, 'gateway': step_gateway}
+         'whatsapp': step_whatsapp, 'telegram': step_telegram, 'android': step_android, 'gateway': step_gateway}
 
 
 def sources():
     extra = getattr(assistant(), 'connector_services', None)
-    return sorted({*SERVICES} - {'salesflare', 'outlook-calendar'}) + (extra() if extra else sorted(getattr(assistant(), 'SETUPS', None) or {}))
+    return sorted({*SERVICES} - {'salesflare', 'outlook-calendar', 'telegram-chats'}) + (extra() if extra else sorted(getattr(assistant(), 'SETUPS', None) or {}))
 
 
 def offer_phone_skip(config, account, ui):
@@ -1789,11 +2031,14 @@ def connect(config_path, name, ui, account_id=None, restart=True):
 
 def disconnect(config_path, account_id):
     """Stop reading one account: it leaves config.json (the old file is kept as config.json.bak). What it already
-    brought in stays, and so do sign-ins and keys, which other accounts or tools may share. Returns the account."""
+    brought in stays, and so do sign-ins and keys, which other accounts or tools may share. Telegram chats is the
+    exception: its device is logged out at Telegram and its own store deleted. Returns the account."""
     config = load(config_path)
     account = next((a for a in config.get('accounts', []) if a.get('id') == account_id), None)
     if not account:
         raise SetupError('That account is not connected here')
+    if account.get('service') == 'telegram':
+        telegram_remove(config, account)  # Telegram's own login ends too: this device is logged out there
     config['accounts'] = [a for a in config['accounts'] if a.get('id') != account_id]
     save(config_path, config)
     return account

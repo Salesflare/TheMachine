@@ -8,7 +8,7 @@ site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## Wat het doet
 
-Telegram is een manier om je to-do's te krijgen, niet iets wat The Machine leest. Je eigen bot stuurt elke to-do binnen je [werkuren](work-hours.md), met dezelfde knoppen als op het dashboard: **Doe het**, **Snoozen**, **Wijzigen**, **Markeer als gedaan**, **Niet nodig**, en **Versturen** voor een klaargezet bericht.
+Deze Telegram is een manier om je to-do's te krijgen. Wil je dat The Machine je eigen Telegram-chats leest, zie dan [Telegram-chats](telegram-chats.md). Je eigen bot stuurt elke to-do binnen je [werkuren](work-hours.md), met dezelfde knoppen als op het dashboard: **Doe het**, **Snoozen**, **Wijzigen**, **Markeer als gedaan**, **Niet nodig**, en **Versturen** voor een klaargezet bericht.
 
 Telegram is optioneel. Het dashboard als telefoonapp stuurt dezelfde to-do's als meldingen.
 

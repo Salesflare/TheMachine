@@ -23,7 +23,7 @@ De tabbladen **Werk** en **Privé** tonen alleen die contacten. **CSV downloaden
 
 ### Tijdlijn
 
-Elke pagina van een persoon en organisatie heeft er een, nieuwste eerst: e-mail, afspraken en hun Zoom-samenvattingen, Intercom-gesprekken (open of gesloten, met **Openen in Intercom**), chats op WhatsApp, Slack, LinkedIn en X, to-do's, beloftes en verplaatsingen van projecten. De labels bovenaan tonen één bron tegelijk. **Meer tonen** laadt oudere items.
+Elke pagina van een persoon en organisatie heeft er een, nieuwste eerst: e-mail, afspraken en hun Zoom-samenvattingen, Intercom-gesprekken (open of gesloten, met **Openen in Intercom**), chats op WhatsApp, Telegram, Slack, LinkedIn en X, to-do's, beloftes en verplaatsingen van projecten. De labels bovenaan tonen één bron tegelijk. **Meer tonen** laadt oudere items.
 
 Afspraken die nog moeten komen, staan apart bovenaan onder **Binnenkort**, de eerstvolgende eerst; **Alles wat eraan komt tonen** toont de rest. Een afspraak in meer dan één van je agenda's staat er één keer.
 

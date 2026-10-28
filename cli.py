@@ -957,7 +957,7 @@ def parser():
     c.add_argument('--all', action='store_true', help='keep every line, even past the 4,000 characters OpenClaw chats load')
     c.add_argument('--workspace', help='OpenClaw workspace with USER.md (default: OPENCLAW_WORKSPACE or ~/.openclaw/workspace)')
     c = add('connect', 'Set up a source: sign-in or key, IDs, a test read and the first sync', cmd_connect)
-    c.add_argument('source', nargs='?', help='gmail, calendar, outlook, outlook_calendar, slack, crm, whatsapp, android, gateway or a connector plugin')
+    c.add_argument('source', nargs='?', help='gmail, calendar, outlook, outlook_calendar, slack, crm, whatsapp, telegram (your Telegram chats), android, gateway or a connector plugin')
     c.add_argument('--account', help='account id, to redo one of several or add another')
     add('doctor', 'Check the whole setup; every problem comes with its fix', cmd_doctor)
     c = add('telegram', 'Telegram is optional: turn to-do delivery there off or back on (the dashboard app works either way)', cmd_telegram)

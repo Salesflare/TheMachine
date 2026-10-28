@@ -28,7 +28,7 @@ Review turns get the owner's profile (`USER.md`) and these instructions in their
      - empty or image-only messages
      - opaque notifications and error logs
      - text that was already cut at the source, which will never get longer
-   - Slack, WhatsApp and LinkedIn signals come with `earlier_in_conversation`: up to four earlier messages from the same chat. Judge a short reply in that context instead of deferring it.
+   - Slack, WhatsApp, Telegram and LinkedIn signals come with `earlier_in_conversation`: up to four earlier messages from the same chat. Judge a short reply in that context instead of deferring it.
    - Emails end with `[Quoted earlier messages: …]` when they quote a thread: the new message above it is complete, and the earlier messages are separate signals, so that marker is no reason to defer.
    - **Don't re-defer what you've deferred before.** The service sets aside a signal deferred twice at the same version: it stays pending and searchable but isn't offered in batches until new content arrives; `status` reports the `set_aside` count. Don't chase set-aside signals unless something new makes them relevant.
    - Initial import is bounded by the configured source window (usually seven days; Calendar also includes future events). Retained unfinished catch-up can be older.

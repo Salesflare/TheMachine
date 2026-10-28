@@ -173,7 +173,7 @@ BACKFILL_MAX = 400
 BACKFILL_CHARS = 14000  # the block's size in one review
 BACKFILL_SHOWN_DAYS = 3  # the board says what it found for this long
 BACKFILL_GIVE_UP_DAYS = 7
-BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'whatsapp.message', 'intercom.conversation', 'x.dm',
+BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
                   'ms_graph.message', 'outlook.message', 'calendar.event', 'salesflare.meeting', 'outlook.event', 'ms_graph.event')
 STUCK_DAYS = 10         # no reply for this long after the owner wrote: the tile says so
 # A person's automatic side (Work or Personal), from what The Machine knows of them (2026-10-25, see auto_side). Raised
@@ -416,6 +416,15 @@ def _touches(kind, m, owner, wrote_to):
         if '@' not in chat or chat.endswith('@broadcast') or chat.startswith('status@'):
             return []
         return [('wa:' + chat.split('@')[0], m.get('chat_name'), WEIGHTS['owner' if mine else 'them'], 'owner' if mine else 'them')]
+    if kind == 'telegram.message':
+        # A private chat's ID is the other person's Telegram user ID; in a group, the sender's. Never the owner.
+        chat, mine = str(m.get('chat_id') or ''), m.get('from_me') is True
+        if m.get('chat_kind') == 'group':
+            sender = str(m.get('sender_id') or '')
+            return [] if mine or not sender.isdigit() else [('tg:' + sender, m.get('from'), 0.1, 'seen')]
+        if not chat.isdigit():
+            return []
+        return [('tg:' + chat, m.get('chat_name'), WEIGHTS['owner' if mine else 'them'], 'owner' if mine else 'them')]
     if kind == 'slack.message':
         if m.get('bot_id') or m.get('subtype') in ('bot_message', 'channel_join', 'channel_leave'):
             return []
@@ -487,6 +496,8 @@ def thread_key(kind, m):
         return ('sl:' + str(m['channel_id']) + ':' + str(stamp), True) if stamp else (None, False)
     if kind in ('whatsapp.message',) and m.get('chat_id'):
         return 'wa:' + str(m['chat_id']), False
+    if kind == 'telegram.message' and m.get('chat_id'):
+        return 'tg:' + str(m['chat_id']), False
     if kind in ('linkedin.message', 'x.dm') and m.get('conversation_id'):
         return kind + ':' + str(m['conversation_id']), False
     if kind == 'x.mention' and m.get('conversation_id'):
@@ -723,7 +734,7 @@ def fade(weight, age_days, half_life):
 
 def shown_id(identifier, x_names):
     space, _, value = identifier.partition(':')
-    return {'email': value, 'wa': '+' + value if value.isdigit() else 'WhatsApp', 'slack': 'Slack', 'li': 'LinkedIn',
+    return {'email': value, 'wa': '+' + value if value.isdigit() else 'WhatsApp', 'tg': 'Telegram', 'slack': 'Slack', 'li': 'LinkedIn',
             'x': '@' + x_names[identifier] if x_names.get(identifier) else 'X', 'gh': 'GitHub ' + value}.get(space, identifier)
 
 
@@ -2223,7 +2234,7 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
 
 
 VIA = {'linkedin.message': 'LinkedIn', 'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack',
-       'whatsapp.message': 'WhatsApp', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
+       'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
 
 
 def set_org(db, node_id, org, source, now, event_id=None, quote=None):
@@ -4213,7 +4224,7 @@ def backfill_view(db, board_id, now, maybes):
     return {'state': 'done', 'added': added, 'review': len(maybes)}
 
 
-MESSAGE_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'whatsapp.message', 'intercom.conversation', 'x.dm',
+MESSAGE_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
                  'ms_graph.message', 'outlook.message')
 
 

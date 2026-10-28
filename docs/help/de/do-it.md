@@ -19,7 +19,7 @@ order: 2
 - Ein Schritt, der etwas verbindlich macht, etwa absenden, bezahlen oder buchen, hält an und wartet auf deine Bestätigung.
 - Im Chat einer Aufgabe wird ein Entwurf nie in derselben Nachricht gesendet, die ihn geschrieben hat.
 
-Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnachricht, eine Nachricht über WhatsApp, LinkedIn oder X. Der Artikel jeder Verbindung sagt, was sie senden kann.
+Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnachricht, eine Nachricht über WhatsApp, Telegram, LinkedIn oder X. Der Artikel jeder Verbindung sagt, was sie senden kann.
 
 ## Eine E-Mail bearbeiten
 

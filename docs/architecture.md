@@ -5,7 +5,7 @@
 ## Architecture
 
 ```text
-Gmail · Calendar · Slack · CRM · Android notifications · WhatsApp · OpenClaw Gateway · plugins (GitHub, Stripe, LinkedIn, X, RSS)
+Gmail · Calendar · Slack · CRM · Android notifications · WhatsApp · Telegram chats · OpenClaw Gateway · plugins (GitHub, Stripe, LinkedIn, X, RSS)
                 │  (read-only collectors, one thread and checkpoint per account)
                 ▼
 assistant.py (systemd user service) → private SQLite + full-text search, local API on 127.0.0.1
@@ -25,7 +25,7 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | `assistant.py` | Collectors, SQLite store, local API, dashboard server, Telegram outbox, review and preparation workers |
 | `dashboard.html`, `sw.js`, `manifest.webmanifest`, `brand/` | Owner dashboard and installable web app |
 | `cli.py` | The `assistant` command line |
-| `next_actions.py` | Approved sends: email (Gmail via `gog`), LinkedIn messages and X replies and DMs (OpenClaw browser), Slack direct messages (Maton) and WhatsApp messages (`wacli`) |
+| `next_actions.py` | Approved sends: email (Gmail via `gog`), LinkedIn messages and X replies and DMs (OpenClaw browser), Slack direct messages (Maton), WhatsApp messages (`wacli`) and Telegram messages (the outbox of `telegram_mirror.py`) |
 | `preparation_state.py`, `rollout_health.py` | Preparation bookkeeping and health checks |
 | `retention.py` | Nightly housekeeping: old sync history and preparation logs go, free space goes back to the disk, local database copies rotate |
 | `openclaw-plugin/` | `personal-assistant-bridge`: the `assistant_signals` tool, Telegram buttons and replies, Android feed capture, review/preparation guards |

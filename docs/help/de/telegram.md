@@ -8,7 +8,7 @@ site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## Was es macht
 
-Telegram ist ein Weg, deine Aufgaben zu bekommen, nichts, was The Machine liest. Dein eigener Bot schickt jede Aufgabe innerhalb deiner [Arbeitszeiten](work-hours.md), mit denselben Buttons wie im Dashboard: **Ausführen**, **Zurückstellen**, **Ändern**, **Als erledigt markieren**, **Nicht nötig** und **Senden** für eine vorbereitete Nachricht.
+Dieses Telegram ist ein Weg, deine Aufgaben zu bekommen. Soll The Machine deine eigenen Telegram-Chats lesen, siehe [Telegram-Chats](telegram-chats.md). Dein eigener Bot schickt jede Aufgabe innerhalb deiner [Arbeitszeiten](work-hours.md), mit denselben Buttons wie im Dashboard: **Ausführen**, **Zurückstellen**, **Ändern**, **Als erledigt markieren**, **Nicht nötig** und **Senden** für eine vorbereitete Nachricht.
 
 Telegram ist optional. Das Dashboard als App auf dem Handy schickt dieselben Aufgaben als Benachrichtigungen.
 

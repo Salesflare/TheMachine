@@ -8,7 +8,7 @@ site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## Ce qu’il fait
 
-Telegram est un moyen de recevoir vos tâches, pas une source que The Machine lit. Votre propre bot envoie chaque tâche pendant vos [heures de travail](work-hours.md), avec les mêmes boutons que dans le tableau de bord : **Faire**, **Mettre en attente**, **Modifier**, **Marquer comme fait**, **Pas nécessaire**, et **Envoyer** pour un message préparé.
+Ce Telegram est un moyen de recevoir vos tâches. Pour que The Machine lise vos propres discussions Telegram, voir [Discussions Telegram](telegram-chats.md). Votre propre bot envoie chaque tâche pendant vos [heures de travail](work-hours.md), avec les mêmes boutons que dans le tableau de bord : **Faire**, **Mettre en attente**, **Modifier**, **Marquer comme fait**, **Pas nécessaire**, et **Envoyer** pour un message préparé.
 
 Telegram est facultatif. Le tableau de bord en app sur téléphone envoie les mêmes tâches en notifications.
 

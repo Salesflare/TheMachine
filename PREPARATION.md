@@ -104,9 +104,9 @@ Reply in a conversation from the task's linkedin.message evidence: `{kind:linked
 
 Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on X,account_id:<task X account ID>,reply_to:<that event's metadata.tweet_id>,body:<reply>}`, or answer an x.dm with `{kind:x,label:Send,account_id:...,conversation_id:<its metadata.conversation_id>,body:...}`. Plain text, no media; a reply at most 280 characters (links count 23), a DM 10000. Public replies stay short and keep private or customer details out. It's sent through the owner's own x.com session after their Send now, or send_now when they asked you to send it.
 
-### WhatsApp message
+### WhatsApp or Telegram message
 
-`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`. If the owner talks to them on WhatsApp, switch from any channel: to_name:<name> instead of chat_id finds their chat. Short plain text in their WhatsApp voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom: reply there `{kind:intercom,account_id,conversation_id,body}`; email only if asked (by_email:true) or refused.
+`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`; Telegram: kind:telegram. If the owner talks to them there, switch: to_name:<name> instead of chat_id finds their chat. Short plain text in that channel's voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom: reply there `{kind:intercom,account_id,conversation_id,body}`; email only if asked (by_email:true) or refused.
 
 ### Slack message, and handing a task to someone
 
@@ -148,7 +148,7 @@ Retries keep this exact confirmed step and preview. Read preparation_history and
 - A local follow-up is appropriate only if the current result isn't already the draft it would revise: `{kind:prepare,label:Draft support email,instructions:<concrete next local preparation>}`.
 - A follow-up `{kind:prepare,label:Apply fix,instructions:...}` runs another Do it turn with those exact instructions under the same limits; use it only when the change is a separate step the owner should start.
 - A useful verified original link can say Open the automation or View proposal.
-- Never label anything Pay, Create event, Send or Reply unless it is the email, LinkedIn, Slack, X or WhatsApp send action or a `kind:finish` last step.
+- Never label anything Pay, Create event, Send or Reply unless it is an email or chat send action or a `kind:finish` last step.
 
 ## Saving
 

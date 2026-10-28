@@ -1451,7 +1451,7 @@ class AgentJobs:
         row = db.execute('SELECT next_action FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
         current = json.loads(row['next_action'] or '{}') if row else {}
         actions = current.get('actions') if current.get('kind') == 'menu' else [current]
-        drafts = [a for a in actions or [] if a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom')]
+        drafts = [a for a in actions or [] if a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom')]
         return drafts[0].get('revision') if len(drafts) == 1 else None
 
     # -- what the dashboard shows
