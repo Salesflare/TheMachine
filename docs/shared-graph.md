@@ -45,9 +45,9 @@ review the preview and correct mistakes with Keep private. When unsure, nothing 
 
 | Thread | Who reads it | What the team sees |
 |---|---|---|
-| **Client**: at least one person outside the company, at an organization on the Graph or with a work domain | The Fleet | The full email: body, from, to, date, and its attachments (up to 2.5 MB each; bigger ones show as "too large to share") |
-| **Sensitive**: buying or selling a company, a merger, an investment or fundraising, a valuation, a term sheet or LOI, a deal NDA, HR, hiring or recruiting about one person (the owner too), legal, health, own money, security (access, keys, tokens, vulnerabilities, incidents) | Only the people on it | Nothing in automatic sharing, not even that it exists. Sticky across reviews; explicit named thread/board sharing may include it |
-| **Unsure**: probably client work, but not clear; a peer or competitor with no clear customer relationship | The owner first | Nothing until the owner picks Share in **Share these?** |
+| **Client**: at least one person outside the company, at an organization on the Graph or with a work domain; also the everyday work with a partner company, one in the same market too (an integration, a listing or link exchange, co-marketing) | The Fleet | The full email: body, from, to, date, and its attachments (up to 2.5 MB each; bigger ones show as "too large to share") |
+| **Sensitive**: buying or selling a company, a merger, talks with a possible buyer, acquirer or investor (a first approach too), an investment or fundraising, board matters and investor updates, a valuation, a term sheet or LOI, a deal NDA, HR, hiring or recruiting about one person (the owner too), legal, health, own money, security (access, keys, tokens, vulnerabilities, incidents) | Only the people on it | Nothing in automatic sharing, not even that it exists. Sticky across reviews; explicit named thread/board sharing may include it |
+| **Unsure**: probably client work, but not clear; a peer or competitor where what the two do together is unclear | The owner first | Nothing until the owner picks **Share with team** (the Fleet) or **Share with…** (chosen teammates) in **Share these?** |
 | **Internal**: colleagues only | Only the people on it | Nothing. Never re-shared, also not by hand |
 | **Other**: notifications, receipts, invoices, the company's own bills and support tickets with its suppliers, newsletters, cold pitches | The owner | Nothing |
 | **Personal**: a personal account, or the review says it is personal | The owner | Nothing, not even that it exists. Sticky, and never by hand either |
@@ -363,7 +363,11 @@ Nothing more is shared for any of it (`SharedGraph.team_boards`).
   12 projects with their full timelines, deals too. Personal and other companies never go."), and **Share** or **Stop sharing**. The
   board's header says "Shared with Robin".
 - **What's shared**, a pane per Work Fleet on the Fleet tab (also in Settings): counts per kind, the first-share review
-  with **Keep private** and **Share now** (it goes within the hour by itself), **Share these?**, every shared thread with its why-line and **Unshare**, and what is kept private.
+  with **Keep private** and **Share now** (it goes within the hour by itself), **Share these?** (the review's unsure
+  threads in groups of one kind, named by the review with a suggested choice: **Share with team**, **Share with…** chosen
+  teammates, which also keeps them from the rest of the team, or **Keep private**; one tap per group, opened to untick
+  threads; unsure threads judged before groups existed are judged again once, and one then called client stays here
+  with Share suggested instead of going by itself), every shared thread with its why-line and **Unshare**, and what is kept private.
   For admins also **Teammates** (who shares, who hasn't shared yet, **Take out**, **Share again**) and the switch
   **Share the Graph in this Fleet**, which everyone sees.
 - The Fleet tab, in the Team Graph box: "<name> joined <Fleet>. Share the team's Graph with them?" and "<name> asks to

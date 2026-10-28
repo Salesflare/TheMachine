@@ -1442,6 +1442,86 @@ class SharedGraph(unittest.TestCase):
         self.assertIn('Shall we list each other?', self.received(self.mem))
         self.assertNotIn('ad formats', self.received(self.mem))
 
+    def peers(self):
+        """Fictional unsure threads: two listing swaps with software companies, a fund asking about a stake, one ungrouped."""
+        self.add(self.own, mail('work', 40, 'Pat <pat@listy.example>', 'own1@acme.example', 'Listy x Acme', 'Shall we add each other to our comparison pages?', 3, 't-listy'),
+                 mail('work', 41, 'Kim <kim@rankr.example>', 'own1@acme.example', 'Rankr x Acme', 'A backlink swap for our CRM roundup?', 2, 't-rankr'),
+                 mail('work', 42, 'Ola <ola@northfund.example>', 'own1@acme.example', 'Quick catch-up', 'Would you consider selling a stake this year?', 1, 't-fund'),
+                 mail('work', 43, 'Ray <ray@misc.example>', 'own1@acme.example', 'Hello', 'Hi there, a question for you.', 1, 't-misc'))
+        with self.own.store.connect() as db:
+            sg.judge(db, [{'event_id': self.event_id(self.own, 'work-40'), 'share': 'unsure', 'line': '', 'group': 'Partner and listing exchanges', 'suggest': 'team'},
+                          {'event_id': self.event_id(self.own, 'work-41'), 'share': 'unsure', 'line': '', 'group': ' Partner and  listing exchanges ', 'suggest': 'team'},
+                          {'event_id': self.event_id(self.own, 'work-42'), 'share': 'unsure', 'line': '', 'group': 'Investors and buyers', 'suggest': 'people'},
+                          {'event_id': self.event_id(self.own, 'work-43'), 'share': 'unsure', 'line': '', 'suggest': 'whatever'}])
+
+    def test_share_these_asks_once_per_group_with_the_review_s_suggestion(self):
+        self.peers()
+        view = self.own.graph_overview(FLEET)
+        self.assertEqual(view['groups'], [{'name': 'Partner and listing exchanges', 'suggest': 'team', 'count': 2},
+                                          {'name': 'Investors and buyers', 'suggest': 'people', 'count': 1},
+                                          {'name': '', 'suggest': None, 'count': 1}])  # no group (or a made-up choice): last, nothing suggested
+        self.assertEqual({x['title']: x['group'] for x in view['unsure']}, {'Listy x Acme': 'Partner and listing exchanges', 'Rankr x Acme': 'Partner and listing exchanges',
+                                                                           'Quick catch-up': 'Investors and buyers', 'Hello': ''})
+        self.assertEqual(view['teammates'], [{'fleet': FLEET, 'member': 'adm2', 'name': 'Ada'}, {'fleet': FLEET, 'member': 'mem3', 'name': 'Mo'}])
+        with self.own.store.connect() as db:
+            self.assertEqual(sg.groups(db), ['Partner and listing exchanges', 'Investors and buyers'])  # for the next review to reuse
+        self.assertEqual(sg.unsure_groups([{'group': 'G', 'suggest': 'team'}, {'group': 'G', 'suggest': 'private'}]),
+                         [{'name': 'G', 'suggest': 'private', 'count': 2}])  # a tie: the cautious choice
+
+    def test_share_with_chosen_teammates_from_share_these_reaches_only_them(self):
+        self.peers()
+        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        fund = self.event_id(self.own, 'work-42')
+        with self.assertRaisesRegex(ValueError, 'Choose who'):
+            app.graph_share_action('graph_share_many', {'event_ids': [fund], 'share': 'people', 'people': []})
+        with self.assertRaises(ValueError):  # only confirmed teammates of a Work Fleet
+            app.graph_share_action('graph_share_many', {'event_ids': [fund], 'share': 'people', 'people': [{'fleet': FLEET, 'member': 'stranger'}]})
+        out = app.graph_share_action('graph_share_many', {'event_ids': [fund], 'share': 'people',
+                                                          'people': [{'fleet': FLEET, 'member': 'adm2'}]})
+        self.assertEqual((out['done'], out['shared_with']), (1, ['Ada']))
+        self.rounds()
+        self.assertIn('selling a stake', self.received(self.adm))
+        self.assertNotIn('selling a stake', self.received(self.mem))  # plain Share is the whole team; Share with… is not
+        view = self.own.graph_overview(FLEET)
+        self.assertNotIn('Quick catch-up', [x['title'] for x in view['unsure']])
+        kept = next(x for x in view['by_hand'] if x['title'] == 'Quick catch-up')
+        self.assertEqual((kept['shared_with'], 'thread' in kept), (['Ada'], False))
+        self.assertEqual([g['name'] for g in view['groups']], ['Partner and listing exchanges', ''])
+
+    def test_share_with_skips_personal_and_colleague_only_threads(self):
+        self.olive_mail()
+        self.add(self.own, mail('work', 23, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Our kids', 'Family weekend plans.', 2, 't-kids'))
+        self.judge(self.own, ('work-23', 'personal', 'Family'))
+        out = self.own.graph_threads_share([self.event_id(self.own, s) for s in ('work-23', 'work-4', 'home-5')], [{'fleet': FLEET, 'member': 'adm2'}])
+        self.assertEqual((out['done'], out['skipped']), (0, 3))
+        self.rounds()
+        self.assertNotIn('Family weekend plans', self.received(self.adm))
+        self.assertNotIn(PERSONAL, self.received(self.adm))
+
+    def test_an_unsure_thread_from_before_groups_is_judged_again_and_still_waits_for_the_owner(self):
+        self.peers()
+        with self.own.store.connect() as db:
+            db.execute('UPDATE share_threads SET grp=NULL,suggest=NULL')  # judged before the review grouped them
+        given = {x['subject'] for x in self.own.graph_unjudged()}
+        self.assertTrue({'Listy x Acme', 'Rankr x Acme', 'Quick catch-up', 'Hello'} <= given)
+        with self.own.store.connect() as db:
+            sg.judge(db, [{'event_id': self.event_id(self.own, 'work-40'), 'share': 'client', 'line': 'Pat proposed a listing swap', 'group': 'Partner and listing exchanges'},
+                          {'event_id': self.event_id(self.own, 'work-41'), 'share': 'client', 'line': 'Kim proposed a backlink swap'},
+                          {'event_id': self.event_id(self.own, 'work-42'), 'share': 'sensitive', 'line': ''},
+                          {'event_id': self.event_id(self.own, 'work-43'), 'share': 'unsure', 'line': ''}])
+        self.rounds()
+        self.assertEqual(self.team(self.mem, 'team_mail'), [])  # "They stay with you until you choose": client now only suggests Share
+        view = self.own.graph_overview(FLEET)
+        self.assertEqual({x['title']: (x['group'], x['suggest']) for x in view['unsure']},
+                         {'Listy x Acme': ('Partner and listing exchanges', 'team'), 'Rankr x Acme': ('Client and partner work', 'team'), 'Hello': ('', None)})
+        self.assertEqual(view['held'], 1)  # the fund's question: sensitive, out of the list, nothing goes
+        self.assertFalse({'Listy x Acme', 'Rankr x Acme', 'Quick catch-up', 'Hello'} & {x['subject'] for x in self.own.graph_unjudged()})  # once
+        self.add(self.own, mail('work', 44, 'Sol <sol@new.example>', 'own1@acme.example', 'Sol x Acme', 'A listing swap?', 0, 't-sol'))
+        with self.own.store.connect() as db:  # a new one the review is sure of: client, as before
+            sg.judge(db, [{'event_id': self.event_id(self.own, 'work-44'), 'share': 'client', 'line': 'Sol proposed a listing swap'}])
+        self.rounds()
+        self.assertIn('A listing swap?', self.received(self.mem))
+
     def test_sensitive_sticks_whatever_a_later_review_says(self):
         self.olive_mail()
         for later in ('client', 'unsure', 'other'):
@@ -1538,6 +1618,16 @@ class SharedGraph(unittest.TestCase):
     def test_the_review_is_told_billing_security_and_recruiting_are_never_client(self):
         for words in ('own bills', 'support tickets with the tools and suppliers', 'security', 'recruiting', 'never choose client'):
             self.assertIn(words, a.SHARE_VERDICTS)
+
+    def test_the_review_calls_deals_sensitive_and_partner_listings_client_and_groups_the_rest(self):
+        for words in ('possible buyer, acquirer or investor', 'board matters and investor updates', 'fundraising',  # sensitive, not unsure
+                      'partner company, also one in the same market', 'listing or link exchange',  # business as usual: client
+                      'group:', 'suggest:', '"people"', 'share_groups'):
+            self.assertIn(words, a.SHARE_VERDICTS)
+        prompt = a.share_history_prompt('r1', 2, ['Partner and listing exchanges'])
+        self.assertIn('"group", "suggest"', prompt)
+        self.assertIn('["Partner and listing exchanges"]', prompt)
+        self.assertNotIn('share_groups (', a.share_history_prompt('r1', 2))
 
     def test_a_second_companys_mailbox_starts_off_and_its_owner_decides(self):
         self.olive_mail()

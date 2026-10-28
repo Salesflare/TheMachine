@@ -57,6 +57,8 @@ LOOK_OVER = 3600            # a Machine's first share with a Fleet goes this lon
 REKEY_HOLD = 86400          # a new key for someone admitted: an admin's Machine vouches for it after this, unless told it isn't theirs
 SUGGEST_AFTER = 2           # this many hand choices the same way on threads with one company: ask once to make it a rule
 HANDS = ('team', 'private')
+SUGGESTS = ('team', 'private', 'people')  # an unsure group's suggested choice: Share, Keep private, or Share with… chosen teammates
+GROUP_CHARS = 60
 ROUND_EVERY = 300           # publish and fetch, at most this often
 SNAPSHOT_EVERY = 86400      # a full snapshot at least daily
 MAX_RECORDS = 3000
@@ -141,6 +143,11 @@ def ensure(db):
     db.executescript(SCHEMA)
     if 'sorted_at' not in {r[1] for r in db.execute('PRAGMA table_info(share_threads)')}:
         db.execute('ALTER TABLE share_threads ADD COLUMN sorted_at TEXT')  # when the review first called it client: the hold
+    if 'grp' not in {r[1] for r in db.execute('PRAGMA table_info(share_threads)')}:
+        # An unsure thread's group (what kind of conversation it is, in the review's words) and the choice it suggests for
+        # it, so "Share these?" asks once per group, not once per thread
+        db.execute('ALTER TABLE share_threads ADD COLUMN grp TEXT')
+        db.execute('ALTER TABLE share_threads ADD COLUMN suggest TEXT')
     if not db.execute("SELECT 1 FROM share_meta WHERE key='sorter' AND value='2'").fetchone():
         # Sorted again with the tuned review (deals, peers, notifications), before anything goes: every call the review
         # made before. A hand choice stays; until the review looks again, the thread stays with the owner.
@@ -289,9 +296,11 @@ def thread_of(kind, metadata, event_id):
 
 
 def judge(db, team, at=None):
-    """The review's per-thread call (finish_analysis team): [{event_id, share, line}]. share: client, sensitive, internal
-    or personal, judged by meaning; line: one short line of what happened, for the timeline, never the text itself.
-    The owner's hand choice stays."""
+    """The review's per-thread call (finish_analysis team): [{event_id, share, line, group, suggest}]. share: client,
+    sensitive, internal, personal, other or unsure, judged by meaning; line: one short line of what happened, for the
+    timeline, never the text itself. An unsure thread also gets its group (what kind of conversation it is, short, the
+    same name for threads of the same kind) and the choice the review suggests for that group (SUGGESTS), so the owner
+    decides once per group. The owner's hand choice stays."""
     stamp = at or now()
     kept = 0
     for item in team or ():
@@ -304,11 +313,16 @@ def judge(db, team, at=None):
         if verdict not in VERDICTS:
             raise ValueError('share: ' + ', '.join(VERDICTS))
         thread = thread_of(row['kind'], json.loads(row['metadata'] or '{}'), row['id'])
-        db.execute('INSERT INTO share_threads(thread,verdict,event_id,at,sorted_at) VALUES(?,?,?,?,?) ON CONFLICT(thread) DO UPDATE SET '
+        if verdict == 'client' and thread in regroup(db, thread):
+            # one the owner was told stays with them until they choose: client now means a group suggested to share
+            verdict, item = 'unsure', {**item, 'suggest': 'team', 'group': item.get('group') or 'Client and partner work'}
+        group = ' '.join(str(item.get('group') or '').split())[:GROUP_CHARS].strip() if verdict == 'unsure' else ''
+        suggest = item.get('suggest') if verdict == 'unsure' and item.get('suggest') in SUGGESTS else None
+        db.execute('INSERT INTO share_threads(thread,verdict,event_id,at,sorted_at,grp,suggest) VALUES(?,?,?,?,?,?,?) ON CONFLICT(thread) DO UPDATE SET '
                    'verdict=CASE WHEN share_threads.verdict IN (\'sensitive\',\'personal\') THEN share_threads.verdict '
                    'ELSE excluded.verdict END,event_id=excluded.event_id,at=excluded.at,'
-                   'sorted_at=coalesce(share_threads.sorted_at,excluded.sorted_at)',
-                   (thread, verdict, row['id'], stamp, stamp if verdict == 'client' else None))
+                   'sorted_at=coalesce(share_threads.sorted_at,excluded.sorted_at),grp=excluded.grp,suggest=excluded.suggest',
+                   (thread, verdict, row['id'], stamp, stamp if verdict == 'client' else None, group if verdict == 'unsure' else None, suggest))
         verdict = db.execute('SELECT verdict FROM share_threads WHERE thread=?', (thread,)).fetchone()[0]  # sticky calls win
         line = graph.one_line(item.get('line'), 160)
         if line and verdict == 'client':
@@ -317,6 +331,13 @@ def judge(db, team, at=None):
             db.execute('DELETE FROM share_lines WHERE thread=?', (thread,))
         kept += 1
     return kept
+
+
+def groups(db, limit=20):
+    """The names the review gave unsure threads still waiting for the owner, most used first: given to the next review,
+    so threads of the same kind land in the same group."""
+    return [r[0] for r in db.execute("SELECT grp FROM share_threads WHERE verdict='unsure' AND hand IS NULL AND grp>'' "
+                                     'GROUP BY grp ORDER BY count(*) DESC, grp LIMIT ?', (limit,))]
 
 
 def set_hand(db, event_id, choice):
@@ -950,12 +971,21 @@ def owner_pick(info):
     return {'owner_pick': pick} if MEMBER_ID.fullmatch(pick) else {}
 
 
-def unjudged(db, scope, limit, skip=(), first=None):
+def regroup(db, thread=None):
+    """Unsure threads the review judged before it grouped them (no group yet, no hand choice): the history pass judges
+    them again, so "Share these?" asks once per group and sensitive ones leave it. One it now calls client stays in
+    "Share these?" with Share suggested (judge): the owner was told it stays with them until they choose."""
+    sql = "SELECT thread FROM share_threads WHERE verdict='unsure' AND hand IS NULL AND grp IS NULL"
+    return {r[0] for r in (db.execute(sql + ' AND thread=?', (thread,)) if thread else db.execute(sql))}
+
+
+def unjudged(db, scope, limit, skip=(), first=None, again=()):
     """Work client threads the review hasn't judged yet, the newest first: for the history pass (one run judges a batch,
     the next one goes on), so all the Work history the Machine has goes through the same review labels. Each with its
     latest message and the start of earlier ones, since what a thread is about can sit in any of them. first: threads
     to judge before the rest (the ones that went to the team before an update to the sorting); several, in turn: each
-    pass takes what the one before left (a board shared by name, then what went to the team, then the rest)."""
+    pass takes what the one before left (a board shared by name, then what went to the team, then the rest). again:
+    unsure threads to judge again (regroup)."""
     found = []
     if not scope.accounts:
         return found
@@ -982,7 +1012,8 @@ def unjudged(db, scope, limit, skip=(), first=None):
                 seen.add(thread)
                 continue
             seen.add(thread)
-            if visibility(db, scope, e) != 'pending':
+            view = visibility(db, scope, e)
+            if view != 'pending' and not (view == 'ask' and thread in again):
                 continue
             taken.add(thread)
             earlier[thread] = []
@@ -1082,14 +1113,38 @@ def overview(db, scope, sent=0):
                 'at': e['occurred_at'], 'view': view, 'share': label(view) or 'only_you', 'why': why(view, hand, scope.company(e['metadata']), kept)}
     newest = sorted(found.values(), key=lambda x: x[1]['occurred_at'], reverse=True)
     shared = [item(*x) for x in newest if x[0] in ('team', 'wait')]
-    unsure = [item(*x) for x in newest if x[0] == 'ask' and any(scope.client_address(a) for a in addresses(x[1]['metadata']))]
-    by_hand = [item(*x) for x in newest if x[0] == 'private' and x[2] == 'private']
+    kinds = {r[0]: (r[1] or '', r[2]) for r in db.execute("SELECT thread,grp,suggest FROM share_threads WHERE verdict='unsure'")}
+    unsure = []
+    for thread, x in sorted(found.items(), key=lambda kv: kv[1][1]['occurred_at'], reverse=True):
+        if x[0] == 'ask' and any(scope.client_address(a) for a in addresses(x[1]['metadata'])):
+            group, suggest = kinds.get(thread, ('', None))
+            unsure.append({**item(*x), 'group': group, 'suggest': suggest})
+    by_hand = []
+    for thread, x in sorted(found.items(), key=lambda kv: kv[1][1]['occurred_at'], reverse=True):
+        if x[0] == 'private' and x[2] == 'private':
+            by_hand.append({**item(*x), 'thread': thread})  # who it is shared with by name, if anyone, is added by the caller
     records = [{'node_id': r['id'], 'name': r['name'], 'kind': r['kind']} for r in
                db.execute('SELECT n.id,n.name,n.kind FROM share_private p JOIN graph_nodes n ON n.id=p.node_id ORDER BY p.at DESC LIMIT 200')]
     rules = [dict(r) for r in db.execute('SELECT key,choice,name,at FROM share_rules ORDER BY at DESC')]
     return {'sorted': sorted_, 'unsorted': views.get('pending', 0), 'shared': views.get('team', 0), 'waiting': views.get('wait', 0),
             'held': views.get('sensitive', 0), 'sent': sent, 'threads': shared[:LISTED], 'more': max(0, len(shared) - LISTED),
-            'unsure': unsure[:LISTED], 'unsure_more': max(0, len(unsure) - LISTED), 'by_hand': by_hand[:LISTED], 'records': records, 'rules': rules}
+            'unsure': unsure[:LISTED], 'unsure_more': max(0, len(unsure) - LISTED), 'groups': unsure_groups(unsure),
+            'by_hand': by_hand[:LISTED], 'records': records, 'rules': rules}
+
+
+def unsure_groups(unsure):
+    """Share these?, by group: [{name, suggest, count}], the biggest first and the ones the review gave no group last.
+    A group's suggestion is the one most of its threads got (the cautious one on a tie: Keep private, then Share with…)."""
+    found = collections.OrderedDict()
+    for x in unsure:
+        found.setdefault(x.get('group') or '', []).append(x.get('suggest'))
+    order = {'private': 0, 'people': 1, 'team': 2}
+    out = []
+    for name, picks in found.items():
+        votes = collections.Counter(p for p in picks if p in SUGGESTS)
+        suggest = min(votes, key=lambda p: (-votes[p], order[p])) if votes and name else None
+        out.append({'name': name, 'suggest': suggest, 'count': len(picks)})
+    return sorted(out, key=lambda g: (not g['name'], -g['count'], g['name'].lower()))
 
 
 def preview(db, scope, limit=12):
@@ -1607,11 +1662,16 @@ class SharedGraph:
             scope = Scope(db, self.graph_accounts(fleet), self.internal(fleet), self.my_emails(), self._personal_people(db))
             sent = db.execute("SELECT count(*) FROM share_out WHERE fleet=? AND kind='thread'", (fleet,)).fetchone()[0]
             out = overview(db, scope, sent)
+            names = self.member_names()
+            for x in out['by_hand']:  # kept from the team, maybe shared with chosen teammates (Share with…)
+                x['shared_with'] = self.named_shares(db, 'thread', x.pop('thread'), names)
             start = self.meta('graph_start:' + fleet) or {}
             if not start.get('started'):
                 out['preview'] = preview(db, scope)
                 for x in out['threads']:  # nothing went yet: say what goes, not what went
                     x['why'] = re.sub(r'^(Shared|Shares within the hour): ', 'Goes within the hour: ', x['why'])
+        out['teammates'] = [{'fleet': f, 'member': m, 'name': n} for (f, m), n in
+                            sorted(self.graph_teammates().items(), key=lambda x: x[1].lower()) if f == fleet]  # Share with…
         return out
 
     def graph_rule(self, key, choice, name=''):
@@ -1682,6 +1742,32 @@ class SharedGraph:
                 raise ValueError('Personal threads are never shared')
             self._share_named(db, 'thread', thread, chosen)
             return {'ok': True, 'label': self.thread_labels(db, [dict(row)]).get(row['id']), 'shared_with': sorted(teammates[c] for c in chosen)}
+
+    def graph_threads_share(self, event_ids, people):
+        """Share with… in "Share these?": several threads for chosen teammates only, sensitive ones too, and kept from the
+        rest of the team (Only you by hand), so they leave the list. Never a personal thread, nor one with colleagues
+        only: those are skipped. {done, skipped}."""
+        chosen, teammates = self._chosen(people)
+        if not chosen:
+            raise ValueError('Choose who gets them')
+        ids = [int(i) for i in event_ids or [] if str(i).isdigit()][:500]
+        if not ids:
+            raise ValueError('Choose threads')
+        done = skipped = 0
+        with self.connect() as db:
+            ensure(db)
+            rows = [dict(r) for r in db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(ids),))]
+            labels = self.thread_labels(db, rows)
+            for row in rows:
+                label = labels.get(row['id'])
+                thread = thread_of(row['kind'], json.loads(row['metadata'] or '{}'), row['id'])
+                if not label or label['fixed'] or db.execute("SELECT 1 FROM share_threads WHERE thread=? AND verdict='personal'", (thread,)).fetchone():
+                    skipped += 1
+                    continue
+                self._share_named(db, 'thread', thread, chosen)
+                set_hand(db, row['id'], 'private')  # not for the whole team: only the people chosen
+                done += 1
+        return {'ok': True, 'done': done, 'skipped': skipped, 'shared_with': sorted(teammates[c] for c in chosen)}
 
     def member_names(self):
         """{(fleet, member): name} of everyone in this Machine's Work Fleets, from the directory it keeps (no call, no
@@ -2328,7 +2414,8 @@ class SharedGraph:
                 # then the meetings and chats of the team's boards: they wait for this call before they go
                 on_board = _threads_of(db, scope.team_items)
                 boards = (lambda t, on=on_board: t in on) if on_board else None
-                for item in unjudged(db, scope, limit - len(out), first=[named, boards, went]):
+                again = regroup(db)
+                for item in unjudged(db, scope, limit - len(out), first=[named, boards, went], again=again):
                     if item['event_id'] not in skip:
                         skip.add(item['event_id'])
                         out.append(item)

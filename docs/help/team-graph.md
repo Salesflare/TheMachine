@@ -56,7 +56,15 @@ Personal and colleague-only threads stay out, and so do people in your Family or
 
 ## Not sure? It waits
 
-When your Machine isn't sure, it doesn't share. Those threads wait under **Share these?** until you pick **Share with the team** or **Keep private**.
+When your Machine isn't sure, it doesn't share. Those threads wait under **Share these?**, grouped by what they are (like "Partner and listing exchanges"), each group with a suggested choice:
+
+- **Share with team** goes to everyone in the Fleet.
+- **Share with…** goes only to the teammates you pick, for example a board member for investor talks. The rest of the team doesn't get it.
+- **Keep private** keeps it with you.
+
+One tap decides a whole group. Open a group to see its threads and untick any you want to decide separately.
+
+Talks about buying, selling or investing in a company, and board matters, count as sensitive, so they don't wait here. Listings, integrations and other everyday work with a partner company are client work.
 
 ## Before the first share
 

@@ -51,7 +51,15 @@ Los hilos personales y los que son solo entre compañeros se quedan fuera, y tam
 
 ## ¿No está segura? Espera
 
-Cuando tu Machine no está segura, no comparte. Esos hilos esperan en **¿Compartir estos?** hasta que elijas **Compartir con el equipo** o **Mantener en privado**.
+Cuando tu Machine no está segura, no comparte. Esos hilos esperan en **¿Compartir estos?**, agrupados según lo que son (como «Intercambios con socios y listados»), cada grupo con una opción sugerida:
+
+- **Compartir con el equipo** llega a todos en la Fleet.
+- **Compartir con…** llega solo a quienes elijas, por ejemplo un miembro del consejo para conversaciones con inversores. El resto del equipo no lo recibe.
+- **Mantener en privado** lo deja contigo.
+
+Un toque decide por todo un grupo. Abre un grupo para ver sus hilos y desmarca los que quieras decidir aparte.
+
+Las conversaciones sobre comprar, vender o invertir en una empresa y los asuntos del consejo cuentan como sensibles, así que no esperan aquí. Los listados, las integraciones y el resto del trabajo habitual con una empresa socia son trabajo de clientes.
 
 ## Antes de compartir por primera vez
 

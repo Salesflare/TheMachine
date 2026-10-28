@@ -51,7 +51,15 @@ Conversas pessoais e só entre colegas ficam de fora, assim como pessoas da sua 
 
 ## Na dúvida, ela espera
 
-Quando sua Machine não tem certeza, ela não compartilha. Essas conversas esperam em **Compartilhar estes?** até você escolher **Compartilhar com a equipe** ou **Manter privado**.
+Quando sua Machine não tem certeza, ela não compartilha. Essas conversas esperam em **Compartilhar estes?**, agrupadas pelo que são (como "Trocas com parceiros e listagens"), cada grupo com uma escolha sugerida:
+
+- **Compartilhar com a equipe** vai para todos na Fleet.
+- **Compartilhar com…** vai só para quem você escolher, por exemplo um membro do conselho para conversas com investidores. O resto da equipe não recebe.
+- **Manter privado** deixa com você.
+
+Um toque decide o grupo inteiro. Abra um grupo para ver as conversas e desmarque as que quiser decidir separadamente.
+
+Conversas sobre comprar, vender ou investir em uma empresa e assuntos do conselho contam como sensíveis, então não esperam aqui. Listagens, integrações e o resto do trabalho do dia a dia com uma empresa parceira são trabalho de cliente.
 
 ## Antes do primeiro compartilhamento
 

@@ -574,7 +574,9 @@
  "Choose team or private": "Choose team or private",
  "Choose team, private or none": "Choose team, private or none",
  "Choose teammates whose Machines are confirmed in your Work Fleet": "Choose teammates whose Machines are confirmed in your Work Fleet",
+ "Choose threads": "Choose threads",
  "Choose who gets it.": "Choose who gets it.",
+ "Choose who gets them": "Choose who gets them",
  "Choose who gets this email from the addresses offered.": "Choose who gets this email from the addresses offered.",
  "Choose yes or no": "Choose yes or no",
  "Choose your username on your account page first.": "Choose your username on your account page first.",
@@ -603,6 +605,7 @@
  "Click to rename": "Click to rename",
  "Clicking “{}” on the page…": "Clicking “{}” on the page…",
  "Client": "Client",
+ "Client and partner work": "Client and partner work",
  "Client threads with {} go to the team.": "Client threads with {} go to the team.",
  "Close": "Close",
  "Close (a closeness)": "Close",
@@ -1137,6 +1140,7 @@
  "Goes along": "Goes along",
  "Goes out at {}": "Goes out at {}",
  "Goes to the {} job": "Goes to the {} job",
+ "Goes to {} only, also if sensitive. Not to the rest of the team.": "Goes to {} only, also if sensitive. Not to the rest of the team.",
  "Goes when you start": "Goes when you start",
  "Goes when you start: client thread": "Goes when you start: client thread",
  "Goes when you start: client thread with {}": "Goes when you start: client thread with {}",
@@ -2157,6 +2161,7 @@
  "Only this event goes. Nobody gets an update.": "Only this event goes. Nobody gets an update.",
  "Only what needs you, where you want it.": "Only what needs you, where you want it.",
  "Only you": "Only you",
+ "Only you and {}": "Only you and {}",
  "Only you see this and its threads.": "Only you see this and its threads.",
  "Only you see this project now.": "Only you see this project now.",
  "Only you: kept private": "Only you: kept private",
@@ -2262,6 +2267,7 @@
  "Other company, shared": "Other company, shared",
  "Other reason…": "Other reason…",
  "Other sources": "Other sources",
+ "Other threads": "Other threads",
  "Outlook": "Outlook",
  "Outlook Calendar": "Outlook Calendar",
  "Outlook alias": "Outlook alias",
@@ -2864,10 +2870,16 @@
  "Share what Help is asked": "Share what Help is asked",
  "Share with all {}": "Share with all {}",
  "Share with one of your Work Fleets": "Share with one of your Work Fleets",
+ "Share with team": "Share with team",
+ "Share with team goes to everyone in the Fleet. Share with… goes only to the teammates you pick.": "Share with team goes to everyone in the Fleet. Share with… goes only to the teammates you pick.",
  "Share with the team": "Share with the team",
  "Share with the team again": "Share with the team again",
  "Share with…": "Share with…",
  "Share {}": "Share {}",
+ "Share {} threads with…": {
+  "one": "Share {} thread with…",
+  "other": "Share {} threads with…"
+ },
  "Share {} with The Machine team?": "Share {} with The Machine team?",
  "Share {} with {}'s Machine?": "Share {} with {}'s Machine?",
  "Share “{}”": "Share “{}”",
@@ -2896,6 +2908,10 @@
  "Shared with {} {}.": "Shared with {} {}.",
  "Shared with {}, sealed to their Machines.": "Shared with {}, sealed to their Machines.",
  "Shared with {}.": "Shared with {}.",
+ "Shared {} threads with {} only.": {
+  "one": "Shared {} thread with {} only.",
+  "other": "Shared {} threads with {} only."
+ },
  "Shared {} threads with {} this week, {} held back.": {
   "one": "Shared {} thread with {} this week, {} held back.",
   "other": "Shared {} threads with {} this week, {} held back."
@@ -2943,6 +2959,10 @@
  "Show what a to-do says on your lock screen.": "Show what a to-do says on your lock screen.",
  "Show what changed": "Show what changed",
  "Show {} more": "Show {} more",
+ "Show {} threads": {
+  "one": "Show {} thread",
+  "other": "Show {} threads"
+ },
  "Showing what’s in so far. More can still come in.": "Showing what’s in so far. More can still come in.",
  "Sign in": "Sign in",
  "Sign in again": "Sign in again",
@@ -3120,6 +3140,7 @@
  "Suggested by": "Suggested by",
  "Suggested edit": "Suggested edit",
  "Suggested for your to-dos": "Suggested for your to-dos",
+ "Suggested: {}": "Suggested: {}",
  "Suggestions": "Suggestions",
  "Suggestions (G then S)": "Suggestions (G then S)",
  "Summary": "Summary",

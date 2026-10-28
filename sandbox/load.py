@@ -18,6 +18,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 import secrets
 import sys
 from pathlib import Path
@@ -209,6 +210,9 @@ def load_share(db):
     import shared_graph
     shared_graph.ensure(db)
     calls, sensitive = [], None
+    # a few the review was unsure of, in the groups it would give them, for "Share these?"
+    unsure = {'Webinar together?': ('Partner and co-marketing', 'team'), 'Partnership idea': ('Partner and co-marketing', 'team'),
+              'Podcast slot next week': ('Partner and co-marketing', 'team'), 'Intro: Sunniva <> Alex': ('Intros to investors', 'people')}
     for row in db.execute("SELECT id,title,metadata FROM events WHERE account_id='work-gmail' AND kind='gmail.message' ORDER BY occurred_at DESC"):
         meta = json.loads(row['metadata'] or '{}')
         people = shared_graph.addresses(meta)
@@ -218,6 +222,10 @@ def load_share(db):
             calls.append({'event_id': row['id'], 'share': 'internal'})
             continue
         who = str(meta.get('from') or '').split('<')[0].strip().split(' ')[0] or 'They'
+        title = re.sub(r'^(re|fwd?):\s*', '', str(row['title'] or ''), flags=re.I)
+        if title in unsure:
+            calls.append({'event_id': row['id'], 'share': 'unsure', 'group': unsure[title][0], 'suggest': unsure[title][1]})
+            continue
         if sensitive is None and 'lumenlabs' not in str(meta.get('from') or ''):
             sensitive = row['id']
             calls.append({'event_id': row['id'], 'share': 'sensitive'})
