@@ -252,6 +252,21 @@ class Api(unittest.TestCase):
             self.assertEqual(db.execute('SELECT count(*) FROM decisions').fetchone()[0], 0)
 
 
+class Sealed(unittest.TestCase):
+    def test_what_was_said_is_sealed_at_rest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'events.sqlite'
+            store = a.Store(path, protect=True)
+            talk = t.Talk({}, runner=Gateway())
+            talk_id = talk.start(SID, {})['id']
+            with store.connect() as db:
+                talk.line(db, talk_id, 'user', 'Tell Quinzel the zebra code', 1)
+            raw = b''.join(f.read_bytes() for f in Path(temp).iterdir() if f.is_file())
+            self.assertNotIn(b'zebra code', raw)
+            with store.connect() as db:
+                self.assertEqual(t.lines(db, SID)[1]['text'], 'Tell Quinzel the zebra code')
+
+
 class Dashboard(unittest.TestCase):
     def test_a_spoken_yes_never_sends(self):
         html = (ROOT / 'dashboard.html').read_text()
