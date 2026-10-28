@@ -90,7 +90,12 @@ class Checks(unittest.TestCase):
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': f'n{n}', 'kind': 'gmail.message', 'occurred_at': a.now(),
                                              'title': 'New', 'body': 'Hi', 'metadata': {}, 'deleted': False} for n in range(50)])
         runner = Runner()
-        self.assertIsNone(self.app.review_step(runner))
+        self.assertEqual(self.app.review_step(runner), 'admitted')  # the first review digs on, also at 70% (its own share: first_dig)
+        with self.store.connect() as db:
+            db.execute("UPDATE review_runs SET status='ok',finished_at='2000-01-01T00:00:00+00:00'")
+            db.execute("INSERT INTO milestones(name,at,detail) VALUES('first_dig_done',?,'cards')", (a.now(),))
+        runner = Runner()
+        self.assertIsNone(self.app.review_step(runner))  # after it, a regular review waits at 70%
         self.assertEqual(runner.requests, [])
         self.app.model_usage = usage(short=30, short_reset=time.time() + HOUR)
         self.assertEqual(self.app.review_step(runner), 'admitted')
