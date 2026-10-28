@@ -2782,6 +2782,44 @@ def calendar_event(account, raw, timezone):
             'body': body[:40000], 'metadata': metadata, 'deleted': raw.get('status') == 'cancelled'}
 
 
+def calendar_rooms(connect):
+    """The Graph's word on meeting rooms, for a meeting's details: addresses that are rooms (graph_resources), the ones
+    the owner said are people after all, and the names kept for rooms ({address: name})."""
+    try:
+        with connect() as db:
+            rooms, kept = graph.resources(db), graph.not_resources(db)
+            names = {str(r[0])[6:]: r[1] for r in db.execute(
+                "SELECT identifier,name FROM graph_resources WHERE resource=1 AND name IS NOT NULL AND identifier LIKE 'email:%' "
+                "UNION ALL SELECT node_id,name FROM graph_names WHERE node_id LIKE 'email:%'") if r[1] and '@' not in str(r[1])}
+    except sqlite3.OperationalError:
+        return set(), set(), {}
+    return rooms, kept, names
+
+
+def calendar_room(attendee, rooms=(), kept=()):
+    """Whether a guest on an invite is a meeting room: one the Graph knows is a room, or one whose address or name says so
+    (graph.room_like) and that the owner didn't call a person. Google and Outlook flag their own rooms (resource)."""
+    email = str(attendee.get('email') or '').strip().lower()
+    if attendee.get('self') or not email:
+        return False
+    return 'email:' + email in rooms or ('email:' + email not in kept and graph.room_like(email, attendee.get('displayName')))
+
+
+def room_name(attendee, names=None):
+    """A booked room's name: the invite's, the one kept for it, or its address made readable ("falconheavy_room" ->
+    "Falconheavy room")."""
+    email = str(attendee.get('email') or '').strip().lower()
+    name = str(attendee.get('displayName') or '').strip()
+    if name and '@' not in name:
+        return name
+    if (names or {}).get(email):
+        return str(names[email]).strip()
+    if email.endswith('.calendar.google.com'):
+        return ''  # a Google room's address is an id, not a name
+    local = re.sub(r'[._+-]+', ' ', email.split('@')[0]).strip()
+    return local[:1].upper() + local[1:]
+
+
 def calendar_owned(metadata, owner=()):
     """Whether a meeting is the owner's: on their own calendar, or on one shared with them (someone else's) that
     they organize or are invited to and didn't decline. 'self' on a shared calendar means its owner, not them."""
@@ -4107,10 +4145,14 @@ class Store:
                               "AND coalesce(json_extract(metadata,'$.end_at'),occurred_at)>? ORDER BY occurred_at,id LIMIT 300",
                               (*account_ids, end, start)).fetchall()
         owner = {str(e).lower() for e in owner if e}
+        rooms, kept, room_names = calendar_rooms(self.connect)
         found = []
         for r in rows:
             m = json.loads(r['metadata'])
-            attendees = [a for a in m.get('attendees') or [] if isinstance(a, dict) and not a.get('resource')]  # a booked room isn't a guest
+            guests = [a for a in m.get('attendees') or [] if isinstance(a, dict)]
+            booked = [a for a in guests if a.get('resource') or calendar_room(a, rooms, kept)]
+            attendees = [a for a in guests if not any(a is b for b in booked)]  # a booked room isn't a guest: it shows under Where
+            where = [n for n in dict.fromkeys(room_name(a, room_names) for a in booked if a.get('responseStatus') != 'declined') if n]
             shared = m.get('access') == 'shared_read_only'
             mine = owner | {str(m.get('credential_account') or '').lower()}
             me = next((a for a in attendees if (str(a.get('email') or '').lower() in mine if shared else a.get('self'))), {})
@@ -4131,6 +4173,7 @@ class Store:
                 'id': r['id'], 'account_id': r['account_id'], 'title': str(r['title'])[:300], 'start': r['occurred_at'],
                 'end': m.get('end_at') or r['occurred_at'], 'all_day': bool(m.get('all_day')),
                 'location': str(m.get('location') or '')[:200], 'guests': sum(1 for a in attendees if a is not me),
+                **({'rooms': [n[:120] for n in where if n.casefold() not in str(m.get('location') or '').casefold()][:4]} if where else {}),
                 'people': list(dict.fromkeys(people))[:20], 'with': met, 'shared': ((names or {}).get(r['account_id']) or calendar_owner_name(m)) if theirs else None,
                 'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
                 **({'edit': dict(zip(('start', 'end', 'all_day'), calendar_edit_times(m)))}

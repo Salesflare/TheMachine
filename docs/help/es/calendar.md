@@ -31,6 +31,8 @@ En la cuadrícula, los eventos a la misma hora se colocan uno al lado del otro y
 
 Haz clic en una fila para abrir el chat de su tarea, la promesa o la reunión en su propio calendario. En una reunión, alguien que tu Graph conoce, y las organizaciones y proyectos de los que trata, son enlaces a su página. Mirar no cambia nada.
 
+Una sala de reuniones reservada aparece en el lugar, nunca como persona ni en tu Graph.
+
 ## Notas de reunión
 
 Los detalles de una reunión muestran sus notas. **Añadir notas** para pegar notas o una transcripción, o **Subir archivo** para un archivo Markdown o de texto. **Editar** las cambia, y **Quitar** las quita (toca dos veces). En una reunión que puedes cambiar, **Añadir notas** está debajo de su formulario.

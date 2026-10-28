@@ -31,6 +31,8 @@ Im Raster stehen Termine zur selben Zeit nebeneinander, solange jeder lesbar ble
 
 Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting in seinem eigenen Kalender zu öffnen. Bei einem Meeting sind Personen, die dein Graph kennt, und die Organisationen und Projekte, um die es geht, Links zu ihrer Seite. Ansehen ändert nichts.
 
+Ein gebuchter Besprechungsraum steht beim Ort, nie als Person oder in deinem Graph.
+
 ## Besprechungsnotizen
 
 Die Details eines Termins zeigen seine Notizen. **Notizen hinzufügen**, um Notizen oder ein Transkript einzufügen, oder **Datei hochladen** für eine Markdown- oder Textdatei. **Bearbeiten** ändert sie, und **Entfernen** nimmt sie weg (zweimal tippen). Bei einem Termin, den du ändern kannst, steht **Notizen hinzufügen** unter seinem Formular.

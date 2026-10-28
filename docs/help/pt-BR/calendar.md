@@ -31,6 +31,8 @@ Na grade, eventos no mesmo horário ficam lado a lado, e cada um continua legív
 
 Clique em uma linha para abrir o chat da tarefa, a promessa ou a reunião na própria agenda. Em uma reunião, quem o seu Graph conhece, e as organizações e projetos de que ela trata, são links para a página deles. Só olhar não muda nada.
 
+Uma sala de reunião reservada aparece no local, nunca como pessoa nem no seu Graph.
+
 ## Notas da reunião
 
 Os detalhes de uma reunião mostram as notas dela. **Adicionar notas** para colar notas ou uma transcrição, ou **Enviar arquivo** para um arquivo Markdown ou de texto. **Editar** muda as notas, e **Remover** tira elas (toque duas vezes). Numa reunião que você pode mudar, **Adicionar notas** fica embaixo do formulário.

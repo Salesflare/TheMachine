@@ -21,7 +21,7 @@ Su un computer, Invio o Ctrl+Invio (Cmd+Invio su Mac) invia e Maiusc+Invio va a 
 
 ## Modello e ragionamento
 
-Sotto la casella del messaggio, la chat mostra il suo modello e il livello di ragionamento, come "GPT-6.1 Sol" e "Ragionamento basso". Tocca uno dei due per sceglierne un altro solo per questa chat. Le nuove chat usano ciò che hai impostato in **Impostazioni**, **Modello** (vedi [Modello](model.md)).
+Sotto la casella del messaggio, la chat mostra il suo modello e il livello di ragionamento, come "GPT-6.1 Sol" e "Ragionamento basso". Tocca uno dei due per sceglierne un altro solo per questa chat. I modelli sono elencati sotto il loro provider. Le nuove chat usano ciò che hai impostato in **Impostazioni**, **Modello** (vedi [Modello](model.md)).
 
 ## Ferma una risposta
 

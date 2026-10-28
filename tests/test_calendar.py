@@ -115,6 +115,33 @@ class Calendar(unittest.TestCase):
         self.assertEqual(board['orgs'], [{'node_id': 'org:investor.example', 'name': 'Investor'}])  # not the room's venue
         self.assertEqual(board['projects'], [{'node_id': 'project:9', 'name': 'Series A'}])  # an outside guest's, not the cofounder's every project
         self.assertNotIn('declined', json.dumps(board))
+        self.assertEqual(board['rooms'], ['Falcon Meeting Room', 'Desk 4'])  # shown under Where, by the name the Graph kept
+
+    def test_a_room_by_its_address_or_name_is_where_not_who(self):
+        """A room an outside organization booked comes as a plain guest without a flag. Its address or name says it is a
+        room: it shows under Where (after the location, once), never as a person; one the owner said is a person stays."""
+        self.store.commit_page('cal', {}, [meeting('visit', {'dateTime': '2026-10-28T13:30:00+01:00'}, {'dateTime': '2026-10-28T14:30:00+01:00'}, 'Visit',
+            location='Main Street 14, Antwerp',
+            attendees=[{'email': 'owner@example.com', 'self': True, 'responseStatus': 'accepted'},
+                       {'email': 'falconheavy_room@venue.example', 'responseStatus': 'accepted'},
+                       {'email': 'atlas@hall.example', 'displayName': 'Atlas Conference Room', 'responseStatus': 'accepted'},
+                       {'email': 'r2@hall.example', 'displayName': 'Main Street 14, Antwerp', 'resource': True},
+                       {'email': 'board.room@kept.example', 'displayName': 'Boardroom Bea', 'responseStatus': 'accepted'},
+                       {'email': 'kim@client.example', 'displayName': 'Kim Client', 'responseStatus': 'accepted'}]),
+            meeting('rooms', {'dateTime': '2026-10-28T15:00:00+01:00'}, {'dateTime': '2026-10-28T16:00:00+01:00'}, 'Room only',
+            attendees=[{'email': 'owner@example.com', 'self': True, 'responseStatus': 'accepted'},
+                       {'email': 'c_9@resource.calendar.google.com', 'resource': True},
+                       {'email': 'falconheavy_room@venue.example', 'responseStatus': 'accepted'}])])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_resources(identifier,resource,source,event_id,name,created_at) "
+                       "VALUES('email:board.room@kept.example',0,'owner',NULL,'Boardroom Bea','2026-10-27')")
+        week = {m['title']: m for m in self.store.calendar(['cal'], *self.week, owner={'owner@example.com'})}
+        visit = week['Visit']
+        self.assertEqual([w['email'] for w in visit['with']], ['board.room@kept.example', 'kim@client.example'])
+        self.assertEqual(visit['guests'], 2)
+        self.assertEqual((visit['location'], visit['rooms']), ('Main Street 14, Antwerp', ['Falconheavy room', 'Atlas Conference Room']))
+        only = week['Room only']
+        self.assertEqual((only['with'], only['guests'], only['location'], only['rooms']), ([], 0, '', ['Falconheavy room']))
 
     def test_the_week_is_slim_rows_soonest_first(self):
         rows = self.store.calendar(['cal'], *self.week)
