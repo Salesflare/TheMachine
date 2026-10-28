@@ -33,7 +33,7 @@ const open=async({width=1440,height=900,scheme='light',time=DAY}={})=>{
  await page.locator('#suggestions .all-clear .poke-line').waitFor();
  if(language==='nl')await page.waitForFunction(()=>document.documentElement.lang==='nl');
  return [context,page]};
-const line=page=>page.locator('#suggestions .all-clear .poke-line').innerText();
+const raw=page=>page.locator('#suggestions .all-clear .poke-line').innerText(),line=async page=>(await raw(page)).replace(/\u00a0/g,' ');
 const EN=[/^Peeked at everything 52 minutes ago\. All quiet\.$/,/^Last snooped around 52 minutes ago\. Nothing to report\.$/,/^Checked in 52 minutes ago\. Back to my nap\.$/];
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -49,7 +49,7 @@ try{
   [context,page]=await open({time:DAY+d*864e5});reviewHealth.last_completed=new Date(DAY+d*864e5-52*60000).toISOString();
   await page.evaluate(()=>refresh());
   const text=await line(page);
-  assert.ok(EN.some(r=>r.test(text)),text);assert.doesNotMatch(text,/signal|10,808|wait/);
+  assert.ok(EN.some(r=>r.test(text)),text);assert.match(await raw(page),/52\u00a0minutes\u00a0ago/,'the time does not break');assert.doesNotMatch(text,/signal|10,808|wait/);
   await page.evaluate(()=>refresh());assert.equal(await line(page),text,'same wording within a day');
   seen.add(text);await context.close();
  }
@@ -57,7 +57,7 @@ try{
  // Dutch.
  language='nl';reviewHealth.last_completed=new Date(DAY-52*60000).toISOString();
  [context,page]=await open();
- assert.match(await line(page),/52 minuten geleden/);assert.doesNotMatch(await line(page),/signal|wacht/);
+ assert.match(await raw(page),/52\u00a0minuten\u00a0geleden/);assert.doesNotMatch(await line(page),/signal|wacht/);
  await context.close();
  if(shots){language='en';
   for(const scheme of ['light','dark'])for(const [width,height] of [[1440,900],[390,844]]){
