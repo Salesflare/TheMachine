@@ -39,7 +39,7 @@ Les détails d’une réunion ont deux parties. **Notes** est le résumé : déc
 
 Chacune a son propre **Ajouter des notes** ou **Ajouter une transcription**, **Importer un fichier** pour un fichier Markdown ou texte, **Modifier** et **Retirer** (touchez deux fois). Ce qui est dans l’une y reste. Sur une réunion que vous pouvez modifier, **Notes** sous son formulaire les ouvre.
 
-Avec [Zoom](zoom.md) connecté, son résumé apparaît dans Notes et sa transcription dans Transcription, marqués **De Zoom**. Zoom ne remplace jamais ce que vous avez ajouté : quand les deux existent, les deux s’affichent.
+Avec [Zoom](zoom.md) ou [Google Meet](google-meet.md) connecté, ses notes apparaissent dans Notes et sa transcription dans Transcription, marquées **De Zoom** ou **De Google Meet**. Elles ne remplacent jamais ce que vous avez ajouté : quand les deux existent, les deux s’affichent.
 
 The Machine peut aussi les ajouter. Demandez-le sur une tâche, par exemple "ajoute cette transcription au conseil d’administration d’aujourd’hui". Une transcription va dans Transcription, un résumé dans Notes. Une réunion qui en a affiche **Notes** ou **Transcription** dans le calendrier.
 

@@ -39,7 +39,7 @@ A meeting's details have two parts. **Notes** is the summary: decisions and acti
 
 Each has its own **Add notes** or **Add transcript**, **Upload file** for a Markdown or text file, **Edit** and **Remove** (tap twice). What goes in one stays there. On a meeting you can change, **Notes** under its form opens them.
 
-With [Zoom](zoom.md) connected, its summary shows in Notes and its transcript in Transcript, marked **From Zoom**. Zoom never replaces what you added: when both are there, both show.
+With [Zoom](zoom.md) or [Google Meet](google-meet.md) connected, its notes show in Notes and its transcript in Transcript, marked **From Zoom** or **From Google Meet**. They never replace what you added: when both are there, both show.
 
 The Machine can add them too. Ask on a to-do, like "add this transcript to today's board meeting". A transcript goes in Transcript, a summary in Notes. A meeting with them says **Notes** or **Transcript** in the Calendar.
 

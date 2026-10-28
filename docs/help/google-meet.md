@@ -12,6 +12,8 @@ Transcripts and Gemini notes of Google Meet meetings you organized, once Meet ha
 
 Meet only makes them when transcripts or Gemini notes were turned on during the meeting.
 
+Each one is matched to the meeting in your calendar at the same time. Gemini's notes show in that meeting's Notes and the transcript in its Transcript, marked **From Google Meet**, next to anything you added there; they never replace it.
+
 ## What it can do
 
 Nothing in Meet or Drive. It only reads, and it never turns on transcripts itself.

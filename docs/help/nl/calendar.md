@@ -39,7 +39,7 @@ De details van een vergadering hebben twee delen. **Notities** is de samenvattin
 
 Elk heeft zijn eigen **Notities toevoegen** of **Transcript toevoegen**, **Bestand uploaden** voor een Markdown- of tekstbestand, **Bewerken** en **Verwijderen** (tik twee keer). Wat in het ene staat, blijft daar. Bij een vergadering die je kunt wijzigen opent **Notities** onder het formulier ze.
 
-Met [Zoom](zoom.md) gekoppeld staat de samenvatting in Notities en het transcript in Transcript, met **Van Zoom** erbij. Zoom vervangt nooit wat jij toevoegde: staan ze er allebei, dan zie je ze allebei.
+Met [Zoom](zoom.md) of [Google Meet](google-meet.md) gekoppeld staan de notities in Notities en het transcript in Transcript, met **Van Zoom** of **Van Google Meet** erbij. Ze vervangen nooit wat jij toevoegde: staan ze er allebei, dan zie je ze allebei.
 
 The Machine kan ze ook toevoegen. Vraag het op een to-do, zoals "zet dit transcript bij de bestuursvergadering van vandaag". Een transcript komt in Transcript, een samenvatting in Notities. Een vergadering met een van beide toont **Notities** of **Transcript** in de agenda.
 

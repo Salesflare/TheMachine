@@ -5,8 +5,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A meeting's details in the Calendar show its two records apart (meeting_notes.py): Notes first and open, then its
-// Transcript folded under "Transcript · 2h 03m" until Show. Each shows what was added to the meeting and Zoom's,
-// marked From Zoom, both when both are there. Add, Upload, Edit and Remove change only their own field: a transcript
+// Transcript folded under "Transcript · 2h 03m" until Show. Each shows what was added to the meeting and the meeting
+// app's, marked From Zoom or From Google Meet, both when both are there. Add, Upload, Edit and Remove change only their own field: a transcript
 // saved under Transcript is sent as field transcript, and nothing is moved between the two. Nothing is wider than
 // the screen. MEETING_SHOT=<dir> writes the dialog at 1440x900, 1440x700 and 390x844 in light and dark.
 process.env.TZ='Europe/Brussels';
@@ -19,11 +19,15 @@ const meetings=[
  {id:201,account_id:'cal',title:'Board meeting Q4',start:iso(at(0,10)),end:iso(at(0,12)),all_day:false,location:'Room 2',guests:3,
   with:[{name:'Dana Board',email:'dana@board.example'},{name:'Sam Investor',email:'sam@fund.example'}],url:'https://calendar.google.com/calendar/event?eid=board',
   notes:{by:'machine',at:now,chars:120},transcript:{by:'machine',at:now,chars:turns.length}},
- {id:202,account_id:'cal',title:'Pilot call with Northwind',start:iso(at(0,15)),end:iso(at(0,15,45)),all_day:false,location:'Zoom',guests:1,url:null}];
+ {id:202,account_id:'cal',title:'Pilot call with Northwind',start:iso(at(0,15)),end:iso(at(0,15,45)),all_day:false,location:'Zoom',guests:1,url:null},
+ {id:203,account_id:'cal',title:'Design review',start:iso(at(0,16)),end:iso(at(0,17)),all_day:false,location:'Google Meet',guests:2,url:null,notes:{by:'owner',at:now,chars:30}}];
 const owned={
  201:{notes:{id:9,text:'## Decisions\n\n- Hire two engineers in Q1\n- Budget approved as proposed\n\n## Action items\n\n- Dana sends the updated deck by Friday\n- Sam shares the term sheet draft',by:'machine',at:now,chars:120,next_offset:null},
       transcript:{id:10,text:turns,by:'machine',at:now,chars:turns.length,next_offset:null,minutes:123},
       zoom:{notes:{id:11,title:'Board meeting Q4',text:'**Summary**\n\nThe board reviewed Q3 results and approved the hiring plan.',chars:70,next_offset:null},transcript:null,url:'https://us02web.zoom.us/doc/board'}},
+ 203:{notes:{id:30,text:'Ask Robin for the final mockups.',by:'owner',at:now,chars:32,next_offset:null},transcript:null,zoom:null,
+      google_meet:{notes:{id:31,title:'Meeting notes',text:'### Summary\n\nThe team picked the second layout and moves the launch to next week.',chars:80,next_offset:null,url:'https://docs.google.com/document/d/notes-doc/edit'},
+       transcript:{id:32,title:'Meeting transcript',text:'Robin: The second layout reads better.\nAlex: Agreed, let’s move the launch.',chars:75,next_offset:null,minutes:52,truncated:false,url:'https://docs.google.com/document/d/tr-doc/edit'},url:'https://docs.google.com/document/d/notes-doc/edit'}},
  202:{notes:null,transcript:null,zoom:{notes:{id:12,title:'Pilot call',text:'Northwind starts the pilot on Monday.',chars:36,next_offset:null},transcript:{id:13,title:'Pilot call',text:'Robin: We can start Monday.\nOwner: Great, I’ll send the plan.',chars:60,next_offset:null,minutes:44,truncated:false},url:null}}};
 let posts=[];const notes201={...owned[201].notes};
 const state=()=>({suggestions:[{id:'a'.repeat(16),title:'Prep the board follow-ups',body:'Made-up card.',status:'pending',scope:'work',created_at:now,event_ids:[]}],promises:[],connectors:[{id:'cal',email:'owner@example.com',service:'calendar',status:'ok'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]}});
@@ -109,10 +113,28 @@ try{
   assert.ok(await page.evaluate(()=>!!($('#cal-v-tr-zoom').compareDocumentPosition($('#cal-v-tr-add'))&Node.DOCUMENT_POSITION_FOLLOWING)));
   await fits(page);
   if(process.env.MEETING_SHOT)await page.screenshot({path:`${process.env.MEETING_SHOT}/meeting-1440x900-zoom-only.png`});
+  await page.keyboard.press('Escape');
+  // Google Meet's: Gemini's notes under the owner's own notes and their buttons, the transcript in Transcript, each
+  // marked From Google Meet and opening its own Google Doc
+  await view(page,203);
+  assert.ok(await shown(page,'#cal-v-notes-body'));assert.match(await page.locator('#cal-v-notes-body').textContent(),/final mockups/);
+  assert.ok(await shown(page,'#cal-v-notes-meet'));assert.ok(!await shown(page,'#cal-v-notes-zoom'));
+  assert.equal(await page.locator('#cal-v-notes-meet .cal-v-from').textContent(),'From Google Meet');
+  assert.match(await page.locator('#cal-v-notes-meet-body').textContent(),/second layout/);
+  assert.equal(await page.locator('#cal-v-notes-meet-open').getAttribute('href'),'https://docs.google.com/document/d/notes-doc/edit');
+  assert.ok(await page.evaluate(()=>!!($('#cal-v-notes-edit').compareDocumentPosition($('#cal-v-notes-meet'))&Node.DOCUMENT_POSITION_FOLLOWING)));
+  assert.equal(await page.locator('#cal-v-tr-h').textContent(),'Transcript · 52m');
+  await page.locator('#cal-v-tr-toggle').click();assert.ok(await shown(page,'#cal-v-tr-meet'));assert.ok(await shown(page,'#cal-v-tr-add'));
+  assert.match(await page.locator('#cal-v-tr-meet-body').textContent(),/Robin: The second layout/);
+  assert.equal(await page.locator('#cal-v-tr-meet-open').getAttribute('href'),'https://docs.google.com/document/d/tr-doc/edit');
+  await fits(page);
+  if(process.env.MEETING_SHOT)for(const scheme of ['dark','light']){await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(300);await page.screenshot({path:`${process.env.MEETING_SHOT}/meeting-1440x900-${scheme}-meet.png`})}
   await context.close()}
  for(const [w,h] of [[1440,700],[390,844]])for(const scheme of ['dark','light']){const {context,page}=await open(w,h,scheme);
   owned[201].transcript={id:10,text:turns,by:'machine',at:now,chars:turns.length,next_offset:null,minutes:123};owned[201].notes={...notes201};
   await view(page,201);await fits(page);
+  if(process.env.MEETING_SHOT&&w<600){await page.evaluate(()=>$('#cal-view').close());await view(page,203);await page.locator('#cal-v-tr-toggle').click();await fits(page);
+   await page.screenshot({path:`${process.env.MEETING_SHOT}/meeting-${w}x${h}-${scheme}-meet.png`});await page.evaluate(()=>$('#cal-view').close());await view(page,201)}
   if(process.env.MEETING_SHOT){await page.screenshot({path:`${process.env.MEETING_SHOT}/meeting-${w}x${h}-${scheme}-folded.png`});
    await page.locator('#cal-v-tr-toggle').click();await page.waitForTimeout(100);await page.locator('#cal-v-tr-h').scrollIntoViewIfNeeded();await page.screenshot({path:`${process.env.MEETING_SHOT}/meeting-${w}x${h}-${scheme}-open.png`})}
   await context.close()}

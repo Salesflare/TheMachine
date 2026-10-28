@@ -99,6 +99,7 @@ class GoogleMeetTests(unittest.TestCase):
             self.assertRegex(meta['thread_id'], r'^[0-9a-f]{64}$')
             self.assertTrue(meta['source_url'].startswith('https://docs.google.com/document/d/'))
             self.assertFalse(meta['truncated'])
+            self.assertEqual((meta['start_at'], meta['end_at']), (START, '2026-10-27T10:00:00+00:00'))  # the call's times, to match its meeting
             self.assertFalse(row['deleted'])
         self.assertEqual(rows[0]['body'], self.documents['smartNotes-doc-1'])
         self.assertEqual(rows[1]['body'], self.documents['transcripts-doc-1'])
@@ -262,12 +263,15 @@ class GoogleMeetTests(unittest.TestCase):
                 self.assertEqual(self.rows(), [])
 
     def test_response_limits_and_document_clipping_are_explicit(self):
-        self.documents['transcripts-doc-1'] = 'x' * 40001
+        self.documents['transcripts-doc-1'] = 'x' * 400001
+        self.documents['smartNotes-doc-1'] = 'y' * 40001
         self.sync()
         row = next(row for row in self.rows() if row['kind'].endswith('transcript'))
-        self.assertEqual(len(row['body']), 40000)
+        self.assertEqual(len(row['body']), 400000)
         self.assertTrue(json.loads(row['metadata'])['truncated'])
-        self.assertEqual(json.loads(row['metadata'])['body_chars'], 40001)
+        self.assertEqual(json.loads(row['metadata'])['body_chars'], 400001)
+        notes = next(row for row in self.rows() if row['kind'].endswith('notes'))
+        self.assertEqual(len(notes['body']), 40000)
         with patch.object(meet, 'MAX_BYTES', 10):
             with self.assertRaisesRegex(a.SourceError, '^google_meet_response_too_large$'):
                 self.sync()
