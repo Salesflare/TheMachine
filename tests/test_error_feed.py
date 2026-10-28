@@ -127,6 +127,36 @@ class Scrub(Base):
             for word in ('riverbrook', 'laboratory', 'maple', 'private_customer', 'RiverbrookError'):
                 self.assertNotIn(word, cleaned)
 
+    def test_common_errors_keep_the_words_that_say_what_broke(self):
+        # 2026-10-28: the finite vocabulary turned these into "<word> is not <word>" or nothing at all
+        for message in ('database is locked', 'maximum recursion depth exceeded', 'too many values to unpack (expected 2)',
+                        'NetworkError when attempting to fetch resource.', 'Failed to fetch.', 'QuotaExceededError'):
+            with self.subTest(message=message):
+                out = ef.normalize(message)
+                self.assertTrue(out and ef.allowed(out), out)
+                self.assertNotIn('<word>', out)
+
+    def test_a_source_error_keeps_its_service_and_which_http_status(self):
+        # 2026-10-28, right after release-20261028-2110: a CRM sync error arrived as "<word>: HTTP_ <n>", so a 401 (the
+        # key turned down) couldn't be told from a 429 (slow down) or a 500 (their side)
+        said = {code: ef.normalize(f'salesflare:HTTP_{code}') for code in (401, 403, 429, 500)}
+        self.assertEqual(said[401], 'salesflare: HTTP unauthorized')
+        self.assertEqual(said[429], 'salesflare: HTTP rate limited')
+        self.assertEqual(len(set(said.values())), 4)
+        for out in said.values():
+            self.assertTrue(ef.allowed(out), out)
+            self.assertNotRegex(out, r'\d{3}')  # the control plane takes no 3-digit numbers
+        for code in ('trello_http:HTTP_404', 'google_meet_invalid_page', 'hubspot_query_failed:HTTP_502', 'x_rate_limited'):
+            self.assertNotIn('<word>', ef.normalize(code), code)
+        # A code made of words that aren't ours, or free text after the service, is still taken out
+        self.assertEqual(ef.normalize('riverbrook_maple_contract'), '<word>')
+        self.assertEqual(ef.normalize('salesflare: deal for riverbrook maple', names=['riverbrook']), 'salesflare: <word> for <name> <word>')
+
+    def test_every_connector_is_a_service_the_feed_keeps(self):
+        root = Path(ef.__file__).resolve().parent / 'connectors'
+        for stem in (p.stem for p in root.glob('*.py') if not p.stem.startswith('_')):
+            self.assertTrue(ef.safe_word(stem), f'{stem}: add it to error_feed.SERVICES')
+
     def test_the_shape_check_refuses_anything_else(self):
         for bad in ('Sam’s card', 'naïve', 'a' * 200, 'x\ny', "it's"):
             self.assertFalse(ef.allowed(bad), bad)
@@ -299,8 +329,8 @@ class Sources(Base):
         store.failed('other-slack', a.SourceError('slack:conversations.history', 403))
         with store.connect() as db:
             rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
-        self.assertEqual(rows, [('slack: conversations.history: HTTP_ <n>', 'sync:other-slack'),
-                                ('slack: conversations.history: HTTP_ <n>', 'sync:work-slack')])
+        self.assertEqual(rows, [('slack: conversations.history: HTTP forbidden', 'sync:other-slack'),
+                                ('slack: conversations.history: HTTP rate limited', 'sync:work-slack')])
 
     def test_a_failed_agent_job_names_the_tool_and_kind_only(self):
         store = a.Store(self.path)

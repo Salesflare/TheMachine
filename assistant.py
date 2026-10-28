@@ -14477,8 +14477,12 @@ class App:
             handoffs = notify.take_handoffs(db)
             subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')] if pushes else []
         went = []
+        if pushes and not (subscriptions and self.config.get('dashboard_host')):
+            with self.store.connect() as db:
+                notify.delivered(db, pushes)  # nowhere to push to: dropped, not kept to go off later
+            pushes = []
         for item in pushes:
-            if subscriptions and self.config.get('dashboard_host') and push_send(self.store, self.config, subscriptions, item['payload'], 'held', push, kind=item['kind'], held=True):
+            if push_send(self.store, self.config, subscriptions, item['payload'], 'held', push, kind=item['kind'], held=True):
                 with self.store.connect() as db:
                     notify.delivered(db, [item])
                 went.append('push')

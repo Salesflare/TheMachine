@@ -173,6 +173,24 @@ class Google(unittest.TestCase):
         self.assertTrue(state['coverage_complete'])
         self.assertEqual(state['since'], NOW)
 
+    def test_shared_with_me_pages_stop_at_the_window_not_the_whole_drive_history(self):
+        original, asked = self.fake.respond, []
+        def pages(request, data=None, timeout=None):
+            url = urllib.parse.urlsplit(request.full_url)
+            q = dict(urllib.parse.parse_qsl(url.query))
+            if url.path == '/drive/v3/files' and 'sharedWithMe = true and trashed' in q['q']:
+                asked.append(q.get('pageToken'))
+                old = '2025-01-01T00:00:00.000Z'  # years of shares, newest first: this page already ends before the window
+                return Response(json.dumps({'files': [dict(SHARED, id=f's{i}', sharedWithMeTime=old) for i in range(25)],
+                                            'nextPageToken': 'older'}).encode())
+            if url.path == '/drive/v3/files':
+                return Response(b'{"files": []}')
+            return original(request, data, timeout)
+        with patch('urllib.request.OpenerDirector.open', side_effect=pages):
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for())
+        self.assertEqual(asked, [None])
+        self.assertTrue(self.store.checkpoint(ACCOUNT['id'])['coverage_complete'])
+
     def test_without_the_docs_consent_it_says_to_connect_google_docs(self):
         self.fake.granted = {'https://www.googleapis.com/auth/gmail.readonly'}
         with self.assertRaises(a.SourceError) as caught:

@@ -37,11 +37,12 @@ def provider_of(model):
 
 
 def for_model(usage, model):
-    """Only the selected runtime's quota. Unknown selection retains the conservative existing behavior."""
+    """Only the selected runtime's quota. An unknown selection, or one whose provider reports no usage under a name
+    we recognize, keeps all of it: pacing on the wrong quota only waits, no pacing at all could use up the plan."""
     provider = provider_of(model)
     if not provider:
         return usage
-    return [p for p in usage or [] if provider_of(str(p.get('provider') or '') + '/') == provider]
+    return [p for p in usage or [] if provider_of(str(p.get('provider') or '') + '/') == provider] or usage
 
 
 def window_kind(label):

@@ -234,6 +234,8 @@ class ProviderIsolation(unittest.TestCase):
         self.assertIsNone(b.pause(b.for_model(usage, 'openai/gpt-6.1-sol'), NOW))
         self.assertTrue(b.pause(b.for_model(usage, 'claude-cli/opus'), NOW))
         self.assertEqual(b.for_model(usage, None), usage)
+        # A provider name we don't map (or no usage reported for the selected one) never turns pacing off
+        self.assertEqual(b.for_model(usage, 'google-gemini-cli/gemini-3-pro'), usage)
 
     def test_app_checks_only_the_current_provider_and_releases_a_previous_provider_hold(self):
         app = object.__new__(a.App); app.config = {}; app.model_usage = [

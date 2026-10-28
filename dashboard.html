@@ -3786,13 +3786,13 @@ function outboxFlush(){return outbox.busy||(outbox.busy=(async()=>{await outboxL
    try{while(it.steps.length){await decidePost(it.sid,it.steps[0]);it.steps.shift();if(it.steps.length)await outboxSave()}}
    catch(e){it.sending=false;if(e.offline){netSet(true,e.restarting);outboxRetry();return}
     if(e.sessionGone||e.status===401||e.status===403){netPaint();return}
-    accepted=false;if(it.kind==='other'&&it.text)chatDraftKeep(it.sid,it.text);toast(t('A waiting change couldn’t be saved: {}',e.message),true)}
+    accepted=false;if(it.kind==='other'&&it.text)chatDraftReturn(it.sid,it.text);toast(t('A waiting change couldn’t be saved: {}',e.message),true)}
    if(outbox.items[0]===it)outbox.items.shift();if(accepted)saved++;await outboxSave()}
   outbox.wait=0}
  finally{outbox.busy=null;netPaint();if(saved){toast(t('Back online. Your waiting changes are saved.'));refresh().catch(()=>{});if(chatId)chatPoll()}}})())}
 function outboxCancel(id){const i=outbox.items.findIndex(x=>x.id===id);if(i<0||outbox.items[i].sending)return false;const [it]=outbox.items.splice(i,1);outboxSave();
  // A chat message that didn't go comes back into the box, so nothing typed is lost
- if(it.kind==='other'&&it.text&&chatId===it.sid){const input=$('#chat-input');if(input&&!input.value.trim()){input.value=it.text;chatGrow(input);chatSendState()}}
+ if(it.kind==='other'&&it.text)chatDraftReturn(it.sid,it.text);
  return true}
 const OUTBOX_LINE={snooze:'Snooze saves when you’re back online.',reject:'Not needed saves when you’re back online.',complete:'Done saves when you’re back online.',
  reopen:'Reopen saves when you’re back online.',undo:'Reopen saves when you’re back online.',other:'Your note sends when you’re back online.'};
@@ -3828,6 +3828,10 @@ function chatDraftKeep(id,text){if(!id)return;chatDraftTouched.add(id);text=Stri
 function chatDraftsSave(){clearTimeout(chatDraftTimer);chatDraftTimer=null;return localCache.put('chat-drafts',Object.fromEntries(chatDrafts))}
 addEventListener('pagehide',()=>{if(chatDraftTimer)chatDraftsSave()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&chatDraftTimer)chatDraftsSave()});
 const chatDraftsLoaded=localCache.read('chat-drafts').then(hit=>{for(const [k,v] of Object.entries(hit?.value||{}))if(typeof v==='string'&&!chatDraftTouched.has(k)&&!chatDrafts.has(k))chatDrafts.set(k,v)}).catch(()=>{});
+// A chat message that didn't go (canceled, or refused) back into its draft, before what was typed since: never over it
+async function chatDraftReturn(id,text){await chatDraftsLoaded;const input=$('#chat-input'),open=id===chatId&&input;
+ const merged=[text,(open?input.value:chatDrafts.get(id))||''].filter(x=>x.trim()).join('\n\n');chatDraftKeep(id,merged);
+ if(open){input.value=merged;chatGrow(input);chatSendState()}}
 async function chatDraftBack(id){await chatDraftsLoaded;const text=chatDrafts.get(id),input=$('#chat-input');if(!text||id!==chatId||!input||input.value.trim())return;input.value=text;chatGrow(input);chatSendState()}
 
 // Skills (skills.py): the owner's how-tos, written to OpenClaw's workspace; shared ones are read here and installed by the owner.
