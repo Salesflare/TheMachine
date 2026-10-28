@@ -16289,6 +16289,10 @@ class App:
         enabled = settings.get('enabled')
         if enabled:  # reviews just turned on: the first look's cards that want a draft get one
             self.store.prepare_first_look(int(self.config.get('prepare_ahead_per_day', 10)) if self.config.get('prepare_ahead', True) is not False else 0)
+            # The reviews take over from the first look: its last state from before ("due") would stay in the health
+            # report for good, with "first to-dos in about N min" that never come (first_cards_report)
+            with self.store.connect() as db:
+                self.store.note_first_look(db, None)
         if not enabled:
             # Reviews off: only a preview runs (and is monitored) here: the owner's, or the first look
             # The Machine starts by itself once a model and a source are there.

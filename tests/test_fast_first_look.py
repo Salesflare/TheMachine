@@ -196,6 +196,20 @@ class FastFirstLook(unittest.TestCase):
             self.assertEqual(report['full']['status'], 'ok')
             self.assertEqual(self.app.quick_first_review(db), 0)  # once
 
+    def test_once_reviews_are_on_the_first_looks_last_state_leaves_the_report(self):
+        # A first look noted "due" with reviews off, then reviews went on (2026-10-27): the report kept "due" and
+        # "first to-dos in about 4 min" for hours, with nothing left to review
+        with self.store.connect() as db:
+            self.store.note_first_look(db, {'state': 'due', 'quick': True, 'waiting': 14})
+            report = a.first_cards_report(db, self.app.config['accounts'])
+        self.assertEqual((report['look']['state'], report['eta_minutes']), ('due', 4))
+        self.app.config.update(review_worker={'enabled': True}, delivery_enabled=True)
+        self.assertIsNone(self.step(Runner()))  # nothing waiting
+        with self.store.connect() as db:
+            report = a.first_cards_report(db, self.app.config['accounts'])
+        self.assertNotIn('look', report)
+        self.assertNotIn('eta_minutes', report)
+
     def test_an_install_that_reviewed_before_gets_no_quick_review(self):
         self.app.config.update(review_worker={'enabled': True}, delivery_enabled=True)
         with self.store.connect() as db:
