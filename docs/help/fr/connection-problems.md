@@ -12,6 +12,7 @@ Ouvrez **Connexions**. Chaque source indique son état :
 
 - **Reconnexion automatique** : un petit accroc. Elle réessaie d’elle-même.
 - **En attente de la première synchro** : tout juste connectée. Laissez-lui quelques minutes.
+- **Lit à nouveau à** 07:00 : X et LinkedIn ne lisent qu’en journée. Rien à faire.
 - **Attend votre aide** : ouvrez **Détails**. Elle dit ce qui n’a pas marché et quoi faire.
 
 Le nombre sur **Connexions** ne compte que les sources qui attendent votre aide.

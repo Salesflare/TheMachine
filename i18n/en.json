@@ -2418,6 +2418,7 @@
  "Reading the last days again to fill a gap.": "Reading the last days again to fill a gap.",
  "Reads OpenClaw’s synced messages. Live phone sync is managed separately.": "Reads OpenClaw’s synced messages. Live phone sync is managed separately.",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Reads accounts, contacts, emails and meetings. Changes nothing.",
+ "Reads again at {}": "Reads again at {}",
  "Reads everything. Sends nothing you didn’t approve.": "Reads everything. Sends nothing you didn’t approve.",
  "Reads only": "Reads only",
  "Reads only. Never replies.": "Reads only. Never replies.",

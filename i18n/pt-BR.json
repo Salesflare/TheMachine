@@ -2418,6 +2418,7 @@
  "Reading the last days again to fill a gap.": "Lendo os últimos dias de novo para cobrir uma lacuna.",
  "Reads OpenClaw’s synced messages. Live phone sync is managed separately.": "Lê as mensagens sincronizadas do OpenClaw. A sincronização ao vivo do celular é gerenciada à parte.",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Lê contas, contatos, e-mails e reuniões. Não altera nada.",
+ "Reads again at {}": "Lê de novo às {}",
  "Reads everything. Sends nothing you didn’t approve.": "Lê tudo. Não envia nada que você não aprovou.",
  "Reads only": "Só leitura",
  "Reads only. Never replies.": "Só lê. Nunca responde.",

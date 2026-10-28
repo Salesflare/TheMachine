@@ -12,6 +12,7 @@ Apri **Connessioni**. Ogni fonte dice come sta andando:
 
 - **Riconnessione automatica**: un breve intoppo. Riprova da sola.
 - **In attesa della prima sincronizzazione**: appena collegata. Aspetta qualche minuto.
+- **Legge di nuovo alle** 07:00: X e LinkedIn leggono solo di giorno. Non serve fare nulla.
 - **Serve il tuo aiuto**: apri **Dettagli**. Spiega cosa è andato storto e cosa fare.
 
 Il numero su **Connessioni** conta solo le fonti a cui serve il tuo aiuto.

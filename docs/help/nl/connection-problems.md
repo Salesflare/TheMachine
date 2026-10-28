@@ -12,6 +12,7 @@ Open **Koppelingen**. Elke bron laat zien hoe het ermee gaat:
 
 - **Verbindt automatisch opnieuw**: een korte hapering. Hij probeert het zelf opnieuw.
 - **Wacht op eerste sync**: net gekoppeld. Geef hem een paar minuten.
+- **Leest weer om** 07:00: X en LinkedIn lezen alleen overdag. Je hoeft niets te doen.
 - **Heeft je hulp nodig**: open **Details**. Daar staat wat er misging en wat je moet doen.
 
 Het getal bij **Koppelingen** telt alleen bronnen die je hulp nodig hebben.

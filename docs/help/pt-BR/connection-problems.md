@@ -12,6 +12,7 @@ Abra **Conexões**. Cada fonte mostra como está:
 
 - **Reconectando automaticamente**: uma falha rápida. Ela tenta de novo sozinha.
 - **Aguardando a primeira sincronização**: acabou de conectar. Espere alguns minutos.
+- **Lê de novo às** 07:00: X e LinkedIn só leem durante o dia. Não precisa fazer nada.
 - **Precisa da sua ajuda**: abra **Detalhes**. Ali diz o que deu errado e o que fazer.
 
 O número em **Conexões** só conta as fontes que precisam da sua ajuda.

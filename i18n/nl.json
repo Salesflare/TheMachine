@@ -2418,6 +2418,7 @@
  "Reading the last days again to fill a gap.": "Leest de laatste dagen opnieuw om een gat te vullen.",
  "Reads OpenClaw’s synced messages. Live phone sync is managed separately.": "Leest de gesynchroniseerde berichten van OpenClaw. Live sync met je telefoon wordt apart beheerd.",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Leest accounts, contacten, e-mails en afspraken. Verandert niets.",
+ "Reads again at {}": "Leest weer om {}",
  "Reads everything. Sends nothing you didn’t approve.": "Leest alles. Verstuurt niets wat je niet goedkeurde.",
  "Reads only": "Alleen lezen",
  "Reads only. Never replies.": "Alleen lezen. Antwoordt nooit.",

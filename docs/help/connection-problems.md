@@ -12,6 +12,7 @@ Open **Connections**. Each source says how it's doing:
 
 - **Reconnecting automatically**: a short hiccup. It retries by itself.
 - **Waiting for first sync**: just connected. Give it a few minutes.
+- **Reads again at** 07:00: X and LinkedIn only read during the day. Nothing to do.
 - **Needs your help**: open **Details**. It says what went wrong and what to do.
 
 The number on **Connections** only counts sources that need your help.

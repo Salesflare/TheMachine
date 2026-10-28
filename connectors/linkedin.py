@@ -25,6 +25,8 @@ import subprocess
 import urllib.parse
 from pathlib import Path
 
+# Reads only from start to end hour, local time (an account's active_hours overrides it); the dashboard says when it reads again.
+READ_HOURS = (7, 22)
 KINDS = {'linkedin.message': 'LinkedIn'}
 # For `assistant connect linkedin`: the account it adds (see docs/adding-a-source.md).
 SETUP = {'label': 'LinkedIn', 'what': 'Your LinkedIn messages.',
@@ -134,7 +136,7 @@ def profiles(data):
 def sync(store, config, account, helpers, source=None):
     # Browser reads with no official API: keep them rare and in waking hours.
     current = dt.datetime.fromisoformat(helpers.now())
-    start, end = account.get('active_hours', [7, 22])
+    start, end = account.get('active_hours', READ_HOURS)
     if not start <= current.astimezone(helpers.local_tz()).hour < end:
         return {'mode': 'incremental', 'events': 0}
     source = source or Source(config, account, helpers)

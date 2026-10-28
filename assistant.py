@@ -7688,6 +7688,7 @@ class Store:
                                              'boundary_by': account.get('boundary_by'),
                                              'service': account.get('service', 'gmail'),
                                              'poll_seconds':account.get('poll_seconds',300),
+                                             'read_window': read_window(account),
                                              'display_name': account.get('display_name') or account.get('email') or account['id'],
                                              **(dict(row) if row else {}), **dict(counts), **channel_health})
             # Newest first: the dashboard shows the top few and says when each happened.
@@ -8777,6 +8778,28 @@ def load_connector(service):
         spec.loader.exec_module(module)
         _connectors[service] = module
     return _connectors[service]
+
+
+def read_window(account, at=None):
+    """A source that reads only in set hours (X, LinkedIn: the connector's READ_HOURS, or the account's active_hours):
+    when today's window opened and, outside it, when it reads again. The dashboard counts staleness from the opening, so
+    a source paused overnight never reads as stale. None for a source that reads around the clock."""
+    plugin = load_connector(account.get('service'))
+    hours = account.get('active_hours') or getattr(plugin, 'READ_HOURS', None)
+    try:
+        start, end = int(hours[0]), int(hours[1])
+    except (TypeError, ValueError, IndexError):
+        return None
+    if not 0 <= start < end <= 24 or (start == 0 and end == 24):
+        return None
+    local = dt.datetime.fromisoformat(at or now()).astimezone(local_tz())
+    opens = local.replace(hour=start, minute=0, second=0, microsecond=0)
+    utc = lambda d: d.astimezone(dt.timezone.utc).isoformat()
+    if start <= local.hour < end:
+        return {'hours': [start, end], 'opened_at': utc(opens)}
+    if local.hour >= end:
+        opens += dt.timedelta(days=1)  # aware arithmetic keeps the wall clock, so it's right across a DST change too
+    return {'hours': [start, end], 'reads_again_at': utc(opens)}
 
 
 def source_kind(kind):

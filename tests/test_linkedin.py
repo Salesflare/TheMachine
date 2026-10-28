@@ -413,3 +413,27 @@ class Tabs(unittest.TestCase):
                 with patch.object(reader, 'oc', slow), self.assertRaises(reader.Fail):
                     reader.with_tab('https://example.test', lambda target: None)
                 self.assertEqual(tabs, {'OWNER', 'UNRELATED'}, name)
+
+
+class ReadWindow(unittest.TestCase):
+    """Sources with read hours tell the dashboard when they read again, so a night's pause never reads as stale."""
+    def test_when_it_opened_and_when_it_reads_again(self):
+        x = {'id': 'me-x', 'service': 'x', 'boundary': 'work'}
+        cases = [('2026-10-28T02:00:00+00:00', x, {'hours': [7, 23], 'reads_again_at': '2026-10-28T06:00:00+00:00'}),  # 03:00 local
+                 ('2026-10-28T09:00:00+00:00', x, {'hours': [7, 23], 'opened_at': '2026-10-28T06:00:00+00:00'}),
+                 ('2026-10-28T22:30:00+00:00', x, {'hours': [7, 23], 'reads_again_at': '2026-10-29T06:00:00+00:00'}),  # 23:30 local
+                 # LinkedIn's own hours; the evening before the clocks go back, 07:00 is an hour later in UTC
+                 ('2026-10-24T20:30:00+00:00', {**x, 'service': 'linkedin'}, {'hours': [7, 22], 'reads_again_at': '2026-10-25T06:00:00+00:00'}),
+                 ('2026-10-28T12:00:00+00:00', {**x, 'active_hours': [9, 17]}, {'hours': [9, 17], 'opened_at': '2026-10-28T08:00:00+00:00'}),
+                 ('2026-10-28T02:00:00+00:00', {**x, 'active_hours': [0, 24]}, None),  # around the clock
+                 ('2026-10-28T02:00:00+00:00', {**x, 'service': 'github'}, None)]
+        for at, account, want in cases:
+            with self.subTest(at=at, account=account), patch.object(a, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
+                self.assertEqual(a.read_window(account, at), want)
+
+    def test_the_dashboard_gets_it_with_each_source(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(a, 'now', return_value='2026-10-28T02:00:00+00:00'), \
+                patch.object(a, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
+            store = a.Store(Path(tmp) / 'events.sqlite')
+            found = {c['id']: c['read_window'] for c in store.snapshot([{**ACCOUNT, 'service': 'linkedin'}, {'id': 'gh', 'service': 'github', 'boundary': 'work'}])['connectors']}
+        self.assertEqual(found, {'li': {'hours': [7, 22], 'reads_again_at': '2026-10-28T06:00:00+00:00'}, 'gh': None})

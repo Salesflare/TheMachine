@@ -12,6 +12,7 @@ order: 1
 
 - **Verbindet sich automatisch neu**: ein kurzer Aussetzer. Sie versucht es von selbst erneut.
 - **Wartet auf die erste Synchronisierung**: gerade verbunden. Gib ihr ein paar Minuten.
+- **Liest wieder um** 07:00: X und LinkedIn lesen nur tagsüber. Nichts zu tun.
 - **Braucht deine Hilfe**: Öffne **Details**. Dort steht, was schiefging und was zu tun ist.
 
 Die Zahl bei **Verbindungen** zählt nur Quellen, die deine Hilfe brauchen.
