@@ -1,0 +1,20 @@
+{
+  "about": "Telethon and its pure-Python dependencies for the Telegram chats mirror (telegram_mirror.py). Each file is checked against its sha256 before anything is unpacked. Keep in step with telegram-requirements.txt (tests/test_telegram.py checks).",
+  "packages": [
+    {"name": "telethon", "version": "1.45.0", "license": "MIT", "packages": ["telethon"],
+     "url": "https://files.pythonhosted.org/packages/92/ac/241c09e6905215f225d8088438ceb1f32cc4b4865f3f49068cb402debfd7/telethon-1.45.0-py3-none-any.whl",
+     "sha256": "339e24c83aedc9f12cbe389264627edc49779e4289c535aa90aafc4ce62f7972"},
+    {"name": "pyaes", "version": "1.6.1", "license": "MIT", "packages": ["pyaes"],
+     "url": "https://files.pythonhosted.org/packages/44/66/2c17bae31c906613795711fc78045c285048168919ace2220daa372c7d72/pyaes-1.6.1.tar.gz",
+     "sha256": "02c1b1405c38d3c370b085fb952dd8bea3fadcee6411ad99f312cc129c536d8f"},
+    {"name": "rsa", "version": "4.9.1", "license": "Apache-2.0", "packages": ["rsa"],
+     "url": "https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl",
+     "sha256": "68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762"},
+    {"name": "pyasn1", "version": "0.6.4", "license": "BSD-2-Clause", "packages": ["pyasn1"],
+     "url": "https://files.pythonhosted.org/packages/9a/3b/6163796d69c3977d1e4287bea4a6979161cbbdd170ebb430511e8e1999ce/pyasn1-0.6.4-py3-none-any.whl",
+     "sha256": "deda9277cfd454080ec40b207fb6df82206a3a2688735233cdcd8d3d565f088b"},
+    {"name": "qrcode", "version": "8.2", "license": "BSD-3-Clause", "packages": ["qrcode"],
+     "url": "https://files.pythonhosted.org/packages/dd/b8/d2d6d731733f51684bbf76bf34dab3b70a9148e8f2cef2bb544fccec681a/qrcode-8.2-py3-none-any.whl",
+     "sha256": "16e64e0716c14960108e85d853062c9e8bba5ca8252c0b4d0231b9df4060ff4f"}
+  ]
+}

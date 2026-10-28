@@ -53,13 +53,14 @@ Right after the service starts, the installer walks through each source:
 | Slack | Asks for your Maton API key (hidden), then finds the Slack connection in Maton (asks which one if you have several), your team, user and email itself. |
 | Salesflare | Asks for an API key (hidden), then finds your user and team. |
 | WhatsApp | Finds the wacli store, offers to link it (QR code), records which account it is and keeps it synced with a user service. |
+| Telegram chats | Unpacks the pinned Telethon, asks for your Telegram app ID when the Machine has none, logs in with a QR code and keeps your chats read with a user service. |
 | Android | Picks your paired Android phone from OpenClaw. For each source you connect that also has a phone app (Gmail, Slack, WhatsApp, …) it asks whether to skip that app's notifications; the default keeps them, since the phone may show other inboxes too. |
 | Gateway log | Finds the Gateway's systemd unit. |
 | Plugins | `github`, `stripe`, `intercom`, `x`, `linkedin`, `trello`, `rss`: not part of the installer; `assistant connect github` (and so on) asks for the few fields each needs. |
 
 Setup verifies a supported read before reporting the account connected. A busy/rate-limited browser source can be saved for its first sync, explicitly unverified; saved configuration is not proof a read succeeded. Afterwards you see the first sync per source: how many signals came in and from how far back.
 
-Skipped one? `assistant connect gmail` (or `slack`, `crm`, `whatsapp`, `android`, `github`, …) does the same any time, and so does the dashboard: Connections, **+ Add**. `assistant connect` on its own lists what is still missing.
+Skipped one? `assistant connect gmail` (or `slack`, `crm`, `whatsapp`, `telegram`, `android`, `github`, …) does the same any time, and so does the dashboard: Connections, **+ Add**. `assistant connect` on its own lists what is still missing.
 
 ### Pairing your Android phone
 

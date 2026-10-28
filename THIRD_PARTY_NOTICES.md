@@ -52,6 +52,11 @@ Installed from their own package sources only when you use the feature that need
 | Python | runs the service | PSF License |
 | Tailscale | private dashboard access | BSD-3-Clause |
 | [`wacli`](https://github.com/openclaw/wacli), installed from the [Salesflare/wacli](https://github.com/Salesflare/wacli) fork (upstream plus read-only profile picture lookups) | local WhatsApp store, owner-approved WhatsApp sends and profile pictures | MIT, Copyright (c) 2026 Peter Steinberger |
+| [Telethon](https://codeberg.org/Lonami/Telethon) 1.45.0, unpacked from PyPI by `telegram_release.py` (`telegram-pin.json`) | Telegram chats: the logged-in device, reads and owner-approved sends | MIT, Copyright (c) 2016-Present LonamiWebs |
+| [pyaes](https://github.com/ricmoo/pyaes) 1.6.1 | Telethon's AES | MIT, Copyright (c) 2014 Richard Moore |
+| [rsa](https://github.com/sybrenstuvel/python-rsa) 4.9.1 | Telethon's RSA | Apache-2.0 |
+| [pyasn1](https://github.com/pyasn1/pyasn1) 0.6.4 | used by rsa | BSD-2-Clause |
+| [qrcode](https://github.com/lincolnloop/python-qrcode) 8.2 | the Telegram login QR code | BSD-3-Clause |
 
 ## Source Serif 4
 

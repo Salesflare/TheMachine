@@ -79,7 +79,7 @@ The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.op
 `assistant service status|restart|stop|start|logs` works the same everywhere. `assistant support-bundle` saves versions, checks and recent logs in one file, without keys or tokens, to send when you need help. Beta means it is tested in CI but not yet run for long on a real computer.
 
 - Your own user account, not root.
-- **Python 3.12+** (standard library only).
+- **Python 3.12+** (standard library only; Telegram chats adds pinned pure-Python libraries of its own, below).
 - **Node.js 24.22.1+ within the 24.x series, or 26.12.1+** (`>=24.22.1 <25 || >=26.12.1`, OpenClaw's engine range since 2026.10.6). With an older OpenClaw already set up, The Machine still runs on Node 24.16+ or 26.1+; update Node.js before you update OpenClaw. Node 22 and 25 are unsupported. The installer resolves mise/asdf shims and the installed npm package.
 - **OpenClaw 2026.10.7 or later**, with the Gateway running. Its Telegram channel (your bot) is optional: without it, to-dos reach you through the dashboard app. Without it, `./install.sh` in a terminal offers to install and set it up (below). CI tests 2026.10.7 and the latest release every week; see [Known limitations](#known-limitations).
 - Optional, per feature:
@@ -87,7 +87,7 @@ The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.op
   - Your own Microsoft Entra app registration for Outlook mail and calendar (`assistant connect outlook` signs you in with a device code).
   - **Tailscale** for dashboard access (the dashboard only serves your Tailscale identity).
   - **Caddy** only if you want the dashboard on your own domain (`deploy/Caddyfile`). Not needed: `tailscale serve` gives it an HTTPS address on your tailnet.
-  - `wacli` for WhatsApp; a Maton connection for Slack (allowed to post as you, to send Slack messages); a Salesflare API key.
+  - `wacli` for WhatsApp; for Telegram chats, a Telegram app ID of your own from [my.telegram.org](https://my.telegram.org) (hosted Machines get The Machine's), and `assistant connect telegram` unpacks the pinned Telethon (`telegram-pin.json`, checked against its sha256s); a Maton connection for Slack (allowed to post as you, to send Slack messages); a Salesflare API key.
   - The `gh` CLI logged in as you for GitHub; a restricted read-only key (or a Maton connection) for Stripe.
   - For LinkedIn and X: your accounts signed in to the OpenClaw browser (profile `openclaw`). To use another browser profile set `LINKEDIN_INBOX_BROWSER_PROFILE` / `X_INBOX_BROWSER_PROFILE`; to read through a browser's DevTools address directly instead of OpenClaw's browser commands (faster and steadier on a small, busy server) set `LINKEDIN_INBOX_BROWSER_CDP` / `X_INBOX_BROWSER_CDP`, e.g. `http://127.0.0.1:9222`. When a read finds the browser signed out, the Connections tab says "Signed out of LinkedIn" with what to do (on a hosted install: a Sign in again link to the server's browser).
   - The OpenClaw Android app paired as a node for phone notifications ([pairing it, also from outside your network](docs/getting-started.md#pairing-your-android-phone)).

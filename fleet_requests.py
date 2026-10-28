@@ -59,7 +59,7 @@ SOURCES = 3
 SOURCE_CHARS = 6000
 SOURCES_CHARS = 12000
 CARRIED = {'gmail.message': 'email', 'salesflare.email': 'email', 'fleet.email': 'email',
-           'slack.message': 'message', 'whatsapp.message': 'message', 'fleet.message': 'message',
+           'slack.message': 'message', 'whatsapp.message': 'message', 'telegram.message': 'message', 'fleet.message': 'message',
            'intercom.conversation': 'message', 'fleet.intercom': 'message'}
 # An Intercom conversation also goes with where it is (`intercom`: region, workspace, conversation and the customer's
 # address), so the teammate's card links it and, when their Machine reads the same workspace, is that conversation itself:
@@ -75,7 +75,7 @@ SPLIT_SHOWN_DAYS = 7
 # Accept. The review judges that by meaning (handoff_on_it); the teammate hears "on it", where and when, and the first
 # name of who they talked to ("talked to Sam on Slack"), never what was said. It travels as an accept with a `silent`
 # mark, so an older Machine reads a plain accept.
-ON_IT = {'gmail.message': 'email', 'outlook.message': 'email', 'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp',
+ON_IT = {'gmail.message': 'email', 'outlook.message': 'email', 'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
          'linkedin.message': 'LinkedIn', 'teams.message': 'Teams', 'calendar.event': 'a call', 'outlook_calendar.event': 'a call'}
 WHERE = set(ON_IT.values())
 ASKED_CHARS = 240  # a handed-off card's body: "Asked Pat: …", one or two lines

@@ -23,7 +23,7 @@ Le schede **Lavoro** e **Personale** mostrano solo quei contatti. **Scarica CSV*
 
 ### Cronologia
 
-Ogni pagina di persona e organizzazione ne ha una, dalla più recente: email, riunioni e i loro riepiloghi Zoom, conversazioni Intercom (aperte o chiuse, con **Apri in Intercom**), chat WhatsApp, Slack, LinkedIn e X, attività, promesse e spostamenti di progetto. I chip in alto mostrano una fonte alla volta. **Mostra altro** carica quelle più vecchie.
+Ogni pagina di persona e organizzazione ne ha una, dalla più recente: email, riunioni e i loro riepiloghi Zoom, conversazioni Intercom (aperte o chiuse, con **Apri in Intercom**), chat WhatsApp, Telegram, Slack, LinkedIn e X, attività, promesse e spostamenti di progetto. I chip in alto mostrano una fonte alla volta. **Mostra altro** carica quelle più vecchie.
 
 Le riunioni ancora da fare stanno a parte in alto sotto **In arrivo**, le più vicine per prime; **Mostra tutti i prossimi** mostra le altre. Una riunione presente in più di uno dei tuoi calendari compare una volta sola.
 

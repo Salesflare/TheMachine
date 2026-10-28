@@ -19,7 +19,7 @@ order: 2
 - Een stap die iets vastlegt, zoals verzenden, betalen of boeken, stopt en wacht op je bevestiging.
 - In de chat van een to-do wordt een concept nooit verstuurd in hetzelfde bericht dat het schreef.
 
-Wat hij kan versturen, hangt af van de bron: een e-mail, een direct bericht in Slack, een bericht op WhatsApp, LinkedIn of X. Het artikel van elke koppeling zegt wat die kan versturen.
+Wat hij kan versturen, hangt af van de bron: een e-mail, een direct bericht in Slack, een bericht op WhatsApp, Telegram, LinkedIn of X. Het artikel van elke koppeling zegt wat die kan versturen.
 
 ## Een e-mail bewerken
 

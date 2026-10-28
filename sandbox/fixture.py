@@ -47,6 +47,7 @@ ACCOUNTS = [  # the owner's sources, as in a config; ids say what they are, neve
     {'id': 'home-gmail', 'service': 'gmail', 'transport': 'gog', 'email': OWNER['personal_email'], 'client': 'default', 'boundary': 'personal'},
     {'id': 'home-calendar', 'service': 'calendar', 'transport': 'gog', 'email': OWNER['personal_email'], 'client': 'default', 'calendar_id': 'primary', 'boundary': 'personal'},
     {'id': 'home-whatsapp', 'service': 'whatsapp', 'transport': 'wacli', 'email': '', 'display_name': 'WhatsApp', 'boundary': 'personal'},
+    {'id': 'home-telegram', 'service': 'telegram', 'transport': 'telegram_mirror', 'email': '', 'display_name': 'Telegram chats', 'boundary': 'personal'},
     {'id': 'home-phone', 'service': 'android', 'transport': 'openclaw-feed', 'email': '', 'display_name': 'Phone notifications', 'boundary': 'personal', 'node_id': 'sandbox-phone'},
 ]
 KIND_ACCOUNT = {  # profile key -> (account, event kind)
@@ -159,6 +160,11 @@ STORIES = [
      'thread': [(9000, False, 'Webinar together?', 'Hi Alex,\n\nWould you be up for a joint webinar in November? Our audience asks about follow-up habits a lot.\n\nYara'),
                 (8700, True, 'Re: Webinar together?', 'Hi Yara,\n\nLove it. Proposal attached: 45 minutes on the 19th, you host, we bring the case study.\n\nAlex')],
      'draft': ('email', 'Hi Yara,\n\nChecking in on the webinar proposal. Does the 19th still work for you? If November is too tight, December is fine too.\n\nAlex')},
+    {'key': 'climb', 'telegram': True, 'family': True, 'status': 'prepared', 'minutes': 610,
+     'title': 'Tell Sam if you are in for climbing on Saturday', 'body': 'Sam asked on Telegram and offers to bring the rope.',
+     'chat': ('Sam Whitlock', [(660, False, 'Still on for climbing Saturday at 10?'),
+                               (655, False, 'I can bring the long rope if you bring coffee.')]),
+     'draft': ('telegram', 'Yes, I am in for 10. Bring the rope, I will bring the coffee.')},
 ]
 
 # Closed cards, one per earlier email: what the card said, by the email's topic (EMAIL_TOPICS order)
@@ -448,10 +454,14 @@ def build(profile):
             for n, line in enumerate(lines):
                 m, who, text = (line[0], None if line[1] else chat, line[2]) if not group else line
                 key = f"story:{story['key']}:{n}"
-                add('home-whatsapp', 'whatsapp.message', m, chat, text, {'chat_name': chat, 'chat_id': slug(chat), 'from_me': who is None, 'group': group,
-                    **({'sender_display': who} if who else {}), 'message_id': f"wa-{story['key']}-{n}"}, key)
+                if story.get('telegram'):
+                    add('home-telegram', 'telegram.message', m, chat, text, {'chat_name': chat, 'chat_id': '7001', 'chat_kind': 'dm', 'from_me': who is None,
+                        **({'sender_name': who, 'sender_id': '7001'} if who else {}), 'message_id': f"tg-{story['key']}-{n}"}, key)
+                else:
+                    add('home-whatsapp', 'whatsapp.message', m, chat, text, {'chat_name': chat, 'chat_id': slug(chat), 'from_me': who is None, 'group': group,
+                        **({'sender_display': who} if who else {}), 'message_id': f"wa-{story['key']}-{n}"}, key)
                 out.append(key)
-            account, source, to = 'home-whatsapp', 'WhatsApp from Robin Morgan', None
+            account, source, to = ('home-telegram', 'Telegram from ' + chat, None) if story.get('telegram') else ('home-whatsapp', 'WhatsApp from Robin Morgan', None)
         card = {'key': 'open' + str(i), 'title': story['title'], 'body': story['body'], 'status': story['status'], 'events': out, 'accounts': [account],
                 'minutes_ago': story['minutes'], 'source': source, 'project': story.get('project'), 'urgent': bool(story.get('urgent')),
                 'snooze_hours': story.get('snooze_hours')}
@@ -463,6 +473,9 @@ def build(profile):
                                    'body': body, 'revision': f'rev{i:04d}'}
         elif kind == 'slack':
             card['next_action'] = {'kind': 'slack', 'account_id': 'work-slack', 'to_name': '#support', 'body': body, 'label': 'Reply in #support', 'revision': f'rev{i:04d}'}
+        elif kind == 'telegram':
+            card['next_action'] = {'kind': 'telegram', 'account_id': 'home-telegram', 'to_name': chat, 'chat_id': '7001', 'body': body,
+                                   'label': 'Send to ' + chat.split()[0], 'revision': f'rev{i:04d}'}
         elif kind == 'whatsapp':
             card['next_action'] = {'kind': 'whatsapp', 'account_id': 'home-whatsapp', 'to_name': 'Morgan family', 'chat_id': 'morganfamily', 'body': body,
                                    'label': 'Send to Morgan family', 'revision': f'rev{i:04d}'}

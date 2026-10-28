@@ -19,7 +19,7 @@ order: 2
 - Un paso que compromete algo, como enviar un formulario, pagar o reservar, se detiene y espera tu confirmación.
 - En el chat de una tarea, un borrador nunca se envía en el mismo mensaje que lo escribió.
 
-Lo que puede enviar depende de la fuente: un correo, un mensaje directo de Slack, un mensaje de WhatsApp, LinkedIn o X. El artículo de cada conexión dice qué puede enviar.
+Lo que puede enviar depende de la fuente: un correo, un mensaje directo de Slack, un mensaje de WhatsApp, Telegram, LinkedIn o X. El artículo de cada conexión dice qué puede enviar.
 
 ## Editar un correo
 

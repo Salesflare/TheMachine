@@ -79,7 +79,7 @@ ENV = {
     'dashboard_host': 'ASSISTANT_DASHBOARD_HOST',
     'timezone': 'ASSISTANT_TIMEZONE',
     'locale': 'ASSISTANT_LOCALE',               # language-region for dates and times, e.g. en-GB (hosted: from signup)
-    'connectors': 'ASSISTANT_CONNECTORS',       # comma list: gmail,calendar,gateway,android,whatsapp,slack,crm (or none)
+    'connectors': 'ASSISTANT_CONNECTORS',       # comma list: gmail,calendar,gateway,android,whatsapp,telegram,slack,crm (or none)
     'email': 'ASSISTANT_EMAIL',                 # Google account for gmail/calendar
     'gog_client': 'ASSISTANT_GOG_CLIENT',
     'boundary': 'ASSISTANT_BOUNDARY',           # e.g. work:Acme
@@ -577,7 +577,7 @@ def setup_config(interactive, facts, paths):
         say(f'Writing {paths.config}')
     refresh_install_paths(config, facts, paths)
     # Built-in sources plus connector plugins (connectors/<service>.py, see docs/adding-a-source.md).
-    supported = {'gmail', 'calendar', 'outlook', 'outlook_calendar', 'slack', 'salesflare', 'android', 'whatsapp', 'gateway'} | {
+    supported = {'gmail', 'calendar', 'outlook', 'outlook_calendar', 'slack', 'salesflare', 'android', 'whatsapp', 'telegram', 'gateway'} | {
         p.stem for p in (ROOT / 'connectors').glob('*.py') if re.fullmatch(r'[a-z][a-z0-9_]{0,30}', p.stem)}
     unsupported = [a['id'] for a in config.get('accounts', []) if a.get('service', 'gmail') not in supported]
     if unsupported:
@@ -1045,6 +1045,14 @@ def uninstall(paths, purge, interactive):
     if paths.unit.exists():
         paths.unit.unlink()
         say(f'Removed {paths.unit}')
+    try:  # Telegram chats: each logged-in device is logged out at Telegram, and its store goes
+        config = json.loads(paths.config.read_text()) if paths.config.exists() else {}
+    except (OSError, ValueError):
+        config = {}
+    for account in config.get('accounts', []) if isinstance(config, dict) else []:
+        if isinstance(account, dict) and account.get('service') == 'telegram' and account.get('id'):
+            onboarding.telegram_remove(config, account)
+            say(f'Logged out of Telegram: {account["id"]}')
     pattern = service.LABEL_PREFIX + 'wacli-*.plist' if launchd else 'the-machine-wacli-*.service'
     for sync in sorted(paths.unit.parent.glob(pattern)):
         # The WhatsApp syncs it started; the linked wacli store itself stays.

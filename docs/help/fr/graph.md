@@ -23,7 +23,7 @@ Les onglets **Travail** et **Perso** n’affichent que ces contacts-là. **Tél�
 
 ### Chronologie
 
-Chaque page de personne et d’organisation en a une, la plus récente d’abord : e-mails, réunions et leurs résumés Zoom, conversations Intercom (ouvertes ou fermées, avec **Ouvrir dans Intercom**), chats WhatsApp, Slack, LinkedIn et X, tâches, promesses et changements de projet. Les filtres en haut montrent une source à la fois. **Afficher plus** charge les plus anciens.
+Chaque page de personne et d’organisation en a une, la plus récente d’abord : e-mails, réunions et leurs résumés Zoom, conversations Intercom (ouvertes ou fermées, avec **Ouvrir dans Intercom**), chats WhatsApp, Telegram, Slack, LinkedIn et X, tâches, promesses et changements de projet. Les filtres en haut montrent une source à la fois. **Afficher plus** charge les plus anciens.
 
 Les réunions à venir sont à part en haut, sous **À venir**, la plus proche d’abord. **Afficher tout ce qui est à venir** montre le reste. Une réunion présente dans plusieurs de vos agendas n’apparaît qu’une fois.
 

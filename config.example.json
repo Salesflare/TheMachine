@@ -181,6 +181,14 @@
       "boundary": "personal:whatsapp"
     },
     {
+      "id": "personal-telegram",
+      "service": "telegram",
+      "transport": "telegram_mirror",
+      "store": "~/.local/share/personal-assistant/telegram/personal-telegram",
+      "identity_sha256": "sha256-of-your-telegram-user-id",
+      "boundary": "personal:telegram"
+    },
+    {
       "id": "openclaw-gateway",
       "service": "gateway",
       "transport": "journald",

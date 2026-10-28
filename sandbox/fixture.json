@@ -115,6 +115,14 @@
    "boundary": "personal"
   },
   {
+   "id": "home-telegram",
+   "service": "telegram",
+   "transport": "telegram_mirror",
+   "email": "",
+   "display_name": "Telegram chats",
+   "boundary": "personal"
+  },
+  {
    "id": "home-phone",
    "service": "android",
    "transport": "openclaw-feed",
@@ -4750,6 +4758,40 @@
    }
   },
   {
+   "key": "story:climb:0",
+   "account_id": "home-telegram",
+   "kind": "telegram.message",
+   "minutes_ago": 660,
+   "title": "Sam Whitlock",
+   "body": "Still on for climbing Saturday at 10?",
+   "metadata": {
+    "chat_name": "Sam Whitlock",
+    "chat_id": "7001",
+    "chat_kind": "dm",
+    "from_me": false,
+    "sender_name": "Sam Whitlock",
+    "sender_id": "7001",
+    "message_id": "tg-climb-0"
+   }
+  },
+  {
+   "key": "story:climb:1",
+   "account_id": "home-telegram",
+   "kind": "telegram.message",
+   "minutes_ago": 655,
+   "title": "Sam Whitlock",
+   "body": "I can bring the long rope if you bring coffee.",
+   "metadata": {
+    "chat_name": "Sam Whitlock",
+    "chat_id": "7001",
+    "chat_kind": "dm",
+    "from_me": false,
+    "sender_name": "Sam Whitlock",
+    "sender_id": "7001",
+    "message_id": "tg-climb-1"
+   }
+  },
+  {
    "key": "story:kids:2",
    "account_id": "home-whatsapp",
    "kind": "whatsapp.message",
@@ -7375,6 +7417,33 @@
     "to_name": "Yara Oakhurst",
     "body": "Hi Yara,\n\nChecking in on the webinar proposal. Does the 19th still work for you? If November is too tight, December is fine too.\n\nAlex",
     "revision": "rev0011"
+   }
+  },
+  {
+   "key": "open12",
+   "title": "Tell Sam if you are in for climbing on Saturday",
+   "body": "Sam asked on Telegram and offers to bring the rope.",
+   "status": "prepared",
+   "events": [
+    "story:climb:0",
+    "story:climb:1"
+   ],
+   "accounts": [
+    "home-telegram"
+   ],
+   "minutes_ago": 610,
+   "source": "Telegram from Sam Whitlock",
+   "project": null,
+   "urgent": false,
+   "snooze_hours": null,
+   "next_action": {
+    "kind": "telegram",
+    "account_id": "home-telegram",
+    "to_name": "Sam Whitlock",
+    "chat_id": "7001",
+    "body": "Yes, I am in for 10. Bring the rope, I will bring the coffee.",
+    "label": "Send to Sam",
+    "revision": "rev0012"
    }
   },
   {

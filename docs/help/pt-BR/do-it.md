@@ -19,7 +19,7 @@ order: 2
 - Uma etapa que compromete algo, como enviar um formulário, pagar ou reservar, para e espera sua confirmação.
 - No chat de uma tarefa, um rascunho nunca é enviado na mesma mensagem que o escreveu.
 
-O que ela pode enviar depende da fonte: um e-mail, uma mensagem direta no Slack, uma mensagem no WhatsApp, LinkedIn ou X. O artigo de cada conexão diz o que ela pode enviar.
+O que ela pode enviar depende da fonte: um e-mail, uma mensagem direta no Slack, uma mensagem no WhatsApp, Telegram, LinkedIn ou X. O artigo de cada conexão diz o que ela pode enviar.
 
 ## Editar um e-mail
 

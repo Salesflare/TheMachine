@@ -40,7 +40,7 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - **Do it grants broad account and machine access for the accepted task.** The plugin's
   guards are not a sandbox. Source messages are untrusted and may contain prompt injection.
   Read the README's security model before activating reviews or delivery.
-- Messages use exact owner-approved Send actions; complete Telegram drafts can be sent directly from their to-do. Explicit owner requests use `send_now` where supported. WhatsApp retains a to-do confirmation. Unknown sends are reconciled, never blindly repeated. Collectors read by default; configured CRM joins are an opt-in exception.
+- Messages use exact owner-approved Send actions; complete Telegram drafts can be sent directly from their to-do. Explicit owner requests use `send_now` where supported. WhatsApp and Telegram chats retain a to-do confirmation; Telegram sends go through the mirror's outbox, keyed by the approved action, and the mirror refuses a row without one. Unknown sends are reconciled, never blindly repeated. Collectors read by default; configured CRM joins are an opt-in exception.
 - Fresh installs collect configured sources with recurring reviews and delivery disabled. One read-only first-look preview may run after setup; it sends no to-dos or external actions.
   `./install.sh --activate` explicitly enables both after setup.
 - The dashboard's sign-in dialog fills sites in the assistant's browser on the owner's behalf and can save
@@ -64,7 +64,8 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   database: without it the messages are lost. `"message_protection": false` turns it off. Email attachments a
   Do-it run saves are encrypted on disk with the same key; the run reads a private copy that is removed when it
   ends. Files a run makes itself are not. Stores other programs own are not covered: OpenClaw's session
-  transcripts and WhatsApp's `wacli` store.
+  transcripts and WhatsApp's `wacli` store. The Telegram mirror's store seals message text and the session itself,
+  with a key derived from the message key. The Telegram cloud password is passed to Telegram once and never stored.
 - Files the owner adds to a to-do chat are kept in `chat-files/` next to the database (mode 600), sealed with the
   message key when message protection is on, with their names sealed in the database. They are checked by type and
   size and served back only to the owner's dashboard (images and PDFs inline, anything else as a download). A run

@@ -19,7 +19,7 @@ order: 2
 - Une étape qui engage quelque chose, comme valider, payer ou réserver, s’arrête et attend votre confirmation.
 - Dans le chat d’une tâche, un brouillon n’est jamais envoyé dans le message qui l’a rédigé.
 
-Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Slack, un message WhatsApp, LinkedIn ou X. L’article de chaque connexion dit ce qu’elle peut envoyer.
+Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Slack, un message WhatsApp, Telegram, LinkedIn ou X. L’article de chaque connexion dit ce qu’elle peut envoyer.
 
 ## Modifier un e-mail
 

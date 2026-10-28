@@ -91,7 +91,7 @@ Promise Load Loading Script Network Fetch JSON HTTP HTTPS API URL SQL TLS SSL EO
 Got Has Have Must Should Only Already Empty Out Of In On At For To From With Without And Or If Then Else Unhandled
 Rejection Maximum Minimum Call Stack Size Exceeded Assertion Decode Encode Unicode Recursion Overflow Memory Zero
 Division Lookup Stop Iteration Generator Runtime Not Implemented Gateway Machine Machines OpenClaw Telegram Gmail Google
-Microsoft Outlook Slack WhatsApp Zoom Calendar Drive Network Fleet Graph Card Cards Chat Review Preparation Sync Token Tokens
+Microsoft Outlook Slack WhatsApp Telegram Zoom Calendar Drive Network Fleet Graph Card Cards Chat Review Preparation Sync Token Tokens
 Expired Authentication Auth Rate Limit Quota Service Unavailable Forbidden Unauthorized Server Client Found Read Write Socket'''.split())
 TYPES = {'str', 'int', 'float', 'bool', 'bytes', 'dict', 'list', 'tuple', 'set', 'frozenset', 'NoneType', 'object', 'type',
          'function', 'method', 'module', 'datetime', 'date', 'Path', 'Row', 'Connection', 'Cursor', 'undefined', 'null',

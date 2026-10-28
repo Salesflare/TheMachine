@@ -7,6 +7,7 @@ import portable
 import datetime
 from email.message import EmailMessage
 from email.utils import format_datetime
+import contextlib
 import hashlib
 import google_api
 import mail_attachments
@@ -127,7 +128,7 @@ def attachment_bytes(record, config):
 
 
 # Owner-approved sends: each needs the Send review and Send now (Telegram) or the dashboard dialog.
-SEND_KINDS = ('email', 'email_demo', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')
+SEND_KINDS = ('email', 'email_demo', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
 # Owner-approved changes to The Machine's own code: Merge reviews the fix, Merge now applies it.
 APPROVE_KINDS = SEND_KINDS + ('merge', 'calendar')
 # The last step of a task taken up to it (a filled-in form, a cart, a payment): the owner reviews
@@ -137,7 +138,7 @@ FINISH_VERBS = ('Submit', 'Pay', 'Book', 'Confirm', 'Order', 'Buy', 'Publish', '
                 'Approve', 'Create', 'Delete', 'Cancel', 'Register', 'Renew', 'File', 'Upload', 'Schedule', 'Reserve',
                 'Apply', 'Transfer', 'Deploy', 'Send', 'Request', 'Unsubscribe', 'Close', 'Archive', 'Invite',
                 'Share', 'Update', 'Save', 'Claim', 'Return', 'Refund', 'Reply')
-TEXT_KINDS = ('linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')  # a message without a subject
+TEXT_KINDS = ('linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')  # a message without a subject
 LINKEDIN_INBOX = Path(__file__).resolve().parent / 'integrations/linkedin_inbox.py'
 X_INBOX = Path(__file__).resolve().parent / 'integrations/x_inbox.py'
 X_URLISH = re.compile(r'(?:https?://)?(?:[\w-]+\.)+[a-zA-Z]{2,}(?:/\S*)?')
@@ -222,7 +223,7 @@ def label(value):
         return 'Reply on X' if value.get('reply_to') else 'Send'
     if value['kind'] == 'calendar':
         return calendar_writes.label(value)
-    return value.get('label') or {'email':'Send','email_demo':'Send','linkedin':'Send','slack':'Send','whatsapp':'Send','intercom':'Send reply','doc_reply':'Post reply','merge':'Merge fix','prepare':'Prepare next step','open':'Open original','handoff':'Hand off'}.get(value['kind'],'Continue')
+    return value.get('label') or {'email':'Send','email_demo':'Send','linkedin':'Send','slack':'Send','whatsapp':'Send','telegram':'Send','intercom':'Send reply','doc_reply':'Post reply','merge':'Merge fix','prepare':'Prepare next step','open':'Open original','handoff':'Hand off'}.get(value['kind'],'Continue')
 
 
 def preview(value):
@@ -240,6 +241,8 @@ def preview(value):
         return value['preview'] + message + files + ('\n\n' + value['url'] if value.get('url') else '')
     if value['kind'] == 'whatsapp':
         return 'WhatsApp message to ' + value['to_name'] + '\n\n' + value['body']
+    if value['kind'] == 'telegram':
+        return 'Telegram message to ' + value['to_name'] + '\n\n' + value['body']
     if value['kind'] == 'intercom':
         return 'Intercom reply to ' + value['to_name'] + ', as ' + value['as_name'] + '\n\n' + value['body']
     if value['kind'] == 'doc_reply':
@@ -305,13 +308,13 @@ def pick_sender(mailbox, options, replied):
 
 
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
-             intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None):
+             intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None, telegram_chats=None):
     if value is None:
         return None
     if isinstance(value,list):
         if not 1<=len(value)<=3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
         if any(not isinstance(item,dict) for item in value):raise ValueError('Each next action must be one concrete choice')
-        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied) for item in value]
+        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
             raise ValueError('Next actions must be distinct concrete choices')
         return {'kind':'menu','actions':choices}
@@ -586,6 +589,29 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if not isinstance(body, str) or not body.strip() or len(body) > 4000 or '\x00' in body:
             raise ValueError('Provide the concrete WhatsApp message, at most 4000 characters')
         result['body'] = body.strip()
+    elif value.get('kind') == 'telegram':
+        # A Telegram message in an existing private chat or small group the owner's own account reads, sent by the
+        # Telegram mirror only after the owner's Send on this exact text. Text only. The chat is one from this task's
+        # own Telegram messages, or the person's chat in that account that the service looked up (telegram_chats).
+        if set(value) - {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body'}:
+            raise ValueError('Unsupported Telegram fields; plain text only, no media')
+        account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'telegram'), None)
+        if not account or account.get('shared'):
+            raise ValueError('Use one of the owner’s Telegram accounts')
+        result = {'kind': 'telegram', 'account_id': account['id']}
+        if value.get('label'):
+            if value['label'] != 'Send' and not value['label'].startswith('Send '):
+                raise ValueError('Telegram button labels must say Send, such as Send reply')
+            result['label'] = value['label']
+        chat = (telegram_chats or {}).get(str(value.get('chat_id') or ''))
+        if not chat or chat.get('account_id') != account['id']:
+            raise ValueError('Send only in an existing Telegram chat: one from this task’s own messages (its metadata.chat_id), '
+                             'or the person’s chat in this account (chat_id, or to_name to look it up)')
+        result.update(chat_id=str(value['chat_id']), to_name=chat.get('name') or 'Telegram chat', max_length=4096)
+        body = value.get('body')
+        if not isinstance(body, str) or not body.strip() or len(body) > 4096 or '\x00' in body:
+            raise ValueError('Provide the concrete Telegram message, at most 4096 characters')
+        result['body'] = body.strip()
     elif value.get('kind') == 'intercom':
         # A reply in an Intercom conversation from this task's own messages, as the owner's own Intercom admin (the one
         # who signed in with Intercom for replies). It goes out only after the owner's Send on this exact text. A plain
@@ -664,7 +690,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     elif value.get('kind') == 'merge':
         result = merge_action(value, config)
     else:
-        raise ValueError('Only email drafts, LinkedIn, Slack, X and WhatsApp messages, Fleet handoffs, local preparation and original-page links are supported; no payments or arbitrary writes')
+        raise ValueError('Only email drafts, LinkedIn, Slack, X, WhatsApp and Telegram messages, Fleet handoffs, local preparation and original-page links are supported; no payments or arbitrary writes')
     result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
     return result
 
@@ -727,7 +753,7 @@ def revise(action, subject=None, body=None):
         result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
         return result
     if action['kind'] not in ('email',) + TEXT_KINDS:
-        raise ValueError('Only email, LinkedIn, Slack, X, WhatsApp, Intercom and doc reply drafts and final steps can be edited')
+        raise ValueError('Only email, LinkedIn, Slack, X, WhatsApp, Telegram, Intercom and doc reply drafts and final steps can be edited')
     result = {k: v for k, v in action.items() if k != 'revision'}
     if body is not None:
         if (not isinstance(body, str) or not body.strip() or '\x00' in body
@@ -751,9 +777,9 @@ def closing_spaced(body):
     return '\n'.join(lines)
 
 
-# Drafts that reach the recipient as plain text (WhatsApp, LinkedIn, X, a Fleet handoff): links go as words (URL).
+# Drafts that reach the recipient as plain text (WhatsApp, Telegram, LinkedIn, X, a Fleet handoff): links go as words (URL).
 # Email and Slack keep Markdown links: the send turns them into real links (mail_html, slack_text).
-PLAIN_LINKS = ('handoff', 'whatsapp', 'linkedin', 'x')
+PLAIN_LINKS = ('handoff', 'whatsapp', 'telegram', 'linkedin', 'x')
 LINK = re.compile(r'\[([^\[\]\n]{1,200})\]\((https://[^\s()<>]{1,2000})\)|(https://[^\s<>]*[^\s<>.,;:!?)\]])')
 
 
@@ -1378,6 +1404,74 @@ class WhatsAppTransport:
         return {'message_id': 'whatsapp:' + str(found[0]['MsgID'])} if len(found) == 1 and found[0].get('MsgID') else {}
 
 
+class TelegramTransport:
+    """Sends one owner-approved Telegram text into an existing chat. The app never holds the Telegram session: it puts
+    the message in the mirror's outbox (telegram_store.py), keyed by the approved action job, and the mirror
+    (telegram_mirror.py), which holds the session, sends it, paced, and writes back what happened. A job is queued at
+    most once (its ID is the row's), and a row the mirror started is never sent again: an unclear outcome is read from
+    the outbox afterwards."""
+    WAIT = 120  # seconds a send waits for the mirror; it keeps at least 20 seconds between two sends
+
+    def __init__(self, config, sleep=time.sleep, clock=time.monotonic):
+        self.config, self.sleep, self.clock = config, sleep, clock
+
+    def account(self, action):
+        return next(a for a in self.config['accounts'] if a['id'] == action['account_id'] and a.get('service') == 'telegram')
+
+    def open(self, action, readonly=True):
+        import telegram_store
+        store = self.account(action)['store']
+        try:
+            return telegram_store, telegram_store.connect(store, readonly=readonly)
+        except Exception:
+            raise ValueError('I couldn’t reach Telegram on this computer. Nothing was sent; tap Send again.') from None
+
+    def preflight(self, action):
+        if action['kind'] != 'telegram':
+            raise ValueError('Only an owner-approved Telegram message can use the Telegram transport')
+        ts, db = self.open(action)
+        with contextlib.closing(db):
+            state = ts.get_state(db)
+            if state.get('error') == 'app_blocked':
+                raise ValueError('Telegram stopped accepting this Machine’s app ID. Nothing was sent.')
+            if state.get('error') or state.get('identity') != self.account(action).get('identity_sha256'):
+                raise ValueError('Telegram is logged out, or logged in to another account. Nothing was sent.')
+            chat = db.execute('SELECT skipped FROM chats WHERE id=?', (action['chat_id'],)).fetchone()
+        if not chat or chat['skipped']:
+            raise ValueError('I couldn’t find that Telegram chat. Nothing was sent.')
+
+    def send(self, action, job):
+        ts, db = self.open(action, readonly=False)
+        seal = ts.sealer(self.account(action)['store'], self.config.get('database'), create=False)
+        if seal is None:
+            return {'rejected': 'no_key'}
+        with contextlib.closing(db), db:
+            db.execute("INSERT OR IGNORE INTO outbox(id, op, chat_id, text, approval, created_at) VALUES (?, 'send', ?, ?, ?, ?)",
+                       (job['id'], action['chat_id'], seal.seal(action['body']), job['id'], ts.now()))
+        return self.outcome(action, job, wait=self.WAIT)
+
+    def outcome(self, action, job, wait=0):
+        ts, db = self.open(action)
+        until = self.clock() + wait
+        with contextlib.closing(db):
+            while True:
+                row = db.execute('SELECT status, msg_id, error FROM outbox WHERE id=?', (job['id'],)).fetchone()
+                if row and row['status'] == 'sent' and row['msg_id']:
+                    return {'message_id': f"telegram:{action['chat_id']}:{row['msg_id']}"}
+                if row and row['status'] == 'failed':
+                    return {'rejected': str(row['error'] or 'refused')[:80]}
+                if self.clock() >= until:
+                    return {}
+                self.sleep(2)
+
+    def reconcile(self, action, job):
+        try:
+            result = self.outcome(action, job)
+        except ValueError:
+            return {}
+        return result if result.get('message_id') else {}
+
+
 class IntercomTransport:
     """Posts one owner-approved reply into an Intercom conversation from the task's own messages, as the owner's own
     Intercom admin, with their reply token, through the connector's one allowed write (connectors/intercom.py Replier).
@@ -1912,12 +2006,12 @@ class DocReplyTransport:
 
 
 class ActionTransport:
-    """Routes an approved send to Gmail, LinkedIn, Slack, X, WhatsApp or Intercom, a calendar change to Google Calendar,
+    """Routes an approved send to Gmail, LinkedIn, Slack, X, WhatsApp, Telegram or Intercom, a calendar change to Google Calendar,
     or a fix to The Machine itself, by its kind."""
 
-    def __init__(self, email, linkedin, slack=None, x=None, merge=None, whatsapp=None, intercom=None, calendar=None, docs=None):
+    def __init__(self, email, linkedin, slack=None, x=None, merge=None, whatsapp=None, intercom=None, calendar=None, docs=None, telegram=None):
         self.email, self.linkedin, self.slack, self.x, self.merge, self.whatsapp = email, linkedin, slack, x, merge, whatsapp
-        self.intercom, self.calendar, self.docs = intercom, calendar, docs
+        self.intercom, self.calendar, self.docs, self.telegram = intercom, calendar, docs, telegram
 
     def pick(self, action):
         if action['kind'] == 'calendar':
@@ -1940,6 +2034,10 @@ class ActionTransport:
             if not self.whatsapp:
                 raise ValueError('WhatsApp sending isn’t set up. Nothing was sent.')
             return self.whatsapp
+        if action['kind'] == 'telegram':
+            if not self.telegram:
+                raise ValueError('Telegram sending isn’t set up. Nothing was sent.')
+            return self.telegram
         if action['kind'] == 'intercom':
             if not self.intercom:
                 raise ValueError('Intercom replies aren’t set up. Nothing was sent.')

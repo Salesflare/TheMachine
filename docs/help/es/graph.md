@@ -23,7 +23,7 @@ Las pestañas **Trabajo** y **Personal** solo listan esos contactos. **Descargar
 
 ### Cronología
 
-Cada página de persona y de organización tiene una, lo más reciente primero: correos, reuniones y sus resúmenes de Zoom, conversaciones de Intercom (abiertas o cerradas, con **Abrir en Intercom**), chats de WhatsApp, Slack, LinkedIn y X, tareas, promesas y movimientos de proyectos. Las etiquetas de arriba muestran una fuente cada vez. **Mostrar más** carga las más antiguas.
+Cada página de persona y de organización tiene una, lo más reciente primero: correos, reuniones y sus resúmenes de Zoom, conversaciones de Intercom (abiertas o cerradas, con **Abrir en Intercom**), chats de WhatsApp, Telegram, Slack, LinkedIn y X, tareas, promesas y movimientos de proyectos. Las etiquetas de arriba muestran una fuente cada vez. **Mostrar más** carga las más antiguas.
 
 Las reuniones que aún no han llegado quedan aparte arriba, en **Lo próximo**, la más cercana primero; **Mostrar todos los próximos** muestra el resto. Una reunión que está en más de uno de tus calendarios aparece una vez.
 

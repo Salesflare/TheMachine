@@ -23,7 +23,7 @@ Die Tabs **Arbeit** und **Privat** listen nur diese Kontakte. **CSV herunterlade
 
 ### Verlauf
 
-Jede Seite einer Person und Organisation hat einen, das Neueste zuerst: E-Mails, Meetings und ihre Zoom-Zusammenfassungen, Intercom-Unterhaltungen (offen oder geschlossen, mit **In Intercom öffnen**), Chats auf WhatsApp, Slack, LinkedIn und X, Aufgaben, Versprechen und Projektbewegungen. Die Chips oben zeigen jeweils eine Quelle. **Mehr anzeigen** lädt ältere Einträge.
+Jede Seite einer Person und Organisation hat einen, das Neueste zuerst: E-Mails, Meetings und ihre Zoom-Zusammenfassungen, Intercom-Unterhaltungen (offen oder geschlossen, mit **In Intercom öffnen**), Chats auf WhatsApp, Telegram, Slack, LinkedIn und X, Aufgaben, Versprechen und Projektbewegungen. Die Chips oben zeigen jeweils eine Quelle. **Mehr anzeigen** lädt ältere Einträge.
 
 Anstehende Meetings stehen getrennt oben unter **Demnächst**, das nächste zuerst. **Alle anstehenden zeigen** zeigt den Rest. Ein Meeting, das in mehreren deiner Kalender steht, erscheint nur einmal.
 

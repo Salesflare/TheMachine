@@ -978,7 +978,7 @@ AUTO_UNDO_NEW = dt.timedelta(hours=1)
 # A message send whose outcome is unknown keeps its lock while the service checks the conversation
 # (it never resends by itself). After this long with no sign of it, the owner may send it again.
 SEND_RETRY_AFTER = dt.timedelta(minutes=30)
-MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')
+MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
 
 
 def send_retry_ok(job, kind):
@@ -1524,7 +1524,7 @@ PROFILE_MIN = 5         # fewer says too little about how someone writes
 PROFILE_SECONDS = 900
 PROFILE_LISTS = {'languages': 4, 'examples': 4, 'matters': 8, 'leave_alone': 6}
 PROFILE_TEXT = ('role', 'tone', 'greeting', 'sign_off', 'habits')
-PROFILE_VOICES = 5      # one voice per channel: email reads nothing like WhatsApp
+PROFILE_VOICES = 6      # one voice per channel: email reads nothing like WhatsApp or Telegram
 PROFILE_ROOM = 1200     # characters a draft aims for when USER.md's free room is unknown; OpenClaw chats load 4,000
 # Not writing: media placeholders, reactions and automated mail say nothing about how someone writes.
 PROFILE_SKIP = re.compile(r'^(?:Sent (?:an? )?(?:image|photo|video|sticker|audio|voice message|document|GIF|file)\b|Reacted \S{1,8} to |'
@@ -1538,9 +1538,9 @@ ORGS_PEOPLE = 60        # people without an organization one organizations turn 
 EVIDENCE_PAGE_CHARS = 40000
 SHARE_HISTORY_BATCH, SHARE_HISTORY_PAGE = 120, 20  # the Shared Graph's history pass: threads per turn, and per page
 PROFILE_WEIGHTS = {'gmail.message': 2}  # drafts are mostly email, so email gets two turns per round
-OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
+OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
 # How the owner writes, per channel. A voice is a short block (a few lines); All holds what goes for every channel.
-VOICE_CHANNELS = ('All', 'Email', 'Slack', 'WhatsApp', 'LinkedIn', 'X DM')
+VOICE_CHANNELS = ('All', 'Email', 'Slack', 'WhatsApp', 'Telegram', 'LinkedIn', 'X DM')
 VOICE_CHARS = 450
 VOICE_LINES = 5
 # Each habit as precisely as the owner shows it, never broader (2026-10-24): "I don't use caps on chat" meant sentence starts,
@@ -1559,7 +1559,7 @@ VOICE_STUDY_MIN = 5       # fewer says too little about a channel
 VOICE_STUDY_DAYS = 30     # read again this often, so the blocks follow how the owner writes now
 VOICE_MAX = 10
 VOICE_EXAMPLES = 6        # the owner's own recent messages a draft gets to match, same conversation first
-DRAFT_EVENT_KINDS = {'email': 'gmail.message', 'slack': 'slack.message', 'whatsapp': 'whatsapp.message', 'linkedin': 'linkedin.message', 'x': 'x.dm'}
+DRAFT_EVENT_KINDS = {'email': 'gmail.message', 'slack': 'slack.message', 'whatsapp': 'whatsapp.message', 'telegram': 'telegram.message', 'linkedin': 'linkedin.message', 'x': 'x.dm'}
 EVENT_CHANNELS = {kind: 'Email' if name == 'email' else name for kind, name in OWN_KINDS.items()}
 ELSEWHERE_DAYS = 3        # the owner's own message in the draft's conversation this soon after it was ready replaced the draft
 FACTS_ALL_UNDER = 1200  # while what was learned is this short, every preparation gets all of it
@@ -2298,6 +2298,159 @@ def sync_whatsapp(store, config, account, source=None):
     return {'mode':'incremental','events':len(events)}
 
 
+class Telegram:
+    """The owner's own Telegram chats, read from the store the Telegram mirror keeps (telegram_store.py), read-only.
+    The mirror alone holds the Telegram session; nothing here talks to Telegram."""
+
+    def __init__(self, config, account):
+        self.config, self.account = config, account
+
+    def open(self):
+        import telegram_store
+        store = self.account.get('store')
+        if not store or not (Path(store).expanduser() / telegram_store.DB_NAME).exists():
+            raise SourceError('telegram_source_unavailable')
+        try:
+            db = telegram_store.connect(Path(store).expanduser(), readonly=True)
+            seal = telegram_store.sealer(Path(store).expanduser(), self.config.get('database'), create=False)
+        except (sqlite3.Error, OSError, ValueError):
+            raise SourceError('telegram_source_unavailable') from None
+        if seal is None:
+            db.close()
+            raise SourceError('telegram_source_unavailable')
+        return telegram_store, db, seal
+
+    def profile(self):
+        """The mirror's state, when it is logged in to this account and nothing stopped it. A stop says why: logged out
+        (log in again), Telegram refused this Machine's app ID (telegram_app_blocked: said plainly on Connections, never a
+        silent gap), or a flood wait it is sitting out."""
+        ts, db, _ = self.open()
+        with contextlib.closing(db):
+            state = ts.get_state(db)
+        error = state.get('error')
+        if error == 'app_blocked':
+            raise SourceError('telegram_app_blocked')
+        if error in ('signed_out', 'logged_out', 'session_unreadable'):
+            raise SourceError('telegram_logged_out')
+        if state.get('identity') != self.account.get('identity_sha256'):
+            raise SourceError('account_identity_mismatch')
+        return state
+
+    def chats(self, query=None, limit=10):
+        """The chats the mirror reads ({id, kind, name}), optionally those whose name holds `query`."""
+        ts, db, seal = self.open()
+        with contextlib.closing(db):
+            rows = db.execute("SELECT id, kind, name FROM chats WHERE skipped='' ORDER BY updated_at DESC").fetchall()
+        found = [{'id': r['id'], 'kind': r['kind'], 'name': seal.open(r['name']) or 'Telegram chat'} for r in rows]
+        if query:
+            words = query.casefold().split()
+            found = [c for c in found if all(w in c['name'].casefold() for w in words)]
+        return found[:limit]
+
+    def messages(self, after):
+        ts, db, seal = self.open()
+        with contextlib.closing(db):
+            rows = db.execute("SELECT m.*, c.name chat_name, c.kind chat_kind FROM messages m JOIN chats c ON c.id=m.chat_id "
+                              "WHERE m.occurred_at>=? AND c.skipped='' ORDER BY m.occurred_at LIMIT 20000", (after,)).fetchall()
+        return [{**dict(r), 'text': seal.open(r['text']) if r['text'] is not None else None,
+                 'sender_name': seal.open(r['sender_name']), 'chat_name': seal.open(r['chat_name'])} for r in rows]
+
+
+TELEGRAM_CHAT = re.compile(r'-?[0-9]{1,20}')
+
+
+def telegram_event(account, raw):
+    """One message from the Telegram store as an event (kind telegram.message), like a WhatsApp one."""
+    chat, mid = str(raw.get('chat_id') or ''), raw.get('msg_id')
+    if not TELEGRAM_CHAT.fullmatch(chat) or not isinstance(mid, int) or not isinstance(raw.get('occurred_at'), str):
+        raise SourceError('telegram_invalid_message')
+    try:
+        stamp = dt.datetime.fromisoformat(raw['occurred_at'])
+    except ValueError:
+        raise SourceError('telegram_invalid_timestamp') from None
+    if stamp.tzinfo is None:
+        raise SourceError('telegram_missing_timezone')
+    from_me = bool(raw.get('from_me'))
+    body = raw.get('text') or ''
+    if not body.strip() and raw.get('media_type'):
+        body = 'Sent a ' + str(raw['media_type'])
+    sensitive = bool(re.search(r'(?i)verification code|security code|login code|one.time (?:code|password)|\bOTP\b|verificatiecode', body))
+    if sensitive:
+        body = '[One-time security code omitted]'
+    group = raw.get('chat_kind') == 'group'
+    chat_name = raw.get('chat_name') or ('Telegram group' if group else 'Telegram chat')
+    sender = 'You' if from_me else (raw.get('sender_name') or ('Unknown sender' if group else chat_name))
+    deleted = bool(raw.get('deleted')) or not body.strip()
+    metadata = {'chat_name': chat_name, 'chat_id': chat, 'chat_kind': 'group' if group else 'dm', 'message_id': mid,
+                'from_me': from_me, 'sender_id': None if from_me else (str(raw.get('sender_id') or '') or None),
+                'sender_identity': 'authenticated_account_owner' if from_me else 'source_label_unverified',
+                'from': sender, 'sender_display': sender,
+                'sender_display_source': 'authenticated_account_owner' if from_me else 'source_label_unverified',
+                'edited': bool(raw.get('edited')), 'revoked': bool(raw.get('deleted')), 'no_content': not body.strip(),
+                'media_type': raw.get('media_type') or '', 'media_collected': False, 'reply_to': raw.get('reply_to'),
+                'security_code_omitted': sensitive, 'truncated': len(body) > 40000,
+                'transport': 'telegram_mirror_store',
+                'coverage': 'Private chats and small groups the mirror reads; channels, bots, muted and archived chats are skipped.'}
+    identity = hashlib.sha256(encoded([chat, mid, from_me]).encode()).hexdigest()
+    return {'account_id': account['id'], 'source_id': identity, 'kind': 'telegram.message',
+            'occurred_at': stamp.astimezone(dt.timezone.utc).isoformat(),
+            'title': chat_name[:1000], 'body': body[:40000], 'metadata': metadata, 'deleted': deleted}
+
+
+def sync_telegram(store, config, account, source=None):
+    source = source or Telegram(config, account)
+    state_ = source.profile()
+    stamp = dt.datetime.fromisoformat(now())
+    after = (stamp - dt.timedelta(days=config.get('bootstrap_days', 7))).isoformat()
+    rows = source.messages(after)
+    events = list({e['source_id']: e for e in (telegram_event(account, raw) for raw in rows)}.values())
+    checkpoint = store.checkpoint(account['id']) or {}
+    checkpoint.update(mode='incremental', after=after, before=stamp.isoformat(), retained_days=config.get('bootstrap_days', 7),
+                      available_messages=len(rows), source_latest_message=max((e['occurred_at'] for e in events), default=None),
+                      mirror_last_ok=state_.get('last_ok'), flood_until=state_.get('flood_until'),
+                      coverage='Seven-day reread of the Telegram mirror store. Nothing here talks to Telegram.')
+    store.commit_page(account['id'], checkpoint, events)
+    return {'mode': 'incremental', 'events': len(events)}
+
+
+def owner_telegram_chats(config, db, raw, task_chats, source=None):
+    """As owner_whatsapp_chats, for Telegram: the person's existing chat in the owner's own Telegram account, for a
+    card that switches to Telegram. A chat_id must be one the mirror reads; a to_name must match one chat (a private
+    chat first). Never a new chat. Returns {chat_id: {account_id, name, switched}} and fills in the chat_id it found."""
+    found = {}
+    for item in raw if isinstance(raw, list) else [raw]:
+        if not isinstance(item, dict) or item.get('kind') != 'telegram' or str(item.get('chat_id') or '') in task_chats:
+            continue
+        account = next((a for a in config['accounts'] if a['id'] == item.get('account_id') and a.get('service') == 'telegram' and not a.get('shared')), None)
+        if not account:
+            continue
+        excluded = {c for r in account.get('exclude') or [] if set(r) == {'chats'} for c in r['chats']}
+        reader = source(config, account) if source else Telegram(config, account)
+        try:
+            chats = reader.chats(limit=100000) if item.get('chat_id') else reader.chats(str(item.get('to_name') or '').strip() or None)
+        except SourceError:
+            raise ValueError('Telegram can’t be read right now, so I can’t find the chat. Put the message in the body and say '
+                             'in one line that they can send it on Telegram themselves.') from None
+        chats = [c for c in chats if c['id'] not in excluded]
+        if item.get('chat_id'):
+            chat = next((c for c in chats if c['id'] == str(item['chat_id'])), None)
+            if not chat:
+                continue
+        elif isinstance(item.get('to_name'), str) and 2 <= len(item['to_name'].strip()) <= 100:
+            people = [c for c in chats if c['kind'] == 'dm'] or chats
+            if len(people) != 1:
+                raise ValueError(('More than one Telegram chat matches: ' + '; '.join(f"{c['name']} (chat_id {c['id']})" for c in people[:5])
+                                  + '. Give the right chat_id.') if people else
+                                 'No Telegram chat with ' + item['to_name'].strip() + ' in this account. Never start a new one: put the message '
+                                 'in the body and say in one line that they can send it on Telegram themselves.')
+            chat = people[0]
+            item['chat_id'] = chat['id']
+        else:
+            continue
+        found[chat['id']] = {'account_id': account['id'], 'name': chat['name'], 'switched': True}
+    return found
+
+
 class Android:
     def __init__(self, config, account):
         self.config, self.account = config, account
@@ -2707,7 +2860,7 @@ def routine_recurring_instance(metadata):
 def excluded_by_rules(rules, event):
     """Owner-chosen noise that is never stored (account config `exclude`). A rule matches when
     all its conditions hold: `channels` (Slack channel names), `bots_only`, `packages`
-    (Android package names), `chats` (WhatsApp chat IDs), `senders` (email address substrings)
+    (Android package names), `chats` (WhatsApp or Telegram chat IDs), `senders` (email address substrings)
     or `routine_recurring` (calendar instances of a recurring event that weren't moved or canceled),
     usually combined with `titles` (exact event titles, case-insensitive), or `text`
     (case-insensitive regular expressions searched in the title and body)."""
@@ -4510,7 +4663,7 @@ class Store:
 
         def rank(row):
             m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-            if row['kind'] in ('linkedin.message', 'x.dm', 'whatsapp.message'):
+            if row['kind'] in ('linkedin.message', 'x.dm', 'whatsapp.message', 'telegram.message'):
                 return 3 if m.get('from_me') else 0
             if row['kind'] == 'slack.message' and m.get('conversation_type') == 'dm':
                 return 3 if m.get('user_id') in self.owner_user_ids else 0
@@ -4590,7 +4743,7 @@ class Store:
     def conversation_context(self, rows, limit=4, hours=48):
         """Up to four earlier messages from the same chat for each Slack/WhatsApp signal, so a
         short reply ("let me check") is reviewed with what it answers."""
-        keys = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'x.mention': 'conversation_id'}
+        keys = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'telegram.message': 'chat_id', 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'x.mention': 'conversation_id'}
         context = {}
         with self.connect() as db:
             for row in rows:
@@ -4636,8 +4789,8 @@ class Store:
                 by_key[('x-reply', action['account_id'], job['message_id'][2:])] = card
             elif action.get('kind') == 'x' and action.get('conversation_id'):
                 by_key[('x-dm', action['account_id'], action['conversation_id'])] = card
-            elif action.get('kind') == 'whatsapp' and action.get('chat_id'):
-                by_key[('whatsapp', action['account_id'], action['chat_id'])] = card
+            elif action.get('kind') in ('whatsapp', 'telegram') and action.get('chat_id'):
+                by_key[(action['kind'], action['account_id'], action['chat_id'])] = card
             elif action.get('kind') == 'intercom' and action.get('conversation_id'):
                 by_key[('intercom', action['account_id'], action['conversation_id'])] = card
         found = {}
@@ -4654,8 +4807,8 @@ class Store:
                 card = by_key.get(('x-reply', row['account_id'], m.get('in_reply_to_id')))
             elif row['kind'] == 'x.dm' and not m.get('from_me'):
                 card = by_key.get(('x-dm', row['account_id'], m.get('conversation_id')))
-            elif row['kind'] == 'whatsapp.message' and not m.get('from_me'):
-                card = by_key.get(('whatsapp', row['account_id'], m.get('chat_id')))
+            elif row['kind'] in ('whatsapp.message', 'telegram.message') and not m.get('from_me'):
+                card = by_key.get((row['kind'].split('.')[0], row['account_id'], m.get('chat_id')))
             elif row['kind'] == 'intercom.conversation' and m.get('last_author_type') in ('user', 'lead', 'contact'):
                 card = by_key.get(('intercom', row['account_id'], m.get('conversation_id')))  # the customer wrote last
             if card and row['occurred_at'] > card['sent_at']:
@@ -4971,7 +5124,7 @@ class Store:
                 promise = next((r for r in rows if r['id'] == awaiting), None)
                 watch = promise and awaiting_key(dict(promise), self.owner_user_ids)
                 if not watch:
-                    raise ValueError('awaiting_event_id must be one of event_ids: the email, Slack, WhatsApp or LinkedIn message where someone else made the promise')
+                    raise ValueError('awaiting_event_id must be one of event_ids: the email, Slack, WhatsApp, Telegram or LinkedIn message where someone else made the promise')
                 if when in ('now', 'digest') and not due:
                     raise ValueError('A follow-up on someone else\'s promise needs due (their deadline) or when, so the card waits until then')
             target = None
@@ -5362,7 +5515,7 @@ class Store:
             db.execute('BEGIN IMMEDIATE')
             event = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id=? AND deleted=0', (args.get('event_id'),)).fetchone()
             if not event or event['kind'] not in OWN_KINDS:
-                raise ValueError('event_id is the email, Slack, WhatsApp, LinkedIn or X message with the promise')
+                raise ValueError('event_id is the email, Slack, WhatsApp, Telegram, LinkedIn or X message with the promise')
             own = own_message(dict(event), self.owner_user_ids)
             if direction == 'mine' and not own:
                 raise ValueError("The owner's promises are in messages they sent (a reply, a yes or a reaction to a request); event_id is that message")
@@ -6728,7 +6881,7 @@ class Store:
 
     def learn_sent_elsewhere(self, days=ELSEWHERE_DAYS):
         """A ready draft the owner didn't send from the card, because they wrote their own reply in that conversation
-        (in Gmail, WhatsApp, Slack…): what they wrote instead teaches the next drafts like an edit does."""
+        (in Gmail, WhatsApp, Telegram, Slack…): what they wrote instead teaches the next drafts like an edit does."""
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
         ids, learned = sorted(self.owner_user_ids), 0
         with self.connect() as db:
@@ -7291,7 +7444,7 @@ class Store:
                     raise ValueError('This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
             action=next_actions.selected(row['next_action'],revision) if row else None
-            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','intercom','doc_reply','finish'):
+            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','finish'):
                 raise ValueError('This draft changed or is no longer ready. Use its current buttons.')
             lock=send_lock(db,suggestion_id,revision,action['kind'])
             if lock:raise ValueError(lock)
@@ -7329,7 +7482,7 @@ class Store:
             done=db.execute("SELECT status FROM action_jobs WHERE suggestion_id=? AND revision=? AND status IN ('sent','done')",(suggestion_id,revision)).fetchone() if row and row['status']=='completed' else None
             if done:
                 return {'status':done['status'],'duplicate':True}
-            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','intercom','doc_reply','merge','prepare','finish','calendar'):
+            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','prepare','finish','calendar'):
                 raise ValueError('This result changed or is no longer ready. Use its current buttons.')
             if action.get('to_options'):
                 # The owner picked who gets it, only from the addresses the service found in the thread.
@@ -8777,6 +8930,8 @@ def sync_source(store, config, account):
         return sync_slack(store, config, account)
     if service == 'whatsapp':
         return sync_whatsapp(store, config, account)
+    if service == 'telegram':
+        return sync_telegram(store, config, account)
     if service == 'salesflare':
         return sync_salesflare(store, config, account)
     if service == 'gateway':
@@ -8951,7 +9106,7 @@ def awaiting_key(event, owner_slack_ids=()):
         return {**key, 'thread_id': m.get('thread_id'), 'from': _address(m.get('from'))}
     if event['kind'] == 'slack.message' and m.get('user_id') and m['user_id'] not in owner_slack_ids:
         return {**key, 'channel_id': m.get('channel_id'), 'user_id': m['user_id']}
-    if event['kind'] in ('whatsapp.message', 'linkedin.message', 'x.dm') and not m.get('from_me') and (m.get('chat_id') or m.get('conversation_id')):
+    if event['kind'] in ('whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm') and not m.get('from_me') and (m.get('chat_id') or m.get('conversation_id')):
         return {**key, 'conversation': m.get('chat_id') or m['conversation_id'], 'sender': m.get('sender_id') or m.get('from') or ''}
     return None
 
@@ -9063,7 +9218,7 @@ def awaiting_match(watch, event, owner_slack_ids=()):
 
 SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack',
                'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
-               'android.notification': 'phone', 'whatsapp.message': 'WhatsApp',
+               'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
                'gateway.alert': 'OpenClaw'}
 SOURCE_KIND['fleet.request'] = 'Fleet'
 SOURCE_KIND['fleet.email'] = 'email'  # a copy a teammate's handoff carried (fleet_requests.handoff_sources)
@@ -9472,7 +9627,7 @@ CHAT_UNDONE = {('complete', 'reopen'), ('reject', 'reopen'), ('snooze', 'unsnooz
 # A conversation event's parts, one per line: "<unix time> · <author> · <part kind>: <text>"
 CHAT_PART = re.compile(r'^(\d{9,11}) · ([^·\n]{1,120}) · ([\w.-]{1,60}):[ \t]?(.*)$', re.M)
 CHAT_AGENTS = {'claude': 'Claude Code', 'codex': 'Codex'}
-CHAT_SENT = {'email': 'email', 'email_demo': 'email', 'linkedin': 'message', 'slack': 'message', 'x': 'post', 'whatsapp': 'message', 'intercom': 'reply', 'doc_reply': 'reply'}
+CHAT_SENT = {'email': 'email', 'email_demo': 'email', 'linkedin': 'message', 'slack': 'message', 'x': 'post', 'whatsapp': 'message', 'telegram': 'message', 'intercom': 'reply', 'doc_reply': 'reply'}
 CHAT_SECRETS = (
     (re.compile(r'-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----'), '[redacted private key]'),
     (re.compile(r'\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'), '[redacted token]'),
@@ -9642,7 +9797,7 @@ def chat_person(name):
 
 # A raw chat handle is never shown: a channel ("#DM", "#general"), a Slack or WhatsApp ID, or both together
 CHAT_HANDLE = re.compile(r'(?:#[\w.-]*|[CDGUW][A-Z0-9]{8,})(?:\s+[UW][A-Z0-9]{8,})?|\d{6,}@(?:s\.whatsapp\.net|g\.us|lid)')
-CHAT_ON = {'slack': ' on Slack', 'whatsapp': ' on WhatsApp', 'linkedin': ' on LinkedIn', 'x': ' on X', 'intercom': ' in Intercom', 'doc_reply': ' in the doc'}
+CHAT_ON = {'slack': ' on Slack', 'whatsapp': ' on WhatsApp', 'telegram': ' on Telegram', 'linkedin': ' on LinkedIn', 'x': ' on X', 'intercom': ' in Intercom', 'doc_reply': ' in the doc'}
 
 
 def chat_plain_name(name):
@@ -9883,7 +10038,7 @@ def chat_prompt(job, config=None):
     return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. {i18n.prompt_rule()} This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. Preparation job ID: {j}.
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{meeting_notes_prompt(config)}
-- Save with assistant_signals prepare args suggestion_id={sid}, job_id={j}, reply=<your answer to their message, short; the chat shows it>, body=<the card's status after this: where the task stands and what is ready, about the task, never a reply to them; leave it out when only answered and the status didn't change>, next_actions=[...] (the current ones again when you only answered), outcome and note_kind as the earlier instructions say (outcome answered when you only answered and no draft is waiting); or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason, details, and questions when only the owner can unblock it. When they say they talk to this person on another channel (WhatsApp), switch the draft to it as PREPARATION.md says; a limit of The Machine is never a question for them. When they say the person doesn't know about it yet, the message first says what it is about.'''
+- Save with assistant_signals prepare args suggestion_id={sid}, job_id={j}, reply=<your answer to their message, short; the chat shows it>, body=<the card's status after this: where the task stands and what is ready, about the task, never a reply to them; leave it out when only answered and the status didn't change>, next_actions=[...] (the current ones again when you only answered), outcome and note_kind as the earlier instructions say (outcome answered when you only answered and no draft is waiting); or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason, details, and questions when only the owner can unblock it. When they say they talk to this person on another channel (WhatsApp, Telegram), switch the draft to it as PREPARATION.md says; a limit of The Machine is never a question for them. When they say the person doesn't know about it yet, the message first says what it is about.'''
 
 
 # What a review's own tool calls say it is doing, in the owner's words. Only names and card titles (what a card already
@@ -9938,7 +10093,7 @@ def review_steps(db, run, agent_db=None, limit=8):
 
 
 KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting', 'meetings'), 'slack.message': ('Slack message', 'Slack messages'),
-              'whatsapp.message': ('WhatsApp message', 'WhatsApp messages'), 'linkedin.message': ('LinkedIn message', 'LinkedIn messages'),
+              'whatsapp.message': ('WhatsApp message', 'WhatsApp messages'), 'telegram.message': ('Telegram message', 'Telegram messages'), 'linkedin.message': ('LinkedIn message', 'LinkedIn messages'),
               'android.notification': ('phone notification', 'phone notifications'), 'x.message': ('X message', 'X messages')}
 
 
@@ -10403,7 +10558,7 @@ def card(row):
         status={'queued':t('Testing the fix. It merges by itself if every check passes.') if auto else t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),'sending':t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),
                 'sent':((t('Merged by itself and restarted. You can undo it for 24 hours; it undoes itself if the error comes back.') if auto else t('Merged. The Machine restarts with the fix.'))
                         +(' '+action_state['error'] if action_state.get('error') else '')) if merging else
-                ('✓ '+(t('LinkedIn message sent') if mid.startswith(('urn:li:','linkedin:')) else t('Slack message sent') if mid.startswith('slack:') else t('Reply posted on X') if mid.startswith('x:') else t('X message sent') if mid.startswith('xdm:') else t('WhatsApp message sent') if mid.startswith('whatsapp:') else t('Sent as {} in Intercom', ' '.join(str(sent.get('as_name') or t('your Intercom admin')).split())) if mid.startswith('intercom:') else t('Reply posted in the doc') if mid.startswith('doc:') else t('Email sent'))+to_at+'.'+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(t(' Tap Merge fix to merge it anyway.') if auto else ''),'failed':action_state.get('error'),
+                ('✓ '+(t('LinkedIn message sent') if mid.startswith(('urn:li:','linkedin:')) else t('Slack message sent') if mid.startswith('slack:') else t('Reply posted on X') if mid.startswith('x:') else t('X message sent') if mid.startswith('xdm:') else t('WhatsApp message sent') if mid.startswith('whatsapp:') else t('Telegram message sent') if mid.startswith('telegram:') else t('Sent as {} in Intercom', ' '.join(str(sent.get('as_name') or t('your Intercom admin')).split())) if mid.startswith('intercom:') else t('Reply posted in the doc') if mid.startswith('doc:') else t('Email sent'))+to_at+'.'+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(t(' Tap Merge fix to merge it anyway.') if auto else ''),'failed':action_state.get('error'),
                 'undoing':t('Undoing the merge…'),'undone':action_state.get('error') or t('Merge undone.')}.get(action_state['status'],status)
     try:
         handed = json.loads(row['awaiting']) if row.get('awaiting') else {}
@@ -10436,7 +10591,7 @@ def card(row):
     return ('**' + title + '**\n\n' + body + source + ('\n\n' + status if status else '')).strip()
 
 
-CARD_DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply')
+CARD_DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
 ACTION_BUSY = ('queued', 'sending', 'sent', 'uncertain', 'local_preparation', 'paused', 'undoing', 'undone')
 # What is really working right now, for tools and for a check before a restart or an update (`assistant busy`).
 # A confirmed step whose preparation stopped (blocked, timed out, canceled by a snooze or close) is 'paused', not here.
@@ -10543,7 +10698,7 @@ def card_draft(row):
     elif a['kind'] == 'doc_reply':
         head = ['Reply to ' + a.get('to_name', '') + ' on “' + a.get('doc_title', '') + '”']
     else:
-        head = [{'linkedin': 'LinkedIn', 'slack': 'Slack', 'whatsapp': 'WhatsApp'}[a['kind']] + ' message to ' + a.get('to_name', '')]
+        head = [{'linkedin': 'LinkedIn', 'slack': 'Slack', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram'}[a['kind']] + ' message to ' + a.get('to_name', '')]
     tail = []
     if a.get('signature'): tail.append('+ your signature')
     if a.get('attachments'): tail.append('Attachments: ' + ', '.join(x.get('name', '') for x in a['attachments']))
@@ -10788,7 +10943,7 @@ def controls(row, root=''):
         for action in actions:
             state=action.get('state') or row.get('action_status',{})
             if action['kind']=='finish' and state.get('status')=='done':continue
-            if action['kind'] in ('email','email_demo','linkedin','slack','x','whatsapp','intercom','doc_reply','merge','prepare','finish') and not action_busy(state):
+            if action['kind'] in ('email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','prepare','finish') and not action_busy(state):
                 if shown and shown['full'] and shown['action']['revision']==action['revision']:
                     # The card shows this draft in full: Send confirms it, Edit opens it in the dashboard editor.
                     buttons.append({'label':next_actions.label(action),'action':{'type':'callback','value':f"assistant:{row['id']}:confirm_{action['revision']}"}})
@@ -10859,7 +11014,7 @@ def event_glance(event, accounts, own=(), chars=240):
         if not out['dm'] and m.get('channel_name'):
             out['place'] = '#' + str(m['channel_name'])[:80]
     # The conversation a chat message is part of, so the Graph shows a run of them as one row. Mail and meetings: none.
-    thread = {'whatsapp.message': m.get('chat_id'), 'slack.message': m.get('channel_id'), 'linkedin.message': m.get('conversation_id'),
+    thread = {'whatsapp.message': m.get('chat_id'), 'telegram.message': m.get('chat_id'), 'slack.message': m.get('channel_id'), 'linkedin.message': m.get('conversation_id'),
               'x.dm': m.get('conversation_id'), 'intercom.conversation': m.get('conversation_id')}.get(event.get('kind'))
     if thread:
         out['thread'] = f"{event.get('account_id')}:{event.get('kind')}:{thread}"
@@ -11797,7 +11952,7 @@ For this job:
 - Save the result with assistant_signals prepare args suggestion_id={sid}, job_id={j}, body=<short result>, next_actions=[...], outcome, and send_now:true only when the owner's latest message approves sending a draft they already saw on the card, unchanged (the service refuses any other). A draft you write or change in this turn is saved without send_now and shown to them: they read it and tap Send (outcome:'needs_you', needs:'check the draft and send it'), also when their note only says what to do ("email Sam now").
 - outcome:'done' only when the task itself is complete and nothing is left for the owner but to check it; outcome:'answered' when you only answered their question, explained or planned, and the task itself is still to do (the card then offers Do it again); outcome:'already_done' with no next_actions when it turns out to be done already or no longer needed; outcome:'your_step' with step:'submit' (or pay, book, sign, confirm, order, apply) when everything is ready but that final click is left for them, e.g. a form you filled in and didn't submit (the card says so and links to the page in this Machine's browser by itself; no link of your own needed); outcome:'needs_you' with needs:<the one thing they have to do, in a few words> otherwise (approve the send, sign in, choose); when that is a question for them, write needs as the question itself, ending in "?" (the card then leads with Answer). The card shows that status line itself, so the body doesn't repeat it. Finish what you can first: don't stop to ask about steps the rules already let you do.
 - When the card's title no longer says where things stand after this result (the situation changed, not just the wording), add title=<a new short title for now, under 90 characters>; otherwise leave title out.
-- When latest_feedback is a Change note, also give note_kind: style (how it was written), fact (something you didn't know), continue (keep going or finish the job) or new_ask (something else to do). A style note that holds beyond this card (how they write on a channel or with this kind of person: length, tone, greeting, sign-off, language, capitals, punctuation, links, formatting; "always…", "next time…", or what they asked on an earlier card) updates that channel's voice: assistant_signals remember_fact args kind=voice, channel=<the channel it is about: Email, Slack, WhatsApp, LinkedIn, X DM, another channel's name, or All when it holds everywhere>, text=<that channel's whole voice block (up to {VOICE_LINES} short lines, at most {VOICE_CHARS} characters): the current block with the note worked in, everything else kept, only what it contradicts dropped>, decision_id=<that note's decision>. {VOICE_PRECISE} How a kind of task is done (what to include, where things go) is a draft rule instead: remember_fact kind=draft, text=<the rule, general>. A fact note that holds beyond this card goes in remember_fact as a fact. A note about how to do a kind of task next time ("next time keep it open for me") is a draft rule, also when it is not about writing. The card's chat shows what remember_fact saved, with Undo: the body never says you noted, saved or will remember something, and never claims it when nothing was saved.
+- When latest_feedback is a Change note, also give note_kind: style (how it was written), fact (something you didn't know), continue (keep going or finish the job) or new_ask (something else to do). A style note that holds beyond this card (how they write on a channel or with this kind of person: length, tone, greeting, sign-off, language, capitals, punctuation, links, formatting; "always…", "next time…", or what they asked on an earlier card) updates that channel's voice: assistant_signals remember_fact args kind=voice, channel=<the channel it is about: Email, Slack, WhatsApp, Telegram, LinkedIn, X DM, another channel's name, or All when it holds everywhere>, text=<that channel's whole voice block (up to {VOICE_LINES} short lines, at most {VOICE_CHARS} characters): the current block with the note worked in, everything else kept, only what it contradicts dropped>, decision_id=<that note's decision>. {VOICE_PRECISE} How a kind of task is done (what to include, where things go) is a draft rule instead: remember_fact kind=draft, text=<the rule, general>. A fact note that holds beyond this card goes in remember_fact as a fact. A note about how to do a kind of task next time ("next time keep it open for me") is a draft rule, also when it is not about writing. The card's chat shows what remember_fact saved, with Undo: the body never says you noted, saved or will remember something, and never claims it when nothing was saved.
 - When the owner's note means they want this task itself back later (remind me about it next week, later, on Tuesday), that is this card's snooze, not a reminder: save with outcome:'snoozed' and snooze_until:<their local date and time, e.g. 2026-10-27T09:00, or a date alone for their morning>, and a one-line body. The card leaves their list and comes back then. Do not also add an automation, cron job or reminder for it. A separate reminder about something else, or a recurring one, stays an automation. Their time zone is {getattr(local_tz(),'key','UTC')}; it is now {dt.datetime.fromisoformat(now()).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')} there.
 - A first message to someone who doesn't know about it yet says what it is about before it asks.
 - Or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason=<one plain sentence>, details=<technical specifics>. Block only on what you truly can't know (their first-hand notes, a fact only they have, a call with no sensible default); a minor judgment call with an obvious sensible default you make yourself and name in one line of the result. When only the owner can unblock it, also give questions=[{{question:<one short plain question>, options:[<2-4 short choices, only when it is a clear choice>]}}] (at most 3). Each question must make sense on its own to someone who hasn't seen your work: plain words, what it is about and why it matters, no jargon or internal terms, e.g. {{question:'What did you notice when you tried OnePageCRM? A few lines on what you tried and what stood out are enough.'}}. The card shows them with quick picks and an Answer box. No paths, IDs or tool names in reason or questions.''' + owner_details(config) + (f'''
@@ -11908,7 +12063,7 @@ def recap_noise(db, since):
     noise, circle = {}, collections.defaultdict(lambda: {'mine': 0, 'people': set()})
     for i, account, kind, m in db.execute('SELECT id,account_id,kind,metadata FROM events WHERE ingested_at>=?', (since,)):
         m = json.loads(m)
-        if kind == 'whatsapp.message' and str(m.get('chat_id', '')).endswith('@g.us'):
+        if (kind == 'whatsapp.message' and str(m.get('chat_id', '')).endswith('@g.us')) or (kind == 'telegram.message' and m.get('chat_kind') == 'group'):
             chat = circle[(account, m['chat_id'])]  # who takes part, from every message in it (cards or not)
             if m.get('from_me'):
                 chat['mine'] += 1
@@ -11921,6 +12076,8 @@ def recap_noise(db, since):
             where, rule = '#' + m['channel_name'], {'channels': [m['channel_name']]}
         elif kind == 'whatsapp.message' and str(m.get('chat_id', '')).endswith('@g.us'):
             where, rule = m.get('chat_name') or 'WhatsApp group', {'chats': [m['chat_id']]}
+        elif kind == 'telegram.message' and m.get('chat_kind') == 'group' and m.get('chat_id'):
+            where, rule = m.get('chat_name') or 'Telegram group', {'chats': [m['chat_id']]}
         elif kind == 'android.notification' and m.get('package_name'):
             app = str(m.get('app_name') or android_app_name(m['package_name']))
             app = app.rsplit('.', 1)[-1] if re.fullmatch(r'[\w]+(?:\.[\w]+)+', app) else app  # com.Slack → Slack
@@ -12226,7 +12383,7 @@ Goal: draft the lines of the owner's USER.md that their own messages show, so re
 4. Call save_profile once with args.profile = {{"role": "…", "languages": ["Dutch: colleagues and family", "English: customers"], "tone": "…", "greeting": "…", "sign_off": "…", "habits": "…", "voices": {{"Email": "…", "Slack": "…", "WhatsApp": "…"}}, "examples": ["…"], "matters": ["Sam (Acme): weekly product call", "…"], "leave_alone": ["newsletters from …"]}}.
    - USER.md is loaded into every chat, so the whole profile must stay under {room} characters. Fewer, sharper lines beat complete ones.
    - Write each as a USER.md line in plain words, about the owner ("Short and friendly; first names; no exclamation marks"). Each text field is one or two sentences, under 250 characters. Per language when it differs (greeting and sign-off in Dutch vs English).
-   - voices: one line per channel with enough of their messages (Email, Slack, WhatsApp, LinkedIn, X DM), each under 200 characters: length, tone, language, greeting and sign-off as they write on that channel ("short bursts in Flemish, sentences start lowercase but names keep capitals, haha and 😅, no greeting or sign-off"). Say each habit exactly, never broader. Say what differs between channels; put what holds everywhere in tone, and leave greeting and sign_off out when the voices cover them. Drafts follow the voice of the channel they're for, so make each one usable on its own.
+   - voices: one line per channel with enough of their messages (Email, Slack, WhatsApp, Telegram, LinkedIn, X DM), each under 200 characters: length, tone, language, greeting and sign-off as they write on that channel ("short bursts in Flemish, sentences start lowercase but names keep capitals, haha and 😅, no greeting or sign-off"). Say each habit exactly, never broader. Say what differs between channels; put what holds everywhere in tone, and leave greeting and sign_off out when the voices cover them. Drafts follow the voice of the channel they're for, so make each one usable on its own.
    - examples: up to four short work phrases (under 140 characters) that sound most like them, from different messages, with no amounts, addresses, phone numbers, family or private life, or other people's details.
    - matters: up to eight people, customers or projects they clearly spend time on, with a few words why. Leave out anything confidential: deals, acquisitions or fundraising, investors, legal, health, money, accounting and family matters. leave_alone: senders or kinds of mail that are clearly noise to them (not bills, banks or anything they must act on).
    - Only what the messages show; leave a field out when unsure. Never invent a role or relationship.
@@ -12767,7 +12924,7 @@ class App:
             return False
         current = json.loads(row['next_action'])
         actions = current.get('actions') if current.get('kind') == 'menu' else [current]
-        editable = [a for a in actions or [] if isinstance(a, dict) and a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'intercom', 'doc_reply') and a.get('revision')]
+        editable = [a for a in actions or [] if isinstance(a, dict) and a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply') and a.get('revision')]
         if len(editable) != 1:
             return False
         return self.store.revise_draft(str(suggestion_id), editable[0]['revision'], 'agent', None, text, agent_job=job).get('status') == 'revised'
@@ -13671,6 +13828,9 @@ class App:
                 whatsapp_chats={m['chat_id']:{'account_id':r[0],'name':m.get('chat_name') or 'WhatsApp chat'} for r in db.execute(
                     "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='whatsapp.message' ORDER BY e.occurred_at",(row['event_ids'],))
                     for m in (json.loads(r[1]),) if m.get('chat_id')}
+                telegram_chats={m['chat_id']:{'account_id':r[0],'name':m.get('chat_name') or 'Telegram chat'} for r in db.execute(
+                    "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='telegram.message' ORDER BY e.occurred_at",(row['event_ids'],))
+                    for m in (json.loads(r[1]),) if m.get('chat_id')}
                 # The task's Intercom conversations, with the customer's address: an email to them is checked against
                 # replying in Intercom (next_actions.validate). One a handoff carried that this Machine doesn't read
                 # (fleet.intercom) can't be replied to here.
@@ -13682,8 +13842,9 @@ class App:
                 docs=doc_comments(self.config,db,row['event_ids'])
                 # The owner talks to this person on WhatsApp although the task came in another way: their existing chat.
                 whatsapp_chats.update(owner_whatsapp_chats(self.config,db,args.get('next_actions',args.get('next_action')),whatsapp_chats))
+                telegram_chats.update(owner_telegram_chats(self.config,db,args.get('next_actions',args.get('next_action')),telegram_chats))
                 calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
-            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails))
+            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats)
             for item in next_actions.actions(action):
                 if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
                     raise ValueError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')
@@ -15248,7 +15409,7 @@ class App:
                 LOG.error('delivery error=%s', type(error).__name__)
 
     def action_step(self,transport=None):
-        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_self),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config))
+        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_self),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config),next_actions.TelegramTransport(self.config))
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             for candidate in db.execute("SELECT j.id,j.revision,s.status,s.next_action FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id WHERE j.status IN ('queued','blocked')").fetchall():
@@ -15272,7 +15433,7 @@ class App:
                 else:
                     # Keep checking Sent mail, every five minutes for a day, then hourly.
                     wait=dt.timedelta(minutes=5 if dt.datetime.fromisoformat(job['created_at'])>dt.datetime.fromisoformat(now())-dt.timedelta(days=1) else 60)
-                    db.execute("UPDATE action_jobs SET status='uncertain',error=?,retry_at=? WHERE id=? AND status IN ('sending','uncertain')",('I couldn’t confirm whether the fix was merged. I’m checking the code; I won’t merge it again.' if action['kind']=='merge' else 'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.' if action['kind']=='calendar' else 'I couldn’t confirm whether this X '+('reply' if action.get('reply_to') else 'message')+' was sent. I’m checking X; I won’t send it again.' if action['kind']=='x' else 'I couldn’t confirm whether this WhatsApp message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='whatsapp' else 'I couldn’t confirm whether this Intercom reply was sent. I’m checking the conversation; I won’t send it again.' if action['kind']=='intercom' else 'I couldn’t confirm whether this doc reply was posted. I’m checking the comment; I won’t post it again.' if action['kind']=='doc_reply' else 'I couldn’t confirm whether this '+('LinkedIn' if action['kind']=='linkedin' else 'Slack')+' message was sent. I’m checking the conversation; I won’t send it again.' if action['kind'] in ('linkedin','slack') else 'I couldn’t confirm whether this email was sent. I’m checking Sent mail; I won’t send it again.',(dt.datetime.fromisoformat(now())+wait).isoformat(),job['id']))
+                    db.execute("UPDATE action_jobs SET status='uncertain',error=?,retry_at=? WHERE id=? AND status IN ('sending','uncertain')",('I couldn’t confirm whether the fix was merged. I’m checking the code; I won’t merge it again.' if action['kind']=='merge' else 'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.' if action['kind']=='calendar' else 'I couldn’t confirm whether this X '+('reply' if action.get('reply_to') else 'message')+' was sent. I’m checking X; I won’t send it again.' if action['kind']=='x' else 'I couldn’t confirm whether this WhatsApp message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='whatsapp' else 'I couldn’t confirm whether this Telegram message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='telegram' else 'I couldn’t confirm whether this Intercom reply was sent. I’m checking the conversation; I won’t send it again.' if action['kind']=='intercom' else 'I couldn’t confirm whether this doc reply was posted. I’m checking the comment; I won’t post it again.' if action['kind']=='doc_reply' else 'I couldn’t confirm whether this '+('LinkedIn' if action['kind']=='linkedin' else 'Slack')+' message was sent. I’m checking the conversation; I won’t send it again.' if action['kind'] in ('linkedin','slack') else 'I couldn’t confirm whether this email was sent. I’m checking Sent mail; I won’t send it again.',(dt.datetime.fromisoformat(now())+wait).isoformat(),job['id']))
             if result.get('message_id') and action['kind']=='merge':
                 self.merge_effect(job,action,result,'merge',transport.pick(action) if hasattr(transport,'pick') else transport)
             return
@@ -15283,7 +15444,7 @@ class App:
                 db.execute("UPDATE action_jobs SET retry_at=?,updated_at=? WHERE id=? AND status='queued'",((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=2)).isoformat(),now(),job['id']))
             return 'waiting'
         except Exception as error:
-            reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','intercom':'Intercom','doc_reply':'The doc'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
+            reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','telegram':'Telegram','intercom':'Intercom','doc_reply':'The doc'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
             with self.store.connect() as db:
                 db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id=? AND status='queued'",(reason,now(),job['id']))
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
@@ -15308,7 +15469,7 @@ class App:
             return 'waiting'
         with self.store.connect() as db:
             status='sent' if result.get('message_id') else 'failed' if result.get('rejected') else 'uncertain'
-            what,where={'linkedin':('this LinkedIn message','LinkedIn'),'slack':('this Slack message','Slack'),'x':('this X '+('reply' if action.get('reply_to') else 'message'),'X'),'whatsapp':('this WhatsApp message','WhatsApp'),'intercom':('this Intercom reply','Intercom'),'doc_reply':('this doc reply','The doc')}.get(action['kind'],('this email',mailbox_name(self.config,action)))
+            what,where={'linkedin':('this LinkedIn message','LinkedIn'),'slack':('this Slack message','Slack'),'x':('this X '+('reply' if action.get('reply_to') else 'message'),'X'),'whatsapp':('this WhatsApp message','WhatsApp'),'telegram':('this Telegram message','Telegram'),'intercom':('this Intercom reply','Intercom'),'doc_reply':('this doc reply','The doc')}.get(action['kind'],('this email',mailbox_name(self.config,action)))
             error={'sent':None,'failed':f"Last attempt failed: {where} refused {what} (error {result.get('rejected')}). Nothing was sent; change it or try again.",
                    'uncertain':f'I couldn’t confirm whether {what} was sent. I won’t resend it.'}[status]
             if action['kind']=='calendar':
