@@ -16,12 +16,12 @@ Il tuo piano AI viene fatturato dal tuo fornitore, come OpenAI. Noi non aggiungi
 
 ## Nel Network
 
-- Amici e Family: gratis, con qualsiasi Machine.
+- Amici e Family: gratis, con qualsiasi Machine. In una Fleet di famiglia, le Machine in hosting costano {price.family_pair} per le prime due insieme, poi {price.family_seat} ciascuna, IVA esclusa.
 - Fleet Lavoro: {price.seat} per posto al mese, o {price.seat_big} con un server Più grande, IVA esclusa. Un collega che gestisce la propria Machine costa {price.network} al mese, e uno che è già in hosting è gratis. Ogni Fleet ha la sua carta e le sue fatture, e il proprietario conferma ogni importo prima dell’addebito.
 
 Tutti i prezzi sono al mese, IVA esclusa. Vedi [Prezzi](/pricing).
 
-I prezzi in hosting e per posto di lavoro sono prezzi early adopter, invece di {price.standard_list} e {price.seat_list}. Gli early adopter li mantengono finché l’abbonamento resta attivo.
+I prezzi in hosting, per posto di lavoro e per la Fleet di famiglia sono prezzi early adopter, invece di {price.standard_list}, {price.seat_list} e {price.family_pair_list}. Gli early adopter li mantengono finché l’abbonamento resta attivo.
 
 ## Carta e fatture
 

@@ -16,12 +16,12 @@ Je AI-abonnement wordt gefactureerd door je provider, zoals OpenAI. Wij rekenen 
 
 ## Op het Network
 
-- Vrienden en Familie: gratis, met elke Machine.
+- Vrienden en Familie: gratis, met elke Machine. In een Familie-Fleet kosten gehoste Machines samen {price.family_pair} voor de eerste twee, daarna {price.family_seat} per stuk, excl. btw.
 - Werk-Fleet: {price.seat} per plaats per maand, of {price.seat_big} met een grotere server, excl. btw. Een teamgenoot die een eigen Machine draait, kost {price.network} per maand, en wie al gehost is, is gratis. Elke Fleet heeft een eigen kaart en eigen facturen, en de eigenaar bevestigt elk bedrag voordat het aangerekend wordt.
 
 Alle prijzen zijn per maand, excl. btw. Zie [Prijzen](/pricing).
 
-De prijzen voor gehost en Werk-plaatsen zijn early-adopterprijzen, verlaagd van {price.standard_list} en {price.seat_list}. Early adopters houden ze zolang hun abonnement actief blijft.
+De prijzen voor gehost, Werk-plaatsen en Familie-Fleets zijn early-adopterprijzen, verlaagd van {price.standard_list}, {price.seat_list} en {price.family_pair_list}. Early adopters houden ze zolang hun abonnement actief blijft.
 
 ## Kaart en facturen
 
