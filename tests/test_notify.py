@@ -230,6 +230,33 @@ class Notifications(unittest.TestCase):
         self.assertEqual(self.step(t0 + notify.EMAIL_AFTER + notify.EMAIL_EVERY), [])
         self.assertEqual(len(self.mails), 1)
 
+    def test_a_handoff_email_that_keeps_failing_is_retried_for_a_day_not_forever(self):
+        self.paired()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        row = self.handoff()
+        with patch.object(notify.time, 'time', return_value=t0):
+            self.app.fleet_notify([row])
+        self.mail = lambda *args: False  # the control plane doesn't take it
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER), [])
+        self.assertEqual(self.step(t0 + notify.EMAIL_AFTER + 61), [])  # kept and tried again
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel='handoff'").fetchone()[0], 1)
+        self.step(t0 + notify.HANDOFF_STALE + 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel='handoff'").fetchone()[0], 0)
+
+    def test_a_held_push_with_no_phone_left_is_dropped_not_kept_for_later(self):
+        self.held()
+        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        notify.mark_active(lambda: t0, client='desk', on=True)
+        notify.mark_active(lambda: t0 + 5, client='desk', on=False)
+        self.deliver(self.card(), t0 + 10)
+        with self.store.connect() as db:
+            db.execute('DELETE FROM push_subscriptions')  # the phone unsubscribed meanwhile
+        self.assertEqual(self.step(t0 + 5 + notify.AWAY_GRACE), [])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel='push'").fetchone()[0], 0)
+
     def test_no_handoff_email_with_a_phone_or_telegram_once_seen_or_handled_or_switched_off(self):
         self.paired()
         t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()

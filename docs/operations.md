@@ -178,10 +178,17 @@ Broker-token rotations replace only the exact login that made the request, never
 - Held notification email stays queued until a receipt. The same captured bundle uses the same delivery ID on retry.
   The control plane keeps a content hash and delivery status for 30 days, not the email body. Known rejections can
   retry; an uncertain provider send is held for reconciliation, never blindly resent. Existing seen/stale rules apply.
+  A held push is dropped when no phone is subscribed, or when it still couldn't go 15 minutes after it was due; a
+  handoff email that keeps failing is dropped after a day (the dashboard still shows the handoff).
 - A paired computer acknowledges a Codex brief only after committing its local ticket and job. Lost responses
   redeliver the same ticket without another launch; pending local jobs are recovered on restart.
-- Usage pacing applies to the selected provider, not another connected provider's quota. These changes add no
-  permissions or approval tiers. Error messages use a finite technical vocabulary, with unfamiliar words removed.
+- Usage pacing applies to the selected provider, not another connected provider's quota. When no usage is reported
+  under the selected provider's name, all reported windows still pace (waiting on the wrong quota is safer than none).
+  These changes add no permissions or approval tiers. Error messages use a finite technical vocabulary (the words
+  Python, browsers, SQLite and HTTP write errors in, the services a source names, and codes made only of those, like
+  `salesflare_invalid_json`), with unfamiliar words removed. An HTTP status goes as words (`salesflare: HTTP
+  unauthorized`, `HTTP rate limited`), since the control plane takes no 3-digit numbers. The control plane's
+  `cloud/errors.py` keeps the same `safe_word`, `SAFE_WORDS`, `SERVICES` and `SAFE_TYPES`, or it blanks those messages.
 
 Rollback uses a reviewed source revert, preserving SQLite and receipts. Old notification/catch-up code does not
 provide these guarantees; reverting it must not discard pending entries or replay uncertain sends.

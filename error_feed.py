@@ -99,12 +99,65 @@ TYPES = {'str', 'int', 'float', 'bool', 'bytes', 'dict', 'list', 'tuple', 'set',
          'Node', 'Window', 'Document'}
 TYPE_NAME = re.compile(r'[A-Z][A-Za-z0-9]*(?:Error|Exception|Warning|Interrupt|Exit|Iteration|Type)')
 SAFE_WORDS = {w.lower() for w in WORDS | TYPES} | set('''such attribute properties reading after s person email lookup delivery status android feed jwt parse reply draft rejected open cannot send see role has no name known next failed down gone error unavailable request response local at remote retry code result received returned does did not exist is was are been have network reach body text get set null sent timeout connection refused deprecation validation sync unknown outcome exceeded exception quota limit read write pending range invalid empty function expected dict list index key and or of the a an to from for in on with without by it its this that too many client server call file os errno'''.split())
+# The words Python, the browser, SQLite and HTTP write their errors in: never a person's or a customer's, and without
+# them a report says "<word> is not <word>" where it should say "database is locked" (2026-10-28)
+SAFE_WORDS |= set('''defined locked column table constraint unique operand unsupported values value unpack literal base depth
+maximum minimum recursion expecting line char column evaluating attempting resource fetch object readonly database disk full
+denied permission directory closed reset peer broken pipe decode encode codec byte bytes position start end out memory
+argument arguments positional keyword unexpected missing required takes given were but callable iterable subscriptable
+hashable serializable json http https url ssl certificate verify handshake host resolution temporary failure aborted abort
+operation cancelled canceled interrupted process exited signal killed terminated command found module property setting
+undefined assignment before referenced variable global access initialization declaration token input syntax storage
+transaction inactive version blocked because document focused allowed agent context changed load loading chunk script
+dynamically imported worker service registration timed seconds deadline eof occurred violation protocol would block
+temporarily unavailable try again files header headers content length type mismatch got instead must be should can could
+convert float int string number nan infinity zero division modulo non iterator generator already executing running event
+loop thread lock schema row rows query sql near incomplete bindings supplied current statement uses parameter parameters
+foreign check integrity image malformed attempt gateway bad internal unauthorized forbidden conflict payload large
+unprocessable entity rate limited later upstream proxy gaierror sqlite3 subprocess returned nonzero exit status
+when while during into than as if then else only all any some more less same other one first last
+'''.split())
 SAFE_CODES = {'android_feed_unavailable', 'delivery_outcome_unknown', 'conversations.history', 'HTTP_'}
+# The services a source error names (SourceError categories: salesflare:HTTP_401, trello_http, google_meet_invalid_page)
+SERVICES = set('''gmail calendar outlook slack salesflare hubspot pipedrive intercom stripe zoom trello shortcut github google
+meet linkedin x rss whatsapp android docs journal maton telegram openclaw gog wacli microsoft gbrain codex claude openai
+anthropic crm imap smtp graph fleet notion jira linear asana airtable'''.split())
+# Words those codes are made of besides (each part of a snake_case or dotted code must be a known word or service)
+SAFE_WORDS |= set('''invalid page cursor broker credential unreachable signin expired unreadable http missing timezone window feed
+advancing opportunities join disabled method ratelimited browser busy reader signed story member move history workspace
+search board action summary user host conference artifact maton shared replies off region profile conversation
+conversations parts identity mismatch entry encoding transport source content message person mention account scope
+notifications notification offline snapshot query unreachable stopped collector unsupported download no too large
+response timestamp media payment redirect required answered'''.split())
+# An HTTP status said in words, as the control plane takes no 3-digit numbers: 401 and 429 stay told apart
+HTTP_STATUS = re.compile(r'(?i)(?<![A-Za-z])HTTP(?:[ _]?Error)?[ _:]*([1-5]\d\d)\b')
+REASONS = {400: 'bad request', 401: 'unauthorized', 402: 'payment required', 403: 'forbidden', 404: 'not found',
+           405: 'method not allowed', 408: 'request timeout', 409: 'conflict', 410: 'gone', 413: 'payload too large',
+           415: 'unsupported media type', 422: 'unprocessable entity', 423: 'locked', 429: 'rate limited',
+           500: 'internal server error', 501: 'not implemented', 502: 'bad gateway', 503: 'service unavailable',
+           504: 'gateway timeout'}
+
+
+def http_reason(code):
+    code = int(code)
+    return REASONS.get(code) or {3: 'redirect', 4: 'client error', 5: 'server error'}.get(code // 100, 'status')
 SAFE_TYPES = set('''Error Exception Warning BaseException RuntimeError ValueError TypeError KeyError IndexError AttributeError NameError ImportError ModuleNotFoundError SyntaxError ReferenceError RangeError AbortError TimeoutError ConnectionError ConnectionResetError ConnectionRefusedError BrokenPipeError FileNotFoundError PermissionError OSError IOError EOFError UnicodeError UnicodeDecodeError UnicodeEncodeError RecursionError OverflowError MemoryError ZeroDivisionError AssertionError LookupError StopIteration SystemExit KeyboardInterrupt NotImplementedError OperationalError DatabaseError IntegrityError HttpError SourceError BrokerError'''.split())
+SAFE_TYPES |= set('''NetworkError QuotaExceededError NotAllowedError NotFoundError InvalidStateError SecurityError DataError
+DataCloneError TransactionInactiveError VersionError ConstraintError NotSupportedError DOMException UnknownError
+InvalidAccessError NotReadableError EncodingError HTTPError URLError JSONDecodeError IsADirectoryError NotADirectoryError
+FileExistsError ProgrammingError InterfaceError CalledProcessError TimeoutExpired SSLError SSLCertVerificationError
+CancelledError InvalidURL RemoteDisconnected IncompleteRead ChildProcessError ProcessLookupError BlockingIOError
+InterruptedError ConnectionAbortedError UnboundLocalError IndentationError ResourceWarning DeprecationWarning UserWarning
+RuntimeWarning ArithmeticError BufferError SystemError EvalError URIError AggregateError InternalError ExceptionGroup
+GeneratorExit StopAsyncIteration UnsupportedOperation BadZipFile ParseError ChunkLoadError TargetClosedError ProtocolError
+ReadTimeout ConnectTimeout'''.split())
 
 
 def safe_word(word):
-    return word.lower() in SAFE_WORDS or word in SAFE_CODES or word in SAFE_TYPES
+    if word.lower() in SAFE_WORDS or word.lower() in SERVICES or word in SAFE_CODES or word in SAFE_TYPES:
+        return True
+    parts = [p for p in re.split(r'[_.]', word.lower()) if p]  # a code: salesflare_invalid_json, trello_http
+    return len(parts) > 1 and all(p in SAFE_WORDS or p in SERVICES for p in parts)
 
 SECRETISH = (
     (re.compile(r'(?i)\b(bearer|basic)\s+\S+'), r'\1 <secret>'),
@@ -154,6 +207,7 @@ def normalize(message, names=()):
     text = support.scrub(text)
     for pattern, replace in SECRETISH:
         text = pattern.sub(replace, text)
+    text = HTTP_STATUS.sub(lambda m: 'HTTP ' + http_reason(m.group(1)), text)
     text = URL.sub('<url>', text)
     text = EMAIL.sub('<email>', text)
     text = DOMAIN.sub('<url>', text)
@@ -184,7 +238,8 @@ def normalize(message, names=()):
 
 def allowed(message):
     return (isinstance(message, str) and len(message) <= MESSAGE_MAX and bool(SHAPE.fullmatch(message))
-            and all(safe_word(w) for w in re.findall(r'[A-Za-z_][A-Za-z0-9_$.]*', re.sub(r'<[a-z]{1,8}>', ' ', message))))
+            # a sentence's full stop is not part of its last word ("Failed to fetch resource." was refused whole)
+            and all(safe_word(w.rstrip('.')) for w in re.findall(r'[A-Za-z_][A-Za-z0-9_$.]*', re.sub(r'<[a-z]{1,8}>', ' ', message))))
 
 
 KIND = re.compile(r'[A-Za-z][A-Za-z0-9_.]{0,59}')

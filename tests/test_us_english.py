@@ -29,6 +29,7 @@ ALLOWED = [
     ('dashboard.html', "keywords:'organisation organization"),  # the palette finds it typed either way
     ('test_dismiss_and_snooze.py', "I didn't realise"),  # a reason as the owner types it
     ('test_crm.py', "'Organisation'"),  # a spreadsheet's column header as it may be written
+    ('error_feed.py', 'operation cancelled canceled'),  # error words as systems spell them, both kept
 ]
 
 

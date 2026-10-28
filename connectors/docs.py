@@ -495,6 +495,8 @@ def sync_google(store, config, account, helpers, state, now):
     fields = 'id,name,mimeType,webViewLink,modifiedTime,sharedWithMeTime,sharingUser(displayName,emailAddress,me),owners(displayName,emailAddress,me),lastModifyingUser(displayName,emailAddress,me)'
     shared, next_shared = ([], None) if cycle.get('shared_done') else source.files_page(
         "sharedWithMe = true and trashed = false", 'sharedWithMeTime desc', MAX_SHARED, fields, cycle.get('shared'))
+    if next_shared and shared and (stamp(shared[-1].get('sharedWithMeTime')) or start) < start:
+        next_shared = None  # newest share first: the next page is older still, past what this sync looks at
     cycle.update(shared=next_shared, shared_done=not next_shared)
     for f in shared:
         at = stamp(f.get('sharedWithMeTime'))

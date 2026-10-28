@@ -47,6 +47,8 @@ AWAY_GRACE = 60  # seconds after the owner left the dashboard before a push goes
 EMAIL_AFTER = 15 * 60  # still unseen and waiting this long after it came in: an email
 EMAIL_EVERY = 60 * 60  # at most one such email per hour, all that waits in it
 EMAIL_STALE = 3 * 60 * 60  # not emailed by then (outside hours, the cap): the dashboard and the digest have it
+HANDOFF_STALE = 24 * 60 * 60  # a handoff email still not taken by then (the mailer down, an unsure send): the dashboard has it
+# A held push that still couldn't go after EMAIL_AFTER is dropped: the email for what still waits takes over by then
 QUEUE = ('CREATE TABLE IF NOT EXISTS notify_queue(id INTEGER PRIMARY KEY,channel TEXT NOT NULL,kind TEXT NOT NULL,ref TEXT,'
          'title TEXT NOT NULL,payload TEXT,show INTEGER NOT NULL DEFAULT 1,created REAL NOT NULL,due REAL NOT NULL)')
 DIGEST_LATE = dt.timedelta(hours=3)  # a digest not sent by then (the Machine was off) waits for the next day
@@ -168,6 +170,9 @@ def take_due(db, still_open=lambda ref: True, clock=wall):
     dropped = {'seen': db.execute("SELECT count(*) FROM notify_queue WHERE channel='email' AND created<=?", (seen,)).fetchone()[0]}
     db.execute('DELETE FROM notify_queue WHERE created<=?', (seen,))
     dropped['stale'] = db.execute("DELETE FROM notify_queue WHERE channel='email' AND created<?", (at - EMAIL_STALE,)).rowcount
+    # Kept until a receipt, but never retried forever: a push only while it is still news, a handoff for a day
+    db.execute("DELETE FROM notify_queue WHERE (channel='push' AND due<?) OR (channel='handoff' AND created<?)",
+               (at - EMAIL_AFTER, at - HANDOFF_STALE))
     rows = [dict(r) for r in db.execute('SELECT * FROM notify_queue WHERE claimed_until<=? ORDER BY created,id', (at,))]
     gone = [r['id'] for r in rows if r['ref'] and not still_open(r['ref'])]
     dropped['handled'] = sum(r['channel'] == 'email' for r in rows if r['id'] in gone)

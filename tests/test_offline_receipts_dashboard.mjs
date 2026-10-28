@@ -40,6 +40,13 @@ try{browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/u
  });
  assert.ok(refused.some(s=>s.includes('couldn’t be saved')));
  assert.ok(!refused.some(s=>s.includes('Your waiting changes are saved')),'a refused change never gets a success toast');
+ const draft=await page.evaluate(async()=>{
+  clearTimeout(outbox.timer);outbox.items=[];const prior=toast;toast=()=>{};chatDraftKeep('gone-chat','typed since');
+  outbox.items.push({id:'refused-note',sid:'gone-chat',kind:'other',text:'the waiting note',steps:[{choice:'other',feedback:'the waiting note'}]});
+  const priorRequest=request;request=async()=>{throw Object.assign(Error('To-do removed'),{status:404})};
+  await outboxFlush();await chatDraftsLoaded;await new Promise(r=>setTimeout(r,0));request=priorRequest;toast=prior;return chatDrafts.get('gone-chat');
+ });
+ assert.equal(draft,'the waiting note\n\ntyped since','a refused note comes back before the draft typed since, never over it');
  const wiped=await page.evaluate(async()=>{
   const encrypt=crypto.subtle.encrypt.bind(crypto.subtle);let n=0;
   crypto.subtle.encrypt=async(...args)=>{if(++n===1)await new Promise(r=>setTimeout(r,150));return encrypt(...args)};
