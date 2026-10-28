@@ -23,6 +23,8 @@ const cards=[
   outcome:JSON.stringify({state:'answered'}),latest_feedback:{choice:'other',feedback:'What would you do when I tap Do it?',created_at:now}},
  {id:'s1',title:'Reply to Corey about the listings',body:'Adapted the reply.',status:'prepared',scope:'work',created_at:now,event_ids:[7],outcome:JSON.stringify({state:'needs_you',needs:'Approve sending the reply to Corey.'}),
   next_actions:[{kind:'email',revision:'v2',label:'Send',to:['corey@example.com'],subject:'Listings',body:'Hi Corey',state:{status:'sent',sent_at:now}}]},
+ {id:'w1',title:'Reply to Jo about the refund',body:'Drafted the reply.',status:'prepared',scope:'work',created_at:now,event_ids:[8],outcome:JSON.stringify({state:'done'}),
+  next_actions:[{kind:'email',revision:'v3',label:'Send to Jo',to:['jo@example.com'],to_name:'Jo',subject:'Refund',body:'Hi Jo'}]},
  {id:'b1',title:'Look up the venue hours',body:'Open 9 to 5 on weekdays.',status:'prepared',early:1,scope:'work',created_at:now,event_ids:[5],outcome:JSON.stringify({state:'done'})}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -57,6 +59,9 @@ try{
   assert.deepEqual(await notes('a1'),['Ready to approve. Nothing goes out until you do.']);
   // Once the reply went out, the old needs line is gone; the sent line says it
   assert.ok(!(await text('s1')).includes('Needs you'));
+  // Prepared, not done: a result saved as done while its draft still waits reads as ready to approve, never Finished
+  assert.deepEqual(await notes('w1'),['Ready to approve. Nothing goes out until you do.']);
+  assert.ok(!(await text('w1')).includes('Finished'));
   // Prepared ahead, nothing to approve: no approve line, just finished
   assert.deepEqual(await notes('b1'),['Finished. Mark it done if it looks right.']);
   // Only answered: says nothing is done yet, never Finished, and Do it leads

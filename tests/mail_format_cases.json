@@ -113,5 +113,10 @@
   "body": "",
   "html": "<div><br></div>",
   "text": ""
+ },
+ {
+  "body": "Hi Sam,\r\n\r\nFirst paragraph.\r\nSame paragraph.\r\n \r\nSecond paragraph.\n\t\nCheers,\n\nAlex",
+  "html": "<div>Hi Sam,</div><div><br></div><div>First paragraph.</div><div>Same paragraph.</div><div><br></div><div>Second paragraph.</div><div><br></div><div>Cheers,</div><div><br></div><div>Alex</div>",
+  "text": "Hi Sam,\n\nFirst paragraph.\nSame paragraph.\n\nSecond paragraph.\n\nCheers,\n\nAlex"
  }
 ]

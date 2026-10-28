@@ -138,6 +138,9 @@ FINISH_VERBS = ('Submit', 'Pay', 'Book', 'Confirm', 'Order', 'Buy', 'Publish', '
                 'Approve', 'Create', 'Delete', 'Cancel', 'Register', 'Renew', 'File', 'Upload', 'Schedule', 'Reserve',
                 'Apply', 'Transfer', 'Deploy', 'Send', 'Request', 'Unsubscribe', 'Close', 'Archive', 'Invite',
                 'Share', 'Update', 'Save', 'Claim', 'Return', 'Refund', 'Reply')
+# Steps that still wait for the owner (a send, a merge, a calendar change, a final click, a handoff): a result that
+# has one is ready, not done. The prepare save refuses outcome:'done' with one, and the to-do says so.
+WAITING_KINDS = APPROVE_KINDS + FINISH_KINDS + ('handoff',)
 TEXT_KINDS = ('linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')  # a message without a subject
 LINKEDIN_INBOX = Path(__file__).resolve().parent / 'integrations/linkedin_inbox.py'
 X_INBOX = Path(__file__).resolve().parent / 'integrations/x_inbox.py'
@@ -324,6 +327,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             or not re.fullmatch(r'[A-Za-z][A-Za-z0-9 ,’\-/]+',value['label'])
             or value['label'].lower() in ('done','mark done','dismiss','reject','snooze','change','prepare','continue','do it','yes')):
         raise ValueError('Use a short specific action label, not a generic or owner-status button')
+    for field in ('body', 'message', 'preview'):  # the paragraph breaks the card shows are the ones that go out
+        if isinstance(value.get(field), str):
+            value = {**value, field: paragraphs(value[field])}
     if value.get('kind') in PLAIN_LINKS and isinstance(value.get('body'), str):
         value = {**value, 'body': body_text(value['body'])}  # they arrive as plain text: a Markdown link would show raw
     if value.get('kind') == 'calendar':
@@ -747,8 +753,9 @@ def revise(action, subject=None, body=None):
         if body is not None:
             if not isinstance(body, str) or not body.strip() or '\x00' in body or len(body.strip()) > (8000 if field == 'message' else 2000):
                 raise ValueError('The text needs some words, within the size limit')
-            if body.strip() != action[field]:
-                result[field] = body.strip()
+            body = paragraphs(body).strip()
+            if body != action[field]:
+                result[field] = body
                 result['edited'] = True
         result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
         return result
@@ -759,6 +766,7 @@ def revise(action, subject=None, body=None):
         if (not isinstance(body, str) or not body.strip() or '\x00' in body
                 or text_length(action, body.strip()) > action.get('max_length', 8000 if action['kind'] in TEXT_KINDS else 12000)):
             raise ValueError('The draft needs some text, within the size limit')
+        body = paragraphs(body)
         result['body'] = body.strip() if action['kind'] in TEXT_KINDS else closing_spaced(body)
     if subject is not None and action['kind'] not in TEXT_KINDS:
         if not isinstance(subject, str) or not subject.strip() or len(subject) > 250 or '\r' in subject or '\n' in subject or '\x00' in subject:
@@ -766,6 +774,12 @@ def revise(action, subject=None, body=None):
         result['subject'] = subject
     result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
     return result
+
+
+def paragraphs(text):
+    """Line breaks as the card shows them: a Windows or old Mac line end is one line break, and a line of only spaces is
+    an empty line. Otherwise an HTML mail draws that line with no height and the blank line between paragraphs is lost."""
+    return '\n'.join(line if line.strip() else '' for line in re.split(r'\r\n?|\n', str(text)))
 
 
 def closing_spaced(body):
@@ -840,7 +854,7 @@ def mail_plain(line):
 def mail_blocks(body):
     """The body's lines in runs: ('text', [lines]), ('ul', [items]) and ('ol', start, [items])."""
     blocks = []
-    for line in str(body).split('\n'):
+    for line in paragraphs(body).split('\n'):
         bullet, number = MAIL_BULLET.fullmatch(line), MAIL_NUMBER.fullmatch(line)
         if bullet:
             if blocks and blocks[-1][0] == 'ul':

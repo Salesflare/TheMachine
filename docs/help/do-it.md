@@ -10,6 +10,8 @@ order: 2
 
 **Do it** asks your Machine to prepare the to-do: draft the reply, look things up, fill in a form. It works with your own accounts and its own browser, as you would.
 
+Before it drafts a follow-up or hands something off, it checks the conversation for newer replies, also from a teammate. If it's already handled, the to-do says so instead. When it made or changed a document or page, the to-do links straight to it.
+
 ## Nothing goes out before your yes
 
 - A reply comes back as a draft. **Review and send** opens it ready to edit; it only goes out when you press **Send now**.
@@ -18,6 +20,7 @@ order: 2
 - A reply answers the newest email of its thread, and the to-do's source opens that email.
 - A step that commits something, like submit, pay or book, stops and waits for your confirm.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
+- Until you approve it, the to-do says **Ready to approve** or **Needs you**, never finished. It says a draft went out only once it did.
 
 What it can send depends on the source: an email, a Slack direct message, a WhatsApp, Telegram, LinkedIn or X message. Each connection's article says what it can send.
 
@@ -34,3 +37,4 @@ What it can send depends on the source: an email, a Slack direct message, a What
 - **Needs your help** means it asks you something: **Answer** it. **Stuck** means it stopped without a question, or ran too long and was stopped; the to-do says why.
 - **Try again** runs it once more. **Change** asks for something else.
 - A site wants you to sign in: press **Sign in**, or **Open the browser** and sign in there. Once you're in, it carries on by itself and the to-do says "Signed in. I'll start shortly." Closing the browser checks right away. If it doesn't carry on, press **Continue**.
+- A code sent to your phone, or a permission it lacks, stops it. The to-do says in one line what it needs, like the code in its browser or access to a file, then **Continue** or **Try again**.
