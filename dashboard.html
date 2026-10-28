@@ -583,6 +583,7 @@ span.share-chip{cursor:default}.share-chip.on{color:var(--text);border-color:col
 /* A project's organization: a quiet link on its page, its tile, its row and the project form; an organization lists its projects */
 button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;padding:0;border:0;background:none;color:inherit;font:inherit;font-weight:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer;text-align:left}button.inline-node:hover{background:none;text-decoration-color:currentColor}
 .tile-org{margin:4px 0 0;padding-left:32px;font-size:var(--fs-xs);color:var(--c-text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile-org .inline-node{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}  /* a long organization name ends in … inside the tile, not cut off at its edge */
 .proj-org{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-weight:600;min-width:0}.proj-org .inline-node{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .org-projects ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}.org-projects li{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-width:0}.org-projects li .inline-node{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.org-projects li small{flex:none;max-width:55%;text-align:right;overflow-wrap:anywhere}.org-projects li.done .inline-node{font-weight:400;color:var(--c-text-2)}
 .ed-org ul{margin-bottom:0}.ed-org li small{flex:none;font-size:var(--fs-xs)}.ed-org .pj-org-new{display:block;margin-top:6px}
@@ -647,13 +648,14 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .board-fits>summary{cursor:pointer;color:var(--c-text-2);font-size:var(--fs-sm)}.board-fits>summary b{color:var(--text);font-weight:var(--fw-medium)}
 .board-fits ul{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .board-fits li,.fits-bulk{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--c-line)}
-.fits-bulk{margin-top:8px;font-size:var(--fs-sm);color:var(--c-text-2)}.fits-bulk .fit-pick{flex:1 1 auto;gap:8px}
+.fits-bulk{margin-top:8px;flex-wrap:wrap;font-size:var(--fs-sm);color:var(--c-text-2)}.fits-bulk .fit-pick{flex:1 1 auto;gap:8px}
 .board-fits .fit-text{flex:1 1 auto;min-width:0;font-size:var(--fs-sm);overflow-wrap:anywhere}.board-fits li small{display:block;color:var(--c-text-3)}
 .board-fits .fit-pick{display:flex;align-items:center;flex:none;cursor:pointer}.board-fits .fit-pick input{margin:0;width:18px;height:18px}
 .board-fits .fit-acts{display:flex;gap:4px;flex:none;margin-left:auto}
 .board-fits .fit-acts button{margin:0;min-height:30px;padding:0 8px;font-size:var(--fs-sm);white-space:nowrap}
 @media (max-width:600px){.board-fits li{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:start}  /* on a phone the name and why get the row's width, Add and Leave out sit together under them */
- .board-fits li .fit-pick{padding-top:1px}.board-fits li .fit-acts{grid-column:-2/-1;margin-left:-8px}.board-fits li .fit-acts button{min-height:28px}}
+ .board-fits li .fit-pick{padding-top:1px}.board-fits li :is(.fit-text,.fit-acts){grid-column:-2/-1}.board-fits li .fit-acts{margin-left:-8px}.board-fits li .fit-acts button{min-height:28px}
+ .board-fits li:not(:has(.fit-pick)){grid-template-columns:minmax(0,1fr)}}  /* one project to review has no tick box: the text and buttons get the whole row */
 .proj-new{display:none;margin:0 0 10px}
 .proj-facts{margin:8px 0 0}.proj-facts p{margin:2px 0}.proj-notes{white-space:pre-wrap;color:var(--c-text-2)}
 .lane-more{display:block;width:100%;min-height:32px;margin:8px 0 0;padding:0;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--c-text-2);font:var(--fw-medium) var(--fs-sm)/1 var(--sans);cursor:pointer}
@@ -7242,7 +7244,7 @@ $('#people-view').addEventListener('click',e=>{const t=e.target.closest('[data-g
  if(t)graphKeep(pane,'tab',t.dataset.graphList);if(o)graphKeep(pane,'sort',o.dataset.graphSort);graphTabsPaint(pane);if(o)document.querySelector(`[data-graph-panel="${pane}"] .graph-sort summary`)?.focus()});
 document.addEventListener('click',e=>{for(const d of document.querySelectorAll('.graph-sort[open]'))if(!d.contains(e.target))d.open=false});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const d=document.querySelector('.graph-sort[open],details.fact-menu[open],details.board-menu[open],details.tile-menu[open]');if(d){d.open=false;d.querySelector('summary').focus()}});
-document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>.fact-menu-list');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
+document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>:is(.fact-menu-list,.graph-sort-list)');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
  // A menu stays on screen: it moves in from an edge, and opens upward when there's no room under its button but there is above it
  let r=l.getBoundingClientRect();if(r.right>innerWidth-8){l.style.left='auto';l.style.right='0';r=l.getBoundingClientRect()}if(r.left<8){l.style.right='auto';l.style.left=(8-d.getBoundingClientRect().left)+'px'}
  const s=d.querySelector(':scope>summary')?.getBoundingClientRect();if(s&&r.bottom>innerHeight-8&&s.top-r.height-8>8){l.style.top='auto';l.style.bottom='calc(100% + 4px)'}},true);
