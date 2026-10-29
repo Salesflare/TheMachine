@@ -17,7 +17,7 @@ Pour un seul projet : **Relances…** dans le **⋯** de sa carte ou sur sa page
 ## Réglages
 
 - Attendre 3 à 7 jours sans réponse. Après l’attente la plus courte, une relance est rédigée. La plus longue est la limite à laquelle elle part, même quand votre utilisation est serrée.
-- Relancer au moins 1 fois et au plus 3 fois. Le minimum part toujours. Entre les deux, elle lit la conversation et le projet et ne relance que si cela a encore du sens. Jamais plus que le maximum.
+- Relancer au moins 1 fois et au plus 3 fois. Le minimum part toujours. Entre les deux, elle rédige quand même chaque relance. Si elle pense qu’il vaut mieux arrêter, le brouillon dit pourquoi (« The Machine s’arrêterait ici : 9 e-mails sans réponse depuis août ») et n’est pas coché : envoyez-le, ignorez-le ou choisissez **Arrêter les relances ici**. Demandez-en une quand même dans le chat d’une relance et elle l’écrit. Jamais plus que le maximum.
 - **Étapes** : **Toutes les étapes ouvertes**, donc ni la dernière étape du tableau ni Au point mort ou refusé. **Personnaliser** active ou désactive des étapes et donne à une étape sa propre attente.
 - **Canaux** : ceux qui sont connectés et peuvent envoyer. Une relance part sur le même canal que le dernier message. **Changer de canal sans réponse** essaie le suivant autorisé.
 - **Déplacer vers « Au point mort ou refusé » après la dernière** : activé quand le tableau a cette ligne.
@@ -32,11 +32,11 @@ Juste avant l’envoi, le fil est vérifié à nouveau, et si quelqu’un a écr
 
 Les relances d’un tableau arrivent en une seule tâche, jamais une par e-mail. Pendant la rédaction, elle indique « Rédaction de 3 relances… », puis « 8 relances prêtes pour Alpha testers ».
 
-**Vérifier** les affiche en entier, les unes sous les autres : un seul défilement suffit pour tout lire. **Envoyer**, **Modifier** et **Ignorer** apparaissent sur la relance en cours. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie, s ignore et c réécrit. **Envoyer tout ce qui est coché** envoie celles encore cochées. La relance d’un seul projet est une tâche normale.
+**Vérifier** les affiche en entier, les unes sous les autres : un seul défilement suffit pour tout lire. **Envoyer**, **Modifier** et **Ignorer** apparaissent sur la relance en cours. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie, s ignore et c réécrit. **Envoyer tout ce qui est coché** envoie celles encore cochées. **Ignorer** décoche un brouillon et le place en bas, marqué Ignorée avec **Annuler** ; il n’est vraiment ignoré qu’à la fermeture de la vérification. Une relance ignorée revient avec **Récupérer** dans les relances du projet ou sur sa tâche dans Fait, tant qu’aucune relance plus récente n’est venue. La relance d’un seul projet est une tâche normale.
 
-**Modifier…** réécrit tous les brouillons cochés, ou seulement celui en cours, comme vous le demandez ; rien n’est envoyé, et **Annuler la modification** rétablit l’ancien texte.
+**Modifier…** réécrit tous les brouillons cochés, ou seulement celui en cours, comme vous le demandez ; rien n’est envoyé, et **Annuler la modification** rétablit l’ancien texte. Tant que la zone de modification est ouverte ou qu’une réécriture tourne, rien ne part, et un brouillon qui a changé s’affiche d’abord à nouveau.
 
-Quand plusieurs partent à la suite, aussi avec Envoyer sans demander, chaque boîte mail en envoie une toutes les 30 à 45 secondes, et la tâche montre où on en est : « Envoi de 3 sur 8… ».
+Quand plusieurs partent à la suite, aussi avec Envoyer sans demander, chaque boîte mail en envoie une toutes les 30 à 45 secondes, et la tâche montre où on en est : « Envoi de 3 sur 8… ». **Arrêter l’envoi** arrête le reste : celle déjà en route part quand même, les autres reviennent en brouillons dans la vérification, à envoyer plus tard (« Envoi arrêté. Envoyées : 1. 11 gardées en brouillons. »).
 
 ## E-mails envoyés avant votre Machine
 

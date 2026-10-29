@@ -8,8 +8,9 @@ its own settings, or off). One setting holds:
   like other background work.
 - min to max: follow up at least `min` times (DEFAULT_MIN) when there's no reply, at most `max` times (DEFAULT_MAX).
   Up to the minimum a follow-up is always drafted (unless a stop condition holds); past it, the preparation judges from
-  the thread and the project whether another one is still worth it (outcome follow_up:'stop' ends the round). Never
-  past the maximum. After the last one (waited `days`, still no reply) it ends: the project gets a quiet "No reply
+  the thread and the project whether another one is still worth it. It never ends the round on that judgment: it
+  still drafts it, with why it would stop (advise); the review leaves that draft unchecked, and the owner sends it,
+  skips it or picks Stop follow-ups here (stop_here). Never past the maximum. After the last one (waited `days`, still no reply) it ends: the project gets a quiet "No reply
   after N follow-ups" and, with `stall` (on by default when the board has "Stalled or declined"), moves there.
 - stages (boards): which stages get follow-ups. By default every open stage does; the last stage (done, won, live) and
   "Stalled or declined" don't. A stage can have its own minimum wait (Customize).
@@ -47,7 +48,9 @@ holds the next follow-up from the same mailbox (or the same LinkedIn, WhatsApp..
 seconds after the one before. Two mailboxes go side by side; a single follow-up goes at once. The spacing and the batch
 are kept here (follow_up_sends, follow_up_pace), so after a restart the rest goes on with the same spacing and nothing
 goes twice (a send that was under way is only checked, as for every outbox send). A failed one stays a to-do that asks;
-the rest of the batch goes on. The dashboard shows each batch's progress ("Sending 3 of 8...", then "Sent 8").
+the rest of the batch goes on. The dashboard shows each batch's progress ("Sending 3 of 8...", then "Sent 8"). Stop
+sending on that progress cancels the ones not gone yet (never one already going out): their drafts are back in the review,
+to send later ("Stopped. 1 sent, 11 kept as drafts.", stop). Kept in the outbox, so it holds after a restart.
 
 Nothing new since the draft (basis, recheck): each draft remembers what it was written against, the thread's latest
 message per channel (follow_up_basis). Right before a follow-up goes out (one Send, Send all checked, Send without
@@ -98,6 +101,7 @@ CREATE TABLE IF NOT EXISTS follow_up_threads(event_id INTEGER PRIMARY KEY,sends 
 CREATE TABLE IF NOT EXISTS follow_up_basis(suggestion_id TEXT PRIMARY KEY,basis TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS follow_up_holds(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,why TEXT NOT NULL,news TEXT,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS follow_up_changes(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,revision TEXT NOT NULL,route TEXT NOT NULL,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS follow_up_advice(suggestion_id TEXT PRIMARY KEY,why TEXT NOT NULL,at TEXT NOT NULL);
 '''
 SCOPES = ('board', 'project')
 # The channels a follow-up can go out on, in the order "switch channel" moves through them
@@ -122,6 +126,7 @@ SEND_GAP = (30, 45)      # seconds between two follow-ups from one mailbox, rand
 SEND_TICK = 3            # the outbox looks every few seconds (assistant.action_worker): drawn so the send still lands in SEND_GAP
 PROGRESS_KEEP = 300      # "Sent 8" stays this long after a batch's last send
 GOING = ('queued', 'sending')  # outbox states of a follow-up still on its way
+STOPPED = 'Stopped by you'  # the error of a follow-up the owner stopped before it went (stop): its draft is back to review
 OPEN_STATES = ('open',)
 STALLED = 'Stalled or declined'  # graph.STALLED
 
@@ -940,10 +945,117 @@ def views(db, now, sendable, mine=mine_default, own=None):
 
 
 def activity(db, project_id, limit=6):
-    """A project's follow-ups, newest first: what went out (by itself or after the owner's Send), skipped or stopped."""
-    rows = db.execute('SELECT n,of_max,channel,state,auto,why,created_at,closed_at FROM follow_up_cards WHERE project_id=? '
+    """A project's follow-ups, newest first: what went out (by itself or after the owner's Send), skipped or stopped.
+    A skipped one that can still come back (can_bring_back) carries its to-do's id as back."""
+    rows = db.execute('SELECT suggestion_id,n,of_max,channel,state,auto,why,created_at,closed_at FROM follow_up_cards WHERE project_id=? '
                       'ORDER BY created_at DESC LIMIT ?', (int(project_id), limit)).fetchall()
-    return [dict(r) for r in rows]
+    return [{**{k: r[k] for k in r.keys() if k != 'suggestion_id'}, **({'back': r['suggestion_id']} if can_bring_back(db, r['suggestion_id']) else {})}
+            for r in rows]
+
+
+SKIP_BACK = 'Bring back'  # the decision's note when a skipped follow-up comes back
+
+
+def _comes_back(db, suggestion_id):
+    """The follow-up card that the owner's word can open again, or None: skipped, stopped by the owner or judged (never
+    a hard fact: a reply, someone else's follow-up, the project won, lost or archived), while it is the project's latest
+    follow-up and nothing else for the project is open."""
+    row = db.execute("SELECT f.*,s.status,s.closed_from,s.next_action FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
+                     "WHERE f.suggestion_id=? AND (f.state='skipped' OR f.state='stopped' AND f.why IN ('owner','judged'))", (suggestion_id,)).fetchone()
+    if not row or db.execute("SELECT 1 FROM follow_up_cards WHERE project_id=? AND suggestion_id<>? AND (state='open' OR created_at>?)",
+                             (row['project_id'], suggestion_id, row['created_at'])).fetchone():
+        return None
+    if row['state'] == 'stopped' and db.execute('SELECT 1 FROM follow_up_ends e JOIN projects p ON p.id=e.project_id WHERE e.project_id=? '
+                                                'AND e.after_event=? AND e.moved=1 AND p.stage=?', (row['project_id'], row['after_event'], STALLED)).fetchone():
+        return None  # the round's end moved it to Stalled or declined, and it's still there: the owner moves it back first
+    return row
+
+
+def can_bring_back(db, suggestion_id):
+    """Bring back: a closed follow-up (_comes_back) whose draft is still there (closed ready, not while it was written)."""
+    row = _comes_back(db, suggestion_id)
+    return bool(row and row['status'] == 'rejected' and row['closed_from'] == 'prepared' and row['next_action'])
+
+
+def reopen(db, suggestion_id):
+    """The owner's word opens a closed follow-up again (Bring back, a message in its chat, Undo, Reopen): its waiting
+    point is open, and a round the owner or a judgment ended is no longer over. True when it was opened."""
+    row = _comes_back(db, suggestion_id)
+    if not row:
+        return False
+    db.execute("UPDATE follow_up_cards SET state='open',why=NULL,closed_at=NULL WHERE suggestion_id=?", (suggestion_id,))
+    if row['state'] == 'stopped':
+        db.execute('DELETE FROM follow_up_ends WHERE project_id=? AND after_event=?', (row['project_id'], row['after_event']))
+    db.execute("UPDATE deliveries SET status='grouped' WHERE suggestion_id=? AND status='cancelled' AND message_id IS NULL AND ?",
+               (suggestion_id, int(bool(row['grouped']))))
+    return True
+
+
+def bring_back(db, suggestion_id, decision_id, now):
+    """A skipped follow-up back in the review: its to-do ready again with the same draft, the waiting point open. The
+    thread is still checked right before it goes, and a reply since closes it as usual (settle)."""
+    if not can_bring_back(db, suggestion_id):
+        raise ValueError('This follow-up can’t come back anymore.')
+    reopen(db, suggestion_id)
+    db.execute("UPDATE suggestions SET status='prepared',undo_until=NULL,closed_decision_id=NULL,feedback_until=NULL WHERE id=?", (suggestion_id,))
+    db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+               (decision_id, suggestion_id, 'reopen', SKIP_BACK, 'dashboard', now))
+    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+    return {'id': suggestion_id, 'status': 'prepared'}
+
+
+# ------------------------------------------------------------------ the owner decides when to stop
+
+def rewrite_judged(db, now, mine=mine_default):
+    """Follow-ups an earlier version closed on its own judgment (follow_up_ends.judged, the to-do stopped 'judged'), or
+    whose preparation still said follow_up:'stop' without a draft: open again, to be drafted on this pass, unless the
+    project had a reply since or the round's end moved it. Returns the to-dos to prepare again."""
+    out = []
+    rows = db.execute("SELECT f.suggestion_id,f.project_id,f.after_event,f.after_at,f.state FROM follow_up_cards f JOIN follow_up_ends e "
+                      "ON e.project_id=f.project_id AND e.after_event=f.after_event WHERE f.state='stopped' AND f.why='judged' AND e.judged=1 AND e.moved=0").fetchall()
+    rows += db.execute("SELECT f.suggestion_id,f.project_id,f.after_event,f.after_at,f.state FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
+                       "WHERE f.state='open' AND s.status='prepared' AND json_valid(s.outcome) AND json_extract(s.outcome,'$.follow_up')='stop' "
+                       "AND json_extract(s.outcome,'$.state')='already_done'").fetchall()
+    for r in rows:
+        sid = r['suggestion_id']
+        if any(not m['mine'] and parse(m['at']) > parse(r['after_at']) and m['id'] != r['after_event'] for m in messages(db, r['project_id'], mine)):
+            continue  # they answered since: nothing to follow up
+        if r['state'] == 'stopped' and not reopen(db, sid):
+            continue
+        db.execute("UPDATE suggestions SET status='accepted',early=1,outcome=NULL WHERE id=?", (sid,))
+        db.execute("UPDATE deliveries SET status='grouped' WHERE suggestion_id=? AND status='cancelled' AND message_id IS NULL "
+                   "AND EXISTS(SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND grouped=1)", (sid, sid))
+        db.execute("UPDATE deliveries SET status='queued' WHERE suggestion_id=? AND status='cancelled' AND message_id IS NULL", (sid,))
+        out.append(sid)
+    return out
+
+
+ADVICE_MAX = 160  # characters of why The Machine would stop here
+
+
+def advise(db, suggestion_id, why, now):
+    """Past the minimum, the preparation thinks another follow-up isn't worth it: it still writes the draft and says why
+    (the review shows "The Machine would stop here: <why>" and leaves it unchecked). None clears it (a draft written on
+    the owner's word, "keep trying")."""
+    if why:
+        db.execute('INSERT OR REPLACE INTO follow_up_advice(suggestion_id,why,at) VALUES(?,?,?)', (suggestion_id, ' '.join(str(why).split())[:ADVICE_MAX], now))
+    else:
+        db.execute('DELETE FROM follow_up_advice WHERE suggestion_id=?', (suggestion_id,))
+
+
+def stop_here(db, suggestion_id, decision_id, now):
+    """Stop follow-ups here, the owner's pick in the review: this round ends like one with no reply (the project's quiet
+    note, Stalled or declined when that is on), and the to-do closes, sending nothing. Bring back undoes it."""
+    f = db.execute("SELECT * FROM follow_up_cards WHERE suggestion_id=? AND state='open'", (suggestion_id,)).fetchone()
+    if not f:
+        raise ValueError('This follow-up isn’t open anymore.')
+    p = db.execute('SELECT * FROM projects WHERE id=?', (f['project_id'],)).fetchone()
+    if p:
+        settings = effective(db, p)[0]
+        board = db.execute('SELECT * FROM boards WHERE id=?', (p['board_id'],)).fetchone() if p['board_id'] else None
+        end(db, {'project': p, 'board': board, 'settings': settings, 'n': f['n'], 'after': f['after_event'], 'after_at': f['after_at']}, now)
+    close(db, suggestion_id, 'owner', now, source='dashboard', decision_id=decision_id)
+    return {'id': suggestion_id, 'state': 'stopped'}
 
 
 # ------------------------------------------------------------------ open follow-up to-dos
@@ -960,15 +1072,19 @@ WHY = {
     'teammate': 'A teammate owns this project now; their Machine follows it up.',
     'judged': 'Another follow-up isn’t worth it now, so follow-ups stopped.',
     'bounced': 'Email bounced, so follow-ups stopped.',
+    'owner': 'Follow-ups stopped here.',
 }
 
 
-def close(db, suggestion_id, why, now, state='stopped'):
-    """Close an open follow-up to-do by itself (WHY says why in the to-do's history)."""
+def close(db, suggestion_id, why, now, state='stopped', source='assistant', decision_id=None):
+    """Close an open follow-up to-do (WHY says why in the to-do's history): by itself on a hard fact, or as the owner
+    said (Stop follow-ups here)."""
     db.execute("UPDATE follow_up_cards SET state=?,why=?,closed_at=? WHERE suggestion_id=? AND state='open'", (state, why, now, suggestion_id))
-    if db.execute("UPDATE suggestions SET status='rejected',early=0 WHERE id=? AND status NOT IN ('completed','rejected')", (suggestion_id,)).rowcount:
+    # The owner's own close keeps where it was (closed_from: its draft can come back, can_bring_back)
+    if db.execute("UPDATE suggestions SET closed_from=CASE WHEN ? THEN status ELSE closed_from END,status='rejected',early=0 "
+                  "WHERE id=? AND status NOT IN ('completed','rejected')", (int(source == 'dashboard'), suggestion_id)).rowcount:
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
-                   ('follow-up-' + why + ':' + suggestion_id, suggestion_id, 'reject', WHY.get(why, why), 'assistant', now))
+                   (decision_id or 'follow-up-' + why + ':' + suggestion_id, suggestion_id, 'reject', WHY.get(why, why), source, now))
         db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','starting','running','blocked')",
                    (now, suggestion_id))
         db.execute("UPDATE deliveries SET status='cancelled',reminder=0,needs_edit=CASE WHEN message_id IS NULL THEN needs_edit ELSE 1 END,updated_at=? "
@@ -979,6 +1095,7 @@ def settle(db, now, mine=mine_default):
     """Open follow-up to-dos: mark the ones the owner closed (sent, skipped), leave the ones a review took over as normal
     to-dos, and close the rest when a stop condition holds. Returns [(suggestion_id, why)] closed by itself."""
     closed = []
+    stopped(db, now)
     for f in db.execute("SELECT f.*,s.status,s.created_at card_at FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
                         "WHERE f.state='open'").fetchall():
         sid = f['suggestion_id']
@@ -1016,14 +1133,10 @@ def settle(db, now, mine=mine_default):
                 outcome = json.loads(outcome[0] or '{}') if outcome else {}
             except ValueError:
                 outcome = {}
-            if outcome.get('state') == 'already_done':
-                # The preparation judged another follow-up not worth it (past the minimum only), or found it handled
-                if outcome.get('follow_up') == 'stop' and f['n'] > int((settings or {}).get('min') or 0):
-                    why = 'judged'
-                    end(db, {'project': p, 'board': board, 'settings': settings, 'n': f['n'], 'after': f['after_event'], 'after_at': f['after_at']},
-                        now, judged=True)
-                else:
-                    why = 'handled'
+            # The preparation found it handled (someone already followed up). Never closed on its own judgment that
+            # another one isn't worth it: that comes as a draft with its advice, and the owner decides (advise)
+            if outcome.get('state') == 'already_done' and outcome.get('follow_up') != 'stop':
+                why = 'handled'
         if why:
             close(db, sid, why, now)
             closed.append((sid, why))
@@ -1063,12 +1176,15 @@ def cards_view(db, ids):
         rows = db.execute(f"SELECT f.*,p.name project,b.name board FROM follow_up_cards f LEFT JOIN projects p ON p.id=f.project_id "
                           f"LEFT JOIN boards b ON b.id=f.board_id WHERE f.suggestion_id IN ({marks}) AND f.state IN ('open','sent','skipped','stopped')",
                           tuple(ids)).fetchall()
+        advice = {r[0]: r[1] for r in db.execute(f'SELECT suggestion_id,why FROM follow_up_advice WHERE suggestion_id IN ({marks})', tuple(ids))}
     except Exception:  # noqa: BLE001 - no table yet
         return {}
     return {r['suggestion_id']: {'project': r['project'], 'name': short_name(r['project'], r['board']), 'project_id': 'project:' + str(r['project_id']), 'board': r['board'],
                                  'group': ('board:' + str(r['board_id'])) if r['grouped'] and r['board_id'] else None,
                                  'n': r['n'], 'max': r['of_max'], 'channel': r['channel'], 'auto': bool(r['auto']), 'state': r['state'],
-                                 **({'bounced': True} if r['why'] == 'bounced' else {})}
+                                 **({'bounced': True} if r['why'] == 'bounced' else {}),
+                                 **({'back': True} if r['state'] in ('skipped', 'stopped') and can_bring_back(db, r['suggestion_id']) else {}),
+                                 **({'advice': advice[r['suggestion_id']]} if r['suggestion_id'] in advice else {})}
             for r in rows}
 
 
@@ -1163,8 +1279,9 @@ def going_out(db, job_id, now, draw=random.uniform):
 
 def progress(db, now):
     """The latest batch per board (and of the projects' own follow-ups) while it goes, and PROGRESS_KEEP after: [{group,
-    board, batch, total, done, sent, going, held, held_new, done_at}] (batch: its id, so a finished one can be dismissed): held the ones not sent because the thread changed
-    (held_new) or couldn't be checked; done_at, while it goes, about when the last one goes (done_around). Batches of one
+    board, batch, total, done, sent, going, held, held_new, stopped, done_at}] (batch: its id, so a finished one can be dismissed, or
+    stopped while it goes): held the ones not sent because the thread changed (held_new) or couldn't be checked; stopped the
+    ones Stop sending kept as drafts (stop); done_at, while it goes, about when the last one goes (done_around). Batches of one
     aren't shown: that to-do says how its send went."""
     out = []
     try:
@@ -1174,7 +1291,7 @@ def progress(db, now):
     since = (parse(now) - dt.timedelta(seconds=PROGRESS_KEEP)).isoformat()
     for grp in groups:
         batch = db.execute('SELECT batch FROM follow_up_sends WHERE grp=? ORDER BY queued_at DESC,rowid DESC LIMIT 1', (grp,)).fetchone()[0]
-        jobs = db.execute('SELECT j.status,j.updated_at,s.sender,h.why held FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id '
+        jobs = db.execute('SELECT j.status,j.error,j.updated_at,s.sender,h.why held FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id '
                           "LEFT JOIN follow_up_holds h ON h.job_id=s.job_id AND j.status='blocked' WHERE s.batch=?", (batch,)).fetchall()
         if len(jobs) < 2:
             continue
@@ -1185,8 +1302,31 @@ def progress(db, now):
         out.append({'group': grp if grp.startswith('board:') else None, 'board': board[0] if board else None, 'batch': batch, 'total': len(jobs),
                     'done': len(jobs) - going, 'sent': sum(j['status'] == 'sent' for j in jobs), 'going': going > 0,
                     'held': sum(j['held'] is not None for j in jobs), 'held_new': sum(j['held'] == 'changed' for j in jobs),
+                    'stopped': sum(j['status'] in ('cancelled', 'blocked') and j['error'] == STOPPED for j in jobs),
                     'done_at': done_around(db, jobs, now) if going else None})
     return out
+
+
+def stop(db, batch, now):
+    """Stop sending: every follow-up of the batch that hasn't gone yet (queued, also one waiting its gap) is canceled,
+    and its draft is back in the review, ready to send later (the to-do stays prepared; a new Send queues it again).
+    One already going out (sending) is never touched. {'stopped': n, 'sent': n}: what the progress then says."""
+    jobs = [r[0] for r in db.execute('SELECT job_id FROM follow_up_sends WHERE batch=?', (str(batch or ''),))]
+    if not jobs:
+        raise ValueError('Nothing left to stop.')
+    marks = ','.join('?' for _ in jobs)
+    db.execute(f"UPDATE action_jobs SET status='cancelled',error=?,retry_at=NULL,updated_at=? WHERE id IN ({marks}) AND status='queued'", (STOPPED, now, *jobs))
+    db.execute(f'UPDATE deliveries SET needs_edit=1 WHERE suggestion_id IN (SELECT suggestion_id FROM action_jobs WHERE id IN ({marks}))', jobs)
+    stopped(db, now)
+    rows = [r[0] for r in db.execute(f'SELECT status FROM action_jobs WHERE id IN ({marks}) AND (error=? OR status=?)', (*jobs, STOPPED, 'sent'))]
+    return {'stopped': rows.count('cancelled'), 'sent': rows.count('sent')}
+
+
+def stopped(db, now):
+    """Follow-ups stopped by hand in the outbox (blocked, STOPPED) are the same as a Stop: canceled, the draft back to
+    review, not a send that failed."""
+    db.execute("UPDATE action_jobs SET status='cancelled',retry_at=NULL,updated_at=? WHERE status='blocked' AND error=? "
+               'AND id IN (SELECT job_id FROM follow_up_sends)', (now, STOPPED))
 
 
 def done_around(db, jobs, now):

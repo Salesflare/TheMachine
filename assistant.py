@@ -629,9 +629,12 @@ OWNER_ACTIONS = {
     'fleet_notice_decide',
     'fleet_rule',
     'fleet_take',
+    'follow_up_bring_back',
     'follow_up_change',
+    'follow_up_end',
     'follow_up_save',
     'follow_up_settings',
+    'follow_up_stop',
     'forget_fact',
     'graph_fact_unlink',
     'graph_new',
@@ -937,9 +940,12 @@ DASHBOARD_ACTIONS = frozenset({
     'fleet_notice_decide',
     'fleet_rule',
     'fleet_take',
+    'follow_up_bring_back',
     'follow_up_change',
+    'follow_up_end',
     'follow_up_save',
     'follow_up_settings',
+    'follow_up_stop',
     'forget_fact',
     'graph_fact_unlink',
     'graph_new',
@@ -7148,6 +7154,10 @@ class Store:
                                   snooze_hours, snoozed_until, snooze_option, verified_terminal_job, work)
             if rows and not result.get('duplicate'):
                 chat_files.bind(db, decision_id, rows)
+            if choice in ('other', 'undo', 'reopen', 'retry', 'accept') and source in ('dashboard', 'telegram') and not result.get('duplicate') and \
+                    db.execute("SELECT 1 FROM suggestions WHERE id=? AND status NOT IN ('completed','rejected')", (suggestion_id,)).fetchone():
+                # The owner's word ("keep trying", Undo, Reopen) opens a skipped or stopped follow-up again (never one a hard fact closed)
+                follow_ups.reopen(db, suggestion_id)
             return result
 
     def stop_chat(self, suggestion_id, job_id, text):
@@ -7826,6 +7836,8 @@ class Store:
         action=suggestion.get('next_action');action=json.loads(action) if isinstance(action,str) else action
         if action:
             states={r['revision']:{**{k:r[k] for k in ('status','error','message_id','snooze_status','snooze_until','snooze_error') if r[k] is not None or k in ('status','error','message_id')},
+                                   # A follow-up stopped before it went (Stop sending, or by hand): a draft to review again, not a failed send
+                                   **({'status':'cancelled','error':None} if r['status'] in ('blocked','cancelled') and r['error']==follow_ups.STOPPED else {}),
                                    **({'auto':True} if r['approval_id'].startswith('auto-merge:') else {}),
                                    **({'sent_at':r['updated_at']} if r['status']=='sent' else {}),
                                    # Checked long enough without a trace: the owner may try again, and the card says so.
@@ -14289,11 +14301,9 @@ class App:
                         raise ValueError("outcome:'already_done' means there is nothing left to approve: leave next_actions empty")
                     outcome={'state':'already_done'}
                     if args.get('follow_up')=='stop':
-                        # An automated follow-up past its minimum: another one isn't worth it (follow_ups.settle ends the round)
-                        with self.store.connect() as db:
-                            if not db.execute("SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND state='open'",(args['suggestion_id'],)).fetchone():
-                                raise ValueError("follow_up:'stop' is only for an automated follow-up")
-                        outcome['follow_up']='stop'
+                        # The Machine never ends follow-ups on its own judgment: the draft comes with its advice, the owner decides
+                        raise ValueError("follow_up:'stop' never goes without a draft: write the follow-up anyway, with follow_up:'stop' and "
+                                         "follow_up_why:<why you would stop, a few words>, and outcome:'needs_you'. The owner decides")
                 elif args.get('outcome')=='answered':outcome={'state':'answered'}
                 elif args.get('outcome')=='your_step':
                     # Everything is ready up to a final click the owner makes themselves (in the Machine's browser):
@@ -14324,7 +14334,21 @@ class App:
                     raise ValueError('Not sent: '+why+'. The owner sends only a draft they have seen. Save it again without send_now, '
                                      "with outcome:'needs_you' and needs:'check the draft and send it', and a body that says it is ready for them "
                                      '(not that it went out). Do not send it any other way.')
+            advice=None
+            with self.store.connect() as db:
+                following=db.execute("SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND state='open'",(args['suggestion_id'],)).fetchone()
+            if args.get('follow_up')=='stop':
+                # An automated follow-up past its minimum that The Machine would stop: the draft is still there, the
+                # review says why and leaves it unchecked (follow_ups.advise)
+                advice=' '.join(str(args.get('follow_up_why') or '').split())
+                if not following:raise ValueError("follow_up:'stop' is only for an automated follow-up")
+                if not 3<=len(advice)<=follow_ups.ADVICE_MAX:raise ValueError(f"follow_up:'stop' needs follow_up_why: why you would stop, 3 to {follow_ups.ADVICE_MAX} characters")
+                if not any(a['kind'] in ('email',)+next_actions.TEXT_KINDS for a in next_actions.actions(action)):
+                    raise ValueError("follow_up:'stop' still comes with the draft: write the follow-up, the owner decides")
             saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'))
+            if following and not saved.get('replayed'):
+                with self.store.connect() as db:
+                    follow_ups.advise(db,args['suggestion_id'],advice,now())
             if saved.get('status')=='snoozed' and not saved.get('replayed'):
                 saved['note']+=' Tell them how it comes back, in these words: '+reminder_line(reminder_channels(self.store,self.config))
 
@@ -14477,6 +14501,36 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner changes follow-ups, on the dashboard')
             return self.follow_up_change(args)
+        if name == 'follow_up_bring_back':
+            # A follow-up skipped in the review, back to review (the project's follow-ups, or its to-do in Done)
+            if not owner_dashboard:
+                raise ValueError('Only the owner brings a follow-up back, on the dashboard')
+            sid = str(args.get('id') or '')
+            if not re.fullmatch(r'[a-f0-9]{16}', sid):
+                raise ValueError('Say which follow-up')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                follow_ups.ensure(db)
+                return follow_ups.bring_back(db, sid, 'fu-back-' + uuid.uuid4().hex, now())
+        if name == 'follow_up_end':
+            # Stop follow-ups here, in the review: this round ends like one with no reply, nothing sent (follow_ups.stop_here)
+            if not owner_dashboard:
+                raise ValueError('Only the owner stops follow-ups, on the dashboard')
+            sid = str(args.get('id') or '')
+            if not re.fullmatch(r'[a-f0-9]{16}', sid):
+                raise ValueError('Say which follow-up')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                follow_ups.ensure(db)
+                return follow_ups.stop_here(db, sid, 'fu-end-' + uuid.uuid4().hex, now())
+        if name == 'follow_up_stop':
+            # Stop sending on a batch's progress: the ones not gone yet go back to the review as drafts (follow_ups.stop)
+            if not owner_dashboard:
+                raise ValueError('Only the owner stops follow-ups, on the dashboard')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                follow_ups.ensure(db)
+                return follow_ups.stop(db, args.get('batch'), now())
         if name in ('follow_up_settings', 'follow_up_save'):
             # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
             if not owner_dashboard:
@@ -16388,6 +16442,11 @@ class App:
             if not follow_ups.any_on(db) and not db.execute("SELECT 1 FROM follow_up_cards WHERE state='open'").fetchone():
                 return {'drafted': 0}
             follow_ups.settle(db, now(), mine)
+            for sid in follow_ups.rewrite_judged(db, now(), mine):  # closed on judgment by an earlier version: drafted after all
+                decision_id = 'ahead:' + sid + ':' + uuid.uuid4().hex[:8]
+                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                           (decision_id, sid, 'prepare_ahead', '', 'assistant', now()))
+                self.store.queue_preparation(db, sid, decision_id)
         self.follow_up_send()
         if not (self.config.get('review_worker') or {}).get('enabled'):
             return {'drafted': 0}
@@ -16478,8 +16537,11 @@ class App:
                  'If they or someone else answered since, or it is handled, save outcome:\'already_done\' instead.']
         if f['n'] > int(settings.get('min') or 0):
             lines.append(f"The minimum of {settings.get('min')} follow-ups went out. Judge from the thread and the project whether another one is still "
-                         "worth it (by what was said, not by keywords). When it isn't, save outcome:'already_done' with follow_up:'stop' and no draft: "
-                         'the project then gets a quiet note that there was no reply.')
+                         "worth it (by what was said, not by keywords). Either way, write the draft: you never end follow-ups yourself. When you would "
+                         "stop, also save follow_up:'stop' with follow_up_why:<why, a few plain words, e.g. 9 unanswered emails since August>; the owner "
+                         'sees it next to the draft and decides.')
+        lines.append("The owner's word beats any judgment: when they ask for one anyway (keep trying, write one), write the draft, without "
+                     "follow_up:'stop'. Never answer that nothing was sent or that follow-ups stopped.")
         if earlier:
             lines.append('Earlier follow-ups said (newest first; say something else):\n' + '\n'.join('- ' + ' '.join(t.split())[:300] for t in earlier))
         return '\n'.join(lines)

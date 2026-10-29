@@ -17,7 +17,7 @@ Per un solo progetto, **Ricontatti…** nel **⋯** della sua scheda o nella sua
 ## Impostazioni
 
 - Aspetta da 3 a 7 giorni senza risposta. Dopo l’attesa più breve viene scritta una bozza. La più lunga è il limite entro cui parte, anche quando sei vicino al limite di utilizzo.
-- Ricontatta almeno 1 e al massimo 3 volte. Il minimo parte sempre. Nel mezzo, legge la conversazione e il progetto e ricontatta solo se ha ancora senso. Mai oltre il massimo.
+- Ricontatta almeno 1 e al massimo 3 volte. Il minimo parte sempre. Nel mezzo, scrive comunque ogni ricontatto. Se pensa che sia meglio fermarsi, la bozza dice perché (“The Machine si fermerebbe qui: 9 email senza risposta da agosto”) e non è spuntata: inviala, saltala o scegli **Ferma i ricontatti qui**. Se ne chiedi uno comunque nella chat di un ricontatto, lo scrive. Mai oltre il massimo.
 - **Fasi**: **Tutte le fasi aperte**, quindi né l’ultima fase della bacheca né Fermi o rifiutati. **Personalizza** attiva o disattiva le fasi e dà a una fase la sua attesa.
 - **Canali**: quelli collegati che possono inviare. Un ricontatto parte sullo stesso canale dell’ultimo messaggio. **Cambia canale se non c’è risposta** prova il successivo consentito.
 - **Sposta in Fermi o rifiutati dopo l’ultimo**: attivo se la bacheca ha quella riga.
@@ -32,11 +32,11 @@ Subito prima dell’invio il thread viene ricontrollato, e se qualcuno ha scritt
 
 I ricontatti di una bacheca arrivano come un’unica attività, mai una per email. Mentre li scrive mostra “Scrittura di 3 ricontatti…”, poi “8 ricontatti pronti per Alpha testers”.
 
-**Rivedi** li mostra interi, uno sotto l’altro, così li leggi tutti scorrendo una volta. **Invia**, **Modifica** e **Salta** compaiono su quello attuale. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica, s salta e c cambia. **Invia tutti i selezionati** invia quelli ancora spuntati. Il ricontatto di un singolo progetto è un’attività normale.
+**Rivedi** li mostra interi, uno sotto l’altro, così li leggi tutti scorrendo una volta. **Invia**, **Modifica** e **Salta** compaiono su quello attuale. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica, s salta e c cambia. **Invia tutti i selezionati** invia quelli ancora spuntati. **Salta** toglie la spunta a una bozza e la sposta in fondo, segnata come Saltata con **Annulla**; viene saltata davvero solo quando chiudi la revisione. Un ricontatto saltato torna con **Ripristina** nei ricontatti del progetto o sulla sua attività in Fatto, finché non ne arriva uno più recente. Il ricontatto di un singolo progetto è un’attività normale.
 
-**Cambia…** riscrive tutte le bozze selezionate, o solo quella attuale, come dici tu; non viene inviato nulla e **Annulla modifica** riporta il testo di prima.
+**Cambia…** riscrive tutte le bozze selezionate, o solo quella attuale, come dici tu; non viene inviato nulla e **Annulla modifica** riporta il testo di prima. Finché il riquadro Cambia è aperto o una riscrittura è in corso non parte nulla, e una bozza cambiata ti viene mostrata di nuovo prima di partire.
 
-Quando ne partono diversi di seguito, anche con Invia senza chiedere, ogni casella ne invia uno ogni 30-45 secondi e l’attività mostra a che punto è: “Invio 3 di 8…”.
+Quando ne partono diversi di seguito, anche con Invia senza chiedere, ogni casella ne invia uno ogni 30-45 secondi e l’attività mostra a che punto è: “Invio 3 di 8…”. **Interrompi l’invio** ferma il resto: quello già in uscita parte comunque, gli altri tornano come bozze nella revisione, da inviare più tardi (“Interrotto. Inviati: 1. 11 tenuti come bozze.”).
 
 ## Email inviate prima della tua Machine
 

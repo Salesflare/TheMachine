@@ -17,7 +17,7 @@ Para um projeto só, **Follow-ups…** no **⋯** do cartão dele ou na página 
 ## Configurações
 
 - Espere de 3 a 7 dias sem resposta. Depois da espera mais curta, um follow-up é escrito. A mais longa é o prazo máximo para ele sair, mesmo com o seu uso apertado.
-- Faça follow-up no mínimo 1 e no máximo 3 vezes. O mínimo sempre sai. Entre os dois, ela lê a conversa e o projeto e só faz follow-up quando ainda faz sentido. Nunca mais que o máximo.
+- Faça follow-up no mínimo 1 e no máximo 3 vezes. O mínimo sempre sai. Entre os dois, ela escreve cada um mesmo assim. Quando acha melhor parar, o rascunho diz por quê (“The Machine pararia aqui: 9 e-mails sem resposta desde agosto”) e não fica marcado: envie, pule ou escolha **Parar os follow-ups aqui**. Peça um mesmo assim no chat de um follow-up e ela escreve. Nunca mais que o máximo.
 - **Etapas**: **Todas as etapas abertas**, ou seja, nem a última etapa do quadro nem Parado ou recusado. **Personalizar** liga ou desliga etapas e dá a uma etapa sua própria espera.
 - **Canais**: os conectados que podem enviar. Um follow-up sai pelo mesmo canal da última mensagem. **Trocar de canal se não houver resposta** tenta o próximo permitido.
 - **Mover para Parado ou recusado depois do último**: ligado quando o quadro tem essa linha.
@@ -32,11 +32,11 @@ Logo antes do envio, a conversa é verificada de novo, e se alguém escreveu dep
 
 Os follow-ups de um quadro chegam como uma tarefa só, nunca uma por e-mail. Enquanto são escritos aparece “Escrevendo 3 follow-ups…”, depois “8 follow-ups prontos para Alpha testers”.
 
-**Revisar** mostra todos completos, um embaixo do outro, para você ler tudo rolando uma vez só. **Enviar**, **Editar** e **Pular** aparecem no atual. No teclado, j e k (ou as setas) navegam, Enter envia, e edita, s pula e c altera. **Enviar todos os marcados** envia os que continuam marcados. O follow-up de um único projeto é uma tarefa normal.
+**Revisar** mostra todos completos, um embaixo do outro, para você ler tudo rolando uma vez só. **Enviar**, **Editar** e **Pular** aparecem no atual. No teclado, j e k (ou as setas) navegam, Enter envia, e edita, s pula e c altera. **Enviar todos os marcados** envia os que continuam marcados. **Pular** desmarca um rascunho e o leva para o fim, marcado como Ignorada com **Desfazer**; ele só é pulado de vez quando você fecha a revisão. Um pulado volta com **Trazer de volta** nos follow-ups do projeto ou na tarefa em Feito, enquanto não houver um mais novo. O follow-up de um único projeto é uma tarefa normal.
 
-**Alterar…** reescreve todos os rascunhos marcados, ou só o atual, do jeito que você disser; nada é enviado e **Desfazer alteração** traz o texto antigo de volta.
+**Alterar…** reescreve todos os rascunhos marcados, ou só o atual, do jeito que você disser; nada é enviado e **Desfazer alteração** traz o texto antigo de volta. Enquanto a caixa de alteração está aberta ou uma reescrita está rodando, nada é enviado, e um rascunho que mudou aparece de novo antes de sair.
 
-Quando vários saem em sequência, também com Enviar sem perguntar, cada caixa de e-mail envia um a cada 30 a 45 segundos, e a tarefa mostra o andamento: “Enviando 3 de 8…”.
+Quando vários saem em sequência, também com Enviar sem perguntar, cada caixa de e-mail envia um a cada 30 a 45 segundos, e a tarefa mostra o andamento: “Enviando 3 de 8…”. **Parar o envio** para o resto: o que já está saindo ainda vai, e os outros voltam como rascunhos para a revisão, para enviar depois (“Parado. Enviados: 1. 11 mantidos como rascunhos.”).
 
 ## E-mails enviados antes da sua Machine
 

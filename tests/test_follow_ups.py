@@ -467,7 +467,7 @@ class FollowUps(unittest.TestCase):
             app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         self.assertEqual(calls, [])
 
-    def model_turns(self, app, rewrite):
+    def model_turns(self, app, rewrite, **extra):
         """One preparation pass with a fake model: each started turn saves what rewrite(suggestion_id, message, draft)
         returns as its result (assistant_signals prepare), as the agent would. No live model, nothing sent. Returns the
         turns started and the saves the service refused."""
@@ -484,7 +484,7 @@ class FollowUps(unittest.TestCase):
                 if saved is not None:
                     try:
                         app.action('prepare', {'suggestion_id': sid, 'job_id': request['job_id'], 'body': 'Follow-up ready.', 'next_actions': [saved],
-                                               'outcome': 'needs_you', 'needs': 'check the draft and send it', 'note_kind': 'style'})
+                                               'outcome': 'needs_you', 'needs': 'check the draft and send it', 'note_kind': 'style', **extra})
                     except ValueError as error:  # the agent sees why and saves again
                         refused.append((sid, str(error)))
             return {'status': 'admitted'}
@@ -774,24 +774,132 @@ class FollowUps(unittest.TestCase):
             self.assertEqual(db.execute('SELECT stage FROM projects WHERE id=?', (self.acme,)).fetchone()[0], 'Invited')
             self.assertFalse(follow_ups.stalls({'stall': None}, None))
 
-    def test_past_the_minimum_the_preparation_can_judge_it_not_worth_it(self):
+    def drafted_pair(self, app):
+        """Both projects' follow-ups drafted through their preparation, as the agent would (no live model, nothing sent)."""
+        app.stop_stale_runs = lambda runner: None
+        self.assertEqual(app.follow_up_step()['drafted'], 2)
+        acme, kim = [c['suggestion_id'] for c in self.cards()]
+        first = lambda sid: {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example' if sid == acme else 'kim@other.example'],
+                             'subject': 'Re: Pilot', 'body': 'Hi, here is the case study I mentioned.\n\nRegards,\n\nOwen'}
+        return acme, kim, first
+
+    def requeue(self):
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='queued' WHERE status IN ('starting','running','done')")
+            db.execute('DELETE FROM preparation_runs')
+
+    def test_the_machine_never_stops_follow_ups_on_its_own_judgment(self):
         self.turn_on(min=0, max=3)
-        self.app().follow_up_step()
-        acme = self.cards()[0]
+        app = self.app()
+        acme, kim, first = self.drafted_pair(app)
+        free = (patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None))
+        # Ending the round without a draft is refused: the draft is written anyway
+        with free[0], free[1]:
+            starts, refused = self.model_turns(app, lambda sid, message, draft: first(sid), next_actions=None, outcome='already_done', follow_up='stop')
+        self.assertIn('Either way, write the draft: you never end follow-ups yourself', starts[0]['message'])
+        self.assertIn("The owner's word beats any judgment", starts[0]['message'])
+        self.assertEqual(sorted(r[0] for r in refused), sorted([acme, kim]))
+        self.assertIn("follow_up:'stop' never goes without a draft", refused[0][1])
+        # With the draft, and why it would stop
+        self.requeue()
+        with free[0], free[1]:
+            refused = self.model_turns(app, lambda sid, message, draft: first(sid), follow_up='stop')[1]
+        self.assertIn('follow_up_why', refused[0][1])
+        self.requeue()
+        with free[0], free[1]:
+            refused = self.model_turns(app, lambda sid, message, draft: first(sid), follow_up='stop', follow_up_why=' 9 unanswered emails\nsince August ')[1]
+        self.assertEqual(refused, [])
         with self.store.connect() as db:
-            db.execute("UPDATE suggestions SET status='prepared',outcome=? WHERE id=?", (json.dumps({'state': 'already_done', 'follow_up': 'stop'}), acme['suggestion_id']))
-        self.app().follow_up_step()
+            view = follow_ups.cards_view(db, [acme, kim])
+        self.assertEqual({view[acme]['advice'], view[kim]['advice']}, {'9 unanswered emails since August'})
+        app.follow_up_step()  # never closed by itself
+        self.assertEqual([(c['state'], c['status']) for c in self.cards()], [('open', 'prepared'), ('open', 'prepared')])
         with self.store.connect() as db:
-            end = dict(db.execute('SELECT n,moved,judged FROM follow_up_ends WHERE project_id=?', (self.acme,)).fetchone())
-        self.assertEqual(end, {'n': 0, 'moved': 1, 'judged': 1})
-        self.assertEqual(self.cards()[0]['why'], 'judged')
-        # Within the minimum the same outcome only means it was handled
-        self.turn_on(min=1, max=3)
-        kim = self.cards()[1]
+            self.assertEqual(db.execute('SELECT count(*) FROM follow_up_ends').fetchone()[0], 0)
+        # Stop follow-ups here: the owner's pick, on the dashboard; the round ends, nothing sent
+        self.assertIn('follow_up_end', a.DASHBOARD_ACTIONS)
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            app.action('follow_up_end', {'id': acme}, owner_dashboard=False)
+        with self.assertRaisesRegex(ValueError, 'Say which follow-up'):
+            app.action('follow_up_end', {'id': 'nope'}, owner_dashboard=True)
+        self.assertEqual(app.action('follow_up_end', {'id': acme}, owner_dashboard=True), {'id': acme, 'state': 'stopped'})
+        with self.assertRaisesRegex(ValueError, 'isn’t open anymore'):
+            app.action('follow_up_end', {'id': acme}, owner_dashboard=True)
+        card = next(c for c in self.cards() if c['suggestion_id'] == acme)
+        self.assertEqual((card['state'], card['why'], card['status']), ('stopped', 'owner', 'rejected'))
+        self.assertEqual(self.jobs(), [])
         with self.store.connect() as db:
-            db.execute("UPDATE suggestions SET status='prepared',outcome=? WHERE id=?", (json.dumps({'state': 'already_done', 'follow_up': 'stop'}), kim['suggestion_id']))
-        self.app().follow_up_step()
-        self.assertEqual(self.cards()[1]['why'], 'handled')
+            self.assertEqual(dict(db.execute('SELECT n,moved,judged FROM follow_up_ends WHERE project_id=?', (self.acme,)).fetchone()),
+                             {'n': 0, 'moved': 1, 'judged': 0})  # none went out yet
+            self.assertEqual(db.execute("SELECT source,feedback FROM decisions WHERE suggestion_id=? AND choice='reject'", (acme,)).fetchone()[:],
+                             ('dashboard', 'Follow-ups stopped here.'))
+            # Moved to Stalled or declined: it comes back once the owner moves it out again
+            self.assertFalse(follow_ups.can_bring_back(db, acme))
+            db.execute("UPDATE projects SET stage='Invited' WHERE id=?", (self.acme,))
+            self.assertEqual(follow_ups.activity(db, self.acme)[0]['back'], acme)
+        app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute('SELECT 1 FROM follow_up_ends WHERE project_id=?', (self.acme,)).fetchone())
+        self.assertEqual(next(c['state'] for c in self.cards() if c['suggestion_id'] == acme), 'open')
+
+    def test_the_owners_word_beats_a_judgment_and_a_skip(self):
+        self.turn_on(min=0, max=3)
+        app = self.app()
+        acme, kim, first = self.drafted_pair(app)
+        free = (patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None))
+        with free[0], free[1]:
+            self.model_turns(app, lambda sid, message, draft: first(sid), follow_up='stop', follow_up_why='No answer to four emails')
+        # Skipped in the review (the owner's reject), then "keep trying" in its chat: open again and drafted
+        self.store.decide(kim, 'reject', '', 'fr-skip-1', 'dashboard')
+        app.follow_up_step()
+        self.assertEqual(next(c['state'] for c in self.cards() if c['suggestion_id'] == kim), 'skipped')
+        self.store.decide(kim, 'other', 'Keep trying, write one anyway.', 'chat-keep-1', 'dashboard')
+        self.assertEqual(next(c['state'] for c in self.cards() if c['suggestion_id'] == kim), 'open')
+        self.assertIn("The owner's word beats any judgment", app.follow_up_lines(kim))
+        # Its new draft comes without advice: the review checks it as any other
+        self.requeue()
+        with free[0], free[1]:
+            self.assertEqual(self.model_turns(app, lambda sid, message, draft: {**first(sid), 'body': 'Hi Kim, one more idea for Friday.'})[1], [])
+        with self.store.connect() as db:
+            view = follow_ups.cards_view(db, [acme, kim])
+        self.assertNotIn('advice', view[kim])
+        # A hard fact is never undone by a message: someone replied, so it stays closed
+        with self.store.connect() as db:
+            follow_ups.close(db, acme, 'replied', NOW)
+        self.store.decide(acme, 'other', 'Keep trying.', 'chat-keep-2', 'dashboard')
+        self.assertEqual(next(c['state'] for c in self.cards() if c['suggestion_id'] == acme), 'stopped')
+
+    def test_follow_ups_an_earlier_version_stopped_on_judgment_are_drafted_after_all(self):
+        self.turn_on(min=0, max=3, stall=False)
+        app = self.app()
+        acme, kim, first = self.drafted_pair(app)
+        with self.store.connect() as db:  # as the earlier version left them: the round ended on its judgment, the to-dos closed
+            for sid, pid in ((acme, self.acme), (kim, self.kim)):
+                f = db.execute('SELECT * FROM follow_up_cards WHERE suggestion_id=?', (sid,)).fetchone()
+                p = db.execute('SELECT * FROM projects WHERE id=?', (pid,)).fetchone()
+                follow_ups.end(db, {'project': p, 'board': None, 'settings': follow_ups.rule(db, 'board', self.board), 'n': f['n'],
+                                    'after': f['after_event'], 'after_at': f['after_at']}, NOW, judged=True)
+                follow_ups.close(db, sid, 'judged', NOW)
+            db.execute("UPDATE preparations SET status='done'")
+        real = follow_ups.messages
+        replied = lambda db, pid, mine=follow_ups.mine_default: real(db, pid, mine) + (
+            [{'id': 'reply-kim', 'at': '2026-10-28T09:00:00+00:00', 'mine': False, 'channel': 'email'}] if pid == self.kim else [])
+        with patch.object(follow_ups, 'messages', side_effect=replied):
+            app.follow_up_step()
+        cards = {c['suggestion_id']: c for c in self.cards()}
+        self.assertEqual((cards[acme]['state'], cards[acme]['status'], cards[acme]['early']), ('open', 'accepted', 1))
+        self.assertEqual((cards[kim]['state'], cards[kim]['why']), ('stopped', 'judged'))  # they replied since: nothing to follow up
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT status FROM preparations WHERE suggestion_id=?", (acme,)).fetchone()[0], 'queued')
+            self.assertEqual([r[0] for r in db.execute('SELECT project_id FROM follow_up_ends')], [self.kim])
+            # An open one whose preparation still said follow_up:'stop' without a draft is drafted too
+            db.execute("UPDATE suggestions SET status='prepared',outcome=? WHERE id=?", (json.dumps({'state': 'already_done', 'follow_up': 'stop'}), acme))
+            db.execute("UPDATE preparations SET status='done'")
+        app.follow_up_step()
+        self.assertEqual(next(c['status'] for c in self.cards() if c['suggestion_id'] == acme), 'accepted')
+        app.follow_up_step()  # once: nothing left to repair
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM decisions WHERE suggestion_id=? AND choice='prepare_ahead'", (acme,)).fetchone()[0], 3)
 
     def test_the_preparation_hears_which_follow_up_and_what_went_before(self):
         self.turn_on()
@@ -860,13 +968,13 @@ class FollowUps(unittest.TestCase):
             self.assertIsNone(step('2026-10-19T09:00:03+00:00'))  # the next waits its gap: nothing goes, nothing is lost
             self.assertIsNone(step('2026-10-19T09:00:39+00:00'))
             self.assertEqual(self.progress(), [{'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'batch': self.progress()[0]['batch'], 'total': 3, 'done': 1, 'sent': 1, 'going': True,
-                                                'held': 0, 'held_new': 0, 'done_at': '2026-10-19T09:01:17+00:00'}])
+                                                'held': 0, 'held_new': 0, 'stopped': 0, 'done_at': '2026-10-19T09:01:17+00:00'}])
             self.assertEqual(step('2026-10-19T09:00:40+00:00'), 'sent')
             self.assertIsNone(step('2026-10-19T09:01:10+00:00'))
             self.assertEqual(step('2026-10-19T09:01:20+00:00'), 'sent')
         self.assertEqual([(sid, at[11:19]) for sid, at in transport.sent], [(sids[0], '09:00:00'), (sids[1], '09:00:40'), (sids[2], '09:01:20')])
         self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'batch': self.progress()[0]['batch'], 'total': 3, 'done': 3, 'sent': 3, 'going': False,
-                                              'held': 0, 'held_new': 0, 'done_at': None})
+                                              'held': 0, 'held_new': 0, 'stopped': 0, 'done_at': None})
         self.at('2026-10-19T09:07:00+00:00')
         self.assertEqual(self.progress(), [])  # "Sent 3" stays a few minutes, then goes
 
@@ -919,7 +1027,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual([sid for sid, _ in transport.sent], [sids[0], sids[2], sids[3]])
         self.assertEqual(transport.attempts[sids[1]], 1)  # tried once, before the kill
         self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'batch': self.progress()[0]['batch'], 'total': 4, 'done': 4, 'sent': 4, 'going': False,
-                                              'held': 0, 'held_new': 0, 'done_at': None})
+                                              'held': 0, 'held_new': 0, 'stopped': 0, 'done_at': None})
 
     def test_a_claimed_send_with_no_trace_asks_instead_of_sending_twice(self):
         transport = FakeOutbox(die=True)
@@ -966,6 +1074,93 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(row['status'], 'prepared')
         self.assertIn('Nothing was sent', row['error'])
         self.assertEqual({c['project_id']: c['state'] for c in self.cards()}, {self.acme: 'open', self.kim: 'sent'})
+
+    # ------------------------------------------------------------------ Stop sending, and stopped by hand
+
+    def action_status(self, sid):
+        with self.store.connect() as db:
+            row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone())
+            return self.store.suggestion_result(row, db).get('action_status')
+
+    def test_stop_sending_keeps_the_rest_as_drafts_and_never_touches_one_going_out(self):
+        transport = FakeOutbox()
+        step = self.outbox(transport)
+        sids = self.batch(*['owner@example.com'] * 5)
+        app = self.app()
+        with patch.object(follow_ups, 'gap', return_value=40):
+            self.assertEqual(step('2026-10-19T09:00:00+00:00'), 'sent')
+            with self.store.connect() as db:  # the second is being sent right now (claimed, provider call under way)
+                db.execute("UPDATE action_jobs SET status='sending' WHERE suggestion_id=?", (sids[1],))
+            batch = self.progress()[0]['batch']
+            with self.assertRaisesRegex(ValueError, 'Only the owner'):
+                app.action('follow_up_stop', {'batch': batch}, owner_dashboard=False)
+            self.assertIn('follow_up_stop', a.DASHBOARD_ACTIONS)
+            self.assertEqual(app.action('follow_up_stop', {'batch': batch}, owner_dashboard=True), {'stopped': 3, 'sent': 1})
+            states = self.job_states()
+            self.assertEqual([states[s] for s in sids], ['sent', 'sending', 'cancelled', 'cancelled', 'cancelled'])
+            # Nothing more goes, also after a restart (a fresh service over the same database)
+            self.store = a.Store(self.store.path)
+            step = self.outbox(transport)
+            for at in ('09:01:00', '09:02:00', '09:03:00'):
+                step('2026-10-19T' + at + '+00:00')
+        self.assertEqual([sid for sid, _ in transport.sent], [sids[0]])
+        p = self.progress()[0]
+        self.assertEqual({k: p[k] for k in ('total', 'sent', 'stopped', 'held')}, {'total': 5, 'sent': 1, 'stopped': 3, 'held': 0})
+        # The kept ones are drafts to review again: prepared, not a failed send; a new Send queues one again
+        with self.store.connect() as db:
+            self.assertEqual({db.execute('SELECT status FROM suggestions WHERE id=?', (s,)).fetchone()[0] for s in sids[2:]}, {'prepared'})
+        self.assertEqual(self.action_status(sids[2])['status'], 'cancelled')
+        self.assertIsNone(self.action_status(sids[2])['error'])
+        self.assertEqual(self.send(sids[2], 'again')['status'], 'cancelled')  # the same job, queued again on the new tap
+        self.assertEqual(self.job_states()[sids[2]], 'queued')
+        with self.assertRaisesRegex(ValueError, 'Nothing left'):
+            app.action('follow_up_stop', {'batch': 'nope'}, owner_dashboard=True)
+
+    def test_stopped_by_hand_in_the_outbox_counts_as_a_stop(self):
+        sids = self.batch('owner@example.com', 'owner@example.com', 'owner@example.com')
+        with self.store.connect() as db:  # what the owner did by hand: blocked, 'Stopped by you'
+            db.execute("UPDATE action_jobs SET status='blocked',error='Stopped by you' WHERE suggestion_id IN (?,?)", (sids[1], sids[2]))
+            db.execute("UPDATE action_jobs SET status='sent' WHERE suggestion_id=?", (sids[0],))
+        self.assertEqual(self.action_status(sids[1])['status'], 'cancelled')  # not shown as a failed send
+        p = self.progress()[0]
+        self.assertEqual((p['stopped'], p['sent'], p['going'], p['held']), (2, 1, False, 0))
+        with self.store.connect() as db:
+            follow_ups.settle(db, a.now())
+        self.assertEqual(self.job_states()[sids[1]], 'cancelled')
+        self.assertEqual(self.progress()[0]['stopped'], 2)
+
+    def test_a_skipped_follow_up_can_be_brought_back_while_it_is_the_latest(self):
+        self.turn_on()
+        self.app().follow_up_step()
+        acme = self.cards()[0]['suggestion_id']
+        self.prepared(acme)
+        self.store.decide(acme, 'reject', '', 'skip-1', 'dashboard')  # Skip, final when the review closed
+        app = self.app()
+        app.follow_up_step()
+        self.assertEqual(self.cards()[0]['state'], 'skipped')
+        with self.store.connect() as db:
+            self.assertEqual(follow_ups.activity(db, self.acme)[0]['back'], acme)
+            self.assertTrue(follow_ups.cards_view(db, [acme])[acme]['back'])
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=False)
+        self.assertIn('follow_up_bring_back', a.DASHBOARD_ACTIONS)
+        self.assertEqual(app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=True), {'id': acme, 'status': 'prepared'})
+        card = self.cards()[0]
+        self.assertEqual((card['state'], card['status']), ('open', 'prepared'))
+        with self.store.connect() as db:
+            self.assertNotIn('back', follow_ups.activity(db, self.acme)[0])
+            draft = json.loads(db.execute('SELECT next_action FROM suggestions WHERE id=?', (acme,)).fetchone()[0])
+        self.assertEqual(draft['body'], 'Hi Sam, here is the case study I mentioned.')  # the same draft, to review again
+        # Once a newer follow-up came, the old one stays skipped
+        self.store.decide(acme, 'reject', '', 'skip-2', 'dashboard')
+        app.follow_up_step()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,created_at) "
+                       "SELECT 'newer',project_id,board_id,grouped,2,of_max,channel,after_event+1,after_at,? FROM follow_up_cards WHERE suggestion_id=?",
+                       ('2026-10-30T09:00:00+00:00', acme))
+            self.assertFalse(follow_ups.can_bring_back(db, acme))
+        with self.assertRaisesRegex(ValueError, 'can’t come back'):
+            app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=True)
 
     # ------------------------------------------------------------------ nothing new since the draft: checked right before it goes
 
