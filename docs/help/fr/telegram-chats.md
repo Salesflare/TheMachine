@@ -41,6 +41,10 @@ Ou lancez `assistant connect telegram` dans un terminal et scannez le code qu’
 
 The Machine utilise pour cela l’API de Telegram. Telegram peut limiter ou mettre fin aux connexions d’apps comme elle.
 
+## Photos
+
+The Machine demande à Telegram les photos de profil des personnes de votre graph qui n’en ont pas, 50 par jour au maximum, via la même connexion qui lit vos chats, et seulement pour les personnes des chats qu’elle lit. Rien ne leur est envoyé. Une personne qui vous cache sa photo reste sans photo.
+
 ## La retirer
 
 **Connexions**, ouvrez Discussions Telegram, **Détails**, puis **Déconnecter**. Votre Machine se déconnecte de Telegram et supprime ce qu’elle gardait pour Telegram.

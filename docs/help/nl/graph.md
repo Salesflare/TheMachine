@@ -3,7 +3,7 @@ title: De Graph
 area: graph
 summary: De personen, organisaties en projecten in je berichten, vanzelf up-to-date gehouden.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Je Machine bouwt een kaart van met wie je te maken hebt en wat er speelt, uit je berichten, afspraken en beslissingen. Je hoeft niets in te stellen, en alles blijft op je Machine.
@@ -99,6 +99,12 @@ Klik op de foto op de pagina van een persoon of organisatie om ze te wijzigen: *
 
 Je wijzigingen blijven, ook als de gegevens opnieuw opgezocht worden of een review iets anders leest, en bij **Samenvoegen** en **Ongedaan maken**. Maak een veld leeg om weer de opgezochte waarde te gebruiken. Een lege naam brengt de naam uit de berichten terug.
 
+## Teruggekomen
+
+Als een e-mail aan iemand terugkomt, toont hun adres **Teruggekomen** met de datum, en komt een ander adres van hen eerst. Nieuwe concepten gaan er nooit naartoe als een ander adres bekend is. Is het hun enige, dan waarschuwt het verzendvenster en kun je toch versturen. Hun gegevens worden opnieuw opgezocht.
+
+Een bounce telt als de mailserver zegt dat het adres niet bestaat, of na 3 tijdelijke fouten over een week. Hij verdwijnt als ze weer vanaf dat adres schrijven, of als een e-mail eraan aankomt.
+
 ## Zelfde persoon?
 
 Als twee personen misschien één persoon zijn, vraagt hun pagina of het dezelfde persoon is, en Personen toont ze onder **Zelfde persoon?**. **Samenvoegen** voegt ze samen, met al hun berichten, notities, rollen en projecten. **Niet dezelfde** houdt ze voorgoed apart.
@@ -115,7 +121,7 @@ Personen met een bedrijfsadres krijgen een functie, foto, LinkedIn en stad, opge
 
 Je koppelingen vullen meer aan terwijl ze draaien, met wat ze al lazen en zonder iets extra te vragen: een functie, telefoonnummer en tijdzone uit Slack, een bio, plaats en website uit X, een kopregel en foto uit LinkedIn, en functies uit Google-contacten en Salesflare. Wat iemand over zichzelf zegt, gaat voor. Ga met de muis over de regel onder de naam om te zien waar het vandaan kwam. Alles blijft op je Machine.
 
-Foto's van WhatsApp komen via je WhatsApp-sync die altijd aanstaat, als die het toelaat: maximaal 50 per dag, alleen voor mensen die al in je Graph staan. Er wordt niets naar hen verstuurd.
+Foto's van WhatsApp komen via je WhatsApp-sync die altijd aanstaat, als die het toelaat: maximaal 50 per dag, alleen voor mensen die al in je Graph staan. Er wordt niets naar hen verstuurd. Foto's van Telegram komen op dezelfde manier, via je koppeling met Telegram-chats: maximaal 50 per dag, alleen voor mensen die al in je Graph staan. Er wordt niets naar hen verstuurd.
 
 ## Iemand definitief verwijderen
 

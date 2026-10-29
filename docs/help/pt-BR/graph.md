@@ -3,7 +3,7 @@ title: O Graph
 area: graph
 summary: As pessoas, organizações e projetos das suas mensagens, sempre atualizados sozinhos.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Sua Machine monta um mapa de com quem você lida e do que está acontecendo, a partir das suas mensagens, reuniões e decisões. Não há nada para configurar, e tudo fica na sua Machine.
@@ -99,6 +99,12 @@ Clique na foto da página de uma pessoa ou organização para mudá-la: **Enviar
 
 Suas edições ficam, mesmo quando os detalhes são buscados de novo ou uma revisão lê outra coisa, e também com **Mesclar** e **Desfazer**. Esvazie um campo para usar de novo o valor buscado. Um nome vazio traz de volta o das mensagens.
 
+## Voltou
+
+Quando um email para alguém volta, o endereço mostra **Voltou** com a data, e outro endereço da pessoa passa a ser o primeiro. Novos rascunhos nunca vão para ele quando outro endereço é conhecido. Se for o único, a janela de envio avisa e você ainda pode enviar. Os dados da pessoa são buscados de novo.
+
+Um retorno conta quando o servidor de email diz que o endereço não existe, ou após 3 falhas temporárias em uma semana. Ele some quando a pessoa escreve de novo desse endereço ou quando um email para ele chega.
+
 ## Mesma pessoa?
 
 Quando duas pessoas podem ser uma só, a página pergunta se são a mesma pessoa, e Pessoas lista as duas em **Mesma pessoa?**. **Mesclar** junta as duas, com todas as mensagens, notas, cargos e projetos. **Não é a mesma** mantém as duas separadas de vez.
@@ -115,7 +121,7 @@ Pessoas com um endereço de empresa recebem cargo, foto, LinkedIn e cidade, busc
 
 Suas conexões completam mais coisas enquanto rodam, com o que já leem e sem pedir nada a mais: cargo, telefone e fuso horário do Slack, bio, local e site do X, título e foto do LinkedIn, e cargos dos contatos do Google e do Salesflare. O que a pessoa diz sobre si mesma vem primeiro. Passe o mouse sobre a linha abaixo do nome para ver de onde veio. Tudo fica na sua Machine.
 
-As fotos do WhatsApp vêm pela sua sincronização do WhatsApp sempre ativa, quando ela permite: até 50 por dia, só para pessoas que já estão no seu Graph. Nada é enviado a elas.
+As fotos do WhatsApp vêm pela sua sincronização do WhatsApp sempre ativa, quando ela permite: até 50 por dia, só para pessoas que já estão no seu Graph. Nada é enviado a elas. As fotos do Telegram vêm do mesmo jeito, pela sua conexão de chats do Telegram: até 50 por dia, só para pessoas que já estão no seu Graph. Nada é enviado a elas.
 
 ## Excluir alguém permanentemente
 

@@ -23,6 +23,9 @@ How it treats the account (Telegram's terms, and the owner's account kept safe):
 - Telegram's flood waits are kept: short ones inside Telethon, longer ones stop the run until they are over.
 - Sends only what the outbox holds, which the app writes for a message the owner approved with Send; one at a time,
   at least SEND_GAP seconds apart. A send that may have gone out is never sent again (status `sending` stays).
+- Fetches a person's small profile photo only when the app asks (`photo_asks`: people in its graph without a photo),
+  only for someone in a chat it reads, one at a time with a pause, at most PHOTOS_PER_DAY a day; a flood wait pauses
+  the photos until it is over, without stopping the chats.
 - `logout` (and a logout row from Disconnect) ends this device at Telegram and deletes the session."""
 import argparse
 import asyncio
@@ -51,6 +54,7 @@ TEMPORARY = 75         # exit code: try again later (the service restarts it)
 SIGNED_OUT = ('AuthKeyUnregisteredError', 'SessionRevokedError', 'SessionExpiredError', 'UserDeactivatedError',
               'UserDeactivatedBanError', 'AuthKeyDuplicatedError', 'AuthKeyInvalidError')
 APP_BLOCKED = ('ApiIdInvalidError', 'ApiIdPublishedFloodError')
+PHOTO_PAUSE = (3.0, 6.0)  # seconds between two profile photos, at least
 
 
 def emit(event, **data):
@@ -170,6 +174,7 @@ class Mirror:
         self.sleep, self.clock = sleep, clock
         self.names = {}
         self.last_send = -SEND_GAP
+        self.next_photo = 0.0
         self.me = None
 
     def chat_row(self, chat_id):
@@ -270,6 +275,56 @@ class Mirror:
         save_message(self.db, self.seal, row['chat_id'], sent, self.names.get(row['chat_id'], 'Telegram chat'))
         done('sent', msg_id=int(sent.id))
         return 'sent'
+
+
+    def reads_person(self, user_id):
+        """Whether someone is in a chat it reads: their private chat, or a small group they wrote in."""
+        return bool(self.db.execute("SELECT 1 FROM chats WHERE id=? AND kind='dm' AND skipped=''", (user_id,)).fetchone()
+                    or self.db.execute("SELECT 1 FROM messages m JOIN chats c ON c.id=m.chat_id WHERE m.sender_id=? AND c.kind='group' "
+                                       "AND c.skipped='' LIMIT 1", (user_id,)).fetchone())
+
+    async def photo(self):
+        """The next profile photo the app asked for, the small one only, paced and within the day's budget. Returns
+        the answer ('done', 'none', 'failed', 'flood') or None when there was nothing to do now."""
+        if self.clock() < self.next_photo:
+            return None
+        state = ts.get_state(self.db)
+        stamp = dt.datetime.now(dt.timezone.utc)
+        if (state.get('photos_until') or '') > stamp.isoformat(timespec='seconds'):
+            return None
+        today = stamp.strftime('%Y-%m-%d')
+        used = state.get('photos_count', 0) if state.get('photos_day') == today else 0
+        if used >= ts.PHOTOS_PER_DAY:
+            return None
+        # An answer the app never took (it found a photo elsewhere meanwhile) goes after 30 days.
+        self.db.execute("DELETE FROM photo_asks WHERE status!='queued' AND done_at<?", ((stamp - dt.timedelta(days=30)).isoformat(),))
+        row = self.db.execute("SELECT user_id FROM photo_asks WHERE status='queued' ORDER BY asked_at, rowid LIMIT 1").fetchone()
+        if not row:
+            return None
+        user_id = row['user_id']
+        if not user_id.isdigit() or not self.reads_person(user_id):
+            ts.answer_photo(self.db, self.seal, user_id, 'none')
+            return 'none'
+        self.next_photo = self.clock() + random.uniform(*PHOTO_PAUSE)
+        ts.set_state(self.db, photos_day=today, photos_count=used + 1)
+        try:
+            entity = await self.client.get_entity(int(user_id))
+            photo = getattr(entity, 'photo', None)
+            if photo is None or type(photo).__name__ == 'UserProfilePhotoEmpty':
+                ts.answer_photo(self.db, self.seal, user_id, 'none')
+                return 'none'
+            data = await self.client.download_profile_photo(entity, file=bytes, download_big=False)
+        except Exception as error:  # noqa: BLE001 - a photo is never worth stopping the chats for
+            if stop_reason(error):
+                raise
+            seconds = flood_seconds(error)
+            if seconds:  # the ask stays queued; no photo is asked until the wait is over
+                ts.set_state(self.db, photos_until=(stamp + dt.timedelta(seconds=seconds)).isoformat(timespec='seconds'))
+                return 'flood'
+            ts.answer_photo(self.db, self.seal, user_id, 'failed')
+            return 'failed'
+        return ts.answer_photo(self.db, self.seal, user_id, 'done' if data else 'none',
+                               str(getattr(photo, 'photo_id', '') or '')[:64] or None, data or None)
 
 
 def lock(store):
@@ -419,7 +474,7 @@ async def login(client, store, seal, phone=None, ask=read_answer, wait=QR_WAIT):
     await client.disconnect()
 
 
-async def follow(client, mirror, refresh=REFRESH_CHATS):
+async def follow(client, mirror, refresh=REFRESH_CHATS, days=ts.BACKFILL_DAYS):
     """Keeps the store in step until Telegram ends the session or a long flood wait stops it."""
     from telethon import events
     from telethon.tl.functions.account import UpdateStatusRequest
@@ -442,12 +497,13 @@ async def follow(client, mirror, refresh=REFRESH_CHATS):
     client.add_event_handler(deleted, events.MessageDeleted())
     seen = await mirror.refresh_chats()
     if not ts.get_state(db).get('backfilled_at'):
-        await mirror.backfill(seen)
+        await mirror.backfill(seen, days)
     ts.set_state(db, error=None, flood_until=None, last_ok=ts.now())
     refreshed, beat = time.monotonic(), time.monotonic()
     while client.is_connected():
         if await mirror.outbox() == 'logout':
             return 0
+        await mirror.photo()
         if time.monotonic() - refreshed > refresh:
             await mirror.refresh_chats()
             refreshed = time.monotonic()
@@ -522,7 +578,7 @@ def run(args):
     client = client_for(args, session, receive=True)
     mirror = Mirror(client, store, seal, include)
     try:
-        return asyncio.run(follow(client, mirror))
+        return asyncio.run(follow(client, mirror, days=max(1, min(int(args.days or ts.BACKFILL_DAYS), 30))))
     except Exception as error:  # noqa: BLE001 - every stop leaves its reason in the store for the app
         reason, seconds = stop_reason(error), flood_seconds(error)
         if reason:
@@ -544,6 +600,7 @@ def main(argv=None):
     parser.add_argument('--lib', required=True, help='where the pinned libraries are unpacked (telegram_release.install)')
     parser.add_argument('--database', help="The Machine's database, whose message key seals the store")
     parser.add_argument('--include', help='chat IDs to read although muted, archived or big, comma separated')
+    parser.add_argument('--days', type=int, help='how many days back the first start reads (bootstrap_days, 1 to 30)')
     parser.add_argument('command', choices=('login', 'follow', 'logout', 'version'))
     parser.add_argument('--phone')
     args = parser.parse_args(argv)

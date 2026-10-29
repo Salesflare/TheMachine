@@ -1,6 +1,7 @@
 """Telegram chats: the pinned libraries, the store's chat filter, the mirror's login, reads and sends with a stand-in
 Telethon client, the collector, and the approve-before-send path. Nothing here talks to Telegram or PyPI."""
 import asyncio
+import contextlib
 import datetime as dt
 import hashlib
 import importlib.util
@@ -359,6 +360,18 @@ def dialog(ent, minutes=5, muted=False, archived=False):
 class MirrorClient:
     def __init__(self, dialogs, history=None, fail=None):
         self.dialogs, self.history, self.fail, self.sent, self.logged_out = dialogs, history or {}, fail, [], False
+        self.people, self.photos, self.photo_fail, self.downloads = {}, {}, None, []
+
+    async def get_entity(self, peer):
+        if self.photo_fail:
+            raise self.photo_fail
+        if peer not in self.people:
+            raise ValueError('Could not find the input entity')
+        return self.people[peer]
+
+    async def download_profile_photo(self, ent, file=None, download_big=True):
+        self.downloads.append((ent.id, file, download_big))
+        return self.photos.get(ent.id)
 
     async def iter_dialogs(self, **_):
         for d in self.dialogs:
@@ -482,6 +495,82 @@ class Mirroring(unittest.TestCase):
             self.assertEqual(tm.run(args), 0)
 
 
+JPEG = b'\xff\xd8\xff\xe0' + b'PICTURE-OF-SAM' * 20
+
+
+class ProfilePhotos(unittest.TestCase):
+    """People's small profile photos: fetched by the mirror only when the app asks, only for someone in a chat it
+    reads, paced, within the day's budget, sealed in the store until the app takes them."""
+
+    def setUp(self):
+        Mirroring.setUp(self)
+        self.clock = [100.0]
+        self.mirror.clock = lambda: self.clock[0]
+        photo = types.SimpleNamespace(photo_id=555)
+        self.client.people = {7: entity('User', 7, photo=photo), 11: entity('User', 11, photo=None), 8: entity('User', 8, photo=photo)}
+        self.client.photos = {7: JPEG}
+        seen = asyncio.run(self.mirror.refresh_chats())
+        asyncio.run(self.mirror.backfill(seen))
+
+    def ask(self, user_id):
+        return ts.ask_photo(self.mirror.db, self.seal, user_id)
+
+    def answer(self):
+        self.clock[0] += 10  # past the pause
+        return asyncio.run(self.mirror.photo())
+
+    def test_only_asked_people_in_chats_it_reads_get_the_small_photo_sealed_once(self):
+        self.assertIsNone(asyncio.run(self.mirror.photo()))  # nothing asked: nothing fetched
+        for user in ('7', '11', '8', '99'):
+            self.assertEqual(self.ask(user), {'pending': True})
+        self.assertEqual([self.answer() for _ in range(4)], ['done', 'none', 'none', 'none'])
+        self.assertEqual(self.client.downloads, [(7, bytes, False)])  # the small one, and only Sam has one
+        raw = (Path(self.store) / ts.DB_NAME).read_bytes()
+        self.assertNotIn(b'PICTURE-OF-SAM', raw)  # sealed at rest
+        self.assertEqual(self.ask('7'), {'id': '555', 'data': JPEG})
+        self.assertEqual(self.ask('11'), {})  # a group member without a photo
+        self.assertEqual(self.ask('8'), {})  # muted chat: not read, never asked at Telegram
+        self.assertEqual(self.ask('99'), {})  # not in any chat it reads
+        self.assertEqual(self.mirror.db.execute("SELECT count(*) FROM photo_asks WHERE status!='queued'").fetchone()[0], 0)  # taken out
+        self.assertEqual(self.ask('7'), {'pending': True})  # asked again later: a new ask
+
+    def test_paced_and_at_most_the_days_budget(self):
+        for user in ('7', '11'):
+            self.ask(user)
+        self.assertEqual(self.answer(), 'done')
+        self.assertIsNone(asyncio.run(self.mirror.photo()))  # within the pause: waits
+        self.assertEqual(self.answer(), 'none')
+        ts.set_state(self.mirror.db, photos_day=dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d'), photos_count=ts.PHOTOS_PER_DAY)
+        self.ask('7')
+        self.ask('7')
+        self.assertIsNone(self.answer())  # the day's budget is spent
+        self.assertEqual(self.ask('7'), {'pending': True})
+
+    def test_a_flood_wait_pauses_the_photos_only_and_a_lost_session_stops_the_mirror(self):
+        self.ask('7')
+        self.client.photo_fail = FloodWaitError(600)
+        self.assertEqual(self.answer(), 'flood')
+        self.assertEqual(self.ask('7'), {'pending': True})  # the ask stays
+        self.assertTrue(ts.get_state(self.mirror.db)['photos_until'])
+        self.client.photo_fail = None
+        self.assertIsNone(self.answer())  # still waiting it out
+        self.assertTrue(asyncio.run(self.mirror.on_message(7, Message(40, 'chats go on'))))
+        ts.set_state(self.mirror.db, photos_until=None)
+        self.client.people.pop(7)
+        self.assertEqual(self.answer(), 'failed')  # Telegram couldn't find them: asked again the next day
+        self.assertEqual(self.ask('7'), {'id': 'failed'})
+        self.ask('7')
+        self.client.photo_fail = AuthKeyUnregisteredError()
+        with self.assertRaises(AuthKeyUnregisteredError):
+            self.answer()
+
+    def test_a_photo_too_big_is_not_kept(self):
+        self.client.photos = {7: b'\xff\xd8\xff' + b'0' * ts.PHOTO_BYTES}
+        self.ask('7')
+        self.assertEqual(self.answer(), 'failed')
+        self.assertEqual(self.ask('7'), {'id': 'failed'})
+
+
 # ---------------------------------------------------------------- the collector
 
 ACCOUNT = {'id': 'home-telegram', 'service': 'telegram', 'transport': 'telegram_mirror', 'identity_sha256': ts.identity(4242),
@@ -534,6 +623,89 @@ class Collector(unittest.TestCase):
             a.Telegram({}, {**mirror_store(tempfile.mkdtemp(dir=self.tmp.name)), 'identity_sha256': 'other'}).profile()
         with self.assertRaisesRegex(a.SourceError, 'telegram_source_unavailable'):
             a.Telegram({}, {**ACCOUNT, 'store': str(Path(self.tmp.name) / 'none')}).profile()
+
+
+class PicturesInTheGraph(unittest.TestCase):
+    """The app's side: it asks the mirror through the store for people in the graph without a photo, the same way and
+    with the same rules as WhatsApp's pictures (enrichment.chat_photos_step), and saves each one once."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.account = mirror_store(str(Path(self.tmp.name) / 'tg'))
+        self.config = {'accounts': [{**self.account, 'id': 'chat'}, {**self.account, 'id': 'team', 'shared': True}]}
+
+    def test_the_size_check_matches_every_other_photo(self):
+        self.assertEqual(ts.PHOTO_BYTES, a.enrichment.PHOTO_BYTES)
+        self.assertEqual(ts.PHOTOS_PER_DAY, a.enrichment.WHATSAPP_PHOTOS_PER_DAY)
+
+    def test_the_picture_is_asked_through_the_store_and_checked(self):
+        source = a.Telegram({}, {**self.account, 'id': 'chat'})
+        self.assertEqual(source.picture('7'), {'pending': True})
+        self.assertEqual(source.picture('7'), {'pending': True})
+        seal = ts.sealer(self.account['store'])
+        with contextlib.closing(ts.connect(self.account['store'])) as db:
+            ts.answer_photo(db, seal, '7', 'done', '555', JPEG)
+        self.assertEqual(source.picture('7'), {'id': '555', 'data': (JPEG, 'image/jpeg')})
+        source.picture('7')
+        with contextlib.closing(ts.connect(self.account['store'])) as db:
+            ts.answer_photo(db, seal, '7', 'done', '556', b'<html>not a picture</html>')
+        self.assertEqual(source.picture('7'), {'id': '556'})  # not an image: none kept, asked again the next day
+        for bad in ('-20', '7; DROP', '', 'abc'):
+            with self.assertRaises(a.SourceError):
+                source.picture(bad)
+
+    def test_only_the_owners_own_accounts_are_asked_and_a_stopped_mirror_is_a_pause(self):
+        accounts, ask = a.telegram_photo_asker(self.config)
+        self.assertEqual(accounts, ['chat'])
+        self.assertIsNone(ask('team', '7'))
+        self.assertEqual(ask('chat', '7'), {'pending': True})
+        stopped = mirror_store(str(Path(self.tmp.name) / 'stopped'), 'signed_out')
+        accounts, ask = a.telegram_photo_asker({'accounts': [{**stopped, 'id': 'chat'}]})
+        self.assertIsNone(ask('chat', '7'))
+
+    def test_people_in_the_graph_without_a_photo_get_it_once(self):
+        sys.path.insert(0, str(ROOT / 'tests'))
+        import test_graph as tg
+        enrichment = tg.a.enrichment
+        graph_case = types.SimpleNamespace(addCleanup=self.addCleanup)
+        tg.Graph.setUp(graph_case)
+
+        def message(chat, kind, sender, name):
+            n = next(tg.counter)
+            return {'account_id': 'chat', 'source_id': f't{n}', 'kind': 'telegram.message', 'occurred_at': tg.at(1), 'title': name, 'body': 'Hi',
+                    'deleted': False, 'metadata': {'chat_id': chat, 'chat_kind': kind, 'chat_name': name, 'from_me': False, 'from': name,
+                                                   'sender_id': sender}}
+        tg.Graph.add(graph_case, *(message('7', 'dm', '7', 'Sam Lee') for _ in range(3)), message('-20', 'group', '11', 'Robin Day'),
+                     message('9', 'dm', '9', 'Kai Moe'))
+        tg.Graph.build(graph_case)
+        connect, now = graph_case.store.connect, tg.NOW.isoformat()
+        with connect() as db:
+            db.execute("INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES('tg:9','k9','image/jpeg',x'ffd8ff',?)", (now,))
+        asked, answers = [], {}
+
+        def ask(account, user):
+            asked.append((account, user))
+            return answers.get(user, {'pending': True})
+        self.assertEqual(enrichment.telegram_photos_step(connect, now, ask, ['chat']), 0)
+        self.assertEqual(asked, [('chat', '7'), ('chat', '11')])  # closest first; a group member by their message; tg:9 has a photo
+        with connect() as db:  # waiting on the mirror spends nothing
+            self.assertEqual(db.execute('SELECT count(*) FROM telegram_photo_asks').fetchone()[0], 0)
+        answers.update({'7': {'id': '555', 'data': (JPEG, 'image/jpeg')}, '11': {}})
+        self.assertEqual(enrichment.telegram_photos_step(connect, now, ask, ['chat']), 1)
+        with connect() as db:
+            self.assertEqual({r[0] for r in db.execute("SELECT identifier FROM person_photos WHERE identifier LIKE 'tg:%'")}, {'tg:7', 'tg:9'})
+        asked.clear()
+        self.assertEqual(enrichment.telegram_photos_step(connect, now, ask, ['chat']), 0)
+        self.assertEqual(asked, [])  # saved, or none in 30 days
+        later = (tg.NOW + dt.timedelta(days=31)).isoformat()
+        enrichment.telegram_photos_step(connect, later, ask, ['chat'])
+        self.assertEqual(asked, [('chat', '11')])
+        self.assertEqual(enrichment.telegram_photos_step(connect, (tg.NOW + dt.timedelta(days=62)).isoformat(), lambda *_: None, ['chat']), 0)
+        with connect() as db:  # a stopped mirror: a pause, like WhatsApp's
+            self.assertTrue(db.execute("SELECT 1 FROM contact_photo_runs WHERE source='telegram:paused'").fetchone())
+            tg.graph.delete_person(db, 'tg:7', tg.CONFIG, later)  # Delete permanently takes the picture and its ask too
+            self.assertEqual(db.execute("SELECT count(*) FROM telegram_photo_asks WHERE identifier='tg:7'").fetchone()[0], 0)
 
 
 # ---------------------------------------------------------------- approve before send
@@ -720,6 +892,64 @@ class Setup(unittest.TestCase):
         self.assertIn('Code sent to your login email j***@example.com.', ui.said)
         self.assertIn('Sent again. Code sent by SMS.', ui.said)
         self.assertEqual([json.loads(w) for w in written], [{'resend': True}, {'code': '12345'}])
+
+    def test_the_qr_login_shows_how_to_scan_once_and_names_the_owner(self):
+        import onboarding
+        script = [{'event': 'qr', 'matrix': ['10', '01']}, {'event': 'qr', 'matrix': ['11', '00']}, {'event': 'connected', 'identity': 'x', 'name': 'Ada Lovelace'}]
+
+        class Process:
+            def __init__(self, *a, **kw):
+                self.stdout = io.StringIO(''.join(json.dumps(e) + '\n' for e in script))
+                self.stdin = types.SimpleNamespace(write=lambda line: None, flush=lambda: None)
+
+            def poll(self):
+                return 0
+
+            def wait(self, *a):
+                return 0
+
+        class Terminal:
+            web, said = False, []
+
+            def choose(self, prompt, options):
+                return 'qr'
+
+            def say(self, line):
+                self.said.append(line)
+
+        class Web(Terminal):
+            web, said, codes = True, [], []
+
+            def show_code(self, code):
+                self.codes.append(code)
+        for ui in (Terminal(), Web()):
+            with tempfile.TemporaryDirectory() as home, patch.object(onboarding.subprocess, 'Popen', Process), \
+                    patch.object(onboarding.service, 'available', return_value=False):
+                state = onboarding.telegram_login({}, {**ACCOUNT, 'store': str(Path(home) / 'tg')}, ui)
+            self.assertEqual(state['name'], 'Ada Lovelace')
+            told = [line for line in ui.said if 'Link Desktop Device' in line]
+            self.assertEqual(len(told), 0 if ui.web else 1)  # the dashboard shows it with the code, and drops it with the code
+        self.assertEqual(len([c for c in Web.codes if c]), 2)
+
+    def test_the_account_and_its_mirror_have_plain_names(self):
+        import onboarding
+        account = onboarding.new_account({'accounts': [{'id': 'acme-gmail', 'service': 'gmail', 'boundary': 'work:Acme'}]}, 'telegram')
+        self.assertEqual(account['id'], 'personal-telegram')
+        self.assertEqual(onboarding.telegram_unit(account), 'the-machine-personal-telegram.service')
+        with tempfile.TemporaryDirectory() as home:
+            said = []
+            ui = types.SimpleNamespace(say=said.append, web=True)
+            store = Path(home) / 'tg'
+            account = {**ACCOUNT, 'store': str(store)}
+            with patch.object(onboarding, 'telegram_app'), patch.object(onboarding, 'telegram_base', return_value=Path(home)), \
+                    patch('telegram_release.install'), patch.object(onboarding, 'telegram_state', return_value={}), \
+                    patch.object(onboarding, 'telegram_login', return_value={'identity': 'x', 'name': 'Ada Lovelace'}), \
+                    patch.object(onboarding, 'telegram_follow', return_value=True):
+                onboarding.step_telegram({}, account, ui)
+            self.assertEqual(said, ['  Connected as Ada Lovelace. Reading your chats now.'])
+            self.assertEqual(account['display_name'], 'Ada’s Telegram')
+            self.assertIn('--days', onboarding.telegram_command({'bootstrap_days': 90}, account, 'follow'))
+            self.assertEqual(onboarding.telegram_command({'bootstrap_days': 90}, account, 'follow')[-2], '30')
 
     def test_a_terminal_qr_code(self):
         import onboarding

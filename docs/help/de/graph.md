@@ -3,7 +3,7 @@ title: Der Graph
 area: graph
 summary: Die Personen, Organisationen und Projekte in deinen Nachrichten, die sich von selbst aktuell halten.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus deinen Nachrichten, Meetings und Entscheidungen. Nichts einzurichten, und alles bleibt auf deiner Machine.
@@ -99,6 +99,12 @@ Klick auf das Bild auf der Seite einer Person oder Organisation, um es zu änder
 
 Deine Änderungen bleiben, auch wenn die Details neu nachgeschlagen werden oder eine Prüfung etwas anderes liest, und auch bei **Zusammenführen** und **Rückgängig**. Leere ein Feld, um wieder den nachgeschlagenen Wert zu nutzen. Ein leerer Name holt den Namen aus den Nachrichten zurück.
 
+## Zurückgekommen
+
+Wenn eine E-Mail an jemanden zurückkommt, zeigt seine Adresse **Zurückgekommen** mit dem Datum, und eine andere Adresse dieser Person rückt nach vorn. Neue Entwürfe gehen nie an sie, wenn eine andere Adresse bekannt ist. Ist es die einzige, warnt das Sendefenster, und du kannst trotzdem senden. Die Angaben der Person werden neu nachgeschlagen.
+
+Eine Rückmeldung zählt, wenn der Mailserver sagt, dass es die Adresse nicht gibt, oder nach 3 vorübergehenden Fehlern innerhalb einer Woche. Sie verschwindet, wenn die Person wieder von dieser Adresse schreibt oder eine E-Mail an sie ankommt.
+
 ## Gleiche Person?
 
 Wenn zwei Personen eine sein könnten, fragt ihre Seite, ob es dieselbe Person ist, und Personen listet sie unter **Gleiche Person?**. **Zusammenführen** verbindet sie, mit allen Nachrichten, Notizen, Rollen und Projekten. **Nicht dieselbe** hält sie dauerhaft getrennt.
@@ -115,7 +121,7 @@ Personen mit einer Firmenadresse bekommen Position, Foto, LinkedIn und Stadt. Da
 
 Deine Verbindungen ergänzen mehr, während sie laufen, mit dem, was sie ohnehin lesen, ohne zusätzliche Anfragen: Position, Telefon und Zeitzone aus Slack, Bio, Ort und Website aus X, Headline und Foto aus LinkedIn und Positionen aus Google-Kontakten und Salesflare. Was jemand über sich selbst sagt, hat Vorrang. Fahr mit der Maus über die Zeile unter dem Namen, um zu sehen, woher es kommt. Alles bleibt auf deiner Machine.
 
-WhatsApp-Bilder kommen über deine dauerhaft laufende WhatsApp-Synchronisierung, wenn sie das erlaubt: bis zu 50 am Tag, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet.
+WhatsApp-Bilder kommen über deine dauerhaft laufende WhatsApp-Synchronisierung, wenn sie das erlaubt: bis zu 50 am Tag, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet. Telegram-Bilder kommen genauso, über deine Verbindung zu Telegram-Chats: bis zu 50 am Tag, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet.
 
 ## Jemanden endgültig löschen
 

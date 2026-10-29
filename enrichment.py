@@ -924,7 +924,6 @@ def contact_photos_step(connect, now, limit=CONTACT_PHOTOS_PER_PASS, fetch=None)
 # is asked again after 30 days. Nothing is sent to them: no message, read receipt or presence.
 WHATSAPP_PHOTOS_PER_DAY = 50
 WHATSAPP_PAUSE_HOURS = 6  # the mirror couldn't answer (off, older, restarting): try again later, not every pass
-WHATSAPP_SCHEMA = 'CREATE TABLE IF NOT EXISTS whatsapp_photo_asks(identifier TEXT PRIMARY KEY,asked_at TEXT NOT NULL,picture_id TEXT)'
 WHATSAPP_USER = re.compile(r'([0-9]{5,20})(?::[0-9]+)?@(s\.whatsapp\.net|lid)')
 WHATSAPP_SCAN = 5000  # group messages read to find the address of someone met only in groups
 
@@ -956,23 +955,53 @@ def whatsapp_addresses(db, wanted, accounts):
 
 
 def whatsapp_photos_step(connect, now, ask, accounts, limit=WHATSAPP_PHOTOS_PER_DAY, fetch=None):
-    """Asks the WhatsApp mirror for the pictures of people in the graph who have none, strongest first, within the day's
-    budget. ask(account id, jid) gives {'id', 'url'}, {} when they have none the owner can see, or None when the mirror
-    can't answer now (then nothing more is asked for a while). Returns how many pictures were saved."""
+    """Asks the WhatsApp mirror for the pictures of people in the graph who have none (chat_photos_step)."""
+    return chat_photos_step(connect, now, ask, accounts, WHATSAPP_CHAT, limit=limit, fetch=fetch)
+
+
+# Each chat app's asks table, as fixed statements: no table name is ever built into SQL.
+PHOTO_ASKS_SQL = {
+    'whatsapp_photo_asks': {
+        'create': 'CREATE TABLE IF NOT EXISTS whatsapp_photo_asks(identifier TEXT PRIMARY KEY,asked_at TEXT NOT NULL,picture_id TEXT)',
+        'today': 'SELECT count(*) FROM whatsapp_photo_asks WHERE asked_at>=?',
+        'asked': 'SELECT identifier,asked_at,picture_id FROM whatsapp_photo_asks',
+        'save': 'INSERT INTO whatsapp_photo_asks(identifier,asked_at,picture_id) VALUES(?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
+                'asked_at=excluded.asked_at,picture_id=excluded.picture_id'},
+    'telegram_photo_asks': {
+        'create': 'CREATE TABLE IF NOT EXISTS telegram_photo_asks(identifier TEXT PRIMARY KEY,asked_at TEXT NOT NULL,picture_id TEXT)',
+        'today': 'SELECT count(*) FROM telegram_photo_asks WHERE asked_at>=?',
+        'asked': 'SELECT identifier,asked_at,picture_id FROM telegram_photo_asks',
+        'save': 'INSERT INTO telegram_photo_asks(identifier,asked_at,picture_id) VALUES(?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
+                'asked_at=excluded.asked_at,picture_id=excluded.picture_id'},
+}
+
+
+# A chat app whose own always-on mirror answers for people's pictures: its name (for the pause), its asks table, the
+# shape of its people's identifiers in the graph, and how their chat address is found.
+WHATSAPP_CHAT = {'name': 'whatsapp', 'table': 'whatsapp_photo_asks', 'identifier': r'wa:[0-9]{5,20}', 'addresses': whatsapp_addresses}
+
+
+def chat_photos_step(connect, now, ask, accounts, chat, limit=WHATSAPP_PHOTOS_PER_DAY, fetch=None):
+    """Asks a chat app's mirror (WhatsApp, Telegram) for the pictures of people in the graph who have none, strongest
+    first, within the day's budget. ask(account id, address) gives {'id', 'url'} or {'id', 'data': (bytes, type)},
+    {} when they have none the owner can see, {'pending': True} when the mirror took the ask and answers on a later
+    pass (nothing kept or counted yet), or None when the mirror can't answer now (then nothing more is asked for a
+    while). Returns how many pictures were saved."""
     fetch = fetch or download_photo
     accounts = [a for a in accounts if a]
     if not accounts:
         return 0
+    statements, paused_key = PHOTO_ASKS_SQL[chat['table']], chat['name'] + ':paused'
     stamp = dt.datetime.fromisoformat(now)
     today = stamp.astimezone(dt.timezone.utc).strftime('%Y-%m-%dT00:00:00')
     retry = (stamp - dt.timedelta(days=PHOTO_RETRY_DAYS)).isoformat()
     with connect() as db:
-        db.execute(WHATSAPP_SCHEMA)
+        db.execute(statements['create'])
         contact_tables(db)
-        paused = db.execute("SELECT ran_at FROM contact_photo_runs WHERE source='whatsapp:paused'").fetchone()
+        paused = db.execute('SELECT ran_at FROM contact_photo_runs WHERE source=?', (paused_key,)).fetchone()
         if paused and paused[0] > (stamp - dt.timedelta(hours=WHATSAPP_PAUSE_HOURS)).isoformat():
             return 0
-        left = limit - db.execute('SELECT count(*) FROM whatsapp_photo_asks WHERE asked_at>=?', (today,)).fetchone()[0]
+        left = limit - db.execute(statements['today'], (today,)).fetchone()[0]
         if left <= 0:
             return 0
         try:
@@ -986,32 +1015,72 @@ def whatsapp_photos_step(connect, now, ask, accounts, limit=WHATSAPP_PHOTOS_PER_
         with_photo = {node for node, identifier in nodes if identifier in photos}
         # A picture that didn't download (they have one, it isn't here) is asked again the next day, none in 30 days.
         again = (stamp - dt.timedelta(days=1)).isoformat()
-        asked = {i: (at, again if picture else retry) for i, at, picture in db.execute('SELECT identifier,asked_at,picture_id FROM whatsapp_photo_asks')}
+        asked = {i: (at, again if picture else retry) for i, at, picture in db.execute(statements['asked'])}
         wanted = []
         for node, identifier in nodes:
             at, since = asked.get(identifier, ('', retry))
-            if (node in with_photo or not re.fullmatch(r'wa:[0-9]{5,20}', str(identifier)) or identifier in wanted
+            if (node in with_photo or not re.fullmatch(chat['identifier'], str(identifier)) or identifier in wanted
                     or at > since or gone(identifier)):
                 continue
             wanted.append(identifier)
-        addresses = whatsapp_addresses(db, set(wanted), accounts) if wanted else {}
+        addresses = chat['addresses'](db, set(wanted), accounts) if wanted else {}
     saved = 0
     for identifier in [i for i in wanted if i in addresses][:left]:
-        account, jid = addresses[identifier]
-        answer = ask(account, jid)
+        account, address = addresses[identifier]
+        answer = ask(account, address)
         if answer is None:
             with connect() as db:
-                db.execute("INSERT INTO contact_photo_runs(source,ran_at) VALUES('whatsapp:paused',?) ON CONFLICT(source) DO UPDATE SET ran_at=excluded.ran_at", (now,))
+                db.execute('INSERT INTO contact_photo_runs(source,ran_at) VALUES(?,?) ON CONFLICT(source) DO UPDATE SET ran_at=excluded.ran_at', (paused_key, now))
             break
-        got = fetch(answer['url']) if answer.get('url') else None
+        if answer.get('pending'):
+            continue
+        got = answer.get('data') or (fetch(answer['url']) if answer.get('url') else None)
         with connect() as db:
-            db.execute('INSERT INTO whatsapp_photo_asks(identifier,asked_at,picture_id) VALUES(?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
-                       'asked_at=excluded.asked_at,picture_id=excluded.picture_id', (identifier, now, answer.get('id') or None))
+            db.execute(statements['save'], (identifier, now, answer.get('id') or None))
             if got and not db.execute('SELECT 1 FROM person_photos WHERE identifier=?', (identifier,)).fetchone():
                 db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)',
                            (identifier, photo_key(identifier), got[1], got[0], now))
                 saved += 1
     return saved
+
+
+# Telegram pictures: asked through the owner's Telegram mirror (telegram_mirror.py), the one process that holds the
+# session, the same way as WhatsApp's: people already in the graph without a photo, whose Telegram user ID the Machine
+# has seen in a chat it reads, at most 50 asks a day. The ask waits in the mirror's store; the mirror fetches the small
+# profile photo at its own pace and keeps it there sealed, and the next pass saves it here once and takes it out of
+# the store. Nothing is sent to them.
+TELEGRAM_USER = re.compile(r'[0-9]{1,20}')
+TELEGRAM_SCAN = 5000  # group messages read to find someone met only in groups
+
+
+def telegram_addresses(db, wanted, accounts):
+    """{'tg:<id>': (account id, user id)} for the wanted people: their private chat first, else a group message they
+    sent (newest first)."""
+    found = {}
+    marks = ','.join('?' * len(accounts))
+    for chat, kind, account in db.execute(f"SELECT DISTINCT json_extract(metadata,'$.chat_id'),json_extract(metadata,'$.chat_kind'),account_id FROM events "
+                                          f"WHERE kind='telegram.message' AND account_id IN ({marks})", list(accounts)):
+        chat = str(chat or '')
+        if kind != 'group' and TELEGRAM_USER.fullmatch(chat) and 'tg:' + chat in wanted:
+            found.setdefault('tg:' + chat, (account, chat))
+    if len(found) < len(wanted):
+        rows = db.execute(f"SELECT json_extract(metadata,'$.sender_id'),account_id FROM events WHERE kind='telegram.message' AND account_id IN ({marks}) "
+                          f"AND json_extract(metadata,'$.chat_kind')='group' ORDER BY occurred_at DESC LIMIT ?", [*accounts, TELEGRAM_SCAN])
+        for sender, account in rows:
+            sender = str(sender or '')
+            if TELEGRAM_USER.fullmatch(sender) and 'tg:' + sender in wanted:
+                found.setdefault('tg:' + sender, (account, sender))
+                if len(found) == len(wanted):
+                    break
+    return found
+
+
+TELEGRAM_CHAT = {'name': 'telegram', 'table': 'telegram_photo_asks', 'identifier': r'tg:[0-9]{1,20}', 'addresses': telegram_addresses}
+
+
+def telegram_photos_step(connect, now, ask, accounts, limit=WHATSAPP_PHOTOS_PER_DAY):
+    """Asks the Telegram mirror for the pictures of people in the graph who have none (chat_photos_step)."""
+    return chat_photos_step(connect, now, ask, accounts, TELEGRAM_CHAT, limit=limit)
 
 
 # Facts about people from what the connectors already read while they run: Slack profiles (the users.info lookup done

@@ -3,7 +3,7 @@ title: Il Graph
 area: graph
 summary: Le persone, le organizzazioni e i progetti nei tuoi messaggi, aggiornati da soli.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 La tua Machine costruisce una mappa delle persone con cui hai a che fare e di cosa sta succedendo, a partire da messaggi, riunioni e decisioni. Non c'è niente da configurare, e resta sulla tua Machine.
@@ -99,6 +99,12 @@ Fai clic sull'immagine nella pagina di una persona o di un'organizzazione per ca
 
 Le tue modifiche restano, anche quando i suoi dettagli vengono cercati di nuovo o una revisione legge qualcos'altro, e anche dopo **Unisci** e **Annulla**. Svuota un campo per usare di nuovo il valore trovato. Un nome vuoto riporta quello dei suoi messaggi.
 
+## Respinto
+
+Quando un'email a qualcuno viene respinta, il suo indirizzo mostra **Respinto** con la data, e un altro suo indirizzo passa davanti. Le nuove bozze non ci vanno mai se se ne conosce un altro. Se è l'unico, la finestra di invio ti avvisa e puoi comunque inviare. I suoi dati vengono cercati di nuovo.
+
+Un rifiuto conta quando il server di posta dice che l'indirizzo non esiste, o dopo 3 errori temporanei in una settimana. Sparisce quando la persona scrive di nuovo da quell'indirizzo o quando un'email arriva.
+
 ## Stessa persona?
 
 Quando due persone potrebbero essere una sola, la loro pagina chiede se sono la stessa persona, e Persone le elenca sotto **Stessa persona?**. **Unisci** le unisce, con tutti i loro messaggi, note, ruoli e progetti. **Non è la stessa** le tiene separate per sempre.
@@ -115,7 +121,7 @@ Le persone con un indirizzo aziendale ricevono ruolo, foto, LinkedIn e città, c
 
 Le tue connessioni completano altri dati mentre girano, con quello che leggono già e senza chiedere nulla in più: ruolo, telefono e fuso orario da Slack, bio, luogo e sito web da X, headline e foto da LinkedIn, e ruoli dai contatti Google e da Salesflare. Quello che una persona dice di sé viene prima. Passa con il mouse sulla riga sotto il nome per vedere da dove viene. Resta tutto sulla tua Machine.
 
-Le immagini di WhatsApp arrivano tramite la sincronizzazione WhatsApp sempre attiva, quando lo consente: fino a 50 al giorno, solo per persone già nel tuo Graph. Non viene inviato nulla a loro.
+Le immagini di WhatsApp arrivano tramite la sincronizzazione WhatsApp sempre attiva, quando lo consente: fino a 50 al giorno, solo per persone già nel tuo Graph. Non viene inviato nulla a loro. Le immagini di Telegram arrivano allo stesso modo, tramite la connessione alle chat di Telegram: fino a 50 al giorno, solo per persone già nel tuo Graph. Non viene inviato nulla a loro.
 
 ## Elimina una persona definitivamente
 
