@@ -36,5 +36,6 @@ What it can send depends on the source: an email, a Slack direct message, a What
 - "This can't be sent from here." means you copy the draft with **Copy draft** and send it yourself.
 - **Needs your help** means it asks you something: **Answer** it. **Stuck** means it stopped without a question, or ran too long and was stopped; the to-do says why.
 - **Try again** runs it once more. **Change** asks for something else.
+- A to-do in Preparing starts within seconds. When it has to wait, it says why and roughly when: "Starts after the current one", a usage limit that resets, or usage saved for later.
 - A site wants you to sign in: press **Sign in**, or **Open the browser** and sign in there. Once you're in, it carries on by itself and the to-do says "Signed in. I'll start shortly." Closing the browser checks right away. If it doesn't carry on, press **Continue**.
 - A code sent to your phone, or a permission it lacks, stops it. The to-do says in one line what it needs, like the code in its browser or access to a file, then **Continue** or **Try again**.

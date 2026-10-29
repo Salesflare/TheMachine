@@ -445,7 +445,7 @@ class FollowUps(unittest.TestCase):
             ids = [db.execute('SELECT id FROM events WHERE source_id=?', (x,)).fetchone()[0] for x in ('in4', 'out4')]
             lee = graph.label(db, ids, 'Lee demo', 'review', NOW)
             db.execute("UPDATE projects SET board_id=?,stage='Invited' WHERE id=?", (self.board, lee))
-            for name in ('first_ahead_started', 'first_card_shown'):  # past the first look: other ahead drafts go one per gap
+            for name in ('first_ahead_started', 'first_card_shown'):  # past the first look: other ahead drafts go one per tick
                 db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', (name, NOW))
         self.turn_on()
         app = self.app()

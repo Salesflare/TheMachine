@@ -187,7 +187,7 @@ class Checks(unittest.TestCase):
         self.assertEqual((row['status'], row['error'], row['auto_retries']), ('queued', 'usage_limited', 0))
         self.assertGreater(row['retry_at'], a.now())
 
-    def test_drafts_prepared_ahead_go_one_at_a_time_after_the_first(self):
+    def test_drafts_prepared_ahead_go_one_per_tick_after_the_first(self):
         made = [self.app.action('suggest', {'dedupe_key': f'k{n}', 'title': f'Reply {n}', 'body': 'I can draft it.', 'event_ids': [1],
                                             'when': 'now', 'prepare_ahead': True})['id'] for n in range(3)]
         calls = []
@@ -195,15 +195,77 @@ class Checks(unittest.TestCase):
         self.assertEqual(len(calls), 1)  # the first magic: one draft at once
         self.assertTrue(calls[0]['background'])
         calls.clear()
+        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'pending'})
+        self.assertNotIn('start', [c['action'] for c in calls])  # the others wait for the first card to be shown
         with self.store.connect() as db:
             db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (a.now(),))
-        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'pending'})
-        self.assertNotIn('start', [c['action'] for c in calls])  # the next one waits for the gap
-        self.app.background_at = time.time() - a.BACKGROUND_GAP_SECONDS
-        calls.clear()
-        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted' if r['action'] == 'start' else 'pending'})
-        self.assertEqual([c['action'] for c in calls].count('start'), 1)
+        for _ in range(2):  # then one per tick (a few seconds), not one per BACKGROUND_GAP_SECONDS
+            calls.clear()
+            self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted' if r['action'] == 'start' else 'pending'})
+            self.assertEqual([c['action'] for c in calls].count('start'), 1)
         self.assertEqual(len(made), 3)
+
+    def test_a_draft_prepared_ahead_starts_at_once_after_a_review_started(self):
+        # 2026-10-29: a review started, made a to-do prepared ahead two minutes later, and that to-do showed "I'll start
+        # shortly." for 8 minutes while nothing else ran: the review's start had used the background gap.
+        with self.store.connect() as db:
+            for name in ('first_card_shown', 'first_ahead_started'):
+                db.execute("INSERT INTO milestones(name,at) VALUES(?,?)", (name, a.now()))
+        self.app.background_started()  # the review that made the to-do just went
+        sid = self.app.action('suggest', {'dedupe_key': 'k', 'title': 'Reply to Sam', 'body': 'I can draft it.', 'event_ids': [1],
+                                          'when': 'now', 'prepare_ahead': True})['id']
+        calls = []
+        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        self.assertEqual([c['action'] for c in calls], ['start'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()[0], 'running')
+        self.assertFalse(self.app.background_spaced())  # profile, voices and other unseen turns still space behind it
+
+    def hold(self, sid):
+        with self.store.connect() as db:
+            card = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone())
+            self.store.card_views(db, [card])
+        return card.get('preparation_hold')
+
+    def test_a_queued_to_do_says_why_it_waits_and_until_when(self):
+        accepted = []
+        for n in range(4):
+            sid = self.store.suggest(f'task{n}', f'Reply {n}', 'I can draft it.', [1])['id']
+            self.store.decide(sid, 'accept', '', f'click{n}', 'dashboard')
+            accepted.append(sid)
+        self.app.config['preparation_concurrency'] = 3
+        self.app.preparation_step(lambda r: {'status': 'admitted' if r['action'] == 'start' else 'pending'})
+        self.assertEqual([self.hold(s) for s in accepted[:3]], [None] * 3)  # running
+        self.assertEqual(self.hold(accepted[3]), {'why': 'busy'})  # every slot taken: starts when one finishes
+        # A usage limit: it waits for the reset and says when
+        until = int(time.time()) + HOUR
+        self.app.usage_limit = {'until': until, 'at': int(time.time())}
+        self.app.preparation_step(lambda r: {'status': 'pending'})
+        self.assertEqual(self.hold(accepted[3]), {'why': 'limit', 'until': until})
+        # A slot free and no limit: no reason, it starts on this tick
+        self.app.usage_limit = None
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='done' WHERE suggestion_id=?", (accepted[0],))
+            db.execute("UPDATE preparation_runs SET finished_at=? WHERE suggestion_id=?", (a.now(), accepted[0]))
+        calls = []
+        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted' if r['action'] == 'start' else 'pending'})
+        with self.store.connect() as db:
+            job_id = db.execute('SELECT job_id FROM preparations WHERE suggestion_id=?', (accepted[3],)).fetchone()[0]
+        self.assertEqual([c['job_id'] for c in calls if c['action'] == 'start'], [job_id])
+        self.assertIsNone(self.hold(accepted[3]))
+
+    def test_a_draft_prepared_ahead_held_by_the_budget_says_so(self):
+        with self.store.connect() as db:
+            for name in ('first_card_shown', 'first_ahead_started'):
+                db.execute("INSERT INTO milestones(name,at) VALUES(?,?)", (name, a.now()))
+        reset = int(time.time()) + 2 * HOUR
+        self.app.model_usage = usage(short=70, short_reset=reset)
+        sid = self.app.action('suggest', {'dedupe_key': 'k', 'title': 'Reply to Sam', 'body': 'I can draft it.', 'event_ids': [1],
+                                          'when': 'now', 'prepare_ahead': True})['id']
+        calls = []
+        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        self.assertEqual(calls, [])
+        self.assertEqual(self.hold(sid), {'why': 'budget', 'until': reset})
 
     def test_background_turns_never_run_on_the_costliest_model(self):
         path = Path(self.temp.name) / 'openclaw.json'

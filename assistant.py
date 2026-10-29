@@ -1625,9 +1625,10 @@ RUN_SIGNAL_BUDGET = 120
 # While the first review digs (App.first_dig), each next review takes this many of the most promising signals of the
 # week; the backlog after it goes in the regular reviews, spread out under the usage budget.
 FIRST_LOOK_NEXT_SIGNALS = QUICK_LOOK_SIGNALS
-# Background turns beyond the first look (profile, voices, roles, organizations, drafts prepared ahead) start at most
-# one per this many seconds, and only once the first card was shown, so the first cards come first and a new
-# install's usage is spread out instead of spent in its first minutes.
+# Background turns beyond the first look (profile, voices, roles, organizations) start at most one per this many
+# seconds, and only once the first card was shown, so the first cards come first and a new install's usage is spread
+# out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
+# wait for this gap (2026-10-29: one waited 8 minutes behind a review's start); the usage budget still holds it.
 BACKGROUND_GAP_SECONDS = 600
 REVIEW_ASKED_SECONDS = 600  # the owner's Review now holds this long for the next review step
 FIRST_MAGIC_SETTLE_SECONDS = 900  # no card shown yet: a finished review counts as the first look after this long
@@ -8197,7 +8198,8 @@ class Store:
             if job: suggestion.update(preparation_status=job['status'],preparation_reason=job['reason'],preparation_error=job['error'],
                                       preparation_details=job['details'],preparation_started_at=job['started_at'],preparation_retried=job['auto_retries']>0,
                                       preparation_questions=blocker_questions(job.get('questions')),preparation_no_questions=job.get('questions')=='[]',
-                                      preparation_cause=job.get('cause'),preparation_signed_in=str(job['decision_id']).startswith('signed-in:'))
+                                      preparation_cause=job.get('cause'),preparation_signed_in=str(job['decision_id']).startswith('signed-in:'),
+                                      preparation_hold=getattr(self,'preparation_holds',{}).get(suggestion['id']) if job['status']=='queued' else None)
             suggestion.update(self.suggestion_result(suggestion, db))
 
     def done_rows(self, db, titles=False):
@@ -17000,8 +17002,9 @@ class App:
             # this same transaction so a decision on another thread can't slip a second run in.
             # A usage limit holds every new run until it resets. Drafts prepared ahead (no owner asked yet) are background
             # work: one usage check each (model_budget), the first look's first one as the first magic, the others one
-            # per BACKGROUND_GAP_SECONDS once the first card was shown.
-            limited=self.background_pause(owner=True) if room else None
+            # per tick once the first card was shown. They show on the board as Preparing, so they don't wait for
+            # BACKGROUND_GAP_SECONDS behind a review or another background turn.
+            limited=self.background_pause(owner=True)
             queued=[dict(r) for r in db.execute("""SELECT p.*,s.status suggestion_status,s.early FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
                 WHERE p.status='queued' AND s.status IN ('accepted','instructions') AND (p.retry_at IS NULL OR p.retry_at<=?)
                 AND NOT EXISTS(SELECT 1 FROM preparation_runs r WHERE r.finished_at IS NULL AND r.job_id!=p.job_id
@@ -17013,6 +17016,7 @@ class App:
             queued.sort(key=lambda j:j['suggestion_id'] in following)
             late=follow_ups.late_ids(db,now()) if following else set()
             admitted=[]
+            held={}  # suggestion id: why its queued preparation waits ({'why', 'until'}), for its to-do (Store.card_views)
             # The owner's own message in a follow-up's chat (the review's Change too) is theirs, not background work: it
             # goes in turn with other work, at most follow_ups.DRAFTING follow-ups at once
             asked=lambda j:j['suggestion_id'] in following and str(j.get('decision_id') or '').startswith('chat-')
@@ -17020,18 +17024,49 @@ class App:
                 if len(admitted)>=room:break
                 if asked(job):
                     if sum(j['suggestion_id'] in following for j in active+admitted)>=follow_ups.DRAFTING:
+                        held[job['suggestion_id']]={'why':'busy'}
                         continue
-                elif job['suggestion_id'] in following and (any(j['suggestion_id'] not in following for j in queued if j not in admitted) or self.follow_up_pause(late=job['suggestion_id'] in late)):
-                    continue
+                elif job['suggestion_id'] in following:
+                    if any(j['suggestion_id'] not in following for j in queued if j not in admitted):
+                        held[job['suggestion_id']]={'why':'others'}
+                        continue
+                    paused=self.follow_up_pause(late=job['suggestion_id'] in late)
+                    if paused:
+                        held[job['suggestion_id']]={'why':'limit' if paused.get('limited') else 'budget','until':paused.get('until')}
+                        continue
                 # A follow-up draft has its own pacing (follow_up_pause above, follow_ups.DRAFTING and PER_DAY): not the one
-                # ahead draft per tick and BACKGROUND_GAP_SECONDS of other drafts prepared ahead
+                # ahead draft per tick
                 if job['early'] and job['suggestion_id'] not in following and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
                     first=ahead_first and not any(j['early'] for j in admitted)
-                    if any(j['early'] for j in admitted) or self.background_pause(first=first, job='ahead:' + job['job_id'], db=db) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
+                    if any(j['early'] for j in admitted):
+                        continue  # the next tick, a few seconds later
+                    paused=self.background_pause(first=first, job='ahead:' + job['job_id'], db=db)
+                    if paused:
+                        held[job['suggestion_id']]={'why':'limit' if paused.get('limited') else 'budget','until':paused.get('until')}
+                        continue
+                    if not (first or self.store.first_magic_done(db)):
                         continue
                     if first:db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('first_ahead_started',?)",(now(),))
                     self.background_started()
                 admitted.append(job)
+            # Every other queued run says why it waits on its to-do: a usage limit, a retry later, an unfinished run of
+            # its own, or every slot taken. Without a reason it starts within seconds ("I'll start shortly.").
+            busy={j['suggestion_id'] for j in active+admitted}
+            for row in db.execute("""SELECT p.suggestion_id,p.job_id,p.session_job_id,p.retry_at,p.error FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
+                    WHERE p.status='queued' AND s.status IN ('accepted','instructions')""").fetchall():
+                sid=row['suggestion_id']
+                if sid in busy or sid in held:continue
+                if limited:
+                    held[sid]={'why':'limit','until':limited.get('until')}
+                elif row['retry_at'] and row['retry_at']>now():
+                    until=dt.datetime.fromisoformat(row['retry_at']).timestamp()
+                    held[sid]={'why':'limit' if row['error']=='usage_limited' else 'retry','until':until}
+                elif db.execute("SELECT 1 FROM preparation_runs r WHERE r.finished_at IS NULL AND r.job_id!=? AND (r.suggestion_id=? OR r.session_job_id=?)",
+                                (row['job_id'],sid,row['session_job_id'] or row['job_id'])).fetchone():
+                    held[sid]={'why':'after'}
+                elif len(active)+len(admitted)>=int(self.config.get('preparation_concurrency',3)):
+                    held[sid]={'why':'busy'}
+            self.store.preparation_holds=held
             queued=admitted
             jobs=[]
             for job in active+queued:

@@ -3542,8 +3542,15 @@ const plainDetails=t=>String(t||'').replace(/(?:~|\/home|\/tmp|\/var|\/Users|mem
 // A run's latest three steps, one line each, in a box that keeps its height from the start: the to-do doesn't grow
 // line by line while it works.
 const stepItems=list=>(list||[]).slice(-1).map(x=>`<li title="${esc(x.title)}">${esc(x.title)}</li>`).join('');
+// Why a queued run waits (s.preparation_hold from the dispatcher: why, until): said on its to-do instead of "I'll start
+// shortly." for minutes. No hold: it starts within seconds.
+function holdNote(h){if(!h)return '';const when=pauseWhen(h.until);
+ if(h.why==='limit')return when?t('Waiting for the usage limit to reset. Starts around {}.',when):t('Waiting for the usage limit to reset.');
+ if(h.why==='budget')return when?t('Saving usage for now. Starts around {}.',when):t('Saving usage for now. Starts when there’s room.');
+ if(h.why==='retry')return when?t('Trying again around {}.',when):'';
+ return {after:t('Starts after the current one.'),busy:t('Starts when one of the running to-dos finishes.'),others:t('Starts after the other to-dos.')}[h.why]||''}
 function preparationNote(s,ask=''){
-if(s.preparation_status==='queued')return `<p class="note">${s.preparation_retried?'That attempt didn’t finish, so I’m trying once more…':s.preparation_signed_in?'Signed in. I’ll start shortly.':'I’ll start shortly.'}</p>`;
+if(s.preparation_status==='queued')return `<p class="note">${esc(holdNote(s.preparation_hold)||(s.preparation_retried?'That attempt didn’t finish, so I’m trying once more…':s.preparation_signed_in?'Signed in. I’ll start shortly.':'I’ll start shortly.'))}</p>`;
 // A blocker that asks the owner already leads as the Needs you line: not said twice.
 if(s.preparation_status==='blocked')return `${ask?(s.preparation_browser?`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):`<p class="note">${format(s.preparation_reason||'I couldn’t finish this. You can try again or change the request.')} ${browserLink(s.id,s.preparation_browser)}</p>`}${s.preparation_details?`<details class="tech" data-tech="${s.id}" ${openTech.has(s.id)?'open':''}><summary>${ask?'Technical details':'Details'}</summary><pre>${linkText(ask?plainDetails(s.preparation_details):s.preparation_details)}</pre></details>`:''}`;
 return `<div class="prep"><div class="prep-main"><p class="note">Preparing… ${s.preparation_started_at?`<span class="elapsed" data-since="${esc(s.preparation_started_at)}">${elapsed(s.preparation_started_at)}</span>`:''}${s.preparation_retried?' · second try':''} <span data-browser="${s.id}">${browserLink(s.id,s.preparation_browser)}</span></p><ul class="steps" data-steps="${s.id}" aria-live="polite">${stepItems(steps.get(s.id))}</ul></div><div class="peek" data-peek="${s.id}">${peekHTML(s.id)}</div></div>`}
