@@ -144,6 +144,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:16px;pa
 .head-side{display:flex;align-items:center;gap:8px}.manage{padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--muted);text-decoration:none;font-size:.85rem}.manage:hover,.head-link:hover{color:var(--text)}
 .head-link{display:inline-flex;align-items:center;padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--muted);text-decoration:none;white-space:nowrap}.head-link[hidden]{display:none}
 .connect-more{margin:14px 0 0}.connect-cli>summary{cursor:pointer;color:var(--muted);width:max-content;max-width:100%}.connect-cli>p{margin:8px 0 0;color:var(--muted)}
+[tabindex="-1"]:is(h1,h2,h3):focus{outline:none}  /* a heading focused for a screen reader as its view opens */
 .connect-sources{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:10px}.connect-source{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:inherit;text-decoration:none;cursor:pointer}.connect-source:hover{border-color:var(--border-strong)}.connect-source.picked{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}.connect-source small{color:var(--muted);font-size:.8rem}.connect-source small.count{margin-top:4px;color:var(--faint)}.connect-run{max-width:640px}.connect-lines{list-style:none;margin:8px 0;padding:0;font-size:.88rem;color:var(--muted)}.connect-lines li{overflow-wrap:anywhere;margin:2px 0}.connect-lines li:last-child{color:var(--text)}.connect-form{display:grid;gap:8px;margin-top:8px}.connect-form input{width:100%}.connect-setup{gap:12px;margin-top:12px}.connect-setup>label{display:grid;gap:4px;font-size:.88rem}.connect-setup .error:empty{display:none}.connect-scope{display:flex;flex-wrap:wrap;gap:6px 18px;border:0;margin:0;padding:0;font-size:.88rem}.connect-scope legend{padding:0;margin-bottom:4px;width:100%}.connect-scope label{display:flex;align-items:center;gap:6px}.connect-scope input{width:auto;margin:0}.connect-note{color:var(--muted);overflow-wrap:anywhere}.connect-qr{display:block;width:220px;max-width:100%;height:auto;aspect-ratio:1;background:#fff;padding:10px;border-radius:10px;margin:8px 0}.connect-wait{margin:8px 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px}.connect-wait p{margin:0 0 8px}.connect-alt{margin-top:14px;font-size:.88rem}.connect-alt summary{cursor:pointer;color:var(--muted);width:max-content;max-width:100%}.connect-alt input{width:100%;max-width:280px}.connect-code{font:600 1.6rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:10px 0;user-select:all}.connect-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.connect-q{margin:8px 0 0}.connect-signin p{margin:6px 0}.connect-signin .actions{margin-top:12px}.connect-signin a.btn-link.primary{background:var(--mint);border-color:var(--mint);color:var(--charcoal)}.code-actions>button,.code-actions>a.btn-link{min-height:40px;box-sizing:border-box;padding:8px 16px;font-size:inherit;line-height:1.2;justify-content:center}@media(max-width:560px){.actions.code-actions>button,.actions.code-actions>a.btn-link{flex:1 1 0;padding:8px 12px;font-size:inherit}}.connect-admin{margin-top:14px;font-size:.85rem;color:var(--muted)}.connect-admin p{margin:0 0 6px}.connect-admin-link{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}.connect-admin-link a{color:var(--text);overflow-wrap:anywhere}.connect-admin-link button{min-height:0;margin:0;padding:4px 12px;font-size:.82rem}.connect-other{margin-top:18px;font-size:.88rem}.connect-other summary{cursor:pointer;color:var(--muted);width:max-content;max-width:100%}.connect-other p{color:var(--muted)}.gbrain-list{margin:6px 0 10px;padding-left:20px;font-size:.9rem}.gbrain-list li{margin:3px 0}.gbrain-facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 14px;margin:10px 0;font-size:.9rem}.gbrain-facts dt{color:var(--muted)}.gbrain-facts dd{margin:0;overflow-wrap:anywhere}.gbrain-check{display:flex;align-items:flex-start;gap:8px;font-size:.9rem;margin:6px 0}.gbrain-check input{width:auto;margin:3px 0 0}.gbrain-panel .actions{margin-top:14px}.gbrain-links{display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 0}.gbrain-panel .sent-ok{color:var(--mint);font-weight:600}
 .brand{display:flex;align-items:center;gap:16px;min-width:0}
 .avatar{display:block;width:68px;height:68px;flex:none;object-fit:contain}
@@ -3029,6 +3030,12 @@ for(const [o,n] of [[window,'scrollTo'],[window,'scroll'],[window,'scrollBy'],[E
 for(const t of ['hashchange','popstate'])addEventListener(t,()=>{place.opened=Date.now()+5000},true);
 for(const t of ['touchstart','wheel','keydown','mousedown'])addEventListener(t,()=>{place.opened=0},{passive:true,capture:true});
 const placeBusy=()=>place.touch||Date.now()-place.lifted<1000;
+// A view drawn in place of a longer one (+ Add's grid swapped for one source's form): its top just under the top bar when
+// it is out of sight or far down, then focus on it (the field given, else its heading), and that is the new place.
+function viewTop(el,focus){if(!el?.isConnected)return;const r=el.getBoundingClientRect(),top=placeTop();
+ if(r.top<top||r.top>innerHeight*.5)scrollTo(scrollX,Math.max(0,scrollY+r.top-top-12));
+ const f=focus||el.querySelector('h1,h2,h3');if(f){if(!focus&&!f.hasAttribute('tabindex'))f.tabIndex=-1;f.focus({preventScroll:true})}
+ placeNote()}
 // Folds the reader opened themselves (a diff, a card's details, a history) stay open when a refresh draws their list anew
 document.addEventListener('click',e=>{const s=e.isTrusted&&e.target.closest?.('summary'),d=s?.parentElement;if(d?.tagName==='DETAILS')d._mine=!d.open},true);
 function foldsKeep(box){const key=d=>{const a=d.parentElement?.closest('[id]');return a&&box.contains(a)?[a.id,a.className,a.dataset.status,d.className,d.querySelector(':scope>summary')?.textContent.trim()].join('|'):null};  // the same fold in the same card, while the card is in the same state
@@ -4431,13 +4438,23 @@ const BROKER_LINK={gmail:'#google',calendar:'#google',outlook:'#microsoft',outlo
 const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
  try{connectList=await connectPost('connect_sources')}catch(e){errCaught(e);$('#connect-add').innerHTML=`<p class="error">${esc(e.message)}</p>`;return}renderConnectAdd()}
+// + Add shows one view at a time in its box: the grid of sources, or one source's sign-in, form, run or GBrain panel.
+// Another view than before starts at its top, under the top bar, with focus on it (its first field, else its heading):
+// from far down the grid the page would otherwise stay down there, the short view above it and only the footer showing.
+// Back to the grid returns to where it was, on the tile it left from (connectGrid, noted on the tap).
+let connectGrid=null;
+function connectDraw(box,kind,html,focus){const was=box.dataset.view;box.innerHTML=html;box.dataset.view=kind;if(was===kind)return;
+ if(kind==='grid'){const g=connectGrid;connectGrid=null;if(!g||!was)return;const tile=[...box.querySelectorAll('.connect-source')].find(n=>placeSig(n)===g.sig);
+  scrollTo(scrollX,g.y);tile?.focus({preventScroll:true});placeNote();return}
+ viewTop(box,focus&&box.querySelector(focus))}
+$('#connect-add').addEventListener('click',e=>{const tile=e.target.closest('.connect-sources>button.connect-source');if(tile)connectGrid={y:scrollY,sig:placeSig(tile)}},true);
 function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(connectGbrain)return renderGbrain();if(!connectList)return;
  const items=connectList.sources.map(x=>{const more=x.connected?`<small class="count">${x.connected} connected</small>`:'',what=x.what?`<small>${esc(x.what)}</small>`:'';
   if(x.hosted_signin&&connectList.manage_url)return `<button type="button" class="connect-source" data-connect-signin="${esc(x.name)}"><b>${esc(x.label)}</b>${what}${more}</button>`;
   if(x.account_page&&connectList.manage_url)return `<a class="connect-source" href="${esc(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener"><b>${esc(x.label)} ↗</b>${what}${more}</a>`;
   if(x.signin&&!connectList.manage_url)return `<button type="button" class="connect-source" data-connect-signin="${esc(x.name)}"><b>${esc(x.label)}</b>${what}${more}</button>`;
   return x.broker?(connectList.manage_url?`<a class="connect-source" href="${esc(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener"><b>${esc(x.label)} ↗</b>${what}${more}</a>`:''):`<button type="button" class="connect-source" data-connect="${esc(x.name)}"><b>${esc(x.label)}</b>${what}${more}</button>`}).join('');
- box.innerHTML=`<p class="sub-note">Pick a source to connect.${connectList.saveable||connectList.manage_url?'':' This service can’t save its settings: use <code>assistant connect</code> in a terminal.'}</p><div class="connect-sources">${items}${codexTile()}${gbrainTile()}</div>`}
+ connectDraw(box,'grid',`<p class="sub-note">Pick a source to connect.${connectList.saveable||connectList.manage_url?'':' This service can’t save its settings: use <code>assistant connect</code> in a terminal.'}</p><div class="connect-sources">${items}${codexTile()}${gbrainTile()}</div>`)}
 // Codex (codex_signin.py): its own tile. It signs in with Codex's own device code, shown here: a hosted Machine's control
 // plane runs that sign-in on its server (POST /_machine/connect, like GitHub), a self-hosted Machine runs it itself.
 const CODEX_DEVICE=/^https:\/\/auth\.openai\.com\/codex\/device[\w/.-]*$/;
@@ -4478,7 +4495,7 @@ function renderGbrain(){const g=connectGbrain,box=$('#connect-add'),back='<butto
  else body=`${g.version?`<p class="muted">${esc(t('Found {} at {}',g.version,g.brain||''))}</p>`:''}<p>What goes into GBrain:</p><ul class="gbrain-list"><li>People and projects from your Graph, with a link back</li><li>What The Machine learned about how you work</li></ul><p>Message text never goes in.</p><p><b>GBrain may send this to its own AI providers.</b></p>
   <label class="gbrain-check"><input type="checkbox" data-gbrain-work-pick><span>Include Work people and companies</span></label><label class="gbrain-check"><input type="checkbox" data-gbrain-consent><span>I agree</span></label>
   ${g.saveable?'':'<p class="fine muted">Change this in config.json (gbrain) on this computer.</p>'}<p class="error" role="status">${esc(g.error||'')}</p><div class="actions"><button type="button" class="primary" data-gbrain-on disabled>Connect GBrain</button>${back}</div>`;
- const html=`<div class="connect-run gbrain-panel"><h3>GBrain</h3>${g.loading||g.on?'':'<p class="muted">Optional, for developers. Keep your own AI memory app in sync with The Machine.</p><p class="muted">Reviews can read your brain to write better to-dos.</p>'}${body}</div>`,sig=JSON.stringify(['gbrain',g]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
+ const html=`<div class="connect-run gbrain-panel"><h3>GBrain</h3>${g.loading||g.on?'':'<p class="muted">Optional, for developers. Keep your own AI memory app in sync with The Machine.</p><p class="muted">Reviews can read your brain to write better to-dos.</p>'}${body}</div>`,sig=JSON.stringify(['gbrain',g]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'gbrain',html)}
 async function gbrainDo(action,args,b){if(b)b.disabled=true;try{connectGbrain=await connectPost(action,args);if(connectList?.gbrain)connectList.gbrain.on=!!connectGbrain.on}catch(e){errCaught(e);if(action==='gbrain_on'){connectGbrain={...connectGbrain,error:e.message}}else toast(e.message,true)}renderGbrain()}
 $('#connect-add').addEventListener('click',e=>{const t=e.target;if(t.closest('[data-gbrain]')){gbrainOpen();return}
  if(t.closest('[data-gbrain-check]')){gbrainOpen();return}
@@ -4497,8 +4514,7 @@ function renderConnectForm(){const x=connectList?.sources.find(v=>v.name===conne
  const asks=(f.ask||[]).map(([k,q])=>`<label>${esc(q)}<input name="ask" data-key="${esc(k)}" type="text" required spellcheck="false" autocomplete="off"></label>`).join('');
  const secret=f.secret?`<label>${esc(f.secret)}<input name="secret" type="password" required autocomplete="off" spellcheck="false"></label>`:'';
  const scope=f.scope?`<fieldset class="connect-scope"><legend>Work or personal?</legend><label><input type="radio" name="scope" value="work"${f.personal?'':' checked'}> Work</label><label><input type="radio" name="scope" value="personal"${f.personal?' checked':''}> Personal</label></fieldset><label class="connect-company"${f.personal?' hidden':''}>Company<input name="company" maxlength="60" value="${esc(f.company||'')}" placeholder="Acme" autocomplete="organization"${f.personal?'':' required'}></label>`:'';
- box.innerHTML=`<div class="connect-run"><h3>${esc(x.label)}</h3>${x.what||f.learn?`<p class="muted">${esc(x.what||'')}${f.learn?` <a class="learn" href="https://themachine.computer/help/${encodeURIComponent(f.learn)}" target="_blank" rel="noopener">${esc(t('Learn more'))}</a>`:''}</p>`:''}${f.note?`<p class="fine connect-note">${linkify(f.note)}</p>`:''}<form class="connect-form connect-setup" data-connect-setup="${esc(x.name)}" novalidate>${asks}${secret}${scope}<p class="error" role="status"></p><div class="actions"><button class="primary">Connect</button><button type="button" data-connect-back>Back</button></div></form></div>`;
- box.querySelector('input:not([type="radio"]):not([hidden])')?.focus()}
+ connectDraw(box,'form',`<div class="connect-run"><h3>${esc(x.label)}</h3>${x.what||f.learn?`<p class="muted">${esc(x.what||'')}${f.learn?` <a class="learn" href="https://themachine.computer/help/${encodeURIComponent(f.learn)}" target="_blank" rel="noopener">${esc(t('Learn more'))}</a>`:''}</p>`:''}${f.note?`<p class="fine connect-note">${linkify(f.note)}</p>`:''}<form class="connect-form connect-setup" data-connect-setup="${esc(x.name)}" novalidate>${asks}${secret}${scope}<p class="error" role="status"></p><div class="actions"><button class="primary">Connect</button><button type="button" data-connect-back>Back</button></div></form></div>`,'input:not([type="radio"]):not([hidden])')}
 async function connectSetup(form){const name=form.dataset.connectSetup,err=form.querySelector('.error'),go=form.querySelector('button.primary');
  const missing=[...form.querySelectorAll('input[required]')].find(i=>!i.closest('[hidden]')&&!i.value.trim());if(missing){{const what=(missing.closest('label')?.firstChild?.textContent||'').trim();err.textContent=what?t('Fill in {}.',what):t('Fill this in.')}missing.focus();return}
  const answers={};for(const i of form.querySelectorAll('input[name="ask"]'))answers[i.dataset.key]=i.value.trim();
@@ -4572,7 +4588,7 @@ const ON_DASHBOARD=['github','whatsapp','android','codex'];
 async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|google_meet|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const x=m[1]==='codex'?connectList?.codex&&codexSource():connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
- connectSignin=signinOf(x,command.startsWith('f_')?'checking':command?ON_DASHBOARD.includes(m[1])?'starting':'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();$('#connect-add').scrollIntoView({block:'start'})}
+ connectSignin=signinOf(x,command.startsWith('f_')?'checking':command?ON_DASHBOARD.includes(m[1])?'starting':'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();viewTop($('#connect-add'))}
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
  const back='<button type="button" data-connect-back>Back</button>';let body;
  const copy=SIGNIN_COPY[s.provider]||{};
@@ -4589,7 +4605,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
  const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"${off?' open':''}><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button"${off?' class="primary"':''} data-connect="${esc(s.source)}">${esc(copy.go||'')}</button>${off?back:''}</div></details>`;
  const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}${off&&!paste?`<div class="actions">${back}</div>`:''}</div>`;
- const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off,s.provider==='codex'&&connectList?.codex?.status]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
+ const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off,s.provider==='codex'&&connectList?.codex?.status]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'signin',html)}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;
  signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.source});if(!connectSignin)return;
   if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}signinPoll()},2500)}
@@ -4611,7 +4627,7 @@ async function phoneApprove(b){b.disabled=true;
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-hosted-reconnect]');if(!b||!state.manage_url)return;
  connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);const p=b.dataset.hostedReconnect,x=connectList?.sources.find(v=>v.hosted_signin===p);
  connectSignin={...(x?signinOf(x,'intro'):{source:p,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,hosted:true,state:'intro'}),...(b.dataset.email?{email:b.dataset.email}:{}),...(p==='whatsapp'&&b.dataset.account?{account:b.dataset.account}:{})};
- $('#connect-add').dataset.sig='';renderConnectSignin();$('#connect-add').scrollIntoView({block:'start',behavior:'smooth'})});
+ $('#connect-add').dataset.sig='';renderConnectSignin();viewTop($('#connect-add'))});
 const hostedReconnect=(c,label,cls)=>`<button type="button" class="${cls}" data-hosted-reconnect="${esc(c.hosted_signin)}"${c.email?` data-email="${esc(c.email)}"`:''}${c.service==='whatsapp'?` data-account="${esc(c.id)}"`:''}>${esc(label)}</button>`;
 // Reconnect on a card or in Needs you: the same steps as + Add, for that account, shown in the + Add pane.
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-reconnect]');if(!b)return;
@@ -4619,9 +4635,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-reco
  if(b.dataset.signin){const p=b.dataset.signin;connectRun=null;connectSignin={source:b.dataset.reconnect,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,state:'intro'};
   showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();$('#connect-add').dataset.sig='';await connectAdd(true);
   if(connectSignin?.source===b.dataset.reconnect&&connectList?.sources.find(v=>v.name===b.dataset.reconnect)?.signin_off){connectSignin={...connectSignin,off:true};renderConnectSignin()}
-  $('#connect-add').scrollIntoView({block:'start',behavior:'smooth'});return}
+  viewTop($('#connect-add'));return}
  if(connectRun&&connectRun.state==='running'){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();return}
- b.disabled=true;connectRun=null;if(await connectStart(b.dataset.reconnect,b.dataset.account)){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();$('#connect-add').scrollIntoView({block:'start',behavior:'smooth'})}b.disabled=false});
+ b.disabled=true;connectRun=null;if(await connectStart(b.dataset.reconnect,b.dataset.account)){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();viewTop($('#connect-add'))}b.disabled=false});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-disconnect]');if(!b||!confirm(`Disconnect ${b.dataset.name}? It stops syncing. What it already brought in stays.`))return;
  b.disabled=true;try{const r=await connectPost('connect_remove',{account:b.dataset.disconnect});toast(r.restarting?'Disconnected. Restarting…':'Disconnected. Restart the service to stop syncing it.');connectList=null;setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);b.disabled=false}});
 function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.question;
@@ -4640,7 +4656,7 @@ function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.questio
  else{const cmd=!state.manage_url&&/(?:^|: )((?:assistant|wacli|gog|gh|openclaw)\b[^;]*)/.exec(r.fix||'');body=`<p class="alert">${esc(r.error||'Stopped')}${r.fix?'. '+esc(r.fix[0].toUpperCase()+r.fix.slice(1))+'.':''}</p>${cmd?`<pre class="signin-command">${esc(cmd[1].trim())}</pre><button type="button" class="browser-link" data-copy-command="${esc(cmd[1].trim())}">Copy command</button> `:''}<div class="actions"><button type="button" data-connect="${esc(r.source)}"${r.reconnect?` data-connect-account="${esc(r.reconnect)}"`:''}>Try again</button><button type="button" data-connect-back>Back</button></div>`}
  const html=head+body+(r.state==='running'?`<div class="actions"><button type="button" class="ghost" data-connect-stop>Cancel</button></div>`:'')+'</div>';
  // A question being answered keeps what was typed: only redraw when something changed.
- const sig=JSON.stringify([r.state,r.lines,q&&q.id,r.error,r.follow,!!connectCard(r),r.signin,r.code]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html;box.querySelector('#connect-answer')?.focus()}
+ const sig=JSON.stringify([r.state,r.lines,q&&q.id,r.error,r.follow,!!connectCard(r),r.signin,r.code]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'run',html);box.querySelector('#connect-answer')?.focus()}
 // After a source is added the service restarts to start reading it: wait until it answers again with the new account,
 // then move to that account's card, which shows how its first sync goes (the + Add pane says so until then).
 const connectCard=r=>r?.account&&(state.connectors||[]).find(c=>c.id===r.account)||null;
@@ -4686,9 +4702,9 @@ $('#connect-add').addEventListener('change',e=>{if(e.target.name!=='scope')retur
 // "Connect your own Intercom" on a to-do: Connections, + Add, at that source. A source that signs in here opens its
 // sign-in intro (nothing starts before Continue); one set up on the account page or by questions is shown and focused.
 async function connectOpen(name){showTab('health','add');await connectAdd(true);const box=$('#connect-add');
- const item=box.querySelector(`[data-connect-signin="${CSS.escape(name)}"]`);if(item){item.click();box.scrollIntoView({block:'start'});return}
+ const item=box.querySelector(`[data-connect-signin="${CSS.escape(name)}"]`);if(item){item.click();viewTop(box);return}
  const x=connectList?.sources.find(v=>v.name===name),el=x&&[...box.querySelectorAll('.connect-source')].find(n=>n.dataset.connect===name||n.querySelector('b')?.textContent.replace(' ↗','')===x.label);
- box.scrollIntoView({block:'start'});if(el){el.classList.add('picked');el.focus()}}
+ viewTop(box);if(el){el.classList.add('picked');el.focus()}}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-connect-open]');if(!a)return;e.preventDefault();connectOpen(a.dataset.connectOpen)});
 function showHealthPane(id){healthPane=id;healthPicked=true;localStorage.setItem('health-pane',id);renderHealthTabs()}
 $('#health-tabs').onclick=e=>{const b=e.target.closest('[data-health-pane]');if(b)showHealthPane(b.dataset.healthPane)};
@@ -7752,7 +7768,7 @@ const fleetRedraw=()=>{render();if(!$('#fleet').hidden)fleetView(false,true)};
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-connect]');if(!b)return;connectRun=null;showTab('health','add');await connectAdd(true);
  const x=connectList?.sources.find(v=>v.service===b.dataset.fleetConnect);if(!x)return;
  if(x.signin){connectSignin={source:x.name,provider:x.signin===true?x.service:x.signin,label:SIGNIN_COPY.stripe.label,own:!x.broker,state:'intro',...(x.signin_off?{off:true}:{})};$('#connect-add').dataset.sig='';renderConnectSignin()}
- $('#connect-add').scrollIntoView({block:'start',behavior:'smooth'})});
+ viewTop($('#connect-add'))});
 fleetOn('click',async e=>{const p=e.target.closest('[data-fleet-pick]');if(p){const on=p.getAttribute('aria-pressed')!=='true';for(const r of p.parentElement.children)r.setAttribute('aria-pressed','false');p.setAttribute('aria-pressed',String(on));return}
  const o=e.target.closest('[data-fleet-noting],[data-fleet-note-cancel]');if(o){if(o.dataset.fleetNoting)fleetNoting.set(o.dataset.fleetNoting,'once');else fleetNoting.delete(o.dataset.fleetNoteCancel);fleetRedraw();return}
  const n=e.target.closest('[data-fleet-note-send]');if(!n)return;const box=n.closest('.fleet-note-editor'),id=n.dataset.fleetNoteSend;
