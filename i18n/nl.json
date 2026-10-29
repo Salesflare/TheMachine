@@ -3215,6 +3215,7 @@
  "Skipped. It won’t be sent.": "Overgeslagen. Hij wordt niet verstuurd.",
  "Skipped: {}.": "Overgeslagen: {}.",
  "Slack": "Slack",
+ "Slack DM with {} (a source)": "Slack-DM met {}",
  "Slack button labels must say Send, such as Send to Sam": "Labels van Slack-knoppen moeten Send zeggen, zoals Send to Sam",
  "Slack connection mismatch": "Slack-koppeling komt niet overeen",
  "Slack credential unavailable": "Slack-inloggegevens niet beschikbaar",

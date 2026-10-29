@@ -3215,6 +3215,7 @@
  "Skipped. It won’t be sent.": "Übersprungen. Sie wird nicht gesendet.",
  "Skipped: {}.": "Übersprungen: {}.",
  "Slack": "Slack",
+ "Slack DM with {} (a source)": "Slack-DM mit {}",
  "Slack button labels must say Send, such as Send to Sam": "Slack-Schaltflächen müssen Send sagen, wie Send to Sam",
  "Slack connection mismatch": "Slack-Verbindung passt nicht",
  "Slack credential unavailable": "Slack-Zugangsdaten nicht verfügbar",

@@ -8049,6 +8049,7 @@ class Store:
         """What the dashboard shows on cards beyond their row: the status payload and the Done pages alike. jobs=False
         does the first half (labels, people, feedback); jobs=True the rest (preparations, results)."""
         if not jobs:
+            source_lines_shown(db, cards)  # a Slack DM by the person's name, never a raw chat handle
             labels = {r['suggestion_id']: skill_labels(r) for r in db.execute("SELECT suggestion_id,target_id,target_name FROM skill_clusters WHERE status IN ('pending','declined')")}
             for card in cards:
                 if card['id'] in labels:
@@ -10759,6 +10760,70 @@ def source_text(row):
     return source_kind(row['kind']) + (f' from {who}' if who else '') + f' · {when}'
 
 
+# The "who" of a source line that is a raw chat handle rather than a name: a Slack DM ("#DM U02AB3CD4"), a member id,
+# a WhatsApp jid or a bare Telegram number
+SOURCE_DM = re.compile(r'#?DM (.+)')
+SOURCE_RAW = re.compile(r'\d{6,}|\+?\d{6,}@\S+')
+
+
+def source_line_shown(line, names=None):
+    """A stored source line as people see it: never a raw chat handle. A Slack DM names the person ("Slack DM with Sam
+    Lee"), a member id becomes their name (`names`, from slack_name_table), and one no name is known for is left out
+    ("Slack · Thu 22 Oct"). Old cards stored the handle, so this runs when a card is shown, not only when it is made."""
+    if not line:
+        return line
+    match = re.fullmatch(r'(Source: )?(.+?)(?: · ([^·]+?))?( \(\+\d+ more\))?', str(line).strip())
+    if not match:
+        return line
+    prefix, head, when, more = match.groups()
+    said = re.fullmatch(r'(.+?) (from|to) (.+)', head)
+    if not said:
+        return line
+    kind, how, who = said.groups()
+    names = names or {}
+    named = lambda text: SLACK_ID.sub(lambda m: names.get(m[1], m[0]), text)
+    dm = SOURCE_DM.fullmatch(who.strip())
+    if dm:
+        person = named(dm[1]).strip()
+        head = kind if SLACK_ID.search(person) or CHAT_HANDLE.fullmatch(person) or not person else f'{kind} DM with {chat_plain_name(person)}'
+    else:
+        who = named(who).strip()
+        channel = re.fullmatch(r'#[\w.-]+', who) and not SLACK_ID.search(who)  # "#general": a channel by its name stays
+        raw = not channel and (SLACK_ID.search(who) or CHAT_HANDLE.fullmatch(who) or SOURCE_RAW.fullmatch(who))
+        head = kind if raw or not who else f'{kind} {how} {who if channel else chat_plain_name(who)}'
+    return (prefix or '') + head + (f' · {when}' if when else '') + (more or '')
+
+
+def slack_people_names(db, ids):
+    """{Slack member id: name} as the people graph shows them (the name from their mail over a lower-case Slack
+    handle, or the owner's own), else as users.info gave it."""
+    ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
+    names = slack_name_table(db, ids)
+    if not ids:
+        return names
+    try:
+        rows = db.execute("SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(ids)) + ')',
+                          ['%"slack:' + i + '"%' for i in ids]).fetchall()
+    except sqlite3.OperationalError:
+        return names  # no graph yet
+    for name, info in rows:
+        try:
+            found = set(json.loads(info or '{}').get('identifiers') or ())
+        except ValueError:
+            continue
+        names.update({i: name for i in ids if 'slack:' + i in found and name and name not in SOURCE_KIND.values()})  # not "Slack", a node no name was known for
+    return names
+
+
+def source_lines_shown(db, cards):
+    """The cards' source lines as source_line_shown writes them, Slack members by their names (slack_people_names)."""
+    lines = [c.get('source_line') for c in cards if c.get('source_line')]
+    names = slack_people_names(db, {m[1] for line in lines for m in SLACK_ID.finditer(str(line))})
+    for c in cards:
+        if c.get('source_line'):
+            c['source_line'] = source_line_shown(c['source_line'], names)
+
+
 def delivery_time(when, digest_at='08:30', current=None, work=False, urgent=False):
     """When a new suggestion's card goes out: now, the next morning digest, or a given day."""
     current = current or dt.datetime.fromisoformat(now())
@@ -10924,7 +10989,7 @@ def card(row):
             due = t('Due {}', locale_prefs.day_text(dt.date.fromisoformat(row['due'])))
         except ValueError:
             pass
-    source = ' · '.join(x for x in (due, row.get('source_line'), tag) if x)
+    source = ' · '.join(x for x in (due, source_line_shown(row.get('source_line')), tag) if x)
     source = ('\n\n' + source) if source else ''
     body = row.get('step_stopped') or row['body']  # a confirmed step that didn't go through: never the earlier "ready" text
     return ('**' + title + '**\n\n' + body + source + ('\n\n' + status if status else '')).strip()
@@ -13237,6 +13302,7 @@ class App:
             if not row:
                 return None
             card = dict(row)
+            source_lines_shown(db, [card])  # a Slack DM by the person's name, never a raw chat handle
             extra = self.store.suggestion_result(card, db)
             note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND trim(feedback)<>'' AND source IN ('telegram','dashboard') "
                               'AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC,rowid DESC LIMIT 1',

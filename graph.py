@@ -339,6 +339,29 @@ def person_name(name):
     return text if re.search(r'[^\W\d_]{2}', text) else raw
 
 
+HANDLE_NAME = re.compile(r"[a-z][a-z'.-]{0,30}(?: [a-z][a-z'.-]{0,30}){0,2}")  # "razvan", "steven pyck": a chat handle
+
+
+def shown_name(counts):
+    """The name a person goes by, from {name: how often it was seen}: the most seen, except that a lower-case chat
+    handle ("razvan", from a Slack profile) gives way to their name as written elsewhere ("Razvan-Ionut Mitrica"),
+    the full one when one begins with it. A handle alone stays as it is (incomplete_name: a Fleet may know better);
+    handle_shown writes it as a name where it is shown."""
+    ranked = [n for n, _ in counts.most_common()]
+    proper = [n for n in ranked if not HANDLE_NAME.fullmatch(n)]
+    name = proper[0] if proper else ranked[0]
+    first = name.split()[0].casefold() if name.split() else ''
+    fuller = [n for n in proper if len(n.split()) > 1 and n.split()[0].split('-')[0].casefold() == first]
+    if len(name.split()) == 1 and fuller:
+        name = fuller[0]  # "Razvan" from a profile, "Razvan Mitrica" from mail
+    return name
+
+
+def handle_shown(name):
+    """A lower-case handle ("razvan") as a name on a chip ("Razvan")."""
+    return name.title() if isinstance(name, str) and HANDLE_NAME.fullmatch(name) else name
+
+
 def plain_name(name):
     """Comparable full name: accents, case, punctuation and extra spaces removed; None unless it
     looks like a person's full name (two or more words, no address)."""
@@ -1195,7 +1218,7 @@ def _build(db, config, now, team=()):
         counts = collections.Counter()
         for identifier in group:
             counts.update(names.get(identifier, {}))
-        name = counts.most_common(1)[0][0] if counts else shown_id(node, x_names)
+        name = shown_name(counts) if counts else shown_id(node, x_names)
         if plain_name(name) in owner.names:
             continue  # the owner on another channel (a note-to-self chat, an old address)
         name = next((named[i] for i in group if i in named), name)  # the owner's own name for them wins
@@ -2211,7 +2234,7 @@ def card_people(db, event_ids, limit=3):
     rows = db.execute(f"SELECT DISTINCT n.id,n.name,n.strength,n.info,o.id org_id,o.name org_name,o.info org_info FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
                       f"LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({marks}) "
                       "ORDER BY n.strength DESC", ids).fetchall()
-    people = [{'id': r['id'], 'name': r['name'], 'role': json.loads(r['info']).get('role'),
+    people = [{'id': r['id'], 'name': handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
                'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
                **({'org': {'id': r['org_id'], 'name': r['org_name']}} if r['org_id'] and r['org_name'] else {})} for r in rows]
     weight = max((r['strength'] + (2 if p['paying'] else 0) for r, p in zip(rows, people)), default=0.0)

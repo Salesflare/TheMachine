@@ -3215,6 +3215,7 @@
  "Skipped. It won’t be sent.": "Omitido. No se enviará.",
  "Skipped: {}.": "Omitido: {}.",
  "Slack": "Slack",
+ "Slack DM with {} (a source)": "MD de Slack con {}",
  "Slack button labels must say Send, such as Send to Sam": "Las etiquetas de botón de Slack deben decir Send, como Send to Sam",
  "Slack connection mismatch": "La conexión de Slack no coincide",
  "Slack credential unavailable": "Credencial de Slack no disponible",
