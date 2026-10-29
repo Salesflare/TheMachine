@@ -594,8 +594,15 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             text = path.read_text()
             with self.subTest(path=path.name):
                 self.assertNotRegex(text, r'\bsqlite3\b|INSERT\s+INTO|UPDATE\s+\w+\s+SET')
-        writes = [m for p in ROOT.glob('*.py') if not p.name.startswith('test_')
-                  for m in re.finditer(r'(INSERT(?: OR \w+)? INTO|UPDATE) events\b', p.read_text()) if p.name != 'assistant.py']
+        # every module, subfolders included, so code moved into a folder stays covered. The sandbox's fixture loader
+        # writes made-up events into a throwaway database through Store.connect(), so they are sealed as the app's are.
+        allowed = {'assistant.py', 'sandbox/load.py'}
+        modules = [p for p in sorted(ROOT.rglob('*.py'))
+                   if not {'tests', 'node_modules', '.git', '.venv'} & set(p.relative_to(ROOT).parts[:-1]) and not p.name.startswith('test_')]
+        self.assertIn(ROOT / 'connectors' / 'x.py', modules)
+        writes = [f'{p.relative_to(ROOT).as_posix()}: {m.group(0)}' for p in modules
+                  for m in re.finditer(r'(INSERT(?: OR \w+)? INTO|UPDATE) events\b', p.read_text(encoding='utf-8'))
+                  if p.relative_to(ROOT).as_posix() not in allowed]
         self.assertEqual(writes, [])
 
     def test_a_connector_putting_message_text_in_a_plain_field_is_caught(self):
