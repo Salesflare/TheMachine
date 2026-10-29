@@ -11,7 +11,7 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Touchez le micro dans une zone de message : le chat d’une tâche, **Nouvelle tâche**, **Aide**, ou la zone pour modifier un brouillon. Parlez, puis touchez la coche. Ou maintenez le micro pendant que vous parlez et relâchez quand vous avez fini.
 
-Pendant qu’elle écoute, la zone affiche un minuteur. Touchez la croix pour arrêter sans rien garder. Un enregistrement dure au plus 2 minutes ; à 2 minutes, il s’arrête tout seul et elle écrit ce que vous avez dit.
+Pendant qu’elle écoute, la zone affiche un minuteur. Touchez la croix pour arrêter sans rien garder. Un enregistrement dure au plus 2 minutes ; à 2 minutes, il s’arrête tout seul et elle écrit ce que vous avez dit. Ce qu’elle a déjà entendu s’affiche dans la barre pendant que vous parlez, pour que le texte soit là peu après l’arrêt.
 
 Ce que vous avez dit arrive dans la zone, là où était votre curseur. Rien n’est envoyé : relisez, modifiez ce que vous voulez et envoyez-le vous-même.
 

@@ -12,6 +12,10 @@ functions in `dashboard.html`.
 2. The browser decodes the clip and turns it into 16 kHz mono 16-bit WAV (about 1.9 MB a minute after base64), then
    posts it as `voice_transcribe` with the `X-Upload: voice` header, which allows a larger body for that one action
    only.
+   While the owner talks, the browser also cuts the recording at pauses (`MIC_PART`: after 6 s, at a pause of 0.7 s,
+   by 25 s at the latest) and posts each part as `voice_transcribe` with `part`, so after the check mark only the last
+   few seconds are left. The bar shows what was heard so far. The parts are joined in order; if one fails, the whole
+   clip goes instead. Parts keep the first part's language when the owner didn't pick one.
 3. The service checks the WAV (`voice_input.pcm`) and turns it into text with the engine the owner picked, and the
    dashboard puts the text in the box at the cursor.
 
@@ -32,10 +36,12 @@ Settings, Voice input, **Turned into text** (`voice_input.ENGINES`), with one sh
   refuses a clip (a ChatGPT plan without audio), the service stops offering it for an hour and uses this Machine.
 - **On this Machine**: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 1.2.1 on CTranslate2,
   int8 on the CPU, in `voice_worker.py`. The service starts the worker on the first clip and stops it after 5 minutes
-  without one, so its memory is free again. The worker and the package install run at a lower priority (`nice -n 10`,
-  below-normal priority on Windows), so reviews and the rest of the Machine come first. Clips go through it one at a
+  without one, so its memory is free again. The package install runs at a lower priority (`nice -n 10`,
+  below-normal priority on Windows); the worker runs at the normal priority, since the owner is waiting on it. Clips go through it one at a
   time. The language is the one picked in Settings, or detected among the app's seven languages.
-- **With OpenAI**: through `openclaw infer audio transcribe` with `gpt-4o-transcribe`. Offered when
+- **With OpenAI**: `gpt-4o-transcribe` through OpenClaw's own transcription, in `voice-openai-run.mjs`: a Node worker
+  that loads OpenClaw once and stays up for 5 minutes, so a clip takes 1 to 3 s instead of the 8 s the
+  `openclaw infer audio transcribe` CLI needs to start (still the fallback). A tap on the mic warms it up. Offered when
   `openclaw infer audio providers` says OpenAI is configured. That's an OpenAI API key, or the ChatGPT (Codex) sign-in:
   OpenClaw's docs say its batch transcription can use the ChatGPT OAuth profile "when the account permits it". OpenAI's
   own Sign in with ChatGPT docs only describe the Responses API, so a plan without audio gets a clear error and
@@ -84,6 +90,22 @@ work (load average 10 to 27), int8:
 End to end through the service (worker already running, 4 threads, same load), the small model wrote a 10 s Dutch clip
 in 10.6 s with the language detected, a 9 s English clip in 5.5 s, and 34 s of Dutch in 9.5 s. Each clip costs at least
 one 30 s window of work, so short clips are relatively slower; detecting the language adds a little.
+
+### Time from the check mark to the text
+
+Measured on a desktop Machine (OpenAI through a ChatGPT sign-in, busy with other work), clip length to the
+time the service took:
+
+| | 9 s English | 10 s Dutch | 34 s Dutch |
+|---|---|---|---|
+| OpenAI before: the `openclaw infer` CLI, about 8 s of it starting up | 7.3 s | 7.4 s | 12.3 s |
+| OpenAI now: the worker, warm | 2.5 s | 1.4 s | 2.5 s |
+| On this Machine (small), worker loaded on the clip | 10.0 s | 6.1 s | 13.9 s |
+| On this Machine (small), worker warm | 9.8 s | 7.7 s | 17.3 s |
+
+With parts, only the tail is left after the check mark: 1.7 s for 6 s with OpenAI, about 7 s on this Machine (each
+clip costs one 30 s window, so short tails don't get faster locally). The worker's first start, 3 to 7 s, happens
+while the owner talks.
 
 ### On a Standard server
 

@@ -49,7 +49,7 @@ TOOLS = [
                     'required': ['words'], 'additionalProperties': False}},
     {'type': 'function', 'name': 'ask_chat',
      'description': ('Hand the owner’s request to this to-do’s chat, as if they had typed it: draft or change a reply, '
-                     'snooze it, mark it done, look something up. The chat follows its usual rules: it never sends. '
+                     'snooze it, mark it done, look something up on the web. The chat follows its usual rules: it never sends. '
                      'Anything that goes to someone waits for the owner’s Approve on screen, and a spoken yes is not one.'),
      'parameters': {'type': 'object', 'properties': {'request': {'type': 'string', 'description': 'The request, in the owner’s words and language.'}},
                     'required': ['request'], 'additionalProperties': False}},
@@ -64,8 +64,23 @@ TOOLS = [
      'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
 ]
 # What the tools answer the voice (in English, for the model; the owner never sees these)
-ASK_NOTE = ('The chat is working on it; its answer and any draft show in the chat. Nothing goes to anyone until the owner '
-            'approves a draft they have seen: a tap on Approve, or a clear yes to your confirm question (ask_to_send).')
+ASK_NOTE = ('The chat is on it. Say one short line, like "Looking that up", and go on with the conversation; don’t check '
+            'on it or say you will. When the chat is done, its answer comes to you as a message. Nothing goes to anyone '
+            'until the owner approves a draft they have seen: a tap on Approve, or a clear yes to your confirm question '
+            '(ask_to_send).')
+QUEUED_NOTE = 'The chat is still on the last request; this one joins it. Its answer comes to you as a message.'
+# The chat's answer, pushed into the conversation when its turn ends (the dashboard sends it as a message)
+DONE_NOTE = ('The chat finished what you asked. Its answer: "{answer}" Tell the owner now, in a sentence or two in '
+             'their language, with where it came from if it says. Don’t read out links.')
+STOPPED_NOTE = 'The chat stopped before it answered. Tell the owner, and offer to ask again.'
+# A request Talk live hands to the chat: a decision id with this prefix (still a chat- turn), never shown as the
+# owner's message (their own words are the talk lines), with this note in the chat's prompt
+RELAY_PREFIX = 'chat-talk-'
+RELAY_NOTE = ('This request came from the owner by voice, through Talk live, and the voice is waiting to tell them your '
+              'answer. Do it now. When it needs facts from outside their messages (opening hours, an address, a price, '
+              'a phone number), look them up on the web or in the browser instead of saying you can’t. Then reply in '
+              'two or three plain sentences that read well aloud, and name where you found it (the site), without links '
+              'or lists.')
 SAY = {
     'ask': 'Ask exactly this, in the owner’s language, then stop and listen: ',
     'read': 'First read the draft below out in full, word for word. ',
@@ -108,12 +123,14 @@ def instructions(title, language, now_text):
         'Keep it short and spoken: a sentence or two at a time. Speak %s unless the owner speaks another language.' % lang,
         'Call todo_details before you answer anything about this to-do, and find_todos to look up others.',
         'You can’t change or delete anything yourself, and nothing you say goes to anyone else.',
-        'When the owner wants something done in this to-do (a reply drafted or changed, snoozed, marked done), call ask_chat '
-        'with their request, and say the chat is on it; call todo_details a little later to see what it did.',
+        'When the owner wants something done in this to-do (a reply drafted or changed, snoozed, marked done) or looked '
+        'up (opening hours, an address, anything on the web), call ask_chat with their request. Say one short line, like '
+        '"Looking that up", then keep talking about anything else; never poll or say you will check. The chat’s answer '
+        'comes to you as a message when it is done: tell the owner then.',
         'To send: only when the owner asks to send the draft on screen, call ask_to_send and ask its question, reading the '
         'draft out first when it says so. After their answer, call send_answer and say what it returns. One draft per '
         'question; never send several at once, and never say something was sent unless send_answer says so.',
-        'If something isn’t in the to-do, say you don’t know rather than guess.',
+        'If something isn’t in the to-do, ask the chat to look it up rather than guess.',
         'It is now %s.' % now_text,
     ])
 
@@ -189,7 +206,7 @@ class Talk:
             if release:
                 self.asking.release()
 
-    def start(self, suggestion_id, env):
+    def start(self, suggestion_id, env, voice='cedar'):
         """A new conversation about this to-do: its ID for the dashboard, never the session's secret."""
         if not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
             raise ValueError('Unknown suggestion')
@@ -199,7 +216,7 @@ class Talk:
                 raise ValueError('A live conversation is already open for this to-do. End it first.')
             if len(self.open) >= 2:
                 raise ValueError('Two live conversations are already open. End one first.')
-        made = self.helper({'method': 'start', 'session_key': SESSION_PREFIX + suggestion_id}, env)
+        made = self.helper({'method': 'start', 'session_key': SESSION_PREFIX + suggestion_id, 'voice': voice}, env)
         if made.get('error') or not made.get('secret'):
             raise ValueError('Talk live couldn’t start. Check OpenAI in OpenClaw, then try again.'
                              if made.get('reason') == 'auth' else 'Talk live couldn’t start. Try again.')

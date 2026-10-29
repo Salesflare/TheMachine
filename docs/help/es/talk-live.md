@@ -19,6 +19,8 @@ La barra tiene **Silenciar** y **Fin**. Una conversación dura hasta 10 minutos.
 
 Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien" o "pospón esto hasta el lunes", The Machine se lo pasa al chat de la tarea, como si lo hubieras escrito. El chat sigue sus reglas de siempre: puede cambiar el borrador o posponer la tarea.
 
+El chat también puede buscar cosas, como el horario de una tienda en la web. Mientras tanto muestra **Trabajando en ello…**, y puedes seguir hablando. Cuando la respuesta está lista, The Machine te la dice, y dónde la encontró. Si pides otra cosa mientras tanto, espera su turno.
+
 Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Lotte por correo?". En un teléfono, lee antes el borrador entero en voz alta. Responde con un sí claro, en cualquier idioma, y ese borrador se envía.
 
 - Solo pregunta por el borrador que se ve en el chat. Si cambia después de la pregunta, vuelve a preguntar.
@@ -27,6 +29,10 @@ Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y
 - El chat muestra **Aprobado por voz** con **Deshacer** unos segundos antes de que salga.
 
 Siempre puedes tocar **Aprobar** en su lugar.
+
+## Elige una voz
+
+En **Ajustes**, **General**, en **Entrada de voz**, elige en **Voz** cómo suena The Machine. Toca reproducir para oír una muestra. **Cedar** es la voz por defecto. La voz Cove de ChatGPT no está disponible para hablar en vivo.
 
 ## Un registro en el chat
 

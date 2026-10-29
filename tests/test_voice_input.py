@@ -68,12 +68,12 @@ class Prefs(unittest.TestCase):
 
     def test_defaults_and_choices(self):
         with self.store.connect() as db:
-            self.assertEqual(v.prefs(db), {'engine': 'auto', 'model': 'small', 'language': ''})
+            self.assertEqual(v.prefs(db), {'engine': 'auto', 'model': 'small', 'language': '', 'talk_voice': 'cedar'})
             self.assertEqual(v.set_prefs(db, {'model': 'base', 'language': 'nl'}, False),
-                             {'engine': 'auto', 'model': 'base', 'language': 'nl'})
+                             {'engine': 'auto', 'model': 'base', 'language': 'nl', 'talk_voice': 'cedar'})
             self.assertEqual(v.set_prefs(db, {'engine': 'local'}, False)['engine'], 'local')
             self.assertEqual(v.set_prefs(db, {'language': ''}, False)['language'], '')
-            for args in ({'engine': 'google'}, {'model': 'large'}, {'language': 'xx'}):
+            for args in ({'engine': 'google'}, {'model': 'large'}, {'language': 'xx'}, {'talk_voice': 'cove'}):
                 with self.assertRaises(ValueError):
                     v.set_prefs(db, args, True)
             with self.assertRaisesRegex(ValueError, 'OpenAI set up in OpenClaw'):
@@ -279,9 +279,7 @@ class Worker(unittest.TestCase):
             self.voice.transcribe(frames, 'small', 'de', 60)
         self.assertEqual(len(self.started), 1)
         command = self.started[0]
-        self.assertTrue(command[-3].endswith('voice_worker.py'))
-        if os.name != 'nt' and shutil.which('nice'):
-            self.assertEqual(command[1:3], ['-n', str(v.NICE)])   # yields to reviews
+        self.assertTrue(command[1].endswith('voice_worker.py'))   # at the normal priority: the owner is waiting on it
         (first, sent), (second, _) = self.worker.requests
         self.assertEqual(sent, frames)
         self.assertEqual(first, {'bytes': len(frames), 'language': None, 'languages': list(v.LANGUAGES)})
@@ -297,6 +295,112 @@ class Worker(unittest.TestCase):
         self.worker.lines = []
         with patch.object(v.Voice, 'ready', return_value=True), self.assertRaisesRegex(ValueError, 'couldn’t start'):
             self.voice.transcribe(b'\0\0' * 16000, 'small', '', 60)
+
+    def test_a_tap_loads_the_model_while_the_owner_talks(self):
+        self.voice.warm('small')   # not prepared: nothing starts
+        self.assertEqual(self.started, [])
+        with patch.object(v.Voice, 'ready', return_value=True):
+            self.voice.warm('small')
+            for _ in range(100):
+                if self.started and self.voice.worker:
+                    break
+                time.sleep(0.01)
+            self.voice.warm('small')   # already running
+            self.voice.transcribe(b'\x02\x00' * 16000, 'small', '', 60)
+        self.assertEqual(len(self.started), 1)
+
+
+class FakeOpenAIWorker(FakeWorker):
+    """voice-openai-run.mjs's side of the pipe: a JSON line per clip, naming the private file it reads."""
+
+    def flush(self):
+        request = json.loads(self.buffer)
+        self.buffer = b''
+        clip = Path(request['file'])
+        self.requests.append((request, clip.read_bytes(), clip.parent.parent.stat().st_mode & 0o777))
+        self.lines.append(json.dumps(self.answer).encode() + b'\n')
+
+
+class OpenAIWorker(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name) / 'clips'
+        self.started, self.worker = [], FakeOpenAIWorker({'text': ' Hallo daar '})
+        self.voice = v.OpenAIVoice(self.root, lambda: (['node', 'voice-openai-run.mjs'], {'PATH': '/bin'}), popen=self.popen)
+        self.addCleanup(self.voice.stop)
+
+    def popen(self, command, **kwargs):
+        self.started.append((command, kwargs))
+        return self.worker
+
+    def test_openclaw_stays_loaded_and_the_clip_is_private_only_during_the_call(self):
+        frames = b'\x02\x00' * 16000
+        self.assertEqual(self.voice.transcribe(frames, ''), {'text': 'Hallo daar', 'language': None})
+        self.assertEqual(self.voice.transcribe(frames, 'nl'), {'text': 'Hallo daar', 'language': 'nl'})
+        self.assertEqual(len(self.started), 1)   # loaded once, not a CLI per clip
+        command, kwargs = self.started[0]
+        self.assertEqual(command, ['node', 'voice-openai-run.mjs', str(self.root)])
+        self.assertEqual(kwargs['env'], {'PATH': '/bin'})
+        (first, sent, mode), (second, _, _) = self.worker.requests
+        self.assertEqual((first['language'], second['language']), (None, 'nl'))
+        self.assertEqual(v.pcm(sent)[0], frames)
+        self.assertEqual(mode, 0o700)
+        self.assertEqual(list(self.root.iterdir()), [])   # gone right after
+
+    def test_errors_leave_it_to_the_cli(self):
+        self.worker.answer = {'error': 'unavailable'}
+        with self.assertRaises(ValueError):
+            self.voice.transcribe(b'\0\0' * 16000, '')
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_one_that_wont_start_isnt_tried_again_for_a_while(self):
+        self.worker.lines = []
+        with self.assertRaises(ValueError):
+            self.voice.transcribe(b'\0\0' * 16000, '')
+        with self.assertRaises(ValueError):
+            self.voice.transcribe(b'\0\0' * 16000, '')
+        self.voice.warm()
+        self.assertEqual(len(self.started), 1)
+
+    def test_a_tap_starts_it(self):
+        self.voice.warm()
+        for _ in range(100):
+            if self.voice.worker:
+                break
+            time.sleep(0.01)
+        self.voice.transcribe(b'\0\0' * 16000, '')
+        self.assertEqual(len(self.started), 1)
+
+
+@unittest.skipUnless(shutil.which('node'), 'needs Node')
+class OpenAIWorkerScript(unittest.TestCase):
+    """voice-openai-run.mjs against a stand-in OpenClaw package: it reads only clips in its folder, says nothing raw."""
+
+    def test_the_helper(self):
+        with tempfile.TemporaryDirectory() as temp:
+            sdk = Path(temp) / 'openclaw' / 'dist' / 'plugin-sdk'
+            sdk.mkdir(parents=True)
+            (sdk / 'runtime-config-snapshot.js').write_text('export const getRuntimeConfig = () => ({});\n')
+            (sdk / 'agent-runtime.js').write_text("export const resolveDefaultAgentId = () => 'main'; export const resolveAgentDir = () => '/a';\n")
+            (sdk / 'media-understanding-runtime.js').write_text(
+                "import {readFileSync} from 'node:fs';\nconsole.log('a note from OpenClaw');\n"
+                "export async function transcribeAudioFile(p) { if (readFileSync(p.filePath, 'utf8') === 'boom') throw new Error('secret /path'); "
+                "return {text: `${p.activeModel.provider}/${p.activeModel.model} ${p.language || '-'}`}; }\n")
+            clips = Path(temp) / 'clips'
+            (clips / 'clip-1').mkdir(parents=True)
+            good, bad = clips / 'clip-1' / ('a' * 16 + '.wav'), clips / 'clip-1' / ('b' * 16 + '.wav')
+            good.write_text('ok')
+            bad.write_text('boom')
+            requests = [{'file': str(good), 'language': 'nl'}, {'file': str(good), 'language': 'xx'}, {'file': str(bad)},
+                        {'file': str(Path(temp) / 'other.wav')}, {'file': '/etc/passwd'}]
+            result = subprocess.run(['node', str(ROOT / 'voice-openai-run.mjs'), str(clips)], input=''.join(json.dumps(r) + '\n' for r in requests),
+                                    capture_output=True, text=True, timeout=60, env={**os.environ, 'OPENCLAW_PACKAGE_DIR': str(Path(temp) / 'openclaw')})
+            answers = [json.loads(line) for line in result.stdout.splitlines()]
+            self.assertEqual(answers, [{'ready': True}, {'text': 'openai/gpt-4o-transcribe nl'}, {'text': 'openai/gpt-4o-transcribe -'},
+                                       {'error': 'unavailable'}, {'error': 'invalid_request'}, {'error': 'invalid_request'}])
+            self.assertIn('a note from OpenClaw', result.stderr)
+            self.assertEqual(v.OPENAI_MODEL, 'openai/gpt-4o-transcribe')
 
 
 class OpenAI(unittest.TestCase):
@@ -338,6 +442,22 @@ class OpenAI(unittest.TestCase):
 TOKEN = 'test-token'
 
 
+class NoOpenAIWorker:
+    """The loaded OpenAI worker: with an answer it gives it, without one it can't start (the CLI does the clip)."""
+
+    def __init__(self, answer=None):
+        self.answer, self.calls, self.warmed = answer, [], 0
+
+    def transcribe(self, frames, language, timeout=60):
+        self.calls.append((len(frames), language))
+        if self.answer is None:
+            raise ValueError('unavailable')
+        return self.answer
+
+    def warm(self):
+        self.warmed += 1
+
+
 class Api(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
@@ -350,6 +470,7 @@ class Api(unittest.TestCase):
         self.app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'database': str(Path(temp.name) / 'events.sqlite'),
                            'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
         self.app._voice_openai = (time.monotonic() + 600, False)
+        self.app._voice_oa = NoOpenAIWorker()   # the CLI path, unless a test says otherwise
 
     def clip(self, seconds=1.0):
         return {'data': base64.b64encode(wav(seconds)).decode()}
@@ -404,7 +525,8 @@ class Api(unittest.TestCase):
             answer = self.app.action('voice_transcribe', self.clip(2), owner_dashboard=True)
         self.assertEqual(answer, {'text': 'Zeg hem dat het goed is', 'language': 'nl'})
         self.assertEqual(heard, [(64000, 'small', '', v.timeout_for(2))])
-        self.assertEqual(logs.output, [f'INFO:{a.LOG.name}:voice clip seconds=2 engine=local'])
+        self.assertEqual(len(logs.output), 1)
+        self.assertRegex(logs.output[0], r'voice clip seconds=2 engine=local part=False took=\d+\.\d$')
         self.assertFalse(any((self.app.dictation.root).glob('**/*.wav')) if self.app.dictation.root.exists() else False)
         with self.store.connect() as db:   # no clip, and no text, in the database
             tables = [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")]
@@ -427,6 +549,41 @@ class Api(unittest.TestCase):
             self.assertEqual(self.app.action('voice_transcribe', self.clip(), owner_dashboard=True)['text'], 'Hola')
         local.assert_not_called()
         self.assertEqual(call.call_args.args[3], 'es')
+
+    def test_openai_through_the_loaded_worker_and_the_cli_when_it_cant(self):
+        self.app._voice_openai = (time.monotonic() + 600, True)
+        self.app._voice_oa = NoOpenAIWorker({'text': 'Snel', 'language': None})
+        with patch.object(v, 'openai_transcribe') as cli:
+            self.assertEqual(self.app.action('voice_transcribe', self.clip(), owner_dashboard=True)['text'], 'Snel')
+        cli.assert_not_called()
+        self.app._voice_oa = NoOpenAIWorker()
+        with patch.object(v, 'openai_transcribe', return_value={'text': 'Traag', 'language': None}) as cli:
+            self.assertEqual(self.app.action('voice_transcribe', self.clip(), owner_dashboard=True)['text'], 'Traag')
+        cli.assert_called_once()
+
+    def test_a_part_keeps_the_language_heard_first(self):
+        self.app._voice_openai = (time.monotonic() + 600, True)
+        self.app._voice_oa = NoOpenAIWorker({'text': 'Deel twee', 'language': 'nl'})
+        self.app.action('voice_transcribe', {**self.clip(), 'part': 2, 'language': 'nl'}, owner_dashboard=True)
+        self.app.action('voice_transcribe', {**self.clip(), 'part': 3, 'language': 'xx'}, owner_dashboard=True)
+        self.assertEqual([c[1] for c in self.app._voice_oa.calls], ['nl', ''])
+        self.app.action('voice_prefs', {'language': 'de'}, owner_dashboard=True)   # what the owner picked comes first
+        self.app.action('voice_transcribe', {**self.clip(), 'part': 2, 'language': 'nl'}, owner_dashboard=True)
+        self.assertEqual(self.app._voice_oa.calls[-1][1], 'de')
+
+    def test_a_tap_warms_the_engine_in_use(self):
+        self.app.action('voice_status', {'warm': True}, owner_dashboard=True)   # the browser's own until ready: nothing
+        self.assertEqual(self.app._voice_oa.warmed, 0)
+        self.app._voice_openai = (time.monotonic() + 600, True)
+        with patch.object(v.Voice, 'warm') as local:
+            self.app.action('voice_status', {'warm': True}, owner_dashboard=True)
+            self.app.action('voice_status', {}, owner_dashboard=True)
+            self.assertEqual(self.app._voice_oa.warmed, 1)
+            local.assert_not_called()
+            self.app._voice_openai = (time.monotonic() + 600, False)
+            with patch.object(v.Voice, 'ready', return_value=True):
+                self.app.action('voice_status', {'warm': True}, owner_dashboard=True)
+            local.assert_called_once_with('small')
 
     def warm(self, checks, openai=False, live=True, busy=False, load=0.0):
         """voice_warm_worker for a number of 5-minute checks; what it prepared."""

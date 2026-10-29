@@ -11,7 +11,7 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Toca el micro en un cuadro de mensaje: el chat de una tarea, **Nueva tarea**, **Ayuda**, o el cuadro para cambiar un borrador. Habla y luego toca la marca de verificación. O mantén pulsado el micro mientras hablas y suéltalo cuando termines.
 
-Mientras escucha, el cuadro muestra un temporizador. Toca la cruz para parar sin guardar nada. Una grabación puede durar hasta 2 minutos; a los 2 minutos se detiene sola y escribe lo que dijiste.
+Mientras escucha, el cuadro muestra un temporizador. Toca la cruz para parar sin guardar nada. Una grabación puede durar hasta 2 minutos; a los 2 minutos se detiene sola y escribe lo que dijiste. Lo que ya oyó aparece en la barra mientras hablas, así el texto está listo poco después de parar.
 
 Lo que dijiste aparece en el cuadro, donde estaba tu cursor. No se envía nada: léelo, cambia lo que quieras y envíalo tú.
 

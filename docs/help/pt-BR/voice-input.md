@@ -11,7 +11,7 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Toque no microfone em uma caixa de mensagem: o chat de uma tarefa, **Nova tarefa**, **Ajuda**, ou a caixa para mudar um rascunho. Fale e depois toque no sinal de confirmação. Ou segure o microfone enquanto fala e solte quando terminar.
 
-Enquanto ela ouve, a caixa mostra um cronômetro. Toque no X para parar sem guardar nada. Uma gravação pode ter até 2 minutos; aos 2 minutos ela para sozinha e escreve o que você disse.
+Enquanto ela ouve, a caixa mostra um cronômetro. Toque no X para parar sem guardar nada. Uma gravação pode ter até 2 minutos; aos 2 minutos ela para sozinha e escreve o que você disse. O que ela já ouviu aparece na barra enquanto você fala, então o texto fica pronto logo depois que você para.
 
 O que você disse aparece na caixa, onde estava o seu cursor. Nada é enviado: leia, mude o que quiser e envie.
 
