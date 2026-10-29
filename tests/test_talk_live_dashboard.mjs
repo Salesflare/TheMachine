@@ -6,15 +6,15 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Talk live (talk_live.py): the wave next to the mic in a to-do's chat starts a spoken conversation. The bar shows Live,
 // the clock, Mute and End; a minute before 10 minutes it warns, and at 10 it ends. What both sides say lands in the chat.
-// A proposal shows above the bar and goes to the chat only on a tap; a spoken "yes" sends nothing. OpenAI is a
+// What it is asked to do goes to the chat as a typed message would; drafts wait for Approve, a spoken "yes" sends nothing. OpenAI is a
 // stand-in here: a fake microphone, RTCPeerConnection and data channel (window.__dc), and the Machine's answers are
 // the fixture server's, so the test never needs a microphone, a key or the network.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const now=new Date().toISOString(),id='c1c1c1c1c1c1c1c1';
 const cards=[{id,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
-const actions=[],lines=[];let ready=true,perUse=true,demo=false,startFails=false,hold=null;
-const TOOLS=[{type:'function',name:'todo_details'},{type:'function',name:'find_todos'},{type:'function',name:'propose'}];
+const actions=[],lines=[],asked=[];let ready=true,perUse=true,demo=false,startFails=false,hold=null;
+const TOOLS=[{type:'function',name:'todo_details'},{type:'function',name:'find_todos'},{type:'function',name:'ask_chat'}];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
@@ -22,12 +22,13 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(demo&&r.action.startsWith('talk_')){res.end(JSON.stringify({ok:true,demo:true}));return}
   const answer={
    talk_status:()=>({ready,limit:600,warn:540}),
-   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',propose_note:'Only their tap sends it.',ready:true},
+   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',ask_note:'Drafts wait for Approve.',ready:true},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_line:()=>{lines.push({kind:a.role==='user'?'you':'reply',text:a.text,via:'live',at:Date.now()});return {ok:true}},
    talk_tool:()=>({output:{title:cards[0].title,messages:[{from:'Lotte',text:'When can I pick it up?'}]}}),
    talk_end:()=>({ok:true}),
-   card_chat:()=>({session:true,status:'done',active:false,cursor:'k',items:[{kind:'reply',text:'Lotte asked when the order can be picked up. Want me to answer her?',at:Date.now()-60000},...lines]}),
+   decide:()=>{asked.push({kind:'you',text:a.feedback,at:Date.now()},{kind:'reply',text:'Drafted a reply to Lotte: Thursday after two works. Tap Approve to send it.',at:Date.now()+1});return {ok:true}},
+   card_chat:()=>({session:true,status:'done',active:false,cursor:'k',items:[{kind:'reply',text:'Lotte asked when the order can be picked up. Want me to answer her?',at:Date.now()-60000},...lines,...asked].sort((x,y)=>x.at-y.at)}),
   }[r.action];
   if(r.action==='talk_offer'&&hold)await hold;
   if(r.action==='talk_start'&&startFails){res.statusCode=400;res.end(JSON.stringify({error:'Talk live couldn’t start. Check OpenAI in OpenClaw, then try again.'}));return}
@@ -60,7 +61,7 @@ try{
   await context.addInitScript(FAKE_RTC);
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const base='http://127.0.0.1:'+server.address().port+'/';
-  actions.length=0;lines.length=0;perUse=true;
+  actions.length=0;lines.length=0;asked.length=0;perUse=true;
   await page.goto(base+'#chat='+id);await page.locator('#chat-input').waitFor();
   const tag=`${w}-${scheme}`,shot=async n=>{if(SHOTS)await page.screenshot({path:`${SHOTS}/${n}-${tag}.png`})};
   const tap=sel=>phone?page.locator(sel).tap():page.locator(sel).click();
@@ -88,7 +89,7 @@ try{
   assert.equal(actions.find(a=>a.action==='talk_offer').args.sdp,'v=0\r\noffer\r\n');
   const setup=await page.evaluate(()=>window.__dc.sent[0]);
   assert.equal(setup.type,'session.update');
-  assert.deepEqual(setup.session.tools.map(x=>x.name),['todo_details','find_todos','propose'],'the page sets its own tools');
+  assert.deepEqual(setup.session.tools.map(x=>x.name),['todo_details','find_todos','ask_chat'],'the page sets its own tools');
   assert.equal(setup.session.instructions,'You are The Machine, talking live.');
   assert.ok(setup.session.audio.input.transcription.model,'what the owner says is written down');
   assert.ok(await page.locator(bar+' .talk-cost').isVisible(),'an API key: the cost note shows');
@@ -109,30 +110,27 @@ try{
   assert.equal(await page.evaluate(()=>window.__dc.sent.at(-1).type),'response.create');
   await page.waitForTimeout(300);await shot('t3-live');
 
-  // A proposal: it shows, and a spoken "yes" afterwards sends nothing
-  await page.evaluate(()=>{__say({type:'response.function_call_arguments.done',call_id:'call2',name:'propose',arguments:JSON.stringify({request:'Reply to Lotte that Thursday after two works'})});
-   __say({type:'conversation.item.input_audio_transcription.completed',item_id:'i3',transcript:'Yes, send it.'})});
-  await page.waitForSelector(bar+' .talk-prop');
-  assert.equal(await page.locator(bar+' .talk-prop-text').textContent(),'Reply to Lotte that Thursday after two works');
+  // Asking the chat: it goes the way a typed message does (a decision 'other'), and a spoken "yes" afterwards sends nothing
+  await page.evaluate(()=>{__say({type:'response.function_call_arguments.done',call_id:'call2',name:'ask_chat',arguments:JSON.stringify({request:'Reply to Lotte that Thursday after two works'})})});
+  await page.waitForFunction(()=>window.__dc.sent.some(x=>x.item?.call_id==='call2'));
   const out=await page.evaluate(()=>JSON.parse(window.__dc.sent.find(x=>x.item?.call_id==='call2').item.output));
-  assert.equal(out.note,'Only their tap sends it.');
-  await page.waitForTimeout(300);assert.equal(sent(),0,'a spoken yes sends nothing');
-  assert.equal(actions.filter(a=>a.action==='talk_tool').length,1,'propose never reaches the Machine as a tool');
-  await shot('t4-proposal');
+  assert.deepEqual(out,{ok:true,waiting:false,note:'Drafts wait for Approve.'});
+  const decided=actions.filter(a=>a.action==='decide');
+  assert.equal(decided.length,1);assert.equal(decided[0].args.choice,'other');
+  assert.equal(decided[0].args.feedback,'Reply to Lotte that Thursday after two works');
+  assert.equal(actions.filter(a=>a.action==='talk_tool').length,1,'ask_chat never reaches the Machine as a tool');
+  await page.evaluate(()=>__say({type:'conversation.item.input_audio_transcription.completed',item_id:'i3',transcript:'Yes, send it.'}));
+  await page.waitForFunction(()=>document.querySelector('#chat-log').textContent.includes('Tap Approve'));
+  await page.waitForTimeout(400);
+  assert.equal(actions.filter(a=>a.action==='decide').length,1,'a spoken yes decides nothing');
+  assert.equal(actions.filter(a=>/send|approve|accept/.test(a.action)||a.args?.choice==='accept').length,0,'and sends nothing');
+  await shot('t4-asked-chat');
 
   // Mute: the microphone track is off
   await tap(bar+' [data-talk-mute]');
   assert.equal(await page.evaluate(()=>window.__stream.getAudioTracks()[0].enabled),false);
   assert.equal(await page.locator(bar+' [data-talk-mute]').textContent(),'Unmute');
   await tap(bar+' [data-talk-mute]');assert.equal(await page.evaluate(()=>window.__stream.getAudioTracks()[0].enabled),true);
-
-  // The tap: the proposal goes to the chat as the owner's message, the normal way (it then drafts for Approve)
-  await tap(bar+' [data-talk-send]');
-  await page.waitForFunction(()=>!document.querySelector('.chat-compose .talk-prop'));
-  await page.waitForTimeout(300);
-  const decided=actions.filter(a=>a.action==='decide');
-  assert.equal(decided.length,1);assert.equal(decided[0].args.choice,'other');
-  assert.equal(decided[0].args.feedback,'Reply to Lotte that Thursday after two works');
 
   // A minute before 10 minutes it warns; at 10 it ends by itself
   await page.evaluate(()=>{window.__skew=545000});
@@ -166,7 +164,7 @@ try{
    await page.goto(base+'#');await page.waitForTimeout(400);
    assert.ok(actions.filter(a=>a.action==='talk_end').length>ends||await page.evaluate(()=>!window.talk),'leaving the chat ends it');
   }
-  assert.equal(sent(),1,'only the one tapped proposal was ever sent');
+  assert.equal(sent(),1,'only the one request to the chat');
   await context.close()}
 
  // Without OpenAI, and in the site's demo: no wave

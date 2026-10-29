@@ -1,7 +1,7 @@
 ---
 title: Falar ao vivo
 area: cards
-summary: Uma conversa falada com a The Machine sobre uma tarefa, com a voz da OpenAI. Ela pode pesquisar e sugerir, mas nunca envia nada.
+summary: Uma conversa falada com a The Machine sobre uma tarefa, com a voz da OpenAI. Ela trabalha no chat da tarefa, mas nunca envia nada.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -9,17 +9,17 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 ---
 ## Comece uma conversa
 
-No chat de uma tarefa, toque na onda ao lado do microfone. Permita o microfone se o navegador pedir. Quando a barra mostrar **Ao vivo**, fale como numa ligação. A The Machine responde em voz alta.
+No chat de uma tarefa, toque na onda ao lado do microfone. Permita o microfone se o navegador pedir. Quando a barra mostrar **Ao vivo**, fale como numa ligação. A The Machine responde em voz alta, e você pode falar por cima para interrompê-la.
 
-Ela conhece a tarefa em que você está: as mensagens e o rascunho dela. Também pode consultar suas outras tarefas.
+Ela conhece a tarefa em que você está: as mensagens, o rascunho e o chat dela. Também pode consultar suas outras tarefas.
 
 A barra tem **Silenciar** e **Fim**. Uma conversa dura até 10 minutos. Um minuto antes do fim, o cronômetro mostra quanto falta. Comece de novo para continuar.
 
 ## Nada é enviado de uma conversa
 
-A The Machine não pode enviar, mudar nem aprovar nada enquanto você fala. Quando você pede algo, como "escreva uma resposta dizendo que quinta está bom", ela mostra o pedido acima da barra. Toque em **Enviar ao chat** para passá-lo ao chat. O que o chat redigir então espera o seu **Aprovar**, como sempre.
+Quando você pede algo, como "escreva uma resposta dizendo que quinta está bom" ou "adie isso até segunda", a The Machine passa o pedido ao chat da tarefa, como se você tivesse digitado. O chat segue as regras de sempre: pode mudar o rascunho ou adiar a tarefa, mas um rascunho espera o seu **Aprovar**.
 
-Dizer "sim" ou "envia" não faz nada. Só os seus toques contam.
+Dizer "sim" ou "envia" não faz nada. Só o seu toque em **Aprovar** envia.
 
 ## Um registro no chat
 

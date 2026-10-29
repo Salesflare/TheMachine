@@ -141,17 +141,17 @@ class Sessions(unittest.TestCase):
 
 
 class Tools(unittest.TestCase):
-    def test_only_reading_tools_and_a_proposal(self):
+    def test_only_reading_tools_and_the_chat(self):
         names = [tool['name'] for tool in t.TOOLS]
-        self.assertEqual(names, ['todo_details', 'find_todos', 'propose'])
-        self.assertIn('spoken yes does nothing', [tool for tool in t.TOOLS if tool['name'] == 'propose'][0]['description'])
-        self.assertIn('A spoken yes does nothing', t.PROPOSE_NOTE)
+        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat'])
+        self.assertIn('never sends', [tool for tool in t.TOOLS if tool['name'] == 'ask_chat'][0]['description'])
+        self.assertIn('A spoken yes does nothing', t.ASK_NOTE)
 
     def test_the_instructions_never_take_a_spoken_yes(self):
         text = t.instructions('Reply to Dana', 'nl', 'Tuesday 28 October 2026, 10:00')
         self.assertIn('"Reply to Dana"', text)
         self.assertIn('Speak Dutch', text)
-        self.assertIn('Never treat a spoken yes', text)
+        self.assertIn('never treat words as approval', text)
         self.assertIn('can’t send, change, approve or delete', text)
 
 
@@ -195,7 +195,7 @@ class Api(unittest.TestCase):
         started = self.act('talk_start', {'suggestion_id': SID})
         self.assertNotIn(SECRET, json.dumps(started))
         self.assertEqual((started['limit'], started['warn'], started['per_use']), (600, 540, True))
-        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'propose'])
+        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat'])
         self.assertIn('Reply to Dana about the offsite', started['instructions'])
         self.assertEqual(self.act('talk_offer', {'id': started['id'], 'sdp': OFFER}), {'sdp': ANSWER})
         self.act('talk_line', {'id': started['id'], 'role': 'user', 'text': 'What does Dana want?'})
@@ -236,7 +236,7 @@ class Api(unittest.TestCase):
         self.assertEqual([x['title'] for x in found['todos']], ['Book the offsite venue'])
         found = self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': {'words': 'offsite'}})['output']
         self.assertNotIn('Old offsite invoice', [x['title'] for x in found['todos']])   # only open ones
-        for name in ('propose', 'send_draft', 'decide'):
+        for name in ('ask_chat', 'send_draft', 'decide'):   # ask_chat is the dashboard's own: the chat's decide path
             with self.assertRaisesRegex(ValueError, 'Unknown tool'):
                 self.act('talk_tool', {'id': talk_id, 'name': name, 'args': {}})
 
@@ -271,11 +271,12 @@ class Dashboard(unittest.TestCase):
     def test_a_spoken_yes_never_sends(self):
         html = (ROOT / 'dashboard.html').read_text()
         self.assertIn('${micBtn()}${talkBtn()}', html)
-        start, end = html.index('function talkTool('), html.index("document.addEventListener('click',e=>{const b=e.target.closest('[data-talk]")
+        # What the voice asks goes to the chat the way a typed message does: a decision 'other', never a send or Approve
+        start, end = html.index('async function talkAsk('), html.index("document.addEventListener('click',e=>{const b=e.target.closest('[data-talk]")
         body = html[start:end]
-        self.assertNotIn('chatSubmit', body)   # a proposal only shows; the owner's tap sends it to the chat
-        self.assertNotIn('decide', body)
-        self.assertIn('input.value=req;chatGrow(input);chatSendState();chatSubmit()});', html)
+        self.assertIn("choice:'other'", body)
+        for word in ('approve', 'send_draft', "'accept'", 'deliver'):
+            self.assertNotIn(word, body)
 
     def test_the_helper_never_asks_to_write(self):
         helper = (ROOT / 'talk-live-run.mjs').read_text()

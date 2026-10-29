@@ -1,7 +1,7 @@
 ---
 title: Live praten
 area: cards
-summary: Een gesproken gesprek met The Machine over een to-do, met de stem van OpenAI. Hij kan dingen opzoeken en voorstellen doen, maar verstuurt nooit iets.
+summary: Een gesproken gesprek met The Machine over een to-do, met de stem van OpenAI. Hij werkt in de chat van de to-do, maar verstuurt nooit iets.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -9,17 +9,17 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 ---
 ## Een gesprek starten
 
-Tik in de chat van een to-do op de golf naast de microfoon. Sta de microfoon toe als je browser erom vraagt. Als de balk **Live** toont, praat je zoals bij een telefoongesprek. The Machine antwoordt hardop.
+Tik in de chat van een to-do op de golf naast de microfoon. Sta de microfoon toe als je browser erom vraagt. Als de balk **Live** toont, praat je zoals bij een telefoongesprek. The Machine antwoordt hardop, en je kunt erdoorheen praten om hem te onderbreken.
 
-Hij kent de to-do waarin je zit: de berichten en het concept. Hij kan ook je andere to-do's opzoeken.
+Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan ook je andere to-do's opzoeken.
 
 De balk heeft **Dempen** en **Einde**. Een gesprek duurt hoogstens 10 minuten. Een minuut voor het einde toont de timer hoeveel tijd er nog is. Start opnieuw om verder te gaan.
 
 ## Vanuit een gesprek wordt niets verstuurd
 
-The Machine kan niets versturen, aanpassen of goedkeuren terwijl je praat. Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past", toont hij de vraag boven de balk. Tik op **Naar de chat** om ze aan de chat te geven. Wat de chat dan opstelt, wacht zoals altijd op je **Goedkeuren**.
+Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past" of "snooze dit tot maandag", geeft The Machine het door aan de chat van de to-do, alsof je het zelf typte. De chat volgt zijn gewone regels: hij kan het concept aanpassen of de to-do snoozen, maar een concept wacht op je **Goedkeuren**.
 
-"Ja" of "verstuur het" zeggen doet niets. Alleen je tikken tellen.
+"Ja" of "verstuur het" zeggen doet niets. Alleen je tik op **Goedkeuren** verstuurt.
 
 ## Een verslag in de chat
 

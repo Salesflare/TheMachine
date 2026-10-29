@@ -1709,14 +1709,11 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .talk-dot{width:10px;height:10px;border-radius:50%;background:var(--c-red,#d93025);animation:mic-pulse 1.4s ease-in-out infinite}.talk-dot.wait{background:var(--muted);animation:none}
 .talk-time{min-width:2.4em;font-variant-numeric:tabular-nums;color:var(--muted)}
 .talk-hint{flex:1;min-width:0;overflow:hidden;color:var(--muted);font:400 .9rem/1.3 var(--sans);text-overflow:ellipsis;white-space:nowrap}
-.talk-mute,.talk-end,.talk-send{flex:none;width:auto;min-height:36px;margin:0;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .88rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
+.talk-mute,.talk-end{flex:none;width:auto;min-height:36px;margin:0;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .88rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
 .talk-mute{margin-left:auto}.talk-mute[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 8%,transparent)}
 .talk-end{border-color:transparent;background:var(--c-red,#d93025);color:#fff}
 .talk-err{border-color:var(--orange)}.talk-err .grow{color:var(--orange);font:600 .88rem/1.3 var(--sans)}.talk-err .talk-end{background:none;border-color:var(--c-line-strong);color:var(--text)}
 .talk-cost{padding:0 14px;color:var(--muted);font-size:.8rem}
-.talk-prop{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border:1px dashed var(--c-line-strong);border-radius:14px;background:var(--surface)}
-.talk-prop-text{flex:1;min-width:0;color:var(--text);font:400 .92rem/1.35 var(--sans)}
-.talk-send{background:var(--c-accent);border-color:transparent;color:var(--on-accent,#fff)}
 @media (max-width:520px){.talk-hint{display:none}}
 .mic-x{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--chat-quiet);font:400 24px/1 var(--sans);cursor:pointer}
 .mic-x:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}
@@ -5705,10 +5702,11 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mic){e.preventDefau
 document.addEventListener('close',e=>{if(mic&&e.target.contains?.(mic.box))micCancel()},true);
 // Talk live (talk_live.py): a spoken conversation with The Machine about the open to-do, with OpenAI's Realtime voice.
 // The Machine starts the session (the OpenAI sign-in and the session's secret never come here) and hands on this page's
-// WebRTC offer; the audio then goes directly between this page and OpenAI. The voice gets this page's tools: two that
-// read, through the Machine, and `propose`, which only shows a request here. It goes to the chat only on a tap, and what
-// the chat drafts waits for Approve as always: a spoken yes never sends anything. What both sides say goes into the
-// chat. At most 10 minutes, with a warning a minute before.
+// WebRTC offer; the audio then goes directly between this page and OpenAI. The owner can talk over it (OpenAI stops
+// and listens). The voice gets this page's tools: two that read, through the Machine, and `ask_chat`, which hands a
+// request to the to-do's chat the way a typed message goes (decideOrWait), so the chat's own rules hold: it can change
+// the draft or snooze, but a draft waits for Approve on screen, and a spoken yes never sends anything. What both sides
+// say goes into the chat. At most 10 minutes, with a warning a minute before.
 const WAVE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>';
 let talk=null,talkInfo={at:0,ready:null,busy:false};  // the one open conversation; whether this Machine can talk live (asked every 10 minutes)
 const talkOk=()=>talkInfo.ready===true&&!!(window.RTCPeerConnection&&navigator.mediaDevices?.getUserMedia);
@@ -5719,11 +5717,10 @@ async function talkLoad(){if(talkInfo.busy||Date.now()-talkInfo.at<600000)return
  chatSendState()}
 function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector('.chat-compose');if(!box){talkEnd();return}
  let bar=box.querySelector(':scope>.talk');if(!bar){bar=document.createElement('div');bar.className='talk';box.insertBefore(bar,box.querySelector('.chat-box'))}
- const key=v.state+'|'+v.muted+'|'+v.props.length+'|'+(v.error||'');
+ const key=v.state+'|'+v.muted+'|'+(v.error||'');
  if(bar.dataset.k!==key){bar.dataset.k=key;
-  const props=v.props.map((p,i)=>`<div class="talk-prop"><span class="talk-prop-text">${esc(p)}</span><button type="button" class="talk-send" data-talk-send="${i}">${esc(t('Send to chat'))}</button></div>`).join('');
   bar.innerHTML=v.state==='error'?`<div class="talk-bar talk-err" role="alert"><span class="grow">${esc(v.error)}</span><button type="button" class="talk-end" data-talk-close>${esc(t('Close'))}</button></div>`
-   :`${props}<div class="talk-bar" role="status"><span class="talk-live"><i class="talk-dot${v.state==='live'?'':' wait'}" aria-hidden="true"></i><strong>${esc(t(v.state==='live'?'Live':'Connecting…'))}</strong><span class="talk-time"></span></span><span class="talk-hint"></span>`
+   :`<div class="talk-bar" role="status"><span class="talk-live"><i class="talk-dot${v.state==='live'?'':' wait'}" aria-hidden="true"></i><strong>${esc(t(v.state==='live'?'Live':'Connecting…'))}</strong><span class="talk-time"></span></span><span class="talk-hint"></span>`
    +`<button type="button" class="talk-mute" data-talk-mute aria-pressed="${v.muted}"${v.state==='live'?'':' disabled'}>${esc(t(v.muted?'Unmute':'Mute'))}</button><button type="button" class="talk-end" data-talk-end>${esc(t('End'))}</button></div>`
    +(v.per_use?`<small class="talk-cost">${esc(t('OpenAI charges your API key per minute of talk.'))}</small>`:'')}
  if(v.state==='error')return;
@@ -5736,13 +5733,13 @@ function talkClose(v){clearInterval(v.tick);try{v.dc?.close()}catch{}try{v.pc?.c
  if(v.audio){v.audio.srcObject=null;v.audio.remove()}if(v.id&&!v.ended){v.ended=true;micPost('talk_end',{id:v.id}).catch(()=>{})}}
 function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove()}
 async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
- const v=talk={sid:s.id,state:'start',props:[],muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set()};talkPaint();
+ const v=talk={sid:s.id,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set()};talkPaint();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
  catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
-  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.propose_note||''});talkPaint();
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||''});talkPaint();
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0]};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
   pc.onconnectionstatechange=()=>{if(talk===v&&['failed','disconnected'].includes(pc.connectionState))talkFail(v,t('Talk live lost its connection. Start it again to go on.'))};
@@ -5765,22 +5762,25 @@ function talkLine(v,role,text,item){text=String(text||'').trim();const key=role+
  micPost('talk_line',{id:v.id,role,text}).catch(()=>{});
  if(chat&&chatOpen()?.id===v.sid){chat={...chat,items:[...(chat.items||[]),{kind:role==='user'?'you':'reply',text,via:'live',at:Date.now()}]};paintChat();chatToEnd()}}
 async function talkTool(v,e){let args={},output;try{args=JSON.parse(e.arguments||'{}')}catch{}
- if(e.name==='propose'){const req=String(args.request||'').trim().slice(0,2000);if(req&&!v.props.includes(req)){v.props=[...v.props.slice(-2),req];talkPaint()}
-  output={shown:!!req,note:v.note}}
+ if(e.name==='ask_chat'){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkAsk(v,req):{error:'Say what to ask.'};if(output.ok)output.note=v.note}
  else try{output=(await micPost('talk_tool',{id:v.id,name:e.name,args})).output}catch(err){output={error:err.message}}
  if(talk!==v||v.dc?.readyState!=='open')return;
  v.dc.send(JSON.stringify({type:'conversation.item.create',item:{type:'function_call_output',call_id:e.call_id,output:JSON.stringify(output)}}));
  v.dc.send(JSON.stringify({type:'response.create'}))}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-end],[data-talk-close],[data-talk-mute],[data-talk-send]');if(!b)return;e.preventDefault();
+// What the voice asks the chat goes the way a typed message does (chatSubmit's decideOrWait, so it can wait offline
+// too); the owner sees it in the chat, and its drafts wait for their Approve.
+async function talkAsk(v,req){const s=state.suggestions?.find(x=>x.id===v.sid);if(!s)return {error:'This to-do is gone.'};
+ const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:req,decision_id:'chat-'+crypto.randomUUID()}];
+ try{const r=await decideOrWait(s.id,steps,'other');
+  if(chatOpen()?.id===s.id){chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text:req,at:Date.now()}],active:!r?.waiting,cursor:null};changing.delete(s.id)}
+  if(!r?.waiting){await refresh();if(chatOpen()?.id===s.id){paintChat();chatToEnd();chatPoll()}}
+  return {ok:true,waiting:!!r?.waiting}}
+ catch(err){return {error:err.message}}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-end],[data-talk-close],[data-talk-mute]');if(!b)return;e.preventDefault();
  if(b.hasAttribute('data-talk')){if(talk)talkEnd();else talkStart();return}
  if(b.hasAttribute('data-talk-end')||b.hasAttribute('data-talk-close')){talkEnd();return}
  const v=talk;if(!v)return;
- if(b.hasAttribute('data-talk-mute')){v.muted=!v.muted;v.stream?.getAudioTracks().forEach(x=>{x.enabled=!v.muted});talkPaint();return}
- // The owner's tap: the proposal goes into the chat as their message, the normal way (decideOrWait)
- const req=v.props[+b.dataset.talkSend],input=$('#chat-input');if(!req||!input)return;v.props=v.props.filter(p=>p!==req);talkPaint();
- // (what the owner had typed already stays: then the proposal joins it in the box, for them to send)
- if(input.value.trim()){input.value=input.value.trimEnd()+' '+req;chatGrow(input);chatSendState();input.focus();return}
- input.value=req;chatGrow(input);chatSendState();chatSubmit()});
+ if(b.hasAttribute('data-talk-mute')){v.muted=!v.muted;v.stream?.getAudioTracks().forEach(x=>{x.enabled=!v.muted});talkPaint()}});
 // On open: the latest at the bottom, nothing cut off under the header; a short chat just sits under the header.
 // The thread scrolls in its own box (on a phone too, so the message box never moves); a page without that layout scrolls itself.
 const chatScroller=()=>{const l=$('#chat-log');return l&&getComputedStyle(l).overflowY!=='visible'?l:null};

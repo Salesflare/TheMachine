@@ -19502,7 +19502,7 @@ class App:
             LOG.info('talk live start via=%s', started.get('via'))
             view = self.talk_view()
             return {**started, 'per_use': started.get('via') == 'key', 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS,
-                    'tools': talk_live.TOOLS, 'propose_note': talk_live.PROPOSE_NOTE, 'instructions': talk_live.instructions(card['title'], locale_prefs.language() or 'en',
+                    'tools': talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE, 'instructions': talk_live.instructions(card['title'], locale_prefs.language() or 'en',
                                                                                    time.strftime('%A %d %B %Y, %H:%M')), 'ready': view.get('ready')}
         if name == 'talk_offer':
             return self.talk.offer(args.get('id'), args.get('sdp'), env)
@@ -19516,7 +19516,7 @@ class App:
 
     def talk_tool(self, suggestion_id, name, args):
         """Talk live's tools that read (talk_live.TOOLS): this to-do, or finding others. Never anything that sends or
-        changes; `propose` is the dashboard's own and only shows on screen."""
+        changes; `ask_chat` is the dashboard's own (the chat's normal decide path)."""
         if name == 'todo_details':
             chat = self.card_chat(suggestion_id)
             with self.store.connect() as db:

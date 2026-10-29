@@ -1,7 +1,7 @@
 # Talk live
 
 A spoken conversation with The Machine in a to-do's chat, with OpenAI's Realtime voice. It can read the to-do and
-look up other to-dos, and it can propose a request, but nothing is sent or changed from a conversation. The help
+look up other to-dos, and it can hand a request to the to-do's chat, which follows its usual rules: nothing is sent from a conversation. The help
 article is [docs/help/talk-live.md](help/talk-live.md); the code is `talk_live.py`, `talk-live-run.mjs` and the
 `talk*` functions in `dashboard.html`.
 
@@ -18,6 +18,8 @@ General, Voice input says whether it's ready.
   `https://api.openai.com/v1/realtime/calls`. OpenAI bills the key per minute, so the bar shows one short line saying so.
 
 When both are set up, OpenClaw uses the key; it doesn't offer a way to prefer the sign-in per session.
+
+OpenAI's server-side turn detection lets the owner interrupt: the voice stops and listens.
 
 The model is OpenAI's GA `gpt-realtime-2.1`, not GPT-Live (`gpt-live-1`, `gpt-live-1-codex`). With GPT-Live the Gateway
 owns the conversation's tools and its own agent, and OpenClaw's voice gate lets a spoken "yes" confirm a high-impact
@@ -46,9 +48,10 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 
 - `todo_details`: the to-do's title, status, its last 25 messages and its current draft, through `talk_tool` (read only).
 - `find_todos`: open to-dos whose title has the words (read only).
-- `propose`: handled in the browser. The request shows above the bar with **Send to chat**. Only that tap posts it
-  to the to-do's chat as the owner's message (the normal decide path), and anything the chat then drafts waits for
-  **Approve**. The voice is told that a spoken yes does nothing.
+- `ask_chat`: handled in the browser (`talkAsk`). The request goes to the to-do's chat the way a typed message does
+  (`decideOrWait`, a decision `other`, so it can also wait offline), and the chat shows it. The chat's own rules hold: it
+  can change the draft, snooze or mark the to-do done, and a draft waits for **Approve** on screen. The voice is told
+  that a spoken yes does nothing, and to tell the owner to tap Approve.
 
 ## Tests
 

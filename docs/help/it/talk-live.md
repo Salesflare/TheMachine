@@ -1,7 +1,7 @@
 ---
 title: Parla dal vivo
 area: cards
-summary: Una conversazione a voce con The Machine su un’attività, con la voce di OpenAI. Può cercare informazioni e dare suggerimenti, ma non invia mai niente.
+summary: Una conversazione a voce con The Machine su un’attività, con la voce di OpenAI. Lavora nella chat dell’attività, ma non invia mai niente.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -9,17 +9,17 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 ---
 ## Inizia una conversazione
 
-Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il microfono se il browser lo chiede. Quando la barra dice **Dal vivo**, parla come in una chiamata. The Machine risponde ad alta voce.
+Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il microfono se il browser lo chiede. Quando la barra dice **Dal vivo**, parla come in una chiamata. The Machine risponde ad alta voce, e puoi parlarle sopra per interromperla.
 
-Conosce l’attività in cui sei: i suoi messaggi e la sua bozza. Può anche consultare le tue altre attività.
+Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività.
 
 La barra ha **Silenzia** e **Fine**. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
 
 ## Da una conversazione non parte niente
 
-The Machine non può inviare, cambiare o approvare niente mentre parli. Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene", mostra la richiesta sopra la barra. Tocca **Invia alla chat** per passarla alla chat. Quello che la chat scrive poi aspetta il tuo **Approva**, come sempre.
+Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" o "posticipa questa a lunedì", The Machine la passa alla chat dell’attività, come se l’avessi scritta tu. La chat segue le solite regole: può cambiare la bozza o posticipare l’attività, ma una bozza aspetta il tuo **Approva**.
 
-Dire "sì" o "invialo" non fa niente. Contano solo i tuoi tocchi.
+Dire "sì" o "invialo" non fa niente. Invia solo il tuo tocco su **Approva**.
 
 ## Una traccia nella chat
 

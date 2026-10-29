@@ -1,7 +1,7 @@
 ---
 title: Live sprechen
 area: cards
-summary: Ein gesprochenes Gespräch mit The Machine über eine Aufgabe, mit der Stimme von OpenAI. Sie kann nachschlagen und Vorschläge machen, sendet aber nie etwas.
+summary: Ein gesprochenes Gespräch mit The Machine über eine Aufgabe, mit der Stimme von OpenAI. Sie arbeitet im Chat der Aufgabe, sendet aber nie etwas.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -9,17 +9,17 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 ---
 ## Ein Gespräch starten
 
-Tippe im Chat einer Aufgabe auf die Welle neben dem Mikrofon. Erlaube das Mikrofon, wenn dein Browser fragt. Wenn die Leiste **Live** zeigt, sprich wie bei einem Anruf. The Machine antwortet laut.
+Tippe im Chat einer Aufgabe auf die Welle neben dem Mikrofon. Erlaube das Mikrofon, wenn dein Browser fragt. Wenn die Leiste **Live** zeigt, sprich wie bei einem Anruf. The Machine antwortet laut, und du kannst dazwischenreden, um sie zu unterbrechen.
 
-Sie kennt die Aufgabe, in der du bist: ihre Nachrichten und ihren Entwurf. Sie kann auch deine anderen Aufgaben nachschlagen.
+Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren Chat. Sie kann auch deine anderen Aufgaben nachschlagen.
 
 Die Leiste hat **Stummschalten** und **Ende**. Ein Gespräch dauert bis zu 10 Minuten. Eine Minute vor dem Ende zeigt der Timer, wie viel Zeit übrig ist. Starte es neu, um weiterzumachen.
 
 ## Aus einem Gespräch wird nichts gesendet
 
-The Machine kann nichts senden, ändern oder freigeben, während du sprichst. Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“, zeigt sie die Bitte über der Leiste. Tippe auf **In den Chat**, um sie an den Chat zu geben. Was der Chat dann entwirft, wartet wie immer auf dein **Freigeben**.
+Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“ oder „stell das bis Montag zurück“, gibt The Machine es an den Chat der Aufgabe weiter, als hättest du es getippt. Der Chat folgt seinen üblichen Regeln: Er kann den Entwurf ändern oder die Aufgabe zurückstellen, aber ein Entwurf wartet auf dein **Freigeben**.
 
-„Ja“ oder „schick es“ zu sagen bewirkt nichts. Nur dein Tippen zählt.
+„Ja“ oder „schick es“ zu sagen bewirkt nichts. Nur dein Tippen auf **Freigeben** sendet.
 
 ## Ein Protokoll im Chat
 

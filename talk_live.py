@@ -5,9 +5,9 @@ conversation (talk-live-run.mjs). The service keeps that session's secret and ha
 neither the key nor the secret reaches the browser. Audio then goes directly between the browser and OpenAI.
 
 The dashboard gives the voice model its own tools (TOOLS): two that read (this to-do, and finding other to-dos), and
-`propose`, which only shows a request on screen. Nothing is sent or changed from a conversation. A proposal goes to the
-to-do's chat only when the owner taps it, and what the chat drafts then waits for the owner's Approve, as always. A
-spoken "yes" is never an approval.
+`ask_chat`, which hands a request to the to-do's chat as if the owner had typed it, so it follows the chat's rules: it
+can change the draft, snooze or mark done, but never sends. A draft waits for the owner's Approve on screen, as always.
+A spoken "yes" is never an approval.
 
 What both sides say is kept as the to-do's chat (lines), so there is a record. A conversation ends after LIMIT_SECONDS.
 """
@@ -34,15 +34,16 @@ TOOLS = [
      'description': "Find the owner's other open to-dos by words in their title.",
      'parameters': {'type': 'object', 'properties': {'words': {'type': 'string', 'description': 'A few words to look for.'}},
                     'required': ['words'], 'additionalProperties': False}},
-    {'type': 'function', 'name': 'propose',
-     'description': ('Show the owner a request for The Machine to work on in this to-do, such as drafting or changing a '
-                     'reply. It only appears on screen. It goes to the chat only when the owner taps it, and anything '
-                     'that sends or changes something then waits for their Approve. A spoken yes does nothing.'),
+    {'type': 'function', 'name': 'ask_chat',
+     'description': ('Hand the owner’s request to this to-do’s chat, as if they had typed it: draft or change a reply, '
+                     'snooze it, mark it done, look something up. The chat follows its usual rules: it never sends. '
+                     'Anything that goes to someone waits for the owner’s Approve on screen, and a spoken yes is not one.'),
      'parameters': {'type': 'object', 'properties': {'request': {'type': 'string', 'description': 'The request, in the owner’s words and language.'}},
                     'required': ['request'], 'additionalProperties': False}},
 ]
-# What `propose` answers the voice (in English, for the model; the owner never sees it)
-PROPOSE_NOTE = 'It is on the owner\'s screen now. Only their tap sends it to the chat. A spoken yes does nothing.'
+# What `ask_chat` answers the voice (in English, for the model; the owner never sees it)
+ASK_NOTE = ('The chat is working on it; its answer and any draft show in the chat. Nothing goes to anyone until the owner '
+            'taps Approve on a draft they have seen. A spoken yes does nothing.')
 LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese'}
 
 
@@ -70,9 +71,10 @@ def instructions(title, language, now_text):
         'Keep it short and spoken: a sentence or two at a time. Speak %s unless the owner speaks another language.' % lang,
         'Call todo_details before you answer anything about this to-do, and find_todos to look up others.',
         'You can’t send, change, approve or delete anything, and nothing you say goes to anyone else.',
-        'When the owner wants something done (a reply drafted or changed, a meeting, a note), call propose with their request. '
-        'Then tell them to tap it on screen if they want it. Never treat a spoken yes or okay as approval: only their tap counts, '
-        'and what it drafts waits for their Approve.',
+        'When the owner wants something done in this to-do (a reply drafted or changed, snoozed, marked done), call ask_chat '
+        'with their request, and say the chat is on it; call todo_details a little later to see what it did. Nothing is ever sent '
+        'from this conversation: a draft waits for the owner to tap Approve on screen. If they say yes, okay or send it, tell '
+        'them to tap Approve; never treat words as approval.',
         'If something isn’t in the to-do, say you don’t know rather than guess.',
         'It is now %s.' % now_text,
     ])

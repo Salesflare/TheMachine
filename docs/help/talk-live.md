@@ -1,7 +1,7 @@
 ---
 title: Talk live
 area: cards
-summary: A spoken conversation with The Machine about a to-do, with OpenAI's voice. It can look things up and suggest, but it never sends anything.
+summary: A spoken conversation with The Machine about a to-do, with OpenAI's voice. It works in the to-do's chat, but it never sends anything.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -9,17 +9,17 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 ---
 ## Start a conversation
 
-In a to-do's chat, tap the wave next to the mic. Allow the microphone if your browser asks. When the bar says **Live**, talk as you would on a call. The Machine answers out loud.
+In a to-do's chat, tap the wave next to the mic. Allow the microphone if your browser asks. When the bar says **Live**, talk as you would on a call. The Machine answers out loud, and you can talk over it to interrupt.
 
-It knows the to-do you're in: its messages and its draft. It can also look up your other to-dos.
+It knows the to-do you're in: its messages, its draft and its chat. It can also look up your other to-dos.
 
 The bar has **Mute** and **End**. A conversation lasts up to 10 minutes. A minute before the end, the timer shows how much is left. Start it again to go on.
 
 ## Nothing is sent from a conversation
 
-The Machine can't send, change or approve anything while you talk. When you ask for something, like "write a reply saying Thursday works", it shows the request above the bar. Tap **Send to chat** to hand it to the chat. What the chat drafts then waits for your **Approve**, as always.
+When you ask for something, like "write a reply saying Thursday works" or "snooze this until Monday", The Machine hands it to the to-do's chat, as if you had typed it. The chat follows its usual rules: it can change the draft or snooze the to-do, but a draft waits for your **Approve**.
 
-Saying "yes" or "send it" does nothing. Only your taps count.
+Saying "yes" or "send it" does nothing. Only your tap on **Approve** sends.
 
 ## A record in the chat
 
