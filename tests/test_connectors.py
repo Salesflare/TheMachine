@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import json
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -143,3 +144,58 @@ class ConnectorSetup(unittest.TestCase):
                 self.assertTrue(isinstance(what, str) and what.strip(), f"{source['name']}: no 'what' line")
                 self.assertLessEqual(len(what), 70, 'one short line, so it fits a tile in two lines')
                 self.assertNotIn('—', what)
+
+
+# Services that offer OAuth (docs/adding-a-source.md, Signing in: OAuth first): a connector for one signs in with it.
+OAUTH_SERVICES = re.compile(r'\b(google|gmail|youtube|microsoft|outlook|office|onedrive|sharepoint|teams|azure|slack|github|'
+                            r'gitlab|bitbucket|notion|hubspot|zoom|calendly|intercom|stripe|salesforce|pipedrive|asana|'
+                            r'linear|atlassian|jira|confluence|trello|dropbox|box|airtable|clickup|monday|figma|miro|'
+                            r'zendesk|freshdesk|xero|quickbooks|shopify|discord|todoist|typeform|webflow|docusign|'
+                            r'mailchimp|spotify|linkedin|twitter|x)\b')
+ASKS_KEY = re.compile(r'\b(token|api[ _-]?key|access[ _-]?key|secret|client[ _-]?(id|secret))\b', re.I)
+# Developer consoles, API explorers and OAuth playgrounds: never somewhere an owner is sent to connect.
+CONSOLE = re.compile(r'console\.cloud\.google\.com|oauthplayground|developers\.google\.com|portal\.azure\.com|entra\.microsoft\.com|'
+                     r'api\.slack\.com/apps|github\.com/settings/(tokens|developers|apps)|marketplace\.zoom\.us/develop|'
+                     r'app\.hubspot\.com/private-apps|power-ups/admin|developer (hub|console|portal)|playground', re.I)
+# Connectors from before this rule, until each signs in with OAuth (remove the entry then). Never add one here:
+# a new connector states its reason in SETUP['no_oauth'] instead.
+OAUTH_PENDING = {'google_meet', 'intercom', 'trello'}
+
+
+class ConnectorSignIn(unittest.TestCase):
+    def test_connectors_for_oauth_services_sign_in_with_oauth(self):
+        for path in sorted(Path(__file__).parent.parent.joinpath('connectors').glob('*.py')):
+            if path.name.startswith('_') or path.stem in OAUTH_PENDING:
+                continue
+            spec = importlib.util.spec_from_file_location('connector_signin_' + path.stem, path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            setup = getattr(module, 'SETUP', None) or {}
+            reason = str(setup.get('no_oauth') or '').strip()
+            if len(reason) >= 20:  # a stated reason, not a placeholder
+                continue
+            with self.subTest(connector=path.stem):
+                name = f"{path.stem} {setup.get('label', '')}".replace('_', ' ').lower()
+                oauth = OAUTH_SERVICES.search(name)
+                offered = setup.get('broker') or setup.get('account_page') or setup.get('account', {}).get('transport') == 'broker'
+                asks = [str(setup.get('secret') or '')] + [' '.join(map(str, q[:2])) for q in setup.get('ask') or []]
+                if oauth and not offered:
+                    self.assertFalse(any(ASKS_KEY.search(text) for text in asks),
+                                     f"connectors/{path.name}: {oauth.group(1)} has OAuth; sign in with it, or say why not in SETUP['no_oauth']")
+                self.assertIsNone(CONSOLE.search(str(setup.get('note') or '')),
+                                  f"connectors/{path.name}: never send the owner to a developer console or playground to connect")
+
+    def test_the_check_catches_a_pasted_token_for_an_oauth_service(self):
+        self.assertTrue(OAUTH_SERVICES.search('google meet google meet'))
+        self.assertTrue(ASKS_KEY.search('Google OAuth access token'))
+        self.assertTrue(CONSOLE.search('Get an access token at https://developers.google.com/oauthplayground/'))
+        self.assertFalse(OAUTH_SERVICES.search('shortcut shortcut'))
+        self.assertFalse(CONSOLE.search('Create a token at https://app.shortcut.com/settings/account/api-tokens'))
+
+    def test_the_reason_is_for_reviewers_not_a_string_to_translate(self):
+        import ast
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
+        import i18n_extract
+        node = ast.parse("{'label': 'Example service', 'no_oauth': 'Example has no OAuth, only personal tokens.'}").body[0].value
+        self.assertEqual(i18n_extract._const_strings(node), ['Example service'])
