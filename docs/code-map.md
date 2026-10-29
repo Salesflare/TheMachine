@@ -19,11 +19,11 @@ writes it; other modules call the owner's functions.
 | message sealing | `message_seal`, `message_keyring`, `network_crypto` | `event_search` |
 | graph and CRM | `graph`, `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures` | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*` |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
-| do it and preparation | `next_actions`, `preparation_state`, `agent_jobs`, `agent_remote`, `calendar_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
+| do it and preparation | `next_actions`, `preparation_state`, `agent_jobs`, `agent_remote`, `calendar_writes`, `calendar_app`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
 | reviews and learning | `learning_loop`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain` | `learning_changes`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
 | chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_files`, `talk_lines`, `voice_prefs` |
 | fleet and network | `fleet`, `fleet_requests`, `fleet_trust`, `shared_graph`, `shared_connectors`, `network`, `friends`, `family`, `contact_share`, `discovery`, `security_levels` | `fleet_*`, `network_request_nodes` (fleet); `share_*`, `team_*` (shared_graph); `network_*` (network, discovery); `contact_*`; `security_prefs` |
-| skills, support | `skills`, `support`, `bug_queue`, `error_feed`, `help_topics` | `skills`, `skill_hints`, `error_feed*`, `help_topics` |
+| skills, support | `skills`, `skills_app`, `support`, `support_app`, `bug_queue`, `error_feed`, `help_topics` | `skills`, `skill_hints`, `error_feed*`, `help_topics` |
 | notify, Telegram | `notify`, `telegram_mirror`, `telegram_store`, `pacing` | `notify_*`, `pacing_*`; `telegram_store` keeps its own database (`chats`, `messages`, `outbox`, ...) |
 | setup and upkeep | `onboarding`, `installer`, `cli`, `service`, `portable`, `moving`, `work_removal`, `retention`, `rollout_health` | `retention_runs`, `sync_daily` |
 | shared helpers | `i18n`, `locale_prefs`, `activity`, `authorship`, `model_budget`, `google_api`, `ms_graph`, `slack_api`, `mail_grants`, `mail_attachments` | `activity_seen` |
@@ -39,9 +39,11 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   the code it calls in its domain's module when there is one. Either way, add the name to the right `*_ACTIONS` set in
   `assistant.py`, one name per line, sorted. Those sets are the security boundary and stay together in `assistant.py`;
   a handler still checks `owner_dashboard` itself where its branch did.
-- **App methods of a domain** (workers, reads, what its actions call): in its mixin when it has one. The mixins today:
-  `support_app.py` (`SupportApp`: Help and Report a bug) and `calendar_app.py` (`CalendarApp`: the Calendar's
-  actions). A mixin imports what it needs like any module, never `assistant`, and only `assistant.py` imports it.
+- **App methods of a domain** (workers, reads, what its actions call): in its mixin when it has one. A mixin imports
+  what it needs like any module, never `assistant`, and only `assistant.py` imports it. The mixins today:
+  - `support_app.py` (`SupportApp`): Help and Report a bug.
+  - `calendar_app.py` (`CalendarApp`): the Calendar's actions.
+  - `skills_app.py` (`SkillsApp`): the skill actions and the skills kept here.
 - **A new route:** `Handler.do_GET` or `do_POST` inside `App.serve`. JSON reads go through `App` methods; owner-only and
   CSP headers stay as the neighboring routes have them (`tests/test_owner_boundary.py`).
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in

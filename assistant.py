@@ -100,6 +100,7 @@ import portable
 import service
 import dashboard_parts
 from calendar_app import CalendarApp
+from skills_app import SkillsApp
 from support_app import SupportApp
 
 ROOT = Path(__file__).resolve().parent
@@ -13486,7 +13487,7 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp)
 
 
 class App(*APP_MIXINS):
@@ -14421,8 +14422,6 @@ class App(*APP_MIXINS):
             proposal_id = self.store.tool_approval_proposal(args['id'], args['title'], args['detail'])
             root = 'https://' + host + self.config.get('dashboard_path', '/')
             return {'id': proposal_id, 'url': root.rstrip('/') + '/approval?id=' + proposal_id}
-        if name in SKILL_ACTIONS or name in ('skill_propose', 'skill_import_report'):
-            return self.skill_action(name, args)
         if name in GBRAIN_ACTIONS:
             if not owner_dashboard:
                 raise ValueError('Only the owner connects GBrain, on the dashboard (Connections)')
@@ -16128,60 +16127,6 @@ class App(*APP_MIXINS):
             return {'ask_meetings': self.fleet.meetings_on()}
         raise ValueError('Unknown Fleet action')
 
-    def skill_action(self, name, args):
-        keeper = self.skills
-        if name == 'skill_propose':  # from the agent: waits for the owner's Approve
-            return keeper.propose(args.get('name'), args.get('description'), args.get('body'), args.get('why') or '', args.get('update'),
-                                  args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'))
-        if name == 'skill_save':  # id: an existing skill; body may be a whole pasted SKILL.md
-            return keeper.save(str(args.get('id') or ''), args.get('name') or '', args.get('description') or '', args.get('body') or '')
-        if name == 'skill_get':
-            return keeper.get(str(args.get('id') or ''))
-        if name == 'skill_example':
-            return keeper.example(str(args.get('key') or 'customer-inquiries'))
-        if name == 'skill_toggle':
-            return keeper.toggle(str(args.get('id') or ''), bool(args.get('on')))
-        if name == 'skill_delete':
-            return keeper.delete(str(args.get('id') or ''))
-        if name == 'skill_share':  # to: member ids, or none for everyone in that Fleet
-            to = args.get('to')
-            return keeper.share(str(args.get('id') or ''), str(args.get('fleet') or ''), to if isinstance(to, list) else None, str(args.get('note') or ''))
-        if name == 'skill_decide':
-            return keeper.decide(str(args.get('id') or ''), str(args.get('choice') or ''), str(args.get('reviewed') or '')[:64] or None)
-        if name == 'skill_installed':  # refresh: read OpenClaw's list again now
-            return keeper.installed(args.get('refresh') is True)
-        if name == 'skill_installed_get':
-            return keeper.installed_get(str(args.get('name') or ''))
-        if name == 'skill_installed_toggle':
-            return keeper.installed_toggle(str(args.get('name') or ''), args.get('on') is True)
-        if name == 'skill_hub_search':
-            return keeper.hub_search(str(args.get('query') or ''))
-        if name == 'skill_hub_get':
-            return keeper.hub_get(str(args.get('ref') or ''))
-        if name == 'skill_hub_install':  # exactly the release the owner read: its version and its SKILL.md's sha
-            return keeper.hub_install(str(args.get('ref') or ''), str(args.get('version') or ''), str(args.get('sha') or ''))
-        if name == 'skill_hint_dismiss':
-            return keeper.hint_dismiss(str(args.get('id') or ''))
-        if name == 'skill_import_find':  # with token and sites: look again in those accounts, after signing in
-            return keeper.import_find(str(args.get('token') or '') or None, args.get('sites'))
-        if name == 'skill_import_signin':
-            return self.skills_signin(str(args.get('site') or ''))
-        if name == 'skill_import_upload':  # from: claude or chatgpt; data: {name, zip} or {name, files: [{path, data}]}, base64
-            return keeper.import_upload(str(args.get('from') or ''), args.get('data'))
-        if name == 'skill_import_paste':
-            return keeper.import_paste(str(args.get('from') or ''), args.get('text'))
-        if name == 'skill_import_status':
-            return keeper.import_status(str(args.get('token') or ''))
-        if name == 'skill_import_read':
-            return keeper.import_read(str(args.get('token') or ''), str(args.get('key') or ''))
-        if name == 'skill_import_run':
-            return keeper.import_run(str(args.get('token') or ''), args.get('keys'), args.get('replace') is True)
-        if name == 'skill_import_install':  # exactly what the owner read: its files' hash
-            return keeper.import_install(str(args.get('token') or ''), str(args.get('key') or ''), str(args.get('sha') or ''))
-        if name == 'skill_import_report':  # from the Find my skills turn only
-            return self.skills_found(args)
-        raise ValueError('Unknown skill action')
-
     def skills_find_start(self, token, items, sites=None, more=False):
         """Find my skills on the service: reads the owner's own skills from claude.ai and chatgpt.com (`sites`: only
         those) in the Machine's own browser, then a turn judges which listed skills would help with this Machine's
@@ -16537,17 +16482,6 @@ class App(*APP_MIXINS):
             row=db.execute("SELECT j.*,e.operation,e.receipt FROM merge_effects e JOIN action_jobs j ON j.id=e.action_id WHERE e.status='pending' LIMIT 1").fetchone()
         if row:
             job=dict(row);self.merge_effect(job,json.loads(job['payload']),json.loads(job['receipt']),job['operation'],next_actions.MergeTransport(self.config,restart_self))
-
-    def own_skills(self):
-        """The owner's own skills (made here, approved or imported), which notes may go into; never a teammate's."""
-        return [s for s in self.skills_on_hand() if s['origin'] != 'shared']
-
-    def skills_on_hand(self):
-        """Every skill The Machine keeps here (on or off), a teammate's included: what a new one is checked against."""
-        with self.store.connect() as db:
-            if not db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone():
-                return []
-            return [dict(r) for r in db.execute("SELECT id,name,slug,description,origin,body,sha FROM skills WHERE status IN ('on','off') ORDER BY name")]
 
     def skills_from_notes_prompt(self):
         """The condense pass's line on turning notes into a skill: the skills here first, by name and what each is for,
@@ -19195,14 +19129,6 @@ class App(*APP_MIXINS):
             self.skills_find_done(run, 'ok')
             return False
         return {'accounts': accounts, 'items': items[:150]}
-
-    def skills_find_done(self, run, status):
-        """The Find my skills turn ended: the list says so, and its browser lease is let go if it still holds it."""
-        try:
-            self.skills.importer.finished(json.loads(run['evidence'])['token'], status)
-        except (ValueError, KeyError, TypeError):
-            pass
-        self.skills_lease_release()
 
     def skills_lease_release(self):
         try:
