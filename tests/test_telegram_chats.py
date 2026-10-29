@@ -721,6 +721,64 @@ class Setup(unittest.TestCase):
         self.assertIn('Sent again. Code sent by SMS.', ui.said)
         self.assertEqual([json.loads(w) for w in written], [{'resend': True}, {'code': '12345'}])
 
+    def test_the_qr_login_shows_how_to_scan_once_and_names_the_owner(self):
+        import onboarding
+        script = [{'event': 'qr', 'matrix': ['10', '01']}, {'event': 'qr', 'matrix': ['11', '00']}, {'event': 'connected', 'identity': 'x', 'name': 'Ada Lovelace'}]
+
+        class Process:
+            def __init__(self, *a, **kw):
+                self.stdout = io.StringIO(''.join(json.dumps(e) + '\n' for e in script))
+                self.stdin = types.SimpleNamespace(write=lambda line: None, flush=lambda: None)
+
+            def poll(self):
+                return 0
+
+            def wait(self, *a):
+                return 0
+
+        class Terminal:
+            web, said = False, []
+
+            def choose(self, prompt, options):
+                return 'qr'
+
+            def say(self, line):
+                self.said.append(line)
+
+        class Web(Terminal):
+            web, said, codes = True, [], []
+
+            def show_code(self, code):
+                self.codes.append(code)
+        for ui in (Terminal(), Web()):
+            with tempfile.TemporaryDirectory() as home, patch.object(onboarding.subprocess, 'Popen', Process), \
+                    patch.object(onboarding.service, 'available', return_value=False):
+                state = onboarding.telegram_login({}, {**ACCOUNT, 'store': str(Path(home) / 'tg')}, ui)
+            self.assertEqual(state['name'], 'Ada Lovelace')
+            told = [line for line in ui.said if 'Link Desktop Device' in line]
+            self.assertEqual(len(told), 0 if ui.web else 1)  # the dashboard shows it with the code, and drops it with the code
+        self.assertEqual(len([c for c in Web.codes if c]), 2)
+
+    def test_the_account_and_its_mirror_have_plain_names(self):
+        import onboarding
+        account = onboarding.new_account({'accounts': [{'id': 'acme-gmail', 'service': 'gmail', 'boundary': 'work:Acme'}]}, 'telegram')
+        self.assertEqual(account['id'], 'personal-telegram')
+        self.assertEqual(onboarding.telegram_unit(account), 'the-machine-personal-telegram.service')
+        with tempfile.TemporaryDirectory() as home:
+            said = []
+            ui = types.SimpleNamespace(say=said.append, web=True)
+            store = Path(home) / 'tg'
+            account = {**ACCOUNT, 'store': str(store)}
+            with patch.object(onboarding, 'telegram_app'), patch.object(onboarding, 'telegram_base', return_value=Path(home)), \
+                    patch('telegram_release.install'), patch.object(onboarding, 'telegram_state', return_value={}), \
+                    patch.object(onboarding, 'telegram_login', return_value={'identity': 'x', 'name': 'Ada Lovelace'}), \
+                    patch.object(onboarding, 'telegram_follow', return_value=True):
+                onboarding.step_telegram({}, account, ui)
+            self.assertEqual(said, ['  Connected as Ada Lovelace. Reading your chats now.'])
+            self.assertEqual(account['display_name'], 'Ada’s Telegram')
+            self.assertIn('--days', onboarding.telegram_command({'bootstrap_days': 90}, account, 'follow'))
+            self.assertEqual(onboarding.telegram_command({'bootstrap_days': 90}, account, 'follow')[-2], '30')
+
     def test_a_terminal_qr_code(self):
         import onboarding
         self.assertEqual(onboarding.telegram_qr_text(['10', '01', '11']), '▀▄\n▀▀')
