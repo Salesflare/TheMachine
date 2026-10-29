@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // An open dashboard never reloads under someone using it. A new release (the server's page differs from this one)
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // field or a dialog is open; meanwhile an "Update ready" pill loads it at a press. A restart of the Machine alone (same
 // page) only reconnects. A data refresh keeps the typed text, the focus and the place on the page. A notification's
 // link opens in the page without reloading it.
-const raw=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const raw=await dashboardPage();
 const now=new Date().toISOString(),id='a1a1a1a1a1a1a1a1';
 let served='v1',current='v1',staleOnce=null,body='Robin asked for the numbers.',down=false;
 const cards=()=>[{id,title:'Reply to Robin about the plan',body,status:'pending',scope:'work',created_at:now,event_ids:[1]},

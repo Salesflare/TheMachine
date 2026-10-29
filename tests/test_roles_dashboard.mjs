@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Who's who: a review's roles with the line they came from, ✓ to confirm, Edit to change; relations and organization roles;
 // open cards ranked by who they're about.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const made=new Date(Date.now()-3600e3).toISOString(),older=new Date(Date.now()-7200e3).toISOString();
 const suggestions=[{id:'aaaaaaaaaaaaaaaa',title:'Newsletter tweak',body:'Small thing.',status:'pending',event_ids:[1],scope:'work',created_at:made,weight:0.2},
  {id:'bbbbbbbbbbbbbbbb',title:'Answer your cofounder',body:'About the board deck.',status:'pending',event_ids:[2],scope:'work',created_at:older,weight:3.4}];

@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Feedback, What I've learned, Recent changes (learning_loop.py): what the learning loop changed, why, with Undo; an
 // undone one stays, marked. All mocked; SHOTS=dir saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const t=d=>`2026-10-${String(d).padStart(2,'0')}T09:00:00+00:00`;
 let changes,posts;
 const reset=()=>{posts=[];changes=[

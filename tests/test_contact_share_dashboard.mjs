@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Share a contact (contact_share.py): ⋯, Share contact… on a person's page opens a dialog to pick one person and the
 // fields that go. A Personal contact keeps Preview off until "Share it anyway" is ticked. Preview shows the exact card,
 // and Send carries that preview's digest and only the picked fields. Contacts shared with the owner wait at the top of
 // People with Add and Dismiss. Nothing here reaches a real Machine: the server below is a fixture.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const person={id:'email:sam@client.example',kind:'person',name:'Sam Lee',strength:2,last_at:new Date().toISOString(),signals:4,ids:['sam@client.example'],
  side:'personal',side_by:'owner',edited:[],emails:[{value:'sam@client.example',by:'messages'}],phones:[{value:'+15550100',by:'owner'}],profile:{title:'Founder'},
  links:[],recent:[],around:[],open:{},can_share:true};

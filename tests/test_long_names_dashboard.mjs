@@ -3,10 +3,11 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A very long address in the People lists is cut off with an ellipsis instead of widening the page.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const long='someone.with.a.long.name@support-0123456789abcdef0123.helpdesk-mail.example';
 const today=new Date().toISOString().slice(0,10);
 const person={id:'email:'+long,kind:'person',name:long,strength:1,closeness:'regular',last_at:today,signals:2,ids:[long]};

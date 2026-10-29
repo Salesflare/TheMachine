@@ -10,6 +10,7 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import dashboard_parts
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('talk_assistant', ROOT / 'assistant.py')
@@ -763,7 +764,7 @@ class Sealed(unittest.TestCase):
 
 class Dashboard(unittest.TestCase):
     def test_asking_the_chat_never_sends(self):
-        html = (ROOT / 'dashboard.html').read_text()
+        html = dashboard_parts.assemble(ROOT)
         self.assertIn('${micBtn()}${talkBtn()}', html)
         # What the voice asks goes to the chat the way a typed message does: a decision 'other', never a send or Approve
         start, end = html.index('async function talkAsk('), html.index("document.addEventListener('click',async e=>{const b=e.target.closest('[data-voice-undo]')")

@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A Standard Work Fleet: team learnings in its pane (label, where from, Remove for everyone, text never markup), and on
 // Sharing the asks that follow the Team Graph with only Always and Never. SHOTS=<folder> also saves screenshots.
-const dashboard=await readFile(process.env.DASHBOARD||new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage(process.env.DASHBOARD);
 const FL='fl_'+'a'.repeat(16),FP='b'.repeat(32);
 const rules={relationships:{rule:'always',details:true},meeting:{rule:'always',details:true},handling:{rule:'always',details:false},
  brief:{rule:'always',details:false},anything:{rule:'ask',details:false}};

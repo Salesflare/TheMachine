@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A meeting opens in the Calendar's own details wherever it is: a row on a person's timeline, a result in Events, a
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // "Original" with a lowercase "calendar" heading and a list of addresses; the invite itself is one tap away under
 // Original invite. A timeline row says when the meeting has notes or a transcript. Nothing is wider than the screen.
 // MEETING_OPEN_SHOT=<dir> writes the timeline and the opened meeting at 1440x900 and 390x844, light and dark.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const now=new Date();now.setHours(12,0,0,0);const daysAgo=d=>new Date(now-d*864e5).toISOString();
 const board={id:41,account_id:'work',title:'Board meeting Q3',start:daysAgo(1),end:new Date(Date.parse(daysAgo(1))+2*36e5).toISOString(),all_day:false,location:'HQ',rooms:['Falconheavy room'],guests:3,

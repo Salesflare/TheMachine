@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {dashboardPage} from './dashboard-page.mjs';
 // The Details toggle in a card's originals only shows when it has something: headers, or a signal's technical part.
-const html=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const html=await dashboardPage();
 const block=html.slice(html.indexOf('const KIND_LABEL='),html.indexOf('async function fillMessage('));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`),sender=s=>s,safeURL=()=>true,fileSize=n=>n+' B',t=s=>s;
 const fmt=html.slice(html.indexOf("let DL='en-US'"),html.indexOf('\n',html.indexOf('const fmtDHM=')));  // dates and times (locale_prefs.py)

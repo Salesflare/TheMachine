@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections, + Add, one source: one short form like the account's setup page (onboarding.web_form), not a question at
 // a time with "work:Main" typed in. Work with its company or Personal as two choices, a key as a password field, then
 // Connect. LinkedIn waits for its sign-in on the Machine and opens it; GitHub and WhatsApp show a code to enter.
 // SHOTS=<folder> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 let calls=[],run={};
 const RUNS={
  linkedin:{session:'s1',state:'running',label:'LinkedIn',lines:['Checking LinkedIn in the Machine’s browser'],signin:'linkedin'},

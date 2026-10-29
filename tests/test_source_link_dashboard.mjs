@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The source link under a card on a phone: when it wraps to two lines the mail icon and the arrow both sit on the
 // first line, the arrow is never underlined, and a tap leaves no hover background or underline behind.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=[{id:'w1',title:'Reply about the venue',body:'They asked about Friday.',status:'pending',scope:'work',created_at:now,event_ids:[1,2],source_line:'WhatsApp from Alex Example · Thu 22 Oct (+12 more)'},
  {id:'z1',title:'Send the call notes',body:'Notes.',status:'pending',scope:'work',created_at:now,event_ids:[3],source_line:'Zoom meeting · Thu 22 Oct'}];

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Boards the owner makes: a review's suggestion on Projects ("Start a board for Hiring?") with Save, Edit and Not now,
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // which projects belong, projects added and taken off) for a new board, a suggestion and a board's ⋯ menu; a removed
 // stage says where its projects go; Delete asks once more and keeps the projects. On a phone the editor is a sheet.
 // Up to three suggestions show at once, each saying who sees the board (Only you or Team); the editor sets it too.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const stages=[{name:'Contacted'},{name:'Agreed'},{name:'Live'},{name:'Stalled or declined',side:true}];
 const tile=(i,name,stage)=>({id:'project:'+i,name,stage,reason:'they asked',by:'review',at:day(2),event_id:100+i,next:'Wait',first:true,days:2,no_reply_days:0,org:null});

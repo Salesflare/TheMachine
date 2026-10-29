@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A card whose run stopped after the owner asked for a change (status instructions, preparation blocked): the card's chip
 // and the chat's status line say the same thing, never a stale "Preparing" in the chat. A run that named no questions asks
 // nothing: Stuck, Try again, no Answer. The owner's own note is "Your note", never "Asked". In the chat the email the owner
 // asked to change steps back as an earlier draft; the WhatsApp draft that replaced it is the one to review and send.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),t0=Date.now()-600000;
 const note={choice:'other',feedback:'they don’t know about this yet, and I talk to them on WhatsApp',created_at:now};
 const cards=[

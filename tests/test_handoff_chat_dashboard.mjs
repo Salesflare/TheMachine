@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A handoff in the card chat. Handed off: a line with its time, the card's buttons under it (not above it on the
 // suggestion), and the status says no answer yet. Their answer: a line of its own. Didn't go out: said in the chat
 // and on the card, with Try again, which opens the handoff form again. Fakes only; no network beyond this fake server.
 // SHOT_DIR=... saves screenshots (390 and 1440, dark).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const hour=3600e3,t0=Date.now()-3*hour,iso=ms=>new Date(ms).toISOString();
 const BODY='Triage confirmed a cross-team exposure of user names and tag names. The account issue is tracked, but these two paths are not. I can hand this to Pat’s Machine to get the missing issue and fixes coordinated **today**.';
 const card=(id,title,extra)=>({id,title,body:BODY,status:'pending',event_ids:[1],scope:'work',created_at:iso(t0),next_actions:[],urgent:true,...extra});

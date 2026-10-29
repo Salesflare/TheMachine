@@ -3,13 +3,14 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Feedback, Share learnings with The Machine team (team_learnings.py): a quiet card; Review shows exactly what would be
 // sent, item by item, to edit or remove; an error log only when ticked; Send posts only the kept items as they read;
 // Not now and Never ask; the Settings switches (offer, and voting on other Machines' tips: On, Ask first, Off, with Ask
 // first's votes waiting in one box on Feedback). All mocked, nothing leaves the test. SHOTS=dir saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const C1={given:'a first reply to a customer who has not heard of the owner yet',when:'the owner opens the draft',then:'the draft says who the owner is before the ask'};
 const C2={given:'a cold intro to a new supplier',when:'the owner asks for a draft in chat',then:'it opens with who the owner is and why they write'};
 const C3={given:'the graph rebuild fails on a busy day',when:'the owner opens the to-do for it',then:'it says what failed and when it tries again'};

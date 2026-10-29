@@ -3,10 +3,11 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A person in the Graph tab: their role (with Edit), what's open between you, and signals only probably in a project.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const soon=new Date(Date.now()+2*864e5).toISOString().slice(0,10);
 let person={id:'email:ann@client.example',kind:'person',name:'Ann Example',strength:2.4,closeness:'regular',last_at:soon,signals:5,ids:['ann@client.example'],
  usual_gap_days:6,quiet:false,role:'customer',role_by:'review',org:'org:named:globex',org_name:'Globex',org_by:'review',org_via:'LinkedIn headline',

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Automated follow-ups on the dashboard (follow_ups.py): a board's ready follow-ups are ONE to-do ("3 follow-ups ready
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // header says "Follow-ups on, next …" (or "Follow-ups off"), a stage with no-reply projects "Follow them up", a tile "Next follow-up: …", the project page what went out. The settings panel
 // for a board and for a project posts follow_up_save. Nothing is wider than the screen. FOLLOW_UPS_SHOT=<dir> writes
 // screenshots at 390 and 1440, light and dark.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()+n*864e5).toISOString();
 const draft=(i,body,extra={})=>({kind:'email',label:'Send',account_id:'work',from:'owner@example.com',to:[`person${i}@client.example`],subject:'Re: Alpha',body,revision:'r'+i,...extra});
 const card=(i,project,body,extra={})=>({id:('f'+i).padEnd(16,'0'),title:'Follow up with '+project,body:'No reply for 4 days. Follow-up 1 of at most 3.',status:'prepared',early:1,scope:'work',event_ids:[i],

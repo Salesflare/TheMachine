@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The model and thinking pickers (chat_model.py) under a to-do chat's message box, in Help and in Settings, Model: each
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Enter picks, Escape closes, and the focus goes back to the trigger. A pick saves what it saved before
 // (chat_model_set, chat_model_default; Help keeps it for its own chat). SHOT_DIR=<folder> saves the open menus at
 // 1440x900 and 390x844, light and dark.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),id='c2c2c2c2c2c2c2c2';
 const cards=[{id,title:'Send the quote for the shop order',body:'The order is ready to quote.',status:'prepared',scope:'personal',created_at:now,event_ids:[1]}];
 const LEVELS=['low','medium','high','xhigh','max','ultra'];

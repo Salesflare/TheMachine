@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet tab, Friends: a request waiting shows Accept, Decline and Block; adding goes by exact username; a friend's
 // busy times show as times only; the rules for friends are the Fleets' component: one rule per kind for all friends,
 // an exception per friend, examples once (not per friend). Apart from the Work Fleet, and never scrolls sideways (390px, 1280px).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),FR='fr_'+'b'.repeat(16);
 const rules=()=>({relationships:{rule:'ask',details:false},meeting:{rule:'ask',details:false},intro:{rule:'ask',details:false},availability:{rule:'ask',details:false}});
 const view={on:true,kinds:{relationships:'who knows someone',meeting:'meeting context',intro:'an intro',availability:'when you are busy'},ask_meetings:false,

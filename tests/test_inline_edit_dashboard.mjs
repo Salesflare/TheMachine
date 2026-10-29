@@ -3,13 +3,14 @@ import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The inline edit field on a project's page (Rename) has the compact style (people and organizations have one Edit form,
 // see test_person_page_dashboard.mjs and test_org_page_dashboard.mjs):
 // a single-line field as tall as its Save button (about 40 to 44px), normal padding, one thin focus ring, a Save
 // button that never wraps, and normal room before the next section. Checked at 360 and 390. SHOT_DIR=… saves shots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=new Date(Date.now()-864e5).toISOString();
 const kai={id:'email:kai@umbrella.example',kind:'person',name:'Kai Novak',strength:2.1,closeness:'regular',last_at:day,signals:6,ids:['kai@umbrella.example'],usual_gap_days:7,
  quiet:false,role:'supplier',role_by:'owner',org:null,org_name:null,org_by:null,profile:null,recent:[],around:[],open:{},links:[{id:'email:sam@umbrella.example',kind:'person',name:'Sam Reed'},{id:'project:p1',kind:'project',name:'Spring launch'}]};

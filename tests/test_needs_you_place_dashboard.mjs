@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // "Needs you" shows everything on Suggestions, and elsewhere only what belongs to that tab: a signed-out source on
 // Connections, waiting skills on Settings › Skills, nothing on other tabs. Settings › General says in plain words that
 // more settings live on the Machine; the terminal commands on Connections sit behind a closed disclosure. Seven Fleet
 // tabs fit a desktop column.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const ok=new Date().toISOString(),later=new Date(Date.now()+6e5).toISOString();
 const linkedin={id:'work-linkedin',service:'linkedin',boundary:'work',display_name:'Work LinkedIn',error:'linkedin_signed_out',error_at:ok,retry_at:later,signed_out:true};
 const skills={skills:[{id:'sk_in',name:'Answer pricing questions',description:'When a customer asks what something costs',status:'incoming',origin:'shared',version:1,author:'Pat',note:'',

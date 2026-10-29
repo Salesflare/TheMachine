@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // X and LinkedIn read only in set hours (read_window from the server). Outside them a source says when it reads again,
 // never "Waiting for a fresh sync", and isn't counted; once its hours open, staleness counts from the opening. A busy
 // browser left over from the last read rests too; signed out still needs the owner. SHOTS=<dir> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const hour=3600e3,ago=h=>new Date(Date.now()-h*hour).toISOString(),soon=new Date(Date.now()+2*hour);
 soon.setMinutes(0,0,0);const again=soon.toISOString(),clock=String(soon.getHours()).padStart(2,'0')+':00';
 const base={boundary:'work',poll_seconds:3600,last_success:ago(9)};

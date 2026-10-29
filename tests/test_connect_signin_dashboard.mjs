@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections, + Add on a self-hosted Machine: Intercom signs in through The Machine's own app once this Machine is
@@ -9,7 +10,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // Intercom and Trello sign in only: no token to paste. Google, Microsoft and Zoom the same way, with their own app folded away (Use your
 // own app). One the control plane has no app for (Stripe here) shows the other way at once, and one it refuses anyway
 // opens no tab: it says so and opens that other way. SHOTS=<folder> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 let paired=true,state='started',calls=[],refuse=false;
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');

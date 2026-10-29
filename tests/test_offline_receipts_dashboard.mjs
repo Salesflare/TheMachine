@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
-const raw=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const raw=await dashboardPage();
 const server=createServer((req,res)=>{const path=new URL(req.url,'http://fixture.invalid').pathname;
  if(path==='/'){res.setHeader('Content-Type','text/html');res.end(raw.replace('__CACHE_SCOPE__','a'.repeat(32)));return}
  res.setHeader('Content-Type','application/json');res.end(path==='/api/status'?JSON.stringify({suggestions:[],connectors:[],decisions:[],analyses:[],deliveries:[],review_runs:[],promises:[],review_health:{},fleet:{on:false}}):path==='/api/events'?'[]':'{}')});

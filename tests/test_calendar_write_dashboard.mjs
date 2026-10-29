@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Changing a calendar from The Machine: New event (with a calendar picker) on the owner's own calendars and shared ones
@@ -13,7 +14,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // an invite and the list of who is right above it. No invite is sent: the fixture only records the request.
 // On a phone New event is a round + on the Today row, and the sticky header has an edge. Nothing is wider than the screen at 360. SHOT_DIR=<folder> saves screenshots at 1440, 390 and 360, light and dark.
 process.env.TZ='Europe/Brussels';
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const at=(days,h,m=0)=>{const d=new Date();d.setDate(d.getDate()+days);d.setHours(h,m,0,0);return d};
 const pad=n=>String(n).padStart(2,'0'),day=n=>{const d=at(n,12);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const iso=d=>d.toISOString(),now=iso(new Date());

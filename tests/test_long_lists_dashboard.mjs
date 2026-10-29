@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 // Long lists load a page at a time. The sidebar and the drawer: Done opens on its 10 latest, Show more adds 20 (asking
 // the Machine for older ones when needed), folding starts over; other groups show 8 first. The main pane: Done loads 30
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // counts that filter, a quiet order menu, each pair one list paged from the Machine, kept per page; back from a person
 // keeps the pages and the scroll. Search: typing waits a moment, an empty box is the list again at once, and a late
 // answer to an older search never shows.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const at=n=>new Date(Date.UTC(2026,9,20,12,0,0)-n*60000).toISOString();
 const hex=(p,n)=>p+n.toString(16).padStart(15,'0');
 const open=Array.from({length:12},(_,n)=>({id:hex('a',n),title:'Ready card '+n,body:'Text.',status:'prepared',scope:'work',created_at:at(n),event_ids:[n+1]}));

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Offline and on a spotty link (a plane's wifi): the app opens with the last to-dos, chat and Calendar from the device,
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // message) wait on the device with Cancel and go by themselves, in order and once each, when the Machine answers
 // again (also through 5xx hiccups), a typed chat message survives a reload, and Send to other people never waits:
 // it says it is offline. docs/architecture.md, "On the device".
-const raw=await readFile(new URL('../dashboard.html',import.meta.url),'utf8'),sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
+const raw=await dashboardPage(),sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
 // The brand files as assistant.py serves them (BRAND_ASSETS), so offline must look the same as online
 const py=await readFile(new URL('../assistant.py',import.meta.url),'utf8');
 const BRAND=Object.fromEntries([...py.slice(py.indexOf('BRAND_ASSETS = {'),py.indexOf('}',py.indexOf('BRAND_ASSETS = {'))).matchAll(/'\/brand\/([\w.-]+)': ROOT \/ '([\w./-]+)'/g)].map(m=>[m[1],m[2]]));

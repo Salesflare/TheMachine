@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Shared connections on the Fleet tab (shared_connectors.py): an admin shares Intercom with the members they tick, says OK
 // to a later joiner, confirms an admin, replaces the token after someone left; a member's Connections card says who
 // shares it, with no Reconnect or Disconnect. Never scrolls sideways (390px and 1440px).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16);
 const base=()=>({on:true,kinds:{},kind_rules:{},no_details:[],scoped:[],scopes:{},
  fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',asks:[],people:[{member_id:'m',name:'Sam Doe',role:'owner',me:true,email:'sam@acme.example'},

@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Graph › Projects as a board: Board is the default view, List one click away and remembered on this device. Chips switch
 // boards, a long column shows "Show N more", a tile opens its project page, a drag or the ⋯ menu moves it (graph_stage)
 // and nothing else is posted. On a phone one stage at a time with stage tabs. Nothing is wider than the screen.
 // An Only-you board says so in its header; a project page sets who sees that project. BOARDS_SHOT=<dir> also writes screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const stages=[{name:'Contacted',hint:'Asked, no yes yet'},{name:'Agreed',hint:'They said yes'},{name:'In review'},{name:'Partly live'},{name:'Live'},{name:'Stalled or declined',side:true}];
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const proj=(i,name,stage,extra={})=>({id:'project:'+i,name,stage,reason:'they asked for a listing',by:'review',at:day(2),event_id:100+i,next:'Wait for their reply',first:stage==='Contacted',days:2,no_reply_days:0,org:{name,logo:null},...extra});

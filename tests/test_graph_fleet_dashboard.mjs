@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet members in the Graph: a marker on their row and detail ("Has a Machine · Work Fleet"), their Fleet name with
 // Keep, See in Fleet and Ask your Fleet; the Fleet tab links back to them. No sideways scroll at 390 and 1280.
 // GRAPH_FLEET_SHOTS=<prefix> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),FR='fr_'+'b'.repeat(16),at='2026-10-20T08:00:00+00:00',day=new Date().toISOString().slice(0,10);
 const fleetMark={machine:true,named:true,name:'Kim Lee-Park',in:[{kind:'work',label:'Work Fleet',fleet:FL,fleet_name:'Acme',member_id:'fm_kim'},{kind:'friends',label:'Friend',fleet:FR,fleet_name:'Friends',member_id:'fp_kim'}]};
 let kim={id:'email:kim@acme.example',kind:'person',name:'Kim Lee-Park',name_from_messages:'kim',strength:3.2,closeness:'close',last_at:day,signals:9,ids:['Slack','kim@acme.example'],

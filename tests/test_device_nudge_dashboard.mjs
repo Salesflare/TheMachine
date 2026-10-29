@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // This device: a quiet nudge at the top of Suggestions to install the app (the browser's prompt on Chromium, steps on an
@@ -10,7 +11,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // General, This device has the same controls for good. A page in a frame or without a service worker (the site's demo)
 // shows no nudge and never asks for a permission. The browser's install, permission and push parts are stand-ins here.
 // SHOTS=<folder> saves light and dark screenshots at 390 and 1440.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 let setupHints=[];
 let connectors=[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}];

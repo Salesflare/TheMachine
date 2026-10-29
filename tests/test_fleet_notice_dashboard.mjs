@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The top of Fleet and its Handoffs box, at 390px and 1440px, light and dark:
@@ -10,7 +11,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 //   Show button on the right, with room above the Fleet tabs; plural with two items; the Network off is the same card.
 // - Handoffs have their own box, not the "Who knows someone?" one: open ones first, accepted and done ones quieter with
 //   three shown and a Show more, the time leading two lines of summary, and the whole row opening its card where it is still there.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),hex=n=>String(n).padStart(16,'c'),at=h=>new Date(Date.now()-h*3600e3).toISOString();
 const rules=()=>({relationships:{rule:'ask',details:false},handoff:{rule:'ask',details:false}});
 const ho=(id,name,title,status,answer,h,card)=>({id,fleet:FL,member_id:name[0],name,kind:'handoff',context:'handoff:'+hex(card),status,at:at(h),answered_at:answer?at(h-1):null,

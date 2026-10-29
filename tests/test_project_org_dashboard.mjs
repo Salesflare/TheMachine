@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A project's organization: its page, its board card and its row link to it; the Edit form picks one from the Graph
 // (search as you type) or adds a new one, says when the Machine set it, and only sends org when the owner changed
 // it; an organization's page lists its projects. At 390 and 1440 nothing is wider than the screen.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const stages=[{name:'Discovery'},{name:'Demo'},{name:'Won'},{name:'Stalled or declined',side:true}];
 const umicore={node_id:'org:umicore.example',name:'Umicore',logo:null,domain:'umicore.example'};

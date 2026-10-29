@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A line of How you write learned from a note on a card: the card's chat says "Saved to How you write: Slack" with Edit,
 // which opens Settings, Writing with that channel's line in view and ready to type in. What I've learned has Edit on
 // each line too. On a phone and a computer, light and dark. All mocked.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),t0=Date.now()-3600000;
 const voices=[{channel:'Email',text:'English: Hey + first name\nShort paragraphs',source:'study',updated_at:now},
  {channel:'Slack',text:'No greeting or sign-off\nSentences often start lowercase, names keep their capitals',source:'assistant',updated_at:now},

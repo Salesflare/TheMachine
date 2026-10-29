@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import zlib from 'node:zlib';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Files on a new to-do (New to-do, chat_files.py): the paperclip (on a phone the file picker, with the camera), a pasted
@@ -11,7 +12,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // uploads, and a refused upload says why. Adding the to-do sends the draft key and the file ids with card_new; closing
 // the form takes the uploads back. The card shows its files, and its chat shows them with the owner's own words.
 // SHOT_DIR=<folder> also saves screenshots; DASHBOARD=<file> runs another dashboard.html (for before shots).
-const dashboard=await readFile(process.env.DASHBOARD||new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage(process.env.DASHBOARD);
 const shotsOnly=!!process.env.DASHBOARD;
 const now=new Date().toISOString(),NEW='ab'.repeat(8);
 const PNG=(()=>{const w=96,h=64,raw=Buffer.alloc((w*3+1)*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++)raw.set([60+x*2,140+y,110-y],y*(w*3+1)+1+x*3);

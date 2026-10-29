@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A usage limit reached (state.model_pause) shows one short line at the top of the dashboard: which limit, when it
 // resets in the viewer's time, and that nothing is lost. No reset known drops that sentence; null hides the line.
 // It fits a phone without a sideways scroll. Reviews waiting for the budget (state.review_pause) say until when, with
 // Review now, which posts the owner's review_now; a usage limit reached goes first.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const posted=[];
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');
  if(url.pathname==='/api/action'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{posted.push(JSON.parse(body));res.setHeader('Content-Type','application/json');res.end('{"asked":true}')});return}

@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings (the gear in the header): Work hours show the saved hours, toggle work days and save through
 // set_work_hours; the device's theme and notifications sit there too. On a phone it fits the screen.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 let hours={days:[1,2,3,4,5],start:'08:00',end:'23:00',morning:'09:00',timezone:'Europe/Amsterdam',digest_at:'08:30',saveable:true};
 const saved=[];
 const server=createServer((req,res)=>{

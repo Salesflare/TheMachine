@@ -3,13 +3,14 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The Shared Graph on the dashboard (shared_graph.py): Mine / Team on People, a quiet "via <name>", a thread's Team or
 // Only you label that changes with one tap, Keep private, the teammates' lines and Ask <name>, and the member prompt on
 // the Fleet tab, a member's ask to stop sharing (Approve) and the owner's own Stop sharing my Work, and a teammate's
 // thread with its attachments (one to open, one too large to share). No sideways scroll at 390 and 1440.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'c'.repeat(16),day=new Date().toISOString().slice(0,10),at=new Date().toISOString();
 const later=new Date(Date.now()+20*3600e3).toISOString();
 // an element screenshot that waits out a re-render of the pane

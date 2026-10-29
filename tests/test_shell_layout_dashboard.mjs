@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The dashboard's shell. On a phone the All clear line wraps and nothing is wider than the screen. On a short computer
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // lights People) and goes out with Settings. A person's page keeps the section's head above its breadcrumb. The week
 // grid's columns line up under its head also with a scrollbar that takes room, and the grid fills the window so only it scrolls. View in browser on a computer shows
 // the Machine's browser in the pane, never a new window.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),day=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString()};
 const person={id:'email:ann@example.test',kind:'person',name:'Ann Example',strength:2,closeness:'close',last_at:now,signals:3,ids:['ann@example.test'],links:[],open:{cards:[]},recent:[]};
 const card=(id,extra)=>({id,title:'Card '+id,body:'Made-up.',status:'pending',scope:'work',created_at:now,event_ids:[],...extra});

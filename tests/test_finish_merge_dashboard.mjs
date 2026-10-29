@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const sid='1234567890abcdef', revision='1234567890ab';
 let kind='finish', finishStatus='needs_input', reply=null;
 const receipt={name:'payment-receipt.pdf',size:21213,sha256:'c'.repeat(64),type:'application/pdf'};

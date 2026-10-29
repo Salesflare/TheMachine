@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Declining a teammate's handoff asks "Why? (optional)" with quick picks, and the note goes with the decline; Cancel
 // keeps Accept and Decline. On the sender's side, the declined card says who declined and why, with Do it myself, Hand
 // to someone else and Mark done. No network beyond this fake server.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),Q='q_'+'1'.repeat(16);
 const view={on:true,kinds:{handoff:'handoffs'},ask_meetings:false,fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',asks:['handoff'],people:[],
  members:[{member_id:'k',name:'Kim',rules:{}}],rules:{},exceptions:{}}],

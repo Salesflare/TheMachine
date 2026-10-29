@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A phone (390x844, touch) scrolled halfway down any main screen stays put while the page updates by itself: a refresh
@@ -10,7 +11,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // browser's own scroll anchoring and without it (Safari on an iPhone has none).
 // Screens: Cards, a card chat, People, Organizations, Projects (board and list), Calendar, Connections, Fleet, Settings.
 process.env.TZ='Europe/Brussels';
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const iso=d=>new Date(d).toISOString(),ago=m=>iso(Date.now()-m*60000),hex=(p,n)=>p+n.toString(16).padStart(15,'0');
 let tick=0;  // each refresh brings something new
 const long='A longer card text, so the list is taller than the screen. '.repeat(4);

@@ -1,5 +1,6 @@
 import json, struct, unittest
 import assistant as a
+import dashboard_parts
 
 
 def png_size(path):
@@ -55,16 +56,16 @@ class HomeScreenApp(unittest.TestCase):
         self.assertEqual(a.dashboard_hosts({'dashboard_host': 'm.ts.net'}), ['m.ts.net'])
 
     def test_dashboard_links_the_manifest(self):
-        self.assertIn('<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">', (a.ROOT / 'dashboard.html').read_text())
+        self.assertIn('<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">', dashboard_parts.assemble(a.ROOT))
 
     def test_something_wrong_goes_to_github_issues_or_the_hosted_support_form(self):
-        page = (a.ROOT / 'dashboard.html').read_text()
+        page = dashboard_parts.assemble(a.ROOT)
         self.assertIn('id="report-problem" class="footer-link" href="https://github.com/Salesflare/TheMachine/issues/new"', page)
         self.assertIn("$('#report-problem').href=new URL('/support',state.manage_url).href", page)
 
     def test_footer_offers_the_source_of_the_running_version(self):
         # AGPL-3.0 section 13: people using the dashboard can get its source.
-        page = (a.ROOT / 'dashboard.html').read_text()
+        page = dashboard_parts.assemble(a.ROOT)
         self.assertIn('id="source-code" class="footer-link" href="https://github.com/Salesflare/TheMachine"', page)
         self.assertIn("$('#source-code').href=state.source_url", page)
 

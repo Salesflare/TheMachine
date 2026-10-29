@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import dashboard_parts
 
 spec = importlib.util.spec_from_file_location('signin_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -452,13 +453,13 @@ class SigninDialogOpens(unittest.TestCase):
 
 class DashboardWiring(unittest.TestCase):
     def test_the_card_and_the_telegram_link_open_the_dialog_for_the_task(self):
-        html = Path(__file__).parent.parent.joinpath('dashboard.html').read_text()
+        html = dashboard_parts.assemble(Path(__file__).parent.parent)
         self.assertIn('#signin-for=', html)
         self.assertIn('data-task="${esc(id)}"', html)
         self.assertIn('suggestion_id:signinTask', html)
 
     def test_the_dialog_opens_the_sign_in_itself_and_never_hangs(self):
-        html = Path(__file__).parent.parent.joinpath('dashboard.html').read_text()
+        html = dashboard_parts.assemble(Path(__file__).parent.parent)
         self.assertIn("signinPost('browser_login_open',{suggestion_id:task})", html)
         self.assertIn('signinWithin(', html)
         self.assertIn('id="signin-frame"', html)
@@ -466,7 +467,7 @@ class DashboardWiring(unittest.TestCase):
         self.assertIn("api/progress?id='+encodeURIComponent(signinTask)", html)
 
     def test_a_waiting_card_shows_it_carried_on_and_closing_the_browser_looks_at_once(self):
-        html = Path(__file__).parent.parent.joinpath('dashboard.html').read_text()
+        html = dashboard_parts.assemble(Path(__file__).parent.parent)
         self.assertIn('setInterval(taskSigninPoll,5000)', html)
         self.assertIn("action:'browser_login_check'", html)
         self.assertIn('signinClosed()', html)

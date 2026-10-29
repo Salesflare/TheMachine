@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Every card leads with one status line under its title: where it stands and what's left to do. A sign that it's
 // handled replaces the result's own line, a result that found it already done shows once, "Ready to approve" only
 // appears when there is something to approve, and a long body folds to a few lines. Another open card named by its
 // title links to it. (A to-do that looks done shows this inside the Look done group: test_look_done_dashboard.mjs.)
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),long='The run checked every source and wrote down what it found in detail. '.repeat(8);
 const hint=reason=>JSON.stringify({reason,event_ids:[9],at:now});
 const cards=[

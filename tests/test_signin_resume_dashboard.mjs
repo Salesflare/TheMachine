@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A to-do waits on a sign-in; the owner signs in in the browser and the service carries the run on by itself
 // (watch_sign_ins). The card shows that within seconds, without a tap. Continue on a card drawn before that is no
 // error (2026-10-27: "Try again is available only for a blocked preparation" as a toast). Closing the Browser pane
 // asks the service to look at once. A card closed meanwhile says so, not as an error. SHOTS=<folder> saves shots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const ID='aaaaaaaaaaaaaaa1';
 const REASON='Example is signed out; sign in on the example login tab in the browser, then tap Continue.';
 let prep='blocked',checks=0,resumeOnCheck=false,closed=false,signedIn=false;const posts=[];

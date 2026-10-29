@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // First-use tips (firstTip): one quiet line under the buttons of the to-do it is about, one at a time. The ready draft's
 // tip first; the first open to-do's names its real buttons (Do it differently or Ask for changes, Not needed), which
 // work like the buttons themselves. Using a button or × closes the tip on the Machine (tip_done); an existing person
 // (first_tips empty) sees none.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();let tips=['change','send'];const posts=[];
 const cards=[{id:'p1',title:'Reply to Sam about pricing',body:'Sam asked for pricing.',status:'pending',scope:'work',created_at:now,event_ids:[1]},
  {id:'p2',title:'Book the venue',body:'Two options.',status:'pending',scope:'work',created_at:now,event_ids:[2]},

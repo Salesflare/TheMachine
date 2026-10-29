@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A card whose result waits on the owner's answer (needs_you, written as a question) leads with Answer: it opens the
 // Change editor under the question, and Send answer saves it as a Change note. Mark done steps back. A question line
 // keeps its "?" (no "?."). A needs line that isn't a question, or one with a draft to send, keeps its usual buttons.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=[
  {id:'q1',title:'Get the quarterly report ready',body:'Filled in every field except the cash-out date.',status:'prepared',scope:'work',created_at:now,event_ids:[1],

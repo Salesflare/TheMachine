@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A preparing card on the browser shows that tab live (right of its steps, below them on a phone; larger on a click,
 // gone when the run is off the browser). Cards on screen read their email ahead, once each. Connections, Add sets a
 // source up right there: its questions one at a time, a key in a password field. SHOTS=<folder> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const icon=(await readFile(new URL('../brand/app-icon-192.png',import.meta.url))).toString('base64');
 const now=new Date().toISOString();
 const card=(id,i,extra={})=>({id,status:'pending',title:'Card '+i,body:'A useful suggestion with enough words to take a few lines on a card. '.repeat(8),created_at:now,source_line:'Source: email from Ann',event_ids:[i],...extra});

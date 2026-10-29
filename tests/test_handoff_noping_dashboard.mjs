@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A handoff waiting on a teammate whose Machine can't notify them (no phone, Telegram or email on there): the sender's
 // card says so under "With Kim", with their first name only, and the Fleet tab's Handoffs box says it on the row. Once
 // their Machine can ping them (no_ping gone) neither line shows. At 390px and 1440px; SHOTS=<dir> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),CARD='c'.repeat(16),at=h=>new Date(Date.now()-h*3600e3).toISOString();
 const card=noPing=>({id:CARD,title:'Confirmed contact owner and tag leaks need engineering follow-up',body:'Asked Kim: can you pick this up today and coordinate the fixes?',
  status:'snoozed',snoozed_until:new Date(Date.now()+2*864e5).toISOString(),scope:'work',created_at:at(30),event_ids:[1],next_actions:[],

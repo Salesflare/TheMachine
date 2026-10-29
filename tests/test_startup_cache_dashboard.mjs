@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Opening the app: until the first real data, a calm outline of the cards (never "All clear", also when the Graph's
@@ -11,7 +12,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // on Sign out, when the session is gone and for another owner. A copy shown while the Machine can't be reached says so
 // ("Offline · updated 10:42"). The page never carries the CSRF token (served without it, so it may go compressed): a
 // change waits for api/session, which has it.
-const raw=await readFile(new URL('../dashboard.html',import.meta.url),'utf8'),sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
+const raw=await dashboardPage(),sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
 const CSRF='c'.repeat(64),S1='a1'.repeat(16),S2='b2'.repeat(16),now=new Date().toISOString();
 let scope=S1,mode='ok',cards=null,holdStatus=null,ver='v1',holdPage=null,pageDown=false;
 const card=(n,title)=>({id:String(n).repeat(16),title,body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:now,event_ids:[n]});

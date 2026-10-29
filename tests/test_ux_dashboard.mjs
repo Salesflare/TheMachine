@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {execFileSync} from 'node:child_process';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick,scopeClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 // Playwright comes with OpenClaw; PLAYWRIGHT_CORE and CHROMIUM_PATH override the defaults.
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 import {forceReplyPayload} from '../openclaw-plugin/change-prompt.ts';
@@ -14,7 +15,7 @@ const sendHead=page=>page.evaluate(()=>[...document.querySelectorAll('#send-head
 const payload=forceReplyPayload('sendMessage',{chat_id:'1000001',text:'Change'},'123','1000001');
 assert.equal(payload.reply_markup.force_reply,true);assert.equal(payload.reply_parameters.message_id,123);
 assert.throws(()=>forceReplyPayload('sendMessage',{chat_id:'another'},'123','1000001'));
-const html=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const html=await dashboardPage();
 const approvalHTML=execFileSync('python3',['-c',"import assistant; print(assistant.approval_document({'title':'Review change','detail':'<script>bad()</script>\\n'+('long command '*200)+'LAST STATEMENT'}))"],{cwd:new URL('..',import.meta.url),encoding:'utf8'});
 const ids=['aaaaaaaaaaaaaaaa','bbbbbbbbbbbbbbbb','cccccccccccccccc','dddddddddddddddd'];
 let suggestions=ids.map((id,i)=>({id,status:['pending','accepted','prepared','snoozed'][i],title:['Decision task','Blocked task','Ready task','Later task'][i],body:i===2?'Actual short result. memory/assistant/261011-result.md':'A useful suggestion.',created_at:new Date().toISOString(),preparation_status:i===1?'blocked':i===2?'done':null,preparation_reason:i===1?'Could not connect':null,result_files:i===2?[{name:'261011-result.md',path:'memory/assistant/261011-result.md'}]:[],original_urls:i===2?['https://example.com/invoice']:[],snoozed_until:i===3?new Date(Date.now()+86400000).toISOString():null}));

@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // - The Salesflare card says what it reads, how far its round of accounts is (stuck after a long while), and has Stop
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // - Relative times follow the dashboard's region, not the browser's language: a French browser still reads "3 hours ago".
 // - Feedback, What you decided: the cards start on the same left edge as the sections above, at both widths.
 // - What's shared, Your connections: another person's calendar read through the owner's sign-in is named for it.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
 const sf={id:'work-crm',service:'salesflare',email:'owner@acme.example',display_name:'CRM',boundary:'work:Acme',last_success:ago(0.05),total:12,signals_24h:2,pending:0,
  salesflare:{stopped:null,synced_until:ago(5),round:{since:ago(170),started:ago(3),accounts:42,done:12,stuck:true,failing:1},slow_accounts:2,no_access:0,keys_url:'https://app.salesflare.com/#/settings/apikeys'}};

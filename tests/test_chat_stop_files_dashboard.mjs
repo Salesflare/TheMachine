@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import zlib from 'node:zlib';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The card chat's composer: Stop takes the place of Send while a reply runs (chat_stop, then the reply so far stays
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // (chat_upload, X-Upload: chat-file), shows in a tray with its preview and a remove button, and goes with the message
 // (decide files). Too big or unknown files say so before anything uploads. The thread shows the files with the message.
 // SHOT_DIR=<folder> also saves screenshots; DASHBOARD=<file> runs another dashboard.html (for before shots).
-const dashboard=await readFile(process.env.DASHBOARD||new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage(process.env.DASHBOARD);
 const shotsOnly=!!process.env.DASHBOARD;
 const now=new Date().toISOString(),t0=Date.now()-60000,ID='c1c1c1c1c1c1c1c1';
 const cards=[{id:ID,title:'Reply to the venue about the dates',body:'They asked for a date.',status:'instructions',scope:'work',created_at:now,event_ids:[1],preparation_status:'running'},

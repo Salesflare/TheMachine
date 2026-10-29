@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Reviews while they happen: a running review sits at the top of Connections with its progress and its own steps
 // (latest visible, earlier ones folded), updates live, and once finished becomes the review's own row (a run that saved
 // its review cleanly is not repeated under Recent runs). The first look is the Suggestions empty state while no cards exist. Nothing is sent anywhere: the fixture server answers everything.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const started=new Date(Date.now()-3*60e3).toISOString();
 let run={run_id:'r1',status:'running',started_at:started,preview:1,auto:1,planned:40,done_count:12,claimed_count:20,account_ids:['gmail'],
  steps:[{title:'Suggesting: Reply to Globex about the renewal',at:started},{title:'Reading 20 emails',at:started}]};

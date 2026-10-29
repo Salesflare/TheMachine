@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Working on a to-do: Ask for changes says what it changes and keeps Review and send in reach; editing an email shows it
 // as it will look (bold, links) and sends the links back as links; who it is about opens their page; one a teammate
 // has can go to someone else; and one that is preparing stays where it was, at a steady height.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[];
 const BODY='Hi Noor,\n\nThe price is **€29** a seat. See [the pricing page](https://example.com/pricing).\n\nAlex';
 const cards=[{id:'r1',title:'Send Noor the pricing',body:'Draft ready.',status:'prepared',scope:'work',created_at:now,preparation_status:'done',event_ids:[2],

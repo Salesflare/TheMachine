@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Talk (talk_live.py, the main conversation): Talk in the sidebar (the drawer on a phone) starts one live conversation
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // The voice lists every open to-do with its state (what needs the owner first), opens one (the screen follows), and works on the one on screen: the
 // Machine is told which (talk_focus), and the send rules are those of a to-do's own Talk live. A to-do that comes in is
 // mentioned at a pause, never while someone talks. OpenAI and the Machine are stand-ins, as in test_talk_live_dashboard.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),M='a7a7a7a7a7a7a7a7',D='d8d8d8d8d8d8d8d8',X='e9e9e9e9e9e9e9e9',A='a1a1a1a1a1a1a1a1',B='b2b2b2b2b2b2b2b2',C='c3c3c3c3c3c3c3c3',P='d4d4d4d4d4d4d4d4',Z='e5e5e5e5e5e5e5e5',N='f6f6f6f6f6f6f6f6';
 const DRAFT={kind:'email',label:'Reply to Lotte',to:['lotte@example.com'],to_name:'Lotte',from:'me@example.com',subject:'Re: Paint order',body:'Hi Lotte, Thursday after two works. See you then.',revision:'r1',account_id:'mail'};
 let cards;

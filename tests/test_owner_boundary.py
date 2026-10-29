@@ -10,6 +10,7 @@ import tempfile
 import threading
 import unittest
 from unittest.mock import patch
+import dashboard_parts
 
 spec = importlib.util.spec_from_file_location('owner_boundary_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -259,7 +260,7 @@ class OwnerBoundary(unittest.TestCase):
 
     def test_every_action_the_dashboard_posts_gets_through(self):
         # A save the dashboard makes that the allowlist lacks fails with "Operation is not available here" (Region did).
-        html = (Path(__file__).parent.parent.joinpath('dashboard.html')).read_text()
+        html = dashboard_parts.assemble(Path(__file__).parent.parent)
         posted = set(re.findall(r"action:'([a-z_]+)'", html))
         posted |= set(re.findall(r"\b(?:sharePost|sigPost|skillCall|fleetPost|agentPost|graphPost|crmUpload|signinPost|modelAction|micPost)\('([a-z_]+)'", html))
         self.assertIn('set_locale', posted)

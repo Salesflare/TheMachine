@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The Calendar moves like a calendar. The agenda runs on: later days load as it nears the end, earlier ones load
@@ -14,7 +15,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // too few to fill the screen below its Monday, and › still brings that Monday to the top.
 // CALENDAR_SHOT=<dir> also writes screenshots.
 process.env.TZ='Europe/Brussels';
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const NOW=new Date('2026-10-27T12:00:00+01:00');
 const at=(days,h,m=0)=>{const d=new Date(NOW);d.setDate(d.getDate()+days);d.setHours(h,m,0,0);return d};

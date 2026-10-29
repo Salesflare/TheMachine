@@ -3,6 +3,7 @@ import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A person's page reads at a glance: photo, name, title · organization, place and one plain line on how you're in touch;
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Personal, Family or Fleet) and Related (People, Projects) as their own sections, and "Joined from" as a quiet
 // disclosure. Edit in the header opens one form (Cancel and Save where Edit was) with fields as long as what goes in
 // them; Save sends only what changed. At 390 and 1440, light and dark. SHOT_DIR=… saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()+n*864e5).toISOString();
 const FACE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#c9b8a6"/><circle cx="32" cy="25" r="12" fill="#7a5c48"/><path d="M10 64c2-14 11-21 22-21s20 7 22 21z" fill="#3d5a80"/></svg>`;
 const fresh=()=>({id:'email:mara.ellison@eu.northwind.example',kind:'person',name:'Mara Ellison',strength:4.2,closeness:'close',last_at:day(-1),signals:180,

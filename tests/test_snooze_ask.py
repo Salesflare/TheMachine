@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
+import dashboard_parts
 
 spec = importlib.util.spec_from_file_location('snooze_ask_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -100,7 +101,7 @@ class SnoozeFromChange(unittest.TestCase):
 
 class DashboardSnoozedLine(unittest.TestCase):
     def test_dashboard_says_until_when(self):
-        html = Path(__file__).parent.parent.joinpath('dashboard.html').read_text()
+        html = dashboard_parts.assemble(Path(__file__).parent.parent)
         self.assertIn("return line('Snoozed until '+snoozedUntil(s.snoozed_until))", html)
         start = html.index("let DL='en-US'")  # the date and time helpers (locale_prefs.py): a Machine without a region
         helpers = html[start:html.index('\n', html.index('const fmtDHM=', start))]

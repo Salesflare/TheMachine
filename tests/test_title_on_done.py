@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+import dashboard_parts
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('title_on_done_assistant', ROOT / 'assistant.py')
@@ -135,7 +136,7 @@ class TitleOnDone(unittest.TestCase):
 class DoneLine(unittest.TestCase):
     """The line under a done to-do's title: the sign that it was handled. What went out has its own line already."""
     def line(self, card):
-        html = (ROOT / 'dashboard.html').read_text()
+        html = dashboard_parts.assemble(ROOT)
         start = html.index('const doneLine=')
         code = (html[start:html.index('\n', html.index("return why?", start))]
                 + "\nconst t=(s,...x)=>x.reduce((o,v)=>o.replace('{}',v),s),esc=s=>s;"

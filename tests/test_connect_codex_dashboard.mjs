@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections, + Add, Codex (codex_signin.py): Codex signs in with its own device code, shown right in the form with
@@ -9,7 +10,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // /_machine/connect, followed by /_machine/connect-state, like GitHub); a self-hosted Machine runs it itself
 // (codex_signin, codex_signin_state). The tile says whether Codex is signed in. In Dutch every line reads Dutch.
 // SHOTS=<folder> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const cats={};for(const l of ['nl'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const MANAGE='https://app.example.org/setup';
 const DEVICE='https://auth.openai.com/codex/device';

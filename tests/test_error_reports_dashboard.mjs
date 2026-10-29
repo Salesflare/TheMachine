@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Error reports (error_feed.py): an uncaught error or unhandled rejection in the dashboard's own code is posted as
@@ -15,7 +16,7 @@ const own=`<script>function renderBoom(){const card=null;return card.title}
 async function loadNope(){throw new RangeError('Nope for sam@example.com')}
 function renderAgain(){return null.x}
 addEventListener('test-boom',()=>{setTimeout(renderBoom);setTimeout(renderBoom)});addEventListener('test-nope',()=>{loadNope()});addEventListener('test-again',()=>setTimeout(renderAgain))</script>`;
-const dashboard=(await readFile(new URL('../dashboard.html',import.meta.url),'utf8')).replace(/<\/html>\s*$/,own+'</html>');
+const dashboard=(await dashboardPage()).replace(/<\/html>\s*$/,own+'</html>');
 let view,posts;
 const reset=on=>{view={offer:true,vote:true,errors:on,network:true,ask:null,last_shared:null};posts=[]};
 const server=createServer(async(req,res)=>{

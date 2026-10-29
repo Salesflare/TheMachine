@@ -3,13 +3,14 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings, Notifications (notify.py): a switch per kind and channel (Telegram only when it's set up, Email for every
 // kind), saved at once; Preview shows the digest on the page; Work hours sit in the same tab. The page tells the Machine
 // whether it is in use, like Slack: visible, in focus and touched in the last 10 minutes; in the background or idle it
 // is not (notify_active). At 390px the grid stays inside the screen. Nothing is sent: the server here is a fixture.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const prefs={todo:{push:true,telegram:true,email:true},result:{push:true,telegram:true,email:true},reminder:{push:true,telegram:true,email:true},digest:{push:true,telegram:false,email:true}};
 let telegram=true;const posts=[],beats=[];
 const view=()=>({prefs,telegram,email:true,push_devices:0,push_ready:true,digest_at:'08:30'});

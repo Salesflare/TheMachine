@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings > Skills: start from the example, save, share with one teammate, read a shared skill quoted with who sent
 // it and install it. On a 390px phone, long names and emails end in an ellipsis (full text on hover) and never
 // widen the page.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const LONG='someone.with.a.really.long.address.for.testing@subdomain.example-company-with-a-long-name.example';
 const BODY='Read the thread first.\n\n1. Find the answer.\n2. Draft a reply for the owner.';
 const example={name:'Research and answer customer inquiries',description:'When a customer or prospect asks a question by email or chat.',body:BODY};

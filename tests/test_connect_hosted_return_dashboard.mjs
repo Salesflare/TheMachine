@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections, + Add on a hosted Machine: a sign-in started here comes back here (the control plane's /open to=connect)
@@ -9,7 +10,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // reason asked from /_machine/connect-state, never read from the address). GitHub, WhatsApp and the phone sign in right
 // here: their code shows in the form. Every provider's way back is followed, and Reconnect on a card or in Needs you
 // opens the same form, never the account page. SHOTS=<folder> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const MANAGE='https://app.example.org/setup';
 let states={},asked=[],posted=[],approved=[],connectors=[];
 const PROVIDERS=['google','microsoft','microsoft_docs','zoom','stripe','intercom','github','whatsapp','android'];

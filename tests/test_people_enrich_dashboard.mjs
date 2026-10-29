@@ -3,13 +3,14 @@ import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Work contacts from enrichment: a photo saved on this Machine (never the service's own link; lazy, fixed size, their initials behind it and
 // alone when there is none or it fails) and job title on People rows; on their page the title
 // beside the photo under their name, city and country, LinkedIn, and Delete permanently with a confirm step. Settings has Look up work contacts.
 // SHOT_DIR=… saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=new Date(Date.now()-864e5).toISOString();
 const FACE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#c9b8a6"/><circle cx="32" cy="25" r="12" fill="#7a5c48"/><path d="M10 64c2-14 11-21 22-21s20 7 22 21z" fill="#3d5a80"/></svg>`;
 const person=(id,name,profile,extra={})=>({id:'email:'+id,kind:'person',name,strength:2.1,closeness:'regular',last_at:day,signals:6,ids:[id],usual_gap_days:7,

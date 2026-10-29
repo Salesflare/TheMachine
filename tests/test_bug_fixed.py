@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import fleet  # noqa: E402
+import dashboard_parts
 
 spec = importlib.util.spec_from_file_location('bug_fixed_assistant', ROOT / 'assistant.py')
 a = importlib.util.module_from_spec(spec)
@@ -65,7 +66,7 @@ class Fixed(unittest.TestCase):
 
     def test_the_dashboard_can_ask(self):
         self.assertIn('bug_fixed', a.SUPPORT_ACTIONS)
-        page = (ROOT / 'dashboard.html').read_text()
+        page = dashboard_parts.assemble(ROOT)
         self.assertIn('<div id="fixed-notice" role="status" hidden></div>', page)
         self.assertIn("action:'bug_fixed'", page)
         self.assertIn('state.fixed', page)  # self-hosted: from the state, no call of its own on each render

@@ -3,12 +3,13 @@ import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The one-line rows on a person or organization page (To you, the organization row, addresses, place, about, links,
 // relations) wrap on a phone instead of being cut off, and their Edit and ✓ Right buttons stay on screen and tappable.
 // Checked at 360 and 390 with long made-up values. SHOT_DIR=… saves shots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=new Date(Date.now()-864e5).toISOString();
 const long='potential acquirer and VP of ecosystem operations for the partner program across Northwind';
 const mira={id:'email:mira.vandenberghe-oyelaran@northwind-logistics.example',kind:'person',name:'Mira Vandenberghe-Oyelaran',strength:2.1,closeness:'close',last_at:day,signals:9,

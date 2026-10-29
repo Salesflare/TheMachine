@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Network discovery (discovery.py): a permission card once; a person card under Suggestions only with a concrete
 // reason; colleague gets Connect, anyone else Friend or Family; the Fleet tab's Network block has the two switches,
 // the quiet list and Leave. Never scrolls sideways (390px and 1000px, dark and light).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FR='fr_'+'b'.repeat(16);
 const soon=new Date(Date.now()+3*864e5).toISOString();
 const base={on:true,kinds:{},ask_meetings:false,kind_rules:{},no_details:[],scoped:[],scopes:{},

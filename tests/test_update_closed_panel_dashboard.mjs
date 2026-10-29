@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A quiet update is held back only by text someone typed and hasn't saved or sent. A closed panel never holds it back:
 // a send panel that still has a sent email's subject and body (the page filled them in, nobody typed them) lets the
 // new version load, and closing the send panel empties it. Typed text in an open to-do still holds it back.
-const raw=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const raw=await dashboardPage();
 const now=new Date().toISOString(),id='a1a1a1a1a1a1a1a1';
 let served='v1',current='v1';
 const status=()=>({suggestions:[{id,title:'Reply to Robin about the plan',body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:now,event_ids:[1]}],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false},ui_version:current});

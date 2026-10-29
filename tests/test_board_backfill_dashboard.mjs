@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A new board looks through the history once: its header says "Looking through your history…" while it runs, then how
@@ -12,7 +13,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // post one board_fit with node_ids, and the toast offers Undo. The list stays open and in place after each one, also
 // through a refresh, and Add and Leave out sit side by side on a phone. Desktop and a 390 px phone, light and dark, no
 // sideways scroll. BACKFILL_SHOT=<dir> also writes screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const stages=[{name:'Discovery'},{name:'Demo'},{name:'Trial'},{name:'Decision'},{name:'Won'},{name:'Stalled or declined',side:true}];
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const proj=(i,name,stage,reason)=>({id:'project:'+i,name,stage,reason,by:'review',first:true,at:day(i),event_id:100+i,days:i,no_reply_days:0,org:{name,logo:null}});

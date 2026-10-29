@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections, + Add, after a source is added (renderConnectRun, connectFollow):
@@ -12,7 +13,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // - Details on a card are plain lines, never the raw saved state; Recent syncs and the Details lines read in Dutch.
 // - Work or personal: "Guessed" only for an account The Machine marked as a guess (boundary_by guess), never for one
 //   from before that mark.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const nl=await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8');
 const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
 const crm={id:'work-crm',service:'salesflare',email:'owner@acme.example',display_name:'CRM',boundary:'work:Acme',boundary_by:'owner',total:0,

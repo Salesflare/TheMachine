@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Leaving Organizations (hundreds of them) for People, Projects or Who's who shows that page at once: its pane is drawn
 // already, so the switch never waits for the Graph's answer (slow here, as on a busy Machine). From an organization's
 // page, the list it goes to says it's loading right away instead of leaving the old page up.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=new Date().toISOString().slice(0,10),SLOW=2500;
 const person=i=>({id:'email:p'+i+'@example.org',kind:'person',name:'Person '+i,strength:3-i/1000,closeness:'regular',last_at:day,signals:4,ids:['p'+i+'@example.org']});
 const org=i=>({id:'org:co'+i+'.example',kind:'org',name:'Company '+i,signals:2,last_at:day,domain:'co'+i+'.example'});

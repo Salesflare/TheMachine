@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A handoff by email offers a task page (task_pages.py): nothing is made until the owner taps Add a task page, sees
 // exactly what the page shows, may leave parts out and pick the days, and taps Add to email. Then the card shows the
 // page's line with Stop sharing, and answers from the page show quoted, as text. No network beyond this fake server.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const BODY='Hi there,\n\nCould you take this on?\n\nSend the signed venue contract\nThe venue needs it back by Friday.\n\nJust reply to this email to let me know.\n\nBest,\nSam';
 const email={kind:'email',label:'Send',revision:'e00000000001',account_id:'work',to:['alex@other.example'],subject:'Could you take this on: Send the signed venue contract',body:BODY};
 const card={id:'c1',title:'Send the signed venue contract',body:'An email handing this to alex@other.example. Read it, change it if you like, and send it yourself.',

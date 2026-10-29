@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings, Account: the first tab on a Machine linked to a control plane account. Hosted, the control plane answers on
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // /_machine/account-hop in a new tab, which opens that page of the account signed in. Self-hosted and paired, this
 // Machine asks (api/account) and the buttons are links. Sign out stays (hosted). Not linked: no Account tab, and General
 // keeps "Join the Network". Made-up data only. Set SHOTS=<dir> for screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC'};
 const CP='https://account.example';
 const hostedSummary={email:'alex@example.org',hop:true,

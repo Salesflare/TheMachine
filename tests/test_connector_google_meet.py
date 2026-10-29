@@ -19,6 +19,7 @@ import mail_grants
 import onboarding
 from test_connectors import a, Response
 from connectors import google_meet as meet
+import dashboard_parts
 
 OWNER = 'owner@acme.example'
 NOW = '2026-10-28T12:00:00+00:00'
@@ -471,7 +472,7 @@ class SignIn(unittest.TestCase):
         self.assertEqual(assistant.reconnect_help(account, hosted['manage_url']),
                          {'account_page': 'https://cp.example/setup#source-google_meet', 'hosted_signin': 'google_meet'})
         self.assertEqual(assistant.reconnect_help(account, None), {'connect_name': 'google_meet'})
-        html = (Path(assistant.__file__).parent / 'dashboard.html').read_text(encoding='utf-8')
+        html = dashboard_parts.assemble(Path(assistant.__file__).parent)
         self.assertIn("google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'}", html)
         self.assertNotIn('Connect Gmail', html)
         self.assertIn("c.last_success?t('Last sync {}',time(c.last_success,true)):t('Not synced yet')", html)  # no "Last sync Not yet"

@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings, General, Language and region (locale_prefs.py): Region and Time format save at once, and every time on the
 // page follows: Updated in the header, the sample under Region. A Machine without a region shows Not set and keeps
 // 24-hour times, unless the browser says where it is: then that region is saved on first load. At 390px the row stays inside the screen. SHOTS=<folder> saves light and dark screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const H12=new Set(['US','AU','CA']),view=(region,clock='auto')=>{const auto=H12.has(region);
  return {locale:region?'en-'+region:null,region:region||'',language:'en',clock,hour12:clock==='auto'?auto:clock==='12h',auto_hour12:auto,
   date_locale:!region||region==='US'||region==='CA'?'en-US':'en-GB',languages:{en:'English'},saveable:true}};

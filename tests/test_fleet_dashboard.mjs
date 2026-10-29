@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet tab: who is who per member, and one rule per kind of question for the whole Fleet: Ask me first | Always | Never
 // as pills, how much they hear, Only about…, a short example, and exceptions for someone in particular as small pills.
 // Never scrolls sideways (390px and 1000px, light and dark).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16);
 const fresh=()=>({relationships:{rule:'ask',details:false},meeting:{rule:'always',details:true},handling:{rule:'ask',details:false},brief:{rule:'never',details:false}});
 const members=[{member_id:'p',name:'Sam Doe (sam.doe@mail.example)'},{member_id:'q',name:'Alexandra Longname-Whitfield'},{member_id:'l',name:'Robin Vale'}];

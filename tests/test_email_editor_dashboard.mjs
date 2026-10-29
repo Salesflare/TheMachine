@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The email editor: a draft is edited as it will look (bold, italic, lists, links), never as marks or HTML. The
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // next_actions.mail_html); what the editor holds reads back into those marks, and Send only sends when the read-back
 // draws the same as the page. A paste comes in as plain text, a link must be https, formatting an email can't carry is
 // taken out before anything goes, and a text the save tidied shows before it is sent.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const CASES=JSON.parse(await readFile(new URL('./mail_format_cases.json',import.meta.url),'utf8'));
 const now=new Date().toISOString(),posts=[];
 const BODY='Hi Noor,\n\nThe plan:\n- **Monday**: kickoff\n- the [brief](https://example.com/brief)\n\nAlex';

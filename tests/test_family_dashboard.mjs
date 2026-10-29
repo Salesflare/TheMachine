@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet tab, Family: when everyone is free, to-dos and plans in one compact pane; a member's to-do or plan waits as a
 // Family card under Suggestions with Accept and Decline; the Family's rules sit under Sharing. Never scrolls sideways.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),FAM='fl_'+'f'.repeat(16),FL2='fl_'+'c'.repeat(16),FR='fr_'+'b'.repeat(16);
 const r=rule=>({rule,details:false});
 const view={on:true,kinds:{relationships:'who knows someone',availability:'free/busy times',todo:'to-dos',event:'family plans'},ask_meetings:false,

@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A phone scrolled down a board picks a stage with fewer projects: the page gets shorter than where the reader was, so it
 // keeps its height a moment (placeKeep), then lets go and settles at its real bottom. Once settled it stays there: a mascot
 // blink or a quiet refresh later never holds the height again, so the page doesn't jump up and back every few seconds.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const stages=[{name:'Reported'},{name:'Investigating'},{name:'Waiting on customer'},{name:'Resolved'},{name:'Stalled or declined',side:true}];
 const counts=[5,2,16,30,2],projects=[];let n=0;
