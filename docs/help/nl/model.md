@@ -12,7 +12,7 @@ In **Instellingen** toont **Model** het model dat achtergrondwerk gebruikt (gema
 
 Kies onder **Chats** het model en het denkniveau dat je to-do-chats en Help gebruiken. De lijst heeft alleen de modellen die je login aanbiedt, zoals die van ChatGPT als je met ChatGPT inlogde, en elk model alleen de niveaus die het heeft.
 
-Meer denkwerk beantwoordt moeilijkere vragen beter, maar is trager en gebruikt meer van je abonnement. **Ultra denkwerk** haalt helpers erbij voor de moeilijkste vragen: het traagst, en het gebruikt het meest. Een wijziging geldt vanaf het volgende bericht.
+Meer denkwerk beantwoordt moeilijkere vragen beter, maar is trager en gebruikt meer van je abonnement. **Ultra denkwerk** haalt helpers erbij voor de moeilijkste vragen: het traagst, en het gebruikt het meest. Een wijziging geldt vanaf het volgende bericht. Een nieuwe Machine start met **Weinig denkwerk** als het model dat heeft: goede resultaten voor veel minder van je abonnement.
 
 Eén chat kan iets anders gebruiken: tik onder het berichtvak op het model of het denkniveau. Die keuze geldt alleen voor die chat. Kies weer hetzelfde als in Instellingen om Instellingen te volgen.
 

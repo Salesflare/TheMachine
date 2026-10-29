@@ -871,6 +871,42 @@ def quiet_openclaw(facts, stamp):
     return changed
 
 
+# A new install starts at this thinking level for chats and work (agents.defaults.thinkingDefault), as a new hosted
+# Machine does (NEW_THINKING in the control plane's machine_agent.py): good results for much less of the owner's AI plan.
+# Only where no level is set, and only when the main model is signed in and offers it (the running Gateway's model list
+# says); a model without it keeps its own default. An existing install keeps its level: this runs on a first install only.
+NEW_THINKING = 'low'
+
+
+def start_thinking(facts):
+    """NEW_THINKING for a new install, as above. Whether it was set."""
+    openclaw = facts.get('openclaw')
+    if not openclaw:
+        return False
+    defaults = (onboarding.openclaw_settings().get('agents') or {}).get('defaults') or {}
+    if not isinstance(defaults, dict) or defaults.get('thinkingDefault'):
+        return False
+    main = defaults.get('model')
+    main = main.get('primary') if isinstance(main, dict) else main
+    if not isinstance(main, str) or '/' not in main:
+        return False
+    result = run([openclaw, 'gateway', 'call', 'models.list', '--json', '--timeout', '30000', '--params', '{"view":"configured"}'], timeout=60)
+    try:
+        rows = (json.loads(result.stdout or '{}').get('models') or []) if result.returncode == 0 else []
+    except (ValueError, AttributeError):
+        rows = []
+    row = next((r for r in rows if isinstance(r, dict) and f"{r.get('provider')}/{r.get('id')}" == main.strip()), None)
+    levels = [x.get('id') for x in (row or {}).get('thinkingLevels') or [] if isinstance(x, dict)]
+    if not row or row.get('available') is not True or NEW_THINKING not in levels:
+        return False
+    result = run([openclaw, 'config', 'set', 'agents.defaults.thinkingDefault', json.dumps(NEW_THINKING), '--strict-json'], timeout=120)
+    if result.returncode:
+        say('  could not set the thinking level in OpenClaw: ' + (result.stderr or result.stdout).strip()[:200])
+        return False
+    say(f'Thinking starts at {NEW_THINKING} for chats and work (change it in Settings, Model)')
+    return True
+
+
 def gateway_health(openclaw):
     """The running Gateway's own health (with the plugins it loaded), or None when no Gateway answers."""
     result = run([openclaw, 'gateway', 'health', '--json', '--timeout', '20000'], timeout=60)
@@ -1177,6 +1213,7 @@ def main(argv=None):
     if not ok:
         say('\nFix the FAIL items above and rerun ./install.sh')
         return 1
+    fresh = not paths.config.exists()
     try:
         config = setup_config(interactive, facts, paths)
     except (KeyboardInterrupt, EOFError):
@@ -1189,6 +1226,8 @@ def main(argv=None):
     if not plugin_ok:
         return 1
     quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
+    if fresh:
+        start_thinking(facts)
     if args.activate:
         config = activate(paths)
     since = onboarding.now()

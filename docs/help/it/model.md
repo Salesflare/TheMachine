@@ -12,7 +12,7 @@ In **Impostazioni**, **Modello** mostra il modello usato dal lavoro in backgroun
 
 In **Chat**, scegli il modello e il livello di ragionamento che usano le chat delle tue attività e l’Aiuto. L’elenco ha solo i modelli offerti dal tuo accesso, come quelli di ChatGPT se hai effettuato l’accesso con ChatGPT, e ogni modello solo i livelli che ha.
 
-Più ragionamento risponde meglio alle domande difficili, ma è più lento e usa di più il tuo piano. **Ragionamento ultra** chiama degli aiutanti per le domande più difficili: è il più lento e quello che usa di più. Una modifica vale dal messaggio successivo.
+Più ragionamento risponde meglio alle domande difficili, ma è più lento e usa di più il tuo piano. **Ragionamento ultra** chiama degli aiutanti per le domande più difficili: è il più lento e quello che usa di più. Una modifica vale dal messaggio successivo. Una nuova Machine parte con **Ragionamento basso** se il suo modello lo offre: buoni risultati con molto meno del tuo piano.
 
 Una chat può usare qualcos’altro: sotto la sua casella del messaggio, tocca il modello o il livello di ragionamento. Quella scelta vale solo per quella chat. Scegli di nuovo lo stesso delle Impostazioni per seguire le Impostazioni.
 

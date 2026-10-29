@@ -12,7 +12,7 @@ In **Einstellungen** zeigt **Modell** das Modell, das Hintergrundarbeit nutzt (m
 
 Wähle unter **Chats** das Modell und die Nachdenkstufe für deine Aufgaben-Chats und die Hilfe. Die Liste hat nur die Modelle, die deine Anmeldung anbietet, etwa die von ChatGPT, wenn du dich mit ChatGPT angemeldet hast, und jedes Modell nur die Stufen, die es hat.
 
-Mehr Nachdenken beantwortet schwierigere Fragen besser, ist aber langsamer und verbraucht mehr von deinem Tarif. **Ultra-Nachdenken** holt Helfer für die schwierigsten Fragen dazu: am langsamsten, und es verbraucht am meisten. Eine Änderung gilt ab der nächsten Nachricht.
+Mehr Nachdenken beantwortet schwierigere Fragen besser, ist aber langsamer und verbraucht mehr von deinem Tarif. **Ultra-Nachdenken** holt Helfer für die schwierigsten Fragen dazu: am langsamsten, und es verbraucht am meisten. Eine Änderung gilt ab der nächsten Nachricht. Eine neue Machine startet mit **Wenig Nachdenken**, wenn ihr Modell das hat: gute Ergebnisse für viel weniger von deinem Tarif.
 
 Ein Chat kann etwas anderes nutzen: Tippe unter seinem Nachrichtenfeld auf das Modell oder die Nachdenkstufe. Diese Wahl gilt nur für diesen Chat. Wähle wieder dasselbe wie in den Einstellungen, um den Einstellungen zu folgen.
 
