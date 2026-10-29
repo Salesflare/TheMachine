@@ -13,13 +13,15 @@ No chat de uma tarefa, toque na onda ao lado do microfone. Permita o microfone s
 
 Ela conhece a tarefa em que você está: as mensagens, o rascunho e o chat dela. Também pode consultar suas outras tarefas.
 
-A barra tem **Silenciar** e **Fim**. Uma conversa dura até 10 minutos. Um minuto antes do fim, o cronômetro mostra quanto falta. Comece de novo para continuar.
+A barra tem **Silenciar** e **Fim**. Diga tchau, ou que já terminou, e ela termina sozinha. Uma conversa dura até 10 minutos. Um minuto antes do fim, o cronômetro mostra quanto falta. Comece de novo para continuar.
 
 ## Repasse todas as suas tarefas falando
 
-Toque em **Falar** na barra lateral (no menu, no celular) para repassar por voz tudo o que espera por você. A The Machine diz quantas há e passa por elas uma a uma: primeiro **Pronta**, depois **A decidir**. A tarefa de que ela fala abre na tela, para você ver o que ela lê.
+Toque em **Falar** na barra lateral (no menu, no celular) para repassar por voz tudo o que espera por você. A The Machine diz quantas há e passa por elas uma a uma: primeiro **Pronta**, depois **A decidir**. Falar tem uma página própria: uma conversa do começo ao fim, com a tarefa de que ela fala no topo, o rascunho e **Abrir o chat**. Ela não leva você de chat em chat.
 
-Peça para ler um rascunho, mudar, adiar, marcar como feita ou ir para a próxima. Enviar funciona como no chat de uma tarefa: um rascunho por pergunta, depois de um sim claro. O que você diz sobre uma tarefa fica no chat dessa tarefa. Quando chega uma tarefa nova, ela avisa numa pausa. Esta conversa dura até 30 minutos.
+Peça para ler um rascunho, mudar, adiar, marcar como feita ou ir para a próxima. Enviar funciona como no chat de uma tarefa: um rascunho por pergunta, depois de um sim claro. O que você diz sobre uma tarefa fica no chat dessa tarefa. Quando chega uma tarefa nova, ela avisa numa pausa.
+
+Enquanto isso você pode ir para outra página: a barra fica embaixo, e **Falar** na barra lateral traz você de volta. Esta conversa dura até 30 minutos.
 
 ## Peça coisas e envie com um sim
 

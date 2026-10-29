@@ -13,13 +13,15 @@ Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il m
 
 Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività.
 
-La barra ha **Silenzia** e **Fine**. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
+La barra ha **Silenzia** e **Fine**. Saluta, o di' che hai finito, e si chiude da sola. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
 
 ## Ripassa tutte le attività a voce
 
-Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e le prende una alla volta: prima **Pronta**, poi **Da decidere**. L'attività di cui parla si apre sullo schermo, così vedi cosa legge.
+Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e le prende una alla volta: prima **Pronta**, poi **Da decidere**. Parla ha una pagina sua: una conversazione dall'inizio alla fine, con in alto l'attività di cui si parla, la sua bozza e **Apri la chat**. Non ti sposta da una chat all'altra.
 
-Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L'invio funziona come nella chat di un'attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un'attività finisce nella chat di quell'attività. Quando arriva una nuova attività, te lo dice in una pausa. Questa conversazione dura al massimo 30 minuti.
+Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L'invio funziona come nella chat di un'attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un'attività finisce nella chat di quell'attività. Quando arriva una nuova attività, te lo dice in una pausa.
+
+Intanto puoi andare su un'altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti.
 
 ## Chiedi le cose, e invia con un sì
 

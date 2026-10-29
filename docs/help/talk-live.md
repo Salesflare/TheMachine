@@ -13,13 +13,15 @@ In a to-do's chat, tap the wave next to the mic. Allow the microphone if your br
 
 It knows the to-do you're in: its messages, its draft and its chat. It can also look up your other to-dos.
 
-The bar has **Mute** and **End**. A conversation lasts up to 10 minutes. A minute before the end, the timer shows how much is left. Start it again to go on.
+The bar has **Mute** and **End**. Say goodbye, or that you're done, and it ends by itself. A conversation lasts up to 10 minutes. A minute before the end, the timer shows how much is left. Start it again to go on.
 
 ## Talk through all your to-dos
 
-Tap **Talk** in the sidebar (in the menu on a phone) to go through everything that needs you, by voice. The Machine says how many are waiting and takes them one by one: **Ready** first, then **To decide**. The to-do it's talking about opens on screen, so you see what it reads.
+Tap **Talk** in the sidebar (in the menu on a phone) to go through everything that needs you, by voice. The Machine says how many are waiting and takes them one by one: **Ready** first, then **To decide**. Talk has its own page: one conversation from start to end, with the to-do it's talking about on top, its draft, and **Open the chat**. It doesn't move you from chat to chat.
 
-Ask it to read a draft, change it, snooze it, mark it done, or move on to the next one. Sending works as in a to-do's chat: one draft per question, after a clear yes. What you say about a to-do goes into that to-do's chat. When a new to-do comes in, it mentions it at a pause. This conversation lasts up to 30 minutes.
+Ask it to read a draft, change it, snooze it, mark it done, or move on to the next one. Sending works as in a to-do's chat: one draft per question, after a clear yes. What you say about a to-do goes into that to-do's chat. When a new to-do comes in, it mentions it at a pause.
+
+Meanwhile, other pages are fine: the bar stays at the bottom, and **Talk** in the sidebar brings you back. This conversation lasts up to 30 minutes.
 
 ## Ask for things, and send with a yes
 

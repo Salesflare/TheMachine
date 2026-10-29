@@ -13,13 +13,15 @@ Tippe im Chat einer Aufgabe auf die Welle neben dem Mikrofon. Erlaube das Mikrof
 
 Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren Chat. Sie kann auch deine anderen Aufgaben nachschlagen.
 
-Die Leiste hat **Stummschalten** und **Ende**. Ein Gespräch dauert bis zu 10 Minuten. Eine Minute vor dem Ende zeigt der Timer, wie viel Zeit übrig ist. Starte es neu, um weiterzumachen.
+Die Leiste hat **Stummschalten** und **Ende**. Verabschiede dich oder sag, dass du fertig bist, und es endet von selbst. Ein Gespräch dauert bis zu 10 Minuten. Eine Minute vor dem Ende zeigt der Timer, wie viel Zeit übrig ist. Starte es neu, um weiterzumachen.
 
 ## Alle Aufgaben durchsprechen
 
-Tippe in der Seitenleiste (auf dem Handy im Menü) auf **Sprechen**, um alles, was auf dich wartet, per Stimme durchzugehen. The Machine sagt, wie viele warten, und nimmt sie nacheinander durch: zuerst **Bereit**, dann **Zu entscheiden**. Die Aufgabe, über die sie spricht, öffnet sich auf dem Bildschirm, damit du siehst, was sie vorliest.
+Tippe in der Seitenleiste (auf dem Handy im Menü) auf **Sprechen**, um alles, was auf dich wartet, per Stimme durchzugehen. The Machine sagt, wie viele warten, und nimmt sie nacheinander durch: zuerst **Bereit**, dann **Zu entscheiden**. Sprechen hat eine eigene Seite: ein Gespräch von Anfang bis Ende, oben die Aufgabe, um die es geht, mit ihrem Entwurf und **Chat öffnen**. Sie springt nicht von Chat zu Chat.
 
-Bitte sie, einen Entwurf vorzulesen, zu ändern, zu verschieben, als erledigt zu markieren oder zum nächsten zu gehen. Senden funktioniert wie im Chat einer Aufgabe: ein Entwurf pro Frage, nach einem klaren Ja. Was du über eine Aufgabe sagst, landet im Chat dieser Aufgabe. Kommt eine neue Aufgabe herein, erwähnt sie sie in einer Pause. Dieses Gespräch dauert höchstens 30 Minuten.
+Bitte sie, einen Entwurf vorzulesen, zu ändern, zu verschieben, als erledigt zu markieren oder zum nächsten zu gehen. Senden funktioniert wie im Chat einer Aufgabe: ein Entwurf pro Frage, nach einem klaren Ja. Was du über eine Aufgabe sagst, landet im Chat dieser Aufgabe. Kommt eine neue Aufgabe herein, erwähnt sie sie in einer Pause.
+
+Du kannst inzwischen auf eine andere Seite gehen: Die Leiste bleibt unten, und **Sprechen** in der Seitenleiste bringt dich zurück. Dieses Gespräch dauert höchstens 30 Minuten.
 
 ## Bitte um Dinge und sende mit einem Ja
 

@@ -70,6 +70,10 @@ TOOLS = [
      'description': ('Call right after the owner answers your confirm question from ask_to_send. The Machine judges their '
                      'answer itself and says what happened; tell the owner that, and never say something was sent otherwise.'),
      'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
+    {'type': 'function', 'name': 'end_talk',
+     'description': ('End this conversation, the same as the owner pressing End. Only when the owner clearly says they are '
+                     'done. Say one short goodbye first, then call this.'),
+     'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
 ]
 # The main conversation's tools: the same reading, chat and send tools, about the to-do in focus, and two to move
 # between to-dos. list_todos and open_todo are the dashboard's own (it knows what Ready and To decide show, and opens it).
@@ -126,6 +130,10 @@ JUDGE = ('Someone was just asked aloud: "{question}"\n'
 # The voice's playback speed (session.update audio.output.speed, 0.25 to 1.5, 1.0 by default): a touch slower than
 # OpenAI's default, never slow. How it phrases things (pacing, length) is in instructions().
 SPEED = 0.95
+# When the owner's turn ends (session.update audio.input.turn_detection): OpenAI's semantic VAD judges from the words
+# whether they are done, instead of a fixed silence. "low" eagerness lets them take their time, so a short filler or a
+# pause mid-thought doesn't start a reply. The Gateway's session starts with server_vad; the dashboard sets this.
+TURN = {'type': 'semantic_vad', 'eagerness': 'low', 'create_response': True, 'interrupt_response': True}
 LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese'}
 
 
@@ -163,6 +171,10 @@ def instructions(title, language, now_text):
         '## Length',
         '- Keep it short and spoken: a sentence or two at a time, then let the owner talk.',
         '- Answer the question first. Leave out what they didn’t ask for.',
+        '- When the owner only acknowledges or fills a pause ("okay", "all right", "cool", "mm-hm"), don’t answer with a '
+        'sentence. Say one word at most, or nothing, and wait for them.',
+        '- Before a tool call, say one short line at most ("One sec"), once. Don’t announce what you will do next, and '
+        'don’t add another line while it runs.',
         '',
         '## Pacing',
         '- A natural, easy conversational pace: unhurried, with small pauses between ideas. Never rushed.',
@@ -189,6 +201,8 @@ def instructions(title, language, now_text):
         'draft out first when it says so. After their answer, call send_answer and say what it returns. One draft per '
         'question; never send several at once, and never say something was sent unless send_answer says so.',
         '- If something isn’t in the to-do, ask the chat to look it up rather than guess.',
+        '- When the owner clearly says they are done (a goodbye, "that’s it for now", "let’s stop"), say one short goodbye '
+        'and call end_talk. Don’t ask if there is anything else first.',
     ])
 
 
@@ -208,6 +222,10 @@ def main_instructions(language, now_text):
         '## Length',
         '- Keep it short and spoken: a sentence or two at a time, then let the owner talk.',
         '- Answer the question first. Leave out what they didn’t ask for.',
+        '- When the owner only acknowledges or fills a pause ("okay", "all right", "cool", "mm-hm"), don’t answer with a '
+        'sentence. Say one word at most, or nothing, and wait for them.',
+        '- Before a tool call, say one short line at most ("One sec"), once. Don’t announce what you will do next, and '
+        'don’t add another line while it runs.',
         '',
         '## Pacing',
         '- A natural, easy conversational pace: unhurried, with small pauses between ideas. Never rushed.',
@@ -244,6 +262,8 @@ def main_instructions(language, now_text):
         'draft out first when it says so. After their answer, call send_answer and say what it returns. One draft per '
         'question; never send several at once, and never say something was sent unless send_answer says so.',
         '- If something isn’t in the to-do, ask the chat to look it up rather than guess.',
+        '- When the owner clearly says they are done (a goodbye, "that’s it for now", "let’s stop"), say one short goodbye '
+        'and call end_talk. Don’t ask if there is anything else first.',
     ])
 
 

@@ -13,13 +13,15 @@ Dans le chat d’une tâche, touchez l’onde à côté du micro. Autorisez le m
 
 Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches.
 
-La barre a **Couper le micro** et **Fin**. Une conversation dure jusqu’à 10 minutes. Une minute avant la fin, le minuteur montre le temps restant. Relancez-la pour continuer.
+La barre a **Couper le micro** et **Fin**. Dites au revoir, ou que vous avez fini, et elle s’arrête d’elle-même. Une conversation dure jusqu’à 10 minutes. Une minute avant la fin, le minuteur montre le temps restant. Relancez-la pour continuer.
 
 ## Passer en revue toutes vos tâches à voix haute
 
-Touchez **Parler** dans la barre latérale (dans le menu sur un téléphone) pour passer en revue à la voix tout ce qui vous attend. The Machine dit combien il y en a et les prend une par une : d’abord **Prête**, puis **À décider**. La tâche dont elle parle s’ouvre à l’écran, pour que vous voyiez ce qu’elle lit.
+Touchez **Parler** dans la barre latérale (dans le menu sur un téléphone) pour passer en revue à la voix tout ce qui vous attend. The Machine dit combien il y en a et les prend une par une : d’abord **Prête**, puis **À décider**. Parler a sa propre page : une conversation du début à la fin, avec en haut la tâche dont elle parle, son brouillon et **Ouvrir le chat**. Elle ne vous fait pas passer de chat en chat.
 
-Demandez-lui de lire un brouillon, de le modifier, de le reporter, de le marquer comme fait ou de passer à la suivante. L’envoi fonctionne comme dans le chat d’une tâche : un brouillon par question, après un oui clair. Ce que vous dites sur une tâche va dans le chat de cette tâche. Quand une nouvelle tâche arrive, elle la mentionne lors d’une pause. Cette conversation dure 30 minutes au plus.
+Demandez-lui de lire un brouillon, de le modifier, de le reporter, de le marquer comme fait ou de passer à la suivante. L’envoi fonctionne comme dans le chat d’une tâche : un brouillon par question, après un oui clair. Ce que vous dites sur une tâche va dans le chat de cette tâche. Quand une nouvelle tâche arrive, elle la mentionne lors d’une pause.
+
+Vous pouvez aller sur une autre page entre-temps : la barre reste en bas, et **Parler** dans la barre latérale vous y ramène. Cette conversation dure 30 minutes au plus.
 
 ## Demandez, et envoyez d’un oui
 
