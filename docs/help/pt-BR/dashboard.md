@@ -33,5 +33,6 @@ Pesquise tudo o que chegou, por significado ou por palavras, em todas as contas 
 ## Feedback
 
 - **Como as tarefas estão indo**: nos últimos 30 dias, quantas foram marcadas como **Valeu a pena**, feitas **De primeira**, **Concluída** e **Enviado como está**.
+- Abaixo, o mesmo por fonte: de onde vieram as tarefas, como **E-mail**, **Adicionado por você** (criadas com **Nova tarefa**), **Notificações no celular** ou **A própria The Machine** (problemas na The Machine, como um erro).
 - **O que aprendi**: como você escreve, fatos e como você gosta que as coisas sejam feitas, a partir das suas notas. Use **Editar** para reescrever qualquer item com suas próprias palavras e **Remover** para tirar o que não for mais verdade. Quando uma nota em uma tarefa ensina um fato ou uma regra, o chat da tarefa avisa abaixo da resposta (**Salvo no que aprendi**, com **Editar** e **Desfazer**). Essa linha vem do que foi guardado, então uma resposta nunca só afirma isso.
 - **O que você decidiu**: uma linha do tempo das suas escolhas nas tarefas.
