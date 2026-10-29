@@ -4,7 +4,7 @@ area: connections
 summary: Customer conversations in your Intercom workspace. It replies only after you send, as you.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
-site: Sign in with Intercom, Or paste an access token, Connect, More sources, Remove
+site: Sign in with Intercom, More sources, Remove
 ---
 ## What it reads
 
@@ -22,21 +22,11 @@ When Intercom can't reply from your Machine (shared with you to read only, repli
 
 ## Connect it
 
-On a hosted Machine:
+1. In the dashboard: **Connections**, **+ Add**, Intercom. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Intercom. On your own computer, pair it with your account first.
+2. Press **Sign in with Intercom**.
+3. Approve The Machine in Intercom. It is made by Salesflare. When you're done, you're back where you started.
 
-1. Open your setup page at app.themachine.computer/setup and go to **More sources**.
-2. Open Intercom and press **Sign in with Intercom**.
-3. Approve The Machine in Intercom. It is made by Salesflare.
-
-Or in the dashboard: **Connections**, **+ Add**, pick Intercom and press **Sign in with Intercom**. When you're done, you're back in the dashboard.
-
-If the sign-in doesn't suit your workspace, open **Or paste an access token** instead, paste a token from Intercom's Developer Hub and press **Connect**.
-
-On your own computer:
-
-1. In Intercom's Developer Hub, open your app, then Authentication, and copy its access token.
-2. In the dashboard, open **Connections**, then **+ Add**, and pick Intercom. Or run `assistant connect intercom`.
-3. Paste the token. A token from another workspace becomes a second Intercom account.
+Signing in to another workspace adds a second Intercom account.
 
 Intercom always counts as work, for the company its workspace names.
 
@@ -47,5 +37,4 @@ Intercom always counts as work, for the company its workspace names.
 
 ## Uninstall it on Intercom
 
-- Signed in with Intercom: in Intercom, open Settings, Apps, Installed apps, and remove The Machine.
-- A pasted token: delete or rotate it in the Developer Hub, or delete the app you made it in.
+In Intercom, open Settings, Apps, Installed apps, and remove The Machine.

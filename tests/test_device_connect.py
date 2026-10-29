@@ -272,6 +272,53 @@ class ConnectDelivered(unittest.TestCase):
         self.assertEqual(self.fake.requests, [])
 
 
+class TrelloDelivered(unittest.TestCase):
+    """Sign in with Trello on a paired self-hosted Machine: the app's key and the read-only token, with the board picked
+    on the way back, checked with a real read of that board before they are kept (no live calls)."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        root = Path(self.temp.name)
+        self.path = root / 'config.json'
+        self.path.write_text(json.dumps({'database': str(root / 'events.sqlite'), 'credentials': {}, 'accounts': []}))
+        self.seen = []
+        patch('urllib.request.urlopen', side_effect=self.respond).start()
+        patch.object(onboarding, 'assistant', return_value=a).start()
+        self.addCleanup(patch.stopall)
+        self.credential = json.dumps({'key': 'f' * 32, 'token': 'ATTA' + 'b' * 60}, separators=(',', ':'))
+
+    def respond(self, request, timeout=None):
+        import io
+        self.seen.append((request.get_method(), request.full_url, request.get_header('Authorization')))
+        if '/actions' in request.full_url:
+            return io.BytesIO(b'[]')
+        return io.BytesIO(json.dumps({'id': 'b' * 24, 'shortLink': 'Board001', 'name': 'Example board'}).encode())
+
+    def args(self, **change):
+        return {'source': 'trello', 'answers': {'Trello board': 'https://trello.com/b/Board001'},
+                'secrets': {'Trello token': self.credential}, **change}
+
+    def test_checked_with_a_read_of_the_board_then_kept_out_of_the_config(self):
+        self.assertEqual(onboarding.connect_delivered(self.path, self.args()), {'ok': True, 'name': 'Trello'})
+        config = json.loads(self.path.read_text())
+        [account] = config['accounts']
+        self.assertEqual((account['service'], account['board']), ('trello', 'https://trello.com/b/Board001'))
+        self.assertNotIn('ATTA', self.path.read_text())
+        self.assertNotIn('api_key', account)
+        self.assertEqual(json.loads(Path(config['credentials'][account['credential']]).read_text()),
+                         json.loads(self.credential))
+        self.assertTrue(self.seen and all(m == 'GET' and u.startswith('https://api.trello.com/1/boards/Board001') for m, u, _ in self.seen))
+        self.assertTrue(all('ATTA' not in u and 'ATTA' in h for _, u, h in self.seen))  # the token in the header, never the address
+
+    def test_only_the_trello_token_it_asks_for(self):
+        for args in (self.args(secrets={}), self.args(secrets={'Trello token': self.credential, 'API key': 'x' * 10}),
+                     self.args(secrets={'Trello token': 'has space in it'})):
+            with self.assertRaises(onboarding.SetupError):
+                onboarding.connect_delivered(self.path, args)
+        self.assertEqual(self.seen, [])
+
+
 class Dashboard(unittest.TestCase):
     """Connections, + Add on a self-hosted Machine: Sign in with Intercom once paired, else pair first."""
 
@@ -291,6 +338,8 @@ class Dashboard(unittest.TestCase):
         found = app.action('connect_sources', {}, owner_dashboard=True)
         [intercom] = [x for x in found['sources'] if x['service'] == 'intercom']
         self.assertTrue(intercom['signin'])
+        [trello] = [x for x in found['sources'] if x['service'] == 'trello']
+        self.assertEqual(trello['signin'], 'trello')  # Sign in with Trello too, through the control plane
         self.assertEqual((found['paired'], found['pair_url']), (True, fleet.PAIR_PAGE))
         with self.assertRaises(ValueError):
             app.action('connect_signin', {'name': 'intercom'})  # only from the owner's dashboard
@@ -335,9 +384,9 @@ class Dashboard(unittest.TestCase):
         self.assertFalse(any(x.get('signin') for x in found['sources']))
         # Google, Microsoft, Zoom, Stripe and Intercom sign in from + Add, by the control plane's own flow (POST /_machine/connect)
         signins = {x['service']: x['hosted_signin'] for x in found['sources'] if x.get('hosted_signin')}
-        self.assertEqual({k: signins.get(k) for k in ('gmail', 'calendar', 'outlook', 'outlook_calendar', 'zoom', 'stripe', 'intercom')},
+        self.assertEqual({k: signins.get(k) for k in ('gmail', 'calendar', 'outlook', 'outlook_calendar', 'zoom', 'stripe', 'intercom', 'trello')},
                          {'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft', 'zoom': 'zoom',
-                          'stripe': 'stripe', 'intercom': 'intercom'})
+                          'stripe': 'stripe', 'intercom': 'intercom', 'trello': 'trello'})
         self.assertNotIn('docs', signins)  # Docs keeps its own consent on the account page
         with self.assertRaises(ValueError):
             app.action('connect_signin', {'name': 'intercom'}, owner_dashboard=True)

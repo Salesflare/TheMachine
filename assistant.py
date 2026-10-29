@@ -627,8 +627,9 @@ CONNECT_ACTIONS = (
 # from OpenAI).
 # Not Slack: until The Machine's Slack app is in the Slack Marketplace, + Add connects Slack through Maton; Sign in with
 # Slack shows only on the setup page, for the workspaces the control plane opens it to (its cloud/slack_app.py open_for).
-HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'github', 'whatsapp', 'android', 'microsoft_docs', 'codex'}
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs', 'codex'}
 ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
+SIGNIN_ONLY = ('intercom', 'trello')  # connected only by signing in with the control plane's app, hosted or paired (fleet.connect_start)
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
 CONNECT_SIGNIN_WAIT = 600
@@ -13377,6 +13378,8 @@ def reconnect_help(account, manage, docs_consent=False):
         # a self-hosted one once paired. One read through Maton stays on Maton (its Reconnect is Maton's): until the app is
         # in the Slack Marketplace, Slack holds it to 1 history call a minute, which would read less than Maton does.
         return {'connect_name': 'slack', **({'hosted_signin': 'slack'} if manage else {'signin': 'slack'})}
+    if manage and service in SIGNIN_ONLY:  # Intercom, Trello: Sign in with it again under + Add; Disconnect here
+        return {'connect_name': service, 'hosted_signin': service}
     if manage and service in ON_DASHBOARD:  # GitHub, WhatsApp, the phone: their code on the dashboard; Disconnect here
         return {'connect_name': service, 'hosted_signin': service}
     return {'connect_name': 'crm' if service == 'salesflare' else service}
@@ -14412,6 +14415,8 @@ class App:
                 connector.update(reconnect_help(account, result['manage_url'], docs_offered(self.config, kind)))
                 if kind == 'microsoft' and not result['manage_url'] and 'connect_name' in connector:
                     connector['signin'] = fleet.SIGNIN_OF['docs']  # self-hosted: Connect Microsoft documents signs in through the control plane
+                if connector.get('service') in SIGNIN_ONLY and not result['manage_url'] and 'connect_name' in connector:
+                    connector['signin'] = connector['service']  # self-hosted: Reconnect is Sign in with it, through the control plane
                 if result['manage_url']:
                     continue  # a hosted machine: no terminal there, its account page signs in again
                 if 'google_signin_expired' in (connector.get('error') or '') and connector['id'] in by_id:

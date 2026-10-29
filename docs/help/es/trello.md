@@ -4,7 +4,7 @@ area: connections
 summary: Cambios en tarjetas, comentarios y actividad en un tablero de Trello. Solo lee.
 covers: connector:trello
 code: connectors/trello.py
-site: Connect, More sources, Remove
+site: Sign in with Trello, Connect, More sources, Remove
 ---
 ## Qué lee
 
@@ -16,11 +16,9 @@ Nada en Trello. Solo lee.
 
 ## Conéctalo
 
-1. En trello.com/power-ups/admin, crea un Power-Up con cualquier nombre.
-2. Abre su página de clave de API y copia la clave de API (no el secreto).
-3. Haz clic en el enlace Token que hay al lado, permite el acceso de lectura y copia el token.
-4. En una Machine alojada: abre tu página de configuración en app.themachine.computer/setup, ve a **Más fuentes** y abre Trello. En tu propio ordenador: **Conexiones**, **+ Añadir**, Trello, o `assistant connect trello`.
-5. Indica la dirección del tablero, la clave de API y el token; luego pulsa **Conectar**.
+1. En el panel: **Conexiones**, **+ Añadir**, Trello. O en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Trello. En tu propio ordenador, vincúlalo primero a tu cuenta.
+2. Pulsa **Iniciar sesión con Trello** y permite el acceso de lectura en Trello. The Machine la hace Salesflare.
+3. Elige el tablero que seguir y pulsa **Conectar**. Para otro tablero, añade Trello de nuevo.
 
 ## Quítalo
 
@@ -29,4 +27,4 @@ Nada en Trello. Solo lee.
 
 ## Revócalo en Trello
 
-Revoca el token en los ajustes de tu cuenta de Trello, en Applications, o elimina el Power-Up.
+Revoca The Machine en los ajustes de tu cuenta de Trello, en Applications.

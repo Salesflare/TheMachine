@@ -4,7 +4,7 @@ area: connections
 summary: Klantgesprekken in je Intercom-workspace. Het antwoordt alleen nadat jij verstuurt, als jou.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
-site: Sign in with Intercom, Or paste an access token, Connect, More sources, Remove
+site: Sign in with Intercom, More sources, Remove
 ---
 ## Wat het leest
 
@@ -22,21 +22,11 @@ Kan Intercom niet antwoorden vanaf je Machine (alleen-lezen met je gedeeld, antw
 
 ## Koppelen
 
-Op een gehoste Machine:
+1. In het dashboard: **Koppelingen**, **+ Toevoegen**, Intercom. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Intercom. Op je eigen computer koppel je hem eerst aan je account.
+2. Druk op **Inloggen met Intercom**.
+3. Keur The Machine goed in Intercom. Hij is gemaakt door Salesflare. Daarna ben je terug waar je begon.
 
-1. Open je setuppagina op app.themachine.computer/setup en ga naar **Meer bronnen**.
-2. Open Intercom en druk op **Inloggen met Intercom**.
-3. Keur The Machine goed in Intercom. Het is gemaakt door Salesflare.
-
-Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Intercom en druk op **Inloggen met Intercom**. Als je klaar bent, ben je terug in het dashboard.
-
-Past de login niet bij je workspace, open dan **Of plak een toegangstoken**, plak een token uit de Developer Hub van Intercom en druk op **Verbinden**.
-
-Op je eigen computer:
-
-1. Open in de Developer Hub van Intercom je app, dan Authentication, en kopieer het toegangstoken.
-2. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies Intercom. Of voer `assistant connect intercom` uit.
-3. Plak het token. Een token van een andere workspace wordt een tweede Intercom-account.
+Inloggen bij een andere workspace voegt een tweede Intercom-account toe.
 
 Intercom telt altijd als werk, voor het bedrijf dat de workspace noemt.
 
@@ -47,5 +37,4 @@ Intercom telt altijd als werk, voor het bedrijf dat de workspace noemt.
 
 ## Verwijderen op Intercom
 
-- Ingelogd met Intercom: open in Intercom Settings, Apps, Installed apps, en verwijder The Machine.
-- Een geplakt token: verwijder of vervang het in de Developer Hub, of verwijder de app waarin je het gemaakt hebt.
+Open in Intercom Settings, Apps, Installed apps, en verwijder The Machine.

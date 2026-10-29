@@ -232,10 +232,10 @@ PAIR_PAGE = CONTROL + '/account?tab=fleet#devices'  # where a self-hosted Machin
 START_PREFIX = b'tm-device-connect-start/1\n'  # what a start request is signed as (the control plane's device_connect.start)
 # sign-ins through the control plane's own apps, from the dashboard. microsoft_docs: Docs (Word, OneDrive, SharePoint) for
 # a Microsoft account this Machine has, Files.Read.All with its own consent (onboarding.connect_docs_grant)
-SIGNIN_SOURCES = {'intercom', 'google', 'microsoft', 'zoom', 'microsoft_docs', 'stripe', 'slack'}
+SIGNIN_SOURCES = {'intercom', 'google', 'microsoft', 'zoom', 'microsoft_docs', 'stripe', 'slack', 'trello'}
 # a dashboard source -> the sign-in that connects it (Google: Gmail and Calendar together; Microsoft: Outlook mail and calendar)
 SIGNIN_OF = {'intercom': 'intercom', 'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft', 'zoom': 'zoom',
-             'docs': 'microsoft_docs', 'stripe': 'stripe', 'slack': 'slack'}
+             'docs': 'microsoft_docs', 'stripe': 'stripe', 'slack': 'slack', 'trello': 'trello'}
 SIGNIN_EXPIRES = 30 * 60  # a sign-in started on the dashboard and not finished by then is shown as stopped
 SIGNINS_FRESH = 5 * 60  # how long the control plane's list of the sign-ins it can start for this Machine is kept (Fleet.signins)
 # what the control plane says when it has no app for a sign-in (device_connect.start): an older one only says it this way

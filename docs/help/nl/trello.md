@@ -4,7 +4,7 @@ area: connections
 summary: Wijzigingen aan kaarten, reacties en activiteit op één Trello-bord. Het leest alleen.
 covers: connector:trello
 code: connectors/trello.py
-site: Connect, More sources, Remove
+site: Sign in with Trello, Connect, More sources, Remove
 ---
 ## Wat het leest
 
@@ -16,11 +16,9 @@ Niets in Trello. Het leest alleen.
 
 ## Koppelen
 
-1. Maak op trello.com/power-ups/admin een Power-Up aan, met welke naam ook.
-2. Open de pagina met de API-sleutel en kopieer de API-sleutel (niet het secret).
-3. Klik op de link Token ernaast, sta leestoegang toe en kopieer het token.
-4. Op een gehoste Machine: open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen** en open Trello. Op je eigen computer: **Koppelingen**, **+ Toevoegen**, Trello, of `assistant connect trello`.
-5. Geef het adres van het bord, de API-sleutel en het token, en druk op **Verbinden**.
+1. In het dashboard: **Koppelingen**, **+ Toevoegen**, Trello. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Trello. Op je eigen computer koppel je hem eerst aan je account.
+2. Druk op **Inloggen met Trello** en sta leestoegang toe in Trello. The Machine is gemaakt door Salesflare.
+3. Kies het bord om te volgen en druk op **Verbinden**. Voor een ander bord voeg je Trello opnieuw toe.
 
 ## Verwijderen
 
@@ -29,4 +27,4 @@ Niets in Trello. Het leest alleen.
 
 ## Intrekken in Trello
 
-Trek het token in bij de accountinstellingen van Trello, onder Applications, of verwijder de Power-Up.
+Trek The Machine in bij de accountinstellingen van Trello, onder Applications.

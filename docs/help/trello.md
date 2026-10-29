@@ -4,7 +4,7 @@ area: connections
 summary: Card changes, comments and activity on one Trello board. It only reads.
 covers: connector:trello
 code: connectors/trello.py
-site: Connect, More sources, Remove
+site: Sign in with Trello, Connect, More sources, Remove
 ---
 ## What it reads
 
@@ -16,11 +16,9 @@ Nothing in Trello. It only reads.
 
 ## Connect it
 
-1. At trello.com/power-ups/admin, create a Power-Up with any name.
-2. Open its API key page and copy the API key (not the secret).
-3. Click the Token link next to it, allow read access and copy the token.
-4. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources** and open Trello. On your own computer: **Connections**, **+ Add**, Trello, or `assistant connect trello`.
-5. Give the board's address, the API key and the token, then press **Connect**.
+1. In the dashboard: **Connections**, **+ Add**, Trello. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Trello. On your own computer, pair it with your account first.
+2. Press **Sign in with Trello** and allow read access in Trello. The Machine is made by Salesflare.
+3. Pick the board to follow and press **Connect**. For another board, add Trello again.
 
 ## Remove it
 
@@ -29,4 +27,4 @@ Nothing in Trello. It only reads.
 
 ## Revoke it in Trello
 
-Revoke the token in your Trello account settings, under Applications, or delete the Power-Up.
+Revoke The Machine in your Trello account settings, under Applications.

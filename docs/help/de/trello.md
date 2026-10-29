@@ -4,7 +4,7 @@ area: connections
 summary: Kartenänderungen, Kommentare und Aktivität auf einem Trello-Board. Es liest nur.
 covers: connector:trello
 code: connectors/trello.py
-site: Connect, More sources, Remove
+site: Sign in with Trello, Connect, More sources, Remove
 ---
 ## Was es liest
 
@@ -16,11 +16,9 @@ Nichts in Trello. Es liest nur.
 
 ## Verbinden
 
-1. Erstelle unter trello.com/power-ups/admin ein Power-Up mit beliebigem Namen.
-2. Öffne seine Seite für den API-Schlüssel und kopiere den API-Schlüssel (nicht das Secret).
-3. Klick auf den Token-Link daneben, erlaube Lesezugriff und kopiere das Token.
-4. Auf einer gehosteten Machine: Öffne deine Einrichtungsseite unter app.themachine.computer/setup, geh zu **Weitere Quellen** und öffne Trello. Auf deinem eigenen Computer: **Verbindungen**, **+ Hinzufügen**, Trello, oder `assistant connect trello`.
-5. Gib die Adresse des Boards, den API-Schlüssel und das Token an und tippe dann auf **Verbinden**.
+1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Trello. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Trello. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
+2. Tippe auf **Mit Trello anmelden** und erlaube in Trello den Lesezugriff. The Machine wird von Salesflare gemacht.
+3. Wähle das Board, dem gefolgt werden soll, und tippe auf **Verbinden**. Für ein weiteres Board füge Trello noch einmal hinzu.
 
 ## Entfernen
 
@@ -29,4 +27,4 @@ Nichts in Trello. Es liest nur.
 
 ## In Trello widerrufen
 
-Widerrufe das Token in den Einstellungen deines Trello-Kontos unter Applications, oder lösche das Power-Up.
+Widerrufe The Machine in den Einstellungen deines Trello-Kontos unter Applications.

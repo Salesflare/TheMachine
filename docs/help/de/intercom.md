@@ -4,7 +4,7 @@ area: connections
 summary: Kundengespräche in deinem Intercom-Workspace. Es antwortet erst, nachdem du sendest, in deinem Namen.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
-site: Sign in with Intercom, Or paste an access token, Connect, More sources, Remove
+site: Sign in with Intercom, More sources, Remove
 ---
 ## Was es liest
 
@@ -22,21 +22,11 @@ Kann Intercom nicht von deiner Machine aus antworten (nur zum Lesen mit dir gete
 
 ## Verbinden
 
-Auf einer gehosteten Machine:
+1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Intercom. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Intercom. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
+2. Tippe auf **Mit Intercom anmelden**.
+3. Erlaube The Machine in Intercom. Sie wird von Salesflare gemacht. Danach bist du wieder dort, wo du angefangen hast.
 
-1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne Intercom und tippe auf **Mit Intercom anmelden**.
-3. Gib The Machine in Intercom frei. Es kommt von Salesflare.
-
-Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Intercom und tippe auf **Mit Intercom anmelden**. Danach bist du zurück im Dashboard.
-
-Passt die Anmeldung nicht zu deinem Workspace, öffne stattdessen **Oder füge ein Zugriffstoken ein**, füge ein Token aus dem Developer Hub von Intercom ein und tippe auf **Verbinden**.
-
-Auf deinem eigenen Computer:
-
-1. Öffne im Developer Hub von Intercom deine App, dann Authentication, und kopiere ihr Zugriffstoken.
-2. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle Intercom. Oder führe `assistant connect intercom` aus.
-3. Füge das Token ein. Ein Token aus einem anderen Workspace wird zu einem zweiten Intercom-Konto.
+Eine Anmeldung bei einem anderen Workspace fügt ein zweites Intercom-Konto hinzu.
 
 Intercom zählt immer als Arbeit, für die Firma, die sein Workspace nennt.
 
@@ -47,5 +37,4 @@ Intercom zählt immer als Arbeit, für die Firma, die sein Workspace nennt.
 
 ## Bei Intercom deinstallieren
 
-- Mit Intercom angemeldet: Öffne in Intercom Settings, Apps, Installed apps und entferne The Machine.
-- Ein eingefügtes Token: Lösche oder erneuere es im Developer Hub, oder lösche die App, in der du es erstellt hast.
+Öffne in Intercom Settings, Apps, Installed apps und entferne The Machine.

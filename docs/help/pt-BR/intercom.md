@@ -4,7 +4,7 @@ area: connections
 summary: Conversas com clientes no seu workspace do Intercom. Ele só responde depois que você envia, em seu nome.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
-site: Sign in with Intercom, Or paste an access token, Connect, More sources, Remove
+site: Sign in with Intercom, More sources, Remove
 ---
 ## O que ele lê
 
@@ -22,21 +22,11 @@ Quando o Intercom não consegue responder pela sua Machine (compartilhado com vo
 
 ## Conectar
 
-Em uma Machine hospedada:
+1. No painel: **Conexões**, **+ Adicionar**, Intercom. Ou na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Intercom. No seu próprio computador, pareie-o primeiro com sua conta.
+2. Clique em **Entrar com o Intercom**.
+3. Aprove a The Machine no Intercom. Ela é feita pela Salesflare. Quando terminar, você volta para onde começou.
 
-1. Abra sua página de configuração em app.themachine.computer/setup e vá em **Mais fontes**.
-2. Abra Intercom e toque em **Entrar com o Intercom**.
-3. Aprove a The Machine no Intercom. Ela é feita pela Salesflare.
-
-Ou no painel: **Conexões**, **+ Adicionar**, escolha Intercom e clique em **Entrar com Intercom**. Quando terminar, você volta para o painel.
-
-Se o login não funcionar para o seu workspace, abra **Ou cole um token de acesso**, cole um token do Developer Hub do Intercom e toque em **Conectar**.
-
-No seu próprio computador:
-
-1. No Developer Hub do Intercom, abra seu app, depois Authentication, e copie o token de acesso dele.
-2. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha Intercom. Ou rode `assistant connect intercom`.
-3. Cole o token. Um token de outro workspace vira uma segunda conta do Intercom.
+Entrar em outro workspace adiciona uma segunda conta do Intercom.
 
 O Intercom sempre conta como trabalho, para a empresa que o workspace indica.
 
@@ -47,5 +37,4 @@ O Intercom sempre conta como trabalho, para a empresa que o workspace indica.
 
 ## Desinstalar no Intercom
 
-- Se você entrou com o Intercom: no Intercom, abra Settings, Apps, Installed apps, e remova a The Machine.
-- Um token colado: exclua ou troque o token no Developer Hub, ou exclua o app em que você o criou.
+No Intercom, abra Settings, Apps, Installed apps, e remova a The Machine.
