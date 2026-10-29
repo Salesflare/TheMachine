@@ -16472,6 +16472,12 @@ class App:
                 raise ValueError('This service cannot save its settings' if hosted else f'This service cannot save its settings; run assistant connect {source} in a terminal')
             answers, secrets_ = connect_form(known[source], args) if args.get('form') is True and not again else (None, None)
             with lock:
+                for v in sessions.values():
+                    # Starting the same source again replaces a setup the dashboard lost track of (a reload, another
+                    # device); so does any setup left untouched for 10 minutes
+                    if v['state'] == 'running' and (v['source'] == source or time.monotonic() - v['at'] > 600):
+                        v['ui'].cancel()
+                        v['state'] = 'cancelled'
                 if any(v['state'] == 'running' for v in sessions.values()):
                     raise ValueError('Another source is being added; finish or stop that one first')
                 key = secrets.token_hex(12)
@@ -16495,6 +16501,7 @@ class App:
                 raise ValueError('Invalid answer')
             if not session['ui'].answer(args.get('question'), value):
                 raise ValueError('That question was already answered')
+            session['at'] = time.monotonic()
             time.sleep(0.3)  # most steps answer at once: show what comes next
         elif name == 'connect_cancel':
             session['ui'].cancel()
