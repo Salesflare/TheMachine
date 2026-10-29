@@ -489,7 +489,11 @@ Friends are free, between hosted and self-hosted Machines alike.
 
 ### Finding people you know
 
-Both switches are off until you turn them on, in the Fleet tab under **Network** (Suggestions asks once).
+Both switches are on by default at the Standard security level, and off at Careful (your own level, or a Careful Work
+Fleet you're in). Change either in the Fleet tab under **Network**; your choice stays until you pick a security level
+again. A Machine from before this, where you never touched a switch, turns it on with its next update and says so once:
+a line in the Fleet activity history and "Now findable by people who have your email" with **Turn off** in the Network
+block. No card.
 
 - **Check which of my contacts have a Machine** looks daily for your contacts on the Network, and soon after you meet someone
   new or someone you know becomes findable. Your Machine blinds each

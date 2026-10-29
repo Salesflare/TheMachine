@@ -18,6 +18,8 @@ Nel pannello Network:
 - "Controlla quali miei contatti hanno una Machine" ti suggerisce persone che conosci.
 - "Permetti a chi ha la mia email di trovarmi" permette loro di trovarti.
 
+Entrambi sono attivi per impostazione predefinita, e disattivati al livello di sicurezza Prudente. Puoi disattivarli quando vuoi; la tua scelta resta.
+
 Le persone che conosci e che sono nel Network ti vengono suggerite appena lo attivi, e quando qualcuno si unisce più tardi. Ogni corrispondenza arriva con Collegati, Non ora o **Non suggerire mai**. **Esci dal Network** ti toglie dal Network.
 
 ## Una Machine sul tuo computer

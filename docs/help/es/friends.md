@@ -18,6 +18,8 @@ En el panel Network:
 - "Ver cuáles de mis contactos tienen una Machine" te sugiere gente que conoces.
 - "Dejar que me encuentren quienes tienen mi correo" permite que te encuentren.
 
+Los dos están activados por defecto, y desactivados en el nivel de seguridad Prudente. Desactiva cualquiera cuando quieras; tu elección se mantiene.
+
 La gente que conoces y está en la Network se te sugiere en cuanto la activas, y cuando alguien se une más tarde. Cada coincidencia viene con Conectar, Ahora no o **No sugerir nunca**. **Salir de la Network** te saca de ella.
 
 ## Una Machine en tu propio ordenador

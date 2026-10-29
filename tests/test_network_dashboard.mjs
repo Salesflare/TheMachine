@@ -61,12 +61,24 @@ try{
   assert.equal(await block.locator('[data-net-addr="sam@other.example"]').isChecked(),false);
   calls.length=0;await block.locator('[data-net-addr="sam.doe-with-a-long-address@personal-mail.example"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'address_off',email:'sam.doe-with-a-long-address@personal-mail.example'}});
+  assert.equal(await block.locator('.net-default').count(),0);  // turned on by the owner: no line
   calls.length=0;await block.locator('[data-net-toggle="discoverable_off"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'discoverable_off'}});
   calls.length=0;await block.locator('[data-net-do="leave"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'leave',email:'',relation:''}});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px Fleet tab scrolls sideways`);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/network-${scheme}-${width}.png`,fullPage:true});
+  // Turned on by default (Standard): one quiet line with Turn off, no card under Suggestions
+  shown={...found,network:{...found.network,asked:false,default_at:new Date().toISOString(),people:[]}};
+  await page.reload();await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('[data-fleet-pane="network"]').click();
+  const line=page.locator('#fleet-network .net-default');await line.waitFor();
+  assert.match(await line.innerText(),/Now findable by people who have your email\./);
+  calls.length=0;await line.locator('[data-net-do="discoverable_off"]').click();
+  assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'discoverable_off',email:'',relation:''}});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px default line scrolls sideways`);
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/network-default-${scheme}-${width}.png`,fullPage:true});
+  await navClick(page.locator('nav [data-tab="inbox"]'));
+  assert.equal(await page.locator('.net-card').count(),0);
   assert.deepEqual(errors,[]);
  }
  console.log('ok network dashboard');

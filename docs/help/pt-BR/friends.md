@@ -18,6 +18,8 @@ No painel da Network:
 - "Verificar quais dos meus contatos têm uma Machine" sugere pessoas que você conhece.
 - "Deixar quem tem meu e-mail me encontrar" permite que elas encontrem você.
 
+Os dois vêm ligados por padrão, e desligados no nível de segurança Cuidadoso. Desligue qualquer um quando quiser; sua escolha fica.
+
 Pessoas que você conhece e que estão na Network são sugeridas assim que você a ativa, e quando alguém entra depois. Uma sugestão vem com Conectar, Agora não ou **Nunca sugerir**. **Sair da Network** tira você dela.
 
 ## Uma Machine no seu próprio computador

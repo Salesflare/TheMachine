@@ -20,6 +20,7 @@ Un nivel es un punto de partida. Si después cambias cualquier ajuste, el nivel 
 - **Texto en las notificaciones** desactivado: una notificación dice "Nueva tarea" o "Lista", no lo que dice la tarea.
 - **Ofrecer guardar inicios de sesión** desactivado. Los sitios con sesión iniciada que guardaste se quedan hasta que toques **Olvidar todos los inicios de sesión guardados**.
 - **Buscar contactos de trabajo**, **Ofrecer compartir aprendizajes** y **Compartir lo que se pregunta a la ayuda** desactivados.
+- **Comprobar cuáles de mis contactos tienen una Machine** y **Dejar que me encuentren quienes tienen mi correo** desactivados.
 - **Guardar los detalles de Hazlo 90 días** desactivado: se guardan 30 días.
 - En una Family, las horas libres y ocupadas te preguntan antes. Con Amigos, se rechaza el contexto de reuniones.
 
@@ -32,6 +33,7 @@ Lo elige el propietario del Fleet o un administrador en la página de la cuenta,
 - El Graph del equipo comparte los correos de clientes sin sus adjuntos.
 - Las notificaciones de tareas de trabajo no muestran texto.
 - No se buscan datos de contactos de trabajo.
+- Tu Machine no comprueba tus contactos en la Network ni hace que te encuentren por correo, salvo que lo hayas activado tú.
 - Todos vuelven a iniciar sesión cada 7 días.
 - Un enlace de invitación solo funciona para el correo al que se envió.
 

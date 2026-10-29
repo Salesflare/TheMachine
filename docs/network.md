@@ -21,10 +21,11 @@ how messages stay reliable, and where it's going.
   hands out the secret and knows it: equal hashes reveal matching claims, and it can test a candidate Message-ID
   obtained elsewhere. Claims are therefore not end-to-end encrypted. The secret cannot open sealed questions or
   sign as a Machine; those keys never leave your Machine. A secret unknown to the Network is on the roadmap.
-- **Finding people you know** (docs/fleet.md) is opt-in on both sides. Contacts are looked up blinded (private set
+- **Finding people you know** (docs/fleet.md) is on by default at the Standard security level and off at Careful;
+  either switch can be turned off any time. Contacts are looked up blinded (private set
   intersection), so the Network never sees your address book. Being findable covers your account email and the
   addresses of the mail accounts your Machine connected, each of which you can turn off; the Network keeps those only
-  blinded and learns which addresses matched people who chose to be found.
+  blinded and learns which addresses matched people who are findable.
 - **Your own addresses.** A self-hosted Machine tells the Network the mail addresses of its work accounts (so teammates'
   Machines know who knows whom) and its dashboard's https address when you set `dashboard_host`, so your Account page
   can link to your dashboard. Without `dashboard_host` it sends no dashboard address.

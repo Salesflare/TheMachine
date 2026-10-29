@@ -20,6 +20,7 @@ Un livello è un punto di partenza. Se poi cambi un’impostazione, il livello m
 - **Testo nelle notifiche** disattivato: una notifica dice "Nuova attività" o "Pronta", non cosa dice l’attività.
 - **Proponi di salvare gli accessi** disattivato. I siti con un accesso salvato restano finché non tocchi **Dimentica tutti gli accessi salvati**.
 - **Cerca i contatti di lavoro**, **Proponi di condividere apprendimenti** e **Condividi cosa si chiede all’aiuto** disattivati.
+- **Controlla quali dei miei contatti hanno una Machine** e **Lascia che mi trovi chi ha la mia email** disattivati.
 - **Conserva i dettagli di Fallo per 90 giorni** disattivato: vengono conservati 30 giorni.
 - In una Family, gli orari libero/occupato ti chiedono prima il permesso. Con gli Amici, il contesto delle riunioni viene rifiutato.
 
@@ -32,6 +33,7 @@ Lo sceglie il proprietario della Fleet o un admin nella pagina dell’account, s
 - Il Graph del team condivide le email dei clienti senza allegati.
 - Le notifiche delle attività di lavoro non mostrano testo.
 - I contatti di lavoro non vengono cercati.
+- La tua Machine non controlla i tuoi contatti nel Network e non ti rende trovabile per email, a meno che non l’abbia attivato tu.
 - Tutti devono accedere di nuovo ogni 7 giorni.
 - Un link di invito funziona solo per l’email a cui è stato inviato.
 

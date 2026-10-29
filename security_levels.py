@@ -10,6 +10,9 @@ Two places pick a level:
   attachments in the Shared Graph, no card text in phone notifications for work cards, and no contact lookups.
   A member's own stricter choices stay; their looser stored choices are kept but count as the floor while it lasts.
 
+The Network's two discovery switches (discovery.py) follow the level too: on at Standard, off at Careful, unless the
+owner set one themselves. Picking a level resets both to its default.
+
 Neither level changes what needs the owner's OK to go out (every send, calendar write and final step waits for their
 Send or confirm in both), nor Do it, its tools or coding agents. Standard changes nothing for anyone."""
 from __future__ import annotations
@@ -164,6 +167,7 @@ def apply(db, level):
         raise ValueError('A level is Standard or Careful')
     now = current(db)
     want = values(level, now)
+    network_follow(db)
     rules = []
     for key in (k for k in now if now[k] != want[k]):
         if key in OWN:
@@ -172,6 +176,18 @@ def apply(db, level):
             group, kind = key.split('_', 1)
             rules.append((group_ref(db, group), kind, want[key]))
     return rules
+
+
+def network_follow(db):
+    """The Network's discovery switches follow the level again: the owner's earlier choice is let go, and the Machine's
+    next Network round (discovery.Discovery.network_defaults) sets them to the level's default."""
+    raw = _get(db, "SELECT value FROM fleet_meta WHERE key='network'")
+    try:
+        found = json.loads(raw) if raw else None
+    except ValueError:
+        found = None
+    if isinstance(found, dict):
+        _put(db, "UPDATE fleet_meta SET value=? WHERE key='network'", (json.dumps({**found, 'chosen': []}),))
 
 
 def view(db):
