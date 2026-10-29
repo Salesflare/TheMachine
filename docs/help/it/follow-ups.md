@@ -32,7 +32,9 @@ Subito prima dell’invio il thread viene ricontrollato, e se qualcuno ha scritt
 
 I ricontatti di una bacheca arrivano come un’unica attività, mai una per email. Mentre li scrive mostra “Scrittura di 3 ricontatti…”, poi “8 ricontatti pronti per Alpha testers”.
 
-**Rivedi** li mostra interi, uno sotto l’altro, così li leggi tutti scorrendo una volta. **Invia**, **Modifica** e **Salta** compaiono su quello attuale. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica e s salta. **Invia tutti i selezionati** invia quelli ancora spuntati. Il ricontatto di un singolo progetto è un’attività normale.
+**Rivedi** li mostra interi, uno sotto l’altro, così li leggi tutti scorrendo una volta. **Invia**, **Modifica** e **Salta** compaiono su quello attuale. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica, s salta e c cambia. **Invia tutti i selezionati** invia quelli ancora spuntati. Il ricontatto di un singolo progetto è un’attività normale.
+
+**Cambia…** riscrive tutte le bozze selezionate, o solo quella attuale, come dici tu; non viene inviato nulla e **Annulla modifica** riporta il testo di prima.
 
 Quando ne partono diversi di seguito, anche con Invia senza chiedere, ogni casella ne invia uno ogni 30-45 secondi e l’attività mostra a che punto è: “Invio 3 di 8…”.
 

@@ -1415,6 +1415,15 @@ class Boards(unittest.TestCase):
                                           {'project': f'project:{bram}', 'fit': 'no', 'why': 'not a partner'}])
         return board_id, pid, bram, self.ids([m['source_id'] for m in partner]), self.ids([m['source_id'] for m in bramble])
 
+    def test_a_part_whose_name_is_taken_keeps_the_bundle_in_front(self):
+        board_id, pid, bram, partner, bramble = self.bundle()
+        with self.store.connect() as db:
+            org = db.execute("SELECT name FROM graph_nodes WHERE id='org:partner.example'").fetchone()[0]
+            graph.project_id(db, org, NOW.isoformat())  # other work by that name, never merged into
+            db.execute('UPDATE projects SET closed_at=? WHERE name=?', (NOW.isoformat(), org))
+            names = {p['key']: p['name'] for p in graph.split_plan(db, pid)}
+        self.assertEqual(names['org:partner.example'], f'Acme sale: {org}')
+
     def test_add_on_a_bundle_makes_one_project_per_counterpart_and_undo_puts_it_back(self):
         board_id, pid, bram, partner, bramble = self.bundle()
         with self.store.connect() as db:
@@ -1425,7 +1434,8 @@ class Boards(unittest.TestCase):
         with self.store.connect() as db:
             on = {r['name']: r for r in db.execute('SELECT * FROM projects WHERE board_id=? AND closed_at IS NULL', (board_id,))}
             self.assertEqual(len(on), 2)
-            part = next(n for n in on if n.startswith('Acme sale: '))
+            part = next(n for n in on if n != 'Bramble talks')
+            self.assertEqual(part, db.execute("SELECT name FROM graph_nodes WHERE id='org:partner.example'").fetchone()[0])  # the board names the work
             self.assertEqual(sorted(r[0] for r in db.execute('SELECT event_id FROM event_projects WHERE project_id=?', (on[part]['id'],))), sorted(partner))
             self.assertEqual(on[part]['org'], 'partner.example')
             self.assertIn('Bramble talks', on)  # the counterpart's own project, no second one
@@ -1436,7 +1446,7 @@ class Boards(unittest.TestCase):
         self.app.action('board_fit', {'board_id': board_id, 'undo': done['undo']}, owner_dashboard=True)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM projects WHERE board_id IS NOT NULL').fetchone()[0], 0)
-            self.assertFalse(db.execute("SELECT 1 FROM projects WHERE name LIKE 'Acme sale: %'").fetchone())
+            self.assertFalse(db.execute('SELECT 1 FROM projects WHERE name=?', (part,)).fetchone())
             self.assertIsNone(db.execute('SELECT closed_at FROM projects WHERE id=?', (pid,)).fetchone()[0])
             self.assertEqual(sorted(r[0] for r in db.execute('SELECT event_id FROM event_projects WHERE project_id=?', (pid,))), sorted(partner + bramble))
             self.assertEqual(db.execute('SELECT count(*) FROM event_projects WHERE project_id=?', (bram,)).fetchone()[0], 0)

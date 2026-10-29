@@ -32,7 +32,9 @@ Juste avant l’envoi, le fil est vérifié à nouveau, et si quelqu’un a écr
 
 Les relances d’un tableau arrivent en une seule tâche, jamais une par e-mail. Pendant la rédaction, elle indique « Rédaction de 3 relances… », puis « 8 relances prêtes pour Alpha testers ».
 
-**Vérifier** les affiche en entier, les unes sous les autres : un seul défilement suffit pour tout lire. **Envoyer**, **Modifier** et **Ignorer** apparaissent sur la relance en cours. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie et s ignore. **Envoyer tout ce qui est coché** envoie celles encore cochées. La relance d’un seul projet est une tâche normale.
+**Vérifier** les affiche en entier, les unes sous les autres : un seul défilement suffit pour tout lire. **Envoyer**, **Modifier** et **Ignorer** apparaissent sur la relance en cours. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie, s ignore et c réécrit. **Envoyer tout ce qui est coché** envoie celles encore cochées. La relance d’un seul projet est une tâche normale.
+
+**Modifier…** réécrit tous les brouillons cochés, ou seulement celui en cours, comme vous le demandez ; rien n’est envoyé, et **Annuler la modification** rétablit l’ancien texte.
 
 Quand plusieurs partent à la suite, aussi avec Envoyer sans demander, chaque boîte mail en envoie une toutes les 30 à 45 secondes, et la tâche montre où on en est : « Envoi de 3 sur 8… ».
 
