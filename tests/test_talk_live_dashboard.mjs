@@ -24,7 +24,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(demo&&r.action.startsWith('talk_')){res.end(JSON.stringify({ok:true,demo:true}));return}
   const answer={
    talk_status:()=>({ready,limit:600,warn:540}),
-   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',ask_note:'Drafts wait for Approve.',notes:{queued:'Joins the last request.',done:'The chat finished. Its answer: "{answer}" Tell the owner now.',stopped:'The chat stopped.'},ready:true},
+   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',voice:'cedar',speed:0.95,ask_note:'Drafts wait for Approve.',notes:{queued:'Joins the last request.',done:'The chat finished. Its answer: "{answer}" Tell the owner now.',stopped:'The chat stopped.'},ready:true},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_line:()=>{lines.push({kind:a.role==='user'?'you':'reply',text:a.text,via:'live',at:Date.now()});return {ok:true}},
    talk_tool:()=>({output:{title:cards[0].title,messages:[{from:'Lotte',text:'When can I pick it up?'}]}}),
@@ -103,6 +103,7 @@ try{
   assert.deepEqual(setup.session.tools.map(x=>x.name),['todo_details','find_todos','ask_chat'],'the page sets its own tools');
   assert.equal(setup.session.instructions,'You are The Machine, talking live.');
   assert.ok(setup.session.audio.input.transcription.model,'what the owner says is written down');
+  assert.deepEqual(setup.session.audio.output,{voice:'cedar',speed:0.95},'the owner\'s voice, a touch slower than the default');
   assert.ok(await page.locator(bar+' .talk-cost').isVisible(),'an API key: the cost note shows');
 
   // What both sides say lands in the chat, as normal messages: the voice's once its response is done
