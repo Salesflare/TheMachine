@@ -76,6 +76,6 @@ To join a Fleet, start one, or pair a Machine on your own computer, see [Plans a
 The Fleet part of your account page shows two more things:
 
 - **Removed lately**: each person removed, or who left. It says **Removed, confirmed** once their Machine removed the work data, Google confirmed the sign-out and any shared access they had was renewed. Until then it says **Pending** and why.
-- **Activity**: who did what and when. Invites, joins, removals, roles, servers and billing, shared connections and approvals. It also lists every time our team opened a member's server or its logs. Never message content. **Download CSV** exports it. Kept 12 months.
+- **Activity**: who did what and when. Invites, joins, removals, roles, hosted Machines and billing, shared connections and approvals. It also lists every time our team opened a member's Machine or its logs. Never message content. **Download CSV** exports it. Kept 12 months.
 
 After **Stop sharing**, a shared connection shows **Removed, confirmed** once every Machine lost access to it.

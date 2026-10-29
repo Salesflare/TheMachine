@@ -36,7 +36,7 @@ A The Machine pede ao WhatsApp as fotos de perfil das pessoas no seu Graph que n
 
 ## Remover
 
-- Em uma Machine hospedada: toque em **Remover** ao lado dele na sua página de configuração. Seu servidor se desconecta e exclui o que guardou do WhatsApp.
+- Em uma Machine hospedada: toque em **Remover** ao lado dele na sua página de configuração. Sua Machine se desconecta e exclui o que guardou do WhatsApp.
 - No seu próprio computador: **Conexões**, abra WhatsApp, **Detalhes** e depois **Desconectar**. Depois desconecte no seu celular também.
 
 ## Desconectar no WhatsApp

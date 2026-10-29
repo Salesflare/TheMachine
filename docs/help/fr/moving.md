@@ -11,7 +11,7 @@ order: 5
 
 1. Sur la page de votre compte, ouvrez Données et appuyez sur **Tout exporter**.
 2. Si vous voulez, définissez une phrase secrète pour emporter vos clés. Sans phrase secrète, l’export reçoit un code et ces sources devront être reconnectées.
-3. Appuyez sur **Télécharger**. Le fichier vient directement de votre serveur, qui le supprime après 24 heures, ou tout de suite avec **Le supprimer maintenant**.
+3. Appuyez sur **Télécharger**. Le fichier vient directement de votre Machine, qui le supprime après 24 heures, ou tout de suite avec **Le supprimer maintenant**.
 
 Le fichier est toujours chiffré. Google demande toujours une nouvelle connexion de l’autre côté. La connexion à votre modèle et l’historique de vos chats restent sur place.
 

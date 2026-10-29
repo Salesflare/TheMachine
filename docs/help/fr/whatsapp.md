@@ -36,7 +36,7 @@ The Machine demande à WhatsApp les photos de profil des personnes de votre grap
 
 ## Le retirer
 
-- Sur une Machine hébergée : appuyez sur **Retirer** à côté sur votre page de configuration. Votre serveur se dissocie et supprime ce qu’il gardait pour WhatsApp.
+- Sur une Machine hébergée : appuyez sur **Retirer** à côté sur votre page de configuration. Votre Machine se dissocie et supprime ce qu’elle gardait pour WhatsApp.
 - Sur votre propre ordinateur : **Connexions**, ouvrez WhatsApp, **Détails**, puis **Déconnecter**. Puis dissociez-le aussi sur votre téléphone.
 
 ## Le dissocier dans WhatsApp

@@ -76,6 +76,6 @@ Wie du einer Fleet beitrittst, eine gründest oder eine Machine auf deinem eigen
 Der Fleet-Teil deiner Kontoseite zeigt zwei weitere Dinge:
 
 - **Kürzlich entfernt**: jede Person, die entfernt wurde oder gegangen ist. Dort steht **Entfernt, bestätigt**, sobald ihre Machine die Arbeitsdaten entfernt hat, Google die Abmeldung bestätigt hat und jedes geteilte Token, das sie hatte, ersetzt wurde. Bis dahin steht dort **Ausstehend** und warum.
-- **Aktivität**: wer was wann gemacht hat. Einladungen, Beitritte, Entfernungen, Rollen, Server und Abrechnung, geteilte Connectoren und Freigaben. Es listet auch jedes Mal, wenn unser Team den Server eines Mitglieds oder seine Logs geöffnet hat. Nie Nachrichteninhalte. **CSV herunterladen** exportiert es. Wird 12 Monate aufbewahrt.
+- **Aktivität**: wer was wann gemacht hat. Einladungen, Beitritte, Entfernungen, Rollen, gehostete Machines und Abrechnung, geteilte Connectoren und Freigaben. Es listet auch jedes Mal, wenn unser Team die Machine eines Mitglieds oder ihre Logs geöffnet hat. Nie Nachrichteninhalte. **CSV herunterladen** exportiert es. Wird 12 Monate aufbewahrt.
 
 Nach **Nicht mehr teilen** zeigt ein geteilter Connector **Entfernt, bestätigt**, sobald jede Machine das Token gelöscht hat.

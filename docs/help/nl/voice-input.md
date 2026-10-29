@@ -34,7 +34,7 @@ Tot hij klaar is, gebruikt **Automatisch** de eigen spraakherkenning van je brow
 ## Instellingen
 
 - **Omgezet naar tekst**: **Automatisch**, **Op deze Machine** of **Met OpenAI**.
-- **Nauwkeurigheid** (alleen op je Machine): **Nauwkeuriger** werkt het best voor de meeste talen. **Sneller** is vlugger, maar met meer foute woorden. Op een Standard-server, die minder geheugen heeft, staat **Sneller** standaard aan.
+- **Nauwkeurigheid** (alleen op je Machine): **Nauwkeuriger** werkt het best voor de meeste talen. **Sneller** is vlugger, maar met meer foute woorden. Op een Standaard-Machine, die minder geheugen heeft, staat **Sneller** standaard aan.
 - **Taal**: **Herkennen** werkt voor elke taal van de app. Je eigen taal kiezen is iets sneller.
 
 Wil je liever hardop met The Machine praten, zie dan [Live praten](talk-live.md).

@@ -19,7 +19,7 @@ Una risposta o un messaggio diretto, e solo dopo che l'hai approvato sull'attivi
 Su una Machine in hosting:
 
 1. Apri la tua pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
-2. Apri X, scrivi il tuo nome utente senza la @, accedi a X nel browser del tuo server quando te lo chiede, poi premi **Collegati**.
+2. Apri X, scrivi il tuo nome utente senza la @, accedi a X nel browser della tua Machine quando te lo chiede, poi premi **Collegati**.
 
 Sul tuo computer:
 

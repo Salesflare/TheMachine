@@ -76,6 +76,6 @@ Om lid te worden van een Fleet, er een te starten of een Machine op je eigen com
 Het Fleet-deel van je accountpagina toont nog twee dingen:
 
 - **Onlangs verwijderd**: elke persoon die verwijderd is of vertrokken is. Er staat **Verwijderd, bevestigd** zodra hun Machine de werkgegevens verwijderd heeft, Google het uitloggen bevestigd heeft en elk gedeeld token dat ze hadden vervangen is. Tot dan staat er **In behandeling** en waarom.
-- **Activiteit**: wie wat deed en wanneer. Uitnodigingen, nieuwe leden, verwijderingen, rollen, servers en facturatie, gedeelde connectors en goedkeuringen. Het toont ook elke keer dat ons team de server of de logboeken van een lid geopend heeft. Nooit de inhoud van berichten. **CSV downloaden** exporteert het. 12 maanden bewaard.
+- **Activiteit**: wie wat deed en wanneer. Uitnodigingen, nieuwe leden, verwijderingen, rollen, gehoste Machines en facturatie, gedeelde connectors en goedkeuringen. Het toont ook elke keer dat ons team de Machine of de logboeken van een lid geopend heeft. Nooit de inhoud van berichten. **CSV downloaden** exporteert het. 12 maanden bewaard.
 
 Na **Stoppen met delen** toont een gedeelde connector **Verwijderd, bevestigd** zodra elke Machine het token verwijderd heeft.

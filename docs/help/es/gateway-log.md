@@ -1,7 +1,7 @@
 ---
-title: Registro del servidor
+title: Registro de la Machine
 area: connections
-summary: El propio registro de tu servidor, para que The Machine detecte sus propios problemas. Solo lee.
+summary: El propio registro de tu Machine, para que detecte sus propios problemas. Solo lee.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -12,11 +12,11 @@ El registro de tu OpenClaw Gateway: ejecuciones fallidas, traspasos rechazados, 
 
 ## Qué puede hacer
 
-Nada. Solo lee el registro en tu propio servidor.
+Nada. Solo lee el registro en tu propia Machine.
 
 ## Conéctalo
 
-- En una Machine alojada está en tu página de configuración, en **Más fuentes**, como registro de OpenClaw Gateway. Uno por servidor.
+- En una Machine alojada está en tu página de configuración, en **Más fuentes**, como registro de OpenClaw Gateway. Uno por Machine.
 - En tu propio ordenador: ejecuta `assistant connect gateway`.
 
 ## Quítalo

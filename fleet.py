@@ -96,7 +96,7 @@ FLEET_NAMES = {'work': 'Work Fleet', 'family': 'Family Fleet'}
 ASKS = {'work': ('relationships', 'meeting'), 'family': ()}       # what each Fleet asks (the relay says the same)
 RULE_KINDS = {'work': ('relationships', 'meeting', 'handling'), 'family': ()}
 KIND_LABEL = {'relationships': 'who knows someone', 'meeting': 'meeting context', 'handling': 'who handles shared emails',
-              'seat': 'a server in your Fleet'}
+              'seat': 'a hosted Machine in your Fleet'}
 # Added kinds (append-only): the team brief and free questions.
 ASKS['work'] += ('brief', 'anything')
 RULE_KINDS['work'] += ('brief', 'anything')
@@ -1306,8 +1306,8 @@ def notice_clean(view):
 
 def notice_push(view, root):
     """The phone notification for a notice: its line, opening the Fleet tab at it."""
-    title = t({'seat_request': 'Your Fleet asks you', 'seat_confirmed': 'Your server was confirmed',
-               'seat_declined': 'Your server was not confirmed', 'friend_request': 'Friend request',
+    title = t({'seat_request': 'Your Fleet asks you', 'seat_confirmed': 'Your Machine was confirmed',
+               'seat_declined': 'Your Machine was not confirmed', 'friend_request': 'Friend request',
                'friend_accepted': 'Friends now'}.get(view['kind'], 'Your Fleet'))
     return {'title': title, 'body': view['text'], 'url': (root + '#fleet=' + view['id']) if root else view['url'],
             'tag': 'fleet-' + view['id']}

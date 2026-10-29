@@ -8,7 +8,7 @@ site: Sign in with ChatGPT, Reconnect ChatGPT
 ---
 ## À quoi ça sert
 
-ChatGPT est le modèle qui lit et rédige pour vous, sur votre propre abonnement ChatGPT. The Machine n’a pas d’IA à elle. Les requêtes de votre Machine vont directement de votre serveur à OpenAI, sous votre compte et selon ses conditions.
+ChatGPT est le modèle qui lit et rédige pour vous, sur votre propre abonnement ChatGPT. The Machine n’a pas d’IA à elle. Les requêtes de votre Machine vont directement à OpenAI, sous votre compte et selon ses conditions.
 
 ## Se connecter
 

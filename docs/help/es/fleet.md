@@ -76,6 +76,6 @@ Para unirte a un Fleet, crear uno o vincular una Machine en tu propio ordenador,
 La parte de Fleet de la página de tu cuenta muestra dos cosas más:
 
 - **Quitados hace poco**: cada persona quitada, o que se fue. Dice **Eliminado, confirmado** cuando su Machine eliminó los datos de trabajo, Google confirmó el cierre de sesión y se sustituyó cualquier token compartido que tuviera. Hasta entonces dice **Pendiente** y por qué.
-- **Actividad**: quién hizo qué y cuándo. Invitaciones, incorporaciones, bajas, roles, servidores y facturación, conectores compartidos y aprobaciones. También lista cada vez que nuestro equipo abrió el servidor de un miembro o sus registros. Nunca el contenido de los mensajes. **Descargar CSV** lo exporta. Se guarda 12 meses.
+- **Actividad**: quién hizo qué y cuándo. Invitaciones, incorporaciones, bajas, roles, Machines alojadas y facturación, conectores compartidos y aprobaciones. También lista cada vez que nuestro equipo abrió la Machine de un miembro o sus registros. Nunca el contenido de los mensajes. **Descargar CSV** lo exporta. Se guarda 12 meses.
 
 Después de **Dejar de compartir**, un conector compartido muestra **Eliminado, confirmado** cuando cada Machine ha eliminado el token.

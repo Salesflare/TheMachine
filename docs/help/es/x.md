@@ -19,7 +19,7 @@ Una respuesta o un mensaje directo, y solo después de que lo apruebes en la tar
 En una Machine alojada:
 
 1. Abre tu página de configuración en app.themachine.computer/setup y ve a **Más fuentes**.
-2. Abre X, escribe tu usuario sin la @, inicia sesión en X en el navegador de tu servidor cuando te lo pida y luego pulsa **Conectar**.
+2. Abre X, escribe tu usuario sin la @, inicia sesión en X en el navegador de tu Machine cuando te lo pida y luego pulsa **Conectar**.
 
 En tu propio ordenador:
 

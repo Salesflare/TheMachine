@@ -34,7 +34,7 @@ Until it's ready, **Automatic** uses your browser's own speech recognition where
 ## Settings
 
 - **Turned into text**: **Automatic**, **On this Machine** or **With OpenAI**.
-- **Accuracy** (on your Machine only): **More accurate** works best for most languages. **Faster** is quicker but gets more words wrong. On a Standard server, which has less memory, **Faster** is the default.
+- **Accuracy** (on your Machine only): **More accurate** works best for most languages. **Faster** is quicker but gets more words wrong. On a Standard Machine, which has less memory, **Faster** is the default.
 - **Language**: **Detect** works for every app language. Picking yours is a little faster.
 
 To talk with The Machine instead, out loud, see [Talk live](talk-live.md).

@@ -19,7 +19,7 @@ Een antwoord of een direct bericht, en pas nadat je het goedkeurt op de to-do.
 Op een gehoste Machine:
 
 1. Open je setuppagina op app.themachine.computer/setup en ga naar **Meer bronnen**.
-2. Open X, typ je handle zonder de @, log in bij X in de browser van je server als daarom gevraagd wordt, en druk dan op **Verbinden**.
+2. Open X, typ je handle zonder de @, log in bij X in de browser van je Machine als daarom gevraagd wordt, en druk dan op **Verbinden**.
 
 Op je eigen computer:
 

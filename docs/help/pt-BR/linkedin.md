@@ -19,7 +19,7 @@ Uma resposta a uma mensagem, e só depois que você aprovar na tarefa. Até lá,
 Em uma Machine hospedada:
 
 1. Abra sua página de configuração em app.themachine.computer/setup e vá para **Mais fontes**.
-2. Abra LinkedIn, entre no LinkedIn no navegador do seu servidor quando ele pedir e depois clique em **Conectar**.
+2. Abra LinkedIn, entre no LinkedIn no navegador da sua Machine quando ela pedir e depois clique em **Conectar**.
 
 No seu próprio computador:
 

@@ -19,7 +19,7 @@ Une réponse ou un message privé, et seulement après votre accord sur la tâch
 Sur une Machine hébergée :
 
 1. Ouvrez votre page de configuration sur app.themachine.computer/setup et allez dans **Plus de sources**.
-2. Ouvrez X, tapez votre identifiant sans le @, connectez-vous à X dans le navigateur de votre serveur quand il le demande, puis appuyez sur **Se connecter**.
+2. Ouvrez X, tapez votre identifiant sans le @, connectez-vous à X dans le navigateur de votre Machine quand elle le demande, puis appuyez sur **Se connecter**.
 
 Sur votre propre ordinateur :
 

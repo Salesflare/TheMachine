@@ -36,7 +36,7 @@ The Machine chiede a WhatsApp le foto profilo delle persone nel tuo graph che no
 
 ## Rimuovilo
 
-- Su una Machine ospitata: premi **Rimuovi** accanto a WhatsApp nella tua pagina di configurazione. Il server si scollega da solo ed elimina ciò che aveva conservato per WhatsApp.
+- Su una Machine ospitata: premi **Rimuovi** accanto a WhatsApp nella tua pagina di configurazione. La tua Machine si scollega da sola ed elimina ciò che aveva conservato per WhatsApp.
 - Sul tuo computer: **Connessioni**, apri WhatsApp, **Dettagli**, poi **Disconnetti**. Poi scollegalo anche dal telefono.
 
 ## Scollegalo in WhatsApp

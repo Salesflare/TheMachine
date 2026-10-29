@@ -1,7 +1,7 @@
 ---
 title: Beveiliging en privacy
 area: security
-summary: Je eigen privéserver, mail versleuteld opgeslagen, en niets verstuurd zonder je OK. De korte versie, met links.
+summary: Je eigen privé-Machine, mail versleuteld opgeslagen, en niets verstuurd zonder je OK. De korte versie, met links.
 covers: 
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
@@ -9,15 +9,15 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 ---
 ## In het kort
 
-- Je eigen server: een gehoste Machine is een privéserver in de EU, nooit gedeeld. Of draai hem op je eigen computer.
+- Je eigen Machine: een gehoste draait in de EU-cloud, alleen voor jou, nooit gedeeld. Of draai hem op je eigen computer.
 - We lezen je e-mail niet: berichten worden versleuteld opgeslagen, en onze supporttools kunnen ze niet openen.
 - Niets wordt verstuurd zonder je OK: hij leest en schrijft concepten; jij beslist wat er weggaat. Zie [Doe het](do-it.md).
 - Niet gebruikt om AI te trainen: we hebben geen eigen AI. Je provider werkt onder jouw account en hun voorwaarden.
 - Inzichten voor het team alleen met je OK: af en toe vraagt hij om een paar algemene tips te sturen, niets persoonlijks. Zie [Inzichten delen](share-learnings.md).
 - Foutrapporten, tenzij je ze uitzet: als er iets stukgaat, het soort fout en waar in de code. Nooit je berichten, namen of adressen. Zie [Foutrapporten](error-reports.md).
 - Gebruikscijfers op een gehoste Machine: dagelijkse aantallen van wat je deed (zoals geopende to-do's of verstuurde e-mails), nooit de inhoud.
-- Neem het mee, of verwijder het: exporteer alles in één bestand, of verwijder je server en de back-ups met één knop.
-- Onze toegang wordt gelogd: elke keer dat ons team inlogt op je gehoste server of het rapport ervan leest. Eigenaars en beheerders van een Fleet zien het onder **Activiteit**. Zie [Fleets](fleet.md).
+- Neem het mee, of verwijder het: exporteer alles in één bestand, of verwijder je Machine en de back-ups met één knop.
+- Onze toegang wordt gelogd: elke keer dat ons team inlogt op je gehoste Machine of het rapport ervan leest. Eigenaars en beheerders van een Fleet zien het onder **Activiteit**. Zie [Fleets](fleet.md).
 
 ## Beveiligingsniveaus
 

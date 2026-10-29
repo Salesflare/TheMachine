@@ -76,6 +76,6 @@ Pour rejoindre une Fleet, en créer une ou associer une Machine sur votre propre
 La partie Fleet de la page de votre compte affiche deux éléments de plus :
 
 - **Retirés récemment** : chaque personne retirée, ou partie. La ligne indique **Supprimé, confirmé** une fois que sa Machine a supprimé les données de travail, que Google a confirmé la déconnexion et que tout jeton partagé qu’elle avait a été remplacé. D’ici là, elle indique **En attente** et pourquoi.
-- **Activité** : qui a fait quoi et quand. Invitations, arrivées, retraits, rôles, serveurs et facturation, connecteurs partagés et accords. La liste indique aussi chaque fois que notre équipe a ouvert le serveur d’un membre ou ses journaux. Jamais le contenu des messages. **Télécharger le CSV** l’exporte. Conservé 12 mois.
+- **Activité** : qui a fait quoi et quand. Invitations, arrivées, retraits, rôles, Machines hébergées et facturation, connecteurs partagés et accords. La liste indique aussi chaque fois que notre équipe a ouvert la Machine d’un membre ou ses journaux. Jamais le contenu des messages. **Télécharger le CSV** l’exporte. Conservé 12 mois.
 
 Après **Arrêter le partage**, un connecteur partagé affiche **Supprimé, confirmé** une fois que chaque Machine a supprimé le jeton.

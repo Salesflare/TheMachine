@@ -19,7 +19,7 @@ Eine Antwort oder eine Direktnachricht, und nur, nachdem du sie bei der Aufgabe 
 Auf einer gehosteten Machine:
 
 1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne X, gib deinen Handle ohne @ ein, melde dich bei X im Browser deines Servers an, wenn es danach fragt, und tippe dann auf **Verbinden**.
+2. Öffne X, gib deinen Handle ohne @ ein, melde dich bei X im Browser deiner Machine an, wenn es danach fragt, und tippe dann auf **Verbinden**.
 
 Auf deinem eigenen Computer:
 

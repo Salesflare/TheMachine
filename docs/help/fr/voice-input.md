@@ -34,7 +34,7 @@ Tant qu’elle n’est pas prête, **Automatique** utilise la reconnaissance voc
 ## Paramètres
 
 - **Transcrit** : **Automatique**, **Sur cette Machine** ou **Avec OpenAI**.
-- **Précision** (sur votre Machine uniquement) : **Plus précis** fonctionne le mieux pour la plupart des langues. **Plus rapide** va plus vite mais se trompe sur plus de mots. Sur un serveur Standard, qui a moins de mémoire, **Plus rapide** est le réglage par défaut.
+- **Précision** (sur votre Machine uniquement) : **Plus précis** fonctionne le mieux pour la plupart des langues. **Plus rapide** va plus vite mais se trompe sur plus de mots. Sur une Machine Standard, qui a moins de mémoire, **Plus rapide** est le réglage par défaut.
 - **Langue** : **Détecter** fonctionne pour toutes les langues de l’app. Choisir la vôtre est un peu plus rapide.
 
 Pour parler à voix haute avec The Machine, voyez [Parler en direct](talk-live.md).

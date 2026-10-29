@@ -36,7 +36,7 @@ The Machine pide a WhatsApp las fotos de perfil de las personas de tu Graph que 
 
 ## Quítalo
 
-- En una Machine alojada: pulsa **Quitar** junto a él en tu página de configuración. Tu servidor se desvincula y elimina lo que guardaba para WhatsApp.
+- En una Machine alojada: pulsa **Quitar** junto a él en tu página de configuración. Tu Machine se desvincula y elimina lo que guardaba para WhatsApp.
 - En tu propio ordenador: **Conexiones**, abre WhatsApp, **Detalles** y luego **Desconectar**. Después desvincúlalo también en tu teléfono.
 
 ## Desvincúlalo en WhatsApp

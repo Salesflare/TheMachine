@@ -19,7 +19,7 @@ Uma resposta ou uma mensagem direta, e só depois que você aprova na tarefa.
 Em uma Machine hospedada:
 
 1. Abra sua página de configuração em app.themachine.computer/setup e vá em **Mais fontes**.
-2. Abra X, digite seu nome de usuário sem o @, entre no X no navegador do seu servidor quando ele pedir, e depois clique em **Conectar**.
+2. Abra X, digite seu nome de usuário sem o @, entre no X no navegador da sua Machine quando ela pedir, e depois clique em **Conectar**.
 
 No seu próprio computador:
 

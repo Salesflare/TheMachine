@@ -1,7 +1,7 @@
 ---
-title: Log del server
+title: Log della Machine
 area: connections
-summary: Il log del tuo server, così The Machine nota i propri problemi. Legge soltanto.
+summary: Il log della tua Machine, così nota i propri problemi. Legge soltanto.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -12,11 +12,11 @@ Il log del tuo OpenClaw Gateway: esecuzioni non riuscite, passaggi rifiutati, me
 
 ## Cosa può fare
 
-Niente. Legge solo il log sul tuo server.
+Niente. Legge solo il log sulla tua Machine.
 
 ## Collegalo
 
-- Su una Machine in hosting si trova nella tua pagina di configurazione, sotto **Altre fonti**, come OpenClaw Gateway log. Uno per server.
+- Su una Machine in hosting si trova nella tua pagina di configurazione, sotto **Altre fonti**, come OpenClaw Gateway log. Uno per Machine.
 - Sul tuo computer: esegui `assistant connect gateway`.
 
 ## Rimuovilo

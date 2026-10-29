@@ -20,6 +20,6 @@ Vengono conservati per {grace_days} giorni così puoi esportarli, poi vengono el
 
 ## Elimina tutto subito
 
-Nella pagina del tuo account, apri Dati, scrivi DELETE o la tua email e premi **Cancella tutto ora**. Termina l'abbonamento, revoca l'accesso a Google e Microsoft ed elimina il tuo server, i suoi backup e tutti i suoi dati. Non si può annullare.
+Nella pagina del tuo account, apri Dati, scrivi DELETE o la tua email e premi **Cancella tutto ora**. Termina l'abbonamento, revoca l'accesso a Google e Microsoft ed elimina la tua Machine, i suoi backup e tutti i suoi dati. Non si può annullare.
 
-Senza un server in hosting, il pulsante è **Elimina il mio account**. Una Machine sul tuo computer resta com'è.
+Senza una Machine ospitata, il pulsante è **Elimina il mio account**. Una Machine sul tuo computer resta com'è.

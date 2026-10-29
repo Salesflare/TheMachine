@@ -36,7 +36,7 @@ The Machine vraagt WhatsApp om de profielfoto's van mensen in je Graph die er ge
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Verwijderen** ernaast op je setuppagina. Je server ontkoppelt zichzelf en verwijdert wat hij voor WhatsApp bewaarde.
+- Op een gehoste Machine: druk op **Verwijderen** ernaast op je setuppagina. Je Machine ontkoppelt zichzelf en verwijdert wat hij voor WhatsApp bewaarde.
 - Op je eigen computer: **Koppelingen**, open WhatsApp, **Details**, dan **Ontkoppelen**. Ontkoppel hem daarna ook op je telefoon.
 
 ## Ontkoppelen in WhatsApp

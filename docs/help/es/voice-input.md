@@ -34,7 +34,7 @@ Hasta que esté lista, **Automático** usa el reconocimiento de voz de tu navega
 ## Ajustes
 
 - **Pasado a texto**: **Automático**, **En esta Machine** o **Con OpenAI**.
-- **Precisión** (solo en tu Machine): **Más preciso** funciona mejor para la mayoría de los idiomas. **Más rápido** va más rápido pero se equivoca en más palabras. En un servidor Standard, que tiene menos memoria, **Más rápido** es el valor por defecto.
+- **Precisión** (solo en tu Machine): **Más preciso** funciona mejor para la mayoría de los idiomas. **Más rápido** va más rápido pero se equivoca en más palabras. En una Machine Standard, que tiene menos memoria, **Más rápido** es el valor por defecto.
 - **Idioma**: **Detectar** funciona para todos los idiomas de la app. Elegir el tuyo es un poco más rápido.
 
 Para hablar en voz alta con The Machine, mira [Hablar en vivo](talk-live.md).
