@@ -10,7 +10,7 @@ Wenn jemand auf einem Board nicht mehr antwortet, entwirft deine Machine das Nac
 
 ## Einschalten
 
-**⋯** auf einem Board, dann **Nachfassen…**, und hake **Nachfassen, wenn keine Antwort kommt** an. Das gilt für jedes Projekt auf diesem Board.
+**⋯** auf einem Board, dann **Nachfassen…**, und hake **Nachfassen, wenn keine Antwort kommt** an. Das gilt für jedes Projekt auf diesem Board. Oder tippe unter dem Namen des Boards auf **Nachfassen aus**, oder in einer Phase mit Projekten ohne Antwort seit 10+ Tagen auf **Bei ihnen nachfassen**.
 
 Für ein einzelnes Projekt: **Nachfassen…** im **⋯** seiner Karte oder auf seiner Seite. **Für dieses Projekt** wählt **An**, **Aus** oder die Einstellung des Boards. Die eigene Einstellung eines Projekts geht vor.
 
