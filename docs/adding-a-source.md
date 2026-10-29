@@ -43,6 +43,15 @@ The service calls `sync` every `poll_seconds` (default 300) in the account's own
 | `helpers.local_tz()` | The owner's time zone (config `timezone`), for things like active hours. |
 | `helpers.credential(config, name)` | The secret named `name` in `config['credentials']` (or systemd's `LoadCredential`), as text. Use it for API keys instead of reading files yourself. |
 
+### Signing in: OAuth first
+
+When the service offers OAuth, the connector signs in with it. Nobody pastes a token or key, and nobody is sent to a developer console, an API explorer or an OAuth playground.
+
+- Reuse The Machine's own sign-ins instead of registering a new app: Google through the token broker ([`google_api.py`](../google_api.py), `transport: broker`), Microsoft through [`ms_graph.py`](../ms_graph.py), Zoom, Intercom and Stripe through the hosted account pages (`broker`, `account_page`), GitHub through `gh auth login`.
+- Ask for the narrowest read-only scopes that do the job. For Google, prefer scopes that aren't restricted or sensitive (`drive.file` over `drive.readonly`), since restricted ones need a security assessment.
+- A scope or API call the shared sign-in doesn't allow yet: write the connector for it anyway, and name the scope and calls in the pull request; a maintainer adds them to that sign-in.
+- A token or key only when the service has no OAuth, or has OAuth but The Machine has no app for it yet. Say why in `SETUP['no_oauth']` and in the pull request. `tests/test_connectors.py` fails a connector for a known OAuth service that asks for a key or links a developer console without that reason.
+
 ### Setup: `assistant connect <service>`
 
 Setup verifies a real read before saving the account configuration. A plugin can define `check(config, account, helpers)`, returning `None` on success or raising `helpers.SourceError` with a content-free error label. The check must not write source data or advance checkpoints. Existing `Source.verify()` or `Source.profile()` methods are also supported. Without a supported read check, setup reports that verification is unavailable rather than calling the account connected. A source that answers it is busy or rate limited (`x_browser_busy`, `linkedin_browser_busy`, `x_rate_limited`) is saved anyway with a note; the first sync reads it.
@@ -53,10 +62,11 @@ Declare `SETUP` so the owner can add an account without editing JSON:
 SETUP = {'label': 'RSS feed',                          # name in prompts, doctor and next steps
          'account': {'id': 'feed', 'service': 'rss', 'transport': 'http', 'boundary': 'work', 'poll_seconds': 1800},
          'what': 'Posts from the feeds you follow.',     # one line: what it reads, shown next to the source in setup screens
-         'note': 'Shown before the questions, e.g. where to find a key. Give full https:// links; setup pages make them clickable.',
+         'note': 'Shown before the questions. Give full https:// links; setup pages make them clickable.',
          'ask': [('url', 'Feed URL (RSS or Atom)')],     # (key, prompt[, default]); defaults can use '{other_key}'
          'detect': {},                                   # key -> command whose output is the default, e.g. ['gh', 'api', 'user', '--jq', '.login']
          'secret': None,                                 # a prompt here asks for a key without echo into the `credential` file (mode 600)
+         'no_oauth': None,                               # with a key for a service that has OAuth: why it can't sign in with OAuth (see above)
          'hints': {},                                    # error prefix -> plain fix, e.g. {'myapi:HTTP_401': 'MyAPI rejected the key'}
          'browser': None,                                # for sources read through the shared browser: its site ('linkedin', 'x'); an error ending in _signed_out then shows 'Signed out' with a way to sign in again
          'broker': False,                                # True when a hosting control plane signs it in (Zoom): the Add tab links to that page instead
@@ -128,6 +138,7 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 
 ## Checklist
 
+- [ ] OAuth through The Machine's existing sign-ins when the service has it, with the narrowest scopes; a key only with `no_oauth` saying why.
 - [ ] Read-only credential for exactly this account, with the least access that works.
 - [ ] Stable `source_id`; `kind` listed in `KINDS`.
 - [ ] Message text only in `title`, `body` and metadata, never in ids, lookup keys or the cursor.

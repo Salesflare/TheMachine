@@ -32,6 +32,9 @@ and explain why they are needed. The dashboard is plain HTML, CSS and JavaScript
   do not need tests that merely repeat their implementation.
 - Source adapters must verify account identity and save each page with its checkpoint
   atomically. Use fixtures to check pagination, replay and failures. See README “Adding a source”.
+- Connectors sign in with OAuth when the service offers it, reusing The Machine's existing sign-ins with the narrowest
+  scopes. A pasted token or key only when there's no OAuth, with the reason in `SETUP['no_oauth']` and the pull request
+  ([Adding a source](docs/adding-a-source.md#signing-in-oauth-first)).
 - Every feature change updates its help article in `docs/help/` in the same pull request (the articles are the help at
   themachine.computer/help). `python3 scripts/help_check.py` names the article a new connector, dashboard tab or Settings
   tab needs, and any button text, route or command an article names that the code no longer has.

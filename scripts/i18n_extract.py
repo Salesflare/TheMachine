@@ -482,11 +482,12 @@ def _english(text):
 
 
 def _const_strings(node):
-    """The string values in a constant (dict values, list and tuple items), leaving out an 'account' record."""
+    """The string values in a constant (dict values, list and tuple items), leaving out an 'account' record and a
+    connector's 'no_oauth' reason (for reviewers, never shown)."""
     import ast
     if isinstance(node, ast.Dict):
         return [s for k, v in zip(node.keys, node.values)
-                if not (isinstance(k, ast.Constant) and k.value == 'account') for s in _const_strings(v)]
+                if not (isinstance(k, ast.Constant) and k.value in ('account', 'no_oauth')) for s in _const_strings(v)]
     if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
         return [s for v in node.elts for s in _const_strings(v)]
     text = _py_text(node)
