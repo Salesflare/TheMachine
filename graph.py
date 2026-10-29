@@ -178,8 +178,34 @@ BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slac
 STUCK_DAYS = 10         # no reply for this long after the owner wrote: the tile says so
 # A person's automatic side (Work or Personal), from what The Machine knows of them (2026-10-25, see auto_side). Raised
 # when the rule changes: the first build under a new rule records each automatic side it changed (side_changes).
-SIDE_RULE = 2
+SIDE_RULE = 3  # 3 (2026-10-29): Family, Friends and a family or friend relation (wife, father) are Personal
 WORK_VERDICTS = {'client', 'sensitive', 'internal'}  # the sharing review's calls on a thread that make it work
+# Why a person is Personal because they are part of the owner's own life, not because of what their threads are about:
+# the owner said so, they're in the owner's Family or Friends, or what they are to the owner is family or a friend.
+# A Work Fleet never gets them (shared_graph.Scope); the owner marking them Work is the only way out.
+OWN_LIFE = ('owner', 'network', 'relation')
+# What someone is to the owner ("To you") when that is family or a friend: a closed set of relations, in the languages
+# the dashboard speaks, matched on the role's first word ("friend from university", "brother-in-law"). "Partner" is
+# left out: it is as often a business partner.
+PERSONAL_RELATIONS = frozenset('''
+wife husband spouse fiance fiancee girlfriend boyfriend mother father mom mum dad mama papa parent parents son daughter child
+children kid kids sister brother sibling grandmother grandfather grandma grandpa granny grandparent grandson granddaughter
+grandchild aunt uncle niece nephew cousin godmother godfather godson goddaughter godchild stepmother stepfather stepson
+stepdaughter stepsister stepbrother mother-in-law father-in-law sister-in-law brother-in-law son-in-law daughter-in-law
+friend bestie family
+vrouw echtgenote echtgenoot man moeder vader mama papa zoon dochter zus zuster broer oma opa grootmoeder grootvader tante
+oom nicht neef schoonmoeder schoonvader schoonzus schoonbroer vriend vriendin meter peter
+femme epouse epoux mari mere pere maman fils fille soeur frere grand-mere grand-pere tante oncle niece neveu cousine
+belle-mere beau-pere belle-soeur beau-frere ami amie marraine parrain
+frau ehefrau ehemann mann mutter vater mutti vati sohn tochter schwester bruder oma opa grossmutter grossvater tante onkel
+nichte neffe schwiegermutter schwiegervater freund freundin patin pate
+esposa esposo marido madre padre mama papa hijo hija hermana hermano abuela abuelo tia tio sobrina sobrino prima primo
+suegra suegro cunada cunado amigo amiga madrina padrino novia novio
+moglie marito madre padre mamma papa figlio figlia sorella fratello nonna nonno zia zio nipote cugina cugino suocera suocero
+cognata cognato amico amica fidanzata fidanzato
+mulher esposa esposo marido mae pai filho filha irma irmao avo tia tio sobrinha sobrinho prima primo sogra sogro cunhada
+cunhado amigo amiga namorada namorado madrinha padrinho
+'''.split())
 
 
 def ensure(db):
@@ -569,6 +595,49 @@ def account_side(account):
     return kind if kind in ('work', 'personal') else None
 
 
+AMBIGUOUS_RELATIONS = frozenset({'family', 'friend', 'parent', 'parents', 'child', 'kid', 'man', 'mann', 'mulher', 'frau', 'femme', 'mama', 'papa', 'mother', 'sister'})
+
+
+def personal_relation(role):
+    """Whether what someone is to the owner (their role, "To you") is family or a friend: "wife", "father",
+    "friend from university", "brother-in-law". Not a role about someone else ("father's email domain", "Helena's
+    school") and not a job or a company ("family lawyer", "sister company")."""
+    words = unicodedata.normalize('NFKD', str(role or '')).encode('ascii', 'ignore').decode().casefold().split()
+    while words and words[0] in ('my', 'the', "owner's", 'mijn', 'ma', 'mon', 'mein', 'meine', 'mi', 'mia', 'mio', 'minha', 'meu'):
+        words = words[1:]
+    if not words:
+        return False
+    first = words[0].strip('.,;:()')
+    if first not in PERSONAL_RELATIONS:
+        return False
+    # A word that also names a kind of job or company ("family lawyer", "parent company") counts only alone or with
+    # where the relation is from ("friend from university", "family friend")
+    return len(words) == 1 or first not in AMBIGUOUS_RELATIONS or words[1] in (
+        'from', 'of', 'since', 'and', 'friend', 'friends', 'member', 'van', 'uit', 'de', 'du', 'des', 'von', 'aus', 'da', 'di', 'do', 'del')
+
+
+def own_life(info):
+    """Whether a person (a graph_nodes info) is Personal as part of the owner's own life (OWN_LIFE): the owner said so,
+    they're in Family or Friends, or they're family or a friend. Never shared with a Work Fleet."""
+    return info.get('side') == 'personal' and info.get('side_why') in OWN_LIFE
+
+
+def circles(fleets):
+    """{address: {'work', 'family', 'friends'}} for the members of the owner's Fleets, Family and Friends (fleets: the
+    directory by Fleet id, as fleet.Fleet.fleets() gives it), the way fleet_marks matches them; never the owner."""
+    found = collections.defaultdict(set)
+    for f in (fleets or {}).values():
+        kind = (f or {}).get('kind')
+        if kind not in FLEET_GROUPS:
+            continue
+        for m in f.get('members') or ():
+            if isinstance(m, dict) and not m.get('me') and m.get('member_id'):
+                for e in m.get('emails') or ():
+                    if MEMBER_EMAIL.fullmatch(str(e).strip()):
+                        found[str(e).strip().lower()].add(kind)
+    return dict(found)
+
+
 def auto_side(address, threads, projects, accounts):
     """A person's automatic side and why, from what The Machine knows of them, strongest first. Having no work address
     is not evidence of anything: someone known only from LinkedIn is not personal for that.
@@ -860,19 +929,21 @@ def owner_tz(config):
         return dt.timezone.utc
 
 
-def build(db, config, now, team=()):
+def build(db, config, now, team=(), kin=None):
     """Publish one coherent graph. Concurrent edits cannot be overwritten by an older build. team: the addresses of the
-    people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py)."""
+    people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py). kin: which
+    of them are in the owner's Work Fleets, Family or Friends (circles), so someone only in Family or Friends is
+    Personal."""
     db.execute('BEGIN IMMEDIATE')
     try:
-        return _build(db, config, now, team)
+        return _build(db, config, now, team, kin)
     except BaseException:
         if db.in_transaction:
             db.execute('ROLLBACK')
         raise
 
 
-def _build(db, config, now, team=()):
+def _build(db, config, now, team=(), kin=None):
     """Recompute graph_nodes, graph_links and graph_events. Returns a short summary."""
     import own_addresses
     started = dt.datetime.now(dt.timezone.utc)
@@ -1272,8 +1343,16 @@ def _build(db, config, now, team=()):
         if PHONE.fullmatch(stated_phone) and contact_key('phones', stated_phone) not in gone | {contact_key('phones', r['value']) for r in contacts['phones']}:
             contacts['phones'].append({'value': stated_phone, 'by': ((person_profile.get('sources') or {}).get('phone') or {}).get('from') or 'messages'})
         person_profile = person_profile or None
+        # A person's Type (Work or Personal), the one the Work and Personal lists and sharing with a Work Fleet go by: the
+        # owner's word; else someone only in their Family or Friends, or family or a friend to them ("To you": wife,
+        # father), is Personal, whatever address they write from; else what The Machine knows of them (auto_side).
         side, side_why = edited.get('side'), 'owner'
-        if not side:
+        circle = set().union(*((kin or {}).get(i[6:].lower(), ()) for i in group if i.startswith('email:')))
+        if not side and circle and circle <= {'family', 'friends'}:
+            side, side_why = 'personal', 'network'
+        elif not side and personal_relation(role):
+            side, side_why = 'personal', 'relation'
+        elif not side:
             called = collections.Counter(thread_sides[node].values())
             on = collections.Counter(project_side.get(pid) for pid in on_projects[node])
             side, side_why = auto_side(bool(colleague or domains or (said_org and said_org['org'])), called, on,
