@@ -32,7 +32,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DASHBOARD = ROOT / 'dashboard.html'
+sys.path.insert(0, str(ROOT))
+import dashboard_parts  # noqa: E402  (the dashboard's source, assembled from its parts)
+
 CATALOG = ROOT / 'i18n'
 
 # area: (ids of static elements, ranges of top-level functions that build it: (first, last) by name, each range taking
@@ -307,7 +309,7 @@ def element(html_text, element_id):
 
 
 def area_strings(area, source=None):
-    source = source if source is not None else DASHBOARD.read_text(encoding='utf-8')
+    source = source if source is not None else dashboard_parts.assemble(ROOT)
     ids, names = AREAS[area]
     static, out = markup(source), []
     for element_id in ids:
@@ -390,7 +392,7 @@ def not_ui():
 
 def dashboard_strings(source=None):
     """Every string in dashboard.html: the whole markup after the stylesheet (outside its scripts) and every script."""
-    source = source if source is not None else DASHBOARD.read_text(encoding='utf-8')
+    source = source if source is not None else dashboard_parts.assemble(ROOT)
     body = source[source.index('</style>', source.index('<style>')) + len('</style>'):]
     scripts = re.findall(r'<script\b[^>]*>(.*?)</script>', body, re.S)
     parser = _Whole()
@@ -438,7 +440,8 @@ def _unique(items):
 # Server text the dashboard shows. Every module's raised messages are read (they come back as a request's error); these
 # modules only talk to a terminal, a model or another Machine, never to the dashboard.
 NOT_DASHBOARD = {'cli.py', 'installer.py', 'network_crypto.py', 'message_seal.py', 'message_keyring.py', 'openclaw_pin.py',
-                 'wacli_release.py', 'service.py', 'portable.py', 'rollout_health.py', 'i18n.py', 'locale_prefs.py'}
+                 'wacli_release.py', 'service.py', 'portable.py', 'rollout_health.py', 'i18n.py', 'locale_prefs.py',
+                 'dashboard_parts.py'}
 # Functions whose strings are lines the dashboard shows as the server wrote them (a reason, a sync line, a hint).
 SERVER_TEXT = {
     'own_addresses.py': ['suggest_reason', 'classify', 'SENT_ONLY', 'NAMED_ONLY', 'LABELS'],
@@ -611,7 +614,7 @@ def glued(source=None):
     """[(literal, context)]: dashboard words glued to a value with + ("'Hand to '+name") without a catalog entry that
     frames them ("Hand to {}"). The page only translates whole lines, so such a line reads English in every language:
     use t('Hand to {}', name) instead."""
-    source = source if source is not None else DASHBOARD.read_text(encoding='utf-8')
+    source = source if source is not None else dashboard_parts.assemble(ROOT)
     body = source[source.index('</style>', source.index('<style>')) + len('</style>'):]
     en = catalog('en')
     keys = list(en) + [f for v in en.values() if isinstance(v, dict) for f in v.values()]
@@ -643,7 +646,7 @@ def missing(areas=None):
     en, skip, out = catalog('en'), not_ui(), {}
     # a key, or a form of a plural entry (the English singular in t(['{} promise', '{} promises'], n))
     keys = set(en) | {form for value in en.values() if isinstance(value, dict) for form in value.values()}
-    source = DASHBOARD.read_text(encoding='utf-8')
+    source = dashboard_parts.assemble(ROOT)
     if areas:
         groups = {area: area_strings(area, source) for area in areas}
     else:

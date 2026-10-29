@@ -44,10 +44,16 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 - **Dashboard code:** next to the functions of its area (the areas in `scripts/i18n_extract.py` `AREAS`: shell, to-dos,
   settings, graph, calendar, connections, help, events, new), never at the end of the script. New UI strings go in
   every catalog in `i18n/`.
+- **Reading the dashboard's source** (a test, a script): through `dashboard_parts.assemble()` in Python or
+  `dashboardPage()` from `tests/dashboard-page.mjs` in Node, never `dashboard.html` itself. The page is served as one
+  document, but its source can be split into parts (`dashboard/<name>.js`, each filling the line
+  `/*@include dashboard/<name>.js*/` in `dashboard.html`), and only the assembled page has them all.
+  `scripts/split_dashboard.py readers` rewrites a test that still reads the file.
 
 ## The rules and their checks
 
-Run them with `python3 scripts/test.py test_architecture.py test_message_seal.py` (both run in CI with every suite).
+Run them with `python3 scripts/test.py test_architecture.py test_message_seal.py test_dashboard_parts.py` (they run in
+CI with every suite).
 
 | rule | check |
 |---|---|
@@ -56,6 +62,7 @@ Run them with `python3 scripts/test.py test_architecture.py test_message_seal.py
 | Each table is created by one module, its owner (today's few shared ones are in `SHARED_SCHEMA`). | `tests/test_architecture.py` |
 | Only the owner writes a table. Today's other writers are listed in `OTHER_WRITERS`. That list may only shrink: a new writer fails with the owner's name, and an entry that no longer writes fails until it's removed. | `tests/test_architecture.py` |
 | Only `assistant.py` writes `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
+| Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
 | Every dashboard area in `scripts/i18n_extract.py` resolves. | `tests/test_architecture.py`, `python3 scripts/i18n_extract.py --area <name>` |
 
 The table checks read the SQL in each module's strings. A statement whose table name is computed
