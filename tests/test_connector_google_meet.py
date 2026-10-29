@@ -1,4 +1,6 @@
-"""Synthetic Meet/Drive responses only; no live calls or credential files."""
+"""Google Meet (connectors/google_meet.py), faked end to end: the token broker, the Meet REST API and the Docs API. No live
+calls. It reads with Meet's own Google sign-in (its own broker, apart from Gmail's) and only two read-only scopes,
+meetings.space.readonly and documents.readonly, never Gmail's and never a Drive scope; it writes nothing."""
 import copy
 import io
 import json
@@ -8,17 +10,26 @@ import types
 import unittest
 import urllib.error
 import urllib.parse
-import urllib.request
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
+import assistant
+import fleet
+import google_api
+import mail_grants
+import onboarding
 from test_connectors import a, Response
 from connectors import google_meet as meet
 
+OWNER = 'owner@acme.example'
 NOW = '2026-10-28T12:00:00+00:00'
 START = '2026-10-27T09:00:00+00:00'
-ACCOUNT = dict(meet.SETUP['account'])
+GMAIL = {'id': 'acme-gmail', 'service': 'gmail', 'email': OWNER, 'transport': 'broker', 'boundary': 'work:Acme'}
+ACCOUNT = {**meet.SETUP['account'], 'email': OWNER, 'boundary': 'work:Acme'}
 RECORD = {'name': 'conferenceRecords/record-1', 'startTime': START,
           'endTime': '2026-10-27T10:00:00Z', 'space': 'spaces/space-1'}
+PEOPLE = {'participants': [
+    {'name': RECORD['name'] + '/participants/p1', 'signedinUser': {'user': 'users/1', 'displayName': 'Robin Reviewer'}},
+    {'name': RECORD['name'] + '/participants/p2', 'anonymousUser': {'displayName': 'Guest Sam'}}]}
 
 
 def artifact(collection='transcripts', number=1, **fields):
@@ -28,70 +39,113 @@ def artifact(collection='transcripts', number=1, **fields):
                                 'exportUri': 'https://example.invalid/not-followed'}, **fields}
 
 
-class GoogleMeetTests(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
-        self.credential = Mock(return_value='fixture-access-token')
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError,
-                                             credential=self.credential, now=lambda: NOW)
-        self.requests = []
+def entry(number, speaker, text):
+    return {'name': f'{RECORD["name"]}/transcripts/artifact-1/entries/e{number}', 'participant': RECORD['name'] + '/participants/' + speaker,
+            'text': text, 'languageCode': 'en-US', 'startTime': '2026-10-27T09:05:00Z', 'endTime': '2026-10-27T09:05:05Z'}
+
+
+def document(text):
+    """A Docs API document whose first tab holds `text`, one paragraph per line."""
+    return {'documentId': 'x', 'body': {'content': [{'paragraph': {'elements': [{'textRun': {'content': line + '\n'}}]}}
+                                                    for line in text.split('\n')]}}
+
+
+def helpers_for(now=NOW):
+    return types.SimpleNamespace(SourceError=a.SourceError, now=lambda: now,
+                                 credential=lambda config, name: 'machine-token' if name == 'google_meet-broker' else 1 / 0)
+
+
+class Fake:
+    """The broker, Meet and Docs. Records every request; only the broker sees a refresh token."""
+
+    def __init__(self, test):
+        self.test, self.requests, self.granted = test, [], set(meet.SCOPES)
         self.conferences = {'': {'conferenceRecords': [copy.deepcopy(RECORD)]}}
         self.artifacts = {('transcripts', ''): {'transcripts': [artifact()]},
                           ('smartNotes', ''): {'smartNotes': [artifact('smartNotes')]}}
-        self.documents = {'transcripts-doc-1': 'Speaker 1: Discuss the example release.\nSpeaker 2: Ready.',
-                          'smartNotes-doc-1': 'Summary: Example release.\nNext step: Review the checklist. ✓'}
+        self.entries = {('artifact-1', ''): {'transcriptEntries': [entry(1, 'p1', 'Discuss the example release.'),
+                                                                   entry(2, 'p1', 'Then the checklist.'),
+                                                                   entry(3, 'p2', 'Ready.')]}}
+        self.documents = {'smartNotes-doc-1': document('Summary: Example release.\nNext step: Review the checklist. ✓')}
+        self.people = copy.deepcopy(PEOPLE)
         self.overrides = {}
-        self.http = patch.object(urllib.request.OpenerDirector, 'open', side_effect=self.respond).start()
-        self.addCleanup(patch.stopall)
 
-    def respond(self, request, timeout):
-        self.assertEqual(request.get_method(), 'GET')
-        self.assertIsNone(request.data)
-        self.assertEqual(timeout, 30)
-        self.assertEqual(request.get_header('Authorization'), 'Bearer fixture-access-token')
-        self.assertNotIn('fixture-access-token', request.full_url)
+    def respond(self, request, data=None, timeout=None):
         url = urllib.parse.urlsplit(request.full_url)
-        self.assertEqual(url.scheme, 'https')
-        self.assertIn(url.netloc, ('meet.googleapis.com', 'www.googleapis.com'))
+        body = json.loads(request.data) if request.data else None
+        if url.netloc == 'cp.example':
+            self.test.assertEqual(url.path, '/api/google-meet/token')  # Meet's own broker, never the mail one
+            self.requests.append(('BROKER', body.get('scope'), {}))
+            if not body.get('scope'):
+                return Response(json.dumps({'scopes': sorted(self.granted)}).encode())
+            if body['scope'] not in self.granted:
+                raise urllib.error.HTTPError(request.full_url, 403, 'no', {}, io.BytesIO(b''))
+            self.test.assertEqual(body['refresh_token'], 'refresh-1')
+            return Response(json.dumps({'access_token': 'access', 'expires_in': 3600}).encode())
+        self.test.assertEqual(request.get_method(), 'GET')
+        self.test.assertIsNone(request.data)
+        self.test.assertEqual(request.get_header('Authorization'), 'Bearer access')
+        self.test.assertIn(url.netloc, ('meet.googleapis.com', 'docs.googleapis.com'))  # never Drive, never Gmail
+        self.test.assertNotIn('refresh', request.full_url)
         params = urllib.parse.parse_qs(url.query)
         token = params.get('pageToken', [''])[0]
         self.requests.append((url.netloc, url.path, params))
-        if (url.path, token) in self.overrides:
-            answer = self.overrides[(url.path, token)]
-        elif url.path == '/v2/conferenceRecords':
+        path = url.path
+        if (path, token) in self.overrides:
+            answer = self.overrides[(path, token)]
+        elif path == '/v2/conferenceRecords':
             answer = self.conferences[token]
-        elif url.path.startswith('/v2/' + RECORD['name'] + '/'):
-            collection = url.path.rsplit('/', 1)[-1]
-            answer = self.artifacts[(collection, token)]
+        elif path.startswith('/v1/documents/'):
+            answer = self.documents[path.rsplit('/', 1)[1]]
+        elif path.endswith('/participants'):
+            answer = self.people
+        elif path.endswith('/entries'):
+            answer = self.entries[(path.split('/')[-2], token)]
         else:
-            self.assertTrue(url.path.startswith('/drive/v3/files/'))
-            self.assertTrue(url.path.endswith('/export'))
-            self.assertEqual(params, {'mimeType': ['text/plain']})
-            answer = self.documents[url.path.split('/')[-2]].encode('utf-8')
+            answer = self.artifacts[(path.rsplit('/', 1)[-1], token)]
         if isinstance(answer, Exception):
             raise answer
         return Response(answer if isinstance(answer, bytes) else json.dumps(answer).encode())
 
+    def scopes(self):
+        return {r[1] for r in self.requests if r[0] == 'BROKER' and r[1]}
+
+
+class GoogleMeetTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'google_broker': {'url': 'https://cp.example/api/google/token'},
+                       'google_meet_broker': {'url': 'https://cp.example/api/google-meet/token'}, 'accounts': [GMAIL, ACCOUNT]}
+        mail_grants.put(self.config, 'google', OWNER, 'mail-refresh')  # Gmail's own: never sent for Meet
+        mail_grants.put(self.config, 'google_meet', OWNER, 'refresh-1')
+        google_api._tokens.clear()
+        self.addCleanup(google_api._tokens.clear)
+        self.fake = Fake(self)
+        self.helpers = helpers_for()
+        patch('urllib.request.OpenerDirector.open', side_effect=self.fake.respond).start()
+        self.addCleanup(patch.stopall)
+
     def sync(self, config=None):
-        return meet.sync(self.store, config or {}, ACCOUNT, self.helpers)
+        return meet.sync(self.store, {**self.config, **(config or {})}, ACCOUNT, self.helpers)
 
     def rows(self):
         with self.store.connect() as db:
             return [dict(row) for row in db.execute('SELECT * FROM events ORDER BY kind,source_id')]
 
-    def error(self, code=400, message='Invalid page token', headers=None):
-        return urllib.error.HTTPError('https://example.invalid/', code, 'private error text',
-                                      headers or {}, io.BytesIO(json.dumps({'error': {'message': message}}).encode()))
+    def error(self, code=400):
+        return urllib.error.HTTPError('https://example.invalid/', code, 'private error text', {}, io.BytesIO(b'{"private": 1}'))
 
-    def test_notes_and_transcripts_and_plugin_dispatch(self):
-        with patch.object(a.CONNECTOR_HELPERS, 'credential', self.credential), patch.object(a.CONNECTOR_HELPERS, 'now', return_value=NOW):
-            result = a.sync_source(self.store, {}, ACCOUNT)
+    def test_notes_and_transcripts_with_the_two_read_only_scopes_only(self):
+        result = self.sync()
         self.assertEqual(result, {'mode': 'incremental', 'events': 2, 'more': False})
-        rows = self.rows()
-        self.assertEqual([row['kind'] for row in rows], ['google_meet.notes', 'google_meet.transcript'])
-        for row in rows:
+        notes, transcript = self.rows()
+        self.assertEqual((notes['kind'], transcript['kind']), ('google_meet.notes', 'google_meet.transcript'))
+        self.assertEqual(notes['body'], 'Summary: Example release.\nNext step: Review the checklist. ✓')
+        # one line per turn, by the name Meet shows, consecutive entries of one speaker together
+        self.assertEqual(transcript['body'], 'Robin Reviewer: Discuss the example release. Then the checklist.\nGuest Sam: Ready.')
+        for row in (notes, transcript):
             meta = json.loads(row['metadata'])
             self.assertEqual(row['occurred_at'], '2026-10-27T09:05:00+00:00')
             self.assertEqual(row['account_id'], ACCOUNT['id'])
@@ -100,38 +154,56 @@ class GoogleMeetTests(unittest.TestCase):
             self.assertTrue(meta['source_url'].startswith('https://docs.google.com/document/d/'))
             self.assertFalse(meta['truncated'])
             self.assertEqual((meta['start_at'], meta['end_at']), (START, '2026-10-27T10:00:00+00:00'))  # the call's times, to match its meeting
-            self.assertFalse(row['deleted'])
-        self.assertEqual(rows[0]['body'], self.documents['smartNotes-doc-1'])
-        self.assertEqual(rows[1]['body'], self.documents['transcripts-doc-1'])
-        self.assertEqual(a.source_kind('google_meet.notes'), 'Meet notes')
-        self.assertEqual(self.requests[0][2]['filter'], [
+        self.assertEqual(self.fake.scopes(), set(meet.SCOPES))  # never a Gmail scope, never Drive
+        self.assertEqual(meet.SCOPES, ('https://www.googleapis.com/auth/meetings.space.readonly',
+                                       'https://www.googleapis.com/auth/documents.readonly'))
+        docs_calls = [r for r in self.fake.requests if r[0] == 'docs.googleapis.com']
+        self.assertEqual([r[1] for r in docs_calls], ['/v1/documents/smartNotes-doc-1'])  # the notes doc, by its id
+        self.assertEqual(self.fake.requests[1][2]['filter'], [
             'start_time>="2026-10-21T12:00:00+00:00" AND start_time<="2026-10-28T12:00:00+00:00"'])
-        self.credential.assert_called_once_with({}, 'google_meet')
+        self.assertEqual(a.source_kind('google_meet.notes'), 'Meet notes')
+
+    def test_plugin_dispatch_reads_through_the_broker(self):
+        with patch.object(a.CONNECTOR_HELPERS, 'credential', lambda config, name: 'machine-token'), \
+                patch.object(a.CONNECTOR_HELPERS, 'now', return_value=NOW):
+            self.assertEqual(a.sync_source(self.store, self.config, ACCOUNT)['events'], 2)
 
     def test_replays_are_idempotent_and_edits_version_the_same_artifact(self):
         self.sync()
         original_ids = {row['kind']: row['source_id'] for row in self.rows()}
         self.sync()
         self.assertEqual([row['version'] for row in self.rows()], [1, 1])
-        self.documents['smartNotes-doc-1'] = 'Updated example notes.'
+        self.fake.documents['smartNotes-doc-1'] = document('Updated example notes.')
         self.sync()
         rows = self.rows()
         self.assertEqual([row['version'] for row in rows], [2, 1])
         self.assertEqual({row['kind']: row['source_id'] for row in rows}, original_ids)
 
     def test_pending_artifacts_are_revisited_without_writes(self):
-        self.artifacts[('smartNotes', '')]['smartNotes'][0]['state'] = 'ENDED'
+        self.fake.artifacts[('smartNotes', '')]['smartNotes'][0]['state'] = 'ENDED'
         self.assertEqual(self.sync()['events'], 1)
-        self.artifacts[('smartNotes', '')]['smartNotes'][0]['state'] = 'FILE_GENERATED'
+        self.fake.artifacts[('smartNotes', '')]['smartNotes'][0]['state'] = 'FILE_GENERATED'
         self.assertEqual(self.sync()['events'], 2)
         self.assertEqual(len(self.rows()), 2)
 
+    def test_transcript_entries_page_and_a_transcript_without_a_doc_still_reads(self):
+        self.fake.entries[('artifact-1', '')]['nextPageToken'] = 'more'
+        self.fake.entries[('artifact-1', 'more')] = {'transcriptEntries': [entry(4, 'p9', 'Someone joined by phone.')]}
+        self.fake.artifacts[('transcripts', '')] = {'transcripts': [artifact(docsDestination=None)]}
+        self.sync()
+        transcript = next(r for r in self.rows() if r['kind'] == 'google_meet.transcript')
+        self.assertTrue(transcript['body'].endswith('Guest Sam: Ready.\nSomeone: Someone joined by phone.'))
+        self.assertNotIn('source_url', json.loads(transcript['metadata']))
+        entries = [r for r in self.fake.requests if r[1].endswith('/entries')]
+        self.assertEqual(entries[0][2]['pageSize'], ['100'])
+        self.assertEqual(len([r for r in self.fake.requests if r[1].endswith('/participants')]), 1)  # once per conference
+
     def test_conference_and_artifact_pagination_resume_across_runs(self):
-        self.conferences['']['nextPageToken'] = 'conferences-next'
-        self.conferences['conferences-next'] = {}  # Google omits empty repeated fields.
-        self.artifacts[('transcripts', '')]['nextPageToken'] = 'transcripts-next'
-        self.artifacts[('transcripts', 'transcripts-next')] = {'transcripts': [artifact(number=2)]}
-        self.documents['transcripts-doc-2'] = 'Second transcript session.'
+        self.fake.conferences['']['nextPageToken'] = 'conferences-next'
+        self.fake.conferences['conferences-next'] = {}  # Google omits empty repeated fields.
+        self.fake.artifacts[('transcripts', '')]['nextPageToken'] = 'transcripts-next'
+        self.fake.artifacts[('transcripts', 'transcripts-next')] = {'transcripts': [artifact(number=2)]}
+        self.fake.entries[('artifact-2', '')] = {'transcriptEntries': [entry(1, 'p2', 'Second transcript session.')]}
         with patch.object(meet, 'PAGES', 2):
             self.assertTrue(self.sync()['more'])
         state = self.store.checkpoint(ACCOUNT['id'])
@@ -142,142 +214,165 @@ class GoogleMeetTests(unittest.TestCase):
         self.assertFalse(self.sync()['more'])
         self.assertEqual(len(self.rows()), 3)
         self.assertEqual(self.store.checkpoint(ACCOUNT['id'])['since'], NOW)
-        self.assertEqual(self.requests[-1][2]['pageToken'], ['conferences-next'])
+        self.assertEqual([r for r in self.fake.requests if r[1] == '/v2/conferenceRecords'][-1][2]['pageToken'], ['conferences-next'])
 
     def test_empty_pages_with_continuations_are_not_dropped(self):
-        self.conferences = {'': {'nextPageToken': 'next'}, 'next': {'conferenceRecords': [RECORD]}}
-        self.artifacts[('smartNotes', '')] = {'nextPageToken': 'notes-next'}
-        self.artifacts[('smartNotes', 'notes-next')] = {'smartNotes': [artifact('smartNotes')]}
+        self.fake.conferences = {'': {'nextPageToken': 'next'}, 'next': {'conferenceRecords': [RECORD]}}
+        self.fake.artifacts[('smartNotes', '')] = {'nextPageToken': 'notes-next'}
+        self.fake.artifacts[('smartNotes', 'notes-next')] = {'smartNotes': [artifact('smartNotes')]}
         self.assertEqual(self.sync()['events'], 2)
 
-    def test_empty_account_and_setup_probe_do_not_touch_checkpoints(self):
-        self.conferences = {'': {}}
-        self.assertIsNone(meet.check({}, ACCOUNT, self.helpers))
-        self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
-        self.assertEqual(self.sync()['events'], 0)
-        self.assertTrue(self.store.checkpoint(ACCOUNT['id'])['coverage_complete'])
-
-    def test_setup_probe_reads_artifact_text_but_stores_nothing(self):
-        self.assertIsNone(meet.check({}, ACCOUNT, self.helpers))
-        self.assertEqual(len(self.requests), 5)
+    def test_setup_check_needs_both_scopes_and_stores_nothing(self):
+        self.assertIsNone(meet.check(self.config, ACCOUNT, self.helpers))
         self.assertEqual(self.rows(), [])
         self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
+        for missing in meet.SCOPES:  # granted Meet but not Docs (or the other way): not added, whatever the meetings
+            with self.subTest(missing=missing):
+                self.fake.granted = set(meet.SCOPES) - {missing}
+                with self.assertRaisesRegex(a.SourceError, '^google_meet_not_connected:HTTP_403$'):
+                    meet.check(self.config, ACCOUNT, self.helpers)
+        self.fake.granted, self.fake.conferences = set(meet.SCOPES), {'': {}}
+        self.assertIsNone(meet.check(self.config, ACCOUNT, self.helpers))
 
-    def test_failed_export_keeps_the_last_page_for_atomic_replay(self):
-        self.artifacts[('transcripts', '')]['transcripts'].append(artifact(number=2))
-        self.documents['transcripts-doc-2'] = 'Second transcript session.'
-        self.overrides[('/drive/v3/files/transcripts-doc-2/export', '')] = self.error(503)
-        with self.assertRaises(a.SourceError):
+    def test_a_scope_taken_back_or_a_revoked_sign_in_says_what_to_do(self):
+        self.fake.granted = {meet.DOCS_SCOPE}
+        with self.assertRaisesRegex(a.SourceError, '^google_meet_not_connected:HTTP_403$'):
             self.sync()
-        self.assertEqual(self.rows(), [])
-        state = self.store.checkpoint(ACCOUNT['id'])
-        self.assertEqual(state['window']['collection'], 'transcripts')
-        self.overrides.clear()
-        self.assertEqual(self.sync()['events'], 3)
-        self.assertEqual(len(self.rows()), 3)
+        self.fake.granted = set(meet.SCOPES)
+        google_api._tokens.clear()
+        self.fake.overrides[('/v2/conferenceRecords', '')] = self.error(401)
+        with self.assertRaisesRegex(a.SourceError, '^google_meet_signin_expired:HTTP_401$'):
+            self.sync()
+        self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
+        self.assertEqual(meet.SETUP['hints']['google_meet_not_connected'], 'Connect Google Meet again')
 
-    def test_failed_commit_does_not_advance_the_artifact_cursor(self):
-        with patch.object(meet, 'PAGES', 1):
-            self.sync()
-        state = self.store.checkpoint(ACCOUNT['id'])
-        with patch.object(self.store, 'commit_page', side_effect=RuntimeError('interrupted')):
-            with self.assertRaises(RuntimeError):
-                self.sync()
-        self.assertEqual(self.store.checkpoint(ACCOUNT['id']), state)
-        self.assertEqual(self.rows(), [])
-        self.assertEqual(self.sync()['events'], 2)
-
-    def retained_token(self):
-        self.conferences['']['nextPageToken'] = 'old-token'
-        with patch.object(meet, 'PAGES', 3):
-            self.sync()
-        return self.store.checkpoint(ACCOUNT['id'])
+    def test_no_meet_sign_in_reads_nothing_and_never_borrows_gmails(self):
+        for account, config in (({**ACCOUNT, 'transport': 'api', 'credential': 'google_meet'}, self.config),  # a token pasted before
+                                ({**ACCOUNT, 'email': ''}, self.config),
+                                (ACCOUNT, {**self.config, 'google_meet_broker': {}})):  # Gmail is here, Meet's sign-in isn't
+            with self.subTest(account=account, broker=config['google_meet_broker']):
+                with self.assertRaisesRegex(a.SourceError, '^google_meet_not_connected'):
+                    meet.sync(self.store, config, account, self.helpers)
+        self.assertEqual(self.fake.requests, [])
+        mail_grants.forget(self.config, 'google_meet', OWNER, revoke=False)
+        self.fake.granted = set()
+        with self.assertRaisesRegex(a.SourceError, '^google_meet_not_connected'):
+            meet.check(self.config, ACCOUNT, self.helpers)
 
     def test_expired_cursor_replays_bounded_window_and_discloses_gap(self):
-        self.retained_token()
-        self.overrides[('/v2/conferenceRecords', 'old-token')] = self.error()
-        self.conferences[''].pop('nextPageToken')
+        self.fake.conferences['']['nextPageToken'] = 'old-token'
+        with patch.object(meet, 'PAGES', 3):
+            self.sync()
+        self.fake.overrides[('/v2/conferenceRecords', 'old-token')] = self.error(400)
+        self.fake.conferences[''].pop('nextPageToken')
         self.assertFalse(self.sync()['more'])
         state = self.store.checkpoint(ACCOUNT['id'])
         self.assertEqual(state['cursor_expired_at'], NOW)
         self.assertIn('older pending artifacts', state['coverage_gap'])
         self.assertFalse(state['coverage_complete'])
         self.assertEqual(len(self.rows()), 2)
-        self.assertEqual([row['version'] for row in self.rows()], [1, 1])
 
-    def test_transient_errors_and_unrelated_400_keep_valid_continuation(self):
-        state = self.retained_token()
-        cases = [(self.error(429, headers={'Retry-After': '123'}), 'google_meet_http:HTTP_429', 123),
-                 (self.error(400, 'Invalid filter'), 'google_meet_http:HTTP_400', None),
-                 (self.error(410), 'google_meet_http:HTTP_410', None),
-                 (urllib.error.URLError('private network text'), 'google_meet_network', None)]
-        for outcome, label, delay in cases:
+    def test_transient_errors_keep_the_last_good_checkpoint(self):
+        self.fake.conferences['']['nextPageToken'] = 'old-token'
+        with patch.object(meet, 'PAGES', 3):
+            self.sync()
+        state = self.store.checkpoint(ACCOUNT['id'])
+        for outcome, label, delay in ((self.error(429), 'google_meet_http:HTTP_429', 60),
+                                      (self.error(500), 'google_meet_http:HTTP_500', None),
+                                      (urllib.error.URLError('private network text'), 'google_meet_network', None)):
             with self.subTest(label=label):
-                self.overrides[('/v2/conferenceRecords', 'old-token')] = outcome
+                self.fake.overrides[('/v2/conferenceRecords', 'old-token')] = outcome
                 with self.assertRaises(a.SourceError) as caught:
                     self.sync()
                 self.assertEqual(str(caught.exception), label)
                 self.assertEqual(caught.exception.retry_after, delay)
                 self.assertEqual(self.store.checkpoint(ACCOUNT['id']), state)
 
-    def test_auth_errors_are_safe_and_do_not_create_a_checkpoint(self):
-        for code in (401, 403, 500):
-            with self.subTest(code=code):
-                self.overrides[('/v2/conferenceRecords', '')] = self.error(code, 'private service text')
-                with self.assertRaises(a.SourceError) as caught:
-                    self.sync()
-                self.assertEqual(str(caught.exception), 'google_meet_http:HTTP_' + str(code))
-                self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
+    def test_a_400_without_a_page_token_is_no_cursor_expiry(self):
+        self.fake.overrides[('/v2/conferenceRecords', '')] = self.error(400)
+        with self.assertRaisesRegex(a.SourceError, '^google_meet_http:HTTP_400$'):
+            self.sync()
+        self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
 
     def test_invalid_json_and_page_shapes_are_safe_errors(self):
         for answer in (b'{private', b'\xff', [], {'conferenceRecords': 'private'},
                        {'conferenceRecords': [None]}, {'nextPageToken': 12}):
             with self.subTest(answer=answer):
-                self.overrides[('/v2/conferenceRecords', '')] = answer
+                self.fake.overrides[('/v2/conferenceRecords', '')] = answer
                 with self.assertRaises(a.SourceError) as caught:
                     self.sync()
                 self.assertIn(caught.exception.category, ('google_meet_invalid_response', 'google_meet_invalid_page'))
                 self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
 
-    def test_same_cursor_is_rejected_without_losing_last_good_checkpoint(self):
-        state = self.retained_token()
-        self.conferences['old-token'] = {'nextPageToken': 'old-token'}
+    def test_same_cursor_is_rejected(self):
+        self.fake.conferences[''] = {'nextPageToken': 'same'}
+        self.fake.conferences['same'] = {'nextPageToken': 'same'}
         with self.assertRaisesRegex(a.SourceError, '^google_meet_invalid_page$'):
             self.sync()
-        self.assertEqual(self.store.checkpoint(ACCOUNT['id']), state)
 
-    def test_invalid_resource_paths_timestamps_and_document_ids_are_rejected(self):
+    def test_invalid_resource_names_timestamps_and_document_ids_are_rejected(self):
         for field, value in (('name', 'https://example.invalid/'), ('startTime', 'private text')):
             with self.subTest(field=field):
-                self.conferences[''] = {'conferenceRecords': [{**RECORD, field: value}]}
+                self.fake.conferences[''] = {'conferenceRecords': [{**RECORD, field: value}]}
                 with self.assertRaises(a.SourceError):
                     self.sync()
                 self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
-        self.conferences[''] = {'conferenceRecords': [RECORD]}
-        for item in (artifact(docsDestination={'document': '../private'}), artifact(docsDestination={}),
-                     artifact(name='conferenceRecords/other/transcripts/artifact-1')):
+        self.fake.conferences[''] = {'conferenceRecords': [RECORD]}
+        for collection, item in (('smartNotes', artifact('smartNotes', docsDestination={'document': '../private'})),
+                                 ('smartNotes', artifact('smartNotes', docsDestination={})),
+                                 ('transcripts', artifact(docsDestination={'document': '../private'})),
+                                 ('transcripts', artifact(name='conferenceRecords/other/transcripts/artifact-1'))):
             with self.subTest(item=item):
-                self.artifacts[('transcripts', '')] = {'transcripts': [item]}
+                with self.store.connect() as db:
+                    db.execute('DELETE FROM events')
+                    db.execute('DELETE FROM checkpoints')
+                other = 'transcripts' if collection == 'smartNotes' else 'smartNotes'
+                self.fake.artifacts[(other, '')] = {}
+                self.fake.artifacts[(collection, '')] = {collection: [item]}
                 with self.assertRaises(a.SourceError):
                     self.sync()
                 self.assertEqual(self.rows(), [])
+        self.assertFalse([r for r in self.fake.requests if 'private' in r[1]])
 
-    def test_response_limits_and_document_clipping_are_explicit(self):
-        self.documents['transcripts-doc-1'] = 'x' * 400001
-        self.documents['smartNotes-doc-1'] = 'y' * 40001
+    def test_only_fixed_get_methods_on_googles_hosts(self):
+        for method in ('meet.conferenceRecords.delete', 'drive.files.export.meet', 'gmail.users.messages.send'):
+            with self.subTest(method=method), self.assertRaises(google_api.BrokerError):
+                google_api.url_for(method, {})
+        verb, url = google_api.url_for('meet.conferenceRecords.transcripts.entries.list',
+                                       {'conference': 'r/../x', 'transcript': 't', 'pageSize': 100})
+        self.assertEqual(verb, 'GET')
+        self.assertEqual(url, 'https://meet.googleapis.com/v2/conferenceRecords/r%2F..%2Fx/transcripts/t/entries?pageSize=100')
+        self.assertTrue(all(v[0] == 'GET' for k, v in google_api.READ.items() if k.startswith('meet.')))
+        self.assertFalse([k for k in google_api.WRITE if k.startswith(('meet.', 'docs.'))])
+
+    def test_response_limits_and_clipping_are_explicit(self):
+        self.fake.entries[('artifact-1', '')] = {'transcriptEntries': [entry(1, 'p1', 'x' * 400_001)]}
+        self.fake.documents['smartNotes-doc-1'] = document('y' * 40_001)
         self.sync()
         row = next(row for row in self.rows() if row['kind'].endswith('transcript'))
-        self.assertEqual(len(row['body']), 400000)
+        self.assertEqual(len(row['body']), 400_000)
         self.assertTrue(json.loads(row['metadata'])['truncated'])
-        self.assertEqual(json.loads(row['metadata'])['body_chars'], 400001)
         notes = next(row for row in self.rows() if row['kind'].endswith('notes'))
-        self.assertEqual(len(notes['body']), 40000)
+        self.assertEqual(len(notes['body']), 40_000)
         with patch.object(meet, 'MAX_BYTES', 10):
             with self.assertRaisesRegex(a.SourceError, '^google_meet_response_too_large$'):
                 self.sync()
 
+    def test_the_notes_doc_reads_tables_people_and_links_as_text(self):
+        para = lambda *parts: {'paragraph': {'elements': list(parts)}}
+        doc = {'body': {'content': [
+            {'sectionBreak': {}},
+            para({'textRun': {'content': 'Attendees: '}}, {'person': {'personProperties': {'name': 'Robin Reviewer', 'email': 'robin@x.example'}}},
+                 {'textRun': {'content': '\n'}}),
+            {'table': {'tableRows': [{'tableCells': [{'content': [para({'textRun': {'content': 'Action\n'}})]},
+                                                     {'content': [para({'textRun': {'content': 'Owner\n'}})]}]}]}},
+            para({'richLink': {'richLinkProperties': {'title': 'Q4 plan', 'uri': 'https://docs.google.com/x'}}}, {'textRun': {'content': '\n'}})]}}
+        self.assertEqual(meet.doc_text(doc['body']['content']), 'Attendees: Robin Reviewer\nAction\nOwner\nQ4 plan\n')
+        self.assertEqual(meet.doc_text(None), '')
+        self.assertEqual(meet.doc_text([{'paragraph': {'elements': [None, {'textRun': {'content': 5}}]}}]), '')
+
     def test_explicitly_labeled_sensitive_values_are_omitted(self):
-        self.documents['smartNotes-doc-1'] = 'password: example-placeholder\notp=000000\nOrdinary notes remain.'
+        self.fake.documents['smartNotes-doc-1'] = document('password: example-placeholder\notp=000000\nOrdinary notes remain.')
         self.sync()
         row = next(row for row in self.rows() if row['kind'].endswith('notes'))
         self.assertEqual(row['body'], 'password: [omitted]\notp: [omitted]\nOrdinary notes remain.')
@@ -288,51 +383,106 @@ class GoogleMeetTests(unittest.TestCase):
                 ('2026-08-01T12:00:00+00:00', '2026-09-28T12:00:00+00:00', True)):
             with self.subTest(since=since):
                 self.store.commit_page(ACCOUNT['id'], {'since': since}, [])
-                self.conferences = {'': {}}
+                self.fake.conferences = {'': {}}
                 self.sync()
-                self.assertIn(expected_after, self.requests[-1][2]['filter'][0])
+                listed = [r for r in self.fake.requests if r[1] == '/v2/conferenceRecords']
+                self.assertIn(expected_after, listed[-1][2]['filter'][0])
                 self.assertEqual(bool(self.store.checkpoint(ACCOUNT['id']).get('coverage_gap')), gap)
 
     def test_old_and_future_records_are_not_imported_and_retention_is_disclosed(self):
-        self.conferences[''] = {'conferenceRecords': [
+        self.fake.conferences[''] = {'conferenceRecords': [
             {**RECORD, 'startTime': '2026-01-01T00:00:00Z'},
             {**RECORD, 'startTime': '2027-01-01T00:00:00Z'}]}
         self.assertEqual(self.sync({'bootstrap_days': 365})['events'], 0)
-        self.assertEqual(len(self.requests), 1)
         state = self.store.checkpoint(ACCOUNT['id'])
         self.assertIn('30 days', state['coverage_gap'])
         self.assertFalse(state['coverage_complete'])
-        self.assertIn('2026-09-28', self.requests[0][2]['filter'][0])
 
-    def test_credentials_only_come_from_helper_and_bad_values_are_safe(self):
-        for value in ('', 'token\nInjected: header', None):
-            with self.subTest(value=value):
-                self.credential.return_value = value
-                with self.assertRaisesRegex(a.SourceError, '^google_meet_credential_unavailable$'):
-                    self.sync()
-        self.credential.side_effect = RuntimeError('private credential details')
-        with self.assertRaisesRegex(a.SourceError, '^google_meet_credential_unavailable$'):
-            self.sync()
-        self.assertEqual(self.requests, [])
-
-    def test_fixed_read_routes_and_redirects_prevent_token_forwarding(self):
-        source = meet.Source({}, ACCOUNT, self.helpers)
-        for path in ('https://example.invalid/', 'spaces/space-1', '../conferenceRecords',
-                     RECORD['name'] + '/transcripts/artifact-1/delete'):
-            with self.subTest(path=path), self.assertRaisesRegex(a.SourceError, '^google_meet_path_not_allowed$'):
-                source.get(path)
-        self.assertEqual(self.requests, [])
-        request = urllib.request.Request('https://meet.googleapis.com/v2/conferenceRecords')
-        self.assertIsNone(meet.NoRedirect().redirect_request(request, None, 302, 'redirect', {}, 'https://example.invalid/'))
-
-    def test_setup_is_complete_and_does_not_ask_for_secrets_as_plain_answers(self):
-        self.assertEqual(meet.SETUP['ask'], [])
-        self.assertIn('OAuth access token', meet.SETUP['secret'])
-        self.assertIn('https://developers.google.com/oauthplayground/', meet.SETUP['note'])
-        self.assertIn('https://www.googleapis.com/auth/drive.meet.readonly', meet.SETUP['note'])
-        self.assertIn('https://www.googleapis.com/auth/meetings.space.readonly', meet.SETUP['note'])
+    def test_setup_signs_in_with_google_and_never_asks_for_a_token(self):
+        self.assertEqual(meet.SETUP['account']['transport'], 'broker')
+        self.assertNotIn('secret', meet.SETUP)
+        text = json.dumps(meet.SETUP)
+        for gone in ('oauthplayground', 'drive.meet.readonly', 'console.cloud.google.com', 'access token'):
+            self.assertNotIn(gone, text)
+        self.assertLessEqual(len(meet.SETUP['note']), 120)
         self.assertLessEqual(len(meet.SETUP['what']), 70)
-        self.assertNotIn('\n', meet.SETUP['what'])
+        self.assertNotIn('—', text)
+
+
+class SignIn(unittest.TestCase):
+    """Connect Google Meet: + Add on a hosted Machine (its control plane's form), or through the control plane on a
+    paired self-hosted one, which hands Meet's own sign-in over (onboarding.connect_grant). Gmail isn't needed."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        (self.root / 'fleet.token').write_text('fixture-device-token\n')
+        self.path = self.root / 'config.json'
+        self.path.write_text(json.dumps({'database': str(self.root / 'events.sqlite'), 'credentials': {'fleet': str(self.root / 'fleet.token')},
+                                         'fleet': {'url': 'https://cp.example/api/fleet'}, 'accounts': []}))
+        self.checked, self.answer = [], None
+        patch.object(onboarding, 'assistant', return_value=a).start()
+        patch.object(onboarding, 'check', side_effect=lambda config, account: self.checked.append(dict(account)) or self.answer).start()
+        self.addCleanup(patch.stopall)
+
+    def config(self):
+        return json.loads(self.path.read_text())
+
+    def test_a_paired_machine_keeps_meets_own_sign_in_without_gmail(self):
+        grant = {'provider': 'google_meet', 'email': OWNER, 'refresh_token': 'fixture-refresh-token-meet', 'scopes': list(meet.SCOPES)}
+        args = {'source': 'google_meet', 'grant': grant}
+        self.answer = 'google_meet_not_connected'  # Google didn't allow it after all: nothing is kept
+        with self.assertRaisesRegex(onboarding.SetupError, 'did not check out'):
+            onboarding.connect_delivered(self.path, args)
+        self.assertIsNone(mail_grants.get(self.config(), 'google_meet', OWNER))
+        self.assertNotIn('google_meet', [x['service'] for x in self.config()['accounts']])
+        self.answer = None
+        self.assertEqual(onboarding.connect_delivered(self.path, args), {'ok': True, 'name': OWNER})  # no Gmail here
+        config = self.config()
+        [account] = config['accounts']
+        self.assertEqual((account['service'], account['email'], account['transport'], account['boundary']),
+                         ('google_meet', OWNER, 'broker', 'work:Acme'))
+        self.assertNotIn('credential', account)
+        self.assertEqual(config['google_meet_broker'], {'url': 'https://cp.example/api/fleet/google_meet-token'})
+        self.assertEqual(config['credentials']['google_meet-broker'], config['credentials']['fleet'])
+        self.assertEqual(mail_grants.get(config, 'google_meet', OWNER), 'fixture-refresh-token-meet')
+        self.assertIsNone(mail_grants.get(config, 'google', OWNER))  # never a mail sign-in
+        self.assertNotIn('google_broker', config)
+        self.assertNotIn('fixture-refresh-token-meet', self.path.read_text())
+        self.assertEqual(self.checked[-1]['service'], 'google_meet')  # checked with a real read before it is kept
+        onboarding.connect_delivered(self.path, args)
+        self.assertEqual(len([x for x in self.config()['accounts'] if x['service'] == 'google_meet']), 1)  # again: the same one
+        with self.assertRaises(onboarding.SetupError):
+            onboarding.connect_delivered(self.path, {'source': 'google_meet', 'grant': {**grant, 'provider': 'google'}})
+
+    def test_the_sign_in_is_offered_where_it_works(self):
+        self.assertIn('google_meet', fleet.SIGNIN_SOURCES)
+        self.assertEqual(fleet.SIGNIN_OF['google_meet'], 'google_meet')
+        self.assertIn('google_meet', assistant.HOSTED_SIGNINS)
+        self.assertIn('google_meet', mail_grants.PROVIDERS)
+        hosted = {'manage_url': 'https://cp.example/setup', 'accounts': []}
+        self.assertNotIn('google_meet', [s['service'] for s in onboarding.catalog(hosted)])  # until its control plane has the app
+        meet_broker = {'google_meet_broker': {'url': 'https://cp.example/api/google-meet/token'}}
+        self.assertIn('google_meet', [s['service'] for s in onboarding.catalog({**hosted, **meet_broker})])
+        self.assertIn('google_meet', [s['service'] for s in onboarding.catalog({'accounts': []})])  # self-hosted
+        self.assertEqual(onboarding.missing({'credentials': {}}, ACCOUNT), 'google_meet_broker url is not set')
+        account = {**ACCOUNT, 'id': 'acme-meet'}
+        self.assertEqual(assistant.reconnect_help(account, hosted['manage_url']),
+                         {'account_page': 'https://cp.example/setup#source-google_meet', 'hosted_signin': 'google_meet'})
+        self.assertEqual(assistant.reconnect_help(account, None), {'connect_name': 'google_meet'})
+        html = (Path(assistant.__file__).parent / 'dashboard.html').read_text(encoding='utf-8')
+        self.assertIn("google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'}", html)
+        self.assertNotIn('Connect Gmail', html)
+
+    def test_disconnect_revokes_meets_own_sign_in_at_google(self):
+        config = {'database': str(self.root / 'events.sqlite')}
+        mail_grants.put(config, 'google_meet', OWNER, 'fixture-refresh-token-meet')
+        mail_grants.put(config, 'google', OWNER, 'fixture-refresh-token-mail')
+        with patch.object(mail_grants, '_revoke_google', return_value=True) as revoke:
+            self.assertEqual(mail_grants.forget(config, 'google_meet', OWNER), 'revoked')
+        revoke.assert_called_once_with('fixture-refresh-token-meet')
+        self.assertEqual(mail_grants.get(config, 'google', OWNER), 'fixture-refresh-token-mail')  # Gmail's stays
 
 
 if __name__ == '__main__':

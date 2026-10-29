@@ -627,7 +627,7 @@ CONNECT_ACTIONS = (
 # from OpenAI).
 # Not Slack: until The Machine's Slack app is in the Slack Marketplace, + Add connects Slack through Maton; Sign in with
 # Slack shows only on the setup page, for the workspaces the control plane opens it to (its cloud/slack_app.py open_for).
-HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs', 'codex'}
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs', 'codex', 'google_meet'}
 ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
 SIGNIN_ONLY = ('intercom', 'trello')  # connected only by signing in with the control plane's app, hosted or paired (fleet.connect_start)
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
@@ -13370,7 +13370,7 @@ def reconnect_help(account, manage, docs_consent=False):
     if manage and service == 'docs':  # its Connect Microsoft documents consent, once the account page offers it
         return {'account_page': urllib.parse.urljoin(manage, '#docs'), 'hosted_signin': 'microsoft_docs'} if docs_consent else {}
     if manage and account.get('transport') == 'broker':
-        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack') else 'google'
+        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack', 'google_meet') else 'google'
         return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),
                 'hosted_signin': provider}
     if service == 'slack' and account.get('transport') != 'maton':
@@ -19408,7 +19408,7 @@ class App:
         the control plane forgets this Machine had it, so nothing refreshes it again."""
         import mail_grants
         provider = {'microsoft_docs': 'microsoft'}.get(fleet.SIGNIN_OF.get(account.get('service')), fleet.SIGNIN_OF.get(account.get('service')))
-        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe', 'slack'):
+        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe', 'slack', 'google_meet'):
             return
         import slack_api
 
