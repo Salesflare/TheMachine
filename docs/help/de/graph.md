@@ -27,6 +27,8 @@ Jede Seite einer Person und Organisation hat einen, das Neueste zuerst: E-Mails,
 
 Anstehende Meetings stehen getrennt oben unter **Demnächst**, das nächste zuerst. **Alle anstehenden zeigen** zeigt den Rest. Ein Meeting, das in mehreren deiner Kalender steht, erscheint nur einmal.
 
+Ein Termin zeigt, wer dabei war, mit Namen, jede Person einmal, ohne Besprechungsräume. Einer mit Notizen oder Transkript zeigt **Notizen** oder **Transkript**; ein Klick öffnet sie.
+
 Der Verlauf einer Organisation enthält die Nachrichten ihrer Personen und die Intercom-Unterhaltungen von ihrer Domain. Deine Verläufe gehören dir: Der Graph des Teams zeigt nur, was deine Freigaberegeln erlauben.
 
 Wenn eine Seite **Die Seite konnte nicht geladen werden.** zeigt, tippe auf **Erneut versuchen**. Bleibt es dabei, nutze **Stimmt etwas nicht?** unten auf der Seite.

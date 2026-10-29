@@ -190,6 +190,27 @@ class Calendar(unittest.TestCase):
         # Two invites with the same start, end and title: once
         self.assertEqual(sum(t.casefold().split() == ['lunch', 'with', 'sam'] for t in rows), 1)
 
+    def test_one_meeting_opened_from_anywhere_is_the_calendars_row(self):
+        """A meeting opened from a timeline, Events or a to-do's source shows the Calendar's own row: the copy the Calendar
+        keeps (so its notes are the same ones), with its notes marker; one the owner declined still opens."""
+        rows = self.shared_week()
+        with self.store.connect() as db:
+            ids = dict(db.execute("SELECT source_id,id FROM events").fetchall())
+            db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at) "
+                       "VALUES('cal',?,'meeting.notes','2026-10-27T15:00:00+00:00','Notes','We agreed.','{}',0,'h','2026-10-27T18:00:00+00:00')",
+                       (f"notes:{ids['parents-mine']}",))
+        owner = {'owner@example.com'}
+        mine = self.store.meeting(['cal', 'partner-cal'], ids['parents-mine'], owner)
+        self.assertEqual({k: v for k, v in mine.items() if k != 'notes'}, rows['Parents evening'])
+        self.assertEqual(mine['notes']['by'], 'owner')
+        # The shared calendar's copy of it opens as the owner's own, the one its notes are on
+        self.assertEqual(self.store.meeting(['cal', 'partner-cal'], ids['parents'], owner)['id'], ids['parents-mine'])
+        self.assertEqual(self.store.meeting(['cal'], ids['pilot'], owner)['title'], 'Pilot review')
+        self.assertEqual(self.store.meeting(['cal'], ids['declined'], owner)['title'], 'Said no')  # not on the Calendar, still opens
+        self.assertIsNone(self.store.meeting(['cal'], ids['cancelled'], owner))
+        self.assertIsNone(self.store.meeting(['partner-cal'], ids['pilot'], owner))  # not on these accounts
+        self.assertIsNone(self.store.meeting([], ids['pilot'], owner))
+
     def test_a_shared_calendar_never_makes_cards(self):
         self.shared_week()
         with self.store.connect() as db:
@@ -241,6 +262,11 @@ class Calendar(unittest.TestCase):
         self.assertEqual([m['title'] for m in body['meetings']], ['Late call', 'Pilot review', 'Odd link', 'Team offsite'])
         self.assertEqual(get('/api/calendar?from=2026-10-23T00:00:00Z&to=2027-01-01T00:00:00Z')[0], 400)
         self.assertEqual(get('/api/calendar')[0], 400)
+        # One meeting, opened from anywhere: the Calendar's row; none for a signal that is no meeting
+        pilot = next(m for m in body['meetings'] if m['title'] == 'Pilot review')
+        self.assertEqual(get(f"/api/meeting?event={pilot['id']}"), (200, {'meeting': pilot}))
+        self.assertEqual(get('/api/meeting?event=999999'), (200, {'meeting': None}))
+        self.assertEqual(get('/api/meeting?event=x')[0], 400)
         after = self.store.snapshot([ACCOUNT])
         self.assertEqual((before['suggestions'], before['decisions']), (after['suggestions'], after['decisions']))
 

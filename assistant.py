@@ -4535,8 +4535,32 @@ class Store:
                                        'VALUES(?,?,?,?,?,?,?,0,?,?)', (r['account_id'], r['source_id'], r['kind'], r['occurred_at'], r['title'], r['body'],
                                                                        r['metadata'], r['content_hash'], r['ingested_at'])).lastrowid}
 
+    def meeting(self, account_ids, event_id, owner=(), writable=(), names=None):
+        """One meeting as the Calendar shows it, for its details wherever it is opened (a timeline, Events, a to-do's
+        source): the copy the Calendar keeps when it is on several calendars, so its notes and transcript are the same
+        ones. One the owner declined still opens. None when the event is no meeting (or not on these accounts)."""
+        if not account_ids:
+            return None
+        with self.connect() as db:
+            r = db.execute("SELECT id,title,occurred_at,metadata FROM events WHERE id=? AND kind='calendar.event' AND deleted=0 "
+                           'AND account_id IN (' + ','.join('?' for _ in account_ids) + ')', (int(event_id), *account_ids)).fetchone()
+        if not r:
+            return None
+        m = json.loads(r['metadata'])
+        at = dt.datetime.fromisoformat(str(r['occurred_at']).replace('Z', '+00:00'))
+        at = at if at.tzinfo else at.replace(tzinfo=dt.timezone.utc)
+        keys = calendar_keys(m, r['title'], r['occurred_at'], m.get('end_at'))
+        second = dt.timedelta(seconds=1)
+        rows = self._calendar(account_ids, (at - second).isoformat(), (at + second).isoformat(), owner, writable, names, declined=True)
+        return next((row for k, row in rows if row['id'] == r['id']), None) or next((row for k, row in rows if k & keys), None)
+
     def calendar(self, account_ids, start, end, owner=(), writable=(), names=None):
-        """Meetings that overlap [start, end), for the dashboard's Calendar: slim rows, soonest first.
+        """Meetings that overlap [start, end), for the dashboard's Calendar: slim rows, soonest first."""
+        return [row for _, row in self._calendar(account_ids, start, end, owner, writable, names)]
+
+    def _calendar(self, account_ids, start, end, owner=(), writable=(), names=None, declined=False):
+        """[(keys, row)] of the meetings that overlap [start, end), soonest first (calendar); declined keeps the ones the
+        owner said no to.
         One that is on someone else's calendar shared with the owner, and that they aren't on, carries that
         person's first name (shared); one on both calendars shows once, as the owner's. One on a calendar the owner
         can change (`writable` account ids) without other people on it carries `edit`: its times for the form."""
@@ -4563,7 +4587,7 @@ class Store:
             shared = m.get('access') == 'shared_read_only'
             mine = owner | {str(m.get('credential_account') or '').lower()}
             me = next((a for a in attendees if (str(a.get('email') or '').lower() in mine if shared else a.get('self'))), {})
-            if me.get('responseStatus') == 'declined':
+            if me.get('responseStatus') == 'declined' and not declined:
                 continue  # a meeting the owner said no to isn't on their day
             theirs = not calendar_owned(m, owner)
             url = m.get('source_url')
@@ -4621,8 +4645,8 @@ class Store:
             if keys & seen:
                 continue
             seen |= keys
-            result.append(row)
-        return sorted(result, key=lambda x: (x['start'], x['id']))
+            result.append((keys, row))
+        return sorted(result, key=lambda x: (x[1]['start'], x[1]['id']))
 
     def _calendar_links(self, rows):
         """The Graph behind each meeting, for links in its details: each guest the Graph knows gets their node
@@ -19813,14 +19837,28 @@ class App:
 
         # People on a meeting by the name the graph has for them, when the invite has only their address
         invited = {str(a.get('email') or '').strip().lower() for r in rows.values() if r['kind'] == 'calendar.event'
-                   for a in r['metadata'].get('attendees') or () if isinstance(a, dict)} - {''}
-        known = {}
+                   for a in [*(r['metadata'].get('attendees') or ()), r['metadata'].get('organizer')] if isinstance(a, dict)} - {''}
+        # (one person under two addresses is one node: keyed by it, they show once) and without the rooms booked on it
+        known, nodes, noted = {}, {}, {}
+        rooms, kept, _ = calendar_rooms(self.store.connect) if invited else (set(), set(), {})
         if invited:
             with self.store.connect() as db:
                 for start in range(0, len(invited), 400):
                     chunk = ['email:' + e for e in sorted(invited)[start:start + 400]]
-                    known |= {n['id'][6:]: n['name'] for n in db.execute(f"SELECT id,name FROM graph_nodes WHERE id IN ({','.join('?' * len(chunk))})", chunk)
-                              if n['name'] and '@' not in n['name']}
+                    marks = ','.join('?' * len(chunk))
+                    for n in db.execute(f"SELECT id,name,id identifier FROM graph_nodes WHERE kind='person' AND id IN ({marks}) UNION ALL "
+                                        f"SELECT n.id,n.name,j.value FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value IN ({marks})",
+                                        (*chunk, *chunk)):
+                        address = n['identifier'][6:]
+                        nodes.setdefault(address, n['id'])
+                        if n['name'] and '@' not in n['name']:
+                            known.setdefault(address, n['name'])
+        if any(r['kind'] == 'calendar.event' for r in rows.values()):  # a meeting with notes or a transcript says so on its row
+            try:
+                with self.store.connect() as db:
+                    noted = meeting_notes.added_for(db, [i for i, r in rows.items() if r['kind'] == 'calendar.event'])
+            except sqlite3.OperationalError:
+                noted = {}
 
         def row_for(item):
             if item['type'] != 'event':
@@ -19838,6 +19876,8 @@ class App:
                 row['preview'] = ' '.join(opening.split())[:240]
                 if '@' in str(row.get('from') or ''):  # who opened it by name, not by address
                     row['from'] = (str(m.get('from_name') or '') or str(m.get('contact_name') or '') or row['from'])[:80]
+            if r['kind'] in meeting_notes.PREFIX and (said := re.fullmatch(r'(?:notes|transcript):(\d+)', str(r['source_id']))):
+                row['meeting_id'] = int(said[1])  # a meeting's notes or transcript open with the meeting
             if r['kind'] == 'calendar.event':  # one row for its copies on several calendars, everyone on it once
                 row['all_day'] = bool(m.get('all_day'))
                 people, copies = {}, [r, *(rows[i] for i in item.get('copies') or () if i in rows)]
@@ -19854,14 +19894,25 @@ class App:
                             continue
                         if ' '.join(str(a.get('displayName') or '').split()).casefold() in own:
                             continue
-                        name = ' '.join(str(a.get('displayName') or '').split()) or known.get(address) or address
-                        people.setdefault(address or name.casefold(), name[:80])
+                        if a.get('resource') or 'email:' + address in rooms or calendar_room(a, rooms, kept):
+                            continue  # a meeting room is where, not who
+                        if nodes.get(address) and nodes[address] in {nodes.get(g) for g in given}:
+                            continue  # this page's person under another address of theirs
+                        shown = ' '.join(str(a.get('displayName') or '').split())
+                        name = (shown if shown and '@' not in shown else '') or known.get(address) or shown or address
+                        key = nodes.get(address) or address or name.casefold()
+                        if key not in people or '@' in people[key] and '@' not in name:
+                            people[key] = name[:80]
                 where = str(m.get('location') or '').strip()
                 said = [line for line in str(r.get('body') or '').splitlines() if line.strip() and not line.startswith('Participants: ') and line.strip() != where]
                 names = list(people.values())
                 line = ' · '.join(filter(None, ['With ' + ', '.join(names[:6]) + (f' and {len(names) - 6} more' if len(names) > 6 else '') if names else '',
                                                 where, ' '.join(' '.join(said).split()) if said else '']))
                 row['preview'] = line[:240] + ('…' if len(line) > 240 else '')
+                for c in copies:
+                    for field in ('notes', 'transcript'):
+                        if field in noted.get(c['id'], {}):
+                            row[field] = True
             return row
         def safe_row(item):  # one signal that can't be read is logged and left out, never the whole timeline
             try:
@@ -20759,6 +20810,15 @@ class App:
                                           'calendars': writable})
                     except (ValueError, sqlite3.OperationalError):
                         self.output(400, {'error': 'Ask for a window of at most 15 days'})
+                elif path.path == '/api/meeting':  # one meeting as the Calendar shows it, opened from anywhere in the dashboard
+                    args = urllib.parse.parse_qs(path.query)
+                    try:
+                        writable = writable_calendars(app.config)
+                        self.output(200, {'meeting': app.store.meeting([a['id'] for a in app.config['accounts']], int(args.get('event', [''])[0]),
+                                                                       app.owner_emails(), {c['id'] for c in writable},
+                                                                       {a['id']: n for a in app.config['accounts'] if (n := calendar_account_owner(a))})})
+                    except (ValueError, sqlite3.OperationalError):
+                        self.output(400, {'error': 'That meeting is not there anymore'})
                 elif path.path == '/api/meeting-notes':  # a meeting's notes in the Calendar: added ones and Zoom's, read only
                     args = urllib.parse.parse_qs(path.query)
                     try:

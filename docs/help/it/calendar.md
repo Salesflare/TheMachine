@@ -49,6 +49,8 @@ Anche The Machine può aggiungerle. Chiediglielo su un’attività, come "aggiun
 
 The Machine le legge entrambe per i passi successivi della riunione. Sono Lavoro o Personali come la riunione, e vanno al tuo team solo quando ci va la riunione.
 
+Una riunione si apre con questi dettagli ovunque la trovi: in una cronologia, in Eventi o come fonte di un to-do. **Invito originale** in fondo mostra l’invito così come è arrivato.
+
 ## Aggiungi o modifica un evento
 
 Quando un calendario si può modificare da qui, **Nuovo evento** ne aggiunge uno (sul telefono è sotto **+** nella barra in alto): scegli il calendario, un titolo e l’ora. Fai clic su un evento senza invitati in quel calendario per modificarlo, oppure **Elimina** (tocca due volte).

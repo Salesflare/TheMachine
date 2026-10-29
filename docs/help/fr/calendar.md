@@ -49,6 +49,8 @@ The Machine peut aussi les ajouter. Demandez-le sur une tâche, par exemple "ajo
 
 The Machine lit les deux pour les suites de la réunion. Elles sont Travail ou Personnel comme la réunion, et ne vont à votre équipe que si la réunion y va.
 
+Une réunion s’ouvre avec ces détails où que vous la trouviez : dans une chronologie, dans Événements ou comme source d’une tâche. **Invitation d’origine** en bas montre l’invitation telle qu’elle est arrivée.
+
 ## Ajouter ou modifier un événement
 
 Quand un agenda peut être modifié d’ici, **Nouvel événement** en ajoute un (sur un téléphone, il est sous **+** dans la barre du haut) : choisissez l’agenda, un titre et l’heure. Cliquez sur un événement sans invités de cet agenda pour le modifier, ou pour le **Supprimer** (touchez deux fois).

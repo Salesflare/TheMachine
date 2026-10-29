@@ -49,6 +49,8 @@ The Machine kann sie auch hinzufügen. Frag sie bei einer Aufgabe, etwa "füge d
 
 The Machine liest beides für die nächsten Schritte nach dem Termin. Sie sind Arbeit oder Privat wie der Termin und gehen nur an dein Team, wenn der Termin es tut.
 
+Ein Termin öffnet sich überall mit diesen Details: in einem Verlauf, unter Termine oder als Quelle eines To-dos. **Ursprüngliche Einladung** unten zeigt die Einladung, wie sie ankam.
+
 ## Termin hinzufügen oder ändern
 
 Wenn sich ein Kalender von hier aus ändern lässt, fügt **Neuer Termin** einen hinzu (auf dem Handy unter **+** in der oberen Leiste): Wähle den Kalender, einen Titel und die Uhrzeit. Klick auf einen Termin ohne Gäste in diesem Kalender, um ihn zu ändern, oder **Löschen** (zweimal tippen).

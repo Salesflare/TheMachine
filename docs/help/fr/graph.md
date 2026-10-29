@@ -27,6 +27,8 @@ Chaque page de personne et d’organisation en a une, la plus récente d’abord
 
 Les réunions à venir sont à part en haut, sous **À venir**, la plus proche d’abord. **Afficher tout ce qui est à venir** montre le reste. Une réunion présente dans plusieurs de vos agendas n’apparaît qu’une fois.
 
+Une réunion montre qui y était, par leur nom, chaque personne une fois, sans les salles de réunion. Une réunion avec des notes ou une transcription affiche **Notes** ou **Transcription** ; cliquez pour les lire.
+
 La chronologie d’une organisation contient les messages de ses membres et les conversations Intercom venant de son domaine. Vos chronologies sont à vous : le Graph de l’équipe ne montre que ce que vos règles de partage autorisent.
 
 Si une page affiche **Impossible de charger cette page.**, appuyez sur **Réessayer**. Si cela continue, utilisez **Un problème ?** en bas de la page.

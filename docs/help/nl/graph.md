@@ -27,6 +27,8 @@ Elke pagina van een persoon en organisatie heeft er een, nieuwste eerst: e-mail,
 
 Afspraken die nog moeten komen, staan apart bovenaan onder **Binnenkort**, de eerstvolgende eerst; **Alles wat eraan komt tonen** toont de rest. Een afspraak in meer dan één van je agenda's staat er één keer.
 
+Een afspraak toont wie erbij was bij naam, elke persoon één keer, zonder vergaderzalen. Eén met notities of een transcript toont **Notities** of **Transcript**; klik erop om ze te lezen.
+
 De tijdlijn van een organisatie heeft de berichten van de mensen daar en de Intercom-gesprekken van het domein. Je tijdlijnen zijn van jou: de Graph van het team toont alleen wat je deelregels toelaten.
 
 Staat er op een pagina **Deze pagina kon niet laden.**, tik dan op **Opnieuw proberen**. Blijft dat zo, gebruik dan **Klopt er iets niet?** onderaan de pagina.
