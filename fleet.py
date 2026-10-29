@@ -237,6 +237,14 @@ SIGNIN_SOURCES = {'intercom', 'google', 'microsoft', 'zoom', 'microsoft_docs', '
 SIGNIN_OF = {'intercom': 'intercom', 'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft', 'zoom': 'zoom',
              'docs': 'microsoft_docs', 'stripe': 'stripe'}
 SIGNIN_EXPIRES = 30 * 60  # a sign-in started on the dashboard and not finished by then is shown as stopped
+SIGNINS_FRESH = 5 * 60  # how long the control plane's list of the sign-ins it can start for this Machine is kept (Fleet.signins)
+# what the control plane says when it has no app for a sign-in (device_connect.start): an older one only says it this way
+SIGNIN_REFUSED = "That source can't be signed in this way here."
+
+
+class SigninUnavailable(ValueError):
+    """The control plane can't start this sign-in for this Machine (no app for it there): the dashboard offers the
+    other way (pasting a key, its own app) instead of a tab that closes at once."""
 
 
 def connect_start_request(private, source, another=False, clock=None):
@@ -3128,21 +3136,54 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             done.append(item['id'])
         return done
 
+    def signins(self, clock=None):
+        """The sign-ins the control plane can start for this Machine (GET /signins: those with an app set up there), as
+        a frozenset, kept SIGNINS_FRESH. None when it can't say (a control plane from before, or the Network away): the
+        dashboard then offers each one, and a start it refuses falls back to the other way (SigninUnavailable)."""
+        import time
+        at = (clock or time.monotonic)()
+        kept = self.__dict__.get('signins_kept')
+        if kept and at - kept[0] < SIGNINS_FRESH:
+            return kept[1]
+        try:
+            found = self.relay.call('GET', '/signins', timeout=10)
+        except (Off, Unavailable, OSError, ValueError):
+            found = None
+        names = found.get('signins') if isinstance(found, dict) else None
+        value = frozenset(n for n in names if n in SIGNIN_SOURCES) if isinstance(names, list) else None
+        self.signins_kept = (at, value)
+        return value
+
+    def signin_refused(self, source):
+        """The control plane refused to start `source`: the kept list says so until it is asked again."""
+        import time
+        kept = self.__dict__.get('signins_kept')
+        self.signins_kept = (kept[0] if kept else time.monotonic(),
+                             frozenset((kept[1] if kept and kept[1] is not None else SIGNIN_SOURCES) - {source}))
+
     def connect_start(self, source, another=False):
         """Sign in with <source> from this Machine's dashboard (Connections, + Add): asks the control plane for a one-time
         start link, signed with this Machine's own key. Returns that link for the person to open, signed in as its owner.
-        The dashboard follows it with signin_state."""
+        The dashboard follows it with signin_state. SigninUnavailable when the control plane has no app for it."""
         if source not in SIGNIN_SOURCES:
             raise ValueError('That source signs in another way')
         private = getattr(self.relay, 'private', None)
         if not private:
             raise ValueError('This Machine has no Network keys yet. Pick it as your Machine in a Fleet first.')
+        kept = self.__dict__.get('signins_kept')
+        if kept and kept[1] is not None and source not in kept[1]:
+            raise SigninUnavailable(SIGNIN_REFUSED)  # known already: no request that is refused anyway
         try:
             found = self.relay.call('POST', '/connect-start', connect_start_request(private, source, another), timeout=30)
         except Off:
             raise ValueError('The control plane does not take this yet. Try again later.') from None
         except (Unavailable, OSError):
             raise ValueError('The Network did not answer. Try again in a minute.') from None
+        except ValueError as error:
+            if str(error) != SIGNIN_REFUSED:
+                raise
+            self.signin_refused(source)
+            raise SigninUnavailable(SIGNIN_REFUSED) from None
         url = str((found or {}).get('url') or '')
         home = urllib.parse.urlsplit(str((settings(self.config) or {}).get('url') or ''))
         link = urllib.parse.urlsplit(url)

@@ -7,9 +7,10 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // Connections, + Add on a self-hosted Machine: Intercom signs in through The Machine's own app once this Machine is
 // paired (a one-time start link in a new tab, then its row follows how it goes); not paired, it says pair first.
 // Pasting a token stays, folded away. Google, Microsoft and Zoom the same way, with their own app folded away (Use your
-// own app). SHOTS=<folder> saves screenshots.
+// own app). One the control plane has no app for (Stripe here) shows the other way at once, and one it refuses anyway
+// opens no tab: it says so and opens that other way. SHOTS=<folder> saves screenshots.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-let paired=true,state='started',calls=[];
+let paired=true,state='started',calls=[],refuse=false;
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -23,8 +24,9 @@ const server=createServer(async(req,res)=>{
    {name:'outlook',service:'outlook',label:'Outlook',what:'Your Outlook email.',connected:0,broker:false,signin:'microsoft'},
    {name:'zoom',service:'zoom',label:'Zoom',what:'Your meetings.',connected:0,broker:false,signin:'zoom'},
    {name:'docs',service:'docs',label:'Docs',what:'Comments and shares on your docs.',connected:0,broker:true,signin:'microsoft_docs'},
+   {name:'stripe',service:'stripe',label:'Stripe',what:'Payments and subscriptions.',connected:0,broker:false,signin:'stripe',signin_off:true},
    {name:'github',service:'github',label:'GitHub',connected:0,broker:false}]}));return}
-  if(action==='connect_signin'){assert.ok(['intercom','gmail','docs'].includes(args.name));res.end(JSON.stringify({url:base+'/connect/start/'+'A'.repeat(32),state:'started'}));return}
+  if(action==='connect_signin'){assert.ok(['intercom','gmail','docs'].includes(args.name));if(refuse){res.end(JSON.stringify({state:'unavailable'}));return}res.end(JSON.stringify({url:base+'/connect/start/'+'A'.repeat(32),state:'started'}));return}
   if(action==='connect_signin_state'){res.end(JSON.stringify(state==='done'?{state:'done',name:'Example Support',replies:true}:state==='done-google'?{state:'done',name:'dee@acme.example'}:{state}));return}
   if(action==='connect_start'){res.end(JSON.stringify({session:'s1',state:'running',label:'Intercom',lines:[],question:{id:'q1',kind:'secret',prompt:'Intercom access token'}}));return}
   res.end('{}');return}
@@ -35,13 +37,14 @@ const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
 const shot=async(page,name)=>{if(shots)await page.locator('#connect-add').screenshot({path:`${shots}/${name}.png`})};
+const pageShot=async(page,name)=>{if(shots){await page.locator('#connect-add').scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/${name}.png`})}};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const scheme of ['dark','light'])for(const [width,height] of [[1440,900],[390,844],[320,700]]){
+ for(const scheme of ['dark','light'])for(const [width,height] of [[1440,900],[1440,700],[390,844],[320,700]]){
   const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
-  const tag=`${width}-${scheme}`;
+  const tag=`${width}x${height}-${scheme}`;
   paired=true;state='started';calls=[];
   await page.goto(base+'/#connections=add');
   await page.locator('#connect-add [data-connect-signin="intercom"]').click();
@@ -112,6 +115,30 @@ try{
   assert.equal(await page.locator('#connect-add h3').innerText(),'Docs');
   assert.match(await page.locator('#connect-add').innerText(),/Word, OneDrive and SharePoint, for an Outlook address you connected\. Reads only\./);
   assert.equal(await page.locator('#connect-add details.connect-other').count(),0);
+  // Stripe, which the control plane has no app for: no Sign in button, pasting a restricted key open at once
+  let opened=0;context.on('page',()=>opened++);
+  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.locator('#connect-add [data-connect-signin="stripe"]').click();
+  await page.getByText('Sign in with Stripe isn’t available yet. Paste a restricted key instead.').waitFor();
+  assert.equal(await page.getByRole('button',{name:'Sign in with Stripe'}).count(),0);
+  assert.notEqual(await page.locator('#connect-add details.connect-other').getAttribute('open'),null,'the paste form is open');
+  assert.ok(await page.getByRole('button',{name:'Paste a key'}).isVisible());
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
+  await shot(page,`add-stripe-unavailable-${tag}`);await pageShot(page,`page-stripe-unavailable-${tag}`);
+  // Intercom refused anyway (the list was not known): no tab opens or closes; the line, and pasting a token open
+  refuse=true;calls=[];
+  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.locator('#connect-add [data-connect-signin="intercom"]').click();
+  await page.getByRole('button',{name:'Sign in with Intercom'}).click();
+  await page.getByText('Sign in with Intercom isn’t available yet. Paste an access token instead.').waitFor();
+  assert.equal(opened,0,'no tab for a refused start');
+  assert.ok(calls.includes('connect_signin'));
+  assert.equal(await page.getByRole('button',{name:'Sign in with Intercom'}).count(),0);
+  assert.equal(await page.getByRole('button',{name:'Try again'}).count(),0);
+  assert.notEqual(await page.locator('#connect-add details.connect-other').getAttribute('open'),null);
+  assert.ok(await page.getByRole('button',{name:'Paste a token'}).isVisible());
+  await shot(page,`add-intercom-refused-${tag}`);await pageShot(page,`page-intercom-refused-${tag}`);
+  refuse=false;
   await page.goto('about:blank');await page.goto(base+'/#connections=add');
   await shot(page,`add-list-${tag}`);
   await context.close();
