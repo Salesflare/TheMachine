@@ -147,7 +147,7 @@ Mail from email warm-up tools is kept out, under "Hidden as warm-up", with **Und
 
 ## Projects
 
-Named by your Machine from what your messages are about. Signals that look like they belong show as "probably part of it". Renaming a project to another project's name joins the two.
+Named by your Machine from what your messages are about. Messages that look like they belong show as "probably part of it". Renaming a project to another project's name joins the two.
 
 Or run them by hand, like deals in a CRM:
 

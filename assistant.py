@@ -10915,7 +10915,7 @@ def card(row):
         elif row['status'] == 'prepared':
             status = t('No reply from {} yet.', handed['name'])
     if row['status'] not in ('completed','rejected','snoozed') and row.get('change_prompt',{}).get('status')=='uncertain':
-        status+='\n'+t('I couldn’t confirm the Change prompt. If it arrived, reply to it; otherwise use Change on the dashboard.')
+        status+='\n'+t('I couldn’t confirm the message asking what to change. If it arrived, reply to it; otherwise use Change on the dashboard.')
     # A hashtag, so tapping it in Telegram lists every #work or #personal card.
     tag = '#' + row['scope'] if row.get('scope') else ''
     due = ''

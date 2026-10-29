@@ -53,9 +53,9 @@ In einer Fleet mit Vorsichtig warten Anfragen im Fleet-Tab unter **Brief-Anfrage
 
 In einer Work Fleet wird Kundenarbeit mit deinem Team geteilt, nachdem du sie durchgesehen hast. Siehe [Team-Graph](team-graph.md).
 
-## Geteilte Connectors
+## Geteilte Verbindungen
 
-Ein Owner oder Admin kann Stripe oder Intercom einmal verbinden und mit dem Team teilen, im Kasten **Geteilte Connectors** im Fleet-Tab. Die Machines der Teammitglieder lesen es, nur lesend, und sehen, wer es geteilt hat. Nur Admins ändern oder stoppen es. Siehe [Stripe](stripe.md) und [Intercom](intercom.md).
+Ein Owner oder Admin kann Stripe oder Intercom einmal verbinden und mit dem Team teilen, im Kasten **Geteilte Verbindungen** im Fleet-Tab. Die Machines der Teammitglieder lesen es, nur lesend, und sehen, wer es geteilt hat. Nur Admins ändern oder stoppen es. Siehe [Stripe](stripe.md) und [Intercom](intercom.md).
 
 ## Was deine Machine antwortet
 

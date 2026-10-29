@@ -34,7 +34,7 @@ Op je eigen computer: kan inloggen met Stripe nog niet, dan zegt + Add dat en op
 
 In een Werk-Fleet koppelt een eigenaar of beheerder Stripe één keer en deelt het met het team:
 
-1. Koppel Stripe op je eigen Machine (zie hierboven). Het vak **Gedeelde connectors** in het tabblad Fleet heeft ook **Stripe koppelen**.
+1. Koppel Stripe op je eigen Machine (zie hierboven). Het vak **Gedeelde koppelingen** in het tabblad Fleet heeft ook **Stripe koppelen**.
 2. Open in het tabblad Fleet **Stripe delen**. Iedereen is aangevinkt; vink uit wie het niet mag krijgen. Druk op **Delen**.
 
 De Machines van teamgenoten lezen het dan ook, alleen lezen. Onder Koppelingen staat wie het deelde, en alleen de beheerders van de Fleet kunnen het wijzigen of stoppen. Je Machine vernieuwt hun toegang elk uur, dus als hij langer uit staat, pauzeert hun Stripe tot hij terug is. Niemand krijgt ooit je login zelf. Details: [Fleets](fleet.md).

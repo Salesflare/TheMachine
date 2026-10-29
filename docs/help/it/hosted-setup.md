@@ -1,9 +1,9 @@
 ---
 title: Configura una Machine ospitata
 area: getting-started
-summary: Accedi, inizia i tuoi giorni gratuiti, collega la posta e scegli il modello. Bastano pochi minuti.
+summary: Accedi, inizia i tuoi giorni gratuiti, collega la posta e scegli la tua IA. Bastano pochi minuti.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
 order: 1
 ---
 Una Machine ospitata gira su un server privato tutto suo nell'UE. Pensiamo noi a tenerlo attivo e aggiornato.
@@ -19,7 +19,7 @@ Una Machine ospitata gira su un server privato tutto suo nell'UE. Pensiamo noi a
 Il server si avvia, poi la pagina di configurazione ti guida nel resto, un passo alla volta:
 
 1. **Email e calendario**: collega Google o Microsoft. Puoi farlo mentre il server si avvia. Dopo l’accesso, il passaggio dice che sta lavorando finché la tua Machine non è installata e ha letto la tua posta, circa un minuto. Vedi [Gmail](gmail.md) e [Microsoft](microsoft.md).
-2. **Il tuo modello**: accedi con ChatGPT o usa la tua chiave. Vedi [ChatGPT](chatgpt.md).
+2. **La tua IA**: accedi con ChatGPT o Claude, o usa una chiave del tuo fornitore di IA. Vedi [ChatGPT](chatgpt.md).
 3. Le revisioni si attivano da sole. Le prime attività arrivano dalla posta più recente, poi dagli ultimi 7 giorni.
 
 Sotto **Aggiungi altro quando vuoi** ci sono quelle facoltative: **Altre fonti** come Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) e la connessione del tuo browser. Nessuna serve per iniziare. La dashboard te le suggerisce quando sono utili, per esempio GitHub quando continua ad arrivarti la sua posta.
@@ -28,7 +28,7 @@ Appena la tua Machine è pronta, **Apri la tua dashboard** compare in cima alla 
 
 ## Richiedi una fonte
 
-Ti manca una fonte? In **Connettori**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. Il tuo modello la scrive e la testa sul tuo server. Se la condividi, The Machine apre una pull request su GitHub per te. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
+Ti manca una fonte? In **Fonti**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. La tua IA la scrive e la testa sul tuo server. Se la condividi, The Machine apre una pull request su GitHub per te. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
 
 ## Torna più tardi
 

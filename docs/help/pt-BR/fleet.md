@@ -53,9 +53,9 @@ Em um Fleet Cuidadoso, os pedidos esperam por você na aba Fleet, em **Pedidos d
 
 Em um Fleet de Trabalho, o trabalho com clientes é compartilhado com sua equipe depois que você revisa. Veja [Graph da equipe](team-graph.md).
 
-## Conectores compartilhados
+## Conexões compartilhadas
 
-Um proprietário ou admin pode conectar o Stripe ou o Intercom uma vez e compartilhar com a equipe, pela caixa **Conectores compartilhados** da aba Fleet. As Machines dos colegas leem, só leitura, e veem quem compartilhou. Só admins mudam ou param. Veja [Stripe](stripe.md) e [Intercom](intercom.md).
+Um proprietário ou admin pode conectar o Stripe ou o Intercom uma vez e compartilhar com a equipe, pela caixa **Conexões compartilhadas** da aba Fleet. As Machines dos colegas leem, só leitura, e veem quem compartilhou. Só admins mudam ou param. Veja [Stripe](stripe.md) e [Intercom](intercom.md).
 
 ## O que sua Machine responde
 

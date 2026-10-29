@@ -34,7 +34,7 @@ On your own computer, when Sign in with Stripe isn't available yet, + Add says s
 
 In a Work Fleet, an owner or admin connects Stripe once and shares it with the team:
 
-1. Connect Stripe on your own Machine (above). The Fleet tab's **Shared connectors** box also has **Connect Stripe**.
+1. Connect Stripe on your own Machine (above). The Fleet tab's **Shared connections** box also has **Connect Stripe**.
 2. On the Fleet tab, open **Share Stripe**. Everyone is ticked; untick who shouldn't get it. Press **Share**.
 
 Teammates' Machines read it too, read only. Under Connections it says who shared it, and only the Fleet's admins can change or stop it. Your Machine renews their access every hour, so while it is off for longer, their Stripe pauses until it is back. Nobody ever gets your sign-in itself. Details: [Fleets](fleet.md).

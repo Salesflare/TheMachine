@@ -34,4 +34,4 @@ The top of the dashboard says which limit was reached and when it resets. Work w
 
 ## Change the main model
 
-The main model is what the rest of The Machine uses. On a hosted Machine, pick another one on your setup page, under Your model. On your own computer, change it in OpenClaw. See [ChatGPT](chatgpt.md) and the [models guide](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+The main model is what the rest of The Machine uses. On a hosted Machine, pick another one on your setup page, under Your AI. On your own computer, change it in OpenClaw. See [ChatGPT](chatgpt.md) and the [models guide](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

@@ -34,7 +34,7 @@ No seu próprio computador, se entrar com Stripe ainda não estiver disponível,
 
 Em um Fleet de Trabalho, um proprietário ou admin conecta o Stripe uma vez e compartilha com a equipe:
 
-1. Conecte o Stripe na sua própria Machine (acima). A caixa **Conectores compartilhados** da aba Fleet também tem **Conectar Stripe**.
+1. Conecte o Stripe na sua própria Machine (acima). A caixa **Conexões compartilhadas** da aba Fleet também tem **Conectar Stripe**.
 2. Na aba Fleet, abra **Compartilhar Stripe**. Todos vêm marcados; desmarque quem não deve receber. Clique em **Compartilhar**.
 
 As Machines dos colegas também leem, só leitura. Em Conexões aparece quem compartilhou, e só os admins do Fleet podem mudar ou parar. Sua Machine renova o acesso deles a cada hora, então enquanto ela fica desligada por mais tempo, o Stripe deles pausa até ela voltar. Ninguém recebe o seu login. Detalhes: [Fleets](fleet.md).

@@ -56,7 +56,7 @@ const shareFlow=async(page,w)=>{
  await page.locator('.board-menu summary').click();await page.locator('[data-board-edit]').click();await page.locator('#board-dialog[open]').waitFor();
  assert.ok(await page.locator('#board-form [name="visibility"][value="people"]').isChecked());assert.match(await page.locator('.ed-seen').textContent(),/Only you\s*Chosen people\s*Your team/);
  assert.ok(await page.locator('.ed-people input[value="fl_1|m_robin"]').isChecked());assert.ok(!await page.locator('.ed-people input[value="fl_1|m_ada"]').isChecked());
- assert.equal(await page.locator('#board-form .sp-line').textContent(),'Shared with Robin, sealed to their Machines.');
+ assert.equal(await page.locator('#board-form .sp-line').textContent(),'Shared with Robin, encrypted for their Machines only.');
  await page.locator('#board-form [data-ed-close]').first().click();
  // Two people, then nobody: Stop sharing, back to Only you
  await page.locator('.board-menu summary').click();await page.locator('[data-board-share]').click();await page.locator('#share-people[open]').waitFor();
@@ -77,7 +77,7 @@ const editorFlow=async(page,w)=>{
  assert.equal(await page.locator('#board-form .sp-line').textContent(),'Choose who gets it.');
  calls=[];await page.locator('#board-form button.primary').click();assert.equal(await page.locator('#board-form [data-ed-error]').textContent(),'Choose who gets it.');assert.equal(calls.length,0);
  await page.locator('.ed-people input[value="fl_1|m_ada"]').check();await page.locator('.ed-people input[value="fl_1|m_robin"]').check();
- assert.equal(await page.locator('#board-form .sp-line').textContent(),'Shared with Ada and Robin, sealed to their Machines.');
+ assert.equal(await page.locator('#board-form .sp-line').textContent(),'Shared with Ada and Robin, encrypted for their Machines only.');
  await fits(page,w+' editor');await shot(page,`board-editor-people-${w}`);
  await page.locator('#board-form button.primary').click();await saved();
  assert.deepEqual(calls.map(c=>c.action),['board_save','graph_board_share']);assert.equal(calls[0].args.visibility,'only_you');

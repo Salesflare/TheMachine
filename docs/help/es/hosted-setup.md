@@ -1,9 +1,9 @@
 ---
 title: Configura una Machine alojada
 area: getting-started
-summary: Inicia sesión, empieza tus días gratis, conecta tu correo y elige tu modelo. Lleva unos minutos.
+summary: Inicia sesión, empieza tus días gratis, conecta tu correo y elige tu IA. Lleva unos minutos.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
 order: 1
 ---
 Una Machine alojada funciona en su propio servidor privado en la UE. Nosotros la mantenemos en marcha y actualizada.
@@ -19,7 +19,7 @@ Una Machine alojada funciona en su propio servidor privado en la UE. Nosotros la
 Tu servidor arranca, y luego la página de configuración te guía por el resto, paso a paso:
 
 1. **Correo y calendario**: conecta Google o Microsoft. Puedes hacerlo mientras arranca tu servidor. Después de iniciar sesión, el paso indica que está trabajando hasta que tu Machine esté instalada y haya leído tu correo, más o menos un minuto. Consulta [Gmail](gmail.md) y [Microsoft](microsoft.md).
-2. **Tu modelo**: inicia sesión con ChatGPT o usa tu propia clave. Consulta [ChatGPT](chatgpt.md).
+2. **Tu IA**: inicia sesión con ChatGPT o Claude, o usa una clave de tu proveedor de IA. Consulta [ChatGPT](chatgpt.md).
 3. Las revisiones se activan solas. Las primeras tareas salen de tu correo más reciente, y luego de tus últimos 7 días.
 
 En **Añade más cuando quieras** están las opcionales: **Más fuentes** como Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) y la conexión de tu navegador. Ninguna hace falta para empezar. Tu panel te las sugiere cuando ayudan, por ejemplo GitHub cuando no para de llegar su correo.
@@ -28,7 +28,7 @@ En cuanto tu Machine esté lista, **Abrir tu panel** aparece arriba en la págin
 
 ## Pedir una fuente
 
-¿Te falta una fuente? En **Conectores**, en **Pedir una fuente**, escribe el servicio y qué leer, y pulsa **Crearlo**. Tu propio modelo la escribe y la prueba en tu servidor. Si la compartes, The Machine abre un pull request en GitHub por ti. No necesitas una cuenta de GitHub; [conecta GitHub](github.md) para aparecer como coautor.
+¿Te falta una fuente? En **Fuentes**, en **Pedir una fuente**, escribe el servicio y qué leer, y pulsa **Crearlo**. Tu propia IA la escribe y la prueba en tu servidor. Si la compartes, The Machine abre un pull request en GitHub por ti. No necesitas una cuenta de GitHub; [conecta GitHub](github.md) para aparecer como coautor.
 
 ## Vuelve más tarde
 

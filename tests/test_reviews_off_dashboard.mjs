@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Reviews still off: every tab says so at the top with the way to turn them on (hosted: the setup step; self-hosted:
-// the command), and Signal reviews shows one line for it instead of a first-look row next to "No reviews yet".
+// the command), and Reviews of new messages shows one line for it instead of a first-look row next to "No reviews yet".
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 let on=false,manage='https://control.example/setup',cards=[];
 let look={state:'waiting',why:'sources',days:7};

@@ -53,9 +53,9 @@ En un Fleet Prudente, las solicitudes te esperan en la pestaña Fleet, en **Soli
 
 En un Work Fleet, el trabajo con clientes se comparte con tu equipo, después de que lo revises. Consulta [Graph del equipo](team-graph.md).
 
-## Conectores compartidos
+## Conexiones compartidas
 
-Un propietario o administrador puede conectar Stripe o Intercom una vez y compartirlo con el equipo, desde el cuadro **Conectores compartidos** de la pestaña Fleet. Las Machines de los compañeros lo leen, solo lectura, y ven quién lo compartió. Solo los administradores lo cambian o lo paran. Consulta [Stripe](stripe.md) e [Intercom](intercom.md).
+Un propietario o administrador puede conectar Stripe o Intercom una vez y compartirlo con el equipo, desde el cuadro **Conexiones compartidas** de la pestaña Fleet. Las Machines de los compañeros lo leen, solo lectura, y ven quién lo compartió. Solo los administradores lo cambian o lo paran. Consulta [Stripe](stripe.md) e [Intercom](intercom.md).
 
 ## Qué responde tu Machine
 
