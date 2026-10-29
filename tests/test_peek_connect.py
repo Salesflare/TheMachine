@@ -236,6 +236,22 @@ class WebConnectTest(unittest.TestCase):
             view = self.wait(view, lambda v: v['state'] != 'running')
             self.assertEqual(view['state'], 'cancelled')
 
+    def test_a_lost_setup_of_the_same_source_is_replaced(self):
+        """A reload or another device loses the setup's Stop: starting that source again replaces it; another source waits."""
+        def connect(path, name, ui, account_id=None, restart=True):
+            ui.ask('Login code')
+        with patch.object(onboarding, 'connect', connect):
+            old = self.app.action('connect_start', {'source': 'telegram'}, owner_dashboard=True)
+            old = self.wait(old, lambda v: v['question'])
+            with self.assertRaisesRegex(ValueError, 'Another'):
+                self.app.action('connect_start', {'source': 'slack'}, owner_dashboard=True)
+            new = self.app.action('connect_start', {'source': 'telegram'}, owner_dashboard=True)
+            self.assertNotEqual(new['session'], old['session'])
+            self.assertEqual(new['state'], 'running')
+            old = self.wait(old, lambda v: v['state'] != 'running')
+            self.assertEqual(old['state'], 'cancelled')
+            self.app.action('connect_cancel', {'session': new['session']}, owner_dashboard=True)
+
     def test_intercom_names_its_place_on_the_account_page(self):
         """A hosted Machine's account page signs Intercom in (the read-only app); here it can still be set up by token."""
         by = {s['name']: s for s in self.app.action('connect_sources', {}, owner_dashboard=True)['sources']}
