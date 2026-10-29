@@ -474,6 +474,7 @@ class SignIn(unittest.TestCase):
         html = (Path(assistant.__file__).parent / 'dashboard.html').read_text(encoding='utf-8')
         self.assertIn("google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'}", html)
         self.assertNotIn('Connect Gmail', html)
+        self.assertIn("c.last_success?t('Last sync {}',time(c.last_success,true)):t('Not synced yet')", html)  # no "Last sync Not yet"
 
     def test_disconnect_revokes_meets_own_sign_in_at_google(self):
         config = {'database': str(self.root / 'events.sqlite')}
