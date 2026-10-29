@@ -1,7 +1,7 @@
 ---
 title: Sicherheit und Datenschutz
 area: security
-summary: Dein eigener privater Server, Mails verschlüsselt gespeichert, und nichts wird ohne dein OK gesendet. Die Kurzfassung, mit Links.
+summary: Deine eigene private Machine, Mails verschlüsselt gespeichert, und nichts wird ohne dein OK gesendet. Die Kurzfassung, mit Links.
 covers: 
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
@@ -9,15 +9,15 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 ---
 ## Kurz gesagt
 
-- Dein eigener Server: Eine gehostete Machine ist ein privater Server in der EU, nie geteilt. Oder du betreibst sie auf deinem eigenen Computer.
+- Deine eigene Machine: Eine gehostete läuft in der EU-Cloud, nur für dich, nie geteilt. Oder du betreibst sie auf deinem eigenen Computer.
 - Wir lesen deine E-Mails nicht: Nachrichten werden verschlüsselt gespeichert, und unsere Support-Tools können sie nicht öffnen.
 - Nichts wird ohne dein OK gesendet: Sie liest und entwirft, du entscheidest, was rausgeht. Siehe [Ausführen](do-it.md).
 - Nicht zum Training von KI genutzt: Wir haben keine eigene KI. Dein Anbieter arbeitet unter deinem Konto und seinen Bedingungen.
 - Erkenntnisse für das Team nur mit deinem OK: Ab und zu fragt sie, ob sie ein paar allgemeine Tipps senden darf, nichts Persönliches. Siehe [Erkenntnisse teilen](share-learnings.md).
 - Fehlerberichte, außer du schaltest sie aus: Wenn etwas kaputtgeht, die Art des Fehlers und wo im Code. Nie deine Nachrichten, Namen oder Adressen. Siehe [Fehlerberichte](error-reports.md).
 - Nutzungszahlen auf einer gehosteten Machine: tägliche Zahlen zu dem, was du getan hast (etwa geöffnete Aufgaben oder gesendete E-Mails), nie deren Inhalt.
-- Nimm sie mit oder lösche sie: Exportiere alles in einer Datei, oder lösche deinen Server und seine Backups mit einem Button.
-- Unser Zugriff wird protokolliert: jedes Mal, wenn unser Team sich bei deinem gehosteten Server anmeldet oder seinen Bericht liest. Owner und Admins einer Fleet sehen das unter **Aktivität**. Siehe [Fleets](fleet.md).
+- Nimm sie mit oder lösche sie: Exportiere alles in einer Datei, oder lösche deine Machine und ihre Backups mit einem Button.
+- Unser Zugriff wird protokolliert: jedes Mal, wenn unser Team sich bei deiner gehosteten Machine anmeldet oder ihren Bericht liest. Owner und Admins einer Fleet sehen das unter **Aktivität**. Siehe [Fleets](fleet.md).
 
 ## Sicherheitsstufen
 

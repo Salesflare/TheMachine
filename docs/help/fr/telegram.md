@@ -29,7 +29,7 @@ Sur votre propre ordinateur, l’installateur le demande, ou lancez `assistant t
 
 ## Le retirer
 
-- Sur une Machine hébergée : appuyez sur **Déconnecter Telegram** sur votre page de configuration. Votre bot et son jeton sont retirés de votre serveur.
+- Sur une Machine hébergée : appuyez sur **Déconnecter Telegram** sur votre page de configuration. Votre bot et son jeton sont retirés de votre Machine.
 - Sur votre propre ordinateur : `assistant telegram off`. Ajoutez `--remove-bot` pour oublier aussi le bot.
 
 ## Supprimer le bot dans Telegram

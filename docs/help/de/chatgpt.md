@@ -8,7 +8,7 @@ site: Sign in with ChatGPT, Reconnect ChatGPT
 ---
 ## Wofür es da ist
 
-ChatGPT ist das Modell, das für dich liest und Entwürfe schreibt, über deinen eigenen ChatGPT-Tarif. The Machine hat keine eigene KI. Die Anfragen deiner Machine gehen von deinem Server direkt an OpenAI, unter deinem Konto und deren Bedingungen.
+ChatGPT ist das Modell, das für dich liest und Entwürfe schreibt, über deinen eigenen ChatGPT-Tarif. The Machine hat keine eigene KI. Die Anfragen deiner Machine gehen direkt an OpenAI, unter deinem Konto und deren Bedingungen.
 
 ## Anmelden
 

@@ -20,6 +20,6 @@ Ze worden {grace_days} dagen bewaard zodat je ze kunt exporteren, en daarna verw
 
 ## Alles nu verwijderen
 
-Open Gegevens op je accountpagina, typ DELETE of je e-mailadres en druk op **Nu alles wissen**. Dat beëindigt je abonnement, trekt de toegang tot Google en Microsoft in en verwijdert je server, de back-ups en al zijn gegevens. Dit kun je niet ongedaan maken.
+Open Gegevens op je accountpagina, typ DELETE of je e-mailadres en druk op **Nu alles wissen**. Dat beëindigt je abonnement, trekt de toegang tot Google en Microsoft in en verwijdert je Machine, de back-ups en al zijn gegevens. Dit kun je niet ongedaan maken.
 
-Zonder gehoste server heet de knop **Mijn account verwijderen**. Een Machine op je eigen computer blijft zoals hij is.
+Zonder gehoste Machine heet de knop **Mijn account verwijderen**. Een Machine op je eigen computer blijft zoals hij is.

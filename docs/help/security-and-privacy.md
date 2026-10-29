@@ -1,7 +1,7 @@
 ---
 title: Security and privacy
 area: security
-summary: Your own private server, mail stored encrypted, and nothing sent without your OK. The short version, with links.
+summary: Your own private Machine, mail stored encrypted, and nothing sent without your OK. The short version, with links.
 covers: 
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
@@ -9,15 +9,15 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 ---
 ## In short
 
-- Your own server: a hosted Machine is a private server in the EU, never shared. Or run it on your own computer.
+- Your own Machine: a hosted one runs in the EU cloud, just for you, never shared. Or run it on your own computer.
 - We don't read your email: messages are stored encrypted, and our support tools can't open them.
 - Nothing is sent without your OK: it reads and drafts; you decide what goes out. See [Do it](do-it.md).
 - Not used to train AI: we have no AI of our own. Your provider works under your account and their terms.
 - Learnings for the team only with your OK: now and then it asks to send a few general tips, nothing personal. See [Share learnings](share-learnings.md).
 - Error reports, unless you turn them off: when something breaks, the type of error and where in the code. Never your messages, names or addresses. See [Error reports](error-reports.md).
 - Usage counts on a hosted Machine: daily counts of what you did (like to-dos opened or emails sent), never their content.
-- Take it with you, or delete it: export everything in one file, or delete your server and its backups with one button.
-- Our access is logged: every time our team signs in to your hosted server or reads its report. Fleet owners and admins see it under **Activity**. See [Fleets](fleet.md).
+- Take it with you, or delete it: export everything in one file, or delete your Machine and its backups with one button.
+- Our access is logged: every time our team signs in to your hosted Machine or reads its report. Fleet owners and admins see it under **Activity**. See [Fleets](fleet.md).
 
 ## Security levels
 

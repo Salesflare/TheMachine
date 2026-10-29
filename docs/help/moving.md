@@ -11,7 +11,7 @@ order: 5
 
 1. On your account page, open Data and press **Export everything**.
 2. Optionally set a passphrase to take your keys along. Without one, the export gets a code and those sources need connecting again.
-3. Press **Download**. The file comes straight from your server, which deletes it after 24 hours, or at once with **Delete it now**.
+3. Press **Download**. The file comes straight from your Machine, which deletes it after 24 hours, or at once with **Delete it now**.
 
 The file is always encrypted. Google always needs a new sign-in on the other side. Your model sign-in and chat history stay behind.
 

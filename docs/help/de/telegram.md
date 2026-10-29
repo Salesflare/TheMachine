@@ -29,7 +29,7 @@ Auf deinem eigenen Computer fragt der Installer danach, oder du führst `assista
 
 ## Entfernen
 
-- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite auf **Telegram trennen**. Dein Bot und sein Token werden von deinem Server entfernt.
+- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite auf **Telegram trennen**. Dein Bot und sein Token werden von deiner Machine entfernt.
 - Auf deinem eigenen Computer: `assistant telegram off`. Füge `--remove-bot` hinzu, um auch den Bot zu vergessen.
 
 ## Den Bot in Telegram löschen

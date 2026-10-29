@@ -34,7 +34,7 @@ Bis sie bereit ist, nutzt **Automatisch** die Spracherkennung deines Browsers, f
 ## Einstellungen
 
 - **In Text umgewandelt**: **Automatisch**, **Auf dieser Machine** oder **Mit OpenAI**.
-- **Genauigkeit** (nur auf deiner Machine): **Genauer** funktioniert für die meisten Sprachen am besten. **Schneller** geht flotter, erkennt aber mehr Wörter falsch. Auf einem Standard-Server, der weniger Speicher hat, ist **Schneller** voreingestellt.
+- **Genauigkeit** (nur auf deiner Machine): **Genauer** funktioniert für die meisten Sprachen am besten. **Schneller** geht flotter, erkennt aber mehr Wörter falsch. Auf einer Standard-Machine, die weniger Speicher hat, ist **Schneller** voreingestellt.
 - **Sprache**: **Erkennen** funktioniert für jede Sprache der App. Deine eigene zu wählen ist etwas schneller.
 
 Um stattdessen laut mit The Machine zu sprechen, sieh dir [Live sprechen](talk-live.md) an.

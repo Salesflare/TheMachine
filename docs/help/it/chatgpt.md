@@ -8,7 +8,7 @@ site: Sign in with ChatGPT, Reconnect ChatGPT
 ---
 ## A cosa serve
 
-ChatGPT è il modello che legge e prepara le bozze per te, con il tuo piano ChatGPT. The Machine non ha un’AI propria. Le richieste della tua Machine vanno dal tuo server direttamente a OpenAI, con il tuo account e alle sue condizioni.
+ChatGPT è il modello che legge e prepara le bozze per te, con il tuo piano ChatGPT. The Machine non ha un’AI propria. Le richieste della tua Machine vanno direttamente a OpenAI, con il tuo account e alle sue condizioni.
 
 ## Accedi
 

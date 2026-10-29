@@ -11,7 +11,7 @@ order: 5
 
 1. Öffne auf deiner Kontoseite Daten und tippe auf **Alles exportieren**.
 2. Lege optional eine Passphrase fest, um deine Schlüssel mitzunehmen. Ohne bekommt der Export einen Code, und diese Quellen müssen neu verbunden werden.
-3. Tippe auf **Herunterladen**. Die Datei kommt direkt von deinem Server, der sie nach 24 Stunden löscht, oder sofort mit **Jetzt löschen**.
+3. Tippe auf **Herunterladen**. Die Datei kommt direkt von deiner Machine, die sie nach 24 Stunden löscht, oder sofort mit **Jetzt löschen**.
 
 Die Datei ist immer verschlüsselt. Google braucht auf der anderen Seite immer eine neue Anmeldung. Die Anmeldung für dein Modell und dein Chatverlauf bleiben zurück.
 

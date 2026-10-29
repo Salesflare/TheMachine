@@ -6,19 +6,19 @@ code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
 order: 1
 ---
-Una Machine alojada funciona en su propio servidor privado en la UE. Nosotros la mantenemos en marcha y actualizada.
+Una Machine alojada funciona en la nube, en la UE, solo para ti. Nosotros la mantenemos en marcha y actualizada.
 
 ## Regístrate
 
 1. En app.themachine.computer, pulsa **Continuar con Google** o **Continuar con Microsoft**. Así se crea tu cuenta.
 2. Escanea el código con una app de autenticación, escribe los seis dígitos y pulsa **Activar**. Una llave de acceso puede venir después.
-3. Elige un tamaño de servidor y el nombre de tu Machine, y luego añade tu tarjeta. Los primeros {trial_days} días son gratis y no se cobra nada antes de que terminen.
+3. Elige el tamaño y el nombre de tu Machine, y luego añade tu tarjeta. Los primeros {trial_days} días son gratis y no se cobra nada antes de que terminen.
 
 ## Tu página de configuración
 
-Tu servidor arranca, y luego la página de configuración te guía por el resto, paso a paso:
+Tu Machine arranca, y luego la página de configuración te guía por el resto, paso a paso:
 
-1. **Correo y calendario**: conecta Google o Microsoft. Puedes hacerlo mientras arranca tu servidor. Después de iniciar sesión, el paso indica que está trabajando hasta que tu Machine esté instalada y haya leído tu correo, más o menos un minuto. Consulta [Gmail](gmail.md) y [Microsoft](microsoft.md).
+1. **Correo y calendario**: conecta Google o Microsoft. Puedes hacerlo mientras arranca tu Machine. Después de iniciar sesión, el paso indica que está trabajando hasta que tu Machine esté instalada y haya leído tu correo, más o menos un minuto. Consulta [Gmail](gmail.md) y [Microsoft](microsoft.md).
 2. **Tu IA**: inicia sesión con ChatGPT o Claude, o usa una clave de tu proveedor de IA. Consulta [ChatGPT](chatgpt.md).
 3. Las revisiones se activan solas. Las primeras tareas salen de tu correo más reciente, y luego de tus últimos 7 días.
 
@@ -28,7 +28,7 @@ En cuanto tu Machine esté lista, **Abrir tu panel** aparece arriba en la págin
 
 ## Pedir una fuente
 
-¿Te falta una fuente? En **Fuentes**, en **Pedir una fuente**, escribe el servicio y qué leer, y pulsa **Crearlo**. Tu propia IA la escribe y la prueba en tu servidor. Si la compartes, The Machine abre un pull request en GitHub por ti. No necesitas una cuenta de GitHub; [conecta GitHub](github.md) para aparecer como coautor.
+¿Te falta una fuente? En **Fuentes**, en **Pedir una fuente**, escribe el servicio y qué leer, y pulsa **Crearlo**. Tu propia IA la escribe y la prueba en tu Machine. Si la compartes, The Machine abre un pull request en GitHub por ti. No necesitas una cuenta de GitHub; [conecta GitHub](github.md) para aparecer como coautor.
 
 ## Vuelve más tarde
 

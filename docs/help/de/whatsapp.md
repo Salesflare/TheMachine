@@ -36,7 +36,7 @@ The Machine fragt WhatsApp nach den Profilbildern von Personen in deinem Graph, 
 
 ## Entfernen
 
-- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite daneben auf **Entfernen**. Dein Server trennt die Verknüpfung selbst und löscht, was er für WhatsApp gespeichert hat.
+- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite daneben auf **Entfernen**. Deine Machine trennt die Verknüpfung selbst und löscht, was sie für WhatsApp gespeichert hat.
 - Auf deinem eigenen Computer: **Verbindungen**, WhatsApp öffnen, **Details**, dann **Trennen**. Trenn die Verknüpfung dann auch auf deinem Handy.
 
 ## Verknüpfung in WhatsApp trennen

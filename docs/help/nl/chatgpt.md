@@ -8,7 +8,7 @@ site: Sign in with ChatGPT, Reconnect ChatGPT
 ---
 ## Waarvoor het dient
 
-ChatGPT is het model dat voor je leest en concepten schrijft, op je eigen ChatGPT-abonnement. The Machine heeft geen eigen AI. De verzoeken van je Machine gaan van je server rechtstreeks naar OpenAI, onder jouw account en hun voorwaarden.
+ChatGPT is het model dat voor je leest en concepten schrijft, op je eigen ChatGPT-abonnement. The Machine heeft geen eigen AI. De verzoeken van je Machine gaan rechtstreeks naar OpenAI, onder jouw account en hun voorwaarden.
 
 ## Inloggen
 

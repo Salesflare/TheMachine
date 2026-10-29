@@ -34,7 +34,7 @@ Finché non è pronta, **Automatico** usa il riconoscimento vocale del browser, 
 ## Impostazioni
 
 - **Trascritto**: **Automatico**, **Su questa Machine** o **Con OpenAI**.
-- **Precisione** (solo sulla tua Machine): **Più preciso** funziona meglio per la maggior parte delle lingue. **Più veloce** è più rapido ma sbaglia più parole. Su un server Standard, che ha meno memoria, **Più veloce** è il predefinito.
+- **Precisione** (solo sulla tua Machine): **Più preciso** funziona meglio per la maggior parte delle lingue. **Più veloce** è più rapido ma sbaglia più parole. Su una Machine Standard, che ha meno memoria, **Più veloce** è il predefinito.
 - **Lingua**: **Rileva** funziona per tutte le lingue dell’app. Scegliere la tua è un po’ più veloce.
 
 Per parlare invece ad alta voce con The Machine, vedi [Parla dal vivo](talk-live.md).

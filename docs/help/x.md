@@ -19,7 +19,7 @@ A reply or a direct message, and only after you approve it on the to-do.
 On a hosted Machine:
 
 1. Open your setup page at app.themachine.computer/setup and go to **More sources**.
-2. Open X, type your handle without the @, sign in to X in your server's browser when it asks, then press **Connect**.
+2. Open X, type your handle without the @, sign in to X in your Machine's browser when it asks, then press **Connect**.
 
 On your own computer:
 

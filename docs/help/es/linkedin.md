@@ -19,7 +19,7 @@ Una respuesta a un mensaje, y solo después de que la apruebes en la tarea. Hast
 En una Machine alojada:
 
 1. Abre tu página de configuración en app.themachine.computer/setup y ve a **Más fuentes**.
-2. Abre LinkedIn, inicia sesión en LinkedIn en el navegador de tu servidor cuando te lo pida y luego pulsa **Conectar**.
+2. Abre LinkedIn, inicia sesión en LinkedIn en el navegador de tu Machine cuando te lo pida y luego pulsa **Conectar**.
 
 En tu propio ordenador:
 

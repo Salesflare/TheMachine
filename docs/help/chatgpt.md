@@ -8,7 +8,7 @@ site: Sign in with ChatGPT, Reconnect ChatGPT
 ---
 ## What it is for
 
-ChatGPT is the model that reads and drafts for you, on your own ChatGPT plan. The Machine has no AI of its own. Your Machine's requests go from your server straight to OpenAI, under your account and their terms.
+ChatGPT is the model that reads and drafts for you, on your own ChatGPT plan. The Machine has no AI of its own. Your Machine's requests go straight to OpenAI, under your account and their terms.
 
 ## Sign in
 

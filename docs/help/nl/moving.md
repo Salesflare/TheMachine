@@ -11,7 +11,7 @@ order: 5
 
 1. Open Gegevens op je accountpagina en druk op **Alles exporteren**.
 2. Stel eventueel een wachtwoordzin in om je sleutels mee te nemen. Zonder wachtwoordzin krijgt de export een code en moet je die bronnen opnieuw koppelen.
-3. Druk op **Downloaden**. Het bestand komt rechtstreeks van je server, die het na 24 uur verwijdert, of meteen met **Nu verwijderen**.
+3. Druk op **Downloaden**. Het bestand komt rechtstreeks van je Machine, die het na 24 uur verwijdert, of meteen met **Nu verwijderen**.
 
 Het bestand is altijd versleuteld. Google vraagt aan de andere kant altijd om opnieuw in te loggen. Je login bij je model en je chatgeschiedenis blijven achter.
 

@@ -34,7 +34,7 @@ Até ficar pronta, **Automático** usa o reconhecimento de voz do seu navegador,
 ## Configurações
 
 - **Transcrito**: **Automático**, **Nesta Machine** ou **Com a OpenAI**.
-- **Precisão** (só na sua Machine): **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas erra mais palavras. Em um servidor Standard, que tem menos memória, **Mais rápido** é o padrão.
+- **Precisão** (só na sua Machine): **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas erra mais palavras. Em uma Machine Standard, que tem menos memória, **Mais rápido** é o padrão.
 - **Idioma**: **Detectar** funciona para todos os idiomas do app. Escolher o seu é um pouco mais rápido.
 
 Para conversar em voz alta com a The Machine, veja [Falar ao vivo](talk-live.md).

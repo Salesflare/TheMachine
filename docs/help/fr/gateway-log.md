@@ -1,7 +1,7 @@
 ---
-title: Journal du serveur
+title: Journal de la Machine
 area: connections
-summary: Le journal de votre serveur, pour que The Machine repère ses propres problèmes. Il ne fait que lire.
+summary: Le journal de votre Machine, pour qu’elle repère ses propres problèmes. Il ne fait que lire.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -12,11 +12,11 @@ Le journal de votre OpenClaw Gateway : exécutions échouées, transferts refus�
 
 ## Ce qu’il peut faire
 
-Rien. Il ne fait que lire le journal sur votre propre serveur.
+Rien. Il ne fait que lire le journal sur votre propre Machine.
 
 ## Le connecter
 
-- Sur une Machine hébergée, il se trouve sur votre page de configuration, sous **Plus de sources**, sous le nom OpenClaw Gateway log. Un par serveur.
+- Sur une Machine hébergée, il se trouve sur votre page de configuration, sous **Plus de sources**, sous le nom OpenClaw Gateway log. Un par Machine.
 - Sur votre propre ordinateur : lancez `assistant connect gateway`.
 
 ## Le retirer

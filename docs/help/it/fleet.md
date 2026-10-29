@@ -76,6 +76,6 @@ Per entrare in una Fleet, crearne una o abbinare una Machine sul tuo computer, v
 La parte Fleet della pagina del tuo account mostra altre due cose:
 
 - **Rimossi di recente**: ogni persona rimossa o che è uscita. Dice **Rimosso, confermato** quando la sua Machine ha rimosso i dati di lavoro, Google ha confermato la disconnessione e ogni token condiviso che aveva è stato sostituito. Fino ad allora dice **In sospeso** e perché.
-- **Registro attività**: chi ha fatto cosa e quando. Inviti, ingressi, rimozioni, ruoli, server e fatturazione, connettori condivisi e approvazioni. Elenca anche ogni volta che il nostro team ha aperto il server di un membro o i suoi log. Mai il contenuto dei messaggi. **Scarica CSV** lo esporta. Conservato 12 mesi.
+- **Registro attività**: chi ha fatto cosa e quando. Inviti, ingressi, rimozioni, ruoli, Machine ospitate e fatturazione, connettori condivisi e approvazioni. Elenca anche ogni volta che il nostro team ha aperto la Machine di un membro o i suoi log. Mai il contenuto dei messaggi. **Scarica CSV** lo esporta. Conservato 12 mesi.
 
 Dopo **Interrompi condivisione**, un connettore condiviso mostra **Rimosso, confermato** quando ogni Machine ha eliminato il token.

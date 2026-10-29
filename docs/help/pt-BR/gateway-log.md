@@ -1,7 +1,7 @@
 ---
-title: Log do servidor
+title: Log da Machine
 area: connections
-summary: O log do seu próprio servidor, para a The Machine notar os próprios problemas. Ele só lê.
+summary: O log da sua própria Machine, para ela notar os próprios problemas. Ele só lê.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -12,11 +12,11 @@ O log do seu OpenClaw Gateway: execuções que falharam, repasses recusados, men
 
 ## O que ele pode fazer
 
-Nada. Ele só lê o log no seu próprio servidor.
+Nada. Ele só lê o log na sua própria Machine.
 
 ## Conectar
 
-- Em uma Machine hospedada, ele fica na sua página de configuração, em **Mais fontes**, como OpenClaw Gateway log. Um por servidor.
+- Em uma Machine hospedada, ele fica na sua página de configuração, em **Mais fontes**, como OpenClaw Gateway log. Um por Machine.
 - No seu próprio computador: execute `assistant connect gateway`.
 
 ## Remover

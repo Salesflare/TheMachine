@@ -6,19 +6,19 @@ code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
 order: 1
 ---
-Una Machine ospitata gira su un server privato tutto suo nell'UE. Pensiamo noi a tenerlo attivo e aggiornato.
+Una Machine ospitata gira nel cloud, nell'UE, solo per te. Pensiamo noi a tenerla attiva e aggiornata.
 
 ## Registrati
 
 1. Su app.themachine.computer, premi **Continua con Google** o **Continua con Microsoft**. Così crei il tuo account.
 2. Scansiona il codice con un'app di autenticazione, scrivi le sei cifre e premi **Attiva**. Una passkey può arrivare dopo.
-3. Scegli la dimensione del server e il nome della tua Machine, poi aggiungi la tua carta di pagamento. I primi {trial_days} giorni sono gratuiti e non paghi nulla prima che finiscano.
+3. Scegli la dimensione e il nome della tua Machine, poi aggiungi la tua carta di pagamento. I primi {trial_days} giorni sono gratuiti e non paghi nulla prima che finiscano.
 
 ## La tua pagina di configurazione
 
-Il server si avvia, poi la pagina di configurazione ti guida nel resto, un passo alla volta:
+La tua Machine si avvia, poi la pagina di configurazione ti guida nel resto, un passo alla volta:
 
-1. **Email e calendario**: collega Google o Microsoft. Puoi farlo mentre il server si avvia. Dopo l’accesso, il passaggio dice che sta lavorando finché la tua Machine non è installata e ha letto la tua posta, circa un minuto. Vedi [Gmail](gmail.md) e [Microsoft](microsoft.md).
+1. **Email e calendario**: collega Google o Microsoft. Puoi farlo mentre la tua Machine si avvia. Dopo l’accesso, il passaggio dice che sta lavorando finché la tua Machine non è installata e ha letto la tua posta, circa un minuto. Vedi [Gmail](gmail.md) e [Microsoft](microsoft.md).
 2. **La tua IA**: accedi con ChatGPT o Claude, o usa una chiave del tuo fornitore di IA. Vedi [ChatGPT](chatgpt.md).
 3. Le revisioni si attivano da sole. Le prime attività arrivano dalla posta più recente, poi dagli ultimi 7 giorni.
 
@@ -28,7 +28,7 @@ Appena la tua Machine è pronta, **Apri la tua dashboard** compare in cima alla 
 
 ## Richiedi una fonte
 
-Ti manca una fonte? In **Fonti**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. La tua IA la scrive e la testa sul tuo server. Se la condividi, The Machine apre una pull request su GitHub per te. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
+Ti manca una fonte? In **Fonti**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. La tua IA la scrive e la testa sulla tua Machine. Se la condividi, The Machine apre una pull request su GitHub per te. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
 
 ## Torna più tardi
 

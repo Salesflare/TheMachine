@@ -19,7 +19,7 @@ Una risposta a un messaggio, e solo dopo che l’hai approvata nell’attività.
 Su una Machine in hosting:
 
 1. Apri la tua pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
-2. Apri LinkedIn, accedi a LinkedIn nel browser del tuo server quando te lo chiede, poi premi **Collegati**.
+2. Apri LinkedIn, accedi a LinkedIn nel browser della tua Machine quando te lo chiede, poi premi **Collegati**.
 
 Sul tuo computer:
 

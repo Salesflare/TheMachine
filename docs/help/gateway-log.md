@@ -1,7 +1,7 @@
 ---
-title: Server log
+title: Machine log
 area: connections
-summary: Your server's own log, so The Machine spots its own trouble. It only reads.
+summary: Your Machine's own log, so it spots its own trouble. It only reads.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -12,11 +12,11 @@ The log of your OpenClaw Gateway: failed runs, refused handoffs, Telegram messag
 
 ## What it can do
 
-Nothing. It only reads the log on your own server.
+Nothing. It only reads the log on your own Machine.
 
 ## Connect it
 
-- On a hosted Machine it is on your setup page, under **More sources**, as OpenClaw Gateway log. One per server.
+- On a hosted Machine it is on your setup page, under **More sources**, as OpenClaw Gateway log. One per Machine.
 - On your own computer: run `assistant connect gateway`.
 
 ## Remove it

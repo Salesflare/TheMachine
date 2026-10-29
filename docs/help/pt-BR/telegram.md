@@ -29,7 +29,7 @@ No seu próprio computador, o instalador pede o token, ou rode `assistant telegr
 
 ## Remover
 
-- Em uma Machine hospedada: toque em **Desconectar Telegram** na sua página de configuração. Seu bot e o token dele são removidos do seu servidor.
+- Em uma Machine hospedada: toque em **Desconectar Telegram** na sua página de configuração. Seu bot e o token dele são removidos da sua Machine.
 - No seu próprio computador: `assistant telegram off`. Adicione `--remove-bot` para também esquecer o bot.
 
 ## Excluir o bot no Telegram

@@ -55,7 +55,7 @@ WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Yo
         'salesflare': 'Accounts, contacts and deals, so it knows who matters.',
         'android': 'The notifications on your Android phone, through the OpenClaw app.',
         'whatsapp': 'Your WhatsApp chats, as a linked device.',
-        'telegram': 'Your Telegram chats and small groups.', 'gateway': "Your server's own log, so The Machine spots its own trouble."}
+        'telegram': 'Your Telegram chats and small groups.', 'gateway': "Your Machine's own log, so it spots its own trouble."}
 # Microsoft 365 and Outlook.com (ms_graph.py): your own app registration and a device-code sign-in. A hosted control
 # plane adds them with "transport": "broker" instead.
 MICROSOFT = {'outlook': {'id': 'work-outlook', 'service': 'outlook', 'transport': 'graph', 'email': 'alex@example.com',
@@ -890,7 +890,7 @@ def set_boundary(config_path, account_id, boundary):
     if not account:
         raise SetupError('That account is not connected here')
     if str(account.get('boundary') or '').startswith('owner:'):
-        raise SetupError('This source belongs to your server itself')
+        raise SetupError('This source belongs to your Machine itself')
     text = str(boundary or '').strip()
     if not text or len(text) > 80 or not re.fullmatch(r'[^\x00-\x1f<>]+', text):
         raise SetupError('Pick work with a company name, or personal')

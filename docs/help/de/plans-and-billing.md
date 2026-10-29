@@ -10,14 +10,14 @@ order: 1
 ## Deine Machine
 
 - Auf deinem eigenen Computer: kostenlos. Alles, was The Machine kann, mit deinem eigenen Modell.
-- Gehostet: {price.standard} im Monat für einen Standard-Server oder {price.big} für einen größeren, zzgl. MwSt. Die ersten {trial_days} Tage sind kostenlos, einmal pro Person. Zum Start brauchst du deine Zahlungskarte, und vor dem Ende der kostenlosen Tage wird nichts abgebucht.
+- Gehostet: {price.standard} im Monat für eine Standard-Machine oder {price.big} für eine größere, zzgl. MwSt. Die ersten {trial_days} Tage sind kostenlos, einmal pro Person. Zum Start brauchst du deine Zahlungskarte, und vor dem Ende der kostenlosen Tage wird nichts abgebucht.
 
 Deinen KI-Tarif rechnet dein Anbieter ab, etwa OpenAI. Wir schlagen nichts drauf.
 
 ## Im Network
 
 - Freunde und Familie: kostenlos, mit jeder Machine. In einer Familien-Fleet kosten gehostete Machines {price.family_pair} für die ersten zwei zusammen, dann {price.family_seat} pro Stück, zzgl. MwSt.
-- Work Fleet: {price.seat} pro Platz und Monat, oder {price.seat_big} mit einem größeren Server, zzgl. MwSt. Ein Teammitglied, das seine eigene Machine betreibt, kostet {price.network} im Monat, und eins, das schon gehostet ist, ist kostenlos. Jede Fleet hat ihre eigene Karte und eigene Rechnungen, und der Owner bestätigt jeden Betrag, bevor er abgebucht wird.
+- Work Fleet: {price.seat} pro Platz und Monat, oder {price.seat_big} für eine größere, zzgl. MwSt. Ein Teammitglied, das seine eigene Machine betreibt, kostet {price.network} im Monat, und eins, das schon gehostet ist, ist kostenlos. Jede Fleet hat ihre eigene Karte und eigene Rechnungen, und der Owner bestätigt jeden Betrag, bevor er abgebucht wird.
 
 Alle Preise gelten pro Monat, zzgl. MwSt. Siehe [Preise](/pricing).
 
@@ -27,4 +27,4 @@ Die Preise für gehostet, Arbeitsplätze und Familien-Fleets sind Early-Adopter-
 
 Öffne auf deiner Kontoseite Abrechnung und tippe auf **Abo verwalten**. Das öffnet Stripe, wo du deine Karte änderst und Rechnungen herunterlädst. Deine Kartendaten erreichen uns nie.
 
-Die Größe deines Servers kannst du jederzeit auf deiner Kontoseite ändern.
+Die Größe deiner Machine kannst du jederzeit auf deiner Kontoseite ändern.

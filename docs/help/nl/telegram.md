@@ -29,7 +29,7 @@ Op je eigen computer vraagt het installatieprogramma erom, of voer je `assistant
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Telegram ontkoppelen** op je setuppagina. Je bot en het token worden van je server verwijderd.
+- Op een gehoste Machine: druk op **Telegram ontkoppelen** op je setuppagina. Je bot en het token worden van je Machine verwijderd.
 - Op je eigen computer: `assistant telegram off`. Voeg `--remove-bot` toe om de bot ook te vergeten.
 
 ## De bot verwijderen in Telegram

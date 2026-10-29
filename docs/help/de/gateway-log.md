@@ -1,7 +1,7 @@
 ---
-title: Server-Log
+title: Machine-Log
 area: connections
-summary: Das eigene Log deines Servers, damit The Machine eigene Probleme erkennt. Es liest nur.
+summary: Das eigene Log deiner Machine, damit sie eigene Probleme erkennt. Es liest nur.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -12,11 +12,11 @@ Das Log deines OpenClaw Gateway: fehlgeschlagene Durchläufe, abgelehnte Überga
 
 ## Was es tun kann
 
-Nichts. Es liest nur das Log auf deinem eigenen Server.
+Nichts. Es liest nur das Log auf deiner eigenen Machine.
 
 ## Verbinden
 
-- Auf einer gehosteten Machine steht es auf deiner Einrichtungsseite unter **Weitere Quellen**, als OpenClaw Gateway log. Eins pro Server.
+- Auf einer gehosteten Machine steht es auf deiner Einrichtungsseite unter **Weitere Quellen**, als OpenClaw Gateway log. Eins pro Machine.
 - Auf deinem eigenen Computer: Führe `assistant connect gateway` aus.
 
 ## Entfernen

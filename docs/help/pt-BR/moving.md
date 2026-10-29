@@ -11,7 +11,7 @@ order: 5
 
 1. Na página da sua conta, abra Dados e clique em **Exportar tudo**.
 2. Se quiser, defina uma senha para levar suas chaves junto. Sem ela, a exportação recebe um código e essas fontes precisam ser conectadas de novo.
-3. Clique em **Baixar**. O arquivo vem direto do seu servidor, que o exclui depois de 24 horas, ou na hora com **Excluir agora**.
+3. Clique em **Baixar**. O arquivo vem direto da sua Machine, que o exclui depois de 24 horas, ou na hora com **Excluir agora**.
 
 O arquivo é sempre criptografado. O Google sempre pede um novo login do outro lado. O login do seu modelo e o histórico do chat ficam para trás.
 

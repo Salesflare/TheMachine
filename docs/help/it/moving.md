@@ -11,7 +11,7 @@ order: 5
 
 1. Nella pagina del tuo account, apri Dati e premi **Esporta tutto**.
 2. Se vuoi, imposta una passphrase per portare con te le chiavi. Senza, l'esportazione riceve un codice e quelle fonti vanno ricollegate.
-3. Premi **Scarica**. Il file arriva direttamente dal tuo server, che lo elimina dopo 24 ore, o subito con **Eliminalo ora**.
+3. Premi **Scarica**. Il file arriva direttamente dalla tua Machine, che lo elimina dopo 24 ore, o subito con **Eliminalo ora**.
 
 Il file è sempre cifrato. Google richiede sempre un nuovo accesso dall'altra parte. L'accesso al tuo modello e la cronologia della chat restano lì.
 

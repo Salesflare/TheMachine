@@ -20,6 +20,6 @@ Se guardan {grace_days} días para que puedas exportarlos, y luego se eliminan, 
 
 ## Eliminar todo ahora
 
-En la página de tu cuenta, abre Datos, escribe DELETE o tu correo y pulsa **Borrar todo ahora**. Esto termina tu suscripción, revoca el acceso de Google y Microsoft, y elimina tu servidor, sus copias de seguridad y todos sus datos. No se puede deshacer.
+En la página de tu cuenta, abre Datos, escribe DELETE o tu correo y pulsa **Borrar todo ahora**. Esto termina tu suscripción, revoca el acceso de Google y Microsoft, y elimina tu Machine, sus copias de seguridad y todos sus datos. No se puede deshacer.
 
-Sin un servidor alojado, el botón es **Eliminar mi cuenta**. Una Machine en tu propio ordenador se queda como está.
+Sin una Machine alojada, el botón es **Eliminar mi cuenta**. Una Machine en tu propio ordenador se queda como está.

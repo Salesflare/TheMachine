@@ -38,7 +38,7 @@ The Machine asks WhatsApp for the profile pictures of people in your graph who h
 
 ## Remove it
 
-- On a hosted Machine: press **Remove** next to it on your setup page. Your server unlinks itself and deletes what it kept for WhatsApp.
+- On a hosted Machine: press **Remove** next to it on your setup page. Your Machine unlinks itself and deletes what it kept for WhatsApp.
 - On your own computer: **Connections**, open WhatsApp, **Details**, then **Disconnect**. Then unlink it on your phone too.
 
 ## Unlink it in WhatsApp

@@ -8,7 +8,7 @@ site: Sign in with ChatGPT, Reconnect ChatGPT
 ---
 ## Para que serve
 
-O ChatGPT é o modelo que lê e escreve rascunhos para você, no seu próprio plano do ChatGPT. The Machine não tem IA própria. As solicitações da sua Machine vão do seu servidor direto para a OpenAI, na sua conta e sob os termos dela.
+O ChatGPT é o modelo que lê e escreve rascunhos para você, no seu próprio plano do ChatGPT. The Machine não tem IA própria. As solicitações da sua Machine vão direto para a OpenAI, na sua conta e sob os termos dela.
 
 ## Entrar
 

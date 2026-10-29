@@ -19,7 +19,7 @@ A reply to a message, and only after you approve it on the to-do. Until then it 
 On a hosted Machine:
 
 1. Open your setup page at app.themachine.computer/setup and go to **More sources**.
-2. Open LinkedIn, sign in to LinkedIn in your server's browser when it asks, then press **Connect**.
+2. Open LinkedIn, sign in to LinkedIn in your Machine's browser when it asks, then press **Connect**.
 
 On your own computer:
 
