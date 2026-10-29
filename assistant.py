@@ -12177,6 +12177,22 @@ def waits_on_others(row):
     return row['status'] == 'prepared' and not row.get('handled_hint') and outcome_state(row) == 'waiting'
 
 
+def todo_state(row):
+    """An open to-do's state in plain words (talk_live.STATES), as the dashboard's lists place it: looksDone,
+    waitsOnOthers and placeOf in dashboard.html. Closed ones are 'done'."""
+    if row['status'] in ('completed', 'rejected'):
+        return 'done'
+    if looks_done(row):
+        return 'looks done'
+    if row['status'] == 'snoozed':
+        return 'snoozed'
+    if waits_on_others(row):
+        return 'waiting on others'
+    if row['status'] == 'pending' or row.get('preparation_status') == 'blocked':
+        return 'to decide'
+    return 'ready' if row['status'] == 'prepared' else 'preparing'
+
+
 def first_sentence(text):
     """The first sentence of a card's body, plain: an already_done result leads with what shows it."""
     text = ' '.join(re.sub(r'[*_`\[\]]|\(https?://[^)]*\)', '', str(text or '')).split())
@@ -20505,7 +20521,8 @@ class App:
                     'limit': talk_live.MAIN_LIMIT_SECONDS if main else talk_live.LIMIT_SECONDS,
                     'warn': talk_live.MAIN_WARN_SECONDS if main else talk_live.WARN_SECONDS,
                     'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,
-                    'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE},
+                    'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE,
+                              'ready': talk_live.READY_NOTE},
                     'instructions': talk_live.main_instructions(language, now) if main else talk_live.instructions(card['title'], language, now),
                     'main': main, 'ready': view.get('ready')}
         if name == 'talk_focus':
@@ -20594,25 +20611,40 @@ class App:
         if name == 'todo_details':
             chat = self.card_chat(suggestion_id)
             with self.store.connect() as db:
-                card = db.execute('SELECT title,status FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+                card = db.execute('SELECT s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s '
+                                  'LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?', (suggestion_id,)).fetchone()
             said, drafts = [], []
             for i in chat.get('items') or []:
                 who = {'source': i.get('from') or 'Message', 'you': 'Owner', 'reply': 'The Machine', 'agent': i.get('name') or 'Agent'}.get(i.get('kind'))
                 if who and str(i.get('text') or '').strip():
                     said.append({'from': clamp(str(who), 80), 'text': clamp(str(i['text']), 800)})
                 drafts = i.get('drafts') or drafts
-            return {'title': card['title'] if card else '', 'status': card['status'] if card else '', 'messages': said[-25:],
+            return {'title': card['title'] if card else '', 'state': todo_state(dict(card)) if card else '', 'messages': said[-25:],
                     'drafts': [{k: d.get(k) for k in ('kind', 'to', 'subject', 'body')} for d in drafts[:3]]}
         if name == 'find_todos':
             words = [w for w in re.findall(r'\w+', str(args.get('words') or '').lower()) if len(w) > 1][:6]
-            if not words:
+            want = str(args.get('state') or '').strip().lower()
+            want = want if want in talk_live.STATES else ''
+            if not words and not want:
                 return {'todos': []}
             with self.store.connect() as db:
-                rows = db.execute("SELECT id,title,status FROM suggestions WHERE status NOT IN ('completed','rejected') ORDER BY created_at DESC LIMIT 500").fetchall()
-            found = [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
-                    [r for r in rows if any(w in (r['title'] or '').lower() for w in words)]
+                rows = [dict(r) for r in db.execute(
+                    "SELECT s.id,s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s "
+                    "LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.status NOT IN ('completed','rejected') "
+                    "ORDER BY s.created_at DESC LIMIT 500")]
+            for r in rows:
+                r['state'] = todo_state(r)
+            if want:
+                rows = [r for r in rows if r['state'] == want]
+            found = rows if not words else [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
+                [r for r in rows if any(w in (r['title'] or '').lower() for w in words)]
+            named = next((st for st in talk_live.STATES if set(st.split()) <= set(words)), '') if not want else ''
+            if not found and named:  # "anything preparing?": no title has the word, so the state it names
+                found = [r for r in rows if r['state'] == named]
+            found.sort(key=lambda r: talk_live.STATES.index(r['state']))  # the dashboard's order: what needs the owner first
             # the main conversation opens one by its id (open_todo)
-            return {'todos': [{**({'id': r['id']} if ids else {}), 'title': clamp(r['title'], 200), 'status': r['status']} for r in found[:10]]}
+            return {'todos': [{**({'id': r['id']} if ids else {}), 'title': clamp(r['title'], 200), 'state': r['state']}
+                              for r in found[:20]], 'count': len(found)}
         raise ValueError('Unknown tool')
 
     def lookups_view(self):

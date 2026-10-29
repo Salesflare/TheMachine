@@ -47,20 +47,35 @@ ASK_SECONDS = 180            # a confirm question older than this needs asking a
 SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
 CHANNELS = {'email': 'by email', 'linkedin': 'on LinkedIn', 'slack': 'on Slack', 'x': 'on X', 'whatsapp': 'on WhatsApp',
             'telegram': 'on Telegram', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc'}
+# An open to-do's state, in plain words, as the dashboard's lists show it (Ready, To decide, Preparing, Waiting on others,
+# Later, Look done), in that order
+STATES = ('ready', 'to decide', 'preparing', 'waiting on others', 'snoozed', 'looks done')
 TOOLS = [
     {'type': 'function', 'name': 'todo_details',
      'description': 'Read the to-do this conversation is about: its title, the messages in it and the current draft.',
      'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
     {'type': 'function', 'name': 'find_todos',
-     'description': "Find the owner's other open to-dos by words in their title.",
-     'parameters': {'type': 'object', 'properties': {'words': {'type': 'string', 'description': 'A few words to look for.'}},
-                    'required': ['words'], 'additionalProperties': False}},
+     'description': ("Find the owner's other open to-dos by words in their title, by state, or both. Each comes with its "
+                     'state: ready, to decide, preparing (still being worked on, no draft yet), waiting on others, '
+                     'snoozed or looks done.'),
+     'parameters': {'type': 'object', 'properties': {
+         'words': {'type': 'string', 'description': 'A few words to look for in the title. Leave out to find by state only.'},
+         'state': {'type': 'string', 'enum': list(STATES), 'description': 'Only to-dos in this state.'}},
+         'additionalProperties': False}},
     {'type': 'function', 'name': 'ask_chat',
-     'description': ('Hand the owner’s request to this to-do’s chat, as if they had typed it: draft or change a reply, '
+     'description': ('Only for a request about this to-do. Hand it to this to-do’s chat, as if the owner had typed it: draft or change a reply, '
                      'snooze it, mark it done, look something up on the web. The chat follows its usual rules: it never sends. '
                      'Anything that goes to someone waits for the owner’s Approve on screen, and a spoken yes is not one.'),
      'parameters': {'type': 'object', 'properties': {'request': {'type': 'string', 'description': 'The request, in the owner’s words and language.'}},
                     'required': ['request'], 'additionalProperties': False}},
+    {'type': 'function', 'name': 'create_todo',
+     'description': ('Add a new to-do to the owner’s list, the same as New to-do on the dashboard: for anything new, or '
+                     'about something other than the to-do in focus. Nothing is sent; The Machine fills in the rest. '
+                     'The to-do in focus stays the same.'),
+     'parameters': {'type': 'object', 'properties': {
+         'title': {'type': 'string', 'description': 'What needs doing, short, in the owner’s words and language.'},
+         'note': {'type': 'string', 'description': 'Any details the owner gave, like a day or who it is about.'}},
+         'required': ['title'], 'additionalProperties': False}},
     {'type': 'function', 'name': 'ask_to_send',
      'description': ('When the owner wants to send the draft that is on screen. Returns the confirm question for that one '
                      'draft. If read_aloud is true, read the draft out in full first. Then ask the question, in the owner’s '
@@ -76,11 +91,13 @@ TOOLS = [
      'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
 ]
 # The main conversation's tools: the same reading, chat and send tools, about the to-do in focus, and two to move
-# between to-dos. list_todos and open_todo are the dashboard's own (it knows what Ready and To decide show, and opens it).
+# between to-dos. list_todos and open_todo are the dashboard's own (it knows what each list shows, and opens it).
 MAIN_TOOLS = [
     {'type': 'function', 'name': 'list_todos',
-     'description': ('The to-dos that need the owner now, in the order the dashboard shows them: Ready (a draft is '
-                     'prepared) first, then To decide. Each has an id, its list, its title and who it is from.'),
+     'description': ('All the owner’s open to-dos, in the order the dashboard shows them: ready (a draft is prepared) '
+                     'and to decide first (these need the owner), then preparing (still being worked on, no draft yet), '
+                     'waiting on others, snoozed and looks done. Each has an id, its state, its title and who it is '
+                     'from; counts has how many there are in each state.'),
      'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
     {'type': 'function', 'name': 'open_todo',
      'description': ('Open one to-do on screen and work on it: its title, messages and current draft come back. Everything '
@@ -88,7 +105,7 @@ MAIN_TOOLS = [
      'parameters': {'type': 'object', 'properties': {'id': {'type': 'string', 'description': 'The id from list_todos or find_todos.'}},
                     'required': ['id'], 'additionalProperties': False}},
     {**TOOLS[0], 'description': 'Read the to-do that is open now: its title, the messages in it and the current draft.'},
-    {**TOOLS[1], 'description': "Find the owner's other open to-dos by words in their title. Each has an id for open_todo."},
+    {**TOOLS[1], 'description': TOOLS[1]['description'] + ' Each has an id for open_todo.'},
     *TOOLS[2:],
 ]
 # What the tools answer the voice (in English, for the model; the owner never sees these)
@@ -103,6 +120,9 @@ DONE_NOTE = ('The chat finished what you asked. Its answer: "{answer}" Tell the 
 # A to-do that came in during the main conversation (the dashboard says it at a pause, never while either side talks)
 NEW_NOTE = ('A new to-do needs the owner: "{title}" (from: {from}). At a natural pause, mention it in one short line, like "A new one '
             'just came in from Pieter. Want to hear it?", and only open it if they say so.')
+# A to-do that was still preparing when the main conversation started (or since) and is ready now: told once, the same way
+READY_NOTE = ('A to-do that was preparing is ready now: "{title}" (from: {from}). At a natural pause, mention it in one '
+              'short line, like "The one for Pieter is ready now. Want to hear it?", and only open it if they say so.')
 STOPPED_NOTE = 'The chat stopped before it answered. Tell the owner, and offer to ask again.'
 # A request Talk live hands to the chat: a decision id with this prefix (still a chat- turn), never shown as the
 # owner's message (their own words are the talk lines), with this note in the chat's prompt
@@ -197,6 +217,10 @@ def instructions(title, language, now_text):
         'up (opening hours, an address, anything on the web), call ask_chat with their request. Say one short line, like '
         '"Looking that up", then keep talking about anything else; never poll or say you will check. The chat’s answer '
         'comes to you as a message when it is done: tell the owner then.',
+        '- ask_chat is only for this to-do. Never hand it a request about something else. For anything new (a reminder, '
+        'a new task) call create_todo; for another existing to-do, find it and open it first.',
+        '- Creating: when they give something usable as a title, create it right away. Ask one short question at most, '
+        'only when it is unclear what the to-do is. Then say it’s added in a few words, and stay on the to-do in focus.',
         '- To send: only when the owner asks to send the draft on screen, call ask_to_send and ask its question, reading the '
         'draft out first when it says so. After their answer, call send_answer and say what it returns. One draft per '
         'question; never send several at once, and never say something was sent unless send_answer says so.',
@@ -220,8 +244,9 @@ def main_instructions(language, now_text):
         '- Speak %s unless the owner speaks another language.' % lang,
         '',
         '## Length',
-        '- Keep it short and spoken: a sentence or two at a time, then let the owner talk.',
+        '- Keep it short and spoken: one or two sentences, then let the owner talk.',
         '- Answer the question first. Leave out what they didn’t ask for.',
+        '- Don’t list options or what you could do next. Ask one short question at most.',
         '- When the owner only acknowledges or fills a pause ("okay", "all right", "cool", "mm-hm"), don’t answer with a '
         'sentence. Say one word at most, or nothing, and wait for them.',
         '- Before a tool call, say one short line at most ("One sec"), once. Don’t announce what you will do next, and '
@@ -242,13 +267,19 @@ def main_instructions(language, now_text):
         '- If you didn’t hear or understand the owner, ask them briefly to say it again.',
         '',
         '# Going through the to-dos',
-        '- Start with list_todos. Say how many need them, in one line, then take the first one.',
+        '- Start with list_todos. It has every open to-do and its state. Begin with the ones that need the owner (ready, '
+        'to decide): say how many, in one line, then take the first one.',
+        '- Mention in a few words how many are still preparing, and that you’ll tell them when one is ready. Don’t go '
+        'through the preparing, waiting or snoozed ones unless they ask.',
+        '- If they ask about one that is preparing, open it and say in a sentence what it’s working on. There is no draft '
+        'to send yet.',
         '- One to-do at a time: open_todo, say in a sentence who it is from and what they want, and whether a reply is '
         'drafted. Offer to read the draft; read it only if they want.',
         '- Then follow their lead: change the draft, snooze it, mark it done or not needed (all through ask_chat), send '
         'it, or skip to the next one. When one is handled, move on to the next without being asked.',
-        '- If they ask about another to-do, find it (find_todos or list_todos) and open it.',
-        '- When nothing is left, say so in a line and ask if there is anything else.',
+        '- If they ask about another to-do, find it (list_todos, or find_todos by words or by state) and open it. Never '
+        'say there is nothing before you’ve checked list_todos.',
+        '- When nothing that needs them is left, say so in a line and ask if there is anything else.',
         '',
         '# Tools and rules',
         '- Everything below is about the to-do that is open (open_todo). Open the right one first.',
@@ -258,6 +289,10 @@ def main_instructions(language, now_text):
         'up (opening hours, an address, anything on the web), call ask_chat with their request. Say one short line, like '
         '"Looking that up", then keep talking about anything else; never poll or say you will check. The chat’s answer '
         'comes to you as a message when it is done: tell the owner then.',
+        '- ask_chat is only for this to-do. Never hand it a request about something else. For anything new (a reminder, '
+        'a new task) call create_todo; for another existing to-do, find it and open it first.',
+        '- Creating: when they give something usable as a title, create it right away. Ask one short question at most, '
+        'only when it is unclear what the to-do is. Then say it’s added in a few words, and stay on the to-do in focus.',
         '- To send: only when the owner asks to send the draft on screen, call ask_to_send and ask its question, reading the '
         'draft out first when it says so. After their answer, call send_answer and say what it returns. One draft per '
         'question; never send several at once, and never say something was sent unless send_answer says so.',

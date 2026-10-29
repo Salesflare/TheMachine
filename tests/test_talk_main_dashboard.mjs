@@ -6,19 +6,21 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Talk (talk_live.py, the main conversation): Talk in the sidebar (the drawer on a phone) starts one live conversation
 // about whatever needs the owner. Its bar floats at the bottom of the page, and sits in a to-do's chat when one is open.
-// The voice lists what's Ready and To decide, opens one (the screen follows), and works on the one on screen: the
+// The voice lists every open to-do with its state (what needs the owner first), opens one (the screen follows), and works on the one on screen: the
 // Machine is told which (talk_focus), and the send rules are those of a to-do's own Talk live. A to-do that comes in is
 // mentioned at a pause, never while someone talks. OpenAI and the Machine are stand-ins, as in test_talk_live_dashboard.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-const now=new Date().toISOString(),A='a1a1a1a1a1a1a1a1',B='b2b2b2b2b2b2b2b2',C='c3c3c3c3c3c3c3c3';
+const now=new Date().toISOString(),A='a1a1a1a1a1a1a1a1',B='b2b2b2b2b2b2b2b2',C='c3c3c3c3c3c3c3c3',P='d4d4d4d4d4d4d4d4',Z='e5e5e5e5e5e5e5e5',N='f6f6f6f6f6f6f6f6';
 const DRAFT={kind:'email',label:'Reply to Lotte',to:['lotte@example.com'],to_name:'Lotte',from:'me@example.com',subject:'Re: Paint order',body:'Hi Lotte, Thursday after two works. See you then.',revision:'r1',account_id:'mail'};
 let cards;
 const reset=()=>{cards=[{id:A,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1],people:[{id:'p1',name:'Lotte'}],next_actions:[DRAFT]},
- {id:B,title:'Decide on the offsite venue',body:'Two venues offered.',status:'pending',scope:'personal',created_at:now,event_ids:[2]}]};
+ {id:B,title:'Decide on the offsite venue',body:'Two venues offered.',status:'pending',scope:'personal',created_at:now,event_ids:[2]},
+ {id:P,title:'Find a rug and table for the living room',body:'Looking at three shops.',status:'accepted',scope:'personal',created_at:now,event_ids:[4],people:[{id:'p3',name:'Juliana'}]},
+ {id:Z,title:'Renew the parking permit',body:'Back on Monday.',status:'snoozed',snoozed_until:new Date(Date.now()+3*864e5).toISOString(),scope:'personal',created_at:now,event_ids:[5]}]};
 let talkReady=true;
 const state=()=>({talk_ready:talkReady,suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const actions=[],lines=[],sends=[],replies=[],relayed=[];let askedQ=null,focus=null,running=false;
-const MAIN_TOOLS=['list_todos','open_todo','todo_details','find_todos','ask_chat','ask_to_send','send_answer'].map(name=>({type:'function',name}));
+const MAIN_TOOLS=['list_todos','open_todo','todo_details','find_todos','ask_chat','create_todo','ask_to_send','send_answer'].map(name=>({type:'function',name}));
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
@@ -26,7 +28,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   const answer={
    talk_status:()=>({ready:true,limit:600,warn:540}),
    talk_start:()=>({id:'feedfeedfeedfeed',via:'signin',per_use:false,limit:a.main?1800:600,warn:a.main?1740:540,tools:MAIN_TOOLS,main:!!a.main,instructions:'You are The Machine, going through the to-dos.',voice:'cedar',speed:0.95,turn:{type:'semantic_vad',eagerness:'low'},turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},
-    ask_note:'Drafts wait for Approve.',notes:{queued:'Joins.',done:'Done: "{answer}"',stopped:'Stopped.',new:'A new to-do needs the owner: "{title}" (from: {from}). At a natural pause, mention it.'},ready:true}),
+    ask_note:'Drafts wait for Approve.',notes:{queued:'Joins.',done:'Done: "{answer}"',stopped:'Stopped.',new:'A new to-do needs the owner: "{title}" (from: {from}). At a natural pause, mention it.',ready:'A to-do that was preparing is ready now: "{title}" (from: {from}).'},ready:true}),
+   card_new:()=>{const made={id:N,title:a.text.split('\n')[0],body:a.text,status:'accepted',origin:'owner',scope:a.scope||'personal',created_at:new Date().toISOString(),event_ids:[9]};cards.push(made);return {id:N}},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_focus:()=>{focus=a.suggestion_id;askedQ=null;return {ok:true}},
    talk_line:()=>{lines.push({sid:focus,kind:a.role==='user'?'you':'reply',text:a.text,via:'live',at:Date.now()});return {ok:true}},
@@ -97,7 +100,7 @@ try{
   await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());await live(dockBar);
   assert.notEqual(await page.evaluate(()=>location.hash),'#talk');
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));await page.waitForTimeout(200);
-  const gap=await page.evaluate(()=>{const cards=[...document.querySelectorAll('#inbox .card')].filter(c=>c.offsetParent),dock=document.querySelector('#talk-dock').getBoundingClientRect();
+  const gap=await page.evaluate(()=>{const cards=[...document.querySelectorAll('#inbox .card')].filter(c=>c.checkVisibility()),dock=document.querySelector('#talk-dock').getBoundingClientRect();
    return [cards.at(-1),document.querySelector('.site-footer')].filter(Boolean).map(x=>dock.top-x.getBoundingClientRect().bottom)});
   for(const g of gap)assert.ok(g>=12,`the page ends ${g}px above the floating bar, under it`);
   await shot('m1b-talk-floating-scrolled');
@@ -105,9 +108,13 @@ try{
   await tap('#side-talk');await inView();await live(viewBar);assert.equal(ended(),0);
 
   // What needs the owner, in the dashboard's order: Ready first, then To decide
+  // Every open to-do the lists show, with its state in plain words: what needs the owner first, then Preparing, Later
   const listed=await call('l1','list_todos');
-  assert.deepEqual(listed.todos.map(x=>[x.id,x.list]),[[A,'Ready'],[B,'To decide']]);
+  assert.deepEqual(listed.todos.map(x=>[x.id,x.state]),[[A,'ready'],[B,'to decide'],[P,'preparing'],[Z,'snoozed']]);
+  assert.deepEqual(listed.counts,{ready:1,'to decide':1,preparing:1,snoozed:1});assert.equal(listed.count,4);
   assert.equal(listed.todos[0].from,'Lotte');
+  // No send question yet: the bar has no "say yes" hint
+  assert.equal(await page.locator(viewBar+' .talk-hint').textContent(),'');
   assert.match((await call('l2','ask_to_send')).error,/open_todo first/);
   // The voice opens one: the Machine is told, Talk's view shows it with its draft, the page stays where it is
   const opened=await call('o1','open_todo',{id:A});
@@ -125,15 +132,19 @@ try{
   await said('s1b','Read it to me.');
   await page.waitForFunction(()=>document.querySelector('#talk-view .talk-log').textContent.includes('Read it to me.'));
   await until(()=>lines.length>=2);assert.equal(lines.at(-1).sid,A);
+  assert.equal(await page.locator(viewBar+' .talk-hint').textContent(),'','a draft on screen, but nothing asked yet');
   await page.waitForTimeout(300);await shot('m2-talk-about-a-todo');
+  if(phone){await page.evaluate(()=>drawerOpen());await page.waitForTimeout(400);await shot('m2a-the-lists-talk-sees');await page.evaluate(()=>drawerClose());await page.waitForTimeout(300)}
 
   // Sending by voice, from Talk's view: the same rules, about the draft it shows
   const q=await call('q1','ask_to_send');
   assert.equal(q.question,'Send this reply to Lotte by email?');
+  await page.waitForFunction(sel=>document.querySelector(sel+' .talk-hint').textContent==='Say yes to send what’s on screen.',viewBar);  // asked: the hint, until answered
   assert.equal(actions.find(a=>a.action==='talk_ask_send').args.revision,'r1');
   await said('s2','Send this reply to Lotte by email?','assistant');await said('s3','Yes, send it.');
   assert.equal((await call('q2','send_answer')).status,'queued');
   assert.equal(sends.length,1);assert.equal(await page.evaluate(()=>location.hash),'#talk');
+  await page.waitForFunction(sel=>document.querySelector(sel+' .talk-hint').textContent==='',viewBar);
 
   // A change goes through the to-do's chat, which isn't open: its answer still comes back to the voice
   const asked=await call('c1','ask_chat',{request:'Make it Friday instead.'});
@@ -152,6 +163,26 @@ try{
   await page.waitForFunction(n=>window.__dc.sent.filter(x=>x.type==='conversation.item.create'&&x.item?.type==='message').length>n,toldBefore,{timeout:6000});
   assert.deepEqual((await told()).slice(toldBefore),['A new to-do needs the owner: "Pieter asks about pricing" (from: Pieter). At a natural pause, mention it.']);
   await page.waitForTimeout(800);assert.equal((await told()).length,toldBefore+1,'once');
+
+  // The one that was preparing is ready now: told once, as ready (not as a new one), and never again
+  await page.evaluate(()=>{__say({type:'response.created',response:{id:'told2'}});__say({type:'response.done',response:{id:'told2',status:'completed'}})});  // the voice told it
+  cards.find(c=>c.id===P).status='prepared';await page.evaluate(()=>refresh());
+  await page.waitForFunction(n=>window.__dc.sent.filter(x=>x.type==='conversation.item.create'&&x.item?.type==='message').length>n,toldBefore+1,{timeout:6000});
+  assert.deepEqual((await told()).slice(toldBefore+1),['A to-do that was preparing is ready now: "Find a rug and table for the living room" (from: Juliana).']);
+  await page.evaluate(()=>refresh());await page.waitForTimeout(800);assert.equal((await told()).length,toldBefore+2,'once');
+
+  // Something new while a to-do is in focus: a new to-do (New to-do's own card_new), not that to-do's chat
+  const relayedBefore=relayed.length;
+  const made=await call('n1','create_todo',{title:'Plan a trip to Antwerp',note:'A reminder'});
+  assert.equal(made.ok,true);assert.equal(made.id,N);
+  assert.deepEqual(actions.find(a=>a.action==='card_new').args,{text:'Plan a trip to Antwerp\nA reminder',scope:null,due:null,due_at:null,about:[],attach:[]});
+  assert.equal(relayed.length,relayedBefore,'nothing handed to the to-do in focus');
+  assert.equal(actions.filter(a=>a.action==='talk_focus').at(-1).args.suggestion_id,A,'the focus stays');
+  await page.waitForFunction(()=>[...document.querySelectorAll('#talk-view .talk-mark')].some(x=>x.textContent==='Added a to-do: Plan a trip to Antwerp'));
+  assert.equal(await page.locator('#talk-view .talk-about h3').textContent(),'Reply to Lotte about the paint order');
+  await page.evaluate(()=>refresh());await page.waitForTimeout(800);assert.equal((await told()).length,toldBefore+2,'the one it made is not announced');
+  assert.match((await call('n2','create_todo',{title:'  '})).error,/Say what the to-do is/);
+  await page.waitForTimeout(300);await shot('m2b-added-a-todo');
 
   // The to-do's own chat has what was said, decided and sent about it (Open the chat on the card); Back returns to Talk
   await tap('#talk-view .talk-about a[href^="#chat="]');

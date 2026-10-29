@@ -17,9 +17,11 @@ Die Leiste hat **Stummschalten** und **Ende**. Verabschiede dich oder sag, dass 
 
 ## Alle Aufgaben durchsprechen
 
-Tippe in der Seitenleiste (auf dem Handy im Menü) auf **Sprechen**, um alles, was auf dich wartet, per Stimme durchzugehen. The Machine sagt, wie viele warten, und nimmt sie nacheinander durch: zuerst **Bereit**, dann **Zu entscheiden**. Sprechen hat eine eigene Seite: ein Gespräch von Anfang bis Ende, oben die Aufgabe, um die es geht, mit ihrem Entwurf und **Chat öffnen**. Sie springt nicht von Chat zu Chat.
+Tippe in der Seitenleiste (auf dem Handy im Menü) auf **Sprechen**, um alles, was auf dich wartet, per Stimme durchzugehen. The Machine sagt, wie viele warten, und nimmt sie nacheinander durch: zuerst **Bereit**, dann **Zu entscheiden**. Sie sieht auch deine anderen Aufgaben, etwa die noch **Wird vorbereitet**, und sagt dir, wenn eine bereit ist.
 
-Bitte sie, einen Entwurf vorzulesen, zu ändern, zu verschieben, als erledigt zu markieren oder zum nächsten zu gehen. Senden funktioniert wie im Chat einer Aufgabe: ein Entwurf pro Frage, nach einem klaren Ja. Was du über eine Aufgabe sagst, landet im Chat dieser Aufgabe. Kommt eine neue Aufgabe herein, erwähnt sie sie in einer Pause.
+Sprechen hat eine eigene Seite: ein Gespräch von Anfang bis Ende, oben die Aufgabe, um die es geht, mit ihrem Entwurf und **Chat öffnen**. Sie springt nicht von Chat zu Chat.
+
+Bitte sie, einen Entwurf vorzulesen, zu ändern, zu verschieben, als erledigt zu markieren oder zum nächsten zu gehen. Senden funktioniert wie im Chat einer Aufgabe: ein Entwurf pro Frage, nach einem klaren Ja. Was du über eine Aufgabe sagst, landet im Chat dieser Aufgabe. Kommt eine neue Aufgabe herein, erwähnt sie sie in einer Pause. Sag „füge eine Aufgabe hinzu: …“, und sie legt eine neue an, ohne die aktuelle zu verlassen.
 
 Du kannst inzwischen auf eine andere Seite gehen: Die Leiste bleibt unten, und **Sprechen** in der Seitenleiste bringt dich zurück. Dieses Gespräch dauert höchstens 30 Minuten.
 

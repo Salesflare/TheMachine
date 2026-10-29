@@ -155,9 +155,34 @@ class Tools(unittest.TestCase):
 
     def test_reading_tools_the_chat_and_a_confirmed_send(self):
         names = [tool['name'] for tool in t.TOOLS]
-        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer', 'end_talk'])
+        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'create_todo', 'ask_to_send', 'send_answer', 'end_talk'])
         self.assertIn('never sends', [tool for tool in t.TOOLS if tool['name'] == 'ask_chat'][0]['description'])
         self.assertIn('a clear yes to your confirm question', t.ASK_NOTE)
+
+    def test_talk_sees_every_open_todo_and_starts_with_what_needs_the_owner(self):
+        # Jeroen, live: "let's go through the to-dos" said nothing needs him while one was still Preparing. Talk sees
+        # them all, starts with ready and to decide, says how many are preparing, and keeps it short.
+        text = t.main_instructions('en', 'Thursday')
+        for words in ('It has every open to-do and its state', 'how many are still preparing', 'you’ll tell them when one is ready',
+                      'There is no draft to send yet.', 'Never say there is nothing before you’ve checked list_todos',
+                      'one or two sentences', 'Don’t list options'):
+            self.assertIn(words, text)
+        listing = [x for x in t.MAIN_TOOLS if x['name'] == 'list_todos'][0]['description']
+        for words in ('All the owner’s open to-dos', 'preparing', 'waiting on others', 'snoozed', 'its state'):
+            self.assertIn(words, listing)
+        find = [x for x in t.MAIN_TOOLS if x['name'] == 'find_todos'][0]['parameters']
+        self.assertEqual(find['properties']['state']['enum'], list(t.STATES))
+        self.assertNotIn('required', find)   # by state only: "anything preparing?"
+
+    def test_new_things_become_a_new_todo_not_the_focused_chat(self):
+        # Jeroen, live: "create a new to-do: plan a trip to Antwerp" went into another to-do's chat
+        create = [x for x in t.MAIN_TOOLS if x['name'] == 'create_todo'][0]
+        self.assertEqual(create['parameters']['required'], ['title'])
+        self.assertIn('Nothing is sent', create['description'])
+        self.assertIn('Only for a request about this to-do.', [x for x in t.MAIN_TOOLS if x['name'] == 'ask_chat'][0]['description'])
+        for text in (t.instructions('Reply to Lotte', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
+            self.assertIn('ask_chat is only for this to-do. Never hand it a request about something else.', text)
+            self.assertIn('create it right away. Ask one short question at most', text)
 
     def test_asking_the_chat_says_one_line_and_never_polls(self):
         text = t.instructions('Pick up the paint', 'en', 'Thursday 29 October 2026, 12:39')
@@ -311,11 +336,12 @@ class Api(unittest.TestCase):
         self.assertEqual(self.gateway.calls[-1]['session_key'], t.SESSION_PREFIX + 'main')
         self.assertEqual((started['limit'], started['warn']), (1800, 1740))   # OpenAI allows 60 minutes
         self.assertEqual([x['name'] for x in started['tools']],
-                         ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer', 'end_talk'])
+                         ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'ask_chat', 'create_todo', 'ask_to_send', 'send_answer', 'end_talk'])
         for words in ('Start with list_todos', 'One to-do at a time', 'never say something was sent unless send_answer says so',
                       'call ask_to_send and ask its question', 'never poll', 'contractions'):
             self.assertIn(words, started['instructions'])
         self.assertIn('{title}', started['notes']['new'])
+        self.assertIn('was preparing is ready now', started['notes']['ready'])   # told once when a preparing one is ready
         self.assertNotIn(SECRET, json.dumps(started))
         with self.assertRaisesRegex(ValueError, 'Talk is already open'):
             self.act('talk_start', {'main': True})
@@ -338,6 +364,26 @@ class Api(unittest.TestCase):
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'b' * 16})
         self.assertEqual(self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']['title'], 'Book the offsite venue')
         self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'}))   # nothing to send there
+
+    def test_finding_todos_by_state_says_each_ones_state(self):
+        with self.store.connect() as db:
+            for sid, title, status, extra in (('d' * 16, 'Plan the Antwerp trip', 'accepted', ''), ('e' * 16, 'Send the quote to Kim', 'prepared', ''),
+                                              ('f' * 16, 'Review the deck', 'prepared', '{"state":"waiting"}'), ('0' * 16, 'Call the bank', 'snoozed', '')):
+                db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,outcome) VALUES(?,?,?,'','[]','[]',?,?,?)",
+                           (sid, title, title, status, '2026-10-28T10:00:00Z', extra or None))
+        talk_id = self.act('talk_start', {'main': True})['id']
+        find = lambda **args: self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': args})['output']
+        self.assertEqual([(x['title'], x['state']) for x in find(state='preparing')['todos']], [('Plan the Antwerp trip', 'preparing')])
+        self.assertEqual(find(state='preparing')['todos'][0]['id'], 'd' * 16)
+        # "do you see something that's preparing?": no title has the word, so the state it names
+        self.assertEqual([x['title'] for x in find(words='preparing')['todos']], ['Plan the Antwerp trip'])
+        self.assertEqual([x['state'] for x in find(state='waiting on others')['todos']], ['waiting on others'])
+        self.assertEqual([x['title'] for x in find(state='snoozed')['todos']], ['Call the bank'])
+        everything = [x['state'] for x in find(words='the')['todos']]   # what needs the owner first, the dashboard's order
+        self.assertEqual(everything, sorted(everything, key=t.STATES.index))
+        self.assertEqual(find(state='nonsense'), {'todos': []})
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'd' * 16})
+        self.assertEqual(self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']['state'], 'preparing')
 
     def test_talk_keeps_what_was_said_in_each_todos_chat(self):
         talk_id = self.act('talk_start', {'main': True})['id']
@@ -485,7 +531,7 @@ class Api(unittest.TestCase):
         started = self.act('talk_start', {'suggestion_id': SID})
         self.assertNotIn(SECRET, json.dumps(started))
         self.assertEqual((started['limit'], started['warn'], started['per_use']), (600, 540, True))
-        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer', 'end_talk'])
+        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat', 'create_todo', 'ask_to_send', 'send_answer', 'end_talk'])
         self.assertIn('Reply to Dana about the offsite', started['instructions'])
         self.assertEqual(self.act('talk_offer', {'id': started['id'], 'sdp': OFFER}), {'sdp': ANSWER})
         self.act('talk_line', {'id': started['id'], 'role': 'user', 'text': 'What does Dana want?'})
@@ -553,6 +599,7 @@ class Api(unittest.TestCase):
         self.assertEqual([x['title'] for x in found['todos']], ['Book the offsite venue'])
         found = self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': {'words': 'offsite'}})['output']
         self.assertNotIn('Old offsite invoice', [x['title'] for x in found['todos']])   # only open ones
+        self.assertEqual({x['state'] for x in found['todos']}, {'to decide'})
         for name in ('ask_chat', 'ask_to_send', 'send_answer', 'send_draft', 'decide'):   # the dashboard's own, through their own actions
             with self.assertRaisesRegex(ValueError, 'Unknown tool'):
                 self.act('talk_tool', {'id': talk_id, 'name': name, 'args': {}})

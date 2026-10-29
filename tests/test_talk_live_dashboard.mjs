@@ -164,7 +164,7 @@ try{
   await page.locator('#chat-log .chat-draft.current [data-smart]').waitFor();
   assert.ok((await page.locator('#chat-log .chat-draft.current').textContent()).includes('Thursday after two works'));
   await page.waitForTimeout(400);
-  if(!phone)assert.equal(await page.locator(bar+' .talk-hint').textContent(),'Say yes to send what’s on screen.');
+  assert.equal(await page.locator(bar+' .talk-hint').textContent(),'','a draft on screen, but no send question yet: no hint');
   await shot('t4-asked-chat');
   const said=(n,text,role='user')=>page.evaluate(([n,text,role])=>{if(role==='user'){__say({type:'conversation.item.input_audio_transcription.completed',item_id:n,transcript:text});return}
    __say({type:'response.output_audio_transcript.done',response_id:'r'+n,item_id:n,transcript:text});__say({type:'response.done',response:{id:'r'+n,status:'completed'}})},[n,text,role]);
@@ -176,6 +176,7 @@ try{
   assert.equal(q.question,'Send this reply to Lotte by email?');
   const asking=actions.filter(a=>a.action==='talk_ask_send').at(-1).args;
   assert.equal(asking.revision,'r1');assert.equal(asking.read_aloud,phone,'a phone: the voice reads the draft out first');
+  if(!phone)await page.waitForFunction(b=>document.querySelector(b+' .talk-hint').textContent==='Say yes to send what’s on screen.',bar);  // only while the question is open
   await said('i3','Send this reply to Lotte by email?','assistant');
   await page.waitForTimeout(150);await shot('t4b-confirm-question');
 
