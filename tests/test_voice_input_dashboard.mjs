@@ -26,7 +26,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(demo&&r.action.startsWith('voice_')){res.end(JSON.stringify({ok:true,demo:true}));return}  // the site's demo answers what it doesn't know so
   if(r.action==='voice_status'){res.end(JSON.stringify(voiceView()));return}
   if(r.action==='voice_prepare'){if(local.state!=='ready')local={state:'preparing',step:'packages',done:0,total:0};res.end(JSON.stringify(voiceView()));return}
-  if(r.action==='voice_prefs'){res.end(JSON.stringify({...voiceView(),...r.args}));return}
+  // As before the fix on the Machine: a saved change answered without Talk live's part (the page keeps what it had)
+  if(r.action==='voice_prefs'){const {talk,...v}=voiceView();res.end(JSON.stringify({...v,...r.args}));return}
   if(r.action==='voice_transcribe'){
    if(r.args.part){if(r.args.part===partFails){res.statusCode=400;res.end(JSON.stringify({error:'Voice didn’t answer. Try again.'}));return}
     res.end(JSON.stringify({text:PARTS[r.args.part-1]||'and more',language:'en'}));return}
@@ -237,6 +238,12 @@ try{
   await page.waitForFunction(()=>true);for(let i=0;i<40&&!fetched.length;i++)await page.waitForTimeout(50);
   assert.deepEqual(actions.find(a=>a.action==='voice_prefs')?.args,{talk_voice:'marin'});
   assert.ok(fetched.includes('/brand/voices/marin.mp3'),'the one picked plays');
+  await page.waitForTimeout(150);await page.locator('#settings-dictation').scrollIntoViewIfNeeded();await shot('11c-settings-voice-changed');
+  await page.waitForFunction(()=>!document.querySelector('#talk-voice')?.disabled);
+  assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap the wave/,'the Talk live row stays after a change');
+  assert.equal(await page.locator('#talk-voice').inputValue(),'marin','the Voice row stays, with the one picked');
+  await page.selectOption('#dictation-language','');await page.waitForTimeout(200);
+  assert.equal(await page.locator('#talk-voice').count(),1,'and after any other change in Voice input');
   fetched.length=0;await tap('[data-talk-sample]');for(let i=0;i<40&&!fetched.length;i++)await page.waitForTimeout(50);
   assert.ok(fetched.length>0,'the play button plays a sample');
   await context.close()}

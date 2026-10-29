@@ -32,11 +32,12 @@ action as the agent sees fit. Here the dashboard sets its own tools instead, and
 1. `talk_start` (owner, dashboard only): the service asks the Gateway for a session (`talk.client.create`, scopes
    `operator.read` and `operator.talk` only, never `operator.write`), for the session key
    `agent:main:assistant-talk-<to-do id>`. It keeps the session's secret in memory and returns an ID, the tools and the
-   instructions (the to-do's title, the dashboard language, the time). The secret and the key never reach the browser.
+   instructions (the to-do's title, the dashboard language, the time) and the voice and speed. The secret and the key never reach the browser.
 2. The browser opens the microphone, makes a WebRTC offer with an `oai-events` data channel and posts it as
    `talk_offer`. The service hands it on once, with the secret, and returns OpenAI's answer. The dashboard's CSP keeps
    `connect-src 'self'`; the audio then goes directly between the browser and OpenAI over WebRTC.
-3. On the data channel the dashboard sends `session.update` with the instructions, the tools and input transcription.
+3. On the data channel the dashboard sends `session.update` with the instructions, the tools, input transcription and
+   the voice and speed.
 4. What each side says (`conversation.item.input_audio_transcription.completed`, `response.output_audio_transcript.done`)
    is posted as `talk_line` (the voice's lines once their response is done, so an interrupted fragment isn't kept) and kept in `talk_lines`; the to-do's chat shows it after a **Talked live** line.
 5. **End**, leaving the chat, or 10 minutes end it (`talk_end`, `talk.client.close`). The timer warns a minute before.
@@ -69,6 +70,14 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 `talk.client.create`. The default is `cedar`. ChatGPT's Cove isn't offered on `gpt-realtime` models (only on the
 ChatGPT-only `gpt-live-1-codex` route, where the Gateway owns the tools), so `cedar` is the closest. Settings plays a
 short sample for each, `brand/voices/<voice>.mp3`, recorded once from the Realtime API.
+
+OpenAI recommends `marin` and `cedar` for best quality; `cedar` stays the default. The page sets
+`audio.output.speed` to `talk_live.SPEED` (0.95, a touch under OpenAI's 1.0, never slow) in its `session.update`:
+`talk.client.create` takes no speed. Speed only changes playback, so how the voice talks is in
+`talk_live.instructions`, laid out as OpenAI's Realtime prompting guide suggests: labeled sections (personality and tone,
+length, pacing, variety, speaking not reading) before the rules, which are unchanged. It talks in short, warm turns with
+contractions, varies its openers, says what a to-do is about instead of reading its title, and never reads out lists or
+links, except a draft it is asked to read in full before a send question.
 
 ## Sending by voice
 

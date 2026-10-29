@@ -3706,7 +3706,7 @@ function renderDictation(){const d=state.dictation,box=$('#settings-dictation'),
  // Still preparing, or the Machine still asking OpenClaw what OpenAI can do here (it answers at once, and fills that in later)
  clearTimeout(dictation.timer);if((l.state==='preparing'||d.openai==null||d.talk&&d.talk.ready==null)&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
 $('#settings-dictation').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select'))return;const key={'dictation-engine':'engine','dictation-model':'model','dictation-language':'language','talk-voice':'talk_voice'}[el.id];if(!key)return;el.disabled=true;
- try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prefs',args:{[key]:el.value}})});micPrepped=false;notice(t('Saved.'))}catch(err){errCaught(err);notice(err.message)}renderDictation()});
+ try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prefs',args:{[key]:el.value}})}).then(r=>({talk:state.dictation?.talk,...r}));micPrepped=false;notice(t('Saved.'))}catch(err){errCaught(err);notice(err.message)}renderDictation()});
 // Talk live's voices (voice_input.TALK_VOICES): a few seconds of each, from the Machine itself (brand/voices)
 const TALK_VOICES=['cedar','marin','ash','ballad','coral','echo','sage','shimmer','verse','alloy'];
 const PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
@@ -5986,7 +5986,7 @@ async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
-  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||''});talkPaint();
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0});talkPaint();
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0]};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
   pc.onconnectionstatechange=()=>{if(talk===v&&['failed','disconnected'].includes(pc.connectionState))talkFail(v,t('Talk live lost its connection. Start it again to go on.'))};
@@ -5996,7 +5996,7 @@ async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
  catch(err){if(err.offline)netSet(true,err.restarting);talkFail(v,err.offline?t('Offline. Start it again when you’re back online.'):err.message||t('Talk live couldn’t start. Try again.'))}}
 // The voice's own setup: this page's instructions and tools (never the Gateway's agent), and what the owner says written down
 function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();
- v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'}},...(v.voice?{output:{voice:v.voice}}:{})}}}));
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'}},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));
  v.tick=setInterval(()=>talkTick(v),250);talkPaint()}
 function talkTick(v){if(talk!==v)return;if(chatOpen()?.id!==v.sid){talkEnd();return}v.secs=(Date.now()-v.t0)/1000;
  if(v.relay&&!chat?.active&&Date.now()-v.relay.at>20000)talkTurnDone();  // a turn that ended between two looks

@@ -165,6 +165,19 @@ class Tools(unittest.TestCase):
         self.assertIn('call ask_to_send and ask its question', text)
         self.assertIn('never say something was sent unless send_answer says so', text)
 
+    def test_the_instructions_sound_like_a_conversation(self):
+        text = t.instructions('Reply to Dana', 'en', 'Tuesday 28 October 2026, 10:00')
+        for section in ('# Personality and tone', '## Length', '## Pacing', '## Variety', '# Tools and rules'):
+            self.assertIn(section, text)   # labeled sections, as OpenAI's Realtime prompting guide suggests
+        for words in ('contractions', 'Don’t repeat the same sentence', 'Don’t read its title out word for word',
+                      'Don’t read out lists', 'Never rushed', 'say it again'):
+            self.assertIn(words, text)
+        self.assertIn('read it in full, word for word', text)   # a draft asked about is still read out whole
+        self.assertNotIn('—', text)
+
+    def test_the_voice_plays_a_touch_slower_never_slow(self):
+        self.assertTrue(0.95 <= t.SPEED < 1.0)
+
     def test_the_question_names_who_and_how(self):
         self.assertEqual(t.question({'kind': 'email', 'subject': 'Re: Offsite'}, 'Dana'), 'Send this reply to Dana by email?')
         self.assertEqual(t.question({'kind': 'slack'}, 'Robin'), 'Send this message to Robin on Slack?')
@@ -392,8 +405,12 @@ class Api(unittest.TestCase):
     def test_the_voice_is_cedar_unless_the_owner_picks_another(self):
         started = self.act('talk_start', {'suggestion_id': SID})
         self.assertEqual((started['voice'], self.gateway.calls[-1]['voice']), ('cedar', 'cedar'))
+        self.assertEqual(started['speed'], t.SPEED)            # the page sets it in session.update
+        self.assertNotIn('speed', self.gateway.calls[-1])      # talk.client.create takes no speed
         self.act('talk_end', {'id': started['id']})
-        self.assertEqual(self.act('voice_prefs', {'talk_voice': 'marin'})['talk_voice'], 'marin')
+        saved = self.act('voice_prefs', {'talk_voice': 'marin'})
+        self.assertEqual(saved['talk_voice'], 'marin')
+        self.assertIn('ready', saved['talk'])   # Settings keeps its Talk live and Voice rows after a change
         with self.assertRaisesRegex(ValueError, 'Pick one of the voices'):
             self.act('voice_prefs', {'talk_voice': 'cove'})   # ChatGPT's Cove isn't a Realtime voice
         self.assertEqual(self.act('talk_start', {'suggestion_id': SID})['voice'], 'marin')

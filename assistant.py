@@ -20337,7 +20337,8 @@ class App:
                     self.dictation_openai.warm()
                 elif view['use'] == 'local':
                     self.dictation.warm(prefs['model'])
-            return {**view, 'talk': self.talk_view(check=True)} if args.get('settings') else view
+            # Settings (its own status, and a change saved there) shows Talk live's rows from this too
+            return {**view, 'talk': self.talk_view(check=bool(args.get('settings')))} if args.get('settings') or name == 'voice_prefs' else view
         if name == 'voice_prepare':
             if voice_input.engine_for(prefs, self.voice_openai()) == 'local':
                 self.dictation.prepare(prefs['model'])
@@ -20412,7 +20413,7 @@ class App:
             started = self.talk.start(sid, env, voice)
             LOG.info('talk live start via=%s', started.get('via'))
             view = self.talk_view()
-            return {**started, 'voice': voice, 'per_use': started.get('via') == 'key', 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS,
+            return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'per_use': started.get('via') == 'key', 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS,
                     'tools': talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE, 'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE}, 'instructions': talk_live.instructions(card['title'], locale_prefs.language() or 'en',
                                                                                    time.strftime('%A %d %B %Y, %H:%M')), 'ready': view.get('ready')}
         if name == 'talk_offer':
