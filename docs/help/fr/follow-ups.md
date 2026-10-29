@@ -48,6 +48,10 @@ Les relances s’arrêtent quand la personne répond, quand le projet est gagné
 
 Après la dernière relance sans réponse, le projet affiche « Pas de réponse après 3 relances » et passe à Au point mort ou refusé si c’est activé.
 
+Si son e-mail a été rejeté et qu'il existe une autre adresse, la relance y va ("Rejetée, maintenant à <adresse>"). Un brouillon dont l'adresse est rejetée avant l'envoi est retenu : "Non envoyé : <adresse> a été rejetée", et passe à son autre adresse, où il attend ton envoi.
+
+Sans autre adresse, les relances passent sur LinkedIn ou WhatsApp quand c'est autorisé et que vous y échangez. Sinon elles s'arrêtent avec "E-mail non distribué". Quand le projet compte, tu reçois un to-do pour trouver une nouvelle adresse.
+
 ## Où les voir
 
 L’en-tête du tableau indique « Relances activées, la prochaine jeu. ». La carte d’un projet montre sa prochaine relance, ou qu’une relance est prête. La page du projet liste ce qui est parti, y compris ce qui a été envoyé automatiquement.

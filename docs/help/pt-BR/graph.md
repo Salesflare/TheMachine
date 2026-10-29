@@ -3,7 +3,7 @@ title: O Graph
 area: graph
 summary: As pessoas, organizações e projetos das suas mensagens, sempre atualizados sozinhos.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Sua Machine monta um mapa de com quem você lida e do que está acontecendo, a partir das suas mensagens, reuniões e decisões. Não há nada para configurar, e tudo fica na sua Machine.
@@ -98,6 +98,12 @@ Clique na foto da página de uma pessoa ou organização para mudá-la: **Enviar
 **Editar**, no topo da página, muda o nome, o cargo, a organização, o local, o LinkedIn, os telefones e e-mails, o que a pessoa é para você e Trabalho ou Pessoal. **Salvar** mantém, **Cancelar** deixa como estava.
 
 Suas edições ficam, mesmo quando os detalhes são buscados de novo ou uma revisão lê outra coisa, e também com **Mesclar** e **Desfazer**. Esvazie um campo para usar de novo o valor buscado. Um nome vazio traz de volta o das mensagens.
+
+## Voltou
+
+Quando um email para alguém volta, o endereço mostra **Voltou** com a data, e outro endereço da pessoa passa a ser o primeiro. Novos rascunhos nunca vão para ele quando outro endereço é conhecido. Se for o único, a janela de envio avisa e você ainda pode enviar. Os dados da pessoa são buscados de novo.
+
+Um retorno conta quando o servidor de email diz que o endereço não existe, ou após 3 falhas temporárias em uma semana. Ele some quando a pessoa escreve de novo desse endereço ou quando um email para ele chega.
 
 ## Mesma pessoa?
 

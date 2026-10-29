@@ -2069,9 +2069,57 @@ def incomplete_name(name):
     return not name or '@' in name or plain_name(name) is None or name == name.lower()
 
 
+def with_bounces(db, result):
+    """Marks a person's email addresses that bounced (bounces.py) in a graph view: each email row gets bounced_at,
+    bounce_kind and bounce_event, and 'bounced' {address: when} says it for the list's addresses. A working address
+    goes first, so it is the one shown and used; the bounced one stays, readable, after it."""
+    import bounces
+    people = []
+
+    def walk(value):
+        if isinstance(value, dict):
+            if value.get('kind') == 'person' and isinstance(value.get('id'), str):
+                people.append(value)
+            for v in value.values():
+                if isinstance(v, (dict, list)):
+                    walk(v)
+        elif isinstance(value, list):
+            for v in value:
+                walk(v)
+    walk(result)
+    def address(v):
+        v = str(v.get('value') if isinstance(v, dict) else v or '')
+        return v[6:].lower() if v.startswith('email:') else v.lower()
+    wanted = {address(e) for p in people for e in list(p.get('emails') or ()) + list(p.get('ids') or ()) if '@' in address(e)}
+    try:
+        found = bounces.flags(db, wanted)
+    except sqlite3.Error:
+        return result
+    if not found:
+        return result
+    for p in people:
+        mine = {a: found[a] for a in (address(e) for e in list(p.get('emails') or ()) + list(p.get('ids') or ())) if a in found}
+        if not mine:
+            continue
+        p['bounced'] = {a: f['at'] for a, f in mine.items()}
+        rows = []
+        for e in p.get('emails') or ():
+            if isinstance(e, dict) and address(e) in mine:
+                f = mine[address(e)]
+                e = {**e, 'bounced_at': f['at'], 'bounce_kind': f['kind'], 'bounce_event': f['event_id']}
+            rows.append(e)
+        if rows:
+            p['emails'] = sorted(rows, key=lambda e: address(e) in mine)  # stable: a working one first
+        if p.get('ids'):
+            p['ids'] = sorted(p['ids'], key=lambda i: address(i) in mine)
+    return result
+
+
 def with_fleet(db, result, marks):
     """Marks the people in a graph view (overview, detail, search) who are in the owner's Fleets, Family or Friends, and
-    gives an incomplete name ("sam") the name they share there. The owner's own name for someone always wins."""
+    gives an incomplete name ("sam") the name they share there. The owner's own name for someone always wins. Their
+    bounced email addresses are marked too (with_bounces)."""
+    with_bounces(db, result)
     if not marks:
         return result
     kept = {r[0] for r in db.execute('SELECT node_id FROM graph_names')}

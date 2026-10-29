@@ -48,6 +48,10 @@ Los seguimientos se detienen cuando la persona responde, cuando el proyecto se g
 
 Tras el último seguimiento sin respuesta, el proyecto muestra “Sin respuesta tras 3 seguimientos” y pasa a Estancado o rechazado si eso está activado.
 
+Si su email rebotó y tienen otra dirección, el seguimiento va allí ("Rebotó, ahora a <dirección>"). Un borrador cuya dirección rebota antes de salir se retiene: "No enviado: <dirección> rebotó", y pasa a su otra dirección, donde espera a que lo envíes.
+
+Sin otra dirección, los seguimientos pasan a LinkedIn o WhatsApp cuando está permitido y habláis allí. Si no, se detienen con "El email rebotó". Cuando el proyecto importa, recibes un to-do para encontrar una dirección nueva.
+
 ## Dónde lo ves
 
 La cabecera del tablero dice “Seguimientos activados, el próximo el jue”. La tarjeta de un proyecto muestra su próximo seguimiento, o que hay uno listo. La página del proyecto lista lo que se envió, también lo enviado automáticamente.

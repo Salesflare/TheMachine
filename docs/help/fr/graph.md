@@ -3,7 +3,7 @@ title: Le Graph
 area: graph
 summary: Les personnes, organisations et projets de vos messages, tenus à jour tout seuls.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Votre Machine dresse une carte des gens avec qui vous traitez et de ce qui se passe, à partir de vos messages, réunions et décisions. Rien à configurer, et tout reste sur votre Machine.
@@ -98,6 +98,12 @@ Cliquez sur la photo de la page d’une personne ou d’une organisation pour la
 **Modifier**, en haut de sa page, change son nom, son poste, son organisation, son lieu, son LinkedIn, ses téléphones et e-mails, ce qu’elle est pour vous, et Travail ou Perso. **Enregistrer** garde les changements, **Annuler** laisse tout comme avant.
 
 Vos modifications restent, même quand ses informations sont recherchées à nouveau ou qu’une revue lit autre chose, et après **Fusionner** et **Annuler**. Videz un champ pour reprendre la valeur trouvée. Un nom vide remet celui tiré de ses messages.
+
+## Rejetée
+
+Quand un e-mail à quelqu'un est rejeté, son adresse affiche **Rejetée** avec la date, et une autre de ses adresses passe en premier. Les nouveaux brouillons n'y vont jamais si une autre adresse est connue. Si c'est la seule, la fenêtre d'envoi te prévient, et tu peux quand même envoyer. Ses informations sont recherchées à nouveau.
+
+Un rejet compte quand le serveur de mail dit que l'adresse n'existe pas, ou après 3 échecs temporaires sur une semaine. Il disparaît quand la personne écrit de nouveau depuis cette adresse, ou quand un e-mail vers elle arrive.
 
 ## Même personne ?
 
