@@ -28,6 +28,12 @@ Sul tuo computer:
 
 Un secondo account LinkedIn ha un browser tutto suo. Se LinkedIn disconnette la tua Machine, vedi [Disconnesso da un sito](signed-out.md).
 
+## Se LinkedIn chiede un codice
+
+La prima volta che la tua Machine accede, LinkedIn spesso invia un codice per email. Scrivilo nella finestra di accesso sotto **Codice** e premi **Accedi**. La pagina resta ferma mentre scrivi.
+
+Se LinkedIn torna all’inizio, o non succede niente per due minuti, LinkedIn ha interrotto l’accesso. Aspetta un minuto e premi **Riprova**. Se LinkedIn mostra un controllo anti-robot, completalo nel browser della tua Machine.
+
 ## Rimuovilo
 
 - Nella dashboard: **Connessioni**, apri LinkedIn, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato dentro resta.

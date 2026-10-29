@@ -17387,17 +17387,30 @@ class App:
                 return {'state': 'unavailable'}  # no tab: the dashboard opens the other way
         if name == 'connect_site_signin':
             # LinkedIn or X while its connect waits for the owner to sign in there: the site's sign-in page in front
-            # in the Machine's browser, for the dashboard's sign-in dialog. Nothing is typed here.
+            # in the Machine's browser, for the dashboard's sign-in dialog. One already under way (the code it emailed)
+            # is brought to the front as it is; `fresh` (Try again after the site stopped it) starts it over in that
+            # tab. Nothing is typed here.
             site = args.get('site') if isinstance(args.get('site'), str) else ''
             if site not in CONNECT_SIGNIN:
                 raise ValueError('That site signs in another way')
             try:
                 base = browser_login.endpoints(self.config)[0]
-                browser_login.browser_cdp.open_tab(base, CONNECT_SIGNIN[site])
-            except (browser_login.browser_cdp.CdpError, OSError, IndexError):
+                hosts = onboarding.SIGNIN_HOSTS[site]
+                # a sign-in already under way there (a code it emailed) stays as it is: in front, never a fresh page
+                at = lambda t: urllib.parse.urlsplit(t.get('url') or '')
+                try:
+                    tabs = [t for t in browser_login.browser_cdp._http(base, '/json/list', timeout=5) if t.get('type') == 'page']
+                except (browser_login.browser_cdp.CdpError, OSError, TypeError, AttributeError):
+                    tabs = []
+                under_way = [t for t in tabs if any(browser_login.site(at(t).hostname) == h or browser_login.site(at(t).hostname).endswith('.' + h) for h in hosts)
+                             and onboarding.SIGNIN_STEP.search(at(t).path)]
+                if under_way and args.get('fresh') is True:  # Try again after the site stopped it: its sign-in page afresh
+                    browser_login.browser_cdp.navigate(base, under_way[0]['id'], CONNECT_SIGNIN[site], timeout=20)
+                tab = under_way[0]['id'] if under_way else browser_login.browser_cdp.open_tab(base, CONNECT_SIGNIN[site])
+            except (browser_login.browser_cdp.CdpError, OSError, IndexError, TypeError, AttributeError, KeyError):
                 raise ValueError('I couldn’t open the sign-in page in the browser') from None
             try:
-                browser_viewer.focus(CONNECT_SIGNIN[site], base)
+                browser_viewer.focus(CONNECT_SIGNIN[site], base, target=tab)
             except (ValueError, OSError):
                 pass
             return {'opened': True, 'view': browser_link(self.config)}

@@ -321,7 +321,8 @@ class Tabs(unittest.TestCase):
                 if len([c for c in calls if c[0] == 'evaluate']) == 1:
                     raise cdp.CdpError('script failed: Execution context was destroyed.')  # still navigating
                 return {'ok': True}
-            fakes = {'open_tab': lambda base, url: calls.append(('open', url)) or 'T1',
+            fakes = {'open_background_tab': lambda base, url: calls.append(('open', url)) or 'T1',  # behind a sign-in in front
+                     'open_tab': lambda base, url: self.fail('a reader tab never opens in front'),
                      'close_tab': lambda base, target: calls.append(('close', target)),
                      'tab_ids': lambda base: {'OWNER'}, 'evaluate': evaluate,
                      'navigate': lambda base, target, url: calls.append(('navigate', target, url))}

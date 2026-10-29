@@ -28,6 +28,12 @@ No seu próprio computador:
 
 Uma segunda conta do LinkedIn ganha um navegador próprio. Se o LinkedIn desconectar sua Machine, veja [Desconectado de um site](signed-out.md).
 
+## Se o LinkedIn pedir um código
+
+Na primeira vez que sua Machine entra, o LinkedIn costuma enviar um código por e-mail. Digite-o na janela de login, em **Código**, e toque em **Entrar**. A página fica parada enquanto você digita.
+
+Se o LinkedIn voltar ao início, ou nada acontecer por dois minutos, ele interrompeu este login. Espere um minuto e toque em **Tentar de novo**. Se o LinkedIn mostrar uma verificação de robô, conclua-a no navegador da sua Machine.
+
 ## Remova
 
 - No painel: **Conexões**, abra LinkedIn, **Detalhes** e depois **Desconectar**. Ela para de ler. O que já foi trazido continua lá.

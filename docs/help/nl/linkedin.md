@@ -28,6 +28,12 @@ Op je eigen computer:
 
 Een tweede LinkedIn-account krijgt een eigen browser. Logt LinkedIn je Machine uit, zie dan [Uitgelogd op een site](signed-out.md).
 
+## Als LinkedIn om een code vraagt
+
+De eerste keer dat je Machine inlogt, mailt LinkedIn vaak een code. Typ die in het inlogvenster bij **Code** en druk op **Inloggen**. De pagina blijft staan terwijl je typt.
+
+Gaat LinkedIn terug naar het begin, of gebeurt er twee minuten niets, dan stopte LinkedIn het inloggen. Wacht een minuut en druk op **Opnieuw proberen**. Toont LinkedIn een robotcheck, maak die dan af in de browser van je Machine.
+
 ## Verwijderen
 
 - In het dashboard: **Koppelingen**, open LinkedIn, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft.

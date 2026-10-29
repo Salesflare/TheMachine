@@ -311,8 +311,10 @@ _store_locks_guard = threading.Lock()
 def fill(config, page, host, username=None, password=None, code=None, settle=SETTLE):
     """Types what the owner gave into the sign-in page `page` (an id from pages()) on `host`, and submits it.
 
-    Returns {'result': 'next'|'done'|'approve'|'still_here', 'page': the sign-in form now shown, if any}. 'approve':
-    no form left, but the tab is still at a sign-in step (approve it in the site's app); watch() says when it is past.
+    Returns {'result': 'next'|'done'|'approve'|'captcha'|'blocked'|'still_here', 'page': the sign-in form now shown, if
+    any}. 'approve': no form left, but the tab is still at a sign-in step (approve it in the site's app); watch() says
+    when it is past. 'captcha': that step is a robot check, for the browser itself. 'blocked': after a code, the site
+    asks for the username and password again (it stopped this sign-in).
     Errors are plain ValueErrors that never contain a value given here."""
     index, _, target = str(page or '').partition(':')
     bases = endpoints(config)
@@ -378,9 +380,11 @@ def fill(config, page, host, username=None, password=None, code=None, settle=SET
         if state == 'same':
             return {'result': 'still_here', 'page': shown and {**shown, 'id': page, 'site': site(shown['host'])}}
         if shown:
-            return {'result': 'next', 'page': {**shown, 'id': page, 'site': site(shown['host'])}}
-        if _checkpoint(base, target):  # nothing to type, but not in yet: approve it in the site's app, say
-            return {'result': 'approve', 'page': {'id': page, 'host': host, 'site': site(host)}}
+            # a code sent, and the site asks for the username and password again: it stopped this sign-in
+            back = 'c' in wanted and shown.get('username') and shown.get('password') and not shown.get('code')
+            return {'result': 'blocked' if back else 'next', 'page': {**shown, 'id': page, 'site': site(shown['host'])}}
+        if _checkpoint(base, target):  # nothing to type, but not in yet: a robot check, or approve it in the site's app
+            return {'result': 'captcha' if _captcha(base, target) else 'approve', 'page': {'id': page, 'host': host, 'site': site(host)}}
         return {'result': 'done', 'page': None}
     finally:
         _filling.release()
@@ -433,6 +437,13 @@ CHECKPOINT = re.compile(r'(?i)checkpoint|challenge|/2fa|/mfa|two.?(step|factor)|
 ADDRESS = '() => location.pathname + location.search'
 
 
+# A robot check on the page (reCAPTCHA, hCaptcha, Arkose, Cloudflare's): only someone at the browser can do it.
+# By what the page is made of (its frames and their sources), never what it says.
+CAPTCHA = r'''() => [...document.querySelectorAll('iframe[src], [id*="captcha" i], [class*="captcha" i]')].some(e => {
+  const r = e.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 && (e.tagName !== 'IFRAME' || /captcha|arkoselabs|funcaptcha|challenges\.cloudflare\.com/i.test(e.src)); })'''
+
+
 def _checkpoint(base, target):
     try:
         return bool(CHECKPOINT.search(str(browser_cdp.evaluate(base, target, ADDRESS, timeout_ms=3000) or '')))
@@ -440,10 +451,17 @@ def _checkpoint(base, target):
         return False
 
 
+def _captcha(base, target):
+    try:
+        return browser_cdp.evaluate(base, target, CAPTCHA, timeout_ms=3000) is True
+    except (browser_cdp.CdpError, OSError):
+        return False
+
+
 def watch(config, page):
     """How the sign-in in tab `page` (an id from pages()) is going, after the dialog sent it: {'state': 'form', 'page'}
     when the page asks for something to type, 'waiting' while it waits on the owner elsewhere (their phone's app),
-    'done' once past it. Read-only: which fields show and the tab's address, never what is in them."""
+    'captcha' at a robot check (for the browser itself), 'done' once past it. Read-only: which fields show and the tab's address, never what is in them."""
     index, _, target = str(page or '').partition(':')
     bases = endpoints(config)
     if not index.isdigit() or int(index) >= len(bases) or not target:
@@ -457,7 +475,9 @@ def watch(config, page):
         return {'state': 'waiting'}  # mid-navigation, or the browser is slow: look again
     if isinstance(shown, dict) and shown.get('host'):
         return {'state': 'form', 'page': {**shown, 'id': page, 'site': site(shown['host'])}}
-    return {'state': 'waiting' if _checkpoint(base, target) else 'done'}
+    if _checkpoint(base, target):
+        return {'state': 'captcha' if _captcha(base, target) else 'waiting'}
+    return {'state': 'done'}
 
 
 class LoginStore:

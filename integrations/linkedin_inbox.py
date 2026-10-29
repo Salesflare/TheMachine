@@ -329,8 +329,8 @@ def open_tab(label, url):
     remember_tab('pending:' + marker, True)
     target = None
     try:
-        if CDP:
-            target = browser_cdp.open_tab(CDP, marker)
+        if CDP:  # behind the tab in front: someone signing in there keeps their page (and their typing)
+            target = browser_cdp.open_background_tab(CDP, marker)
         else:
             receipt = oc('open', '--label', label, marker)
             match = re.search(r'^(?:id|tab):\s*(\S+)', receipt, re.M)

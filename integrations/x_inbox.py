@@ -490,7 +490,7 @@ def open_tab(label, url):
     target = None
     try:
         if CDP:
-            target = browser_cdp.open_tab(CDP, marker)
+            target = browser_cdp.open_background_tab(CDP, marker)  # behind: a sign-in in front keeps its page
         else:
             receipt = oc('open', '--label', label, marker)
             match = re.search(r'^(?:id|tab):\s*(\S+)', receipt, re.M)
