@@ -4,7 +4,7 @@ area: connections
 summary: Conversaciones con clientes en tu espacio de trabajo de Intercom. Solo responde después de que envíes, en tu nombre.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
-site: Sign in with Intercom, Or paste an access token, Connect, More sources, Remove
+site: Sign in with Intercom, More sources, Remove
 ---
 ## Qué lee
 
@@ -22,21 +22,11 @@ Cuando Intercom no puede responder desde tu Machine (compartido contigo solo par
 
 ## Conéctalo
 
-En una Machine alojada:
+1. En el panel: **Conexiones**, **+ Añadir**, Intercom. O en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Intercom. En tu propio ordenador, vincúlalo primero a tu cuenta.
+2. Pulsa **Iniciar sesión con Intercom**.
+3. Aprueba The Machine en Intercom. La hace Salesflare. Cuando termines, vuelves a donde empezaste.
 
-1. Abre tu página de configuración en app.themachine.computer/setup y ve a **Más fuentes**.
-2. Abre Intercom y pulsa **Iniciar sesión con Intercom**.
-3. Aprueba The Machine en Intercom. La hace Salesflare.
-
-O en el panel: **Conexiones**, **+ Añadir**, elige Intercom y pulsa **Iniciar sesión con Intercom**. Cuando termines, vuelves al panel.
-
-Si el inicio de sesión no encaja con tu espacio de trabajo, abre **O pega un token de acceso**, pega un token del Developer Hub de Intercom y pulsa **Conectar**.
-
-En tu propio ordenador:
-
-1. En el Developer Hub de Intercom, abre tu app, luego Authentication, y copia su token de acceso.
-2. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige Intercom. O ejecuta `assistant connect intercom`.
-3. Pega el token. Un token de otro espacio de trabajo se convierte en una segunda cuenta de Intercom.
+Iniciar sesión en otro espacio de trabajo añade una segunda cuenta de Intercom.
 
 Intercom siempre cuenta como trabajo, para la empresa que indica su espacio de trabajo.
 
@@ -47,5 +37,4 @@ Intercom siempre cuenta como trabajo, para la empresa que indica su espacio de t
 
 ## Desinstálalo en Intercom
 
-- Con inicio de sesión de Intercom: en Intercom, abre Settings, Apps, Installed apps, y quita The Machine.
-- Con un token pegado: elimínalo o rótalo en el Developer Hub, o elimina la app en la que lo creaste.
+En Intercom, abre Settings, Apps, Installed apps, y quita The Machine.

@@ -1,8 +1,11 @@
 """Read card-related board actions with GET only; never mark a board viewed.
 
-One board per account. The API key (public by Trello's own account) is a setup answer; the token is the
-credential, loaded exclusively through helpers.credential. Authorize the token with scope=read. A credential
-saved earlier as JSON with ``key`` and ``token`` still works.
+One board per account. Signed in with Trello: the hosting control plane's Trello app "The Machine" asks Trello for
+scope read, expiration never (its cloud/trello.py), and the owner picks the board on the way back. Hosted Machines
+start it on their account page or the dashboard; a paired self-hosted one from its dashboard (fleet.py connect_start),
+the token then sealed for it alone. The credential file holds {"key", "token"}: the app's API key (public by Trello's
+design) and the token, loaded exclusively through helpers.credential. A token alone with the key in the account's
+api_key, as connected before sign-in, still works.
 The initial import is bounded by bootstrap_days (default seven).
 """
 import copy
@@ -19,15 +22,15 @@ SETUP = {
     'label': 'Trello',
     'account': {'id': 'trello', 'service': 'trello', 'transport': 'api',
                 'boundary': 'work', 'credential': 'trello', 'poll_seconds': 300},
-    'ask': [('board', 'Trello board URL or board ID (one board per connection)'),
-            ('api_key', 'Trello API key')],
+    'ask': [('board', 'Trello board URL or board ID (one board per connection)')],
+    # What Sign in with Trello answers with: the app's key and the read-only token, as JSON. Never typed by the owner.
     'secret': 'Trello token',
-    'note': 'At https://trello.com/power-ups/admin create a Power-Up (any name), then open its API key page '
-            'and copy the API key (not the Secret). Next to it, click the Token link, allow read access '
-            'and copy the token it shows (it starts with ATTA).',
+    # Signed in at the hosting control plane (hosted: its account page; self-hosted: paired, from Connections, + Add)
+    'account_page': 'source-trello',
+    'note': 'Sign in with Trello from Connections, + Add, then pick the board. It only reads.',
     'what': 'Card changes, comments and activity on one Trello board.',
-    'hints': {'trello_http:HTTP_401': 'Trello rejected the API key or token. The token starts with ATTA: '
-                                      'the Secret on the API key page is not the token.'}}
+    'hints': {'trello_http:HTTP_401': 'Trello turned the sign-in down; sign in with Trello again',
+              'trello_credential_unavailable': 'Trello needs a sign-in; sign in with Trello again'}}
 LIMIT = 1000
 PAGES = 5
 ID = r'[0-9a-f]{24}'

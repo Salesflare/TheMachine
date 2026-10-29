@@ -4,7 +4,7 @@ area: connections
 summary: Les conversations clients de votre espace de travail Intercom. Elle ne répond qu’après votre envoi, en votre nom.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
-site: Sign in with Intercom, Or paste an access token, Connect, More sources, Remove
+site: Sign in with Intercom, More sources, Remove
 ---
 ## Ce qu’il lit
 
@@ -22,21 +22,11 @@ Quand Intercom ne peut pas répondre depuis votre Machine (partagé avec vous en
 
 ## Le connecter
 
-Sur une Machine hébergée :
+1. Dans le tableau de bord : **Connexions**, **+ Ajouter**, Intercom. Ou sur la page de configuration d’une Machine hébergée, sur app.themachine.computer/setup : **Plus de sources**, Intercom. Sur votre propre ordinateur, associez-le d’abord à votre compte.
+2. Appuyez sur **Se connecter avec Intercom**.
+3. Approuvez The Machine dans Intercom. Elle est créée par Salesflare. Une fois terminé, vous revenez là où vous avez commencé.
 
-1. Ouvrez votre page de configuration sur app.themachine.computer/setup et allez dans **Plus de sources**.
-2. Ouvrez Intercom et appuyez sur **Se connecter avec Intercom**.
-3. Approuvez The Machine dans Intercom. Elle est créée par Salesflare.
-
-Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Intercom et appuyez sur **Se connecter avec Intercom**. Une fois terminé, vous revenez au tableau de bord.
-
-Si la connexion ne convient pas à votre espace de travail, ouvrez plutôt **Ou collez un jeton d’accès**, collez un jeton du Developer Hub d’Intercom et appuyez sur **Se connecter**.
-
-Sur votre propre ordinateur :
-
-1. Dans le Developer Hub d’Intercom, ouvrez votre app, puis Authentication, et copiez son jeton d’accès.
-2. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Intercom. Ou lancez `assistant connect intercom`.
-3. Collez le jeton. Un jeton d’un autre espace de travail devient un second compte Intercom.
+Se connecter à un autre espace de travail ajoute un second compte Intercom.
 
 Intercom compte toujours comme travail, pour l’entreprise que nomme son espace de travail.
 
@@ -47,5 +37,4 @@ Intercom compte toujours comme travail, pour l’entreprise que nomme son espace
 
 ## Le désinstaller dans Intercom
 
-- Connecté avec Intercom : dans Intercom, ouvrez Settings, Apps, Installed apps, et retirez The Machine.
-- Un jeton collé : supprimez-le ou renouvelez-le dans le Developer Hub, ou supprimez l’app dans laquelle vous l’avez créé.
+Dans Intercom, ouvrez Settings, Apps, Installed apps, et retirez The Machine.

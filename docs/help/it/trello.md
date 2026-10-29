@@ -4,7 +4,7 @@ area: connections
 summary: Modifiche alle schede, commenti e attività su una bacheca Trello. Legge soltanto.
 covers: connector:trello
 code: connectors/trello.py
-site: Connect, More sources, Remove
+site: Sign in with Trello, Connect, More sources, Remove
 ---
 ## Cosa legge
 
@@ -16,11 +16,9 @@ Niente in Trello. Legge soltanto.
 
 ## Collegala
 
-1. Su trello.com/power-ups/admin, crea un Power-Up con un nome qualsiasi.
-2. Apri la sua pagina della chiave API e copia la chiave API (non il secret).
-3. Fai clic sul link Token accanto, consenti l'accesso in lettura e copia il token.
-4. Su una Machine in hosting: apri la tua pagina di configurazione su app.themachine.computer/setup, vai su **Altre fonti** e apri Trello. Sul tuo computer: **Connessioni**, **+ Aggiungi**, Trello, oppure `assistant connect trello`.
-5. Inserisci l'indirizzo della bacheca, la chiave API e il token, poi premi **Collegati**.
+1. Nella dashboard: **Connessioni**, **+ Aggiungi**, Trello. Oppure nella pagina di configurazione di una Machine in hosting, su app.themachine.computer/setup: **Altre fonti**, Trello. Sul tuo computer, abbinalo prima al tuo account.
+2. Premi **Accedi con Trello** e consenti l'accesso in lettura in Trello. The Machine è fatta da Salesflare.
+3. Scegli la bacheca da seguire e premi **Collegati**. Per un'altra bacheca, aggiungi di nuovo Trello.
 
 ## Rimuovila
 
@@ -29,4 +27,4 @@ Niente in Trello. Legge soltanto.
 
 ## Revocala in Trello
 
-Revoca il token nelle impostazioni del tuo account Trello, sotto Applicazioni, oppure elimina il Power-Up.
+Revoca The Machine nelle impostazioni del tuo account Trello, sotto Applicazioni.

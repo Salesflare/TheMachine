@@ -47,7 +47,7 @@ class FormTest(unittest.TestCase):
         forms = self.forms()
         self.assertEqual((forms['linkedin']['ask'], forms['linkedin']['browser'], forms['linkedin']['secret']), ([], 'linkedin', None))
         self.assertEqual(forms['x']['ask'], [['handle', 'Your X handle, without @']])  # its usual handle takes the default
-        self.assertEqual([k for k, _ in forms['trello']['ask']], ['board', 'api_key'])
+        self.assertEqual([k for k, _ in forms['trello']['ask']], ['board'])  # the key comes with Sign in with Trello
         self.assertEqual(forms['trello']['secret'], 'Trello token')
         self.assertEqual((forms['slack']['secret'], forms['crm']['secret']), ('Maton API key', 'Salesflare API key'))
         self.assertEqual(forms['github']['ask'], [])  # its login is read from gh once signed in
@@ -59,12 +59,13 @@ class FormTest(unittest.TestCase):
 
     def test_a_form_connects_with_its_answers_marked_as_the_owners_and_its_key_kept_out_of_view(self):
         with patch.object(onboarding, 'check', return_value=None):
-            view = self.act('connect_start', {'name': 'trello', 'form': True, 'answers': {'board': 'b' * 24, 'api_key': 'k1', 'bogus': 'x'},
+            view = self.act('connect_start', {'name': 'trello', 'form': True, 'answers': {'board': 'b' * 24, 'bogus': 'x'},
                                               'secret': 'ATTA-fake-token', 'scope': 'work', 'company': 'Globex'})
             view = self.finish(view)
         self.assertEqual(view['state'], 'done', view)
         saved = next(a for a in json.loads(self.path.read_text())['accounts'] if a['service'] == 'trello')
-        self.assertEqual((saved['board'], saved['api_key'], saved['boundary'], saved['boundary_by']), ('b' * 24, 'k1', 'work:Globex', 'owner'))
+        self.assertEqual((saved['board'], saved['boundary'], saved['boundary_by']), ('b' * 24, 'work:Globex', 'owner'))
+        self.assertNotIn('api_key', saved)
         self.assertNotIn('bogus', json.dumps(saved))
         self.assertIn('ATTA-fake-token', Path(json.loads(self.path.read_text())['credentials']['trello']).read_text())
         self.assertNotIn('ATTA-fake-token', json.dumps(view))

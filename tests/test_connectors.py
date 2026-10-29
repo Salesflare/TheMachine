@@ -159,7 +159,7 @@ CONSOLE = re.compile(r'console\.cloud\.google\.com|oauthplayground|developers\.g
                      r'app\.hubspot\.com/private-apps|power-ups/admin|developer (hub|console|portal)|playground', re.I)
 # Connectors from before this rule, until each signs in with OAuth (remove the entry then). Never add one here:
 # a new connector states its reason in SETUP['no_oauth'] instead.
-OAUTH_PENDING = {'google_meet', 'intercom', 'trello'}
+OAUTH_PENDING = {'google_meet'}
 
 
 class ConnectorSignIn(unittest.TestCase):

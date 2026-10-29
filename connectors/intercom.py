@@ -9,7 +9,9 @@ credential file (reply_credential), set only by enable_replies from that person'
 through a Fleet (an account with "shared" from a grant) only ever reads. A reply goes out only after the owner
 pressed Send on that exact text (next_actions.IntercomTransport).
 
-Config, with an access token from an app in Intercom's Developer Hub in a credential file:
+Signed in with Intercom: the hosting control plane's Intercom app "The Machine" (its cloud/intercom.py), started on a
+hosted Machine's account page or dashboard, or on a paired self-hosted Machine's dashboard (fleet.py connect_start),
+the token then sealed for that Machine alone. Its config, with the token in a credential file:
     {"id": "intercom", "service": "intercom", "transport": "api", "boundary": "work:Acme",
      "credential": "intercom", "poll_seconds": 600}
 The credential file holds the token alone, or an INTERCOM_ACCESS_TOKEN= line (set "credential_variable").
@@ -37,14 +39,14 @@ KINDS = {'intercom.conversation': 'Intercom'}
 SETUP = {'label': 'Intercom', 'what': 'Customer conversations in your Intercom workspace.',
          'account': {'id': 'intercom', 'service': 'intercom', 'transport': 'api', 'boundary': 'work',
                      'credential': 'intercom', 'poll_seconds': 600},
-         'note': 'In Intercom\'s Developer Hub, open your app, then Authentication, and copy its access token.',
+         'note': 'Sign in with Intercom from Connections, + Add.',
+         # What Sign in with Intercom answers with (the app The Machine, hosted or on a paired self-hosted Machine)
          'secret': 'Intercom access token',
-         # On a hosted Machine its account page also offers Sign in with Intercom (the app The Machine), as well as pasting
          'account_page': 'source-intercom',
          # Always work, for the company the workspace names: connecting doesn't ask (connect() sets work:<workspace name>)
          'boundary': 'workspace',
          'hints': {'account_identity_mismatch': 'that token is for another Intercom workspace; add it as another account',
-                   'intercom:HTTP_401': 'Intercom turned the access token down; copy it again from your app in the Developer Hub'}}
+                   'intercom:HTTP_401': 'Intercom turned the sign-in down; sign in with Intercom again'}}
 VERSION = '2.11'
 # Intercom keeps each workspace in one region, with its own API and app address.
 REGIONS = {'us': ('https://api.intercom.io', 'https://app.intercom.com'),

@@ -4,7 +4,7 @@ area: connections
 summary: Mudanças em cartões, comentários e atividade em um quadro do Trello. Ela só lê.
 covers: connector:trello
 code: connectors/trello.py
-site: Connect, More sources, Remove
+site: Sign in with Trello, Connect, More sources, Remove
 ---
 ## O que ela lê
 
@@ -16,11 +16,9 @@ Nada no Trello. Ela só lê.
 
 ## Conecte
 
-1. Em trello.com/power-ups/admin, crie um Power-Up com qualquer nome.
-2. Abra a página da chave de API dele e copie a chave de API (não o secret).
-3. Clique no link Token ao lado, permita o acesso de leitura e copie o token.
-4. Em uma Machine hospedada: abra sua página de configuração em app.themachine.computer/setup, vá para **Mais fontes** e abra Trello. No seu próprio computador: **Conexões**, **+ Adicionar**, Trello, ou `assistant connect trello`.
-5. Informe o endereço do quadro, a chave de API e o token, e depois clique em **Conectar**.
+1. No painel: **Conexões**, **+ Adicionar**, Trello. Ou na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Trello. No seu próprio computador, pareie-o primeiro com sua conta.
+2. Clique em **Entrar com o Trello** e permita o acesso de leitura no Trello. The Machine é feita pela Salesflare.
+3. Escolha o quadro a seguir e clique em **Conectar**. Para outro quadro, adicione o Trello de novo.
 
 ## Remova
 
@@ -29,4 +27,4 @@ Nada no Trello. Ela só lê.
 
 ## Revogue no Trello
 
-Revogue o token nas configurações da sua conta do Trello, em Applications, ou exclua o Power-Up.
+Revogue a The Machine nas configurações da sua conta do Trello, em Applications.

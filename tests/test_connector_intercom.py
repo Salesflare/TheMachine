@@ -75,7 +75,7 @@ class IntercomTests(unittest.TestCase):
         self.assertEqual(a.source_kind('intercom.conversation'), 'Intercom')
         setup = intercom.SETUP
         self.assertEqual((setup['label'], setup['secret'], setup.get('ask')), ('Intercom', 'Intercom access token', None))
-        self.assertIn('Developer Hub', setup['note'])
+        self.assertIn('Sign in with Intercom', setup['note'])  # never a token from a developer console
         self.assertEqual(setup['note'].count('. '), 0)  # one line
         for text in (setup['what'], setup['note'], *setup['hints'].values()):
             self.assertNotIn('—', text)
