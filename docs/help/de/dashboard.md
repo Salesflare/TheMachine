@@ -24,7 +24,7 @@ Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirm
 
 ## Neue Versionen
 
-Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, während etwas eingetippt ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.
+Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, solange etwas Getipptes noch nicht gespeichert oder gesendet ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.
 
 ## Termine
 

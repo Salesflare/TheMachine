@@ -2127,6 +2127,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .cal-v-nb p{margin:0 0 8px}.cal-v-nb :is(ul,ol){margin:0 0 8px;padding-left:20px}.cal-v-nb>:last-child{margin-bottom:0}
 .cal-v-more{margin:6px 0 0;padding:0;min-height:0;border:0;background:none;color:var(--c-text-2);font-size:.9rem;text-decoration:underline}
 .cal-v-notes p.cal-v-mail{margin:0}
+.cal-v-notes .cal-v-retry{min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .cal-v-notes textarea{display:block;width:100%;box-sizing:border-box;min-height:180px;max-height:50dvh;resize:vertical;padding:10px 12px;background:var(--sunken);border:1px solid var(--border);border-radius:10px;color:var(--text);font:.92rem/1.5 var(--sans)}
 .cal-v-error{margin:6px 0 0;color:var(--danger,#e5484d);font-size:.9rem}.cal-v-error:empty{display:none}
 .cal-v-nact{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.cal-v-nact :is(button,.cal-v-file){display:inline-flex;align-items:center;min-height:36px;margin:0;padding:0 14px;border:0;border-radius:10px;background:var(--tile);color:var(--text);font-size:.92rem;font-weight:600;cursor:pointer}
@@ -5286,6 +5287,8 @@ const day=Math.floor(Date.now()/864e5);$('#copyright').textContent=`© ${new Dat
 $('#theme-toggle').onclick=()=>{chooseTheme(document.documentElement.dataset.theme==='light'?'dark':'light');showTheme()};showTheme();
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',showTheme);
 $('#send-cancel').onclick=()=>$('#send-dialog').close();
+// A closed send panel keeps nothing: the next one fills it again, and a sent or canceled draft never reads as typing
+$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').innerHTML='';$('#send-error').textContent=''});
 // The subject wraps as it grows (field-sizing, or its height here where that's missing) but stays one line of text:
 // Enter adds no line break and a pasted one becomes a space.
 const subjectFit=()=>{const x=$('#send-subject');if(CSS.supports?.('field-sizing','content')||!x.offsetParent)return;x.style.height='auto';x.style.height=x.scrollHeight+'px'};
@@ -6171,10 +6174,12 @@ for(const ev of ['pointerdown','pointermove','keydown','wheel','touchstart','inp
 // Doing something on the page (a click, a key, a scroll by hand), unlike a window that opens under the pointer, gets
 // the focus, or has the pointer pass over it
 for(const ev of ['pointerdown','keydown','wheel','touchstart','input'])addEventListener(ev,()=>{lastTouch=Date.now()},{capture:true,passive:true});
-// Typed and not saved yet: any text field (also in a folded card, another tab or a closed panel) that differs from what
-// the page drew there
+// Typed and not saved yet: a text field (also in a folded card or another tab) that differs from what the page drew
+// there. A closed panel never counts: what it still holds (a sent email's subject and body, a draft the page filled in)
+// is not typing, and an open panel holds the update back by itself.
 const TYPED='textarea,input:not([type]),input[type=text],input[type=search],input[type=email],input[type=url],input[type=tel],input[type=number]';
-const typedSomewhere=()=>[...document.querySelectorAll(TYPED)].some(t=>t.value&&t.value!==t.defaultValue)||[...document.querySelectorAll('[contenteditable=""],[contenteditable=true]')].some(t=>t.textContent.trim());
+const inClosedPanel=el=>!!el.closest('dialog:not([open])');
+const typedSomewhere=()=>[...document.querySelectorAll(TYPED)].some(t=>t.value&&t.value!==t.defaultValue&&!inClosedPanel(t))||[...document.querySelectorAll('[contenteditable=""],[contenteditable=true]')].some(t=>t.textContent.trim()&&!inClosedPanel(t));
 const pageInUse=()=>typedSomewhere()||!localCache.on&&outbox.items.length>0||!!document.querySelector('dialog[open]')||placeBusy();
 // Safe to load the new version now: nothing typed or open, and the page is hidden, idle for a few minutes, only just
 // opened (an older copy the app started with, before anything was done on it), or a window in the background (another
@@ -6664,9 +6669,20 @@ const CAL_FIELDS={
 // 2 uur 04 min), since the narrow ones read as meters there (30 m)
 function calRunTime(min){const d=/^en\b/i.test(DL)?'narrow':'short',f=(unit,v,o={})=>new Intl.NumberFormat(DL,{style:'unit',unit,unitDisplay:d,...o}).format(v),h=Math.floor(min/60);
  return h?f('hour',h)+' '+f('minute',min%60,{minimumIntegerDigits:2}):f('minute',min)}
-async function calNotesOpen(m){const me={m,data:null,editing:{notes:false,tr:false},open:false,failed:false};calNote=me;
- for(const f in CAL_FIELDS){$('#cal-v-'+f+'-text').value='';$('#cal-v-'+f+'-error').textContent=''}calNotesShow();
- try{me.data=await request('api/meeting-notes?event='+encodeURIComponent(m.id))}catch{me.failed=true}if(calNote===me){calNotesShow();calNotesFit();calNotesPoll()}}
+async function calNotesOpen(m){const me={m,data:null,editing:{notes:false,tr:false},open:false,failed:false,tries:0};calNote=me;
+ for(const f in CAL_FIELDS){$('#cal-v-'+f+'-text').value='';$('#cal-v-'+f+'-error').textContent=''}calNotesShow();calNotesLoad(me)}
+// A read that fails (The Machine restarting, the network gone for a moment) tries again by itself, 2, 4, 8 and 16 s later,
+// and at once when the window gets the focus or the network is back. Only then the line says it couldn't load, with Try again.
+const CAL_NOTES_RETRY=[2e3,4e3,8e3,16e3];let calNotesRetry=0;
+async function calNotesLoad(me){clearTimeout(calNotesRetry);me.loading=true;let d=null;try{d=await request('api/meeting-notes?event='+encodeURIComponent(me.m.id))}catch{}me.loading=false;
+ if(calNote!==me||me.data)return;if(d){me.data=d;me.failed=false;calNotesShow();calNotesFit();calNotesPoll();return}
+ const wait=CAL_NOTES_RETRY[me.tries++];if(wait==null||!$('#cal-view').open){me.failed=true;calNotesShow();return}
+ calNotesRetry=setTimeout(()=>{if(calNote===me&&$('#cal-view').open)calNotesLoad(me)},wait)}
+// Try again, the focus back after it gave up, or the network back: a fresh round of tries
+function calNotesAgain(){const n=calNote;if(!n||n.data||n.loading||!$('#cal-view').open)return;n.tries=0;n.failed=false;calNotesShow();calNotesLoad(n)}
+addEventListener('focus',()=>{if(calNote?.failed)calNotesAgain()});addEventListener('online',calNotesAgain);
+$('#cal-view').addEventListener('click',e=>{if(e.target.closest('[data-cal-notes-retry]'))calNotesAgain()});
+$('#cal-view').addEventListener('close',()=>{if(!$('#cal-view').open)clearTimeout(calNotesRetry)});  // a close event can come after it opened again
 // While The Machine writes the notes, the open dialog looks again every few seconds; closed, it stops (the writing goes on)
 const calWriting=d=>['queued','running','waiting'].includes(d?.writing?.status);
 let calNotesTimer=0;
@@ -6686,7 +6702,7 @@ function calNotesShow(){const n=calNote,d=n?.data,ready=!!d;
   for(const [k,api] of CAL_APPS){const x=d?.[api]?.[c.api],z=q(k),zb=q(k+'-body');app=app||x;if(added){after.after(z);after=z}else nact.before(z);
    z.hidden=!x||editing;zb.classList.remove('all','cut');zb.classList.toggle('plain',f==='tr');zb.innerHTML=x&&!editing?calNotesHtml(f,x.text):'';q(k+'-more').hidden=true;
    const zl=q(k+'-open'),url=x?.url||d?.[api]?.url;zl.hidden=!url;if(url)zl.href=url}
-  const none=q('none');none.hidden=editing||!!added||!!app||!(ready||n?.failed);none.textContent=t(n?.failed?c.failed:c.empty);
+  const none=q('none');none.hidden=editing||!!added||!!app||!(ready||n?.failed);none.textContent=t(n?.failed?c.failed:c.empty);if(n?.failed)none.insertAdjacentHTML('beforeend',` <button type="button" class="cal-v-retry" data-cal-notes-retry>${esc(t('Try again'))}</button>`);
   // Generate notes: a transcript and no notes at all (the owner's or the meeting app's). It runs on The Machine, so the
   // line says how it goes when the dialog opens again (meeting_writer.py)
   if(f==='notes'){const w=d?.writing,busy=calWriting(d),can=ready&&!added&&!app&&!editing&&!!(d.transcript||CAL_APPS.some(([,api])=>d[api]?.transcript));

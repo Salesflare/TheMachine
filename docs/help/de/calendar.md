@@ -37,6 +37,8 @@ Ein gebuchter Besprechungsraum steht beim Ort, nie als Person oder in deinem Gra
 
 Die Details eines Termins haben zwei Teile. **Notizen** ist die Zusammenfassung: Entscheidungen und Aufgaben. **Transkript** ist, was gesagt wurde, Wort für Wort. Es ist zuerst eingeklappt, mit seiner Länge; **Anzeigen** öffnet es.
 
+Wenn sie nicht laden (etwa während deine Machine neu startet), versucht es die Besprechung etwa eine halbe Minute lang selbst erneut, und noch einmal, wenn du zum Fenster zurückkommst. Danach steht es dort, mit **Erneut versuchen**.
+
 Jeder Teil hat sein eigenes **Notizen hinzufügen** oder **Transkript hinzufügen**, **Datei hochladen** für eine Markdown- oder Textdatei, **Bearbeiten** und **Entfernen** (zweimal tippen). Was in einem Teil steht, bleibt dort. Bei einem Termin, den du ändern kannst, öffnet **Notizen** unter seinem Formular sie.
 
 Ist [Zoom](zoom.md) oder [Google Meet](google-meet.md) verbunden, stehen seine Notizen in Notizen und sein Transkript in Transkript, markiert mit **Von Zoom** oder **Von Google Meet**. Sie ersetzen nie, was du hinzugefügt hast: Gibt es beides, siehst du beides.

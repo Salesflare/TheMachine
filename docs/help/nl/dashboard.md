@@ -24,7 +24,7 @@ Het voorste venster van de browser staat in het midden en de rest van het scherm
 
 ## Nieuwe versies
 
-Als er een nieuwe versie van het dashboard klaar is, herlaadt het nooit terwijl je het gebruikt. Bij openen of herladen laadt de app de nieuwste versie. Een open venster laadt die zodra het venster op de achtergrond staat, of na een paar minuten zonder invoer, en nooit terwijl er iets getypt is of een dialoogvenster open staat. **Update klaar**, bovenaan, laadt het meteen. Een herstart van je Machine maakt alleen opnieuw verbinding.
+Als er een nieuwe versie van het dashboard klaar is, herlaadt het nooit terwijl je het gebruikt. Bij openen of herladen laadt de app de nieuwste versie. Een open venster laadt die zodra het venster op de achtergrond staat, of na een paar minuten zonder invoer, en nooit terwijl er iets getypt is dat nog niet bewaard of verstuurd is, of een dialoogvenster open staat. **Update klaar**, bovenaan, laadt het meteen. Een herstart van je Machine maakt alleen opnieuw verbinding.
 
 ## Gebeurtenissen
 

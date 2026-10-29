@@ -37,6 +37,8 @@ A meeting room booked on a meeting shows under where, never as a person or in yo
 
 A meeting's details have two parts. **Notes** is the summary: decisions and action items. **Transcript** is what was said, word for word. It starts folded, with how long it runs; **Show** opens it.
 
+If they can't load (say, while your Machine restarts), the meeting tries again by itself for about half a minute, and again when you come back to the window. After that it says so, with **Try again**.
+
 Each has its own **Add notes** or **Add transcript**, **Upload file** for a Markdown or text file, **Edit** and **Remove** (tap twice). What goes in one stays there. On a meeting you can change, **Notes** under its form opens them.
 
 With [Zoom](zoom.md) or [Google Meet](google-meet.md) connected, its notes show in Notes and its transcript in Transcript, marked **From Zoom** or **From Google Meet**. They never replace what you added: when both are there, both show.
