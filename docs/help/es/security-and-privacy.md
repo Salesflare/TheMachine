@@ -15,6 +15,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - No se usa para entrenar IA: no tenemos IA propia. Tu proveedor trabaja con tu cuenta y según sus condiciones.
 - Aprendizajes para el equipo solo con tu OK: de vez en cuando pide enviar algunos consejos generales, nada personal. Consulta [Compartir aprendizajes](share-learnings.md).
 - Informes de errores, salvo que los desactives: cuando algo falla, el tipo de error y en qué parte del código. Nunca tus mensajes, nombres ni direcciones. Consulta [Informes de errores](error-reports.md).
+- Recuentos de uso en una Machine alojada: recuentos diarios de lo que hiciste (como tareas abiertas o correos enviados), nunca su contenido.
 - Llévatelo o elimínalo: exporta todo en un archivo, o elimina tu servidor y sus copias de seguridad con un botón.
 - Nuestro acceso queda registrado: cada vez que nuestro equipo entra en tu servidor alojado o lee su informe. Los propietarios y administradores del Fleet lo ven en **Actividad**. Consulta [Fleets](fleet.md).
 

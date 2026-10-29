@@ -15,6 +15,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Non usata per addestrare l'IA: non abbiamo un'IA nostra. Il tuo provider lavora con il tuo account e alle sue condizioni.
 - Apprendimenti per il team solo con il tuo OK: ogni tanto chiede di inviare qualche consiglio generale, niente di personale. Vedi [Condividi gli apprendimenti](share-learnings.md).
 - Segnalazioni di errore, a meno che tu non le disattivi: quando qualcosa si rompe, il tipo di errore e in che punto del codice. Mai i tuoi messaggi, nomi o indirizzi. Vedi [Segnalazioni di errore](error-reports.md).
+- Conteggi d’uso su una Machine in hosting: conteggi giornalieri di ciò che hai fatto (come attività aperte o email inviate), mai il loro contenuto.
 - Portala con te o eliminala: esporta tutto in un unico file, oppure elimina il server e i suoi backup con un pulsante.
 - Il nostro accesso viene registrato: ogni volta che il nostro team accede al tuo server ospitato o legge il suo report. I proprietari e gli admin della Fleet lo vedono in **Registro attività**. Vedi [Fleet](fleet.md).
 
