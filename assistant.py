@@ -99,6 +99,8 @@ import pacing
 import portable
 import service
 import dashboard_parts
+from calendar_app import CalendarApp
+from support_app import SupportApp
 
 ROOT = Path(__file__).resolve().parent
 # How reviews and Do it work; edits show as markers on the hit-rate chart.
@@ -13483,7 +13485,15 @@ def forget_in_notes(root, needles):
     return removed
 
 
-class App:
+# App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
+APP_MIXINS = (SupportApp, CalendarApp)
+
+
+class App(*APP_MIXINS):
+    # action name -> method, from the mixins' ACTIONS; App.action calls it as method(name, args, owner_dashboard). Who
+    # may call an action is still the reviewed sets above (OWNER_ACTIONS, DASHBOARD_ACTIONS, SUPPORT_ACTIONS, ...).
+    ACTION_HANDLERS = {name: method for mixin in APP_MIXINS for name, method in mixin.ACTIONS.items()}
+
     @functools.cached_property
     def task_pages(self):
         """Pages for tasks handed off by email (task_pages.py)."""
@@ -14397,6 +14407,8 @@ class App:
     def action(self, name, args, owner_dashboard=False):
         accounts = [a['id'] for a in self.config['accounts']]
         selected = args.get('account_ids', [])
+        if name in self.ACTION_HANDLERS:  # an action a domain mixin handles (APP_MIXINS)
+            return getattr(self, self.ACTION_HANDLERS[name])(name, args, owner_dashboard)
         if name in ('preparation_tool_intent','preparation_tool_result','preparation_history'):
             with self.store.connect() as db:
                 if name == 'preparation_tool_intent': return preparation_state.tool_intent(db,args,now())
@@ -14415,10 +14427,6 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner connects GBrain, on the dashboard (Connections)')
             return self.gbrain_action(name, args)
-        if name == 'calendar_write':  # the Calendar's New event and edit form: the owner's own tap, from the dashboard only
-            if not owner_dashboard:
-                raise ValueError('Calendar changes come from your tap in the dashboard')
-            return self.calendar_write(args)
         if name in AGENT_ACTIONS:  # Hand to Claude Code / Codex: the owner's own, from the dashboard only
             if not owner_dashboard:
                 raise ValueError('Hand off to Claude Code or Codex from the dashboard')
@@ -14873,12 +14881,6 @@ class App:
                 raise ValueError('Only the owner edits how they write, in Settings')
             self.store.save_voice(args.get('channel'), args.get('text'), 'owner')
             return {'voices': self.store.voices()}
-        if name == 'meeting_notes':
-            return self.meeting_notes(args, owner_dashboard)
-        if name == 'meeting_notes_write':  # Generate notes on a meeting in the Calendar (meeting_writer.py)
-            if not owner_dashboard:
-                raise ValueError('Only the owner asks for notes to be written, in the Calendar')
-            return self.meeting_write(args)
         if name == 'looks_handled':
             return self.store.looks_handled(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
         if name == 'handoff_on_it':  # the review: a message the owner sent or a call they joined shows they took a waiting handoff on
@@ -14889,10 +14891,6 @@ class App:
             if not getattr(self, 'fleet', None):
                 raise ValueError('This Machine is not on the Network')
             return self.fleet.fill_split(str(args.get('split_id') or ''), args.get('event_id'), args.get('parts') or {})
-        if name in SUPPORT_ACTIONS:
-            if not owner_dashboard:
-                raise ValueError('Help and bug reports come from the dashboard')
-            return self.support_action(name, args)
         if name in ('notify_set', 'notify_active', 'notify_preview'):  # Settings, Notifications (notify.py)
             if not owner_dashboard:
                 raise ValueError('Notifications are set in the dashboard')
@@ -19287,18 +19285,6 @@ class App:
                     break
                 self.stop.wait(1)
 
-    def bug_queue_worker(self):
-        """Report a bug: the reports the control plane couldn't take yet go out when they are due (bug_queue.py),
-        looked at every 30 seconds."""
-        self.bug_queue_wake = getattr(self, 'bug_queue_wake', None) or threading.Event()
-        while not self.stop.is_set():
-            try:
-                bug_queue.flush(self.config, self.bug_with_report)
-            except Exception as error:  # noqa: BLE001 - never stops the service
-                LOG.error('bug queue error=%s', type(error).__name__)
-            self.bug_queue_wake.wait(30)
-            self.bug_queue_wake.clear()
-
     def refresh_model_usage(self):
         reply = usage_status(self.config)
         if reply is None:
@@ -20177,23 +20163,6 @@ class App:
 
     BUG_SHOT_BYTES = 2 * 1024 * 1024
     BUG_TEXT = 4000
-    REPORT_BUDGET = 20  # seconds the support report may take; a part not ready by then goes without (support.report)
-
-    def bug_with_report(self, body):
-        """A kept report sent (bug_queue.flush): one whose owner ticked Include a support report gets it now, scrubbed
-        and built within REPORT_BUDGET. When the report can't be built, what the owner wrote still goes, with why."""
-        import onboarding
-        import support
-        body = dict(body)
-        if body.pop('diagnostics', False) and body.get('report') is None:
-            path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
-            try:
-                found = support.report(path, doctor=onboarding.doctor, budget=self.REPORT_BUDGET)
-                body['report'] = support.scrub_value({'parts': found['parts'], 'settings': found['settings']})
-            except Exception as error:  # noqa: BLE001 - the bug report goes whatever happens to the support report
-                LOG.warning('support report not built error=%s', type(error).__name__)
-                body['report'] = {'parts': {'report': [f'not built: {type(error).__name__}']}}
-        return self.fleet.bug_report(body)
 
     def support_action(self, name, args):
         """Help's question (help_chat.ask, on this Machine's own model, a one-shot turn without tools) and Report a
@@ -20297,16 +20266,6 @@ class App:
         if getattr(self, 'bug_queue_wake', None):
             self.bug_queue_wake.set()
         return {'sent': False, 'queued': True, 'at': item['next_at']}
-
-    def support_read(self, what):
-        """Support access on a paired self-hosted Machine (fleet.Fleet.support_round): the scrubbed support report's lines
-        (logs) or support.snapshot (settings), the same the owner's Report a bug shows, read-only."""
-        import onboarding
-        import support
-        path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
-        if what == 'logs':
-            return {'parts': support.report(path)['parts']}
-        return support.snapshot(path, doctor=onboarding.doctor)
 
     def account_view(self):
         """Settings, Account on a self-hosted Machine paired with the Network: its owner's account in short, from the
