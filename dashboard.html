@@ -10058,7 +10058,7 @@ var kbLandSeq=0;
 function kbLand(n=0,seq=++kbLandSeq,from=null){const a=document.activeElement,sec=[...document.querySelectorAll('main>section')].find(s=>!s.hidden);
  if(n&&(seq!==kbLandSeq||sec!==from))return;
  if(!sec||!kbKeyed()||!matchMedia('(pointer:fine)').matches||document.querySelector('dialog[open]')||chatId&&sec.id==='inbox')return;
- if(a&&a!==document.body&&!(a.closest?.('nav,.app-side')))return;
+ if(a&&a!==document.body&&(!a.closest?.('nav,.app-side')||a.matches?.('input,textarea,select,[contenteditable="true"]')))return;  // never out of a field being typed in, the sidebar's search too
  const xs=kbItems(),first=xs.find(x=>x.matches('article'))||xs[0];if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
  if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1,seq,sec),200);return}  // the list is still loading
  const shown=x=>x.getClientRects().length&&!x.disabled;
