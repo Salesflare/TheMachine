@@ -354,17 +354,23 @@ if args[:2] == ["pairing", "list"]:
     def test_phone_apps_that_repeat_a_source_are_skipped_only_when_asked(self):
         phone = {'id': 'phone', 'service': 'android'}
         config = {'accounts': [{'id': 'mail', 'service': 'gmail'}, {'id': 'chat', 'service': 'whatsapp'}, {'id': 'log', 'service': 'gateway'}]}
-        ui = FakeUI(yes=[True, False])
+        ui = FakeUI(answers=['2', '1'])  # 1. Keep both, 2. Skip
         onboarding.offer_phone_skip(config, phone, ui)
-        self.assertEqual(phone['exclude'], [{'packages': ['com.google.android.gm']}])  # WhatsApp kept: the owner said no
-        self.assertEqual(sum('Skip' in line for line in ui.out), 2)  # nothing to ask for the Gateway log
+        self.assertEqual(phone['exclude'], [{'packages': ['com.google.android.gm']}])  # WhatsApp kept: the owner said keep both
+        asked = [line for line in ui.out if 'notifications' in line]
+        self.assertEqual(len(asked), 2)  # nothing to ask for the Gateway log
+        self.assertIn('Your phone also sends WhatsApp notifications. Skip those now that WhatsApp is read here?', asked)
         config['accounts'].append(phone)
         slack = {'id': 'team', 'service': 'slack'}
-        onboarding.offer_phone_skip(config, slack, FakeUI(yes=[True]))
+        onboarding.offer_phone_skip(config, slack, FakeUI(answers=['2']))
         self.assertEqual(phone['exclude'][-1], {'packages': ['com.Slack']})
-        ui = FakeUI(yes=[True])
+        ui = FakeUI(answers=['2'])
         onboarding.offer_phone_skip(config, slack, ui)  # already skipped: not asked again
         self.assertEqual((ui.out, len(phone['exclude'])), ([], 2))
+        telegram = FakeUI()
+        onboarding.offer_phone_skip(config, {'id': 'tg', 'service': 'telegram'}, telegram)  # no answer: both kept
+        self.assertIn('Your phone also sends Telegram notifications. Skip those now that Telegram is read here?', telegram.out)
+        self.assertEqual(len(phone['exclude']), 2)
         onboarding.offer_phone_skip(config, {'id': 'more', 'service': 'whatsapp'}, onboarding.UI(False))
         self.assertEqual(len(phone['exclude']), 2)  # unattended setup never drops phone notifications
 

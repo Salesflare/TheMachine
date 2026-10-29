@@ -419,7 +419,7 @@ async def login(client, store, seal, phone=None, ask=read_answer, wait=QR_WAIT):
     await client.disconnect()
 
 
-async def follow(client, mirror, refresh=REFRESH_CHATS):
+async def follow(client, mirror, refresh=REFRESH_CHATS, days=ts.BACKFILL_DAYS):
     """Keeps the store in step until Telegram ends the session or a long flood wait stops it."""
     from telethon import events
     from telethon.tl.functions.account import UpdateStatusRequest
@@ -442,7 +442,7 @@ async def follow(client, mirror, refresh=REFRESH_CHATS):
     client.add_event_handler(deleted, events.MessageDeleted())
     seen = await mirror.refresh_chats()
     if not ts.get_state(db).get('backfilled_at'):
-        await mirror.backfill(seen)
+        await mirror.backfill(seen, days)
     ts.set_state(db, error=None, flood_until=None, last_ok=ts.now())
     refreshed, beat = time.monotonic(), time.monotonic()
     while client.is_connected():
@@ -522,7 +522,7 @@ def run(args):
     client = client_for(args, session, receive=True)
     mirror = Mirror(client, store, seal, include)
     try:
-        return asyncio.run(follow(client, mirror))
+        return asyncio.run(follow(client, mirror, days=max(1, min(int(args.days or ts.BACKFILL_DAYS), 30))))
     except Exception as error:  # noqa: BLE001 - every stop leaves its reason in the store for the app
         reason, seconds = stop_reason(error), flood_seconds(error)
         if reason:
@@ -544,6 +544,7 @@ def main(argv=None):
     parser.add_argument('--lib', required=True, help='where the pinned libraries are unpacked (telegram_release.install)')
     parser.add_argument('--database', help="The Machine's database, whose message key seals the store")
     parser.add_argument('--include', help='chat IDs to read although muted, archived or big, comma separated')
+    parser.add_argument('--days', type=int, help='how many days back the first start reads (bootstrap_days, 1 to 30)')
     parser.add_argument('command', choices=('login', 'follow', 'logout', 'version'))
     parser.add_argument('--phone')
     args = parser.parse_args(argv)
