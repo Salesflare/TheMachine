@@ -1,7 +1,7 @@
 ---
 title: Live sprechen
 area: cards
-summary: Ein gesprochenes Gespräch mit The Machine über eine Aufgabe, mit der Stimme von OpenAI. Sie arbeitet im Chat der Aufgabe, sendet aber nie etwas.
+summary: Ein gesprochenes Gespräch mit The Machine über eine Aufgabe, mit der Stimme von OpenAI. Sie arbeitet im Chat der Aufgabe und sendet einen Entwurf erst, wenn du Ja dazu sagst.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -15,11 +15,18 @@ Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren
 
 Die Leiste hat **Stummschalten** und **Ende**. Ein Gespräch dauert bis zu 10 Minuten. Eine Minute vor dem Ende zeigt der Timer, wie viel Zeit übrig ist. Starte es neu, um weiterzumachen.
 
-## Aus einem Gespräch wird nichts gesendet
+## Bitte um Dinge und sende mit einem Ja
 
-Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“ oder „stell das bis Montag zurück“, gibt The Machine es an den Chat der Aufgabe weiter, als hättest du es getippt. Der Chat folgt seinen üblichen Regeln: Er kann den Entwurf ändern oder die Aufgabe zurückstellen, aber ein Entwurf wartet auf dein **Freigeben**.
+Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“ oder „stell das bis Montag zurück“, gibt The Machine es an den Chat der Aufgabe weiter, als hättest du es getippt. Der Chat folgt seinen üblichen Regeln: Er kann den Entwurf ändern oder die Aufgabe zurückstellen.
 
-„Ja“ oder „schick es“ zu sagen bewirkt nichts. Nur dein Tippen auf **Freigeben** sendet.
+Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Lotte senden?“. Auf einem Handy liest sie vorher den ganzen Entwurf vor. Antworte mit einem klaren Ja, in jeder Sprache, und genau dieser Entwurf geht raus.
+
+- Sie fragt nur nach dem Entwurf, der im Chat steht. Ändert er sich nach der Frage, fragt sie erneut.
+- Ist deine Antwort kein klares Ja, geht nichts raus und sie fragt erneut. „Nein“ sendet nichts.
+- Ein Ja sendet immer genau einen Entwurf. Für mehrere nimm die Follow-up-Prüfung.
+- Der Chat zeigt ein paar Sekunden lang **Per Sprache freigegeben** mit **Rückgängig**, bevor er rausgeht.
+
+Du kannst auch jederzeit auf **Freigeben** tippen.
 
 ## Ein Protokoll im Chat
 

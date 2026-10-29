@@ -1,7 +1,7 @@
 ---
 title: Parler en direct
 area: cards
-summary: Une conversation à voix haute avec The Machine à propos d’une tâche, avec la voix d’OpenAI. Elle travaille dans le chat de la tâche, mais n’envoie jamais rien.
+summary: Une conversation à voix haute avec The Machine à propos d’une tâche, avec la voix d’OpenAI. Elle travaille dans le chat de la tâche et n’envoie un brouillon qu’après votre oui.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -15,11 +15,18 @@ Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat
 
 La barre a **Couper le micro** et **Fin**. Une conversation dure jusqu’à 10 minutes. Une minute avant la fin, le minuteur montre le temps restant. Relancez-la pour continuer.
 
-## Rien n’est envoyé depuis une conversation
+## Demandez, et envoyez d’un oui
 
-Quand vous demandez quelque chose, comme « écris une réponse pour dire que jeudi me va » ou « mets ça en attente jusqu’à lundi », The Machine le transmet au chat de la tâche, comme si vous l’aviez tapé. Le chat suit ses règles habituelles : il peut modifier le brouillon ou mettre la tâche en attente, mais un brouillon attend votre **Approuver**.
+Quand vous demandez quelque chose, comme « écris une réponse pour dire que jeudi me va » ou « mets ça en attente jusqu’à lundi », The Machine le transmet au chat de la tâche, comme si vous l’aviez tapé. Le chat suit ses règles habituelles : il peut modifier le brouillon ou mettre la tâche en attente.
 
-Dire « oui » ou « envoie-le » ne fait rien. Seul votre appui sur **Approuver** envoie.
+Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Lotte par e-mail ? ». Sur un téléphone, elle lit d’abord tout le brouillon à voix haute. Répondez par un oui clair, dans n’importe quelle langue, et ce brouillon part.
+
+- Elle ne demande que pour le brouillon affiché dans le chat. S’il change après la question, elle redemande.
+- Si votre réponse n’est pas un oui clair, rien ne part et elle redemande. « Non » n’envoie rien.
+- Un oui envoie toujours un seul brouillon. Pour en envoyer plusieurs, utilisez la revue des relances.
+- Le chat affiche **Approuvé à la voix** avec **Annuler** pendant quelques secondes avant l’envoi.
+
+Vous pouvez toujours appuyer sur **Approuver** à la place.
 
 ## Une trace dans le chat
 

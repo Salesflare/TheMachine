@@ -61,7 +61,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 - Carries out owner-requested work, with useful task-specific Send, Submit or Merge actions where appropriate.
 - Shows health, review history and the same tasks on the dashboard and Telegram.
 - Hands a to-do to [Claude Code or Codex](docs/agents.md) when you ask; the job shows in their apps and never sends anything itself.
-- Lets you talk instead of type: [voice input](docs/voice.md) writes what you say into the box, turned into text by OpenAI or on your own Machine, and never sends it; with OpenAI set up, [talk live](docs/talk-live.md) with The Machine about a to-do.
+- Lets you talk instead of type: [voice input](docs/voice.md) writes what you say into the box, turned into text by OpenAI or on your own Machine, and never sends it; with OpenAI set up, [talk live](docs/talk-live.md) with The Machine about a to-do, and send its draft with a spoken yes after it asks.
 - Follows your [skills](docs/skills.md): plain OpenClaw skills you write, approve or get from your Fleet or a friend; instructions only, never more permissions.
 
 ## The Machine and OpenClaw

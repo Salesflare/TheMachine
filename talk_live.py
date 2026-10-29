@@ -4,13 +4,21 @@ The owner's OpenAI sign-in stays in OpenClaw. The Gateway makes a short-lived, s
 conversation (talk-live-run.mjs). The service keeps that session's secret and hands the browser's WebRTC offer on, so
 neither the key nor the secret reaches the browser. Audio then goes directly between the browser and OpenAI.
 
-The dashboard gives the voice model its own tools (TOOLS): two that read (this to-do, and finding other to-dos), and
-`ask_chat`, which hands a request to the to-do's chat as if the owner had typed it, so it follows the chat's rules: it
-can change the draft, snooze or mark done, but never sends. A draft waits for the owner's Approve on screen, as always.
-A spoken "yes" is never an approval.
+The dashboard gives the voice model its own tools (TOOLS): two that read (this to-do, and finding other to-dos),
+`ask_chat`, which hands a request to the to-do's chat as if the owner had typed it, so it follows the chat's rules (it
+can change the draft, snooze or mark done, never send), and two for approving a send by voice.
+
+A spoken yes approves exactly one draft, and only when the owner has seen or heard it: the draft is on screen in this
+to-do's chat (on a phone or with the screen off, the voice reads it out in full first), the voice has just asked a
+confirm question naming who it goes to and how (`ask_to_send`), and the owner's next utterance clearly means yes. The
+Machine judges that answer itself (judge_answer: a model turn with a strict schema; anything else counts as unclear),
+from its own record of what was said, never from the voice's word. If the draft changed after the question, it asks
+again. The yes goes the normal confirm_action way with source 'voice' and waits UNDO_SECONDS, so the chat can show
+"Approved by voice" with Undo; pacing and the outbox's checks apply as for a tap. "Send without asking" is not touched.
 
 What both sides say is kept as the to-do's chat (lines), so there is a record. A conversation ends after LIMIT_SECONDS.
 """
+import hashlib
 import json
 import re
 import secrets
@@ -26,6 +34,11 @@ GRACE_SECONDS = 30           # lines and tool calls that arrive just after the e
 LINE_CHARS = 4000
 ROLES = ('user', 'assistant')
 SESSION_PREFIX = 'agent:main:assistant-talk-'
+UNDO_SECONDS = 10            # a send approved by voice waits this long, with Undo in the chat
+ASK_SECONDS = 180            # a confirm question older than this needs asking again
+SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
+CHANNELS = {'email': 'by email', 'linkedin': 'on LinkedIn', 'slack': 'on Slack', 'x': 'on X', 'whatsapp': 'on WhatsApp',
+            'telegram': 'on Telegram', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc'}
 TOOLS = [
     {'type': 'function', 'name': 'todo_details',
      'description': 'Read the to-do this conversation is about: its title, the messages in it and the current draft.',
@@ -40,10 +53,34 @@ TOOLS = [
                      'Anything that goes to someone waits for the owner’s Approve on screen, and a spoken yes is not one.'),
      'parameters': {'type': 'object', 'properties': {'request': {'type': 'string', 'description': 'The request, in the owner’s words and language.'}},
                     'required': ['request'], 'additionalProperties': False}},
+    {'type': 'function', 'name': 'ask_to_send',
+     'description': ('When the owner wants to send the draft that is on screen. Returns the confirm question for that one '
+                     'draft. If read_aloud is true, read the draft out in full first. Then ask the question, in the owner’s '
+                     'language, and stop to hear their answer.'),
+     'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
+    {'type': 'function', 'name': 'send_answer',
+     'description': ('Call right after the owner answers your confirm question from ask_to_send. The Machine judges their '
+                     'answer itself and says what happened; tell the owner that, and never say something was sent otherwise.'),
+     'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
 ]
-# What `ask_chat` answers the voice (in English, for the model; the owner never sees it)
+# What the tools answer the voice (in English, for the model; the owner never sees these)
 ASK_NOTE = ('The chat is working on it; its answer and any draft show in the chat. Nothing goes to anyone until the owner '
-            'taps Approve on a draft they have seen. A spoken yes does nothing.')
+            'approves a draft they have seen: a tap on Approve, or a clear yes to your confirm question (ask_to_send).')
+SAY = {
+    'ask': 'Ask exactly this, in the owner’s language, then stop and listen: ',
+    'read': 'First read the draft below out in full, word for word. ',
+    'queued': ('Approved. It goes out in %d seconds unless the owner taps Undo in the chat. Say it’s on its way.' % UNDO_SECONDS),
+    'no': 'Not sent. Say so, and ask what they’d like instead.',
+    'unclear': 'That wasn’t a clear yes, so nothing was sent. Call ask_to_send again and ask once more.',
+    'changed': 'The draft changed after you asked, so nothing was sent. Call ask_to_send again to ask about the new draft.',
+    'not_asked': 'No confirm question is open, so nothing was sent. Call ask_to_send first and ask its question.',
+    'no_answer': 'No answer heard yet, so nothing was sent. Wait for the owner to answer.',
+}
+JUDGE = ('Someone was just asked aloud: "{question}"\n'
+         'Their spoken answer, as transcribed: "{answer}"\n'
+         'Does the answer clearly mean yes, send it now? Judge the meaning, in any language. A hesitant, conditional or '
+         'partial answer, a question, a change request, or anything unrelated is "unclear". A refusal or "wait" is "no".\n'
+         'Reply with only this JSON and nothing else: {{"approve": "yes"}} or {{"approve": "no"}} or {{"approve": "unclear"}}')
 LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese'}
 
 
@@ -70,14 +107,43 @@ def instructions(title, language, now_text):
         'You are The Machine, a personal assistant, talking live with your owner about one of their to-dos: "%s".' % title,
         'Keep it short and spoken: a sentence or two at a time. Speak %s unless the owner speaks another language.' % lang,
         'Call todo_details before you answer anything about this to-do, and find_todos to look up others.',
-        'You can’t send, change, approve or delete anything, and nothing you say goes to anyone else.',
+        'You can’t change or delete anything yourself, and nothing you say goes to anyone else.',
         'When the owner wants something done in this to-do (a reply drafted or changed, snoozed, marked done), call ask_chat '
-        'with their request, and say the chat is on it; call todo_details a little later to see what it did. Nothing is ever sent '
-        'from this conversation: a draft waits for the owner to tap Approve on screen. If they say yes, okay or send it, tell '
-        'them to tap Approve; never treat words as approval.',
+        'with their request, and say the chat is on it; call todo_details a little later to see what it did.',
+        'To send: only when the owner asks to send the draft on screen, call ask_to_send and ask its question, reading the '
+        'draft out first when it says so. After their answer, call send_answer and say what it returns. One draft per '
+        'question; never send several at once, and never say something was sent unless send_answer says so.',
         'If something isn’t in the to-do, say you don’t know rather than guess.',
         'It is now %s.' % now_text,
     ])
+
+
+def digest(action):
+    """What a confirm question was about: who, how and what. Any change after the question means asking again."""
+    keep = {k: action.get(k) for k in ('kind', 'to', 'cc', 'bcc', 'from', 'subject', 'body', 'message', 'thread_id', 'channel')}
+    return hashlib.sha256(json.dumps(keep, sort_keys=True, default=str).encode()).hexdigest()
+
+
+def question(action, name):
+    """The confirm question for one draft, naming who it goes to and how."""
+    what = 'reply' if action.get('reply') or str(action.get('subject') or '').lower().startswith('re:') else 'message'
+    if action.get('kind') == 'doc_reply':
+        return 'Post this reply as a comment in the doc?'
+    return 'Send this %s to %s %s?' % (what, name, CHANNELS.get(action.get('kind'), ''))
+
+
+def judge_answer(answer, asked, run):
+    """'yes', 'no' or 'unclear' for the owner's spoken answer to a confirm question: a model turn (run(prompt) -> text)
+    that must answer with exactly one of three JSON objects. Anything else, or no answer, is 'unclear'."""
+    try:
+        out = str(run(JUDGE.format(question=asked.replace('"', "'"), answer=str(answer).replace('"', "'"))) or '')
+        found = re.fullmatch(r'\s*(?:```(?:json)?\s*)?(\{[^{}]*\})\s*(?:```)?\s*', out)
+        data = json.loads(found.group(1)) if found else None
+    except Exception:  # the model could not be reached: not a yes
+        return 'unclear'
+    if isinstance(data, dict) and set(data) == {'approve'} and data['approve'] in ('yes', 'no', 'unclear'):
+        return data['approve']
+    return 'unclear'
 
 
 class Talk:
@@ -177,6 +243,44 @@ class Talk:
             raise ValueError('Nothing to keep')
         db.execute('INSERT INTO talk_lines(suggestion_id,talk_id,role,text,at) VALUES(?,?,?,?,?)', (found['suggestion_id'], talk_id, role, text, at))
         return {'ok': True}
+
+    def ask(self, talk_id, suggestion_id, revision, action, name, at):
+        """The voice is about to ask to send this draft: the question, kept until the owner's next answer."""
+        found = self.get(talk_id, suggestion_id)
+        asked = question(action, name)
+        with self.lock:
+            found['confirm'] = {'revision': revision, 'digest': digest(action), 'at': at, 'question': asked, 'name': name.split(' and ')[0]}
+        return asked
+
+    def answer(self, db, talk_id, at, current, judge):
+        """The owner's answer to the open confirm question, from what this conversation recorded (talk_lines): the
+        voice's question, then the owner's next utterance. current(revision) is that draft as it is now, or None.
+        Returns (status, confirm): 'yes' with the question it approves, or why not."""
+        found = self.get(talk_id)
+        with self.lock:
+            c = found.get('confirm')
+        if not c:
+            return 'not_asked', None
+        if at - c['at'] > ASK_SECONDS * 1000:
+            found.pop('confirm', None)
+            return 'unclear', None
+        said = db.execute('SELECT role,text FROM talk_lines WHERE talk_id=? AND at>=? ORDER BY at,id', (talk_id, c['at'])).fetchall()
+        spoke = next((n for n, r in enumerate(said) if r['role'] == 'assistant'), None)
+        if spoke is None:
+            return 'not_asked', None   # the voice hasn't asked yet: the question stays open
+        first = next((n for n in range(spoke, len(said)) if said[n]['role'] == 'user'), None)
+        voice = ' '.join(r['text'] for r in said[spoke:first] if r['role'] == 'assistant')
+        if not voice:
+            return 'not_asked', None   # the voice hasn't asked yet: the question stays open
+        if first is None:
+            return 'no_answer', None
+        found.pop('confirm', None)     # one answer per question, whatever it was
+        if c['name'] and '@' not in c['name'] and c['name'] != 'them' and c['name'].lower() not in voice.lower():
+            return 'unclear', None     # the question it spoke didn't say who it goes to
+        now = current(c['revision'])
+        if not now or digest(now) != c['digest']:
+            return 'changed', None
+        return judge(said[first]['text'], c['question']), c
 
     def end(self, talk_id, env):
         with self.lock:

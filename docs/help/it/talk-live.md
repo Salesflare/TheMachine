@@ -1,7 +1,7 @@
 ---
 title: Parla dal vivo
 area: cards
-summary: Una conversazione a voce con The Machine su un’attività, con la voce di OpenAI. Lavora nella chat dell’attività, ma non invia mai niente.
+summary: Una conversazione a voce con The Machine su un’attività, con la voce di OpenAI. Lavora nella chat dell’attività e invia una bozza solo dopo il tuo sì.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -15,11 +15,18 @@ Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. P
 
 La barra ha **Silenzia** e **Fine**. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
 
-## Da una conversazione non parte niente
+## Chiedi le cose, e invia con un sì
 
-Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" o "posticipa questa a lunedì", The Machine la passa alla chat dell’attività, come se l’avessi scritta tu. La chat segue le solite regole: può cambiare la bozza o posticipare l’attività, ma una bozza aspetta il tuo **Approva**.
+Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" o "posticipa questa a lunedì", The Machine la passa alla chat dell’attività, come se l’avessi scritta tu. La chat segue le solite regole: può cambiare la bozza o posticipare l’attività.
 
-Dire "sì" o "invialo" non fa niente. Invia solo il tuo tocco su **Approva**.
+Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Lotte per email?". Su un telefono, prima legge ad alta voce tutta la bozza. Rispondi con un sì chiaro, in qualsiasi lingua, e quella bozza parte.
+
+- Chiede solo per la bozza mostrata nella chat. Se cambia dopo la domanda, chiede di nuovo.
+- Se la risposta non è un sì chiaro, non parte niente e chiede di nuovo. "No" non invia niente.
+- Un sì invia sempre una sola bozza. Per inviarne diverse, usa la revisione dei follow-up.
+- La chat mostra **Approvato a voce** con **Annulla** per qualche secondo prima dell’invio.
+
+Puoi sempre toccare **Approva** invece.
 
 ## Una traccia nella chat
 

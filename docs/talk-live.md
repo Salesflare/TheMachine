@@ -1,7 +1,8 @@
 # Talk live
 
 A spoken conversation with The Machine in a to-do's chat, with OpenAI's Realtime voice. It can read the to-do and
-look up other to-dos, and it can hand a request to the to-do's chat, which follows its usual rules: nothing is sent from a conversation. The help
+look up other to-dos, hand a request to the to-do's chat (which follows its usual rules), and send the draft on screen
+after a confirm question and a clear yes. The help
 article is [docs/help/talk-live.md](help/talk-live.md); the code is `talk_live.py`, `talk-live-run.mjs` and the
 `talk*` functions in `dashboard.html`.
 
@@ -23,7 +24,8 @@ OpenAI's server-side turn detection lets the owner interrupt: the voice stops an
 
 The model is OpenAI's GA `gpt-realtime-2.1`, not GPT-Live (`gpt-live-1`, `gpt-live-1-codex`). With GPT-Live the Gateway
 owns the conversation's tools and its own agent, and OpenClaw's voice gate lets a spoken "yes" confirm a high-impact
-action. Here the dashboard sets its own tools instead, and a spoken "yes" never counts.
+action as the agent sees fit. Here the dashboard sets its own tools instead, and a spoken yes counts only under the rules in
+[Sending by voice](#sending-by-voice).
 
 ## How a conversation runs
 
@@ -50,11 +52,40 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 - `find_todos`: open to-dos whose title has the words (read only).
 - `ask_chat`: handled in the browser (`talkAsk`). The request goes to the to-do's chat the way a typed message does
   (`decideOrWait`, a decision `other`, so it can also wait offline), and the chat shows it. The chat's own rules hold: it
-  can change the draft, snooze or mark the to-do done, and a draft waits for **Approve** on screen. The voice is told
-  that a spoken yes does nothing, and to tell the owner to tap Approve.
+  can change the draft, snooze or mark the to-do done, never send.
+- `ask_to_send` and `send_answer`: sending by voice, below.
+
+## Sending by voice
+
+The rule is the same as for a tap: only what the owner has seen or heard, and approved.
+
+1. **The question.** The owner asks to send. `ask_to_send` (browser, `talkAskSend`) works only for the current draft
+   shown in this to-do's chat (`.chat-draft.current`, not with the send sheet open) and scrolls it into view. It posts
+   that draft's revision as `talk_ask_send`, with `read_aloud` on a phone or with the page hidden. The service checks
+   the draft is ready, a kind that goes to people (`talk_live.SEND_KINDS`) and with its recipients set (no
+   `to_options`), and keeps the question in memory: the revision, a digest of who, how and what
+   (`talk_live.digest`), and the time. The voice gets the question naming who and how ("Send this reply to Lotte by
+   email?"), to ask in the owner's language, after reading the draft out in full when `read_aloud` is set.
+2. **The answer.** After the owner answers, the voice calls `send_answer`. The browser checks the same draft is still on
+   screen, waits until the owner's words are kept (`talk_line`), then posts `talk_send`. The service reads its own
+   record (`talk_lines` since the question): the voice's line that asked it (it must name the recipient), then the
+   owner's next utterance. `talk_live.judge_answer` asks the model (`openclaw infer model run`, the background model)
+   whether that answer clearly means yes, in any language, and accepts only one of three exact JSON answers; anything
+   else, or no model, is `unclear`. The question is used up by any answer.
+3. **The send.** A yes for an unchanged draft goes through `confirm_action` with source `voice` and approval
+   `voice:<id>`, held `UNDO_SECONDS` (10) through the job's `retry_at`, so pacing and the outbox's checks before sending
+   apply as for a tap. The chat shows **Approved by voice** with **Undo** while it waits (`talk_undo`,
+   `Store.undo_voice_send`, which cancels the job). Otherwise the voice is told why nothing went: `no`, `unclear` (ask
+   again), `changed` (the draft changed after the question: ask again), `not_asked` or `no_answer`.
+
+One yes sends one draft: there is no "send all" by voice here. "Send without asking" settings are not touched.
+`confirm_action` from the dashboard still only takes the owner's controls (an approval ID of their own); `voice:` comes
+only from `talk_send`.
 
 ## Tests
 
 `tests/test_talk_live.py` (the Gateway helper stubbed: status, start, a single offer, the limit, the transcript in the
-chat, the tools, owner only, the secret never returned) and `tests/test_talk_live_dashboard.mjs` (a fake
-`getUserMedia`, `RTCPeerConnection` and data channel; screenshots at 390x844 and 1440x900, light and dark).
+chat, the tools, owner only, the secret never returned; by voice: a yes after the question sends one draft, with Undo;
+a yes without a question, an unclear answer, a no, a changed draft and a question that doesn't name who all send
+nothing; the judge accepts only exact JSON) and `tests/test_talk_live_dashboard.mjs` (a fake
+`getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).

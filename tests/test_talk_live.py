@@ -1,5 +1,5 @@
 """Talk live (talk_live.py): the session the Gateway makes, the offer handed on once, the limit, the transcript in the
-to-do's chat and the read-only tools. OpenAI and the Gateway never run here: talk-live-run.mjs is stubbed."""
+to-do's chat, the read-only tools, and approving one draft by voice (a confirm question, then a clear yes). OpenAI and the Gateway never run here: talk-live-run.mjs is stubbed."""
 import importlib.util
 import json
 import subprocess
@@ -141,18 +141,37 @@ class Sessions(unittest.TestCase):
 
 
 class Tools(unittest.TestCase):
-    def test_only_reading_tools_and_the_chat(self):
+    def test_reading_tools_the_chat_and_a_confirmed_send(self):
         names = [tool['name'] for tool in t.TOOLS]
-        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat'])
+        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer'])
         self.assertIn('never sends', [tool for tool in t.TOOLS if tool['name'] == 'ask_chat'][0]['description'])
-        self.assertIn('A spoken yes does nothing', t.ASK_NOTE)
+        self.assertIn('a clear yes to your confirm question', t.ASK_NOTE)
 
-    def test_the_instructions_never_take_a_spoken_yes(self):
+    def test_the_instructions_send_only_after_a_question(self):
         text = t.instructions('Reply to Dana', 'nl', 'Tuesday 28 October 2026, 10:00')
         self.assertIn('"Reply to Dana"', text)
         self.assertIn('Speak Dutch', text)
-        self.assertIn('never treat words as approval', text)
-        self.assertIn('can’t send, change, approve or delete', text)
+        self.assertIn('call ask_to_send and ask its question', text)
+        self.assertIn('never say something was sent unless send_answer says so', text)
+
+    def test_the_question_names_who_and_how(self):
+        self.assertEqual(t.question({'kind': 'email', 'subject': 'Re: Offsite'}, 'Dana'), 'Send this reply to Dana by email?')
+        self.assertEqual(t.question({'kind': 'slack'}, 'Robin'), 'Send this message to Robin on Slack?')
+        self.assertEqual(t.question({'kind': 'whatsapp', 'reply': True}, 'Sam'), 'Send this reply to Sam on WhatsApp?')
+
+    def test_only_a_clear_yes_from_the_model_counts(self):
+        judge = lambda out: t.judge_answer('ja, doe maar', 'Send this reply to Dana by email?', lambda prompt: out)
+        self.assertEqual(judge('{"approve": "yes"}'), 'yes')
+        self.assertEqual(judge('```json\n{"approve":"no"}\n```'), 'no')
+        for out in ('yes', '{"approve": "YES"}', '{"approve": "yes", "why": "ok"}', '{"approve": true}', '', 'Sure! {"approve": "yes"}'):
+            self.assertEqual(judge(out), 'unclear', out)
+        def down(prompt):
+            raise OSError('no model')
+        self.assertEqual(t.judge_answer('yes', 'Send it?', down), 'unclear')
+        seen = []
+        t.judge_answer('Oui, envoie-le', 'Send this reply to Dana by email?', lambda prompt: seen.append(prompt) or '{"approve":"yes"}')
+        self.assertIn('Oui, envoie-le', seen[0])
+        self.assertIn('in any language', seen[0])
 
 
 TOKEN = 'test-token'
@@ -183,6 +202,155 @@ class Api(unittest.TestCase):
     def act(self, name, args):
         return self.app.action(name, args, owner_dashboard=True)
 
+    DRAFT = {'kind': 'email', 'label': 'Reply to Dana', 'to': ['dana@example.com'], 'to_name': 'Dana Reyes', 'from': 'me@example.com',
+             'subject': 'Re: Offsite', 'body': 'Hi Dana, Thursday works. See you then.', 'account_id': 'mail', 'revision': 'r1'}
+
+    def ready_draft(self, **change):
+        draft = {**self.DRAFT, **change}
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), SID))
+        return draft
+
+    def asked(self, answer=None, judged='{"approve": "yes"}', spoken='Send this reply to Dana by email?'):
+        """A conversation where the voice asked to send the draft on screen, and the owner answered."""
+        self.ready_draft()
+        self.app.talk_judge = lambda prompt: self.judged.append(prompt) or judged
+        self.judged = []
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': False})
+        if spoken:
+            self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': spoken})
+        if answer:
+            self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': answer})
+        return talk_id, asked
+
+    def jobs(self):
+        with self.store.connect() as db:
+            return [dict(r) for r in db.execute('SELECT status,source,approval_id,retry_at,revision FROM action_jobs')]
+
+    def test_yes_after_the_question_sends_that_one_draft(self):
+        talk_id, asked = self.asked('Ja, verstuur maar.')
+        self.assertEqual(asked['question'], 'Send this reply to Dana by email?')
+        self.assertEqual(asked['draft']['to'], 'Dana')
+        self.assertFalse(asked['read_aloud'])
+        self.assertTrue(asked['say'].endswith('Send this reply to Dana by email?'))
+        sent = self.act('talk_send', {'id': talk_id})
+        self.assertEqual(sent['status'], 'queued')
+        self.assertIn('Ja, verstuur maar.', self.judged[0])   # the Machine judged the owner's own words
+        jobs = self.jobs()
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual((jobs[0]['status'], jobs[0]['source'], jobs[0]['revision'], jobs[0]['approval_id']), ('queued', 'voice', 'r1', sent['approval_id']))
+        self.assertGreater(jobs[0]['retry_at'], a.now())       # held for Undo: the outbox doesn't take it yet
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT choice,source FROM decisions").fetchall()[0][:], ('send', 'voice'))
+        # One yes, one draft: the question is used up
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')
+        self.assertEqual(len(self.jobs()), 1)
+
+    def test_the_chat_shows_approved_by_voice_with_undo(self):
+        talk_id, _ = self.asked('Yes, send it.')
+        approval = self.act('talk_send', {'id': talk_id})['approval_id']
+        line = [i for i in self.app.card_chat(SID)['items'] if i.get('text') == 'Approved by voice']
+        self.assertEqual(len(line), 1)
+        self.assertEqual(line[0]['undo_voice'], approval)
+        self.assertTrue(line[0]['mine'])
+        self.assertEqual(self.act('talk_undo', {'suggestion_id': SID, 'approval_id': approval}), {'status': 'cancelled'})
+        self.assertEqual(self.jobs()[0]['status'], 'cancelled')
+        with self.assertRaisesRegex(ValueError, 'Nothing to undo'):
+            self.act('talk_undo', {'suggestion_id': SID, 'approval_id': 'voice:other'})
+        # A new yes for the same draft after Undo waits again
+        self.act('talk_end', {'id': talk_id})
+        talk_id, _ = self.asked('Yes, now send it.')
+        again = self.act('talk_send', {'id': talk_id})
+        self.assertEqual(again['status'], 'queued')
+        job = self.jobs()[0]
+        self.assertEqual((job['status'], job['approval_id']), ('queued', again['approval_id']))
+        self.assertGreater(job['retry_at'], a.now())
+
+    def test_undo_is_too_late_once_the_wait_is_over(self):
+        talk_id, _ = self.asked('Yes.')
+        approval = self.act('talk_send', {'id': talk_id})['approval_id']
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET retry_at='2000-01-01T00:00:00+00:00'")
+        with self.assertRaisesRegex(ValueError, 'already on its way'):
+            self.act('talk_undo', {'suggestion_id': SID, 'approval_id': approval})
+        self.assertNotIn('undo_voice', [i for i in self.app.card_chat(SID)['items'] if i.get('text') == 'Approved by voice'][0])
+
+    def test_yes_without_a_question_sends_nothing(self):
+        self.ready_draft()
+        self.app.talk_judge = lambda prompt: '{"approve": "yes"}'
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Thursday after two works for Dana.'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes, send it.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')
+        self.assertEqual(self.jobs(), [])
+
+    def test_a_question_not_yet_spoken_or_answered_waits(self):
+        talk_id, _ = self.asked(spoken=None)
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes'})   # before the question was even asked
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'no_answer')
+        self.assertEqual(self.jobs(), [])
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Go ahead.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'queued')
+
+    def test_a_draft_changed_after_the_question_asks_again(self):
+        talk_id, _ = self.asked('Yes, send it.')
+        self.ready_draft(body='Hi Dana, Friday works instead.', revision='r2')
+        sent = self.act('talk_send', {'id': talk_id})
+        self.assertEqual(sent['status'], 'changed')
+        self.assertIn('ask_to_send again', sent['say'])
+        self.assertEqual(self.jobs(), [])
+        # The same revision with other words or recipients is a change too
+        self.act('talk_end', {'id': talk_id})
+        talk_id2, _ = self.asked('Yes.')
+        self.ready_draft(to=['someone@example.com'])
+        self.assertEqual(self.act('talk_send', {'id': talk_id2})['status'], 'changed')
+        self.assertEqual(self.jobs(), [])
+
+    def test_an_unclear_answer_asks_again(self):
+        talk_id, _ = self.asked('Hmm, maybe, what did it say again?', judged='{"approve": "unclear"}')
+        sent = self.act('talk_send', {'id': talk_id})
+        self.assertEqual(sent['status'], 'unclear')
+        self.assertIn('ask once more', sent['say'])
+        self.assertEqual(self.jobs(), [])
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')   # a new question first
+
+    def test_a_model_that_answers_oddly_is_not_a_yes(self):
+        talk_id, _ = self.asked('Yes', judged='Yes, they approved.')
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'unclear')
+        self.assertEqual(self.jobs(), [])
+
+    def test_no_sends_nothing(self):
+        talk_id, _ = self.asked('Nee, wacht even.', judged='{"approve": "no"}')
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'no')
+        self.assertEqual(self.jobs(), [])
+
+    def test_a_question_without_who_it_goes_to_is_not_one(self):
+        talk_id, _ = self.asked('Yes', spoken='Shall I send it?')
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'unclear')
+        self.assertEqual(self.jobs(), [])
+
+    def test_only_a_ready_draft_to_named_people(self):
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'}))      # nothing prepared
+        self.ready_draft(to_options=['a@example.com', 'b@example.com'])
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'}))      # who gets it is picked on screen
+        self.ready_draft(kind='merge')
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'}))
+        self.ready_draft()
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'old'}))     # not the draft on screen
+        read = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': True})
+        self.assertTrue(read['read_aloud'])
+        self.assertTrue(read['say'].startswith('First read the draft below out in full'))
+        self.assertEqual(read['draft']['text'], 'Hi Dana, Thursday works. See you then.')
+
+    def test_the_voice_cannot_approve_through_the_normal_controls(self):
+        self.ready_draft()
+        with self.assertRaisesRegex(ValueError, 'owner’s controls'):
+            self.act('confirm_action', {'suggestion_id': SID, 'revision': 'r1', 'approval_id': 'voice:x y'})
+
     def test_only_the_owner_on_the_dashboard(self):
         for name in sorted(a.TALK_ACTIONS):
             with self.assertRaisesRegex(ValueError, 'Only the owner'):
@@ -195,7 +363,7 @@ class Api(unittest.TestCase):
         started = self.act('talk_start', {'suggestion_id': SID})
         self.assertNotIn(SECRET, json.dumps(started))
         self.assertEqual((started['limit'], started['warn'], started['per_use']), (600, 540, True))
-        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat'])
+        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer'])
         self.assertIn('Reply to Dana about the offsite', started['instructions'])
         self.assertEqual(self.act('talk_offer', {'id': started['id'], 'sdp': OFFER}), {'sdp': ANSWER})
         self.act('talk_line', {'id': started['id'], 'role': 'user', 'text': 'What does Dana want?'})
@@ -236,7 +404,7 @@ class Api(unittest.TestCase):
         self.assertEqual([x['title'] for x in found['todos']], ['Book the offsite venue'])
         found = self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': {'words': 'offsite'}})['output']
         self.assertNotIn('Old offsite invoice', [x['title'] for x in found['todos']])   # only open ones
-        for name in ('ask_chat', 'send_draft', 'decide'):   # ask_chat is the dashboard's own: the chat's decide path
+        for name in ('ask_chat', 'ask_to_send', 'send_answer', 'send_draft', 'decide'):   # the dashboard's own, through their own actions
             with self.assertRaisesRegex(ValueError, 'Unknown tool'):
                 self.act('talk_tool', {'id': talk_id, 'name': name, 'args': {}})
 
@@ -268,15 +436,20 @@ class Sealed(unittest.TestCase):
 
 
 class Dashboard(unittest.TestCase):
-    def test_a_spoken_yes_never_sends(self):
+    def test_asking_the_chat_never_sends(self):
         html = (ROOT / 'dashboard.html').read_text()
         self.assertIn('${micBtn()}${talkBtn()}', html)
         # What the voice asks goes to the chat the way a typed message does: a decision 'other', never a send or Approve
-        start, end = html.index('async function talkAsk('), html.index("document.addEventListener('click',e=>{const b=e.target.closest('[data-talk]")
+        start, end = html.index('async function talkAsk('), html.index("document.addEventListener('click',async e=>{const b=e.target.closest('[data-voice-undo]')")
         body = html[start:end]
         self.assertIn("choice:'other'", body)
-        for word in ('approve', 'send_draft', "'accept'", 'deliver'):
+        for word in ('approve', 'send_draft', "'accept'", 'deliver', 'confirm_action'):
             self.assertNotIn(word, body)
+        # The page only passes a voice yes on to the Machine (talk_send), which judges it; never confirm_action itself
+        start = html.index('async function talkAskSend(')
+        voice = html[start:html.index('// What the voice asks the chat', start)]
+        self.assertIn("'talk_send'", voice)
+        self.assertNotIn('confirm_action', voice)
 
     def test_the_helper_never_asks_to_write(self):
         helper = (ROOT / 'talk-live-run.mjs').read_text()

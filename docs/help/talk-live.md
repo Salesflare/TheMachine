@@ -1,7 +1,7 @@
 ---
 title: Talk live
 area: cards
-summary: A spoken conversation with The Machine about a to-do, with OpenAI's voice. It works in the to-do's chat, but it never sends anything.
+summary: A spoken conversation with The Machine about a to-do, with OpenAI's voice. It works in the to-do's chat, and sends a draft only after you say yes to it.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -15,11 +15,18 @@ It knows the to-do you're in: its messages, its draft and its chat. It can also 
 
 The bar has **Mute** and **End**. A conversation lasts up to 10 minutes. A minute before the end, the timer shows how much is left. Start it again to go on.
 
-## Nothing is sent from a conversation
+## Ask for things, and send with a yes
 
-When you ask for something, like "write a reply saying Thursday works" or "snooze this until Monday", The Machine hands it to the to-do's chat, as if you had typed it. The chat follows its usual rules: it can change the draft or snooze the to-do, but a draft waits for your **Approve**.
+When you ask for something, like "write a reply saying Thursday works" or "snooze this until Monday", The Machine hands it to the to-do's chat, as if you had typed it. The chat follows its usual rules: it can change the draft or snooze the to-do.
 
-Saying "yes" or "send it" does nothing. Only your tap on **Approve** sends.
+To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Lotte by email?". On a phone, it reads the whole draft out before it asks. Answer with a clear yes, in any language, and that one draft goes.
+
+- It only asks about the draft shown in the chat. If the draft changes after the question, it asks again.
+- If your answer isn't a clear yes, nothing is sent and it asks again. "No" sends nothing.
+- A yes always sends one draft. To send several, use the follow-up review.
+- The chat shows **Approved by voice** with **Undo** for a few seconds before it goes.
+
+Tapping **Approve** works too.
 
 ## A record in the chat
 

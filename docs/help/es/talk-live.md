@@ -1,7 +1,7 @@
 ---
 title: Hablar en vivo
 area: cards
-summary: Una conversación en voz alta con The Machine sobre una tarea, con la voz de OpenAI. Trabaja en el chat de la tarea, pero nunca envía nada.
+summary: Una conversación en voz alta con The Machine sobre una tarea, con la voz de OpenAI. Trabaja en el chat de la tarea y solo envía un borrador después de que digas que sí.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -15,11 +15,18 @@ Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También 
 
 La barra tiene **Silenciar** y **Fin**. Una conversación dura hasta 10 minutos. Un minuto antes del final, el temporizador muestra cuánto queda. Vuelve a empezarla para seguir.
 
-## Nada se envía desde una conversación
+## Pide cosas y envía con un sí
 
-Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien" o "pospón esto hasta el lunes", The Machine se lo pasa al chat de la tarea, como si lo hubieras escrito. El chat sigue sus reglas de siempre: puede cambiar el borrador o posponer la tarea, pero un borrador espera tu **Aprobar**.
+Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien" o "pospón esto hasta el lunes", The Machine se lo pasa al chat de la tarea, como si lo hubieras escrito. El chat sigue sus reglas de siempre: puede cambiar el borrador o posponer la tarea.
 
-Decir "sí" o "envíalo" no hace nada. Solo envía tu toque en **Aprobar**.
+Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Lotte por correo?". En un teléfono, lee antes el borrador entero en voz alta. Responde con un sí claro, en cualquier idioma, y ese borrador se envía.
+
+- Solo pregunta por el borrador que se ve en el chat. Si cambia después de la pregunta, vuelve a preguntar.
+- Si tu respuesta no es un sí claro, no se envía nada y vuelve a preguntar. "No" no envía nada.
+- Un sí envía siempre un solo borrador. Para enviar varios, usa la revisión de seguimientos.
+- El chat muestra **Aprobado por voz** con **Deshacer** unos segundos antes de que salga.
+
+Siempre puedes tocar **Aprobar** en su lugar.
 
 ## Un registro en el chat
 

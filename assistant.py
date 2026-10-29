@@ -764,16 +764,19 @@ VOICE_ACTIONS = {
     'voice_transcribe',
 }
 OWNER_ACTIONS |= VOICE_ACTIONS
-# Talk live (talk_live.py): a spoken conversation about a to-do, from the owner's dashboard only. It reads, and it can
-# only show a proposal on screen; nothing is sent or changed from it.
+# Talk live (talk_live.py): a spoken conversation about a to-do, from the owner's dashboard only. It reads, asks the
+# to-do's chat as a typed message would, and sends one draft on screen only after a confirm question and a clear yes.
 VOICE_WARM_QUIET = 3   # 5-minute checks in a row that a live Machine is quiet before voice gets ready in the background
 TALK_ACTIONS = {
+    'talk_ask_send',
     'talk_end',
     'talk_line',
     'talk_offer',
+    'talk_send',
     'talk_start',
     'talk_status',
     'talk_tool',
+    'talk_undo',
 }
 OWNER_ACTIONS |= TALK_ACTIONS
 # Skills (skills.py): writing, sharing and installing them is the owner's own, from the dashboard. The agent can only
@@ -7535,7 +7538,8 @@ class Store:
         # The text as saved (an email gets a blank line before the name): the dashboard shows it before it sends
         return {'status':'revised','revision':revised['revision'],'body':next_actions.draft_text(revised),'subject':revised.get('subject')}
 
-    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None):
+    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None,hold=None):
+        # hold: seconds the send waits before the outbox takes it (a yes by voice: Undo in the chat meanwhile, undo_voice_send)
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
@@ -7578,16 +7582,18 @@ class Store:
                 # unknown outcome. A blocked pre-send permission check may be retried.
                 # So may an unconfirmed message send after SEND_RETRY_AFTER without a trace: only on the owner's new tap.
                 if (previous['status'] in ('blocked','cancelled','failed') or send_retry_ok(previous,action['kind'])) and previous['approval_id']!=approval_id:
-                    db.execute("UPDATE action_jobs SET status='queued',retry_at=NULL,error=NULL,updated_at=?,approval_id=?,source=?,payload=? WHERE id=?",(now(),approval_id,source,encoded(action),previous['id']))
+                    db.execute("UPDATE action_jobs SET status='queued',retry_at=?,error=NULL,updated_at=?,approval_id=?,source=?,payload=? WHERE id=?",
+                               ((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=hold)).isoformat() if hold else None,now(),approval_id,source,encoded(action),previous['id']))
                     follow_ups.queued(db,suggestion_id,previous['id'],action,now())  # an automated follow-up: spaced with its batch
                     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                         (approval_id,suggestion_id,'send','',source,now()))
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
                 return {'status':previous['status'],'duplicate':True}
             job_id=uuid.uuid4().hex;stamp=now()
-            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
+            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id,retry_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                 (job_id,suggestion_id,revision,encoded(action),'local_preparation' if action['kind'] in ('prepare','finish') else 'queued',stamp,stamp,approval_id,source,
-                 '<assistant-'+job_id+'@'+action['from'].split('@')[1]+'>' if action['kind']=='email' else ''))
+                 '<assistant-'+job_id+'@'+action['from'].split('@')[1]+'>' if action['kind']=='email' else '',
+                 (dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=hold)).isoformat() if hold else None))
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                 (approval_id,suggestion_id,'prepare_next' if action['kind']=='prepare' else 'send','',source,stamp))
             if action['kind'] not in ('prepare','finish'):follow_ups.queued(db,suggestion_id,job_id,action,stamp)  # an automated follow-up: spaced with its batch
@@ -7600,6 +7606,20 @@ class Store:
             db.execute('UPDATE suggestions SET feedback_until=NULL WHERE id=?',(suggestion_id,))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
         return {'status':'queued'}
+
+    def undo_voice_send(self, suggestion_id, approval_id):
+        """Undo in the chat on a send approved by voice: it is canceled while it still waits (confirm_action's hold)."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            job=db.execute("SELECT id,status,retry_at FROM action_jobs WHERE suggestion_id=? AND approval_id=? AND source='voice'",(str(suggestion_id or ''),str(approval_id or ''))).fetchone()
+            if not job:
+                raise ValueError('Nothing to undo.')
+            if job['status']=='cancelled':
+                return {'status':'cancelled'}
+            if job['status']!='queued' or not job['retry_at'] or job['retry_at']<=now():
+                raise ValueError('It’s already on its way.')
+            db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE id=?",(now(),job['id']))
+        return {'status':'cancelled'}
 
     def auto_merge(self, suggestion_id, config):
         """Queue a fix to The Machine's own error for merging without the owner's tap, when it is small
@@ -16943,11 +16963,15 @@ class App:
                               'choice': choice, 'mine': True, 'at': at})
         owner.extend(card_chat_handoffs(db, suggestion_id))
         owner.extend(self.card_chat_learned(db, suggestion_id))
-        for r in db.execute('SELECT payload,status,source,created_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
+        for r in db.execute('SELECT payload,status,source,created_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:
                 payload = json.loads(r['payload'])
             except ValueError:
                 continue
+            if r['source'] == 'voice':  # a yes to Talk live's confirm question: Undo while the send still waits (talk_live.py)
+                wait = r['status'] == 'queued' and r['retry_at'] and r['retry_at'] > now()
+                owner.append({'kind': 'event', 'text': 'Approved by voice', 'mine': True, 'at': chat_ms(r['created_at']) - 1,
+                              **({'undo_voice': r['approval_id'], 'undo_until': chat_ms(r['retry_at'])} if wait else {})})
             draft = chat_draft(payload)
             if draft:
                 if len(draft['to']) == 1 and _address(draft['to'][0]) and str(payload.get('to_name') or '').strip():
@@ -19511,8 +19535,67 @@ class App:
         if name == 'talk_line':
             with self.store.connect() as db:
                 return self.talk.line(db, args.get('id'), args.get('role'), args.get('text'), int(time.time() * 1000))
+        if name == 'talk_ask_send':
+            return self.talk_ask_send(args)
+        if name == 'talk_send':
+            return self.talk_send(args)
+        if name == 'talk_undo':
+            return self.store.undo_voice_send(args.get('suggestion_id'), args.get('approval_id'))
         found = self.talk.get(args.get('id'))
         return {'output': self.talk_tool(found['suggestion_id'], str(args.get('name') or ''), args.get('args') if isinstance(args.get('args'), dict) else {})}
+
+    def talk_draft(self, suggestion_id, revision):
+        """The draft Talk live may ask to send: this to-do's current one, ready, going to people the draft names."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT status,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        action = next_actions.selected(row['next_action'], revision) if row and row['status'] == 'prepared' and revision else None
+        if not action or action.get('kind') not in talk_live.SEND_KINDS or action.get('to_options'):
+            return None
+        return action
+
+    def talk_ask_send(self, args):
+        """The voice asks to send the draft on screen (the dashboard says which revision it shows, and whether the owner
+        may not see it: then the voice reads it out first). The question is kept for the owner's next answer."""
+        found = self.talk.get(args.get('id'))
+        sid, revision = found['suggestion_id'], str(args.get('revision') or '')
+        action = self.talk_draft(sid, revision)
+        if not action:
+            return {'error': 'No draft ready to send by voice. It needs a tap on Approve on screen.'}
+        names = {}
+        if len(action.get('to') or []) == 1 and str(action.get('to_name') or '').strip():
+            names[_address(action['to'][0])] = chat_person(str(action['to_name']).strip())
+        name = chat_name((action.get('to') or [''])[0], names, str(action.get('to_name') or '')) if action.get('to') else ''
+        name = name if len(action.get('to') or []) <= 1 else name + ' and %d more' % (len(action['to']) - 1)
+        asked = self.talk.ask(args.get('id'), sid, revision, action, name, int(time.time() * 1000))
+        read = args.get('read_aloud') is True
+        draft = {'to': name, 'how': talk_live.CHANNELS.get(action['kind'], ''), 'subject': action.get('subject') or '',
+                 'text': clamp(str(action.get('body') or action.get('message') or ''), 4000)}
+        return {'question': asked, 'read_aloud': read, 'draft': draft,
+                'say': (talk_live.SAY['read'] if read else '') + talk_live.SAY['ask'] + asked}
+
+    def talk_send(self, args):
+        """The owner answered the confirm question: the Machine judges it from its own record, and a clear yes for the
+        unchanged draft goes the normal way (confirm_action, source 'voice', held for Undo)."""
+        import help_chat
+        talk_id = args.get('id')
+        found = self.talk.get(talk_id)
+        sid = found['suggestion_id']
+        run = getattr(self, 'talk_judge', None)
+        if not run:
+            swap = background_model(self.config)
+            run = lambda prompt: help_chat.openclaw_model_run(self.config, prompt, '/'.join(swap) if swap else None)
+        with self.store.connect() as db:
+            status, asked = self.talk.answer(db, talk_id, int(time.time() * 1000), lambda revision: self.talk_draft(sid, revision),
+                                             lambda answer, q: talk_live.judge_answer(answer, q, run))
+        LOG.info('talk live answer %s', status)
+        if status != 'yes':
+            return {'status': status, 'say': talk_live.SAY[status]}
+        approval = 'voice:' + uuid.uuid4().hex
+        try:
+            self.store.confirm_action(sid, asked['revision'], approval, 'voice', hold=talk_live.UNDO_SECONDS)
+        except ValueError:
+            return {'status': 'changed', 'say': talk_live.SAY['changed']}
+        return {'status': 'queued', 'approval_id': approval, 'undo_seconds': talk_live.UNDO_SECONDS, 'say': talk_live.SAY['queued']}
 
     def talk_tool(self, suggestion_id, name, args):
         """Talk live's tools that read (talk_live.TOOLS): this to-do, or finding others. Never anything that sends or
