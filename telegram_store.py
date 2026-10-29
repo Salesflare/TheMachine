@@ -4,8 +4,9 @@ writes and the app reads. Standard library only, so the app never imports Teleth
 One folder per account (`store`), mode 700:
 - `session.sealed`: the Telegram session (Telethon's StringSession), sealed. Never logged, never in config.json.
 - `telegram.sqlite`: `state` (who is signed in, the last good contact, why it stopped), `chats` (the private chats and
-  small groups it reads, and why others are skipped), `messages` (their text sealed) and `outbox` (sends the owner
-  approved, and a log-out). WAL, so the app reads while the mirror writes.
+  small groups it reads, and why others are skipped), `messages` (their text sealed), `outbox` (sends the owner
+  approved, and a log-out) and `photo_asks` (people's small profile photos the app asked for, sealed until the app
+  takes them). WAL, so the app reads while the mirror writes.
 
 Sealing: with the Machine's message key when its database has one (message_seal.py, which a host can keep off the
 disk), else with a key of the store's own (`store.key`, mode 600). Either way a derived key, never the message key
@@ -39,7 +40,13 @@ CREATE TABLE IF NOT EXISTS messages(chat_id TEXT NOT NULL, msg_id INTEGER NOT NU
 CREATE INDEX IF NOT EXISTS messages_at ON messages(occurred_at);
 CREATE TABLE IF NOT EXISTS outbox(id TEXT PRIMARY KEY, op TEXT NOT NULL, chat_id TEXT, text BLOB, approval TEXT, created_at TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'queued', msg_id INTEGER, error TEXT, done_at TEXT);
+CREATE TABLE IF NOT EXISTS photo_asks(user_id TEXT PRIMARY KEY, asked_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
+  photo_id TEXT, type TEXT, data BLOB, done_at TEXT);
 '''
+# Profile photos: the small one (160 px) only, at most this big, like every other photo the Machine keeps
+# (enrichment.PHOTO_BYTES). The mirror answers at most PHOTOS_PER_DAY asks a day.
+PHOTO_BYTES = 200_000
+PHOTOS_PER_DAY = 50
 # Why the mirror stopped, as the app shows it (state `error`)
 ERRORS = {
     'signed_out': 'Telegram signed this Machine out. Log in again to keep reading.',
@@ -167,6 +174,36 @@ def readable(chat, include=()):
     if chat.get('archived'):
         return 'archived'
     return ''
+
+
+def ask_photo(db, seal, user_id):
+    """The app's ask for a person's profile photo (enrichment.telegram_photos_step), on a writable connection: the
+    mirror's answer once it has one, taken out of the store, else the ask is left (or kept) for the mirror.
+    {'id', 'data': bytes} for a photo, {} when they have none the owner can see (or it is not someone in a chat the
+    mirror reads), {'id'} when it couldn't be fetched (asked again the next day), {'pending': True} while it waits."""
+    row = db.execute('SELECT * FROM photo_asks WHERE user_id=?', (str(user_id),)).fetchone()
+    if row is None:
+        db.execute('INSERT INTO photo_asks(user_id, asked_at) VALUES (?, ?)', (str(user_id), now()))
+        db.commit()
+        return {'pending': True}
+    if row['status'] == 'queued':
+        return {'pending': True}
+    db.execute('DELETE FROM photo_asks WHERE user_id=?', (str(user_id),))
+    db.commit()
+    if row['status'] == 'done' and row['data'] is not None:
+        return {'id': row['photo_id'] or 'photo', 'data': seal.open_bytes(bytes(row['data']))}
+    return {'id': 'failed'} if row['status'] == 'failed' else {}
+
+
+def answer_photo(db, seal, user_id, status, photo_id=None, data=None):
+    """The mirror's answer to one ask: 'done' with the photo's bytes (sealed here), 'none' or 'failed'. A photo bigger
+    than PHOTO_BYTES counts as failed. Returns the answer kept."""
+    keep = data if status == 'done' and data and len(data) <= PHOTO_BYTES else None
+    status = 'done' if keep else ('failed' if status == 'done' else status)
+    db.execute('UPDATE photo_asks SET status=?, photo_id=?, type=?, data=?, done_at=? WHERE user_id=?',
+               (status, photo_id, 'image/jpeg' if keep else None, seal.seal_bytes(keep) if keep else None, now(), str(user_id)))
+    db.commit()
+    return status
 
 
 def read_app(path):

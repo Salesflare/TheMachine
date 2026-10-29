@@ -115,7 +115,7 @@ Personen met een bedrijfsadres krijgen een functie, foto, LinkedIn en stad, opge
 
 Je koppelingen vullen meer aan terwijl ze draaien, met wat ze al lazen en zonder iets extra te vragen: een functie, telefoonnummer en tijdzone uit Slack, een bio, plaats en website uit X, een kopregel en foto uit LinkedIn, en functies uit Google-contacten en Salesflare. Wat iemand over zichzelf zegt, gaat voor. Ga met de muis over de regel onder de naam om te zien waar het vandaan kwam. Alles blijft op je Machine.
 
-Foto's van WhatsApp komen via je WhatsApp-sync die altijd aanstaat, als die het toelaat: maximaal 50 per dag, alleen voor mensen die al in je Graph staan. Er wordt niets naar hen verstuurd.
+Foto's van WhatsApp komen via je WhatsApp-sync die altijd aanstaat, als die het toelaat: maximaal 50 per dag, alleen voor mensen die al in je Graph staan. Er wordt niets naar hen verstuurd. Foto's van Telegram komen op dezelfde manier, via je koppeling met Telegram-chats: maximaal 50 per dag, alleen voor mensen die al in je Graph staan. Er wordt niets naar hen verstuurd.
 
 ## Iemand definitief verwijderen
 

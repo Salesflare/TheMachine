@@ -115,7 +115,7 @@ Le persone con un indirizzo aziendale ricevono ruolo, foto, LinkedIn e città, c
 
 Le tue connessioni completano altri dati mentre girano, con quello che leggono già e senza chiedere nulla in più: ruolo, telefono e fuso orario da Slack, bio, luogo e sito web da X, headline e foto da LinkedIn, e ruoli dai contatti Google e da Salesflare. Quello che una persona dice di sé viene prima. Passa con il mouse sulla riga sotto il nome per vedere da dove viene. Resta tutto sulla tua Machine.
 
-Le immagini di WhatsApp arrivano tramite la sincronizzazione WhatsApp sempre attiva, quando lo consente: fino a 50 al giorno, solo per persone già nel tuo Graph. Non viene inviato nulla a loro.
+Le immagini di WhatsApp arrivano tramite la sincronizzazione WhatsApp sempre attiva, quando lo consente: fino a 50 al giorno, solo per persone già nel tuo Graph. Non viene inviato nulla a loro. Le immagini di Telegram arrivano allo stesso modo, tramite la connessione alle chat di Telegram: fino a 50 al giorno, solo per persone già nel tuo Graph. Non viene inviato nulla a loro.
 
 ## Elimina una persona definitivamente
 

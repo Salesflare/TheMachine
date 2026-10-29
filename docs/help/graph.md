@@ -115,7 +115,7 @@ People with a company address get a job title, photo, LinkedIn and city, looked 
 
 Your connections fill in more as they run, with what they already read and nothing extra asked: a title, phone and time zone from Slack, a bio, place and website from X, a headline and photo from LinkedIn, and job titles from Google contacts and Salesflare. What someone says about themselves comes first. Hover over the line under their name to see where it came from. It all stays on your Machine.
 
-WhatsApp pictures come through your always-on WhatsApp sync, when it allows them: up to 50 a day, only for people already in your Graph. Nothing is sent to them.
+WhatsApp pictures come through your always-on WhatsApp sync, when it allows them: up to 50 a day, only for people already in your Graph. Nothing is sent to them. Telegram pictures come the same way, through your Telegram chats connection: up to 50 a day, only for people already in your Graph. Nothing is sent to them.
 
 ## Delete someone permanently
 

@@ -41,6 +41,10 @@ Oder führe `assistant connect telegram` in einem Terminal aus und scanne den Co
 
 The Machine nutzt dafür die API von Telegram. Telegram kann Anmeldungen von Apps wie ihr einschränken oder beenden.
 
+## Bilder
+
+The Machine fragt Telegram nach den Profilbildern von Personen in deinem Graph, die keins haben, höchstens 50 am Tag, über dieselbe Anmeldung, die deine Chats liest, und nur für Personen aus Chats, die sie liest. An die Personen wird nichts gesendet. Wer sein Bild vor dir verbirgt, bleibt ohne.
+
 ## Entfernen
 
 **Verbindungen**, Telegram-Chats öffnen, **Details**, dann **Trennen**. Deine Machine meldet sich bei Telegram ab und löscht, was sie für Telegram gespeichert hat.

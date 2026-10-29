@@ -41,6 +41,10 @@ O ejecuta `assistant connect telegram` en un terminal y escanea el código que m
 
 The Machine usa la API de Telegram para esto. Telegram puede limitar o terminar las sesiones de apps como ella.
 
+## Fotos
+
+The Machine pide a Telegram las fotos de perfil de las personas de tu Graph que no tienen, como mucho 50 al día, con el mismo inicio de sesión que lee tus chats, y solo de personas de chats que lee. No se les envía nada. Alguien que te oculta su foto se queda sin ella.
+
 ## Quítalo
 
 **Conexiones**, abre Chats de Telegram, **Detalles** y luego **Desconectar**. Tu Machine cierra su sesión en Telegram y elimina lo que guardaba para Telegram.

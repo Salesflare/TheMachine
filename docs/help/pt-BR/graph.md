@@ -115,7 +115,7 @@ Pessoas com um endereço de empresa recebem cargo, foto, LinkedIn e cidade, busc
 
 Suas conexões completam mais coisas enquanto rodam, com o que já leem e sem pedir nada a mais: cargo, telefone e fuso horário do Slack, bio, local e site do X, título e foto do LinkedIn, e cargos dos contatos do Google e do Salesflare. O que a pessoa diz sobre si mesma vem primeiro. Passe o mouse sobre a linha abaixo do nome para ver de onde veio. Tudo fica na sua Machine.
 
-As fotos do WhatsApp vêm pela sua sincronização do WhatsApp sempre ativa, quando ela permite: até 50 por dia, só para pessoas que já estão no seu Graph. Nada é enviado a elas.
+As fotos do WhatsApp vêm pela sua sincronização do WhatsApp sempre ativa, quando ela permite: até 50 por dia, só para pessoas que já estão no seu Graph. Nada é enviado a elas. As fotos do Telegram vêm do mesmo jeito, pela sua conexão de chats do Telegram: até 50 por dia, só para pessoas que já estão no seu Graph. Nada é enviado a elas.
 
 ## Excluir alguém permanentemente
 

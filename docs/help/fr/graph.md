@@ -115,7 +115,7 @@ Les personnes qui ont une adresse d’entreprise reçoivent un poste, une photo,
 
 Vos connexions complètent les informations au fil de leur travail, avec ce qu’elles lisent déjà et sans rien demander de plus : un poste, un téléphone et un fuseau horaire depuis Slack, une bio, un lieu et un site web depuis X, un titre et une photo depuis LinkedIn, et des postes depuis les contacts Google et Salesflare. Ce que la personne dit d’elle-même passe en premier. Survolez la ligne sous son nom pour voir d’où vient l’information. Tout reste sur votre Machine.
 
-Les photos WhatsApp arrivent via votre synchronisation WhatsApp toujours active, quand elle le permet : jusqu’à 50 par jour, seulement pour les personnes déjà dans votre Graph. Rien ne leur est envoyé.
+Les photos WhatsApp arrivent via votre synchronisation WhatsApp toujours active, quand elle le permet : jusqu’à 50 par jour, seulement pour les personnes déjà dans votre Graph. Rien ne leur est envoyé. Les photos Telegram arrivent de la même façon, via votre connexion aux chats Telegram : jusqu’à 50 par jour, seulement pour les personnes déjà dans votre Graph. Rien ne leur est envoyé.
 
 ## Supprimer définitivement une personne
 
