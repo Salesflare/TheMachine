@@ -36,6 +36,8 @@ A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and 
 
 A closed to-do can come back with **Reopen**. It also comes back by itself when something new happens, like a new message from them. Your own reply doesn't bring it back.
 
+On your first to-dos, a short tip under the buttons shows the key moves: **Do it differently** (or **Ask for changes**) and **Not needed** when a to-do isn't quite right, and on your first ready draft that nothing goes out until you press **Send**. A tip goes for good once you use its button or press ×, on all your devices.
+
 Each to-do starts with its title. The line under it says who it's about, their organization, the project, Work or Personal (under **All**) and when it came in, plus where it stands when its group doesn't say so. Tap a name to open its page in the Graph.
 
 **Details** shows the message it came from (tap it to read the thread), your last note and a coding agent's result. **Chat ›** at the end of that row opens the chat. A done to-do stays short: its title, one line and what went out.

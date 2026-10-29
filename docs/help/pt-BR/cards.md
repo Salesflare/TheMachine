@@ -36,6 +36,8 @@ Uma tarefa nova tem **Fazer**, **Marcar como feita**, **Adiar**, **Fazer de outr
 
 Uma tarefa fechada pode voltar com **Reabrir**. Ela também volta sozinha quando acontece algo novo, como uma nova mensagem da pessoa. Uma resposta sua não faz a tarefa voltar.
 
+Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencial: **Fazer de outro jeito** (ou **Pedir mudanças**) e **Não precisa** quando uma tarefa não está bem certa, e no seu primeiro rascunho pronto, que nada sai até você tocar em **Enviar**. Uma dica some de vez assim que você usa o botão dela ou toca no ×, em todos os seus aparelhos.
+
 Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização, o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph.
 
 **Detalhes** mostra a mensagem de onde ela veio (toque para ler a conversa), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado.
