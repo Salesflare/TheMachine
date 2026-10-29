@@ -12,7 +12,7 @@ Em **Configurações**, **Modelo** mostra o modelo que o trabalho em segundo pla
 
 Em **Chats**, escolha o modelo e o nível de raciocínio que os chats das suas tarefas e a Ajuda usam. A lista só tem os modelos que o seu login oferece, como os do ChatGPT se você entrou com o ChatGPT, e cada modelo só os níveis que ele tem.
 
-Mais raciocínio responde melhor perguntas difíceis, mas é mais lento e usa mais do seu plano. **Raciocínio ultra** traz ajudantes para as perguntas mais difíceis: é o mais lento e o que mais usa. Uma mudança vale a partir da próxima mensagem.
+Mais raciocínio responde melhor perguntas difíceis, mas é mais lento e usa mais do seu plano. **Raciocínio ultra** traz ajudantes para as perguntas mais difíceis: é o mais lento e o que mais usa. Uma mudança vale a partir da próxima mensagem. Uma Machine nova começa com **Raciocínio baixo** quando o modelo dela tem: bons resultados usando bem menos do seu plano.
 
 Um chat pode usar outra coisa: abaixo da caixa de mensagem dele, toque no modelo ou no nível de raciocínio. Essa escolha vale só para esse chat. Escolha de novo o mesmo das Configurações para seguir as Configurações.
 

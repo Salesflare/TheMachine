@@ -77,6 +77,37 @@ class InstallerTest(unittest.TestCase):
                 self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp), [])
                 self.assertEqual(calls, [])
 
+    def test_a_new_install_starts_at_thinking_low_only_where_unset_and_the_model_offers_it(self):
+        listed = {'models': [{'provider': 'acme', 'id': 'lm-2', 'available': True, 'thinkingLevels': [{'id': 'low'}, {'id': 'medium'}]},
+                             {'provider': 'acme', 'id': 'deep', 'available': True, 'thinkingLevels': [{'id': 'medium'}, {'id': 'high'}]},
+                             {'provider': 'other', 'id': 'out', 'available': False, 'thinkingLevels': [{'id': 'low'}]}]}
+        calls = []
+        def run(command, **kwargs):
+            calls.append(command[1:])
+            out = json.dumps(listed) if command[1:4] == ['gateway', 'call', 'models.list'] else ''
+            return subprocess.CompletedProcess(command, 0, out, '')
+        low = ['config', 'set', 'agents.defaults.thinkingDefault', '"low"', '--strict-json']
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say'):
+            config = Path(tmp) / 'openclaw.json'
+            with mock.patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(config)}):
+                for settings, expected in (({'model': {'primary': 'acme/lm-2'}}, True),
+                                           ({'model': 'acme/lm-2', 'thinkingDefault': 'high'}, False),  # a level set stays
+                                           ({'model': {'primary': 'acme/deep'}}, False),  # no low: its own default stays
+                                           ({'model': {'primary': 'other/out'}}, False),  # not signed in (a hosted Machine before its sign-in)
+                                           ({}, False)):
+                    calls.clear()
+                    config.write_text(json.dumps({'agents': {'defaults': settings}}))
+                    self.assertEqual(installer.start_thinking({'openclaw': 'openclaw'}), expected, settings)
+                    self.assertEqual(low in calls, expected, settings)
+                self.assertFalse(installer.start_thinking({}))
+
+    def test_only_a_first_install_sets_the_starting_thinking_level(self):
+        import inspect
+        source = inspect.getsource(installer.main)
+        self.assertIn('fresh = not paths.config.exists()', source)
+        self.assertLess(source.index('fresh = not paths.config.exists()'), source.index('setup_config('))
+        self.assertIn('if fresh:\n        start_thinking(facts)', source)
+
     def gateway(self, reload_code=1, health=(), unit='openclaw-gateway.service', restart_code=0):
         """install_plugin against a fake OpenClaw whose reload fails and whose Gateway health answers `health` in turn."""
         calls, answers = [], iter(health)

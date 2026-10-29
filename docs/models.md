@@ -17,6 +17,8 @@ To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthrop
 
 The thinking level (`agents.defaults.thinkingDefault`) applies to fallbacks too: OpenClaw passes it on to whichever model answers, mapped to the nearest level that model supports. Claude Code gets it as its `--effort`. Set `params.thinking` on one model's entry in `agents.defaults.models` to give that model its own level.
 
+A new install starts at thinking `low` (`NEW_THINKING` in installer.py): good results for much less of the owner's plan. `./install.sh` sets it once, on a first install, only when no level is set and the main model is signed in and offers low (the Gateway's `models.list` says); a model without it keeps its own default. An existing install keeps its level. Hosted Machines do the same after their sign-in.
+
 ## Model and thinking for chats
 
 **Settings → Model → Chats** sets the model and thinking level for the owner's to-do chats (their Do it turns too) and Help; the pill under a chat's message box changes it for that chat only. The choices come from the running Gateway's `models.list` (the `configured` view, read every ten minutes, no model call): models whose provider is signed in (`available`) and that `agents.defaults.models` or `agents.defaults.modelPolicy.allow` allow, each with the thinking levels OpenClaw lists for it.

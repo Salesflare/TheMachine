@@ -12,7 +12,7 @@ En **Ajustes**, **Modelo** muestra el modelo que usa el trabajo en segundo plano
 
 En **Chats**, elige el modelo y el nivel de razonamiento que usan los chats de tus tareas y la Ayuda. La lista solo tiene los modelos que ofrece tu inicio de sesión, como los de ChatGPT si iniciaste sesión con ChatGPT, y cada modelo solo los niveles que tiene.
 
-Más razonamiento responde mejor a las preguntas difíciles, pero es más lento y usa más de tu plan. **Razonamiento ultra** suma ayudantes para las preguntas más difíciles: es el más lento y el que más usa. Un cambio se aplica desde el siguiente mensaje.
+Más razonamiento responde mejor a las preguntas difíciles, pero es más lento y usa más de tu plan. **Razonamiento ultra** suma ayudantes para las preguntas más difíciles: es el más lento y el que más usa. Un cambio se aplica desde el siguiente mensaje. Una Machine nueva empieza con **Razonamiento bajo** si su modelo lo tiene: buenos resultados con mucho menos de tu plan.
 
 Un chat puede usar otra cosa: debajo de su cuadro de mensaje, toca el modelo o el nivel de razonamiento. Esa elección es solo para ese chat. Vuelve a elegir lo mismo que en Ajustes para seguir los Ajustes.
 

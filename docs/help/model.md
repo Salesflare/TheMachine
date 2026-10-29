@@ -12,7 +12,7 @@ In **Settings**, **Model** shows the model background work uses (marked **Backgr
 
 Under **Chats**, pick the model and the thinking level your to-do chats and Help use. The list has only the models your sign-in offers, like ChatGPT's when you signed in with ChatGPT, and each model only the levels it has.
 
-More thinking answers harder questions better, but is slower and uses more of your plan. **Ultra thinking** brings in helpers for the hardest questions: the slowest, and it uses the most. A change applies from the next message.
+More thinking answers harder questions better, but is slower and uses more of your plan. **Ultra thinking** brings in helpers for the hardest questions: the slowest, and it uses the most. A change applies from the next message. A new Machine starts at **Low thinking** when its model has it: good results for much less of your plan.
 
 One chat can use something else: under its message box, tap the model or the thinking level. That choice is for that chat only. Pick the same as in Settings again to follow Settings.
 
