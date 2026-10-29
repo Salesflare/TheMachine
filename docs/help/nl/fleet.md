@@ -53,9 +53,9 @@ In een voorzichtige Fleet wachten vragen op je in het tabblad Fleet onder **Brie
 
 In een Werk-Fleet wordt werk voor klanten gedeeld met je team, nadat je het hebt nagekeken. Zie [Team-Graph](team-graph.md).
 
-## Gedeelde connectors
+## Gedeelde koppelingen
 
-Een eigenaar of beheerder kan Stripe of Intercom één keer koppelen en met het team delen, vanuit het vak **Gedeelde connectors** in het tabblad Fleet. De Machines van teamgenoten lezen het, alleen lezen, en zien wie het deelde. Alleen beheerders wijzigen of stoppen het. Zie [Stripe](stripe.md) en [Intercom](intercom.md).
+Een eigenaar of beheerder kan Stripe of Intercom één keer koppelen en met het team delen, vanuit het vak **Gedeelde koppelingen** in het tabblad Fleet. De Machines van teamgenoten lezen het, alleen lezen, en zien wie het deelde. Alleen beheerders wijzigen of stoppen het. Zie [Stripe](stripe.md) en [Intercom](intercom.md).
 
 ## Wat je Machine antwoordt
 

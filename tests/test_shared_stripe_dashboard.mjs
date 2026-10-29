@@ -37,7 +37,7 @@ const server=createServer(async(req,res)=>{res.setHeader('Content-Type','applica
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
 const shots=process.env.SHARED_SHOTS;
-const box=page=>page.locator('.fleet-box').filter({hasText:'Shared connectors'});
+const box=page=>page.locator('.fleet-box').filter({hasText:'Shared connections'});
 const shot=async(page,name,size)=>{if(shots){await box(page).scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/${name}-${size}.png`})}};
 try{
  for(const [width,height] of [[390,844],[1440,900],[1440,700]]){

@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Shared connectors on the Fleet tab (shared_connectors.py): an admin shares Intercom with the members they tick, says OK
+// Shared connections on the Fleet tab (shared_connectors.py): an admin shares Intercom with the members they tick, says OK
 // to a later joiner, confirms an admin, replaces the token after someone left; a member's Connections card says who
 // shares it, with no Reconnect or Disconnect. Never scrolls sideways (390px and 1440px).
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
@@ -40,7 +40,7 @@ try{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   page.on('dialog',d=>d.accept());
   await page.goto('http://127.0.0.1:'+server.address().port);
-  await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-box h3',{hasText:'Shared connectors'}).waitFor();
+  await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-box h3',{hasText:'Shared connections'}).waitFor();
   assert.deepEqual(errors,[]);
   // Sharing: confirmed admins get it (ticked, fixed); members are ticked by the admin
   await page.locator('.share-new summary').click();
@@ -69,8 +69,8 @@ try{
   await page.locator('#share-p1').waitFor();
   assert.match(await page.locator('#share-p1').innerText(),/Share Intercom with Robin Vale's Machine\?/);
   assert.match(await page.locator('#share-p2').innerText(),/Confirm Ada Park as an admin of Acme\?/);
-  assert.match(await page.locator('#share-p3').innerText(),/Mo Ray left Acme\. Replace the Intercom token so it stops working on their Machine\./);
-  assert.match(await page.locator('.fleet-box').filter({hasText:'Shared connectors'}).innerText(),/Not confirmed yet: Ada Park/);
+  assert.match(await page.locator('#share-p3').innerText(),/Mo Ray left Acme\. Replace the Intercom access so it stops working on their Machine\./);
+  assert.match(await page.locator('.fleet-box').filter({hasText:'Shared connections'}).innerText(),/Not confirmed yet: Ada Park/);
   await page.locator('#toast.show').waitFor({state:'detached'}).catch(()=>{});await page.waitForFunction(()=>!document.querySelector('#toast.show'));
   if(shots)await page.screenshot({path:`${shots}/oss-share-prompts-${width}.png`,fullPage:true});
   await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/action')&&r.request().postDataJSON()?.action==='fleet_share_ok'),

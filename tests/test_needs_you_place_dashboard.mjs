@@ -50,7 +50,7 @@ try{
  await page.evaluate(()=>document.querySelector('[data-tab="health"]').click());
  const cli=page.locator('#connect-more details.connect-cli');
  await cli.waitFor({state:'attached'});
- assert.equal(await cli.locator('summary').textContent(),'Set up from the terminal');
+ assert.equal(await cli.locator('summary').textContent(),'For developers: set up from the terminal');
  assert.equal(await cli.evaluate(d=>d.open),false);
  assert.match(await cli.textContent(),/assistant connect gmail/);
  // Desktop: seven Fleet tabs are all in view, none under the fade, whatever the font: wider glyphs (a CI runner's

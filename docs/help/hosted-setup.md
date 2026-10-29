@@ -1,9 +1,9 @@
 ---
 title: Set up a hosted Machine
 area: getting-started
-summary: Sign in, start your free days, connect your mail and pick your model. It takes a few minutes.
+summary: Sign in, start your free days, connect your mail and pick your AI. It takes a few minutes.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
 order: 1
 ---
 A hosted Machine runs on a private server of its own in the EU. We keep it running and updated.
@@ -19,7 +19,7 @@ A hosted Machine runs on a private server of its own in the EU. We keep it runni
 Your server starts, then the setup page walks you through the rest, one step at a time:
 
 1. **Mail and Calendar**: connect Google or Microsoft. You can do this while your server starts. After you sign in, the step says it's working until your Machine is installed and has read your mail, about a minute. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
-2. **Your model**: sign in with ChatGPT or use your own key. See [ChatGPT](chatgpt.md).
+2. **Your AI**: sign in with ChatGPT or Claude, or use a key from your AI provider. See [ChatGPT](chatgpt.md).
 3. Reviews turn on by themselves. First to-dos come from your newest mail, then from your last 7 days.
 
 Under **Add more any time** are the optional ones: **More sources** such as Slack, WhatsApp or GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) and your browser's connection. None are needed to start. Your dashboard suggests them when they help, for example GitHub once its mail keeps coming in.
@@ -28,7 +28,7 @@ As soon as your Machine is ready, **Open your dashboard** shows at the top of th
 
 ## Ask for a source
 
-Missing a source? On **Connectors**, under **Ask for a source**, name the service and what to read, then press **Build it**. Your own model writes and tests it on your server. If you share it, The Machine opens a pull request for it on GitHub for you. You don't need a GitHub account; [connect GitHub](github.md) to be named as co-author.
+Missing a source? On **Sources**, under **Ask for a source**, name the service and what to read, then press **Build it**. Your own AI writes and tests it on your server. If you share it, The Machine opens a pull request for it on GitHub for you. You don't need a GitHub account; [connect GitHub](github.md) to be named as co-author.
 
 ## Come back later
 

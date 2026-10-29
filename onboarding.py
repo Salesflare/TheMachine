@@ -2159,7 +2159,7 @@ def enable_replies(config_path, account_id, token):
     a = assistant()
     plugin = a.load_connector('intercom')
     if plugin.received(account):
-        raise SetupError('A token shared through your Fleet only reads', 'sign in with Intercom yourself to reply')
+        raise SetupError('A connection shared through your Fleet can only read', 'sign in with Intercom yourself to reply')
     try:
         admin, name = plugin.reply_profile(config, account, token, a.CONNECTOR_HELPERS)
     except a.SourceError as error:

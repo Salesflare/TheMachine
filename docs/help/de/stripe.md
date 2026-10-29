@@ -34,7 +34,7 @@ Auf deinem eigenen Computer: Ist die Anmeldung mit Stripe noch nicht verfügbar,
 
 In einer Work Fleet verbindet ein Owner oder Admin Stripe einmal und teilt es mit dem Team:
 
-1. Verbinde Stripe auf deiner eigenen Machine (siehe oben). Der Kasten **Geteilte Connectors** im Fleet-Tab hat auch **Stripe verbinden**.
+1. Verbinde Stripe auf deiner eigenen Machine (siehe oben). Der Kasten **Geteilte Verbindungen** im Fleet-Tab hat auch **Stripe verbinden**.
 2. Öffne im Fleet-Tab **Stripe teilen**. Alle sind angehakt. Nimm den Haken bei denen weg, die es nicht bekommen sollen. Tippe auf **Teilen**.
 
 Die Machines der Teammitglieder lesen es auch, nur lesend. Unter Verbindungen steht, wer es geteilt hat, und nur die Admins der Fleet können es ändern oder stoppen. Deine Machine erneuert ihren Zugriff jede Stunde. Ist sie länger aus, pausiert ihr Stripe, bis sie wieder da ist. Niemand bekommt je deine Anmeldung selbst. Details: [Fleets](fleet.md).

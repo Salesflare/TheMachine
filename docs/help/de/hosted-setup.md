@@ -1,9 +1,9 @@
 ---
 title: Eine gehostete Machine einrichten
 area: getting-started
-summary: Melde dich an, starte deine kostenlosen Tage, verbinde deine Mail und wähle dein Modell. Das dauert ein paar Minuten.
+summary: Melde dich an, starte deine kostenlosen Tage, verbinde deine Mail und wähle deine KI. Das dauert ein paar Minuten.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your model, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Connectors, Ask for a source, Build it
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
 order: 1
 ---
 Eine gehostete Machine läuft auf einem eigenen privaten Server in der EU. Wir halten ihn am Laufen und aktuell.
@@ -19,7 +19,7 @@ Eine gehostete Machine läuft auf einem eigenen privaten Server in der EU. Wir h
 Dein Server startet, dann führt dich die Einrichtungsseite Schritt für Schritt durch den Rest:
 
 1. **Mail und Kalender**: Verbinde Google oder Microsoft. Das geht schon, während dein Server startet. Nach der Anmeldung zeigt der Schritt, dass sie arbeitet, bis deine Machine installiert ist und deine Mails gelesen hat, etwa eine Minute. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
-2. **Dein Modell**: Melde dich mit ChatGPT an oder nutze deinen eigenen Schlüssel. Siehe [ChatGPT](chatgpt.md).
+2. **Deine KI**: Melde dich mit ChatGPT oder Claude an, oder nutze einen Schlüssel deines KI-Anbieters. Siehe [ChatGPT](chatgpt.md).
 3. Prüfungen schalten sich von selbst ein. Die ersten Aufgaben kommen aus deinen neuesten Mails, dann aus deinen letzten 7 Tagen.
 
 Unter **Jederzeit mehr hinzufügen** stehen die optionalen: **Weitere Quellen** wie Slack, WhatsApp oder GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) und die Verbindung deines Browsers. Keine davon ist zum Start nötig. Dein Dashboard schlägt sie vor, wenn sie helfen, etwa GitHub, sobald dessen Mails regelmäßig reinkommen.
@@ -28,7 +28,7 @@ Sobald deine Machine bereit ist, steht **Dashboard öffnen** oben auf der Seite.
 
 ## Eine Quelle anfragen
 
-Fehlt dir eine Quelle? Gib unter **Connectors** bei **Eine Quelle anfragen** den Dienst an und was gelesen werden soll, und tippe auf **Bauen**. Dein eigenes Modell schreibt und testet sie auf deinem Server. Wenn du sie teilst, öffnet The Machine dafür einen Pull Request auf GitHub für dich. Ein GitHub-Konto brauchst du nicht; [verbinde GitHub](github.md), um als Co-Autor genannt zu werden.
+Fehlt dir eine Quelle? Gib unter **Quellen** bei **Eine Quelle anfragen** den Dienst an und was gelesen werden soll, und tippe auf **Bauen**. Deine eigene KI schreibt und testet sie auf deinem Server. Wenn du sie teilst, öffnet The Machine dafür einen Pull Request auf GitHub für dich. Ein GitHub-Konto brauchst du nicht; [verbinde GitHub](github.md), um als Co-Autor genannt zu werden.
 
 ## Später zurückkommen
 
