@@ -568,6 +568,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'team_learnings.items': 'general learnings for The Machine team, anything personal taken out (team_learnings.strip)',
             'team_learning_votes.text': "another Machine's general learning, scrubbed by the team and stripped again here",
             'team_learning_votes.reason': 'the general reason sent with a vote, stripped (team_learnings.save_votes)',
+            'follow_up_cards.state': 'open, sent, skipped, stopped, handled or detached',
             'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',
         }
         sealed = {f'{t}.{c}' for t, cs in message_seal.DERIVED.items() for c in cs} | {f'{t}.{c}' for t, c, _ in message_seal.DERIVED_JSON}
