@@ -17,6 +17,12 @@ again. The yes goes the normal confirm_action way with source 'voice' and waits 
 "Approved by voice" with Undo; pacing and the outbox's checks apply as for a tap. "Send without asking" is not touched.
 
 What both sides say is kept as the to-do's chat (lines), so there is a record. A conversation ends after LIMIT_SECONDS.
+
+The main conversation (Talk in the sidebar) isn't tied to one to-do: the voice goes through what needs the owner one by
+one (MAIN_TOOLS). It works on one to-do at a time, the one on screen (`focus`): the dashboard opens it when the voice
+does (open_todo), and when the owner opens another one, that becomes the focus. Every rule above holds for the to-do in
+focus, and what is said about it is kept in that to-do's chat. It ends after MAIN_LIMIT_SECONDS (OpenAI allows a
+Realtime session up to 60 minutes).
 """
 import hashlib
 import json
@@ -32,6 +38,8 @@ LIMIT_SECONDS = 600          # one conversation at most; the dashboard warns a m
 WARN_SECONDS = 540
 GRACE_SECONDS = 30           # lines and tool calls that arrive just after the end still count
 LINE_CHARS = 4000
+MAIN_LIMIT_SECONDS = 1800    # the main conversation goes through several to-dos: longer, well under OpenAI's 60 minutes
+MAIN_WARN_SECONDS = 1740
 ROLES = ('user', 'assistant')
 SESSION_PREFIX = 'agent:main:assistant-talk-'
 UNDO_SECONDS = 10            # a send approved by voice waits this long, with Undo in the chat
@@ -63,6 +71,22 @@ TOOLS = [
                      'answer itself and says what happened; tell the owner that, and never say something was sent otherwise.'),
      'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
 ]
+# The main conversation's tools: the same reading, chat and send tools, about the to-do in focus, and two to move
+# between to-dos. list_todos and open_todo are the dashboard's own (it knows what Ready and To decide show, and opens it).
+MAIN_TOOLS = [
+    {'type': 'function', 'name': 'list_todos',
+     'description': ('The to-dos that need the owner now, in the order the dashboard shows them: Ready (a draft is '
+                     'prepared) first, then To decide. Each has an id, its list, its title and who it is from.'),
+     'parameters': {'type': 'object', 'properties': {}, 'additionalProperties': False}},
+    {'type': 'function', 'name': 'open_todo',
+     'description': ('Open one to-do on screen and work on it: its title, messages and current draft come back. Everything '
+                     'after this (todo_details, ask_chat, ask_to_send, send_answer) is about this to-do until you open another.'),
+     'parameters': {'type': 'object', 'properties': {'id': {'type': 'string', 'description': 'The id from list_todos or find_todos.'}},
+                    'required': ['id'], 'additionalProperties': False}},
+    {**TOOLS[0], 'description': 'Read the to-do that is open now: its title, the messages in it and the current draft.'},
+    {**TOOLS[1], 'description': "Find the owner's other open to-dos by words in their title. Each has an id for open_todo."},
+    *TOOLS[2:],
+]
 # What the tools answer the voice (in English, for the model; the owner never sees these)
 ASK_NOTE = ('The chat is on it. Say one short line, like "Looking that up", and go on with the conversation; don’t check '
             'on it or say you will. When the chat is done, its answer comes to you as a message. Nothing goes to anyone '
@@ -72,6 +96,9 @@ QUEUED_NOTE = 'The chat is still on the last request; this one joins it. Its ans
 # The chat's answer, pushed into the conversation when its turn ends (the dashboard sends it as a message)
 DONE_NOTE = ('The chat finished what you asked. Its answer: "{answer}" Tell the owner now, in a sentence or two in '
              'their language, with where it came from if it says. Don’t read out links.')
+# A to-do that came in during the main conversation (the dashboard says it at a pause, never while either side talks)
+NEW_NOTE = ('A new to-do needs the owner: "{title}" (from: {from}). At a natural pause, mention it in one short line, like "A new one '
+            'just came in from Pieter. Want to hear it?", and only open it if they say so.')
 STOPPED_NOTE = 'The chat stopped before it answered. Tell the owner, and offer to ask again.'
 # A request Talk live hands to the chat: a decision id with this prefix (still a chat- turn), never shown as the
 # owner's message (their own words are the talk lines), with this note in the chat's prompt
@@ -165,6 +192,61 @@ def instructions(title, language, now_text):
     ])
 
 
+def main_instructions(language, now_text):
+    """The main conversation: the same voice and rules, going through the to-dos that need the owner one by one."""
+    lang = LANGUAGE_NAMES.get(language, 'the owner’s language')
+    return '\n'.join([
+        '# Role',
+        '- You are The Machine, a personal assistant, talking live with your owner to go through their to-dos together.',
+        '- It is now %s.' % now_text,
+        '',
+        '# Personality and tone',
+        '- Warm, relaxed and natural, like a capable friend on the phone. Confident, never fawning or formal.',
+        '- Talk the way people talk: contractions, plain everyday words, no stock assistant phrases.',
+        '- Speak %s unless the owner speaks another language.' % lang,
+        '',
+        '## Length',
+        '- Keep it short and spoken: a sentence or two at a time, then let the owner talk.',
+        '- Answer the question first. Leave out what they didn’t ask for.',
+        '',
+        '## Pacing',
+        '- A natural, easy conversational pace: unhurried, with small pauses between ideas. Never rushed.',
+        '',
+        '## Variety',
+        '- Don’t repeat the same sentence or opener twice. Vary how you acknowledge and how you start.',
+        '- A brief "Sure", "Okay" or "Got it" is fine now and then, not every turn.',
+        '- Say what a to-do is about in your own words (who, what for). Don’t read its title out word for word.',
+        '',
+        '## Speaking, not reading',
+        '- Don’t read out lists, bullets, headings, links or email addresses. Pick what matters and say it in a sentence.',
+        '- Say dates and times the way people say them ("Thursday at half past two", not "2026-10-29 14:30").',
+        '- The one exception: when ask_to_send says to read a draft out, read it in full, word for word.',
+        '- If you didn’t hear or understand the owner, ask them briefly to say it again.',
+        '',
+        '# Going through the to-dos',
+        '- Start with list_todos. Say how many need them, in one line, then take the first one.',
+        '- One to-do at a time: open_todo, say in a sentence who it is from and what they want, and whether a reply is '
+        'drafted. Offer to read the draft; read it only if they want.',
+        '- Then follow their lead: change the draft, snooze it, mark it done or not needed (all through ask_chat), send '
+        'it, or skip to the next one. When one is handled, move on to the next without being asked.',
+        '- If they ask about another to-do, find it (find_todos or list_todos) and open it.',
+        '- When nothing is left, say so in a line and ask if there is anything else.',
+        '',
+        '# Tools and rules',
+        '- Everything below is about the to-do that is open (open_todo). Open the right one first.',
+        '- Call todo_details before you answer anything about this to-do.',
+        '- You can’t change or delete anything yourself, and nothing you say goes to anyone else.',
+        '- When the owner wants something done in this to-do (a reply drafted or changed, snoozed, marked done) or looked '
+        'up (opening hours, an address, anything on the web), call ask_chat with their request. Say one short line, like '
+        '"Looking that up", then keep talking about anything else; never poll or say you will check. The chat’s answer '
+        'comes to you as a message when it is done: tell the owner then.',
+        '- To send: only when the owner asks to send the draft on screen, call ask_to_send and ask its question, reading the '
+        'draft out first when it says so. After their answer, call send_answer and say what it returns. One draft per '
+        'question; never send several at once, and never say something was sent unless send_answer says so.',
+        '- If something isn’t in the to-do, ask the chat to look it up rather than guess.',
+    ])
+
+
 def digest(action):
     """What a confirm question was about: who, how and what. Any change after the question means asking again."""
     keep = {k: action.get(k) for k in ('kind', 'to', 'cc', 'bcc', 'from', 'subject', 'body', 'message', 'thread_id', 'channel')}
@@ -193,6 +275,11 @@ def judge_answer(answer, asked, run):
     return 'unclear'
 
 
+def subject(found):
+    """The to-do a conversation is about now: its own, or in the main conversation the one in focus (None before one is open)."""
+    return found.get('focus') if found.get('main') else found['suggestion_id']
+
+
 class Talk:
     """The live conversations this service has open (in memory only), and the Gateway helper."""
 
@@ -200,6 +287,7 @@ class Talk:
         self.config, self.run, self.clock = config or {}, runner, clock
         self.lock, self.asking = threading.Lock(), threading.Lock()
         self.open = {}      # talk ID -> {'suggestion_id', 'started', 'secret', 'offer_url', 'offer_headers', 'voice_session_id', 'via', 'offered'}
+                            # (+ 'main' and 'focus' for the main conversation, whose suggestion_id is '')
         self.ready = None   # (good until, {'ready', 'model'}) from the Gateway's catalog
 
     def helper(self, request, env, timeout=40):
@@ -237,16 +325,21 @@ class Talk:
                 self.asking.release()
 
     def start(self, suggestion_id, env, voice='cedar'):
-        """A new conversation about this to-do: its ID for the dashboard, never the session's secret."""
-        if not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
+        """A new conversation about this to-do, or the main one (suggestion_id None): its ID for the dashboard, never
+        the session's secret."""
+        main = suggestion_id is None
+        if not main and not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
             raise ValueError('Unknown suggestion')
+        suggestion_id = '' if main else suggestion_id
         self.sweep()
         with self.lock:
-            if any(t['suggestion_id'] == suggestion_id for t in self.open.values()):
+            if main and any(t.get('main') for t in self.open.values()):
+                raise ValueError('Talk is already open. End it first.')
+            if not main and any(t['suggestion_id'] == suggestion_id for t in self.open.values()):
                 raise ValueError('A live conversation is already open for this to-do. End it first.')
             if len(self.open) >= 2:
                 raise ValueError('Two live conversations are already open. End one first.')
-        made = self.helper({'method': 'start', 'session_key': SESSION_PREFIX + suggestion_id, 'voice': voice}, env)
+        made = self.helper({'method': 'start', 'session_key': SESSION_PREFIX + (suggestion_id or 'main'), 'voice': voice}, env)
         if made.get('error') or not made.get('secret'):
             raise ValueError('Talk live couldn’t start. Check OpenAI in OpenClaw, then try again.'
                              if made.get('reason') == 'auth' else 'Talk live couldn’t start. Try again.')
@@ -254,17 +347,29 @@ class Talk:
         with self.lock:
             self.open[talk_id] = {'suggestion_id': suggestion_id, 'started': self.clock(), 'secret': made['secret'],
                                   'offer_url': made.get('offer_url'), 'offer_headers': made.get('offer_headers') or {},
-                                  'voice_session_id': made.get('voice_session_id'), 'via': made.get('via'), 'offered': False}
+                                  'voice_session_id': made.get('voice_session_id'), 'via': made.get('via'), 'offered': False,
+                                  'limit': MAIN_LIMIT_SECONDS if main else LIMIT_SECONDS, **({'main': True, 'focus': None} if main else {})}
         return {'id': talk_id, 'via': made.get('via'), 'model': str(made.get('model') or '')[:80]}
 
     def get(self, talk_id, suggestion_id=None):
         with self.lock:
             found = self.open.get(str(talk_id or ''))
-        if not found or (suggestion_id is not None and found['suggestion_id'] != suggestion_id):
+        if not found or (suggestion_id is not None and subject(found) != suggestion_id):
             raise ValueError('This live conversation has ended.')
-        if self.clock() - found['started'] > LIMIT_SECONDS + GRACE_SECONDS:
+        if self.clock() - found['started'] > found.get('limit', LIMIT_SECONDS) + GRACE_SECONDS:
             raise ValueError('This live conversation has ended.')
         return found
+
+    def focus(self, talk_id, suggestion_id):
+        """The main conversation moves to this to-do (the one on screen). A confirm question about another one is dropped."""
+        found = self.get(talk_id)
+        if not found.get('main') or not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
+            raise ValueError('Unknown suggestion')
+        with self.lock:
+            if found['focus'] != suggestion_id:
+                found.pop('confirm', None)
+            found['focus'] = suggestion_id
+        return {'ok': True}
 
     def offer(self, talk_id, sdp, env):
         """The browser's WebRTC offer, handed on with the session's secret (once); the answer goes back."""
@@ -275,7 +380,7 @@ class Talk:
             if found['offered']:
                 raise ValueError('Talk live couldn’t connect. Try again.')
             found['offered'] = True
-        got = self.helper({'method': 'offer', 'session_key': SESSION_PREFIX + found['suggestion_id'], 'sdp': sdp, 'secret': found['secret'],
+        got = self.helper({'method': 'offer', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'), 'sdp': sdp, 'secret': found['secret'],
                            'offer_url': found['offer_url'], 'offer_headers': found['offer_headers']}, env)
         if got.get('error') or not str(got.get('sdp') or '').startswith('v=0'):
             self.end(talk_id, env)
@@ -283,12 +388,13 @@ class Talk:
         return {'sdp': got['sdp']}
 
     def line(self, db, talk_id, role, text, at):
-        """What one side said, kept as the to-do's chat."""
+        """What one side said, kept as the to-do's chat (in the main conversation: the to-do in focus; before one is
+        open, kept for the record only)."""
         found = self.get(talk_id)
         text = ' '.join(str(text or '').split())[:LINE_CHARS]
         if role not in ROLES or not text:
             raise ValueError('Nothing to keep')
-        db.execute('INSERT INTO talk_lines(suggestion_id,talk_id,role,text,at) VALUES(?,?,?,?,?)', (found['suggestion_id'], talk_id, role, text, at))
+        db.execute('INSERT INTO talk_lines(suggestion_id,talk_id,role,text,at) VALUES(?,?,?,?,?)', (subject(found) or '', talk_id, role, text, at))
         return {'ok': True}
 
     def ask(self, talk_id, suggestion_id, revision, action, name, at):
@@ -333,12 +439,12 @@ class Talk:
         with self.lock:
             found = self.open.pop(str(talk_id or ''), None)
         if found:
-            self.helper({'method': 'end', 'session_key': SESSION_PREFIX + found['suggestion_id'],
+            self.helper({'method': 'end', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'),
                          'voice_session_id': found.get('voice_session_id')}, env, timeout=25)
         return {'ok': True}
 
     def sweep(self):
         """Conversations past their limit are forgotten (their secret with them)."""
         with self.lock:
-            for talk_id in [k for k, v in self.open.items() if self.clock() - v['started'] > LIMIT_SECONDS + GRACE_SECONDS]:
+            for talk_id in [k for k, v in self.open.items() if self.clock() - v['started'] > v.get('limit', LIMIT_SECONDS) + GRACE_SECONDS]:
                 self.open.pop(talk_id, None)

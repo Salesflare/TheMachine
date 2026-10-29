@@ -15,6 +15,12 @@ Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren
 
 Die Leiste hat **Stummschalten** und **Ende**. Ein Gespräch dauert bis zu 10 Minuten. Eine Minute vor dem Ende zeigt der Timer, wie viel Zeit übrig ist. Starte es neu, um weiterzumachen.
 
+## Alle Aufgaben durchsprechen
+
+Tippe in der Seitenleiste (auf dem Handy im Menü) auf **Sprechen**, um alles, was auf dich wartet, per Stimme durchzugehen. The Machine sagt, wie viele warten, und nimmt sie nacheinander durch: zuerst **Bereit**, dann **Zu entscheiden**. Die Aufgabe, über die sie spricht, öffnet sich auf dem Bildschirm, damit du siehst, was sie vorliest.
+
+Bitte sie, einen Entwurf vorzulesen, zu ändern, zu verschieben, als erledigt zu markieren oder zum nächsten zu gehen. Senden funktioniert wie im Chat einer Aufgabe: ein Entwurf pro Frage, nach einem klaren Ja. Was du über eine Aufgabe sagst, landet im Chat dieser Aufgabe. Kommt eine neue Aufgabe herein, erwähnt sie sie in einer Pause. Dieses Gespräch dauert höchstens 30 Minuten.
+
 ## Bitte um Dinge und sende mit einem Ja
 
 Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“ oder „stell das bis Montag zurück“, gibt The Machine es an den Chat der Aufgabe weiter, als hättest du es getippt. Der Chat folgt seinen üblichen Regeln: Er kann den Entwurf ändern oder die Aufgabe zurückstellen.

@@ -15,6 +15,12 @@ It knows the to-do you're in: its messages, its draft and its chat. It can also 
 
 The bar has **Mute** and **End**. A conversation lasts up to 10 minutes. A minute before the end, the timer shows how much is left. Start it again to go on.
 
+## Talk through all your to-dos
+
+Tap **Talk** in the sidebar (in the menu on a phone) to go through everything that needs you, by voice. The Machine says how many are waiting and takes them one by one: **Ready** first, then **To decide**. The to-do it's talking about opens on screen, so you see what it reads.
+
+Ask it to read a draft, change it, snooze it, mark it done, or move on to the next one. Sending works as in a to-do's chat: one draft per question, after a clear yes. What you say about a to-do goes into that to-do's chat. When a new to-do comes in, it mentions it at a pause. This conversation lasts up to 30 minutes.
+
 ## Ask for things, and send with a yes
 
 When you ask for something, like "write a reply saying Thursday works" or "snooze this until Monday", The Machine hands it to the to-do's chat, as if you had typed it. The chat follows its usual rules: it can change the draft or snooze the to-do.

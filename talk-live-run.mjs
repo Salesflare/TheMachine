@@ -9,7 +9,7 @@ import {gatewayRuntime} from './openclaw-root.mjs';
 import {readFileSync} from 'node:fs';
 import {homedir} from 'node:os';
 
-const SESSION = /^agent:main:assistant-talk-[a-f0-9]{16}$/;
+const SESSION = /^agent:main:assistant-talk-(?:[a-f0-9]{16}|main)$/;   // a to-do's conversation, or the main one
 const SCOPE = {scopes: ['operator.read', 'operator.talk']};
 // Where an offer may go: OpenAI's own Realtime endpoint (with an API key) or the Gateway's (with a ChatGPT sign-in)
 const OPENAI_CALLS = 'https://api.openai.com/v1/realtime/calls';

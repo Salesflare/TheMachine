@@ -15,6 +15,12 @@ Ela conhece a tarefa em que você está: as mensagens, o rascunho e o chat dela.
 
 A barra tem **Silenciar** e **Fim**. Uma conversa dura até 10 minutos. Um minuto antes do fim, o cronômetro mostra quanto falta. Comece de novo para continuar.
 
+## Repasse todas as suas tarefas falando
+
+Toque em **Falar** na barra lateral (no menu, no celular) para repassar por voz tudo o que espera por você. A The Machine diz quantas há e passa por elas uma a uma: primeiro **Pronta**, depois **A decidir**. A tarefa de que ela fala abre na tela, para você ver o que ela lê.
+
+Peça para ler um rascunho, mudar, adiar, marcar como feita ou ir para a próxima. Enviar funciona como no chat de uma tarefa: um rascunho por pergunta, depois de um sim claro. O que você diz sobre uma tarefa fica no chat dessa tarefa. Quando chega uma tarefa nova, ela avisa numa pausa. Esta conversa dura até 30 minutos.
+
 ## Peça coisas e envie com um sim
 
 Quando você pede algo, como "escreva uma resposta dizendo que quinta está bom" ou "adie isso até segunda", a The Machine passa o pedido ao chat da tarefa, como se você tivesse digitado. O chat segue as regras de sempre: pode mudar o rascunho ou adiar a tarefa.

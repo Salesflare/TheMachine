@@ -848,6 +848,7 @@ VOICE_WARM_QUIET = 3   # 5-minute checks in a row that a live Machine is quiet b
 TALK_ACTIONS = {
     'talk_ask_send',
     'talk_end',
+    'talk_focus',
     'talk_line',
     'talk_offer',
     'talk_send',
@@ -20467,6 +20468,15 @@ class App:
             return {'ready': None}
         return {'ready': found['ready'], 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS}
 
+    def talk_ready(self):
+        """Whether Talk (the sidebar's) can show: Talk live's readiness as known (kept 10 minutes, refreshed in the
+        background), None until known."""
+        try:
+            found = self.talk.status(self.talk_env(), check=True)
+        except Exception:  # never in the way of the page's status
+            return None
+        return found['ready'] if found else None
+
     def talk_action(self, name, args):
         """A live conversation in a to-do's chat (talk_live.py). Only what it reads and what both sides said pass here;
         the audio goes directly between the browser and OpenAI."""
@@ -20474,19 +20484,32 @@ class App:
         if name == 'talk_status':
             return self.talk_view(check=True)
         if name == 'talk_start':
+            # A to-do's own conversation, or the main one (Talk in the sidebar: main=True, no to-do)
+            main = args.get('main') is True
             sid = str(args.get('suggestion_id') or '')
             with self.store.connect() as db:
                 card = db.execute('SELECT title FROM suggestions WHERE id=?', (sid,)).fetchone() if re.fullmatch(r'[a-f0-9]{16}', sid) else None
-            if not card:
+            if not card and not main:
                 raise ValueError('Unknown suggestion')
             with self.store.connect() as db:
                 voice = voice_input.prefs(db)['talk_voice']
-            started = self.talk.start(sid, env, voice)
-            LOG.info('talk live start via=%s', started.get('via'))
+            started = self.talk.start(None if main else sid, env, voice)
+            LOG.info('talk live start via=%s main=%s', started.get('via'), main)
             view = self.talk_view()
-            return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'per_use': started.get('via') == 'key', 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS,
-                    'tools': talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE, 'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE}, 'instructions': talk_live.instructions(card['title'], locale_prefs.language() or 'en',
-                                                                                   time.strftime('%A %d %B %Y, %H:%M')), 'ready': view.get('ready')}
+            now, language = time.strftime('%A %d %B %Y, %H:%M'), locale_prefs.language() or 'en'
+            return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'per_use': started.get('via') == 'key',
+                    'limit': talk_live.MAIN_LIMIT_SECONDS if main else talk_live.LIMIT_SECONDS,
+                    'warn': talk_live.MAIN_WARN_SECONDS if main else talk_live.WARN_SECONDS,
+                    'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,
+                    'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE},
+                    'instructions': talk_live.main_instructions(language, now) if main else talk_live.instructions(card['title'], language, now),
+                    'main': main, 'ready': view.get('ready')}
+        if name == 'talk_focus':
+            sid = str(args.get('suggestion_id') or '')
+            with self.store.connect() as db:
+                if not (re.fullmatch(r'[a-f0-9]{16}', sid) and db.execute('SELECT 1 FROM suggestions WHERE id=?', (sid,)).fetchone()):
+                    raise ValueError('Unknown suggestion')
+            return self.talk.focus(args.get('id'), sid)
         if name == 'talk_offer':
             return self.talk.offer(args.get('id'), args.get('sdp'), env)
         if name == 'talk_end':
@@ -20501,7 +20524,10 @@ class App:
         if name == 'talk_undo':
             return self.store.undo_voice_send(args.get('suggestion_id'), args.get('approval_id'))
         found = self.talk.get(args.get('id'))
-        return {'output': self.talk_tool(found['suggestion_id'], str(args.get('name') or ''), args.get('args') if isinstance(args.get('args'), dict) else {})}
+        tool = str(args.get('name') or '')
+        if tool == 'todo_details' and not talk_live.subject(found):
+            return {'output': {'error': 'No to-do is open. Call open_todo first.'}}
+        return {'output': self.talk_tool(talk_live.subject(found), tool, args.get('args') if isinstance(args.get('args'), dict) else {}, ids=bool(found.get('main')))}
 
     def talk_draft(self, suggestion_id, revision):
         """The draft Talk live may ask to send: this to-do's current one, ready, going to people the draft names."""
@@ -20516,8 +20542,8 @@ class App:
         """The voice asks to send the draft on screen (the dashboard says which revision it shows, and whether the owner
         may not see it: then the voice reads it out first). The question is kept for the owner's next answer."""
         found = self.talk.get(args.get('id'))
-        sid, revision = found['suggestion_id'], str(args.get('revision') or '')
-        action = self.talk_draft(sid, revision)
+        sid, revision = talk_live.subject(found), str(args.get('revision') or '')
+        action = self.talk_draft(sid, revision) if sid else None
         if not action:
             return {'error': 'No draft ready to send by voice. It needs a tap on Approve on screen.'}
         names = {}
@@ -20538,7 +20564,9 @@ class App:
         import help_chat
         talk_id = args.get('id')
         found = self.talk.get(talk_id)
-        sid = found['suggestion_id']
+        sid = talk_live.subject(found)
+        if not sid:
+            return {'status': 'not_asked', 'say': talk_live.SAY['not_asked']}
         run = getattr(self, 'talk_judge', None)
         if not run:
             swap = background_model(self.config)
@@ -20556,7 +20584,7 @@ class App:
             return {'status': 'changed', 'say': talk_live.SAY['changed']}
         return {'status': 'queued', 'approval_id': approval, 'undo_seconds': talk_live.UNDO_SECONDS, 'say': talk_live.SAY['queued']}
 
-    def talk_tool(self, suggestion_id, name, args):
+    def talk_tool(self, suggestion_id, name, args, ids=False):
         """Talk live's tools that read (talk_live.TOOLS): this to-do, or finding others. Never anything that sends or
         changes; `ask_chat` is the dashboard's own (the chat's normal decide path)."""
         if name == 'todo_details':
@@ -20579,7 +20607,8 @@ class App:
                 rows = db.execute("SELECT id,title,status FROM suggestions WHERE status NOT IN ('completed','rejected') ORDER BY created_at DESC LIMIT 500").fetchall()
             found = [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
                     [r for r in rows if any(w in (r['title'] or '').lower() for w in words)]
-            return {'todos': [{'title': clamp(r['title'], 200), 'status': r['status']} for r in found[:10]]}
+            # the main conversation opens one by its id (open_todo)
+            return {'todos': [{**({'id': r['id']} if ids else {}), 'title': clamp(r['title'], 200), 'status': r['status']} for r in found[:10]]}
         raise ValueError('Unknown tool')
 
     def lookups_view(self):
@@ -20966,7 +20995,7 @@ class App:
                     self.output(200, {'csrf': dashboard_csrf(app.token, app.config['tailscale_owner']),
                                       'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner'])})
                 elif path.path == '/api/status':
-                    self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'ui_version': dashboard_version(), 'source_url': source_url(), 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
+                    self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                                       'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})
                     try:
                         app.store.note_card_shown()

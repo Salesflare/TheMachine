@@ -291,6 +291,92 @@ class Api(unittest.TestCase):
         self.assertEqual((job['status'], job['approval_id']), ('queued', again['approval_id']))
         self.assertGreater(job['retry_at'], a.now())
 
+    # Talk (the main conversation): not tied to one to-do; it works on the one on screen (talk_focus)
+
+    def test_talk_goes_through_the_todos_with_its_own_tools_and_limit(self):
+        started = self.act('talk_start', {'main': True})
+        self.assertTrue(started['main'])
+        self.assertEqual(self.gateway.calls[-1]['session_key'], t.SESSION_PREFIX + 'main')
+        self.assertEqual((started['limit'], started['warn']), (1800, 1740))   # OpenAI allows 60 minutes
+        self.assertEqual([x['name'] for x in started['tools']],
+                         ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer'])
+        for words in ('Start with list_todos', 'One to-do at a time', 'never say something was sent unless send_answer says so',
+                      'call ask_to_send and ask its question', 'never poll', 'contractions'):
+            self.assertIn(words, started['instructions'])
+        self.assertIn('{title}', started['notes']['new'])
+        self.assertNotIn(SECRET, json.dumps(started))
+        with self.assertRaisesRegex(ValueError, 'Talk is already open'):
+            self.act('talk_start', {'main': True})
+        # A to-do's own conversation can still open next to it
+        self.assertTrue(self.act('talk_start', {'suggestion_id': SID})['id'])
+
+    def test_the_page_status_says_whether_talk_can_show(self):
+        self.assertIs(self.app.talk_ready(), True)   # known (setUp asked): the sidebar's Talk shows
+        self.app._talk = t.Talk({}, runner=Gateway(ready=False))
+        self.app._talk.status({}, True, wait=True)
+        self.assertIs(self.app.talk_ready(), False)
+
+    def test_talk_reads_only_the_todo_it_opened(self):
+        talk_id = self.act('talk_start', {'main': True})['id']
+        self.assertIn('error', self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output'])
+        found = self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': {'words': 'offsite'}})['output']['todos']
+        self.assertEqual({x['id'] for x in found}, {SID, 'b' * 16})   # ids, so it can open one
+        with self.assertRaisesRegex(ValueError, 'Unknown suggestion'):
+            self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'f' * 16})
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'b' * 16})
+        self.assertEqual(self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']['title'], 'Book the offsite venue')
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'}))   # nothing to send there
+
+    def test_talk_keeps_what_was_said_in_each_todos_chat(self):
+        talk_id = self.act('talk_start', {'main': True})['id']
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'You have two that need you.'})
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': SID})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Dana asks if Thursday works.'})
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'b' * 16})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Snooze the venue one.'})
+        with self.store.connect() as db:
+            dana, venue = t.lines(db, SID), t.lines(db, 'b' * 16)
+        self.assertEqual([(i['kind'], i['text']) for i in dana], [('event', 'Talked live'), ('reply', 'Dana asks if Thursday works.')])
+        self.assertEqual([(i['kind'], i['text']) for i in venue], [('event', 'Talked live'), ('you', 'Snooze the venue one.')])
+
+    def test_talk_sends_one_draft_by_voice_under_the_same_rules(self):
+        self.ready_draft()
+        self.app.talk_judge = lambda prompt: '{"approve": "yes"}'
+        talk_id = self.act('talk_start', {'main': True})['id']
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')   # nothing open, nothing asked
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': SID})
+        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': True})
+        self.assertEqual(asked['question'], 'Send this reply to Dana by email?')
+        self.assertTrue(asked['say'].startswith(t.SAY['read']))
+        # The owner opens another to-do before answering: the question is dropped, nothing goes
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'b' * 16})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')
+        self.assertEqual(self.jobs(), [])
+        # Back on Dana's: asked, a clear yes, that one draft waits with Undo, and the chat says so
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': SID})
+        self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': False})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes, send it.'})
+        sent = self.act('talk_send', {'id': talk_id})
+        self.assertEqual(sent['status'], 'queued')
+        self.assertEqual([(j['source'], j['revision']) for j in self.jobs()], [('voice', 'r1')])
+        self.assertTrue([i for i in self.app.card_chat(SID)['items'] if i.get('text') == 'Approved by voice'])
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')   # one yes, one draft
+
+    def test_talk_ends_after_its_own_limit(self):
+        talk = t.Talk({}, runner=Gateway(), clock=Clock())
+        main = talk.start(None, {})['id']
+        own = talk.start(SID, {})['id']
+        talk.clock.now += t.LIMIT_SECONDS + t.GRACE_SECONDS + 1
+        talk.get(main)
+        with self.assertRaisesRegex(ValueError, 'ended'):
+            talk.get(own)
+        talk.clock.now += t.MAIN_LIMIT_SECONDS
+        with self.assertRaisesRegex(ValueError, 'ended'):
+            talk.get(main)
+
     def test_undo_is_too_late_once_the_wait_is_over(self):
         talk_id, _ = self.asked('Yes.')
         approval = self.act('talk_send', {'id': talk_id})['approval_id']
