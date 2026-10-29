@@ -91,6 +91,7 @@ import browser_viewer
 import preparation_state
 import model_budget
 import follow_ups
+import bounces
 import pacing
 import portable
 import service
@@ -3318,6 +3319,9 @@ def message_event(account, raw, config=None):
     if headers.get('reply-to'):
         metadata['reply-to'] = headers['reply-to']
     metadata.update(list_headers(headers))
+    report = bounces.read_report(raw.get('payload'))  # a delivery report (bounce): its recipients, read from its structure
+    if report:
+        metadata['bounce'] = report
     metadata.update(thread_id=raw.get('threadId'), labels=sorted(raw.get('labelIds', [])),
                     source_url=raw.get('webLink') if account.get('service') == 'outlook' else
                     'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(account['email']) + '#all/' + raw['id'],
@@ -3718,6 +3722,7 @@ class Store:
                 db.execute(schema)
             graph.ensure(db)
             follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
+            bounces.ensure(db)  # addresses that bounce (bounces.py): new tables only
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')
             # Who set a to-do's project: 'review' (or NULL, from before 2026-10-27), 'auto' (graph.link_cards: its thread or
@@ -4858,6 +4863,19 @@ class Store:
             out[event_id] = {**({'projects': named} if named else {}), **({'probably_project': guessed[0]} if guessed and not named else {})}
         return out
 
+    def bounce_hints(self, hints, event_ids):
+        """A delivery report in a review's batch: who it bounced for, their other working address, and whether it matters
+        (an open project on its thread, or a to-do's email waiting for their reply). Added to hints by event id."""
+        try:
+            with self.connect() as db:
+                for event_id in bounces.bounce_event_ids(db, event_ids):
+                    found = bounces.hint(db, event_id)
+                    if found:
+                        hints.setdefault(event_id, {})['bounce'] = found
+        except sqlite3.Error:
+            pass
+        return hints
+
     def unnamed_text(self, run_id, limit=2):
         """Up to two groups of threads that read alike and share people but have no project, each offered
         to one review (again only once it has doubled)."""
@@ -5000,6 +5018,7 @@ class Store:
         context = self.conversation_context(rows)
         replies = self.card_replies(rows)
         hints = self.project_hints([r['id'] for r in rows])
+        self.bounce_hints(hints, [r['id'] for r in rows])
         owned, teams = self.owner_threads(rows), self.team_inboxes(rows)
         pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned, team_inbox=teams.get(r['id'])),
                                **({'answers_your_card': replies[r['id']]} if r['id'] in replies else {}),
@@ -5031,6 +5050,7 @@ class Store:
         # A signal may grow after the original page layout was committed.
         replies = self.card_replies([rows[i] for i in ids if i in rows])
         hints = self.project_hints([i for i in ids if i in rows])
+        self.bounce_hints(hints, [i for i in ids if i in rows])
         owned, teams = self.owner_threads([rows[i] for i in ids if i in rows]), self.team_inboxes([rows[i] for i in ids if i in rows])
         views = [{**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned, team_inbox=teams.get(i)),
                   **({'answers_your_card': replies[i]} if i in replies else {}), **hints.get(i, {})}
@@ -7774,7 +7794,7 @@ class Store:
                                    # A merged fix can be undone for a day.
                                    **({'undo_until':(dt.datetime.fromisoformat(r['updated_at'])+UNDO_MERGE).isoformat()} if r['status']=='sent' and str(r['message_id']).startswith('merge:') else {})}
                     for r in db.execute('SELECT j.revision,j.status,j.error,j.message_id,j.approval_id,j.updated_at,j.payload,t.status snooze_status,t.until snooze_until,t.error snooze_error FROM action_jobs j LEFT JOIN thread_snoozes t ON t.job_id=j.id WHERE j.suggestion_id=?',(suggestion['id'],))}
-            extra['next_actions']=[{**item,**({'state':states[item['revision']]} if item['revision'] in states else {})} for item in next_actions.visible_actions(action)]
+            extra['next_actions']=[{**bounces.mark_draft(db,item),**({'state':states[item['revision']]} if item['revision'] in states else {})} for item in next_actions.visible_actions(action)]
             if action['kind']!='menu' and action['revision'] in states:extra['action_status']=states[action['revision']]
             # The draft Telegram shows in full on the card, so its Send there confirms directly (card_draft).
             shown=card_draft({**suggestion,**extra})
@@ -14014,6 +14034,12 @@ class App:
             options=thread_recipients(emails,[a.get('email','') for a in self.config['accounts']])
             for key in ('next_actions','next_action'):
                 if args.get(key):args={**args,key:reply_to_newest(emails,args[key])}
+            with self.store.connect() as db:  # never a bounced address as To when the person has a working one (bounces.py)
+                for key in ('next_actions','next_action'):
+                    if args.get(key):
+                        steered,options=bounces.steer(db,args[key],options)
+                        args={**args,key:steered}
+                if not args.get('next_actions') and not args.get('next_action'):options=bounces.steer(db,None,options)[1]
             with self.store.connect() as db:
                 senders=own_addresses.senders(db,self.config)
             with self.store.connect() as db:
@@ -16013,7 +16039,7 @@ class App:
             b['follow_ups'] = found['boards'].get(b['id']) or {'on': False, 'next_at': None}
             for p in b['projects']:
                 view = found['projects'].get(int(p['id'].split(':', 1)[1]))
-                if view and (view['on'] or view.get('end')):
+                if view and (view['on'] or view.get('end') or view.get('reason') == 'bounced'):
                     p['follow_up'] = {k: view[k] for k in ('state', 'next_at', 'n', 'max', 'own', 'end', 'reason')}
 
     def follow_up_project(self, db, node_id):
@@ -16122,6 +16148,23 @@ class App:
             return limited
         model = openclaw_model(self.config)
         return model_budget.follow_up_pause(model_budget.for_model(getattr(self, 'model_usage', None), model), time.time(), late)
+
+    def bounce_step(self):
+        """Every five minutes, before follow-ups: reads newly collected mail for delivery reports (the first time, the
+        ones collected before too: bounces.scan), clears addresses that work again, marks a follow-up that bounced and
+        queues a fresh look-up of a bounced person (people enrichment, when it's on)."""
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            own = self.follow_up_own(db)['emails']
+            flagged = bounces.scan(db, own)
+            cleared = bounces.clear(db, now(), own)
+            for event_id, address, _ in flagged:
+                bounces.requeue_lookup(db, address)
+                follow_ups.bounced(db, event_id, address, now())
+        if flagged or cleared:
+            LOG.info('bounces flagged=%s cleared=%s', len(flagged), len(cleared))
+        return {'flagged': len(flagged), 'cleared': len(cleared)}
 
     def follow_up_step(self, limit=follow_ups.BATCH):
         """Every five minutes: close follow-up to-dos that aren't needed any more, send the ones the owner said to send
@@ -16322,6 +16365,8 @@ class App:
                 except Exception as error:LOG.error('style learning error=%s',type(error).__name__)
             if time.monotonic() - followed >= 300:
                 followed = time.monotonic()
+                try:self.bounce_step()  # before follow-ups: a bounced address gets none by email
+                except Exception as error:LOG.error('bounce check error=%s',type(error).__name__)
                 try:self.follow_up_step()
                 except Exception as error:LOG.error('follow-up error=%s',type(error).__name__)
             try:self.action_step()

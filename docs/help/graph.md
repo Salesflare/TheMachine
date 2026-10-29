@@ -3,7 +3,7 @@ title: The Graph
 area: graph
 summary: The people, organizations and projects in your messages, kept up to date by themselves.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Your Machine builds a map of who you deal with and what's going on, from your messages, meetings and decisions. Nothing to set up, and it stays on your Machine.
@@ -98,6 +98,12 @@ Click the picture on a person's or organization's page to change it: **Upload a 
 **Edit**, at the top of their page, changes their name, title, organization, location, LinkedIn, phones and emails, what they are to you, and Work or Personal. **Save** keeps it, **Cancel** leaves it as it was.
 
 Your edits stay, also when their details are looked up again or a review reads something else, and through **Merge** and **Undo**. Empty a field to use the looked-up value again. An empty name brings back the one from their messages.
+
+## Bounced
+
+When an email to someone bounces, their address shows **Bounced** with the date, and another address of theirs comes first. New drafts never go to it when another address is known. If it's their only one, the send sheet warns you, and you can still send. Their details are looked up again.
+
+A bounce counts when the mail server says the address doesn't exist, or after 3 temporary failures over a week. It clears when they write from that address again, or when an email to it goes through.
 
 ## Same person?
 

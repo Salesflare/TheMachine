@@ -26,6 +26,11 @@ most: follow_up_cards is UNIQUE on (project, that message); the follow-up the ow
 Waiting points older than STALE_DAYS past their date are left alone: turning follow-ups on never chases old threads,
 and a round only ends by itself (note, Stalled) after a follow-up that went out from here.
 
+A bounced address (bounces.py) gets no follow-up by email: when every To of the owner's last email in the project
+bounced, the follow-up moves to another allowed channel where the conversation already is (as switch does), else the
+project shows "Email bounced" (state off, reason bounced). An open email draft closes with why 'bounced', and a sent
+follow-up that bounced is marked the same way (bounced). A delivery report is never a reply.
+
 App.follow_up_step drafts in a low-priority background pass: only while no other preparation waits and the model's
 usage has room (model_budget.follow_up_pause, which pauses before every other background work). It makes a to-do
 prepared ahead by the normal preparation (the owner's voice, the last exchange, newer messages checked first) and the
@@ -120,6 +125,8 @@ def ensure(db):
     for statement in SCHEMA.split(';'):
         if statement.strip():
             db.execute(statement)
+    import bounces
+    bounces.ensure(db)  # a delivery report is never a reply, and a bounced address gets no follow-up by email
 
 
 def parse(value):
@@ -378,8 +385,11 @@ def mine_default(event):
 def messages(db, project_id, mine=mine_default):
     """A project's messages, oldest first: {'id', 'at', 'mine', 'channel'}."""
     marks = ','.join('?' for _ in MESSAGE_KINDS)
-    # Labeled into it (event_projects), or the Graph's own link (graph_events: its threads)
-    rows = db.execute(f"SELECT e.id,e.kind,e.occurred_at,e.metadata FROM events e WHERE e.deleted=0 AND e.kind IN ({marks}) AND e.id IN ("
+    # Labeled into it (event_projects), or the Graph's own link (graph_events: its threads); never a delivery report
+    # (bounces.py): a bounce in the thread is no reply
+    reports = 'AND e.id NOT IN (SELECT event_id FROM email_bounce_events) ' if db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='email_bounce_events'").fetchone() else ''
+    rows = db.execute(f"SELECT e.id,e.kind,e.occurred_at,e.metadata FROM events e WHERE e.deleted=0 AND e.kind IN ({marks}) {reports}AND e.id IN ("
                       "SELECT event_id FROM event_projects WHERE project_id=? UNION SELECT event_id FROM graph_events WHERE node_id=? AND probable=0) "
                       'ORDER BY e.occurred_at,e.id', (*MESSAGE_KINDS, int(project_id), 'project:' + str(project_id))).fetchall()
     return [{'id': r['id'], 'at': r['occurred_at'], 'mine': mine(dict(r)), 'channel': CHANNEL_KINDS.get(r['kind'], 'x')} for r in rows]
@@ -714,6 +724,46 @@ def owned_by_other(db, project_id):
     return bool(row and row[0] and row[0] != 'me')
 
 
+def email_bounced(db, msgs):
+    """The project's email can't reach them: every To of the owner's latest email in it bounced and didn't work since
+    (bounces.flags). Then no follow-up goes by email: another allowed channel where the conversation is, or none."""
+    import bounces
+    ours = [x for x in msgs if x['mine'] and x['channel'] == 'email']
+    if not ours:
+        return False
+    row = db.execute('SELECT metadata FROM events WHERE id=?', (ours[-1]['id'],)).fetchone()
+    if not row:
+        return False
+    to = bounces.addresses_in(_meta(row['metadata']).get('to'))
+    return bool(to) and set(bounces.flags(db, to)) >= set(to)
+
+
+def bounced(db, event_id, address, now):
+    """A follow-up that went out to this address and bounced: marked on the project's list ("Follow-up 2 bounced"), with
+    "Email bounced" in its to-do's history. The project's next one then skips email (email_bounced). Returns the to-dos."""
+    report = db.execute('SELECT at,original_id,thread_id FROM email_bounce_events WHERE event_id=? AND address=?', (event_id, address)).fetchone()
+    if not report:
+        return []
+    at = parse(report['at'])
+    rows = db.execute("SELECT f.suggestion_id,j.rfc_message_id,j.payload FROM follow_up_cards f JOIN action_jobs j ON j.suggestion_id=f.suggestion_id "
+                      "WHERE f.state='sent' AND f.why IS NULL AND j.status='sent' AND j.updated_at>=? AND j.updated_at<=?",
+                      ((at - dt.timedelta(days=7)).isoformat(), (at + dt.timedelta(minutes=5)).isoformat())).fetchall()
+    marked = []
+    for r in rows:
+        payload = _meta(r['payload'])
+        if payload.get('kind') != 'email' or address not in {str(a).lower() for a in payload.get('to') or ()}:
+            continue
+        same = (report['original_id'] and r['rfc_message_id'] == report['original_id']) or (
+            report['thread_id'] and payload.get('thread_id') == report['thread_id'])
+        if not same:
+            continue
+        db.execute("UPDATE follow_up_cards SET why='bounced' WHERE suggestion_id=?", (r['suggestion_id'],))
+        db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                   ('follow-up-bounced:' + r['suggestion_id'], r['suggestion_id'], 'bounced', WHY['bounced'], 'assistant', now))
+        marked.append(r['suggestion_id'])
+    return marked
+
+
 def open_card(db, project_id):
     return db.execute("SELECT f.*,s.status FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id WHERE f.project_id=? AND f.state='open' "
                       'ORDER BY f.created_at DESC LIMIT 1', (project_id,)).fetchone()
@@ -751,6 +801,10 @@ def plan(db, now, sendable, mine=mine_default, own=None):
             done = db.execute('SELECT state FROM follow_up_cards WHERE project_id=? AND after_event=?', (pid, found['after'])).fetchone()
             if done:  # this waiting point was followed up already (or skipped): the next one is the follow-up itself
                 found = {**found, 'state': 'open' if done['state'] == 'open' else 'handled', 'next_at': None}
+                if done['state'] == 'stopped' and db.execute("SELECT 1 FROM follow_up_cards WHERE project_id=? AND after_event=? AND why='bounced'",
+                                                             (pid, found['after'])).fetchone():
+                    found = {**found, 'state': 'off'}  # its draft stopped when the address bounced
+                    item['reason'] = 'bounced'
         if found['state'] in ('last', 'ended', 'due', 'waiting', 'open', 'handled') and found['after'] is not None:
             ended = db.execute('SELECT n,moved,judged,at FROM follow_up_ends WHERE project_id=? AND after_event=?', (pid, found['after'])).fetchone()
             if ended:
@@ -764,7 +818,16 @@ def plan(db, now, sendable, mine=mine_default, own=None):
         elif found['state'] == 'last':
             found = {**found, 'state': 'done'}
         reachable = {m['channel'] for m in msgs}
-        channel = pick_channel(found['channel'], found['tail'], settings, sendable, reachable) if found['state'] == 'due' else found['channel']
+        # Their address bounced: no follow-up by email. Another allowed channel where the conversation already is (as
+        # pick_channel moves off a channel that can't send), else it stops: "Email bounced".
+        blocked = found['state'] in ('due', 'waiting') and email_bounced(db, msgs)
+        if blocked:
+            channel = pick_channel(found['channel'], found['tail'], settings, set(sendable) - {'email'}, reachable - {'email'})
+            if not channel:
+                found = {**found, 'state': 'off', 'next_at': None}
+                item['reason'] = 'bounced'
+        else:
+            channel = pick_channel(found['channel'], found['tail'], settings, sendable, reachable) if found['state'] == 'due' else found['channel']
         if found['state'] == 'due' and not channel:
             found = {**found, 'state': 'off', 'next_at': None}
             item['reason'] = 'channel'
@@ -870,6 +933,7 @@ WHY = {
     'off': 'Follow-ups were turned off.',
     'teammate': 'A teammate owns this project now; their Machine follows it up.',
     'judged': 'Another follow-up isn’t worth it now, so follow-ups stopped.',
+    'bounced': 'Email bounced, so follow-ups stopped.',
 }
 
 
@@ -915,8 +979,11 @@ def settle(db, now, mine=mine_default):
         board = db.execute('SELECT * FROM boards WHERE id=?', (p['board_id'],)).fetchone() if p['board_id'] else None
         why = stop_reason(p, settings, source, board, owned_by_other(db, p['id']))
         if not why:
-            later = [m for m in messages(db, p['id'], mine) if parse(m['at']) > parse(f['after_at']) and m['id'] != f['after_event']]
+            msgs = messages(db, p['id'], mine)
+            later = [m for m in msgs if parse(m['at']) > parse(f['after_at']) and m['id'] != f['after_event']]
             why = 'replied' if any(not m['mine'] for m in later) else 'handled' if later else None
+            if not why and f['channel'] == 'email' and email_bounced(db, msgs):
+                why = 'bounced'  # their address bounced: this email draft can't reach them
         if not why:
             outcome = db.execute('SELECT outcome FROM suggestions WHERE id=?', (sid,)).fetchone()
             try:
@@ -974,7 +1041,8 @@ def cards_view(db, ids):
         return {}
     return {r['suggestion_id']: {'project': r['project'], 'name': short_name(r['project'], r['board']), 'project_id': 'project:' + str(r['project_id']), 'board': r['board'],
                                  'group': ('board:' + str(r['board_id'])) if r['grouped'] and r['board_id'] else None,
-                                 'n': r['n'], 'max': r['of_max'], 'channel': r['channel'], 'auto': bool(r['auto']), 'state': r['state']}
+                                 'n': r['n'], 'max': r['of_max'], 'channel': r['channel'], 'auto': bool(r['auto']), 'state': r['state'],
+                                 **({'bounced': True} if r['why'] == 'bounced' else {})}
             for r in rows}
 
 

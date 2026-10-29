@@ -3,7 +3,7 @@ title: De Graph
 area: graph
 summary: De personen, organisaties en projecten in je berichten, vanzelf up-to-date gehouden.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Je Machine bouwt een kaart van met wie je te maken hebt en wat er speelt, uit je berichten, afspraken en beslissingen. Je hoeft niets in te stellen, en alles blijft op je Machine.
@@ -98,6 +98,12 @@ Klik op de foto op de pagina van een persoon of organisatie om ze te wijzigen: *
 **Bewerken**, bovenaan de pagina, wijzigt de naam, functie, organisatie, locatie, LinkedIn, telefoonnummers en e-mailadressen, wat die persoon voor jou is, en Werk of Privé. **Opslaan** bewaart het, **Annuleren** laat het zoals het was.
 
 Je wijzigingen blijven, ook als de gegevens opnieuw opgezocht worden of een review iets anders leest, en bij **Samenvoegen** en **Ongedaan maken**. Maak een veld leeg om weer de opgezochte waarde te gebruiken. Een lege naam brengt de naam uit de berichten terug.
+
+## Teruggekomen
+
+Als een e-mail aan iemand terugkomt, toont hun adres **Teruggekomen** met de datum, en komt een ander adres van hen eerst. Nieuwe concepten gaan er nooit naartoe als een ander adres bekend is. Is het hun enige, dan waarschuwt het verzendvenster en kun je toch versturen. Hun gegevens worden opnieuw opgezocht.
+
+Een bounce telt als de mailserver zegt dat het adres niet bestaat, of na 3 tijdelijke fouten over een week. Hij verdwijnt als ze weer vanaf dat adres schrijven, of als een e-mail eraan aankomt.
 
 ## Zelfde persoon?
 

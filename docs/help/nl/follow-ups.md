@@ -48,6 +48,8 @@ Opvolging stopt als ze antwoorden, als het project gewonnen, verloren, gearchive
 
 Na de laatste opvolging zonder antwoord toont het project "Geen antwoord na 3 opvolgingen" en gaat het naar Vastgelopen of afgewezen als dat aanstaat.
 
+Kwam hun e-mail terug, dan gaan opvolgingen verder op LinkedIn of WhatsApp als dat mag en jullie daar praten. Anders stoppen ze met "E-mail kwam terug". Is het project belangrijk, dan krijg je een to-do om een nieuw adres te vinden.
+
 ## Waar je het ziet
 
 In de kop van het bord staat "Opvolging aan, volgende op do". De kaart van een project toont de volgende opvolging, of dat er een klaarstaat. De projectpagina toont wat er verstuurd is, ook wat automatisch wegging.

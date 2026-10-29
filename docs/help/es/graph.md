@@ -3,7 +3,7 @@ title: El Graph
 area: graph
 summary: Las personas, organizaciones y proyectos de tus mensajes, siempre al día solos.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Tu Machine construye un mapa de con quién tratas y de qué está pasando, a partir de tus mensajes, reuniones y decisiones. No hay nada que configurar, y se queda en tu Machine.
@@ -98,6 +98,12 @@ Haz clic en la foto de la página de una persona u organización para cambiarla:
 **Editar**, arriba en su página, cambia su nombre, cargo, organización, ubicación, LinkedIn, teléfonos y correos, qué es para ti, y Trabajo o Personal. **Guardar** lo guarda, **Cancelar** lo deja como estaba.
 
 Tus cambios se quedan, también cuando sus datos se vuelven a buscar o una revisión lee otra cosa, y al usar **Fusionar** y **Deshacer**. Vacía un campo para volver a usar el valor buscado. Un nombre vacío recupera el de sus mensajes.
+
+## Rebotó
+
+Cuando un email a alguien rebota, su dirección muestra **Rebotó** con la fecha, y otra dirección suya pasa primero. Los borradores nuevos nunca van a ella si se conoce otra. Si es la única, la ventana de envío te avisa y aun así puedes enviar. Sus datos se buscan de nuevo.
+
+Un rebote cuenta cuando el servidor de correo dice que la dirección no existe, o tras 3 fallos temporales en una semana. Se quita cuando vuelven a escribir desde esa dirección o cuando un email a ella llega.
 
 ## ¿Misma persona?
 

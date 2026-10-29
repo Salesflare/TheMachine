@@ -3,7 +3,7 @@ title: Der Graph
 area: graph
 summary: Die Personen, Organisationen und Projekte in deinen Nachrichten, die sich von selbst aktuell halten.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
 order: 1
 ---
 Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus deinen Nachrichten, Meetings und Entscheidungen. Nichts einzurichten, und alles bleibt auf deiner Machine.
@@ -98,6 +98,12 @@ Klick auf das Bild auf der Seite einer Person oder Organisation, um es zu änder
 **Bearbeiten** oben auf der Seite ändert Name, Position, Organisation, Ort, Telefonnummern, LinkedIn und E-Mail-Adressen, was die Person für dich ist, und Arbeit oder Privat. **Speichern** behält es, **Abbrechen** lässt es, wie es war.
 
 Deine Änderungen bleiben, auch wenn die Details neu nachgeschlagen werden oder eine Prüfung etwas anderes liest, und auch bei **Zusammenführen** und **Rückgängig**. Leere ein Feld, um wieder den nachgeschlagenen Wert zu nutzen. Ein leerer Name holt den Namen aus den Nachrichten zurück.
+
+## Zurückgekommen
+
+Wenn eine E-Mail an jemanden zurückkommt, zeigt seine Adresse **Zurückgekommen** mit dem Datum, und eine andere Adresse dieser Person rückt nach vorn. Neue Entwürfe gehen nie an sie, wenn eine andere Adresse bekannt ist. Ist es die einzige, warnt das Sendefenster, und du kannst trotzdem senden. Die Angaben der Person werden neu nachgeschlagen.
+
+Eine Rückmeldung zählt, wenn der Mailserver sagt, dass es die Adresse nicht gibt, oder nach 3 vorübergehenden Fehlern innerhalb einer Woche. Sie verschwindet, wenn die Person wieder von dieser Adresse schreibt oder eine E-Mail an sie ankommt.
 
 ## Gleiche Person?
 
