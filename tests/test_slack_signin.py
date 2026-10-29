@@ -1,7 +1,7 @@
 """Sign in with Slack (slack_api.py, transport broker): the owner's own Slack sign-in through the control plane's Slack app.
 Every HTTP request is faked: nothing reaches Slack, Maton or a broker. The sign-in goes to the broker only and never
 leaves this Machine; Slack itself only ever sees short-lived access tokens. A Slack account read through Maton keeps
-working as before and gets a Reconnect Slack nudge; signing in with Slack switches that same account over."""
+working as before, with no nudge; signing in with Slack anyway switches that same account over."""
 import json
 import tempfile
 import unittest
@@ -149,11 +149,10 @@ class SlackSignin(unittest.TestCase):
         with self.assertRaisesRegex(onboarding.SetupError, 'No Slack sign-in'):
             onboarding.slack_signed_in(self.config, 'sam@acme.test')
 
-    def test_connections_nudge_maton_users_to_reconnect_and_sign_in_from_add(self):
+    def test_maton_accounts_stay_on_maton_and_new_ones_sign_in_from_add(self):
         manage = 'https://app.example.com/setup'
-        self.assertEqual(a.reconnect_help(MATON, manage), {'connect_name': 'slack', 'hosted_signin': 'slack', 'slack_upgrade': True})
-        self.assertEqual(a.reconnect_help(MATON, None), {'connect_name': 'slack', 'signin': 'slack', 'slack_upgrade': True})
-        self.assertNotIn('slack_upgrade', a.reconnect_help(BROKER, manage))
+        self.assertEqual(a.reconnect_help(MATON, manage), {'connect_name': 'slack'})  # no nudge: Maton's own Reconnect
+        self.assertEqual(a.reconnect_help(MATON, None), {'connect_name': 'slack'})
         self.assertEqual(a.reconnect_help(BROKER, manage)['hosted_signin'], 'slack')
         self.assertEqual(a.reconnect_help(BROKER, None), {'connect_name': 'slack', 'signin': 'slack'})
 

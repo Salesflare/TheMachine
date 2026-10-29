@@ -3,8 +3,8 @@ title: Slack
 area: connections
 summary: Les canaux et messages directs dont vous faites partie. N’envoie un message direct qu’après votre accord.
 covers: connector:slack
-code: assistant.py, slack_api.py, next_actions.py, onboarding.py
-site: Sign in with Slack, Connect, More sources, Remove
+code: assistant.py, next_actions.py, onboarding.py
+site: Connect, More sources, Remove
 ---
 ## Ce qu’elle lit
 
@@ -16,20 +16,11 @@ Un message direct à une personne, en votre nom, et seulement après votre accor
 
 ## La connecter
 
-Connectez-vous avec Slack, le plus simple :
-
-1. Dans le tableau de bord : **Connexions**, **+ Ajouter**, Slack. Ou sur la page de configuration d’une Machine hébergée sur app.themachine.computer/setup : **Plus de sources**, Slack. Sur votre propre ordinateur, associez-le d’abord à votre compte.
-2. Appuyez sur **Se connecter avec Slack**. Slack demande quel espace de travail et montre ce que The Machine peut lire et envoyer.
-3. Appuyez sur **Allow**. Vous revenez là où vous étiez, et Slack est connecté.
-
-Dans certains espaces de travail, seuls les admins approuvent les nouvelles apps. Slack demande alors d’abord à un admin ; une fois approuvé, reconnectez-vous.
-
-Ou utilisez Maton :
+Slack est lu via Maton, qui détient la connexion Slack.
 
 1. Connectez-vous sur maton.ai, connectez-y Slack et copiez votre clé API Maton depuis Home.
-2. Ouvrez Slack comme ci-dessus (ou lancez `assistant connect slack`), ouvrez **Ou utilisez une clé API Maton**, collez la clé et appuyez sur **Se connecter**.
-
-Slack déjà connecté via Maton ? Il continue de fonctionner. Connexions affiche **Reconnecter Slack** : appuyez dessus et connectez-vous avec Slack pour ne plus passer par Maton. Ce que Slack a déjà apporté reste.
+2. Sur une Machine hébergée : ouvrez votre page de configuration sur app.themachine.computer/setup, allez dans **Plus de sources**, ouvrez Slack, collez la clé et appuyez sur **Se connecter**.
+3. Sur votre propre ordinateur : lancez `assistant connect slack`, ou **Connexions**, **+ Ajouter**, Slack.
 
 ## La retirer
 
@@ -38,5 +29,4 @@ Slack déjà connecté via Maton ? Il continue de fonctionner. Connexions affich
 
 ## La désinstaller côté Slack
 
-- Connecté avec Slack : dans Slack, ouvrez la page Manage apps de votre espace de travail (ou Paramètres, Apps), trouvez The Machine et retirez-la. Un admin Slack peut aussi la retirer pour tout l’espace de travail.
-- Via Maton : retirez la connexion Slack dans Maton et supprimez la clé API Maton que vous avez donnée.
+Retirez la connexion Slack dans Maton, et supprimez la clé API Maton que vous avez fournie. Un admin Slack peut aussi retirer l’app de l’espace de travail, sous Manage apps.

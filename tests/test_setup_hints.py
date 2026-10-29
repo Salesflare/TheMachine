@@ -59,7 +59,7 @@ class SetupHints(unittest.TestCase):
     def test_only_a_hosted_machine_gets_hints(self):
         self.mail('slack.com', 5)
         self.assertEqual(self.ids(), ['source-slack'])
-        self.assertEqual(a.setup_hints(self.store, self.config)[0]['href'], '#connect=slack')  # Sign in with Slack under + Add, on the dashboard, never away
+        self.assertEqual(a.setup_hints(self.store, self.config)[0]['href'], '#connections=add')  # + Add on the dashboard, never away
         self.assertEqual(a.setup_hints(self.store, {'accounts': []}), [])
 
 

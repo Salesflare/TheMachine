@@ -3,8 +3,8 @@ title: Slack
 area: connections
 summary: Die Channels und Direktnachrichten, in denen du bist. Sendet eine Direktnachricht erst, nachdem du sie freigegeben hast.
 covers: connector:slack
-code: assistant.py, slack_api.py, next_actions.py, onboarding.py
-site: Sign in with Slack, Connect, More sources, Remove
+code: assistant.py, next_actions.py, onboarding.py
+site: Connect, More sources, Remove
 ---
 ## Was es liest
 
@@ -16,20 +16,11 @@ Eine Direktnachricht an eine Person, als du, und nur, nachdem du sie bei der Auf
 
 ## Verbinden
 
-Mit Slack anmelden, der einfache Weg:
-
-1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Slack. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Slack. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
-2. Tippe auf **Mit Slack anmelden**. Slack fragt, welcher Workspace, und zeigt, was The Machine lesen und senden darf.
-3. Tippe auf **Allow**. Du bist wieder da, wo du angefangen hast, und Slack ist verbunden.
-
-In manchen Workspaces dürfen nur Admins neue Apps freigeben. Slack fragt dann zuerst einen Admin; sobald er zustimmt, melde dich noch einmal an.
-
-Oder nutze stattdessen Maton:
+Slack wird über Maton gelesen, das die Slack-Anmeldung hält.
 
 1. Melde dich bei maton.ai an, verbinde dort Slack und kopiere deinen Maton-API-Schlüssel unter Home.
-2. Öffne Slack wie oben (oder führe `assistant connect slack` aus), öffne **Oder einen Maton-API-Schlüssel verwenden**, füge den Schlüssel ein und tippe auf **Verbinden**.
-
-Slack schon über Maton verbunden? Es funktioniert weiter. Unter Verbindungen steht **Slack neu verbinden**: Tippe darauf und melde dich mit Slack an, um Maton nicht mehr zu nutzen. Was Slack schon geholt hat, bleibt.
+2. Auf einer gehosteten Machine: Öffne deine Einrichtungsseite unter app.themachine.computer/setup, geh zu **Weitere Quellen**, öffne Slack, füge den Schlüssel ein und tippe auf **Verbinden**.
+3. Auf deinem eigenen Computer: Führe `assistant connect slack` aus, oder **Verbindungen**, **+ Hinzufügen**, Slack.
 
 ## Entfernen
 
@@ -38,5 +29,4 @@ Slack schon über Maton verbunden? Es funktioniert weiter. Unter Verbindungen st
 
 ## Bei Slack deinstallieren
 
-- Mit Slack angemeldet: Öffne in Slack die Seite Manage apps deines Workspaces (oder Einstellungen, Apps), such The Machine und entferne die App. Ein Slack-Admin kann sie auch für den ganzen Workspace entfernen.
-- Über Maton: Entferne die Slack-Verbindung in Maton und lösche den Maton-API-Schlüssel, den du angegeben hast.
+Entferne die Slack-Verbindung in Maton und lösche den Maton-API-Schlüssel, den du angegeben hast. Ein Slack-Admin kann die App auch unter Manage apps aus dem Workspace entfernen.

@@ -625,6 +625,8 @@ CONNECT_ACTIONS = (
 # GitHub, WhatsApp, the phone and Codex have no provider page: the control plane starts them there and the dashboard's
 # form shows their code (GitHub's device code, WhatsApp's QR or pairing code, the phone app's setup code, Codex's code
 # from OpenAI).
+# Not Slack: until The Machine's Slack app is in the Slack Marketplace, + Add connects Slack through Maton; Sign in with
+# Slack shows only on the setup page, for the workspaces the control plane opens it to (its cloud/slack_app.py open_for).
 HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'github', 'whatsapp', 'android', 'microsoft_docs', 'codex'}
 ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
@@ -13347,11 +13349,11 @@ def reconnect_help(account, manage, docs_consent=False):
         provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack') else 'google'
         return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),
                 'hosted_signin': provider}
-    if service == 'slack':
+    if service == 'slack' and account.get('transport') != 'maton':
         # Sign in with Slack (slack_api.py) through the control plane's own Slack app: on a hosted Machine from + Add, on
-        # a self-hosted one once paired. One still read through Maton gets a nudge to switch (`slack_upgrade`).
-        found = {'connect_name': 'slack', **({'hosted_signin': 'slack'} if manage else {'signin': 'slack'})}
-        return {**found, 'slack_upgrade': True} if account.get('transport') == 'maton' else found
+        # a self-hosted one once paired. One read through Maton stays on Maton (its Reconnect is Maton's): until the app is
+        # in the Slack Marketplace, Slack holds it to 1 history call a minute, which would read less than Maton does.
+        return {'connect_name': 'slack', **({'hosted_signin': 'slack'} if manage else {'signin': 'slack'})}
     if manage and service in ON_DASHBOARD:  # GitHub, WhatsApp, the phone: their code on the dashboard; Disconnect here
         return {'connect_name': service, 'hosted_signin': service}
     return {'connect_name': 'crm' if service == 'salesflare' else service}

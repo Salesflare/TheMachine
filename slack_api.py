@@ -10,8 +10,9 @@ refresh token, keeping neither. Reads and the owner-approved direct messages the
     "credentials": {"slack-broker": "~/.local/share/personal-assistant/google-broker"}
 
 The broker answers POST {"email": "<team id>:<user id>", "refresh_token"} with {"access_token", "expires_in", "scopes",
-"refresh_token"}. A Slack account connected through Maton ("transport": "maton") keeps reading as before until the
-owner signs in with Slack (Connections shows Reconnect Slack); that switches the same account over, history and all.
+"refresh_token"}. A Slack account connected through Maton ("transport": "maton") keeps reading through Maton: until the Slack app is in the
+Slack Marketplace, Slack allows it 1 history call a minute. An owner who signs in with Slack anyway (+ Add) switches
+that same account over, history and all.
 
 The user token's scopes (the control plane's cloud/slack_app.py USER_SCOPES) are what the reader and the Slack
 transport use, nothing more: read the conversations the owner is in, the people in them, and send one direct message

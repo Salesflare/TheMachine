@@ -2402,7 +2402,7 @@ def _connect_stripe_grant(config_path, config, key, refresh, previous):
 def slack_signed_in(config, key, boundary=''):
     """The Slack account for a sign-in with Slack (slack_api.py), its refresh token already kept in mail_grants.py under
     `key` ('<team id>:<user id>'): the one this Machine reads through Maton for the same person in the same workspace is
-    switched over (same id, same history, Reconnect Slack done), else a new one. Who it is and the workspace come from
+    switched over (same id, same history), else a new one. Who it is and the workspace come from
     Slack itself (auth.test, users.info), then the account is checked with a real read like any other. Returns the
     account, not saved yet; raises SetupError when it does not check out."""
     if not re.fullmatch(SLACK_KEY, str(key or '')):
