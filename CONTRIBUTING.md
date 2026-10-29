@@ -45,6 +45,9 @@ and explain why they are needed. The dashboard is plain HTML, CSS and JavaScript
 - Before opening a pull request, run your own tests and the checks that cover what every change ships with:
   `python3 scripts/test.py test_i18n.py test_help.py test_us_english.py` plus the suites of the code you touched. A red
   pull request waits until it is fixed.
+- Put code in the module that owns its domain and tables ([Code map](docs/code-map.md)). `tests/test_architecture.py`
+  fails on a name a module uses but never imports, a new module that loads `assistant.py`, and a write to a table
+  from outside its owner.
 - Keep changes where they belong, so parallel pull requests merge cleanly: a new dashboard function goes next to the
   functions of its area, not at the end of the script; the dashboard's static markup has one element with an id per
   line (break inside the tag before it, `</div` newline `><div id=…>`, so the page stays the same); the action lists in

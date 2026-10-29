@@ -48,6 +48,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 | Encryption, reliability and roadmap of the Network | [Network](docs/network.md) |
 | Add a connector | [Adding a source](docs/adding-a-source.md) |
 | Sandbox, screenshots and layout checks | [Development](docs/development.md) |
+| Which module owns what, where new code goes | [Code map](docs/code-map.md) |
 | Agent instructions | [AGENTS.md](AGENTS.md), [PREPARATION.md](PREPARATION.md) |
 | Contribute or report a vulnerability | [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) |
 | Historical repair notes | [History](docs/history.md) |

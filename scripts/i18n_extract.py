@@ -117,9 +117,10 @@ def functions(source, ranges):
     starts = [i for i, line in enumerate(lines) if re.match(r'(?:async )?function |const |let |\$\(|document\.|window\.|// ', line)]
     where = {}
     for i, line in enumerate(lines):
-        found = re.match(r'(?:async )?function ([A-Za-z0-9_]+)', line)
+        # a function, or a const holding an arrow function (const openEvent=(ev,title)=>...)
+        found = re.match(r'(?:async )?function ([A-Za-z0-9_]+)|const ([A-Za-z0-9_]+)=(?:async )?(?:\([^)]*\)|[A-Za-z0-9_]+)=>', line)
         if found:
-            where.setdefault(found.group(1), i)
+            where.setdefault(found.group(1) or found.group(2), i)
     for first, last in ranges:
         if first not in where or last not in where:
             raise KeyError(f'dashboard.html has no function {first if first not in where else last} (i18n_extract AREAS)')
