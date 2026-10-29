@@ -470,9 +470,10 @@ class Scope:
     """What this Machine may share with one Work Fleet: its accounts, its own domains, who is private."""
 
     def __init__(self, db, accounts, internal, mine, personal=()):
-        """personal: graph people of the owner's own life (only in their Family or Friends): never a record, and
-        threads with them stay out, like Keep private. So does anyone the owner marked Personal; one they marked
-        Work is not."""
+        """personal: graph people of the owner's own life (only in their Family or Friends, from the directory now):
+        never a record, and threads with them stay out, like Keep private. So does anyone whose Type is Personal for
+        being part of the owner's life (graph.own_life: the owner marked them Personal, Family or Friends, or family or
+        a friend to the owner); one the owner marked Work is not. The same Type the Graph's Work and Personal lists show."""
         personal = set(personal)
         self.accounts, self.internal, self.mine = set(accounts), set(internal), {m.lower() for m in mine}
         self._db, self._automated = db, None
@@ -503,8 +504,8 @@ class Scope:
                     self.org_names['@' + info['domain']] = row['name']
             ids = {row['id'], *info.get('identifiers', [])}
             if row['kind'] == 'person':
-                if info.get('side_by') == 'owner' and info.get('side') == 'personal' or row['id'] in personal and info.get('side_by') != 'owner':
-                    self.private.add(row['id'])  # the owner's word (Work or Personal) wins over Family or Friends
+                if graph.own_life(info) or row['id'] in personal and info.get('side_by') != 'owner':
+                    self.private.add(row['id'])  # the owner's word (Work or Personal) wins over Family, Friends or a relation
                 for i in ids:
                     if str(i).startswith('email:') and info.get('org'):
                         self.org_of[i[6:].lower()] = info['org']

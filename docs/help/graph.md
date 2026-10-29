@@ -19,7 +19,7 @@ Everyone you're in touch with, closest first. A person's page starts with their 
 
 Someone's addresses and chats are joined by themselves when it's clear they're one person, like a work email with their own address in CC.
 
-The **Work** and **Personal** tabs list only those contacts. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet, also for Organizations and Projects.
+The **Work** and **Personal** tabs list people by their Type, the one on their page. Your own pick (**Edit**) wins. Otherwise your Family and Friends, and family or friends to you (a wife, a father), are Personal, whatever address they write from. Your team never gets Personal contacts. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet, also for Organizations and Projects.
 
 ### Timeline
 

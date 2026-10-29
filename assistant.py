@@ -19066,15 +19066,17 @@ class App:
 
     def graph_freshness(self):
         """What makes a rebuild worth it before the ten minutes are up: new organization or people profiles (looked up by the
-        enrichment worker, or by a hosting agent writing straight into the database), and, while the graph has no
-        organizations yet (the first import), new signals."""
+        enrichment worker, or by a hosting agent writing straight into the database), who is in the owner's Family,
+        Friends and Work Fleets (a Personal contact follows within a minute), and, while the graph has no organizations
+        yet (the first import), new signals."""
+        circles = tuple(sorted((e, tuple(sorted(k))) for e, k in self.fleet_circles().items()))
         with self.store.connect() as db:
             profiles = tuple(db.execute("SELECT count(*),max(fetched_at) FROM org_profiles WHERE status!='error'").fetchone()) \
                 + tuple(db.execute("SELECT count(*),max(fetched_at) FROM person_profiles WHERE status!='error'").fetchone()) \
                 + tuple(db.execute('SELECT count(*),max(saved_at) FROM person_photos').fetchone())
             empty = not db.execute("SELECT 1 FROM graph_nodes WHERE kind='org' LIMIT 1").fetchone()
             signals = tuple(db.execute('SELECT count(*),max(ingested_at) FROM events').fetchone()) if empty else None
-        return profiles, signals
+        return profiles, signals, circles
 
     def graph_worker(self):
         """Rebuilds the people and projects graph every ten minutes, soon after a label or merge, and within a minute
@@ -19237,7 +19239,17 @@ class App:
     def graph_build(self):
         with self.store.connect() as db:
             db.isolation_level = None  # graph.build runs its own transaction
-            return graph.build(db, self.config, now(), self.fleet_addresses())
+            return graph.build(db, self.config, now(), self.fleet_addresses(), self.fleet_circles())
+
+    def fleet_circles(self):
+        """Which of the people in the owner's Fleets are in a Work Fleet, Family or Friends, by address (graph.circles):
+        someone only in Family or Friends is a Personal contact."""
+        if not getattr(self, 'fleet', None):
+            return {}
+        try:
+            return graph.circles(self.fleet.fleets())
+        except (fleet.Off, ValueError, OSError, sqlite3.Error, KeyError, TypeError, AttributeError):
+            return {}
 
     def fleet_addresses(self):
         """The addresses of the people in the owner's Fleets (Work, Family, Friends): one they use too is never the

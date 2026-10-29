@@ -1,6 +1,8 @@
 """A person's automatic side (Work or Personal) comes from what The Machine knows of them, never from a missing work
 address: the account a conversation came from, the projects they're on and the sharing review's calls on their threads.
-Thin or split evidence leaves it unknown. The owner's own choice and Family/Friends stay as they are."""
+Thin or split evidence leaves it unknown. The owner's own choice wins; else Family, Friends and family or friends by
+relation ("To you": wife, father) are Personal, whatever address they write from. The Work and Personal lists and
+sharing with a Work Fleet go by that same Type."""
 import json
 import unittest
 
@@ -23,10 +25,18 @@ class PersonSide(unittest.TestCase):
             if x['id'] == account_id:
                 x.update({k: v for k, v in (('boundary', boundary), ('scope', scope)) if v})
 
-    def build(self):
+    def build(self, kin=None):
         with self.store.connect() as db:
             db.isolation_level = None
-            return graph.build(db, {'accounts': self.accounts, 'embeddings': {'enabled': False}}, NOW.isoformat())
+            return graph.build(db, {'accounts': self.accounts, 'embeddings': {'enabled': False}}, NOW.isoformat(), (), kin)
+
+    def listed(self, name):
+        with self.store.connect() as db:
+            return {x['id'] for x in graph.page(db, name, limit=50)['items']}, graph.list_counts(db)[name]
+
+    def role(self, node_id, role, source='owner'):
+        with self.store.connect() as db:
+            db.execute('INSERT OR REPLACE INTO person_roles(identifier,role,source,created_at) VALUES(?,?,?,?)', (node_id, role, source, NOW.isoformat()))
 
     def prospect(self, conv='c-kai', name='Kai Moss'):
         first = linkedin(5, conv, name, 'Saw your post about the CRM, could we get a demo?')
@@ -162,7 +172,8 @@ class PersonSide(unittest.TestCase):
         self.assertEqual(self.side(owned), ('personal', 'owner'))
 
     def test_sharing_only_follows_the_owners_own_side(self):
-        """Scope keeps out people the owner marked Personal and Family/Friends; an automatic side, any value, changes nothing."""
+        """Scope keeps out people the owner marked Personal, Family/Friends and family or friends by relation; a side from
+        what their threads, projects or accounts say, any value, changes nothing."""
         node, _ = self.prospect()
         self.place('li', boundary='personal:me')
         self.add(mail(5, 'Ann <ann@client.example>', 'sam@acme.com'))
@@ -175,6 +186,74 @@ class PersonSide(unittest.TestCase):
         self.build()
         with self.store.connect() as db:
             self.assertEqual(shared_graph.Scope(db, ['work', 'li'], {'acme.com'}, {'sam@acme.com'}).private, {'email:ann@client.example'})
+
+    def test_family_with_a_work_address_is_personal_in_the_lists_and_never_shared_unless_the_owner_says_work(self):
+        """The bug: someone in the owner's Family who also writes from their employer's address was a Work contact by that
+        address, so the Work list showed them at the top while their page said Personal contact."""
+        self.place('work', boundary='work:Acme')
+        self.add(mail(5, 'Jo Rivers <jo.rivers@umbrella.example>', 'sam@acme.com', thread='t-jo'),
+                 mail(4, 'Sam <sam@acme.com>', 'jo.rivers@umbrella.example', ('SENT',), thread='t-jo'),
+                 mail(3, 'Ann <ann@client.example>', 'sam@acme.com', thread='t-ann'))
+        jo, ann = 'email:jo.rivers@umbrella.example', 'email:ann@client.example'
+        self.build()
+        self.assertEqual(self.side(jo), ('work', None))  # what an address alone says, before anyone is known as Family
+        kin = {'jo.rivers@umbrella.example': {'family'}}
+        self.build(kin)
+        self.assertEqual((self.side(jo), self.info(jo)['side_why']), (('personal', None), 'network'))
+        self.assertEqual(self.listed('work'), ({ann}, 1))
+        self.assertEqual(self.listed('personal'), ({jo}, 1))
+        with self.store.connect() as db:
+            shared_graph.ensure(db)
+            self.assertEqual(shared_graph.Scope(db, ['work'], {'acme.com'}, {'sam@acme.com'}).private, {jo})  # also before the directory is read
+        # someone also in one of the owner's Work Fleets is not only their own life: what they're about decides
+        self.build({'jo.rivers@umbrella.example': {'family', 'work'}})
+        self.assertEqual(self.side(jo), ('work', None))
+        with self.store.connect() as db:
+            graph.person_edit(db, jo, {'side': 'work'}, NOW.isoformat())
+        self.build(kin)
+        self.assertEqual(self.side(jo), ('work', 'owner'))  # the owner's word wins over Family
+        self.assertEqual(self.listed('work'), ({ann, jo}, 2))
+        with self.store.connect() as db:
+            self.assertEqual(shared_graph.Scope(db, ['work'], {'acme.com'}, {'sam@acme.com'}, {jo}).private, set())
+
+    def test_family_or_a_friend_by_relation_is_personal_and_a_job_with_such_a_word_is_not(self):
+        self.place('work', boundary='work:Acme')
+        self.add(mail(5, 'Rob Lane <rob@lane-family.example>', 'sam@acme.com', thread='t-rob'),
+                 mail(4, 'Uma Fox <uma@foxlaw.example>', 'sam@acme.com', thread='t-uma'),
+                 mail(3, 'Ivy Moss <ivy@bigco.example>', 'sam@acme.com', thread='t-ivy'))
+        rob, uma, ivy = 'email:rob@lane-family.example', 'email:uma@foxlaw.example', 'email:ivy@bigco.example'
+        self.role(rob, 'Father')
+        self.role(uma, 'family lawyer')
+        self.role(ivy, 'friend from university', source='agent')  # a review's word counts too
+        self.build()
+        self.assertEqual((self.side(rob), self.info(rob)['side_why']), (('personal', None), 'relation'))
+        self.assertEqual((self.side(ivy), self.info(ivy)['side_why']), (('personal', None), 'relation'))
+        self.assertEqual(self.side(uma), ('work', None))
+        self.assertEqual(self.listed('work'), ({uma}, 1))
+        self.assertEqual(self.listed('personal'), ({rob, ivy}, 2))
+        with self.store.connect() as db:
+            shared_graph.ensure(db)
+            self.assertEqual(shared_graph.Scope(db, ['work'], {'acme.com'}, {'sam@acme.com'}).private, {rob, ivy})
+            graph.person_edit(db, rob, {'side': 'work'}, NOW.isoformat())
+        self.build()
+        self.assertEqual(self.side(rob), ('work', 'owner'))
+        with self.store.connect() as db:
+            self.assertEqual(shared_graph.Scope(db, ['work'], {'acme.com'}, {'sam@acme.com'}).private, {ivy})
+
+    def test_what_counts_as_family_or_a_friend(self):
+        for role in ('wife', 'Father', 'my mother', 'brother-in-law', 'friend', 'friend from university', 'family friend', 'grandma', 'Vrouw', 'schoonvader', 'Ehefrau', 'mère'):
+            self.assertTrue(graph.personal_relation(role), role)
+        for role in (None, '', 'partner', 'customer', 'family lawyer', 'parent company contact', 'sister company', "father's email domain",
+                     "Helena's school", 'childcare provider', 'potential acquirer', 'investor'):
+            self.assertFalse(graph.personal_relation(role), role)
+
+    def test_who_is_in_family_friends_or_a_work_fleet_by_address(self):
+        fleets = {'f1': {'kind': 'family', 'members': [{'member_id': 'me', 'me': True, 'emails': ['sam@acme.com']},
+                                                       {'member_id': 'm1', 'emails': ['Jo@Home.example', 'not an address']}]},
+                  'f2': {'kind': 'friends', 'members': [{'member_id': 'm2', 'emails': ['jo@home.example', 'kim@pal.example']}]},
+                  'f3': {'kind': 'work', 'members': [{'member_id': 'm3', 'emails': ['kim@pal.example']}, {'emails': ['nobody@x.example']}]},
+                  'f4': {'kind': 'other', 'members': [{'member_id': 'm4', 'emails': ['odd@x.example']}]}}
+        self.assertEqual(graph.circles(fleets), {'jo@home.example': {'family', 'friends'}, 'kim@pal.example': {'friends', 'work'}})
 
     def test_a_person_added_by_hand_without_messages_has_no_side_yet(self):
         with self.store.connect() as db:
