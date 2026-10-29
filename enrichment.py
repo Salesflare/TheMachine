@@ -24,6 +24,7 @@ import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
+from html.parser import HTMLParser
 from pathlib import Path
 
 import security_levels
@@ -721,38 +722,54 @@ def download_photo(url, timeout=10):
     """(bytes, type) of a photo, or None: https only, to a public address, no redirects, at most PHOTO_BYTES, and only
     a JPEG, PNG or WebP image (by its own bytes, not only its header). Each checked address in turn, IPv4 first, so a
     host without IPv6 still gets it."""
-    parts = urllib.parse.urlsplit(url)
-    if parts.scheme != 'https' or not parts.hostname or not LOGO.fullmatch(url):
+    got = _download(url, 'image/jpeg,image/png,image/webp', PHOTO_BYTES, timeout)
+    if not got or not got[1].startswith('image/'):
         return None
-    try:
-        port = parts.port or 443
-        addresses = {info[4][0] for info in socket.getaddrinfo(parts.hostname, port, type=socket.SOCK_STREAM)}
-        if not addresses or not all(ipaddress.ip_address(a.split('%')[0]).is_global for a in addresses):
+    kind = image_type(got[0])
+    return (got[0], kind) if kind else None
+
+
+def _download(url, accept, limit, timeout=10, redirects=0):
+    """(bytes, content type, final url) of a 200 answer of at most limit bytes, or None: https only, each hop to a
+    public address (checked, then pinned), at most `redirects` redirects, each one checked the same way."""
+    for _ in range(redirects + 1):
+        parts = urllib.parse.urlsplit(url)
+        if parts.scheme != 'https' or not parts.hostname or not LOGO.fullmatch(url):
             return None
-    except (OSError, ValueError):
-        return None
-    for address in sorted(addresses, key=lambda a: (':' in a, a)):
-        connection = _Pinned(parts.hostname, address, port=port, timeout=timeout, context=ssl.create_default_context())
         try:
-            connection.connect()
-        except OSError:
-            connection.close()
-            continue  # unreachable from here (no IPv6 route): the next address
-        try:
-            connection.request('GET', (parts.path or '/') + ('?' + parts.query if parts.query else ''),
-                               headers={'Accept': 'image/jpeg,image/png,image/webp', 'User-Agent': 'the-machine/1 (+https://themachine.computer)'})
-            response = connection.getresponse()
-            if response.status != 200 or not (response.getheader('Content-Type') or '').lower().startswith('image/'):
+            port = parts.port or 443
+            addresses = {info[4][0] for info in socket.getaddrinfo(parts.hostname, port, type=socket.SOCK_STREAM)}
+            if not addresses or not all(ipaddress.ip_address(a.split('%')[0]).is_global for a in addresses):
                 return None
-            if int(response.getheader('Content-Length') or 0) > PHOTO_BYTES:
-                return None
-            data = response.read(PHOTO_BYTES + 1)
-        except (OSError, ValueError, http.client.HTTPException):
+        except (OSError, ValueError):
             return None
-        finally:
-            connection.close()
-        kind = image_type(data)
-        return (data, kind) if kind and len(data) <= PHOTO_BYTES else None
+        moved = None
+        for address in sorted(addresses, key=lambda a: (':' in a, a)):
+            connection = _Pinned(parts.hostname, address, port=port, timeout=timeout, context=ssl.create_default_context())
+            try:
+                connection.connect()
+            except OSError:
+                connection.close()
+                continue  # unreachable from here (no IPv6 route): the next address
+            try:
+                connection.request('GET', (parts.path or '/') + ('?' + parts.query if parts.query else ''),
+                                   headers={'Accept': accept, 'User-Agent': 'the-machine/1 (+https://themachine.computer)'})
+                response = connection.getresponse()
+                if response.status in (301, 302, 303, 307, 308) and redirects:
+                    moved = urllib.parse.urljoin(url, response.getheader('Location') or '')
+                    break
+                if response.status != 200 or int(response.getheader('Content-Length') or 0) > limit:
+                    return None
+                data = response.read(limit + 1)
+                kind = (response.getheader('Content-Type') or '').split(';')[0].strip().lower()
+            except (OSError, ValueError, http.client.HTTPException):
+                return None
+            finally:
+                connection.close()
+            return (data, kind, url) if len(data) <= limit else None
+        if not moved:
+            return None
+        url = moved
     return None
 
 
@@ -796,6 +813,92 @@ def photos_step(connect, now, limit=PHOTOS_PER_PASS, fetch=None):
             elif had:
                 profile['photo_gone'] = True
             db.execute('UPDATE person_profiles SET profile=? WHERE identifier=?', (json.dumps(profile), identifier))
+    return saved
+
+
+# Organization logos from their own website: when the lookup brought no logo (or there was no lookup), the icon the
+# site's home page names (apple-touch-icon, icon) or else its /favicon.ico, saved once on this Machine like a photo
+# (person_photos, as logo:<domain>), so the dashboard shows it from here and no logo service learns which
+# organizations the owner deals with. Only the organization's own site is asked. None found: asked again in 30 days.
+SITE_LOGOS_PER_PASS = 10
+PAGE_BYTES = 512_000
+
+
+def logo_type(data):
+    """An image type for a site's icon: JPEG, PNG, WebP or an .ico file (never SVG, which can hold script)."""
+    return image_type(data) or ('image/x-icon' if data[:4] == b'\x00\x00\x01\x00' else None)
+
+
+class _Icons(HTMLParser):
+    """The icons a page names in its <link rel="icon"> and <link rel="apple-touch-icon">: (href, size)."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.found = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag != 'link':
+            return
+        attrs = {k.lower(): (v or '').strip() for k, v in attrs}
+        rel, href = attrs.get('rel', '').lower().split(), attrs.get('href', '')
+        if not href or not ({'icon', 'apple-touch-icon', 'apple-touch-icon-precomposed'} & set(rel)):
+            return
+        if 'svg' in attrs.get('type', '').lower() or urllib.parse.urlsplit(href).path.lower().endswith('.svg') or 'dark' in attrs.get('media', '').lower():
+            return
+        sizes = [int(w) for w, _ in re.findall(r'(\d{1,4})x(\d{1,4})', attrs.get('sizes', ''))]
+        self.found.append((href, max(sizes, default=180 if any(r.startswith('apple-touch-icon') for r in rel) else 32)))
+
+
+def site_icons(page, base):
+    """The icon links a home page names, best first: 64 to 256 pixels (largest first), then bigger (smallest first),
+    then smaller; the site's /favicon.ico last."""
+    parser = _Icons()
+    try:
+        parser.feed(page)
+    except Exception:  # a broken page: whatever was read so far
+        pass
+    rank = lambda size: (0, -size) if 64 <= size <= 256 else (1, size) if size > 256 else (2, -size)
+    links = [urllib.parse.urljoin(base, href) for href, size in sorted(parser.found, key=lambda f: rank(f[1]))]
+    return list(dict.fromkeys([u for u in links if u.startswith('https://')] + [urllib.parse.urljoin(base, '/favicon.ico')]))
+
+
+def site_logo(domain, timeout=8, tries=4):
+    """(bytes, type) of an organization's icon from its own website, or None: its home page (https, a few redirects),
+    the icons it names, else /favicon.ico. At most `tries` images are asked for."""
+    host = urllib.parse.urlsplit(website(domain)).hostname or ''
+    links = ['https://' + host + '/favicon.ico']  # no home page: only its favicon, so a site that is down costs little
+    for start in dict.fromkeys(['https://' + host + '/', 'https://www.' + host + '/']):
+        got = _download(start, 'text/html', PAGE_BYTES, timeout, redirects=3)
+        if got and got[1] in ('text/html', 'application/xhtml+xml'):
+            links = site_icons(got[0].decode('utf-8', 'replace'), got[2])
+            break
+    for link in links[:tries]:
+        got = _download(link, 'image/png,image/x-icon,image/jpeg,image/webp', PHOTO_BYTES, timeout, redirects=2)
+        kind = logo_type(got[0]) if got else None
+        if kind:
+            return got[0], kind
+    return None
+
+
+def site_logos_step(connect, now, limit=SITE_LOGOS_PER_PASS, fetch=None):
+    """Saves a logo from their own website for organizations that show none, once each, closest first. Returns how many
+    were saved."""
+    fetch = fetch or site_logo
+    retry = (dt.datetime.fromisoformat(now) - dt.timedelta(days=PHOTO_RETRY_DAYS)).isoformat()
+    with connect() as db:
+        db.execute('CREATE TABLE IF NOT EXISTS org_logo_tries(domain TEXT PRIMARY KEY,tried_at TEXT NOT NULL)')
+        rows = db.execute("SELECT DISTINCT json_extract(n.info,'$.domain') d FROM graph_nodes n WHERE n.kind='org' AND d IS NOT NULL "
+                          "AND json_extract(n.info,'$.profile.logo') IS NULL AND NOT EXISTS(SELECT 1 FROM person_photos s WHERE s.identifier='logo:'||d) "
+                          "AND NOT EXISTS(SELECT 1 FROM org_logo_tries t WHERE t.domain=d AND t.tried_at>?) ORDER BY n.strength DESC LIMIT ?",
+                          (retry, limit)).fetchall()
+    saved = 0
+    for (domain,) in rows:
+        got = fetch(domain)
+        with connect() as db:
+            db.execute('INSERT INTO org_logo_tries(domain,tried_at) VALUES(?,?) ON CONFLICT(domain) DO UPDATE SET tried_at=excluded.tried_at', (domain, now))
+            if got and logo_type(got[0]) == got[1] and len(got[0]) <= PHOTO_BYTES:
+                db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
+                           'type=excluded.type,data=excluded.data,saved_at=excluded.saved_at', ('logo:' + domain, photo_key('logo:' + domain), got[1], got[0], now))
+                saved += 1
     return saved
 
 
@@ -1273,7 +1376,7 @@ def photo(db, key):
     if not re.fullmatch(r'[0-9a-f]{32}', str(key or '')):
         return None
     row = db.execute('SELECT data,type FROM person_photos WHERE key=?', (key,)).fetchone()
-    return (bytes(row[0]), row[1]) if row and row[1] in ('image/jpeg', 'image/png', 'image/webp') else None
+    return (bytes(row[0]), row[1]) if row and row[1] in ('image/jpeg', 'image/png', 'image/webp', 'image/x-icon') else None
 
 
 def people_status(db):

@@ -13,6 +13,8 @@ order: 2
 
 Only an organization's web address is sent, never your messages or who you know there. A few are looked up at a time, at most 50 a day, and refreshed every 90 days. People get their own look-up: see [Job title and photo](graph.md#job-title-and-photo). Shared hosts and mail providers, like google.com, sites.google.com or gmail.com, are never looked up: they're no one company's website.
 
+When the look-up has no logo, or there's no look-up, the logo comes from the organization's own website: the icon its home page names. It's saved on your Machine, so no logo service learns who you deal with. A site without one is asked again after 30 days.
+
 ## Fix a wrong one
 
 On the organization's page:

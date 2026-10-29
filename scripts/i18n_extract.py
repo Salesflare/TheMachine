@@ -156,9 +156,9 @@ def _texts(literal):
         part = re.sub(r'&nbsp;', ' ', part).strip()
         if '{' in part:
             # a run with holes: keep it when it reads as a sentence around them
-            words = re.sub(r'\{\d+\}', '', part)
+            words = re.sub(r'\{\d*\}', '', part)
             if not (len(re.findall(r'[A-Za-z]{2,}', words)) >= 2 or re.search(r'[A-Z][a-z]+', words)
-                    or re.fullmatch(r'\s*[a-z]{3,}(?:/[a-z]{3,})?\s*', words) and re.fullmatch(r'\{\d+\} \w+|\w+ \{\d+\}', part)) \
+                    or re.fullmatch(r'\s*[a-z]{3,}(?:/[a-z]{3,})?\s*', words) and re.fullmatch(r'\{\d*\} \w+|\w+ \{\d*\}', part)) \
                     or re.search(r'[=;]|\(|\)|=>', words):  # a sentence around them, or "{} connected" 
                 continue
             part = re.sub(r'\{\d+\}', '{}', part)

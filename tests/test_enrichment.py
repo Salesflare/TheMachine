@@ -495,6 +495,94 @@ class Enrichment(unittest.TestCase):
         self.assertIsNone(enrichment.download_photo('https://pps.whatsapp.net/v/t61/p.jpg?oe=1'))
         self.assertEqual(tried[1:], ['57.144.0.32', '2a03:2880:f000::1'])  # each address once, then none
 
+    def test_an_organization_without_a_looked_up_logo_shows_the_one_from_its_own_site(self):
+        # The lookup knows Globex but brought no logo (as cached before the lead API's logo was passed on); Initech is
+        # unknown to it. Both get the icon their own site names, saved here; a logo from the lookup or the owner wins.
+        PNG, ICO = b'\x89PNG\r\n\x1a\n' + b'0' * 40, b'\x00\x00\x01\x00' + b'1' * 40
+        self.add(tg.mail(3, 'Lee <lee@globex.com>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Lee <lee@globex.com>', ('SENT',)),
+                 tg.mail(3, 'Kim <kim@initech.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Kim <kim@initech.example>', ('SENT',)),
+                 tg.mail(3, 'Rae <rae@hooli.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Rae <rae@hooli.example>', ('SENT',)))
+        now, asked = tg.NOW.isoformat(), []
+        with self.store.connect() as db:
+            enrichment.save(db, 'globex.com', 'found', {'name': 'Globex', 'industry': 'Manufacturing'}, now)
+            enrichment.save(db, 'hooli.example', 'found', {'name': 'Hooli', 'logo': 'https://media.example/hooli.png'}, now)
+        self.build()
+        icons = {'globex.com': (PNG, 'image/png'), 'initech.example': (ICO, 'image/x-icon')}
+        fetch = lambda domain: asked.append(domain) or icons.get(domain)
+        self.assertEqual(enrichment.site_logos_step(self.store.connect, now, fetch=fetch), 2)
+        self.assertEqual(sorted(asked), ['globex.com', 'initech.example'])  # Hooli has its looked-up logo
+        self.build()
+        for domain, data in (('globex.com', PNG), ('initech.example', ICO)):
+            key = enrichment.photo_key('logo:' + domain)
+            self.assertEqual(self.node('org:' + domain)['profile']['logo'], 'api/person-photo?p=' + key)  # from here, not the site
+            with self.store.connect() as db:
+                self.assertEqual(enrichment.photo(db, key)[0], data)
+                self.assertEqual(graph.org_card(db, domain)['logo'], 'api/person-photo?p=' + key)  # a project's tile too
+        self.assertEqual(self.node('org:hooli.example')['profile']['logo'], 'https://media.example/hooli.png')
+        self.assertEqual(enrichment.site_logos_step(self.store.connect, now, fetch=fetch), 0)  # once
+        self.assertEqual(len(asked), 2)
+        # The owner takes Globex's picture off: no logo, also not the site's; a site without one is asked again in 30 days.
+        with self.store.connect() as db:
+            graph.set_picture(db, 'org:globex.com', None, now)
+            db.execute("DELETE FROM person_photos WHERE identifier='logo:initech.example'")
+            db.execute("DELETE FROM org_logo_tries WHERE domain='initech.example'")
+        self.build()
+        self.assertNotIn('logo', {k: v for k, v in self.node('org:globex.com')['profile'].items() if v})
+        icons.clear()
+        self.assertEqual(enrichment.site_logos_step(self.store.connect, now, fetch=fetch), 0)
+        self.assertEqual(asked[2:], ['initech.example'])
+        day = lambda n: (tg.NOW + tg.dt.timedelta(days=n)).isoformat()
+        self.assertEqual(enrichment.site_logos_step(self.store.connect, day(29), fetch=fetch), 0)
+        self.assertEqual(len(asked), 3)
+        enrichment.site_logos_step(self.store.connect, day(31), fetch=fetch)
+        self.assertEqual(asked[3:], ['initech.example'])
+
+    def test_a_site_logo_is_the_icon_its_home_page_names_never_an_svg(self):
+        page = """<html><head><link rel="icon" href="/dark.png" sizes="192x192" media="(prefers-color-scheme: dark)">
+            <link rel="icon" type="image/svg+xml" href="/logo.svg"><link rel="shortcut icon" href="/small.png">
+            <link rel="icon" href="https://cdn.example/big.png" sizes="512x512"><link rel="apple-touch-icon" href="touch.png">
+            <link rel="icon" href="data:image/png;base64,AAAA"><link rel="icon" href="http://plain.example/x.png" sizes="128x128"></head></html>"""
+        self.assertEqual(enrichment.site_icons(page, 'https://www.globex.com/en/'),
+                         ['https://www.globex.com/en/touch.png', 'https://cdn.example/big.png', 'https://www.globex.com/small.png',
+                          'https://www.globex.com/favicon.ico'])
+        self.assertEqual(enrichment.logo_type(b'\x00\x00\x01\x00abc'), 'image/x-icon')
+        self.assertIsNone(enrichment.logo_type(b'<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>'))
+        # The home page redirects to www; its icon is asked from there. A redirect to this Machine's network is refused.
+        import socket
+        resolve = socket.getaddrinfo
+        self.addCleanup(setattr, socket, 'getaddrinfo', resolve)
+        hosts = {'globex.com': '93.184.215.14', 'www.globex.com': '93.184.215.14', 'cdn.example': '93.184.215.15', 'inside.example': '10.0.0.8'}
+        socket.getaddrinfo = lambda host, *args, **kwargs: [(socket.AF_INET, socket.SOCK_STREAM, 6, '', (hosts[host], 443))]
+        PNG = b'\x89PNG\r\n\x1a\n' + b'0' * 40
+        site = {('globex.com', '/'): (301, {'Location': 'https://www.globex.com/'}, b''),
+                ('www.globex.com', '/'): (200, {'Content-Type': 'text/html; charset=utf-8'}, b'<link rel="apple-touch-icon" href="https://cdn.example/t.png">'),
+                ('cdn.example', '/t.png'): (200, {'Content-Type': 'image/png'}, PNG),
+                ('inside.example', '/'): (200, {'Content-Type': 'text/html'}, b'')}
+        asked = []
+
+        class Pinned:
+            def __init__(self, host, address, **kwargs):
+                self.host = host
+            def connect(self):
+                pass
+            def request(self, method, path, headers=None):
+                asked.append((self.host, path))
+                self.answer = site.get((self.host, path), (404, {}, b''))
+            def getresponse(self):
+                status, headers, body = self.answer
+                return type('R', (), {'status': status, 'getheader': lambda _, name: headers.get(name), 'read': lambda _, n: body[:n]})()
+            def close(self):
+                pass
+        pinned = enrichment._Pinned
+        self.addCleanup(setattr, enrichment, '_Pinned', pinned)
+        enrichment._Pinned = Pinned
+        self.assertEqual(enrichment.site_logo('globex.com'), (PNG, 'image/png'))
+        self.assertEqual(asked, [('globex.com', '/'), ('www.globex.com', '/'), ('cdn.example', '/t.png')])
+        site[('globex.com', '/')] = (302, {'Location': 'https://inside.example/'}, b'')
+        asked.clear()
+        self.assertIsNone(enrichment._download('https://globex.com/', 'text/html', 1000, redirects=3))
+        self.assertEqual(asked, [('globex.com', '/')])  # never on to the private address
+
     def test_the_one_time_backfill_looks_everyone_up_once_closest_first(self):
         self.add(tg.mail(3, 'Lee Parker <lee@globex.com>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Lee Parker <lee@globex.com>', ('SENT',)),
                  tg.mail(3, 'Kai Novak <kai@hooli.example>', 'sam@acme.com'), tg.mail(3, 'Rae Quinn <rae@initech.example>', 'sam@acme.com'))
