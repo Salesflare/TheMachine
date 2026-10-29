@@ -2838,7 +2838,7 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><button type="button" id="signin-browser" class="ghost">Open the browser</button
 ><button type="button" id="signin-retry" class="ghost" hidden>Try again</button
 ><button type="button" id="signin-continue" class="ghost" hidden>Continue</button></div
-><p class="fine" id="signin-fine">This goes straight into the page in your server’s browser. The assistant never sees it. For anything else, open the browser.</p></form></dialog>
+><p class="fine" id="signin-fine">This goes straight into the page in your Machine’s browser. The assistant never sees it. For anything else, open the browser.</p></form></dialog>
 <script id="i18n">
 // Languages (i18n/, glossary.md, locale_prefs.py): the owner's language from Settings, General, else the browser's on
 // the first load. English is the source and the fallback. The catalog is keyed by the English text, so markup and code
@@ -9401,10 +9401,10 @@ for(let first=true;run===signinRun&&$('#signin-dialog').open&&signinApproving===
  if(r.state==='form'){signinApproving=null;signinShow(r.page,'');return}
  if(r.state==='captcha'){signinApproving=null;signinBrowser({site:siteName(page),kind:'captcha'},run);return}
  if(now&&first)signinStatus(`Not approved yet. Approve the sign-in in your ${siteName(page)} app first; I keep checking.`,true);
- else if(Date.now()-since>SIGNIN_STALL&&$('#signin-retry').hidden){signinStatus(t('{} hasn’t moved on. If it stopped the sign-in, press Try again.',siteName(page)),false);signinFresh=true;$('#signin-retry').hidden=false}}}
+ else if(Date.now()-since>SIGNIN_STALL&&$('#signin-retry').hidden){signinStatus(t('{} hasn’t moved on. If it stopped the sign-in, press Try again.',siteName(page)),false);signinFresh=true;$('#signin-retry').hidden=false;$('#signin-retry').className='primary';$('#signin-continue').className='ghost'}}}
 const signinWithin=(promise,ms)=>Promise.race([promise,new Promise((_,no)=>setTimeout(()=>no(Error('The browser took too long to answer.')),ms))]);
 const SIGNIN_SAYS={eid:n=>t('{} signs in with itsme or eID.',n),passkey:n=>t('{} wants a passkey.',n),captcha:n=>t('{} wants a quick check that you’re not a robot.',n),account:n=>t('{} wants you to pick the right account.',n),code:n=>t('{} wants a one-time code.',n)};
-async function openSignin(account,wait,task,page,site,after){const run=++signinRun;signinFresh=false;signinArgs=[account,wait,task,page,site,after];signinAfter=after||null;signinTask=task||null;signinTab=page||null;signinSite=SIGNIN_SITES[site]||null;signinApproving=null;$('#signin-continue').className='ghost';$('#signin-browser').hidden=false;const d=$('#signin-dialog');$('#signin-user').value='';$('#signin-save').checked=false;$('#signin-pick').hidden=true;
+async function openSignin(account,wait,task,page,site,after){const run=++signinRun;signinFresh=false;signinArgs=[account,wait,task,page,site,after];signinAfter=after||null;signinTask=task||null;signinTab=page||null;signinSite=SIGNIN_SITES[site]||null;signinApproving=null;$('#signin-continue').className='ghost';$('#signin-retry').className='ghost';$('#signin-browser').hidden=false;const d=$('#signin-dialog');$('#signin-user').value='';$('#signin-save').checked=false;$('#signin-pick').hidden=true;
 $('#signin-title').textContent=signinSite?`Sign in to ${signinSite.name} on your Machine`:'Sign in';signinMode('wait');if(!d.open)d.showModal();let info=null;
 if(task){signinStatus('Opening the sign-in page…',true);
 try{info=await signinWithin(signinPost('browser_login_open',{suggestion_id:task}),20000)}catch(err){errCaught(err);if(run===signinRun)signinFail(err.message);return}

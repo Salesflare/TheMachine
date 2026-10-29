@@ -46,6 +46,7 @@ try{
   await page.locator('#signin-code').waitFor({state:'visible'});
   assert.equal(await page.locator('#signin-title').textContent(),'Code from your email');
   assert.equal(await page.locator('#signin-code-help').textContent(),'Sent to j•••@example.com (as LinkedIn shows it).');
+  assert.equal(await page.locator('#signin-fine').textContent(),'This goes straight into the page in your Machine’s browser. The assistant never sees it. For anything else, open the browser.');
   // Typing the code: nothing in the dialog redraws or empties it while LinkedIn's email comes in.
   await page.locator('#signin-code').fill('42');await page.clock.runFor(65000);
   assert.equal(await page.locator('#signin-code').inputValue(),'42');
@@ -72,6 +73,7 @@ try{
   assert.ok(await page.locator('#signin-retry').isHidden());
   for(let i=0;i<45&&await page.locator('#signin-retry').isHidden();i++)await page.clock.runFor(3100);
   await page.locator('#signin-status-text',{hasText:'LinkedIn hasn’t moved on. If it stopped the sign-in, press Try again.'}).waitFor();
+  assert.deepEqual([await page.locator('#signin-retry').getAttribute('class'),await page.locator('#signin-continue').getAttribute('class')],['primary','ghost']);
   await shot(page,'stalled',width,scheme);
   const before=posts.length;await page.locator('#signin-retry').click();await page.locator('#signin-user').waitFor({state:'visible'});
   assert.deepEqual(posts.slice(before).find(p=>p.action==='connect_site_signin'),{action:'connect_site_signin',args:{site:'linkedin',fresh:true}});
