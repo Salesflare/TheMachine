@@ -293,7 +293,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual([(c['project_id'], c['grouped'], c['n'], c['channel'], c['status'], c['early']) for c in cards],
                          [(self.acme, 1, 1, 'email', 'accepted', 1), (self.kim, 1, 1, 'email', 'accepted', 1)])
         self.assertEqual(sorted(c['delivery'] for c in cards), ['grouped', 'queued'])  # one heads-up for the batch
-        self.assertEqual(cards[0]['title'], 'Follow up on Acme pilot')
+        self.assertEqual(cards[0]['title'], 'Follow up with Acme pilot')
         # The dashboard groups them under the board
         with self.store.connect() as db:
             view = follow_ups.cards_view(db, [c['suggestion_id'] for c in cards])
@@ -466,6 +466,177 @@ class FollowUps(unittest.TestCase):
         with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None):
             app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         self.assertEqual(calls, [])
+
+    def model_turns(self, app, rewrite):
+        """One preparation pass with a fake model: each started turn saves what rewrite(suggestion_id, message, draft)
+        returns as its result (assistant_signals prepare), as the agent would. No live model, nothing sent. Returns the
+        turns started and the saves the service refused."""
+        calls, refused = [], []
+
+        def runner(request):
+            calls.append(request)
+            if request['action'] == 'start':
+                with self.store.connect() as db:
+                    sid = db.execute('SELECT suggestion_id FROM preparations WHERE job_id=?', (request['job_id'],)).fetchone()[0]
+                    current = db.execute('SELECT next_action FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
+                draft = next(iter(a.next_actions.actions(current or 'null')), None)
+                saved = rewrite(sid, request['message'], draft)
+                if saved is not None:
+                    try:
+                        app.action('prepare', {'suggestion_id': sid, 'job_id': request['job_id'], 'body': 'Follow-up ready.', 'next_actions': [saved],
+                                               'outcome': 'needs_you', 'needs': 'check the draft and send it', 'note_kind': 'style'})
+                    except ValueError as error:  # the agent sees why and saves again
+                        refused.append((sid, str(error)))
+            return {'status': 'admitted'}
+        app.preparation_step(runner)
+        with self.store.connect() as db:
+            db.execute("UPDATE preparation_runs SET status='ok',finished_at=? WHERE finished_at IS NULL", (NOW,))
+        return [c for c in calls if c['action'] == 'start'], refused
+
+    def test_change_in_the_review_rewrites_the_drafts_through_their_chat_and_never_sends(self):
+        self.turn_on()
+        app = self.app()
+        app.stop_stale_runs = lambda runner: None
+        app.follow_up_lines = lambda sid: ''
+        self.assertEqual(app.follow_up_step()['drafted'], 2)
+        acme, kim = [c['suggestion_id'] for c in self.cards()]
+        first = lambda sid: {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example' if sid == acme else 'kim@other.example'],
+                             'subject': 'Re: Pilot', 'body': 'Hi, here is the case study I mentioned.\n\nRegards,\n\nOwen'}
+        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+            self.assertEqual(self.model_turns(app, lambda sid, message, draft: first(sid))[1], [])
+        def drafts():
+            with self.store.connect() as db:
+                return {s: a.next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (s,)).fetchone()[0])[0] for s in (acme, kim)}
+        before = drafts()
+        self.assertEqual({c['status'] for c in self.cards()}, {'prepared'})
+        # Only the owner, on the dashboard
+        with self.assertRaises(ValueError):
+            app.action('follow_up_change', {'ids': [acme], 'text': 'Shorter.'}, owner_dashboard=False)
+        self.assertIn('follow_up_change', a.DASHBOARD_ACTIONS)
+        with self.assertRaises(ValueError):
+            app.action('follow_up_change', {'ids': [acme], 'text': '  '}, owner_dashboard=True)
+        # All checked: both go back to work as a Change note in their chat (decide 'other'), nothing queued to send
+        said = app.action('follow_up_change', {'ids': [acme, kim, 'f' * 16], 'text': 'Shorter, and ask about Friday.'}, owner_dashboard=True)
+        self.assertEqual(said, {'changing': [{'id': acme, 'revision': before[acme]['revision']}, {'id': kim, 'revision': before[kim]['revision']}],
+                                'skipped': ['f' * 16]})
+        with self.store.connect() as db:
+            notes = db.execute("SELECT suggestion_id,id,feedback,source FROM decisions WHERE choice='other' ORDER BY suggestion_id").fetchall()
+            self.assertEqual([(n['suggestion_id'], n['feedback'], n['source']) for n in notes],
+                             sorted([(acme, 'Shorter, and ask about Friday.', 'dashboard'), (kim, 'Shorter, and ask about Friday.', 'dashboard')]))
+            self.assertTrue(all(n['id'].startswith('chat-') for n in notes))  # the chat's own path
+            self.assertEqual({r[0] for r in db.execute('SELECT status FROM suggestions WHERE id IN (?,?)', (acme, kim))}, {'instructions'})
+        self.assertEqual(self.jobs(), [])
+        # The owner's ask, not background work: not held by the follow-up pause, at most DRAFTING at once
+        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None), \
+                patch.object(follow_ups, 'DRAFTING', 1):
+            starts = self.model_turns(app, lambda sid, message, draft: None)[0]
+        self.assertEqual(len(starts), 1)
+        self.assertIn(follow_ups.CHANGE_NOTE, starts[0]['message'])
+        self.assertNotIn('background', starts[0])
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='queued' WHERE status IN ('starting','running')")
+            db.execute('DELETE FROM preparation_runs')
+        # The fake model rewrites both at once: one keeps everything but the text, one tries another recipient and a send
+        tries = []
+
+        def rewrite(sid, message, draft):
+            tries.append(sid)
+            out = {**first(sid), 'body': 'Hi, short one: does Friday work?\n\nRegards,\n\nOwen'}
+            if sid == kim and tries.count(kim) == 1:
+                out['to'] = ['someone@else.example']
+            return out
+        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None):
+            starts, refused = self.model_turns(app, rewrite)
+        self.assertEqual(len(starts), 2)  # both at once
+        self.assertEqual([r[0] for r in refused], [kim], refused)
+        self.assertIn("keep the draft's to as it was", refused[0][1])
+        with self.store.connect() as db:
+            job = db.execute('SELECT job_id FROM preparations WHERE suggestion_id=?', (kim,)).fetchone()[0]
+        with self.assertRaises(ValueError) as sent:
+            app.action('prepare', {'suggestion_id': kim, 'job_id': job, 'body': 'Sent.', 'next_actions': [{**first(kim), 'body': 'Hi, Friday?'}],
+                                   'send_now': True, 'outcome': 'done', 'note_kind': 'style'})
+        self.assertIn('never sent from here', str(sent.exception))
+        app.action('prepare', {'suggestion_id': kim, 'job_id': job, 'body': 'Follow-up ready.', 'next_actions': [{**first(kim), 'body': 'Hi, Friday?'}],
+                               'outcome': 'needs_you', 'needs': 'check the draft and send it', 'note_kind': 'style'})
+        after = drafts()
+        self.assertEqual(after[acme]['body'], 'Hi, short one: does Friday work?\n\nRegards,\n\nOwen')
+        self.assertEqual(after[kim]['body'], 'Hi, Friday?')
+        for sid in (acme, kim):  # same channel, recipient, account and thread; a new revision; ready, not sent
+            self.assertEqual(follow_ups.route(after[sid]), follow_ups.route(before[sid]))
+            self.assertNotEqual(after[sid]['revision'], before[sid]['revision'])
+        self.assertEqual({c['status'] for c in self.cards()}, {'prepared'})
+        self.assertEqual({c['state'] for c in self.cards()}, {'open'})
+        self.assertEqual(self.jobs(), [])
+        # Only this one; then Undo change is the owner's own edit back to the text before
+        said = app.action('follow_up_change', {'ids': [acme], 'text': 'Mention the video.'}, owner_dashboard=True)
+        self.assertEqual([c['id'] for c in said['changing']], [acme])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (kim,)).fetchone()[0], 'prepared')
+        # A draft on its way out (Send all checked, spaced) isn't changed under it
+        self.store.confirm_action(kim, after[kim]['revision'], 'tap', 'dashboard')
+        self.assertEqual(app.action('follow_up_change', {'ids': [kim], 'text': 'Shorter.'}, owner_dashboard=True), {'changing': [], 'skipped': [kim]})
+        self.assertEqual([j['status'] for j in self.jobs()], ['queued'])
+
+    def test_a_change_takes_the_full_context_and_a_skill_added_after_the_drafts(self):
+        """"I added a skill, use it now": the rewrite is a full preparation turn (style, the thread, earlier follow-ups),
+        never the chat's short turn, and it names the skills on right now, one added after the drafts included, with
+        its SKILL.md to read. The fake model reads that file and follows it."""
+        import skills
+        self.turn_on()
+        app = self.app(openclaw_workspace=self.tmp.name)
+        app.stop_stale_runs = lambda runner: None
+        app.skills = skills.Skills(self.store.connect, self.tmp.name)
+        self.assertEqual(app.follow_up_step()['drafted'], 2)
+        acme = [c['suggestion_id'] for c in self.cards()][0]
+        first = {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Re: Pilot', 'body': 'Hi, any news?\n\nRegards,\n\nOwen'}
+        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+            self.model_turns(app, lambda sid, message, draft: first if sid == acme else None)
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='done' WHERE suggestion_id!=?", (acme,))
+        # minutes later the owner adds a skill, then asks for it in the review
+        app.skills.save(None, 'Listing exchanges', 'How to follow up on a listing exchange',
+                        'Offer a listing on our partner page in return, and link the page: https://example.com/partners.')
+        app.action('follow_up_change', {'ids': [acme], 'text': 'I added a skill, use it now'}, owner_dashboard=True)
+        seen = []
+
+        def rewrite(sid, message, draft):
+            seen.append(message)
+            path = next(Path(line.rsplit('(', 1)[1].rstrip(')')) for line in message.splitlines() if line.startswith('- Listing exchanges:'))
+            follow = path.read_text().strip().splitlines()[-1]  # the skill's instructions, read as the agent would
+            return {**first, 'body': 'Hi Sam, ' + follow.split(',')[0].lower() + '?\n\nRegards,\n\nOwen'}
+        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None):
+            starts, refused = self.model_turns(app, rewrite)
+        self.assertEqual((len(starts), refused), (1, []))
+        message = seen[0]
+        self.assertNotIn('The owner wrote to you in the chat', message)  # not the short chat turn
+        self.assertIn('Follow the preparation rules above', message)  # the full preparation context
+        self.assertIn('Automated follow-up 1', message)  # which follow-up it is, its channel and earlier ones (follow_up_lines)
+        self.assertIn(follow_ups.CHANGE_NOTE, message)
+        self.assertIn('- Listing exchanges: How to follow up on a listing exchange (', message)
+        self.assertIn(str(Path(self.tmp.name) / 'skills' / skills.FOLDER / 'listing-exchanges' / 'SKILL.md'), message)
+        with self.store.connect() as db:
+            body = a.next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (acme,)).fetchone()[0])[0]['body']
+        self.assertTrue(body.startswith('Hi Sam, offer a listing on our partner page in return?'), body)
+        self.assertEqual(self.jobs(), [])  # nothing sent
+
+    def test_short_names_without_the_board(self):
+        self.assertEqual(follow_ups.short_name('Editorial listing exchanges: Solutions GURUS', 'Editorial listing exchanges'), 'Solutions GURUS')
+        self.assertEqual(follow_ups.short_name('Editorial listing exchang: WEBRIS: Law Firm Marketing Agency', 'Editorial listing exchanges'),
+                         'WEBRIS: Law Firm Marketing Agency')
+        self.assertEqual(follow_ups.short_name('Acme pilot', 'Alpha testers'), 'Acme pilot')
+        self.assertEqual(follow_ups.short_name('Salesflare acquisition: Perficient', 'Acquisition conversations'), 'Salesflare acquisition: Perficient')
+        self.assertEqual(follow_ups.short_name('Alpha: Acme', 'Alpha testers'), 'Alpha: Acme')  # too short a front to be the board's
+        self.assertEqual(follow_ups.short_name('Alpha testers: ', 'Alpha testers'), 'Alpha testers: ')
+        # The to-do's title and the review name the project without the board
+        with self.store.connect() as db:
+            db.execute("UPDATE projects SET name='Alpha testers: Acme pilot' WHERE id=?", (self.acme,))
+        self.turn_on()
+        self.app().follow_up_step()
+        acme = [c for c in self.cards() if c['project_id'] == self.acme][0]
+        self.assertEqual(acme['title'], 'Follow up with Acme pilot')
+        with self.store.connect() as db:
+            view = follow_ups.cards_view(db, [acme['suggestion_id']])[acme['suggestion_id']]
+        self.assertEqual((view['project'], view['name']), ('Alpha testers: Acme pilot', 'Acme pilot'))
 
     def test_follow_ups_dont_use_up_the_room_for_other_to_dos(self):
         self.turn_on()

@@ -32,7 +32,9 @@ Right before one goes, the thread is checked again, and if anyone wrote since th
 
 A board's follow-ups come as one to-do, never one per email. While they're drafted it says "Writing 3 follow-ups…", then "8 follow-ups ready for Alpha testers".
 
-**Review** shows them one under the other, each in full, so one scroll reads them all. **Send**, **Edit** and **Skip** show on the current one. On a keyboard, j and k (or the arrows) move, Enter sends, e edits and s skips. **Send all checked** sends the ones still ticked. A single project's follow-up is a normal to-do.
+**Review** shows them one under the other, each in full, so one scroll reads them all. **Send**, **Edit** and **Skip** show on the current one. On a keyboard, j and k (or the arrows) move, Enter sends, e edits, s skips and c changes. **Send all checked** sends the ones still ticked. A single project's follow-up is a normal to-do.
+
+**Change…** rewrites all checked drafts, or only the current one, the way you say; nothing is sent, and **Undo change** brings back the old text.
 
 When several go out in a row, also with Send without asking, each mailbox sends one every 30 to 45 seconds, and the to-do shows how far it got: "Sending 3 of 8…".
 

@@ -254,6 +254,7 @@
  "Alias": "Alias",
  "All": "Alle",
  "All accounts": "Alle accounts",
+ "All checked ({})": "Alle aangevinkte ({})",
  "All clear": "Alles afgehandeld",
  "All clear.": "Alles in orde.",
  "All day": "Hele dag",
@@ -742,6 +743,7 @@
  "Could not install the Telegram libraries ({})": "De Telegram-bibliotheken konden niet geïnstalleerd worden ({})",
  "Could not start the Telegram login ({})": "Het inloggen bij Telegram kon niet starten ({})",
  "Couldn’t add the to-do": "Kon de to-do niet toevoegen",
+ "Couldn’t change this one, try again": "Kon deze niet aanpassen, probeer het opnieuw",
  "Couldn’t check the thread, try again.": "Kon de thread niet controleren, probeer het opnieuw.",
  "Couldn’t check your accounts this time.": "Kon je accounts deze keer niet nakijken.",
  "Couldn’t copy automatically. Select the command to copy it.": "Kon niet automatisch kopiëren. Selecteer het commando om het te kopiëren.",
@@ -1052,8 +1054,8 @@
  "Folder": "Map",
  "Follow them up": "Volg ze op",
  "Follow up at least {} and at most {} times": "Minstens {} en hoogstens {} keer opvolgen",
- "Follow up on {}": "{} opvolgen",
  "Follow up when there’s no reply": "Opvolgen als er geen antwoord komt",
+ "Follow up with {}": "{} opvolgen",
  "Follow up: {}": "Opvolgen: {}",
  "Follow-up labels describe drafting, checking, research or applying the task’s change": "Labels voor vervolgstappen beschrijven een concept opstellen, controleren, opzoeken of de wijziging van de taak toepassen",
  "Follow-up ready": "Opvolging klaar",
@@ -1539,7 +1541,7 @@
  "Kept. It stays if they leave.": "Bewaard. Het blijft als ze vertrekken.",
  "Keyboard": "Toetsenbord",
  "Keyboard shortcuts": "Sneltoetsen",
- "Keys: j and k move, Enter sends, e edits, s skips.": "Toetsen: j en k verplaatsen, Enter verstuurt, e bewerkt, s slaat over.",
+ "Keys: j and k move, Enter sends, e edits, s skips, c changes.": "Toetsen: j en k verplaatsen, Enter verstuurt, e bewerkt, s slaat over, c wijzigt.",
  "Known about {}": "Bekend over {}",
  "Language": "Taal",
  "Language and region": "Taal en regio",
@@ -2233,6 +2235,7 @@
  "Only the owner can edit what was learned, on the dashboard": "Alleen de eigenaar kan bewerken wat geleerd is, op het dashboard",
  "Only the owner can remove a fact, on the dashboard": "Alleen de eigenaar kan een feit verwijderen, op het dashboard",
  "Only the owner changes a picture, on the dashboard": "Alleen de eigenaar wijzigt een foto, op het dashboard",
+ "Only the owner changes follow-ups, on the dashboard": "Alleen de eigenaar wijzigt opvolgingen, op het dashboard",
  "Only the owner changes owners, merges organizations and imports, on the dashboard": "Alleen de eigenaar wijzigt eigenaars, voegt organisaties samen en importeert, op het dashboard",
  "Only the owner changes region and time format, on the dashboard (Settings, General)": "Alleen de eigenaar wijzigt regio en tijdnotatie, op het dashboard (Instellingen, Algemeen)",
  "Only the owner changes security settings, in Settings on the dashboard": "Alleen de eigenaar wijzigt beveiligingsinstellingen, in Instellingen op het dashboard",
@@ -2271,6 +2274,7 @@
  "Only the vote goes, with its short reason. Nothing about you.": "Alleen de stem vertrekt, met de korte reden. Niets over jou.",
  "Only this event changes. Nobody gets an update.": "Alleen deze afspraak verandert. Niemand krijgt een update.",
  "Only this event goes. Nobody gets an update.": "Alleen deze afspraak verdwijnt. Niemand krijgt een update.",
+ "Only this one: {}": "Alleen deze: {}",
  "Only what needs you, where you want it.": "Alleen wat jou nodig heeft, waar je het wilt.",
  "Only you": "Alleen jij",
  "Only you and {}": "Alleen jij en {}",
@@ -2798,6 +2802,8 @@
  "Reviews wait to save your {} week.": "Reviews wachten om je {}-week te sparen.",
  "Reviews wait until {} to save your {} 5-hour limit.": "Reviews wachten tot {} om je 5-uurslimiet van {} te sparen.",
  "Reviews wait until {} to save your {} week.": "Reviews wachten tot {} om je {}-week te sparen.",
+ "Rewrite": "Herschrijven",
+ "Rewriting…": "Bezig met herschrijven…",
  "Right: {}": "Juiste persoon: {}",
  "Role": "Rol",
  "Roles your Machine picked up. Confirm or edit; it learns from your edits.": "Rollen die je Machine heeft opgepikt. Bevestig of bewerk; hij leert van je bewerkingen.",
@@ -2869,6 +2875,7 @@
  "Say when to use it, in 10 to {} characters": "Zeg wanneer je hem gebruikt, in 10 tot {} tekens",
  "Say which board or project": "Zeg welk bord of project",
  "Say which board the project is on (board; with stages when the board is new)": "Zeg op welk bord het project staat (board; met stages als het bord nieuw is)",
+ "Say which follow-ups": "Zeg welke opvolgingen",
  "Say which projects belong in one sentence (up to 200 characters)": "Zeg in één zin welke projecten erbij horen (tot 200 tekens)",
  "Say who you would like to be introduced to": "Zeg aan wie je voorgesteld wilt worden",
  "Say yes to send what’s on screen.": "Zeg ja om te versturen wat op het scherm staat.",
@@ -3930,6 +3937,7 @@
  "Underline": "Onderstrepen",
  "Undo": "Ongedaan maken",
  "Undo Not needed": "Niet nodig ongedaan maken",
+ "Undo change": "Wijziging ongedaan maken",
  "Undo has expired; use Reopen for a completed item": "Ongedaan maken is verlopen; gebruik Heropenen voor een afgerond item",
  "Undo last import": "Laatste import ongedaan maken",
  "Undo merge": "Merge ongedaan maken",
@@ -4146,6 +4154,7 @@
  "What it is to you": "Wat het voor jou is",
  "What needs doing?": "Wat moet er gebeuren?",
  "What should I change?": "Wat moet ik aanpassen?",
+ "What should change?": "Wat moet er anders?",
  "What should it help with?": "Waarmee moet het helpen?",
  "What should {} change?": "Wat moet {} wijzigen?",
  "What the Fleet saw": "Wat de Fleet zag",
@@ -4950,6 +4959,22 @@
   "one": "{} opvolging klaar voor {}",
   "other": "{} opvolgingen klaar voor {}"
  },
+ "{} follow-ups sent": {
+  "one": "{} opvolging verstuurd",
+  "other": "{} opvolgingen verstuurd"
+ },
+ "{} follow-ups sent for {}": {
+  "one": "{} opvolging verstuurd voor {}",
+  "other": "{} opvolgingen verstuurd voor {}"
+ },
+ "{} follow-ups skipped": {
+  "one": "{} opvolging overgeslagen",
+  "other": "{} opvolgingen overgeslagen"
+ },
+ "{} follow-ups skipped for {}": {
+  "one": "{} opvolging overgeslagen voor {}",
+  "other": "{} opvolgingen overgeslagen voor {}"
+ },
  "{} for you under Suggestions.": "{} voor jou bij Suggesties.",
  "{} for {} did not check out ({})": "{} voor {} klopte niet ({})",
  "{} found": "{} gevonden",
@@ -5195,6 +5220,7 @@
   "other": "{} skills"
  },
  "{} skills wait for you to read them.": "Er wachten {} skills om te lezen.",
+ "{} skipped": "{} overgeslagen",
  "{} skipped as too slow": "{} overgeslagen als te traag",
  "{} stages on": {
   "one": "{} fase aan",

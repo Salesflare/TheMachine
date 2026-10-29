@@ -32,7 +32,9 @@ Vlak voor het versturen wordt de thread opnieuw gecontroleerd, en als iemand sin
 
 De opvolgingen van een bord komen als één to-do, nooit één per e-mail. Terwijl ze geschreven worden staat er "3 opvolgingen worden geschreven…", daarna "8 opvolgingen klaar voor Alpha testers".
 
-**Nakijken** toont ze volledig onder elkaar, zodat je ze in één keer doorleest. **Versturen**, **Bewerken** en **Overslaan** staan bij de huidige. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt en s slaat over. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is. De opvolging van één project is een gewone to-do.
+**Nakijken** toont ze volledig onder elkaar, zodat je ze in één keer doorleest. **Versturen**, **Bewerken** en **Overslaan** staan bij de huidige. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt, s slaat over en c wijzigt. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is. De opvolging van één project is een gewone to-do.
+
+**Wijzigen…** herschrijft alle aangevinkte concepten, of alleen het huidige, zoals jij het zegt; er wordt niets verstuurd en **Wijziging ongedaan maken** zet de oude tekst terug.
 
 Gaan er meerdere na elkaar weg, ook met Versturen zonder te vragen, dan verstuurt elke mailbox er één per 30 tot 45 seconden en de to-do toont hoe ver het is: "3 van 8 versturen…".
 

@@ -50,6 +50,14 @@ a teammate's Machine), the draft is held, not sent: "Not sent: new message in th
 ends the round as before; the owner's own send counts as that round, and the next follow-up waits from it (settle, plan).
 When the thread can't be read (offline, signed out), it isn't sent either: "Couldn’t check the thread, try again".
 
+Change in the review (App.follow_up_change): the owner says what should change, for all checked drafts or one. Each
+goes through the same path as a message in its to-do's chat (a Change note, the preparation's next turn in its own
+session), at most DRAFTING at once, but as a full preparation turn, never the chat's short one: the owner's current
+style, what was learned, the thread and earlier follow-ups again, and the skills on right now with their SKILL.md
+(change_note), so "I added a skill, use it now" works minutes after the skill was added. Only the text changes: the rewritten draft keeps its channel, recipients, sending
+account and thread (route, checked when it is saved: change_problem), and it is never sent from there (no send_now). It
+comes back ready, still checked, for the owner to read and send (follow_up_changes).
+
 Open follow-up to-dos close by themselves (settle) when the person replies, someone else answered or the owner wrote
 again, the project is won, lost, Stalled, archived or its stage turned off, or follow-ups were turned off. Snoozing
 the to-do holds it; Skip ends that round.
@@ -79,6 +87,7 @@ CREATE TABLE IF NOT EXISTS follow_up_pace(sender TEXT PRIMARY KEY,next_at TEXT N
 CREATE TABLE IF NOT EXISTS follow_up_threads(event_id INTEGER PRIMARY KEY,sends TEXT,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS follow_up_basis(suggestion_id TEXT PRIMARY KEY,basis TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS follow_up_holds(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,why TEXT NOT NULL,news TEXT,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS follow_up_changes(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,revision TEXT NOT NULL,route TEXT NOT NULL,at TEXT NOT NULL);
 '''
 SCOPES = ('board', 'project')
 # The channels a follow-up can go out on, in the order "switch channel" moves through them
@@ -940,6 +949,18 @@ def earlier_texts(db, project_id, limit=6):
     return [t for t in out if t]
 
 
+def short_name(name, board):
+    """A project's name without its board's in front: on the board "Editorial listing exchanges", the project
+    "Editorial listing exchanges: Acme" is "Acme", also when that front was cut short to fit ("Editorial listing
+    exchang: Acme"). Any other name stays as it is."""
+    name, board = str(name or ''), ' '.join(str(board or '').split())
+    head, sep, rest = name.partition(': ')
+    head = ' '.join(head.split())
+    if sep and rest.strip() and board and len(head) >= min(len(board), 8) and board.lower().startswith(head.lower()):
+        return rest.strip()
+    return name
+
+
 def cards_view(db, ids):
     """{suggestion_id: {...}} for the to-do list: which follow-up a to-do is, and the board it groups under."""
     if not ids:
@@ -951,7 +972,7 @@ def cards_view(db, ids):
                           tuple(ids)).fetchall()
     except Exception:  # noqa: BLE001 - no table yet
         return {}
-    return {r['suggestion_id']: {'project': r['project'], 'project_id': 'project:' + str(r['project_id']), 'board': r['board'],
+    return {r['suggestion_id']: {'project': r['project'], 'name': short_name(r['project'], r['board']), 'project_id': 'project:' + str(r['project_id']), 'board': r['board'],
                                  'group': ('board:' + str(r['board_id'])) if r['grouped'] and r['board_id'] else None,
                                  'n': r['n'], 'max': r['of_max'], 'channel': r['channel'], 'auto': bool(r['auto']), 'state': r['state']}
             for r in rows}
@@ -1085,3 +1106,68 @@ def done_around(db, jobs, now):
         first = max(start, parse(row[0])) if row else start
         out = max(out, first + dt.timedelta(seconds=mean * (left - 1)))
     return out.replace(microsecond=0).isoformat()
+
+
+# ------------------------------------------------------------------ Change in the review
+
+CHANGE_NOTE = ('This message came from the follow-up review\'s Change: rewrite only the text of this to-do\'s follow-up draft as it asks. '
+               'Keep the draft\'s kind, recipients, sending account and thread exactly as they are, and save it without send_now: the owner reads it and sends it.')
+CHANGE_MAX = 2000  # characters of the owner's instruction
+
+
+def change_note(skills_on):
+    """The rewrite rules for a Change, and the owner's skills that are on right now ({name, description, path}): a skill
+    added after this session began isn't in its skill list yet, so the turn names each one with its SKILL.md to read."""
+    if not skills_on:
+        return CHANGE_NOTE
+    listed = '\n'.join(f"- {k['name']}: {' '.join(str(k.get('description') or '').split())[:200]} ({k['path']})" for k in skills_on[:30])
+    return (CHANGE_NOTE + ' Write it like a new draft, with the owner\'s style and everything above. The owner\'s skills that are on now '
+            '(also ones added since this session began) are below: when the owner\'s words point to one ("use the skill", its name or what '
+            'it is for), or one is clearly for this kind of follow-up, read its SKILL.md now and follow it in the rewrite.\n' + listed)
+# What a rewrite keeps: the channel, who gets it, from which account, and the thread or chat it goes in
+ROUTE = ('kind', 'account_id', 'from', 'to', 'cc', 'bcc', 'to_email', 'thread_id', 'conversation_id', 'chat_id', 'user_id', 'handle', 'profile')
+
+
+def _route_value(value):
+    if isinstance(value, list):
+        return sorted(str(v).strip().lower() for v in value)
+    return str(value).strip().lower() if isinstance(value, str) else value
+
+
+def route(action):
+    """Where a draft goes (ROUTE), comparable between two drafts."""
+    return {k: _route_value(action[k]) for k in ROUTE if isinstance(action, dict) and action.get(k) not in (None, '', [])}
+
+
+def changing(db, suggestion_id, decision_id, revision, action, now):
+    """Remember a Change from the review: the draft it rewrites and where that draft goes."""
+    db.execute('INSERT OR REPLACE INTO follow_up_changes(decision_id,suggestion_id,revision,route,at) VALUES(?,?,?,?,?)',
+               (decision_id, suggestion_id, revision, json.dumps(route(action)), now))
+
+
+def change_of(db, suggestion_id, job_id):
+    """The review's Change this preparation works on, or None."""
+    if not job_id:
+        return None
+    try:
+        return db.execute('SELECT c.* FROM follow_up_changes c JOIN preparations p ON p.decision_id=c.decision_id '
+                          'WHERE p.suggestion_id=? AND p.job_id=? AND c.suggestion_id=?', (suggestion_id, job_id, suggestion_id)).fetchone()
+    except Exception:  # noqa: BLE001 - no table yet
+        return None
+
+
+def change_problem(change, drafts, send_now):
+    """Why a rewrite from the review's Change can't be saved as it is, or None: it is never sent from there, and the
+    draft keeps where it goes (ROUTE). drafts: the result's message drafts."""
+    if not change:
+        return None
+    if send_now:
+        return 'A Change from the follow-up review is never sent from here: save the draft without send_now, for the owner to read and send'
+    before = json.loads(change['route'])
+    for draft in drafts:
+        after = route(draft)
+        moved = [k for k in before if after.get(k) != before[k]]
+        if moved:
+            return ('Only the text changes in a Change from the follow-up review: keep the draft\'s ' + ', '.join(moved)
+                    + ' as it was and save it again')
+    return None
