@@ -3270,7 +3270,7 @@ if(/rate_?limit/.test(what))return t('{} asked to slow down',name||t('The source
 if(/read_failed$/.test(what))return name?t('Couldn’t read {}',name):t('Couldn’t read the source');
 if(/^HTTP_5/.test(what))return t('{} had a problem on its side',name||t('The source'));
 const words=v.replace(/[_:]+/g,' ').trim();return words[0].toUpperCase()+words.slice(1)}
-const service=v=>({gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',slack:'Slack',salesflare:'Salesflare CRM',whatsapp:'WhatsApp',telegram:'Telegram chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'OpenClaw Gateway',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',stripe:'Stripe',rss:'Feed',docs:'Docs',x:'X'}[v]||v);
+const service=v=>({gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',slack:'Slack',salesflare:'Salesflare CRM',whatsapp:'WhatsApp',telegram:'Telegram chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'OpenClaw Gateway',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',trello:'Trello',stripe:'Stripe',rss:'Feed',docs:'Docs',x:'X'}[v]||v);
 const label=v=>({pending:'Needs your decision',accepted:'Accepted',prepared:'Ready for you',rejected:'Not needed',snoozed:'Later',instructions:'Changes requested',completed:'Done'}[v]||v);
 const tone=v=>({pending:'amber',accepted:'lavender',instructions:'lavender',prepared:'mint',snoozed:'lavender',completed:'mint',rejected:'muted'}[v]||'muted');
 // A blocker waiting on the owner (a sign-in in the kept tab) resumes with Continue; same rule as the service.
@@ -4737,7 +4737,7 @@ function telegramNote(c){const stop=c.error==='telegram_app_blocked'?t('Telegram
  :c.error==='telegram_logged_out'?t('Telegram logged this Machine out. Reconnect to keep reading.'):'';
  return `<p class="note">${esc(t('Private chats and small groups. Replies only when you press Send on a to-do.'))}</p>${stop?`<p class="alert">${esc(stop)} ${reconnectButton(c)}</p>`:''}`}
 function connectorCard(c,open){
-const unit={calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings'}[c.service]||'messages',tone=connectorTone(c);
+const unit={calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings',trello:'card changes'}[c.service]||'messages',tone=connectorTone(c);
 return `<article data-group="${healthGroup(c.service)}" data-conn="${esc(c.id)}"><div class="conn-head">${icon(c.service)}<div><h3>${esc(c.display_name||c.email)}</h3><small>${service(c.service)} · ${esc(scopeLabel(c.boundary))}</small></div><span class="state-dot t-${tone}" title="${esc(connectorHealth(c).text)}"></span></div>
 <p class="connection-status">${esc(connectorHealth(c).text)}</p>
 ${c.service==='intercom'?`<p class="muted conn-replies">${c.replies_as?`Replies as ${esc(c.replies_as)}, only after you press Send.`:'Reads only. Never replies.'}</p>`:''}

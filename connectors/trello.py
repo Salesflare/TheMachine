@@ -195,9 +195,12 @@ def sync(store, config, account, helpers):
 
 
 def check(config, account, helpers):
-    """Probe board access and parse a recent page, without storing anything."""
+    """Probe board access and parse a recent page, without storing anything. Names the connection after its board
+    (display_name, kept once set) so its card reads like the others, never the account id."""
     source = Source(config, account, helpers)
     board = source.verify()
+    if not account.get('display_name'):
+        account['display_name'] = plain(board.get('name') or '')[:200] or 'Trello board'
     now = timestamp(helpers.now(), helpers)
     window = {'since': (now - dt.timedelta(days=int(config.get('bootstrap_days', 7)))).isoformat(),
               'until': now.isoformat()}

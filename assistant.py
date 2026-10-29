@@ -8384,7 +8384,7 @@ class Store:
                                              'service': account.get('service', 'gmail'),
                                              'poll_seconds':account.get('poll_seconds',300),
                                              'read_window': read_window(account),
-                                             'display_name': account.get('display_name') or account.get('email') or account['id'],
+                                             'display_name': account.get('display_name') or account.get('email') or UNNAMED.get(account.get('service')) or account['id'],
                                              **(dict(row) if row else {}), **dict(counts), **channel_health})
             # Newest first: the dashboard shows the top few and says when each happened.
             result['deliveries'] = [dict(r) for r in db.execute('SELECT * FROM deliveries ORDER BY updated_at DESC,rowid DESC')]
@@ -9386,6 +9386,7 @@ def remember_profiles(store, source, offers):
     return changed
 
 
+UNNAMED = {'trello': 'Trello board'}  # a connection without a name of its own yet: what its card says, not the account id
 CONNECTOR_HELPERS = types.SimpleNamespace(
     SourceError=SourceError, browser_read_failure=browser_read_failure, recover_browser=lambda profile, own_cdp=False, config=None: recover_browser(profile, own_cdp, config), now=lambda: now(), remember_profiles=lambda store, source, offers: remember_profiles(store, source, offers), credential=lambda config, name: credential(config, name), local_tz=lambda: local_tz(),
     iso=lambda stamp: dt.datetime.fromtimestamp(stamp, dt.timezone.utc).isoformat())

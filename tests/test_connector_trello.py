@@ -167,12 +167,29 @@ class TrelloTests(unittest.TestCase):
         self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
 
     def test_setup_check_is_read_only_and_verifies_board_identity(self):
-        self.assertIsNone(trello.check({}, ACCOUNT, self.helpers))
+        self.assertIsNone(trello.check({}, dict(ACCOUNT), self.helpers))
         self.assertEqual(self.rows(), [])
         self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
         with patch('urllib.request.urlopen', return_value=Response(json.dumps({**BOARD, 'shortLink': 'Wrong001'}).encode())):
             with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
                 trello.check({}, ACCOUNT, self.helpers)
+
+    def test_check_names_the_connection_after_its_board(self):
+        self.pages = [[], []]
+        account = dict(ACCOUNT)
+        trello.check({}, account, self.helpers)
+        self.assertEqual(account['display_name'], 'Example board')  # its card's title, never the account id
+        account['display_name'] = 'Renamed'
+        trello.check({}, account, self.helpers)
+        self.assertEqual(account['display_name'], 'Renamed')  # a name once set is kept
+        unnamed = dict(ACCOUNT)
+        with patch('urllib.request.urlopen', side_effect=lambda *x, **k: Response(json.dumps({**BOARD, 'name': ''}).encode() if '/actions' not in x[0].full_url else b'[]')):
+            trello.check({}, unnamed, self.helpers)
+        self.assertEqual(unnamed['display_name'], 'Trello board')
+
+    def test_an_unnamed_connection_reads_trello_board_not_its_id(self):
+        card = self.store.snapshot([{**ACCOUNT, 'id': 'work-trello', 'boundary': 'work'}])['connectors'][0]
+        self.assertEqual(card['display_name'], 'Trello board')
 
     def test_board_validation_and_credentials_are_runtime_only(self):
         for value in ('https://example.invalid/b/Board001', '../members/me', '', None):
