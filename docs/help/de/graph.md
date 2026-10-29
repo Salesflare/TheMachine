@@ -115,7 +115,7 @@ Personen mit einer Firmenadresse bekommen Position, Foto, LinkedIn und Stadt. Da
 
 Deine Verbindungen ergänzen mehr, während sie laufen, mit dem, was sie ohnehin lesen, ohne zusätzliche Anfragen: Position, Telefon und Zeitzone aus Slack, Bio, Ort und Website aus X, Headline und Foto aus LinkedIn und Positionen aus Google-Kontakten und Salesflare. Was jemand über sich selbst sagt, hat Vorrang. Fahr mit der Maus über die Zeile unter dem Namen, um zu sehen, woher es kommt. Alles bleibt auf deiner Machine.
 
-WhatsApp-Bilder kommen über deine dauerhaft laufende WhatsApp-Synchronisierung, wenn sie das erlaubt: bis zu 50 am Tag, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet.
+WhatsApp-Bilder kommen über deine dauerhaft laufende WhatsApp-Synchronisierung, wenn sie das erlaubt: bis zu 50 am Tag, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet. Telegram-Bilder kommen genauso, über deine Verbindung zu Telegram-Chats: bis zu 50 am Tag, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet.
 
 ## Jemanden endgültig löschen
 

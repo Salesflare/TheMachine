@@ -41,6 +41,10 @@ Or run `assistant connect telegram` in a terminal and scan the code it shows the
 
 The Machine uses Telegram's API for this. Telegram may limit or end logins from apps like it.
 
+## Pictures
+
+The Machine asks Telegram for the profile pictures of people in your graph who have none, at most 50 a day, through the same login that reads your chats, and only for people in chats it reads. Nothing is sent to them. Someone who hides their picture from you stays without one.
+
 ## Remove it
 
 **Connections**, open Telegram chats, **Details**, then **Disconnect**. Your Machine logs itself out at Telegram and deletes what it kept for Telegram.

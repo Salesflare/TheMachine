@@ -2184,6 +2184,18 @@ def whatsapp_photo_asker(config):
     return list(accounts), ask
 
 
+def telegram_photo_asker(config):
+    """ask(account id, user id) for enrichment.telegram_photos_step: the owner's own Telegram accounts only (never one
+    shared from a Fleet); None when the mirror can't answer."""
+    accounts = {a['id']: a for a in config.get('accounts', []) if a.get('service') == 'telegram' and a.get('store') and not a.get('shared')}
+    def ask(account_id, user_id):
+        try:
+            return Telegram(config, accounts[account_id]).picture(user_id)
+        except (SourceError, KeyError):
+            return None
+    return list(accounts), ask
+
+
 WHATSAPP_JID = r'(?:[0-9]+(?::[0-9]+)?@(?:s\.whatsapp\.net|lid)|[0-9]+(?:-[0-9]+)?@g\.us)'
 
 
@@ -2381,6 +2393,29 @@ class Telegram:
                               "WHERE m.occurred_at>=? AND c.skipped='' ORDER BY m.occurred_at LIMIT 20000", (after,)).fetchall()
         return [{**dict(r), 'text': seal.open(r['text']) if r['text'] is not None else None,
                  'sender_name': seal.open(r['sender_name']), 'chat_name': seal.open(r['chat_name'])} for r in rows]
+
+    def picture(self, user_id):
+        """A person's small profile photo, asked through the mirror, which holds the session (telegram_store.ask_photo):
+        {'id', 'data': (bytes, type)}, {} when they have none the owner can see, {'id'} when it didn't download, or
+        {'pending': True} while the mirror hasn't answered. SourceError when the mirror can't answer."""
+        if not re.fullmatch(r'[0-9]{1,20}', str(user_id)):
+            raise SourceError('telegram_invalid_person')
+        self.profile()
+        import telegram_store
+        store = Path(self.account['store']).expanduser()
+        try:
+            seal = telegram_store.sealer(store, self.config.get('database'), create=False)
+            if seal is None:
+                raise SourceError('telegram_source_unavailable')
+            with contextlib.closing(telegram_store.connect(store)) as db:
+                answer = telegram_store.ask_photo(db, seal, str(user_id))
+        except (sqlite3.Error, OSError, ValueError, message_seal.SealError):
+            raise SourceError('telegram_source_unavailable') from None
+        data = answer.pop('data', None)
+        kind = enrichment.image_type(data) if data else None
+        if kind and len(data) <= enrichment.PHOTO_BYTES:
+            answer['data'] = (data, kind)
+        return answer
 
 
 TELEGRAM_CHAT = re.compile(r'-?[0-9]{1,20}')
@@ -18520,6 +18555,9 @@ class App:
                 wa_accounts, ask = whatsapp_photo_asker(self.config)
                 if wa_accounts and not self.stop.is_set():
                     photos += enrichment.whatsapp_photos_step(self.store.connect, now(), ask, wa_accounts)
+                tg_accounts, ask = telegram_photo_asker(self.config)
+                if tg_accounts and not self.stop.is_set():
+                    photos += enrichment.telegram_photos_step(self.store.connect, now(), ask, tg_accounts)
                 found += enrichment.facts_from_signals(self.store.connect, now())  # once: facts already in stored signals
                 if found or photos:
                     LOG.info('enrichment people found=%s photos=%s', found, photos)

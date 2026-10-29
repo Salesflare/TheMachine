@@ -41,6 +41,10 @@ Of voer `assistant connect telegram` uit in een terminal en scan de code die daa
 
 The Machine gebruikt hiervoor de API van Telegram. Telegram kan logins van apps zoals hem beperken of beëindigen.
 
+## Foto's
+
+The Machine vraagt Telegram om de profielfoto's van mensen in je Graph die er geen hebben, maximaal 50 per dag, via dezelfde login die je chats leest, en alleen voor mensen uit chats die hij leest. Er wordt niets naar hen verstuurd. Wie de eigen foto voor je verbergt, blijft zonder foto.
+
 ## Verwijderen
 
 **Koppelingen**, open Telegram-chats, **Details**, dan **Ontkoppelen**. Je Machine logt zichzelf uit bij Telegram en verwijdert wat hij voor Telegram bewaarde.
