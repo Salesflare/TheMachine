@@ -4419,7 +4419,7 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
 // one such a source signs in through The Machine's own app (fleet.py connect_start), once this Machine is paired with
 // an account, and its row follows how that goes; pasting a token stays, folded away.
 let connectList=null,connectListAt=0,connectRun=null,connectTimer=0,connectSignin=null,signinTimer=0,connectForm=null,connectSiteShown=null,connectGbrain=null;
-const BROKER_LINK={gmail:'#google',calendar:'#google',outlook:'#microsoft',outlook_calendar:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe'};
+const BROKER_LINK={gmail:'#google',calendar:'#google',outlook:'#microsoft',outlook_calendar:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack'};
 const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
  try{connectList=await connectPost('connect_sources')}catch(e){errCaught(e);$('#connect-add').innerHTML=`<p class="error">${esc(e.message)}</p>`;return}renderConnectAdd()}
@@ -4507,7 +4507,8 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  microsoft_docs:{label:'Microsoft',title:'Docs',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
- stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste a restricted key instead.'}};
+ stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste a restricted key instead.'},
+ slack:{label:'Slack',about:'Your DMs and the channels you’re in. Sends only messages you approved, as yourself.',other:'Or use a Maton API key',how:'Connect Slack in Maton, then paste your Maton API key.',go:'Use Maton',off:'Sign in with {} isn’t available yet. Use a Maton API key instead.'}};
 // A work organization that lets only approved apps in: the short link its Microsoft 365 admin approves The Machine with.
 // It opens Microsoft's approval page with a fresh signed state on each visit (the control plane's site), so it never expires.
 const MS_ADMIN_LINK='https://themachine.computer/m365-admin-consent';
@@ -4516,7 +4517,7 @@ const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.ho
  return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{}),...(!hosted&&x.signin_off?{off:true}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
 // Pasting a key or token stays on the account page's tile.
-const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',intercom:'#source-intercom',github:'#source-github'};
+const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',github:'#source-github'};
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;

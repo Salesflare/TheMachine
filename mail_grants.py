@@ -1,4 +1,4 @@
-"""Google, Microsoft and Zoom sign-ins of broker accounts, kept on this Machine only (docs/configuration.md, "Broker accounts").
+"""Google, Microsoft, Zoom, Stripe and Slack sign-ins of broker accounts, kept on this Machine only (docs/configuration.md, "Broker accounts").
 
 A hosting control plane keeps the OAuth client and its secret, never the sign-ins themselves. A broker account's refresh
 token lives here, in `mail-grants.json` next to the database (mode 600), sealed with the message key (message_seal.py).
@@ -33,7 +33,7 @@ RECEIPTS = 'revocations.json'
 PENDING = 'revoke:'  # a sign-in forgotten here whose revoke Google hasn't confirmed yet: kept only to try again
 RECEIPT_DAYS = 30
 RETRY_MINUTES = 60
-PROVIDERS = ('google', 'microsoft', 'zoom', 'stripe')  # Zoom and Stripe (connectors/zoom.py, connectors/stripe.py): forgotten here; the owner can remove the app there
+PROVIDERS = ('google', 'microsoft', 'zoom', 'stripe', 'slack')  # Zoom, Stripe and Slack (connectors/zoom.py, connectors/stripe.py, slack_api.py): forgotten here; the owner can remove the app there
 GOOGLE_REVOKE = 'https://oauth2.googleapis.com/revoke'
 GOOGLE_REMOVE = 'myaccount.google.com/permissions'
 MICROSOFT_REMOVE = 'myapps.microsoft.com (work) or account.live.com/consent/Manage (personal)'

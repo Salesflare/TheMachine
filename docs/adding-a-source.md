@@ -47,7 +47,7 @@ The service calls `sync` every `poll_seconds` (default 300) in the account's own
 
 When the service offers OAuth, the connector signs in with it. Nobody pastes a token or key, and nobody is sent to a developer console, an API explorer or an OAuth playground.
 
-- Reuse The Machine's own sign-ins instead of registering a new app: Google through the token broker ([`google_api.py`](../google_api.py), `transport: broker`), Microsoft through [`ms_graph.py`](../ms_graph.py), Zoom, Intercom and Stripe through the hosted account pages (`broker`, `account_page`), GitHub through `gh auth login`.
+- Reuse The Machine's own sign-ins instead of registering a new app: Google through the token broker ([`google_api.py`](../google_api.py), `transport: broker`), Microsoft through [`ms_graph.py`](../ms_graph.py), Zoom, Slack, Intercom and Stripe through the hosted account pages (`broker`, `account_page`), GitHub through `gh auth login`.
 - Ask for the narrowest read-only scopes that do the job. For Google, prefer scopes that aren't restricted or sensitive (`drive.file` over `drive.readonly`), since restricted ones need a security assessment.
 - A scope or API call the shared sign-in doesn't allow yet: write the connector for it anyway, and name the scope and calls in the pull request; a maintainer adds them to that sign-in.
 - A token or key only when the service has no OAuth, or has OAuth but The Machine has no app for it yet. Say why in `SETUP['no_oauth']` and in the pull request. `tests/test_connectors.py` fails a connector for a known OAuth service that asks for a key or links a developer console without that reason.
