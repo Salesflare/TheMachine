@@ -15,6 +15,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Nicht zum Training von KI genutzt: Wir haben keine eigene KI. Dein Anbieter arbeitet unter deinem Konto und seinen Bedingungen.
 - Erkenntnisse für das Team nur mit deinem OK: Ab und zu fragt sie, ob sie ein paar allgemeine Tipps senden darf, nichts Persönliches. Siehe [Erkenntnisse teilen](share-learnings.md).
 - Fehlerberichte, außer du schaltest sie aus: Wenn etwas kaputtgeht, die Art des Fehlers und wo im Code. Nie deine Nachrichten, Namen oder Adressen. Siehe [Fehlerberichte](error-reports.md).
+- Nutzungszahlen auf einer gehosteten Machine: tägliche Zahlen zu dem, was du getan hast (etwa geöffnete Aufgaben oder gesendete E-Mails), nie deren Inhalt.
 - Nimm sie mit oder lösche sie: Exportiere alles in einer Datei, oder lösche deinen Server und seine Backups mit einem Button.
 - Unser Zugriff wird protokolliert: jedes Mal, wenn unser Team sich bei deinem gehosteten Server anmeldet oder seinen Bericht liest. Owner und Admins einer Fleet sehen das unter **Aktivität**. Siehe [Fleets](fleet.md).
 

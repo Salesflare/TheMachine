@@ -63,6 +63,7 @@ import fleet
 import shared_graph
 import agent_jobs
 import chat_model
+import activity
 import error_feed
 import mimetypes
 import work_removal
@@ -1451,6 +1452,17 @@ def first_cards_report(db, accounts=(), current=None):
     if eta and not out['cards']:
         out['eta_minutes'] = eta
     return out
+
+
+def activity_report(db, timezone=None, current=None):
+    """Per local day, the last 7 days: plain counts of what the owner did (to-dos shown and opened, Do it, Send,
+    sent, Mark done, Not needed, snoozed, chat messages, visits, active hours), for the hosted health report next to
+    first_cards_report. Counts only, never content (activity.py). `db`: a plain sqlite3 connection to the events database."""
+    try:
+        tz = ZoneInfo(timezone) if timezone else local_tz()
+    except (ValueError, KeyError):
+        tz = local_tz()
+    return activity.report(db, tz, current or now())
 
 
 def main_model():
@@ -3704,6 +3716,7 @@ class Store:
             db.execute(task_pages.SCHEMA)  # task pages offered or shared from handoffs by email (task_pages.py)
             team_learnings.ensure(db)  # learnings for The Machine team (team_learnings.py), with their use cases
             error_feed.ensure(db)  # error reports for The Machine team: signatures only (error_feed.py)
+            activity.ensure(db)  # daily activity counts for the hosted health report (activity.py)
             pacing.ensure(db)  # how often background work paced (pacing.py): made here, not inside someone's write
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             # Promises the owner made and promises made to them, from reviewed messages. Each is
@@ -4201,6 +4214,26 @@ class Store:
             if shown:
                 db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_card_shown',?,?)", (now(), str(shown)))
                 self._card_shown = True
+
+    def note_activity(self, kind, ref=None):
+        """Count one dashboard moment for the daily activity counts (activity.py): 'dashboard' (its list was asked for),
+        'visit' (a page load) or 'opened' (a to-do, ref its id). Never raises: a count never costs the owner a page.
+        The list's poll writes at most once a minute."""
+        if kind == 'dashboard':
+            if time.time() - getattr(self, '_activity_at', 0) < 60:
+                return
+            self._activity_at = time.time()
+        try:
+            with self.connect() as db:
+                activity.ensure(db)
+                if kind == 'dashboard':
+                    activity.note_dashboard(db, now(), local_tz())
+                elif kind == 'visit':
+                    activity.note_visit(db, now(), local_tz())
+                elif kind == 'opened' and isinstance(ref, str) and re.fullmatch(r'[a-f0-9]{16}', ref):
+                    activity.note_opened(db, ref, now(), local_tz())
+        except (sqlite3.Error, ValueError) as error:
+            LOG.warning('activity not noted kind=%s error=%s', kind, type(error).__name__)
 
     def commit_page(self, account, state, events, record_sync=True, excluded_source_ids=(), android_inbox_ids=()):
         # The page AND its next cursor commit together. A killed fetch replays the page.
@@ -14917,6 +14950,8 @@ class App:
                 result.update(duplicate=True,card_confirmation_only=True)
             return result
         if name == 'card_chat':
+            if owner_dashboard and not args.get('cursor'):
+                self.store.note_activity('opened', args.get('suggestion_id'))  # a to-do opened (its chat's first read)
             return self.card_chat(args.get('suggestion_id'), args.get('cursor'))
         if name == 'chat_stop':
             return self.chat_stop(args.get('suggestion_id'))
@@ -20358,6 +20393,7 @@ class App:
                 elif path.path == '/api/session':
                     # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
                     # copy never keeps it) and whose data the device may keep (dashboard_cache_scope)
+                    app.store.note_activity('visit')
                     self.output(200, {'csrf': dashboard_csrf(app.token, app.config['tailscale_owner']),
                                       'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner'])})
                 elif path.path == '/api/status':
@@ -20365,6 +20401,7 @@ class App:
                                       'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})
                     try:
                         app.store.note_card_shown()
+                        app.store.note_activity('dashboard')
                     except sqlite3.Error as error:
                         LOG.warning('card shown not noted error=%s', type(error).__name__)
                 elif path.path == '/api/merge-diff':
