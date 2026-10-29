@@ -171,6 +171,8 @@ Deine Wahl in **Bearbeiten** bleibt immer, auch wenn du sie entfernst. **Gleiche
 
 Projekte einer Art in Phasen, etwa eine Pipeline für Evaluierungen. **⋯** auf einem Board: **Board bearbeiten** (Name, Phasen, welche Projekte dazugehören), **Auf diesem Board öffnen** und **Neues Board**. Prüfungen fügen weiter passende Projekte hinzu und setzen sie in eine Phase. Wenn sie unsicher sind, zeigt das Board „2 Projekte könnten hierher gehören“: **Hinzufügen** oder **Auslassen**.
 
+**Nachfassen…** im **⋯** eines Boards fasst von selbst nach, wenn jemand nicht antwortet. Siehe [Nachfassen](follow-ups.md).
+
 Hake ein paar an, oder **Alle auswählen**, um sie auf einmal zu bearbeiten, und **Rückgängig** direkt danach, wenn du es dir anders überlegst. Ein Projekt, das mehrere Gegenüber bündelt, wird beim Hinzufügen zu einem Projekt pro Gegenüber.
 
 **Pipeline**, oben auf einem Board, rechnet den Wert der offenen Projekte pro Phase zusammen, und was pro Monat laut Abschlussdatum abgeschlossen werden soll. Gewonnene, verlorene und festgefahrene Projekte sind nicht offen. Was du diesen Monat gewonnen hast, steht getrennt. Werte sind in Euro, außer deine Machine ist auf eine andere Währung eingestellt. Mit **Inhaber** in Filtern zählt sie nur deine.

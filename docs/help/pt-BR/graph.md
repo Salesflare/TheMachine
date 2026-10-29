@@ -171,6 +171,8 @@ Sua escolha em **Editar** sempre fica, mesmo quando você a tira. **Mesma organi
 
 Projetos de um tipo em etapas, como um pipeline de avaliação. **⋯** em um quadro: **Editar quadro** (nome, etapas, quais projetos fazem parte), **Abrir neste quadro** e **Novo quadro**. As revisões continuam adicionando projetos que se encaixam e os colocam em uma etapa. Quando não têm certeza, o quadro mostra "2 projetos podem fazer parte daqui": **Adicionar** ou **Deixar de fora**.
 
+**Follow-ups…** no **⋯** de um quadro faz follow-up sozinha quando alguém não responde. Veja [Follow-ups](follow-ups.md).
+
 Marque alguns, ou **Selecionar tudo**, para fazer de uma vez, e **Desfazer** logo depois se mudar de ideia. Um projeto que junta várias contrapartes vira um projeto por contraparte quando você o adiciona.
 
 **Pipeline**, no topo de um quadro, soma o valor dos projetos abertos por etapa e o que deve fechar por mês, pelas datas de fechamento. Projetos ganhos, perdidos e parados não estão abertos. O que você ganhou neste mês aparece à parte. Os valores são em euros, a menos que sua Machine esteja configurada para outra moeda. Com **Proprietário** em Filtrar, conta só os seus.

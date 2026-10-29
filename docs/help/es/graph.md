@@ -171,6 +171,8 @@ Tu elección en **Editar** siempre se queda, también cuando la quitas. **Misma 
 
 Proyectos de un mismo tipo por etapas, como un pipeline de evaluación. **⋯** en un tablero: **Editar tablero** (nombre, etapas, qué proyectos pertenecen), **Abrir en este tablero** y **Nuevo tablero**. Las revisiones siguen añadiendo proyectos que encajan y los colocan en una etapa. Cuando no están seguras, el tablero muestra "2 proyectos podrían ir aquí": **Añadir** u **Omitir**.
 
+**Seguimientos…** en el **⋯** de un tablero hace seguimiento por sí sola cuando alguien no responde. Mira [Seguimientos](follow-ups.md).
+
 Marca unos cuantos, o **Seleccionar todo**, para hacerlos a la vez, y **Deshacer** justo después si cambias de idea. Un proyecto que agrupa varias contrapartes se convierte en un proyecto por contraparte cuando lo añades.
 
 **Pipeline**, arriba en un tablero, suma el valor de sus proyectos abiertos por etapa, y lo que se espera cerrar cada mes según sus fechas de cierre. Los proyectos ganados, perdidos y estancados no están abiertos; lo que ganaste este mes aparece aparte. Los valores están en euros, salvo que tu Machine tenga configurada otra moneda. Con **Propietario** en Filtrar, solo cuenta los tuyos.

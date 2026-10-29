@@ -171,6 +171,8 @@ La tua scelta in **Modifica** resta sempre, anche quando la togli. **Stessa orga
 
 Progetti di un tipo organizzati in fasi, come una pipeline di valutazione. **⋯** su una bacheca: **Modifica bacheca** (nome, fasi, quali progetti ne fanno parte), **Apri su questa bacheca** e **Nuova bacheca**. Le revisioni continuano ad aggiungere i progetti adatti e li mettono in una fase. Quando non sono sicure, la bacheca mostra "2 progetti potrebbero stare qui": **Aggiungi** o **Escludi**.
 
+**Ricontatti…** nel **⋯** di una bacheca ricontatta da sola chi non risponde. Vedi [Ricontatti](follow-ups.md).
+
 Spuntane alcuni, o **Seleziona tutto**, per gestirli in una volta, e **Annulla** subito dopo se cambi idea. Un progetto che raggruppa più controparti diventa un progetto per controparte quando lo aggiungi.
 
 **Pipeline**, in cima a una bacheca, somma il valore dei progetti aperti per fase, e quanto dovrebbe chiudersi ogni mese in base alle date di chiusura. I progetti vinti, persi e fermi non sono aperti; quello che hai vinto questo mese compare a parte. I valori sono in euro, a meno che la tua Machine non usi un'altra valuta. Con **Proprietario** in Filtra, conta solo i tuoi.
