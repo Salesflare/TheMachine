@@ -950,7 +950,7 @@ class Boards(unittest.TestCase):
             self.store.finish_analysis(claim['analysis_id'], 'x', stages=[{**move, 'event_id': 999999}])
         with self.assertRaises(ValueError):
             self.store.finish_analysis(claim['analysis_id'], 'x', stages={'Paperkite': 'Agreed'})
-        done = self.store.finish_analysis(claim['analysis_id'], 'Reviewed', stages=[move])
+        done = self.store.finish_analysis(claim['analysis_id'], 'Reviewed', stages=[move], replies=[{'event_id': agreed, 'why': 'Ann only said yes'}])
         self.assertEqual(done['stages'][0]['stage'], 'Agreed')
         with self.store.connect() as db:  # the next review sees where it stands
             self.assertEqual(graph.boards_brief(db)[0]['board'], 'Listings')
