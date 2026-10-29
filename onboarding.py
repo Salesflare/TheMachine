@@ -182,6 +182,9 @@ class WebUI:
         self.answers, self.secrets, self.marks = {}, {}, True
         self.signing_in = None  # the site the connect waits on the owner to sign in to (wait_signed_in)
         self.code = None  # a code to show: {'kind': 'device', 'code', 'url'} (GitHub) or {'kind': 'pair', 'code'} (WhatsApp)
+        # More for the next question only: {'phone_first': i} (the choice to lead with on a phone, where a QR code on
+        # the same screen can't be scanned), {'resend': True} (a Send the code again button), {'note': text}
+        self.extra = None
 
     def prefill(self, answers=None, secrets=None):
         """What the dashboard's form for this source already said, as a setup page's form does (agent ScriptedUI):
@@ -231,7 +234,8 @@ class WebUI:
                 raise SetupError('Stopped')
             self._asked += 1
             self.question = {'id': self._asked, 'kind': kind, 'prompt': str(prompt), 'options': options,
-                             'default': '' if kind == 'secret' else default}
+                             'default': '' if kind == 'secret' else default, **(self.extra or {})}
+            self.extra = None
             self._answer = None
             given = self._cond.wait_for(lambda: self._answer is not None or self.cancelled, self.wait)
             self.question = None
@@ -1630,8 +1634,10 @@ def telegram_login(config, account, ui):
     if service.available() and service.definition_path(unit, home()).exists():
         service.stop(unit, run=run)  # the store has one writer: the login, until the mirror starts again with it
     telegram_store.forget_session(account['store'])
-    by_phone = ui.choose('How do you log in to Telegram', [('qr', 'Scan a QR code in Telegram on your phone'),
-                                                          ('phone', 'Get a code in Telegram for your phone number')])
+    if getattr(ui, 'web', False):
+        ui.extra = {'phone_first': 1}  # on a phone, the QR code can't be scanned from the same screen
+    by_phone = ui.choose('How do you log in to Telegram', [('qr', 'Scan a QR code with Telegram on another device'),
+                                                          ('phone', 'Get a code for your phone number')])
     extra = []
     if by_phone == 'phone':
         phone = '+' + re.sub(r'[^\d]', '', ui.ask('Your Telegram phone number, with its country code (+32 470 12 34 56)'))
@@ -1665,7 +1671,7 @@ def telegram_login(config, account, ui):
     def hide():
         if getattr(ui, 'web', False):
             ui.show_code(None)
-    until, connected = time.monotonic() + TELEGRAM_LOGIN, None
+    until, connected, sent = time.monotonic() + TELEGRAM_LOGIN, None, None
     try:
         while not (done.is_set() and not events):
             if getattr(ui, 'cancelled', False) or time.monotonic() > until:
@@ -1681,9 +1687,22 @@ def telegram_login(config, account, ui):
                 else:
                     ui.say(telegram_qr_text(event['matrix']))
                 ui.say('  In Telegram on your phone: Settings, Devices, Link Desktop Device, then scan this code.')
-            elif kind in ('code_sent', 'code_wrong'):
+            elif kind in ('code_sent', 'code_wrong', 'code_expired', 'code_resend_failed'):
                 hide()
-                answer('code', ui.ask('The login code Telegram sent to your Telegram app' + (' (that one was wrong)' if kind == 'code_wrong' else '')))
+                if kind == 'code_sent':
+                    sent = event
+                    ui.say(telegram_sent_line(event))
+                elif kind == 'code_resend_failed':
+                    ui.say(telegram_resend_failed(event))
+                prompt = {'code_wrong': 'That code was wrong. The login code', 'code_expired': 'That code expired. Send the code again, then type the new one'}.get(kind, 'The login code')
+                web = getattr(ui, 'web', False)
+                if web:
+                    ui.extra = {'resend': True}
+                typed = ui.ask(prompt + ('' if web else ' (or type again for a new one)'))
+                if typed.strip().lower() in ('again', TELEGRAM_RESEND):
+                    answer('resend', True)
+                else:
+                    answer('code', typed)
             elif kind in ('password', 'password_wrong'):
                 hide()
                 hint = str(event.get('hint') or '')[:60]
@@ -1692,7 +1711,7 @@ def telegram_login(config, account, ui):
             elif kind == 'connected':
                 connected = event
             elif kind == 'error':
-                failed.append(str(event.get('code') or ''))
+                failed.append(event)
         process.wait(30)
     finally:
         hide()
@@ -1700,11 +1719,58 @@ def telegram_login(config, account, ui):
             process.terminate()
             process.wait(10)
     if not connected:
-        why = failed[-1] if failed else ''
+        last = failed[-1] if failed else {}
+        why = str(last.get('code') or '')
         if why == 'app_blocked':
             raise SetupError('Telegram does not accept this Machine’s app ID right now', 'add your own at my.telegram.org, then add Telegram again')
+        if why in TELEGRAM_REFUSED:
+            wait = int(last.get('wait') or 0)
+            text = TELEGRAM_REFUSED[why]
+            raise SetupError(text if not wait else f'{text} ({telegram_wait(wait)})', TELEGRAM_REFUSED_FIX.get(why, 'add Telegram again'))
         raise SetupError('Telegram was not logged in' + (f' ({why})' if why else ''), 'add Telegram again')
     return telegram_state(account) or {'identity': connected.get('identity')}
+
+
+TELEGRAM_RESEND = 'again'  # what the dashboard's Send the code again button answers
+# Why Telegram refused a login, as the owner reads it (the mirror's error codes)
+TELEGRAM_REFUSED = {
+    'PhoneNumberInvalidError': 'Telegram doesn’t know that phone number',
+    'PhoneNumberUnoccupiedError': 'That phone number has no Telegram account',
+    'PhoneNumberBannedError': 'Telegram has banned that phone number',
+    'PhoneNumberFloodError': 'Telegram sent this number too many codes for now',
+    'FloodWaitError': 'Telegram asks to wait before sending another code',
+    'email_setup_required': 'Telegram sends no code to this account until it has a login email',
+    'code_wrong': 'Three wrong codes in a row',
+    'password_wrong': 'Three wrong cloud passwords in a row',
+    'qr_expired': 'The QR code was not scanned in time',
+}
+TELEGRAM_REFUSED_FIX = {
+    'PhoneNumberInvalidError': 'check the number and its country code, then add Telegram again',
+    'email_setup_required': 'scan the QR code with Telegram on another device instead',
+    'PhoneNumberFloodError': 'try again later, or scan the QR code instead',
+    'FloodWaitError': 'try again later, or scan the QR code instead',
+}
+
+
+def telegram_wait(seconds):
+    return f'about {max(1, round(seconds / 60))} min' if seconds < 3600 else f'about {round(seconds / 3600)} h'
+
+
+def telegram_sent_line(event):
+    """Where Telegram sent the login code, in one line."""
+    via, to = event.get('via'), str(event.get('to') or '')[:80]
+    line = {'app': 'Code sent to your Telegram app on another device. Look in the Telegram chat there.',
+            'sms': 'Code sent by SMS.', 'call': 'Telegram calls your phone with the code.',
+            'fragment': 'Code sent to your Fragment number.',
+            'email': f'Code sent to your login email {to}.' if to else 'Code sent to your login email.'}.get(via, 'Code sent.')
+    return ('Sent again. ' if event.get('again') else '') + line
+
+
+def telegram_resend_failed(event):
+    wait = int(event.get('wait') or 0)
+    if wait:
+        return f'Telegram can’t send another code yet ({telegram_wait(wait)}). The last one still works.'
+    return 'Telegram can’t send the code another way. The last one still works.'
 
 
 def telegram_unit(account):
@@ -1994,9 +2060,11 @@ def connect(config_path, name, ui, account_id=None, restart=True):
     else:
         account = same[0] if same else None
     existing = account is not None
-    ui.say(f'\n{label(service)}' + (f' ({account["id"]})' if existing else ': new account'))
+    web = getattr(ui, 'web', False)  # the dashboard's run already shows its name; account IDs are for the terminal
+    if not web:
+        ui.say(f'\n{label(service)}' + (f' ({account["id"]})' if existing else ': new account'))
     account = json.loads(json.dumps(account)) if existing else new_account(config, service, account_id, ui)
-    if not existing:
+    if not existing and not web:
         ui.say(f'  saving it as {account["id"]}' + (f' ({scope_label(account["boundary"])})' if ':' in str(account.get('boundary') or '') else ''))
     own = {field: os.environ[var] for field, var in (setup_of(service).get('browser_env') or {}).items() if os.environ.get(var)}
     if own and not any(account.get(field) for field in own):

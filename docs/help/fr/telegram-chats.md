@@ -28,7 +28,7 @@ Si une tâche est arrivée par e-mail mais que vous parlez à cette personne sur
 3. Sur votre téléphone, dans Telegram, ouvrez Paramètres, Appareils, **Link Desktop Device**, et scannez le code.
 4. Si votre compte a un mot de passe cloud, saisissez-le quand il est demandé. Il va à Telegram et n’est jamais enregistré.
 
-Vous configurez sur votre téléphone, sans second écran pour scanner ? Choisissez plutôt **Recevoir un code dans Telegram pour votre numéro**. Telegram envoie le code dans votre app Telegram.
+Vous configurez sur votre téléphone, sans second écran pour scanner ? Choisissez plutôt **Recevoir un code dans Telegram pour votre numéro**. Le formulaire indique où Telegram a envoyé le code : dans votre app Telegram sur un autre appareil, par SMS ou à votre e-mail de connexion. Pas de code ? Appuyez sur **Renvoyer le code**.
 
 Sur votre propre ordinateur, il vous faut aussi votre propre ID d’app Telegram. Créez-en un sur [my.telegram.org](https://my.telegram.org), sous API development tools, et saisissez son api_id et son api_hash dans le formulaire.
 

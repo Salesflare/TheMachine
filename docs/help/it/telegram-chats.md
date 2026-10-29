@@ -28,7 +28,7 @@ Se un'attività è arrivata via email ma con quella persona parli su Telegram, d
 3. Sul telefono, in Telegram, apri Impostazioni, Dispositivi, **Link Desktop Device**, e scansiona il codice.
 4. Se il tuo account ha una password cloud, scrivila quando te la chiede. Va a Telegram e non viene mai salvata.
 
-Stai configurando dal telefono, senza un secondo schermo da cui scansionare? Scegli invece **Ricevi un codice in Telegram per il tuo numero**. Telegram invia il codice alla tua app Telegram.
+Stai configurando dal telefono, senza un secondo schermo da cui scansionare? Scegli invece **Ricevi un codice in Telegram per il tuo numero**. Il modulo dice dove Telegram ha inviato il codice: alla tua app Telegram su un altro dispositivo, via SMS o alla tua email di accesso. Nessun codice? Premi **Invia di nuovo il codice**.
 
 Sul tuo computer ti serve anche un tuo ID app di Telegram. Crealo su [my.telegram.org](https://my.telegram.org), in API development tools, e inserisci il suo api_id e api_hash nel modulo.
 
