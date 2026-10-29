@@ -36,6 +36,8 @@ Una nuova attività ha **Fallo**, **Segna come fatto**, **Posticipa**, **Fallo d
 
 Un'attività chiusa può tornare con **Riapri**. Torna anche da sola quando succede qualcosa di nuovo, come un nuovo messaggio dall'altra persona. La tua risposta non la fa tornare.
 
+Un'attività che contava solo fino a un certo momento, come una conferma prima di una riunione, si chiude da sola quando quel momento è passato. Passa tra quelle fatte con "Non serve più" e quando era. **Annulla** la riporta indietro per un giorno.
+
 Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: **Fallo diversamente** (o **Chiedi modifiche**) e **Non serve** quando un'attività non è proprio giusta, e sulla tua prima bozza pronta, che non parte nulla finché non premi **Invia**. Un suggerimento sparisce per sempre appena usi il suo pulsante o premi ×, su tutti i tuoi dispositivi.
 
 Ogni attività inizia con il suo titolo. La riga sotto dice chi riguarda, la sua organizzazione, il progetto, Lavoro o Personale (sotto **Tutti**) e quando è arrivata, più a che punto è quando il suo gruppo non lo dice già. Tocca un nome per aprirne la pagina nel Graph.

@@ -36,6 +36,8 @@ A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and 
 
 A closed to-do can come back with **Reopen**. It also comes back by itself when something new happens, like a new message from them. Your own reply doesn't bring it back.
 
+A to-do that only mattered until a set time, like a confirmation before a meeting, closes by itself once that time has passed. It moves to **Done / dismissed** with "No longer needed" and when it was. **Undo** brings it back for a day.
+
 On your first to-dos, a short tip under the buttons shows the key moves: **Do it differently** (or **Ask for changes**) and **Not needed** when a to-do isn't quite right, and on your first ready draft that nothing goes out until you press **Send**. A tip goes for good once you use its button or press ×, on all your devices.
 
 Each to-do starts with its title. The line under it says who it's about, their organization, the project, Work or Personal (under **All**) and when it came in, plus where it stands when its group doesn't say so. Tap a name to open its page in the Graph.

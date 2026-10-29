@@ -81,6 +81,7 @@
  "Stages${pick?",
  "Stages{}",
  "Switch to {}? This changes {} setting{}.",
+ "That moment has passed already, so this to-do is not needed",
  "The draft on screen changed or is gone, so nothing was sent. Call ask_to_send again.",
  "The signal review is still unfinished.",
  "This to-do is gone.",

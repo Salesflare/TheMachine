@@ -36,6 +36,8 @@ Eine neue Aufgabe hat **Ausführen**, **Als erledigt markieren**, **Zurückstell
 
 Eine geschlossene Aufgabe kommt mit **Wieder öffnen** zurück. Sie kommt auch von selbst zurück, wenn etwas Neues passiert, etwa eine neue Nachricht von der Person. Deine eigene Antwort holt sie nicht zurück.
 
+Eine Aufgabe, die nur bis zu einem bestimmten Zeitpunkt zählte, etwa eine Bestätigung vor einem Meeting, schließt sich von selbst, sobald dieser Zeitpunkt vorbei ist. Sie wandert zu den erledigten mit „Nicht mehr nötig“ und wann es war. **Rückgängig** holt sie einen Tag lang zurück.
+
 Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigste: **Anders ausführen** (oder **Änderungen anfragen**) und **Nicht nötig**, wenn eine Aufgabe nicht ganz passt, und bei deinem ersten fertigen Entwurf, dass nichts rausgeht, bevor du auf **Senden** tippst. Ein Tipp verschwindet für immer, sobald du seinen Button nutzt oder auf × tippst, auf all deinen Geräten.
 
 Jede Aufgabe beginnt mit ihrem Titel. Die Zeile darunter zeigt, um wen es geht, deren Organisation, das Projekt, Arbeit oder Privat (unter **Alle**) und wann sie kam, dazu ihren Stand, wenn ihre Gruppe ihn nicht schon nennt. Tippe auf einen Namen, um seine Seite im Graph zu öffnen.
