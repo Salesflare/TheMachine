@@ -26,7 +26,7 @@ SUFFIXES = {'.py', '.md', '.html', '.mjs', '.js', '.ts', '.json', '.sh', '.ps1',
 ALLOWED = [
     ('assistant.py', 'learned|learnt|remembered'),  # matches what the model writes
     ('skills.py', "'LICENCE'"),  # a file name in third-party skills
-    ('dashboard.html', "keywords:'organisation organization"),  # the palette finds it typed either way
+    ('shell-keys.js', "keywords:'organisation organization"),  # the palette finds it typed either way (dashboard/)
     ('test_dismiss_and_snooze.py', "I didn't realise"),  # a reason as the owner types it
     ('test_crm.py', "'Organisation'"),  # a spreadsheet's column header as it may be written
     ('error_feed.py', 'operation cancelled canceled'),  # error words as systems spell them, both kept

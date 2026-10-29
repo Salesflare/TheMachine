@@ -88,6 +88,48 @@ class DashboardParts(unittest.TestCase):
             dashboard_parts.marker('../x.js')
         self.assertEqual(dashboard_parts.marker('graph-1.js'), '/*@include dashboard/graph-1.js*/')
 
+    def test_each_part_is_whole_statements(self):
+        # A part is whole top-level statements: it parses as a script on its own, and so does the main script that
+        # stays in dashboard.html (the include lines are comments to it).
+        if not node():
+            self.skipTest('no node')
+        folder = ROOT / 'dashboard'
+        files = sorted(folder.glob('*.js')) if folder.is_dir() else []
+        if not files:
+            self.skipTest('no parts')
+        script = ("import vm from 'node:vm';import {readFileSync} from 'node:fs';const bad=[];"
+                  "for(const f of process.argv.slice(1)){try{new vm.Script(readFileSync(f,'utf8'),{filename:f})}"
+                  "catch(e){bad.push(f+': '+e.message)}}process.stdout.write(bad.join('\\n'))")
+        lines = (ROOT / 'dashboard.html').read_text(encoding='utf-8').split('\n')
+        with tempfile.TemporaryDirectory() as tmp:
+            main = Path(tmp) / 'dashboard-main-script.js'
+            first = lines.index('<script>', next(i for i, x in enumerate(lines) if x.startswith('<script id="i18n">'))) + 1
+            end = max(i for i, x in enumerate(lines) if x.startswith('</script>'))
+            main.write_text('\n'.join(lines[first:end]), encoding='utf-8')
+            bad = subprocess.run([node(), '--input-type=module', '-e', script, *map(str, files), str(main)], capture_output=True,
+                                 text=True, check=True, timeout=60).stdout
+        self.assertEqual(bad, '', 'a part (or the main script around the include lines) does not parse on its own')
+
+    def test_the_split_tool_loses_nothing(self):
+        # scripts/split_dashboard.py split cuts the assembled page into parts and nothing else: cutting it again and
+        # putting it back gives the same bytes (the PR that split it showed the page was byte for byte the one before).
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('split_dashboard', ROOT / 'scripts' / 'split_dashboard.py')
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+        page = dashboard_parts.assemble(ROOT)
+        try:
+            html, parts = tool.cut(page)
+        except KeyError as gone:
+            self.skipTest(f'the split tool\'s anchors have moved on ({gone}); it is only for rebasing the split')
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / 'dashboard').mkdir()
+            for name, text in parts.items():
+                (Path(tmp) / 'dashboard' / name).write_text(text, encoding='utf-8')
+            (Path(tmp) / 'dashboard.html').write_text(html, encoding='utf-8')
+            self.assertEqual(dashboard_parts.assemble(tmp), page)
+        self.assertGreater(len(parts), 1)
+
     def test_node_and_python_assemble_the_same_page(self):
         if not node():
             self.skipTest('no node')

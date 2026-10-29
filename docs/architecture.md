@@ -23,7 +23,7 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | Path | Role |
 |---|---|
 | `assistant.py` | Collectors, SQLite store, local API, dashboard server, Telegram outbox, review and preparation workers |
-| `dashboard.html`, `sw.js`, `manifest.webmanifest`, `brand/` | Owner dashboard and installable web app |
+| `dashboard.html` (its main script in parts in `dashboard/`, served as one page), `sw.js`, `manifest.webmanifest`, `brand/` | Owner dashboard and installable web app |
 | `cli.py` | The `assistant` command line |
 | `next_actions.py` | Approved sends: email (Gmail via `gog`), LinkedIn messages and X replies and DMs (OpenClaw browser), Slack direct messages (Maton), WhatsApp messages (`wacli`) and Telegram messages (the outbox of `telegram_mirror.py`) |
 | `preparation_state.py`, `rollout_health.py` | Preparation bookkeeping and health checks |

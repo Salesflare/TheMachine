@@ -3,9 +3,9 @@
 [Documentation index](../README.md). For contributors and coding agents: which module owns what, where new code goes,
 and the checks that keep it that way. How the parts work together: [Architecture](architecture.md).
 
-The app is a modular monolith in the making. `assistant.py` (the service, `python3 assistant.py serve`) and
-`dashboard.html` (the whole dashboard, one page) still hold most of the code. Domains move out of them one at a time,
-each in its own pull request, with the code moved as is. Until a domain has moved, its code stays where this map says.
+The app is a modular monolith in the making. `assistant.py` (the service, `python3 assistant.py serve`) and the
+dashboard (`dashboard.html`, served as one page, with most of its script in parts in `dashboard/`) still hold most of
+the code. Domains move out of them one at a time, each in its own pull request, with the code moved as is. Until a domain has moved, its code stays where this map says.
 
 ## Modules and the tables they own
 
@@ -41,14 +41,19 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in
   that same module.
 - **A new domain:** a new flat module at the root that the others import. It never imports `assistant`.
-- **Dashboard code:** next to the functions of its area (the areas in `scripts/i18n_extract.py` `AREAS`: shell, to-dos,
-  settings, graph, calendar, connections, help, events, new), never at the end of the script. New UI strings go in
-  every catalog in `i18n/`.
+- **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
+  connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. What
+  stays in `dashboard.html` is the page's core: the stylesheet, the markup, the i18n script, and in the main script the
+  locale and error reports, network and outbox, `render()` and `refresh()`, `toast()` and the start. A new top-level
+  statement goes in a part only whole (each part parses on its own). Parts run in the page's order, as they were in
+  the one file, so a part may use what an earlier one declares. New UI strings go in every catalog in `i18n/`.
 - **Reading the dashboard's source** (a test, a script): through `dashboard_parts.assemble()` in Python or
   `dashboardPage()` from `tests/dashboard-page.mjs` in Node, never `dashboard.html` itself. The page is served as one
   document, but its source can be split into parts (`dashboard/<name>.js`, each filling the line
   `/*@include dashboard/<name>.js*/` in `dashboard.html`), and only the assembled page has them all.
-  `scripts/split_dashboard.py readers` rewrites a test that still reads the file.
+  `scripts/split_dashboard.py readers` rewrites a test that still reads the file. The service serves the assembled
+  page (`dashboard_page()`), so the browser, the service worker's offline copy, the ETag and the CSP see one page as
+  before; `dashboard/` itself is never served.
 
 ## The rules and their checks
 
@@ -62,7 +67,7 @@ CI with every suite).
 | Each table is created by one module, its owner (today's few shared ones are in `SHARED_SCHEMA`). | `tests/test_architecture.py` |
 | Only the owner writes a table. Today's other writers are listed in `OTHER_WRITERS`. That list may only shrink: a new writer fails with the owner's name, and an entry that no longer writes fails until it's removed. | `tests/test_architecture.py` |
 | Only `assistant.py` writes `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
-| Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
+| Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once and parses on its own; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
 | Every dashboard area in `scripts/i18n_extract.py` resolves. | `tests/test_architecture.py`, `python3 scripts/i18n_extract.py --area <name>` |
 
 The table checks read the SQL in each module's strings. A statement whose table name is computed
