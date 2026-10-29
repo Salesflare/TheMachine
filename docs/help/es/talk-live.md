@@ -15,6 +15,12 @@ Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También 
 
 La barra tiene **Silenciar** y **Fin**. Una conversación dura hasta 10 minutos. Un minuto antes del final, el temporizador muestra cuánto queda. Vuelve a empezarla para seguir.
 
+## Repasa todas tus tareas hablando
+
+Toca **Hablar** en la barra lateral (en el menú en un teléfono) para repasar con la voz todo lo que te espera. The Machine dice cuántas hay y las toma una por una: primero **Lista**, luego **Por decidir**. La tarea de la que habla se abre en pantalla, así ves lo que lee.
+
+Pídele que lea un borrador, lo cambie, lo posponga, lo marque como hecho o pase a la siguiente. Enviar funciona como en el chat de una tarea: un borrador por pregunta, tras un sí claro. Lo que dices sobre una tarea queda en el chat de esa tarea. Si llega una tarea nueva, te la menciona en una pausa. Esta conversación dura hasta 30 minutos.
+
 ## Pide cosas y envía con un sí
 
 Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien" o "pospón esto hasta el lunes", The Machine se lo pasa al chat de la tarea, como si lo hubieras escrito. El chat sigue sus reglas de siempre: puede cambiar el borrador o posponer la tarea.

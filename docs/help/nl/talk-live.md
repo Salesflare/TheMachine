@@ -15,6 +15,12 @@ Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan o
 
 De balk heeft **Dempen** en **Einde**. Een gesprek duurt hoogstens 10 minuten. Een minuut voor het einde toont de timer hoeveel tijd er nog is. Start opnieuw om verder te gaan.
 
+## Al je to-do's doorpraten
+
+Tik op **Praten** in de zijbalk (in het menu op een telefoon) om alles wat op je wacht met je stem te overlopen. The Machine zegt hoeveel er wachten en neemt ze een voor een door: eerst **Klaar**, dan **Te beslissen**. De to-do waarover hij praat, opent op het scherm, zodat je ziet wat hij voorleest.
+
+Vraag hem een concept voor te lezen, aan te passen, te snoozen, als klaar te markeren of naar de volgende te gaan. Versturen werkt zoals in de chat van een to-do: één concept per vraag, na een duidelijke ja. Wat je over een to-do zegt, komt in de chat van die to-do. Komt er een nieuwe to-do binnen, dan meldt hij die bij een pauze. Dit gesprek duurt hoogstens 30 minuten.
+
 ## Vraag dingen, en verstuur met een ja
 
 Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past" of "snooze dit tot maandag", geeft The Machine het door aan de chat van de to-do, alsof je het zelf typte. De chat volgt zijn gewone regels: hij kan het concept aanpassen of de to-do snoozen.

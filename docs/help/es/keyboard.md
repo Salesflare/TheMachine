@@ -17,7 +17,7 @@ En un teléfono, toca el icono de búsqueda en la barra superior.
 Pulsa `?` para ver **Atajos de teclado**, la lista completa para tu ordenador.
 
 - Ir a una página: `G` y luego `S` Sugerencias, `C` Calendario, `E` Eventos, `P` Personas, `O` Organizaciones, `J` Proyectos, `F` Fleet, `B` Comentarios, `N` Conexiones, `,` Ajustes.
-- `C` añade una tarea nueva. `J` y `K` (o `↓` y `↑`) recorren una lista, Enter abre.
+- `C` añade una tarea nueva. `T` inicia Hablar, o lo termina mientras está en curso. En el Calendario, `T` va a hoy. `J` y `K` (o `↓` y `↑`) recorren una lista, Enter abre.
 - En una tarea: `E` le cambia el nombre, `S` la pospone, `D` la marca como hecha, `R` escribe en su chat.
 
 Las teclas no funcionan mientras escribes en un campo.

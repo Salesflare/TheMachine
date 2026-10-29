@@ -17,7 +17,7 @@ Su un telefono, tocca l'icona di ricerca nella barra in alto.
 Premi `?` per **Scorciatoie da tastiera**, l'elenco completo per il tuo computer.
 
 - Vai a una pagina: `G` poi `S` Suggerimenti, `C` Calendario, `E` Eventi, `P` Persone, `O` Organizzazioni, `J` Progetti, `F` Fleet, `B` Feedback, `N` Connessioni, `,` Impostazioni.
-- `C` aggiunge una nuova attività. `J` e `K` (o `↓` e `↑`) si muovono in un elenco, Invio apre.
+- `C` aggiunge una nuova attività. `T` avvia Parla, o lo chiude mentre è in corso. Nel Calendario, `T` va a oggi. `J` e `K` (o `↓` e `↑`) si muovono in un elenco, Invio apre.
 - Su un'attività: `E` la rinomina, `S` la posticipa, `D` la segna come fatta, `R` scrive nella sua chat.
 
 I tasti non funzionano mentre scrivi in un campo.

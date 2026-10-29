@@ -1751,6 +1751,12 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .talk-end{border-color:transparent;background:var(--c-red,#d93025);color:#fff}
 .talk-err{border-color:var(--orange)}.talk-err .grow{color:var(--orange);font:600 .88rem/1.3 var(--sans)}.talk-err .talk-end{background:none;border-color:var(--c-line-strong);color:var(--text)}
 .talk-cost{padding:0 14px;color:var(--muted);font-size:.8rem}
+/* Talk (the main conversation) outside a to-do's chat: the same bar, floating at the bottom of the page */
+#talk-dock{position:fixed;z-index:60;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100vw - 32px));margin:0;transform:translateX(-50%)}
+#talk-dock .talk-bar{box-shadow:0 6px 24px rgba(0,0,0,.14)}
+/* While the bar floats, the page ends with room for it (bar + its gap + air), so the last to-do and the footer scroll clear */body:has(#talk-dock)::after{content:'';display:block;flex:none;height:calc(var(--talk-dock-h,64px) + 32px + env(safe-area-inset-bottom,0px))}
+@media(min-width:1024px){#talk-dock{left:calc(50% + var(--side-w,0px)/2)}}
+.side-talk[hidden]{display:none!important}
 @media (max-width:520px){.talk-hint{display:none}}
 .mic-x{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--chat-quiet);font:400 24px/1 var(--sans);cursor:pointer}
 .mic-x:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}
@@ -3702,7 +3708,7 @@ function renderDictation(){const d=state.dictation,box=$('#settings-dictation'),
   +(d.openai===false&&d.engine!=='local'?`<div class="dictation-fine"><small>${esc(t('OpenAI needs OpenAI set up in OpenClaw: an API key, or a ChatGPT sign-in that allows audio.'))}</small></div>`:'')
   +(d.in_use==='local'?`<div><span class="grow"><strong>${esc(t('Accuracy'))}</strong><small>${esc(t(d.model==='base'?'Quicker, but it gets more words wrong.':'Best for most languages. Slower on a small Machine.'))}</small></span><select id="dictation-model" aria-label="${esc(t('Accuracy'))}">${opt('small','More accurate',d.model==='small')}${opt('base','Faster',d.model==='base')}</select></div>`:'')
   +`<div><span class="grow"><strong>${esc(t('Language'))}</strong><small>${esc(t('Detect works for every app language. Picking yours is a little faster.'))}</small></span><select id="dictation-language" aria-label="${esc(t('Voice input language'))}"><option value=""${d.language?'':' selected'}>${esc(t('Detect'))}</option>${MIC_LANGS.map(([c,n])=>`<option value="${c}" translate="no"${d.language===c?' selected':''}>${n}</option>`).join('')}</select></div>`
-  +(d.talk?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t(d.talk.ready==null?'Checking…':d.talk.ready?'Ready. Tap the wave in a to-do’s chat to talk with The Machine.':'Needs OpenAI set up in OpenClaw: a ChatGPT sign-in, or an API key.'))}</small></span></div>`
+  +(d.talk?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t(d.talk.ready==null?'Checking…':d.talk.ready?'Ready. Tap Talk in the menu, or the wave in a to-do’s chat.':'Needs OpenAI set up in OpenClaw: a ChatGPT sign-in, or an API key.'))}</small></span></div>`
    +(d.talk.ready&&d.talk_voice?`<div><span class="grow"><strong>${esc(t('Voice'))}</strong><small>${esc(t('How The Machine sounds when you talk live.'))}</small></span><button type="button" class="quiet talk-sample" data-talk-sample aria-label="${esc(t('Play a sample'))}" title="${esc(t('Play a sample'))}">${PLAY}</button><select id="talk-voice" aria-label="${esc(t('Voice'))}">${TALK_VOICES.map(n=>`<option value="${n}" translate="no"${d.talk_voice===n?' selected':''}>${n[0].toUpperCase()+n.slice(1)}</option>`).join('')}</select></div>`:''):'');
  // Still preparing, or the Machine still asking OpenClaw what OpenAI can do here (it answers at once, and fills that in later)
  clearTimeout(dictation.timer);if((l.state==='preparing'||d.openai==null||d.talk&&d.talk.ready==null)&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
@@ -5113,7 +5119,7 @@ const decisionVia=source=>DECISION_VIA[source]?t(DECISION_VIA[source]):t('via {}
 const listOpenKept={};const listOpen=id=>{const d=document.getElementById(id);if(d)listOpenKept[id]=d.open;return !!listOpenKept[id]};
 // Feedback's rows name where the to-dos came from (assistant.py TODO_SOURCE); the ones that need it say a little more
 const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Problems in The Machine, like an error','Phone notifications':'Texts and alerts on your phone','Other':'The source is gone or unknown'};
-function render(){scopeSync(state.locale);applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();
+function render(){scopeSync(state.locale);try{talkFromStatus()}catch{}applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),lookOpen=listOpen('lookdone-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
@@ -5123,6 +5129,7 @@ const lookDone=outstanding.filter(looksDone),waitingOn=outstanding.filter(waitsO
 const fleetCards=scopeFilter==='personal'?[]:fleetCardsOf(fleetData);
 const needs=[...fleetCards,...open.filter(s=>placeOf(s)==='needs')],preparing=open.filter(s=>placeOf(s)==='preparing'),ready=open.filter(s=>placeOf(s)==='ready');
 const fuv=fuSplit(ready,needs,preparing);  // a board's follow-ups are one to-do (fuGroupCard)
+talkTodos=[...ready.map(s=>[s,'ready']),...needs.filter(s=>state.suggestions.includes(s)).map(s=>[s,'needs'])];  // what Talk goes through
 {const tips=firstTips(),own=new Set(shown.map(s=>s.id));tipSend=tips.includes('send')&&fuv.ready.find(s=>s&&typeof s==='object'&&own.has(s.id)&&sendTipFits(s))?.id||'';tipChange=!tipSend&&tips.includes('change')?'next':''}
 const fuHidden=ready.length+needs.length+preparing.length-fuv.ready.length-fuv.needs.length-fuv.preparing.length;
 // What the list shows (a board's follow-ups are one to-do, a batch going out one progress line): All clear only when nothing is
@@ -5962,15 +5969,27 @@ document.addEventListener('close',e=>{if(mic&&e.target.contains?.(mic.box))micCa
 // Machine judge the owner's next words itself. A clear yes approves that one draft, held a few seconds with Undo in the
 // chat ("Approved by voice"). What both sides say goes into the chat. At most 10 minutes, with a warning a minute before.
 const WAVE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>';
-let talk=null,talkInfo={at:0,ready:null,busy:false};  // the one open conversation; whether this Machine can talk live (asked every 10 minutes)
+let talk=null,talkInfo={at:0,ready:null,busy:false},talkTodos=[];  // the one open conversation; whether this Machine can talk live (asked every 10 minutes); what Talk goes through
 const talkOk=()=>talkInfo.ready===true&&!!(window.RTCPeerConnection&&navigator.mediaDevices?.getUserMedia);
 const talkBtn=()=>`<button type="button" class="chat-mic chat-talk" data-talk aria-label="Talk live" title="Talk live"${talkOk()?'':' hidden'}>${WAVE}</button>`;
 async function talkLoad(){if(talkInfo.busy||Date.now()-talkInfo.at<600000)return;talkInfo.busy=true;
  let later=false;try{const r=await micPost('talk_status');talkInfo.ready=r.demo?false:r.ready===true;later=!r.demo&&r.ready==null}catch{}finally{talkInfo.busy=false;talkInfo.at=later?0:Date.now()}
  if(later&&!talkInfo.retry)talkInfo.retry=setTimeout(()=>{talkInfo.retry=null;if(chatOpen())talkLoad()},3000);  // the Machine is still asking OpenClaw
- chatSendState()}
-function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector('.chat-compose');if(!box){talkEnd();return}
- let bar=box.querySelector(':scope>.talk');if(!bar){bar=document.createElement('div');bar.className='talk';box.insertBefore(bar,box.querySelector('.chat-box'))}
+ chatSendState();talkSide()}
+// Talk in the sidebar (and the phone drawer): the main conversation, about whatever needs the owner
+// Whether this Machine can talk live also comes with the page's status (talk_ready), so Talk shows without asking
+function talkFromStatus(){if(typeof state.talk_ready==='boolean'&&talkInfo.ready!==state.talk_ready&&!talkInfo.busy){talkInfo.ready=state.talk_ready;talkSide()}}
+// Talk in the sidebar, or T: starts the main conversation, or ends it while it's live (the same as End)
+function talkMain(){const was=talk?.main;if(talk)talkEnd();if(!was)talkStart(true)}
+function talkSide(){const b=$('#side-talk');if(b){b.hidden=!talkOk();b.setAttribute('aria-pressed',String(!!talk?.main))}}
+// The bar sits above the chat's message box; Talk's own floats at the bottom of the page when no chat is open
+function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector('.chat-compose');
+ if(!box&&!v.main){talkEnd();return}
+ let host=box,bar=box?.querySelector(':scope>.talk');
+ if(!box){host=$('#talk-dock');if(!host){host=document.createElement('div');host.id='talk-dock';document.body.append(host)}bar=host.querySelector('.talk')}
+ document.querySelectorAll('.talk').forEach(x=>{if(x!==bar&&!x.closest('#settings'))x.remove()});if(box)$('#talk-dock')?.remove();
+ if(!bar){bar=document.createElement('div');bar.className='talk';if(box)box.insertBefore(bar,box.querySelector('.chat-box'));else host.append(bar)}
+ if(!box&&!host.dataset.ro){host.dataset.ro=1;new ResizeObserver(()=>document.body.style.setProperty('--talk-dock-h',host.offsetHeight+'px')).observe(host)}
  const key=v.state+'|'+v.muted+'|'+(v.error||'');
  if(bar.dataset.k!==key){bar.dataset.k=key;
   bar.innerHTML=v.state==='error'?`<div class="talk-bar talk-err" role="alert"><span class="grow">${esc(v.error)}</span><button type="button" class="talk-end" data-talk-close>${esc(t('Close'))}</button></div>`
@@ -5985,15 +6004,16 @@ function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector(
 function talkFail(v,msg){if(talk!==v)return;talkClose(v);v.state='error';v.error=msg;talk=v;talkPaint()}
 function talkClose(v){clearInterval(v.tick);try{v.dc?.close()}catch{}try{v.pc?.close()}catch{}try{v.stream?.getTracks().forEach(x=>x.stop())}catch{}
  if(v.audio){v.audio.srcObject=null;v.audio.remove()}if(v.id&&!v.ended){v.ended=true;micPost('talk_end',{id:v.id}).catch(()=>{})}}
-function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove()}
-async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
- const v=talk={sid:s.id,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[]};talkPaint();
+function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove();$('#talk-dock')?.remove();document.body.style.removeProperty('--talk-dock-h');talkSide()}
+async function talkStart(main){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;micCancel();
+ const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],known:new Set(talkTodos.map(([x])=>x.id))};talkPaint();talkSide();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
  catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
- try{const r=await micPost('talk_start',{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
+ try{const r=await micPost('talk_start',main?{main:true}:{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
   Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0});talkPaint();
+  if(v.main&&chatOpen())talkFocus(v,chatOpen().id);  // started with a to-do open: that one first
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0]};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
   pc.onconnectionstatechange=()=>{if(talk===v&&['failed','disconnected'].includes(pc.connectionState))talkFail(v,t('Talk live lost its connection. Start it again to go on.'))};
@@ -6005,13 +6025,28 @@ async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
 function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();
  v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'}},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));
  v.tick=setInterval(()=>talkTick(v),250);talkPaint()}
-function talkTick(v){if(talk!==v)return;if(chatOpen()?.id!==v.sid){talkEnd();return}v.secs=(Date.now()-v.t0)/1000;
+function talkTick(v){if(talk!==v)return;if(!v.main&&chatOpen()?.id!==v.sid){talkEnd();return}v.secs=(Date.now()-v.t0)/1000;
  if(v.relay&&!chat?.active&&Date.now()-v.relay.at>20000)talkTurnDone();  // a turn that ended between two looks
- if(v.secs>=v.limit){talkEnd();toast(t('Talk live ends after 10 minutes. Start it again to go on.'));return}talkPaint()}
+ if(v.main)talkNew(v);
+ if(v.secs>=v.limit){talkEnd();toast(v.main?t('Talk ends after 30 minutes. Start it again to go on.'):t('Talk live ends after 10 minutes. Start it again to go on.'));return}talkPaint()}
+// Talk works on the to-do on screen: the one the voice opens, or the one the owner opens. A send question about another is dropped.
+function talkFocus(v,id){if(talk!==v||v.sid===id)return v.focusing;v.sid=id;v.asked=null;v.queue=[];v.relay=null;
+ return v.focusing=micPost('talk_focus',{id:v.id,suggestion_id:id}).catch(()=>{})}
+// What needs the owner, in the order the dashboard shows it (Ready, then To decide)
+const talkWho=s=>String((s.people||[])[0]?.name||'').slice(0,80);
+function talkList(){return {todos:talkTodos.slice(0,20).map(([s,list])=>({id:s.id,list:list==='ready'?'Ready':'To decide',title:String(s.title||'').slice(0,200),...(talkWho(s)?{from:talkWho(s)}:{})})),count:talkTodos.length}}
+async function talkOpen(v,id){if(!state.suggestions?.some(s=>s.id===id))return {error:'No to-do with that id. Use list_todos or find_todos.'};
+ if(chatOpen()?.id!==id)chatGo(id);await talkFocus(v,id);
+ try{return (await micPost('talk_tool',{id:v.id,name:'todo_details',args:{}})).output}catch(err){return {error:err.message}}}
+// A to-do that comes in while Talk is open: a short heads-up at the next pause (talkTellNext waits while either side talks)
+function talkNew(v){if(!v.dc||v.state!=='live')return;for(const [s] of talkTodos)if(!v.known.has(s.id)){v.known.add(s.id);
+ const who=talkWho(s);talkTell(v,(v.notes.new||'{title}').replace('{title}',String(s.title||'').slice(0,200)).replace('{from}',who||'unknown'))}}
 // What the voice says is kept once its response is done, unless the owner talked over it (OpenAI stops it): a cut-off start
 // ("The chat is on…") never lands in the chat.
 async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)}catch{return}
- if(e.type==='conversation.item.input_audio_transcription.completed')talkLine(v,'user',e.transcript,e.item_id);
+ if(e.type==='input_audio_buffer.speech_started')v.speaking=true;
+ else if(e.type==='input_audio_buffer.speech_stopped'){v.speaking=false;setTimeout(()=>talkTellNext(v),1200)}
+ else if(e.type==='conversation.item.input_audio_transcription.completed')talkLine(v,'user',e.transcript,e.item_id);
  else if(e.type==='response.created')v.responding=true;
  else if(e.type==='response.output_audio_transcript.done')(v.heard[e.response_id]||=[]).push([e.transcript,e.item_id]);
  else if(e.type==='response.done'){v.responding=false;const id=e.response?.id,said=v.heard[id]||[];delete v.heard[id];
@@ -6023,6 +6058,9 @@ function talkLine(v,role,text,item){text=String(text||'').trim();const key=role+
  if(chat&&chatOpen()?.id===v.sid){chat={...chat,items:[...(chat.items||[]),{kind:role==='user'?'you':'reply',text,via:'live',at:Date.now()}]};paintChat();chatToEnd()}}
 async function talkTool(v,e){let args={},output;try{args=JSON.parse(e.arguments||'{}')}catch{}
  if(e.name==='ask_chat'){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkAsk(v,req):{error:'Say what to ask.'};if(output.ok)output.note=output.queued?v.notes.queued||v.note:v.note}
+ else if(e.name==='list_todos'&&v.main)output=talkList();
+ else if(e.name==='open_todo'&&v.main)output=await talkOpen(v,String(args.id||''));
+ else if(v.main&&!v.sid&&['ask_chat','ask_to_send','send_answer'].includes(e.name))output={error:'No to-do is open. Call open_todo first.'};
  else if(e.name==='ask_to_send')output=await talkAskSend(v);
  else if(e.name==='send_answer')output=await talkAnswer(v);
  else try{output=(await micPost('talk_tool',{id:v.id,name:e.name,args})).output}catch(err){output={error:err.message}}
@@ -6067,13 +6105,14 @@ function talkTurnDone(){const v=talk;if(!v||talk.state!=='live'||chatOpen()?.id!
  if(v.queue.length){const s=state.suggestions?.find(x=>x.id===v.sid),reqs=v.queue;v.queue=[];if(s)talkRelay(v,s,reqs)}}
 // A note for the voice, as a message it answers aloud; while it is talking, after that
 function talkTell(v,text){if(!text)return;v.tell.push(text);talkTellNext(v)}
-function talkTellNext(v){if(talk!==v||v.responding||!v.tell.length||v.dc?.readyState!=='open')return;const text=v.tell.shift();v.responding=true;
+function talkTellNext(v){if(talk!==v||v.responding||v.speaking||!v.tell.length||v.dc?.readyState!=='open')return;const text=v.tell.shift();v.responding=true;
  v.dc.send(JSON.stringify({type:'conversation.item.create',item:{type:'message',role:'system',content:[{type:'input_text',text}]}}));
  v.dc.send(JSON.stringify({type:'response.create'}))}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-voice-undo]');if(!b)return;e.preventDefault();b.disabled=true;
  try{await micPost('talk_undo',{suggestion_id:b.dataset.sid,approval_id:b.dataset.voiceUndo});toast(t('Canceled. It won’t be sent.'))}catch(err){errCaught(err);toast(err.message,true)}
  await refresh();if(chatOpen())chatPoll()});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-end],[data-talk-close],[data-talk-mute]');if(!b)return;e.preventDefault();
+document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-main],[data-talk-end],[data-talk-close],[data-talk-mute]');if(!b)return;e.preventDefault();
+ if(b.hasAttribute('data-talk-main')){if(typeof drawerClose==='function')drawerClose();talkMain();return}
  if(b.hasAttribute('data-talk')){if(talk)talkEnd();else talkStart();return}
  if(b.hasAttribute('data-talk-end')||b.hasAttribute('data-talk-close')){talkEnd();return}
  const v=talk;if(!v)return;
@@ -6156,7 +6195,7 @@ async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
 let chatPushed=false;
 function openChatLink(){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
- if(id===chatId)return;const was=chatId;chatId=id;chat=null;if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
+ if(id===chatId)return;const was=chatId;chatId=id;chat=null;if(talk?.main){if(id&&talk.sid!==id)talkFocus(talk,id)}else if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
  if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatDraftBack(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;
@@ -9727,6 +9766,9 @@ function ncAddFiles(list){const problems=[],draft=nc.draft;$('#nc-error').textCo
 // Entry points: a row under Find a to-do on a computer, "+" in the top bar on a phone, C, and the palette (Ctrl/⌘K) then "new".
 {const row=document.createElement('button');row.type='button';row.className='side-new';row.id='side-new';row.dataset.newCard='';row.title='New to-do (C)';row.setAttribute('aria-label','New to-do');
  row.innerHTML=`${NC_PLUS}<span>New to-do</span><kbd>C</kbd>`;$('#side-search').after(row);
+ // Talk: the main live conversation, through what needs the owner (shows once this Machine can talk live)
+ const talkRow=document.createElement('button');talkRow.type='button';talkRow.className='side-new side-talk';talkRow.id='side-talk';talkRow.dataset.talkMain='';talkRow.hidden=true;
+ talkRow.title='Talk (T)';talkRow.setAttribute('aria-label','Talk');talkRow.setAttribute('aria-pressed','false');talkRow.innerHTML=`${WAVE}<span>Talk</span><kbd>T</kbd>`;row.after(talkRow);
  const plus=document.createElement('button');plus.type='button';plus.className='head-link settings-link new-card-link';plus.id='new-card-top';plus.dataset.newMenu='';plus.title='New';plus.setAttribute('aria-label','New');plus.setAttribute('aria-haspopup','menu');plus.setAttribute('aria-expanded','false');
  // With the phone drawer (#topbar), the sidebar row shows in the drawer and the "+" sits on the right of the top bar.
  const top=$('#topbar');if(top){plus.className='topbar-menu new-card-top';plus.innerHTML=NC_PLUS;top.append(plus);document.documentElement.classList.add('nc-drawer')}
@@ -9889,6 +9931,7 @@ actionAdd(
 // Actions
 actionAdd(
  {id:'new-card',group:'Actions',label:'New to-do',keywords:'add task todo card create',keys:'c',run:()=>ncOpen()},
+ {id:'talk',group:'Actions',label:'Talk',keywords:'talk live voice speak conversation',keys:'t',when:()=>talkOk()||!!talk?.main,run:()=>talkMain()},  // on the Calendar, T stays Today (it comes first)
  {id:'add-connection',group:'Actions',label:'Add a connection',keywords:'connect source account gmail slack',run:()=>{showTab('health','add');$('#connect-add')?.scrollIntoView({block:'start'})}},
  {id:'open-browser',group:'Actions',label:'Open the browser',keywords:'browser /browser chrome',when:()=>kbHas($('#open-browser'))&&!!$('#open-browser').getAttribute('href'),run:()=>$('#open-browser').click()},
  {id:'theme',group:'Actions',label:()=>document.documentElement.dataset.theme==='light'?'Switch to dark mode':'Switch to light mode',keywords:'theme light dark mode appearance',run:()=>$('#theme-toggle').click()},
@@ -10017,7 +10060,7 @@ var kbLandSeq=0;
 function kbLand(n=0,seq=++kbLandSeq,from=null){const a=document.activeElement,sec=[...document.querySelectorAll('main>section')].find(s=>!s.hidden);
  if(n&&(seq!==kbLandSeq||sec!==from))return;
  if(!sec||!kbKeyed()||!matchMedia('(pointer:fine)').matches||document.querySelector('dialog[open]')||chatId&&sec.id==='inbox')return;
- if(a&&a!==document.body&&!(a.closest?.('nav,.app-side')))return;
+ if(a&&a!==document.body&&(!a.closest?.('nav,.app-side')||a.matches?.('input,textarea,select,[contenteditable="true"]')))return;  // never out of a field being typed in, the sidebar's search too
  const xs=kbItems(),first=xs.find(x=>x.matches('article'))||xs[0];if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
  if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1,seq,sec),200);return}  // the list is still loading
  const shown=x=>x.getClientRects().length&&!x.disabled;

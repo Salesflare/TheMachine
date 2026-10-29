@@ -15,6 +15,12 @@ Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. P
 
 La barra ha **Silenzia** e **Fine**. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
 
+## Ripassa tutte le attività a voce
+
+Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e le prende una alla volta: prima **Pronta**, poi **Da decidere**. L'attività di cui parla si apre sullo schermo, così vedi cosa legge.
+
+Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L'invio funziona come nella chat di un'attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un'attività finisce nella chat di quell'attività. Quando arriva una nuova attività, te lo dice in una pausa. Questa conversazione dura al massimo 30 minuti.
+
 ## Chiedi le cose, e invia con un sì
 
 Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" o "posticipa questa a lunedì", The Machine la passa alla chat dell’attività, come se l’avessi scritta tu. La chat segue le solite regole: può cambiare la bozza o posticipare l’attività.

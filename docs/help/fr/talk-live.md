@@ -15,6 +15,12 @@ Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat
 
 La barre a **Couper le micro** et **Fin**. Une conversation dure jusqu’à 10 minutes. Une minute avant la fin, le minuteur montre le temps restant. Relancez-la pour continuer.
 
+## Passer en revue toutes vos tâches à voix haute
+
+Touchez **Parler** dans la barre latérale (dans le menu sur un téléphone) pour passer en revue à la voix tout ce qui vous attend. The Machine dit combien il y en a et les prend une par une : d’abord **Prête**, puis **À décider**. La tâche dont elle parle s’ouvre à l’écran, pour que vous voyiez ce qu’elle lit.
+
+Demandez-lui de lire un brouillon, de le modifier, de le reporter, de le marquer comme fait ou de passer à la suivante. L’envoi fonctionne comme dans le chat d’une tâche : un brouillon par question, après un oui clair. Ce que vous dites sur une tâche va dans le chat de cette tâche. Quand une nouvelle tâche arrive, elle la mentionne lors d’une pause. Cette conversation dure 30 minutes au plus.
+
 ## Demandez, et envoyez d’un oui
 
 Quand vous demandez quelque chose, comme « écris une réponse pour dire que jeudi me va » ou « mets ça en attente jusqu’à lundi », The Machine le transmet au chat de la tâche, comme si vous l’aviez tapé. Le chat suit ses règles habituelles : il peut modifier le brouillon ou mettre la tâche en attente.

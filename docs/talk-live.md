@@ -64,7 +64,31 @@ At most one conversation per to-do and two in all. A session's secret is forgott
   polls. If the voice is speaking, the note waits for `response.done`.
 - `ask_to_send` and `send_answer`: sending by voice, below.
 
-## Voice
+## Talk: the main conversation
+
+**Talk** in the sidebar (`#side-talk`, in the drawer on a phone; shown once `talk_status` says ready) starts one
+conversation that isn't tied to a to-do (`talk_start` with `main: true`, session key
+`agent:main:assistant-talk-main`). One at a time; a to-do's own Talk live can run beside it (two in all).
+
+- Tools (`talk_live.MAIN_TOOLS`): `list_todos` (the page's own: what Ready and To decide show, in that order, with ids
+  and who it's from), `open_todo` (the page opens that to-do's chat, tells the Machine with `talk_focus`, and returns
+  `todo_details`), then the same `todo_details`, `find_todos` (with ids here), `ask_chat`, `ask_to_send` and
+  `send_answer`. Instructions: `talk_live.main_instructions` (the same voice and rules, plus going through the to-dos
+  one by one).
+- Focus: the conversation works on the to-do on screen. The Machine keeps it (`Talk.focus`); `todo_details`,
+  `talk_ask_send` and `talk_send` act on it only, and before one is open they refuse. When the owner opens another
+  to-do, the page moves the focus there (`openChatLink`); a confirm question about the previous one is dropped, so a
+  yes can only send the draft on screen. All the rules in [Sending by voice](#sending-by-voice) hold as they are.
+- Lines: `talk_line` keeps each line under the to-do in focus, so each to-do's chat shows what was said about it,
+  after its own **Talked live** line. Lines before any to-do is open are kept with no to-do (not shown in a chat).
+- The bar: in the open chat's message box, as for a to-do's own; with no chat open it floats at the bottom of the page
+  (`#talk-dock`). Leaving a chat doesn't end Talk.
+- New to-dos: a to-do that shows up in Ready or To decide while Talk is live is told to the voice as a system note
+  (`talk_live.NEW_NOTE`), once, when neither side is talking (`response.done`, and 1.2 s after
+  `input_audio_buffer.speech_stopped`).
+- Limit: 30 minutes (`MAIN_LIMIT_SECONDS`), a warning a minute before. OpenAI allows a Realtime session up to 60
+  minutes; 30 keeps an API key's per-minute cost bounded.
+
 
 `talk_voice` in the voice settings picks the Realtime voice (`voice_input.TALK_VOICES`), passed to
 `talk.client.create`. The default is `cedar`. ChatGPT's Cove isn't offered on `gpt-realtime` models (only on the
@@ -113,3 +137,6 @@ chat, the tools, owner only, the secret never returned; by voice: a yes after th
 a yes without a question, an unclear answer, a no, a changed draft and a question that doesn't name who all send
 nothing; the judge accepts only exact JSON) and `tests/test_talk_live_dashboard.mjs` (a fake
 `getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).
+`tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, listing and opening to-dos (the
+screen follows), a send by voice about the to-do on screen, a new to-do told at a pause, following the owner to
+another to-do, and its 30-minute limit (390x844 and 1440x900, light and dark).

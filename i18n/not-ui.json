@@ -56,6 +56,8 @@
  "Nederlands",
  "No draft on screen to send. Ask the chat to draft one first.",
  "No draft ready to send by voice. It needs a tap on Approve on screen.",
+ "No to-do is open. Call open_todo first.",
+ "No to-do with that id. Use list_todos or find_todos.",
  "Not supported by The Machine",
  "Notification",
  "Now the rest of the week: {} of {} active conversations{}",
