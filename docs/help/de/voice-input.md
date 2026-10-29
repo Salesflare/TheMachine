@@ -15,19 +15,29 @@ Während sie zuhört, zeigt das Feld einen Timer. Tippe auf das Kreuz, um aufzuh
 
 Was du gesagt hast, landet im Feld, dort, wo dein Cursor war. Nichts wird gesendet: Lies es, ändere, was du willst, und sende es selbst.
 
-## Beim ersten Mal
-
-Wenn du zum ersten Mal auf das Mikrofon tippst, bereitet deine Machine die Sprache vor. Sie lädt das Sprachmodell einmal herunter, 150 bis 500 MB, und zeigt "Sprache wird vorbereitet…" mit dem Fortschritt. Das dauert ein paar Minuten. Deine Aufnahme wartet und wird aufgeschrieben, sobald alles bereit ist.
-
 ## Wohin deine Stimme geht
 
-Standardmäßig wird deine Aufnahme auf deiner Machine selbst in Text umgewandelt. Sie verlässt sie nie und wird gelöscht, sobald der Text da ist. Die eigene Spracherkennung deines Browsers wird nicht genutzt, weil manche Browser deine Stimme dabei an ihren Hersteller schicken.
+In **Einstellungen**, **Allgemein**, unter **Spracheingabe** sagt eine kurze Zeile, was gerade genutzt wird.
 
-In den **Einstellungen**, unter **Allgemein**, **Spracheingabe**, kannst du wählen:
+- **Automatisch** (Standard): Wenn OpenAI in OpenClaw eingerichtet ist, wandelt OpenAI deine Aufnahme in Text um. Das ist ein API-Schlüssel oder eine ChatGPT-Anmeldung, wenn dein Tarif Audio erlaubt. Ohne OpenAI wird sie auf deiner Machine selbst in Text umgewandelt und verlässt sie nie.
+- **Auf dieser Machine**: immer auf deiner Machine, auch wenn OpenAI eingerichtet ist.
+- **Mit OpenAI**: immer OpenAI.
 
-- **In Text umgewandelt**: **Auf dieser Machine** oder **Mit OpenAI**. OpenAI ist auf einem kleinen Server schneller, aber deine Aufnahme geht mit deinem eigenen Schlüssel an OpenAI. Dafür braucht es einen OpenAI-API-Schlüssel in OpenClaw. Eine ChatGPT-Anmeldung reicht nicht.
-- **Genauigkeit**: **Genauer** funktioniert für die meisten Sprachen am besten. **Schneller** geht flotter, hat aber mehr falsche Wörter. Auf einem Standard-Server, der weniger Arbeitsspeicher hat, ist **Schneller** voreingestellt.
+Eine Aufnahme wird gelöscht, sobald der Text zurück ist.
+
+## Vorbereitung
+
+Um Sprache selbst in Text umzuwandeln, braucht deine Machine ein Sprachmodell mit 150 bis 500 MB. Sie lädt es im Hintergrund mit niedriger Priorität herunter, sobald sie eingerichtet ist, ihre erste Durchsicht fertig ist und es eine Weile ruhig war. Solange zeigen die Einstellungen **Wird vorbereitet (im Hintergrund)**. Wenn OpenAI genutzt wird, macht sie das nie.
+
+Bis sie bereit ist, nutzt **Automatisch** die Spracherkennung deines Browsers, falls er eine hat, und sagt das unter dem Feld. Manche Browser schicken das an ihren Hersteller. Wenn **Auf dieser Machine** gewählt ist, wartet deine Aufnahme, und das Feld zeigt „Sprache wird vorbereitet…“ mit der verbleibenden Zeit.
+
+## Einstellungen
+
+- **In Text umgewandelt**: **Automatisch**, **Auf dieser Machine** oder **Mit OpenAI**.
+- **Genauigkeit** (nur auf deiner Machine): **Genauer** funktioniert für die meisten Sprachen am besten. **Schneller** geht flotter, erkennt aber mehr Wörter falsch. Auf einem Standard-Server, der weniger Speicher hat, ist **Schneller** voreingestellt.
 - **Sprache**: **Erkennen** funktioniert für jede Sprache der App. Deine eigene zu wählen ist etwas schneller.
+
+Um stattdessen laut mit The Machine zu sprechen, sieh dir [Live sprechen](talk-live.md) an.
 
 ## Wenn es nicht klappt
 

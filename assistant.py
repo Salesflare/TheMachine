@@ -68,6 +68,7 @@ import mimetypes
 import work_removal
 import retention
 import chat_files
+import talk_live
 import voice_input
 import security_levels
 import skills
@@ -763,6 +764,21 @@ VOICE_ACTIONS = {
     'voice_transcribe',
 }
 OWNER_ACTIONS |= VOICE_ACTIONS
+# Talk live (talk_live.py): a spoken conversation about a to-do, from the owner's dashboard only. It reads, asks the
+# to-do's chat as a typed message would, and sends one draft on screen only after a confirm question and a clear yes.
+VOICE_WARM_QUIET = 3   # 5-minute checks in a row that a live Machine is quiet before voice gets ready in the background
+TALK_ACTIONS = {
+    'talk_ask_send',
+    'talk_end',
+    'talk_line',
+    'talk_offer',
+    'talk_send',
+    'talk_start',
+    'talk_status',
+    'talk_tool',
+    'talk_undo',
+}
+OWNER_ACTIONS |= TALK_ACTIONS
 # Skills (skills.py): writing, sharing and installing them is the owner's own, from the dashboard. The agent can only
 # propose one (skill_propose), which waits for the owner's Approve.
 # Everything else OpenClaw has (skill_installed*, skill_hub_*): shown read-only; OpenClaw's own on/off and ClawHub install, on the owner's tap.
@@ -881,6 +897,7 @@ DASHBOARD_ACTIONS = frozenset({
     *SHARE_ACTIONS,
     *SKILL_ACTIONS,
     *SUPPORT_ACTIONS,
+    *TALK_ACTIONS,
     *VOICE_ACTIONS,
     'board_default',
     'board_delete',
@@ -3686,6 +3703,7 @@ class Store:
             chat_files.initialize(db)
             chat_model.initialize(db)
             voice_input.initialize(db)
+            talk_live.initialize(db)
             db.execute('CREATE TABLE IF NOT EXISTS chat_stops(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,text TEXT NOT NULL,at TEXT NOT NULL)')
         os.chmod(self.path, 0o600)
         self.ensure_monotonic_event_ids()
@@ -7520,7 +7538,8 @@ class Store:
         # The text as saved (an email gets a blank line before the name): the dashboard shows it before it sends
         return {'status':'revised','revision':revised['revision'],'body':next_actions.draft_text(revised),'subject':revised.get('subject')}
 
-    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None):
+    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None,hold=None):
+        # hold: seconds the send waits before the outbox takes it (a yes by voice: Undo in the chat meanwhile, undo_voice_send)
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
@@ -7563,16 +7582,18 @@ class Store:
                 # unknown outcome. A blocked pre-send permission check may be retried.
                 # So may an unconfirmed message send after SEND_RETRY_AFTER without a trace: only on the owner's new tap.
                 if (previous['status'] in ('blocked','cancelled','failed') or send_retry_ok(previous,action['kind'])) and previous['approval_id']!=approval_id:
-                    db.execute("UPDATE action_jobs SET status='queued',retry_at=NULL,error=NULL,updated_at=?,approval_id=?,source=?,payload=? WHERE id=?",(now(),approval_id,source,encoded(action),previous['id']))
+                    db.execute("UPDATE action_jobs SET status='queued',retry_at=?,error=NULL,updated_at=?,approval_id=?,source=?,payload=? WHERE id=?",
+                               ((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=hold)).isoformat() if hold else None,now(),approval_id,source,encoded(action),previous['id']))
                     follow_ups.queued(db,suggestion_id,previous['id'],action,now())  # an automated follow-up: spaced with its batch
                     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                         (approval_id,suggestion_id,'send','',source,now()))
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
                 return {'status':previous['status'],'duplicate':True}
             job_id=uuid.uuid4().hex;stamp=now()
-            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
+            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id,retry_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                 (job_id,suggestion_id,revision,encoded(action),'local_preparation' if action['kind'] in ('prepare','finish') else 'queued',stamp,stamp,approval_id,source,
-                 '<assistant-'+job_id+'@'+action['from'].split('@')[1]+'>' if action['kind']=='email' else ''))
+                 '<assistant-'+job_id+'@'+action['from'].split('@')[1]+'>' if action['kind']=='email' else '',
+                 (dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=hold)).isoformat() if hold else None))
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                 (approval_id,suggestion_id,'prepare_next' if action['kind']=='prepare' else 'send','',source,stamp))
             if action['kind'] not in ('prepare','finish'):follow_ups.queued(db,suggestion_id,job_id,action,stamp)  # an automated follow-up: spaced with its batch
@@ -7585,6 +7606,20 @@ class Store:
             db.execute('UPDATE suggestions SET feedback_until=NULL WHERE id=?',(suggestion_id,))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
         return {'status':'queued'}
+
+    def undo_voice_send(self, suggestion_id, approval_id):
+        """Undo in the chat on a send approved by voice: it is canceled while it still waits (confirm_action's hold)."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            job=db.execute("SELECT id,status,retry_at FROM action_jobs WHERE suggestion_id=? AND approval_id=? AND source='voice'",(str(suggestion_id or ''),str(approval_id or ''))).fetchone()
+            if not job:
+                raise ValueError('Nothing to undo.')
+            if job['status']=='cancelled':
+                return {'status':'cancelled'}
+            if job['status']!='queued' or not job['retry_at'] or job['retry_at']<=now():
+                raise ValueError('It’s already on its way.')
+            db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE id=?",(now(),job['id']))
+        return {'status':'cancelled'}
 
     def auto_merge(self, suggestion_id, config):
         """Queue a fix to The Machine's own error for merging without the owner's tap, when it is small
@@ -14652,6 +14687,10 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner uses voice input, on the dashboard')
             return self.voice_action(name, args)
+        if name in TALK_ACTIONS:
+            if not owner_dashboard:
+                raise ValueError('Only the owner talks live, on the dashboard')
+            return self.talk_action(name, args)
         if name in ('chat_upload', 'chat_file_remove'):
             # A New to-do form's files upload before the to-do exists, under the form's own draft key
             sid = 'new:' + str(args['draft']) if args.get('draft') is not None else str(args.get('suggestion_id') or '')
@@ -16924,11 +16963,15 @@ class App:
                               'choice': choice, 'mine': True, 'at': at})
         owner.extend(card_chat_handoffs(db, suggestion_id))
         owner.extend(self.card_chat_learned(db, suggestion_id))
-        for r in db.execute('SELECT payload,status,source,created_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
+        for r in db.execute('SELECT payload,status,source,created_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:
                 payload = json.loads(r['payload'])
             except ValueError:
                 continue
+            if r['source'] == 'voice':  # a yes to Talk live's confirm question: Undo while the send still waits (talk_live.py)
+                wait = r['status'] == 'queued' and r['retry_at'] and r['retry_at'] > now()
+                owner.append({'kind': 'event', 'text': 'Approved by voice', 'mine': True, 'at': chat_ms(r['created_at']) - 1,
+                              **({'undo_voice': r['approval_id'], 'undo_until': chat_ms(r['retry_at'])} if wait else {})})
             draft = chat_draft(payload)
             if draft:
                 if len(draft['to']) == 1 and _address(draft['to'][0]) and str(payload.get('to_name') or '').strip():
@@ -17003,6 +17046,7 @@ class App:
                               'at': answer['at'], **({'full': full} if full else {})})
             if r['status'] in ('failed', 'cancelled'):
                 owner.append({'kind': 'event', 'text': f"{name} {'stopped' if r['status'] == 'failed' else 'cancelled'}", 'at': chat_ms(r['finished_at'] or r['updated_at'])})
+        owner.extend(talk_live.lines(db, suggestion_id))  # what was said in a live conversation (Talk live)
         for i in owner:
             i.pop('choice', None)
         return owner, results
@@ -19345,29 +19389,79 @@ class App:
             self._voice = voice_input.Voice(Path(self.config['database']).expanduser().parent / 'voice', self.config)
         return self._voice
 
-    def voice_openai(self, check=False):
-        """Whether OpenClaw has an OpenAI key that can transcribe: asked on Settings' Voice input (it takes OpenClaw a few
-        seconds) and kept 10 minutes; None until asked."""
+    def voice_openai(self, check=False, wait=False):
+        """Whether OpenClaw has OpenAI access that can transcribe (an API key, or a ChatGPT sign-in where the account allows
+        it), kept 10 minutes; None until known. Asking OpenClaw takes it 10 to 20 seconds on a busy Machine, so with check
+        a stale answer is refreshed in the background and what is known now comes back at once (Settings never waits on
+        it); only wait=True (the background worker, a clip when nothing is known yet) waits for the answer."""
         kept = getattr(self, '_voice_openai', None)
         if check and (not kept or kept[0] < time.monotonic()):
-            kept = self._voice_openai = (time.monotonic() + 600, voice_input.openai_ready(self.config))
+            if wait:
+                kept = self._voice_openai = (time.monotonic() + 600, voice_input.openai_ready(self.config))
+            else:
+                lock = self.__dict__.setdefault('_voice_openai_lock', threading.Lock())
+                if lock.acquire(blocking=False):
+                    def refresh():
+                        try:
+                            self._voice_openai = (time.monotonic() + 600, voice_input.openai_ready(self.config))
+                        finally:
+                            lock.release()
+                    threading.Thread(target=refresh, daemon=True, name='voice-openai').start()
         return kept[1] if kept else None
 
     def voice_view(self, prefs, check=False):
-        return {**prefs, 'local': self.dictation.status(prefs['model']), 'openai': self.voice_openai(check),
+        openai, local = self.voice_openai(check), self.dictation.status(prefs['model'])
+        engine = voice_input.engine_for(prefs, openai)
+        # What a tap does now: the engine in use; on Automatic without OpenAI while this Machine's own isn't ready yet,
+        # 'browser' (the dashboard uses the browser's own speech recognition where it has one, else waits); with On this
+        # Machine picked, 'wait': the recording waits for it, never going anywhere else.
+        use = engine if engine == 'openai' or local['state'] == 'ready' else 'browser' if prefs['engine'] == 'auto' else 'wait'
+        return {**prefs, 'local': local, 'openai': openai, 'in_use': engine, 'use': use,
                 'max_seconds': voice_input.MAX_SECONDS, 'languages': list(voice_input.LANGUAGES),
                 'models': list(voice_input.MODELS)}
+
+    def voice_warm_worker(self):
+        """Gets this Machine's own voice engine ready in the background, so a tap on the mic never waits on a download.
+        Never during setup: only once this Machine is live (its first full review is done) and has been quiet for a while
+        (VOICE_WARM_QUIET checks in a row: no review or preparation running, load under half the cores). Only when it
+        will use it (no OpenAI here, or On this Machine picked) and there's room on disk. The same after an update that
+        changes its packages. The install runs at a lower priority (voice_input.lowered). Until then a tap uses OpenAI or
+        the browser's own speech recognition (voice_view's `use`)."""
+        tried, quiet = 0.0, 0
+        try:
+            self.voice_openai(True, wait=True)   # known before the first tap: whether Automatic means OpenAI here
+        except Exception as error:
+            LOG.error('voice openai check error=%s', type(error).__name__)
+        while not self.stop.wait(300):
+            try:
+                with self.store.connect() as db:
+                    prefs = voice_input.prefs(db)
+                    live = db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND NOT COALESCE(window_hours,0) LIMIT 1").fetchone()
+                    busy = db.execute("SELECT (SELECT count(*) FROM preparations WHERE status IN ('starting','running'))"
+                                      "+(SELECT count(*) FROM review_runs WHERE status IN ('starting','running','recovering'))").fetchone()[0]
+                openai = self.voice_openai(True, wait=True)   # kept 10 minutes: OpenAI connected later switches Automatic to it
+                quiet = quiet + 1 if live and not busy and voice_input.idle() else 0
+                status = self.dictation.status(prefs['model'])
+                if quiet < VOICE_WARM_QUIET or (status['state'] == 'failed' and time.monotonic() - tried < 6 * 3600):
+                    continue
+                if voice_input.warm_due(prefs, openai, status, self.dictation.room()):
+                    tried = time.monotonic()
+                    LOG.info('voice warm start model=%s', prefs['model'])
+                    self.dictation.prepare(prefs['model'])
+            except Exception as error:
+                LOG.error('voice warm error=%s', type(error).__name__)
 
     def voice_action(self, name, args):
         """Settings, Voice input, and the mic in the dashboard's message boxes. A clip is only ever in memory here, and the
         log has only its length (voice_input.py)."""
         with self.store.connect() as db:
-            prefs = (voice_input.set_prefs(db, args, self.voice_openai(True) if args.get('engine') == 'openai' else False)
+            prefs = (voice_input.set_prefs(db, args, (self.voice_openai() or self.voice_openai(True, wait=True)) if args.get('engine') == 'openai' else False)
                      if name == 'voice_prefs' else voice_input.prefs(db))
         if name in ('voice_status', 'voice_prefs'):
-            return self.voice_view(prefs, check=bool(args.get('settings')) or name == 'voice_prefs')
+            view = self.voice_view(prefs, check=bool(args.get('settings')) or name == 'voice_prefs')
+            return {**view, 'talk': self.talk_view(check=True)} if args.get('settings') else view
         if name == 'voice_prepare':
-            if prefs['engine'] == 'local':
+            if voice_input.engine_for(prefs, self.voice_openai()) == 'local':
                 self.dictation.prepare(prefs['model'])
             return self.voice_view(prefs)
         try:
@@ -19375,16 +19469,159 @@ class App:
         except (ValueError, TypeError) as error:
             raise ValueError('That recording couldn’t be read. Try again.') from error
         frames, seconds = voice_input.pcm(data)
-        if prefs['engine'] == 'openai':
-            heard = voice_input.openai_transcribe(self.config, self.dictation.root / 'clips', frames, prefs['language'])
-        else:
+        openai = self.voice_openai(True, wait=self.voice_openai() is None) if prefs['engine'] == 'auto' else self.voice_openai()
+        engine = voice_input.engine_for(prefs, openai)
+        local_ready = self.dictation.ready(prefs['model'])
+        if engine == 'openai':
             try:
-                heard = self.dictation.transcribe(frames, prefs['model'], prefs['language'], voice_input.timeout_for(seconds))
+                heard, engine = voice_input.openai_transcribe(self.config, self.dictation.root / 'clips', frames, prefs['language']), 'openai'
+            except ValueError:
+                if prefs['engine'] == 'auto':   # OpenAI refused (a sign-in without audio access): Automatic leaves it for an hour
+                    self._voice_openai = (time.monotonic() + 3600, False)
+                if not local_ready:
+                    raise
+                heard, engine = None, 'local'
+        else:
+            heard = None
+        if heard is None:
+            try:
+                heard, engine = self.dictation.transcribe(frames, prefs['model'], prefs['language'], voice_input.timeout_for(seconds)), 'local'
             except voice_input.NotReady:
                 self.dictation.prepare(prefs['model'])
                 return {'pending': True, 'voice': self.voice_view(prefs)}
-        LOG.info('voice clip seconds=%.0f engine=%s', seconds, prefs['engine'])
+        LOG.info('voice clip seconds=%.0f engine=%s', seconds, engine)
         return {'text': voice_input.clean(heard['text']), 'language': heard.get('language')}
+
+    @property
+    def talk(self):
+        """Talk live's open conversations (talk_live.py)."""
+        if getattr(self, '_talk', None) is None:
+            self._talk = talk_live.Talk({**self.config, '_node': node_bin(self.config)})
+        return self._talk
+
+    def talk_env(self):
+        return {**node_env(self.config), 'OPENCLAW_CONFIG_PATH': str(Path(self.config.get('openclaw_config') or Path.home() / '.openclaw' / 'openclaw.json').expanduser())}
+
+    def talk_view(self, check=False):
+        """Whether Talk live can start here. Whether OpenAI charges per use (an API key, which the Gateway uses first) or
+        not (a ChatGPT sign-in) shows once a conversation starts (talk_start's `per_use`)."""
+        found = self.talk.status(self.talk_env(), check)
+        if found is None:
+            return {'ready': None}
+        return {'ready': found['ready'], 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS}
+
+    def talk_action(self, name, args):
+        """A live conversation in a to-do's chat (talk_live.py). Only what it reads and what both sides said pass here;
+        the audio goes directly between the browser and OpenAI."""
+        env = self.talk_env()
+        if name == 'talk_status':
+            return self.talk_view(check=True)
+        if name == 'talk_start':
+            sid = str(args.get('suggestion_id') or '')
+            with self.store.connect() as db:
+                card = db.execute('SELECT title FROM suggestions WHERE id=?', (sid,)).fetchone() if re.fullmatch(r'[a-f0-9]{16}', sid) else None
+            if not card:
+                raise ValueError('Unknown suggestion')
+            started = self.talk.start(sid, env)
+            LOG.info('talk live start via=%s', started.get('via'))
+            view = self.talk_view()
+            return {**started, 'per_use': started.get('via') == 'key', 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS,
+                    'tools': talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE, 'instructions': talk_live.instructions(card['title'], locale_prefs.language() or 'en',
+                                                                                   time.strftime('%A %d %B %Y, %H:%M')), 'ready': view.get('ready')}
+        if name == 'talk_offer':
+            return self.talk.offer(args.get('id'), args.get('sdp'), env)
+        if name == 'talk_end':
+            return self.talk.end(args.get('id'), env)
+        if name == 'talk_line':
+            with self.store.connect() as db:
+                return self.talk.line(db, args.get('id'), args.get('role'), args.get('text'), int(time.time() * 1000))
+        if name == 'talk_ask_send':
+            return self.talk_ask_send(args)
+        if name == 'talk_send':
+            return self.talk_send(args)
+        if name == 'talk_undo':
+            return self.store.undo_voice_send(args.get('suggestion_id'), args.get('approval_id'))
+        found = self.talk.get(args.get('id'))
+        return {'output': self.talk_tool(found['suggestion_id'], str(args.get('name') or ''), args.get('args') if isinstance(args.get('args'), dict) else {})}
+
+    def talk_draft(self, suggestion_id, revision):
+        """The draft Talk live may ask to send: this to-do's current one, ready, going to people the draft names."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT status,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        action = next_actions.selected(row['next_action'], revision) if row and row['status'] == 'prepared' and revision else None
+        if not action or action.get('kind') not in talk_live.SEND_KINDS or action.get('to_options'):
+            return None
+        return action
+
+    def talk_ask_send(self, args):
+        """The voice asks to send the draft on screen (the dashboard says which revision it shows, and whether the owner
+        may not see it: then the voice reads it out first). The question is kept for the owner's next answer."""
+        found = self.talk.get(args.get('id'))
+        sid, revision = found['suggestion_id'], str(args.get('revision') or '')
+        action = self.talk_draft(sid, revision)
+        if not action:
+            return {'error': 'No draft ready to send by voice. It needs a tap on Approve on screen.'}
+        names = {}
+        if len(action.get('to') or []) == 1 and str(action.get('to_name') or '').strip():
+            names[_address(action['to'][0])] = chat_person(str(action['to_name']).strip())
+        name = chat_name((action.get('to') or [''])[0], names, str(action.get('to_name') or '')) if action.get('to') else ''
+        name = name if len(action.get('to') or []) <= 1 else name + ' and %d more' % (len(action['to']) - 1)
+        asked = self.talk.ask(args.get('id'), sid, revision, action, name, int(time.time() * 1000))
+        read = args.get('read_aloud') is True
+        draft = {'to': name, 'how': talk_live.CHANNELS.get(action['kind'], ''), 'subject': action.get('subject') or '',
+                 'text': clamp(str(action.get('body') or action.get('message') or ''), 4000)}
+        return {'question': asked, 'read_aloud': read, 'draft': draft,
+                'say': (talk_live.SAY['read'] if read else '') + talk_live.SAY['ask'] + asked}
+
+    def talk_send(self, args):
+        """The owner answered the confirm question: the Machine judges it from its own record, and a clear yes for the
+        unchanged draft goes the normal way (confirm_action, source 'voice', held for Undo)."""
+        import help_chat
+        talk_id = args.get('id')
+        found = self.talk.get(talk_id)
+        sid = found['suggestion_id']
+        run = getattr(self, 'talk_judge', None)
+        if not run:
+            swap = background_model(self.config)
+            run = lambda prompt: help_chat.openclaw_model_run(self.config, prompt, '/'.join(swap) if swap else None)
+        with self.store.connect() as db:
+            status, asked = self.talk.answer(db, talk_id, int(time.time() * 1000), lambda revision: self.talk_draft(sid, revision),
+                                             lambda answer, q: talk_live.judge_answer(answer, q, run))
+        LOG.info('talk live answer %s', status)
+        if status != 'yes':
+            return {'status': status, 'say': talk_live.SAY[status]}
+        approval = 'voice:' + uuid.uuid4().hex
+        try:
+            self.store.confirm_action(sid, asked['revision'], approval, 'voice', hold=talk_live.UNDO_SECONDS)
+        except ValueError:
+            return {'status': 'changed', 'say': talk_live.SAY['changed']}
+        return {'status': 'queued', 'approval_id': approval, 'undo_seconds': talk_live.UNDO_SECONDS, 'say': talk_live.SAY['queued']}
+
+    def talk_tool(self, suggestion_id, name, args):
+        """Talk live's tools that read (talk_live.TOOLS): this to-do, or finding others. Never anything that sends or
+        changes; `ask_chat` is the dashboard's own (the chat's normal decide path)."""
+        if name == 'todo_details':
+            chat = self.card_chat(suggestion_id)
+            with self.store.connect() as db:
+                card = db.execute('SELECT title,status FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            said, drafts = [], []
+            for i in chat.get('items') or []:
+                who = {'source': i.get('from') or 'Message', 'you': 'Owner', 'reply': 'The Machine', 'agent': i.get('name') or 'Agent'}.get(i.get('kind'))
+                if who and str(i.get('text') or '').strip():
+                    said.append({'from': clamp(str(who), 80), 'text': clamp(str(i['text']), 800)})
+                drafts = i.get('drafts') or drafts
+            return {'title': card['title'] if card else '', 'status': card['status'] if card else '', 'messages': said[-25:],
+                    'drafts': [{k: d.get(k) for k in ('kind', 'to', 'subject', 'body')} for d in drafts[:3]]}
+        if name == 'find_todos':
+            words = [w for w in re.findall(r'\w+', str(args.get('words') or '').lower()) if len(w) > 1][:6]
+            if not words:
+                return {'todos': []}
+            with self.store.connect() as db:
+                rows = db.execute("SELECT id,title,status FROM suggestions WHERE status NOT IN ('completed','rejected') ORDER BY created_at DESC LIMIT 500").fetchall()
+            found = [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
+                    [r for r in rows if any(w in (r['title'] or '').lower() for w in words)]
+            return {'todos': [{'title': clamp(r['title'], 200), 'status': r['status']} for r in found[:10]]}
+        raise ValueError('Unknown tool')
 
     def lookups_view(self):
         """Settings, Look up work contacts: whether this Machine can look people up, and whether the owner has it on."""
@@ -20234,6 +20471,7 @@ class App:
             threading.Thread(target=self.collector, args=(account,), daemon=True).start()
         threading.Thread(target=self.delivery_worker, daemon=True).start()
         threading.Thread(target=self.preparation_worker, daemon=True).start()
+        threading.Thread(target=self.voice_warm_worker, name='voice-warm', daemon=True).start()
         threading.Thread(target=self.action_worker, daemon=True).start()
         threading.Thread(target=self.review_worker, daemon=True).start()
         threading.Thread(target=self.graph_worker, daemon=True).start()

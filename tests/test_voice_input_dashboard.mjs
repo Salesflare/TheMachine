@@ -13,8 +13,10 @@ const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf
 const now=new Date().toISOString(),id='c1c1c1c1c1c1c1c1';
 const cards=[{id,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
-const actions=[];let local={state:'ready'},hold=null,down=false,demo=false,said='Tell her Thursday after two works.';
-const voiceView=()=>({engine:'local',model:'small',language:'',local,openai:false,max_seconds:120,languages:['de','en','es','fr','it','nl','pt'],models:['small','base']});
+const actions=[];let local={state:'ready'},hold=null,down=false,demo=false,engine='local',said='Tell her Thursday after two works.';
+// As voice_view: on Automatic without OpenAI, a tap uses the browser's own speech recognition until this Machine is ready
+const voiceView=()=>({engine,model:'small',language:'',local,openai:false,in_use:'local',use:local.state==='ready'?'local':engine==='auto'?'browser':'wait',
+ max_seconds:120,languages:['de','en','es','fr','it','nl','pt'],models:['small','base'],talk:{ready:true,limit:600,warn:540}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(down&&url.pathname.startsWith('/api/')){res.statusCode=502;res.setHeader('Content-Type','text/html');res.end('<h1>502</h1>');return}  // the Machine can't be reached (its proxy answers)
@@ -146,6 +148,25 @@ try{
    assert.equal(await page.evaluate(()=>window.__mic.stopped>0),true,'it stopped by itself');
    await page.evaluate(()=>{window.__skew=0});
    assert.equal(sent(),0,'still nothing sent');
+
+   // Automatic, before this Machine is ready: the browser's own speech recognition writes it, and the box says so.
+   // Nothing waits, and no clip goes to the Machine.
+   engine='auto';local={state:'preparing',step:'model',done:10,total:100};await page.locator('#chat-input').fill('');actions.length=0;
+   await page.evaluate(()=>{micPrepped=false;window.SpeechRecognition=class{start(){this.timer=setTimeout(()=>this.onresult?.({resultIndex:0,results:[Object.assign([{transcript:'Browser heard this'}],{isFinal:true})]}),200)}
+    stop(){setTimeout(()=>this.onend?.(),20)}abort(){clearTimeout(this.timer)}}});
+   await tap(mic);await page.waitForSelector(box+' .mic-time');
+   await page.waitForFunction(()=>document.querySelector('.chat-compose .mic-hint')?.textContent==='Your browser writes this one down.');
+   await shot('4b-browser');await page.waitForTimeout(400);await tap(box+' [data-mic-stop]');
+   await page.waitForFunction(()=>document.querySelector('#chat-input').value.length>0);
+   assert.equal(await page.locator('#chat-input').inputValue(),'Browser heard this');
+   assert.equal(actions.filter(a=>a.action==='voice_transcribe'||a.action==='voice_prepare').length,0,'no clip and no download on a tap');
+   // On this Machine picked: never the browser's; the clip waits with the time left
+   engine='local';await page.locator('#chat-input').fill('');await page.evaluate(()=>{micPrepped=false});
+   await tap(mic);await page.waitForSelector(box+' .mic-time');await page.waitForTimeout(500);await tap(box+' [data-mic-stop]');
+   await page.waitForFunction(()=>/Getting voice ready/.test(document.querySelector('.chat-compose .mic-hint')?.textContent||''));
+   assert.ok(actions.some(a=>a.action==='voice_transcribe'),'the clip goes to this Machine');
+   local={state:'ready'};await page.waitForFunction(()=>document.querySelector('#chat-input').value.length>0,null,{timeout:8000});
+   await page.evaluate(()=>{delete window.SpeechRecognition;micPrepped=false});engine='local';
   }
 
   // New to-do: the mic next to Add; the text lands in the box and Add waits for the owner
@@ -173,7 +194,12 @@ try{
   await page.evaluate(()=>showSettings('general'));await page.waitForSelector('#settings-dictation:not([hidden]) #dictation-engine');
   assert.equal(await page.locator('#dictation-engine option[value="openai"]').isDisabled(),true,'With OpenAI needs a key');
   assert.ok(await page.evaluate(()=>{const dev=[...document.querySelectorAll('#settings h2')].find(h=>h.textContent==='This device');return dev.getBoundingClientRect().top<document.querySelector('#settings-dictation').getBoundingClientRect().top}),'Voice input sits below This device');
+  assert.equal(await page.locator('#dictation-note').textContent(),'In use: this Machine. Your recordings never leave it.');
+  assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap the wave/);
   await page.locator('#settings-dictation').scrollIntoViewIfNeeded();await shot('11-settings');
+  engine='auto';local={state:'preparing',step:'model',done:10,total:100};await page.evaluate(()=>loadDictation(true));
+  await page.waitForFunction(()=>document.querySelector('#dictation-note')?.textContent==='Getting ready (in the background). Until then, your browser writes it down.');
+  await shot('11b-settings-getting-ready');engine='local';local={state:'ready'};
   actions.length=0;await page.selectOption('#dictation-language','nl');await page.waitForFunction(()=>true);
   await page.waitForTimeout(200);assert.deepEqual(actions.find(a=>a.action==='voice_prefs')?.args,{language:'nl'});
   await context.close()}

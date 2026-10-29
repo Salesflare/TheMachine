@@ -68,18 +68,39 @@ class Prefs(unittest.TestCase):
 
     def test_defaults_and_choices(self):
         with self.store.connect() as db:
-            self.assertEqual(v.prefs(db), {'engine': 'local', 'model': 'small', 'language': ''})
+            self.assertEqual(v.prefs(db), {'engine': 'auto', 'model': 'small', 'language': ''})
             self.assertEqual(v.set_prefs(db, {'model': 'base', 'language': 'nl'}, False),
-                             {'engine': 'local', 'model': 'base', 'language': 'nl'})
+                             {'engine': 'auto', 'model': 'base', 'language': 'nl'})
+            self.assertEqual(v.set_prefs(db, {'engine': 'local'}, False)['engine'], 'local')
             self.assertEqual(v.set_prefs(db, {'language': ''}, False)['language'], '')
             for args in ({'engine': 'google'}, {'model': 'large'}, {'language': 'xx'}):
                 with self.assertRaises(ValueError):
                     v.set_prefs(db, args, True)
-            with self.assertRaisesRegex(ValueError, 'OpenAI API key'):
-                v.set_prefs(db, {'engine': 'openai'}, False)   # a ChatGPT sign-in can't transcribe
+            with self.assertRaisesRegex(ValueError, 'OpenAI set up in OpenClaw'):
+                v.set_prefs(db, {'engine': 'openai'}, False)
             self.assertEqual(v.set_prefs(db, {'engine': 'openai'}, True)['engine'], 'openai')
             db.execute("UPDATE voice_prefs SET value='gone' WHERE key='engine'")
-            self.assertEqual(v.prefs(db)['engine'], 'local')
+            self.assertEqual(v.prefs(db)['engine'], 'auto')
+
+    def test_automatic_uses_openai_when_there_is_one(self):
+        auto, local, openai = ({'engine': e} for e in ('auto', 'local', 'openai'))
+        self.assertEqual(v.engine_for(auto, True), 'openai')
+        self.assertEqual(v.engine_for(auto, False), 'local')
+        self.assertEqual(v.engine_for(auto, None), 'local')
+        self.assertEqual(v.engine_for(local, True), 'local')   # the owner picked privacy
+        self.assertEqual(v.engine_for(openai, True), 'openai')
+
+    def test_the_local_model_is_only_ever_fetched_when_it_will_be_used(self):
+        missing, ready, failed = {'state': 'missing'}, {'state': 'ready'}, {'state': 'failed'}
+        self.assertFalse(v.warm_due({'engine': 'auto'}, True, missing, True))    # OpenAI here: never, not even later
+        self.assertFalse(v.warm_due({'engine': 'openai'}, False, missing, True))
+        self.assertTrue(v.warm_due({'engine': 'auto'}, False, missing, True))
+        self.assertTrue(v.warm_due({'engine': 'local'}, True, failed, True))     # On this Machine picked
+        self.assertFalse(v.warm_due({'engine': 'local'}, True, ready, True))
+        self.assertFalse(v.warm_due({'engine': 'local'}, True, missing, False))  # no room on disk
+        self.assertTrue(v.idle(0.5, 2))
+        self.assertFalse(v.idle(1.5, 2))
+        self.assertFalse(v.idle(3.0, 4))
 
 
 TINY = {'tiny': {'repo': 'example/tiny', 'revision': 'abc', 'files': {
@@ -343,13 +364,35 @@ class Api(unittest.TestCase):
     def test_status_and_settings(self):
         view = self.app.action('voice_status', {}, owner_dashboard=True)
         self.assertEqual({k: view[k] for k in ('engine', 'model', 'language', 'max_seconds')},
-                         {'engine': 'local', 'model': 'small', 'language': '', 'max_seconds': 120})
+                         {'engine': 'auto', 'model': 'small', 'language': '', 'max_seconds': 120})
         self.assertEqual(view['local'], {'state': 'missing'})
         self.assertEqual(view['models'], ['small', 'base'])
+        self.assertEqual((view['in_use'], view['use']), ('local', 'browser'))   # not ready: the browser's own until then
         view = self.app.action('voice_prefs', {'language': 'it'}, owner_dashboard=True)
         self.assertEqual(view['language'], 'it')
-        with self.assertRaisesRegex(ValueError, 'OpenAI API key'):
+        with self.assertRaisesRegex(ValueError, 'OpenAI set up in OpenClaw'):
             self.app.action('voice_prefs', {'engine': 'openai'}, owner_dashboard=True)
+        view = self.app.action('voice_prefs', {'engine': 'local'}, owner_dashboard=True)
+        self.assertEqual((view['in_use'], view['use']), ('local', 'wait'))      # On this Machine never goes elsewhere
+        self.app._voice_openai = (time.monotonic() + 600, True)
+        view = self.app.action('voice_prefs', {'engine': 'auto'}, owner_dashboard=True)
+        self.assertEqual((view['in_use'], view['use']), ('openai', 'openai'))
+
+    def test_automatic_with_openai_never_touches_the_local_model(self):
+        self.app._voice_openai = (time.monotonic() + 600, True)
+        with patch.object(v, 'openai_transcribe', return_value={'text': 'Hi', 'language': 'en'}), \
+                patch.object(v.Voice, 'transcribe') as local, patch.object(v.Voice, 'prepare') as prepare:
+            self.assertEqual(self.app.action('voice_transcribe', self.clip(), owner_dashboard=True)['text'], 'Hi')
+        local.assert_not_called()
+        prepare.assert_not_called()
+
+    def test_automatic_falls_back_when_openai_refuses(self):
+        self.app._voice_openai = (time.monotonic() + 600, True)
+        with patch.object(v, 'openai_transcribe', side_effect=ValueError('OpenAI didn’t answer.')), \
+                patch.object(v.Voice, 'ready', return_value=True), \
+                patch.object(v.Voice, 'transcribe', return_value={'text': 'Lokaal', 'language': 'nl'}):
+            self.assertEqual(self.app.action('voice_transcribe', self.clip(), owner_dashboard=True)['text'], 'Lokaal')
+        self.assertFalse(self.app.voice_openai())   # not offered again for a while
 
     def test_a_clip_becomes_text_and_is_never_kept_or_logged(self):
         heard = []
@@ -384,6 +427,52 @@ class Api(unittest.TestCase):
             self.assertEqual(self.app.action('voice_transcribe', self.clip(), owner_dashboard=True)['text'], 'Hola')
         local.assert_not_called()
         self.assertEqual(call.call_args.args[3], 'es')
+
+    def warm(self, checks, openai=False, live=True, busy=False, load=0.0):
+        """voice_warm_worker for a number of 5-minute checks; what it prepared."""
+        with self.store.connect() as db:
+            db.execute('DELETE FROM review_runs')
+            if live:
+                db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('r1','ok','t','t')")
+            if busy:
+                db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('r2','running','t','t')")
+        waits = iter([False] * checks + [True])
+        self.app.stop = type('Stop', (), {'wait': lambda self, seconds: next(waits)})()
+        with patch.object(a.App, 'voice_openai', return_value=openai), patch.object(v.Voice, 'prepare') as prepare, \
+                patch.object(v.Voice, 'room', return_value=True), patch.object(v, 'idle', return_value=load < 1):
+            self.app.voice_warm_worker()
+        return prepare.call_args_list
+
+    def test_the_local_model_gets_ready_only_on_a_live_quiet_machine_without_openai(self):
+        self.assertEqual(len(self.warm(a.VOICE_WARM_QUIET)), 1)
+
+    def test_never_while_setting_up_busy_or_with_openai(self):
+        self.assertEqual(self.warm(a.VOICE_WARM_QUIET - 1), [])      # not quiet long enough yet
+        self.assertEqual(self.warm(10, live=False), [])               # setup: no full review done yet
+        self.assertEqual(self.warm(10, busy=True), [])                # a review is running
+        self.assertEqual(self.warm(10, load=2.0), [])                 # the server is busy
+        self.assertEqual(self.warm(10, openai=True), [])              # GPT Live/OpenAI does dictation here
+
+    def test_settings_never_wait_on_the_openai_check(self):
+        slow = threading.Event()
+
+        def ready(config):
+            slow.wait(5)
+            return True
+        del self.app._voice_openai
+        self.app._talk = a.talk_live.Talk({}, runner=lambda *x, **y: (slow.wait(5), subprocess.CompletedProcess(x[0], 0, '{"ready": true}', ''))[1])
+        with patch.object(v, 'openai_ready', ready):
+            began = time.monotonic()
+            view = self.app.action('voice_status', {'settings': True}, owner_dashboard=True)
+            self.assertLess(time.monotonic() - began, 0.5)   # OpenClaw takes 10 to 20 seconds on a busy Machine
+            self.assertIsNone(view['openai'])                 # filled in afterwards: the dashboard asks again
+            self.assertIsNone(view['talk']['ready'])
+            slow.set()
+            for _ in range(100):
+                if self.app.voice_openai() is not None:
+                    break
+                time.sleep(0.02)
+        self.assertTrue(self.app.voice_openai())
 
     def test_a_bad_clip_says_try_again(self):
         for args in ({}, {'data': 'not base64!'}, {'data': base64.b64encode(b'RIFF....').decode()}):
@@ -445,7 +534,9 @@ class Dashboard(unittest.TestCase):
     def test_every_message_box_has_the_mic(self):
         html = (ROOT / 'dashboard.html').read_text()
         self.assertGreaterEqual(html.count('micBtn()}'), 4)   # to-do chat, New to-do, Help, change a draft
-        self.assertNotIn('SpeechRecognition', html)   # never the browser's own: Chrome sends it to Google
+        # The browser's own speech recognition only as the stopgap on Automatic (voice_view's use 'browser'), never otherwise
+        self.assertEqual(html.count('window.SpeechRecognition'), 1)
+        self.assertIn("micUse==='browser'", html)
 
 
 if __name__ == '__main__':

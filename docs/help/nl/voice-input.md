@@ -15,19 +15,29 @@ Terwijl hij luistert, toont het vak een timer. Tik op het kruisje om te stoppen 
 
 Wat je zei komt in het vak, waar je cursor stond. Er wordt niets verstuurd: lees het, pas aan wat je wilt en verstuur het zelf.
 
-## De eerste keer
-
-De eerste keer dat je op de microfoon tikt, zet je Machine spraak klaar. Hij downloadt het spraakmodel één keer, 150 tot 500 MB, en toont "Spraak klaarzetten…" met hoe ver hij is. Dat duurt een paar minuten. Je opname wacht en wordt uitgeschreven zodra het klaar is.
-
 ## Waar je stem naartoe gaat
 
-Standaard wordt je opname op je Machine zelf omgezet naar tekst. Ze verlaat hem nooit, en ze wordt gewist zodra de tekst er is. De eigen spraakherkenning van je browser wordt niet gebruikt, omdat sommige browsers je stem dan naar de maker van de browser sturen.
+In **Instellingen**, **Algemeen**, onder **Spraakinvoer**, zegt één korte regel welke er gebruikt wordt.
 
-In **Instellingen**, **Algemeen**, onder **Spraakinvoer**, kun je kiezen:
+- **Automatisch** (standaard): als OpenAI is ingesteld in OpenClaw, zet OpenAI je opname om naar tekst. Dat is een API-sleutel, of een ChatGPT-login als je abonnement audio toelaat. Zonder OpenAI wordt ze op je Machine zelf omgezet naar tekst en verlaat ze hem nooit.
+- **Op deze Machine**: altijd op je Machine, ook als OpenAI is ingesteld.
+- **Met OpenAI**: altijd OpenAI.
 
-- **Omgezet naar tekst**: **Op deze Machine**, of **Met OpenAI**. OpenAI is sneller op een kleine server, maar je opname gaat naar OpenAI, met je eigen sleutel. Daarvoor is een OpenAI API-sleutel in OpenClaw nodig. Een ChatGPT-login is niet genoeg.
-- **Nauwkeurigheid**: **Nauwkeuriger** werkt het best voor de meeste talen. **Sneller** is vlugger, maar met meer foute woorden. Op een Standard-server, die minder geheugen heeft, staat **Sneller** standaard aan.
+Een opname wordt gewist zodra de tekst terug is.
+
+## Klaarzetten
+
+Om spraak zelf om te zetten naar tekst heeft je Machine een spraakmodel nodig, 150 tot 500 MB. Hij downloadt het op de achtergrond, met lage prioriteit, zodra hij is ingesteld, zijn eerste review klaar is en het een tijdje rustig is geweest. Intussen toont Instellingen **Wordt klaargezet (op de achtergrond)**. Als OpenAI gebruikt wordt, doet hij dat nooit.
+
+Tot hij klaar is, gebruikt **Automatisch** de eigen spraakherkenning van je browser, als je browser die heeft, en zegt dat onder het vak. Sommige browsers sturen dat naar hun maker. Met **Op deze Machine** gekozen wacht je opname, en toont het vak "Spraak klaarzetten…" met de resterende tijd.
+
+## Instellingen
+
+- **Omgezet naar tekst**: **Automatisch**, **Op deze Machine** of **Met OpenAI**.
+- **Nauwkeurigheid** (alleen op je Machine): **Nauwkeuriger** werkt het best voor de meeste talen. **Sneller** is vlugger, maar met meer foute woorden. Op een Standard-server, die minder geheugen heeft, staat **Sneller** standaard aan.
 - **Taal**: **Herkennen** werkt voor elke taal van de app. Je eigen taal kiezen is iets sneller.
+
+Wil je liever hardop met The Machine praten, zie dan [Live praten](talk-live.md).
 
 ## Als het niet werkt
 

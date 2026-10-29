@@ -2,20 +2,23 @@
 sends it: the owner reads it, edits it and sends it themselves.
 
 The dashboard records with the browser's MediaRecorder (at most MAX_SECONDS), turns the clip into 16 kHz mono 16-bit
-WAV in the browser, and posts it (voice_transcribe). The browser's own speech recognition is never used: in Chrome it
-sends the audio to Google. Two engines turn the clip into text:
+WAV in the browser, and posts it (voice_transcribe). Engines (Settings, Voice input; `engine_for`):
 
-- **local** (the default): faster-whisper with a Whisper model, on this Machine. Nothing leaves it. It is not part of
-  the install, so installs stay as fast as they were: the first use prepares it (`prepare`), in the background, while
-  the dashboard says "Getting voice ready…". That makes its own virtualenv next to the database (voice/env), installs
-  the exact packages in voice-requirements.txt (every one pinned by hash, wheels only), and downloads the model from
-  Hugging Face at a pinned revision, each file checked against its SHA-256. The model runs in voice_worker.py, under
-  that virtualenv's Python, started on the first clip and stopped after IDLE_SECONDS without one, so its memory is
-  free again. Clips go to it one at a time over a pipe.
-- **openai**: the owner's own OpenAI key, through OpenClaw (`openclaw infer audio transcribe`, model OPENAI_MODEL).
-  Offered in Settings only when OpenClaw has an OpenAI key; a ChatGPT sign-in does not include it. Faster on a small
-  server, but the clip goes to OpenAI. OpenClaw reads a file, so the clip is written to a private folder and removed
-  as soon as it returns.
+- **auto** (the default): OpenAI when this Machine has OpenAI in OpenClaw, otherwise this Machine. With OpenAI here the
+  local model is never downloaded.
+- **openai**: the owner's own OpenAI access, through OpenClaw (`openclaw infer audio transcribe`, model OPENAI_MODEL):
+  an API key, or a ChatGPT sign-in where the account allows audio (OpenClaw's audio providers list says which). The clip
+  goes to OpenAI. OpenClaw reads a file, so the clip is written to a private folder and removed as soon as it returns.
+- **local**: faster-whisper with a Whisper model, on this Machine. Nothing leaves it. It is not part of the install or
+  the prebuilt images, so setup stays as fast as it was. It gets ready in the background once the Machine is live and
+  quiet (the service's voice_warm_worker; `prepare`): its own virtualenv next to the database (voice/env), the exact
+  packages in voice-requirements.txt (every one pinned by hash, wheels only, installed at a lower priority), and the
+  model from Hugging Face at a pinned revision, each file checked against its SHA-256. The model runs in
+  voice_worker.py, at a lower priority, started on the first clip and stopped after IDLE_SECONDS without one. Clips go
+  to it one at a time over a pipe.
+
+Until the local engine is ready, a tap on Automatic uses the browser's own speech recognition where the browser has it
+(the dashboard says so); with On this Machine picked, the clip waits for it instead and goes nowhere else.
 
 A clip is never kept: it is only in memory (and, for the openai engine, in that file for the seconds the call takes),
 and nothing about it is logged but its length. The language is the one the owner picked in Settings, or detected
@@ -47,7 +50,7 @@ REQUEST_BYTES = (MAX_SECONDS + 5) * RATE * 2 * 4 // 3 + 64 * 1024   # the WAV, b
 IDLE_SECONDS = 300
 FREE_BYTES = 2 * 1024 ** 3   # room the preparation needs: packages about 0.5 GB, the small model 0.5 GB, and slack
 LANGUAGES = ('de', 'en', 'es', 'fr', 'it', 'nl', 'pt')   # the app's languages (i18n/*.json), as Whisper names them
-ENGINES = ('local', 'openai')
+ENGINES = ('auto', 'local', 'openai')   # auto: OpenAI when this Machine has OpenAI, else this Machine
 OPENAI_MODEL = 'openai/gpt-4o-transcribe'
 HF = 'https://huggingface.co/{repo}/resolve/{revision}/{name}'
 # The models, at a fixed revision, each file with its size and SHA-256. "small" gets Dutch, German and the rest right
@@ -100,7 +103,7 @@ def initialize(db):
 def prefs(db):
     """The owner's choices in Settings, Voice input: engine, model and language ('' detects it)."""
     kept = dict(db.execute('SELECT key,value FROM voice_prefs').fetchall())
-    engine = kept.get('engine') if kept.get('engine') in ENGINES else 'local'
+    engine = kept.get('engine') if kept.get('engine') in ENGINES else 'auto'
     model = kept.get('model') if kept.get('model') in MODELS else default_model()
     language = kept.get('language') if kept.get('language') in LANGUAGES else ''
     return {'engine': engine, 'model': model, 'language': language}
@@ -110,9 +113,9 @@ def set_prefs(db, args, openai_ok):
     changes = {}
     if 'engine' in args:
         if args['engine'] not in ENGINES:
-            raise ValueError('Pick this Machine or OpenAI')
+            raise ValueError('Pick Automatic, this Machine or OpenAI')
         if args['engine'] == 'openai' and not openai_ok:
-            raise ValueError('Voice through OpenAI needs an OpenAI API key in OpenClaw')
+            raise ValueError('Voice through OpenAI needs OpenAI set up in OpenClaw')
         changes['engine'] = args['engine']
     if 'model' in args:
         if args['model'] not in MODELS:
@@ -126,6 +129,25 @@ def set_prefs(db, args, openai_ok):
         db.execute('INSERT INTO voice_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
                    (key, value))
     return prefs(db)
+
+
+def engine_for(prefs, openai_ok):
+    """The engine in use: OpenAI when picked, or on Automatic when this Machine has OpenAI; otherwise this Machine."""
+    return 'openai' if prefs['engine'] == 'openai' or (prefs['engine'] == 'auto' and openai_ok) else 'local'
+
+
+def idle(load=None, cpus=None):
+    """Whether a small server has nothing much going on: a load under half its cores."""
+    try:
+        load = os.getloadavg()[0] if load is None else load
+    except (AttributeError, OSError):
+        return True
+    return load < max(1, cpus or os.cpu_count() or 1) / 2
+
+
+def warm_due(prefs, openai_ok, status, room):
+    """Whether to get the local engine ready in the background: only when this Machine will use it and there's room."""
+    return engine_for(prefs, openai_ok) == 'local' and status['state'] in ('missing', 'failed') and room
 
 
 def pcm(data):
@@ -365,7 +387,8 @@ class Voice:
 
 
 def openai_ready(config, run=subprocess.run):
-    """Whether OpenClaw has an OpenAI key that can transcribe (a ChatGPT sign-in can't): its audio providers list."""
+    """Whether OpenClaw can transcribe with OpenAI (an API key, or a ChatGPT sign-in where the account allows it): its
+    audio providers list."""
     try:
         result = run([str(config.get('openclaw') or 'openclaw'), 'infer', 'audio', 'providers', '--json'],
                      capture_output=True, text=True, timeout=90)
@@ -386,7 +409,7 @@ def wav_bytes(frames):
 
 
 def openai_transcribe(config, root, frames, language, run=subprocess.run):
-    """Text for the PCM through the owner's OpenAI key in OpenClaw. The clip is in a private file only for the call."""
+    """Text for the PCM through the owner's OpenAI access in OpenClaw. The clip is in a private file only for the call."""
     Path(root).mkdir(parents=True, exist_ok=True, mode=0o700)
     folder = Path(tempfile.mkdtemp(prefix='clip-', dir=root))
     clip = folder / (secrets.token_hex(8) + '.wav')
