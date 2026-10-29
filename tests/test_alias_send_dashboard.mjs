@@ -13,8 +13,9 @@ const nl=await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8'),en=aw
 const aliasId='1234567890abcdef',plainId='0011223344556677',aliasRev='1234567890ab',plainRev='abcdefabcdef';
 const mailbox='sam@acme.example',alias='partnerships@acme.example';
 const body='Hi Casey,\n\nThanks for reaching out. Happy to talk about a partnership. Does Thursday work?\n\nSam';
-const reply={kind:'email',label:'Send reply',revision:aliasRev,account_id:'mail',from:alias,from_options:[mailbox,alias],to:['casey@partner.example'],cc:[],bcc:[],
-  subject:'Re: Partnership idea',body,signature:true,thread_id:'abc123',in_reply_to:'<m1@partner.example>'};
+const subject='Re: Casey (Partner) / Sam (Acme): a partnership idea, the API documentation and the test credits';
+const reply={kind:'email',label:'Send reply',revision:aliasRev,account_id:'mail',from:alias,from_options:[mailbox,alias],to:['casey@partner.example'],cc:['alex@partner.example'],bcc:[],
+  subject,body,signature:true,thread_id:'abc123',in_reply_to:'<m1@partner.example>'};
 const plain={...reply,revision:plainRev,from:mailbox,from_options:undefined,to:['robin@client.example'],subject:'Re: Invoice',body:'Hi Robin,\n\nSent it just now.\n\nSam'};
 const card=(id,title,a)=>({id,title,body:'Drafted the reply.',status:'prepared',event_ids:[1],next_action:a,next_actions:[a],
   outcome:JSON.stringify({state:'needs_you',needs:'Check the reply and send it'}),scope:'work',created_at:new Date().toISOString()});
@@ -61,6 +62,20 @@ try{
   assert.equal(await page.locator('#send-head dt').first().textContent(),language==='nl'?'Van':'From');
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
   assert.equal(await fits(page),true,`fits at ${width}x${height}`);
+  // The top reads like a compose header: From, To, Cc and Subject share one label column and one value column, the
+  // one-line rows are the same height, and the long subject wraps in full (still editable, still one line of text)
+  const top=await page.evaluate(()=>{const box=e=>e.getBoundingClientRect(),rows=[...document.querySelectorAll('#send-head>div'),document.querySelector('#send-subject-label')];
+   return {labels:rows.map(r=>Math.round(box(r.firstElementChild).left)),values:rows.map(r=>Math.round(box(r.lastElementChild).left)),heights:rows.slice(0,3).map(r=>Math.round(box(r).height)),
+    gap:Math.round(box(rows[0].lastElementChild).left-box(rows[0]).left),subject:(s=>({lines:Math.round(s.clientHeight/parseFloat(getComputedStyle(s).lineHeight)),cut:s.scrollHeight>s.clientHeight+1||s.scrollWidth>s.clientWidth+1}))(document.querySelector('#send-subject'))}});
+  assert.deepEqual(await page.locator('#send-head dt').allTextContents(),language==='nl'?['Van','Aan','Cc']:['From','To','Cc']);
+  assert.equal(new Set(top.labels).size,1,JSON.stringify(top));assert.equal(new Set(top.values).size,1,JSON.stringify(top));
+  assert.equal(new Set(top.heights).size,1,JSON.stringify(top));assert.ok(top.gap<=110,'no wide empty label column: '+top.gap);
+  assert.equal(await page.locator('#send-subject').inputValue(),subject);assert.equal(top.subject.cut,false,'the subject is not cut off');
+  if(width===390)assert.ok(top.subject.lines>=2,'the long subject wraps on a phone');
+  await page.locator('#send-subject').press('End');await page.locator('#send-subject').press('Enter');
+  await page.locator('#send-subject').evaluate(s=>{s.setRangeText('\nnext',s.value.length,s.value.length,'end');s.dispatchEvent(new Event('input',{bubbles:true}))});
+  assert.equal(await page.locator('#send-subject').inputValue(),subject+' next');
+  await page.locator('#send-subject').fill(subject);
   if(shots)await page.screenshot({path:`${shots}/from-picker-${language}-${scheme}-${width}x${height}.png`});
   if(shots&&width===390)await page.locator('#send-dialog').screenshot({path:`${shots}/from-picker-dialog-${language}-${scheme}-${width}.png`});
   // The pick stays when the rows are drawn again (Edit, ticking recipients) and goes with the approval
