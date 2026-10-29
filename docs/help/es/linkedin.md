@@ -28,6 +28,12 @@ En tu propio ordenador:
 
 Una segunda cuenta de LinkedIn tiene su propio navegador. Si LinkedIn cierra la sesión de tu Machine, consulta [Sesión cerrada en un sitio](signed-out.md).
 
+## Si LinkedIn pide un código
+
+La primera vez que tu Machine inicia sesión, LinkedIn suele enviar un código por correo. Escríbelo en la ventana de inicio de sesión, en **Código**, y pulsa **Iniciar sesión**. La página no se mueve mientras escribes.
+
+Si LinkedIn vuelve al principio, o no pasa nada en dos minutos, LinkedIn detuvo este inicio de sesión. Espera un minuto y pulsa **Reintentar**. Si LinkedIn muestra una comprobación de robot, termínala en el navegador de tu Machine.
+
 ## Quítalo
 
 - En el panel: **Conexiones**, abre LinkedIn, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda.

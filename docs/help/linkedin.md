@@ -31,6 +31,12 @@ Or run `assistant connect linkedin`.
 
 A second LinkedIn account gets a browser of its own. If LinkedIn signs your Machine out, see [Signed out of a site](signed-out.md).
 
+## If LinkedIn asks for a code
+
+LinkedIn often emails a code the first time your Machine signs in. Type it in the sign-in dialog under **Code** and press **Sign in**. The page stays put while you type.
+
+If LinkedIn goes back to the start, or nothing happens for two minutes, it stopped this sign-in. Wait a minute and press **Try again**. If LinkedIn shows a robot check, finish it in your Machine's browser.
+
 ## Remove it
 
 - In the dashboard: **Connections**, open LinkedIn, **Details**, then **Disconnect**. It stops reading. What it already brought in stays.

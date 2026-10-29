@@ -132,6 +132,51 @@ class OnboardingTest(unittest.TestCase):
         self.assertEqual([a['service'] for a in json.loads(self.path.read_text())['accounts']], ['linkedin'])
         self.assertTrue(any('waiting for you to sign in to LinkedIn on your Machine' in line for line in ui.out))
 
+    def test_a_sign_in_under_way_in_the_browser_is_left_alone_until_it_moves_on(self):
+        # Each look opens the site in the same browser: never while the owner is on its sign-in or code page there.
+        ui = FakeUI()
+        ui.wait_signin = 60
+        tabs = iter(['https://www.linkedin.com/checkpoint/challenge/pin'] * 3 + [None])
+        looks = []
+        with mock.patch.object(onboarding, 'signin_tab', side_effect=lambda *a: next(tabs)), \
+             mock.patch.object(onboarding, 'check', side_effect=lambda c, a: looks.append(1)), mock.patch.object(onboarding, 'SIGNIN_EVERY', 0):
+            error = onboarding.wait_signed_in({}, {'service': 'linkedin'}, 'LinkedIn', ui, 'linkedin_signed_out')
+        self.assertEqual((error, len(looks)), (None, 1))  # once, after the code page moved on
+        # a sign-in page left as it is (signed in another way): looked at anyway, after a while
+        looks.clear()
+        results = iter(['linkedin_signed_out', None])
+        with mock.patch.object(onboarding, 'signin_tab', return_value='https://www.linkedin.com/login'), \
+             mock.patch.object(onboarding, 'check', side_effect=lambda c, a: (looks.append(1), next(results))[1]), \
+             mock.patch.object(onboarding, 'SIGNIN_EVERY', 0.01), mock.patch.object(onboarding, 'SIGNIN_LEFT', 0.05):
+            error = onboarding.wait_signed_in({}, {'service': 'linkedin'}, 'LinkedIn', ui, 'linkedin_signed_out')
+        self.assertEqual((error, len(looks)), (None, 2))
+
+    def test_the_sign_in_tab_is_found_from_the_tab_list_only(self):
+        import http.server, threading
+        listed = [{'type': 'page', 'id': 'a', 'url': 'https://www.linkedin.com/feed/'},
+                  {'type': 'page', 'id': 'b', 'url': 'https://www.linkedin.com/checkpoint/challenge/AgE?x=1'},
+                  {'type': 'page', 'id': 'c', 'url': 'https://notlinkedin.com/login'}]
+        class Browser(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = json.dumps(listed if self.path == '/json/list' else {}).encode()
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(body)
+            def log_message(self, *_):
+                pass
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Browser)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        base = 'http://127.0.0.1:%d' % server.server_address[1]
+        account = {'service': 'linkedin', 'browser_cdp': base}
+        self.assertEqual(onboarding.signin_tab({}, account, 'linkedin'), 'https://www.linkedin.com/checkpoint/challenge/AgE')
+        listed.pop(1)
+        self.assertIsNone(onboarding.signin_tab({}, account, 'linkedin'))
+        self.assertIsNone(onboarding.signin_tab({}, {'service': 'linkedin'}, 'linkedin'))  # no browser set: not looked for
+        with mock.patch.dict(os.environ, {'LINKEDIN_INBOX_BROWSER_CDP': 'http://198.51.100.1:9222'}):
+            self.assertIsNone(onboarding.signin_tab({}, {'service': 'linkedin'}, 'linkedin'))  # this machine's only
+
     def test_a_second_browser_account_keeps_the_browser_profile_it_was_signed_in_with(self):
         self.config()
         def plugin(config, account, ui):

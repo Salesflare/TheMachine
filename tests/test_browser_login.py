@@ -35,6 +35,24 @@ PAGES = {
     '/applogin': b'''<!doctype html><title>Sign in</title><form action="/checkpoint/challenge/x" method="post">
         <input name="session_key" type="email"><input name="session_password" type="password"><button>Sign in</button></form>''',
     '/checkpoint/challenge/x': b'<!doctype html><title>Check your app</title><p>Open your app to approve this sign-in.</p>',
+    # LinkedIn's way from a new device: the password, then a code it emails, on a checkpoint page of its own
+    '/li/login': b'''<!doctype html><title>LinkedIn Login</title><form action="/checkpoint/challenge/pin" method="post">
+        <input id="username" name="session_key" type="text" autocomplete="username"><input id="password" name="session_password" type="password">
+        <button type="submit">Sign in</button></form>''',
+    '/checkpoint/challenge/pin': '''<!doctype html><meta charset="utf-8"><title>Security Verification</title><meta property="og:site_name" content="LinkedIn">
+        <main><h1>Let’s do a quick security check</h1><form id="email-pin-challenge" action="/feed" method="post">
+        <p>The verification code has been sent to j•••@example.com.</p>
+        <label for="input__email_verification_pin">Enter code</label><input id="input__email_verification_pin" name="pin" type="text" maxlength="6">
+        <button type="button" id="resend">Resend code</button><button type="submit" id="email-pin-submit-button">Submit</button></form></main>'''.encode(),
+    '/feed': b'<!doctype html><title>Feed</title><p>Home</p>',
+    # the code taken, and then the sign-in again from the start: the site stopped it
+    '/checkpoint/challenge/stop': '''<!doctype html><meta charset="utf-8"><title>Security Verification</title><form action="/li/login" method="post">
+        <p>The verification code has been sent to j•••@example.com.</p><input name="pin" id="input__email_verification_pin" maxlength="6">
+        <button type="submit">Submit</button></form>'''.encode(),
+    # a robot check after the password: nothing to type, a challenge frame on a checkpoint address
+    '/li/robot': b'''<!doctype html><title>LinkedIn Login</title><form action="/checkpoint/challenge/robot" method="post">
+        <input name="session_key" type="email"><input name="session_password" type="password"><button>Sign in</button></form>''',
+    '/checkpoint/challenge/robot': b'<!doctype html><title>Security Verification</title><iframe src="/captcha-frame" width="300" height="200"></iframe>',
 }
 
 
@@ -191,6 +209,56 @@ class FillTest(unittest.TestCase):
         self.assertEqual(done['page']['error'], "That code isn't right. Try again.")
         self.assertNotIn('000000', json.dumps(done))
         self.assertNotIn("isn't right", done['page']['ask'])
+
+
+    def test_linkedins_emailed_code_signs_in_while_a_reader_looks_in_another_tab(self):
+        # The connect looks in a tab of its own while the owner signs in. It opens behind: the sign-in tab stays in
+        # front (no flicker in the viewer, the typing stays in it) and the code goes into the page that asked for it.
+        Site.posted.clear()
+        self.open('/li/login')
+        base = self.config['browser_cdp_url']
+        [page] = browser_login.pages(self.config)
+        done = browser_login.fill(self.config, page['id'], page['host'], USER, SECRET, settle=5)
+        self.assertEqual(done['result'], 'next')
+        self.assertEqual((done['page']['code'], done['page']['code_kind'], done['page']['sent_to'], done['page']['brand']),
+                         (True, 'email', 'j•••@example.com', 'LinkedIn'))
+        target = page['id'].split(':', 1)[1]
+        reader = browser_login.browser_cdp.open_background_tab(base, 'about:blank#reader')
+        try:
+            self.assertNotEqual(reader, target)
+            self.assertEqual(browser_login.browser_cdp.evaluate(base, target, '() => document.visibilityState'), 'visible')
+            done = browser_login.fill(self.config, page['id'], page['host'], code=CODE, settle=5)
+        finally:
+            browser_login.browser_cdp.close_tab(base, reader)
+        self.assertEqual(done, {'result': 'done', 'page': None})
+        self.assertIn(('/feed', 'pin=' + CODE), Site.posted)  # its Submit, not Resend code
+
+    def test_the_site_stopping_the_sign_in_or_a_robot_check_is_said_so(self):
+        self.open('/checkpoint/challenge/stop')
+        [page] = browser_login.pages(self.config)
+        done = browser_login.fill(self.config, page['id'], page['host'], code=CODE, settle=5)
+        self.assertEqual(done['result'], 'blocked')  # back to the username and password: the dialog says so, with the form
+        self.assertTrue(done['page']['password'])
+        self.open('/li/robot')
+        [page] = browser_login.pages(self.config)
+        done = browser_login.fill(self.config, page['id'], page['host'], USER, SECRET, settle=5)
+        self.assertEqual(done['result'], 'captcha')
+        self.assertEqual(browser_login.watch(self.config, page['id']), {'state': 'captcha'})
+        self.open('/checkpoint/challenge/x')  # approving in the app: no frame, still waited on
+        tab = [t for t in browser_login.browser_cdp._http(self.config['browser_cdp_url'], '/json/list') if t.get('type') == 'page'][0]
+        self.assertEqual(browser_login.watch(self.config, '0:' + tab['id']), {'state': 'waiting'})
+
+    def test_a_tab_opened_from_the_json_endpoint_takes_the_front_a_background_one_does_not(self):
+        self.open('/news')
+        base = self.config['browser_cdp_url']
+        [front] = [t['id'] for t in browser_login.browser_cdp._http(base, '/json/list') if t.get('type') == 'page']
+        shown = lambda: browser_login.browser_cdp.evaluate(base, front, '() => document.visibilityState')
+        behind = browser_login.browser_cdp.open_background_tab(base, 'about:blank')
+        self.assertEqual(shown(), 'visible')
+        browser_login.browser_cdp.close_tab(base, behind)
+        ahead = browser_login.browser_cdp.open_tab(base, 'about:blank')  # what readers did: the owner's page went behind
+        self.assertEqual(shown(), 'hidden')
+        browser_login.browser_cdp.close_tab(base, ahead)
 
 
 class CodeKindTest(unittest.TestCase):

@@ -28,6 +28,12 @@ Sur votre propre ordinateur :
 
 Un deuxième compte LinkedIn a son propre navigateur. Si LinkedIn déconnecte votre Machine, voir [Déconnecté d’un site](signed-out.md).
 
+## Si LinkedIn demande un code
+
+La première fois que votre Machine se connecte, LinkedIn envoie souvent un code par e-mail. Saisissez-le dans la fenêtre de connexion sous **Code** et appuyez sur **Se connecter**. La page ne bouge pas pendant que vous tapez.
+
+Si LinkedIn revient au début, ou si rien ne se passe pendant deux minutes, LinkedIn a arrêté cette connexion. Attendez une minute et appuyez sur **Réessayer**. Si LinkedIn affiche une vérification anti-robot, terminez-la dans le navigateur de votre Machine.
+
 ## Le retirer
 
 - Dans le tableau de bord : **Connexions**, ouvrez LinkedIn, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste.

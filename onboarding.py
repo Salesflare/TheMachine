@@ -2065,18 +2065,53 @@ def offer_phone_skip(config, account, ui):
 
 
 SIGNIN_EVERY = 10  # seconds between looks while a connect waits on the owner signing in to the browser
+SIGNIN_LEFT = 120  # a sign-in page that has not moved for this long may have been left there: look then, and as often
+# The site's own sign-in steps (its log-in page, a checkpoint asking for a code, a challenge), per browser site
+SIGNIN_HOSTS = {'linkedin': ('linkedin.com',), 'x': ('x.com', 'twitter.com')}
+SIGNIN_STEP = re.compile(r'(?i)log-?in|sign-?in|checkpoint|challenge|/uas/|/flow/|/2fa|verif')
+
+
+def signin_tab(config, account, service):
+    """The address of a tab of the site still on a sign-in step (the owner typing a password or a code there), or None.
+    Only the browser's tab list: nothing is opened, loaded or brought to the front, and nothing on the page is read."""
+    hosts = SIGNIN_HOSTS.get(setup_of(service).get('browser') or service)
+    var = (setup_of(service).get('browser_env') or {}).get('browser_cdp')
+    base = account.get('browser_cdp') or (os.environ.get(var) if var else None) or config.get('browser_cdp_url') or ''
+    parsed = urllib.parse.urlsplit(str(base))
+    if not hosts or parsed.scheme != 'http' or parsed.hostname not in ('127.0.0.1', 'localhost', '::1'):
+        return None
+    try:
+        with urllib.request.urlopen(str(base).rstrip('/') + '/json/list', timeout=3) as reply:
+            tabs = json.loads(reply.read() or b'[]')
+    except (OSError, ValueError):
+        return None
+    for tab in tabs if isinstance(tabs, list) else []:
+        url = urllib.parse.urlsplit(str(tab.get('url') or '') if isinstance(tab, dict) else '')
+        host = (url.hostname or '').removeprefix('www.')
+        if tab.get('type') == 'page' and any(host == h or host.endswith('.' + h) for h in hosts) and SIGNIN_STEP.search(url.path):
+            return url.scheme + '://' + url.netloc + url.path
+    return None
 
 
 def wait_signed_in(config, account, name, ui, error):
     """A source read through the browser, connected before the owner signed in there: a UI that can wait (the hosted
     setup page, `ui.wait_signin` seconds) keeps looking until they are in, then the connect goes on by itself.
+    While a tab of the site is on a sign-in step (the password, the code it emailed), it is left alone: a read then
+    would open the site in the same browser in the middle of it. It looks once that tab moves on, or was left there.
     Returns the last check's error (None once signed in)."""
     ui.say(f'  waiting for you to sign in to {name} on your Machine...')
     until = time.monotonic() + float(ui.wait_signin)
+    service, step, since = account.get('service'), None, time.monotonic()
     while error and error.endswith('_signed_out') and time.monotonic() < until:
         time.sleep(SIGNIN_EVERY)
         if getattr(ui, 'cancelled', False):  # Cancel on the dashboard
             raise SetupError('Stopped')
+        now, step, was = time.monotonic(), signin_tab(config, account, service), step
+        if step != was:
+            since = now
+        if step and now - since < SIGNIN_LEFT:
+            continue
+        since = now  # left there: look again after as long
         error = check(config, account)
     if not error:
         ui.say(f'  signed in to {name}')

@@ -28,6 +28,12 @@ Auf deinem eigenen Computer:
 
 Ein zweites LinkedIn-Konto bekommt einen eigenen Browser. Wenn LinkedIn deine Machine abmeldet, siehe [Von einer Website abgemeldet](signed-out.md).
 
+## Wenn LinkedIn nach einem Code fragt
+
+Beim ersten Anmelden schickt LinkedIn oft einen Code per E-Mail. Gib ihn im Anmeldefenster unter **Code** ein und drück auf **Anmelden**. Die Seite bleibt stehen, während du tippst.
+
+Geht LinkedIn zurück zum Anfang oder passiert zwei Minuten lang nichts, hat LinkedIn die Anmeldung gestoppt. Warte eine Minute und drück auf **Erneut versuchen**. Zeigt LinkedIn eine Roboterprüfung, erledige sie im Browser deiner Machine.
+
 ## Entfernen
 
 - Im Dashboard: **Verbindungen**, LinkedIn öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.

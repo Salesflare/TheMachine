@@ -125,6 +125,21 @@ class FormTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.app.action('connect_site_signin', {'site': 'linkedin'})  # not from the dashboard
 
+    def test_a_sign_in_under_way_is_brought_back_not_started_over(self):
+        # Pressing Sign in again while LinkedIn waits for the code it emailed: that tab, as it is. Try again after
+        # LinkedIn stopped it (fresh): its sign-in page again, in that same tab.
+        cdp = assistant.browser_login.browser_cdp
+        tabs = [{'type': 'page', 'id': 'feed', 'url': 'https://www.linkedin.com/feed/'},
+                {'type': 'page', 'id': 'pin', 'url': 'https://www.linkedin.com/checkpoint/challenge/AgE'}]
+        with patch.object(cdp, '_http', return_value=tabs), patch.object(cdp, 'open_tab') as opened, \
+                patch.object(cdp, 'navigate') as navigate, patch.object(assistant.browser_viewer, 'focus') as focus:
+            self.act('connect_site_signin', {'site': 'linkedin'})
+            self.assertEqual((opened.call_count, navigate.call_count, focus.call_args.kwargs['target']), (0, 0, 'pin'))
+            self.act('connect_site_signin', {'site': 'linkedin', 'fresh': True})
+            self.assertEqual(navigate.call_args.args[1:], ('pin', 'https://www.linkedin.com/login'))
+            self.act('connect_site_signin', {'site': 'x'})  # none of X's: a new one
+            self.assertEqual(opened.call_args.args[1], 'https://x.com/i/flow/login')
+
     def test_hosted_github_whatsapp_and_the_phone_sign_in_on_the_dashboard_itself(self):
         self.app.config['manage_url'] = 'https://cp.example.org/setup'
         sources = {s['name']: s for s in self.act('connect_sources', {})['sources']}

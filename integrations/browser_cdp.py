@@ -36,6 +36,24 @@ def open_tab(base, url):
     return tab['id']
 
 
+def open_background_tab(base, url):
+    """A new tab behind the one in front, so someone looking at the browser (signing in there, in the viewer) keeps
+    their page and their typing in it. /json/new always opens in front; Target.createTarget asked through an open
+    tab can open behind it. With no tab open, or a browser that refuses it: in front, as open_tab."""
+    try:
+        pages = [t for t in _http(base, '/json/list', timeout=30) if t.get('type') == 'page' and t.get('id')]
+    except CdpError:
+        pages = []
+    for page in pages[:1]:
+        try:
+            made = _call(base, page['id'], 'Target.createTarget', {'url': url, 'background': True}, 30)
+        except (CdpError, OSError, ValueError):
+            break
+        if isinstance(made, dict) and made.get('targetId'):
+            return made['targetId']
+    return open_tab(base, url)
+
+
 def close_tab(base, target):
     try:
         _http(base, '/json/close/' + urllib.parse.quote(target, safe=''), timeout=30)
