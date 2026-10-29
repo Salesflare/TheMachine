@@ -48,7 +48,7 @@ E-Mails, die du aus einer anderen App gesendet hast, bevor deine Machine dieses 
 
 Das Nachfassen hört auf, wenn die Person antwortet, wenn das Projekt gewonnen, verloren, archiviert oder in eine geschlossene Phase verschoben wird, und wenn du einen Entwurf zurückstellst oder überspringst. Vor jedem Entwurf schaut deine Machine, ob es im Gespräch etwas Neueres gibt, damit sie niemanden nervt, der schon woanders geantwortet hat.
 
-Nach dem letzten Nachfassen ohne Antwort zeigt das Projekt „Keine Antwort nach 3 Mal Nachfassen“ und wechselt zu Ins Stocken geraten oder abgelehnt, wenn das an ist.
+Nach dem letzten Nachfassen ohne Antwort zeigt das Projekt „Keine Antwort nach 3 Mal Nachfassen“ und wechselt zu Ins Stocken geraten oder abgelehnt, wenn das an ist. Gestoppt, bevor eins rausging, steht dort „Nachfassen gestoppt“, und es bleibt in seiner Phase.
 
 Kam ihre E-Mail zurück und gibt es eine andere Adresse, geht das Nachfassen dorthin ("Zurückgekommen, jetzt an <Adresse>"). Ein Entwurf, dessen Adresse vor dem Senden zurückkommt, wird angehalten: "Nicht gesendet: <Adresse> kam zurück", und geht an die andere Adresse, wo er auf dein Senden wartet.
 

@@ -48,7 +48,7 @@ E-mails die je uit een andere app stuurde, voor je Machine die mailbox las, tell
 
 Opvolging stopt als ze antwoorden, als het project gewonnen, verloren, gearchiveerd of naar een gesloten fase verplaatst is, en als je er een snoozet of overslaat. Voor hij iets opstelt, kijkt je Machine of er iets nieuwers in het gesprek staat, zodat hij niemand lastigvalt die al ergens anders antwoordde.
 
-Na de laatste opvolging zonder antwoord toont het project "Geen antwoord na 3 opvolgingen" en gaat het naar Vastgelopen of afgewezen als dat aanstaat.
+Na de laatste opvolging zonder antwoord toont het project "Geen antwoord na 3 opvolgingen" en gaat het naar Vastgelopen of afgewezen als dat aanstaat. Gestopt voor er een wegging, dan staat er "Opvolging gestopt" en blijft het in zijn fase.
 
 Kwam hun e-mail terug en is er een ander adres, dan gaat de opvolging daarheen ("Teruggekomen, nu naar <adres>"). Een concept waarvan het adres terugkomt voor het vertrekt, wordt tegengehouden: "Niet verstuurd: <adres> kwam terug", en gaat naar hun andere adres, waar het wacht op jouw Versturen.
 

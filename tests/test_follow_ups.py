@@ -829,18 +829,29 @@ class FollowUps(unittest.TestCase):
         self.assertEqual((card['state'], card['why'], card['status']), ('stopped', 'owner', 'rejected'))
         self.assertEqual(self.jobs(), [])
         with self.store.connect() as db:
+            # None went out yet: "Follow-ups stopped", and the project stays in its stage
             self.assertEqual(dict(db.execute('SELECT n,moved,judged FROM follow_up_ends WHERE project_id=?', (self.acme,)).fetchone()),
-                             {'n': 0, 'moved': 1, 'judged': 0})  # none went out yet
+                             {'n': 0, 'moved': 0, 'judged': 0})
+            self.assertEqual(db.execute('SELECT stage FROM projects WHERE id=?', (self.acme,)).fetchone()[0], 'Invited')
+            self.assertEqual(db.execute('SELECT count(*) FROM project_moves WHERE project_id=?', (self.acme,)).fetchone()[0], 0)
             self.assertEqual(db.execute("SELECT source,feedback FROM decisions WHERE suggestion_id=? AND choice='reject'", (acme,)).fetchone()[:],
                              ('dashboard', 'Follow-ups stopped here.'))
-            # Moved to Stalled or declined: it comes back once the owner moves it out again
-            self.assertFalse(follow_ups.can_bring_back(db, acme))
-            db.execute("UPDATE projects SET stage='Invited' WHERE id=?", (self.acme,))
             self.assertEqual(follow_ups.activity(db, self.acme)[0]['back'], acme)
         app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=True)
         with self.store.connect() as db:
             self.assertIsNone(db.execute('SELECT 1 FROM follow_up_ends WHERE project_id=?', (self.acme,)).fetchone())
         self.assertEqual(next(c['state'] for c in self.cards() if c['suggestion_id'] == acme), 'open')
+        # Once one went out, stopping moves it to Stalled or declined as the setting says; it comes back once moved out again
+        with self.store.connect() as db:
+            db.execute('UPDATE follow_up_cards SET n=2 WHERE suggestion_id=?', (kim,))
+        app.action('follow_up_end', {'id': kim}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual(dict(db.execute('SELECT n,moved FROM follow_up_ends WHERE project_id=?', (self.kim,)).fetchone()), {'n': 1, 'moved': 1})
+            self.assertEqual(tuple(db.execute('SELECT stage,stage_reason FROM projects WHERE id=?', (self.kim,)).fetchone()),
+                             (graph.STALLED, 'No reply after 1 follow-up'))
+            self.assertFalse(follow_ups.can_bring_back(db, kim))
+            db.execute("UPDATE projects SET stage='Invited' WHERE id=?", (self.kim,))
+            self.assertTrue(follow_ups.can_bring_back(db, kim))
 
     def test_the_owners_word_beats_a_judgment_and_a_skip(self):
         self.turn_on(min=0, max=3)

@@ -119,6 +119,7 @@ try{
   assert.match(await page.locator('.tile[data-node="project:5"] .tile-fu').textContent(),/^Next follow-up: \w{3}$/);
   assert.equal(await page.locator('.tile[data-node="project:1"] .tile-fu').textContent(),'Follow-up ready');
   assert.equal(await page.locator('.tile[data-node="project:6"] .tile-fu').textContent(),'No reply after 3 follow-ups');
+  assert.equal(await page.evaluate(()=>fuNoReply(0)),'Follow-ups stopped');  // stopped before any went out
   assert.equal(await page.locator('.tile[data-node="project:7"] .tile-fu').count(),0);
   await fits(page,'1440 board');await shot(page,'board-1440-light');
   // The board's settings panel: both pairs on two rows, stages behind Customize, channels, Stalled, asking first
