@@ -4,7 +4,7 @@ area: cards
 summary: Envoyez une tâche de code à Claude Code ou Codex. Le résultat revient sur la tâche.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
-site: Connect Codex, Add more any time
+site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
 ---
 ## Transférer une tâche
@@ -26,7 +26,7 @@ Une mission n’envoie jamais rien à votre place.
 
 Dans **Paramètres**, **Modèle**, sous **Codex et Claude Code** :
 
-- **Codex** : où il tourne. Sur votre ordinateur, il n’a besoin de rien de plus ici ; **Modifier** ouvre votre page de configuration.
+- **Codex** : où il tourne. Sur votre Machine ou votre ordinateur, il n’a besoin de rien de plus ici ; **Modifier** ouvre votre page de configuration.
 - **Codex cloud** : son identifiant d’environnement, depuis Codex, et éventuellement une **Branche** de départ.
 - **Claude Code** : le lien d’une session Claude Code.
 
@@ -36,7 +36,10 @@ Claude renvoie son résultat via le connecteur The Machine. Ajoutez-le une fois 
 
 Sur une Machine hébergée, choisissez-le sur votre page de configuration, sous **Ajoutez-en d’autres à tout moment**, **Codex** :
 
-- **Sur mon ordinateur** (par défaut) : la mission tourne sur votre propre ordinateur, avec le Codex connecté là-bas. Rien de Codex n’est sur votre serveur, et la mission est chiffrée pour cet ordinateur uniquement : le Network la transmet mais ne peut pas la lire. Installez The Machine sur cet ordinateur, associez-le sur la page de votre compte et lancez `codex login` dessus. Laissez The Machine tourner dessus. La mission apparaît comme un fil dans l’app Codex sur cet ordinateur, et le résultat revient sur la tâche. Quand l’ordinateur est éteint, les missions attendent son retour.
-- **Cloud Codex** : la mission tourne dans le cloud d’OpenAI. Appuyez sur **Connecter Codex**. Il utilise le même abonnement ChatGPT que votre modèle, et OpenAI demande un code de plus, pour Codex. Saisissez ensuite l’environnement cloud Codex dans les Paramètres.
+- **Sur votre Machine** (par défaut) : appuyez sur **Connecter Codex** et saisissez chez OpenAI le code affiché. Il utilise le même abonnement ChatGPT que votre modèle, et les missions tournent sur votre Machine. Aucun terminal requis.
+- **Autres options**, **Sur mon ordinateur** : la mission tourne sur votre propre ordinateur, avec le Codex connecté là-bas. Rien de Codex n’est sur votre serveur, et la mission est chiffrée pour cet ordinateur uniquement : le Network la transmet mais ne peut pas la lire. Installez The Machine sur cet ordinateur, associez-le sur la page de votre compte et lancez `codex login` dessus. Laissez The Machine tourner dessus. La mission apparaît comme un fil dans l’app Codex sur cet ordinateur, et le résultat revient sur la tâche. Quand l’ordinateur est éteint, les missions attendent son retour.
+- **Autres options**, **Codex cloud** : la mission tourne dans le cloud d’OpenAI. Appuyez sur **Connecter Codex**. Il utilise le même abonnement ChatGPT que votre modèle, et OpenAI demande un code de plus, pour Codex. Saisissez ensuite l’environnement cloud Codex dans les Paramètres.
+
+Ou connectez-vous depuis votre tableau de bord : **Connexions**, **+ Ajouter**, **Codex**, **Obtenir un code**. Une Machine auto-hébergée fait cette même connexion elle-même.
 
 Sur une Machine hébergée, Codex et Claude Code apparaît dès que GitHub ou Codex est connecté. La section apparaît aussi sur les configurations qui exécutent les missions ailleurs. Plus d’infos dans le [guide des agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

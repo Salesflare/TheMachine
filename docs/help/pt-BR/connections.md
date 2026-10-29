@@ -12,7 +12,7 @@ A aba **Conexões** agrupa suas fontes em **E-mail e agenda**, **Chat** e **Outr
 
 ## Adicionar uma
 
-Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Depois de conectada, sua Machine reinicia para começar a ler a fonte e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Documentos, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.
+Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Depois de conectada, sua Machine reinicia para começar a ler a fonte e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Documentos, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, o Codex, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.
 
 **Reconectar** em uma fonte e em **Precisa de você** abre o mesmo formulário. No seu próprio computador, `assistant connect` faz o mesmo em um terminal.
 

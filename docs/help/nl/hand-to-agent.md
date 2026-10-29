@@ -4,7 +4,7 @@ area: cards
 summary: Stuur een programmeer-to-do naar Claude Code of Codex. Het resultaat komt terug op de to-do.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
-site: Connect Codex, Add more any time
+site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
 ---
 ## Een to-do overdragen
@@ -26,7 +26,7 @@ Een opdracht verstuurt nooit iets voor je.
 
 In **Instellingen**, **Model**, onder **Codex en Claude Code**:
 
-- **Codex**: waar het draait. Op je computer is hier niets meer nodig; **Wijzigen** opent je setuppagina.
+- **Codex**: waar het draait. Op je Machine of je computer is hier niets meer nodig; **Wijzigen** opent je setuppagina.
 - **Codex cloud**: de id van de omgeving, uit Codex, en eventueel een **Branch** om van te starten.
 - **Claude Code**: de link van een Claude Code-sessie.
 
@@ -36,7 +36,10 @@ Claude stuurt zijn resultaat terug via de connector van The Machine. Voeg die é
 
 Op een gehoste Machine kies je het op je setuppagina, onder **Voeg later meer toe**, **Codex**:
 
-- **Op mijn computer** (standaard): de opdracht draait op je eigen computer, met de Codex waarmee daar ingelogd is. Er staat niets van Codex op je server, en de opdracht is versleuteld voor alleen die computer: het Network geeft hem door maar kan hem niet lezen. Installeer The Machine op die computer, koppel hem op je pagina Account, en voer daar `codex login` uit. Laat The Machine erop draaien. De opdracht verschijnt als thread in de Codex-app op die computer, en het resultaat komt terug op de to-do. Staat de computer uit, dan wachten opdrachten tot hij terug is.
-- **Codex-cloud**: de opdracht draait in de cloud van OpenAI. Druk op **Codex koppelen**. Het gebruikt hetzelfde ChatGPT-abonnement als je model, en OpenAI vraagt nog één code, voor Codex. Vul daarna de Codex-cloudomgeving in bij Instellingen.
+- **Op je Machine** (standaard): druk op **Codex koppelen** en vul de code die verschijnt in bij OpenAI. Het gebruikt hetzelfde ChatGPT-abonnement als je model, en opdrachten draaien op je Machine. Geen terminal nodig.
+- **Andere manieren**, **Op mijn computer**: de opdracht draait op je eigen computer, met de Codex waarmee daar ingelogd is. Er staat niets van Codex op je server, en de opdracht is versleuteld voor alleen die computer: het Network geeft hem door maar kan hem niet lezen. Installeer The Machine op die computer, koppel hem op je pagina Account, en voer daar `codex login` uit. Laat The Machine erop draaien. De opdracht verschijnt als thread in de Codex-app op die computer, en het resultaat komt terug op de to-do. Staat de computer uit, dan wachten opdrachten tot hij terug is.
+- **Andere manieren**, **Codex cloud**: de opdracht draait in de cloud van OpenAI. Druk op **Codex koppelen**. Het gebruikt hetzelfde ChatGPT-abonnement als je model, en OpenAI vraagt nog één code, voor Codex. Vul daarna de Codex-cloudomgeving in bij Instellingen.
+
+Of log in vanaf je dashboard: **Koppelingen**, **+ Toevoegen**, **Codex**, **Code ophalen**. Een zelf gehoste Machine doet die login zelf.
 
 Op een gehoste Machine verschijnt Codex en Claude Code zodra GitHub of Codex gekoppeld is. Het verschijnt ook bij setups die opdrachten elders draaien. Meer in de [gids over agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

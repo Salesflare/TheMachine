@@ -12,11 +12,11 @@ The **Connections** tab groups your sources into **Mail and calendar**, **Chat**
 
 ## Add one
 
-Open **+ Add** and pick a source. It shows one short form, like your setup page: what it needs (a key, an address), and **Work** with its company or **Personal**. Press **Connect**. A source that signs in, like LinkedIn or X, opens its sign-in on your Machine and goes on by itself once you're in. GitHub and WhatsApp show a code to enter, and Telegram chats a QR code to scan.
+Open **+ Add** and pick a source. It shows one short form, like your setup page: what it needs (a key, an address), and **Work** with its company or **Personal**. Press **Connect**. A source that signs in, like LinkedIn or X, opens its sign-in on your Machine and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats a QR code to scan.
 
 **Cancel** stops adding it. Once it is connected, your Machine restarts to start reading it, then opens the new card, which shows how its first sync goes.
 
-On a hosted Machine, Google, Microsoft, Docs, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal**, press **Sign in**, and you come back to this form, which shows how connecting goes, or why it didn't work. GitHub, WhatsApp, Telegram chats and your Android phone show their code right in this form.
+On a hosted Machine, Google, Microsoft, Docs, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal**, press **Sign in**, and you come back to this form, which shows how connecting goes, or why it didn't work. GitHub, WhatsApp, Codex, Telegram chats and your Android phone show their code right in this form. The Codex tile says whether Codex is signed in.
 
 **Reconnect** on a source and in **Needs you** opens the same form. On your own computer, `assistant connect` does the same in a terminal.
 

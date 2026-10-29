@@ -12,7 +12,7 @@ Der Tab **Verbindungen** gruppiert deine Quellen in **Mail und Kalender**, **Cha
 
 ## Eine hinzufügen
 
-Öffne **+ Hinzufügen** und wähle eine Quelle. Sie fragt nach dem, was sie braucht, eine Frage nach der anderen. **Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft. Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Dokumente, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, melde dich an, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft. GitHub, WhatsApp, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular.
+Öffne **+ Hinzufügen** und wähle eine Quelle. Sie fragt nach dem, was sie braucht, eine Frage nach der anderen. **Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft. Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Dokumente, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, melde dich an, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular.
 
 **Neu verbinden** bei einer Quelle und in **Braucht dich** öffnet dasselbe Formular. Auf deinem eigenen Computer macht `assistant connect` dasselbe im Terminal.
 

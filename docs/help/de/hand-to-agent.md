@@ -4,7 +4,7 @@ area: cards
 summary: Schick eine Programmieraufgabe an Claude Code oder Codex. Das Ergebnis kommt bei der Aufgabe zurück.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
-site: Connect Codex, Add more any time
+site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
 ---
 ## Eine Aufgabe übergeben
@@ -26,7 +26,7 @@ Ein Auftrag sendet nie etwas für dich.
 
 In **Einstellungen**, **Modell**, unter **Codex und Claude Code**:
 
-- **Codex**: wo es läuft. Auf deinem Computer braucht es hier nichts weiter; **Ändern** öffnet deine Einrichtungsseite.
+- **Codex**: wo es läuft. Auf deiner Machine oder deinem Computer braucht es hier nichts weiter; **Ändern** öffnet deine Einrichtungsseite.
 - **Codex Cloud**: die ID ihrer Umgebung, aus Codex, und optional ein **Branch** als Ausgangspunkt.
 - **Claude Code**: der Link einer Sitzung in Claude Code.
 
@@ -36,7 +36,10 @@ Claude schickt sein Ergebnis über den Connector von The Machine zurück. Füge 
 
 Auf einer gehosteten Machine wählst du es auf deiner Einrichtungsseite, unter **Jederzeit mehr hinzufügen**, **Codex**:
 
-- **Auf meinem Computer** (die Voreinstellung): Der Auftrag läuft auf deinem eigenen Computer, mit dem Codex, das dort angemeldet ist. Nichts von Codex liegt auf deinem Server, und der Auftrag ist nur für diesen Computer verschlüsselt: Das Network gibt ihn weiter, kann ihn aber nicht lesen. Installiere The Machine auf diesem Computer, kopple ihn auf deiner Kontoseite und führe dort `codex login` aus. Lass The Machine darauf laufen. Der Auftrag erscheint als Thread in der Codex-App auf diesem Computer, und das Ergebnis kommt bei der Aufgabe zurück. Ist der Computer aus, warten Aufträge, bis er wieder da ist.
-- **Codex-Cloud**: Der Auftrag läuft in der Cloud von OpenAI. Tippe auf **Codex verbinden**. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und OpenAI fragt nach einem weiteren Code, für Codex. Gib dann die Cloud-Umgebung in Codex in den Einstellungen ein.
+- **Auf deiner Machine** (die Voreinstellung): Tippe auf **Codex verbinden** und gib den angezeigten Code bei OpenAI ein. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und Aufträge laufen auf deiner Machine. Kein Terminal nötig.
+- **Andere Wege**, **Auf meinem Computer**: Der Auftrag läuft auf deinem eigenen Computer, mit dem Codex, das dort angemeldet ist. Nichts von Codex liegt auf deinem Server, und der Auftrag ist nur für diesen Computer verschlüsselt: Das Network gibt ihn weiter, kann ihn aber nicht lesen. Installiere The Machine auf diesem Computer, kopple ihn auf deiner Kontoseite und führe dort `codex login` aus. Lass The Machine darauf laufen. Der Auftrag erscheint als Thread in der Codex-App auf diesem Computer, und das Ergebnis kommt bei der Aufgabe zurück. Ist der Computer aus, warten Aufträge, bis er wieder da ist.
+- **Andere Wege**, **Codex Cloud**: Der Auftrag läuft in der Cloud von OpenAI. Tippe auf **Codex verbinden**. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und OpenAI fragt nach einem weiteren Code, für Codex. Gib dann die Cloud-Umgebung in Codex in den Einstellungen ein.
+
+Oder melde dich im Dashboard an: **Verbindungen**, **+ Hinzufügen**, **Codex**, **Code holen**. Eine selbst gehostete Machine führt dieselbe Anmeldung selbst aus.
 
 Auf einer gehosteten Machine erscheint Codex und Claude Code, sobald GitHub oder Codex verbunden ist. Es erscheint auch bei Setups, die Aufträge woanders ausführen. Mehr dazu im [Agents-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

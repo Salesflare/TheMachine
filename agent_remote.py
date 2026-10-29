@@ -248,8 +248,8 @@ def stopped(jobs, row, result):
 
 
 def where(jobs):
-    """Where the owner's Codex jobs go, from the Network: {'codex': 'device'|'cloud'|None, 'devices': [...]}, or None
-    when it can't say now (the last answer stays)."""
+    """Where the owner's Codex jobs go, from the Network: {'codex': 'machine'|'device'|'cloud'|None, 'devices': [...]},
+    or None when it can't say now (the last answer stays)."""
     own = (aj.settings(jobs.config) or {}).get('codex')
     cloud = isinstance(own, dict) and own.get('place') == 'cloud' and bool(own.get('env'))
     try:
@@ -259,7 +259,7 @@ def where(jobs):
         return None
     devices = [{'label': str(d.get('label') or '')[:60], 'codex': bool(d.get('codex')), 'online': bool(d.get('online'))}
                for d in found.get('devices') or [] if isinstance(d, dict)][:10]
-    return {'codex': found.get('codex') if found.get('codex') in ('device', 'cloud') else None, 'devices': devices}
+    return {'codex': found.get('codex') if found.get('codex') in ('machine', 'device', 'cloud') else None, 'devices': devices}
 
 
 class DeviceCodex:

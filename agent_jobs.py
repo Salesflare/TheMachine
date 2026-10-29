@@ -14,6 +14,8 @@ Where a job runs (`place`):
   result comes back through The Machine's claude.ai connector (`report_result`), with a token for that job only.
 - `cloud` (Codex, hosted Machines): `codex cloud exec`, polled with `codex cloud status` and `codex cloud diff`. It runs
   in Codex cloud, not on the owner's computer, and the card says so.
+- `local` on a hosted Machine (Codex, "Where Codex runs: On your Machine", the default): Codex's own device sign-in on
+  the server (the setup page, or Connections, + Add, Codex), and the job runs there as on any computer.
 - `device` (Codex, hosted Machines, "Where Codex runs: On my computer" on the setup page): the job goes over The Machine
   Network to the self-hosted Machine the owner paired on their own computer, which runs it there as a `local` job with
   the Codex signed in on that computer, and reports the result back into the job's ticket (agent_remote.py). The hosted
@@ -115,8 +117,8 @@ def device_label(where):
 def tools(config, where=None):
     """The tools this Machine can hand jobs to, with where they run: [{id, name, place, device?}]. A hosted Machine
     (one with a manage_url) has no local CLI of the owner's: there Claude needs its paired session and Codex either the
-    owner's own computer (`where`, what the Network says they chose: {'codex': 'device', 'devices': [...]}) or its
-    cloud environment set up first."""
+    owner's own computer (`where`, what the Network says they chose: {'codex': 'device', 'devices': [...]}), the
+    Codex signed in on the server itself ('machine': `local`) or its cloud environment set up first."""
     found = settings(config)
     if found is None:
         return []
@@ -132,6 +134,10 @@ def tools(config, where=None):
             continue
         if tool == 'codex' and own.get('place') == 'device':
             continue  # only a hosted Machine hands Codex jobs to the owner's computer
+        if tool == 'codex' and hosted and (where or {}).get('codex') == 'machine' and not own.get('place'):
+            if find(tool, own.get('command')):  # Codex signed in on the server: it runs here
+                out.append({'id': tool, 'name': name, 'place': 'local'})
+            continue
         place = own.get('place') or ('remote' if tool == 'claude' else 'cloud') if hosted else own.get('place') or 'local'
         if place not in PLACES[tool] or not find(tool, own.get('command')):
             continue
