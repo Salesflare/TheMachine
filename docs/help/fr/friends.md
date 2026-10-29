@@ -18,7 +18,7 @@ Dans le volet Network :
 - « Vérifier lesquels de mes contacts ont une Machine » suggère des personnes que vous connaissez.
 - « Laisser les personnes qui ont mon e-mail me trouver » leur permet de vous trouver.
 
-Les deux sont activés par défaut, et désactivés au niveau de sécurité Prudent. Désactivez-les quand vous voulez ; votre choix est conservé.
+Les deux sont activés par défaut, et désactivés au niveau de sécurité Prudent. Désactivez-les quand vous voulez ; votre choix est conservé. On peut vous trouver par votre e-mail de connexion et vos adresses connectées, sauf les adresses partagées comme info@, qui restent désactivées jusqu’à ce que vous les activiez.
 
 Les personnes que vous connaissez et qui sont sur le Network sont suggérées dès que vous l’activez, et quand quelqu’un le rejoint plus tard. Une correspondance propose Se connecter, Pas maintenant ou **Ne jamais suggérer**. **Quitter le Network** vous en retire.
 

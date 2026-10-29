@@ -504,7 +504,9 @@ block. No card.
   when to look again, your Machine asks every 15 minutes in which of 256 buckets someone became findable, nothing more.
 - **Let people who have my email find me** makes your account email findable that way, and only by people who already
   have it, plus the addresses of the mail and calendar accounts your Machine signed in to. The Fleet tab lists them
-  under **Findable by**; untick any you'd rather keep out. The Network stores those only blinded. Someone's sign-in
+  under **Findable by**; untick any you'd rather keep out. Shared addresses are listed off, marked "Shared address": a
+  role or team inbox by its name (info@, sales@, support@), a mailbox shared from a Fleet, an address a Fleet teammate
+  also has, or one marked as the team's in Settings, Account. Tick one to be findable by it anyway; your choice stays. The Network stores those only blinded. Someone's sign-in
   email only ever finds them, and an address that two accounts list finds neither. It needs a username.
 
 A match becomes a card in Suggestions right away when it is new: the contacts already on the Network when you turn

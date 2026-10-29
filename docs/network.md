@@ -24,7 +24,8 @@ how messages stay reliable, and where it's going.
 - **Finding people you know** (docs/fleet.md) is on by default at the Standard security level and off at Careful;
   either switch can be turned off any time. Contacts are looked up blinded (private set
   intersection), so the Network never sees your address book. Being findable covers your account email and the
-  addresses of the mail accounts your Machine connected, each of which you can turn off; the Network keeps those only
+  addresses of the mail accounts your Machine connected, except shared ones (info@, sales@, a team inbox, an address a
+  teammate also has), which stay off until you turn them on; each can be turned off; the Network keeps those only
   blinded and learns which addresses matched people who are findable.
 - **Your own addresses.** A self-hosted Machine tells the Network the mail addresses of its work accounts (so teammates'
   Machines know who knows whom) and its dashboard's https address when you set `dashboard_host`, so your Account page

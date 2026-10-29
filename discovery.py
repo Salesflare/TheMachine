@@ -9,7 +9,8 @@ so once, quietly: a line in the Fleet log and in the Fleet tab's Network block, 
   them to its own secret and returns them with its (blinded) list of people who are findable; the Machine
   compares. Only the matches are then looked up by address, to learn their username and name.
 - Let people who have my email find me: the Network adds the owner's account email to that list, and the addresses
-  of the mail and calendar accounts this Machine connected (it says which; each can be turned off in the Fleet tab).
+  of the mail and calendar accounts this Machine connected (it says which; each can be turned off in the Fleet tab),
+  except shared ones (info@, sales@, a team inbox: shared_addresses), which stay off until the owner turns one on.
   The Network keeps those blinded only, and an address that is someone else's sign-in finds nobody.
 
 Someone in a Work or Family Fleet with the owner is connected already: never suggested (nor by the Network, which
@@ -215,9 +216,28 @@ class Discovery:
                 found.append(email)
         return found
 
+    def shared_addresses(self):
+        """The connected addresses other people read too, so not findable unless the owner turns one on: a role or team
+        inbox by its name (info@, sales@, support@: own_addresses.ROLE), a mailbox shared from a Fleet, an address a
+        Fleet teammate also has, and one the owner or the Machine marked as the team's or shared (Settings, Account)."""
+        import own_addresses as known
+        out = {e for e in self.own_addresses() if known.role_like(e)}
+        out |= {normal(a.get('email')) for a in self.config.get('accounts', []) if isinstance(a, dict) and a.get('shared')}
+        out |= self.fleet_mates()[1]
+        try:
+            with self.connect() as db:
+                known.ensure(db)
+                out |= known.team(db, self.config)
+                out |= {r[0] for r in db.execute("SELECT address FROM own_addresses WHERE state='shared'")}
+        except Exception:  # noqa: BLE001 - no address table yet: by name and Fleet only
+            pass
+        return out & set(self.own_addresses())
+
     def _findable_wanted(self):
-        off = set(self.network_settings().get('address_off') or [])
-        return [e for e in self.own_addresses() if e not in off]
+        """The connected addresses to be findable by: each one the owner turned on, and the rest unless turned off or shared."""
+        found = self.network_settings()
+        off, on, shared = set(found.get('address_off') or []), set(found.get('address_on') or []), self.shared_addresses()
+        return [e for e in self.own_addresses() if e in on or (e not in off and e not in shared)]
 
     def send_findable(self):
         """Tell the Network which connected addresses the owner can be found by (the ones not turned off)."""
@@ -438,8 +458,10 @@ class Discovery:
         if do in ('address_on', 'address_off'):
             if email not in self.own_addresses():
                 raise ValueError('Not one of your connected addresses')
-            off = set(self.network_settings().get('address_off') or []) - {email} | ({email} if do == 'address_off' else set())
-            self._set_network(address_off=sorted(off))
+            found = self.network_settings()  # the owner's word on this address, kept whatever it looks like
+            off = set(found.get('address_off') or []) - {email} | ({email} if do == 'address_off' else set())
+            on = set(found.get('address_on') or []) - {email} | ({email} if do == 'address_on' else set())
+            self._set_network(address_off=sorted(off), address_on=sorted(on))
             if self.network_settings().get('discoverable'):
                 self.send_findable()
             with self.connect() as db:
@@ -500,7 +522,9 @@ class Discovery:
                       if r['status'] not in ('new', 'later') or not self.in_my_fleet(mates, r['username'], r['email'])]
         findable, off, account = set(found.get('findable') or []), set(found.get('address_off') or []), found.get('account_email')
         addresses = [{'email': account, 'account': True, 'on': True, 'findable': account in findable}] if account else []
-        addresses += [{'email': e, 'account': False, 'on': e not in off, 'findable': e in findable} for e in self.own_addresses() if e != account]
+        wanted, shared = set(self._findable_wanted()), self.shared_addresses()
+        addresses += [{'email': e, 'account': False, 'on': e in wanted, 'findable': e in findable, 'shared': e in shared}
+                      for e in self.own_addresses() if e != account]
         # Turned on by default (not by the owner) in the last DEFAULT_NOTE_DAYS: the Network block says so, with Turn off
         note = found.get('default_at') if found.get('default_on') and found.get('discoverable') and 'discoverable' not in self.network_chosen() \
             and not self._ago(found.get('default_at'), DEFAULT_NOTE_DAYS * 86400) else None

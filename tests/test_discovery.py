@@ -454,6 +454,38 @@ class Discovery(unittest.TestCase):
         self.fleet.network_action('discoverable_off')
         self.assertEqual(self.fleet.network_view()['addresses'][0]['findable'], False)
 
+    def test_shared_addresses_stay_off_unless_the_owner_turns_one_on(self):
+        """Findable by the sign-in and every connected address, except shared ones: a role or team inbox by its name,
+        one a Fleet teammate also has, one marked as the team's in Settings. Listed off, with the reason."""
+        self.fleet.config = {**self.fleet.config, 'accounts': self.fleet.config['accounts'] + [
+            {'id': 'info', 'email': 'info@acme.example', 'transport': 'gog'}, {'id': 'desk', 'email': 'desk@acme.example', 'transport': 'gog'},
+            {'id': 'pat', 'email': 'pat@acme.example', 'transport': 'gog'}]}
+        with self.store.connect() as db:
+            tf.a.own_addresses.ensure(db)
+            db.execute("INSERT INTO own_address_choices(address,choice,at) VALUES('desk@acme.example','team',?)", (discovery.now(),))
+        self.fleet.discovery_round()  # on by default
+        sent = [b for b in self.relay.sent('/discover') if b['action'] == 'discoverable'][-1]
+        self.assertEqual(sent['emails'], ['owner@acme.example', 'owner@gmail.com'])
+        view = {a['email']: (a['on'], a['shared']) for a in self.fleet.network_view()['addresses'] if not a['account']}
+        self.assertEqual(view, {'owner@gmail.com': (True, False), 'info@acme.example': (False, True), 'desk@acme.example': (False, True),
+                                'pat@acme.example': (False, True)})  # pat: the Work Fleet teammate's address
+        # The owner turns one on: kept, whatever it looks like
+        self.fleet.network_action('address_on', 'info@acme.example')
+        self.assertIn('info@acme.example', self.relay.sent('/discover')[-1]['emails'])
+        self.fleet.discovery_round()
+        self.assertIn('info@acme.example', self.fleet._findable_wanted())
+        self.fleet.network_action('address_off', 'info@acme.example')
+        self.assertNotIn('info@acme.example', self.relay.sent('/discover')[-1]['emails'])
+
+    def test_upgrade_stops_a_shared_address_the_owner_never_chose(self):
+        """A Machine findable before by every connected address: its next round sends them again without the shared ones."""
+        self.fleet.config = {**self.fleet.config, 'accounts': self.fleet.config['accounts'] + [{'id': 'sales', 'email': 'sales@acme.example', 'transport': 'gog'}]}
+        everything = ['owner@acme.example', 'owner@gmail.com', 'sales@acme.example']
+        self.fleet.set_meta('network', {'find': True, 'discoverable': True, 'findable': everything, 'findable_sent': everything,
+                                        'findable_at': discovery.now(), 'account_email': 'owner@acme.example'})
+        self.fleet.discovery_round()
+        self.assertEqual([b for b in self.relay.sent('/discover') if b['action'] == 'discoverable'][-1]['emails'], ['owner@acme.example', 'owner@gmail.com'])
+
     def test_group_matches_the_network(self):
         a, items, buckets = discovery.blind(['x@example.com'], secret=7)
         self.assertEqual(items, [discovery.hexed(pow(discovery.to_group('X@Example.com '), 7, discovery.P))])
