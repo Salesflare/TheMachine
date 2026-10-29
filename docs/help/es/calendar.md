@@ -37,6 +37,8 @@ Una sala de reuniones reservada aparece en el lugar, nunca como persona ni en tu
 
 Los detalles de una reunión tienen dos partes. **Notas** es el resumen: decisiones y tareas. **Transcripción** es lo que se dijo, palabra por palabra. Empieza plegada, con su duración; **Mostrar** la abre.
 
+Si no cargan (por ejemplo, mientras tu Machine se reinicia), la reunión lo vuelve a intentar sola durante unos treinta segundos, y otra vez cuando vuelves a la ventana. Después lo dice, con **Reintentar**.
+
 Cada una tiene su propio **Añadir notas** o **Añadir transcripción**, **Subir archivo** para un archivo Markdown o de texto, **Editar** y **Quitar** (toca dos veces). Lo que va en una se queda ahí. En una reunión que puedes cambiar, **Notas** debajo de su formulario las abre.
 
 Con [Zoom](zoom.md) o [Google Meet](google-meet.md) conectado, sus notas aparecen en Notas y su transcripción en Transcripción, marcadas **De Zoom** o **De Google Meet**. Nunca reemplazan lo que añadiste: cuando están los dos, se ven los dos.

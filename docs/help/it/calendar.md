@@ -37,6 +37,8 @@ Una sala riunioni prenotata compare nel luogo, mai come persona né nel tuo Grap
 
 I dettagli di una riunione hanno due parti. **Note** è il riepilogo: decisioni e azioni. **Trascrizione** è ciò che è stato detto, parola per parola. All’inizio è chiusa, con la sua durata; **Mostra** la apre.
 
+Se non si caricano (per esempio mentre la tua Machine si riavvia), la riunione riprova da sola per circa mezzo minuto, e di nuovo quando torni alla finestra. Dopo lo dice, con **Riprova**.
+
 Ognuna ha il suo **Aggiungi note** o **Aggiungi trascrizione**, **Carica file** per un file Markdown o di testo, **Modifica** e **Rimuovi** (tocca due volte). Quello che va in una resta lì. Su una riunione che puoi modificare, **Note** sotto il suo modulo le apre.
 
 Con [Zoom](zoom.md) o [Google Meet](google-meet.md) collegato, le sue note compaiono in Note e la sua trascrizione in Trascrizione, segnate **Da Zoom** o **Da Google Meet**. Non sostituiscono mai ciò che hai aggiunto: quando ci sono entrambi, si vedono entrambi.

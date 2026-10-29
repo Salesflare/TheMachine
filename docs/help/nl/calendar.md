@@ -37,6 +37,8 @@ Een geboekte vergaderzaal staat bij de plaats, nooit als persoon of in je Graph.
 
 De details van een vergadering hebben twee delen. **Notities** is de samenvatting: beslissingen en actiepunten. **Transcript** is wat er gezegd is, woord voor woord. Het staat dichtgeklapt, met hoe lang het duurt; **Tonen** opent het.
 
+Laden ze niet (bijvoorbeeld terwijl je Machine herstart), dan probeert de vergadering het zelf ongeveer een halve minuut opnieuw, en nog eens als je terugkomt in het venster. Daarna staat het er, met **Opnieuw proberen**.
+
 Elk heeft zijn eigen **Notities toevoegen** of **Transcript toevoegen**, **Bestand uploaden** voor een Markdown- of tekstbestand, **Bewerken** en **Verwijderen** (tik twee keer). Wat in het ene staat, blijft daar. Bij een vergadering die je kunt wijzigen opent **Notities** onder het formulier ze.
 
 Met [Zoom](zoom.md) of [Google Meet](google-meet.md) gekoppeld staan de notities in Notities en het transcript in Transcript, met **Van Zoom** of **Van Google Meet** erbij. Ze vervangen nooit wat jij toevoegde: staan ze er allebei, dan zie je ze allebei.
