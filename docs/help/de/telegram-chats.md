@@ -28,7 +28,7 @@ Kam eine Aufgabe per E-Mail rein, aber du schreibst mit der Person über Telegra
 3. Öffne auf deinem Handy in Telegram Einstellungen, Geräte, **Link Desktop Device**, und scanne den Code.
 4. Hat dein Konto ein Cloud-Passwort, gib es ein, wenn danach gefragt wird. Es geht an Telegram und wird nie gespeichert.
 
-Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Wähle stattdessen **Code in Telegram für deine Telefonnummer anfordern**. Telegram schickt den Code an deine Telegram-App.
+Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Wähle stattdessen **Code in Telegram für deine Telefonnummer anfordern**. Das Formular sagt, wohin Telegram den Code geschickt hat: an deine Telegram-App auf einem anderen Gerät, per SMS oder an deine Login-E-Mail. Kein Code? Drück **Code erneut senden**.
 
 Auf deinem eigenen Computer brauchst du außerdem eine eigene Telegram-App-ID. Erstelle eine auf [my.telegram.org](https://my.telegram.org), unter API development tools, und trag ihre api_id und api_hash ins Formular ein.
 

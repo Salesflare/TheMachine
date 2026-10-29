@@ -68,7 +68,7 @@ class FormTest(unittest.TestCase):
         self.assertNotIn('bogus', json.dumps(saved))
         self.assertIn('ATTA-fake-token', Path(json.loads(self.path.read_text())['credentials']['trello']).read_text())
         self.assertNotIn('ATTA-fake-token', json.dumps(view))
-        self.assertIn('saving it as globex-trello (Work · Globex)', view['lines'])
+        self.assertNotIn('saving it as globex-trello (Work · Globex)', view['lines'])
         self.assertFalse(any('work:' in line for line in view['lines']))
 
     def test_personal_and_a_company_offered_already_take_no_question(self):

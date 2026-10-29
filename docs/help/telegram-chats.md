@@ -24,11 +24,11 @@ If a to-do came in by email but you talk to that person on Telegram, say so in t
 ## Connect it
 
 1. In the dashboard, open **Connections**, then **+ Add**, and pick Telegram chats.
-2. Choose **Scan a QR code in Telegram on your phone**.
+2. Choose **Scan a QR code with Telegram on another device**.
 3. On your phone, in Telegram, open Settings, Devices, **Link Desktop Device**, and scan the code.
 4. If your account has a cloud password, type it when asked. It goes to Telegram and is never stored.
 
-Setting up on your phone, with no second screen to scan from? Choose **Get a code in Telegram for your phone number** instead. Telegram sends the code to your Telegram app.
+On a phone, the form leads with **Get a code for your phone number**, since a QR code can't be scanned from the same screen. It says where Telegram sent the code: your Telegram app on another device, an SMS or your login email. No code? Press **Send the code again**.
 
 On your own computer you also need a Telegram app ID of your own. Create one at [my.telegram.org](https://my.telegram.org), under API development tools, and fill in its api_id and api_hash in the form.
 

@@ -28,7 +28,7 @@ Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo Telegram, d
 3. No seu celular, no Telegram, abra Configurações, Dispositivos, **Link Desktop Device**, e escaneie o código.
 4. Se a sua conta tem uma senha na nuvem, digite quando for pedida. Ela vai para o Telegram e nunca é guardada.
 
-Configurando pelo celular, sem uma segunda tela para escanear? Escolha **Receber um código no Telegram para o seu número**. O Telegram envia o código para o seu app do Telegram.
+Configurando pelo celular, sem uma segunda tela para escanear? Escolha **Receber um código no Telegram para o seu número**. O formulário diz para onde o Telegram enviou o código: para o seu app do Telegram em outro dispositivo, por SMS ou para o seu e-mail de login. Não chegou? Toque em **Enviar o código de novo**.
 
 No seu próprio computador, você também precisa de um ID de app do Telegram só seu. Crie um em [my.telegram.org](https://my.telegram.org), em API development tools, e preencha o api_id e o api_hash dele no formulário.
 

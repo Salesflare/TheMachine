@@ -151,6 +151,31 @@ class AuthKeyUnregisteredError(Exception):
     pass
 
 
+class PhoneCodeExpiredError(Exception):
+    pass
+
+
+class PhoneCodeEmptyError(Exception):
+    pass
+
+
+class SentCodeTypeApp:
+    pass
+
+
+class SentCodeTypeSms:
+    pass
+
+
+class SentCodeTypeEmailCode:
+    def __init__(self, pattern):
+        self.email_pattern = pattern
+
+
+class SentCodeTypeSetUpEmailRequired:
+    pass
+
+
 class FloodWaitError(Exception):
     def __init__(self, seconds):
         super().__init__('flood')
@@ -159,14 +184,17 @@ class FloodWaitError(Exception):
 
 def fake_telethon():
     errors = types.SimpleNamespace(SessionPasswordNeededError=SessionPasswordNeededError, PasswordHashInvalidError=PasswordHashInvalidError,
-                                   PhoneCodeInvalidError=PhoneCodeInvalidError)
+                                   PhoneCodeInvalidError=PhoneCodeInvalidError, PhoneCodeExpiredError=PhoneCodeExpiredError,
+                                   PhoneCodeEmptyError=PhoneCodeEmptyError)
     account = types.ModuleType('telethon.tl.functions.account')
     account.GetPasswordRequest = lambda: 'get-password'
     account.UpdateStatusRequest = lambda offline: ('status', offline)
+    auth = types.ModuleType('telethon.tl.functions.auth')
+    auth.ResendCodeRequest = lambda phone, code_hash: ('resend', phone, code_hash)
     telethon = types.ModuleType('telethon')
     telethon.errors = errors
-    return {'telethon': telethon, 'telethon.tl': types.ModuleType('telethon.tl'),
-            'telethon.tl.functions': types.ModuleType('telethon.tl.functions'), 'telethon.tl.functions.account': account}
+    return {'telethon': telethon, 'telethon.tl': types.ModuleType('telethon.tl'), 'telethon.tl.functions': types.ModuleType('telethon.tl.functions'),
+            'telethon.tl.functions.account': account, 'telethon.tl.functions.auth': auth}
 
 
 class QR:
@@ -185,8 +213,9 @@ class QR:
 
 
 class LoginClient:
-    def __init__(self, qr=None, password='right', code='12345'):
+    def __init__(self, qr=None, password='right', code='12345', sent=None, resent=None):
         self.qr, self.password, self.code, self.calls = qr, password, code, []
+        self.sent, self.resent = sent or SentCodeTypeApp(), resent
         self.session = types.SimpleNamespace(save=lambda: 'SESSION')
 
     async def connect(self):
@@ -200,11 +229,15 @@ class LoginClient:
 
     async def __call__(self, request):
         self.calls.append(request)
+        if isinstance(request, tuple) and request[0] == 'resend':
+            if isinstance(self.resent, Exception):
+                raise self.resent
+            return types.SimpleNamespace(phone_code_hash='hash2', type=self.resent or SentCodeTypeSms(), next_type=None, timeout=None)
         return types.SimpleNamespace(hint='pet')
 
     async def send_code_request(self, phone):
         self.calls.append(('code', phone))
-        return types.SimpleNamespace(phone_code_hash='hash')
+        return types.SimpleNamespace(phone_code_hash='hash', type=self.sent, next_type=SentCodeTypeSms(), timeout=60)
 
     async def sign_in(self, phone=None, code=None, password=None, phone_code_hash=None):
         if password is not None:
@@ -260,6 +293,38 @@ class Login(unittest.TestCase):
         asyncio.run(tm.login(client, self.store, self.seal, phone='+32470000000', ask=lambda field: next(answers)))
         self.assertEqual([e['event'] for e in self.out], ['code_sent', 'code_wrong', 'password', 'connected'])
         self.assertIn(('code', '+32470000000'), client.calls)
+        self.assertEqual({k: self.out[0][k] for k in ('via', 'next', 'wait')}, {'via': 'app', 'next': 'sms', 'wait': 60})
+
+    def test_the_owner_hears_where_the_code_went_and_can_have_it_sent_again(self):
+        answers = iter([tm.RESEND, '12345', 'right'])
+        client = LoginClient(password='right', sent=SentCodeTypeEmailCode('j***@example.com'))
+        asyncio.run(tm.login(client, self.store, self.seal, phone='+32470000000', ask=lambda field: next(answers)))
+        self.assertEqual([e['event'] for e in self.out], ['code_sent', 'code_sent', 'password', 'connected'])
+        self.assertEqual((self.out[0]['via'], self.out[0]['to']), ('email', 'j***@example.com'))
+        self.assertEqual((self.out[1]['via'], self.out[1]['again']), ('sms', True))
+        self.assertIn(('resend', '+32470000000', 'hash'), client.calls)
+        self.assertIn(('sign_in', '12345'), client.calls)
+        self.assertNotIn('12345', json.dumps(self.out))
+
+    def test_a_refused_resend_and_an_expired_code_keep_the_login_going(self):
+        answers = iter([tm.RESEND, 'old', '12345', 'right'])
+        client = LoginClient(password='right', resent=FloodWaitError(120))
+        expired = iter([True])
+
+        async def sign_in(phone=None, code=None, password=None, phone_code_hash=None, original=client.sign_in):
+            if code == 'old' and next(expired, False):
+                raise PhoneCodeExpiredError()
+            return await original(phone=phone, code=code, password=password, phone_code_hash=phone_code_hash)
+        client.sign_in = sign_in
+        asyncio.run(tm.login(client, self.store, self.seal, phone='+32470000000', ask=lambda field: next(answers)))
+        self.assertEqual([e['event'] for e in self.out], ['code_sent', 'code_resend_failed', 'code_expired', 'password', 'connected'])
+        self.assertEqual(self.out[1], {'event': 'code_resend_failed', 'reason': 'FloodWaitError', 'wait': 120})
+
+    def test_no_code_until_a_login_email_is_set_up_is_said_not_waited_for(self):
+        client = LoginClient(sent=SentCodeTypeSetUpEmailRequired())
+        with self.assertRaisesRegex(RuntimeError, 'email_setup_required'):
+            asyncio.run(tm.login(client, self.store, self.seal, phone='+32470000000', ask=lambda field: self.fail('asked for a code')))
+        self.assertEqual(self.out, [])
 
     def test_three_wrong_passwords_stop_without_a_session(self):
         client = LoginClient(QR([SessionPasswordNeededError()]))
@@ -270,6 +335,7 @@ class Login(unittest.TestCase):
     def test_the_login_reads_answers_as_json_lines(self):
         self.assertEqual(tm.read_answer('code', io.StringIO('{"code": "123"}\n')), '123')
         self.assertEqual(tm.read_answer('code', io.StringIO('not json\n')), '')
+        self.assertEqual(tm.read_answer('code', io.StringIO('{"resend": true}\n')), tm.RESEND)
 
 
 class Message:
@@ -610,6 +676,50 @@ class Setup(unittest.TestCase):
             self.assertIsNone(form['secret'])
             self.assertEqual(form['ask'], [])
             self.assertEqual(onboarding.label('telegram'), 'Telegram chats')
+
+    def test_the_phone_login_says_where_the_code_went_and_can_send_it_again(self):
+        import onboarding
+        script = [{'event': 'code_sent', 'via': 'email', 'to': 'j***@example.com'}, {'event': 'code_sent', 'via': 'sms', 'again': True},
+                  {'event': 'connected', 'name': 'Owner'}]
+        written = []
+
+        class Process:
+            def __init__(self, *a, **kw):
+                self.stdout = io.StringIO(''.join(json.dumps(e) + '\n' for e in script))
+                self.stdin = types.SimpleNamespace(write=written.append, flush=lambda: None)
+
+            def poll(self):
+                return 0
+
+            def wait(self, *a):
+                return 0
+
+        class UI:
+            web, said, asked, extras = True, [], [], []
+
+            def choose(self, prompt, options):
+                self.extras.append(dict(self.extra))
+                return 'phone'
+
+            def ask(self, prompt):
+                self.asked.append(prompt)
+                self.extras.append(dict(getattr(self, 'extra', {}) or {}))
+                return '+32 470 00 00 00' if 'phone number' in prompt else ('again' if len(self.asked) == 2 else '12345')
+
+            def say(self, line):
+                self.said.append(line)
+
+            def show_code(self, code):
+                pass
+        ui = UI()
+        with tempfile.TemporaryDirectory() as home, patch.object(onboarding.subprocess, 'Popen', Process), \
+                patch.object(onboarding.service, 'available', return_value=False):
+            onboarding.telegram_login({}, {**ACCOUNT, 'store': str(Path(home) / 'tg')}, ui)
+        self.assertEqual(ui.extras[0], {'phone_first': 1})
+        self.assertTrue(ui.extras[2].get('resend'))
+        self.assertIn('Code sent to your login email j***@example.com.', ui.said)
+        self.assertIn('Sent again. Code sent by SMS.', ui.said)
+        self.assertEqual([json.loads(w) for w in written], [{'resend': True}, {'code': '12345'}])
 
     def test_a_terminal_qr_code(self):
         import onboarding

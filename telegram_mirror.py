@@ -300,16 +300,40 @@ def client_for(args, session_text, receive=False):
                           connection_retries=5, retry_delay=5, auto_reconnect=True, catch_up=receive, receive_updates=receive)
 
 
+RESEND = '\x00resend'  # the owner asked for the login code again
+# Where Telegram sent a login code (auth.SentCode's type), as the dashboard says it
+SENT_VIA = {'SentCodeTypeApp': 'app', 'SentCodeTypeSms': 'sms', 'SentCodeTypeSmsWord': 'sms', 'SentCodeTypeSmsPhrase': 'sms',
+            'SentCodeTypeFirebaseSms': 'sms', 'SentCodeTypeCall': 'call', 'SentCodeTypeFlashCall': 'call',
+            'SentCodeTypeMissedCall': 'call', 'SentCodeTypeFragmentSms': 'fragment', 'SentCodeTypeEmailCode': 'email',
+            'SentCodeTypeSetUpEmailRequired': 'email_setup'}
+
+
 def read_answer(field, stream=None):
-    """One JSON line from the dashboard (through onboarding): {"code": ...} or {"password": ...}."""
+    """One JSON line from the dashboard (through onboarding): {"code": ...}, {"password": ...} or {"resend": true}."""
     line = (stream or sys.stdin).readline()
     if not line:
         raise SystemExit(TEMPORARY)
     try:
-        value = json.loads(line).get(field)
+        data = json.loads(line)
+        value = RESEND if data.get('resend') is True else data.get(field)
     except (ValueError, AttributeError):
         value = None
     return str(value or '')
+
+
+def sent_event(sent):
+    """What the owner is told about a login code: where it went, and how it can come next. Never the code."""
+    kind = type(getattr(sent, 'type', None)).__name__
+    via = SENT_VIA.get(kind, 'other')
+    data = {'via': via, 'kind': kind[:60]}
+    pattern = getattr(sent.type, 'email_pattern', None) or getattr(sent.type, 'prefix', None)
+    if isinstance(pattern, str) and via in ('email', 'call'):
+        data['to'] = pattern[:80]  # Telegram's own masked form, such as j***@example.com
+    if getattr(sent, 'next_type', None) is not None:
+        data['next'] = SENT_VIA.get(type(sent.next_type).__name__, 'other')
+    if isinstance(getattr(sent, 'timeout', None), int):
+        data['wait'] = sent.timeout
+    return data
 
 
 async def login(client, store, seal, phone=None, ask=read_answer, wait=QR_WAIT):
@@ -335,19 +359,40 @@ async def login(client, store, seal, phone=None, ask=read_answer, wait=QR_WAIT):
         raise RuntimeError('password_wrong')
 
     if phone:
+        from telethon.tl.functions.auth import ResendCodeRequest
         sent = await client.send_code_request(phone)
-        emit('code_sent')
-        for _ in range(3):
+        info = sent_event(sent)
+        if info['via'] == 'email_setup':  # Telegram sends no code until the account has a login email: the QR code works
+            raise RuntimeError('email_setup_required')
+        emit('code_sent', **info)
+        wrong = resent = 0
+        while True:
+            code = ask('code')
+            if code == RESEND:
+                resent += 1
+                if resent > 3:
+                    emit('code_resend_failed', reason='too_many')
+                    continue
+                try:
+                    sent = await client(ResendCodeRequest(phone, sent.phone_code_hash))
+                    emit('code_sent', again=True, **sent_event(sent))
+                except Exception as error:  # noqa: BLE001 - no other way left, or a wait: said, and the old code still works
+                    wait = flood_seconds(error)
+                    emit('code_resend_failed', reason=error_name(error)[:60], **({'wait': wait} if wait else {}))
+                continue
             try:
-                await client.sign_in(phone=phone, code=ask('code'), phone_code_hash=sent.phone_code_hash)
+                await client.sign_in(phone=phone, code=code, phone_code_hash=sent.phone_code_hash)
                 break
             except errors.SessionPasswordNeededError:
                 await password()
                 break
-            except (errors.PhoneCodeInvalidError,):
+            except errors.PhoneCodeExpiredError:
+                emit('code_expired')
+            except (errors.PhoneCodeInvalidError, errors.PhoneCodeEmptyError):
+                wrong += 1
+                if wrong >= 3:
+                    raise RuntimeError('code_wrong') from None
                 emit('code_wrong')
-        else:
-            raise RuntimeError('code_wrong')
     else:
         qr = await client.qr_login()
         until = time.monotonic() + wait
@@ -452,7 +497,8 @@ def run(args):
             raise
         except Exception as error:  # noqa: BLE001 - said to the dashboard as one short code
             code = stop_reason(error) or (str(error) if isinstance(error, RuntimeError) else error_name(error))
-            emit('error', code=code[:60])
+            wait = flood_seconds(error)
+            emit('error', code=code[:60], **({'wait': wait} if wait else {}))
             if stop_reason(error) == 'app_blocked':
                 ts.set_state(db, error='app_blocked')
             return 1

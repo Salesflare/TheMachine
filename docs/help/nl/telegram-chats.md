@@ -28,7 +28,7 @@ Kwam een to-do binnen via e-mail maar praat je met die persoon op Telegram, zeg 
 3. Open op je telefoon in Telegram Instellingen, Apparaten, **Link Desktop Device**, en scan de code.
 4. Heeft je account een cloudwachtwoord, typ het dan als erom gevraagd wordt. Het gaat naar Telegram en wordt nooit bewaard.
 
-Stel je alles in op je telefoon, zonder tweede scherm om van te scannen? Kies dan **Krijg een code in Telegram voor je telefoonnummer**. Telegram stuurt de code naar je Telegram-app.
+Stel je alles in op je telefoon, zonder tweede scherm om van te scannen? Kies dan **Krijg een code in Telegram voor je telefoonnummer**. Het formulier zegt waar Telegram de code heen stuurde: naar je Telegram-app op een ander apparaat, per sms of naar je inlog-e-mail. Geen code? Druk op **Code opnieuw sturen**.
 
 Op je eigen computer heb je ook een eigen Telegram-app-ID nodig. Maak er een aan op [my.telegram.org](https://my.telegram.org), onder API development tools, en vul de api_id en api_hash in het formulier in.
 
