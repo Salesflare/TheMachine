@@ -34,6 +34,13 @@ draft is checked against earlier follow-ups so the same text never goes twice. A
 outbox (confirm_action), so a draft goes out once at most; Send without asking falls back to asking on anything
 unusual (an earlier attempt on that to-do, a draft for another channel, no verified recipient, a repeated text).
 
+Several follow-ups in a row (Send all checked, or Send without asking) go out spaced: the outbox (assistant.action_step)
+holds the next follow-up from the same mailbox (or the same LinkedIn, WhatsApp... account) for a random SEND_GAP
+seconds after the one before. Two mailboxes go side by side; a single follow-up goes at once. The spacing and the batch
+are kept here (follow_up_sends, follow_up_pace), so after a restart the rest goes on with the same spacing and nothing
+goes twice (a send that was under way is only checked, as for every outbox send). A failed one stays a to-do that asks;
+the rest of the batch goes on. The dashboard shows each batch's progress ("Sending 3 of 8...", then "Sent 8").
+
 Open follow-up to-dos close by themselves (settle) when the person replies, someone else answered or the owner wrote
 again, the project is won, lost, Stalled, archived or its stage turned off, or follow-ups were turned off. Snoozing
 the to-do holds it; Skip ends that round.
@@ -45,6 +52,7 @@ from __future__ import annotations
 import datetime as dt
 import difflib
 import json
+import random
 import re
 
 SCHEMA = '''
@@ -56,6 +64,9 @@ CREATE TABLE IF NOT EXISTS follow_up_cards(suggestion_id TEXT PRIMARY KEY,projec
 CREATE INDEX IF NOT EXISTS follow_up_cards_project ON follow_up_cards(project_id,state);
 CREATE TABLE IF NOT EXISTS follow_up_ends(project_id INTEGER NOT NULL,after_event INTEGER NOT NULL,n INTEGER NOT NULL,moved INTEGER NOT NULL DEFAULT 0,
   judged INTEGER NOT NULL DEFAULT 0,at TEXT NOT NULL,PRIMARY KEY(project_id,after_event));
+CREATE TABLE IF NOT EXISTS follow_up_sends(job_id TEXT PRIMARY KEY,batch TEXT NOT NULL,grp TEXT NOT NULL,sender TEXT NOT NULL,queued_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS follow_up_sends_batch ON follow_up_sends(grp,batch);
+CREATE TABLE IF NOT EXISTS follow_up_pace(sender TEXT PRIMARY KEY,next_at TEXT NOT NULL);
 '''
 SCOPES = ('board', 'project')
 # The channels a follow-up can go out on, in the order "switch channel" moves through them
@@ -76,6 +87,10 @@ BATCH = 3               # new follow-up drafts per pass
 DRAFTING = 3            # follow-ups being drafted at once, at most
 PER_DAY = 30            # new follow-up drafts a day, at most
 REPEAT = 0.85           # a draft this close to an earlier follow-up (difflib ratio) is a repeat
+SEND_GAP = (30, 45)      # seconds between two follow-ups from one mailbox, random in between
+SEND_TICK = 3            # the outbox looks every few seconds (assistant.action_worker): drawn so the send still lands in SEND_GAP
+PROGRESS_KEEP = 300      # "Sent 8" stays this long after a batch's last send
+GOING = ('queued', 'sending')  # outbox states of a follow-up still on its way
 OPEN_STATES = ('open',)
 STALLED = 'Stalled or declined'  # graph.STALLED
 
@@ -642,4 +657,71 @@ def covered(db):
         settings, _ = effective(db, p)
         if settings and settings.get('on'):
             out |= {m['id'] for m in messages(db, p['id'], lambda e: True)}
+    return out
+
+
+# ------------------------------------------------------------------ sending several in a row
+
+def sender(action):
+    """Which account a follow-up goes out from, for the spacing: the email's From address, or the channel's account."""
+    if action.get('kind') == 'email':
+        return 'email:' + str(action.get('from') or '').strip().lower()
+    return str(action.get('kind') or '') + ':' + str(action.get('account_id') or '')
+
+
+def gap(draw=random.uniform):
+    """Seconds until the next follow-up from the same account may go: random in SEND_GAP, less the outbox's tick."""
+    return draw(SEND_GAP[0], SEND_GAP[1] - SEND_TICK)
+
+
+def queued(db, suggestion_id, job_id, action, now):
+    """An outbox send of a follow-up was queued (confirm_action): it joins the batch of its board (or of the projects'
+    own follow-ups) that is still on its way, or starts a new one. Not a follow-up: nothing."""
+    f = db.execute('SELECT board_id,grouped FROM follow_up_cards WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+    if not f:
+        return None
+    grp = 'board:' + str(f['board_id']) if f['grouped'] and f['board_id'] else 'own'
+    going = db.execute(f"SELECT s.batch FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id WHERE s.grp=? AND s.job_id<>? "
+                       f"AND j.status IN ({','.join('?' for _ in GOING)}) ORDER BY s.queued_at DESC LIMIT 1", (grp, job_id, *GOING)).fetchone()
+    batch = going[0] if going else grp + '@' + now
+    db.execute('INSERT OR REPLACE INTO follow_up_sends(job_id,batch,grp,sender,queued_at) VALUES(?,?,?,?,?)', (job_id, batch, grp, sender(action), now))
+    return batch
+
+
+def held_until(db, job_id, now):
+    """When a queued follow-up may go: None now, else the time the one before from the same account asked it to wait."""
+    row = db.execute('SELECT p.next_at FROM follow_up_sends s JOIN follow_up_pace p ON p.sender=s.sender WHERE s.job_id=?', (job_id,)).fetchone()
+    return row[0] if row and parse(row[0]) > parse(now) else None
+
+
+def going_out(db, job_id, now, draw=random.uniform):
+    """A follow-up is admitted to send (in the outbox's transaction): the next one from its account waits a gap."""
+    row = db.execute('SELECT sender FROM follow_up_sends WHERE job_id=?', (job_id,)).fetchone()
+    if not row:
+        return None
+    next_at = (parse(now) + dt.timedelta(seconds=gap(draw))).isoformat()
+    db.execute('INSERT INTO follow_up_pace(sender,next_at) VALUES(?,?) ON CONFLICT(sender) DO UPDATE SET next_at=excluded.next_at', (row[0], next_at))
+    return next_at
+
+
+def progress(db, now):
+    """The latest batch per board (and of the projects' own follow-ups) while it goes, and PROGRESS_KEEP after: [{group,
+    board, total, done, sent, going}]. Batches of one aren't shown: that to-do says how its send went."""
+    out = []
+    try:
+        groups = [r[0] for r in db.execute('SELECT DISTINCT grp FROM follow_up_sends')]
+    except Exception:  # noqa: BLE001 - no table yet
+        return out
+    since = (parse(now) - dt.timedelta(seconds=PROGRESS_KEEP)).isoformat()
+    for grp in groups:
+        batch = db.execute('SELECT batch FROM follow_up_sends WHERE grp=? ORDER BY queued_at DESC,rowid DESC LIMIT 1', (grp,)).fetchone()[0]
+        jobs = db.execute('SELECT j.status,j.updated_at FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id WHERE s.batch=?', (batch,)).fetchall()
+        if len(jobs) < 2:
+            continue
+        going = sum(j['status'] in GOING for j in jobs)
+        if not going and max(j['updated_at'] for j in jobs) < since:
+            continue
+        board = db.execute('SELECT name FROM boards WHERE id=?', (int(grp.split(':')[1]),)).fetchone() if grp.startswith('board:') else None
+        out.append({'group': grp if grp.startswith('board:') else None, 'board': board[0] if board else None, 'total': len(jobs),
+                    'done': len(jobs) - going, 'sent': sum(j['status'] == 'sent' for j in jobs), 'going': going > 0})
     return out

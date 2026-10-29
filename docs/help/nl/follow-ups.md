@@ -30,6 +30,8 @@ Voor één project: **Opvolging…** in de **⋯** van de kaart of op de project
 
 De opvolgingen van een bord komen als één to-do: "8 opvolgingen klaar voor Alpha testers". **Nakijken** toont ze onder elkaar, elk met **Versturen**, **Bewerken** en **Overslaan**. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt en s slaat over. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is. De opvolging van één project is een gewone to-do.
 
+Gaan er meerdere na elkaar weg, ook met Versturen zonder te vragen, dan verstuurt elke mailbox er één per 30 tot 45 seconden en de to-do toont hoe ver het is: "3 van 8 versturen…".
+
 ## Wanneer het stopt
 
 Opvolging stopt als ze antwoorden, als het project gewonnen, verloren, gearchiveerd of naar een gesloten fase verplaatst is, en als je er een snoozet of overslaat. Voor hij iets opstelt, kijkt je Machine of er iets nieuwers in het gesprek staat, zodat hij niemand lastigvalt die al ergens anders antwoordde.

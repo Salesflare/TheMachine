@@ -1062,6 +1062,7 @@
  "Follow-up {} skipped": "Seguimiento {} omitido",
  "Follow-ups": "Seguimientos",
  "Follow-ups are set for a board or a project": "Los seguimientos se configuran para un tablero o un proyecto",
+ "Follow-ups for {}": "Seguimientos para {}",
  "Follow-ups from {} on {}: ": "Seguimientos de {} del {}: ",
  "Follow-ups of a meeting with Fleet teammates. Split who does what; nothing goes until you send it.": "Seguimientos de una reunión con compañeros del Fleet. Reparte quién hace qué; no sale nada hasta que lo envíes.",
  "Follow-ups off": "Seguimientos desactivados",
@@ -2917,6 +2918,7 @@
  "Sending approval must come from the owner’s controls": "La aprobación de envío debe venir de los controles del propietario",
  "Sending automatically is off": "El envío automático está desactivado",
  "Sending your approved draft…": "Enviando tu borrador aprobado…",
+ "Sending {} of {}…": "Enviando {} de {}…",
  "Sending {} votes.": {
   "one": "Enviando {} voto.",
   "other": "Enviando {} votos."
@@ -2952,10 +2954,12 @@
  "Sent to {}. They read it and decide.": "Enviado a {}. Lo leen y deciden.",
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Enviado a {}. Esperando su respuesta hasta {}; se cierra cuando responda.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Enviado a {}. Esperando su respuesta; se cierra cuando conteste.",
+ "Sent {}": "{} enviados",
  "Sent {} learnings. New ones go automatically now.": {
   "one": "{} aprendizaje enviado. Los nuevos se envían automáticamente.",
   "other": "{} aprendizajes enviados. Los nuevos se envían automáticamente."
  },
+ "Sent {} of {}": "{} de {} enviados",
  "Sent {}. Thank you.": "Enviado {}. Gracias.",
  "Sent, thanks. You’ll see it here when it’s fixed.": "Enviado, gracias. Lo verás aquí cuando esté arreglado.",
  "Sent.": "Enviado.",

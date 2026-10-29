@@ -30,6 +30,8 @@ Per un solo progetto, **Ricontatti…** nel **⋯** della sua scheda o nella sua
 
 I ricontatti di una bacheca arrivano come un’unica attività: “8 ricontatti pronti per Alpha testers”. **Rivedi** li mostra uno sotto l’altro, ognuno con **Invia**, **Modifica** e **Salta**. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica e s salta. **Invia tutti i selezionati** invia quelli ancora spuntati. Il ricontatto di un singolo progetto è un’attività normale.
 
+Quando ne partono diversi di seguito, anche con Invia senza chiedere, ogni casella ne invia uno ogni 30-45 secondi e l’attività mostra a che punto è: “Invio 3 di 8…”.
+
 ## Quando si fermano
 
 I ricontatti si fermano quando la persona risponde, quando il progetto è vinto, perso, archiviato o spostato in una fase chiusa, e quando ne posticipi o salti uno. Prima di scrivere, la tua Machine controlla se nella conversazione c’è qualcosa di più recente, così non insiste con chi ha già risposto altrove.

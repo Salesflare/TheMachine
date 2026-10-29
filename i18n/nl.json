@@ -1062,6 +1062,7 @@
  "Follow-up {} skipped": "Opvolging {} overgeslagen",
  "Follow-ups": "Opvolging",
  "Follow-ups are set for a board or a project": "Opvolging stel je in voor een bord of een project",
+ "Follow-ups for {}": "Opvolging voor {}",
  "Follow-ups from {} on {}: ": "Opvolgpunten van {} op {}: ",
  "Follow-ups of a meeting with Fleet teammates. Split who does what; nothing goes until you send it.": "Opvolging van een meeting met Fleet-teamgenoten. Verdeel wie wat doet; er gaat niets weg tot jij het verstuurt.",
  "Follow-ups off": "Opvolging uit",
@@ -2917,6 +2918,7 @@
  "Sending approval must come from the owner’s controls": "Goedkeuring om te versturen moet van de knoppen van de eigenaar komen",
  "Sending automatically is off": "Automatisch versturen staat uit",
  "Sending your approved draft…": "Je goedgekeurde concept versturen…",
+ "Sending {} of {}…": "{} van {} versturen…",
  "Sending {} votes.": {
   "one": "{} stem wordt verstuurd.",
   "other": "{} stemmen worden verstuurd."
@@ -2952,10 +2954,12 @@
  "Sent to {}. They read it and decide.": "Verstuurd naar {}. Zij lezen het en beslissen.",
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Verstuurd naar {}. Wacht op hun antwoord tot {}; het sluit zodra ze antwoorden.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Verstuurd naar {}. Wacht op hun antwoord; het sluit wanneer ze antwoorden.",
+ "Sent {}": "{} verstuurd",
  "Sent {} learnings. New ones go automatically now.": {
   "one": "{} inzicht verstuurd. Nieuwe gaan voortaan automatisch.",
   "other": "{} inzichten verstuurd. Nieuwe gaan voortaan automatisch."
  },
+ "Sent {} of {}": "{} van {} verstuurd",
  "Sent {}. Thank you.": "{} verstuurd. Bedankt.",
  "Sent, thanks. You’ll see it here when it’s fixed.": "Verstuurd, bedankt. Je ziet het hier zodra het opgelost is.",
  "Sent.": "Verstuurd.",
