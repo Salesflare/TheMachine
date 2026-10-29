@@ -17,9 +17,11 @@ La barra tiene **Silenciar** y **Fin**. Despídete, o di que ya terminaste, y te
 
 ## Repasa todas tus tareas hablando
 
-Toca **Hablar** en la barra lateral (en el menú en un teléfono) para repasar con la voz todo lo que te espera. The Machine dice cuántas hay y las toma una por una: primero **Lista**, luego **Por decidir**. Hablar tiene su propia página: una conversación de principio a fin, con la tarea de la que habla arriba, su borrador y **Abrir el chat**. No te lleva de chat en chat.
+Toca **Hablar** en la barra lateral (en el menú en un teléfono) para repasar con la voz todo lo que te espera. The Machine dice cuántas hay y las toma una por una: primero **Lista**, luego **Por decidir**. También ve tus otras tareas, como las que siguen **Preparando**, y te avisa cuando una está lista.
 
-Pídele que lea un borrador, lo cambie, lo posponga, lo marque como hecho o pase a la siguiente. Enviar funciona como en el chat de una tarea: un borrador por pregunta, tras un sí claro. Lo que dices sobre una tarea queda en el chat de esa tarea. Si llega una tarea nueva, te la menciona en una pausa.
+Hablar tiene su propia página: una conversación de principio a fin, con la tarea de la que habla arriba, su borrador y **Abrir el chat**. No te lleva de chat en chat.
+
+Pídele que lea un borrador, lo cambie, lo posponga, lo marque como hecho o pase a la siguiente. Enviar funciona como en el chat de una tarea: un borrador por pregunta, tras un sí claro. Lo que dices sobre una tarea queda en el chat de esa tarea. Si llega una tarea nueva, te la menciona en una pausa. Di "añade una tarea para..." y crea una nueva sin dejar la que tienes abierta.
 
 Mientras tanto puedes ir a otra página: la barra queda abajo, y **Hablar** en la barra lateral te trae de vuelta. Esta conversación dura hasta 30 minutos.
 

@@ -17,9 +17,11 @@ La barra ha **Silenzia** e **Fine**. Saluta, o di' che hai finito, e si chiude d
 
 ## Ripassa tutte le attività a voce
 
-Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e le prende una alla volta: prima **Pronta**, poi **Da decidere**. Parla ha una pagina sua: una conversazione dall'inizio alla fine, con in alto l'attività di cui si parla, la sua bozza e **Apri la chat**. Non ti sposta da una chat all'altra.
+Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e le prende una alla volta: prima **Pronta**, poi **Da decidere**. Vede anche le altre attività, come quelle ancora **In preparazione**, e ti avvisa quando una è pronta.
 
-Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L'invio funziona come nella chat di un'attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un'attività finisce nella chat di quell'attività. Quando arriva una nuova attività, te lo dice in una pausa.
+Parla ha una pagina sua: una conversazione dall'inizio alla fine, con in alto l'attività di cui si parla, la sua bozza e **Apri la chat**. Non ti sposta da una chat all'altra.
+
+Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L'invio funziona come nella chat di un'attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un'attività finisce nella chat di quell'attività. Quando arriva una nuova attività, te lo dice in una pausa. Di' "aggiungi un'attività per..." e ne crea una nuova, senza lasciare quella su cui sei.
 
 Intanto puoi andare su un'altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti.
 

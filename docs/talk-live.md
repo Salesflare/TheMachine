@@ -49,8 +49,14 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 
 `talk_live.TOOLS`, called by the voice as Realtime function calls:
 
-- `todo_details`: the to-do's title, status, its last 25 messages and its current draft, through `talk_tool` (read only).
-- `find_todos`: open to-dos whose title has the words (read only).
+- `todo_details`: the to-do's title, state, its last 25 messages and its current draft, through `talk_tool` (read only).
+- `find_todos`: open to-dos by words in their title, by `state`, or both (read only), each with its state in plain words
+  (`talk_live.STATES`: ready, to decide, preparing, waiting on others, snoozed, looks done; `todo_state` places it the
+  way the dashboard's lists do), what needs the owner first, at most 20, with `count`. Words that name a state and match
+  no title ("anything preparing?") find that state.
+- `create_todo`: a new to-do, handled in the browser (`talkCreate`) with New to-do's own `card_new` (title, then the
+  note on the next line; Work or Personal as the list's filter, as New to-do). Nothing is sent and the focus stays. For
+  anything new or about something else: `ask_chat` is only for the to-do in focus, and the instructions say so.
 - `ask_chat`: handled in the browser (`talkAsk`). The request goes to the to-do's chat as a decision `other`
   (`decideOrWait`, so it can also wait offline) whose id starts with `talk_live.RELAY_PREFIX`. That hand-off is
   invisible: `card_chat` leaves it out, so the chat only shows what the owner said and **Working on it…**. The
@@ -70,11 +76,14 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 conversation that isn't tied to a to-do (`talk_start` with `main: true`, session key
 `agent:main:assistant-talk-main`). One at a time; a to-do's own Talk live can run beside it (two in all).
 
-- Tools (`talk_live.MAIN_TOOLS`): `list_todos` (the page's own: what Ready and To decide show, in that order, with ids
-  and who it's from), `open_todo` (the page shows that to-do in Talk's view, tells the Machine with `talk_focus`, and
+- Tools (`talk_live.MAIN_TOOLS`): `list_todos` (the page's own: every open to-do the lists show, in their order: Ready,
+  To decide, Preparing, Waiting on others, Later, Look done; at most 30, each with its id, state, title and who it's
+  from, and `counts` per state), `open_todo` (the page shows that to-do in Talk's view, tells the Machine with `talk_focus`, and
   returns `todo_details`), then the same `todo_details`, `find_todos` (with ids here), `ask_chat`, `ask_to_send` and
-  `send_answer`, and `end_talk`. Instructions: `talk_live.main_instructions` (the same voice and rules, plus going through the to-dos
-  one by one).
+  `send_answer`, `create_todo` and `end_talk`. Instructions: `talk_live.main_instructions` (the same voice and rules,
+  plus going through the to-dos one by one: ready and to decide first, then in a few words how many are still
+  preparing; one that is preparing can be opened, but has no draft to send yet). Replies are one or two sentences,
+  without lists of options.
 - Focus: the conversation works on the to-do on screen. The Machine keeps it (`Talk.focus`); `todo_details`,
   `talk_ask_send` and `talk_send` act on it only, and before one is open they refuse. When the owner opens another
   to-do, the page moves the focus there (`openChatLink`); a confirm question about the previous one is dropped, so a
@@ -93,7 +102,11 @@ conversation that isn't tied to a to-do (`talk_start` with `main: true`, session
   ends it.
 - New to-dos: a to-do that shows up in Ready or To decide while Talk is live is told to the voice as a system note
   (`talk_live.NEW_NOTE`), once, when neither side is talking (`response.done`, and 1.2 s after
-  `input_audio_buffer.speech_stopped`).
+  `input_audio_buffer.speech_stopped`). One that was preparing gets `talk_live.READY_NOTE` instead ("is ready now"),
+  also once (`v.known`; `v.prep` remembers what was preparing). One Talk made itself (`create_todo`) isn't told, and
+  the transcript gets a mark: **Added a to-do: …**.
+- The bar's hint, **Say yes to send what's on screen.**, shows only while a send question is open (`ask_to_send`
+  asked, not answered, under `ASK_SECONDS`, its draft still on screen); **Muted** while muted; otherwise none.
 - Ending: when the owner clearly says they're done, the voice says one short goodbye and calls `end_talk` (also in a
   to-do's own Talk live). The page sends no new response, waits until the goodbye has played
   (`output_audio_buffer.stopped`, at most 10 s), then ends as **End** does.
