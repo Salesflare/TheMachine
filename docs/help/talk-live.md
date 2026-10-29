@@ -23,7 +23,9 @@ Talk has its own page: one conversation from start to end, with the to-do it's t
 
 Ask it to read a draft, change it, snooze it, mark it done, or move on to the next one. Sending works as in a to-do's chat: one draft per question, after a clear yes. What you say about a to-do goes into that to-do's chat. When a new to-do comes in, it mentions it at a pause. Say "add a to-do to..." and it adds a new one, without leaving the one you're on.
 
-Meanwhile, other pages are fine: the bar stays at the bottom, and **Talk** in the sidebar brings you back. This conversation lasts up to 30 minutes.
+It reaches the rest of The Machine too. Ask about a person, an organization, a project, a meeting or a promise, and it looks it up and shows it. It can snooze, mark done, dismiss, rename or reopen a to-do, also one in **Done / dismissed**. For anything else, it adds a to-do, lets its chat handle it, and tells you the answer.
+
+Meanwhile, other pages are fine: the bar stays at the bottom, and **Talk** in the sidebar brings you back. This conversation lasts up to 30 minutes. It keeps going in the background on computers and Android. On iPhone, it stops when the app leaves the screen.
 
 ## Ask for things, and send with a yes
 
@@ -31,9 +33,9 @@ When you ask for something, like "write a reply saying Thursday works" or "snooz
 
 The chat can also look things up, like a store's opening hours on the web. It shows **Working on it…** meanwhile, and you can keep talking. When the answer is ready, The Machine tells you, and where it found it. Ask something else meanwhile and it waits its turn.
 
-To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Lotte by email?". On a phone, it reads the whole draft out before it asks. Answer with a clear yes, in any language, and that one draft goes.
+To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Lotte by email?". It first reads the whole draft out: who it goes to, the subject and the text. So it works with your phone in your pocket, too. Answer with a clear yes, in any language, and that one draft goes.
 
-- It only asks about the draft shown in the chat. If the draft changes after the question, it asks again.
+- It sends exactly the draft it read out. If the draft changes after the question, it reads it again and asks again. A question you don't answer within 3 minutes expires.
 - If your answer isn't a clear yes, nothing is sent and it asks again. "No" sends nothing.
 - A yes always sends one draft. To send several, use the follow-up review.
 - The chat shows **Approved by voice** with **Undo** for a few seconds before it goes.

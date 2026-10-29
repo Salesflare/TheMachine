@@ -23,7 +23,9 @@ Parler a sa propre page : une conversation du début à la fin, avec en haut la 
 
 Demandez-lui de lire un brouillon, de le modifier, de le reporter, de le marquer comme fait ou de passer à la suivante. L’envoi fonctionne comme dans le chat d’une tâche : un brouillon par question, après un oui clair. Ce que vous dites sur une tâche va dans le chat de cette tâche. Quand une nouvelle tâche arrive, elle la mentionne lors d’une pause. Dites « ajoute une tâche pour… » et elle en crée une nouvelle, sans quitter celle en cours.
 
-Vous pouvez aller sur une autre page entre-temps : la barre reste en bas, et **Parler** dans la barre latérale vous y ramène. Cette conversation dure 30 minutes au plus.
+Elle accède aussi au reste de The Machine. Demandez une personne, une organisation, un projet, une réunion ou une promesse, et elle la cherche et l’affiche. Elle peut reporter une tâche, la marquer comme faite, l’écarter, la renommer ou la rouvrir, même une tâche dans **Fait / écarté**. Pour tout le reste, elle crée une tâche, laisse son chat s’en charger et vous donne la réponse.
+
+Vous pouvez aller sur une autre page entre-temps : la barre reste en bas, et **Parler** dans la barre latérale vous y ramène. Cette conversation dure 30 minutes au plus. Elle continue en arrière-plan sur ordinateur et sur Android. Sur iPhone, elle s’arrête quand l’app quitte l’écran.
 
 ## Demandez, et envoyez d’un oui
 
@@ -31,9 +33,9 @@ Quand vous demandez quelque chose, comme « écris une réponse pour dire que je
 
 Le chat peut aussi chercher des choses, comme les horaires d’un magasin sur le web. Pendant ce temps, il affiche **Je m’en occupe…**, et vous pouvez continuer à parler. Quand la réponse est prête, The Machine vous la dit, avec l’endroit où elle l’a trouvée. Si vous demandez autre chose entre-temps, cela attend son tour.
 
-Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Lotte par e-mail ? ». Sur un téléphone, elle lit d’abord tout le brouillon à voix haute. Répondez par un oui clair, dans n’importe quelle langue, et ce brouillon part.
+Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Lotte par e-mail ? ». Elle lit d’abord tout le brouillon à voix haute : à qui il va, l’objet et le texte. Ça marche donc aussi avec le téléphone dans la poche. Répondez par un oui clair, dans n’importe quelle langue, et ce brouillon part.
 
-- Elle ne demande que pour le brouillon affiché dans le chat. S’il change après la question, elle redemande.
+- Elle envoie exactement le brouillon qu’elle a lu. S’il change après la question, elle le relit et redemande. Une question sans réponse au bout de 3 minutes expire.
 - Si votre réponse n’est pas un oui clair, rien ne part et elle redemande. « Non » n’envoie rien.
 - Un oui envoie toujours un seul brouillon. Pour en envoyer plusieurs, utilisez la revue des relances.
 - Le chat affiche **Approuvé à la voix** avec **Annuler** pendant quelques secondes avant l’envoi.

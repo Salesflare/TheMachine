@@ -23,7 +23,9 @@ Praten heeft een eigen pagina: één gesprek van begin tot einde, met bovenaan d
 
 Vraag hem een concept voor te lezen, aan te passen, te snoozen, als klaar te markeren of naar de volgende te gaan. Versturen werkt zoals in de chat van een to-do: één concept per vraag, na een duidelijke ja. Wat je over een to-do zegt, komt in de chat van die to-do. Komt er een nieuwe to-do binnen, dan meldt hij die bij een pauze. Zeg "maak een to-do om..." en hij maakt een nieuwe, zonder de huidige te verlaten.
 
-Je kunt intussen naar een andere pagina: de balk blijft onderaan, en **Praten** in de zijbalk brengt je terug. Dit gesprek duurt hoogstens 30 minuten.
+Hij kan ook bij de rest van The Machine. Vraag naar een persoon, een organisatie, een project, een afspraak of een belofte, en hij zoekt het op en toont het. Hij kan een to-do snoozen, als klaar markeren, afwijzen, hernoemen of weer openen, ook een onder **Gedaan / afgewezen**. Voor al de rest maakt hij een to-do, laat de chat ervan het doen en zegt je het antwoord.
+
+Je kunt intussen naar een andere pagina: de balk blijft onderaan, en **Praten** in de zijbalk brengt je terug. Dit gesprek duurt hoogstens 30 minuten. Op computers en Android loopt het door op de achtergrond. Op een iPhone stopt het als de app van het scherm gaat.
 
 ## Vraag dingen, en verstuur met een ja
 
@@ -31,9 +33,9 @@ Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past" of "snooze d
 
 De chat kan ook dingen opzoeken, zoals de openingsuren van een winkel op het web. Intussen toont hij **Ermee bezig…**, en je kan gewoon verder praten. Als het antwoord klaar is, zegt The Machine het je, en waar hij het vond. Vraag je intussen iets anders, dan wacht dat zijn beurt af.
 
-Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Lotte sturen?". Op een telefoon leest hij eerst het hele concept voor. Antwoord met een duidelijke ja, in elke taal, en dat ene concept gaat weg.
+Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Lotte sturen?". Eerst leest hij het hele concept voor: naar wie het gaat, het onderwerp en de tekst. Zo werkt het ook met je telefoon in je zak. Antwoord met een duidelijke ja, in elke taal, en dat ene concept gaat weg.
 
-- Hij vraagt het alleen voor het concept dat in de chat staat. Verandert het concept na de vraag, dan vraagt hij het opnieuw.
+- Hij verstuurt precies het concept dat hij voorlas. Verandert het na de vraag, dan leest hij het opnieuw voor en vraagt hij het opnieuw. Een vraag die je niet binnen 3 minuten beantwoordt, vervalt.
 - Is je antwoord geen duidelijke ja, dan gaat er niets weg en vraagt hij het opnieuw. "Nee" verstuurt niets.
 - Eén ja verstuurt altijd één concept. Wil je er meerdere versturen, gebruik dan de follow-upreview.
 - De chat toont een paar seconden **Goedgekeurd met je stem** met **Ongedaan maken** voor het weggaat.

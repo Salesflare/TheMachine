@@ -1,6 +1,7 @@
 """Talk live (talk_live.py): the session the Gateway makes, the offer handed on once, the limit, the transcript in the
 to-do's chat, the read-only tools, and approving one draft by voice (a confirm question, then a clear yes). OpenAI and the Gateway never run here: talk-live-run.mjs is stubbed."""
 import importlib.util
+import datetime as dt
 import json
 import subprocess
 import tempfile
@@ -171,7 +172,7 @@ class Tools(unittest.TestCase):
         for words in ('All the owner’s open to-dos', 'preparing', 'waiting on others', 'snoozed', 'its state'):
             self.assertIn(words, listing)
         find = [x for x in t.MAIN_TOOLS if x['name'] == 'find_todos'][0]['parameters']
-        self.assertEqual(find['properties']['state']['enum'], list(t.STATES))
+        self.assertEqual(find['properties']['state']['enum'], list(t.STATES) + ['done', 'dismissed'])
         self.assertNotIn('required', find)   # by state only: "anything preparing?"
 
     def test_new_things_become_a_new_todo_not_the_focused_chat(self):
@@ -199,7 +200,7 @@ class Tools(unittest.TestCase):
         text = t.instructions('Reply to Dana', 'nl', 'Tuesday 28 October 2026, 10:00')
         self.assertIn('"Reply to Dana"', text)
         self.assertIn('Speak Dutch', text)
-        self.assertIn('call ask_to_send and ask its question', text)
+        self.assertIn('call ask_to_send, read the draft out in full', text)
         self.assertIn('never say something was sent unless send_answer says so', text)
 
     def test_the_instructions_sound_like_a_conversation(self):
@@ -209,7 +210,7 @@ class Tools(unittest.TestCase):
         for words in ('contractions', 'Don’t repeat the same sentence', 'Don’t read its title out word for word',
                       'Don’t read out lists', 'Never rushed', 'say it again'):
             self.assertIn(words, text)
-        self.assertIn('read it in full, word for word', text)   # a draft asked about is still read out whole
+        self.assertIn('Read it in full, word for word', text)   # a draft asked about is still read out whole
         self.assertNotIn('—', text)
 
     def test_the_voice_plays_a_touch_slower_never_slow(self):
@@ -278,7 +279,7 @@ class Api(unittest.TestCase):
         self.app.talk_judge = lambda prompt: self.judged.append(prompt) or judged
         self.judged = []
         talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
-        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': False})
+        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})
         if spoken:
             self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': spoken})
         if answer:
@@ -292,8 +293,8 @@ class Api(unittest.TestCase):
     def test_yes_after_the_question_sends_that_one_draft(self):
         talk_id, asked = self.asked('Ja, verstuur maar.')
         self.assertEqual(asked['question'], 'Send this reply to Dana by email?')
-        self.assertEqual(asked['draft']['to'], 'Dana')
-        self.assertFalse(asked['read_aloud'])
+        self.assertEqual(asked['draft']['to'], ['Dana'])
+        self.assertEqual(asked['revision'], 'r1')
         self.assertTrue(asked['say'].endswith('Send this reply to Dana by email?'))
         sent = self.act('talk_send', {'id': talk_id})
         self.assertEqual(sent['status'], 'queued')
@@ -336,9 +337,12 @@ class Api(unittest.TestCase):
         self.assertEqual(self.gateway.calls[-1]['session_key'], t.SESSION_PREFIX + 'main')
         self.assertEqual((started['limit'], started['warn']), (1800, 1740))   # OpenAI allows 60 minutes
         self.assertEqual([x['name'] for x in started['tools']],
-                         ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'ask_chat', 'create_todo', 'ask_to_send', 'send_answer', 'end_talk'])
+                         ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'search', 'open_record', 'calendar', 'machine_status',
+                          'ask_chat', 'create_todo', 'todo_action', 'ask_machine', 'ask_to_send', 'send_answer', 'end_talk'])
+        action = [x for x in started['tools'] if x['name'] == 'todo_action'][0]['parameters']['properties']['action']['enum']
+        self.assertFalse([x for x in action if 'send' in x or 'approve' in x])   # a to-do's buttons, never a send
         for words in ('Start with list_todos', 'One to-do at a time', 'never say something was sent unless send_answer says so',
-                      'call ask_to_send and ask its question', 'never poll', 'contractions'):
+                      'call ask_to_send, read the draft out in full', 'never poll', 'contractions'):
             self.assertIn(words, started['instructions'])
         self.assertIn('{title}', started['notes']['new'])
         self.assertIn('was preparing is ready now', started['notes']['ready'])   # told once when a preparing one is ready
@@ -385,6 +389,100 @@ class Api(unittest.TestCase):
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'd' * 16})
         self.assertEqual(self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']['state'], 'preparing')
 
+    def graph_people(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES('email:dana@client.example','person','Dana Reyes',3,"
+                       "'2026-10-27T15:00:00Z',4,?)", (json.dumps({'role': 'Head of Events', 'org': 'org:client.example'}),))
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:client.example','org','Client Example',2,3,?)",
+                       (json.dumps({'domain': 'client.example'}),))
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:sam@other.example','person','Sam Lane',1,1,'{}')")
+            db.execute("INSERT INTO graph_links(a,b,kind,strength) VALUES('email:dana@client.example','org:client.example','works_at',1)")
+
+    def test_talk_looks_up_people_organizations_and_projects_in_the_graph(self):
+        self.graph_people()
+        talk_id = self.act('talk_start', {'main': True})['id']
+        tool = lambda name, **args: self.act('talk_tool', {'id': talk_id, 'name': name, 'args': args})['output']
+        found = tool('search', words='dana')['found']
+        self.assertEqual([(x['id'], x['kind'], x['name']) for x in found], [('email:dana@client.example', 'person', 'Dana Reyes')])
+        self.assertEqual([x['kind'] for x in tool('search', words='client', kind='organization')['found']], ['organization'])
+        self.assertEqual(tool('search', words='dana', kind='project')['found'], [])
+        self.assertIn('error', tool('search', words=' '))
+        record = tool('open_record', id='email:dana@client.example')
+        self.assertEqual((record['kind'], record['name']), ('person', 'Dana Reyes'))
+        self.assertEqual(record['card'], {'kind': 'person', 'title': 'Dana Reyes', 'line': record.get('about') or record.get('headline') or '',
+                                          'node': 'email:dana@client.example'})   # what Talk's transcript shows
+        self.assertNotIn('info', record)
+        for wrong in ('', 'team:x', 'email:nobody@example.com', 'promise:x'):
+            self.assertIn('error', tool('open_record', id=wrong), wrong)
+        # The focused to-do stays the same, and a to-do's own conversation doesn't have these
+        self.assertIn('error', self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output'])
+        own = self.act('talk_start', {'suggestion_id': SID})['id']
+        with self.assertRaisesRegex(ValueError, 'Unknown tool'):
+            self.act('talk_tool', {'id': own, 'name': 'search', 'args': {'words': 'dana'}})
+
+    def test_talk_reads_the_calendar_and_opens_a_meeting(self):
+        cal = {'id': 'cal', 'email': 'owner@example.com', 'service': 'calendar', 'boundary': 'work:Example'}
+        self.app.config['accounts'] = [cal]
+        today = dt.datetime.now(a.local_tz()).replace(hour=14, minute=30, second=0, microsecond=0)
+        raw = {'id': 'pilot', 'summary': 'Pilot review with Dana', 'status': 'confirmed', 'location': 'Zoom', 'description': 'Agenda: the offsite',
+               'start': {'dateTime': today.isoformat()}, 'end': {'dateTime': (today + dt.timedelta(minutes=45)).isoformat()},
+               'attendees': [{'email': 'owner@example.com', 'self': True, 'responseStatus': 'accepted'}, {'email': 'dana@client.example'}]}
+        self.store.commit_page('cal', {}, [a.calendar_event(cal, raw, str(a.local_tz()))])
+        talk_id = self.act('talk_start', {'main': True})['id']
+        tool = lambda name, **args: self.act('talk_tool', {'id': talk_id, 'name': name, 'args': args})['output']
+        day = tool('calendar')
+        self.assertEqual((day['count'], day['days']), (1, 1))
+        meeting = day['meetings'][0]
+        self.assertEqual((meeting['title'], meeting['where']), ('Pilot review with Dana', 'Zoom'))
+        self.assertTrue(meeting['when'].endswith('14:30') and meeting['until'] == '15:15', meeting)
+        self.assertEqual(tool('calendar', day=(today + dt.timedelta(days=1)).date().isoformat())['meetings'], [])
+        self.assertEqual(tool('calendar', day=(today - dt.timedelta(days=1)).date().isoformat(), days=3)['count'], 1)
+        self.assertIn('error', tool('calendar', day='tomorrow'))
+        record = tool('open_record', id=meeting['id'])
+        self.assertEqual((record['kind'], record['title'], record['with']), ('meeting', 'Pilot review with Dana', ['dana@client.example']))
+        self.assertNotIn('Agenda', json.dumps(record))   # what the Calendar shows, not the invite's private notes
+        self.assertEqual(record['card']['event'], int(meeting['id'].split(':')[1]))
+        self.assertIn('error', tool('open_record', id='event:999999'))
+        found = tool('search', words='pilot review', kind='meeting')['found']
+        self.assertEqual([(x['id'], x['kind'], x['title']) for x in found], [(meeting['id'], 'meeting', 'Pilot review with Dana')])
+        self.assertEqual(tool('search', words='pilot review', kind='message')['found'], [])
+
+    def test_ask_machine_hands_off_to_a_new_todos_chat_that_never_sends(self):
+        self.assertEqual(t.ASK_PREFIX, 'chat-voice-')
+        self.assertTrue(t.ASK_PREFIX.startswith('chat-') and not t.ASK_PREFIX.startswith(t.RELAY_PREFIX))
+        self.assertIn('never send', t.ASK_MACHINE_NOTE)
+        source = (ROOT / 'assistant.py').read_text()
+        self.assertIn("startswith(talk_live.ASK_PREFIX):request['message']+='\\n\\n'+talk_live.RELAY_NOTE+'\\n'+talk_live.ASK_MACHINE_NOTE", source)
+        with self.store.connect() as db:   # the owner's request shows in that to-do's chat as theirs
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('chat-voice-1',?,'other',"
+                       "'Who is Dana again?','dashboard','2026-10-29T12:39:00Z')", (SID,))
+        said = [i['text'] for i in self.act('card_chat', {'suggestion_id': SID})['items'] if i['kind'] == 'you']
+        self.assertEqual(said, ['Who is Dana again?'])
+        text = t.main_instructions('en', 'Thursday 29 October 2026, 10:00')
+        for words in ('# The rest of the Machine', 'ask_machine, never ask_chat', 'Never guess about someone', 'calendar for meetings'):
+            self.assertIn(words, text)
+        self.assertNotIn('—', text)
+        tools = {x['name']: x for x in t.MAIN_TOOLS}
+        self.assertIn('never send', tools['ask_machine']['description'])
+        self.assertEqual(set(t.MACHINE_TOOLS) & {x['name'] for x in t.TOOLS}, set())   # only the main conversation has them
+
+    def test_talk_reaches_done_and_dismissed_todos(self):
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='rejected' WHERE id=?", ('b' * 16,))
+            for rid, sid, choice, at in (('d1', 'c' * 16, 'complete', '2026-10-02T09:00:00Z'), ('d2', 'b' * 16, 'reject', '2026-10-28T11:00:00Z')):
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,'','dashboard',?)", (rid, sid, choice, at))
+        talk_id = self.act('talk_start', {'main': True})['id']
+        find = lambda **args: self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': args})['output']
+        self.assertEqual([(x['title'], x['state']) for x in find(state='done')['todos']], [('Old offsite invoice', 'done')])
+        self.assertEqual([(x['title'], x['state']) for x in find(state='dismissed')['todos']], [('Book the offsite venue', 'dismissed')])
+        self.assertEqual([x['title'] for x in find(words='anything dismissed')['todos']], ['Book the offsite venue'])
+        # Open ones first: a closed one only when no open one matches, latest closed first
+        self.assertEqual([x['state'] for x in find(words='offsite')['todos']], ['to decide'])
+        self.assertEqual([(x['title'], x['state']) for x in find(words='venue')['todos']], [('Book the offsite venue', 'dismissed')])
+        self.assertEqual([x['id'] for x in find(words='invoice')['todos']], ['c' * 16])
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'c' * 16})   # it can open one for its details
+        self.assertEqual(self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']['state'], 'done')
+
     def test_talk_keeps_what_was_said_in_each_todos_chat(self):
         talk_id = self.act('talk_start', {'main': True})['id']
         self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'You have two that need you.'})
@@ -403,7 +501,7 @@ class Api(unittest.TestCase):
         talk_id = self.act('talk_start', {'main': True})['id']
         self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')   # nothing open, nothing asked
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': SID})
-        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': True})
+        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})
         self.assertEqual(asked['question'], 'Send this reply to Dana by email?')
         self.assertTrue(asked['say'].startswith(t.SAY['read']))
         # The owner opens another to-do before answering: the question is dropped, nothing goes
@@ -414,7 +512,7 @@ class Api(unittest.TestCase):
         self.assertEqual(self.jobs(), [])
         # Back on Dana's: asked, a clear yes, that one draft waits with Undo, and the chat says so
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': SID})
-        self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': False})
+        self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})
         self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})
         self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes, send it.'})
         sent = self.act('talk_send', {'id': talk_id})
@@ -509,10 +607,42 @@ class Api(unittest.TestCase):
         self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'}))
         self.ready_draft()
         self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'revision': 'old'}))     # not the draft on screen
-        read = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read_aloud': True})
-        self.assertTrue(read['read_aloud'])
-        self.assertTrue(read['say'].startswith('First read the draft below out in full'))
-        self.assertEqual(read['draft']['text'], 'Hi Dana, Thursday works. See you then.')
+        read = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})
+        self.assertTrue(read['say'].startswith('First read the draft below out in full: who it goes to, the subject'))
+        self.assertEqual(read['draft'], {'to': ['Dana'], 'how': 'by email', 'subject': 'Re: Offsite', 'text': 'Hi Dana, Thursday works. See you then.'})
+
+    def test_without_the_screen_the_machine_picks_the_draft_and_pins_it(self):
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id}))      # nothing prepared
+        self.ready_draft(to=['dana@example.com', 'kim@example.com'], to_name='')
+        asked = self.act('talk_ask_send', {'id': talk_id})   # no card on screen: its only draft, read out whole
+        self.assertEqual(asked['revision'], 'r1')
+        self.assertEqual(asked['draft']['to'], ['dana@example.com', 'kim@example.com'])   # every recipient, read out
+        self.assertIn('Hi Dana, Thursday works.', asked['draft']['text'])
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to dana@example.com and 1 more by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes.'})
+        self.app.talk_judge = lambda prompt: '{"approve": "yes"}'
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'queued')
+        self.assertEqual(self.jobs()[0]['revision'], 'r1')   # the revision it pinned, nothing else
+
+    def test_more_than_one_draft_is_asked_by_its_number(self):
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        two = {'kind': 'menu', 'actions': [self.DRAFT, {**self.DRAFT, 'label': 'Reply to Kim', 'to': ['kim@example.com'], 'to_name': 'Kim', 'revision': 'r9'}]}
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(two), SID))
+        which = self.act('talk_ask_send', {'id': talk_id})
+        self.assertIn('more than one draft', which['error'])
+        self.assertEqual(which['drafts'], [{'draft': 1, 'label': 'Reply to Dana'}, {'draft': 2, 'label': 'Reply to Kim'}])
+        self.assertEqual(self.act('talk_ask_send', {'id': talk_id, 'draft': 2})['revision'], 'r9')
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'draft': 5}))
+
+    def test_an_old_question_expires(self):
+        talk_id, _ = self.asked('Yes, send it.')
+        self.app._talk.open[talk_id]['confirm']['at'] -= (t.ASK_SECONDS + 1) * 1000
+        sent = self.act('talk_send', {'id': talk_id})
+        self.assertEqual(sent['status'], 'expired')
+        self.assertIn('read the draft out and ask once more', sent['say'])
+        self.assertEqual(self.jobs(), [])
 
     def test_the_voice_cannot_approve_through_the_normal_controls(self):
         self.ready_draft()

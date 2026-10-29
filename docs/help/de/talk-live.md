@@ -23,7 +23,9 @@ Sprechen hat eine eigene Seite: ein Gespräch von Anfang bis Ende, oben die Aufg
 
 Bitte sie, einen Entwurf vorzulesen, zu ändern, zu verschieben, als erledigt zu markieren oder zum nächsten zu gehen. Senden funktioniert wie im Chat einer Aufgabe: ein Entwurf pro Frage, nach einem klaren Ja. Was du über eine Aufgabe sagst, landet im Chat dieser Aufgabe. Kommt eine neue Aufgabe herein, erwähnt sie sie in einer Pause. Sag „füge eine Aufgabe hinzu: …“, und sie legt eine neue an, ohne die aktuelle zu verlassen.
 
-Du kannst inzwischen auf eine andere Seite gehen: Die Leiste bleibt unten, und **Sprechen** in der Seitenleiste bringt dich zurück. Dieses Gespräch dauert höchstens 30 Minuten.
+Sie erreicht auch den Rest von The Machine. Frag nach einer Person, einer Organisation, einem Projekt, einem Termin oder einem Versprechen, und sie schlägt es nach und zeigt es. Sie kann eine Aufgabe zurückstellen, als erledigt markieren, verwerfen, umbenennen oder wieder öffnen, auch eine unter **Erledigt / verworfen**. Für alles andere legt sie eine Aufgabe an, lässt deren Chat es erledigen und sagt dir die Antwort.
+
+Du kannst inzwischen auf eine andere Seite gehen: Die Leiste bleibt unten, und **Sprechen** in der Seitenleiste bringt dich zurück. Dieses Gespräch dauert höchstens 30 Minuten. Auf Computern und Android läuft es im Hintergrund weiter. Auf dem iPhone endet es, wenn die App den Bildschirm verlässt.
 
 ## Bitte um Dinge und sende mit einem Ja
 
@@ -31,9 +33,9 @@ Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“
 
 Der Chat kann auch Dinge nachschlagen, etwa die Öffnungszeiten eines Geschäfts im Web. Währenddessen zeigt er **Bin dran…**, und du kannst weiterreden. Wenn die Antwort da ist, sagt The Machine sie dir, und wo sie sie gefunden hat. Fragst du inzwischen etwas anderes, kommt das danach dran.
 
-Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Lotte senden?“. Auf einem Handy liest sie vorher den ganzen Entwurf vor. Antworte mit einem klaren Ja, in jeder Sprache, und genau dieser Entwurf geht raus.
+Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Lotte senden?“. Vorher liest sie den ganzen Entwurf vor: an wen er geht, den Betreff und den Text. So klappt es auch mit dem Handy in der Tasche. Antworte mit einem klaren Ja, in jeder Sprache, und genau dieser Entwurf geht raus.
 
-- Sie fragt nur nach dem Entwurf, der im Chat steht. Ändert er sich nach der Frage, fragt sie erneut.
+- Sie sendet genau den Entwurf, den sie vorgelesen hat. Ändert er sich nach der Frage, liest sie ihn neu vor und fragt erneut. Eine Frage, die du nicht innerhalb von 3 Minuten beantwortest, verfällt.
 - Ist deine Antwort kein klares Ja, geht nichts raus und sie fragt erneut. „Nein“ sendet nichts.
 - Ein Ja sendet immer genau einen Entwurf. Für mehrere nimm die Follow-up-Prüfung.
 - Der Chat zeigt ein paar Sekunden lang **Per Sprache freigegeben** mit **Rückgängig**, bevor er rausgeht.

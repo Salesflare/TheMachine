@@ -6,8 +6,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Talk live (talk_live.py): the wave next to the mic in a to-do's chat starts a spoken conversation. The bar shows Live,
 // the clock, Mute and End; a minute before 10 minutes it warns, and at 10 it ends. What both sides say lands in the chat.
-// What it is asked to do goes to the chat as a typed message would. A spoken yes sends only the draft on screen, after
-// the voice asked about it, and only when the Machine (talk_send, stubbed here) judged it a yes. OpenAI is a
+// What it is asked to do goes to the chat as a typed message would. A spoken yes sends only the draft the voice read out, after
+// it asked about it, and only when the Machine (talk_send, stubbed here) judged it a yes. OpenAI is a
 // stand-in here: a fake microphone, RTCPeerConnection and data channel (window.__dc), and the Machine's answers are
 // the fixture server's, so the test never needs a microphone, a key or the network.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
@@ -30,8 +30,11 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    talk_tool:()=>({output:{title:cards[0].title,messages:[{from:'Lotte',text:'When can I pick it up?'}]}}),
    talk_end:()=>({ok:true}),
    // The Machine's side of a voice approval: the question it keeps, and its verdict on the owner's answer
-   talk_ask_send:()=>{askedQ=a.revision;return {question:'Send this reply to Lotte by email?',read_aloud:a.read_aloud,draft:{to:'Lotte',how:'by email',subject:'',text:cards[0].next_actions?.[0]?.body},say:'Ask exactly this: Send this reply to Lotte by email?'}},
+   // It pins the revision it hands the voice (the one on screen, else the to-do's current one) and reads it out whole
+   talk_ask_send:()=>{const d=cards[0].next_actions?.[0];if(!d)return {error:'No draft ready to send by voice.'};askedQ=a.revision||d.revision;
+    return {question:'Send this reply to Lotte by email?',revision:askedQ,draft:{to:['Lotte'],how:'by email',subject:d.subject,text:d.body},say:'First read the draft below out in full. Ask exactly this: Send this reply to Lotte by email?'}},
    talk_send:()=>{if(!askedQ)return {status:'not_asked',say:'No confirm question is open.'};const q=askedQ;askedQ=null;
+    if(cards[0].next_actions?.[0]?.revision!==q)return {status:'changed',say:'The draft changed after you asked, so nothing was sent. Call ask_to_send again.'};
     if(verdict!=='queued')return {status:verdict,say:'Not sent.'};
     sends.push({kind:'event',text:'Approved by voice',mine:true,undo_voice:'voice:1',undo_until:Date.now()+10000,at:Date.now()},{kind:'event',text:'Sending to Lotte…',mine:true,at:Date.now()+1});
     return {status:'queued',approval_id:'voice:1',revision:q,undo_seconds:10,say:'Approved.'}},
@@ -171,12 +174,13 @@ try{
   const call=async(n,name)=>{await page.evaluate(([n,name])=>__say({type:'response.function_call_arguments.done',call_id:n,name,arguments:'{}'}),[n,name]);
    await page.waitForFunction(n=>window.__dc.sent.some(x=>x.item?.call_id===n),n);return page.evaluate(n=>JSON.parse(window.__dc.sent.find(x=>x.item?.call_id===n).item.output),n)};
 
-  // The question: only for the draft on screen (its revision), read out first on a phone
+  // The question: for the draft on screen (its revision), always read out whole first
   const q=await call('call3','ask_to_send');
-  assert.equal(q.question,'Send this reply to Lotte by email?');
+  assert.equal(q.question,'Send this reply to Lotte by email?');assert.match(q.say,/^First read the draft below out in full/);
+  assert.equal(q.draft.text,'Hi Lotte, Thursday after two works. See you then.');
   const asking=actions.filter(a=>a.action==='talk_ask_send').at(-1).args;
-  assert.equal(asking.revision,'r1');assert.equal(asking.read_aloud,phone,'a phone: the voice reads the draft out first');
-  if(!phone)await page.waitForFunction(b=>document.querySelector(b+' .talk-hint').textContent==='Say yes to send what’s on screen.',bar);  // only while the question is open
+  assert.equal(asking.revision,'r1');assert.equal(asking.read_aloud,undefined);
+  if(!phone)await page.waitForFunction(b=>document.querySelector(b+' .talk-hint').textContent==='Say yes to send it.',bar);  // only while the question is open
   await said('i3','Send this reply to Lotte by email?','assistant');
   await page.waitForTimeout(150);await shot('t4b-confirm-question');
 
@@ -209,7 +213,8 @@ try{
   await said('i7','Yes.');
   const changed=await call('call7','send_answer');
   assert.equal(changed.status,'changed');assert.match(changed.say,/ask_to_send again/);
-  assert.equal(actions.filter(a=>a.action==='talk_send').length,sentBefore,'nothing asked of the Machine for a changed draft');
+  assert.equal(actions.filter(a=>a.action==='talk_send').length,sentBefore+1,'the Machine refuses it: the revision it pinned changed');
+  assert.equal(sends.length,0);
 
   // An unclear answer, or a no: the Machine says so, nothing goes
   for(const [n,v,text] of [[8,'unclear','Hmm, what did it say again?'],[9,'no','No, wait.']]){

@@ -23,7 +23,9 @@ Hablar tiene su propia página: una conversación de principio a fin, con la tar
 
 Pídele que lea un borrador, lo cambie, lo posponga, lo marque como hecho o pase a la siguiente. Enviar funciona como en el chat de una tarea: un borrador por pregunta, tras un sí claro. Lo que dices sobre una tarea queda en el chat de esa tarea. Si llega una tarea nueva, te la menciona en una pausa. Di "añade una tarea para..." y crea una nueva sin dejar la que tienes abierta.
 
-Mientras tanto puedes ir a otra página: la barra queda abajo, y **Hablar** en la barra lateral te trae de vuelta. Esta conversación dura hasta 30 minutos.
+También llega al resto de The Machine. Pregunta por una persona, una organización, un proyecto, una reunión o una promesa, y lo busca y te lo muestra. Puede posponer una tarea, marcarla como hecha, descartarla, cambiarle el nombre o reabrirla, también una de **Hecho / descartado**. Para todo lo demás, crea una tarea, deja que su chat se encargue y te dice la respuesta.
+
+Mientras tanto puedes ir a otra página: la barra queda abajo, y **Hablar** en la barra lateral te trae de vuelta. Esta conversación dura hasta 30 minutos. Sigue en segundo plano en computadoras y Android. En iPhone, se detiene cuando la app sale de la pantalla.
 
 ## Pide cosas y envía con un sí
 
@@ -31,9 +33,9 @@ Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien
 
 El chat también puede buscar cosas, como el horario de una tienda en la web. Mientras tanto muestra **Trabajando en ello…**, y puedes seguir hablando. Cuando la respuesta está lista, The Machine te la dice, y dónde la encontró. Si pides otra cosa mientras tanto, espera su turno.
 
-Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Lotte por correo?". En un teléfono, lee antes el borrador entero en voz alta. Responde con un sí claro, en cualquier idioma, y ese borrador se envía.
+Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Lotte por correo?". Primero lee el borrador entero en voz alta: a quién va, el asunto y el texto. Así funciona también con el teléfono en el bolsillo. Responde con un sí claro, en cualquier idioma, y ese borrador se envía.
 
-- Solo pregunta por el borrador que se ve en el chat. Si cambia después de la pregunta, vuelve a preguntar.
+- Envía exactamente el borrador que leyó. Si cambia después de la pregunta, lo vuelve a leer y vuelve a preguntar. Una pregunta sin respuesta en 3 minutos caduca.
 - Si tu respuesta no es un sí claro, no se envía nada y vuelve a preguntar. "No" no envía nada.
 - Un sí envía siempre un solo borrador. Para enviar varios, usa la revisión de seguimientos.
 - El chat muestra **Aprobado por voz** con **Deshacer** unos segundos antes de que salga.

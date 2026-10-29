@@ -10,17 +10,24 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Machine is told which (talk_focus), and the send rules are those of a to-do's own Talk live. A to-do that comes in is
 // mentioned at a pause, never while someone talks. OpenAI and the Machine are stand-ins, as in test_talk_live_dashboard.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-const now=new Date().toISOString(),A='a1a1a1a1a1a1a1a1',B='b2b2b2b2b2b2b2b2',C='c3c3c3c3c3c3c3c3',P='d4d4d4d4d4d4d4d4',Z='e5e5e5e5e5e5e5e5',N='f6f6f6f6f6f6f6f6';
+const now=new Date().toISOString(),M='a7a7a7a7a7a7a7a7',D='d8d8d8d8d8d8d8d8',X='e9e9e9e9e9e9e9e9',A='a1a1a1a1a1a1a1a1',B='b2b2b2b2b2b2b2b2',C='c3c3c3c3c3c3c3c3',P='d4d4d4d4d4d4d4d4',Z='e5e5e5e5e5e5e5e5',N='f6f6f6f6f6f6f6f6';
 const DRAFT={kind:'email',label:'Reply to Lotte',to:['lotte@example.com'],to_name:'Lotte',from:'me@example.com',subject:'Re: Paint order',body:'Hi Lotte, Thursday after two works. See you then.',revision:'r1',account_id:'mail'};
 let cards;
 const reset=()=>{cards=[{id:A,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1],people:[{id:'p1',name:'Lotte'}],next_actions:[DRAFT]},
  {id:B,title:'Decide on the offsite venue',body:'Two venues offered.',status:'pending',scope:'personal',created_at:now,event_ids:[2]},
  {id:P,title:'Find a rug and table for the living room',body:'Looking at three shops.',status:'accepted',scope:'personal',created_at:now,event_ids:[4],people:[{id:'p3',name:'Juliana'}]},
+ {id:D,title:'Pay the paint invoice',body:'Paid.',status:'completed',scope:'personal',created_at:now,event_ids:[6]},
  {id:Z,title:'Renew the parking permit',body:'Back on Monday.',status:'snoozed',snoozed_until:new Date(Date.now()+3*864e5).toISOString(),scope:'personal',created_at:now,event_ids:[5]}]};
 let talkReady=true;
 const state=()=>({talk_ready:talkReady,suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
-const actions=[],lines=[],sends=[],replies=[],relayed=[];let askedQ=null,focus=null,running=false;
-const MAIN_TOOLS=['list_todos','open_todo','todo_details','find_todos','ask_chat','create_todo','ask_to_send','send_answer'].map(name=>({type:'function',name}));
+const actions=[],lines=[],sends=[],replies=[],relayed=[],voiced=[];let askedQ=null,focus=null,running=false;
+const MAIN_TOOLS=['list_todos','open_todo','todo_details','find_todos','search','open_record','calendar','machine_status','ask_chat','create_todo','todo_action','ask_machine','ask_to_send','send_answer'].map(name=>({type:'function',name}));
+// The Machine's read tools (talk_tool): what search, open_record and calendar answer
+const LOOKUP={
+ search:x=>x.kind==='meeting'?{found:[{id:'event:7',kind:'meeting',title:'Pilot review with Dana',what:'Calendar'}]}:{found:[{id:'email:dana@client.example',kind:'person',name:'Dana Reyes',about:'Head of Events at Client Example',last:'Tue 27 Oct 15:00'}]},
+ open_record:x=>x.id==='event:7'?{id:'event:7',kind:'meeting',title:'Pilot review with Dana',when:'Thu 29 Oct 14:30',until:'15:15',where:'Zoom',with:['Dana Reyes'],card:{kind:'meeting',title:'Pilot review with Dana',line:'Thu 29 Oct 14:30 · Zoom',event:7}}
+  :{id:x.id,kind:'person',name:'Dana Reyes',about:'Head of Events at Client Example',recent:['Asked about the offsite dates'],card:{kind:'person',title:'Dana Reyes',line:'Head of Events at Client Example',node:'email:dana@client.example'}},
+ calendar:()=>({meetings:[{id:'event:7',title:'Pilot review with Dana',when:'Thu 29 Oct 14:30',until:'15:15',where:'Zoom',with:['Dana Reyes']}],from:'2026-10-29',days:1,count:1})};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
@@ -29,20 +36,24 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    talk_status:()=>({ready:true,limit:600,warn:540}),
    talk_start:()=>({id:'feedfeedfeedfeed',via:'signin',per_use:false,limit:a.main?1800:600,warn:a.main?1740:540,tools:MAIN_TOOLS,main:!!a.main,instructions:'You are The Machine, going through the to-dos.',voice:'cedar',speed:0.95,turn:{type:'semantic_vad',eagerness:'low'},turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},
     ask_note:'Drafts wait for Approve.',notes:{queued:'Joins.',done:'Done: "{answer}"',stopped:'Stopped.',new:'A new to-do needs the owner: "{title}" (from: {from}). At a natural pause, mention it.',ready:'A to-do that was preparing is ready now: "{title}" (from: {from}).'},ready:true}),
-   card_new:()=>{const made={id:N,title:a.text.split('\n')[0],body:a.text,status:'accepted',origin:'owner',scope:a.scope||'personal',created_at:new Date().toISOString(),event_ids:[9]};cards.push(made);return {id:N}},
+   card_new:()=>{const id=cards.some(c=>c.id===N)?M:N,made={id,title:a.text.split('\n')[0],body:a.text,status:'accepted',origin:'owner',scope:a.scope||'personal',created_at:new Date().toISOString(),event_ids:[9]};cards.push(made);return {id}},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
-   talk_focus:()=>{focus=a.suggestion_id;askedQ=null;return {ok:true}},
+   talk_focus:()=>{if(![...cards,{id:X}].some(c=>c.id===a.suggestion_id))return {__status:400,error:'Unknown suggestion'};focus=a.suggestion_id;askedQ=null;return {ok:true}},
    talk_line:()=>{lines.push({sid:focus,kind:a.role==='user'?'you':'reply',text:a.text,via:'live',at:Date.now()});return {ok:true}},
-   talk_tool:()=>({output:focus?{title:cards.find(c=>c.id===focus).title,drafts:focus===A?[{kind:'email',to:DRAFT.to,subject:DRAFT.subject,body:DRAFT.body}]:[]}:{error:'No to-do is open. Call open_todo first.'}}),
+   talk_tool:()=>(LOOKUP[a.name]?{output:LOOKUP[a.name](a.args)}:focus===X?{output:{title:'Order the new desk chair',state:'dismissed',messages:[],drafts:[]}}:{output:focus?{title:cards.find(c=>c.id===focus).title,drafts:focus===A?[{kind:'email',to:DRAFT.to,subject:DRAFT.subject,body:DRAFT.body}]:[]}:{error:'No to-do is open. Call open_todo first.'}}),
    talk_end:()=>({ok:true}),
-   talk_ask_send:()=>{if(focus!==A)return {error:'No draft ready to send by voice.'};askedQ=a.revision;return {question:'Send this reply to Lotte by email?',read_aloud:a.read_aloud,say:'Ask exactly this: Send this reply to Lotte by email?'}},
+   talk_ask_send:()=>{if(focus!==A)return {error:'No draft ready to send by voice.'};askedQ=a.revision||'r1';return {question:'Send this reply to Lotte by email?',revision:askedQ,draft:{to:['Lotte'],how:'by email',subject:DRAFT.subject,text:DRAFT.body},say:'First read the draft below out in full. Ask exactly this: Send this reply to Lotte by email?'}},
    talk_send:()=>{if(!askedQ)return {status:'not_asked',say:'No confirm question is open.'};askedQ=null;
     sends.push({kind:'event',text:'Approved by voice',mine:true,undo_voice:'voice:1',undo_until:Date.now()+10000,at:Date.now()});
     return {status:'queued',approval_id:'voice:1',undo_seconds:10,say:'Approved.'}},
-   decide:()=>{if(String(a.decision_id).startsWith('chat-talk-')){relayed.push({sid:a.suggestion_id,text:a.feedback});running=true}return {ok:true}},
-   card_chat:()=>({session:true,status:running?'running':'done',active:running,cursor:'k',items:[...replies.filter(x=>x.sid===a.suggestion_id),{kind:'reply',text:'Ready for you.',...(a.suggestion_id===A?{drafts:[{kind:'email',to:['Lotte'],subject:DRAFT.subject,body:DRAFT.body,reply:true}]}:{}),at:Date.now()-60000},...lines.filter(l=>l.sid===a.suggestion_id),...(a.suggestion_id===A?sends:[])].sort((x,y)=>x.at-y.at)}),
+   decide:()=>{if(String(a.decision_id).startsWith('chat-talk-')){relayed.push({sid:a.suggestion_id,text:a.feedback});running=true}
+    // ask_machine: its own new to-do's chat answers (the owner's words, shown as theirs)
+    else if(String(a.decision_id).startsWith('chat-voice-')){voiced.push({sid:a.suggestion_id,text:a.feedback});replies.push({sid:a.suggestion_id,kind:'reply',text:'Trattoria Roma is open Friday until eleven.',at:Date.now()})}
+    return a.choice==='snooze'?{ok:true,snoozed_until:'2026-10-30T08:00:00Z'}:{ok:true}},
+   card_rename:()=>({ok:true}),
+   card_chat:()=>({session:true,status:running&&a.suggestion_id!==M?'running':'done',active:running&&a.suggestion_id!==M,cursor:'k',items:[...replies.filter(x=>x.sid===a.suggestion_id),...(a.suggestion_id===M?[]:[{kind:'reply',text:'Ready for you.',...(a.suggestion_id===A?{drafts:[{kind:'email',to:['Lotte'],subject:DRAFT.subject,body:DRAFT.body,reply:true}]}:{}),at:Date.now()-60000}]),...lines.filter(l=>l.sid===a.suggestion_id),...(a.suggestion_id===A?sends:[])].sort((x,y)=>x.at-y.at)}),
   }[r.action];
-  res.end(JSON.stringify(answer?answer():{}));return}
+  const out=answer?answer():{};if(out?.__status){res.statusCode=out.__status;delete out.__status}res.end(JSON.stringify(out));return}
  if(/^\/brand\/[\w.-]+\.(png|webp|woff2|svg)$/.test(url.pathname)){try{const f=await readFile(new URL('..'+(url.pathname==='/brand/avatar.png'?'/brand/app-icon-192.png':url.pathname),import.meta.url));res.setHeader('Content-Type',{png:'image/png',webp:'image/webp',woff2:'font/woff2',svg:'image/svg+xml'}[url.pathname.split('.').pop()]);res.end(f)}catch{res.statusCode=404;res.end()}return}
  res.statusCode=200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -67,7 +78,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   await context.addInitScript(FAKE_RTC);
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  reset();actions.length=0;lines.length=0;sends.length=0;replies.length=0;relayed.length=0;running=false;askedQ=null;focus=null;
+  reset();actions.length=0;lines.length=0;sends.length=0;replies.length=0;relayed.length=0;voiced.length=0;running=false;askedQ=null;focus=null;
   await page.goto('http://127.0.0.1:'+server.address().port+'/#');await page.waitForTimeout(400);
   const tag=`${w}-${scheme}`,shot=async n=>{if(SHOTS)await page.screenshot({path:`${SHOTS}/${n}-${tag}.png`})};
   const tap=sel=>phone?page.locator(sel).tap():page.locator(sel).click();
@@ -139,7 +150,7 @@ try{
   // Sending by voice, from Talk's view: the same rules, about the draft it shows
   const q=await call('q1','ask_to_send');
   assert.equal(q.question,'Send this reply to Lotte by email?');
-  await page.waitForFunction(sel=>document.querySelector(sel+' .talk-hint').textContent==='Say yes to send what’s on screen.',viewBar);  // asked: the hint, until answered
+  await page.waitForFunction(sel=>document.querySelector(sel+' .talk-hint').textContent==='Say yes to send it.',viewBar);  // asked: the hint, until answered
   assert.equal(actions.find(a=>a.action==='talk_ask_send').args.revision,'r1');
   await said('s2','Send this reply to Lotte by email?','assistant');await said('s3','Yes, send it.');
   assert.equal((await call('q2','send_answer')).status,'queued');
@@ -177,12 +188,64 @@ try{
   assert.equal(made.ok,true);assert.equal(made.id,N);
   assert.deepEqual(actions.find(a=>a.action==='card_new').args,{text:'Plan a trip to Antwerp\nA reminder',scope:null,due:null,due_at:null,about:[],attach:[]});
   assert.equal(relayed.length,relayedBefore,'nothing handed to the to-do in focus');
-  assert.equal(actions.filter(a=>a.action==='talk_focus').at(-1).args.suggestion_id,A,'the focus stays');
+  assert.equal(focus,A,'the focus stays');
   await page.waitForFunction(()=>[...document.querySelectorAll('#talk-view .talk-mark')].some(x=>x.textContent==='Added a to-do: Plan a trip to Antwerp'));
   assert.equal(await page.locator('#talk-view .talk-about h3').textContent(),'Reply to Lotte about the paint order');
   await page.evaluate(()=>refresh());await page.waitForTimeout(800);assert.equal((await told()).length,toldBefore+2,'the one it made is not announced');
   assert.match((await call('n2','create_todo',{title:'  '})).error,/Say what the to-do is/);
   await page.waitForTimeout(300);await shot('m2b-added-a-todo');
+
+  // The rest of the Machine: a person and a meeting looked up and opened show as cards in the transcript; the to-do in
+  // focus stays the same
+  const focusBefore=actions.filter(a=>a.action==='talk_focus').length;
+  assert.equal((await call('w1','search',{words:'Dana'})).found[0].id,'email:dana@client.example');
+  const person=await call('w2','open_record',{id:'email:dana@client.example'});
+  assert.equal(person.name,'Dana Reyes');assert.equal(person.card,undefined,'the card is the page\'s, not the voice\'s');
+  await page.waitForSelector('#talk-view .talk-record a[href*="dana"]');
+  assert.equal(await page.locator('#talk-view .talk-record').last().locator('.talk-record-kind').textContent(),'Person');
+  await said('s4','Dana runs events at Client Example. You last talked on Tuesday.','assistant');
+  await page.waitForTimeout(300);await shot('m5-looked-up-a-person');
+  const day=await call('w3','calendar',{});assert.equal(day.meetings[0].id,'event:7');
+  await call('w4','open_record',{id:'event:7'});
+  await page.waitForSelector('#talk-view .talk-record [data-talk-event="7"][data-meeting]');
+  assert.match(await page.locator('#talk-view .talk-record').last().textContent(),/^Meeting.*Pilot review with Dana.*Zoom/);
+  await said('s5','Your pilot review with Dana is today at half past two, on Zoom.','assistant');
+  await page.waitForTimeout(300);await shot('m6-looked-up-a-meeting');
+  assert.equal(actions.filter(a=>a.action==='talk_focus').length,focusBefore,'the focus stays');
+  assert.equal(await page.locator('#talk-view .talk-about h3').textContent(),'Reply to Lotte about the paint order');
+  const status=await call('w5','machine_status');
+  assert.deepEqual(Object.keys(status),['connections','reviews','needs_owner']);
+
+  // Anything else: ask_machine makes its own to-do, hands the request to that chat (chat-voice-), and its answer
+  // comes back to the voice; never the to-do in focus
+  const toldNow=(await told()).length;
+  const machine=await call('w6','ask_machine',{request:'Which Italian place near the office is open Friday night?'});
+  assert.equal(machine.ok,true);
+  assert.equal(actions.filter(a=>a.action==='card_new').at(-1).args.text,'Which Italian place near the office is open Friday night?');
+  await until(()=>voiced.length===1);assert.deepEqual(voiced[0],{sid:M,text:'Which Italian place near the office is open Friday night?'});
+  assert.equal(relayed.length,relayedBefore,'nothing handed to the to-do in focus');
+  await page.waitForFunction(n=>window.__dc.sent.filter(x=>x.type==='conversation.item.create'&&x.item?.type==='message').length>n,toldNow,{timeout:8000});
+  assert.equal((await told()).at(-1),'Done: "Trattoria Roma is open Friday until eleven."');
+  await page.evaluate(()=>{__say({type:'response.created',response:{id:'told3'}});__say({type:'response.done',response:{id:'told3',status:'completed'}})});
+
+  // A to-do's own buttons by voice (todo_action): the same decide and card_rename actions, never a send
+  const decided=()=>actions.filter(a=>a.action==='decide').at(-1).args;
+  assert.equal((await call('t1','todo_action',{action:'unsnooze',id:Z})).ok,true);assert.deepEqual([decided().suggestion_id,decided().choice],[Z,'accept']);
+  assert.equal((await call('t2','todo_action',{action:'snooze',id:B,snooze:'3d'})).until,'2026-10-30T08:00:00Z');
+  assert.deepEqual([decided().choice,decided().snooze_option],['snooze','3d']);
+  await call('t3','todo_action',{action:'mark_done',id:B});assert.deepEqual([decided().suggestion_id,decided().choice],[B,'complete']);
+  await call('t4','todo_action',{action:'dismiss',id:B,why:'Already booked'});assert.deepEqual([decided().choice,decided().feedback],['reject','Already booked']);
+  await call('t5','todo_action',{action:'reopen',id:D});assert.deepEqual([decided().suggestion_id,decided().choice],[D,'reopen']);
+  assert.match((await call('t6','todo_action',{action:'unsnooze',id:B})).error,/isn’t snoozed/);
+  assert.match((await call('t7','todo_action',{action:'mark_done',id:D})).error,/closed/);
+  await call('t8','todo_action',{action:'rename',title:'Reply to Lotte about the paint'});
+  assert.deepEqual((({suggestion_id,title})=>({suggestion_id,title}))(actions.filter(a=>a.action==='card_rename').at(-1).args),{suggestion_id:A,title:'Reply to Lotte about the paint'});
+  // A dismissed one the page hasn't loaded: it opens, and Reopen goes the Done / dismissed list's way
+  const gone=await call('t9','open_todo',{id:X});assert.equal(gone.state,'dismissed');
+  await page.waitForFunction(()=>[...document.querySelectorAll('#talk-view .talk-mark')].some(x=>x.textContent==='Order the new desk chair'));
+  await call('t10','todo_action',{action:'reopen'});assert.deepEqual([decided().suggestion_id,decided().choice],[X,'reopen']);
+  assert.equal(actions.filter(a=>a.action==='confirm_action').length,0,'never a send');
+  await call('t11','open_todo',{id:A});
 
   // The to-do's own chat has what was said, decided and sent about it (Open the chat on the card); Back returns to Talk
   await tap('#talk-view .talk-about a[href^="#chat="]');
@@ -254,6 +317,70 @@ try{
    assert.deepEqual(actions.filter(a=>a.action==='talk_start').at(-1).args,{main:true});
    await page.keyboard.press('t');await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));
    await until(()=>ended()===4);}
+  await context.close()}
+ // In the background (a phone's lock screen, another tab): the screen stays on, the lock screen has Mute and End, and
+ // what timers did runs on the voice's own events, so slowed-down timers don't hold it up. Back on screen it checks the
+ // connection is still there; one that went away while hidden ends cleanly and says so.
+ {const BACKGROUND=()=>{window.__wakes=[];Object.defineProperty(navigator,'wakeLock',{value:{request:async kind=>{const l={kind,released:false,release:async()=>{l.released=true}};window.__wakes.push(l);return l}}});
+   const ms={handlers:{},metadata:null,playbackState:'none',setActionHandler(n,f){if(n==='hangup'||n==='togglemicrophone')throw new TypeError('not supported here');if(f)this.handlers[n]=f;else delete this.handlers[n]},setMicrophoneActive(on){this.mic=on}};
+   Object.defineProperty(navigator,'mediaSession',{value:ms});window.__hidden=false;
+   Object.defineProperty(document,'hidden',{get:()=>window.__hidden});Object.defineProperty(document,'visibilityState',{get:()=>window.__hidden?'hidden':'visible'});
+   window.__show=hidden=>{window.__hidden=hidden;document.dispatchEvent(new Event('visibilitychange'))};
+   // throttled timers: while frozen, nothing a timer would do happens
+   const si=window.setInterval,st=window.setTimeout;window.setInterval=(f,ms,...a)=>si(()=>{if(!window.__frozen)f(...a)},ms);
+   window.setTimeout=(f,ms,...a)=>st(function run(){if(window.__frozen)return st(run,50);if(typeof f==='function')f(...a)},ms)};
+  reset();actions.length=0;focus=null;
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'en-US'});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  await context.addInitScript(FAKE_RTC);await context.addInitScript(BACKGROUND);
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#');await page.waitForTimeout(400);
+  const live=()=>page.waitForFunction(()=>document.querySelector('#talk-view .talk-live strong')?.textContent==='Live');
+  const start=async()=>{await page.evaluate(()=>talkMain());await live()};
+  const ended=()=>page.waitForFunction(()=>!document.querySelector('#talk-view .talk'),null,{timeout:3000});
+  await start();
+  assert.deepEqual(await page.evaluate(()=>window.__wakes.map(l=>[l.kind,l.released])),[['screen',false]],'the screen stays on while live');
+  const media=()=>page.evaluate(()=>({title:navigator.mediaSession.metadata?.title,artist:navigator.mediaSession.metadata?.artist,art:navigator.mediaSession.metadata?.artwork?.[0]?.src||'',
+   state:navigator.mediaSession.playbackState,mic:navigator.mediaSession.mic,handlers:Object.keys(navigator.mediaSession.handlers).sort()}));
+  let m=await media();
+  assert.deepEqual([m.title,m.artist,m.state,m.mic,m.handlers],['Talk','The Machine','playing',true,['pause','play','stop']]);assert.match(m.art,/app-icon-192\.png$/);
+  assert.equal(await page.evaluate(()=>talk.audio.isConnected&&talk.audio.autoplay),true,'an audio element plays the voice');
+  // The lock screen's pause is Mute, play unmutes; the bar follows
+  await page.evaluate(()=>navigator.mediaSession.handlers.pause());
+  assert.equal(await page.evaluate(()=>window.__stream.getAudioTracks()[0].enabled),false);m=await media();assert.deepEqual([m.state,m.mic],['paused',false]);
+  assert.equal(await page.locator('#talk-view [data-talk-mute]').textContent(),'Unmute');
+  await page.evaluate(()=>navigator.mediaSession.handlers.play());assert.equal(await page.evaluate(()=>window.__stream.getAudioTracks()[0].enabled),true);
+  // Hidden and back: the wake lock the browser let go is taken again
+  await page.evaluate(()=>{__show(true);window.__wakes[0].released=true;__show(false)});
+  await page.waitForFunction(()=>window.__wakes.length===2);
+  // Timers frozen: a goodbye still ends it once heard, on the voice's own events
+  await page.evaluate(()=>{window.__frozen=true;__say({type:'response.created',response:{id:'bye'}});__say({type:'output_audio_buffer.started'});
+   __say({type:'response.output_audio_transcript.done',response_id:'bye',item_id:'bye1',transcript:'Bye for now.'});
+   __say({type:'response.function_call_arguments.done',call_id:'e1',name:'end_talk',arguments:'{}'});
+   __say({type:'response.done',response:{id:'bye',status:'completed'}})});
+  await page.waitForTimeout(400);assert.equal(await page.locator('#talk-view .talk').count(),1,'not while the goodbye plays');
+  await page.evaluate(()=>__say({type:'output_audio_buffer.stopped'}));await ended();
+  m=await media();assert.deepEqual([m.title,m.state,m.handlers],[undefined,'none',[]]);
+  assert.equal(await page.evaluate(()=>window.__wakes.every(l=>l.released)),true,'the screen lock is let go');
+  // Timers frozen: the 30 minutes count from the clock, checked on the next event or when the page shows again
+  await page.evaluate(()=>{window.__frozen=false});await start();
+  await page.evaluate(()=>{window.__frozen=true;__show(true);window.__skew=1801000;__show(false)});await ended();
+  await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('Talk ends after 30 minutes'));
+  await page.evaluate(()=>{window.__frozen=false;window.__skew=0});await start();
+  await page.evaluate(()=>{window.__frozen=true;window.__skew=1801000;__say({type:'response.done',response:{id:'x',status:'completed'}})});await ended();
+  // The connection went away while hidden: back on screen it ends cleanly, says so, with Start again
+  await page.evaluate(()=>{window.__frozen=false;window.__skew=0});await start();
+  await page.evaluate(()=>{__show(true);window.__pc.connectionState='failed'});await page.waitForTimeout(200);
+  assert.equal(await page.locator('#talk-view .talk').count(),1);
+  await page.evaluate(()=>__show(false));await ended();
+  await page.waitForFunction(()=>document.getElementById('toast').textContent==='Talk stopped while in the background.');
+  assert.equal(await page.locator('#talk-view .talk-again-btn').count(),1,'Start again');
+  // An iPhone stops the microphone when the app leaves the screen: the same clean end
+  await start();
+  await page.evaluate(()=>{__show(true);window.__stream.getAudioTracks()[0].dispatchEvent(new Event('ended'))});await ended();
+  await page.evaluate(()=>__show(false));
+  await page.waitForFunction(()=>document.getElementById('toast').textContent==='Talk stopped while in the background.');
+  if(SHOTS)await page.screenshot({path:`${SHOTS}/m7-stopped-in-the-background-390-light.png`});
   await context.close()}
  // Without OpenAI (the page's status says so): no Talk
  talkReady=false;reset();actions.length=0;
