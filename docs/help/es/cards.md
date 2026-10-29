@@ -16,7 +16,12 @@ La pestaña **Sugerencias** las agrupa:
 - **Necesita tu decisión**: algo que solo tú puedes decidir.
 - **Preparando**: tu Machine está trabajando en ella. Una tarea a la que acabas de decir **Hazlo** se queda donde estaba mientras se prepara, y luego pasa a **Lista para ti**.
 - **Vuelve más tarde**: pospuesta.
+- **Parecen hechas**: tareas que ya parecen terminadas. Plegadas, justo encima de **Hecho / descartado**.
 - **Hecho / descartado**: cada tarea terminada, las más recientes primero, de 30 en 30 según te desplazas.
+
+En **Parecen hechas** cada tarea es una línea: su título y lo que muestra que está hecha, como "PR #3451 fusionado". **Hecho** cierra una, **Marcar todas como hechas** las cierra todas (con **Deshacer**), y **No está hecho** la devuelve como tarea normal para que tu Machine aprenda. Toca una línea para ver la tarea entera. Nunca aparecen como atrasadas ni cuentan como pendientes de ti. Nada se cierra sin ti.
+
+Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta.
 
 **Todo al día.** significa que ahora nada te necesita. La línea de abajo dice cuándo tu Machine revisó por última vez.
 

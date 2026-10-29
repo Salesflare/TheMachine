@@ -16,7 +16,12 @@ The **Suggestions** tab groups them:
 - **Needs your decision**: something only you can decide.
 - **Preparing**: your Machine is working on it. A to-do you just said **Do it** to stays where it was while it prepares, then moves to **Ready for you**.
 - **Coming back later**: snoozed.
+- **Look done**: to-dos that seem finished already. Folded, right above **Done / dismissed**.
 - **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll.
+
+Under **Look done** each to-do is one line: its title and what shows it's done, like "PR #3451 merged". **Done** closes one, **Mark all done** closes them all (with **Undo**), and **Not done** puts it back as a normal to-do so your Machine learns from it. Tap a line to see the whole to-do. These never show as late and don't count as waiting for you. Nothing closes without you.
+
+A to-do whose last step is still open on someone else's side, like a review, a merge or a reply, says **Waiting on:** that step and stays open. It waits in **Waiting on others**, folded above Coming back later, and doesn't count as ready for you. A new message on it brings it back.
 
 **All clear.** means nothing needs you now. The line under it says when your Machine last looked.
 
