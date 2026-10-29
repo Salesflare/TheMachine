@@ -17,7 +17,7 @@ No celular, toque no ícone de busca na barra superior.
 Aperte `?` para ver **Atalhos de teclado**, a lista completa para o seu computador.
 
 - Ir para uma página: `G` e depois `S` Sugestões, `C` Calendário, `E` Eventos, `P` Pessoas, `O` Organizações, `J` Projetos, `F` Fleet, `B` Feedback, `N` Conexões, `,` Configurações.
-- `C` adiciona uma nova tarefa. `J` e `K` (ou `↓` e `↑`) andam por uma lista, Enter abre.
+- `C` adiciona uma nova tarefa. `T` inicia Falar, ou encerra enquanto está ao vivo. No Calendário, `T` vai para hoje. `J` e `K` (ou `↓` e `↑`) andam por uma lista, Enter abre.
 - Em uma tarefa: `E` renomeia, `S` adia, `D` marca como feita, `R` escreve no chat dela.
 
 As teclas não funcionam enquanto você digita em um campo.

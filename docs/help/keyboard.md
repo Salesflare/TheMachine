@@ -17,7 +17,7 @@ On a phone, tap the search icon in the top bar.
 Press `?` for **Keyboard shortcuts**, the full list for your computer.
 
 - Go to a page: `G` then `S` Suggestions, `C` Calendar, `E` Events, `P` People, `O` Organizations, `J` Projects, `F` Fleet, `B` Feedback, `N` Connections, `,` Settings.
-- `C` adds a new to-do. `J` and `K` (or `↓` and `↑`) move through a list, Enter opens.
+- `C` adds a new to-do. `T` starts Talk, or ends it while it's live. On the Calendar, `T` goes to today. `J` and `K` (or `↓` and `↑`) move through a list, Enter opens.
 - On a to-do: `E` renames it, `S` snoozes it, `D` marks it done, `R` writes in its chat.
 
 Keys don't work while typing in a field.

@@ -17,7 +17,7 @@ Tik op een telefoon op het zoekicoon in de bovenste balk.
 Druk op `?` voor **Sneltoetsen**, de volledige lijst voor je computer.
 
 - Naar een pagina gaan: `G` en dan `S` Suggesties, `C` Agenda, `E` Gebeurtenissen, `P` Personen, `O` Organisaties, `J` Projecten, `F` Fleet, `B` Feedback, `N` Koppelingen, `,` Instellingen.
-- `C` voegt een nieuwe to-do toe. `J` en `K` (of `↓` en `↑`) gaan door een lijst, Enter opent.
+- `C` voegt een nieuwe to-do toe. `T` start Praten, of stopt het terwijl het loopt. In de Agenda gaat `T` naar vandaag. `J` en `K` (of `↓` en `↑`) gaan door een lijst, Enter opent.
 - Op een to-do: `E` hernoemt hem, `S` snoozet hem, `D` markeert hem als gedaan, `R` schrijft in zijn chat.
 
 Toetsen werken niet terwijl je in een veld typt.

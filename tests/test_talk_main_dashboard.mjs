@@ -85,6 +85,13 @@ try{
   assert.deepEqual(setup.session.tools.map(x=>x.name),MAIN_TOOLS.map(x=>x.name));
   assert.equal(await page.locator('#side-talk').getAttribute('aria-pressed'),'true');
   await page.waitForTimeout(200);await shot('m1-talk-floating');
+  // Scrolled to the end, the last to-do clears the floating bar (its buttons stay tappable)
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));await page.waitForTimeout(200);
+  const gap=await page.evaluate(()=>{const cards=[...document.querySelectorAll('#inbox .card')].filter(c=>c.offsetParent),dock=document.querySelector('#talk-dock').getBoundingClientRect();
+   return [cards.at(-1),document.querySelector('.site-footer')].filter(Boolean).map(x=>dock.top-x.getBoundingClientRect().bottom)});
+  for(const g of gap)assert.ok(g>=12,`the page ends ${g}px above the floating bar, under it`);
+  await shot('m1b-talk-floating-scrolled');
+  await page.evaluate(()=>window.scrollTo(0,0));
 
   // What needs the owner, in the dashboard's order: Ready first, then To decide
   const listed=await call('l1','list_todos');
@@ -102,6 +109,7 @@ try{
   // Lines are kept for the to-do on screen
   await said('s1','Lotte wants to know when to pick up the paint. I drafted a reply. Want to hear it?','assistant');
   await page.waitForFunction(()=>document.querySelector('#chat-log').textContent.includes('Want to hear it?'));
+  for(let i=0;i<40&&!lines.length;i++)await page.waitForTimeout(50);
   assert.equal(lines.at(-1).sid,A);
   await page.waitForTimeout(300);await shot('m2-the-todo-on-screen');
 
@@ -153,6 +161,19 @@ try{
   for(let i=0;i<40&&actions.filter(a=>a.action==='talk_end').length<2;i++)await page.waitForTimeout(50);
   assert.equal(actions.filter(a=>a.action==='talk_end').length,2);
   assert.equal(await page.locator('#side-talk').getAttribute('aria-pressed'),'false');
+  // T, like C for New to-do: shown on the row on a computer (not in the phone drawer), starts Talk, and ends it while live
+  if(phone){await page.evaluate(()=>drawerOpen());assert.equal(await page.locator('#side-talk kbd').isVisible(),false,'no key hint on a phone');await page.evaluate(()=>drawerClose())}
+  else{assert.equal(await page.locator('#side-talk kbd').textContent(),'T');assert.equal(await page.locator('#side-talk kbd').isVisible(),true)
+   const starts=()=>actions.filter(a=>a.action==='talk_start').length,n=starts();
+   await page.locator('#side-find').focus();await page.keyboard.press('t');await page.waitForTimeout(200);
+   assert.equal(starts(),n,'T while typing types a t');assert.equal(await page.locator('#side-find').inputValue(),'t');
+   await page.locator('#side-find').fill('');await page.evaluate(()=>document.activeElement.blur());
+   for(const k of ['Control+t','Alt+t'])await page.keyboard.press(k);await page.waitForTimeout(200);assert.equal(starts(),n,'not with Ctrl or Alt held');
+   await page.keyboard.press('t');await page.waitForFunction(()=>document.querySelector('#talk-dock .talk-live strong')?.textContent==='Live');
+   assert.deepEqual(actions.filter(a=>a.action==='talk_start').at(-1).args,{main:true});
+   await page.keyboard.press('t');await page.waitForFunction(()=>!document.querySelector('#talk-dock'));
+   for(let i=0;i<40&&actions.filter(a=>a.action==='talk_end').length<3;i++)await page.waitForTimeout(50);
+   assert.equal(actions.filter(a=>a.action==='talk_end').length,3,'T again ends it, the same as End')}
   await context.close()}
  // Without OpenAI (the page's status says so): no Talk
  talkReady=false;reset();actions.length=0;
@@ -161,6 +182,15 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#');await page.waitForTimeout(800);
   assert.equal(await page.locator('#side-talk').isVisible(),false,'no OpenAI, no Talk');
   assert.equal(actions.filter(a=>a.action==='talk_status').length,0,'known from the page status, never asked separately');
+  await page.keyboard.press('t');await page.waitForTimeout(400);
+  assert.equal(actions.filter(a=>a.action==='talk_start').length,0,'T does nothing without Talk live');
+  assert.equal(await page.locator('#talk-dock').count(),0,'and no floating bar');
+  if(SHOTS)await page.screenshot({path:`${SHOTS}/m4-no-talk-live-1440-light.png`});
+  // Talk live becomes ready: Talk shows with the page's next status, no reload
+  talkReady=true;await page.evaluate(()=>refresh());await page.waitForSelector('#side-talk:not([hidden])');
+  assert.equal(await page.locator('#side-talk kbd').isVisible(),true);
+  await page.keyboard.press('t');await page.waitForFunction(()=>document.querySelector('#talk-dock .talk-live strong')?.textContent==='Live');
+  await page.keyboard.press('t');await page.waitForFunction(()=>!document.querySelector('#talk-dock'));
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('talk main dashboard ok');

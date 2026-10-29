@@ -1754,7 +1754,7 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 /* Talk (the main conversation) outside a to-do's chat: the same bar, floating at the bottom of the page */
 #talk-dock{position:fixed;z-index:60;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100vw - 32px));margin:0;transform:translateX(-50%)}
 #talk-dock .talk-bar{box-shadow:0 6px 24px rgba(0,0,0,.14)}
-body:has(#talk-dock) main{padding-bottom:88px}
+/* While the bar floats, the page ends with room for it (bar + its gap + air), so the last to-do and the footer scroll clear */body:has(#talk-dock)::after{content:'';display:block;flex:none;height:calc(var(--talk-dock-h,64px) + 32px + env(safe-area-inset-bottom,0px))}
 @media(min-width:1024px){#talk-dock{left:calc(50% + var(--side-w,0px)/2)}}
 .side-talk[hidden]{display:none!important}
 @media (max-width:520px){.talk-hint{display:none}}
@@ -3707,7 +3707,7 @@ function renderDictation(){const d=state.dictation,box=$('#settings-dictation'),
   +(d.openai===false&&d.engine!=='local'?`<div class="dictation-fine"><small>${esc(t('OpenAI needs OpenAI set up in OpenClaw: an API key, or a ChatGPT sign-in that allows audio.'))}</small></div>`:'')
   +(d.in_use==='local'?`<div><span class="grow"><strong>${esc(t('Accuracy'))}</strong><small>${esc(t(d.model==='base'?'Quicker, but it gets more words wrong.':'Best for most languages. Slower on a small Machine.'))}</small></span><select id="dictation-model" aria-label="${esc(t('Accuracy'))}">${opt('small','More accurate',d.model==='small')}${opt('base','Faster',d.model==='base')}</select></div>`:'')
   +`<div><span class="grow"><strong>${esc(t('Language'))}</strong><small>${esc(t('Detect works for every app language. Picking yours is a little faster.'))}</small></span><select id="dictation-language" aria-label="${esc(t('Voice input language'))}"><option value=""${d.language?'':' selected'}>${esc(t('Detect'))}</option>${MIC_LANGS.map(([c,n])=>`<option value="${c}" translate="no"${d.language===c?' selected':''}>${n}</option>`).join('')}</select></div>`
-  +(d.talk?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t(d.talk.ready==null?'Checking…':d.talk.ready?'Ready. Tap the wave in a to-do’s chat to talk with The Machine.':'Needs OpenAI set up in OpenClaw: a ChatGPT sign-in, or an API key.'))}</small></span></div>`
+  +(d.talk?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t(d.talk.ready==null?'Checking…':d.talk.ready?'Ready. Tap Talk in the menu, or the wave in a to-do’s chat.':'Needs OpenAI set up in OpenClaw: a ChatGPT sign-in, or an API key.'))}</small></span></div>`
    +(d.talk.ready&&d.talk_voice?`<div><span class="grow"><strong>${esc(t('Voice'))}</strong><small>${esc(t('How The Machine sounds when you talk live.'))}</small></span><button type="button" class="quiet talk-sample" data-talk-sample aria-label="${esc(t('Play a sample'))}" title="${esc(t('Play a sample'))}">${PLAY}</button><select id="talk-voice" aria-label="${esc(t('Voice'))}">${TALK_VOICES.map(n=>`<option value="${n}" translate="no"${d.talk_voice===n?' selected':''}>${n[0].toUpperCase()+n.slice(1)}</option>`).join('')}</select></div>`:''):'');
  // Still preparing, or the Machine still asking OpenClaw what OpenAI can do here (it answers at once, and fills that in later)
  clearTimeout(dictation.timer);if((l.state==='preparing'||d.openai==null||d.talk&&d.talk.ready==null)&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
@@ -5977,6 +5977,8 @@ async function talkLoad(){if(talkInfo.busy||Date.now()-talkInfo.at<600000)return
 // Talk in the sidebar (and the phone drawer): the main conversation, about whatever needs the owner
 // Whether this Machine can talk live also comes with the page's status (talk_ready), so Talk shows without asking
 function talkFromStatus(){if(typeof state.talk_ready==='boolean'&&talkInfo.ready!==state.talk_ready&&!talkInfo.busy){talkInfo.ready=state.talk_ready;talkSide()}}
+// Talk in the sidebar, or T: starts the main conversation, or ends it while it's live (the same as End)
+function talkMain(){const was=talk?.main;if(talk)talkEnd();if(!was)talkStart(true)}
 function talkSide(){const b=$('#side-talk');if(b){b.hidden=!talkOk();b.setAttribute('aria-pressed',String(!!talk?.main))}}
 // The bar sits above the chat's message box; Talk's own floats at the bottom of the page when no chat is open
 function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector('.chat-compose');
@@ -5985,6 +5987,7 @@ function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector(
  if(!box){host=$('#talk-dock');if(!host){host=document.createElement('div');host.id='talk-dock';document.body.append(host)}bar=host.querySelector('.talk')}
  document.querySelectorAll('.talk').forEach(x=>{if(x!==bar&&!x.closest('#settings'))x.remove()});if(box)$('#talk-dock')?.remove();
  if(!bar){bar=document.createElement('div');bar.className='talk';if(box)box.insertBefore(bar,box.querySelector('.chat-box'));else host.append(bar)}
+ if(!box&&!host.dataset.ro){host.dataset.ro=1;new ResizeObserver(()=>document.body.style.setProperty('--talk-dock-h',host.offsetHeight+'px')).observe(host)}
  const key=v.state+'|'+v.muted+'|'+(v.error||'');
  if(bar.dataset.k!==key){bar.dataset.k=key;
   bar.innerHTML=v.state==='error'?`<div class="talk-bar talk-err" role="alert"><span class="grow">${esc(v.error)}</span><button type="button" class="talk-end" data-talk-close>${esc(t('Close'))}</button></div>`
@@ -5999,8 +6002,8 @@ function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector(
 function talkFail(v,msg){if(talk!==v)return;talkClose(v);v.state='error';v.error=msg;talk=v;talkPaint()}
 function talkClose(v){clearInterval(v.tick);try{v.dc?.close()}catch{}try{v.pc?.close()}catch{}try{v.stream?.getTracks().forEach(x=>x.stop())}catch{}
  if(v.audio){v.audio.srcObject=null;v.audio.remove()}if(v.id&&!v.ended){v.ended=true;micPost('talk_end',{id:v.id}).catch(()=>{})}}
-function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove();$('#talk-dock')?.remove();talkSide()}
-async function talkStart(main){const s=main?null:chatOpen();if(talk||!main&&!s)return;micCancel();
+function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove();$('#talk-dock')?.remove();document.body.style.removeProperty('--talk-dock-h');talkSide()}
+async function talkStart(main){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;micCancel();
  const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],known:new Set(talkTodos.map(([x])=>x.id))};talkPaint();talkSide();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
  catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
@@ -6107,7 +6110,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-voic
  try{await micPost('talk_undo',{suggestion_id:b.dataset.sid,approval_id:b.dataset.voiceUndo});toast(t('Canceled. It won’t be sent.'))}catch(err){errCaught(err);toast(err.message,true)}
  await refresh();if(chatOpen())chatPoll()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-main],[data-talk-end],[data-talk-close],[data-talk-mute]');if(!b)return;e.preventDefault();
- if(b.hasAttribute('data-talk-main')){if(typeof drawerClose==='function')drawerClose();const was=talk?.main;if(talk)talkEnd();if(!was)talkStart(true);return}
+ if(b.hasAttribute('data-talk-main')){if(typeof drawerClose==='function')drawerClose();talkMain();return}
  if(b.hasAttribute('data-talk')){if(talk)talkEnd();else talkStart();return}
  if(b.hasAttribute('data-talk-end')||b.hasAttribute('data-talk-close')){talkEnd();return}
  const v=talk;if(!v)return;
@@ -9763,7 +9766,7 @@ function ncAddFiles(list){const problems=[],draft=nc.draft;$('#nc-error').textCo
  row.innerHTML=`${NC_PLUS}<span>New to-do</span><kbd>C</kbd>`;$('#side-search').after(row);
  // Talk: the main live conversation, through what needs the owner (shows once this Machine can talk live)
  const talkRow=document.createElement('button');talkRow.type='button';talkRow.className='side-new side-talk';talkRow.id='side-talk';talkRow.dataset.talkMain='';talkRow.hidden=true;
- talkRow.title='Talk';talkRow.setAttribute('aria-label','Talk');talkRow.setAttribute('aria-pressed','false');talkRow.innerHTML=`${WAVE}<span>Talk</span>`;row.after(talkRow);
+ talkRow.title='Talk (T)';talkRow.setAttribute('aria-label','Talk');talkRow.setAttribute('aria-pressed','false');talkRow.innerHTML=`${WAVE}<span>Talk</span><kbd>T</kbd>`;row.after(talkRow);
  const plus=document.createElement('button');plus.type='button';plus.className='head-link settings-link new-card-link';plus.id='new-card-top';plus.dataset.newMenu='';plus.title='New';plus.setAttribute('aria-label','New');plus.setAttribute('aria-haspopup','menu');plus.setAttribute('aria-expanded','false');
  // With the phone drawer (#topbar), the sidebar row shows in the drawer and the "+" sits on the right of the top bar.
  const top=$('#topbar');if(top){plus.className='topbar-menu new-card-top';plus.innerHTML=NC_PLUS;top.append(plus);document.documentElement.classList.add('nc-drawer')}
@@ -9926,6 +9929,7 @@ actionAdd(
 // Actions
 actionAdd(
  {id:'new-card',group:'Actions',label:'New to-do',keywords:'add task todo card create',keys:'c',run:()=>ncOpen()},
+ {id:'talk',group:'Actions',label:'Talk',keywords:'talk live voice speak conversation',keys:'t',when:()=>talkOk()||!!talk?.main,run:()=>talkMain()},  // on the Calendar, T stays Today (it comes first)
  {id:'add-connection',group:'Actions',label:'Add a connection',keywords:'connect source account gmail slack',run:()=>{showTab('health','add');$('#connect-add')?.scrollIntoView({block:'start'})}},
  {id:'open-browser',group:'Actions',label:'Open the browser',keywords:'browser /browser chrome',when:()=>kbHas($('#open-browser'))&&!!$('#open-browser').getAttribute('href'),run:()=>$('#open-browser').click()},
  {id:'theme',group:'Actions',label:()=>document.documentElement.dataset.theme==='light'?'Switch to dark mode':'Switch to light mode',keywords:'theme light dark mode appearance',run:()=>$('#theme-toggle').click()},

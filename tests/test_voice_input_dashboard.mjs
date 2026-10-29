@@ -224,7 +224,7 @@ try{
   assert.equal(await page.locator('#dictation-engine option[value="openai"]').isDisabled(),true,'With OpenAI needs a key');
   assert.ok(await page.evaluate(()=>{const dev=[...document.querySelectorAll('#settings h2')].find(h=>h.textContent==='This device');return dev.getBoundingClientRect().top<document.querySelector('#settings-dictation').getBoundingClientRect().top}),'Voice input sits below This device');
   assert.equal(await page.locator('#dictation-note').textContent(),'In use: this Machine. Your recordings never leave it.');
-  assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap the wave/);
+  assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap Talk in the menu, or the wave/);
   await page.locator('#settings-dictation').scrollIntoViewIfNeeded();await shot('11-settings');
   engine='auto';local={state:'preparing',step:'model',done:10,total:100};await page.evaluate(()=>loadDictation(true));
   await page.waitForFunction(()=>document.querySelector('#dictation-note')?.textContent==='Getting ready (in the background). Until then, your browser writes it down.');
@@ -240,7 +240,7 @@ try{
   assert.ok(fetched.includes('/brand/voices/marin.mp3'),'the one picked plays');
   await page.waitForTimeout(150);await page.locator('#settings-dictation').scrollIntoViewIfNeeded();await shot('11c-settings-voice-changed');
   await page.waitForFunction(()=>!document.querySelector('#talk-voice')?.disabled);
-  assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap the wave/,'the Talk live row stays after a change');
+  assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap Talk in the menu, or the wave/,'the Talk live row stays after a change');
   assert.equal(await page.locator('#talk-voice').inputValue(),'marin','the Voice row stays, with the one picked');
   await page.selectOption('#dictation-language','');await page.waitForTimeout(200);
   assert.equal(await page.locator('#talk-voice').count(),1,'and after any other change in Voice input');
