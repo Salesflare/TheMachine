@@ -959,6 +959,23 @@ def whatsapp_photos_step(connect, now, ask, accounts, limit=WHATSAPP_PHOTOS_PER_
     return chat_photos_step(connect, now, ask, accounts, WHATSAPP_CHAT, limit=limit, fetch=fetch)
 
 
+# Each chat app's asks table, as fixed statements: no table name is ever built into SQL.
+PHOTO_ASKS_SQL = {
+    'whatsapp_photo_asks': {
+        'create': 'CREATE TABLE IF NOT EXISTS whatsapp_photo_asks(identifier TEXT PRIMARY KEY,asked_at TEXT NOT NULL,picture_id TEXT)',
+        'today': 'SELECT count(*) FROM whatsapp_photo_asks WHERE asked_at>=?',
+        'asked': 'SELECT identifier,asked_at,picture_id FROM whatsapp_photo_asks',
+        'save': 'INSERT INTO whatsapp_photo_asks(identifier,asked_at,picture_id) VALUES(?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
+                'asked_at=excluded.asked_at,picture_id=excluded.picture_id'},
+    'telegram_photo_asks': {
+        'create': 'CREATE TABLE IF NOT EXISTS telegram_photo_asks(identifier TEXT PRIMARY KEY,asked_at TEXT NOT NULL,picture_id TEXT)',
+        'today': 'SELECT count(*) FROM telegram_photo_asks WHERE asked_at>=?',
+        'asked': 'SELECT identifier,asked_at,picture_id FROM telegram_photo_asks',
+        'save': 'INSERT INTO telegram_photo_asks(identifier,asked_at,picture_id) VALUES(?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
+                'asked_at=excluded.asked_at,picture_id=excluded.picture_id'},
+}
+
+
 # A chat app whose own always-on mirror answers for people's pictures: its name (for the pause), its asks table, the
 # shape of its people's identifiers in the graph, and how their chat address is found.
 WHATSAPP_CHAT = {'name': 'whatsapp', 'table': 'whatsapp_photo_asks', 'identifier': r'wa:[0-9]{5,20}', 'addresses': whatsapp_addresses}
@@ -974,17 +991,17 @@ def chat_photos_step(connect, now, ask, accounts, chat, limit=WHATSAPP_PHOTOS_PE
     accounts = [a for a in accounts if a]
     if not accounts:
         return 0
-    table, paused_key = chat['table'], chat['name'] + ':paused'
+    statements, paused_key = PHOTO_ASKS_SQL[chat['table']], chat['name'] + ':paused'
     stamp = dt.datetime.fromisoformat(now)
     today = stamp.astimezone(dt.timezone.utc).strftime('%Y-%m-%dT00:00:00')
     retry = (stamp - dt.timedelta(days=PHOTO_RETRY_DAYS)).isoformat()
     with connect() as db:
-        db.execute(f'CREATE TABLE IF NOT EXISTS {table}(identifier TEXT PRIMARY KEY,asked_at TEXT NOT NULL,picture_id TEXT)')
+        db.execute(statements['create'])
         contact_tables(db)
         paused = db.execute('SELECT ran_at FROM contact_photo_runs WHERE source=?', (paused_key,)).fetchone()
         if paused and paused[0] > (stamp - dt.timedelta(hours=WHATSAPP_PAUSE_HOURS)).isoformat():
             return 0
-        left = limit - db.execute(f'SELECT count(*) FROM {table} WHERE asked_at>=?', (today,)).fetchone()[0]
+        left = limit - db.execute(statements['today'], (today,)).fetchone()[0]
         if left <= 0:
             return 0
         try:
@@ -998,7 +1015,7 @@ def chat_photos_step(connect, now, ask, accounts, chat, limit=WHATSAPP_PHOTOS_PE
         with_photo = {node for node, identifier in nodes if identifier in photos}
         # A picture that didn't download (they have one, it isn't here) is asked again the next day, none in 30 days.
         again = (stamp - dt.timedelta(days=1)).isoformat()
-        asked = {i: (at, again if picture else retry) for i, at, picture in db.execute(f'SELECT identifier,asked_at,picture_id FROM {table}')}
+        asked = {i: (at, again if picture else retry) for i, at, picture in db.execute(statements['asked'])}
         wanted = []
         for node, identifier in nodes:
             at, since = asked.get(identifier, ('', retry))
@@ -1019,8 +1036,7 @@ def chat_photos_step(connect, now, ask, accounts, chat, limit=WHATSAPP_PHOTOS_PE
             continue
         got = answer.get('data') or (fetch(answer['url']) if answer.get('url') else None)
         with connect() as db:
-            db.execute(f'INSERT INTO {table}(identifier,asked_at,picture_id) VALUES(?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
-                       'asked_at=excluded.asked_at,picture_id=excluded.picture_id', (identifier, now, answer.get('id') or None))
+            db.execute(statements['save'], (identifier, now, answer.get('id') or None))
             if got and not db.execute('SELECT 1 FROM person_photos WHERE identifier=?', (identifier,)).fetchone():
                 db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)',
                            (identifier, photo_key(identifier), got[1], got[0], now))
