@@ -27,6 +27,8 @@ Ogni pagina di persona e organizzazione ne ha una, dalla più recente: email, ri
 
 Le riunioni ancora da fare stanno a parte in alto sotto **In arrivo**, le più vicine per prime; **Mostra tutti i prossimi** mostra le altre. Una riunione presente in più di uno dei tuoi calendari compare una volta sola.
 
+Una riunione mostra chi c’era per nome, ogni persona una volta, senza sale riunioni. Una con note o trascrizione mostra **Note** o **Trascrizione**; fai clic per leggerle.
+
 La cronologia di un'organizzazione contiene i messaggi delle sue persone e le conversazioni Intercom dal suo dominio. Le tue cronologie sono tue: il Graph del team mostra solo quello che le tue regole di condivisione consentono.
 
 Se una pagina dice **Impossibile caricare questa pagina.**, tocca **Riprova**. Se continua a dirlo, usa **Qualcosa non va?** in fondo alla pagina.

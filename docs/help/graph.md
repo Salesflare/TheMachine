@@ -27,6 +27,8 @@ Every person and organization page has one, newest first: email, meetings and th
 
 Meetings still to come sit apart on top under **Coming up**, soonest first; **Show all upcoming** shows the rest. A meeting on more than one of your calendars shows once.
 
+A meeting shows who was on it by name, each person once, without meeting rooms. One with notes or a transcript says **Notes** or **Transcript**; click it to read them.
+
 An organization's timeline has its people's messages and the Intercom conversations from its domain. Your timelines are yours: the team's Graph shows only what your sharing rules allow.
 
 If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps saying so, use **Something's wrong?** at the bottom of the page.

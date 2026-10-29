@@ -27,6 +27,8 @@ Cada página de persona y de organización tiene una, lo más reciente primero: 
 
 Las reuniones que aún no han llegado quedan aparte arriba, en **Lo próximo**, la más cercana primero; **Mostrar todos los próximos** muestra el resto. Una reunión que está en más de uno de tus calendarios aparece una vez.
 
+Una reunión muestra quién estuvo por su nombre, cada persona una vez, sin salas de reuniones. Una con notas o transcripción muestra **Notas** o **Transcripción**; haz clic para leerlas.
+
 La cronología de una organización tiene los mensajes de su gente y las conversaciones de Intercom de su dominio. Tus cronologías son tuyas: el Graph del equipo solo muestra lo que permiten tus reglas para compartir.
 
 Si una página dice **No se pudo cargar esta página.**, toca **Reintentar**. Si lo sigue diciendo, usa **¿Algo va mal?** al pie de la página.

@@ -27,6 +27,8 @@ Toda página de pessoa e de organização tem uma, as mais recentes primeiro: e-
 
 As reuniões que ainda vão acontecer ficam separadas no topo, em **Em breve**, as mais próximas primeiro. **Mostrar todos os próximos** mostra o resto. Uma reunião que está em mais de uma das suas agendas aparece uma vez só.
 
+Uma reunião mostra quem participou pelo nome, cada pessoa uma vez, sem salas de reunião. Uma com notas ou transcrição mostra **Notas** ou **Transcrição**; clique para lê-las.
+
 A linha do tempo de uma organização tem as mensagens das pessoas dela e as conversas do Intercom do domínio dela. Suas linhas do tempo são suas: o Graph da equipe mostra só o que suas regras de compartilhamento permitem.
 
 Se uma página mostrar **Não foi possível carregar esta página.**, toque em **Tentar de novo**. Se continuar assim, use **Algo errado?** no fim da página.

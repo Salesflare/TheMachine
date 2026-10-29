@@ -51,6 +51,8 @@ A The Machine também pode adicioná-las. Peça numa tarefa, como "adicione esta
 
 A The Machine lê as duas para os próximos passos da reunião. Elas são Trabalho ou Pessoal como a reunião, e só vão para sua equipe quando a reunião vai.
 
+Uma reunião abre com estes detalhes onde quer que você a encontre: em uma linha do tempo, em Eventos ou como fonte de uma tarefa. **Convite original** embaixo mostra o convite como ele chegou.
+
 ## Adicionar ou mudar um evento
 
 Quando uma agenda pode ser alterada daqui, **Novo evento** adiciona um (no celular, fica em **+** na barra de cima): escolha a agenda, um título e o horário. Clique em um evento sem convidados nessa agenda para mudá-lo, ou para **Excluir** (toque duas vezes).

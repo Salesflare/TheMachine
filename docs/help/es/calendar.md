@@ -51,6 +51,8 @@ The Machine también puede añadirlas. Pídeselo en una tarea, como "añade esta
 
 The Machine lee las dos para los siguientes pasos de la reunión. Son de Trabajo o Personales como la reunión, y solo van a tu equipo cuando la reunión va.
 
+Una reunión se abre con estos detalles dondequiera que la encuentres: en una cronología, en Eventos o como fuente de una tarea. **Invitación original** abajo muestra la invitación tal como llegó.
+
 ## Añade o cambia un evento
 
 Cuando un calendario se puede cambiar desde aquí, **Nuevo evento** añade uno (en un teléfono está en **+**, en la barra superior): elige el calendario, un título y la hora. Haz clic en un evento sin invitados de ese calendario para cambiarlo, o **Eliminar** (toca dos veces).

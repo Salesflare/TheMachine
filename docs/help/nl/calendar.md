@@ -51,6 +51,8 @@ The Machine kan ze ook toevoegen. Vraag het op een to-do, zoals "zet dit transcr
 
 The Machine leest ze allebei voor de opvolging van de vergadering. Ze zijn Werk of Persoonlijk zoals de vergadering, en gaan alleen naar je team als de vergadering dat doet.
 
+Een afspraak opent met deze details, waar je hem ook vindt: op een tijdlijn, in Gebeurtenissen of als bron van een to-do. **Originele uitnodiging** onderaan toont de uitnodiging zoals ze binnenkwam.
+
 ## Een afspraak toevoegen of wijzigen
 
 Kan een agenda van hieruit gewijzigd worden, dan voegt **Nieuwe afspraak** er een toe (op een telefoon staat het onder **+** in de bovenste balk): kies de agenda, een titel en het tijdstip. Klik op een afspraak zonder gasten in die agenda om hem te wijzigen, of om hem te **Verwijderen** (tik twee keer).

@@ -171,5 +171,50 @@ class Order(unittest.TestCase):
         self.assertEqual(next(i for i in self.found['items'] if i['title'] == 'Review')['preview'], 'With Bo Ex')
 
 
+
+class MeetingRow(unittest.TestCase):
+    """A meeting's row on a timeline: who is on it by the name the Graph has, a person under two addresses once, the rooms
+    booked on it left out, and a small Notes / Transcript marker when the meeting has them."""
+    add = tg.Graph.add
+    build = tg.Graph.build
+
+    def setUp(self):
+        tg.Graph.setUp(self)
+        self.app.config = {**tg.CONFIG, 'accounts': ACCOUNTS}
+        self.store.accounts = ACCOUNTS
+        self.app.fleet = None
+        juli = 'juli@globex.example'
+        board = invite(2, 'board', 'Board Q3', juli, 'lieven@globex.example', 'falconheavy_room@cloudgroup.example', 'c_1886@resource.calendar.google.com',
+                       'babette@globex.example', 'babette.claessens@home.example')
+        self.add(tg.mail(3, 'Juli Ex <juli@globex.example>', 'sam@acme.com'), tg.mail(4, 'Lieven Janssen <lieven@globex.example>', 'sam@acme.com'),
+                 tg.mail(5, 'Babette Claessens <babette@globex.example>', 'sam@acme.com'),
+                 tg.mail(6, 'B. Claessens <babette.claessens@home.example>', 'sam@acme.com'), board,
+                 invite(1, 'lunch', 'Lunch', juli, 'lieven@globex.example'))
+        self.build()
+        with self.store.connect() as db:
+            graph.merge(db, 'email:babette.claessens@home.example', 'email:babette@globex.example', True, tg.NOW.isoformat())
+            ids = dict(db.execute("SELECT source_id,id FROM events WHERE kind='calendar.event'").fetchall())
+            for kind, prefix in (('meeting.notes', 'notes'), ('meeting.transcript', 'transcript')):
+                db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at) '
+                           "VALUES('work',?,?,?,'Board Q3','Said.','{}',0,?,?)", (f"{prefix}:{ids['board']}", kind, tg.at(2), prefix, tg.at(1)))
+        self.build()
+        self.found = self.app.graph_timeline('email:' + juli, now=tg.NOW.isoformat())
+
+    def row(self, title):
+        return next(i for i in self.found['items'] if i.get('title') == title and i.get('kind') == 'calendar.event')
+
+    def test_names_once_and_no_rooms(self):
+        # Babette once (her two addresses are one person on the Graph), by its name for her; the two rooms not at all
+        self.assertRegex(self.row('Board Q3')['preview'], r'^With Lieven Janssen, (Babette|B\.) Claessens$')
+
+    def test_notes_and_transcript_marked(self):
+        board, lunch = self.row('Board Q3'), self.row('Lunch')
+        self.assertEqual((board.get('notes'), board.get('transcript')), (True, True))
+        self.assertNotIn('notes', lunch)
+        self.assertNotIn('transcript', lunch)
+        # The notes' and transcript's own rows open with their meeting
+        self.assertEqual({i['kind']: i.get('meeting_id') for i in self.found['items'] if i.get('kind', '').startswith('meeting.')},
+                         {'meeting.notes': board['id'], 'meeting.transcript': board['id']})
+
 if __name__ == '__main__':
     unittest.main()
