@@ -5025,7 +5025,7 @@ class Store:
                   'next_row_offset': row_offset + len(shown) if row_offset + len(shown) < len(views) else None}
         return {'analysis_id': analysis_id, 'page': int(page), 'pages': pages, **result}
 
-    def finish_analysis(self, analysis_id, summary='', owner_session=None, owner_run=None, reviewed_ids=None, projects=None, stages=None, team=None):
+    def finish_analysis(self, analysis_id, summary='', owner_session=None, owner_run=None, reviewed_ids=None, projects=None, stages=None, team=None, replies=None):
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT * FROM analyses WHERE id=?', (analysis_id,)).fetchone()
@@ -5072,7 +5072,28 @@ class Store:
                     raise ValueError('A team event_id must belong to this batch')
                 shared_graph.ensure(db)
                 shared_graph.judge(db, team)
+            # A reply from the other side on a board project needs the owner's answer, and a board's stage, its next step
+            # or automated follow-ups never stand in for it: it gets a to-do (prepared ahead), or the review says in
+            # replies why it needs no answer (a thanks, a confirmation, a decline that ends it).
+            if replies is not None and not (isinstance(replies, list) and all(
+                    isinstance(r, dict) and str(r.get('event_id') or '').isdigit() and str(r.get('why') or '').strip() for r in replies)):
+                raise ValueError('replies is [{"event_id", "why"}]: a reply on a board that needs no answer, and why in a few words')
+            answered = {int(r['event_id']): str(r['why']).strip()[:200] for r in replies or ()}
+            if not set(answered) <= {i['id'] for i in items}:
+                raise ValueError('A replies event_id must belong to this batch')
+            waiting = [w for w in board_replies_waiting(db, [i['id'] for i in items if i['id'] in reviewed and not i.get('excluded')], self.owner_user_ids)
+                       if w['id'] not in answered]
+            if waiting:
+                raise ValueError('Not finished yet. These replies from the other side, on a project on a board, have no open to-do: '
+                                 + '; '.join(f"{w['id']} \"{w['title']}\" ({w['project']})" for w in waiting)
+                                 + '. When one asks the owner something or proposes terms (a price or fee, a counteroffer, a condition, a date), '
+                                   'save a to-do with suggest and prepare_ahead:true so the answer comes drafted, also when you expect the owner '
+                                   'to say no: the decision is theirs. A stage, its next step or automated follow-ups never replace it. '
+                                   'When one needs no answer (a thanks, a confirmation, a bounce, a decline that ends it), add it to '
+                                   'finish_analysis replies [{"event_id", "why"}]. Then finish again.')
             for item in items:
+                if item['id'] in answered:
+                    item['no_reply'] = answered[item['id']]  # kept with the review, for checking later why there was no to-do
                 if item.get('excluded'):
                     continue
                 if item['id'] not in reviewed:
@@ -10254,6 +10275,49 @@ def thread_keys(rows):
 
 
 CARD_OPEN = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
+
+
+REPLY_KINDS = ('gmail.message', 'ms_graph.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'linkedin.message')
+
+
+def board_replies_waiting(db, event_ids, owner_slack_ids=()):
+    """Messages among event_ids from the other side (a person, not a system sender) that are the latest in their
+    conversation, belong to an open project on a board, and are on no open to-do: [{'id', 'title', 'project'}]. Each
+    needs the owner's answer or the review's word that it needs none (finish_analysis replies)."""
+    if not event_ids:
+        return []
+    marks = ','.join('?' * len(event_ids))
+    rows = db.execute(f"SELECT DISTINCT e.id,e.account_id,e.kind,e.occurred_at,e.title,e.metadata,p.name project FROM events e "
+                      f"JOIN projects p ON p.board_id IS NOT NULL AND p.closed_at IS NULL AND p.id IN ("
+                      f"SELECT project_id FROM event_projects WHERE event_id=e.id UNION "
+                      f"SELECT CAST(substr(node_id,9) AS INTEGER) FROM graph_events WHERE event_id=e.id AND node_id LIKE 'project:%' AND probable=0) "
+                      f"WHERE e.id IN ({marks}) AND e.deleted=0 ORDER BY e.occurred_at", tuple(event_ids)).fetchall()
+    statuses = ','.join('?' * len(CARD_OPEN))
+    out, seen = [], set()
+    for r in rows:
+        if r['id'] in seen:
+            continue
+        seen.add(r['id'])
+        m = json.loads(r['metadata'] or '{}')
+        if r['kind'] not in REPLY_KINDS or own_message(dict(r), owner_slack_ids) or 'SENT' in (m.get('labels') or ()):
+            continue
+        if r['kind'] in ('gmail.message', 'ms_graph.message'):
+            sender = _address(m.get('from'))
+            if not sender or ROBOT_SENDER.match(sender) or graph.bulk(sender) or AUTOMATED_LABELS & set(m.get('labels') or ()):
+                continue
+        later = m.get('thread_id') and db.execute(
+            "SELECT 1 FROM events WHERE account_id=? AND kind=? AND deleted=0 AND occurred_at>? AND json_extract(metadata,'$.thread_id')=? LIMIT 1",
+            (r['account_id'], r['kind'], r['occurred_at'], str(m.get('thread_id') or ''))).fetchone()
+        if later:
+            continue  # a later message in the thread is the one to judge (or the owner answered)
+        if db.execute(f"SELECT 1 FROM suggestions s, json_each(s.event_ids) j WHERE j.value=? AND s.status IN ({statuses}) "
+                      "AND s.id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE suggestion_id IS NOT NULL) LIMIT 1",
+                      (r['id'], *CARD_OPEN)).fetchone():
+            continue
+        out.append({'id': r['id'], 'title': str(r['title'] or '')[:80], 'project': r['project']})
+    return out
+
+
 # A rename on a card: the review's title goes to title_suggested and theirs stays (two parameters, the same title).
 KEEP_OWNER_TITLE = ("title=CASE WHEN title_source='user' THEN title ELSE ? END,"
                     "title_suggested=CASE WHEN title_source='user' THEN ? ELSE NULL END")
@@ -10287,7 +10351,10 @@ def same_thread_card(db, rows, days=60):
         return None
     since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
     statuses = CARD_OPEN + ('completed', 'rejected')
+    # A follow-up to-do (follow_ups.py) is about one nudge: it closes by itself when they reply, so their reply is a
+    # new matter and never folds into it.
     cards = db.execute(f"SELECT * FROM suggestions WHERE status IN ({','.join('?' * len(statuses))}) AND (created_at>=? OR status IN ('pending','accepted','prepared','instructions','snoozed')) "
+                       "AND id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE suggestion_id IS NOT NULL) "
                        "ORDER BY CASE WHEN status IN ('completed','rejected') THEN 1 ELSE 0 END,created_at DESC", (*statuses, since)).fetchall()
     for card in cards:
         ids = json.loads(card['event_ids'] or '[]')
@@ -12718,7 +12785,7 @@ Second, the signal review.
 With the assistant_signals tool: call status, then ONE begin_analysis with account_ids {json.dumps(accounts)} and limit 120. The reply is paged: read every page with analysis_page before finishing, including next_row_offset continuations on the same page. Where body_clipped matters, read the rest with events (the account, event_ids and body_offset). Events replies contain events and remaining_event_ids; read the remaining IDs with the same accounts. Follow body_next_offset to the end of long bodies.
 Save only genuinely useful, distinct suggestions with suggest; the service delivers them. A card's agent_work in status is what Claude Code or Codex did (or is doing) on it, the latest truth of what was done: when you update a card, start from there and never offer work it reports done as the next step. One card per matter: when a signal is about the same matter as an existing card (open, snoozed, waiting for a reply or done: the same conversation, people and ask, judged by meaning), pass card_id so that card is updated and comes back instead of a new one; reopen:true only when a done card genuinely needs the owner again. Then finish_analysis with reviewed_ids. Defer only what you expect to judge better later.
 Name the ongoing work: finish_analysis projects ({{"Project name": [event_ids from this batch]}}) for signals that clearly belong to a deal, hire, launch, renovation or other piece of work, and project on a suggest that belongs to one. Reuse begin_analysis's projects names when they fit; a signal's probably_project is the graph's guess from meaning and people, so add it to projects when it's right. graph tells who someone is to the owner (role, closeness, rhythm, gone quiet, their projects, what's open between them); when a message shows what someone is to them (their title, "our accountant", an introduction) and graph has no role or a wrong one, set it with graph node_id, role, event_id and quote (a short line copied from that message).
-Boards: projects of one kind (partner listings, hires, onboardings), one project per counterpart, stand in stages on boards the owner saved; begin_analysis boards lists them with each project's stage and the board's about (which projects belong). When a message in this batch moves one (they agreed, sent their edits, went live, declined, the address bounced), add it to finish_analysis stages ({{"project", "board", "stage", "reason", "event_id", "next"}}): judge what the message means between these people in its conversation, never its wording, and never move a project only because time passed. reason is a short clause that reads after "Moved to <stage>:" ("Sam signed the order form"); next is the owner's next step in a few words; org the counterpart's web domain when it isn't clear from the people. A new project that fits a board's about goes on it the same way. Projects the owner put on a board come as "Boards to sort" at the top. Only the owner makes boards; a review suggests them, each once, from the boards to suggest at the top with graph suggest_board {{"name", "stages", "about", "projects", "reason", "visibility"}}: stages that fit how that kind of work goes, in order, ending at the good outcome (partner listings: Contacted, Agreed, In review, Live; hiring: Sourced, Screening, Interviews, Offer, Hired); every board has its own Stalled or declined row, so an ending where it didn't happen (lost, declined, dropped) is never a stage. about one sentence on which projects belong. Judge the kind from what the projects are, not from words in their names. The owner's own move stands until a newer message changes things.
+Boards: projects of one kind (partner listings, hires, onboardings), one project per counterpart, stand in stages on boards the owner saved; begin_analysis boards lists them with each project's stage and the board's about (which projects belong). When a message in this batch moves one (they agreed, sent their edits, went live, declined, the address bounced), add it to finish_analysis stages ({{"project", "board", "stage", "reason", "event_id", "next"}}): judge what the message means between these people in its conversation, never its wording, and never move a project only because time passed. reason is a short clause that reads after "Moved to <stage>:" ("Sam signed the order form"); next is the owner's next step in a few words; org the counterpart's web domain when it isn't clear from the people. A new project that fits a board's about goes on it the same way. Projects the owner put on a board come as "Boards to sort" at the top. Only the owner makes boards; a review suggests them, each once, from the boards to suggest at the top with graph suggest_board {{"name", "stages", "about", "projects", "reason", "visibility"}}: stages that fit how that kind of work goes, in order, ending at the good outcome (partner listings: Contacted, Agreed, In review, Live; hiring: Sourced, Screening, Interviews, Offer, Hired); every board has its own Stalled or declined row, so an ending where it didn't happen (lost, declined, dropped) is never a stage. about one sentence on which projects belong. Judge the kind from what the projects are, not from words in their names. The owner's own move stands until a newer message changes things. A stage and its next step never replace a to-do: when the other side's reply asks the owner something or proposes terms (a price or fee, a counteroffer, a condition), move the project and also suggest a to-do with prepare_ahead:true so the answer comes drafted, on a board or not and whether follow-ups are on or not, also when you expect the owner to say no; terms not agreed yet keep the stage before agreement. finish_analysis refuses while such a reply on a board has no open to-do; one that needs no answer (a thanks, a confirmation, a decline that ends it) goes in finish_analysis replies [{{"event_id", "why"}}].
 Team: when begin_analysis lists team (Work messages, shared with the owner's Work Fleet by default), add finish_analysis team ([{{"event_id", "share", "line", "group", "suggest"}}], group and suggest only for unsure ones; begin_analysis share_groups lists the groups already used) for each of those threads, judged by what the conversation is, never by words in it: {SHARE_VERDICTS} line is one short line of what happened, in your own words ("Lee asked for the renewal quote"), never quoted text. The owner's own Team or Only you always wins.
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
 Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
@@ -13827,7 +13894,7 @@ class App:
                     graph.fit_answer(db, args['_review_run'], args.get('fits'))
                     graph.backfill_answer(db, args['_review_run'], args.get('fits'))
             return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
-                                             args.get('stages'), args.get('team'))
+                                             args.get('stages'), args.get('team'), args.get('replies'))
         if name == 'graph':
             return self.graph_action(args)
         if name == 'enrich':  # the CLI: status, or one domain now
