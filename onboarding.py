@@ -76,6 +76,8 @@ IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'tea
 BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:microsoft_signin_pending', 'microsoft_broker_busy')
 # Phone apps whose notifications repeat a source. Setup offers to skip them on the Android account, never by
 # default: the phone app may also show inboxes or workspaces that nothing here reads.
+# what the owner calls the app whose notifications repeat a source, when the source's label says more
+APP_NAMES = {'telegram': 'Telegram'}
 PHONE_APPS = {'gmail': ['com.google.android.gm'], 'calendar': ['com.google.android.calendar'],
               'outlook': ['com.microsoft.office.outlook'], 'outlook_calendar': ['com.microsoft.office.outlook'],
               'whatsapp': ['com.whatsapp', 'com.whatsapp.w4b'], 'telegram': ['org.telegram.messenger', 'org.thunderdog.challegram'], 'slack': ['com.Slack'], 'salesflare': ['org.salesflare.app'],
@@ -974,7 +976,9 @@ def new_account(config, service, account_id=None, ui=None):
     elif template_id and template_id not in taken and not yours:
         account['id'] = template_id
     else:
-        account['id'] = f"{slug(str(account.get('boundary', '')).split(':', 1)[-1])}-{suffix}"
+        kind, _, named = str(account.get('boundary', '')).partition(':')
+        named = slug(named)
+        account['id'] = f"{slug(kind) if named in (suffix, service, '') else named}-{suffix}"  # personal-telegram, not telegram-telegram
     base, number = account['id'], 2
     while account['id'] in taken:
         account['id'], number = f'{base}-{number}', number + 1
@@ -1581,6 +1585,7 @@ def telegram_command(config, account, command, *more):
         parts += ['--database', str(Path(config['database']).expanduser())]
     if account.get('telegram_include'):
         parts += ['--include', ','.join(str(c) for c in account['telegram_include'])]
+    parts += ['--days', str(max(1, min(int(config.get('bootstrap_days', 7) or 7), 30)))]  # the first import's window, as for the other sources
     return parts + [command, *more]
 
 
@@ -1622,14 +1627,18 @@ def step_telegram(config, account, ui):
         raise SetupError('Telegram is not logged in', 'add Telegram again')
     account['identity_sha256'] = state['identity']
     account.pop('app', None)
-    ui.say('  Telegram: logged in')
-    telegram_follow(config, account, ui)
+    first = (state.get('name') or '').split()
+    if first and not account.get('display_name'):
+        account['display_name'] = f'{first[0]}’s Telegram'  # like "<name>’s WhatsApp", never the internal id
+    if telegram_follow(config, account, ui):
+        ui.say(f'  Connected as {state["name"]}. Reading your chats now.' if state.get('name') else '  Connected. Reading your chats now.')
 
 
 def telegram_login(config, account, ui):
     """One login through the mirror, which speaks JSON lines: what it shows goes to the dashboard (or the terminal),
     and the code or password the owner types goes to its stdin and nowhere else."""
     import telegram_store
+    telegram_stop_old(account)
     unit = telegram_unit(account)
     if service.available() and service.definition_path(unit, home()).exists():
         service.stop(unit, run=run)  # the store has one writer: the login, until the mirror starts again with it
@@ -1671,7 +1680,7 @@ def telegram_login(config, account, ui):
     def hide():
         if getattr(ui, 'web', False):
             ui.show_code(None)
-    until, connected, sent = time.monotonic() + TELEGRAM_LOGIN, None, None
+    until, connected, sent, shown = time.monotonic() + TELEGRAM_LOGIN, None, None, False
     try:
         while not (done.is_set() and not events):
             if getattr(ui, 'cancelled', False) or time.monotonic() > until:
@@ -1686,7 +1695,9 @@ def telegram_login(config, account, ui):
                     ui.show_code({'kind': 'qr', 'matrix': [str(r)[:200] for r in event['matrix'][:200]], 'expires': str(event.get('expires') or '')})
                 else:
                     ui.say(telegram_qr_text(event['matrix']))
-                ui.say('  In Telegram on your phone: Settings, Devices, Link Desktop Device, then scan this code.')
+                    if not shown:
+                        ui.say('  In Telegram on your phone: Settings, Devices, Link Desktop Device, then scan this code.')
+                shown = True
             elif kind in ('code_sent', 'code_wrong', 'code_expired', 'code_resend_failed'):
                 hide()
                 if kind == 'code_sent':
@@ -1728,7 +1739,7 @@ def telegram_login(config, account, ui):
             text = TELEGRAM_REFUSED[why]
             raise SetupError(text if not wait else f'{text} ({telegram_wait(wait)})', TELEGRAM_REFUSED_FIX.get(why, 'add Telegram again'))
         raise SetupError('Telegram was not logged in' + (f' ({why})' if why else ''), 'add Telegram again')
-    return telegram_state(account) or {'identity': connected.get('identity')}
+    return {**(telegram_state(account) or {'identity': connected.get('identity')}), 'name': str(connected.get('name') or '')[:100]}
 
 
 TELEGRAM_RESEND = 'again'  # what the dashboard's Send the code again button answers
@@ -1774,25 +1785,33 @@ def telegram_resend_failed(event):
 
 
 def telegram_unit(account):
-    return f"the-machine-telegram-{re.sub(r'[^A-Za-z0-9_-]', '-', account['id'])}.service"
+    """the-machine-personal-telegram.service: the account id already says Telegram."""
+    return f"the-machine-{re.sub(r'[^A-Za-z0-9_-]', '-', account['id'])}.service"
+
+
+def telegram_old_units(account):
+    """The unit name before it followed the account id alone (the-machine-telegram-<id>), stopped when found."""
+    return [f"the-machine-telegram-{re.sub(r'[^A-Za-z0-9_-]', '-', account['id'])}.service"]
 
 
 def telegram_follow(config, account, ui):
     """The mirror only reads while it runs: one per account as a user service (systemd on Linux, launchd on macOS),
     the store's single writer, which also sends what the owner approved. It never restarts after Telegram ends the
-    session, only after a network drop or a flood wait."""
+    session, only after a network drop or a flood wait. True once it runs."""
+    telegram_stop_old(account)
     name = telegram_unit(account)
     unit = service.definition_path(name, home())
     parts = telegram_command(config, account, 'follow')
     if not service.available():
         ui.say('  Telegram: keep it running yourself: ' + ' '.join(shlex.quote(p) for p in parts))
-        return
+        return False
     unit.parent.mkdir(parents=True, exist_ok=True)
     if service.manager() == 'launchd':
         unit.write_text(service.plist_text(parts, unit=name, base=home(), throttle=120))
         started = service.enable(name, run=run)
-        ui.say(f'  Telegram: read by {service.label(name)}' if not started.returncode else f'  Telegram: start it with {service.hint("enable", name)}')
-        return
+        if started.returncode:
+            ui.say(f'  Telegram: start it with {service.hint("enable", name)}')
+        return not started.returncode
     command = ' '.join(shlex.quote(str(part)) for part in parts)
     unit.write_text('[Unit]\nDescription=The Machine: Telegram chats\nAfter=network-online.target\n\n'
                     f'[Service]\nExecStart={command}\nRestart=on-failure\nRestartSec=120\nMemoryMax=512M\n\n[Install]\nWantedBy=default.target\n')
@@ -1800,11 +1819,27 @@ def telegram_follow(config, account, ui):
     started = run(['systemctl', '--user', 'enable', '--now', unit.name], timeout=60)
     if not started.returncode:
         service.restart(unit.name, run=run)  # a new login: a mirror still running would hold the old session
-    ui.say(f'  Telegram: read by {unit.name}' if not started.returncode else f'  Telegram: start it with systemctl --user enable --now {unit.name}')
+    if started.returncode:
+        ui.say(f'  Telegram: start it with systemctl --user enable --now {unit.name}')
+    return not started.returncode
+
+
+def telegram_stop_old(account):
+    """Stop and remove a mirror unit under its old name: the store has one writer."""
+    for name in telegram_old_units(account):
+        unit = service.definition_path(name, home())
+        if name == telegram_unit(account) or not unit.exists():
+            continue
+        if service.available():
+            service.disable_now(name, run=run)
+        unit.unlink(missing_ok=True)
+        if service.available():
+            service.reload(run=run)
 
 
 def telegram_remove(config, account):
     """Disconnect: stop the mirror, log this device out at Telegram, and delete its store (messages, chats, session)."""
+    telegram_stop_old(account)
     name = telegram_unit(account)
     unit = service.definition_path(name, home())
     if unit.exists():
@@ -2017,9 +2052,9 @@ def offer_phone_skip(config, account, ui):
             skipped = {p for rule in phone.get('exclude') or [] if set(rule) == {'packages'} for p in rule['packages']}
             if not packages or set(packages) <= skipped:
                 continue
-            where = '' if phone is account else f' ({phone["id"]})'
-            if ui.yes(f'  Skip {label(service)} notifications from the phone{where}? The {label(service)} source already reads them;'
-                      ' say no if the phone app also shows accounts not connected here', default=False):
+            app = APP_NAMES.get(service, label(service))
+            if ui.choose(f'Your phone also sends {app} notifications. Skip those now that {app} is read here?',
+                         [(False, 'Keep both'), (True, 'Skip')]):
                 phone.setdefault('exclude', []).append({'packages': packages})
 
 
