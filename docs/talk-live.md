@@ -157,4 +157,4 @@ nothing; the judge accepts only exact JSON) and `tests/test_talk_live_dashboard.
 `getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).
 `tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, Talk's view, listing and opening to-dos (the
 card changes, the page doesn't; **Open the chat** and back), a send by voice about the to-do on screen, a new to-do told at a pause, following the owner to
-another to-do, its 30-minute limit, End, **Start again** and `end_talk` (390x844 and 1440x900, light and dark).
+another to-do, its 30-minute limit (its toast only then), End, **Start again** and `end_talk` (the goodbye kept in the transcript) (390x844 and 1440x900, light and dark).

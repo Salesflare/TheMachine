@@ -176,27 +176,39 @@ try{
   await shot('m3-one-minute-left');
   await page.evaluate(()=>{window.__skew=1801000});
   await page.waitForFunction(()=>!document.querySelector('#talk-dock'));
-  await page.waitForFunction(()=>document.body.textContent.includes('Talk ends after 30 minutes'));
+  // its toast, kept up so starting again is what clears it
+  await page.waitForFunction(()=>{const t=document.getElementById('toast');if(!t.classList.contains('show')||!t.textContent.includes('Talk ends after 30 minutes'))return false;clearTimeout(toastTimer);return true});
   await until(()=>ended()===1);
   await page.evaluate(()=>{window.__skew=0});
 
-  // Talk again; End from Talk's view: the transcript stays, with Start again
+  // The limit's toast is about that session only: gone once Talk starts again
+  const limitToast=()=>page.evaluate(()=>{const t=document.getElementById('toast');return t.classList.contains('show')&&t.textContent.includes('30 minutes')});
+  assert.equal(await limitToast(),true);
   if(phone)await page.evaluate(()=>drawerOpen());
   await tap('#side-talk');await inView();await live(viewBar);
-  await said('s9','Thanks, that was all.');await page.waitForFunction(()=>document.querySelector('#talk-view .talk-log').textContent.includes('that was all'));
-  await tap(viewBar+' [data-talk-end]');await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));
-  await until(()=>ended()===2);
-  assert.equal(await page.locator('#side-talk').getAttribute('aria-pressed'),'false');
-  assert.match(await page.locator('#talk-view .talk-log').textContent(),/Talk ended\./);
-  await page.waitForTimeout(200);await shot('m4-talk-ended');
+  assert.equal(await limitToast(),false,'no limit toast once Talk starts again');
 
-  // Start again, and a goodbye ends it by itself (end_talk) once it has been heard
-  await tap('#talk-view [data-talk-main]');await live(viewBar);
-  await page.evaluate(()=>{__say({type:'response.created',response:{id:'bye'}});__say({type:'output_audio_buffer.started'})});
+  // A goodbye ends it by itself (end_talk) once it has been heard; the goodbye stays in the transcript, no limit toast
+  await said('s9','Thanks, that was all.');await page.waitForFunction(()=>document.querySelector('#talk-view .talk-log').textContent.includes('that was all'));
+  await page.evaluate(()=>{__say({type:'response.created',response:{id:'bye'}});__say({type:'output_audio_buffer.started'});
+   __say({type:'response.output_audio_transcript.done',response_id:'bye',item_id:'bye1',transcript:'Bye for now.'})});
   await call('e1','end_talk');await page.evaluate(()=>__say({type:'response.done',response:{id:'bye',status:'completed'}}));
   await page.waitForTimeout(1700);assert.equal(await page.locator(viewBar+' .talk-live strong').textContent(),'Live','not while the goodbye plays');
   await page.evaluate(()=>__say({type:'output_audio_buffer.stopped'}));
-  await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));await until(()=>ended()===3);
+  await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));await until(()=>ended()===2);
+  assert.equal(await page.locator('#side-talk').getAttribute('aria-pressed'),'false');
+  assert.match(await page.locator('#talk-view .talk-log').textContent(),/that was all\..*Bye for now\..*Talk ended\./s);
+  assert.equal(await limitToast(),false,'a goodbye is not the limit');
+  const again=page.locator('#talk-view .talk-again-btn');
+  assert.ok(await again.evaluate(b=>parseFloat(getComputedStyle(b).borderTopWidth)>0&&getComputedStyle(b).borderRadius!=='0px'),'Start again looks like a button');
+  await page.waitForTimeout(200);await shot('m4-talk-ended');
+
+  // Start again; End from Talk's view: the transcript stays, with Start again, and no limit toast
+  await tap('#talk-view [data-talk-main]');await live(viewBar);
+  await tap(viewBar+' [data-talk-end]');await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));
+  await until(()=>ended()===3);
+  assert.match(await page.locator('#talk-view .talk-log').textContent(),/Talk ended\./);
+  assert.equal(await limitToast(),false,'End is not the limit');
 
   // T, like C for New to-do: shown on the row on a computer (not in the phone drawer), starts Talk, and ends it while live
   if(phone){await page.evaluate(()=>drawerOpen());assert.equal(await page.locator('#side-talk kbd').isVisible(),false,'no key hint on a phone');await page.evaluate(()=>drawerClose())}
