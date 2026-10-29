@@ -19,6 +19,8 @@ const locale=()=>({locale:'en-BE',region:'BE',language:lang,language_set:true,cl
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
+ if(url.pathname.startsWith('/brand/')){const f=url.pathname==='/brand/avatar.png'?'app-icon-192.png':url.pathname.slice(7);res.setHeader('Content-Type','image/png');
+  try{res.end(await readFile(new URL('../brand/'+f.replace(/[^\w.-]/g,''),import.meta.url)))}catch{res.statusCode=404;res.end()}return}
  const cat=/^\/i18n\/(\w\w(?:-[A-Z]{2})?)\.json$/.exec(url.pathname);if(cat){res.end(cats[cat[1]]||'{}');return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],
   review_health:{},review_runs:[],locale:locale(),...(hosted?{manage_url:MANAGE}:{})}));return}
@@ -73,6 +75,8 @@ try{
   assert.equal(await open.getAttribute('href'),DEVICE);
   assert.equal(await open.getAttribute('target'),'_blank');
   assert.ok(await fits(page),'no sideways scroll');
+  const heights=await box(page).locator('.code-actions>*').evaluateAll(els=>els.map(e=>Math.round(e.getBoundingClientRect().height)));
+  assert.equal(new Set(heights).size,1,'Copy code and Open OpenAI are one height: '+heights);
   await shot(page,`codex-code-hosted-${tag}`);
   await box(page).getByText('Hand a coding to-do to Codex to use it.').waitFor({timeout:20000});
   await shot(page,`codex-done-${tag}`);
