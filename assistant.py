@@ -15928,9 +15928,9 @@ class App:
         with self.store.connect() as db:
             follow_ups.ensure(db)
             wanted = []
-            for item in follow_ups.plan(db, now(), sendable, mine, own):
-                if item['state'] != 'due':
-                    continue
+            # In the order they're drafted (follow_up_step), so the first ones drafted are the ones read first
+            for item in sorted((x for x in follow_ups.plan(db, now(), sendable, mine, own) if x['state'] == 'due'),
+                               key=lambda x: (not x['late'], x['next_at'])):
                 msgs = follow_ups.messages(db, item['project']['id'], mine)
                 theirs = max((i for i, m in enumerate(msgs) if not m['mine']), default=-1)
                 _, row = follow_ups.latest_email(db, msgs[theirs + 1:])
@@ -15983,7 +15983,8 @@ class App:
             for item in items:
                 if item['state'] == 'end':
                     follow_ups.end(db, item, now())
-            due = sorted((x for x in items if x['state'] == 'due'), key=lambda x: (not x['late'], x['next_at']))
+            # Only once the round could be counted (its thread read or tried, or the quoted history read): never on a guess
+            due = sorted((x for x in items if x['state'] == 'due' and x.get('counted', True)), key=lambda x: (not x['late'], x['next_at']))
             if not due:
                 return {'drafted': 0}
             # Normal work first: no follow-up while another preparation waits, and only a few drafted at once

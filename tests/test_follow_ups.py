@@ -518,6 +518,58 @@ class FollowUps(unittest.TestCase):
             stage = db.execute('SELECT stage FROM projects WHERE id=?', (self.acme,)).fetchone()[0]
         self.assertEqual((end, stage), ({'n': 2, 'moved': 1}, graph.STALLED))
 
+    def test_a_sealed_store_reads_the_quoted_history_and_without_its_key_drafts_nothing_on_a_guess(self):
+        root = Path(self.tmp.name) / 'sealed'
+        root.mkdir()
+        sealed = a.Store(root / 'events.sqlite', protect=True)
+        quoted = {**msg('out1', '2026-10-13T09:00:00+00:00', mine=True), 'body': GMAIL_CHAIN}
+        sealed.commit_page('work', {}, [quoted])
+        with sealed.connect() as db:
+            out1 = db.execute("SELECT id FROM events WHERE source_id='out1'").fetchone()[0]
+            self.assertIsInstance(db.execute('SELECT body FROM events WHERE id=?', (out1,)).fetchone()[0], str)  # opened by the store
+            board = graph.save_board(db, {'name': 'Alpha testers', 'stages': [{'name': 'Invited'}, {'name': 'Live'}]}, '2026-10-01T09:00:00+00:00')['board_id']
+            pid = graph.label(db, [out1], 'Acme pilot', 'review', NOW)
+            db.execute("UPDATE projects SET board_id=?,stage='Invited' WHERE id=?", (board, pid))
+        raw = __import__('sqlite3').connect(root / 'events.sqlite')
+        self.assertIsInstance(raw.execute('SELECT body FROM events WHERE id=?', (out1,)).fetchone()[0], bytes)  # sealed on disk
+        raw.close()
+        self.store = sealed
+        self.turn_on(ref=board)
+        with sealed.connect() as db:
+            item = [x for x in follow_ups.plan(db, NOW, {'email'}) if x['project']['id'] == pid][0]
+        self.assertEqual((item['state'], item['n'], item['prior'], item['counted']), ('due', 3, 2, True))
+        # Read without its key (a plain connection to a copy: the body stays sealed bytes): not counted, never a crash
+        sqlite3 = __import__('sqlite3')
+        raw = sqlite3.connect(root / 'events.sqlite')
+        raw.row_factory = sqlite3.Row
+        item = [x for x in follow_ups.plan(raw, NOW, {'email'}) if x['project']['id'] == pid][0]
+        raw.close()
+        self.assertEqual((item['state'], item['n'], item['counted']), ('due', 1, False))
+
+    def test_nothing_is_drafted_before_its_round_could_be_counted(self):
+        self.turn_on()
+        with patch.object(follow_ups, 'earlier_sends', return_value=(0, None, False)):
+            self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+        self.assertEqual(self.app().follow_up_step()['drafted'], 2)
+
+    def test_the_collected_emails_in_a_read_thread_are_not_counted_twice(self):
+        # Two collected sends (Oct 10, Oct 13): the thread lists Oct 10 before Oct 13, which is the collected one
+        self.store.commit_page('work', {}, [msg('out0', '2026-10-10T09:00:00+00:00', mine=True)])
+        with self.store.connect() as db:
+            out0 = db.execute("SELECT id FROM events WHERE source_id='out0'").fetchone()[0]
+            graph.label(db, [out0], 'Acme pilot', 'review', NOW)
+            for table in ('event_projects', 'graph_events'):
+                db.execute(f'DELETE FROM {table} WHERE event_id=?', (self.ev['in1'],))
+            follow_ups.ensure(db)
+            db.execute('INSERT INTO follow_up_threads(event_id,sends,at) VALUES(?,?,?)', (self.ev['out1'], json.dumps(['2026-10-10T09:00:00+00:00']), NOW))
+        self.turn_on()
+        with self.store.connect() as db:
+            acme = [x for x in follow_ups.plan(db, NOW, {'email'}) if x['project']['id'] == self.acme][0]
+            self.assertEqual((acme['n'], acme['prior'], acme['round_at']), (2, 0, '2026-10-10T09:00:00+00:00'))
+            db.execute('UPDATE follow_up_threads SET sends=? WHERE event_id=?', (json.dumps(['2026-10-10T09:00:00+00:00', '2026-09-20T09:00:00+00:00']), self.ev['out1']))
+            acme = [x for x in follow_ups.plan(db, NOW, {'email'}) if x['project']['id'] == self.acme][0]
+            self.assertEqual((acme['n'], acme['prior'], acme['round_at']), (3, 1, '2026-09-20T09:00:00+00:00'))  # only the one never collected
+
     def test_the_real_thread_is_preferred_and_read_once(self):
         with self.store.connect() as db:
             db.execute("DELETE FROM event_projects WHERE event_id=?", (self.ev['in1'],))
