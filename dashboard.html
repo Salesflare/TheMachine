@@ -802,6 +802,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .tile-fu{margin:4px 0 0;font-size:var(--fs-xs);color:var(--c-accent)}.tile-fu.quiet{color:var(--c-text-3)}
 .graph-fu{margin:8px 0 0}.graph-fu p{margin:0}.graph-fu ol{margin:4px 0 0;padding-left:18px;color:var(--c-text-2);font-size:var(--fs-sm)}
 .fu-names{margin:2px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}
+.fu-group .fu-progress{margin:4px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}
 .fu-title{all:unset;cursor:pointer}.fu-title:hover{text-decoration:underline}.fu-title:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px}
 .fu-keys{margin:-4px 0 8px;color:var(--c-text-3);font-size:var(--fs-xs)}
 .fr-list{list-style:none;margin:0;padding:2px;display:flex;flex-direction:column;gap:8px;max-height:min(62dvh,600px);overflow:auto}
@@ -4881,6 +4882,8 @@ const fleetCards=scopeFilter==='personal'?[]:fleetCardsOf(fleetData);
 const needs=[...fleetCards,...outstanding.filter(s=>placeOf(s)==='needs')],preparing=outstanding.filter(s=>placeOf(s)==='preparing'),ready=outstanding.filter(s=>placeOf(s)==='ready');
 const fuv=fuSplit(ready,needs,preparing);  // a board's follow-ups are one to-do (fuGroupCard)
 const fuHidden=ready.length+needs.length+preparing.length-fuv.ready.length-fuv.needs.length-fuv.preparing.length;
+// What the list shows (a board's follow-ups are one to-do, a batch going out one progress line): All clear only when nothing is
+const anyShown=fuv.ready.length+fuv.needs.length+fuv.preparing.length+(scopeFilter==='personal'?0:(state.follow_up_progress||[]).length);
 // Open cards: by deadline, then by who they're about (the people closest to you, and paying customers, first).
 // Later: in the order they come back, with a heading per day. Done: the last 7 days.
 later.sort((a,b)=>(a.snoozed_until||'').localeCompare(b.snoozed_until||''));
@@ -4896,11 +4899,11 @@ $('#badge-inbox').textContent=(outstanding.length-fuHidden+(fleetData?fleetCards
 if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)))}catch{}
 const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestions').toggleAttribute('aria-busy',loading);
 const foldsBack=foldsKeep($('#suggestions'));
-if(!chatOpen())$('#suggestions').innerHTML=scopeNote(!outstanding.length&&!fleetCards.length&&!loading)+(outstanding.length||fleetCards.length?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+fuSendingCards()+[[fuv.ready,'Ready for you','ready'],[fuv.needs,'Needs your decision','needs'],[fuv.preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
+if(!chatOpen())$('#suggestions').innerHTML=scopeNote(!anyShown&&!loading)+(anyShown?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+fuSendingCards()+[[fuv.ready,'Ready for you','ready'],[fuv.needs,'Needs your decision','needs'],[fuv.preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes.
 +(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary id="later-head"><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary id="finished-head"><span>Done / dismissed</span><span class="count">${doneTotal}</span></summary>${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
-sideCounts={ready:fuv.ready.length,needs:fuv.needs.length,preparing:fuv.preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuv.preparing,'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]);
-{const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[ready,'Ready','ready'],[needs.filter(x=>typeof x!=='string'),'To decide','needs'],[preparing,'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]))}pageHead();
+sideCounts={ready:fuv.ready.length,needs:fuv.needs.length,preparing:fuv.preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]);
+{const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[later,'Later','later'],[recent,'Done','done']]))}pageHead();
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
 fleetSync();
@@ -5291,12 +5294,12 @@ const notifyPresence=(()=>{const id=Math.random().toString(36).slice(2,12)||'pag
 function openCardLink(){
 const m=/^#card=([a-f0-9]{16})$/.exec(location.hash);if(!m||!state.suggestions)return;
 const target=state.suggestions.find(s=>s.id===m[1]);if(!target)return; // Keep the link for a later successful refresh.
-linkedCardId=target.id;
+linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getElementById('fu-'+target.follow_up.group.replace(':','-'));
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';
 folded.delete(placeOf(target));
 render();document.querySelector('nav [data-tab="inbox"]').click();
-const c=document.getElementById('task-'+target.id);if(!c)return;
+const c=document.getElementById('task-'+target.id)||fuEl();if(!c)return;
 for(let parent=c.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
 history.replaceState(null,'',location.pathname+location.search);
 c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');kbFocus(c,false)}
@@ -5510,7 +5513,7 @@ function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…'
   :closed(s)?(s.status==='completed'?'Done':'Not needed'):s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||['accepted','instructions'].includes(s.status)?'Preparing':'';
  return text?`<span>${esc(text)}</span>${p.back&&!chat?.active?`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
 function chatView(s,groups){const p=chatParts(s);
- const side=`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>`<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===s.id?' aria-current="page"':''}>${esc(x.title)}</a>`).join('')}${cut.more?sideMoreRow(key):''}`:''}).join('')}</aside>`;
+ const side=`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>x.fuGroup?`<a href="#" ${x.writing?'data-fu-card':'data-fu-review'}="${esc(x.fuGroup)}" title="${esc(x.title)}" translate="no">${esc(x.title)}</a>`:`<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===s.id?' aria-current="page"':''}>${esc(x.title)}</a>`).join('')}${cut.more?sideMoreRow(key):''}`:''}).join('')}</aside>`;
  return `<div class="chat-layout${chatDrawer?' drawer':''}" data-chat="${s.id}">${side}<div class="chat-main"><header class="chat-head"><a class="chat-back" href="#card=${s.id}" data-chat-back aria-label="Back to the to-do" title="Back to the to-do">${BACK}</a><h2 class="chat-title" title="${esc(s.title)}" translate="no">${esc(s.title)}</h2>
   <details class="chat-menu" id="chat-menu"><summary aria-label="More actions" title="More actions">${DOTS}</summary><div class="chat-menu-list" role="group" aria-label="More actions">${p.rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button></div></details></header>
  <article id="task-${s.id}" class="chat-panel">${p.panel}</article><div class="chat-log" id="chat-log" aria-live="polite">${chatLog(s)}</div>
@@ -5902,7 +5905,7 @@ function doneSearch(q){if(!q||doneFound.q===q||(state?.done_counts?.[scopeFilter
   for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();doneFound.q=q;doneFound.items=r.cards;sideCards()}catch{}},250)}
 function sideCards(groups){if(groups)sideGroups=groups;const q=$('#side-find').value.trim().toLowerCase(),box=$('#side-cards');doneSearch(q);
  const parts=sideGroups.map(([items,title,key])=>{const open=!!q||!sideFolded.has(key),cut=q?{list:sideAll(items,key,q),more:false}:sideList(items,key),count=q?cut.list.length:cut.count;if(!count)return'';
-  return `<div class="side-group${key==='done'||key==='later'?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${CHEVRON}<span>${title}</span><span class="count">${count}</span></button>${open?cut.list.map(x=>x.fuGroup?`<a href="#" data-fu-review="${esc(x.fuGroup)}" title="${esc(x.title)}" translate="no">${esc(x.title)}</a>`:`<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===chatId?' aria-current="page"':''}>${esc(x.title)}</a>`).join('')+(cut.more?sideMoreRow(key):''):''}</div>`}).join('');
+  return `<div class="side-group${key==='done'||key==='later'?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${CHEVRON}<span>${title}</span><span class="count">${count}</span></button>${open?cut.list.map(x=>x.fuGroup?`<a href="#" ${x.writing?'data-fu-card':'data-fu-review'}="${esc(x.fuGroup)}" title="${esc(x.title)}" translate="no">${esc(x.title)}</a>`:`<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===chatId?' aria-current="page"':''}>${esc(x.title)}</a>`).join('')+(cut.more?sideMoreRow(key):''):''}</div>`}).join('');
  const html=`<div class="side-label"><span>To-dos</span>${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${parts||`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
  if(html!==sideHTML){sideHTML=html;const back=sideKeep(box);box.innerHTML=html;back();requestAnimationFrame(chatFades)}}
 // The card list scrolls in its own box (the computer's sidebar, the phone's drawer): a new card above keeps the rows in view where they were
@@ -7890,24 +7893,30 @@ $('#fu-form').addEventListener('submit',async e=>{e.preventDefault();if(!fu)retu
  catch(x){errCaught(x);err.textContent=x.message;err.hidden=false}finally{btn.disabled=false}});
 $('#fu-dialog').addEventListener('close',()=>{fu=null});
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-open]');if(!b)return;e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');fuOpen(b.dataset.fuOpen)},true);
-// The board's follow-ups as one to-do: "8 follow-ups ready for <board>". Ready ones of a board group when there are two
-// or more; one alone stays a normal to-do. The ones still being drafted wait out of sight.
-// Follow-ups on their way in a batch (spaced 30-45 s per mailbox) show as one progress to-do per board instead (fuSendingCard).
-function fuSplit(ready,needs,preparing){fuGroups.clear();const groups={},member=s=>s.follow_up?.group&&s.follow_up.state==='open'&&!sendBusy(s.action_status);
+// The board's follow-ups as one to-do: "8 follow-ups ready for <board>", in Ready once one is written, else in Preparing
+// as "Follow-ups for <board>". Each is in it from the start, also alone: never a to-do of its own in any list, so a board
+// with follow-ups on is one to-do to review, not one per email. While drafts are written it says "Writing 3 follow-ups…".
+// One that got stuck (needs the owner's help) stays a to-do of its own. A project's own follow-up (not grouped) is a
+// normal to-do. Follow-ups on their way in a batch (spaced 30-45 s per mailbox) show as one progress to-do per board
+// instead (fuSendingCard).
+function fuSplit(ready,needs,preparing){fuGroups.clear();const groups={},member=s=>typeof s!=='string'&&s.follow_up?.group&&s.follow_up.state==='open'&&!sendBusy(s.action_status)&&!needsDecision(s);
  const batch=new Set((state.follow_up_progress||[]).filter(p=>p.going).map(p=>p.group||'own')),inBatch=s=>s.follow_up&&sendBusy(s.action_status)&&batch.has(s.follow_up.group||'own');
- for(const s of [...ready,...needs])if(member(s)&&s.status==='prepared')(groups[s.follow_up.group]??=[]).push(s);
- const big=Object.entries(groups).filter(([,l])=>l.length>1),inBig=new Set(big.flatMap(([,l])=>l.map(s=>s.id)));
- return {ready:[...big.map(([g,l])=>fuGroupCard(g,l)),...ready.filter(s=>!inBig.has(s.id)&&!inBatch(s))],needs:needs.filter(s=>typeof s==='string'||!inBig.has(s.id)),preparing:preparing.filter(s=>!(member(s)&&s.early))}}
+ for(const s of [...ready,...needs,...preparing])if(member(s))(groups[s.follow_up.group]??=[]).push(s);
+ const grouped=new Set(Object.values(groups).flat().map(s=>s.id)),cards=Object.entries(groups).map(([g,l])=>[l.some(s=>s.status==='prepared'),fuGroupCard(g,l)]);
+ const out=list=>list.filter(s=>typeof s==='string'||!grouped.has(s.id));
+ return {ready:[...cards.filter(([r])=>r).map(([,c])=>c),...out(ready).filter(s=>!inBatch(s))],needs:out(needs),preparing:[...cards.filter(([r])=>!r).map(([,c])=>c),...out(preparing)]}}
 // The sidebar lists a board's group as one row that opens the review
 const fuGroups=new Map();
 function fuSide(items){return items.map(x=>typeof x==='string'&&fuGroups.has(x)?fuGroups.get(x):x)}
-function fuGroupCard(g,list){const board=list[0].follow_up.board||'',names=list.map(s=>s.follow_up.project),first=names.slice(0,3);
- const card=`<h3><button type="button" class="title-link fu-title" data-fu-review="${esc(g)}"><span translate="no">${esc(t(['{} follow-up ready for {}','{} follow-ups ready for {}'],list.length,board))}</span></button></h3>`
-  +`<div class="meta"><div class="card-badges"><span class="meta-side">${time(list.map(s=>s.created_at).sort().pop(),true)}</span></div></div>`
+function fuGroupCard(g,all){const list=all.filter(s=>s.status==='prepared'),writing=all.length-list.length,board=all[0].follow_up.board||'',names=all.map(s=>s.follow_up.project),first=names.slice(0,3);
+ const title=list.length?t(['{} follow-up ready for {}','{} follow-ups ready for {}'],list.length,board):t('Follow-ups for {}',board);
+ const card=`<h3>${list.length?`<button type="button" class="title-link fu-title" data-fu-review="${esc(g)}"><span translate="no">${esc(title)}</span></button>`:`<span translate="no">${esc(title)}</span>`}</h3>`
+  +`<div class="meta"><div class="card-badges"><span class="meta-side">${time(all.map(s=>s.created_at).sort().pop(),true)}</span></div></div>`
+  +(writing?`<p class="fu-progress" role="status">${esc(t(['Writing {} follow-up…','Writing {} follow-ups…'],writing))}</p>`:'')
   +`<p class="fu-names">${esc(names.length>3?t('{}, {}, {} and {} more',...first,names.length-3):namesLine(first))}</p>`
-  +`<div class="actions"><button class="primary" data-fu-review="${esc(g)}">${esc(t('Review'))}</button></div></article>`;
- const html=`<article class="card todo t-mint fu-group" id="fu-${esc(g.replace(':','-'))}" data-status="prepared">`+card;  // see fuSide
- fuGroups.set(html,{id:'fu-'+g,fuGroup:g,title:t(['{} follow-up ready for {}','{} follow-ups ready for {}'],list.length,board),created_at:list[0].created_at,scope:list[0].scope});return html}
+  +(list.length?`<div class="actions"><button class="primary" data-fu-review="${esc(g)}">${esc(t('Review'))}</button></div>`:'')+'</article>';
+ const html=`<article class="card todo ${list.length?'t-mint':'t-lavender'} fu-group" id="fu-${esc(g.replace(':','-'))}" data-status="${list.length?'prepared':'accepted'}">`+card;  // see fuSide
+ fuGroups.set(html,{id:'fu-'+g,fuGroup:g,title,created_at:all[0].created_at,scope:all[0].scope,writing:!list.length});return html}
 // "Sending 3 of 8…" while a batch goes out, then "Sent 8" (or "Sent 7 of 8": the one that failed is back as a to-do that asks)
 const fuSendingLine=p=>p.going?t('Sending {} of {}…',Math.min(p.done+1,p.total),p.total):p.sent===p.total?t('Sent {}',p.total):t('Sent {} of {}',p.sent,p.total);
 const fuSendingCard=p=>`<article class="card todo t-mint fu-sending" id="fu-sending-${esc((p.group||'own').replace(':','-'))}" data-status="prepared"><h3><span translate="no">${esc(p.board?t('Follow-ups for {}',p.board):t('Follow-ups'))}</span></h3>`
@@ -7955,6 +7964,10 @@ $('#fu-review').addEventListener('keydown',e=>{if(!fr||e.isComposing||e.altKey||
  else if(k==='s'&&cur){e.preventDefault();d.querySelector(`[data-fr-skip="${CSS.escape(cur.id)}"]`)?.click()}
  else if(k==='x'&&cur){e.preventDefault();fr.checked.has(cur.id)?fr.checked.delete(cur.id):fr.checked.add(cur.id);frDraw()}});
 $('#fu-review').addEventListener('close',()=>{const sent=fr?.sent||fr?.gone.size;fr=null;if(sent)refresh().catch(()=>{})});
+document.addEventListener('click',e=>{const w=e.target.closest?.('[data-fu-card]');if(w){e.preventDefault();e.stopPropagation();fuShow(w.dataset.fuCard);return}});
+// A board's follow-ups still being written: back to the to-do list, at their to-do
+function fuShow(g){if(chatId)location.hash='';document.querySelector('nav [data-tab="inbox"]')?.click();folded.delete('preparing');render();
+ const c=document.getElementById('fu-'+g.replace(':','-'));if(!c)return;c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash')}
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-review]');if(!b)return;e.preventDefault();e.stopPropagation();frOpen(b.dataset.fuReview)},true);
 // What someone (or an organization) is to you: said by you, or read by a review in a message, shown with the line it came from.
 // ✓ makes a review's role yours; Edit sets it in your words.

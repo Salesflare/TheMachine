@@ -121,6 +121,90 @@ class Schedule(unittest.TestCase):
         self.assertIsNone(model_budget.follow_up_pause(None, now_s))  # no windows: never paused
 
 
+OWN = {'emails': {'owner@example.com'}, 'names': {'owen owner'}}
+GMAIL_CHAIN = """Hi Sam, any thoughts on the listing?
+
+Owen
+
+On Mon, 21 Sep 2026 08:24:10 -0500, Owen Owner <owner@example.com> wrote:
+> Hi Sam, following up on the exchange.
+>
+> On Wed, 16 Sep 2026 04:31:33 -0500, Owen Owner <
+> owner@example.com> wrote:
+> > Hi Sam, would you be open to an exchange?
+"""
+OUTLOOK_CHAIN = """Hi Sam, one more try.
+
+________________________________
+From: Owen Owner <owner@example.com>
+Sent: Monday, September 21, 2026 3:24 PM
+To: Sam <sam@client.example>
+Subject: RE: Exchange
+
+Hi Sam, following up.
+
+-----Original Message-----
+From: Owen Owner
+Sent: Wednesday, September 16, 2026 9:31 AM
+To: Sam
+Subject: Exchange
+
+Hi Sam, would you be open to an exchange?
+"""
+REPLIED_BETWEEN = """Hi Sam, did you see my last note?
+
+Le lun. 21 sept. 2026 à 08:24, Owen Owner <owner@example.com> a écrit :
+> Thanks, here are the details.
+>
+> Le ven. 18 sept. 2026 à 10:00, Sam Client <sam@client.example> a écrit :
+> > Sounds good, send me the details.
+> >
+> > Le mer. 16 sept. 2026 à 04:31, Owen Owner <owner@example.com> a écrit :
+> > > Would you be open to an exchange?
+"""
+
+
+class EarlierSends(unittest.TestCase):
+    """The owner's earlier unanswered sends that only show in the thread (sent before The Machine read the mailbox)."""
+
+    def test_a_gmail_chain_counts_each_own_quoted_message(self):
+        self.assertEqual(follow_ups.quoted_sends(GMAIL_CHAIN, OWN), ['2026-09-21T13:24:10+00:00', '2026-09-16T09:31:33+00:00'])
+
+    def test_an_outlook_chain_counts_too_by_address_or_full_name(self):
+        self.assertEqual(follow_ups.quoted_sends(OUTLOOK_CHAIN, OWN), ['2026-09-21T15:24:00+00:00', '2026-09-16T09:31:00+00:00'])
+        self.assertEqual(follow_ups.quoted_sends(OUTLOOK_CHAIN, {'emails': {'owner@example.com'}, 'names': set()}),
+                         ['2026-09-21T15:24:00+00:00'])  # the name alone isn't known: stops there
+
+    def test_a_reply_in_between_starts_the_count_again(self):
+        self.assertEqual(follow_ups.quoted_sends(REPLIED_BETWEEN, OWN), ['2026-09-21T08:24:00+00:00'])
+
+    def test_no_quotes_no_earlier_sends(self):
+        self.assertEqual(follow_ups.quoted_sends('Hi Sam, would you be open to an exchange?\n\nOwen', OWN), [])
+        self.assertEqual(follow_ups.quoted_sends('', OWN), [])
+
+    def test_a_forwarded_message_is_not_this_conversation(self):
+        body = 'FYI\n\n---------- Forwarded message ---------\nFrom: Owen Owner <owner@example.com>\nDate: Mon, Sep 21, 2026 at 3:24 PM\n'
+        self.assertEqual(follow_ups.quoted_sends(body, OWN), [])
+
+    def test_the_real_thread_is_read_the_same_way(self):
+        def item(i, ms, sender, labels=('INBOX',)):
+            return {'id': i, 'internalDate': str(ms), 'labelIds': list(labels), 'payload': {'headers': [{'name': 'From', 'value': sender}]}}
+        thread = {'messages': [item('a', 1000, 'Sam <sam@client.example>'), item('b', 2000, 'Owen <owner@example.com>', ['SENT']),
+                               item('c', 3000, 'owner@example.com'), item('d', 3500, 'owner@example.com', ['DRAFT']),
+                               item('e', 4000, 'Owen <owner@example.com>', ['SENT'])]}
+        self.assertEqual(follow_ups.thread_sends(thread, 'e', {'owner@example.com'}),
+                         ['1970-01-01T00:00:03+00:00', '1970-01-01T00:00:02+00:00'])
+        self.assertIsNone(follow_ups.thread_sends(thread, 'zz', {'owner@example.com'}))
+
+    def test_earlier_sends_count_in_the_schedule_and_can_reach_the_maximum(self):
+        rule = {**follow_ups.defaults(), 'on': True, 'max': 3}
+        msgs = [m(5, 13)]
+        found = follow_ups.schedule(msgs, rule, '2026-10-17T10:00:00+00:00', prior=2, since='2026-09-16T09:31:33+00:00')
+        self.assertEqual((found['state'], found['n'], found['round_at']), ('due', 3, '2026-09-16T09:31:33+00:00'))
+        found = follow_ups.schedule(msgs, rule, '2026-10-17T10:00:00+00:00', prior=3, since='2026-09-10T09:00:00+00:00')
+        self.assertEqual((found['state'], found['n']), ('ended', 4))  # three follow-ups already out: done for this round
+
+
 class FollowUps(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -132,6 +216,9 @@ class FollowUps(unittest.TestCase):
         self.clock = patch.object(a, 'now', return_value=NOW)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
+        unread = patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline'))  # no live reads: the quoted history
+        unread.start()
+        self.addCleanup(unread.stop)
         self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [msg('in1', '2026-10-08T09:00:00+00:00'), msg('out1', '2026-10-13T09:00:00+00:00', mine=True),
                                             msg('in2', '2026-10-09T09:00:00+00:00', who='kim@other.example', thread='t2', title='Trial'),
@@ -343,6 +430,35 @@ class FollowUps(unittest.TestCase):
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES('other','d','j','queued',?,?)", (NOW, NOW))
         self.assertEqual(self.app().follow_up_step()['drafted'], 0)
 
+    def test_follow_up_drafts_start_together_without_the_ahead_gap(self):
+        self.store.commit_page('work', {}, [msg('in4', '2026-10-09T09:00:00+00:00', who='lee@third.example', thread='t3', title='Demo'),
+                                            msg('out4', '2026-10-14T09:00:00+00:00', mine=True, who='lee@third.example', thread='t3', title='Demo')])
+        with self.store.connect() as db:
+            ids = [db.execute('SELECT id FROM events WHERE source_id=?', (x,)).fetchone()[0] for x in ('in4', 'out4')]
+            lee = graph.label(db, ids, 'Lee demo', 'review', NOW)
+            db.execute("UPDATE projects SET board_id=?,stage='Invited' WHERE id=?", (self.board, lee))
+            for name in ('first_ahead_started', 'first_card_shown'):  # past the first look: other ahead drafts go one per gap
+                db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', (name, NOW))
+        self.turn_on()
+        app = self.app()
+        self.assertEqual(app.follow_up_step()['drafted'], 3)
+        app.background_at = __import__('time').time()  # another background turn just went
+        app.stop_stale_runs = lambda runner: None
+        app.follow_up_lines = lambda sid: ''
+        calls = []
+        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+            app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        self.assertEqual(len([c for c in calls if c['action'] == 'start']), 3)
+        self.assertTrue(all(c['background'] for c in calls))  # still background work (background_model)
+        # A usage limit still holds them
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='queued'")
+            db.execute('DELETE FROM preparation_runs')
+        calls.clear()
+        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None):
+            app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        self.assertEqual(calls, [])
+
     def test_follow_ups_dont_use_up_the_room_for_other_to_dos(self):
         self.turn_on()
         self.app().follow_up_step()
@@ -375,6 +491,46 @@ class FollowUps(unittest.TestCase):
         # Once: nothing more for this project
         self.app().follow_up_step()
         self.assertEqual([c['project_id'] for c in self.cards()].count(self.acme), 1)
+
+    def test_earlier_sends_quoted_in_the_thread_count_and_the_round_starts_at_the_first(self):
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET body=? WHERE id=?', (GMAIL_CHAIN, self.ev['out1']))
+            db.execute("DELETE FROM event_projects WHERE event_id=?", (self.ev['in1'],))  # Sam never answered: only the owner's
+            db.execute("DELETE FROM graph_events WHERE event_id=?", (self.ev['in1'],))
+        self.turn_on()
+        self.app().follow_up_step()
+        acme = [c for c in self.cards() if c['project_id'] == self.acme][0]
+        self.assertEqual(acme['n'], 3)  # two quoted earlier sends and this one
+        with self.store.connect() as db:
+            body = db.execute('SELECT body FROM suggestions WHERE id=?', (acme['suggestion_id'],)).fetchone()[0]
+        self.assertEqual(body, 'No reply for 32 days. Follow-up 3 of at most 3.')  # since Sep 16, not since Oct 13
+
+    def test_earlier_sends_at_the_maximum_end_the_round_without_a_new_one(self):
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET body=? WHERE id=?', (GMAIL_CHAIN, self.ev['out1']))
+            db.execute("DELETE FROM event_projects WHERE event_id=?", (self.ev['in1'],))
+            db.execute("DELETE FROM graph_events WHERE event_id=?", (self.ev['in1'],))
+        self.turn_on(max=2)
+        self.app().follow_up_step()
+        self.assertEqual([c['project_id'] for c in self.cards()], [self.kim])  # nothing new for Acme
+        with self.store.connect() as db:
+            end = dict(db.execute('SELECT n,moved FROM follow_up_ends WHERE project_id=?', (self.acme,)).fetchone())
+            stage = db.execute('SELECT stage FROM projects WHERE id=?', (self.acme,)).fetchone()[0]
+        self.assertEqual((end, stage), ({'n': 2, 'moved': 1}, graph.STALLED))
+
+    def test_the_real_thread_is_preferred_and_read_once(self):
+        with self.store.connect() as db:
+            db.execute("DELETE FROM event_projects WHERE event_id=?", (self.ev['in1'],))
+            db.execute("DELETE FROM graph_events WHERE event_id=?", (self.ev['in1'],))
+        head = lambda i, ms, who, labels: {'id': i, 'internalDate': str(ms), 'labelIds': labels, 'payload': {'headers': [{'name': 'From', 'value': who}]}}
+        thread = {'messages': [head('old', 1789551093000, 'owner@example.com', ['SENT']), head('out1', 1791882000000, 'owner@example.com', ['SENT'])]}
+        self.turn_on()
+        with patch.object(a.Gmail, 'get', return_value=thread) as read:
+            self.app().follow_up_step()
+            self.app().follow_up_step()
+        self.assertEqual(sorted(c.args[0] for c in read.call_args_list), ['threads/t1', 'threads/t2'])  # each due thread once
+        self.assertEqual(read.call_args.args[1], {'format': 'metadata', 'metadataHeaders': ['From']})
+        self.assertEqual([c['n'] for c in self.cards() if c['project_id'] == self.acme], [2])
 
     def test_the_move_to_stalled_is_a_setting(self):
         self.turn_on(min=1, max=1, stall=False)

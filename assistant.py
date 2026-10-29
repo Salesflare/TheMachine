@@ -1749,9 +1749,9 @@ class Gmail:
     def get(self, resource, params=None):
         methods = {'profile': 'gmail.users.getProfile', 'messages': 'gmail.users.messages.list',
                    'history': 'gmail.users.history.list'}
-        method = methods.get(resource, 'gmail.users.messages.get')
+        method = methods.get(resource, 'gmail.users.threads.get' if resource.startswith('threads/') else 'gmail.users.messages.get')
         values = {'userId': 'me', **(params or {})}
-        if resource.startswith('messages/'):
+        if resource.startswith(('messages/', 'threads/')):
             values['id'] = resource.split('/')[1]
         return gog_read(self.config, self.account, 'gmail', 'v1', method, values,
                         'https://www.googleapis.com/auth/gmail.readonly')
@@ -15879,7 +15879,7 @@ class App:
         """The board view's follow-up state: per board on and the next date, per project its next follow-up or the note."""
         try:
             follow_ups.ensure(db)
-            found = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine())
+            found = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db))
         except sqlite3.Error:
             return
         for b in boards:
@@ -15898,7 +15898,7 @@ class App:
         if not p:
             return None
         settings, source = follow_ups.effective(db, p)
-        view = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine())['projects'].get(pid) or {}
+        view = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db))['projects'].get(pid) or {}
         ends = [dict(r) for r in db.execute('SELECT n,moved,judged,at FROM follow_up_ends WHERE project_id=? ORDER BY at DESC LIMIT 4', (pid,))]
         return {'on': bool(settings and settings.get('on')), 'source': source, 'next_at': view.get('next_at'), 'state': view.get('state'),
                 'reason': view.get('reason'), 'n': view.get('n'), 'max': (settings or {}).get('max'), 'ends': ends,
@@ -15910,6 +15910,46 @@ class App:
 
     def follow_up_sendable(self):
         return follow_ups.sendable(self.config.get('accounts') or [])
+
+    def follow_up_own(self, db):
+        """The owner's addresses and full name, to tell their quoted earlier emails from someone else's."""
+        emails = {str(e).lower() for a in self.config.get('accounts', []) for e in a.get('owner_emails', [a.get('email')]) if e}
+        try:
+            emails |= own_addresses.yours(db, self.config)
+        except sqlite3.Error:
+            pass
+        return {'emails': emails, 'names': [self.config.get('owner_name') or '']}
+
+    def follow_up_threads(self, mine, sendable, own, limit=follow_ups.BATCH * 2):
+        """Read the real thread of due follow-ups once per waiting point (Gmail's thread, Outlook's conversation: who
+        sent each message and when, nothing else), so the owner's earlier sends from another app count
+        (follow_ups.thread_sends). Outside the drafting transaction; a thread that can't be read falls back to the
+        quoted history."""
+        with self.store.connect() as db:
+            follow_ups.ensure(db)
+            wanted = []
+            for item in follow_ups.plan(db, now(), sendable, mine, own):
+                if item['state'] != 'due':
+                    continue
+                msgs = follow_ups.messages(db, item['project']['id'], mine)
+                theirs = max((i for i, m in enumerate(msgs) if not m['mine']), default=-1)
+                _, row = follow_ups.latest_email(db, msgs[theirs + 1:])
+                if row is None or db.execute('SELECT 1 FROM follow_up_threads WHERE event_id=?', (row['id'],)).fetchone():
+                    continue
+                meta = json.loads(row['metadata'] or '{}') if not isinstance(row['metadata'], dict) else row['metadata']
+                wanted.append((row['id'], row['source_id'], row['account_id'], meta.get('thread_id') or meta.get('threadId')))
+        accounts = {a.get('id'): a for a in self.config.get('accounts') or [] if isinstance(a, dict)}
+        for event_id, message_id, account_id, thread_id in wanted[:limit]:
+            account, sends = accounts.get(account_id), None
+            if account and thread_id and account.get('service', 'gmail') in ('gmail', *MICROSOFT_SERVICES):
+                try:
+                    thread = Gmail(self.config, account).get('threads/' + str(thread_id), {'format': 'metadata', 'metadataHeaders': ['From']})
+                    sends = follow_ups.thread_sends(thread, message_id, own['emails'] | {str(account.get('email') or '').lower()})
+                except (SourceError, OSError, ValueError, KeyError) as error:
+                    LOG.info('follow-up thread not read event=%s why=%s', event_id, str(error)[:80])
+            with self.store.connect() as db:
+                db.execute('INSERT OR REPLACE INTO follow_up_threads(event_id,sends,at) VALUES(?,?,?)',
+                           (event_id, None if sends is None else json.dumps(sends), now()))
 
     def follow_up_pause(self, late=False):
         """None when an automated follow-up may be drafted now (model_budget.follow_up_pause): a usage limit holds it,
@@ -15935,8 +15975,11 @@ class App:
             return {'drafted': 0}
         drafted = 0
         with self.store.connect() as db:
+            own = self.follow_up_own(db)
+        self.follow_up_threads(mine, sendable, own)
+        with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            items = follow_ups.plan(db, now(), sendable, mine)
+            items = follow_ups.plan(db, now(), sendable, mine, own)
             for item in items:
                 if item['state'] == 'end':
                     follow_ups.end(db, item, now())
@@ -15976,7 +16019,8 @@ class App:
         grouped = item['source'] == 'board'
         name = p['name']
         title = i18n.t('Follow up on {}', name)[:90]
-        days = (dt.datetime.fromisoformat(now()) - follow_ups.parse(item['after_at'])).days
+        # Since the round's first unanswered message (earlier sends from another app count too)
+        days = (dt.datetime.fromisoformat(now()) - follow_ups.parse(item.get('round_at') or item['after_at'])).days
         body = i18n.t('No reply for {} days. Follow-up {} of at most {}.', days, item['n'], settings['max'])[:700]
         try:
             saved = self.store.suggest(f"follow-up:{p['id']}:{item['after']}", title, body, evidence, 'now', self.config.get('digest_at', '08:30'),
@@ -16167,7 +16211,9 @@ class App:
                 if len(admitted)>=room:break
                 if job['suggestion_id'] in following and (any(j['suggestion_id'] not in following for j in queued if j not in admitted) or self.follow_up_pause(late=job['suggestion_id'] in late)):
                     continue
-                if job['early'] and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
+                # A follow-up draft has its own pacing (follow_up_pause above, follow_ups.DRAFTING and PER_DAY): not the one
+                # ahead draft per tick and BACKGROUND_GAP_SECONDS of other drafts prepared ahead
+                if job['early'] and job['suggestion_id'] not in following and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
                     first=ahead_first and not any(j['early'] for j in admitted)
                     if any(j['early'] for j in admitted) or self.background_pause(first=first, job='ahead:' + job['job_id'], db=db) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
                         continue

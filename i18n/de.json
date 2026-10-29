@@ -4278,6 +4278,10 @@
  "Write your part of the follow-up": "Schreib deinen Teil des Follow-ups",
  "Writing": "Schreiben",
  "Writing it down…": "Wird aufgeschrieben…",
+ "Writing {} follow-ups…": {
+  "one": "{} Nachfassen wird geschrieben…",
+  "other": "{} Nachfassen werden geschrieben…"
+ },
  "Wrong company, clear details": "Falsche Firma, Details löschen",
  "Wrong export code or passphrase, or the file is damaged": "Falscher Exportcode oder falsche Passphrase, oder die Datei ist beschädigt",
  "Wrong facts": "Falsche Fakten",

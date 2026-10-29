@@ -28,9 +28,15 @@ Para un solo proyecto, **Seguimientos…** en el **⋯** de su tarjeta o en su p
 
 ## Revisarlos
 
-Los seguimientos de un tablero llegan como una sola tarea: “8 seguimientos listos para Alpha testers”. **Revisar** los muestra uno debajo de otro, cada uno con **Enviar**, **Editar** y **Omitir**. Con teclado, j y k (o las flechas) para moverte, Enter envía, e edita y s omite. **Enviar todos los marcados** envía los que siguen marcados. El seguimiento de un solo proyecto es una tarea normal.
+Los seguimientos de un tablero llegan como una sola tarea, nunca una por correo. Mientras se redactan dice “Escribiendo 3 seguimientos…” y luego “8 seguimientos listos para Alpha testers”.
+
+**Revisar** los muestra uno debajo de otro, cada uno con **Enviar**, **Editar** y **Omitir**. Con teclado, j y k (o las flechas) para moverte, Enter envía, e edita y s omite. **Enviar todos los marcados** envía los que siguen marcados. El seguimiento de un solo proyecto es una tarea normal.
 
 Cuando salen varios seguidos, también con Enviar sin preguntar, cada buzón envía uno cada 30 a 45 segundos y la tarea muestra cómo va: “Enviando 3 de 8…”.
+
+## Correos enviados antes de tu Machine
+
+Los correos que enviaste desde otra app, antes de que tu Machine leyera ese buzón, también cuentan. Lee la conversación (o, si no puede, los correos anteriores citados en tu último), así que tres correos sin respuesta cuentan como tres, y “Sin respuesta desde hace” cuenta desde el primero. Si ya llegaste al máximo, no redacta otro.
 
 ## Cuándo se detienen
 
