@@ -1,4 +1,5 @@
 """Card quality (hit rate), follow-ups on other people's promises, and checks before a result is saved."""
+import json
 import importlib.util
 from pathlib import Path
 import tempfile
@@ -205,6 +206,24 @@ class NotesRulesAndOutcome(Base):
         self.assertIn('Looks done already. Mark it done if that’s right.', card)
         self.assertNotIn('Looks handled', card)
         self.assertNotIn('approve', card)
+
+    def test_a_step_still_open_is_waiting_not_done(self):
+        # Done means nothing is left for anyone: a hotfix waiting on review is an open to-do waiting on that step.
+        with self.assertRaisesRegex(ValueError, 'waiting_on'):
+            self.save(outcome='waiting')
+        # Given both a done verdict and an open step, the open step wins
+        self.save(outcome='already_done', waiting_on='the hotfix review by Sam', note_kind=None)
+        row = dict(self.store.snapshot(self.app.config['accounts'])['suggestions'][0])
+        self.assertEqual(json.loads(row['outcome']), {'state': 'waiting', 'waiting_on': 'the hotfix review by Sam'})
+        self.assertFalse(a.looks_done(row))
+        self.assertIn('Waiting on: the hotfix review by Sam.', a.card(row))
+        self.assertNotIn('Looks done', a.card(row))
+        with self.store.connect() as db:
+            self.assertEqual(a.waiting_count(db), 0)  # open, but nothing for the owner until that step moves
+        self.save(outcome='already_done', needs='merge the branch to staging', note_kind=None, body='On a separate branch.')
+        row = dict(self.store.snapshot(self.app.config['accounts'])['suggestions'][0])
+        self.assertEqual(json.loads(row['outcome'])['state'], 'needs_you')
+        self.assertFalse(a.looks_done(row))
 
     def test_change_notes_are_sorted_and_count_as_what_they_were(self):
         self.save(outcome='needs_you', needs='approve the send')

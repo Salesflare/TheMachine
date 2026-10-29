@@ -16,7 +16,12 @@ L’onglet **Suggestions** les regroupe :
 - **Attend votre décision** : quelque chose que vous seul pouvez décider.
 - **En préparation** : votre Machine y travaille. Une tâche à laquelle vous venez de dire **Faire** reste à sa place pendant la préparation, puis passe dans **Prêt pour vous**.
 - **Revient plus tard** : mise en attente.
+- **Semblent faites** : les tâches qui semblent déjà terminées. Repliées, juste au-dessus de **Fait / écarté**.
 - **Fait / écarté** : toutes les tâches terminées, les plus récentes d’abord, 30 à la fois quand vous faites défiler.
+
+Sous **Semblent faites**, chaque tâche tient en une ligne : son titre et ce qui montre qu’elle est faite, comme « PR #3451 fusionnée ». **Fait** en ferme une, **Tout marquer comme fait** les ferme toutes (avec **Annuler**), et **Pas fait** la remet comme tâche normale pour que votre Machine en tienne compte. Touchez une ligne pour voir toute la tâche. Elles ne sont jamais en retard et ne comptent pas comme en attente de vous. Rien ne se ferme sans vous.
+
+Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, comme une relecture, une fusion ou une réponse, affiche **En attente de :** cette étape et reste ouverte. Elle attend dans **En attente des autres**, repliée au-dessus de Revient plus tard, et ne compte pas comme prête pour vous. Un nouveau message à son sujet la ramène.
 
 **Tout est à jour.** veut dire que rien n’a besoin de vous pour l’instant. La ligne en dessous indique quand votre Machine a regardé pour la dernière fois.
 

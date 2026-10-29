@@ -16,7 +16,12 @@ Het tabblad **Suggesties** groepeert ze:
 - **Wacht op je beslissing**: iets wat alleen jij kunt beslissen.
 - **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en gaat dan naar **Klaar voor jou**.
 - **Komt later terug**: gesnoozed.
+- **Lijken al gedaan**: to-do's die al af lijken. Ingeklapt, net boven **Gedaan / afgewezen**.
 - **Gedaan / afgewezen**: elke afgeronde to-do, nieuwste eerst, 30 tegelijk terwijl je scrolt.
+
+Onder **Lijken al gedaan** is elke to-do één regel: de titel en wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". **Gedaan** sluit er één, **Alles als gedaan markeren** sluit ze allemaal (met **Ongedaan maken**), en **Niet gedaan** zet hem terug als gewone to-do, zodat je Machine ervan leert. Tik op een regel om de hele to-do te zien. Ze staan nooit als te laat en tellen niet mee als wachtend op jou. Niets sluit zonder jou.
+
+Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug.
 
 **Alles is rustig.** betekent dat er nu niets op je wacht. De regel eronder zegt wanneer je Machine voor het laatst heeft gekeken.
 

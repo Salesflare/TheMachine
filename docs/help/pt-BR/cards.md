@@ -16,7 +16,12 @@ A aba **Sugestões** agrupa as tarefas:
 - **Precisa da sua decisão**: algo que só você pode decidir.
 - **Preparando**: sua Machine está trabalhando nela. Uma tarefa em que você acabou de clicar em **Fazer** fica onde estava enquanto é preparada e depois vai para **Pronta para você**.
 - **Volta mais tarde**: adiada.
+- **Parecem feitas**: tarefas que já parecem concluídas. Recolhidas, logo acima de **Feito / dispensado**.
 - **Feito / dispensado**: todas as tarefas concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola.
+
+Em **Parecem feitas** cada tarefa é uma linha: o título e o que mostra que está feita, como "PR #3451 mesclado". **Feito** fecha uma, **Marcar todas como feitas** fecha todas (com **Desfazer**), e **Não feito** a devolve como tarefa normal para a sua Machine aprender. Toque numa linha para ver a tarefa inteira. Elas nunca aparecem como atrasadas e não contam como esperando por você. Nada fecha sem você.
+
+Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como uma revisão, um merge ou uma resposta, mostra **Aguardando:** esse passo e continua aberta. Ela espera em **Aguardando outras pessoas**, recolhida acima de Volta mais tarde, e não conta como pronta para você. Uma nova mensagem sobre ela a traz de volta.
 
 **Tudo em dia.** significa que nada precisa de você agora. A linha abaixo diz quando sua Machine olhou pela última vez.
 

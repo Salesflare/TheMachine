@@ -28,6 +28,7 @@ try{
  const page=await (await browser.newContext({viewport:{width:390,height:900}})).newPage();
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
+ await page.locator('#lookdone-head').click();await page.locator('[data-ld-expand="c1"]').click();  // it looks done: in the Look done group
  const done=page.locator('#task-c1');await done.waitFor();
  assert.equal(await done.locator('.note.handled').innerText(),'Done: Kim already handled this');
  assert.equal(await done.locator('[data-fleet-handoff]').count(),0);  // nothing to hand on

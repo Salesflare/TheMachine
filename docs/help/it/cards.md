@@ -16,7 +16,12 @@ La scheda **Suggerimenti** le raggruppa:
 - **Serve una tua decisione**: qualcosa che puoi decidere solo tu.
 - **In preparazione**: la tua Machine ci sta lavorando. Un'attività a cui hai appena detto **Fallo** resta dov'era mentre si prepara, poi passa in **Pronta per te**.
 - **Torna più tardi**: posticipate.
+- **Sembrano fatte**: attività che sembrano già concluse. Chiuse, subito sopra **Fatte / ignorate**.
 - **Fatte / ignorate**: tutte le attività concluse, dalla più recente, 30 alla volta mentre scorri.
+
+In **Sembrano fatte** ogni attività è una riga: il titolo e ciò che mostra che è fatta, come "PR #3451 unita". **Fatto** ne chiude una, **Segna tutte come fatte** le chiude tutte (con **Annulla**), e **Non fatto** la rimette come attività normale, così la tua Machine ne tiene conto. Tocca una riga per vedere l’attività intera. Non risultano mai in ritardo e non contano come in attesa di te. Niente si chiude senza di te.
+
+Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, come una revisione, un merge o una risposta, mostra **In attesa di:** quel passo e resta aperta. Aspetta in **In attesa di altri**, chiusa sopra Torna più tardi, e non conta come pronta per te. Un nuovo messaggio su di essa la riporta indietro.
 
 **Tutto a posto.** significa che ora niente ha bisogno di te. La riga sotto dice quando la tua Machine ha controllato l’ultima volta.
 

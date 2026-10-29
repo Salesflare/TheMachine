@@ -66,11 +66,11 @@ def signals(db, since):
                   (since, MAX_SIGNALS))
     decided = _rows(db, "SELECT d.created_at at,d.choice,d.feedback note,s.title,(SELECT kind FROM note_kinds k WHERE k.decision_id=d.id) note_kind "
                         "FROM decisions d JOIN suggestions s ON s.id=d.suggestion_id WHERE d.created_at>? AND d.source IN ('telegram','dashboard') "
-                        "AND (d.choice IN ('reject','snooze') OR (d.choice='other' AND d.feedback!='')) "
+                        "AND (d.choice IN ('reject','snooze','not_done') OR (d.choice='other' AND d.feedback!='')) "
                         "AND d.id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY d.created_at DESC LIMIT ?", (since, MAX_SIGNALS))
     out = [{'what': 'answered it themselves' if e['source'] == 'elsewhere' else 'edited a draft', 'at': e['at'], 'channel': e['channel'],
             'to_do': clip(e['title'], 100), 'draft': clip(e['before']), 'theirs': clip(e['after'])} for e in edits]
-    words = {'reject': 'dismissed', 'snooze': 'snoozed', 'other': 'corrected in chat'}
+    words = {'reject': 'dismissed', 'snooze': 'snoozed', 'other': 'corrected in chat', 'not_done': 'said it was not done after it looked done'}
     out += [{'what': words[d['choice']], 'at': d['at'], 'to_do': clip(d['title'], 100), **({'note': clip(d['note'])} if d['note'] else {}),
              **({'note_kind': d['note_kind']} if d['note_kind'] else {})} for d in decided]
     return sorted(out, key=lambda s: s['at'], reverse=True)[:MAX_SIGNALS]

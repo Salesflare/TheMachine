@@ -6708,10 +6708,10 @@ class Store:
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
         with self.connect() as db:
             rows = db.execute("SELECT d.id,d.choice,d.feedback,s.title FROM decisions d JOIN suggestions s ON s.id=d.suggestion_id "
-                              "WHERE d.feedback!='' AND d.source IN ('telegram','dashboard') AND d.choice IN ('reject','complete','snooze') AND d.created_at>=? "
+                              "WHERE d.feedback!='' AND d.source IN ('telegram','dashboard') AND d.choice IN ('reject','complete','snooze','not_done') AND d.created_at>=? "
                               "AND d.id NOT IN (SELECT decision_id FROM decision_annotations) AND d.id NOT IN (SELECT decision_id FROM facts) "
                               "ORDER BY d.created_at DESC LIMIT ?", (since, limit)).fetchall()
-        verb = {'reject': 'Not needed', 'complete': 'Done', 'snooze': 'Snoozed'}
+        verb = {'reject': 'Not needed', 'complete': 'Done', 'snooze': 'Snoozed', 'not_done': 'Not done (it looked done)'}
         return '\n'.join(f'- {verb[r["choice"]]}: "{r["title"]}". They wrote: "{r["feedback"][:300]}" (decision_id {r["id"]})' for r in rows)
 
     def forget_fact(self, fact_id):
@@ -7261,6 +7261,11 @@ class Store:
             found = db.execute('SELECT count(*) FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchone()[0]
             if found != len(set(event_ids)):
                 raise ValueError('Every event must exist and be live')
+            # The owner said Not done: only a signal that came in after that can say it is handled after all
+            said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice='not_done'", (suggestion_id,)).fetchone()[0]
+            newest = db.execute('SELECT max(ingested_at) FROM events WHERE id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchone()[0]
+            if said and (newest or '') <= said:
+                return {'skipped': 'the owner said it is not done; only a newer signal can show otherwise'}
             db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (encoded({'reason': reason, 'event_ids': event_ids, 'at': now()}), suggestion_id))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
         return {'saved': True}
@@ -7393,7 +7398,7 @@ class Store:
 
     def _decide(self, db, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False):
         # The caller owns one IMMEDIATE transaction, including any prompt validation.
-        if choice not in ['accept', 'reject', 'snooze', 'other', 'complete', 'reopen', 'undo', 'retry'] or not decision_id:
+        if choice not in ['accept', 'reject', 'snooze', 'other', 'complete', 'reopen', 'undo', 'retry', 'not_done'] or not decision_id:
             raise ValueError('Invalid decision')
         if choice == 'reopen' and source not in ('dashboard', 'fleet'):  # fleet: a declined handoff (handoff_back), never a request
             raise ValueError('Reopen is available only through the owner dashboard')
@@ -7447,6 +7452,8 @@ class Store:
             db.execute("UPDATE deliveries SET status='queued',reminder=? WHERE suggestion_id=? AND status='cancelled' AND message_id IS NULL",
                        (int(restored != 'pending'),suggestion_id))
             return {'status':restored,'undone':True}
+        if choice == 'not_done':
+            return self._not_done(db, row, feedback, decision_id, source)
         if choice == 'retry':
             job=db.execute('SELECT status,error,job_id FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
             if row['status'] not in ('accepted','instructions') or not job or job['status']!='blocked':
@@ -7683,6 +7690,27 @@ class Store:
                        (str(message_id),now(),request_id,suggestion_id))
             db.execute('UPDATE suggestions SET feedback_prompt_message_id=? WHERE id=? AND feedback_request_id=? AND feedback_until>?',
                        (str(message_id),suggestion_id,request_id,now()))
+
+    def _not_done(self, db, row, feedback, decision_id, source):
+        """Not done on a to-do that looked done (looks_done): it is a normal to-do again, and the decision (with what the
+        hint or the run said) is what the next review and the learning pass read. A run's already_done result goes back to
+        Needs your decision; nothing starts by itself."""
+        if row['status'] in ('completed', 'rejected', 'snoozed') or not looks_done(dict(row)):
+            if source == 'telegram':
+                return {'status': row['status'], 'duplicate': True, 'skipped': True, 'reason': 'stale_not_done'}
+            raise ValueError('This to-do no longer looks done')
+        try:
+            said = json.loads(row['handled_hint'] or 'null') or {}
+        except ValueError:
+            said = {}
+        why = (said.get('reason') if isinstance(said, dict) else '') or first_sentence(row['body'])
+        note = ' '.join(str(feedback or '').split()) or 'Not done yet. It looked done because: ' + why
+        db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)', (decision_id, row['id'], 'not_done', note[:5000], source, now()))
+        status = 'pending' if row['status'] == 'prepared' and outcome_state(row) == 'already_done' else row['status']
+        db.execute("UPDATE suggestions SET handled_hint=NULL,status=?,outcome=CASE WHEN ?='pending' THEN NULL ELSE outcome END,undo_until=NULL WHERE id=?",
+                   (status, status, row['id']))
+        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+        return {'status': status, 'not_done': True}
 
     def prepare(self, suggestion_id, body, job_id=None, next_action=None, outcome=None, note_kind=None, require_note=False, finish_state=None, title=None, send_now=False):
         if not body.strip():
@@ -9966,7 +9994,7 @@ CHAT_HISTORY_LIMIT = 200
 # The chat's Stop (Store.stop_chat): what the card says after, and a message that is only files (chat_files.py)
 CHAT_STOPPED = 'Stopped. Write what to do next, or tap Try again.'
 CHAT_FILES_ONLY = ('Take a look at the attached file.', 'Take a look at the attached files.')
-CHAT_OWNER_WORDS = {'accept': 'Do it', 'retry': 'Try again', 'complete': 'Marked done', 'reject': 'Not needed',
+CHAT_OWNER_WORDS = {'accept': 'Do it', 'retry': 'Try again', 'complete': 'Marked done', 'reject': 'Not needed', 'not_done': 'Not done yet',
                     'snooze': 'Snoozed', 'reopen': 'Reopened', 'undo': 'Reopened', 'rename': 'Renamed',
                     'rename_reset': 'Back to the suggested title', 'merge': 'Merged into the other to-do', 'keep_both': 'Kept both to-dos'}
 # A tap that the next one takes back within a minute (done then reopened, snoozed then unsnoozed), or that Undo took
@@ -11045,7 +11073,8 @@ def card(row):
                       'done': t('Finished. Mark it done if it looks right.'),
                       'answered': t('Answered. Nothing done yet.'),
                       'snoozed': t('Back, as you asked.'),
-                      'already_done': t('Looks done already. Mark it done if that’s right.')}.get(outcome['state']) or t('Needs you: {}', sentence(outcome['needs']))
+                      'already_done': t('Looks done already. Mark it done if that’s right.'),
+                      'waiting': t('Waiting on: {}', sentence(outcome.get('waiting_on') or ''))}.get(outcome['state']) or t('Needs you: {}', sentence(outcome['needs']))
         except (ValueError, KeyError, TypeError, AttributeError):
             outcome = {}
     if row.get('early') and row['status'] == 'prepared' and not outcome.get('needs') and outcome.get('state') != 'already_done' and any(
@@ -12046,9 +12075,41 @@ def reminder_line(channels):
     return i18n.t('It’ll be back on the dashboard then.')
 
 
+# A to-do that looks done already: a later signal suggests it's handled (looks_handled), or its run found it done
+# (outcome already_done). Only a hint: the owner still closes it, from one quiet group above Done; it never counts as
+# waiting for them (badge, reminders, nudges) and is never late. Same rule as looksDone() in dashboard.html.
+LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND json_extract(outcome,'$.state')='already_done'))"
+# Waiting on others: its run found a step still open on someone else's side (outcome waiting: a review, merge, deploy,
+# a reply). Nothing for the owner until that step moves; a new message on it (update_card) brings it back as open.
+# Neither kind counts as needing the owner. Same rule as waitsOnOthers() in dashboard.html.
+NOT_FOR_OWNER_SQL = "(" + LOOKS_DONE_SQL + " OR (status='prepared' AND json_extract(outcome,'$.state')='waiting'))"
+
+
+def outcome_state(row):
+    try:
+        return (json.loads(row['outcome'] or 'null') or {}).get('state')
+    except (TypeError, ValueError, AttributeError, KeyError, IndexError):
+        return None
+
+
+def looks_done(row):
+    return row['status'] not in ('completed', 'rejected', 'snoozed') and bool(
+        row.get('handled_hint') or (row['status'] == 'prepared' and outcome_state(row) == 'already_done'))
+
+
+def waits_on_others(row):
+    return row['status'] == 'prepared' and not row.get('handled_hint') and outcome_state(row) == 'waiting'
+
+
+def first_sentence(text):
+    """The first sentence of a card's body, plain: an already_done result leads with what shows it."""
+    text = ' '.join(re.sub(r'[*_`\[\]]|\(https?://[^)]*\)', '', str(text or '')).split())
+    return re.split(r'(?<=[.!?])\s', text, maxsplit=1)[0][:200]
+
+
 def waiting_count(db):
-    """To-dos that need the owner now, for the app icon's badge."""
-    return db.execute("SELECT count(*) FROM suggestions WHERE status IN ('pending','prepared') AND handled_hint IS NULL "
+    """To-dos that need the owner now, for the app icon's badge (not the ones that look done or wait on others)."""
+    return db.execute("SELECT count(*) FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
                       "AND (deliver_after IS NULL OR deliver_after<=?)", (now(),)).fetchone()[0]
 
 
@@ -12285,7 +12346,7 @@ def deliver_one(store, config, edit_cards=True):
                    ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=3)).isoformat(),))
         retry_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)).isoformat()
         store.settle_awaiting(db)
-        rows = db.execute("SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN ('accepted','prepared','instructions'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1",(retry_cutoff,now())).fetchall()
+        rows = db.execute("SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN ('accepted','prepared','instructions') AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1",(retry_cutoff,now())).fetchall()
         if not rows:
             return
         row = dict(rows[0])
@@ -12475,7 +12536,7 @@ For this job:
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{meeting_notes_prompt(config)}
 - Save the result with assistant_signals prepare args suggestion_id={sid}, job_id={j}, body=<short result>, next_actions=[...], outcome, and send_now:true only when the owner's latest message approves sending a draft they already saw on the card, unchanged (the service refuses any other). A draft you write or change in this turn is saved without send_now and shown to them: they read it and tap Send (outcome:'needs_you', needs:'check the draft and send it'), also when their note only says what to do ("email Sam now").
-- outcome:'done' only when the task itself is complete and nothing is left for the owner but to check it; outcome:'answered' when you only answered their question, explained or planned, and the task itself is still to do (the card then offers Do it again); outcome:'already_done' with no next_actions when it turns out to be done already or no longer needed; outcome:'your_step' with step:'submit' (or pay, book, sign, confirm, order, apply) when everything is ready but that final click is left for them, e.g. a form you filled in and didn't submit (the card says so and links to the page in this Machine's browser by itself; no link of your own needed); outcome:'needs_you' with needs:<the one thing they have to do, in a few words> otherwise (approve the send, sign in, choose); when that is a question for them, write needs as the question itself, ending in "?" (the card then leads with Answer). The card shows that status line itself, so the body doesn't repeat it. Finish what you can first: don't stop to ask about steps the rules already let you do.
+- outcome:'done' only when the task itself is complete and nothing is left for the owner but to check it; outcome:'answered' when you only answered their question, explained or planned, and the task itself is still to do (the card then offers Do it again); outcome:'already_done' with no next_actions when it turns out to be done already or no longer needed, and nothing is left for anyone; outcome:'waiting' with waiting_on:<the step and who> while a step is still open on someone else's side (a review, merge, deploy, a reply); outcome:'your_step' with step:'submit' (or pay, book, sign, confirm, order, apply) when everything is ready but that final click is left for them, e.g. a form you filled in and didn't submit (the card says so and links to the page in this Machine's browser by itself; no link of your own needed); outcome:'needs_you' with needs:<the one thing they have to do, in a few words> otherwise (approve the send, sign in, choose); when that is a question for them, write needs as the question itself, ending in "?" (the card then leads with Answer). The card shows that status line itself, so the body doesn't repeat it. Finish what you can first: don't stop to ask about steps the rules already let you do.
 - Keep prepared, sent and done apart, in the body and the title too: never call something done, sent, applied or fixed while a draft, a review or a step only they can do is still open; say what is ready and what is left. The service refuses outcome:'done' while a next action still waits for them.
 - Before a follow-up, nudge or handoff, check the conversation for newer activity by anyone else: their reply, a teammate's send or answer, or a teammate's Machine that handled it (the Work Fleet lines). Read the newer messages listed below first when there are any. When it's handled, save outcome:'already_done' saying who did it and when, instead of drafting.
 - When the result is a document, sheet, page or record you made or changed that has its own address (a Google Doc, a live page, a CRM record), add {{kind:open,label:'Open <what it is>',url:<its exact address>}} so the to-do opens it in one tap.
@@ -13155,7 +13216,7 @@ Name the ongoing work: finish_analysis projects ({{"Project name": [event_ids fr
 Boards: projects of one kind (partner listings, hires, onboardings), one project per counterpart, stand in stages on boards the owner saved; begin_analysis boards lists them with each project's stage and the board's about (which projects belong). When a message in this batch moves one (they agreed, sent their edits, went live, declined, the address bounced), add it to finish_analysis stages ({{"project", "board", "stage", "reason", "event_id", "next"}}): judge what the message means between these people in its conversation, never its wording, and never move a project only because time passed. reason is a short clause that reads after "Moved to <stage>:" ("Sam signed the order form"); next is the owner's next step in a few words; org the counterpart's web domain when it isn't clear from the people. A new project that fits a board's about goes on it the same way. Projects the owner put on a board come as "Boards to sort" at the top. Only the owner makes boards; a review suggests them, each once, from the boards to suggest at the top with graph suggest_board {{"name", "stages", "about", "projects", "reason", "visibility"}}: stages that fit how that kind of work goes, in order, ending at the good outcome (partner listings: Contacted, Agreed, In review, Live; hiring: Sourced, Screening, Interviews, Offer, Hired); every board has its own Stalled or declined row, so an ending where it didn't happen (lost, declined, dropped) is never a stage. about one sentence on which projects belong. Judge the kind from what the projects are, not from words in their names. The owner's own move stands until a newer message changes things. A stage and its next step never replace a to-do: when the other side's reply asks the owner something or proposes terms (a price or fee, a counteroffer, a condition), move the project and also suggest a to-do with prepare_ahead:true so the answer comes drafted, on a board or not and whether follow-ups are on or not, also when you expect the owner to say no; terms not agreed yet keep the stage before agreement. finish_analysis refuses while such a reply on a board has no open to-do; one that needs no answer (a thanks, a confirmation, a decline that ends it) goes in finish_analysis replies [{{"event_id", "why"}}].
 Team: when begin_analysis lists team (Work messages, shared with the owner's Work Fleet by default), add finish_analysis team ([{{"event_id", "share", "line", "group", "suggest"}}], group and suggest only for unsure ones; begin_analysis share_groups lists the groups already used) for each of those threads, judged by what the conversation is, never by words in it: {SHARE_VERDICTS} line is one short line of what happened, in your own words ("Lee asked for the renewal quote"), never quoted text. The owner's own Team or Only you always wins.
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
-Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
+Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. After they said Not done on it, only a newer signal counts. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
 When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
 Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
 Meeting notes and transcripts (Zoom's, or added to the meeting: meeting.notes, meeting.transcript) are that meeting's own record: use them for follow-ups on it, its next steps and who took them on, with the notes and the calendar event as evidence.
@@ -14564,14 +14625,22 @@ class App:
                 needs=' '.join(str(args.get('needs') or '').split())
                 if args.get('outcome')=='done':outcome={'state':'done'}
                 elif args.get('outcome')=='needs_you' and 3<=len(needs)<=200:outcome={'state':'needs_you','needs':needs}
+                elif args.get('outcome')=='already_done' and args.get('follow_up')=='stop':
+                    # The Machine never ends follow-ups on its own judgment: the draft comes with its advice, the owner decides
+                    raise ValueError("follow_up:'stop' never goes without a draft: write the follow-up anyway, with follow_up:'stop' and "
+                                     "follow_up_why:<why you would stop, a few words>, and outcome:'needs_you'. The owner decides")
+                elif args.get('outcome')=='waiting' or args.get('outcome')=='already_done' and args.get('waiting_on'):
+                    # Done means nothing is left for anyone: with a step still open (a review, a merge, a deploy, someone's
+                    # reply) it is an open to-do waiting on that step, never "Looks done". Given both, the open step wins.
+                    waiting=' '.join(str(args.get('waiting_on') or '').split())
+                    if not 3<=len(waiting)<=200:raise ValueError("outcome:'waiting' needs waiting_on: the step still open and who it waits on, 3 to 200 characters")
+                    outcome={'state':'waiting','waiting_on':waiting}
+                elif args.get('outcome')=='already_done' and 3<=len(' '.join(str(args.get('needs') or '').split()))<=200:
+                    outcome={'state':'needs_you','needs':' '.join(str(args['needs']).split())}  # something is still left for the owner: open, not done
                 elif args.get('outcome')=='already_done':
                     if any(a['kind']!='open' for a in next_actions.actions(action)):
                         raise ValueError("outcome:'already_done' means there is nothing left to approve: leave next_actions empty")
                     outcome={'state':'already_done'}
-                    if args.get('follow_up')=='stop':
-                        # The Machine never ends follow-ups on its own judgment: the draft comes with its advice, the owner decides
-                        raise ValueError("follow_up:'stop' never goes without a draft: write the follow-up anyway, with follow_up:'stop' and "
-                                         "follow_up_why:<why you would stop, a few words>, and outcome:'needs_you'. The owner decides")
                 elif args.get('outcome')=='answered':outcome={'state':'answered'}
                 elif args.get('outcome')=='your_step':
                     # Everything is ready up to a final click the owner makes themselves (in the Machine's browser):
@@ -14582,7 +14651,7 @@ class App:
                 elif args.get('outcome')=='snoozed':
                     # The owner wants this card itself back later: the card's own snooze, not a separate reminder.
                     outcome={'state':'snoozed','until':asked_snooze_time(args.get('snooze_until'))}
-                else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option>")
+                else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed, nothing left for anyone), outcome:'waiting' with waiting_on (a step still open on someone else's side), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option>")
             if outcome and outcome['state']=='done' and args.get('send_now') is not True and self.store.waiting_steps(args['suggestion_id'],action,args.get('finish_state')):
                 # Prepared is not done: a draft, review or final click still waits for the owner.
                 raise ValueError("Not done yet: a step in next_actions still waits for the owner (a draft to send, a change to approve, a final click). "
@@ -15415,9 +15484,9 @@ class App:
         what, _, key = ref.partition(':')
         with self.store.connect() as db:
             if what == 'suggestion':
-                row = db.execute('SELECT s.status,s.handled_hint,p.status prep FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
+                row = db.execute('SELECT s.status,s.handled_hint,s.outcome,p.status prep FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
                                  'WHERE s.id=?', (key,)).fetchone()
-                return bool(row) and not row['handled_hint'] and (row['status'] in ('pending', 'prepared', 'instructions')
+                return bool(row) and not looks_done(dict(row)) and not waits_on_others(dict(row)) and (row['status'] in ('pending', 'prepared', 'instructions')
                                                                   or (row['status'] == 'accepted' and row['prep'] == 'blocked'))
             if what == 'fleet':
                 try:
@@ -15491,7 +15560,7 @@ class App:
             meetings = [m for m in meetings if m['at'] >= utc(local)] or []
             open_states = "('pending','accepted','prepared','instructions')"
             due = [dict(r) for r in db.execute(
-                f"SELECT title FROM suggestions WHERE (status IN {open_states} AND due=?) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
+                f"SELECT title FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
                 "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
             overnight = [dict(r) for r in db.execute(
                 "SELECT title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
