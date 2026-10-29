@@ -10,7 +10,7 @@ Als iemand op een bord niet meer antwoordt, schrijft je Machine de opvolging voo
 
 ## Aanzetten
 
-**⋯** op een bord, dan **Opvolging…**, en vink **Opvolgen als er geen antwoord komt** aan. Dat geldt voor elk project op dat bord.
+**⋯** op een bord, dan **Opvolging…**, en vink **Opvolgen als er geen antwoord komt** aan. Dat geldt voor elk project op dat bord. Of tik op **Opvolging uit** onder de naam van het bord, of op **Volg ze op** in een fase met projecten zonder antwoord in 10+ dagen.
 
 Voor één project: **Opvolging…** in de **⋯** van de kaart of op de projectpagina. **Voor dit project** kiest **Aan**, **Uit** of de instelling van het bord. De eigen instelling van een project gaat voor op die van het bord.
 

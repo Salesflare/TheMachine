@@ -10,7 +10,7 @@ Quand une personne d’un tableau ne répond plus, votre Machine rédige la rela
 
 ## L’activer
 
-**⋯** sur un tableau, puis **Relances…**, et cochez **Relancer sans réponse**. Cela vaut pour tous les projets de ce tableau.
+**⋯** sur un tableau, puis **Relances…**, et cochez **Relancer sans réponse**. Cela vaut pour tous les projets de ce tableau. Ou touchez **Relances désactivées** sous le nom du tableau, ou **Les relancer** dans une étape avec des projets sans réponse depuis plus de 10 jours.
 
 Pour un seul projet : **Relances…** dans le **⋯** de sa carte ou sur sa page. **Pour ce projet** choisit **Activé**, **Désactivée** ou le réglage du tableau. Le réglage propre d’un projet l’emporte sur celui du tableau.
 

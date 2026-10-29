@@ -10,7 +10,7 @@ Cuando alguien de un tablero deja de responder, tu Machine redacta el seguimient
 
 ## Activarlo
 
-**⋯** en un tablero, luego **Seguimientos…**, y marca **Hacer seguimiento si no hay respuesta**. Se aplica a todos los proyectos de ese tablero.
+**⋯** en un tablero, luego **Seguimientos…**, y marca **Hacer seguimiento si no hay respuesta**. Se aplica a todos los proyectos de ese tablero. O toca **Seguimientos desactivados** bajo el nombre del tablero, o **Hacerles seguimiento** en una etapa con proyectos sin respuesta desde hace más de 10 días.
 
 Para un solo proyecto, **Seguimientos…** en el **⋯** de su tarjeta o en su página. **Para este proyecto** elige **Activado**, **Desactivada** o el ajuste del tablero. El ajuste propio de un proyecto manda sobre el del tablero.
 

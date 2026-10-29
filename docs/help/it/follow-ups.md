@@ -10,7 +10,7 @@ Quando qualcuno su una bacheca smette di rispondere, la tua Machine scrive il ri
 
 ## Attivarli
 
-**⋯** su una bacheca, poi **Ricontatti…**, e spunta **Ricontatta se non c’è risposta**. Vale per tutti i progetti di quella bacheca.
+**⋯** su una bacheca, poi **Ricontatti…**, e spunta **Ricontatta se non c’è risposta**. Vale per tutti i progetti di quella bacheca. Oppure tocca **Ricontatti disattivati** sotto il nome della bacheca, o **Ricontattali** in una fase con progetti senza risposta da oltre 10 giorni.
 
 Per un solo progetto, **Ricontatti…** nel **⋯** della sua scheda o nella sua pagina. **Per questo progetto** sceglie **Attivo**, **Disattivata** o l’impostazione della bacheca. L’impostazione del progetto ha la precedenza su quella della bacheca.
 
