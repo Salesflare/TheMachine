@@ -26,6 +26,8 @@ Voor één project: **Opvolging…** in de **⋯** van de kaart of op de project
 
 **Vraag het me voor het versturen** is de standaard: concepten wachten in je to-do's. **Versturen zonder te vragen** is een vast ja voor dat bord of project. Iets ongewoons wacht toch op jou, net als alles wat mislukt. Met de modus Voorzichtig aan vraagt hij het altijd. Een opvolging gaat nooit twee keer weg.
 
+Vlak voor het versturen wordt de thread opnieuw gecontroleerd, en als iemand sinds het concept schreef, gaat ze niet weg: "Niet verstuurd: nieuw bericht in de thread".
+
 ## Nakijken
 
 De opvolgingen van een bord komen als één to-do, nooit één per e-mail. Terwijl ze geschreven worden staat er "3 opvolgingen worden geschreven…", daarna "8 opvolgingen klaar voor Alpha testers".
