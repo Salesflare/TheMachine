@@ -99,6 +99,7 @@ import pacing
 import portable
 import service
 import dashboard_parts
+from agents_app import AgentsApp
 from calendar_app import CalendarApp
 from skills_app import SkillsApp
 from support_app import SupportApp
@@ -13487,7 +13488,7 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp)
 
 
 class App(*APP_MIXINS):
@@ -13632,20 +13633,6 @@ class App(*APP_MIXINS):
                 'task': card_task(card), 'note': note, 'about': agent_about(card, views), 'history': agent_history(*chat, skip=note),
                 'message_kinds': [v['kind'] for v in views]}
 
-    def agent_revise(self, suggestion_id, text, job=None):
-        """A message Claude Code or Codex rewrote (its draft.md) becomes the card's draft under a new revision, when the
-        card has exactly one message draft: the owner still reads it there and sends it with the card's own Send."""
-        with self.store.connect() as db:
-            row = db.execute('SELECT status,next_action FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
-        if not row or row['status'] != 'prepared' or not row['next_action']:
-            return False
-        current = json.loads(row['next_action'])
-        actions = current.get('actions') if current.get('kind') == 'menu' else [current]
-        editable = [a for a in actions or [] if isinstance(a, dict) and a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply') and a.get('revision')]
-        if len(editable) != 1:
-            return False
-        return self.store.revise_draft(str(suggestion_id), editable[0]['revision'], 'agent', None, text, agent_job=job).get('status') == 'revised'
-
     def teammate_addresses(self):
         """The members of the owner's Work Fleets, each address with their name: who Hand off by email suggests first."""
         out = []
@@ -13769,23 +13756,6 @@ class App(*APP_MIXINS):
             except Exception as error:  # noqa: BLE001 - the next poll reads it anyway
                 LOG.warning('sync_soon account=%s error=%s', account_id, type(error).__name__)
         threading.Thread(target=read, name='sync-soon-' + account_id, daemon=True).start()
-
-    def agent_action(self, name, args):
-        if not self.agents:
-            raise ValueError('Handing off to Claude Code or Codex is off on this Machine')
-        if name == 'agent_draft':
-            return self.agents.draft(args['suggestion_id'])
-        if name == 'agent_send':
-            return self.agents.start(args['suggestion_id'], args['tool'], args.get('brief'), args.get('note'))
-        if name == 'agent_follow_up':
-            return self.agents.follow_up(args['job_id'], args.get('text'))
-        if name == 'agent_retry':
-            return self.agents.retry(args['job_id'])
-        if name == 'agent_cancel':
-            return self.agents.cancel(args['job_id'])
-        if name == 'agent_outcome':
-            return self.agents.set_outcome(args['job_id'], args.get('outcome'))
-        raise ValueError('Unknown operation')
 
     def originals(self, suggestion_id, event_id='', event_ids=None):
         """Source messages for the dashboard, with Gmail attachments looked up live (read-only):
@@ -14065,30 +14035,6 @@ class App(*APP_MIXINS):
             hints = []
         self._setup_hints = (time.monotonic(), key, hints)
         return hints
-
-    def agents_view(self):
-        """Hand to Claude Code / Codex where no local CLI of the owner's runs (agent_remote.py): the paired Claude Code
-        session, the Codex cloud environment, and the claude.ai connector that brings Claude's results back."""
-        own = agent_jobs.settings(self.config)
-        if own is None:
-            return None
-        claude, codex = (own.get('claude') if isinstance(own.get('claude'), dict) else {}), (own.get('codex') if isinstance(own.get('codex'), dict) else {})
-        where = self.agents.where() if getattr(self, 'agents', None) else None  # Where Codex runs, from the setup page
-        on_device = (where or {}).get('codex') == 'device'
-        on_machine = (where or {}).get('codex') == 'machine' and not codex.get('place')
-        if not (self.config.get('manage_url') and (agent_jobs.coding_relevant(self.config) or on_device) or claude.get('place') == 'remote'
-                or codex.get('place') == 'cloud'):
-            return None  # hosted: shown once GitHub or Codex is connected (agent_jobs.coding_relevant)
-        manage = str(self.config.get('manage_url') or '')
-        origin = urllib.parse.urlsplit(manage)
-        base = f'{origin.scheme}://{origin.netloc}' if origin.scheme == 'https' and origin.netloc else 'https://app.themachine.computer'
-        return {'claude_session': str(claude.get('session') or ''), 'device': str(claude.get('device') or ''),
-                'codex_where': 'device' if on_device else 'machine' if on_machine else None,
-                'codex_device': agent_jobs.device_label(where) if on_device else '',
-                'codex_setup': manage.split('#')[0] + '#codex' if manage.startswith('https://') else '',
-                'codex_env': str(codex.get('env') or ''), 'codex_branch': str(codex.get('branch') or ''),
-                'connector': base + '/mcp', 'on_network': bool(getattr(self, 'fleet', None)),
-                'saveable': bool(getattr(self, 'config_path', None))}
 
     def set_agents(self, args):
         import agent_remote
@@ -14426,10 +14372,6 @@ class App(*APP_MIXINS):
             if not owner_dashboard:
                 raise ValueError('Only the owner connects GBrain, on the dashboard (Connections)')
             return self.gbrain_action(name, args)
-        if name in AGENT_ACTIONS:  # Hand to Claude Code / Codex: the owner's own, from the dashboard only
-            if not owner_dashboard:
-                raise ValueError('Hand off to Claude Code or Codex from the dashboard')
-            return self.agent_action(name, args)
         if name in ('events', 'related') and selected in ('all', ['all']):
             selected = accounts  # search everything, asked for explicitly
         if name in ['events', 'begin_analysis', 'related'] and (not selected or not set(selected) <= set(accounts)):
@@ -17931,14 +17873,6 @@ class App(*APP_MIXINS):
             return (found if found.tzinfo else found.replace(tzinfo=dt.timezone.utc)).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')
         lines = agent_jobs.card_work(rows[-3:], self.agent_folder, when)
         return ('\n\n' + AGENT_WORK_NOTE + '\n' + '\n'.join(lines)) if lines else ''
-
-    def agent_folder(self, job_id):
-        """A coding agent job's own folder (its turn transcripts), or None."""
-        if not re.fullmatch(r'aj_[0-9a-f]{16}', str(job_id or '')):
-            return None
-        agents = getattr(self, 'agents', None)
-        root = agents.root if agents is not None else Path(self.config['database']).expanduser().parent / 'agent-jobs'
-        return Path(root) / job_id
 
     def card_chat_gateway(self, request):
         """chat-history-run.mjs: the Gateway's chat.history for one preparation session; {'error'} when unavailable."""

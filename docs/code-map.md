@@ -19,7 +19,7 @@ writes it; other modules call the owner's functions.
 | message sealing | `message_seal`, `message_keyring`, `network_crypto` | `event_search` |
 | graph and CRM | `graph`, `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures` | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*` |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
-| do it and preparation | `next_actions`, `preparation_state`, `agent_jobs`, `agent_remote`, `calendar_writes`, `calendar_app`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
+| do it and preparation | `next_actions`, `preparation_state`, `agent_jobs`, `agent_remote`, `agents_app`, `calendar_writes`, `calendar_app`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
 | reviews and learning | `learning_loop`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain` | `learning_changes`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
 | chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_files`, `talk_lines`, `voice_prefs` |
 | fleet and network | `fleet`, `fleet_requests`, `fleet_trust`, `shared_graph`, `shared_connectors`, `network`, `friends`, `family`, `contact_share`, `discovery`, `security_levels` | `fleet_*`, `network_request_nodes` (fleet); `share_*`, `team_*` (shared_graph); `network_*` (network, discovery); `contact_*`; `security_prefs` |
@@ -44,6 +44,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `support_app.py` (`SupportApp`): Help and Report a bug.
   - `calendar_app.py` (`CalendarApp`): the Calendar's actions.
   - `skills_app.py` (`SkillsApp`): the skill actions and the skills kept here.
+  - `agents_app.py` (`AgentsApp`): Hand to Claude Code / Codex (the hand-off actions and where agents run).
 - **A new route:** `Handler.do_GET` or `do_POST` inside `App.serve`. JSON reads go through `App` methods; owner-only and
   CSP headers stay as the neighboring routes have them (`tests/test_owner_boundary.py`).
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in
