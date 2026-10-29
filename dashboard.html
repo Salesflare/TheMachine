@@ -4320,21 +4320,22 @@ async function connectSetup(form){const name=form.dataset.connectSetup,err=form.
  err.textContent='';go.disabled=true;if(!await connectStart(name,null,payload))go.disabled=false}
 // Sign in with <provider> on a self-hosted Machine: the Machine asks the control plane for a one-time start link,
 // signed with its own key, and it opens in a new tab. The token comes back sealed for this Machine, which checks it.
-const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. Replies only after you approve them, as yourself. Never assigns or closes.',other:'Or paste an access token',how:'From an app in Intercom’s Developer Hub.',go:'Paste a token'},
- google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up'},
- microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up'},
+// off: what it says when the control plane has no app for this sign-in (connect_sources signin_off), above the other way
+const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. Replies only after you approve them, as yourself. Never assigns or closes.',other:'Or paste an access token',how:'From an app in Intercom’s Developer Hub.',go:'Paste a token',off:'Sign in with {} isn’t available yet. Paste an access token instead.'},
+ google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
+ microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Reads only.'},
- zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up'},
+ zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  microsoft_docs:{label:'Microsoft',title:'Docs',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
- stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key'}};
+ stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste a restricted key instead.'}};
 // A work organization that lets only approved apps in: the short link its Microsoft 365 admin approves The Machine with.
 // It opens Microsoft's approval page with a fresh signed state on each visit (the control plane's site), so it never expires.
 const MS_ADMIN_LINK='https://themachine.computer/m365-admin-consent';
 const msAdmin=s=>s.provider!=='microsoft'?'':`<div class="connect-admin"><p>Need your admin’s approval? Send them this link.</p><div class="connect-admin-link"><a href="${MS_ADMIN_LINK}" target="_blank" rel="noopener" translate="no">${MS_ADMIN_LINK.replace('https://','')}</a><button type="button" data-copy-link="${MS_ADMIN_LINK}">Copy link</button></div></div>`;
 const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.hosted_signin),p=hosted?x.hosted_signin:x.signin===true?x.service:x.signin;
- return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{})}};
+ return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{}),...(!hosted&&x.signin_off?{off:true}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
 // Pasting a key or token stays on the account page's tile.
 const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',intercom:'#source-intercom',github:'#source-github'};
@@ -4391,19 +4392,25 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  else if(s.state==='connecting')body='<p class="muted">Connecting…</p>';
  else if(s.state==='done')body=`<p class="note sent-ok">✓ Connected${s.name?' to '+esc(s.name):''}.${s.replies?' Replies go as you, after you approve each one.':''} Restarting to start reading it…</p><div class="actions">${back}</div>`;
  else if(s.state==='failed'||s.state==='stopped')body=`<p class="alert">${esc(s.state==='stopped'?'That sign-in didn’t finish.':s.error||'Not connected.')}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>${msAdmin(s)}`;
+ // the control plane has no app for it (or refused to start it): no Sign in button, the other way open at once
+ else if(s.off&&paired)body=`<p class="muted">${esc(copy.about||'')}</p><p class="note signin-off">${esc(t(s.own&&copy.other&&copy.off||'Sign in with {} isn’t available yet.',s.label))}</p>`;
  else body=`<p class="muted">${esc(copy.about||'')}</p>`+(paired?`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${esc(s.label)}</button>${back}</div>${msAdmin(s)}`
   :`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><a class="btn-link primary" href="${esc(connectList.pair_url)}" target="_blank" rel="noopener">Pair this Machine first ↗</a>${back}</div>`);
- const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button" data-connect="${esc(s.source)}">${esc(copy.go||'')}</button></div></details>`;
- const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}</div>`;
- const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
+ const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
+ const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"${off?' open':''}><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button"${off?' class="primary"':''} data-connect="${esc(s.source)}">${esc(copy.go||'')}</button>${off?back:''}</div></details>`;
+ const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}${off&&!paste?`<div class="actions">${back}</div>`:''}</div>`;
+ const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.innerHTML=html}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;
  signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.source});if(!connectSignin)return;
   if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}signinPoll()},2500)}
 async function signinGo(way){const s=connectSignin;if(!s)return;
  if(s.hosted){if(s.state==='intro')return hostedSigninGo(s,way);connectSignin={...s,state:'intro',error:''};$('#connect-add').dataset.sig='';return renderConnectSignin()}  // Try again: Work or Personal first
- const tab=window.open('about:blank','_blank');  // opened now, while it is the click: a browser blocks it after a wait
- try{const r=await connectPost('connect_signin',{name:s.source});if(tab){tab.opener=null;tab.location.href=r.url}else location.assign(r.url);
-  connectSignin={source:s.source,provider:s.provider,label:s.label,own:s.own,state:'started'}}catch(err){errCaught(err);tab?.close();connectSignin={...s,state:'failed',error:err.message}}
+ // The tab opens only once there is a start link: one the control plane refuses opens no tab, and the other way shows.
+ // Still within the click's few seconds of user activation; a browser that blocks it goes there in this tab instead.
+ try{const r=await connectPost('connect_signin',{name:s.source});
+  if(r.state==='unavailable'){const x=connectList?.sources.find(v=>v.name===s.source);if(x)x.signin_off=true;connectSignin={...s,state:'intro',error:'',off:true}}
+  else{const tab=window.open('about:blank','_blank');if(tab){tab.opener=null;tab.location.href=r.url}else location.assign(r.url);
+   connectSignin={source:s.source,provider:s.provider,label:s.label,own:s.own,state:'started'}}}catch(err){errCaught(err);connectSignin={...s,state:'failed',error:err.message}}
  $('#connect-add').dataset.sig='';renderConnectSignin();signinPoll()}
 // The phone's pairing request, shown while its setup code waits: Approve, a POST from this page to the account
 async function phoneApprove(b){b.disabled=true;
@@ -4419,7 +4426,9 @@ const hostedReconnect=(c,label,cls)=>`<button type="button" class="${cls}" data-
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-reconnect]');if(!b)return;
  // a sign-in through the control plane (Docs from Microsoft on a self-hosted Machine): its Sign in step, in the + Add pane
  if(b.dataset.signin){const p=b.dataset.signin;connectRun=null;connectSignin={source:b.dataset.reconnect,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,state:'intro'};
-  showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();$('#connect-add').dataset.sig='';await connectAdd(true);$('#connect-add').scrollIntoView({block:'start',behavior:'smooth'});return}
+  showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();$('#connect-add').dataset.sig='';await connectAdd(true);
+  if(connectSignin?.source===b.dataset.reconnect&&connectList?.sources.find(v=>v.name===b.dataset.reconnect)?.signin_off){connectSignin={...connectSignin,off:true};renderConnectSignin()}
+  $('#connect-add').scrollIntoView({block:'start',behavior:'smooth'});return}
  if(connectRun&&connectRun.state==='running'){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();return}
  b.disabled=true;connectRun=null;if(await connectStart(b.dataset.reconnect,b.dataset.account)){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();$('#connect-add').scrollIntoView({block:'start',behavior:'smooth'})}b.disabled=false});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-disconnect]');if(!b||!confirm(`Disconnect ${b.dataset.name}? It stops syncing. What it already brought in stays.`))return;
@@ -7235,7 +7244,7 @@ const fleetRedraw=()=>{render();if(!$('#fleet').hidden)fleetView(false,true)};
 // Connect Stripe for the team (self-hosted): Connections, + Add, at its Sign in with Stripe. Shared from the Fleet tab after.
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-connect]');if(!b)return;connectRun=null;showTab('health','add');await connectAdd(true);
  const x=connectList?.sources.find(v=>v.service===b.dataset.fleetConnect);if(!x)return;
- if(x.signin){connectSignin={source:x.name,provider:x.signin===true?x.service:x.signin,label:SIGNIN_COPY.stripe.label,own:!x.broker,state:'intro'};$('#connect-add').dataset.sig='';renderConnectSignin()}
+ if(x.signin){connectSignin={source:x.name,provider:x.signin===true?x.service:x.signin,label:SIGNIN_COPY.stripe.label,own:!x.broker,state:'intro',...(x.signin_off?{off:true}:{})};$('#connect-add').dataset.sig='';renderConnectSignin()}
  $('#connect-add').scrollIntoView({block:'start',behavior:'smooth'})});
 fleetOn('click',async e=>{const p=e.target.closest('[data-fleet-pick]');if(p){const on=p.getAttribute('aria-pressed')!=='true';for(const r of p.parentElement.children)r.setAttribute('aria-pressed','false');p.setAttribute('aria-pressed',String(on));return}
  const o=e.target.closest('[data-fleet-noting],[data-fleet-note-cancel]');if(o){if(o.dataset.fleetNoting)fleetNoting.set(o.dataset.fleetNoting,'once');else fleetNoting.delete(o.dataset.fleetNoteCancel);fleetRedraw();return}

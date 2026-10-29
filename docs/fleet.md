@@ -420,7 +420,10 @@ way. You can disconnect it from your account at any time; its key then stops wor
 **Sign-ins for it.** Some sources sign in through The Machine's own app: Intercom, Google (Gmail and Calendar),
 Microsoft (Outlook mail and calendar) and Zoom. On a paired Machine you start that on its dashboard: Connections,
 **+ Add**, then the source. Not paired yet, the dashboard says to pair
-first and links to the account page; pasting a token stays as a folded fallback. The Machine asks the control plane for a
+first and links to the account page; pasting a token stays as a folded fallback. Only the sign-ins the control plane
+has an app for are offered (`fleet.py signins`, `GET /signins`, kept 5 minutes); for any other, + Add says Sign in
+with it isn't available yet and opens that fallback at once, and so does a start the control plane refuses anyway,
+without opening a tab. The Machine asks the control plane for a
 one-time start link (`fleet.py connect_start`, `POST /connect-start`, main node only), signed with the sign key it
 published after pairing, with a fresh nonce and the time. The control plane checks that signature against the key it
 pinned, and refuses when the key changed since, until you pair again; the link works once, for 10 minutes, and only

@@ -28,6 +28,8 @@ Oppure incolla invece una chiave con restrizioni:
 2. Trova l'ID del tuo account (acct_...) in Settings, Business details.
 3. Apri Stripe come sopra (o esegui `assistant connect stripe`), apri **Oppure incolla una chiave limitata**, incolla l'ID dell'account e la chiave, poi premi **Collegati**.
 
+Sul tuo computer, se l’accesso con Stripe non è ancora disponibile, + Add lo dice e apre subito questo modulo.
+
 ## Collegalo una volta per il tuo team
 
 In una Fleet di lavoro, un proprietario o un admin collega Stripe una volta e lo condivide con il team:

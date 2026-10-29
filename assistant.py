@@ -16435,10 +16435,14 @@ class App:
                         source['hosted_signin'] = signin
             if not hosted:
                 # Sign in with <provider> through The Machine's own app (fleet.py connect_start), once this Machine is
-                # paired with an account; pasting a token stays as the fallback
+                # paired with an account; pasting a token stays as the fallback. One the control plane has no app for
+                # (fleet.signins) is marked signin_off: the dashboard shows that other way at once.
+                available = self.fleet.signins() if getattr(self, 'fleet', None) is not None else None
                 for source in found['sources']:
                     if fleet.SIGNIN_OF.get(source['service']):
                         source['signin'] = fleet.SIGNIN_OF[source['service']]
+                        if available is not None and source['signin'] not in available:
+                            source['signin_off'] = True
                 found['paired'], found['pair_url'] = getattr(self, 'fleet', None) is not None, fleet.PAIR_PAGE
             if not hosted or gbrain.on(self.config):
                 # GBrain (gbrain.py): one optional tile at the end, on a Machine where the owner can install it
@@ -16458,7 +16462,10 @@ class App:
             if not getattr(self, 'config_path', None):
                 raise ValueError('This service cannot save its settings')
             # one already connected is signed in again (onboarding.connect_delivered), as Reconnect does
-            return {'url': self.fleet.connect_start(source), 'state': 'started'}
+            try:
+                return {'url': self.fleet.connect_start(source), 'state': 'started'}
+            except fleet.SigninUnavailable:
+                return {'state': 'unavailable'}  # no tab: the dashboard opens the other way
         if name == 'connect_site_signin':
             # LinkedIn or X while its connect waits for the owner to sign in there: the site's sign-in page in front
             # in the Machine's browser, for the dashboard's sign-in dialog. Nothing is typed here.
