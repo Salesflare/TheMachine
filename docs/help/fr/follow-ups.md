@@ -30,6 +30,8 @@ Pour un seul projet : **Relances…** dans le **⋯** de sa carte ou sur sa page
 
 Les relances d’un tableau arrivent en une seule tâche : « 8 relances prêtes pour Alpha testers ». **Vérifier** les affiche les unes sous les autres, chacune avec **Envoyer**, **Modifier** et **Ignorer**. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie et s ignore. **Envoyer tout ce qui est coché** envoie celles encore cochées. La relance d’un seul projet est une tâche normale.
 
+Quand plusieurs partent à la suite, aussi avec Envoyer sans demander, chaque boîte mail en envoie une toutes les 30 à 45 secondes, et la tâche montre où on en est : « Envoi de 3 sur 8… ».
+
 ## Quand elles s’arrêtent
 
 Les relances s’arrêtent quand la personne répond, quand le projet est gagné, perdu, archivé ou déplacé vers une étape fermée, et quand vous en mettez une en attente ou l’ignorez. Avant de rédiger, votre Machine vérifie s’il y a du nouveau dans la conversation, pour ne pas relancer quelqu’un qui a déjà répondu ailleurs.

@@ -1062,6 +1062,7 @@
  "Follow-up {} skipped": "Follow-up {} skipped",
  "Follow-ups": "Follow-ups",
  "Follow-ups are set for a board or a project": "Follow-ups are set for a board or a project",
+ "Follow-ups for {}": "Follow-ups for {}",
  "Follow-ups from {} on {}: ": "Follow-ups from {} on {}: ",
  "Follow-ups of a meeting with Fleet teammates. Split who does what; nothing goes until you send it.": "Follow-ups of a meeting with Fleet teammates. Split who does what; nothing goes until you send it.",
  "Follow-ups off": "Follow-ups off",
@@ -2917,6 +2918,7 @@
  "Sending approval must come from the owner’s controls": "Sending approval must come from the owner’s controls",
  "Sending automatically is off": "Sending automatically is off",
  "Sending your approved draft…": "Sending your approved draft…",
+ "Sending {} of {}…": "Sending {} of {}…",
  "Sending {} votes.": {
   "one": "Sending {} vote.",
   "other": "Sending {} votes."
@@ -2952,10 +2954,12 @@
  "Sent to {}. They read it and decide.": "Sent to {}. They read it and decide.",
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Sent to {}. Waiting for their reply until {}; it closes when they answer.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Sent to {}. Waiting for their reply; it closes when they answer.",
+ "Sent {}": "Sent {}",
  "Sent {} learnings. New ones go automatically now.": {
   "one": "Sent {} learning. New ones go automatically now.",
   "other": "Sent {} learnings. New ones go automatically now."
  },
+ "Sent {} of {}": "Sent {} of {}",
  "Sent {}. Thank you.": "Sent {}. Thank you.",
  "Sent, thanks. You’ll see it here when it’s fixed.": "Sent, thanks. You’ll see it here when it’s fixed.",
  "Sent.": "Sent.",

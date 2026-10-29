@@ -30,6 +30,8 @@ Para um projeto só, **Follow-ups…** no **⋯** do cartão dele ou na página 
 
 Os follow-ups de um quadro chegam como uma tarefa só: “8 follow-ups prontos para Alpha testers”. **Revisar** mostra um embaixo do outro, cada um com **Enviar**, **Editar** e **Pular**. No teclado, j e k (ou as setas) navegam, Enter envia, e edita e s pula. **Enviar todos os marcados** envia os que continuam marcados. O follow-up de um único projeto é uma tarefa normal.
 
+Quando vários saem em sequência, também com Enviar sem perguntar, cada caixa de e-mail envia um a cada 30 a 45 segundos, e a tarefa mostra o andamento: “Enviando 3 de 8…”.
+
 ## Quando para
 
 Os follow-ups param quando a pessoa responde, quando o projeto é ganho, perdido, arquivado ou movido para uma etapa fechada, e quando você adia ou pula um. Antes de escrever, sua Machine confere se há algo mais novo na conversa, para não insistir com quem já respondeu em outro lugar.

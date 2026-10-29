@@ -15,8 +15,8 @@ const day=n=>new Date(Date.now()+n*864e5).toISOString();
 const draft=(i,body,extra={})=>({kind:'email',label:'Send',account_id:'work',from:'owner@example.com',to:[`person${i}@client.example`],subject:'Re: Alpha',body,revision:'r'+i,...extra});
 const card=(i,project,body,extra={})=>({id:('f'+i).padEnd(16,'0'),title:'Follow up on '+project,body:'No reply for 4 days. Follow-up 1 of at most 3.',status:'prepared',early:1,scope:'work',event_ids:[i],
  created_at:day(-0.1),next_action:draft(i,body),follow_up:{project,project_id:'project:'+i,board:'Alpha testers',group:'board:1',n:1,max:3,channel:'email',auto:false,state:'open'},...extra});
-let suggestions;
-const reset=()=>{suggestions=[card(1,'Acme pilot','Hi Sam, did the alpha build install fine on your side? Happy to do a quick call this week.'),
+let suggestions,progress=[];
+const reset=()=>{progress=[];suggestions=[card(1,'Acme pilot','Hi Sam, did the alpha build install fine on your side? Happy to do a quick call this week.'),
  card(2,'Bolt trial','Hi Kim, here is the short guide I mentioned. Anything blocking you so far?'),
  card(3,'Cobalt rollout','Hi Lee, any first impressions from the team? One question: which inbox did you connect?',{follow_up:{project:'Cobalt rollout',project_id:'project:3',board:'Alpha testers',group:'board:1',n:2,max:3,channel:'email',auto:false,state:'open'}}),
  card(4,'Delta renewal','Hi Ana, checking whether the renewal quote reached you.',{follow_up:{project:'Delta renewal',project_id:'project:4',board:null,group:null,n:1,max:2,channel:'email',auto:false,state:'open'}}),
@@ -37,7 +37,7 @@ const panel=(scope,id)=>scope==='board'?{scope:'board',id:1,name:'Alpha testers'
 let calls=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,follow_up_progress:progress,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');res.end(JSON.stringify(n?detail:{projects:[],people:[],quiet:[],new:[],orgs:[],boards}));return}
  if(req.method==='POST'&&url.pathname==='/api/action'){const c=JSON.parse(body||'{}');calls.push(c);const a=c.args||{};
   if(c.action==='follow_up_settings'||c.action==='follow_up_save'){res.end(JSON.stringify(panel(a.scope,a.id)));return}
@@ -132,6 +132,28 @@ try{
   calls=[];await fu.locator('[name=mode][value=board]').check();await fu.locator('button.primary').click();await fu.waitFor({state:'hidden'});
   assert.deepEqual(calls.find(c=>c.action==='follow_up_save').args,{scope:'project',id:5,settings:{inherit:true}});
   await context.close()}
+ // Send all checked went out spaced (30-45 s per mailbox): the board's queued ones are one progress to-do, "Sending 3 of 8…",
+ // also after a reload, then "Sent 8"; a project's own follow-up that's ready stays as it was, and nothing is wider than the screen
+ for(const [width,height] of [[1440,900],[390,844]]){reset();
+  const going=s=>({...s,action_status:{status:'queued'},next_actions:[{...s.next_action,state:{status:'queued'}}]});
+  suggestions=suggestions.map(s=>s.follow_up?.group==='board:1'?going(s):s);
+  progress=[{group:'board:1',board:'Alpha testers',total:8,done:2,sent:2,going:true}];
+  const {context,page}=await open(width,height);const sending=page.locator('#suggestions .fu-sending');await sending.waitFor();
+  assert.equal(await sending.count(),1);assert.equal(await page.locator('#suggestions .fu-group').count(),0);
+  assert.equal((await sending.locator('h3').textContent()).trim(),'Follow-ups for Alpha testers');
+  assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sending 3 of 8…');
+  assert.equal(await sending.locator('.fu-progress').getAttribute('role'),'status');
+  assert.equal(await page.locator('#task-f100000000000000').count(),0);assert.equal(await page.locator('#task-f400000000000000').count(),1);
+  assert.equal(await page.locator('#side-cards a').evaluateAll(l=>l.filter(a=>/Alpha testers/.test(a.textContent)).length),0);
+  await fits(page,width+' sending');await shot(page,`sending-${width}-light`);
+  await page.reload();await sending.waitFor();assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sending 3 of 8…');
+  progress=[{group:'board:1',board:'Alpha testers',total:8,done:8,sent:8,going:false}];suggestions=suggestions.filter(s=>s.follow_up?.group!=='board:1');
+  await page.reload();await sending.waitFor();assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sent 8');
+  assert.equal(await sending.locator('.fu-bar').count(),0);await shot(page,`sent-${width}-light`);
+  progress=[{group:'board:1',board:'Alpha testers',total:8,done:8,sent:7,going:false}];await page.reload();await sending.waitFor();
+  assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sent 7 of 8');
+  await context.close()}
+ reset();
  // Phone, light and dark: the same pieces fit the screen
  for(const scheme of ['light','dark']){reset();const {context,page}=await open(390,844,scheme);
   await page.locator('#suggestions .fu-group').waitFor();await fits(page,'390 to-dos');await shot(page,`grouped-todo-390-${scheme}`);

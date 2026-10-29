@@ -30,6 +30,8 @@ Para un solo proyecto, **Seguimientos…** en el **⋯** de su tarjeta o en su p
 
 Los seguimientos de un tablero llegan como una sola tarea: “8 seguimientos listos para Alpha testers”. **Revisar** los muestra uno debajo de otro, cada uno con **Enviar**, **Editar** y **Omitir**. Con teclado, j y k (o las flechas) para moverte, Enter envía, e edita y s omite. **Enviar todos los marcados** envía los que siguen marcados. El seguimiento de un solo proyecto es una tarea normal.
 
+Cuando salen varios seguidos, también con Enviar sin preguntar, cada buzón envía uno cada 30 a 45 segundos y la tarea muestra cómo va: “Enviando 3 de 8…”.
+
 ## Cuándo se detienen
 
 Los seguimientos se detienen cuando la persona responde, cuando el proyecto se gana, se pierde, se archiva o pasa a una etapa cerrada, y cuando pospones u omites uno. Antes de redactar, tu Machine busca algo más reciente en la conversación, para no insistir a quien ya respondió por otro lado.

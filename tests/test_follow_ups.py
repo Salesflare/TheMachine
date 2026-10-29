@@ -425,5 +425,179 @@ class FollowUps(unittest.TestCase):
         self.assertIn('follow_up_settings', a.OWNER_ACTIONS)
 
 
+    # ------------------------------------------------------------------ several in a row: spaced per mailbox
+
+    def batch(self, *senders, kind='email'):
+        """Follow-ups of the board, prepared and confirmed by the owner one after the other (Send all checked): one per
+        sender given (the From address; the account for other channels). Returns the suggestion ids in that order."""
+        sids = []
+        with self.store.connect() as db:
+            for i, sender in enumerate(senders):
+                sid = f'fu-batch-{i}'
+                db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at,status) VALUES(?,?,?,?,'[]','[]',?,'prepared')",
+                           (sid, 'k' + sid, 'Follow up on Acme pilot', 'No reply for 4 days.', NOW))
+                db.execute('INSERT INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,created_at) '
+                           'VALUES(?,?,?,1,1,3,?,?,?,?)', (sid, self.acme, self.board, kind, 1000 + i, '2026-10-13T09:00:00+00:00', NOW))
+                sids.append(sid)
+        for sid, sender in zip(sids, senders):
+            extra = {'from': sender} if kind == 'email' else {'account_id': sender}
+            self.prepared(sid, kind=kind, body='Hi, a short follow-up ' + sid, **extra)
+            self.assertEqual(self.store.confirm_action(sid, 'r-' + sid[:6], 'tap-' + sid, 'dashboard')['status'], 'queued')
+        return sids
+
+    def outbox(self, transport):
+        app = self.app()
+        return lambda at: (self.at(at), app.action_step(transport))[1]
+
+    def job_states(self):
+        with self.store.connect() as db:
+            return {r['suggestion_id']: r['status'] for r in db.execute('SELECT suggestion_id,status FROM action_jobs')}
+
+    def progress(self):
+        with self.store.connect() as db:
+            return follow_ups.progress(db, a.now())
+
+    def test_the_gap_is_random_within_30_to_45_seconds(self):
+        self.assertEqual(follow_ups.gap(lambda lo, hi: lo), 30)
+        self.assertLessEqual(follow_ups.gap(lambda lo, hi: hi) + follow_ups.SEND_TICK, 45)  # the outbox's tick still lands it in time
+        draws = {round(follow_ups.gap(), 3) for _ in range(50)}
+        self.assertTrue(all(30 <= d <= 45 for d in draws) and len(draws) > 1)
+
+    def test_one_mailbox_sends_one_every_gap_and_a_single_send_goes_at_once(self):
+        transport = FakeOutbox()
+        step = self.outbox(transport)
+        sids = self.batch('owner@example.com', 'owner@example.com', 'Owner@Example.com')
+        with patch.object(follow_ups, 'gap', return_value=40):
+            self.assertEqual(step('2026-10-19T09:00:00+00:00'), 'sent')  # the first goes at once: no wait for a single send
+            self.assertIsNone(step('2026-10-19T09:00:03+00:00'))  # the next waits its gap: nothing goes, nothing is lost
+            self.assertIsNone(step('2026-10-19T09:00:39+00:00'))
+            self.assertEqual(self.progress(), [{'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'total': 3, 'done': 1, 'sent': 1, 'going': True}])
+            self.assertEqual(step('2026-10-19T09:00:40+00:00'), 'sent')
+            self.assertIsNone(step('2026-10-19T09:01:10+00:00'))
+            self.assertEqual(step('2026-10-19T09:01:20+00:00'), 'sent')
+        self.assertEqual([(sid, at[11:19]) for sid, at in transport.sent], [(sids[0], '09:00:00'), (sids[1], '09:00:40'), (sids[2], '09:01:20')])
+        self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'total': 3, 'done': 3, 'sent': 3, 'going': False})
+        self.at('2026-10-19T09:07:00+00:00')
+        self.assertEqual(self.progress(), [])  # "Sent 3" stays a few minutes, then goes
+
+    def test_two_mailboxes_go_side_by_side(self):
+        transport = FakeOutbox()
+        step = self.outbox(transport)
+        a1, a2, b1, l1 = self.batch('owner@example.com', 'owner@example.com', 'sales@example.com', 'sales@example.com')[:4]
+        with patch.object(follow_ups, 'gap', return_value=35):
+            for at in ('09:00:00', '09:00:03', '09:00:06', '09:00:20', '09:00:35', '09:00:38', '09:00:41'):
+                step('2026-10-19T' + at + '+00:00')
+        sent = [(sid, at[11:19]) for sid, at in transport.sent]
+        self.assertEqual(sent, [(a1, '09:00:00'), (b1, '09:00:03'), (a2, '09:00:35'), (l1, '09:00:38')])
+        # Never two from one mailbox less than 30 s apart
+        for who in ((a1, a2), (b1, l1)):
+            times = [dt.datetime.fromisoformat('2026-10-19T' + at) for sid, at in sent if sid in who]
+            self.assertGreaterEqual((times[1] - times[0]).total_seconds(), 30)
+
+    def test_other_channels_are_spaced_the_same_way(self):
+        transport = FakeOutbox()
+        step = self.outbox(transport)
+        self.batch('li', 'li', kind='linkedin')
+        with patch.object(follow_ups, 'gap', return_value=31):
+            step('2026-10-19T09:00:00+00:00')
+            self.assertIsNone(step('2026-10-19T09:00:30+00:00'))
+            self.assertEqual(step('2026-10-19T09:00:31+00:00'), 'sent')
+        self.assertEqual(len(transport.sent), 2)
+
+    def test_a_restart_or_a_kill_mid_send_resumes_with_the_same_spacing_and_never_sends_twice(self):
+        transport = FakeOutbox()
+        sids = self.batch('owner@example.com', 'owner@example.com', 'owner@example.com', 'owner@example.com')
+        with patch.object(follow_ups, 'gap', return_value=40):
+            self.outbox(transport)('2026-10-19T09:00:00+00:00')
+            # Killed during the second send (kill -9, a crash, a reboot): it was claimed before the provider call
+            transport.die = True
+            with self.assertRaises(KeyboardInterrupt):
+                self.outbox(transport)('2026-10-19T09:00:40+00:00')
+            self.assertEqual(self.job_states()[sids[1]], 'sending')
+            # Back up, on a fresh service over the same database (an update opens it the same way): straight after the
+            # restart nothing goes inside the gap of the claimed one, and the claimed one is only checked, never sent again
+            transport.die = False
+            self.store = a.Store(self.store.path)
+            step = self.outbox(transport)
+            self.assertIsNone(step('2026-10-19T09:00:45+00:00'))
+            self.assertEqual(step('2026-10-19T09:01:20+00:00'), 'sent')  # the third, one gap after the claimed one
+            self.assertEqual(self.progress()[0]['going'], True)
+            transport.in_sent_mail = {sids[1]}  # the Sent folder shows it went out before the kill
+            step('2026-10-19T09:02:15+00:00')  # the claimed one is checked once its 90 s are up
+            self.assertEqual(self.job_states()[sids[1]], 'sent')
+            self.assertEqual(step('2026-10-19T09:02:16+00:00'), 'sent')  # the fourth, one gap after the third
+        self.assertEqual([sid for sid, _ in transport.sent], [sids[0], sids[2], sids[3]])
+        self.assertEqual(transport.attempts[sids[1]], 1)  # tried once, before the kill
+        self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'total': 4, 'done': 4, 'sent': 4, 'going': False})
+
+    def test_a_claimed_send_with_no_trace_asks_instead_of_sending_twice(self):
+        transport = FakeOutbox(die=True)
+        sids = self.batch('owner@example.com', 'owner@example.com')
+        with patch.object(follow_ups, 'gap', return_value=40):
+            with self.assertRaises(KeyboardInterrupt):
+                self.outbox(transport)('2026-10-19T09:00:00+00:00')
+            transport.die = False
+            self.store = a.Store(self.store.path)
+            step = self.outbox(transport)
+            self.assertIsNone(step('2026-10-19T09:00:30+00:00'))  # the second still waits the gap after the claimed one
+            step('2026-10-19T09:01:31+00:00')  # nothing in Sent mail: uncertain, not sent again
+            self.assertEqual(self.job_states()[sids[0]], 'uncertain')
+            step('2026-10-19T09:01:32+00:00')
+        self.assertEqual([sid for sid, _ in transport.sent], [sids[1]])
+        self.assertEqual(transport.attempts[sids[0]], 1)
+        # The batch isn't stuck on "Sending…": it ended, one sent; the other to-do says it couldn't confirm it
+        self.assertEqual(self.progress()[0]['going'], False)
+        self.assertEqual(self.progress()[0]['sent'], 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (sids[0],)).fetchone()[0], 'prepared')
+
+    def test_a_failed_send_asks_and_the_rest_of_the_batch_goes_on(self):
+        self.turn_on(auto=True)
+        transport = FakeOutbox()
+        self.app().follow_up_step()
+        acme, kim = self.cards()
+        self.prepared(acme['suggestion_id'])
+        self.prepared(kim['suggestion_id'], to=['kim@other.example'], body='Hi Kim, here is the guide.')
+        transport.refuse = {acme['suggestion_id']}
+        self.assertEqual(len(self.app().follow_up_send()), 2)  # Send without asking queued both at once
+        step = self.outbox(transport)
+        with patch.object(follow_ups, 'gap', return_value=40):
+            self.assertEqual(step('2026-10-19T09:00:00+00:00'), 'failed')
+            self.assertIsNone(step('2026-10-19T09:00:20+00:00'))
+            self.assertEqual(step('2026-10-19T09:00:40+00:00'), 'sent')
+        self.assertEqual([sid for sid, _ in transport.sent], [kim['suggestion_id']])
+        self.assertEqual(self.progress()[0]['sent'], 1)
+        self.assertEqual((self.progress()[0]['total'], self.progress()[0]['going']), (2, False))
+        # The failed one is a to-do that asks again, with what went wrong
+        self.app().follow_up_step()
+        with self.store.connect() as db:
+            row = db.execute('SELECT s.status,j.error FROM suggestions s JOIN action_jobs j ON j.suggestion_id=s.id WHERE s.id=?', (acme['suggestion_id'],)).fetchone()
+        self.assertEqual(row['status'], 'prepared')
+        self.assertIn('Nothing was sent', row['error'])
+        self.assertEqual({c['project_id']: c['state'] for c in self.cards()}, {self.acme: 'open', self.kim: 'sent'})
+
+
+class FakeOutbox:
+    """The outbox's transports, recorded: no live sends. `die` stops the process mid-send (after the claim, like kill -9)."""
+
+    def __init__(self, die=False):
+        self.sent, self.attempts, self.refuse, self.in_sent_mail, self.die = [], {}, set(), set(), die
+
+    def preflight(self, action):
+        return None
+
+    def send(self, action, job):
+        self.attempts[job['suggestion_id']] = self.attempts.get(job['suggestion_id'], 0) + 1
+        if self.die:
+            raise KeyboardInterrupt('killed mid-send')
+        if job['suggestion_id'] in self.refuse:
+            return {'rejected': 550}
+        self.sent.append((job['suggestion_id'], a.now()))
+        return {'message_id': 'm-' + job['id']}
+
+    def reconcile(self, action, job):
+        return {'message_id': 'm-' + job['id']} if job['suggestion_id'] in self.in_sent_mail else {}
+
+
 if __name__ == '__main__':
     unittest.main()

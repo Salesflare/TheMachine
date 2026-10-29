@@ -30,6 +30,8 @@ For one project, **Follow-ups…** in its card's **⋯** or on its page. **For t
 
 A board's follow-ups come as one to-do: "8 follow-ups ready for Alpha testers". **Review** shows them one under the other, each with **Send**, **Edit** and **Skip**. On a keyboard, j and k (or the arrows) move, Enter sends, e edits and s skips. **Send all checked** sends the ones still ticked. A single project's follow-up is a normal to-do.
 
+When several go out in a row, also with Send without asking, each mailbox sends one every 30 to 45 seconds, and the to-do shows how far it got: "Sending 3 of 8…".
+
 ## When it stops
 
 Follow-ups stop when they reply, when the project is won, lost, archived or moved to a closed stage, and when you snooze or skip one. Before drafting, your Machine checks the conversation for anything newer, so it doesn't nag someone who already answered somewhere else.

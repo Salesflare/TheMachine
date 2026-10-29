@@ -30,6 +30,8 @@ Für ein einzelnes Projekt: **Nachfassen…** im **⋯** seiner Karte oder auf s
 
 Die Entwürfe eines Boards kommen als eine Aufgabe: „8 Nachfassen bereit für Alpha testers“. **Prüfen** zeigt sie untereinander, jeweils mit **Senden**, **Bearbeiten** und **Überspringen**. Auf der Tastatur bewegst du dich mit j und k (oder den Pfeiltasten), Enter sendet, e bearbeitet und s überspringt. **Alle markierten senden** sendet die, die noch angehakt sind. Ein einzelnes Projekt bekommt eine normale Aufgabe.
 
+Gehen mehrere nacheinander raus, auch mit Ohne Nachfrage senden, sendet jedes Postfach nur alle 30 bis 45 Sekunden eine, und die Aufgabe zeigt den Stand: „3 von 8 wird gesendet…“.
+
 ## Wann es aufhört
 
 Das Nachfassen hört auf, wenn die Person antwortet, wenn das Projekt gewonnen, verloren, archiviert oder in eine geschlossene Phase verschoben wird, und wenn du einen Entwurf zurückstellst oder überspringst. Vor jedem Entwurf schaut deine Machine, ob es im Gespräch etwas Neueres gibt, damit sie niemanden nervt, der schon woanders geantwortet hat.

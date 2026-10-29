@@ -7543,6 +7543,7 @@ class Store:
                 # So may an unconfirmed message send after SEND_RETRY_AFTER without a trace: only on the owner's new tap.
                 if (previous['status'] in ('blocked','cancelled','failed') or send_retry_ok(previous,action['kind'])) and previous['approval_id']!=approval_id:
                     db.execute("UPDATE action_jobs SET status='queued',retry_at=NULL,error=NULL,updated_at=?,approval_id=?,source=?,payload=? WHERE id=?",(now(),approval_id,source,encoded(action),previous['id']))
+                    follow_ups.queued(db,suggestion_id,previous['id'],action,now())  # an automated follow-up: spaced with its batch
                     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                         (approval_id,suggestion_id,'send','',source,now()))
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
@@ -7553,6 +7554,7 @@ class Store:
                  '<assistant-'+job_id+'@'+action['from'].split('@')[1]+'>' if action['kind']=='email' else ''))
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                 (approval_id,suggestion_id,'prepare_next' if action['kind']=='prepare' else 'send','',source,stamp))
+            if action['kind'] not in ('prepare','finish'):follow_ups.queued(db,suggestion_id,job_id,action,stamp)  # an automated follow-up: spaced with its batch
             if source in ('telegram','dashboard'):db.execute('UPDATE suggestions SET early=0 WHERE id=?',(suggestion_id,))
             if action['kind'] in ('prepare','finish'):
                 # A local turn: a next preparation, or the final step the owner just confirmed.
@@ -8000,6 +8002,8 @@ class Store:
             for x in result['suggestions']:
                 if x['id'] in following:
                     x['follow_up'] = following[x['id']]
+            # Follow-ups going out spaced, per board: "Sending 3 of 8…", then "Sent 8" (follow_ups.progress)
+            result['follow_up_progress'] = follow_ups.progress(db, now())
             counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events', (SET_ASIDE_AFTER,)).fetchone()
             result['review_health'] = {**dict(counts), 'last_completed': db.execute("SELECT max(finished_at) FROM analyses WHERE status='complete'").fetchone()[0]}
             result['review_runs'] = []
@@ -15541,7 +15545,12 @@ class App:
             for candidate in db.execute("SELECT j.id,j.revision,s.status,s.next_action FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id WHERE j.status IN ('queued','blocked')").fetchall():
                 if candidate['status']!='prepared' or not next_actions.selected(candidate['next_action'],candidate['revision']):
                     db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE id=?",(now(),candidate['id']))
-            job=db.execute("SELECT * FROM action_jobs WHERE status IN ('queued','sending','uncertain') AND (retry_at IS NULL OR retry_at<=?) ORDER BY created_at LIMIT 1",(now(),)).fetchone()
+            job=None
+            for found in db.execute("SELECT * FROM action_jobs WHERE status IN ('queued','sending','uncertain') AND (retry_at IS NULL OR retry_at<=?) ORDER BY created_at",(now(),)).fetchall():
+                # Automated follow-ups in a row: the next from the same account waits its gap (follow_ups.SEND_GAP); another account's goes
+                held=follow_ups.held_until(db,found['id'],now()) if found['status']=='queued' else None
+                if held:db.execute('UPDATE action_jobs SET retry_at=? WHERE id=?',(held,found['id']));continue
+                job=found;break
             if not job:return
             job=dict(job);action=json.loads(job['payload'])
         if job['status'] in ('sending','uncertain'):
@@ -15585,7 +15594,11 @@ class App:
             # an admitted email, and restart/repeated clicks only reconcile it.
             if action['kind'] in ('whatsapp', 'intercom'):
                 action.setdefault('proof', {})[action['kind'] + '_dispatched_at'] = now()
+            held=follow_ups.held_until(db,job['id'],now())
+            if held:
+                db.execute('UPDATE action_jobs SET retry_at=? WHERE id=?',(held,job['id']));return 'waiting'
             db.execute("UPDATE action_jobs SET status='sending',updated_at=?,retry_at=? WHERE id=?",(now(),(dt.datetime.fromisoformat(now())+dt.timedelta(seconds=90)).isoformat(),job['id']))
+            follow_ups.going_out(db,job['id'],now())  # claimed with the send: the next follow-up from this account waits, also after a restart
             if action.get('proof'):db.execute('UPDATE action_jobs SET payload=? WHERE id=?',(encoded(action),job['id']))
         try:result=transport.send(action,job)
         except Exception:result={}
