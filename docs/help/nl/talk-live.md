@@ -19,6 +19,8 @@ De balk heeft **Dempen** en **Einde**. Een gesprek duurt hoogstens 10 minuten. E
 
 Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past" of "snooze dit tot maandag", geeft The Machine het door aan de chat van de to-do, alsof je het zelf typte. De chat volgt zijn gewone regels: hij kan het concept aanpassen of de to-do snoozen.
 
+De chat kan ook dingen opzoeken, zoals de openingsuren van een winkel op het web. Intussen toont hij **Ermee bezig…**, en je kan gewoon verder praten. Als het antwoord klaar is, zegt The Machine het je, en waar hij het vond. Vraag je intussen iets anders, dan wacht dat zijn beurt af.
+
 Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Lotte sturen?". Op een telefoon leest hij eerst het hele concept voor. Antwoord met een duidelijke ja, in elke taal, en dat ene concept gaat weg.
 
 - Hij vraagt het alleen voor het concept dat in de chat staat. Verandert het concept na de vraag, dan vraagt hij het opnieuw.
@@ -27,6 +29,10 @@ Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie
 - De chat toont een paar seconden **Goedgekeurd met je stem** met **Ongedaan maken** voor het weggaat.
 
 Je kunt altijd ook op **Goedkeuren** tikken.
+
+## Kies een stem
+
+Kies in **Instellingen**, **Algemeen**, onder **Spraakinvoer**, bij **Stem** hoe The Machine klinkt. Tik op afspelen om een voorbeeld te horen. **Cedar** is de standaard. De stem Cove van ChatGPT is niet beschikbaar voor Live praten.
 
 ## Een verslag in de chat
 

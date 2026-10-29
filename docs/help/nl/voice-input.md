@@ -11,7 +11,7 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Tik op de microfoon in een berichtvak: de chat van een to-do, **Nieuwe to-do**, **Help**, of het vak om een concept aan te passen. Praat, en tik dan op het vinkje. Of hou de microfoon ingedrukt terwijl je praat en laat los als je klaar bent.
 
-Terwijl hij luistert, toont het vak een timer. Tik op het kruisje om te stoppen zonder iets te houden. Een opname duurt hoogstens 2 minuten; na 2 minuten stopt hij vanzelf en schrijft hij uit wat je zei.
+Terwijl hij luistert, toont het vak een timer. Tik op het kruisje om te stoppen zonder iets te houden. Een opname duurt hoogstens 2 minuten; na 2 minuten stopt hij vanzelf en schrijft hij uit wat je zei. Wat hij al hoorde, staat in de balk terwijl je praat, zodat de tekst er snel is als je stopt.
 
 Wat je zei komt in het vak, waar je cursor stond. Er wordt niets verstuurd: lees het, pas aan wat je wilt en verstuur het zelf.
 

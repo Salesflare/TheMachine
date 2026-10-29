@@ -6,16 +6,21 @@ WAV in the browser, and posts it (voice_transcribe). Engines (Settings, Voice in
 
 - **auto** (the default): OpenAI when this Machine has OpenAI in OpenClaw, otherwise this Machine. With OpenAI here the
   local model is never downloaded.
-- **openai**: the owner's own OpenAI access, through OpenClaw (`openclaw infer audio transcribe`, model OPENAI_MODEL):
-  an API key, or a ChatGPT sign-in where the account allows audio (OpenClaw's audio providers list says which). The clip
-  goes to OpenAI. OpenClaw reads a file, so the clip is written to a private folder and removed as soon as it returns.
+- **openai**: the owner's own OpenAI access, through OpenClaw (model OPENAI_MODEL): an API key, or a ChatGPT sign-in
+  where the account allows audio (OpenClaw's audio providers list says which). The clip goes to OpenAI. OpenClaw runs
+  loaded in voice-openai-run.mjs (OpenAIVoice), started on the tap and kept IDLE_SECONDS, with the
+  `openclaw infer audio transcribe` CLI as the fallback. OpenClaw reads a file, so the clip is written to a private
+  folder and removed as soon as it returns.
 - **local**: faster-whisper with a Whisper model, on this Machine. Nothing leaves it. It is not part of the install or
   the prebuilt images, so setup stays as fast as it was. It gets ready in the background once the Machine is live and
   quiet (the service's voice_warm_worker; `prepare`): its own virtualenv next to the database (voice/env), the exact
   packages in voice-requirements.txt (every one pinned by hash, wheels only, installed at a lower priority), and the
   model from Hugging Face at a pinned revision, each file checked against its SHA-256. The model runs in
-  voice_worker.py, at a lower priority, started on the first clip and stopped after IDLE_SECONDS without one. Clips go
-  to it one at a time over a pipe.
+  voice_worker.py, started when the owner taps the mic and stopped after IDLE_SECONDS without a clip. Clips go to it
+  one at a time over a pipe.
+
+While the owner talks, the dashboard sends what they said so far at each pause (a part), so most of it is written
+down before they tap Done and only the last few seconds are left to wait for.
 
 Until the local engine is ready, a tap on Automatic uses the browser's own speech recognition where the browser has it
 (the dashboard says so); with On this Machine picked, the clip waits for it instead and goes nowhere else.
@@ -50,6 +55,9 @@ REQUEST_BYTES = (MAX_SECONDS + 5) * RATE * 2 * 4 // 3 + 64 * 1024   # the WAV, b
 IDLE_SECONDS = 300
 FREE_BYTES = 2 * 1024 ** 3   # room the preparation needs: packages about 0.5 GB, the small model 0.5 GB, and slack
 LANGUAGES = ('de', 'en', 'es', 'fr', 'it', 'nl', 'pt')   # the app's languages (i18n/*.json), as Whisper names them
+# Talk live's voices (OpenAI Realtime, gpt-realtime). ChatGPT's Cove isn't one of them (only GPT-Live through a
+# ChatGPT sign-in has it); Cedar, calm and low, is the closest, so it's the default. Samples: brand/voices/<name>.mp3.
+TALK_VOICES = ('cedar', 'marin', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'alloy')
 ENGINES = ('auto', 'local', 'openai')   # auto: OpenAI when this Machine has OpenAI, else this Machine
 OPENAI_MODEL = 'openai/gpt-4o-transcribe'
 HF = 'https://huggingface.co/{repo}/resolve/{revision}/{name}'
@@ -101,12 +109,13 @@ def initialize(db):
 
 
 def prefs(db):
-    """The owner's choices in Settings, Voice input: engine, model and language ('' detects it)."""
+    """The owner's choices in Settings, Voice input: engine, model, language ('' detects it) and Talk live's voice."""
     kept = dict(db.execute('SELECT key,value FROM voice_prefs').fetchall())
     engine = kept.get('engine') if kept.get('engine') in ENGINES else 'auto'
     model = kept.get('model') if kept.get('model') in MODELS else default_model()
     language = kept.get('language') if kept.get('language') in LANGUAGES else ''
-    return {'engine': engine, 'model': model, 'language': language}
+    talk_voice = kept.get('talk_voice') if kept.get('talk_voice') in TALK_VOICES else TALK_VOICES[0]
+    return {'engine': engine, 'model': model, 'language': language, 'talk_voice': talk_voice}
 
 
 def set_prefs(db, args, openai_ok):
@@ -125,6 +134,10 @@ def set_prefs(db, args, openai_ok):
         if args['language'] not in ('', *LANGUAGES):
             raise ValueError('Pick a language, or Detect')
         changes['language'] = args['language']
+    if 'talk_voice' in args:
+        if args['talk_voice'] not in TALK_VOICES:
+            raise ValueError('Pick one of the voices')
+        changes['talk_voice'] = args['talk_voice']
     for key, value in changes.items():
         db.execute('INSERT INTO voice_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
                    (key, value))
@@ -309,6 +322,18 @@ class Voice:
                 raise RuntimeError('The voice model didn’t download correctly. Try again.')
             part.replace(target)
 
+    def warm(self, model):
+        """Starts the worker in the background (the mic was tapped), so the model is loaded by the time a clip comes."""
+        if not self.ready(model) or self.worker and self.worker[1] == model and self.worker[0].poll() is None:
+            return
+
+        def start():
+            with contextlib.suppress(ValueError), self.work:
+                self._worker(model)
+                self.used = time.monotonic()
+                self._idle()
+        threading.Thread(target=start, daemon=True, name='voice-warm-worker').start()
+
     def transcribe(self, frames, model, language, timeout):
         """Text for the PCM, through the worker (started when needed)."""
         if not self.ready(model):
@@ -336,9 +361,10 @@ class Voice:
             return self.worker[0]
         self.stop()
         threads = max(1, min(4, (os.cpu_count() or 2)))
-        command, low = lowered([str(python_in(self.env)), str(ROOT / 'voice_worker.py'), str(self.model_dir(model)), str(threads)])
+        # At the normal priority, unlike the preparation: the owner is waiting on it
+        command = [str(python_in(self.env)), str(ROOT / 'voice_worker.py'), str(self.model_dir(model)), str(threads)]
         process = self.popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                             cwd=str(self.root), **low)
+                             cwd=str(self.root))
         self.worker = (process, model)
         try:
             if not self._line(process, 120).get('ready'):
@@ -431,6 +457,106 @@ def openai_transcribe(config, root, frames, language, run=subprocess.run):
         raise ValueError('OpenAI didn’t answer. Try again, or use this Machine for voice in Settings.')
     return {'text': ' '.join(str(o.get('text') or '').strip() for o in outputs if isinstance(o, dict)).strip(),
             'language': language or None}
+
+
+class OpenAIVoice:
+    """The openai engine with OpenClaw loaded once (voice-openai-run.mjs): a clip then takes a second or two, where the
+    `openclaw infer audio transcribe` CLI needs 8 to 10 seconds just to start. Started when the owner taps the mic (so
+    it is ready by the time they stop talking) and stopped after IDLE_SECONDS without a clip. When it can't start or
+    answer, the CLI (openai_transcribe) does the clip instead."""
+
+    def __init__(self, root, command, popen=subprocess.Popen):
+        self.root, self.command, self.popen = Path(root), command, popen   # command(): (argv, env)
+        self.lock, self.work = threading.Lock(), threading.Lock()
+        self.worker = None
+        self.used = 0.0
+        self.timer = None
+        self.broken = 0.0   # when it last failed to start: the CLI does clips for a while after that
+
+    def warm(self):
+        """Starts it in the background (the mic was tapped)."""
+        if self.worker and self.worker.poll() is None or time.monotonic() - self.broken < 600:
+            return
+        threading.Thread(target=self._warm, daemon=True, name='voice-openai-warm').start()
+
+    def _warm(self):
+        with contextlib.suppress(ValueError), self.work:
+            self._worker()
+            self.used = time.monotonic()
+            self._idle()
+
+    def _worker(self):
+        if self.worker and self.worker.poll() is None:
+            return self.worker
+        if time.monotonic() - self.broken < 600:
+            raise ValueError('unavailable')
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        argv, env = self.command()
+        try:
+            process = self.popen([*argv, str(self.root)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL, cwd=str(self.root), env=env)
+        except OSError as error:
+            self.broken = time.monotonic()
+            raise ValueError('unavailable') from error
+        self.worker = process
+        try:
+            if not Voice._line(process, 60).get('ready'):
+                raise EOFError()
+        except (OSError, ValueError, TimeoutError, EOFError) as error:
+            self.stop()
+            self.broken = time.monotonic()
+            raise ValueError('unavailable') from error
+        return process
+
+    def transcribe(self, frames, language, timeout=60):
+        """Text for the PCM, or ValueError (then the CLI tries). The clip is in a private file only for the call."""
+        with self.work:
+            folder = Path(tempfile.mkdtemp(prefix='clip-', dir=self._root()))
+            clip = folder / (secrets.token_hex(8) + '.wav')
+            try:
+                process = self._worker()
+                clip.write_bytes(wav_bytes(frames))
+                process.stdin.write(json.dumps({'file': str(clip), 'language': language or None}).encode() + b'\n')
+                process.stdin.flush()
+                answer = Voice._line(process, timeout)
+            except (OSError, TimeoutError, EOFError) as error:
+                self.stop()
+                raise ValueError('unavailable') from error
+            finally:
+                shutil.rmtree(folder, ignore_errors=True)
+                self.used = time.monotonic()
+                self._idle()
+        if not isinstance(answer, dict) or answer.get('error') or 'text' not in answer:
+            raise ValueError('unavailable')
+        return {'text': str(answer['text']).strip(), 'language': language or None}
+
+    def _root(self):
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        return self.root
+
+    def _idle(self):
+        if self.timer:
+            self.timer.cancel()
+        self.timer = threading.Timer(IDLE_SECONDS, self._maybe_stop)
+        self.timer.daemon = True
+        self.timer.start()
+
+    def _maybe_stop(self):
+        if time.monotonic() - self.used >= IDLE_SECONDS - 1 and self.work.acquire(blocking=False):
+            try:
+                self.stop()
+            finally:
+                self.work.release()
+
+    def stop(self):
+        process, self.worker = self.worker, None
+        if process:
+            with contextlib.suppress(OSError, ValueError):
+                process.stdin.close()
+            try:
+                process.wait(5)
+            except subprocess.TimeoutExpired:
+                process.kill()
 
 
 def timeout_for(seconds):

@@ -53,7 +53,7 @@ class Sessions(unittest.TestCase):
 
     def test_the_helper_is_asked_for_its_own_session_only(self):
         started = self.talk.start(SID, {})
-        self.assertEqual(self.gateway.calls[-1], {'method': 'start', 'session_key': t.SESSION_PREFIX + SID})
+        self.assertEqual(self.gateway.calls[-1], {'method': 'start', 'session_key': t.SESSION_PREFIX + SID, 'voice': 'cedar'})
         self.assertNotIn(SECRET, json.dumps(started))   # the browser gets an ID, never the secret
         self.assertEqual(started['via'], 'key')
         self.assertRegex(started['id'], '^[a-f0-9]{16}$')
@@ -146,6 +146,17 @@ class Tools(unittest.TestCase):
         self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer'])
         self.assertIn('never sends', [tool for tool in t.TOOLS if tool['name'] == 'ask_chat'][0]['description'])
         self.assertIn('a clear yes to your confirm question', t.ASK_NOTE)
+
+    def test_asking_the_chat_says_one_line_and_never_polls(self):
+        text = t.instructions('Pick up the paint', 'en', 'Thursday 29 October 2026, 12:39')
+        self.assertIn('never poll', text)
+        self.assertIn('comes to you as a message', text)
+        self.assertNotIn('call todo_details a little later', text)
+        self.assertIn('Looking that up', t.ASK_NOTE)
+        self.assertIn('{answer}', t.DONE_NOTE)
+        self.assertTrue(t.RELAY_PREFIX.startswith('chat-'))   # still a chat turn (the short follow-up prompt)
+        for words in ('web', 'browser', 'where you found it'):
+            self.assertIn(words, t.RELAY_NOTE)
 
     def test_the_instructions_send_only_after_a_question(self):
         text = t.instructions('Reply to Dana', 'nl', 'Tuesday 28 October 2026, 10:00')
@@ -377,6 +388,28 @@ class Api(unittest.TestCase):
         self.assertEqual([(i['kind'], i['text']) for i in said],
                          [('event', 'Talked live'), ('you', 'What does Dana want?'), ('reply', 'She asks if Thursday works.')])
         self.assertTrue(all(i['at'] for i in said))
+
+    def test_the_voice_is_cedar_unless_the_owner_picks_another(self):
+        started = self.act('talk_start', {'suggestion_id': SID})
+        self.assertEqual((started['voice'], self.gateway.calls[-1]['voice']), ('cedar', 'cedar'))
+        self.act('talk_end', {'id': started['id']})
+        self.assertEqual(self.act('voice_prefs', {'talk_voice': 'marin'})['talk_voice'], 'marin')
+        with self.assertRaisesRegex(ValueError, 'Pick one of the voices'):
+            self.act('voice_prefs', {'talk_voice': 'cove'})   # ChatGPT's Cove isn't a Realtime voice
+        self.assertEqual(self.act('talk_start', {'suggestion_id': SID})['voice'], 'marin')
+        self.assertEqual(self.gateway.calls[-1]['voice'], 'marin')
+        for name in a.voice_input.TALK_VOICES:   # each has its sample, served with the dashboard
+            self.assertTrue(a.BRAND_ASSETS[f'/brand/voices/{name}.mp3'].read_bytes()[:3] in (b'ID3', b'\xff\xfb', b'\xff\xf3'), name)
+
+    def test_a_hand_off_from_talk_live_is_not_the_owners_message(self):
+        with self.store.connect() as db:
+            for rid, text in (('chat-talk-1', 'Please look up the hardware store opening hours'), ('chat-2', 'And when do they close?')):
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'other',?,'dashboard','2026-10-29T12:39:00Z')", (rid, SID, text))
+        items = self.act('card_chat', {'suggestion_id': SID})['items']
+        said = [i['text'] for i in items if i['kind'] == 'you']
+        self.assertEqual(said, ['And when do they close?'])
+        source = (ROOT / 'assistant.py').read_text()
+        self.assertIn("startswith(talk_live.RELAY_PREFIX):request['message']+='\\n\\n'+talk_live.RELAY_NOTE", source)
 
     def test_a_sign_in_has_no_cost_note(self):
         self.gateway.answers['start'] = {**self.gateway.answers['start'], 'offer_url': '/plugins/openai/realtime/calls', 'via': 'signin'}

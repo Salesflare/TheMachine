@@ -15,7 +15,7 @@ const now=new Date().toISOString(),id='c1c1c1c1c1c1c1c1';
 const cards=[{id,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const DRAFT={kind:'email',label:'Reply to Lotte',to:['lotte@example.com'],to_name:'Lotte',from:'me@example.com',subject:'Re: Paint order',body:'Hi Lotte, Thursday after two works. See you then.',revision:'r1',account_id:'mail'};
-const actions=[],lines=[],asked=[],sends=[];let ready=true,askedQ=null,verdict='queued',perUse=true,demo=false,startFails=false,hold=null;
+const actions=[],lines=[],asked=[],sends=[];let running=false,ready=true,askedQ=null,verdict='queued',perUse=true,demo=false,startFails=false,hold=null;
 const TOOLS=[{type:'function',name:'todo_details'},{type:'function',name:'find_todos'},{type:'function',name:'ask_chat'}];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -24,7 +24,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(demo&&r.action.startsWith('talk_')){res.end(JSON.stringify({ok:true,demo:true}));return}
   const answer={
    talk_status:()=>({ready,limit:600,warn:540}),
-   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',ask_note:'Drafts wait for Approve.',ready:true},
+   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',ask_note:'Drafts wait for Approve.',notes:{queued:'Joins the last request.',done:'The chat finished. Its answer: "{answer}" Tell the owner now.',stopped:'The chat stopped.'},ready:true},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_line:()=>{lines.push({kind:a.role==='user'?'you':'reply',text:a.text,via:'live',at:Date.now()});return {ok:true}},
    talk_tool:()=>({output:{title:cards[0].title,messages:[{from:'Lotte',text:'When can I pick it up?'}]}}),
@@ -36,9 +36,10 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
     sends.push({kind:'event',text:'Approved by voice',mine:true,undo_voice:'voice:1',undo_until:Date.now()+10000,at:Date.now()},{kind:'event',text:'Sending to Lotte…',mine:true,at:Date.now()+1});
     return {status:'queued',approval_id:'voice:1',revision:q,undo_seconds:10,say:'Approved.'}},
    talk_undo:()=>{sends.splice(0,sends.length,{kind:'event',text:'Send canceled',mine:true,at:Date.now()});return {status:'cancelled'}},
-   // As the chat does: the reply comes with a draft, and the to-do gets it as its send, which waits for Approve
-   decide:()=>{cards[0].next_actions=[DRAFT];asked.push({kind:'you',text:a.feedback,at:Date.now()},{kind:'reply',text:'Drafted a reply to Lotte.',drafts:[{kind:'email',to:['Lotte'],subject:DRAFT.subject,body:DRAFT.body,reply:true}],at:Date.now()+1});return {ok:true}},
-   card_chat:()=>({session:true,status:'done',active:false,cursor:'k',items:[{kind:'reply',text:'Lotte asked when the order can be picked up. Want me to answer her?',at:Date.now()-60000},...lines,...asked,...sends].sort((x,y)=>x.at-y.at)}),
+   // As the chat does: a hand-off from Talk live (chat-talk-…) never shows as the owner's message; the turn runs
+   // until the test finishes it (done())
+   decide:()=>{if(!String(a.decision_id).startsWith('chat-talk-'))asked.push({kind:'you',text:a.feedback,at:Date.now()});running=true;return {ok:true}},
+   card_chat:()=>({session:true,status:running?'running':'done',active:running,cursor:'k',items:[{kind:'reply',text:'Lotte asked when the order can be picked up. Want me to answer her?',at:Date.now()-60000},...lines,...asked,...sends].sort((x,y)=>x.at-y.at)}),
   }[r.action];
   if(r.action==='talk_offer'&&hold)await hold;
   if(r.action==='talk_start'&&startFails){res.statusCode=400;res.end(JSON.stringify({error:'Talk live couldn’t start. Check OpenAI in OpenClaw, then try again.'}));return}
@@ -71,7 +72,7 @@ try{
   await context.addInitScript(FAKE_RTC);
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const base='http://127.0.0.1:'+server.address().port+'/';
-  actions.length=0;lines.length=0;asked.length=0;sends.length=0;askedQ=null;verdict='queued';perUse=true;delete cards[0].next_actions;
+  actions.length=0;lines.length=0;asked.length=0;sends.length=0;askedQ=null;running=false;verdict='queued';perUse=true;delete cards[0].next_actions;
   await page.goto(base+'#chat='+id);await page.locator('#chat-input').waitFor();
   const tag=`${w}-${scheme}`,shot=async n=>{if(SHOTS)await page.screenshot({path:`${SHOTS}/${n}-${tag}.png`})};
   const tap=sel=>phone?page.locator(sel).tap():page.locator(sel).click();
@@ -104,14 +105,19 @@ try{
   assert.ok(setup.session.audio.input.transcription.model,'what the owner says is written down');
   assert.ok(await page.locator(bar+' .talk-cost').isVisible(),'an API key: the cost note shows');
 
-  // What both sides say lands in the chat, as normal messages
+  // What both sides say lands in the chat, as normal messages: the voice's once its response is done
   await page.evaluate(()=>{__say({type:'conversation.item.input_audio_transcription.completed',item_id:'i1',transcript:'When can Lotte pick up the paint?'});
-   __say({type:'response.output_audio_transcript.done',item_id:'i2',transcript:'She can pick it up on Thursday after two.'})});
+   __say({type:'response.created',response:{id:'r2'}});__say({type:'response.output_audio_transcript.done',response_id:'r2',item_id:'i2',transcript:'She can pick it up on Thursday after two.'});
+   __say({type:'response.done',response:{id:'r2',status:'completed'}})});
   await page.waitForFunction(()=>document.querySelector('#chat-log').textContent.includes('Thursday after two'));
   for(let i=0;i<50&&actions.filter(a=>a.action==='talk_line').length<2;i++)await page.waitForTimeout(20);
   assert.deepEqual(actions.filter(a=>a.action==='talk_line').map(a=>a.args.role),['user','assistant']);
-  await page.evaluate(()=>{__say({type:'response.output_audio_transcript.done',item_id:'i2',transcript:'She can pick it up on Thursday after two.'})});
+  await page.evaluate(()=>{__say({type:'response.output_audio_transcript.done',response_id:'r2b',item_id:'i2',transcript:'She can pick it up on Thursday after two.'});__say({type:'response.done',response:{id:'r2b',status:'completed'}})});
   await page.waitForTimeout(100);assert.equal(actions.filter(a=>a.action==='talk_line').length,2,'each line once');
+  // Talked over: what the voice had started to say is dropped, never a stray half line in the chat
+  await page.evaluate(()=>{__say({type:'response.output_audio_transcript.done',response_id:'r2c',item_id:'i2c',transcript:'The chat is on'});__say({type:'response.done',response:{id:'r2c',status:'cancelled'}})});
+  await page.waitForTimeout(100);assert.equal(actions.filter(a=>a.action==='talk_line').length,2,'a response cut short is not kept');
+  assert.ok(!(await page.locator('#chat-log').textContent()).includes('The chat is on'));
 
   // A read tool: through the Machine, and its answer goes back to the voice
   await page.evaluate(()=>__say({type:'response.function_call_arguments.done',call_id:'call1',name:'todo_details',arguments:'{}'}));
@@ -120,30 +126,54 @@ try{
   assert.equal(await page.evaluate(()=>window.__dc.sent.at(-1).type),'response.create');
   await page.waitForTimeout(300);await shot('t3-live');
 
-  // Asking the chat: it goes the way a typed message does (a decision 'other')
-  await page.evaluate(()=>{__say({type:'response.function_call_arguments.done',call_id:'call2',name:'ask_chat',arguments:JSON.stringify({request:'Reply to Lotte that Thursday after two works'})})});
-  await page.waitForFunction(()=>window.__dc.sent.some(x=>x.item?.call_id==='call2'));
-  const out=await page.evaluate(()=>JSON.parse(window.__dc.sent.find(x=>x.item?.call_id==='call2').item.output));
-  assert.deepEqual(out,{ok:true,waiting:false,note:'Drafts wait for Approve.'});
-  const decided=actions.filter(a=>a.action==='decide');
-  assert.equal(decided.length,1);assert.equal(decided[0].args.choice,'other');
+  // Asking the chat: a hand-off (a decision 'other', chat-talk-…), never shown as the owner's own message
+  const ask=async(n,request)=>{await page.evaluate(([n,request])=>__say({type:'response.function_call_arguments.done',call_id:n,name:'ask_chat',arguments:JSON.stringify({request})}),[n,request]);
+   await page.waitForFunction(n=>window.__dc.sent.some(x=>x.item?.call_id===n),n);return page.evaluate(n=>JSON.parse(window.__dc.sent.find(x=>x.item?.call_id===n).item.output),n)};
+  const told=()=>page.evaluate(()=>window.__dc.sent.filter(x=>x.type==='conversation.item.create'&&x.item?.type==='message').map(x=>x.item.content[0].text));
+  const done=(text,draft)=>{running=false;if(draft)cards[0].next_actions=[DRAFT];asked.push({kind:'reply',text,...(draft?{drafts:[{kind:'email',to:['Lotte'],subject:DRAFT.subject,body:DRAFT.body,reply:true}]}:{}),at:Date.now()})};
+  assert.deepEqual(await ask('call2','Reply to Lotte that Thursday after two works'),{ok:true,waiting:false,note:'Drafts wait for Approve.'});
+  let decided=actions.filter(a=>a.action==='decide');
+  assert.equal(decided.length,1);assert.equal(decided[0].args.choice,'other');assert.match(decided[0].args.decision_id,/^chat-talk-/);
   assert.equal(decided[0].args.feedback,'Reply to Lotte that Thursday after two works');
   assert.equal(actions.filter(a=>a.action==='talk_tool').length,1,'ask_chat never reaches the Machine as a tool');
+  await page.waitForTimeout(300);
+  assert.ok(!(await page.locator('#chat-log').textContent()).includes('Reply to Lotte that'),'the hand-off is not a bubble');
+  await shot('t3b-looking-it-up');
+  // A second ask while the chat is on the first: it waits, it never stops the running turn
+  assert.deepEqual(await ask('call2b','Also ask if she wants it delivered'),{ok:true,queued:true,note:'Joins the last request.'});
+  assert.equal(actions.filter(a=>a.action==='decide').length,1,'no new decision while the turn runs');
+  // The turn ends: its answer goes straight to the voice, which says it (no checking back); then the waiting ask goes
+  done('Drafted a reply to Lotte: Thursday after two works. Tap Approve to send it.',true);
+  await page.waitForFunction(()=>window.__dc.sent.some(x=>x.item?.type==='message'),null,{timeout:8000});
+  assert.deepEqual(await told(),['The chat finished. Its answer: "Drafted a reply to Lotte: Thursday after two works. Tap Approve to send it." Tell the owner now.']);
+  assert.equal(await page.evaluate(()=>window.__dc.sent.at(-1).type),'response.create','and it speaks it at once');
+  await page.waitForFunction(()=>document.querySelector('#chat-log').textContent.includes('Tap Approve to send it'));
+  for(let i=0;i<50&&actions.filter(a=>a.action==='decide').length<2;i++)await page.waitForTimeout(50);
+  decided=actions.filter(a=>a.action==='decide');
+  assert.equal(decided.length,2,'the waiting ask goes once the turn is done');assert.equal(decided[1].args.feedback,'Also ask if she wants it delivered');
+  // Its answer waits while the voice is still talking, and comes right after
+  await page.evaluate(()=>__say({type:'response.created',response:{id:'r3'}}));
+  done('Added a line asking if she wants it delivered.',false);
+  await page.waitForTimeout(1600);assert.equal((await told()).length,1,'not while the voice talks');
+  await page.evaluate(()=>__say({type:'response.done',response:{id:'r3',status:'completed'}}));
+  assert.match((await told())[1],/Added a line asking if she wants it delivered/);
+  await page.evaluate(()=>__say({type:'response.done',response:{id:'r4',status:'completed'}}));
   // The draft it made shows in the chat with its Approve control, like one made from a typed message
   await page.locator('#chat-log .chat-draft.current [data-smart]').waitFor();
   assert.ok((await page.locator('#chat-log .chat-draft.current').textContent()).includes('Thursday after two works'));
   await page.waitForTimeout(400);
   if(!phone)assert.equal(await page.locator(bar+' .talk-hint').textContent(),'Say yes to send what’s on screen.');
   await shot('t4-asked-chat');
-  const said=(n,text,role='user')=>page.evaluate(([n,text,role])=>__say(role==='user'?{type:'conversation.item.input_audio_transcription.completed',item_id:n,transcript:text}:{type:'response.output_audio_transcript.done',item_id:n,transcript:text}),[n,text,role]);
+  const said=(n,text,role='user')=>page.evaluate(([n,text,role])=>{if(role==='user'){__say({type:'conversation.item.input_audio_transcription.completed',item_id:n,transcript:text});return}
+   __say({type:'response.output_audio_transcript.done',response_id:'r'+n,item_id:n,transcript:text});__say({type:'response.done',response:{id:'r'+n,status:'completed'}})},[n,text,role]);
   const call=async(n,name)=>{await page.evaluate(([n,name])=>__say({type:'response.function_call_arguments.done',call_id:n,name,arguments:'{}'}),[n,name]);
    await page.waitForFunction(n=>window.__dc.sent.some(x=>x.item?.call_id===n),n);return page.evaluate(n=>JSON.parse(window.__dc.sent.find(x=>x.item?.call_id===n).item.output),n)};
 
   // The question: only for the draft on screen (its revision), read out first on a phone
   const q=await call('call3','ask_to_send');
   assert.equal(q.question,'Send this reply to Lotte by email?');
-  const ask=actions.filter(a=>a.action==='talk_ask_send').at(-1).args;
-  assert.equal(ask.revision,'r1');assert.equal(ask.read_aloud,phone,'a phone: the voice reads the draft out first');
+  const asking=actions.filter(a=>a.action==='talk_ask_send').at(-1).args;
+  assert.equal(asking.revision,'r1');assert.equal(asking.read_aloud,phone,'a phone: the voice reads the draft out first');
   await said('i3','Send this reply to Lotte by email?','assistant');
   await page.waitForTimeout(150);await shot('t4b-confirm-question');
 
@@ -225,7 +255,7 @@ try{
    await page.goto(base+'#');await page.waitForTimeout(400);
    assert.ok(actions.filter(a=>a.action==='talk_end').length>ends||await page.evaluate(()=>!window.talk),'leaving the chat ends it');
   }
-  assert.equal(sent(),1,'only the one request to the chat');
+  assert.equal(sent(),2,'only the two requests to the chat');
   await context.close()}
 
  // Without OpenAI, and in the site's demo: no wave

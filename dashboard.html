@@ -175,6 +175,7 @@ button.primary{background:var(--mint);border-color:var(--mint);color:var(--charc
 button.primary:hover{background:#cad6b9;color:var(--charcoal)}
 button.ghost{background:transparent}
 button.quiet{background:transparent;border-color:transparent;color:var(--muted)}
+.talk-sample{flex:none;width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:50%;color:var(--text)}button.quiet.talk-sample{border-color:var(--border);background:var(--surface,transparent)}.talk-sample svg{width:15px;height:15px;fill:currentColor}
 button.quiet:hover{color:var(--orange);border-color:#eca45b55}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 input::placeholder,textarea::placeholder{color:var(--faint)}
@@ -1743,7 +1744,8 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .mic-prog i{display:block;width:0;height:100%;border-radius:2px;background:var(--c-accent);transition:width .4s}.mic-prog.busy i{width:35%!important;animation:mic-busy 1.3s ease-in-out infinite}
 @keyframes mic-pulse{50%{opacity:.3}}
 @keyframes mic-busy{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
-@media(max-width:420px){.mic-wave~.mic-hint{display:none}}
+.mic-hint.mic-heard{color:var(--text);text-overflow:clip}
+@media(max-width:420px){.mic-wave~.mic-hint{display:none}.mic-wave~.mic-hint.mic-heard{display:block}.mic-live:has(.mic-heard) .mic-wave{display:none}}
 @media(prefers-reduced-motion:reduce){.talk-dot,.mic-dot,.mic-prog.busy i{animation:none}}
 .chat-tray{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.chat-tray[hidden]{display:none}
 .chat-att{position:relative;display:flex;align-items:center;gap:8px;max-width:240px;height:52px;padding:0 30px 0 6px;border:1px solid var(--c-line-strong);border-radius:14px;background:var(--surface);font-size:.82rem;line-height:1.3}
@@ -3620,11 +3622,19 @@ function renderDictation(){const d=state.dictation,box=$('#settings-dictation'),
   +(d.openai===false&&d.engine!=='local'?`<div class="dictation-fine"><small>${esc(t('OpenAI needs OpenAI set up in OpenClaw: an API key, or a ChatGPT sign-in that allows audio.'))}</small></div>`:'')
   +(d.in_use==='local'?`<div><span class="grow"><strong>${esc(t('Accuracy'))}</strong><small>${esc(t(d.model==='base'?'Quicker, but it gets more words wrong.':'Best for most languages. Slower on a small server.'))}</small></span><select id="dictation-model" aria-label="${esc(t('Accuracy'))}">${opt('small','More accurate',d.model==='small')}${opt('base','Faster',d.model==='base')}</select></div>`:'')
   +`<div><span class="grow"><strong>${esc(t('Language'))}</strong><small>${esc(t('Detect works for every app language. Picking yours is a little faster.'))}</small></span><select id="dictation-language" aria-label="${esc(t('Voice input language'))}"><option value=""${d.language?'':' selected'}>${esc(t('Detect'))}</option>${MIC_LANGS.map(([c,n])=>`<option value="${c}" translate="no"${d.language===c?' selected':''}>${n}</option>`).join('')}</select></div>`
-  +(d.talk?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t(d.talk.ready==null?'Checking…':d.talk.ready?'Ready. Tap the wave in a to-do’s chat to talk with The Machine.':'Needs OpenAI set up in OpenClaw: a ChatGPT sign-in, or an API key.'))}</small></span></div>`:'');
+  +(d.talk?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t(d.talk.ready==null?'Checking…':d.talk.ready?'Ready. Tap the wave in a to-do’s chat to talk with The Machine.':'Needs OpenAI set up in OpenClaw: a ChatGPT sign-in, or an API key.'))}</small></span></div>`
+   +(d.talk.ready&&d.talk_voice?`<div><span class="grow"><strong>${esc(t('Voice'))}</strong><small>${esc(t('How The Machine sounds when you talk live.'))}</small></span><button type="button" class="quiet talk-sample" data-talk-sample aria-label="${esc(t('Play a sample'))}" title="${esc(t('Play a sample'))}">${PLAY}</button><select id="talk-voice" aria-label="${esc(t('Voice'))}">${TALK_VOICES.map(n=>`<option value="${n}" translate="no"${d.talk_voice===n?' selected':''}>${n[0].toUpperCase()+n.slice(1)}</option>`).join('')}</select></div>`:''):'');
  // Still preparing, or the Machine still asking OpenClaw what OpenAI can do here (it answers at once, and fills that in later)
  clearTimeout(dictation.timer);if((l.state==='preparing'||d.openai==null||d.talk&&d.talk.ready==null)&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
-$('#settings-dictation').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select'))return;const key={'dictation-engine':'engine','dictation-model':'model','dictation-language':'language'}[el.id];if(!key)return;el.disabled=true;
+$('#settings-dictation').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select'))return;const key={'dictation-engine':'engine','dictation-model':'model','dictation-language':'language','talk-voice':'talk_voice'}[el.id];if(!key)return;el.disabled=true;
  try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prefs',args:{[key]:el.value}})});micPrepped=false;notice(t('Saved.'))}catch(err){errCaught(err);notice(err.message)}renderDictation()});
+// Talk live's voices (voice_input.TALK_VOICES): a few seconds of each, from the Machine itself (brand/voices)
+const TALK_VOICES=['cedar','marin','ash','ballad','coral','echo','sage','shimmer','verse','alloy'];
+const PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
+let talkSample=null;
+$('#settings-dictation').addEventListener('click',e=>{const b=e.target.closest('[data-talk-sample]');if(!b)return;const name=$('#talk-voice')?.value;if(!TALK_VOICES.includes(name))return;
+ try{talkSample?.pause()}catch{}talkSample=new Audio('brand/voices/'+name+'.mp3');talkSample.play().catch(()=>toast(t('That sample couldn’t play.'),true))});
+$('#settings-dictation').addEventListener('change',e=>{if(e.target.id==='talk-voice')$('[data-talk-sample]')?.click()});  // hear the one just picked
 $('#settings-dictation').addEventListener('click',async e=>{if(!e.target.closest('[data-dictation-retry]'))return;try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prepare',args:{}})})}catch(err){errCaught(err);notice(err.message)}renderDictation()});
 // Codex and Claude Code (Settings, Model; agent_remote.py): where Hand to Codex and Hand to Claude Code send a to-do.
 // Only what this Machine needs is asked: Codex on the owner's computer is one line (chosen on the setup page); Codex
@@ -5684,7 +5694,9 @@ const micPost=(action,args={},upload=false)=>request('api/action',{method:'POST'
 // The first tap gets the Machine's own engine ready while the owner talks (a download the first time only).
 // What a tap does is asked once: OpenAI or this Machine; on Automatic while this Machine's own isn't ready yet, the
 // browser's own speech recognition (it never waits on a download); with On this Machine picked, the recording waits.
-async function micPrep(){if(micPrepped)return;micPrepped=true;try{const s=await micPost('voice_status');if(s.demo)micDemo=true;micUse=s.use||''}catch{micPrepped=false}}
+// Each tap also has the Machine load the engine in use (warm) while the owner talks, so Done doesn't wait for it.
+async function micPrep(){if(micPrepped){micPost('voice_status',{warm:true}).then(s=>{if(s.use)micUse=s.use}).catch(()=>{});return}
+ micPrepped=true;try{const s=await micPost('voice_status',{warm:true});if(s.demo)micDemo=true;micUse=s.use||''}catch{micPrepped=false}}
 const micSR=()=>window.SpeechRecognition||window.webkitSpeechRecognition;
 const MIC_BCP={de:'de-DE',en:'en-US',es:'es-ES',fr:'fr-FR',it:'it-IT',nl:'nl-NL',pt:'pt-BR'};
 // The browser's own speech recognition, while this Machine's own engine isn't ready: what it hears is kept as it goes
@@ -5707,7 +5719,8 @@ function micPaint(v){if(!v.box.isConnected){const box=document.getElementById(v.
   :`${x}<span class="mic-live"><i class="mic-spin" aria-hidden="true"></i><span class="mic-hint"></span></span><span class="mic-prog" aria-hidden="true"${v.state==='prep'?'':' hidden'}><i></i></span>`}
  if(rec){const left=MIC_MAX-v.secs,near=v.state==='rec'&&left<=15,live=bar.querySelector('.mic-live');live.classList.toggle('near',near);
   bar.querySelector('.mic-time').textContent=near?t('{} left',micClock(Math.ceil(left))):micClock(v.secs);
-  bar.querySelectorAll('.mic-wave i').forEach((el,i)=>{el.style.height=Math.round(3+v.levels[i]*19)+'px'})}
+  bar.querySelectorAll('.mic-wave i').forEach((el,i)=>{el.style.height=Math.round(3+v.levels[i]*19)+'px'});
+  const heard=micHeard(v);if(heard&&v.state==='rec'){const h=bar.querySelector('.mic-hint');h.classList.add('mic-heard');h.textContent=micTail(heard,matchMedia('(max-width:420px)').matches?26:48)}}
  else if(v.state!=='error'){bar.querySelector('.mic-hint').textContent=v.state==='wait'?t('Kept until you’re back online.'):v.state==='prep'?(v.left!=null?(v.left<=1?t('Getting voice ready… about a minute left'):t('Getting voice ready… about {} minutes left',v.left)):v.pct!=null?t('Getting voice ready… {}%',v.pct):t('Getting voice ready… This takes a few minutes.')):v.capped?t('Stopped at 2 minutes. Writing it down…'):t('Writing it down…');
   const p=bar.querySelector('.mic-prog');p.hidden=v.state!=='prep';p.firstChild.style.width=(v.pct||0)+'%';p.classList.toggle('busy',v.pct==null)}}
 function micClose(v){if(v.box){v.box.classList.remove('mic-on');v.box.querySelector(':scope>.mic-bar')?.remove()}if(mic===v)mic=null}
@@ -5730,22 +5743,44 @@ async function micStart(btn,down){if(mic)return;const box=btn.closest('.chat-box
  let rec;try{rec=new MediaRecorder(stream,type?{mimeType:type,audioBitsPerSecond:32000}:{})}catch{micFail(v,t('The microphone couldn’t start. Try again.'));stream.getTracks().forEach(x=>x.stop());return}
  Object.assign(v,{stream,rec,state:'rec',t0:Date.now()});
  rec.ondataavailable=e=>{if(e.data?.size)v.chunks.push(e.data)};rec.onstop=()=>micStopped(v);rec.start(1000);
- micMeter(v,stream);v.tick=setInterval(()=>micTick(v),100);micPaint(v)}
+ micMeter(v,stream);if(micUse==='openai'||micUse==='local')micTap(v);v.tick=setInterval(()=>micTick(v),100);micPaint(v)}
+// While the owner talks, what they said so far goes to the Machine at each pause (a part, at least MIC_PART.min seconds;
+// at most MIC_PART.max without a pause), so after Done only the last few seconds are left to write down. What comes
+// back shows in the bar as they talk. If a part fails, the whole clip goes as one, as it does without parts.
+const MIC_PART={min:6,max:25,pause:0.7,quiet:0.012};
+function micTap(v){const ac=v.meter;if(!ac?.createScriptProcessor)return;
+ try{const src=ac.createMediaStreamSource(v.stream),node=ac.createScriptProcessor(4096,1,1);Object.assign(v,{tap:node,pcm:[],pcmLen:0,rate:ac.sampleRate,quiet:0,parts:[],sentTo:0});
+  node.onaudioprocess=e=>{if(mic!==v||v.state!=='rec')return;const d=e.inputBuffer.getChannelData(0);v.pcm.push(new Float32Array(d));v.pcmLen+=d.length;
+   let sum=0;for(let i=0;i<d.length;i++)sum+=d[i]*d[i];v.quiet=Math.sqrt(sum/d.length)>MIC_PART.quiet?0:v.quiet+d.length;
+   const unsent=(v.pcmLen-v.sentTo)/v.rate;if(unsent>=MIC_PART.max||unsent>=MIC_PART.min&&v.quiet/v.rate>=MIC_PART.pause)micPart(v,v.pcmLen)};
+  src.connect(node);node.connect(ac.destination)}catch{v.tap=null;v.parts=null}}
+function micSlice(v,from,to){const out=new Float32Array(to-from);let at=0;for(const c of v.pcm){const a=Math.max(from-at,0),b=Math.min(to-at,c.length);if(b>a)out.set(c.subarray(a,b),at+a-from);at+=c.length;if(at>=to)break}return out}
+function micPart(v,to){const from=v.sentTo,part={text:null};v.sentTo=to;v.parts.push(part);const n=v.parts.length;
+ part.done=(async()=>{const wav=await micWavOf(micSlice(v,from,Math.max(to,from+Math.ceil(v.rate*0.35))),v.rate);  // a short last bit gets a little silence
+  const r=await micPost('voice_transcribe',{data:micB64(wav),part:n,...(v.lang?{language:v.lang}:{})},true);
+  if(r.pending||r.demo||typeof r.text!=='string')throw Error('whole');part.text=r.text;if(!v.lang&&r.language)v.lang=r.language})().catch(()=>{part.failed=true})}
+// The end of what it heard, from a word's start, so the newest words show
+const micTail=(text,n)=>text.length<=n?text:'…'+(text.slice(-n).match(/\s(\S.*)$/)?.[1]||text.slice(-n));
+const micHeard=v=>(v.parts||[]).map(p=>p.text).filter(Boolean).join(' ');
 function micMeter(v,stream){try{const ac=new (window.AudioContext||window.webkitAudioContext)(),an=ac.createAnalyser();an.fftSize=512;ac.createMediaStreamSource(stream).connect(an);v.meter=ac;v.analyser=an;v.wave=new Uint8Array(an.fftSize)}catch{}}
 function micTick(v){if(mic!==v||v.state!=='rec')return;v.secs=(Date.now()-v.t0)/1000;
  if(v.analyser){v.analyser.getByteTimeDomainData(v.wave);let sum=0;for(const x of v.wave)sum+=((x-128)/128)**2;v.levels=[...v.levels.slice(1),Math.min(1,Math.sqrt(sum/v.wave.length)*4)]}
  if(v.secs>=MIC_MAX){v.capped=true;micStop();return}micPaint(v)}
-function micStop(){const v=mic;if(!v||v.state!=='rec')return;v.state='work';micRelease(v);if(v.sr){try{v.sr.stop()}catch{v.sr.onend?.()}micPaint(v);return}try{v.rec.stop()}catch{micStopped(v)}micPaint(v)}
+function micStop(){const v=mic;if(!v||v.state!=='rec')return;v.state='work';micRelease(v);const tail=v.pcmLen-v.sentTo;if(v.parts?.length&&tail>0&&(tail/v.rate>=0.3||v.quiet<tail))micPart(v,v.pcmLen);if(v.sr){try{v.sr.stop()}catch{v.sr.onend?.()}micPaint(v);return}try{v.rec.stop()}catch{micStopped(v)}micPaint(v)}
 async function micStopped(v){if(mic!==v)return;const blob=new Blob(v.chunks,{type:v.rec?.mimeType||'audio/webm'});v.chunks=[];
  if((Date.now()-v.t0)<500||!blob.size){micFail(v,t('That was too short. Talk a little longer.'));return}
+ if(v.parts?.length){const parts=v.parts;v.parts=null;await Promise.all(parts.map(p=>p.done));if(mic!==v)return;
+  if(parts.every(p=>!p.failed)){v.pcm=[];micDone(v,parts.map(p=>p.text).filter(Boolean).join(' '));return}}
  try{v.wav=await micWav(blob)}catch{if(mic===v)micFail(v,t('That recording couldn’t be read. Try again.'));return}micSend(v)}
 // MediaRecorder's clip (WebM/Opus, or MP4/AAC on Safari) as 16 kHz mono 16-bit WAV, the one format the Machine takes
 async function micWav(blob){const ac=new (window.AudioContext||window.webkitAudioContext)();
- try{const buf=await ac.decodeAudioData(await blob.arrayBuffer()),off=new OfflineAudioContext(1,Math.max(1,Math.ceil(buf.duration*16000)),16000),src=off.createBufferSource();src.buffer=buf;src.connect(off.destination);src.start();
+ try{return await micWav16(await ac.decodeAudioData(await blob.arrayBuffer()))}finally{try{ac.close()}catch{}}}
+// A part: the samples the page heard, at the microphone's own rate
+async function micWavOf(samples,rate){const buf=new AudioBuffer({length:Math.max(1,samples.length),numberOfChannels:1,sampleRate:rate});buf.copyToChannel(samples,0);return micWav16(buf)}
+async function micWav16(buf){const off=new OfflineAudioContext(1,Math.max(1,Math.ceil(buf.duration*16000)),16000),src=off.createBufferSource();src.buffer=buf;src.connect(off.destination);src.start();
   const pcm=(await off.startRendering()).getChannelData(0),out=new DataView(new ArrayBuffer(44+pcm.length*2)),w=(o,s)=>[...s].forEach((c,i)=>out.setUint8(o+i,c.charCodeAt(0)));
   w(0,'RIFF');out.setUint32(4,36+pcm.length*2,true);w(8,'WAVE');w(12,'fmt ');out.setUint32(16,16,true);out.setUint16(20,1,true);out.setUint16(22,1,true);out.setUint32(24,16000,true);out.setUint32(28,32000,true);out.setUint16(32,2,true);out.setUint16(34,16,true);w(36,'data');out.setUint32(40,pcm.length*2,true);
   for(let i=0;i<pcm.length;i++){const s=Math.max(-1,Math.min(1,pcm[i]));out.setInt16(44+i*2,s<0?s*0x8000:s*0x7fff,true)}return out.buffer}
- finally{try{ac.close()}catch{}}}
 const micB64=buf=>{const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 async function micSend(v){if(mic!==v)return;v.state='work';v.error='';micPaint(v);
  try{const r=await micPost('voice_transcribe',{data:micB64(v.wav)},true);if(mic!==v)return;
@@ -5814,13 +5849,13 @@ function talkClose(v){clearInterval(v.tick);try{v.dc?.close()}catch{}try{v.pc?.c
  if(v.audio){v.audio.srcObject=null;v.audio.remove()}if(v.id&&!v.ended){v.ended=true;micPost('talk_end',{id:v.id}).catch(()=>{})}}
 function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove()}
 async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
- const v=talk={sid:s.id,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve()};talkPaint();
+ const v=talk={sid:s.id,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[]};talkPaint();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
  catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
-  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||''});talkPaint();
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||''});talkPaint();
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0]};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
   pc.onconnectionstatechange=()=>{if(talk===v&&['failed','disconnected'].includes(pc.connectionState))talkFail(v,t('Talk live lost its connection. Start it again to go on.'))};
@@ -5830,20 +5865,26 @@ async function talkStart(){const s=chatOpen();if(talk||!s)return;micCancel();
  catch(err){if(err.offline)netSet(true,err.restarting);talkFail(v,err.offline?t('Offline. Start it again when you’re back online.'):err.message||t('Talk live couldn’t start. Try again.'))}}
 // The voice's own setup: this page's instructions and tools (never the Gateway's agent), and what the owner says written down
 function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();
- v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'}}}}}));
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'}},...(v.voice?{output:{voice:v.voice}}:{})}}}));
  v.tick=setInterval(()=>talkTick(v),250);talkPaint()}
 function talkTick(v){if(talk!==v)return;if(chatOpen()?.id!==v.sid){talkEnd();return}v.secs=(Date.now()-v.t0)/1000;
+ if(v.relay&&!chat?.active&&Date.now()-v.relay.at>20000)talkTurnDone();  // a turn that ended between two looks
  if(v.secs>=v.limit){talkEnd();toast(t('Talk live ends after 10 minutes. Start it again to go on.'));return}talkPaint()}
+// What the voice says is kept once its response is done, unless the owner talked over it (OpenAI stops it): a cut-off start
+// ("The chat is on…") never lands in the chat.
 async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)}catch{return}
  if(e.type==='conversation.item.input_audio_transcription.completed')talkLine(v,'user',e.transcript,e.item_id);
- else if(e.type==='response.output_audio_transcript.done')talkLine(v,'assistant',e.transcript,e.item_id);
+ else if(e.type==='response.created')v.responding=true;
+ else if(e.type==='response.output_audio_transcript.done')(v.heard[e.response_id]||=[]).push([e.transcript,e.item_id]);
+ else if(e.type==='response.done'){v.responding=false;const id=e.response?.id,said=v.heard[id]||[];delete v.heard[id];
+  if(e.response?.status!=='cancelled')said.forEach(([text,item])=>talkLine(v,'assistant',text,item));talkTellNext(v)}
  else if(e.type==='response.function_call_arguments.done')talkTool(v,e)}
 // What one side said goes into the chat as an ordinary message (and is kept by the Machine, talk_line)
 function talkLine(v,role,text,item){text=String(text||'').trim();const key=role+':'+(item||text);if(!text||v.said.has(key))return;v.said.add(key);
  v.posting=Promise.all([v.posting,micPost('talk_line',{id:v.id,role,text}).catch(()=>{})]);  // kept before the Machine judges an answer
  if(chat&&chatOpen()?.id===v.sid){chat={...chat,items:[...(chat.items||[]),{kind:role==='user'?'you':'reply',text,via:'live',at:Date.now()}]};paintChat();chatToEnd()}}
 async function talkTool(v,e){let args={},output;try{args=JSON.parse(e.arguments||'{}')}catch{}
- if(e.name==='ask_chat'){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkAsk(v,req):{error:'Say what to ask.'};if(output.ok)output.note=v.note}
+ if(e.name==='ask_chat'){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkAsk(v,req):{error:'Say what to ask.'};if(output.ok)output.note=output.queued?v.notes.queued||v.note:v.note}
  else if(e.name==='ask_to_send')output=await talkAskSend(v);
  else if(e.name==='send_answer')output=await talkAnswer(v);
  else try{output=(await micPost('talk_tool',{id:v.id,name:e.name,args})).output}catch(err){output={error:err.message}}
@@ -5867,14 +5908,30 @@ async function talkAnswer(v){let r={status:'not_asked'};
  if(r.status==='queued'){v.asked=null;await refresh();if(chatOpen()?.id===v.sid)chatPoll()}else if(r.status!=='no_answer'&&r.status!=='not_asked')v.asked=null;
  return r}
 // What the voice asks the chat goes the way a typed message does (chatSubmit's decideOrWait, so it can wait offline
-// too); the owner sees it in the chat, and its drafts wait for their Approve.
+// too), as a hand-off (talk_live.RELAY_PREFIX): the chat doesn't show it as the owner's message (what they said is
+// there already), and its drafts wait for their Approve. A request while the chat is still on one never stops it:
+// it waits and goes when that turn ends. Then the chat's answer goes straight to the voice, which tells the owner.
 async function talkAsk(v,req){const s=state.suggestions?.find(x=>x.id===v.sid);if(!s)return {error:'This to-do is gone.'};
- const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:req,decision_id:'chat-'+crypto.randomUUID()}];
+ if(v.relay||chat?.active&&chatOpen()?.id===s.id){v.queue.push(req);return {ok:true,queued:true}}
+ return talkRelay(v,s,[req])}
+const talkReplies=()=>(chat?.items||[]).filter(i=>i.kind==='reply'&&i.via!=='live');
+async function talkRelay(v,s,reqs){v.relay={at:Date.now(),replies:talkReplies().length};
+ const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:reqs.join('\n'),decision_id:'chat-talk-'+crypto.randomUUID()}];
  try{const r=await decideOrWait(s.id,steps,'other');
-  if(chatOpen()?.id===s.id){chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text:req,at:Date.now()}],active:!r?.waiting,cursor:null};changing.delete(s.id)}
+  if(chatOpen()?.id===s.id){chat={...(chat||{}),active:!r?.waiting,cursor:null};changing.delete(s.id)}
   if(!r?.waiting){await refresh();if(chatOpen()?.id===s.id){paintChat();chatToEnd();chatPoll()}}
   return {ok:true,waiting:!!r?.waiting}}
- catch(err){return {error:err.message}}}
+ catch(err){v.relay=null;return {error:err.message}}}
+// The chat's turn ended: its answer goes to the voice at once (no checking back), then what waited goes
+function talkTurnDone(){const v=talk;if(!v||talk.state!=='live'||chatOpen()?.id!==v.sid)return;
+ if(v.relay){const said=talkReplies().slice(v.relay.replies).map(i=>String(i.text||'').trim()).filter(Boolean).join(' ').slice(0,3000);v.relay=null;
+  talkTell(v,said?(v.notes.done||'{answer}').replace('{answer}',said):v.notes.stopped||'')}
+ if(v.queue.length){const s=state.suggestions?.find(x=>x.id===v.sid),reqs=v.queue;v.queue=[];if(s)talkRelay(v,s,reqs)}}
+// A note for the voice, as a message it answers aloud; while it is talking, after that
+function talkTell(v,text){if(!text)return;v.tell.push(text);talkTellNext(v)}
+function talkTellNext(v){if(talk!==v||v.responding||!v.tell.length||v.dc?.readyState!=='open')return;const text=v.tell.shift();v.responding=true;
+ v.dc.send(JSON.stringify({type:'conversation.item.create',item:{type:'message',role:'system',content:[{type:'input_text',text}]}}));
+ v.dc.send(JSON.stringify({type:'response.create'}))}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-voice-undo]');if(!b)return;e.preventDefault();b.disabled=true;
  try{await micPost('talk_undo',{suggestion_id:b.dataset.sid,approval_id:b.dataset.voiceUndo});toast(t('Canceled. It won’t be sent.'))}catch(err){errCaught(err);toast(err.message,true)}
  await refresh();if(chatOpen())chatPoll()});
@@ -5955,7 +6012,7 @@ async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
   // A read that failed while the chat was already on screen changes nothing but whether the run still goes: what was
   // shown stays (with the live answer), quietly, and the next ask catches up
   if(r.unavailable&&chat?.items?.length&&!chat.unavailable)chat={...chat,active:r.active,status:r.status,live:r.active?chat.live:null,stale:true};
-  else{const keep=r.unchanged;chat={...r,items:keep?chat.items:r.items,cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active)refresh()}catch(e){errCaught(e);if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}}
+  else{const keep=r.unchanged;chat={...r,items:keep?chat.items:r.items,cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}}
  if(id===chatId)chatTimer=setTimeout(chatPoll,chat?.active?1000:chat?.unavailable||chat?.stale?4000:10000)}
 // Whether this page put the open chat on the history (so back can take it off again instead of adding an entry)
 let chatPushed=false;

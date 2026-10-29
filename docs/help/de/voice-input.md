@@ -11,7 +11,7 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Tippe in einem Nachrichtenfeld auf das Mikrofon: im Chat einer Aufgabe, bei **Neue Aufgabe**, in der **Hilfe** oder im Feld, mit dem du einen Entwurf änderst. Sprich und tippe dann auf das Häkchen. Oder halte das Mikrofon gedrückt, während du sprichst, und lass los, wenn du fertig bist.
 
-Während sie zuhört, zeigt das Feld einen Timer. Tippe auf das Kreuz, um aufzuhören, ohne etwas zu behalten. Eine Aufnahme kann bis zu 2 Minuten lang sein; nach 2 Minuten stoppt sie von selbst und schreibt auf, was du gesagt hast.
+Während sie zuhört, zeigt das Feld einen Timer. Tippe auf das Kreuz, um aufzuhören, ohne etwas zu behalten. Eine Aufnahme kann bis zu 2 Minuten lang sein; nach 2 Minuten stoppt sie von selbst und schreibt auf, was du gesagt hast. Was sie bisher gehört hat, steht in der Leiste, während du sprichst, damit der Text kurz nach dem Stoppen da ist.
 
 Was du gesagt hast, landet im Feld, dort, wo dein Cursor war. Nichts wird gesendet: Lies es, ändere, was du willst, und sende es selbst.
 

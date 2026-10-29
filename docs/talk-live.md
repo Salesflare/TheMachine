@@ -38,7 +38,7 @@ action as the agent sees fit. Here the dashboard sets its own tools instead, and
    `connect-src 'self'`; the audio then goes directly between the browser and OpenAI over WebRTC.
 3. On the data channel the dashboard sends `session.update` with the instructions, the tools and input transcription.
 4. What each side says (`conversation.item.input_audio_transcription.completed`, `response.output_audio_transcript.done`)
-   is posted as `talk_line` and kept in `talk_lines`; the to-do's chat shows it after a **Talked live** line.
+   is posted as `talk_line` (the voice's lines once their response is done, so an interrupted fragment isn't kept) and kept in `talk_lines`; the to-do's chat shows it after a **Talked live** line.
 5. **End**, leaving the chat, or 10 minutes end it (`talk_end`, `talk.client.close`). The timer warns a minute before.
    **Mute** turns the microphone track off.
 
@@ -50,10 +50,25 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 
 - `todo_details`: the to-do's title, status, its last 25 messages and its current draft, through `talk_tool` (read only).
 - `find_todos`: open to-dos whose title has the words (read only).
-- `ask_chat`: handled in the browser (`talkAsk`). The request goes to the to-do's chat the way a typed message does
-  (`decideOrWait`, a decision `other`, so it can also wait offline), and the chat shows it. The chat's own rules hold: it
-  can change the draft, snooze or mark the to-do done, never send.
+- `ask_chat`: handled in the browser (`talkAsk`). The request goes to the to-do's chat as a decision `other`
+  (`decideOrWait`, so it can also wait offline) whose id starts with `talk_live.RELAY_PREFIX`. That hand-off is
+  invisible: `card_chat` leaves it out, so the chat only shows what the owner said and **Working on it…**. The
+  preparation gets `talk_live.RELAY_NOTE` (look it up on the web or in the browser when needed, answer in two or three
+  plain sentences, say where it was found). The chat's own rules hold: it can change the draft, snooze or mark the to-do
+  done, never send.
+- One hand-off runs at a time. An ask while the chat is busy waits in the browser (`v.queue`) and goes once the turn
+  ends, so a follow-up never replaces a running turn. When the turn ends (`chatPoll`, or `talkTick` as a backstop), the
+  browser sends the chat's new reply to the session as a system message (`talk_live.DONE_NOTE`, or `STOPPED_NOTE`)
+  with `response.create`, so the voice says the answer at once. The voice says one short line while waiting and never
+  polls. If the voice is speaking, the note waits for `response.done`.
 - `ask_to_send` and `send_answer`: sending by voice, below.
+
+## Voice
+
+`talk_voice` in the voice settings picks the Realtime voice (`voice_input.TALK_VOICES`), passed to
+`talk.client.create`. The default is `cedar`. ChatGPT's Cove isn't offered on `gpt-realtime` models (only on the
+ChatGPT-only `gpt-live-1-codex` route, where the Gateway owns the tools), so `cedar` is the closest. Settings plays a
+short sample for each, `brand/voices/<voice>.mp3`, recorded once from the Realtime API.
 
 ## Sending by voice
 

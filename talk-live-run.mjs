@@ -15,6 +15,7 @@ const SCOPE = {scopes: ['operator.read', 'operator.talk']};
 const OPENAI_CALLS = 'https://api.openai.com/v1/realtime/calls';
 const GATEWAY_CALLS = '/plugins/openai/realtime/calls';
 const MAX_SDP = 262144;
+const VOICE = /^[a-z]{2,12}$/;   // the owner's pick in Settings (voice_input.TALK_VOICES)
 // OpenAI's GA Realtime model, not GPT-Live: with GPT-Live the Gateway owns the conversation's tools, and the
 // dashboard's own read-only tools and on-screen proposals (talk_live.py) wouldn't apply. GA works with an API key and,
 // where the account has access, with a ChatGPT sign-in (through the Gateway's offer broker).
@@ -40,7 +41,7 @@ async function status() {
 
 async function start(request) {
   const made = await call('talk.client.create', {sessionKey: request.session_key, mode: 'realtime', transport: 'webrtc',
-    brain: 'agent-consult', provider: 'openai', model: REALTIME_MODEL});
+    brain: 'agent-consult', provider: 'openai', model: REALTIME_MODEL, ...(VOICE.test(request.voice || '') ? {voice: request.voice} : {})});
   if (made?.transport !== 'webrtc' || typeof made.clientSecret !== 'string') return {error: 'unavailable', reason: 'other'};
   const url = made.offerUrl || OPENAI_CALLS;
   if (url !== OPENAI_CALLS && url !== GATEWAY_CALLS) return {error: 'unavailable', reason: 'other'};

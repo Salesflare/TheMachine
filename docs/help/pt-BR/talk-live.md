@@ -19,6 +19,8 @@ A barra tem **Silenciar** e **Fim**. Uma conversa dura até 10 minutos. Um minut
 
 Quando você pede algo, como "escreva uma resposta dizendo que quinta está bom" ou "adie isso até segunda", a The Machine passa o pedido ao chat da tarefa, como se você tivesse digitado. O chat segue as regras de sempre: pode mudar o rascunho ou adiar a tarefa.
 
+O chat também pode procurar coisas, como o horário de uma loja na web. Enquanto isso, mostra **Trabalhando nisso…**, e você pode continuar falando. Quando a resposta fica pronta, a The Machine conta para você, e onde a encontrou. Se você pedir outra coisa enquanto isso, ela espera a vez.
+
 Para enviar um rascunho, diga isso. A The Machine pergunta antes, dizendo para quem e como, por exemplo "Enviar esta resposta para a Lotte por e-mail?". No celular, ela lê o rascunho inteiro em voz alta antes. Responda com um sim claro, em qualquer idioma, e esse rascunho é enviado.
 
 - Ela só pergunta sobre o rascunho que aparece no chat. Se ele mudar depois da pergunta, ela pergunta de novo.
@@ -27,6 +29,10 @@ Para enviar um rascunho, diga isso. A The Machine pergunta antes, dizendo para q
 - O chat mostra **Aprovado por voz** com **Desfazer** por alguns segundos antes do envio.
 
 Você sempre pode tocar em **Aprovar** em vez disso.
+
+## Escolha uma voz
+
+Em **Configurações**, **Geral**, em **Entrada por voz**, escolha em **Voz** como a The Machine soa. Toque em reproduzir para ouvir uma amostra. **Cedar** é a voz padrão. A voz Cove do ChatGPT não está disponível para falar ao vivo.
 
 ## Um registro no chat
 

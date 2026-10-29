@@ -11,7 +11,7 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Tap the mic in a message box: a to-do's chat, **New to-do**, **Help**, or the box to change a draft. Talk, then tap the check mark. Or hold the mic while you talk and let go when you're done.
 
-While it listens, the box shows a timer. Tap the cross to stop without keeping anything. A recording can be up to 2 minutes; at 2 minutes it stops by itself and writes down what you said.
+While it listens, the box shows a timer. Tap the cross to stop without keeping anything. A recording can be up to 2 minutes; at 2 minutes it stops by itself and writes down what you said. What it heard so far shows in the bar as you talk, so the text is there soon after you stop.
 
 What you said lands in the box, where your cursor was. Nothing is sent: read it, change what you like, and send it yourself.
 

@@ -19,6 +19,8 @@ La barre a **Couper le micro** et **Fin**. Une conversation dure jusqu’à 10 m
 
 Quand vous demandez quelque chose, comme « écris une réponse pour dire que jeudi me va » ou « mets ça en attente jusqu’à lundi », The Machine le transmet au chat de la tâche, comme si vous l’aviez tapé. Le chat suit ses règles habituelles : il peut modifier le brouillon ou mettre la tâche en attente.
 
+Le chat peut aussi chercher des choses, comme les horaires d’un magasin sur le web. Pendant ce temps, il affiche **Je m’en occupe…**, et vous pouvez continuer à parler. Quand la réponse est prête, The Machine vous la dit, avec l’endroit où elle l’a trouvée. Si vous demandez autre chose entre-temps, cela attend son tour.
+
 Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Lotte par e-mail ? ». Sur un téléphone, elle lit d’abord tout le brouillon à voix haute. Répondez par un oui clair, dans n’importe quelle langue, et ce brouillon part.
 
 - Elle ne demande que pour le brouillon affiché dans le chat. S’il change après la question, elle redemande.
@@ -27,6 +29,10 @@ Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisan
 - Le chat affiche **Approuvé à la voix** avec **Annuler** pendant quelques secondes avant l’envoi.
 
 Vous pouvez toujours appuyer sur **Approuver** à la place.
+
+## Choisir une voix
+
+Dans **Paramètres**, **Général**, sous **Saisie vocale**, choisissez à **Voix** comment The Machine sonne. Touchez lecture pour entendre un extrait. **Cedar** est la voix par défaut. La voix Cove de ChatGPT n’est pas disponible pour parler en direct.
 
 ## Une trace dans le chat
 

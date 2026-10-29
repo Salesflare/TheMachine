@@ -19,6 +19,8 @@ The bar has **Mute** and **End**. A conversation lasts up to 10 minutes. A minut
 
 When you ask for something, like "write a reply saying Thursday works" or "snooze this until Monday", The Machine hands it to the to-do's chat, as if you had typed it. The chat follows its usual rules: it can change the draft or snooze the to-do.
 
+The chat can also look things up, like a store's opening hours on the web. It shows **Working on it…** meanwhile, and you can keep talking. When the answer is ready, The Machine tells you, and where it found it. Ask something else meanwhile and it waits its turn.
+
 To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Lotte by email?". On a phone, it reads the whole draft out before it asks. Answer with a clear yes, in any language, and that one draft goes.
 
 - It only asks about the draft shown in the chat. If the draft changes after the question, it asks again.
@@ -27,6 +29,10 @@ To send a draft, say so. The Machine asks first, naming who it goes to and how, 
 - The chat shows **Approved by voice** with **Undo** for a few seconds before it goes.
 
 Tapping **Approve** works too.
+
+## Pick a voice
+
+In **Settings**, **General**, under **Voice input**, pick how The Machine sounds at **Voice**. Tap play to hear a sample. **Cedar** is the default. ChatGPT's Cove voice isn't available for Talk live.
 
 ## A record in the chat
 

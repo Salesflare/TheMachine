@@ -128,6 +128,8 @@ BRAND_ASSETS = {
     '/brand/serif.woff2': ROOT / 'brand/fonts/source-serif-4-latin.woff2',
     # Interface typeface (Inter, SIL OFL; license in brand/fonts/Inter-OFL.txt).
     '/brand/sans.woff2': ROOT / 'brand/fonts/inter-latin.woff2',
+    # Talk live's voices, a short sample each for Settings (voice_input.TALK_VOICES)
+    **{f'/brand/voices/{name}.mp3': ROOT / f'brand/voices/{name}.mp3' for name in voice_input.TALK_VOICES},
 }
 ANDROID_APP_NAMES = {
     'android': 'Android System', 'com.google.android.gm': 'Gmail',
@@ -16622,6 +16624,7 @@ class App:
                         lines=self.skills.hint_prompt(clawhub=True)
                         if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1500:request['message']+='\n\n'+lines
                     except Exception as error:LOG.error('skill hint error=%s',type(error).__name__)
+            if str(job.get('decision_id') or '').startswith(talk_live.RELAY_PREFIX):request['message']+='\n\n'+talk_live.RELAY_NOTE  # asked in Talk live: look it up now, answer for the ear
             try:
                 lines=self.agent_work(job['suggestion_id'])
                 if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
@@ -17108,6 +17111,8 @@ class App:
             elif waiting:
                 owner.append({'kind': 'event', 'text': 'Moved the check-in' + via, 'choice': 'snooze', 'mine': True, 'at': at})
                 continue
+            if r['choice'] == 'other' and r['id'].startswith(talk_live.RELAY_PREFIX):
+                continue   # Talk live handed this to the chat: the owner's own words are the talk lines
             if r['choice'] == 'other':
                 attached = sent_files.get(r['id'], [])
                 said = '' if attached and r['feedback'] in CHAT_FILES_ONLY else clamp(r['feedback'], 5000)
@@ -19554,6 +19559,14 @@ class App:
             self._voice = voice_input.Voice(Path(self.config['database']).expanduser().parent / 'voice', self.config)
         return self._voice
 
+    @property
+    def dictation_openai(self):
+        """Voice input's openai engine with OpenClaw kept loaded (voice-openai-run.mjs), so a clip takes a second or two."""
+        if getattr(self, '_voice_oa', None) is None:
+            self._voice_oa = voice_input.OpenAIVoice(self.dictation.root / 'clips',
+                                                     lambda: ([node_bin(self.config), str(Path(__file__).resolve().parent / 'voice-openai-run.mjs')], self.talk_env()))
+        return self._voice_oa
+
     def voice_openai(self, check=False, wait=False):
         """Whether OpenClaw has OpenAI access that can transcribe (an API key, or a ChatGPT sign-in where the account allows
         it), kept 10 minutes; None until known. Asking OpenClaw takes it 10 to 20 seconds on a busy Machine, so with check
@@ -19624,6 +19637,11 @@ class App:
                      if name == 'voice_prefs' else voice_input.prefs(db))
         if name in ('voice_status', 'voice_prefs'):
             view = self.voice_view(prefs, check=bool(args.get('settings')) or name == 'voice_prefs')
+            if args.get('warm'):   # the mic was tapped: the engine in use loads while the owner talks
+                if view['use'] == 'openai':
+                    self.dictation_openai.warm()
+                elif view['use'] == 'local':
+                    self.dictation.warm(prefs['model'])
             return {**view, 'talk': self.talk_view(check=True)} if args.get('settings') else view
         if name == 'voice_prepare':
             if voice_input.engine_for(prefs, self.voice_openai()) == 'local':
@@ -19633,13 +19651,20 @@ class App:
             data = base64.b64decode(str(args.get('data') or ''), validate=True)
         except (ValueError, TypeError) as error:
             raise ValueError('That recording couldn’t be read. Try again.') from error
+        began = time.monotonic()
         frames, seconds = voice_input.pcm(data)
+        if not prefs['language'] and args.get('language') in voice_input.LANGUAGES:   # a later part: the language heard first
+            prefs = {**prefs, 'language': args['language']}
         openai = self.voice_openai(True, wait=self.voice_openai() is None) if prefs['engine'] == 'auto' else self.voice_openai()
         engine = voice_input.engine_for(prefs, openai)
         local_ready = self.dictation.ready(prefs['model'])
         if engine == 'openai':
             try:
-                heard, engine = voice_input.openai_transcribe(self.config, self.dictation.root / 'clips', frames, prefs['language']), 'openai'
+                try:
+                    heard = self.dictation_openai.transcribe(frames, prefs['language'], timeout=30 + seconds)
+                except ValueError:   # it couldn't start or answer: the CLI, which also says why
+                    heard = voice_input.openai_transcribe(self.config, self.dictation.root / 'clips', frames, prefs['language'])
+                engine = 'openai'
             except ValueError:
                 if prefs['engine'] == 'auto':   # OpenAI refused (a sign-in without audio access): Automatic leaves it for an hour
                     self._voice_openai = (time.monotonic() + 3600, False)
@@ -19654,7 +19679,7 @@ class App:
             except voice_input.NotReady:
                 self.dictation.prepare(prefs['model'])
                 return {'pending': True, 'voice': self.voice_view(prefs)}
-        LOG.info('voice clip seconds=%.0f engine=%s', seconds, engine)
+        LOG.info('voice clip seconds=%.0f engine=%s part=%s took=%.1f', seconds, engine, bool(args.get('part')), time.monotonic() - began)
         return {'text': voice_input.clean(heard['text']), 'language': heard.get('language')}
 
     @property
@@ -19687,11 +19712,13 @@ class App:
                 card = db.execute('SELECT title FROM suggestions WHERE id=?', (sid,)).fetchone() if re.fullmatch(r'[a-f0-9]{16}', sid) else None
             if not card:
                 raise ValueError('Unknown suggestion')
-            started = self.talk.start(sid, env)
+            with self.store.connect() as db:
+                voice = voice_input.prefs(db)['talk_voice']
+            started = self.talk.start(sid, env, voice)
             LOG.info('talk live start via=%s', started.get('via'))
             view = self.talk_view()
-            return {**started, 'per_use': started.get('via') == 'key', 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS,
-                    'tools': talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE, 'instructions': talk_live.instructions(card['title'], locale_prefs.language() or 'en',
+            return {**started, 'voice': voice, 'per_use': started.get('via') == 'key', 'limit': talk_live.LIMIT_SECONDS, 'warn': talk_live.WARN_SECONDS,
+                    'tools': talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE, 'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE}, 'instructions': talk_live.instructions(card['title'], locale_prefs.language() or 'en',
                                                                                    time.strftime('%A %d %B %Y, %H:%M')), 'ready': view.get('ready')}
         if name == 'talk_offer':
             return self.talk.offer(args.get('id'), args.get('sdp'), env)
@@ -20164,7 +20191,7 @@ class App:
                     self.output(200, {'key': push_key(app.config)})
                 elif path.path in BRAND_ASSETS:
                     asset = BRAND_ASSETS[path.path]
-                    self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2'}.get(asset.suffix, 'image/png'))
+                    self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg'}.get(asset.suffix, 'image/png'))
                 elif path.path == '/api/session':
                     # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
                     # copy never keeps it) and whose data the device may keep (dashboard_cache_scope)

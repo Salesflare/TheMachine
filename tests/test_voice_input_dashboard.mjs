@@ -13,10 +13,11 @@ const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf
 const now=new Date().toISOString(),id='c1c1c1c1c1c1c1c1';
 const cards=[{id,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
-const actions=[];let local={state:'ready'},hold=null,down=false,demo=false,engine='local',said='Tell her Thursday after two works.';
+const PARTS=['Tell her Thursday after two works,','and that the paint is in.','Ask if she wants it delivered.'];let partFails=0;
+const actions=[],fetched=[];let local={state:'ready'},hold=null,down=false,demo=false,engine='local',said='Tell her Thursday after two works.';
 // As voice_view: on Automatic without OpenAI, a tap uses the browser's own speech recognition until this Machine is ready
 const voiceView=()=>({engine,model:'small',language:'',local,openai:false,in_use:'local',use:local.state==='ready'?'local':engine==='auto'?'browser':'wait',
- max_seconds:120,languages:['de','en','es','fr','it','nl','pt'],models:['small','base'],talk:{ready:true,limit:600,warn:540}});
+ talk_voice:'cedar',max_seconds:120,languages:['de','en','es','fr','it','nl','pt'],models:['small','base'],talk:{ready:true,limit:600,warn:540}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(down&&url.pathname.startsWith('/api/')){res.statusCode=502;res.setHeader('Content-Type','text/html');res.end('<h1>502</h1>');return}  // the Machine can't be reached (its proxy answers)
@@ -27,11 +28,14 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(r.action==='voice_prepare'){if(local.state!=='ready')local={state:'preparing',step:'packages',done:0,total:0};res.end(JSON.stringify(voiceView()));return}
   if(r.action==='voice_prefs'){res.end(JSON.stringify({...voiceView(),...r.args}));return}
   if(r.action==='voice_transcribe'){
+   if(r.args.part){if(r.args.part===partFails){res.statusCode=400;res.end(JSON.stringify({error:'Voice didn’t answer. Try again.'}));return}
+    res.end(JSON.stringify({text:PARTS[r.args.part-1]||'and more',language:'en'}));return}
    if(hold)await hold;
    if(local.state!=='ready'){res.end(JSON.stringify({pending:true,voice:voiceView()}));return}
    res.end(JSON.stringify({text:said,language:'en'}));return}
   res.end(JSON.stringify(r.action==='card_chat'?{session:true,status:'done',active:false,cursor:'k',items:[{kind:'reply',text:'Lotte asked when the order can be picked up. Want me to answer her?',at:Date.now()-60000}]}:{}));return}
  // brand/avatar.png is the app icon, as assistant.py serves it
+ if(/^\/brand\/voices\/[a-z]+\.mp3$/.test(url.pathname)){fetched.push(url.pathname);try{res.setHeader('Content-Type','audio/mpeg');res.end(await readFile(new URL('..'+url.pathname,import.meta.url)))}catch{res.statusCode=404;res.end()}return}
  if(/^\/brand\/[\w.-]+\.(png|webp|woff2|svg)$/.test(url.pathname)){try{const f=await readFile(new URL('..'+(url.pathname==='/brand/avatar.png'?'/brand/app-icon-192.png':url.pathname),import.meta.url));res.setHeader('Content-Type',{png:'image/png',webp:'image/webp',woff2:'font/woff2',svg:'image/svg+xml'}[url.pathname.split('.').pop()]);res.end(f)}catch{res.statusCode=404;res.end()}return}
  res.statusCode=200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -102,6 +106,30 @@ try{
    await page.waitForSelector(box+' .mic-time');await page.waitForTimeout(900);await page.mouse.up();
    await page.waitForFunction(()=>document.querySelector('#chat-input').value.length>0);
    assert.equal(await page.locator('#chat-input').inputValue(),said,'held and let go: it stops and writes');
+
+   // A longer talk: what was said so far goes at each pause (here every second: the tone never pauses) and shows in the
+   // bar while they talk; after Done only the last bit is left, and the parts land in order. Each tap warms the engine.
+   await page.locator('#chat-input').fill('');actions.length=0;
+   await page.evaluate(()=>{MIC_PART.min=0.5;MIC_PART.max=1});
+   await tap(mic);await page.waitForSelector(box+' .mic-time');
+   await page.waitForFunction(()=>/paint is in\.$/.test(document.querySelector('.chat-compose .mic-hint')?.textContent||''),null,{timeout:8000});
+   assert.equal(await page.locator(box+' .mic-hint').textContent(),phone?'…and that the paint is in.':'…after two works, and that the paint is in.','the bar shows the end of what it heard');
+   await shot('2b-heard');
+   await page.waitForTimeout(400);await tap(box+' [data-mic-stop]');
+   await page.waitForFunction(()=>!document.querySelector('.chat-compose .mic-bar'));
+   const parts=actions.filter(a=>a.action==='voice_transcribe');
+   assert.ok(parts.length>=2&&parts.every((a,i)=>a.args.part===i+1),'parts only, numbered: '+parts.map(a=>a.args.part));
+   assert.equal(parts[1].args.language,'en','later parts keep the language heard first');
+   assert.equal(await page.locator('#chat-input').inputValue(),parts.map((a,i)=>PARTS[i]||'and more').join(' '),'the parts land in order');
+   assert.ok(actions.some(a=>a.action==='voice_status'&&a.args.warm),'the tap warms the engine');
+   assert.equal(sent(),0,'nothing is sent');
+   // A part that fails: the whole clip goes as one instead
+   await page.locator('#chat-input').fill('');actions.length=0;partFails=2;
+   await tap(mic);await page.waitForSelector(box+' .mic-time');await page.waitForTimeout(2600);await tap(box+' [data-mic-stop]');
+   await page.waitForFunction(()=>!document.querySelector('.chat-compose .mic-bar'));
+   assert.equal(await page.locator('#chat-input').inputValue(),said,'the whole clip, after a part failed');
+   assert.ok(actions.some(a=>a.action==='voice_transcribe'&&!a.args.part),'the whole clip went');
+   partFails=0;await page.evaluate(()=>{MIC_PART.min=6;MIC_PART.max=25});
 
    // The first time: the Machine gets voice ready (packages, then the model with a percentage), then writes it
    local={state:'missing'};await page.locator('#chat-input').fill('');actions.length=0;
@@ -202,6 +230,15 @@ try{
   await shot('11b-settings-getting-ready');engine='local';local={state:'ready'};
   actions.length=0;await page.selectOption('#dictation-language','nl');await page.waitForFunction(()=>true);
   await page.waitForTimeout(200);assert.deepEqual(actions.find(a=>a.action==='voice_prefs')?.args,{language:'nl'});
+  // Talk live's voice: Cedar unless picked, a sample on the play button, and the one just picked plays
+  assert.equal(await page.locator('#talk-voice').inputValue(),'cedar');
+  assert.equal(await page.locator('#talk-voice option').count(),10);
+  fetched.length=0;actions.length=0;await page.selectOption('#talk-voice','marin');
+  await page.waitForFunction(()=>true);for(let i=0;i<40&&!fetched.length;i++)await page.waitForTimeout(50);
+  assert.deepEqual(actions.find(a=>a.action==='voice_prefs')?.args,{talk_voice:'marin'});
+  assert.ok(fetched.includes('/brand/voices/marin.mp3'),'the one picked plays');
+  fetched.length=0;await tap('[data-talk-sample]');for(let i=0;i<40&&!fetched.length;i++)await page.waitForTimeout(50);
+  assert.ok(fetched.length>0,'the play button plays a sample');
   await context.close()}
 
  // The site's demo (a sealed frame: no microphone, and {demo:true} for the voice actions): it says where voice works

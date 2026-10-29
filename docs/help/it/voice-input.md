@@ -11,7 +11,7 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Tocca il microfono in una casella di messaggio: la chat di un’attività, **Nuova attività**, **Aiuto**, o la casella per modificare una bozza. Parla, poi tocca il segno di spunta. Oppure tieni premuto il microfono mentre parli e rilascia quando hai finito.
 
-Mentre ascolta, la casella mostra un timer. Tocca la croce per fermarti senza tenere niente. Una registrazione dura al massimo 2 minuti; a 2 minuti si ferma da sola e scrive quello che hai detto.
+Mentre ascolta, la casella mostra un timer. Tocca la croce per fermarti senza tenere niente. Una registrazione dura al massimo 2 minuti; a 2 minuti si ferma da sola e scrive quello che hai detto. Quello che ha già sentito appare nella barra mentre parli, così il testo è pronto poco dopo che ti fermi.
 
 Quello che hai detto finisce nella casella, dove c’era il cursore. Non viene inviato niente: leggilo, cambia quello che vuoi e invialo tu.
 

@@ -19,6 +19,8 @@ La barra ha **Silenzia** e **Fine**. Una conversazione dura al massimo 10 minuti
 
 Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" o "posticipa questa a lunedì", The Machine la passa alla chat dell’attività, come se l’avessi scritta tu. La chat segue le solite regole: può cambiare la bozza o posticipare l’attività.
 
+La chat può anche cercare informazioni, come gli orari di un negozio sul web. Nel frattempo mostra **Ci sto lavorando…**, e puoi continuare a parlare. Quando la risposta è pronta, The Machine te la dice, e dove l’ha trovata. Se nel frattempo chiedi altro, aspetta il suo turno.
+
 Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Lotte per email?". Su un telefono, prima legge ad alta voce tutta la bozza. Rispondi con un sì chiaro, in qualsiasi lingua, e quella bozza parte.
 
 - Chiede solo per la bozza mostrata nella chat. Se cambia dopo la domanda, chiede di nuovo.
@@ -27,6 +29,10 @@ Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, pe
 - La chat mostra **Approvato a voce** con **Annulla** per qualche secondo prima dell’invio.
 
 Puoi sempre toccare **Approva** invece.
+
+## Scegli una voce
+
+In **Impostazioni**, **Generale**, sotto **Input vocale**, scegli in **Voce** come suona The Machine. Tocca riproduci per sentire un esempio. **Cedar** è la voce predefinita. La voce Cove di ChatGPT non è disponibile per parlare dal vivo.
 
 ## Una traccia nella chat
 

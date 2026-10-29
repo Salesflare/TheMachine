@@ -19,6 +19,8 @@ Die Leiste hat **Stummschalten** und **Ende**. Ein Gespräch dauert bis zu 10 Mi
 
 Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“ oder „stell das bis Montag zurück“, gibt The Machine es an den Chat der Aufgabe weiter, als hättest du es getippt. Der Chat folgt seinen üblichen Regeln: Er kann den Entwurf ändern oder die Aufgabe zurückstellen.
 
+Der Chat kann auch Dinge nachschlagen, etwa die Öffnungszeiten eines Geschäfts im Web. Währenddessen zeigt er **Bin dran…**, und du kannst weiterreden. Wenn die Antwort da ist, sagt The Machine sie dir, und wo sie sie gefunden hat. Fragst du inzwischen etwas anderes, kommt das danach dran.
+
 Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Lotte senden?“. Auf einem Handy liest sie vorher den ganzen Entwurf vor. Antworte mit einem klaren Ja, in jeder Sprache, und genau dieser Entwurf geht raus.
 
 - Sie fragt nur nach dem Entwurf, der im Chat steht. Ändert er sich nach der Frage, fragt sie erneut.
@@ -27,6 +29,10 @@ Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an w
 - Der Chat zeigt ein paar Sekunden lang **Per Sprache freigegeben** mit **Rückgängig**, bevor er rausgeht.
 
 Du kannst auch jederzeit auf **Freigeben** tippen.
+
+## Eine Stimme wählen
+
+Wähle in **Einstellungen**, **Allgemein**, unter **Spracheingabe** bei **Stimme**, wie The Machine klingt. Tippe auf Abspielen, um eine Probe zu hören. **Cedar** ist der Standard. Die Stimme Cove von ChatGPT gibt es für Live sprechen nicht.
 
 ## Ein Protokoll im Chat
 
