@@ -867,13 +867,14 @@ def plan(db, now, sendable, mine=mine_default, own=None):
 
 
 def end(db, item, now, judged=False):
-    """A round ends without a reply: the project gets the quiet note (follow_up_ends, "No reply after N follow-ups")
-    and, when the setting says so and the board has the stage, moves to Stalled or declined (unless the owner moved it
+    """A round ends without a reply: the project gets the quiet note (follow_up_ends, "No reply after N follow-ups",
+    or "Follow-ups stopped" when none went out) and, once one went out, when the setting says so and the board has the stage, moves to Stalled or declined (unless the owner moved it
     by hand since the waiting point). Once per waiting point. Returns the note's {n, moved}."""
     p, board = item['project'], item['board']
     n = max(0, int(item['n']) - 1)  # the follow-ups that went out: the first message of the round isn't one
     moved = False
-    if stalls(item['settings'] or {}, board) and p['stage'] != STALLED and not (
+    # Stopped before any went out (Stop follow-ups here on the first one): "Follow-ups stopped", and it stays where it is
+    if n and stalls(item['settings'] or {}, board) and p['stage'] != STALLED and not (
             p['stage_by'] == 'owner' and p['stage_at'] and parse(p['stage_at']) > parse(item['after_at'])):
         reason = f'No reply after {n} follow-ups' if n != 1 else 'No reply after 1 follow-up'
         db.execute('INSERT INTO project_moves(project_id,board_id,stage,reason,event_id,source,at,created_at) VALUES(?,?,?,?,?,?,?,?)',

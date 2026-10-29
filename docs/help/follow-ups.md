@@ -48,7 +48,7 @@ Emails you sent from another app, before your Machine read that mailbox, count t
 
 Follow-ups stop when they reply, when the project is won, lost, archived or moved to a closed stage, and when you snooze or skip one. Before drafting, your Machine checks the conversation for anything newer, so it doesn't nag someone who already answered somewhere else.
 
-After the last follow-up with no reply, the project shows "No reply after 3 follow-ups" and moves to Stalled or declined if that's on.
+After the last follow-up with no reply, the project shows "No reply after 3 follow-ups" and moves to Stalled or declined if that's on. Stopped before any went out, it says "Follow-ups stopped" and stays in its stage.
 
 If their email bounced and they have another address, the follow-up goes there instead ("Bounced, now to <address>"). A draft whose address bounces before it goes is held: "Not sent: <address> bounced", and moves to their other address to wait for your Send.
 

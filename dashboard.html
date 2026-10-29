@@ -8161,7 +8161,7 @@ document.addEventListener('change',async e=>{const t=e.target.closest?.('[data-p
 // one follow-up at a time or the whole list, Send, Edit or Skip each, keys to move, Send all checked.
 const FU_CHANNELS={email:'Email',linkedin:'LinkedIn',whatsapp:'WhatsApp',slack:'Slack',telegram:'Telegram',intercom:'Intercom'};
 const fuDay=v=>{if(!v)return '';const d=new Date(v),n=new Date();if(d<=n||localDay(d)===localDay(n))return t('today');return (d-n)/864e5<6?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{day:'numeric',month:'short'})};
-const fuNoReply=n=>n?t(['No reply after {} follow-up','No reply after {} follow-ups'],n):t('No reply, so follow-ups stopped');
+const fuNoReply=n=>n?t(['No reply after {} follow-up','No reply after {} follow-ups'],n):t('Follow-ups stopped');
 const fuTile=f=>!f?'':f.reason==='bounced'?`<p class="tile-fu quiet">${esc(t('Email bounced'))}</p>`:f.end?`<p class="tile-fu quiet">${esc(fuNoReply(f.end.n))}</p>`:f.state==='open'?`<p class="tile-fu">${esc(t('Follow-up ready'))}</p>`:['due','waiting'].includes(f.state)&&f.next_at?`<p class="tile-fu">${esc(t('Next follow-up: {}',fuDay(f.next_at)))}</p>`:'';
 // On or off, the board's line says so and opens its settings; a stage with no-reply projects on a board with follow-ups off
 // offers "Follow them up" (the owner's own boards only: a Team board isn't theirs to change)
