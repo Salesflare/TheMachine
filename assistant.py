@@ -19113,6 +19113,7 @@ class App:
                     self.graph_dirty.set()  # show the new profiles
                 found = enrichment.people_step(self.store.connect, self.config, now(), paired=bool(getattr(self, 'fleet', None)), stop=self.stop.is_set)
                 photos = enrichment.photos_step(self.store.connect, now())  # straight after the lookups (hosted ones too, through the agent)
+                photos += enrichment.site_logos_step(self.store.connect, now())  # organizations that show no logo: their own site's
                 for account in google_photo_accounts(self.config):
                     with self.store.connect() as db:
                         due = enrichment.contact_run_due(db, 'google:' + account['email'].lower(), now())

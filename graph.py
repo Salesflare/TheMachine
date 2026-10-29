@@ -1201,6 +1201,7 @@ def _build(db, config, now, team=()):
     wrong = {r[0] for r in db.execute("SELECT domain FROM org_profiles WHERE status='wrong'")}
     looked_up = {r['identifier']: r['profile'] for r in db.execute("SELECT identifier,profile FROM person_profiles WHERE status='found' AND profile IS NOT NULL")}
     photos = {r['identifier']: r['key'] for r in db.execute('SELECT identifier,key FROM person_photos')}
+    site_logos = {i[5:]: k for i, k in photos.items() if i.startswith('logo:')}  # from an organization's own website (enrichment.site_logos_step)
     facts = enrichment.people_facts(db)  # what connectors read about them (job title, place, links, time zone)
     edits = {r['domain']: json.loads(r['fields']) for r in db.execute('SELECT domain,fields FROM org_edits')}
     person_edits = {r['identifier']: json.loads(r['fields']) for r in db.execute('SELECT identifier,fields FROM person_edits ORDER BY updated_at,identifier')}
@@ -1366,6 +1367,8 @@ def _build(db, config, now, team=()):
         role, role_by = said.get('org:' + domain, (None, None))
         # What the owner wrote wins; the email domain is the website when nothing else says one.
         profile = {'website': enrichment.website(domain), **(profiles.get(domain) or {}), **edits.get(domain, {})}
+        if 'logo' not in profile and domain in site_logos:  # no logo from the lookup or the owner: the one from its own site
+            profile['logo'] = 'api/person-photo?p=' + site_logos[domain]
         nodes.append(('org:' + domain, 'org', org_name(domain)[:200], round(total, 4),
                       max((last_day[p].isoformat() for p, _ in people if p in last_day), default=None), len(people), None, 0, None,
                       json.dumps({'domain': domain, 'role': role, 'role_by': role_by, 'paying': domain in paying_names, 'profile': profile,

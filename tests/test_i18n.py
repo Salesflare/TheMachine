@@ -109,6 +109,12 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(i18n_extract.missing(), {})
 
 
+    def test_a_count_with_one_word_is_read_from_a_plural_pair(self):
+        # "64 organizations" under the Organizations title stayed English in every language: the extractor skipped
+        # "{} organizations" (one word after the count), so no catalog had it.
+        self.assertLessEqual({'{} organization', '{} organizations', '{} person', '{} people'}, set(i18n_extract.dashboard_strings()))
+        self.assertTrue(all(load(f'{lang}.json').get('{} organizations') for lang in ('en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR')))
+
     def test_no_words_are_glued_to_a_value(self):
         # "'Hand to '+name" reads English in every language: the page translates a line only when a catalog entry
         # frames it, so write t('Hand to {}', name) and add "Hand to {}" in every language.

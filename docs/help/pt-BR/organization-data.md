@@ -13,6 +13,8 @@ order: 2
 
 Só o endereço do site da organização é enviado, nunca as suas mensagens nem quem você conhece lá. Algumas são buscadas por vez, no máximo 50 por dia, e atualizadas a cada 90 dias. As pessoas têm a própria busca: veja [Cargo e foto](graph.md#job-title-and-photo). Hospedagens compartilhadas e provedores de e-mail, como google.com, sites.google.com ou gmail.com, nunca são buscados: não são o site de uma empresa específica.
 
+Quando a busca não traz logo, ou não há busca, o logo vem do próprio site da organização: o ícone que a página inicial indica. Ele fica salvo na sua Machine, então nenhum serviço de logos fica sabendo com quem você lida. Um site sem ícone é consultado de novo depois de 30 dias.
+
 ## Corrigir um detalhe errado
 
 Na página da organização:

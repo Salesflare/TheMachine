@@ -5166,6 +5166,10 @@
  "{} open in {} with a value": "{} em aberto em {} com valor",
  "{} open project": "{} projeto aberto",
  "{} open projects": "{} projetos abertos",
+ "{} organizations": {
+  "one": "{} organização",
+  "other": "{} organizações"
+ },
  "{} other files": {
   "one": "{} outro arquivo",
   "other": "{} outros arquivos"
