@@ -33,5 +33,6 @@ Doorzoek alles wat er binnenkwam, op betekenis of op woorden, in alle accounts o
 ## Feedback
 
 - **Hoe de to-do's het doen**: over de laatste 30 dagen, hoeveel er **De moeite waard** waren, bij de **Eerste poging** gedaan, **Afgerond**, en **Verstuurd zoals het was**.
+- Daaronder hetzelfde per bron: waar de to-do's vandaan kwamen, zoals **E-mail**, **Door jou toegevoegd** (gemaakt met **Nieuwe to-do**), **Telefoonmeldingen** of **The Machine zelf** (problemen in The Machine, zoals een fout).
 - **Wat ik geleerd heb**: hoe je schrijft, feiten en hoe je dingen graag gedaan ziet, uit je notities. **Bewerk** alles in je eigen woorden, en **Verwijder** wat niet meer klopt. Leert een notitie op een to-do een feit of regel, dan zegt de chat van de to-do dat onder het antwoord (**Bewaard bij wat ik geleerd heb**, met **Bewerken** en **Ongedaan maken**); die regel komt uit wat opgeslagen is, dus een antwoord beweert het nooit zomaar.
 - **Wat je besliste**: een tijdlijn van je keuzes op to-do's.

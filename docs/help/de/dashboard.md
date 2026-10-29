@@ -33,5 +33,6 @@ Durchsuche alles, was reingekommen ist, nach Bedeutung oder nach Wörtern, über
 ## Feedback
 
 - **Wie es den Aufgaben geht**: in den letzten 30 Tagen, wie viele **Lohnend** waren, beim **Ersten Versuch** erledigt, **Abgeschlossen** und **Unverändert gesendet**.
+- Darunter dasselbe pro Quelle: woher die Aufgaben kamen, etwa **E-Mail**, **Von dir hinzugefügt** (erstellt mit **Neue Aufgabe**), **Handy-Benachrichtigungen** oder **The Machine selbst** (Probleme in The Machine, etwa ein Fehler).
 - **Was ich gelernt habe**: wie du schreibst, Fakten und wie du Dinge gern erledigt hast, aus deinen Notizen. **Bearbeite** alles davon in deinen eigenen Worten und **Entferne**, was nicht mehr stimmt. Wenn eine Notiz zu einer Aufgabe einen Fakt oder eine Regel beibringt, sagt der Chat der Aufgabe das unter der Antwort (**Im Gelernten gespeichert**, mit **Bearbeiten** und **Rückgängig**). Diese Zeile kommt aus dem, was gespeichert wurde, also behauptet eine Antwort das nie einfach so.
 - **Was du entschieden hast**: ein Verlauf deiner Entscheidungen zu Aufgaben.

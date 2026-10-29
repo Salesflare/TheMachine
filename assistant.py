@@ -6533,7 +6533,7 @@ class Store:
         for c in cards:
             o = outcome(c)
             result[o] += 1
-            source = result['by_source'].setdefault(SOURCE_KIND.get(c['kind'], 'other'), {'worth_it': 0, 'dismissed': 0, 'open': 0})
+            source = result['by_source'].setdefault(todo_source(c['kind']), {'worth_it': 0, 'dismissed': 0, 'open': 0})
             source[o] += 1
             made = choices.get(c['id'], [])
             if 'accept' in made:
@@ -9651,6 +9651,29 @@ SOURCE_KIND['fleet.email'] = 'email'  # a copy a teammate's handoff carried (fle
 SOURCE_KIND['owner.card'] = 'note'  # a card the owner made themselves (New card): their own words
 SOURCE_KIND['fleet.message'] = 'message'
 SOURCE_KIND['fleet.intercom'] = 'Intercom'  # an Intercom conversation a handoff carried, on a Machine that doesn't read it
+# Where a to-do came from, by meaning, as Feedback's rows name it ("How the to-dos are doing"): every kind of email is
+# Email, problems The Machine found in itself are one row, a to-do the owner made is "Added by you". A connector's kinds
+# go under its own name (its SETUP label); what is left (no signal, or one nothing names) is Other.
+TODO_SOURCE = {'gmail.message': 'Email', 'ms_graph.message': 'Email', 'outlook.message': 'Email', 'fleet.email': 'Email',
+               'calendar.event': 'Calendar', 'outlook.event': 'Calendar', 'ms_graph.event': 'Calendar', 'outlook_calendar.event': 'Calendar',
+               'meeting.notes': 'Meeting notes', 'meeting.transcript': 'Meeting notes',
+               'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
+               'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'fleet.intercom': 'Intercom',
+               'android.notification': 'Phone notifications', 'owner.card': 'Added by you',
+               'fleet.request': 'Fleet', 'fleet.message': 'Fleet',
+               'gateway.alert': 'The Machine itself', 'machine.fault': 'The Machine itself'}
+TODO_SOURCE_OTHER = 'Other'
+
+
+def todo_source(kind):
+    """Feedback's name for where a to-do with this first signal kind came from (TODO_SOURCE)."""
+    if kind in TODO_SOURCE:
+        return TODO_SOURCE[kind]
+    plugin = load_connector(kind.split('.')[0]) if isinstance(kind, str) and '.' in kind else None
+    label = (getattr(plugin, 'SETUP', None) or {}).get('label')
+    return label if isinstance(label, str) and label else TODO_SOURCE_OTHER
+
+
 # Email, whatever brought it in: what New to-do's Email pill searches (api/events?kind=email)
 EMAIL_KINDS = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'fleet.email'})
 

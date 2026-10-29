@@ -447,6 +447,7 @@ SERVER_TEXT = {
     'crm.py': ['org_doubles'],           # why two organizations look like one
     'fleet.py': ['KIND_LABEL'],          # what a Fleet asks about, in a sentence and (capitalized) as a row's name
     'family.py': ['LABELS'],
+    'assistant.py': ['TODO_SOURCE', 'TODO_SOURCE_OTHER'],  # Feedback's rows: where the to-dos came from
 }
 # Constants the dashboard also shows capitalized (cap()) as a label
 CAPITALIZED = {'fleet.py': ['KIND_LABEL'], 'family.py': ['LABELS']}

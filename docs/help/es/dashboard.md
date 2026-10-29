@@ -33,5 +33,6 @@ Busca en todo lo que ha llegado, por significado o por palabras, en todas las cu
 ## Comentarios
 
 - **Cómo van las tareas**: en los últimos 30 días, cuántas **Valió la pena**, cuántas se hicieron **A la primera**, cuántas están **Terminadas** y cuántas se **Enviaron tal cual**.
+- Debajo, lo mismo por fuente: de dónde vinieron las tareas, como **Correo**, **Añadido por ti** (creadas con **Nueva tarea**), **Notificaciones del teléfono** o **The Machine misma** (problemas en The Machine, como un error).
 - **Lo que he aprendido**: cómo escribes, datos y cómo te gusta hacer las cosas, a partir de tus notas. **Editar** cualquier parte con tus propias palabras, y **Quitar** lo que ya no sea cierto. Cuando una nota en una tarea enseña un dato o una regla, el chat de la tarea lo dice debajo de la respuesta (**Guardado en lo aprendido**, con **Editar** y **Deshacer**); esa línea sale de lo que se guardó, así que una respuesta nunca lo afirma sin más.
 - **Lo que decidiste**: una cronología de tus decisiones sobre las tareas.

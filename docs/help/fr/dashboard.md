@@ -33,5 +33,6 @@ Cherchez dans tout ce qui est arrivé, par sens ou par mots, dans tous les compt
 ## Commentaires
 
 - **Comment se passent les tâches** : sur les 30 derniers jours, combien étaient **Utile**, réussies du **Premier coup**, **Terminées**, et **Envoyées telles quelles**.
+- En dessous, la même chose par source : d’où viennent les tâches, comme **E-mail**, **Ajouté par vous** (créées avec **Nouvelle tâche**), **Notifications sur le téléphone** ou **The Machine elle-même** (problèmes dans The Machine, comme une erreur).
 - **Ce que j’ai appris** : votre façon d’écrire, des faits et la façon dont vous aimez que les choses soient faites, à partir de vos notes. **Modifier** n’importe quel élément avec vos mots, et **Retirer** ce qui n’est plus vrai. Quand une note sur une tâche apprend un fait ou une règle, le chat de la tâche l’indique sous la réponse (**Ajouté à ce que j’ai appris**, avec **Modifier** et **Annuler**) ; cette ligne vient de ce qui a été enregistré, donc une réponse ne peut jamais simplement le prétendre.
 - **Ce que vous avez décidé** : une chronologie de vos choix sur les tâches.

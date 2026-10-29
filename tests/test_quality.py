@@ -109,10 +109,25 @@ class HitRate(Base):
         summary = self.store.preference_summary()
         self.assertTrue(summary.startswith('Cards in the last 30 days by source'))
         self.assertIn('- WhatsApp: 0 of 3 worth it', summary)
-        self.assertIn('- email: 3 of 3 worth it', summary)
+        self.assertIn('- Email: 3 of 3 worth it', summary)
         self.assertEqual(self.store.snapshot(self.app.config['accounts'])['quality']['previous']['hit_rate'], None)
         recap = a.weekly_recap(self.store, self.app.config)
         self.assertIn('**What changed**\n• 50% of to-dos worth it (3 of 6). Do it was right first time in 1 of 2.', recap)
+
+    def test_each_row_says_where_the_to_dos_came_from_in_plain_words(self):
+        """Feedback's rows: no internal kinds ("note", "phone", "OpenClaw"), every email in one row, The Machine's own
+        problems in one row, a connector under its own name, Other only for what nothing names."""
+        for key, kind in [('a', 'gmail.message'), ('b', 'fleet.email'), ('c', 'owner.card'), ('d', 'android.notification'),
+                          ('e', 'gateway.alert'), ('f', 'machine.fault'), ('g', 'intercom.conversation'), ('h', 'linkedin.message'),
+                          ('i', 'meeting.notes'), ('j', 'rss.item'), ('k', 'made.up')]:
+            self.card(key, kind, 'complete')
+        rows = {k: v['worth_it'] for k, v in self.store.quality()['by_source'].items()}
+        self.assertEqual(rows, {'Email': 2, 'Added by you': 1, 'Phone notifications': 1, 'The Machine itself': 2, 'Intercom': 1,
+                                'LinkedIn': 1, 'Meeting notes': 1, 'RSS feed': 1, 'Other': 1})
+        en = a.json.loads((Path(a.__file__).parent / 'i18n' / 'en.json').read_text())
+        for kind in [*a.TODO_SOURCE, 'rss.item', 'zoom.summary', 'docs.comment', 'none']:
+            label = a.todo_source(kind)
+            self.assertTrue(label[:1].isupper() and label in en, (kind, label))  # capitalized, and every language has it
 
     def test_trend_per_local_day_and_week(self):
         at = {'a': '2026-10-14T21:30:00+00:00', 'b': '2026-10-14T22:30:00+00:00', 'c': '2026-10-12T08:00:00+00:00', 'd': '2026-10-08T08:00:00+00:00'}

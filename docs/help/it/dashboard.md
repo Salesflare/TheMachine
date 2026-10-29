@@ -33,5 +33,6 @@ Cerca tutto ciò che è arrivato, per significato o per parole, in tutti gli acc
 ## Feedback
 
 - **Come vanno le attività**: negli ultimi 30 giorni, quante erano **Utile**, fatte al **Primo colpo**, **Concluse** e **Inviate così com'erano**.
+- Sotto, lo stesso per fonte: da dove arrivano le attività, come **Email**, **Aggiunto da te** (create con **Nuova attività**), **Notifiche del telefono** o **The Machine stessa** (problemi in The Machine, come un errore).
 - **Cosa ho imparato**: come scrivi, i fatti e come preferisci che si facciano le cose, dalle tue note. **Modifica** qualsiasi voce con parole tue e **Rimuovi** ciò che non è più vero. Quando una nota su un'attività insegna un fatto o una regola, la chat dell'attività lo dice sotto la risposta (**Salvato in ciò che ho imparato**, con **Modifica** e **Annulla**); quella riga viene da ciò che è stato salvato, quindi una risposta non lo afferma mai e basta.
 - **Cosa hai deciso**: una cronologia delle tue scelte sulle attività.
