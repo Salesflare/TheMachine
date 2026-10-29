@@ -3,7 +3,7 @@
 The code in this repository is open source under AGPL-3.0-only (see [LICENSE](LICENSE)). The license covers the code, not the brand:
 
 - the names "The Machine" and "The Fleet",
-- The Machine's logo and icons,
+- The Machine's logo, icons and robot stickers (the images in brand/; the fonts there keep their own license),
 - the hosted service, the network of hosted Machines and The Machine Network.
 
 You are welcome to run, change and share the code under the AGPL-3.0. If you run a changed version for others, you share

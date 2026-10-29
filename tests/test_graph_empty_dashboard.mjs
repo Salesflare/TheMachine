@@ -9,12 +9,12 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // row did nothing and People stayed), Organizations with none, People with nobody. Each says in one short line how it
 // fills, and its head keeps + New. EMPTY_SHOT=<dir> writes screenshots (desktop and phone, light and dark).
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
-const sticker=await readFile(new URL('../brand/app-icon-192.png',import.meta.url));  // what the app serves at brand/thinking.webp
+const sticker=await readFile(new URL('../brand/thinking.webp',import.meta.url));
 const ann={id:'email:ann@client.example',kind:'person',name:'Ann Example',strength:2,closeness:'regular',last_at:new Date().toISOString(),signals:3,ids:['ann@client.example']};
 let anyone=true;
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/brand/thinking.webp'){res.setHeader('Content-Type','image/png');res.end(sticker);return}
+ if(url.pathname==='/brand/thinking.webp'){res.setHeader('Content-Type','image/webp');res.end(sticker);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'){const n=anyone?1:0;res.end(JSON.stringify({list_counts:{people:n,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:n,org:0,project:0},boards:[],board_suggestions:[]}));return}
  if(url.pathname==='/api/graph/list'){res.end(JSON.stringify({items:anyone&&url.searchParams.get('list')==='people'?[ann]:[],next:null,total:anyone?1:0}));return}

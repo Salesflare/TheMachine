@@ -22,6 +22,33 @@ class HomeScreenApp(unittest.TestCase):
             purposes.add((icon['sizes'], icon['purpose']))
         self.assertTrue({('192x192', 'any'), ('512x512', 'any'), ('512x512', 'maskable')} <= purposes)
 
+    def test_each_mood_is_its_own_sticker_not_the_app_icon(self):
+        # The robot's moods (empty states, errors, the inbox-zero game) are served over HTTP as real stickers: small
+        # transparent WebPs, a different picture for each, none of them the app icon.
+        import http.client, test_owner_boundary
+        fixture = test_owner_boundary.OwnerBoundary()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        port = fixture.serve()
+        owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'}
+        icon = (a.ROOT / 'brand/app-icon-192.png').read_bytes()
+        seen = {}
+        for mood in ('sleepy', 'sad', 'thinking', 'wave', 'laugh', 'party'):
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
+            conn.request('GET', f'/brand/{mood}.webp', headers=owner)
+            response = conn.getresponse()
+            body = response.read()
+            conn.close()
+            self.assertEqual((response.status, response.getheader('Content-Type')), (200, 'image/webp'), mood)
+            self.assertEqual((body[:4], body[8:16]), (b'RIFF', b'WEBPVP8X'), mood)
+            self.assertTrue(body[20] & 0x10, mood + ' keeps its transparency')
+            size = (int.from_bytes(body[24:27], 'little') + 1, int.from_bytes(body[27:30], 'little') + 1)
+            self.assertEqual(size, (256, 256), mood)
+            self.assertLess(len(body), 30_000, mood)
+            self.assertNotEqual(body, icon, mood)
+            self.assertNotIn(body, seen, f'{mood} is the same picture as {seen.get(body)}')
+            seen[body] = mood
+
     def test_own_origin_for_the_app_and_old_links_keep_working(self):
         config = {'dashboard_host': 'm.ts.net:8443', 'dashboard_aliases': ['m.ts.net']}
         self.assertEqual(a.dashboard_hosts(config), ['m.ts.net:8443', 'm.ts.net'])
