@@ -85,7 +85,7 @@ try{
   assert.deepEqual(calls.map(c=>[c.action,c.args.suggestion_id,c.args.revision]),[['confirm_action','f100000000000000','r1']]);
   // e edits in place, Ctrl+Enter saves it (revise_draft), and the edited text is what Send sends
   calls=[];assert.equal(await dlg.locator('.fr-item.on b').textContent(),'Bolt trial');
-  await page.keyboard.press('e');const box=dlg.locator('.fr-edit');await box.waitFor();await box.fill('Hi Kim, short one: did the guide help?');
+  await page.keyboard.press('e');const box=dlg.locator('.fr-edit');await box.waitFor();await box.fill('Hi Kim, short one: did the guide help?');await shot(page,'review-edit-1440-light');
   await page.keyboard.press('Control+Enter');await dlg.locator('.fr-edit').waitFor({state:'detached'});
   assert.deepEqual(calls.map(c=>c.action),['revise_draft']);assert.match(await dlg.locator('.fr-item.on .fr-body').textContent(),/did the guide help\?/);
   // s skips (Not needed), and unchecking leaves one out of Send all checked
@@ -198,6 +198,45 @@ try{
   progress=[{group:'board:1',board:'Alpha testers',total:3,done:0,sent:0,going:true}];await page.reload();
   await page.locator('#suggestions .fu-sending').waitFor();assert.equal(await page.locator('#suggestions .all-clear').count(),0);
   progress=[];suggestions=[];await page.reload();await page.locator('#suggestions .all-clear').waitFor();
+  await context.close()}
+ // The review reads top to bottom: every draft at full height, the list the only thing that scrolls (nothing inside a
+ // draft does), the footer in reach; j moves and scrolls the current one into view, a poll keeps where the list is
+ const para='Thanks again for the call last week. I wrote up the notes and the two options we talked about, so the team can pick one before the next sprint starts.';
+ const many=n=>Array.from({length:n},(_,i)=>card(10+i,['Acme pilot','Bolt trial','Cobalt rollout','Delta renewal','Ember labs','Fjord studio','Grove co','Harbor works'][i],
+  `Hi ${['Sam','Kim','Lee','Ana','Bo','Cy','Di','Ed'][i]},\n\n`+Array.from({length:1+(i*3)%5},()=>para).join('\n\n')+'\n\nRegards,\n\nAlex'));
+ const scrollers=page=>page.evaluate(()=>[...document.querySelectorAll('#fu-review, #fu-review *')].filter(el=>{const o=getComputedStyle(el).overflowY;return (o==='auto'||o==='scroll')&&el.scrollHeight>el.clientHeight+1}).map(el=>el.className||el.id));
+ const inner=page=>page.evaluate(()=>[...document.querySelectorAll('#fu-review .fr-item, #fu-review .fr-item *')].filter(el=>{const o=getComputedStyle(el).overflowY;return o==='auto'||o==='scroll'||el.scrollHeight>el.clientHeight+1&&o!=='visible'}).map(el=>el.className||el.tagName));
+ for(const [width,height] of [[1440,900],[1440,700],[390,844]])for(const scheme of ['light','dark'])for(const n of [3,8]){
+  reset();suggestions=[...many(n),...suggestions.filter(s=>!s.follow_up)];const {context,page}=await open(width,height,scheme);
+  await page.locator('#suggestions .fu-group button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  await page.mouse.move(2,2);await shot(page,`review-${n}-${width}x${height}-${scheme}`);
+  assert.equal(await dlg.locator('.fr-item').count(),n);await fits(page,`${width}x${height} review ${n}`);
+  assert.deepEqual(await inner(page),[],`${width}x${height} ${n}: something inside a draft scrolls`);
+  const sc=await scrollers(page);assert.ok(sc.length<=1&&sc.every(c=>c==='fr-list'),`${width}x${height} ${n}: scrollers ${JSON.stringify(sc)}`);
+  if(n===8)assert.deepEqual(sc,['fr-list'],`${width}x${height}: the list scrolls`);
+  // every draft's text in full, the dialog and its Send all checked on the screen
+  assert.deepEqual(await dlg.locator('.fr-body').evaluateAll(l=>l.map(p=>p.scrollHeight<=p.clientHeight+1)),Array(n).fill(true));
+  const box=await dlg.evaluate(d=>{const r=d.getBoundingClientRect(),b=d.querySelector('[data-fr-all]').getBoundingClientRect();return {top:r.top,bottom:r.bottom,btop:b.top,bbottom:b.bottom,vh:innerHeight}});
+  assert.ok(box.top>=0&&box.bottom<=box.vh+1&&box.btop>=box.top&&box.bbottom<=box.vh,`${width}x${height} ${n}: dialog or footer off screen ${JSON.stringify(box)}`);
+  if(width<600)assert.ok(box.bottom-box.top>=box.vh-1,`390 ${n}: the review is a full-height sheet`);
+  // Send/Edit/Skip only on the current one (or under the pointer), the checkboxes on every one
+  assert.equal(await dlg.locator('.fr-actions').evaluateAll(l=>l.filter(a=>getComputedStyle(a).visibility==='visible').length),1);
+  assert.equal(await dlg.locator('[data-fr-check]:visible').count(),n);
+  if(n===8){
+   // j moves in place (same nodes, no redraw) and brings the current one into view
+   const first=await dlg.locator('.fr-list').elementHandle();for(let i=0;i<5;i++)await page.keyboard.press('j');
+   assert.equal(await dlg.locator('.fr-item.on b').textContent(),'Fjord studio');
+   assert.equal(await page.evaluate(el=>el.isConnected,first),true,'j redrew the list');
+   await page.waitForFunction(()=>{const l=document.querySelector('#fu-review .fr-list').getBoundingClientRect(),r=document.querySelector('#fu-review .fr-item.on').getBoundingClientRect();return r.top>=l.top-1&&r.top<l.bottom-20});
+   await page.waitForTimeout(400);await shot(page,`review-8-moved-${width}x${height}-${scheme}`);
+   if(width>600){const hov=dlg.locator('.fr-item:not(.on)').last();await hov.hover();assert.equal(await hov.locator('.fr-actions').evaluate(a=>getComputedStyle(a).visibility),'visible');await shot(page,`review-8-hover-${width}x${height}-${scheme}`);await page.mouse.move(2,2)}
+   // a poll that changes nothing leaves the list alone; one that changes a draft redraws it at the same spot
+   const list=dlg.locator('.fr-list');await list.evaluate(l=>{l.scrollTop=Math.min(260,l.scrollHeight-l.clientHeight)});const at=await list.evaluate(l=>l.scrollTop);
+   await page.evaluate(()=>refresh());assert.equal(await page.evaluate(el=>el.isConnected,first),true,'a poll with no changes redrew the list');
+   suggestions=suggestions.map(s=>s.id==='f130000000000000'?{...s,next_action:{...s.next_action,body:'Hi Ana, a fresh line.',revision:'r13b'}}:s);
+   await page.evaluate(()=>refresh());await dlg.locator('.fr-body',{hasText:'a fresh line'}).waitFor();
+   assert.equal(await page.evaluate(el=>el.isConnected,first),false);assert.ok(Math.abs(await list.evaluate(l=>l.scrollTop)-at)<=1,'the poll moved the list');
+   assert.equal(await dlg.locator('.fr-item.on b').textContent(),'Fjord studio')}
   await context.close()}
  reset();
  // Phone, light and dark: the same pieces fit the screen

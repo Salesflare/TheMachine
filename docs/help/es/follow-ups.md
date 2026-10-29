@@ -30,7 +30,7 @@ Para un solo proyecto, **Seguimientos…** en el **⋯** de su tarjeta o en su p
 
 Los seguimientos de un tablero llegan como una sola tarea, nunca una por correo. Mientras se redactan dice “Escribiendo 3 seguimientos…” y luego “8 seguimientos listos para Alpha testers”.
 
-**Revisar** los muestra uno debajo de otro, cada uno con **Enviar**, **Editar** y **Omitir**. Con teclado, j y k (o las flechas) para moverte, Enter envía, e edita y s omite. **Enviar todos los marcados** envía los que siguen marcados. El seguimiento de un solo proyecto es una tarea normal.
+**Revisar** los muestra completos, uno debajo de otro, así que los lees todos de un vistazo. **Enviar**, **Editar** y **Omitir** aparecen en el actual. Con teclado, j y k (o las flechas) para moverte, Enter envía, e edita y s omite. **Enviar todos los marcados** envía los que siguen marcados. El seguimiento de un solo proyecto es una tarea normal.
 
 Cuando salen varios seguidos, también con Enviar sin preguntar, cada buzón envía uno cada 30 a 45 segundos y la tarea muestra cómo va: “Enviando 3 de 8…”.
 
