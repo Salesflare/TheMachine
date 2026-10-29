@@ -57,7 +57,11 @@ Codex and Claude Code**.
   Network keeps only the ticket's hash and the sealed result until your Machine picks it up. A result that hasn't come
   back after two days shows as stopped.
 - **Codex**: pick where it runs on the setup page (step **Codex**, **Where Codex runs**).
-- **Codex, On my computer** (the default): the job runs on your own computer, which needs The Machine installed and
+- **Codex, On your Machine** (the default): press **Connect Codex** on the setup page, or **Get a code** under
+  Connections, **+ Add**, **Codex** on the dashboard. Your server runs `codex login --device-auth` and the page shows
+  the code to enter on OpenAI's page. Nobody types a command. Jobs then run on your hosted Machine as ordinary local
+  Codex jobs. A self-hosted Machine runs the same sign-in itself from Connections (`codex_signin.py`).
+- **Codex, On my computer** (under **Other ways**): the job runs on your own computer, which needs The Machine installed and
   paired with your account (Account page, Fleet, pair a Machine) and `codex login` done there. Your hosted Machine
   hands the brief to the Network with only a ticket's sha256 (`dispatch`). The brief is end to end: your hosted
   Machine seals it for that one computer's Network keys and signs it with its own (`network_crypto.seal`, bound to
@@ -70,7 +74,7 @@ Codex and Claude Code**.
   nothing is sealed or opened until you pair the computer again. A computer that isn't signed in to Codex takes no jobs; set
   `"codex": {"serve": false}` in its config.json to never take any. A job that waits for a computer that is off
   stops after two days.
-- **Codex cloud**: sign in to Codex first, on the setup page (step **Codex**): your server runs `codex login --device-auth`
+- **Codex cloud** (under **Other ways**): sign in to Codex first, on the setup page (step **Codex**): your server runs `codex login --device-auth`
   and the page shows a code to enter on OpenAI's page, on your own phone or computer. The Codex CLI keeps its sign-in
   on your server, as it always does. Then enter a Codex cloud environment id (and a branch, if not the default). The job runs as a Codex cloud task
   (`codex cloud exec`). The card shows its status and then its changes, and **Open in Codex cloud** goes to the task.

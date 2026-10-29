@@ -62,6 +62,7 @@ import enrichment
 import fleet
 import shared_graph
 import agent_jobs
+import codex_signin
 import chat_model
 import activity
 import error_feed
@@ -606,6 +607,8 @@ class SourceError(Exception):
 # Owner decisions/feedback. Only the bridge's verified Telegram handlers and the
 # authenticated dashboard may record them; never the local CLI the agent can run.
 CONNECT_ACTIONS = (
+    'codex_signin',
+    'codex_signin_state',
     'connect_answer',
     'connect_cancel',
     'connect_poll',
@@ -619,10 +622,11 @@ CONNECT_ACTIONS = (
 )
 # The sign-ins a hosted Machine's dashboard starts itself (+ Add, Reconnect): the control plane's own OAuth flow, as on
 # its setup page, through POST /_machine/connect on the dashboard's host, and back to the dashboard when it is done.
-# GitHub, WhatsApp and the phone have no provider page: the control plane starts them there and the dashboard's form
-# shows their code (GitHub's device code, WhatsApp's QR or pairing code, the phone app's setup code).
-HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'github', 'whatsapp', 'android', 'microsoft_docs'}
-ON_DASHBOARD = ('github', 'whatsapp', 'android')
+# GitHub, WhatsApp, the phone and Codex have no provider page: the control plane starts them there and the dashboard's
+# form shows their code (GitHub's device code, WhatsApp's QR or pairing code, the phone app's setup code, Codex's code
+# from OpenAI).
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'github', 'whatsapp', 'android', 'microsoft_docs', 'codex'}
+ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
 CONNECT_SIGNIN_WAIT = 600
@@ -13952,6 +13956,7 @@ class App:
         claude, codex = (own.get('claude') if isinstance(own.get('claude'), dict) else {}), (own.get('codex') if isinstance(own.get('codex'), dict) else {})
         where = self.agents.where() if getattr(self, 'agents', None) else None  # Where Codex runs, from the setup page
         on_device = (where or {}).get('codex') == 'device'
+        on_machine = (where or {}).get('codex') == 'machine' and not codex.get('place')
         if not (self.config.get('manage_url') and (agent_jobs.coding_relevant(self.config) or on_device) or claude.get('place') == 'remote'
                 or codex.get('place') == 'cloud'):
             return None  # hosted: shown once GitHub or Codex is connected (agent_jobs.coding_relevant)
@@ -13959,7 +13964,8 @@ class App:
         origin = urllib.parse.urlsplit(manage)
         base = f'{origin.scheme}://{origin.netloc}' if origin.scheme == 'https' and origin.netloc else 'https://app.themachine.computer'
         return {'claude_session': str(claude.get('session') or ''), 'device': str(claude.get('device') or ''),
-                'codex_where': 'device' if on_device else None, 'codex_device': agent_jobs.device_label(where) if on_device else '',
+                'codex_where': 'device' if on_device else 'machine' if on_machine else None,
+                'codex_device': agent_jobs.device_label(where) if on_device else '',
                 'codex_setup': manage.split('#')[0] + '#codex' if manage.startswith('https://') else '',
                 'codex_env': str(codex.get('env') or ''), 'codex_branch': str(codex.get('branch') or ''),
                 'connector': base + '/mcp', 'on_network': bool(getattr(self, 'fleet', None)),
@@ -17366,7 +17372,17 @@ class App:
             if not hosted or gbrain.on(self.config):
                 # GBrain (gbrain.py): one optional tile at the end, on a Machine where the owner can install it
                 found['gbrain'] = {'on': gbrain.on(self.config)}
+            if agent_jobs.settings(self.config) is not None:
+                # Codex (codex_signin.py): its own tile, signed in with a code from OpenAI right here
+                found['codex'] = {'status': codex_signin.status(self.config)}
             return found
+        if name in ('codex_signin', 'codex_signin_state'):
+            # Self-hosted: Codex's device sign-in on this computer. A hosted Machine's runs on its server, started by
+            # the control plane (POST /_machine/connect), which the dashboard follows there.
+            if hosted:
+                raise ValueError('Your account page signs this one in')
+            signin = self.__dict__.setdefault('codex_signin', codex_signin.Signin())
+            return signin.start(self.config) if name == 'codex_signin' else signin.view()
         if name in ('connect_signin', 'connect_signin_state'):
             source = args.get('name') if isinstance(args.get('name'), str) else ''
             source = fleet.SIGNIN_OF.get(onboarding.SERVICES.get(source, source), source)  # Gmail and Calendar: Google

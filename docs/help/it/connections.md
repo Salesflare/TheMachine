@@ -12,7 +12,7 @@ La scheda **Connessioni** raggruppa le tue fonti in **Email e calendario**, **Ch
 
 ## Aggiungine una
 
-Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Una volta collegata, la tua Machine si riavvia per iniziare a leggerla, poi apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Documenti, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
+Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Una volta collegata, la tua Machine si riavvia per iniziare a leggerla, poi apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Documenti, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Codex, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
 
 **Riconnetti** su una fonte e in **Serve il tuo intervento** apre lo stesso modulo. Sul tuo computer, `assistant connect` fa lo stesso in un terminale.
 

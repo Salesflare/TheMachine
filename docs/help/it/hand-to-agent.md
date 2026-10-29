@@ -4,7 +4,7 @@ area: cards
 summary: Invia un'attività di programmazione a Claude Code o Codex. Il risultato torna sull'attività.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
-site: Connect Codex, Add more any time
+site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
 ---
 ## Passa un'attività
@@ -26,7 +26,7 @@ Un lavoro non invia mai nulla per te.
 
 In **Impostazioni**, **Modello**, sotto **Codex e Claude Code**:
 
-- **Codex**: dove gira. Sul tuo computer non serve altro qui; **Cambia** apre la tua pagina di configurazione.
+- **Codex**: dove gira. Sulla tua Machine o sul tuo computer non serve altro qui; **Cambia** apre la tua pagina di configurazione.
 - **Codex cloud**: l'ID del suo ambiente, da Codex, e facoltativamente un **Branch** da cui partire.
 - **Claude Code**: il link di una sessione Claude Code.
 
@@ -36,7 +36,10 @@ Claude invia il risultato tramite il connettore di The Machine. Aggiungilo una v
 
 Su una Machine in hosting, sceglilo nella tua pagina di configurazione, sotto **Aggiungi altro quando vuoi**, **Codex**:
 
-- **Sul mio computer** (l'impostazione predefinita): il lavoro gira sul tuo computer, con il Codex collegato lì. Niente di Codex è sul tuo server, e il lavoro è cifrato solo per quel computer: il Network lo inoltra ma non può leggerlo. Installa The Machine su quel computer, abbinalo nella pagina Account ed esegui `codex login` lì. Tieni The Machine in esecuzione su quel computer. Il lavoro compare come thread nell'app Codex su quel computer, e il risultato torna sull'attività. Quando il computer è spento, i lavori aspettano che torni.
-- **Cloud di Codex**: il lavoro gira nel cloud di OpenAI. Premi **Collega Codex**. Usa lo stesso piano ChatGPT del tuo modello, e OpenAI chiede un altro codice, per Codex. Poi inserisci l'ambiente cloud Codex in Impostazioni.
+- **Sulla tua Machine** (l'impostazione predefinita): premi **Collega Codex** e inserisci su OpenAI il codice che compare. Usa lo stesso piano ChatGPT del tuo modello, e i lavori girano sulla tua Machine. Nessun terminale.
+- **Altri modi**, **Sul mio computer**: il lavoro gira sul tuo computer, con il Codex collegato lì. Niente di Codex è sul tuo server, e il lavoro è cifrato solo per quel computer: il Network lo inoltra ma non può leggerlo. Installa The Machine su quel computer, abbinalo nella pagina Account ed esegui `codex login` lì. Tieni The Machine in esecuzione su quel computer. Il lavoro compare come thread nell'app Codex su quel computer, e il risultato torna sull'attività. Quando il computer è spento, i lavori aspettano che torni.
+- **Altri modi**, **Codex cloud**: il lavoro gira nel cloud di OpenAI. Premi **Collega Codex**. Usa lo stesso piano ChatGPT del tuo modello, e OpenAI chiede un altro codice, per Codex. Poi inserisci l'ambiente cloud Codex in Impostazioni.
+
+Oppure accedi dalla dashboard: **Connessioni**, **+ Aggiungi**, **Codex**, **Ottieni un codice**. Una Machine self-hosted fa lo stesso accesso da sola.
 
 Su una Machine in hosting, Codex e Claude Code compare quando GitHub o Codex è collegato. Compare anche sulle configurazioni che eseguono i lavori altrove. Altro nella [guida agli agenti](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
