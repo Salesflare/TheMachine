@@ -14,8 +14,9 @@ Small fixes, clearer setup instructions and additional general-purpose sources a
    No real accounts or Gateway are needed.
 
 The tests live in `tests/` (`test_*.py`, `test_*.mjs` and their helpers such as `test-env.mjs`). They run from the
-repository root, so they import the app's modules directly and open files like `dashboard.html` by their root path;
-a new test goes in `tests/` too.
+repository root, so they import the app's modules directly and open files like `sw.js` by their root path; a new
+test goes in `tests/` too. The dashboard's page they read assembled, through `dashboardPage()`
+(`tests/dashboard-page.mjs`) or `dashboard_parts.assemble()` ([code map](docs/code-map.md)).
 
 If OpenClaw is installed outside the Node prefix, set `OPENCLAW_PACKAGE_DIR` to its package
 directory. `PLAYWRIGHT_CORE` may point to another `playwright-core/index.mjs`.
