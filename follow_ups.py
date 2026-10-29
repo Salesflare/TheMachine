@@ -527,22 +527,28 @@ def latest_email(db, tail):
 
 
 def earlier_sends(db, msgs, own=None):
-    """(prior, since): how many of the owner's unanswered sends in this round weren't collected, and the first one's
-    date. From the real thread when the App read it (follow_up_threads), else the quoted history of their latest email.
-    The collected ones are never counted twice: the quoted chain covers the tail before that email."""
+    """(prior, since, counted): how many of the owner's unanswered sends in this round weren't collected, the first
+    one's date, and whether that could be counted at all. From the real thread when the App read it
+    (follow_up_threads), else the quoted history of their latest email (its body as the store opens it: a sealed body
+    that can't be opened here is not counted, so no follow-up is drafted on a guess). The collected ones are never
+    counted twice: both list the owner's sends before that email, newest first, and the first `index` of those are the
+    collected tail before it; prior is only what's beyond. Nothing to count (no email, nothing of theirs): counted."""
     last_theirs = max((i for i, m in enumerate(msgs) if not m['mine']), default=-1)
     tail = msgs[last_theirs + 1:]
     if not tail:
-        return 0, None
+        return 0, None, True
     index, row = latest_email(db, tail)
     if row is None:
-        return 0, None
-    sends = None
+        return 0, None, True
+    sends, tried = None, False
     try:
         cached = db.execute('SELECT sends FROM follow_up_threads WHERE event_id=?', (row['id'],)).fetchone()
+        tried = cached is not None  # read, or tried and it couldn't be: the quoted history then
         sends = json.loads(cached[0]) if cached and cached[0] else None
     except Exception:  # noqa: BLE001 - no table yet, or a damaged row: the quoted history
         sends = None
+    if sends is None and not isinstance(row['body'], str):
+        return 0, None, tried  # still sealed (no key on this connection): not readable here
     if sends is None:
         who = owner(own)
         try:
@@ -553,7 +559,7 @@ def earlier_sends(db, msgs, own=None):
         sends = quoted_sends(row['body'], who)
     prior = max(0, len(sends) - index)
     dated = [s for s in sends[index:] if s]
-    return prior, (min(dated) if prior and dated else None)
+    return prior, (min(dated) if prior and dated else None), True
 
 
 def owned_by_other(db, project_id):
@@ -596,8 +602,8 @@ def plan(db, now, sendable, mine=mine_default, own=None):
             continue
         days = stage_rule(settings, board, p['stage'])[1] if source == 'board' and board is not None else settings['days']
         msgs = messages(db, pid, mine)
-        prior, since = earlier_sends(db, msgs, own)
-        found = schedule(msgs, settings, now, days, prior, since)
+        prior, since, counted = earlier_sends(db, msgs, own)
+        found = {**schedule(msgs, settings, now, days, prior, since), 'counted': counted}
         if found['state'] in ('due', 'waiting') and found['after'] is not None:
             done = db.execute('SELECT state FROM follow_up_cards WHERE project_id=? AND after_event=?', (pid, found['after'])).fetchone()
             if done:  # this waiting point was followed up already (or skipped): the next one is the follow-up itself
