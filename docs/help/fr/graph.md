@@ -171,6 +171,8 @@ Votre choix dans **Modifier** est toujours conservé, même quand vous la retire
 
 Des projets d’un même type répartis en étapes, comme un pipeline d’évaluation. **⋯** sur un tableau : **Modifier le tableau** (nom, étapes, projets concernés), **Ouvrir sur ce tableau** et **Nouveau tableau**. Les revues continuent d’ajouter les projets qui correspondent et les placent dans une étape. En cas de doute, le tableau affiche « 2 projets pourraient aller ici » : **Ajouter** ou **Exclure**.
 
+**Relances…** dans le **⋯** d’un tableau relance toute seule quand quelqu’un ne répond pas. Voir [Relances](follow-ups.md).
+
 Cochez-en quelques-uns, ou **Tout sélectionner**, pour les traiter d’un coup, et **Annuler** juste après si vous changez d’avis. Un projet qui regroupe plusieurs interlocuteurs devient un projet par interlocuteur quand vous l’ajoutez.
 
 **Pipeline**, en haut d’un tableau, additionne la valeur de ses projets en cours par étape, et ce qui devrait se conclure chaque mois d’après leurs dates de clôture. Les projets gagnés, perdus et bloqués ne sont pas en cours. Ce que vous avez gagné ce mois-ci s’affiche à part. Les valeurs sont en euros, sauf si votre Machine utilise une autre devise. Avec **Propriétaire** dans Filtrer, il ne compte que les vôtres.

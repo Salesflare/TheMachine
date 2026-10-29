@@ -171,6 +171,8 @@ Your pick in **Edit** always stays, also when you take it off. **Same organizati
 
 Projects of one kind in stages, like an evaluation pipeline. **⋯** on a board: **Edit board** (name, stages, which projects belong), **Open on this board** and **New board**. Reviews keep adding projects that fit and place them in a stage. When they aren't sure, the board shows "2 projects could belong here": **Add** or **Leave out**.
 
+**Follow-ups…** in a board's **⋯** follows up by itself when someone doesn't reply. See [Follow-ups](follow-ups.md).
+
 Tick a few, or **Select all**, to do them at once, and **Undo** right after if you change your mind. A project that bundles several counterparts becomes one project per counterpart when you add it.
 
 **Pipeline**, at the top of a board, adds up the value of its open projects per stage, and what's expected to close per month from their close dates. Won, lost and stalled projects aren't open; what you won this month shows apart. Values are in euros unless your Machine is set to another currency. With **Owner** in Filter, it counts only yours.

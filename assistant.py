@@ -89,6 +89,7 @@ import browser_login
 import browser_viewer
 import preparation_state
 import model_budget
+import follow_ups
 import pacing
 import portable
 import service
@@ -623,6 +624,8 @@ OWNER_ACTIONS = {
     'fleet_notice_decide',
     'fleet_rule',
     'fleet_take',
+    'follow_up_save',
+    'follow_up_settings',
     'forget_fact',
     'graph_fact_unlink',
     'graph_new',
@@ -911,6 +914,8 @@ DASHBOARD_ACTIONS = frozenset({
     'fleet_notice_decide',
     'fleet_rule',
     'fleet_take',
+    'follow_up_save',
+    'follow_up_settings',
     'forget_fact',
     'graph_fact_unlink',
     'graph_new',
@@ -3692,6 +3697,7 @@ class Store:
             for schema in embeddings.SCHEMAS:  # after the monotonic-ID migration, which rebuilds events
                 db.execute(schema)
             graph.ensure(db)
+            follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')
             # Who set a to-do's project: 'review' (or NULL, from before 2026-10-27), 'auto' (graph.link_cards: its thread or
@@ -5456,7 +5462,9 @@ class Store:
     def ahead_room(self, per_day):
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=1)).isoformat()
         with self.connect() as db:
-            return db.execute("SELECT count(*) FROM decisions WHERE choice='prepare_ahead' AND created_at>=?", (since,)).fetchone()[0] < per_day
+            # Automated follow-ups count apart (follow_ups.PER_DAY): they never use up the room for other to-dos
+            return db.execute("SELECT count(*) FROM decisions WHERE choice='prepare_ahead' AND created_at>=? "
+                              'AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)', (since,)).fetchone()[0] < per_day
 
     def settle_ahead(self, db):
         """A prepared-ahead card whose run got stuck goes to the owner as a normal suggestion instead."""
@@ -5706,6 +5714,7 @@ class Store:
         with self.connect() as db:
             done = {r[0] for r in db.execute("SELECT x.event_id FROM slipped x WHERE x.run_id IN (SELECT owner_run FROM analyses WHERE status='complete') OR x.offered_at>?", (ago(0.25),))}
             carded = {r[0] for r in db.execute("SELECT DISTINCT j.value FROM suggestions s, json_each(s.event_ids) j")}
+            followed = follow_ups.covered(db)  # the owner's own emails there: automated follow-ups look after them (follow_ups.py)
             later = ("SELECT 1 FROM events r WHERE r.account_id=e.account_id AND r.kind='gmail.message' AND r.deleted=0 AND r.occurred_at>e.occurred_at "
                      "AND json_extract(r.metadata,'$.thread_id')=json_extract(e.metadata,'$.thread_id')")
             rows = db.execute("SELECT e.id,e.account_id,e.occurred_at,e.title,e.body,e.metadata, instr(e.metadata,'\"SENT\"')>0 mine FROM events e "
@@ -5714,7 +5723,7 @@ class Store:
                               f"OR (instr(e.metadata,'\"SENT\"')=0 AND e.occurred_at>? AND NOT EXISTS ({later} AND instr(r.metadata,'\"SENT\"')>0))) "
                               "ORDER BY e.occurred_at", (ago(21), ago(2), ago(4), ago(14))).fetchall()
             for row in rows:
-                if row['id'] in done or row['id'] in carded or '?' not in new_text(row['body']):
+                if row['id'] in done or row['id'] in carded or (row['mine'] and row['id'] in followed) or '?' not in new_text(row['body']):
                     continue
                 m = json.loads(row['metadata'])
                 if 'SENT' not in m.get('labels', []) and not row['mine']:
@@ -7986,6 +7995,11 @@ class Store:
             # Newest first: the dashboard shows the top few and says when each happened.
             result['deliveries'] = [dict(r) for r in db.execute('SELECT * FROM deliveries ORDER BY updated_at DESC,rowid DESC')]
             self.card_views(db, result['suggestions'], jobs=True)
+            # Automated follow-ups: which one a to-do is, and the board's grouped to-do it goes in (follow_ups.py)
+            following = follow_ups.cards_view(db, [x['id'] for x in result['suggestions']])
+            for x in result['suggestions']:
+                if x['id'] in following:
+                    x['follow_up'] = following[x['id']]
             counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events', (SET_ASIDE_AFTER,)).fetchone()
             result['review_health'] = {**dict(counts), 'last_completed': db.execute("SELECT max(finished_at) FROM analyses WHERE status='complete'").fetchone()[0]}
             result['review_runs'] = []
@@ -13944,6 +13958,12 @@ class App:
                     if any(a['kind']!='open' for a in next_actions.actions(action)):
                         raise ValueError("outcome:'already_done' means there is nothing left to approve: leave next_actions empty")
                     outcome={'state':'already_done'}
+                    if args.get('follow_up')=='stop':
+                        # An automated follow-up past its minimum: another one isn't worth it (follow_ups.settle ends the round)
+                        with self.store.connect() as db:
+                            if not db.execute("SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND state='open'",(args['suggestion_id'],)).fetchone():
+                                raise ValueError("follow_up:'stop' is only for an automated follow-up")
+                        outcome['follow_up']='stop'
                 elif args.get('outcome')=='answered':outcome={'state':'answered'}
                 elif args.get('outcome')=='your_step':
                     # Everything is ready up to a final click the owner makes themselves (in the Machine's browser):
@@ -14115,6 +14135,22 @@ class App:
             return renamed
         if name in GRAPH_SHARE_ACTIONS:
             return self.graph_share_action(name, args, owner_dashboard)
+        if name in ('follow_up_settings', 'follow_up_save'):
+            # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
+            if not owner_dashboard:
+                raise ValueError('Only the owner sets follow-ups, on the dashboard')
+            scope, ref = args.get('scope'), args.get('id')
+            if scope == 'project' and str(ref or '').startswith('project:'):
+                ref = str(ref).split(':', 1)[1]
+            if not str(ref or '').isdigit():
+                raise ValueError('Say which board or project')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                follow_ups.ensure(db)
+                if name == 'follow_up_save':
+                    follow_ups.save(db, scope, ref, args.get('settings'), now())
+                    follow_ups.settle(db, now(), self.follow_up_mine())  # turned off, a stage off: open ones close now
+                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now())
         if name in ('board_save', 'board_delete', 'board_dismiss'):
             if not owner_dashboard:
                 raise ValueError('Only the owner saves, deletes or dismisses a board, on the dashboard; reviews suggest one with graph suggest_board')
@@ -15825,8 +15861,186 @@ class App:
                 db.execute('UPDATE suggestions SET awaiting=? WHERE id=?', (encoded({**json.loads(p['watch']), 'promise': True}), saved['id']))
         return saved
 
+    # Automated follow-ups (follow_ups.py): drafted in a low-priority background pass, sent only through the outbox.
+    def follow_up_annotate(self, db, boards):
+        """The board view's follow-up state: per board on and the next date, per project its next follow-up or the note."""
+        try:
+            follow_ups.ensure(db)
+            found = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine())
+        except sqlite3.Error:
+            return
+        for b in boards:
+            b['follow_ups'] = found['boards'].get(b['id']) or {'on': False, 'next_at': None}
+            for p in b['projects']:
+                view = found['projects'].get(int(p['id'].split(':', 1)[1]))
+                if view and (view['on'] or view.get('end')):
+                    p['follow_up'] = {k: view[k] for k in ('state', 'next_at', 'n', 'max', 'own', 'end', 'reason')}
+
+    def follow_up_project(self, db, node_id):
+        """A project page's follow-ups: the setting that applies (its own or its board's), the next one, the note when a
+        round ended, and what went out."""
+        follow_ups.ensure(db)
+        pid = int(str(node_id).split(':', 1)[1])
+        p = db.execute('SELECT * FROM projects WHERE id=?', (pid,)).fetchone()
+        if not p:
+            return None
+        settings, source = follow_ups.effective(db, p)
+        view = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine())['projects'].get(pid) or {}
+        ends = [dict(r) for r in db.execute('SELECT n,moved,judged,at FROM follow_up_ends WHERE project_id=? ORDER BY at DESC LIMIT 4', (pid,))]
+        return {'on': bool(settings and settings.get('on')), 'source': source, 'next_at': view.get('next_at'), 'state': view.get('state'),
+                'reason': view.get('reason'), 'n': view.get('n'), 'max': (settings or {}).get('max'), 'ends': ends,
+                'activity': follow_ups.activity(db, pid)}
+
+    def follow_up_mine(self):
+        ids = self.store.owner_user_ids
+        return lambda e: own_message(e, ids) or follow_ups.mine_default(e)
+
+    def follow_up_sendable(self):
+        return follow_ups.sendable(self.config.get('accounts') or [])
+
+    def follow_up_pause(self, late=False):
+        """None when an automated follow-up may be drafted now (model_budget.follow_up_pause): a usage limit holds it,
+        and it waits before any other background work while usage runs high, unless it reached its longest wait."""
+        limited = self.background_pause(owner=True)
+        if limited:
+            return limited
+        model = openclaw_model(self.config)
+        return model_budget.follow_up_pause(model_budget.for_model(getattr(self, 'model_usage', None), model), time.time(), late)
+
+    def follow_up_step(self, limit=follow_ups.BATCH):
+        """Every five minutes: close follow-up to-dos that aren't needed any more, send the ones the owner said to send
+        without asking, end rounds that got no reply, then draft the next due ones while nothing else waits."""
+        mine, sendable = self.follow_up_mine(), self.follow_up_sendable()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            if not follow_ups.any_on(db) and not db.execute("SELECT 1 FROM follow_up_cards WHERE state='open'").fetchone():
+                return {'drafted': 0}
+            follow_ups.settle(db, now(), mine)
+        self.follow_up_send()
+        if not (self.config.get('review_worker') or {}).get('enabled'):
+            return {'drafted': 0}
+        drafted = 0
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            items = follow_ups.plan(db, now(), sendable, mine)
+            for item in items:
+                if item['state'] == 'end':
+                    follow_ups.end(db, item, now())
+            due = sorted((x for x in items if x['state'] == 'due'), key=lambda x: (not x['late'], x['next_at']))
+            if not due:
+                return {'drafted': 0}
+            # Normal work first: no follow-up while another preparation waits, and only a few drafted at once
+            others = db.execute("SELECT count(*) FROM preparations p WHERE p.status IN ('queued','starting','running') "
+                                'AND p.suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)').fetchone()[0]
+            drafting = db.execute("SELECT count(*) FROM preparations p JOIN follow_up_cards f ON f.suggestion_id=p.suggestion_id "
+                                  "WHERE p.status IN ('queued','starting','running')").fetchone()[0]
+            room = min(limit, follow_ups.DRAFTING - drafting, follow_ups.PER_DAY - follow_ups.drafted_today(db, now()))
+            if others or room <= 0 or self.follow_up_pause(late=due[0]['late']):
+                return {'drafted': 0, 'waiting': len(due)}
+            for item in due[:room]:
+                if item['late'] is False and drafted and self.follow_up_pause():
+                    break
+                if self.follow_up_card(db, item):
+                    drafted += 1
+        return {'drafted': drafted}
+
+    def follow_up_card(self, db, item):
+        """A follow-up to-do for one due project, prepared ahead (the owner's voice, the last exchange). A board's go
+        into its grouped to-do; the first of a batch keeps its notification, the others don't add one each."""
+        p, board, settings = item['project'], item['board'], item['settings']
+        msgs = follow_ups.messages(db, p['id'], self.follow_up_mine())
+        theirs = [m for m in msgs if not m['mine']]
+        tail = [m for m in msgs if not theirs or m['at'] > theirs[-1]['at']]
+        evidence = [m['id'] for m in reversed(tail[-3:])] + ([theirs[-1]['id']] if theirs else [])
+        on_channel = [m['id'] for m in msgs if m['channel'] == item['channel']]
+        if on_channel and on_channel[-1] not in evidence:
+            evidence.append(on_channel[-1])  # switching channel: the conversation there, so the draft can go on it
+        newer = newer_activity(db, evidence, self.store.owner_user_ids, {x['email']: x['name'] for x in self.teammate_addresses()},
+                               company_domains(self.config))
+        if any(x['id'] not in evidence for x in newer):
+            return None  # something newer is still on its way into the project: next pass
+        grouped = item['source'] == 'board'
+        name = p['name']
+        title = i18n.t('Follow up on {}', name)[:90]
+        days = (dt.datetime.fromisoformat(now()) - follow_ups.parse(item['after_at'])).days
+        body = i18n.t('No reply for {} days. Follow-up {} of at most {}.', days, item['n'], settings['max'])[:700]
+        try:
+            saved = self.store.suggest(f"follow-up:{p['id']}:{item['after']}", title, body, evidence, 'now', self.config.get('digest_at', '08:30'),
+                                       work=self.is_work(sorted({r[0] for r in db.execute(
+                                           f"SELECT account_id FROM events WHERE id IN ({','.join('?' * len(evidence))})", evidence)})),
+                                       ahead=True, project=name, _db=db, owner_step=False)
+        except ValueError as error:
+            LOG.info('follow-up skipped project=%s why=%s', p['id'], str(error)[:80])
+            return None
+        if saved.get('duplicate') or saved.get('preview'):
+            return None
+        batch = grouped and db.execute("SELECT 1 FROM follow_up_cards WHERE board_id=? AND grouped=1 AND state='open'", (p['board_id'],)).fetchone()
+        db.execute('INSERT OR IGNORE INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,state,created_at) '
+                   "VALUES(?,?,?,?,?,?,?,?,?,'open',?)", (saved['id'], p['id'], p['board_id'], int(grouped), item['n'], settings['max'], item['channel'],
+                                                          item['after'], item['after_at'], now()))
+        if batch:
+            db.execute("UPDATE deliveries SET status='grouped',updated_at=? WHERE suggestion_id=? AND status='queued'", (now(), saved['id']))
+        return saved['id']
+
+    def follow_up_lines(self, suggestion_id):
+        """What a follow-up's preparation needs beyond a normal to-do: which follow-up it is, on which channel, what the
+        earlier ones said (never the same again), and whether it judges if another one is worth it (past the minimum)."""
+        with self.store.connect() as db:
+            f = db.execute("SELECT * FROM follow_up_cards WHERE suggestion_id=? AND state='open'", (suggestion_id,)).fetchone()
+            if not f:
+                return ''
+            p = db.execute('SELECT * FROM projects WHERE id=?', (f['project_id'],)).fetchone()
+            settings = (follow_ups.effective(db, p)[0] if p else None) or follow_ups.defaults()
+            earlier = follow_ups.earlier_texts(db, f['project_id'])
+        channel = {'email': 'email', 'linkedin': 'LinkedIn', 'whatsapp': 'WhatsApp', 'slack': 'Slack', 'telegram': 'Telegram', 'intercom': 'Intercom'}[f['channel']]
+        lines = [f"\n\nAutomated follow-up {f['n']} (at most {f['of_max']}) on the project {p['name'] if p else ''}: the owner wrote last and nobody answered. "
+                 f"Draft one short follow-up as a {channel} draft (kind {f['channel']}), in the same conversation as the last messages listed, "
+                 'in the owner\'s voice: refer to the last exchange in a few words, add something useful or one easy question, no guilt and no "just '
+                 'checking in". Never repeat what an earlier follow-up said. Leave send_now out: the service decides how it goes.',
+                 'If they or someone else answered since, or it is handled, save outcome:\'already_done\' instead.']
+        if f['n'] > int(settings.get('min') or 0):
+            lines.append(f"The minimum of {settings.get('min')} follow-ups went out. Judge from the thread and the project whether another one is still "
+                         "worth it (by what was said, not by keywords). When it isn't, save outcome:'already_done' with follow_up:'stop' and no draft: "
+                         'the project then gets a quiet note that there was no reply.')
+        if earlier:
+            lines.append('Earlier follow-ups said (newest first; say something else):\n' + '\n'.join('- ' + ' '.join(t.split())[:300] for t in earlier))
+        return '\n'.join(lines)
+
+    def follow_up_send(self):
+        """Send without asking: an open follow-up that's prepared goes through the outbox when its board or project said
+        so, Careful is off, it's within the owner's hours and nothing about it is unusual (follow_ups.may_send_alone).
+        Anything else stays a to-do that asks."""
+        if not in_hours(dt.datetime.fromisoformat(now()).astimezone(local_tz())):
+            return []
+        sent = []
+        with self.store.connect() as db:
+            is_careful = follow_ups.careful(db)
+            rows = db.execute("SELECT f.*,s.next_action,s.status FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
+                              "WHERE f.state='open' AND s.status='prepared' AND f.auto=0").fetchall()
+            todo = []
+            for f in rows:
+                p = db.execute('SELECT * FROM projects WHERE id=?', (f['project_id'],)).fetchone()
+                settings = follow_ups.effective(db, p)[0] if p else None
+                drafts = [a for a in next_actions.actions(f['next_action']) if a.get('kind') in follow_ups.CHANNELS] if f['next_action'] else []
+                draft = drafts[0] if len(drafts) == 1 else None
+                attempt = db.execute('SELECT 1 FROM action_jobs WHERE suggestion_id=?', (f['suggestion_id'],)).fetchone()
+                repeated = bool(draft) and follow_ups.repeats(draft.get('body'), follow_ups.earlier_texts(db, f['project_id']))
+                if follow_ups.may_send_alone(settings, is_careful, draft, f['channel'], attempt, repeated):
+                    todo.append((f['suggestion_id'], draft['revision']))
+        for sid, revision in todo:
+            try:
+                result = self.store.confirm_action(sid, revision, f'auto-follow-up:{sid}:{revision}', 'auto_follow_up')
+            except ValueError as error:
+                LOG.info('follow-up kept for the owner why=%s', str(error)[:80])
+                continue
+            with self.store.connect() as db:
+                db.execute('UPDATE follow_up_cards SET auto=1 WHERE suggestion_id=?', (sid,))
+            sent.append((sid, result.get('status')))
+        return sent
+
     def action_worker(self):
-        promised = styled = 0
+        promised = styled = followed = 0
         while not self.stop.wait(3):
             if time.monotonic() - promised >= 60:
                 promised = time.monotonic()
@@ -15836,6 +16050,10 @@ class App:
                 styled = time.monotonic()
                 try:self.style_step()
                 except Exception as error:LOG.error('style learning error=%s',type(error).__name__)
+            if time.monotonic() - followed >= 300:
+                followed = time.monotonic()
+                try:self.follow_up_step()
+                except Exception as error:LOG.error('follow-up error=%s',type(error).__name__)
             try:self.action_step()
             except Exception as error:LOG.error('approved action error=%s',type(error).__name__)
             try:self.undo_step()
@@ -15927,9 +16145,15 @@ class App:
                                AND (r.suggestion_id=p.suggestion_id OR r.session_job_id=coalesce(p.session_job_id,p.job_id)))
                 ORDER BY p.created_at LIMIT ?""",(now(),room+20)).fetchall()] if room and not limited else []
             ahead_first=not db.execute("SELECT 1 FROM milestones WHERE name='first_ahead_started'").fetchone()
+            # Automated follow-ups go last (follow_ups.py): after every other queued preparation, and only while usage has room for them
+            following={r[0] for r in db.execute("SELECT suggestion_id FROM follow_up_cards WHERE state='open'")} if queued else set()
+            queued.sort(key=lambda j:j['suggestion_id'] in following)
+            late=follow_ups.late_ids(db,now()) if following else set()
             admitted=[]
             for job in queued:
                 if len(admitted)>=room:break
+                if job['suggestion_id'] in following and (any(j['suggestion_id'] not in following for j in queued if j not in admitted) or self.follow_up_pause(late=job['suggestion_id'] in late)):
+                    continue
                 if job['early'] and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
                     first=ahead_first and not any(j['early'] for j in admitted)
                     if any(j['early'] for j in admitted) or self.background_pause(first=first, job='ahead:' + job['job_id'], db=db) or not (first or (self.store.first_magic_done(db) and self.background_spaced())):
@@ -16006,6 +16230,10 @@ class App:
                     lines=newer_activity_lines(found)
                     if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('newer activity error=%s',type(error).__name__)
+                try:  # an automated follow-up: which one, its channel, what earlier ones said (follow_ups.py)
+                    lines=self.follow_up_lines(job['suggestion_id'])
+                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                except Exception as error:LOG.error('follow-up lines error=%s',type(error).__name__)
                 if getattr(self, 'fleet', None):
                     try:
                         lines=self.fleet.lines(job['suggestion_id'])
@@ -19497,6 +19725,12 @@ class App:
                             found['timeline'] = app.graph_timeline(found['id'])
                             found['recent'] = found['timeline'].pop('items')
                             found['slack_links'] = app.slack_links(found)
+                            if found.get('kind') == 'project':  # its follow-ups: on or not, the next one, what went out (follow_ups.py)
+                                try:
+                                    with app.store.connect() as db:
+                                        found['follow_up'] = app.follow_up_project(db, found['id'])
+                                except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
+                                    LOG.info('follow-up detail error=%s', type(error).__name__)
                             if app.fleet and found.get('kind') == 'person':  # sharing a contact (contact_share.py)
                                 try:
                                     with app.store.connect() as db:
@@ -19519,6 +19753,7 @@ class App:
                             found = app.graph_action({'limit': 15})
                             with app.store.connect() as db:
                                 found['boards'] = graph.boards(db, now())  # the Projects board view
+                                app.follow_up_annotate(db, found['boards'])  # "Follow-ups on", "Next follow-up: Thu" (follow_ups.py)
                                 found['board_suggestions'] = graph.board_suggestions(db)  # "Start a board for …?", saved by the owner or not
                                 found['project_names'] = [{'id': 'project:' + str(r['id']), 'name': r['name'], 'board_id': r['board_id']} for r in db.execute(
                                     'SELECT id,name,board_id FROM projects WHERE closed_at IS NULL ORDER BY name COLLATE NOCASE LIMIT 2000')]  # the board editor's picker

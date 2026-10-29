@@ -171,6 +171,8 @@ Je keuze in **Bewerken** blijft altijd, ook als je ze weghaalt. **Zelfde organis
 
 Projecten van één soort in fases, zoals een pipeline voor evaluaties. **⋯** op een bord: **Bord bewerken** (naam, fases, welke projecten erbij horen), **Openen op dit bord** en **Nieuw bord**. Reviews blijven projecten toevoegen die passen en zetten ze in een fase. Zijn ze niet zeker, dan toont het bord "2 projecten kunnen hier horen": **Toevoegen** of **Weglaten**.
 
+**Opvolging…** in het **⋯** van een bord volgt vanzelf op als iemand niet antwoordt. Zie [Opvolging](follow-ups.md).
+
 Vink er een paar aan, of **Alles selecteren**, om ze in één keer te doen, en **Ongedaan maken** meteen erna als je van gedachten verandert. Een project dat meerdere tegenpartijen bundelt, wordt één project per tegenpartij als je het toevoegt.
 
 **Pipeline**, bovenaan een bord, telt de waarde van de open projecten per fase op, en wat er per maand verwacht wordt te sluiten op basis van de sluitdatums. Gewonnen, verloren en vastgelopen projecten zijn niet open; wat je deze maand won, staat apart. Waarden zijn in euro, tenzij je Machine op een andere munt ingesteld is. Met **Eigenaar** in Filteren telt het alleen de jouwe.

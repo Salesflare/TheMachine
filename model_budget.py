@@ -8,6 +8,9 @@ the cards they asked for keep room:
   reviews of new signals (`signals`) are not paced per day: they go on until WEEK_CAP, so what came in today is looked
   at today, while heavier work (a board's look through the history, drafts prepared ahead, the profile) keeps the
   daily share;
+- automated follow-ups (follow_ups.py) pause first: at FOLLOW_UP_PAUSE in the 5-hour window and FOLLOW_UP_ROOM
+  percent before the day's weekly share, so the owner's to-dos and the other background work keep room. A follow-up
+  that reached its longest wait goes ahead like other background work (`late`);
 - a usage limit a run hit (the provider said so): everything the service starts waits until the reset it named, or
   the window's own reset, instead of trying again every few minutes.
 
@@ -22,6 +25,8 @@ import time
 SHORT_PAUSE = 65
 FIRST_PAUSE = 85
 WEEK_CAP = 90
+FOLLOW_UP_PAUSE = 50
+FOLLOW_UP_ROOM = 10
 DAY, WEEK = 86400, 7 * 86400
 LIMIT_WAIT = 1800  # a usage limit without any reset time known: look again after this long
 LIMIT_WAIT_MAX = 8 * DAY  # a reset further out than a week is not believed
@@ -75,6 +80,28 @@ def pause(usage, now_s=None, first=False, signals=False):
                     start = reset - WEEK
                     day_end = start + math.ceil(max(now_s - start, 1) / DAY) * DAY
                 return {**found, 'window': 'week', 'until': min(day_end or reset, reset) if reset else None, 'threshold': int(round(allowed))}
+    return None
+
+
+def follow_up_pause(usage, now_s=None, late=False):
+    """None when an automated follow-up may be drafted now; else why not, like pause. They wait first: at
+    FOLLOW_UP_PAUSE in the 5-hour window and FOLLOW_UP_ROOM percent below the day's weekly share. `late`: it reached
+    its longest wait, so it only waits where any background work would."""
+    found = pause(usage, now_s)
+    if found or late:
+        return found
+    now_s = time.time() if now_s is None else now_s
+    for entry in usage or []:
+        for w in entry.get('windows') or []:
+            used, reset = w.get('used'), w.get('reset')
+            if not isinstance(used, (int, float)) or (reset and reset <= now_s):
+                continue
+            base = {'provider': entry.get('provider'), 'name': entry.get('name'), 'label': w.get('label'), 'used': used}
+            if window_kind(w.get('label')) == 'short':
+                if used >= FOLLOW_UP_PAUSE:
+                    return {**base, 'window': '5h', 'until': reset, 'threshold': FOLLOW_UP_PAUSE}
+            elif used >= allowed_this_week(reset, now_s) - FOLLOW_UP_ROOM:
+                return {**base, 'window': 'week', 'until': reset, 'threshold': int(round(allowed_this_week(reset, now_s) - FOLLOW_UP_ROOM))}
     return None
 
 
