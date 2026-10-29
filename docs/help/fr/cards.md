@@ -36,6 +36,8 @@ Une nouvelle tâche a **Faire**, **Marquer comme fait**, **Mettre en attente**, 
 
 Une tâche fermée peut revenir avec **Rouvrir**. Elle revient aussi d’elle-même quand il se passe quelque chose de nouveau, comme un nouveau message de la personne. Votre propre réponse ne la fait pas revenir.
 
+Sur vos premières tâches, une courte ligne sous les boutons montre l’essentiel : **Faire autrement** (ou **Demander des modifications**) et **Pas nécessaire** quand une tâche ne convient pas tout à fait, et sur votre premier brouillon prêt, que rien ne part avant que vous appuyiez sur **Envoyer**. Une astuce disparaît pour de bon dès que vous utilisez son bouton ou appuyez sur ×, sur tous vos appareils.
+
 Chaque tâche commence par son titre. La ligne en dessous indique la personne concernée, son organisation, le projet, Travail ou Perso (sous **Tout**) et quand elle est arrivée, ainsi que son état quand son groupe ne le dit pas déjà. Appuyez sur un nom pour ouvrir sa page dans le Graph.
 
 **Détails** montre le message d’origine (appuyez dessus pour lire le fil), votre dernière note et le résultat d’un agent de code. **Chat ›** au bout de cette ligne ouvre le chat. Une tâche terminée reste courte : son titre, une ligne et ce qui est parti.

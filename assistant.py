@@ -677,6 +677,7 @@ OWNER_ACTIONS = {
     'set_signature',
     'set_voice',
     'set_work_hours',
+    'tip_done',
     'undo_merge',
     'unmerge_fact',
 }
@@ -994,6 +995,7 @@ DASHBOARD_ACTIONS = frozenset({
     'set_signature',
     'set_voice',
     'set_work_hours',
+    'tip_done',
     'undo_merge',
     'unmerge_fact',
 })
@@ -1384,6 +1386,12 @@ def first_look_retry_at(runs, current):
 
 
 FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, for "first cards in about N min"
+# First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Do it differently and
+# Not needed), 'send' on their first ready draft (nothing goes out until Send). Each goes once its button was used.
+FIRST_TIPS = ('change', 'send')
+TIP_USED = {'change': {'other', 'reject'}, 'send': {'send'}}
+TIP_SOURCES = ('dashboard', 'telegram', 'owner-chat', 'voice')  # the owner's own decisions
+FIRST_TIPS_UNTIL = 10  # to-dos decided: past their first to-dos, every tip is gone
 FIRST_ACTIONS = {'accept': 'approve', 'other': 'approve', 'prepare_next': 'approve', 'send': 'send', 'complete': 'done', 'reject': 'dismiss'}
 
 
@@ -4240,6 +4248,32 @@ class Store:
                     activity.note_opened(db, ref, now(), local_tz())
         except (sqlite3.Error, ValueError) as error:
             LOG.warning('activity not noted kind=%s error=%s', kind, type(error).__name__)
+
+    def first_tips(self):
+        """The first-use tips still to show on the dashboard (FIRST_TIPS), kept on the Machine so every device agrees.
+        Only a new person gets them: the first time this is asked, someone who has already decided a to-do is past them
+        for good ('tips' milestone off). A tip goes when its button was used (TIP_USED, from any device or Telegram),
+        when it was closed with × (tip_done), and all of them once FIRST_TIPS_UNTIL to-dos were decided."""
+        with self.connect() as db:
+            decided = db.execute('SELECT count(*) FROM (SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES))
+                                 + ') LIMIT ?)', (*TIP_SOURCES, FIRST_TIPS_UNTIL)).fetchone()[0]
+            row = db.execute("SELECT detail FROM milestones WHERE name='tips'").fetchone()
+            if not row:
+                db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('tips',?,?)", (now(), 'off' if decided else 'on'))
+                row = db.execute("SELECT detail FROM milestones WHERE name='tips'").fetchone()
+            if row['detail'] != 'on' or decided >= FIRST_TIPS_UNTIL:
+                return []
+            done = {r['name'][4:] for r in db.execute("SELECT name FROM milestones WHERE name LIKE 'tip:%'")}
+            used = {r['choice'] for r in db.execute('SELECT DISTINCT choice FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ')', TIP_SOURCES)}
+        return [tip for tip in FIRST_TIPS if tip not in done and not used & TIP_USED[tip]]
+
+    def tip_done(self, tip):
+        """A first-use tip closed (×) or its button used on the dashboard: it never comes back, on any device."""
+        if tip not in FIRST_TIPS:
+            raise ValueError('Unknown tip')
+        with self.connect() as db:
+            db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('tip:' + tip, now()))
+        return {'first_tips': self.first_tips()}
 
     def commit_page(self, account, state, events, record_sync=True, excluded_source_ids=(), android_inbox_ids=()):
         # The page AND its next cursor commit together. A killed fetch replays the page.
@@ -14074,6 +14108,10 @@ class App:
             result['notify'] = self.notify_view()
             result['agents_settings'] = self.agents_view()
             result['setup_hints'] = self.setup_hints_view()
+            try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
+                result['first_tips'] = self.store.first_tips()
+            except sqlite3.Error as error:
+                LOG.warning('first tips error=%s', type(error).__name__); result['first_tips'] = []
             result['signatures'] = self.signature_view()
             result['lookups'] = self.lookups_view()
             result['own_addresses'] = self.own_addresses_view()
@@ -14904,6 +14942,10 @@ class App:
             if not owner_dashboard:
                 raise ValueError('Only the owner changes this, on the dashboard (Settings)')
             return self.set_agents(args)
+        if name == 'tip_done':
+            if not owner_dashboard:
+                raise ValueError('Only the owner closes a tip, on the dashboard')
+            return self.store.tip_done(args.get('tip'))
         if name == 'set_locale':
             if not owner_dashboard:
                 raise ValueError('Only the owner changes region and time format, on the dashboard (Settings, General)')
