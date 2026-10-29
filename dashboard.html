@@ -5281,7 +5281,7 @@ $('#theme-toggle').onclick=()=>{chooseTheme(document.documentElement.dataset.the
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',showTheme);
 $('#send-cancel').onclick=()=>$('#send-dialog').close();
 // A closed send panel keeps nothing: the next one fills it again, and a sent or canceled draft never reads as typing
-$('#send-dialog').addEventListener('close',()=>{for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').innerHTML='';$('#send-error').textContent=''});
+$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').innerHTML='';$('#send-error').textContent=''});
 // The subject wraps as it grows (field-sizing, or its height here where that's missing) but stays one line of text:
 // Enter adds no line break and a pasted one becomes a space.
 const subjectFit=()=>{const x=$('#send-subject');if(CSS.supports?.('field-sizing','content')||!x.offsetParent)return;x.style.height='auto';x.style.height=x.scrollHeight+'px'};
@@ -6671,11 +6671,11 @@ async function calNotesLoad(me){clearTimeout(calNotesRetry);me.loading=true;let 
  if(calNote!==me||me.data)return;if(d){me.data=d;me.failed=false;calNotesShow();calNotesFit();calNotesPoll();return}
  const wait=CAL_NOTES_RETRY[me.tries++];if(wait==null||!$('#cal-view').open){me.failed=true;calNotesShow();return}
  calNotesRetry=setTimeout(()=>{if(calNote===me&&$('#cal-view').open)calNotesLoad(me)},wait)}
-// Try again, the focus back or the network back: a fresh round of tries
+// Try again, the focus back after it gave up, or the network back: a fresh round of tries
 function calNotesAgain(){const n=calNote;if(!n||n.data||n.loading||!$('#cal-view').open)return;n.tries=0;n.failed=false;calNotesShow();calNotesLoad(n)}
-for(const ev of ['focus','online'])addEventListener(ev,calNotesAgain);
+addEventListener('focus',()=>{if(calNote?.failed)calNotesAgain()});addEventListener('online',calNotesAgain);
 $('#cal-view').addEventListener('click',e=>{if(e.target.closest('[data-cal-notes-retry]'))calNotesAgain()});
-$('#cal-view').addEventListener('close',()=>clearTimeout(calNotesRetry));
+$('#cal-view').addEventListener('close',()=>{if(!$('#cal-view').open)clearTimeout(calNotesRetry)});  // a close event can come after it opened again
 // While The Machine writes the notes, the open dialog looks again every few seconds; closed, it stops (the writing goes on)
 const calWriting=d=>['queued','running','waiting'].includes(d?.writing?.status);
 let calNotesTimer=0;

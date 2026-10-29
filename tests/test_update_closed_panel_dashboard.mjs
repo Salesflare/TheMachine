@@ -38,6 +38,11 @@ try{
  for(let i=0;i<50&&await page.evaluate(()=>document.querySelector('#send-subject').value);i++)await new Promise(r=>setTimeout(r,20));  // the close event comes a moment later
  assert.deepEqual(await page.evaluate(()=>['#send-subject','#send-body','#send-ask-text'].map(s=>document.querySelector(s).value).concat(document.querySelector('#send-rich-body').innerHTML)),['','','',''],'closing the send panel empties it');
  assert.equal(await page.evaluate(()=>pageInUse()),false,'nothing in use once the panel closed');
+ // closed and opened again at once (the close event comes after it opened): what the page filled in stays
+ await page.evaluate(()=>{const d=document.querySelector('#send-dialog');d.showModal();d.close();d.showModal();document.querySelector('#send-subject').value='Next draft'});
+ await new Promise(r=>setTimeout(r,300));assert.equal(await page.evaluate(()=>document.querySelector('#send-subject').value),'Next draft','a late close event does not empty an open panel');
+ await page.evaluate(()=>document.querySelector('#send-dialog').close());
+ for(let i=0;i<50&&await page.evaluate(()=>document.querySelector('#send-subject').value);i++)await new Promise(r=>setTimeout(r,20));
 
  // 2. A closed panel that still holds text (filled by the page, or left from before) is not typing
  await page.evaluate(()=>{document.querySelector('#send-subject').value='Numbers for Q4';document.querySelector('#send-rich-body').innerHTML='<p>Sending your approved draft…</p>'});

@@ -31,33 +31,35 @@ const until=async(fn,label,ms=8000)=>{const t=Date.now();while(!(await fn())){if
 const open=async(width,height,scheme='light')=>{const mobile=width<600;
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',timezoneId:'Europe/Brussels',colorScheme:scheme});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
- const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));await page.clock.install();
- await page.goto(base);await page.evaluate(()=>showTab('calendar'));await page.waitForFunction(()=>calMeetings!==null&&![...calWeeks.values()].some(w=>w.loading));return {context,page}};
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
+ await page.goto(base);
+ // The real waits are 2, 4, 8 and 16 s (checked below); here they run 25 times faster
+ assert.deepEqual(await page.evaluate(()=>CAL_NOTES_RETRY.splice(0,4,80,160,320,640)),[2e3,4e3,8e3,16e3]);await page.evaluate(()=>showTab('calendar'));await page.waitForFunction(()=>calMeetings!==null&&![...calWeeks.values()].some(w=>w.loading));return {context,page}};
 const view=page=>page.evaluate(()=>calView(calMeetings.find(m=>m.id===204)));
 const shown=(page,sel)=>page.locator(sel).isVisible();
 const idle=page=>until(()=>page.evaluate(()=>!calNote?.loading),'the read is back');
-// The next try: the timer runs, then its read comes back
-const step=async(page,ms)=>{const r=reads;await page.clock.runFor(ms);await until(()=>reads>r,'tried again');await idle(page)};
+// The n-th read: the next try, after its wait
+const step=async(page,ms,n)=>{await until(()=>reads>=n,'tried again');await idle(page)};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  {const {context,page}=await open(1440,900);
   // 1. Two failed reads, then it loads: the failure is never shown, and Generate notes is there
   failing=2;reads=0;await view(page);await until(()=>reads>=1,'first read');await idle(page);
   assert.ok(!await shown(page,'#cal-v-tr-none'),'no failure line while it tries again');
-  await step(page,2000);assert.ok(!await page.evaluate(()=>!!calNote.data));
-  await step(page,4000);await until(()=>page.evaluate(()=>!!calNote.data),'loaded on the third read');
+  await step(page,2000,2);
+  await step(page,4000,3);await until(()=>page.evaluate(()=>!!calNote.data),'loaded on the third read');
   assert.equal(reads,3);assert.ok(await shown(page,'#cal-v-notes-gen'),'Generate notes is back');
   assert.ok(!await shown(page,'[data-cal-notes-retry]'));
   await page.evaluate(()=>$('#cal-view').close());
 
   // 2. Every read fails: four more tries (2, 4, 8, 16 s), then the line with Try again; no more tries after that
   failing=Infinity;reads=0;await view(page);await until(()=>reads>=1,'first read');await idle(page);
-  for(const ms of [2000,4000,8000,16000])await step(page,ms);
+  for(const [i,ms] of [2000,4000,8000,16000].entries())await step(page,ms,i+2);
   assert.equal(reads,5,'one read and four tries');
   await until(()=>shown(page,'#cal-v-tr-none'),'the failure shows');
   assert.match(await page.locator('#cal-v-tr-none').innerText(),/^The transcript couldn’t load\. Try again$/);
   assert.ok(!await shown(page,'#cal-v-notes-gen'),'no Generate notes without the data');
-  await page.clock.runFor(60e3);assert.equal(reads,5,'it stops trying by itself');
+  await new Promise(r=>setTimeout(r,2000));assert.equal(reads,5,'it stops trying by itself');
   if(process.env.RETRY_SHOT)await page.locator('#cal-view').screenshot({path:process.env.RETRY_SHOT+'/retry-failed-1440x900-light.png'});
   // Try again: it loads
   failing=0;await page.locator('#cal-v-tr-none [data-cal-notes-retry]').click();
@@ -66,21 +68,22 @@ try{
   await page.evaluate(()=>$('#cal-view').close());
 
   // 3. Failed, then the window gets the focus again: it loads at once
-  failing=5;reads=0;await view(page);await until(()=>reads>=1,'first read');await idle(page);for(const ms of [2000,4000,8000,16000])await step(page,ms);
+  failing=5;reads=0;await view(page);await until(()=>reads>=1,'first read');await idle(page);for(const [i,ms] of [2000,4000,8000,16000].entries())await step(page,ms,i+2);
   await until(()=>shown(page,'#cal-v-tr-none'),'failed');failing=0;
   await page.evaluate(()=>dispatchEvent(new Event('focus')));await until(()=>page.evaluate(()=>!!calNote.data),'focus loads it');
   await page.evaluate(()=>$('#cal-view').close());
 
   // 4. Waiting for the next try, the network comes back: it loads at once
+  await page.evaluate(()=>CAL_NOTES_RETRY.splice(0,4,60e3,60e3,60e3,60e3));  // a long wait: only the network coming back reads again
   failing=1;reads=0;await view(page);await until(()=>reads>=1,'first read');await idle(page);
   await page.evaluate(()=>dispatchEvent(new Event('online')));await until(()=>page.evaluate(()=>!!calNote.data),'online loads it');
   assert.equal(reads,2);
   // closed: nothing tries any more
-  failing=Infinity;await page.evaluate(()=>$('#cal-view').close());await view(page);await until(()=>reads>=3,'read');await idle(page);await page.evaluate(()=>$('#cal-view').close());
-  const r=reads;await page.clock.runFor(60e3);assert.equal(reads,r,'a closed dialog does not try again');
+  await page.evaluate(()=>CAL_NOTES_RETRY.splice(0,4,80,160,320,640));failing=Infinity;await page.evaluate(()=>$('#cal-view').close());await view(page);await until(()=>reads>=3,'read');await idle(page);await page.evaluate(()=>$('#cal-view').close());
+  const r=reads;await new Promise(r=>setTimeout(r,2000));assert.equal(reads,r,'a closed dialog does not try again');
   await context.close()}
  if(process.env.RETRY_SHOT)for(const [w,h,scheme] of [[1440,900,'dark'],[390,844,'light'],[390,844,'dark']]){const {context,page}=await open(w,h,scheme);
-  failing=Infinity;reads=0;await view(page);await until(()=>reads>=1,'read');await idle(page);for(const ms of [2000,4000,8000,16000])await step(page,ms);
+  failing=Infinity;reads=0;await view(page);await until(()=>reads>=1,'read');await idle(page);for(const [i,ms] of [2000,4000,8000,16000].entries())await step(page,ms,i+2);
   await until(()=>shown(page,'#cal-v-tr-none'),'failed');await page.screenshot({path:`${process.env.RETRY_SHOT}/retry-failed-${w}x${h}-${scheme}.png`});await context.close()}
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({page_errors:errors}));
