@@ -625,6 +625,7 @@ OWNER_ACTIONS = {
     'fleet_notice_decide',
     'fleet_rule',
     'fleet_take',
+    'follow_up_change',
     'follow_up_save',
     'follow_up_settings',
     'forget_fact',
@@ -931,6 +932,7 @@ DASHBOARD_ACTIONS = frozenset({
     'fleet_notice_decide',
     'fleet_rule',
     'fleet_take',
+    'follow_up_change',
     'follow_up_save',
     'follow_up_settings',
     'forget_fact',
@@ -7971,8 +7973,11 @@ class Store:
             closed = {r['id']: r for r in rows[offset:offset + limit]}
             self.card_views(db, cards, jobs=False)
             self.card_views(db, cards, jobs=True)
+            following = follow_ups.cards_view(db, ids)  # sent and skipped follow-ups fold into one row per board and day
             for card in cards:
                 card['closed_at'] = closed[card['id']]['closed_at']
+                if card['id'] in following:
+                    card['follow_up'] = following[card['id']]
                 if closed[card['id']]['scope']:
                     card['scope'] = closed[card['id']]['scope']
         return {'cards': cards, 'next': str(offset + limit) if len(rows) > offset + limit else None, 'total': len(rows)}
@@ -12812,14 +12817,14 @@ def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promis
 ''' if fitting else '') + (f'''Looking through the history for new boards, before the signal review (separate from the batch). The owner made the boards on the first line and wants everything from before that belongs on them. Below are organizations, and people with no organization, from the owner's history whose messages or meetings are in no project yet, each with its key and a few of those messages. For each, judge what the work with them is from what the messages mean (read more with events and their event_ids, or graph and the key, when unsure), never from words in a name or subject. Each line says whether the owner wrote to or met them, or whether it is inbound only. Inbound only is real work when they came for the owner's own work (a trial, a question about the product). It is not when they pitch the owner: unsolicited outreach (a broker or a stranger offering to buy, sell or partner, a cold sales pitch, a deliverability or growth service) is never placed, at most a maybe whose why says it is unanswered cold outreach. Talks like buying or selling a company need the owner to have written to them or a real two-way exchange. When it clearly belongs on a board, make it one project per organization (or person) and place it in one call: graph {{"project": its name, "event_ids": its message ids about this work, "board", "stage": where it stands now, "event_id": the message that shows it, "reason": one short clause, "next"}}. When it might belong, or doesn't, add it to finish_analysis fits [{{"project": its key, "board", "fit": "maybe" or "no", "why"}}], one per board it is checked against, each naming its board, and make no project; a maybe waits on that board for the owner. Judge it against each board's own purpose: a maybe only when the work with them could really be what that board is for; work of another kind (what another board is for, or none) is a no there. A why names who and what happened, with a date, in under 12 words, so the owner can decide from it alone, like "Pitched them on Oct 12, no reply yet" or "Cold buyer pitch from a broker, never answered"; never a label like "acquisition outreach". finish_analysis refuses until each one is placed or in fits.
 {backfill}
 
-''' if backfill else '') + (f'''Two tasks in this turn. First, boards to suggest (once a day, separate from the batch: it is about the whole list below, not about this batch's signals, and needs no new message). These are the owner's open projects on no board, with the people they're with. Sort them by the kind of work each one is (a sale, a CRM or partner listing, a customer onboarding, a possible buyer or investor, a hire, a support case, an evaluation, a personal errand…), judged from what the project is, not the words in its name; open one with graph and its node_id when unsure. A project whose messages are with several organizations in the same kind of work (several possible buyers in one acquisition project, several partners in one listings project) is really one project per counterpart: first name one per organization, all in one call: graph {{"split": [{{"project": "<the work>: <organization>", "event_ids": its message ids below}}, …]}} (up to 40). Then suggest a board with graph suggest_board, as in Boards below, for every clear group of three or more of the same kind of work, each with its own counterpart: several boards when there are several clear groups (up to three), never one only because names look alike. Give each its visibility: "only_you" for sensitive work (M&A, buyers, investors, legal, health, hiring a named person: its board, projects and messages never reach the team), "team" for customer, partner and other pipelines the team works on. Then answer in finish_analysis: boards "suggested", or "none: <the kinds you found, with how many of each>" when no kind has three.
+''' if backfill else '') + (f'''Two tasks in this turn. First, boards to suggest (once a day, separate from the batch: it is about the whole list below, not about this batch's signals, and needs no new message). These are the owner's open projects on no board, with the people they're with. Sort them by the kind of work each one is (a sale, a CRM or partner listing, a customer onboarding, a possible buyer or investor, a hire, a support case, an evaluation, a personal errand…), judged from what the project is, not the words in its name; open one with graph and its node_id when unsure. A project whose messages are with several organizations in the same kind of work (several possible buyers in one acquisition project, several partners in one listings project) is really one project per counterpart: first name one per organization, all in one call: graph {{"split": [{{"project": "<organization>", "event_ids": its message ids below}}, …]}} (up to 40), named after the organization alone since the board names the work ("<organization> <the work in a word>" only when a project by that name is already about other work). Then suggest a board with graph suggest_board, as in Boards below, for every clear group of three or more of the same kind of work, each with its own counterpart: several boards when there are several clear groups (up to three), never one only because names look alike. Give each its visibility: "only_you" for sensitive work (M&A, buyers, investors, legal, health, hiring a named person: its board, projects and messages never reach the team), "team" for customer, partner and other pipelines the team works on. Then answer in finish_analysis: boards "suggested", or "none: <the kinds you found, with how many of each>" when no kind has three.
 {boards}
 
 Second, the signal review.
 ''' if boards else '') + f'''The assistant instructions (tools/personal-assistant/AGENTS.md) and the owner's profile (USER.md) are included in this turn's context; follow the "Reviewing signals" section. Don't re-read those files.
 With the assistant_signals tool: call status, then ONE begin_analysis with account_ids {json.dumps(accounts)} and limit 120. The reply is paged: read every page with analysis_page before finishing, including next_row_offset continuations on the same page. Where body_clipped matters, read the rest with events (the account, event_ids and body_offset). Events replies contain events and remaining_event_ids; read the remaining IDs with the same accounts. Follow body_next_offset to the end of long bodies.
 Save only genuinely useful, distinct suggestions with suggest; the service delivers them. A card's agent_work in status is what Claude Code or Codex did (or is doing) on it, the latest truth of what was done: when you update a card, start from there and never offer work it reports done as the next step. One card per matter: when a signal is about the same matter as an existing card (open, snoozed, waiting for a reply or done: the same conversation, people and ask, judged by meaning), pass card_id so that card is updated and comes back instead of a new one; reopen:true only when a done card genuinely needs the owner again. Then finish_analysis with reviewed_ids. Defer only what you expect to judge better later.
-Name the ongoing work: finish_analysis projects ({{"Project name": [event_ids from this batch]}}) for signals that clearly belong to a deal, hire, launch, renovation or other piece of work, and project on a suggest that belongs to one. Reuse begin_analysis's projects names when they fit; a signal's probably_project is the graph's guess from meaning and people, so add it to projects when it's right. graph tells who someone is to the owner (role, closeness, rhythm, gone quiet, their projects, what's open between them); when a message shows what someone is to them (their title, "our accountant", an introduction) and graph has no role or a wrong one, set it with graph node_id, role, event_id and quote (a short line copied from that message).
+Name the ongoing work: finish_analysis projects ({{"Project name": [event_ids from this batch]}}) for signals that clearly belong to a deal, hire, launch, renovation or other piece of work, and project on a suggest that belongs to one. Reuse begin_analysis's projects names when they fit; a new one on a board is named after its counterpart, never with the board's name in front ("Acme", not "Partner listings: Acme"); a signal's probably_project is the graph's guess from meaning and people, so add it to projects when it's right. graph tells who someone is to the owner (role, closeness, rhythm, gone quiet, their projects, what's open between them); when a message shows what someone is to them (their title, "our accountant", an introduction) and graph has no role or a wrong one, set it with graph node_id, role, event_id and quote (a short line copied from that message).
 Boards: projects of one kind (partner listings, hires, onboardings), one project per counterpart, stand in stages on boards the owner saved; begin_analysis boards lists them with each project's stage and the board's about (which projects belong). When a message in this batch moves one (they agreed, sent their edits, went live, declined, the address bounced), add it to finish_analysis stages ({{"project", "board", "stage", "reason", "event_id", "next"}}): judge what the message means between these people in its conversation, never its wording, and never move a project only because time passed. reason is a short clause that reads after "Moved to <stage>:" ("Sam signed the order form"); next is the owner's next step in a few words; org the counterpart's web domain when it isn't clear from the people. A new project that fits a board's about goes on it the same way. Projects the owner put on a board come as "Boards to sort" at the top. Only the owner makes boards; a review suggests them, each once, from the boards to suggest at the top with graph suggest_board {{"name", "stages", "about", "projects", "reason", "visibility"}}: stages that fit how that kind of work goes, in order, ending at the good outcome (partner listings: Contacted, Agreed, In review, Live; hiring: Sourced, Screening, Interviews, Offer, Hired); every board has its own Stalled or declined row, so an ending where it didn't happen (lost, declined, dropped) is never a stage. about one sentence on which projects belong. Judge the kind from what the projects are, not from words in their names. The owner's own move stands until a newer message changes things. A stage and its next step never replace a to-do: when the other side's reply asks the owner something or proposes terms (a price or fee, a counteroffer, a condition), move the project and also suggest a to-do with prepare_ahead:true so the answer comes drafted, on a board or not and whether follow-ups are on or not, also when you expect the owner to say no; terms not agreed yet keep the stage before agreement. finish_analysis refuses while such a reply on a board has no open to-do; one that needs no answer (a thanks, a confirmation, a decline that ends it) goes in finish_analysis replies [{{"event_id", "why"}}].
 Team: when begin_analysis lists team (Work messages, shared with the owner's Work Fleet by default), add finish_analysis team ([{{"event_id", "share", "line", "group", "suggest"}}], group and suggest only for unsure ones; begin_analysis share_groups lists the groups already used) for each of those threads, judged by what the conversation is, never by words in it: {SHARE_VERDICTS} line is one short line of what happened, in your own words ("Lee asked for the renewal quote"), never quoted text. The owner's own Team or Only you always wins.
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
@@ -14086,6 +14091,10 @@ class App:
                 raise ValueError("Not done yet: a step in next_actions still waits for the owner (a draft to send, a change to approve, a final click). "
                                  "Save outcome:'needs_you' with needs:<what they do, e.g. check the draft and send it>, or outcome:'your_step' for a final click, "
                                  'with a body that says what is ready and what is left, never that it is done, sent or applied.')
+            with self.store.connect() as db:  # a rewrite from the follow-up review's Change: only its text changes, never sent from here
+                why=follow_ups.change_problem(follow_ups.change_of(db,args['suggestion_id'],args.get('job_id')),
+                                              [a for a in next_actions.actions(action) if a['kind'] in ('email',)+next_actions.TEXT_KINDS],args.get('send_now') is True)
+            if why:raise ValueError(why+'.')
             if args.get('send_now') is True:
                 # Only a draft the owner already had in front of them, approved in a later message of theirs. A draft
                 # written or changed in this turn is saved and shown first: the owner reads it and taps Send.
@@ -14241,6 +14250,10 @@ class App:
             return renamed
         if name in GRAPH_SHARE_ACTIONS:
             return self.graph_share_action(name, args, owner_dashboard)
+        if name == 'follow_up_change':
+            if not owner_dashboard:
+                raise ValueError('Only the owner changes follow-ups, on the dashboard')
+            return self.follow_up_change(args)
         if name in ('follow_up_settings', 'follow_up_save'):
             # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
             if not owner_dashboard:
@@ -16169,7 +16182,7 @@ class App:
             return None  # something newer is still on its way into the project: next pass
         grouped = item['source'] == 'board'
         name = p['name']
-        title = i18n.t('Follow up on {}', name)[:90]
+        title = i18n.t('Follow up with {}', follow_ups.short_name(name, board['name'] if board else ''))[:90]  # the board names the rest
         # Since the round's first unanswered message (earlier sends from another app count too)
         days = (dt.datetime.fromisoformat(now()) - follow_ups.parse(item.get('round_at') or item['after_at'])).days
         body = i18n.t('No reply for {} days. Follow-up {} of at most {}.', days, item['n'], settings['max'])[:700]
@@ -16215,6 +16228,54 @@ class App:
         if earlier:
             lines.append('Earlier follow-ups said (newest first; say something else):\n' + '\n'.join('- ' + ' '.join(t.split())[:300] for t in earlier))
         return '\n'.join(lines)
+
+    def follow_up_change_note(self, job):
+        """What a rewrite from the follow-up review's Change adds to its turn (follow_ups.change_note), else '': the
+        rewrite rules and the skills that are on now, read from the database at the start of the turn, so a skill the
+        owner added after the draft (or after the session began) is there with its file to read."""
+        try:
+            with self.store.connect() as db:
+                if not follow_ups.change_of(db, job['suggestion_id'], job['job_id']):
+                    return ''
+                on = [dict(r) for r in db.execute("SELECT name,slug,description FROM skills WHERE status='on' ORDER BY name")] \
+                    if db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone() else []
+        except sqlite3.Error:
+            return ''
+        root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
+        return '\n\n' + follow_ups.change_note([{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in on])
+
+    def follow_up_change(self, args):
+        """Change in the follow-up review: the owner's instruction rewrites the drafts of these follow-up to-dos (all
+        checked, or one), each through its chat's path (a Change note, decide 'other', the preparation's next turn),
+        at most follow_ups.DRAFTING at once (preparation_step). Nothing is sent; only the text changes (change_problem).
+        {'changing': [{'id', 'revision'}], 'skipped': [ids no longer ready]}."""
+        text = str(args.get('text') or '').strip()
+        if not text:
+            raise ValueError('Say what should change')
+        if len(text) > follow_ups.CHANGE_MAX:
+            raise ValueError(f'Keep it under {follow_ups.CHANGE_MAX} characters')
+        ids = args.get('ids')
+        if not isinstance(ids, list) or not ids or len(ids) > 100 or not all(isinstance(i, str) and re.fullmatch(r'[a-f0-9]{16}', i) for i in ids):
+            raise ValueError('Say which follow-ups')
+        changing, skipped = [], []
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            for sid in dict.fromkeys(ids):
+                row = db.execute("SELECT s.status,s.next_action,p.status job FROM suggestions s JOIN follow_up_cards f ON f.suggestion_id=s.id "
+                                 "LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=? AND f.state='open'", (sid,)).fetchone()
+                # Ready, or a rewrite that got stuck (its draft still the one before): Try again
+                ready = row and (row['status'] == 'prepared' or row['status'] in ('instructions', 'accepted') and row['job'] == 'blocked')
+                draft = next((x for x in next_actions.actions(row['next_action'] or 'null') if x['kind'] in ('email',) + next_actions.TEXT_KINDS),
+                             None) if ready else None
+                if not draft or db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('queued','sending','local_preparation')", (sid,)).fetchone():
+                    skipped.append(sid)
+                    continue
+                decision = 'chat-' + uuid.uuid4().hex
+                self.store._decide(db, sid, 'other', text, decision, 'dashboard')
+                follow_ups.changing(db, sid, decision, draft['revision'], draft, now())
+                changing.append({'id': sid, 'revision': draft['revision']})
+        return {'changing': changing, 'skipped': skipped}
 
     def follow_up_send(self):
         """Send without asking: an open follow-up that's prepared goes through the outbox when its board or project said
@@ -16359,9 +16420,15 @@ class App:
             queued.sort(key=lambda j:j['suggestion_id'] in following)
             late=follow_ups.late_ids(db,now()) if following else set()
             admitted=[]
+            # The owner's own message in a follow-up's chat (the review's Change too) is theirs, not background work: it
+            # goes in turn with other work, at most follow_ups.DRAFTING follow-ups at once
+            asked=lambda j:j['suggestion_id'] in following and str(j.get('decision_id') or '').startswith('chat-')
             for job in queued:
                 if len(admitted)>=room:break
-                if job['suggestion_id'] in following and (any(j['suggestion_id'] not in following for j in queued if j not in admitted) or self.follow_up_pause(late=job['suggestion_id'] in late)):
+                if asked(job):
+                    if sum(j['suggestion_id'] in following for j in active+admitted)>=follow_ups.DRAFTING:
+                        continue
+                elif job['suggestion_id'] in following and (any(j['suggestion_id'] not in following for j in queued if j not in admitted) or self.follow_up_pause(late=job['suggestion_id'] in late)):
                     continue
                 # A follow-up draft has its own pacing (follow_up_pause above, follow_ups.DRAFTING and PER_DAY): not the one
                 # ahead draft per tick and BACKGROUND_GAP_SECONDS of other drafts prepared ahead
@@ -16413,7 +16480,10 @@ class App:
             else:request.update(self.chat_turn_args(job['suggestion_id']))  # the model and thinking picked for this chat (chat_model.py)
             # A chat message (dashboard chat, decision chat-…) in a session that already has the card's context: a short
             # follow-up turn instead of the full card context again, so long chats stay cheap.
-            if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead']:
+            # A Change from the follow-up review is a new draft, never a bare text edit: it takes the full context again
+            # (the owner's current style, what was learned, the thread, earlier follow-ups and the skills on right now).
+            changing=self.follow_up_change_note(job)
+            if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead'] and not changing:
                 request['message']=chat_prompt(job,self.config)
             else:
                 self.store.note_rule_files(RULE_FILES)
@@ -16442,7 +16512,7 @@ class App:
                     if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('newer activity error=%s',type(error).__name__)
                 try:  # an automated follow-up: which one, its channel, what earlier ones said (follow_ups.py)
-                    lines=self.follow_up_lines(job['suggestion_id'])
+                    lines=self.follow_up_lines(job['suggestion_id'])+changing
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('follow-up lines error=%s',type(error).__name__)
                 if getattr(self, 'fleet', None):

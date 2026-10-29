@@ -3839,7 +3839,8 @@ def counterpart_keys(db, event_ids):
 def split_plan(db, project_id):
     """How Add splits a project that bundles several counterparts (a review said so): one part per organization (or
     person without one) its messages are with, each going into the open project already with them when there is one
-    (no duplicates), else a new "<project>: <counterpart>". [{name, key, event_ids, project_id or None}]; fewer than
+    (no duplicates), else a new one named after the counterpart ("<project>: <counterpart>" when that name is taken).
+    [{name, key, event_ids, project_id or None}]; fewer than
     two parts means it is one project after all."""
     row = db.execute('SELECT * FROM projects WHERE id=?', (int(project_id),)).fetchone()
     ids = [r[0] for r in db.execute('SELECT ep.event_id FROM event_projects ep JOIN events e ON e.id=ep.event_id WHERE ep.project_id=? AND e.deleted=0 '
@@ -3862,10 +3863,15 @@ def split_plan(db, project_id):
         owners.setdefault(r['a'], r['id'])
         if str(r['org'] or '').startswith('org:'):
             owners.setdefault(r['org'], r['id'])
-    out = []
+    out, used = [], set()
     for key, events in sorted(parts.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         who = one_line(names.get(key), 60) or (key[4:] if key.startswith('org:') else key.split(':', 1)[-1])
-        name = f"{row['name'][:max(10, 58 - len(who))]}: {who}"[:60].strip()
+        # Named after the counterpart alone: the board it goes on names the rest. The bundle's name in front only when
+        # that name is taken already (another project, or a second counterpart by the same name), so two never merge.
+        name = who[:60].strip()
+        if name.lower() in used or db.execute('SELECT 1 FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone():
+            name = f"{row['name'][:max(10, 58 - len(who))]}: {who}"[:60].strip()
+        used.add(name.lower())
         out.append({'name': name, 'key': key, 'event_ids': events, 'project_id': owners.get(key)})
     return out
 

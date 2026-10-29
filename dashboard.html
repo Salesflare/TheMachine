@@ -807,7 +807,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .fu-keys{margin:-4px 0 8px;color:var(--c-text-3);font-size:var(--fs-xs)}
 /* The fast review: every draft at full height, the list the only scroller, the footer always in reach */
 #fu-review[open]{display:flex;flex-direction:column;overflow:hidden;max-height:min(880px,calc(100dvh - 48px))}#fu-review>:not(.fr-list){flex:none}
-.fr-list{flex:1 1 auto;min-height:0;list-style:none;margin:0 -18px;padding:12px 18px 18px;border-top:1px solid var(--c-line);display:flex;flex-direction:column;gap:12px;overflow-y:auto;overscroll-behavior:contain}
+.fr-list{flex:1 1 auto;min-height:0;list-style:none;margin:0 -18px;padding:12px 18px 18px;border-top:1px solid var(--c-line);display:flex;flex-direction:column;gap:12px;overflow-y:auto;overscroll-behavior:contain;overflow-anchor:none}  /* frPatch keeps the top draft in place itself */
 .fr-item{flex:none;border:1px solid var(--c-line);border-radius:var(--r-md);padding:12px 14px 14px;background:var(--surface);transition:border-color .15s,box-shadow .15s}.fr-item:focus{outline:none}
 .fr-item.on{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent)}
 .fr-head{display:flex;align-items:center;gap:10px;min-width:0}.fr-head input{flex:none;width:18px;height:18px;min-height:0;margin:0}.fr-head b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:var(--fs-md)}
@@ -816,18 +816,30 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .fr-to{flex:1;min-width:0;margin:0;font-size:var(--fs-xs);color:var(--c-text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fr-actions{flex:none;display:flex;gap:4px;visibility:hidden;width:0;overflow:hidden}.fr-actions button{margin:0;min-height:30px;padding:4px 12px}
 .fr-item.on .fr-actions,.fr-item:hover .fr-actions,.fr-item:focus-within .fr-actions{visibility:visible;width:auto;overflow:visible}.fr-item:not(.on) .fr-actions .primary{background:none;border:1px solid var(--c-line-strong);color:var(--text);box-shadow:none}
-.fr-body{margin:6px 0 0 28px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);font-size:var(--fs-md);line-height:1.55}
+.fr-body{margin:6px 0 0 28px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);font-size:var(--fs-md);line-height:1.5}
+/* paragraphs: a blank line in the draft is this space, not a full empty line (frBody) */
+.fr-body p{margin:0}.fr-body p+p{margin-top:.6em}
+.fr-item.rewriting .fr-body{opacity:.45}
+.fr-state{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:6px 0 0 28px;font-size:var(--fs-sm);color:var(--c-text-2)}.fr-state.fail{color:var(--c-orange)}
+.fr-state button.link{min-height:0;margin:0;padding:2px 0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.fr-spin{flex:none;width:12px;height:12px;border:2px solid color-mix(in srgb,var(--text) 18%,transparent);border-top-color:var(--c-accent);border-radius:50%;animation:spin .8s linear infinite}
+/* Change: a small box above the footer, what should change and for which drafts */
+.fr-change{display:flex;flex-direction:column;gap:8px;margin:0 -18px;padding:12px 18px;border-top:1px solid var(--c-line);background:var(--c-sunken)}
+.fr-change-q{color:var(--text);font-weight:600;font-size:var(--fs-sm)}
+.fr-change textarea{display:block;width:100%;margin:0;min-height:3.2em;max-height:9em;field-sizing:content;resize:none;font-size:var(--fs-md);line-height:1.45}
+.fr-scope{display:flex;flex-wrap:wrap;gap:0 4px;min-width:0}.fr-scope .fu-radio{min-width:0;min-height:30px;margin-right:12px}.fr-scope .fu-radio span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fr-scope .fu-radio:has(input:disabled){opacity:.5}
+.fr-change-actions{display:flex;justify-content:flex-end;gap:8px}.fr-change-actions button{margin:0}
 .fr-none{margin:6px 0 0 28px}
 .fr-held{margin:6px 0 0 28px;font-size:var(--fs-sm);color:var(--c-orange)}
 .fr-actions .fr-plain{background:transparent;border:1px solid var(--c-line-strong);color:var(--text)}
 .fr-edit{display:block;width:calc(100% - 28px);margin:6px 0 0 28px;min-height:7em;field-sizing:content;resize:vertical;font-size:var(--fs-md);line-height:1.55}
-@media(prefers-reduced-motion:reduce){.fr-item{transition:none}}
+@media(prefers-reduced-motion:reduce){.fr-item{transition:none}.fr-spin{animation:none}}
 @media(hover:none){#fu-review .fu-keys{display:none}}
 @media(max-width:560px){
   #board-dialog,#project-dialog,#record-dialog,#crm-dialog,#crm-dialog.wide,#share-people,#contact-share,#fu-dialog,#fu-review{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}#crm-dialog.tall{height:92dvh}
   .fu-row input[type=number],.fu-stages input[type=number]{width:3.2em}.fu-stages .fu-chk{flex-basis:9rem}
   #fu-review[open]{height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0;padding:14px 16px 16px}#fu-review .ed-actions{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
-  .fr-list{margin:0 -16px;padding:12px 16px 16px}#fu-review .snooze-heading{margin-bottom:10px}.fr-item{padding:12px}.fr-sub,.fr-body,.fr-none,.fr-held{margin-left:0}.fr-edit{width:100%;margin-left:0}
+  .fr-list{margin:0 -16px;padding:12px 16px 16px}#fu-review .snooze-heading{margin-bottom:10px}.fr-item{padding:12px}.fr-sub,.fr-body,.fr-none,.fr-held,.fr-state{margin-left:0}.fr-change{margin:0 -16px;padding:12px 16px}.fr-edit{width:100%;margin-left:0}
   .ed-row{grid-template-columns:1fr}.proj-new{display:block}
   .board-suggest{padding:12px 14px}.board-suggest-actions{width:100%}.board-suggest-actions button{flex:1}
   .ed-actions{margin:0 -16px -16px;padding:12px 16px 16px}.ed-actions .grow{display:none}.ed-actions button.primary{flex:1 1 100%;order:-1}.ed-actions{justify-content:center}
@@ -1852,6 +1864,24 @@ body main{padding-top:0}
 .side-cards a[aria-current]{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text)}
 .side-more,.side-more:hover{display:block;width:100%;min-height:0;margin:1px 0 0;padding:5px 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-quiet,var(--c-text-3));font:500 12.5px/1.45 var(--sans);text-align:left;cursor:pointer}
 .side-more:hover{background:var(--c-hover);color:var(--text)}
+/* Done: a board's sent and skipped follow-ups of one day as one row that opens to the list */
+.done-fold{display:flex;align-items:center;gap:6px;width:100%;min-height:0;margin:0;padding:5px 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-quiet,var(--c-text-3));font:400 13px/1.45 var(--sans);text-align:left;cursor:pointer}
+.done-fold span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.done-fold small,.done-fold-n{flex:none;color:var(--side-quiet,var(--c-text-3));font-size:11.5px;font-variant-numeric:tabular-nums}.done-fold-n{font-size:var(--fs-sm);color:var(--c-text-3)}
+.done-fold svg{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease)}
+.done-fold[aria-expanded="false"] svg{transform:rotate(-90deg)}
+@media(hover:hover) and (pointer:fine){.done-fold:hover{background:var(--c-hover);color:var(--text)}}
+.done-fold-list{margin:0 0 4px 14px;padding-left:4px;border-left:1px solid var(--border)}
+:is(.side-cards,.chat-side) .done-fold-list a{display:flex;flex-direction:column;padding:4px 8px}
+.done-fold-list a span,.done-fold-list small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.done-fold-list small{color:var(--side-quiet,var(--c-text-3));font-size:11.5px;line-height:1.35}
+.fu-done details>summary{display:flex;align-items:baseline;gap:12px;list-style:none;cursor:pointer}
+.fu-done details>summary::-webkit-details-marker{display:none}
+.fu-done details>summary h3{flex:1;min-width:0;margin:0}
+.fu-done-list{display:grid;gap:6px;margin:10px 0 0;padding:0;list-style:none;font-size:var(--fs-sm)}
+.fu-done-list li{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.5fr) 6em;grid-template-areas:'p t w';gap:14px}
+.fu-done-list a{grid-area:p}.fu-done-list li>span{grid-area:t;color:var(--c-text-2)}.fu-done-list li>.muted{grid-area:w;text-align:right;color:var(--c-text-3)}
+.fu-done-list li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A long list's next page: a quiet row while it loads, never a spinner over the page */
 .pager-loading{margin:0;padding:12px 16px;color:var(--c-text-3);font-size:var(--fs-sm);animation:pager-breathe 1.4s ease-in-out infinite}
 @keyframes pager-breathe{50%{opacity:.45}}@media(prefers-reduced-motion:reduce){.pager-loading{animation:none}}
@@ -1992,6 +2022,9 @@ body main{padding-top:0}
   .side-cards{flex:none;min-height:auto;margin-top:12px;overflow:visible;scrollbar-gutter:auto}  /* on a phone the whole drawer scrolls as one column */
   .side-cards a{padding:9px 10px;font-size:15px}
   .side-more,.side-more:hover{padding:9px 10px;font-size:14px}
+  .done-fold{padding:9px 10px;font-size:15px}.done-fold svg{width:14px;height:14px}
+  .side-cards .done-fold-list a{padding:7px 10px}.done-fold-list small{font-size:13px}
+  .fu-done-list{gap:10px}.fu-done-list li{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'p w' 't t';gap:0 12px}
   .app-side .head-side>.live{min-height:36px}
   #open-browser:not([hidden]){display:flex}
   .page-head{display:flex;align-items:center;gap:12px;margin:4px 0 22px}
@@ -4768,19 +4801,19 @@ function learnedList(){
 // scrolls near, and a quiet Show more for keyboards, screen readers and when the scroll doesn't tell. A pager keeps what
 // it loaded, so a refresh, a tab switch or going back from a card or a person shows the same rows at the same place.
 const pagers=new Map();
-function pager(key,load,row){let p=pagers.get(key);if(!p){p={key,load,row,items:[],next:'0',total:null,busy:false,failed:false,html:''};pagers.set(key,p)}else{p.load=load;p.row=row}return p}
+function pager(key,load,row,rows){let p=pagers.get(key);if(!p){p={key,load,row,rows,items:[],next:'0',total:null,busy:false,failed:false,html:''};pagers.set(key,p)}else{p.load=load;p.row=row;p.rows=rows}return p}
 function pagerDrop(prefix){for(const k of [...pagers.keys()])if(k===prefix||k.startsWith(prefix+':'))pagers.delete(k)}
 const pagerSlot=(key,empty='',rows='')=>`<div class="pager" data-pager="${esc(key)}" data-empty="${esc(empty)}" data-rows="${esc(rows)}"></div>`;
 const pagerFoot=p=>p.busy?'<p class="pager-loading" role="status">Loading…</p>':p.failed?'<button type="button" class="quiet more-rows" data-pager-more>Couldn’t load. Try again</button>':p.next!=null?'<button type="button" class="quiet more-rows" data-pager-more>Show more</button>':'';
 function pagerFootPaint(el,p){const empty=!p.items.length&&p.next==null&&!p.busy&&!p.failed;el.querySelector('.pager-foot').innerHTML=empty&&el.dataset.empty?`<p class="muted pager-empty">${esc(el.dataset.empty)}</p>`:pagerFoot(p)}
 function pagerMount(root=document){for(const el of root.querySelectorAll('[data-pager]')){const p=pagers.get(el.dataset.pager);if(!p)continue;
- if(!el.firstChild){el.innerHTML=`<div class="pager-rows ${esc(el.dataset.rows||'')}">${p.html}</div><div class="pager-foot"></div>`;pagerSeen.observe(el.querySelector('.pager-foot'));detailsSync(el)}pagerFootPaint(el,p)}}
+ if(!el.firstChild){if(p.rows)p.html=p.rows(p.items);el.innerHTML=`<div class="pager-rows ${esc(el.dataset.rows||'')}">${p.html}</div><div class="pager-foot"></div>`;pagerSeen.observe(el.querySelector('.pager-foot'));detailsSync(el)}pagerFootPaint(el,p)}}
 const pagerNear=el=>{const f=el.querySelector('.pager-foot');if(!f||!el.offsetParent)return false;const r=f.getBoundingClientRect(),box=el.closest('.side-cards,.chat-side');return r.top<innerHeight+600&&r.bottom>-600&&!box};
 function pagerMore(key){const p=pagers.get(key);if(!p||p.next==null&&!p.busy)return Promise.resolve();if(p.busy)return p.pending;return p.pending=pagerLoad(key,p)}
 async function pagerLoad(key,p,paint=true){p.busy=true;p.failed=false;const els=()=>paint?[...document.querySelectorAll('[data-pager]')].filter(e=>e.dataset.pager===key):[];
  for(const el of els())pagerFootPaint(el,p);let fresh='';
- try{const r=await p.load(p.next);if(pagers.get(key)!==p)return;const have=new Set(p.items.map(x=>x?.id).filter(Boolean));r.items=r.items.filter(x=>!x?.id||!have.has(x.id));p.items.push(...r.items);fresh=r.items.map(x=>p.row(x)).join('');p.html+=fresh;p.next=r.next??null;p.total=r.total??p.total;p.onload?.(r.items)}catch{p.failed=true}finally{p.busy=false}
- for(const el of els()){el.querySelector('.pager-rows')?.insertAdjacentHTML('beforeend',fresh);pagerFootPaint(el,p)}
+ try{const r=await p.load(p.next);if(pagers.get(key)!==p)return;const have=new Set(p.items.map(x=>x?.id).filter(Boolean));r.items=r.items.filter(x=>!x?.id||!have.has(x.id));p.items.push(...r.items);if(p.rows){p.html=p.rows(p.items);fresh=r.items.length?null:''}else{fresh=r.items.map(x=>p.row(x)).join('');p.html+=fresh}p.next=r.next??null;p.total=r.total??p.total;p.onload?.(r.items)}catch{p.failed=true}finally{p.busy=false}
+ for(const el of els()){const rows=el.querySelector('.pager-rows');if(fresh===null){if(rows)rows.innerHTML=p.html}else rows?.insertAdjacentHTML('beforeend',fresh);pagerFootPaint(el,p)}
  if(fresh)requestAnimationFrame(()=>{for(const el of els())if(pagerNear(el)){pagerMore(key);break}})}
 const pagerSeen=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){const el=e.target.closest('[data-pager]');if(el&&pagerNear(el))pagerMore(el.dataset.pager)}},{rootMargin:'0px 0px 600px 0px'});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pager-more]');if(!b)return;e.preventDefault();e.stopPropagation();const el=b.closest('[data-pager]'),p=pagers.get(el?.dataset.pager);if(p?.failed)p.failed=false;if(el)pagerMore(el.dataset.pager)},true);
@@ -4793,9 +4826,42 @@ const doneLocal=()=>{const items=(state?.suggestions||[]).filter(s=>closed(s)&&(
 // The first page is the done cards the status payload already has, so the list is there at once; the Machine sends the rest
 function donePager(){const fresh=!pagers.has(doneKey()),p=pager(doneKey(),cursor=>request(`api/cards/done?cursor=${encodeURIComponent(cursor)}${scopeFilter==='all'?'':'&scope='+scopeFilter}`).catch(()=>null).then(r=>{
   if(!Array.isArray(r?.cards)){const l=doneLocal(),n=Number(cursor)||0;return {items:l.items.slice(n,n+30),next:n+30<l.items.length?String(n+30):null,total:l.total}}
-  for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();return {items:r.cards,next:r.next,total:r.total}}),s=>suggestionCard(s));
- if(fresh){const l=doneLocal(),n=Math.min(30,l.items.length),total=Math.max(l.total,state?.done_counts?.[scopeFilter]??0);p.items=l.items.slice(0,n);p.html=p.items.map(x=>p.row(x)).join('');p.total=total;p.next=total>n?String(n):null}
+  for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();return {items:r.cards,next:r.next,total:r.total}}),s=>suggestionCard(s),doneRows);
+ if(fresh){const l=doneLocal(),n=Math.min(30,l.items.length),total=Math.max(l.total,state?.done_counts?.[scopeFilter]??0);p.items=l.items.slice(0,n);p.html=doneRows(p.items);p.total=total;p.next=total>n?String(n):null}
  return p}
+// Done: sent and skipped follow-ups fold into one row per board (or the projects' own rules) and day: "13 follow-ups
+// sent for Partner listings". Opening it lists them (project, to, when), each a link to its to-do. A search (the
+// sidebar's Find, the palette) still finds each one.
+const doneOpen=new Set(),donePageOpen=new Set();  // the sidebar's open rows, the Done list's
+const fuDoneState=s=>['sent','skipped','stopped'].includes(s?.follow_up?.state)?(s.follow_up.state==='sent'?'sent':'skipped'):'';
+function doneFold(items){const groups=new Map(),out=[];
+ for(const x of items){const st=x&&!x.fuGroup&&!x.fuFold&&fuDoneState(x);if(!st){out.push(x);continue}
+  const k=(x.follow_up.group||'own')+'@'+localDay(new Date(closedAt(x)));let g=groups.get(k);
+  if(!g){g={fuFold:k,id:'fold-'+k,items:[],board:x.follow_up.group?x.follow_up.board||'':'',closed_at:closedAt(x),scope:x.scope};groups.set(k,g);out.push(g)}g.items.push(x)}
+ return out.map(x=>!x.fuFold?x:x.items.length>1?Object.assign(x,{title:doneFoldTitle(x)}):x.items[0])}
+// "13 follow-ups sent for Partner listings", and the skipped ones as a quiet count beside it so the title stays short
+function doneFoldTitle(g){const sent=g.items.filter(s=>fuDoneState(s)==='sent').length;g.skipped=g.items.length-sent;
+ if(!sent)return g.board?t(['{} follow-up skipped for {}','{} follow-ups skipped for {}'],g.skipped,g.board):t(['{} follow-up skipped','{} follow-ups skipped'],g.skipped);
+ return g.board?t(['{} follow-up sent for {}','{} follow-ups sent for {}'],sent,g.board):t(['{} follow-up sent','{} follow-ups sent'],sent)}
+const doneFoldSkipped=g=>g.skipped&&g.skipped<g.items.length?t('{} skipped',g.skipped):'';
+// One folded follow-up: the project, who it went to, and when (or that it was skipped)
+function doneFoldWho(s){const a=frDraft(s),to=a?(a.to_name||(a.to||[]).join(', ')):'';return to?t('To {}',to):''}
+const doneFoldWhen=s=>fuDoneState(s)==='sent'?new Date(closedAt(s)).toLocaleTimeString(DL,{hour:'numeric',minute:'2-digit'}):t('Skipped');
+function sideRow(x,cur){
+ if(x.fuGroup)return `<a href="#" ${x.writing?'data-fu-card':'data-fu-review'}="${esc(x.fuGroup)}" title="${esc(x.title)}" translate="no">${esc(x.title)}</a>`;
+ if(x.fuFold){const open=doneOpen.has(x.fuFold);
+  const n=doneFoldSkipped(x);
+  return `<button type="button" class="done-fold" data-done-fold="${esc(x.fuFold)}" aria-expanded="${open}" title="${esc([x.title,n].filter(Boolean).join(' · '))}"><span translate="no">${esc(x.title)}</span>${n?`<small>${esc(n)}</small>`:''}${CHEVRON}</button>`
+   +(open?`<div class="done-fold-list">${x.items.map(s=>`<a href="#chat=${s.id}" title="${esc(s.title)}"${s.id===cur?' aria-current="page"':''}><span translate="no">${esc(frName(s.follow_up))}</span><small>${esc([doneFoldWho(s),doneFoldWhen(s)].filter(Boolean).join(' · '))}</small></a>`).join('')}</div>`:'')}
+ return `<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===cur?' aria-current="page"':''}>${esc(x.title)}</a>`}
+// The Done list on the Suggestions page: the same fold, a quiet to-do that opens to the list
+function doneRows(items){return doneFold(items).map(x=>x.fuFold?doneFoldCard(x):suggestionCard(x)).join('')}
+function doneFoldCard(g){const open=donePageOpen.has(g.fuFold);
+ return `<article class="card todo t-faint fu-done" id="${esc(g.id.replace(/[^\w-]/g,'-'))}" data-status="completed"><details data-done-fold-card="${esc(g.fuFold)}"${open?' open':''}><summary><h3 translate="no">${esc(g.title)}</h3>${doneFoldSkipped(g)?`<span class="done-fold-n">${esc(doneFoldSkipped(g))}</span>`:''}<span class="meta-side">${time(g.closed_at,true)}</span></summary>`
+  +`<ul class="fu-done-list">${g.items.map(s=>`<li><a href="#chat=${s.id}" translate="no">${esc(frName(s.follow_up))}</a><span>${esc(doneFoldWho(s))}</span><span class="muted">${esc(doneFoldWhen(s))}</span></li>`).join('')}</ul></details></article>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-done-fold]');if(!b)return;e.preventDefault();const k=b.dataset.doneFold;doneOpen.has(k)?doneOpen.delete(k):doneOpen.add(k);const inSide=!!b.closest('#side-cards');sideCards();if(chatOpen())render();
+ (inSide?$('#side-cards'):document).querySelector(`[data-done-fold="${CSS.escape(k)}"]`)?.focus()});
+document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches?.('[data-done-fold-card]'))return;d.open?donePageOpen.add(d.dataset.doneFoldCard):donePageOpen.delete(d.dataset.doneFoldCard)},true);
 function cardsMerge(){if(!state?.suggestions)return;const ids=new Set(state.suggestions.map(s=>s.id));for(const c of doneExtra.values())if(!ids.has(c.id))state.suggestions.push(c)}
 let doneSeen='';  // done counts and ids as last shown: when they change, the Done lists start over from the top
 const listShown={};const clipList=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?rows.slice(0,k).join('')+(rows.length>k?`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''):empty};
@@ -5545,7 +5611,7 @@ function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…'
   :closed(s)?(s.status==='completed'?'Done':'Not needed'):s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||['accepted','instructions'].includes(s.status)?'Preparing':'';
  return text?`<span>${esc(text)}</span>${p.back&&!chat?.active?`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
 function chatView(s,groups){const p=chatParts(s);
- const side=`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>x.fuGroup?`<a href="#" ${x.writing?'data-fu-card':'data-fu-review'}="${esc(x.fuGroup)}" title="${esc(x.title)}" translate="no">${esc(x.title)}</a>`:`<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===s.id?' aria-current="page"':''}>${esc(x.title)}</a>`).join('')}${cut.more?sideMoreRow(key):''}`:''}).join('')}</aside>`;
+ const side=`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>sideRow(x,s.id)).join('')}${cut.more?sideMoreRow(key):''}`:''}).join('')}</aside>`;
  return `<div class="chat-layout${chatDrawer?' drawer':''}" data-chat="${s.id}">${side}<div class="chat-main"><header class="chat-head"><a class="chat-back" href="#card=${s.id}" data-chat-back aria-label="Back to the to-do" title="Back to the to-do">${BACK}</a><h2 class="chat-title" title="${esc(s.title)}" translate="no">${esc(s.title)}</h2>
   <details class="chat-menu" id="chat-menu"><summary aria-label="More actions" title="More actions">${DOTS}</summary><div class="chat-menu-list" role="group" aria-label="More actions">${p.rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button></div></details></header>
  <article id="task-${s.id}" class="chat-panel">${p.panel}</article><div class="chat-log" id="chat-log" aria-live="polite">${chatLog(s)}</div>
@@ -6017,7 +6083,8 @@ function wakeSnoozed(st){const now=Date.now();let next=Infinity;for(const s of s
  clearTimeout(wakeTimer);if(next<Infinity&&next-now<864e5)wakeTimer=setTimeout(()=>refresh(),next-now+3000);return st}
 // Follow-ups going out spaced (30-45 s apart) are watched every 5 s: their progress to-do moves on without a 2 s poll for minutes.
 let sendTimer=null;const sendWatch=()=>{clearTimeout(sendTimer);const busy=s=>chatSends(s).some(x=>['queued','sending'].includes(x.st.status)),batch=(state.follow_up_progress||[]).some(p=>p.going);
- const quick=(state.suggestions||[]).some(s=>busy(s)&&!(batch&&s.follow_up));if(quick||batch)sendTimer=setTimeout(()=>{refreshWhenReady();if(chatId)chatPoll()},quick?2000:5000)};
+ const quick=(state.suggestions||[]).some(s=>busy(s)&&!(batch&&s.follow_up)),rewriting=fr?.changing.size>0;  // the review's Change: every 3 s until each rewrite is back
+ if(quick||batch||rewriting)sendTimer=setTimeout(()=>{refreshWhenReady();if(chatId)chatPoll()},quick?2000:rewriting?3000:5000)};
 // A status read that started before an edit shown at once (a rename) is older than the screen: read again instead of
 // putting the old value back for a moment.
 let localEdits=0;
@@ -6049,11 +6116,11 @@ const titleHas=(x,q)=>String(x.title||'').toLowerCase().includes(q);
 function sideAll(items,key,q=''){let all=q?items.filter(x=>titleHas(x,q)):items;if(key!=='done')return all;
  const extra=[...pagers.get(doneKey())?.items||[],...q&&doneFound.q===q?doneFound.items:[]];if(!extra.length)return all;const seen=new Set(all.map(x=>x.id));
  return [...all,...extra.filter(x=>!seen.has(x.id)&&(!q||titleHas(x,q)))].sort((a,b)=>closedAt(b).localeCompare(closedAt(a)))}
-function sideList(items,key){const all=sideAll(items,key),n=sideShown[key]||sideFirst(key),total=key==='done'?Math.max(all.length,state?.done_counts?.[scopeFilter]??0):all.length;
- return {list:all.slice(0,n),more:all.length>n||total>all.length&&pagers.get(doneKey())?.next!=null,count:total}}
+function sideList(items,key){const each=sideAll(items,key),all=key==='done'?doneFold(each):each,n=sideShown[key]||sideFirst(key),total=key==='done'?Math.max(each.length,state?.done_counts?.[scopeFilter]??0):each.length;
+ return {list:all.slice(0,n),more:all.length>n||total>each.length&&pagers.get(doneKey())?.next!=null,count:total}}
 const sideMoreRow=key=>`<button type="button" class="side-more" data-side-more="${key}">Show more</button>`;
 async function sideMore(key){sideShown[key]=(sideShown[key]||sideFirst(key))+SIDE_STEP;
- if(key==='done'){const items=sideGroups.find(g=>g[2]==='done')?.[0]||[],p=donePager();for(let i=0;i<10&&sideAll(items,'done').length<sideShown.done&&p.next!=null&&!p.failed;i++)await pagerMore(doneKey())}
+ if(key==='done'){const items=sideGroups.find(g=>g[2]==='done')?.[0]||[],p=donePager();for(let i=0;i<10&&doneFold(sideAll(items,'done')).length<sideShown.done&&p.next!=null&&!p.failed;i++)await pagerMore(doneKey())}
  sideCards();if(chatOpen())render()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-side-more]');if(!b)return;e.preventDefault();sideMore(b.dataset.sideMore)});
 // A search also asks the Machine for done cards beyond the ones loaded
@@ -6063,13 +6130,13 @@ function doneSearch(q){if(!q||doneFound.q===q||(state?.done_counts?.[scopeFilter
   for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();doneFound.q=q;doneFound.items=r.cards;sideCards()}catch{}},250)}
 function sideCards(groups){if(groups)sideGroups=groups;const q=$('#side-find').value.trim().toLowerCase(),box=$('#side-cards');doneSearch(q);
  const parts=sideGroups.map(([items,title,key])=>{const open=!!q||!sideFolded.has(key),cut=q?{list:sideAll(items,key,q),more:false}:sideList(items,key),count=q?cut.list.length:cut.count;if(!count)return'';
-  return `<div class="side-group${key==='done'||key==='later'?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${CHEVRON}<span>${title}</span><span class="count">${count}</span></button>${open?cut.list.map(x=>x.fuGroup?`<a href="#" ${x.writing?'data-fu-card':'data-fu-review'}="${esc(x.fuGroup)}" title="${esc(x.title)}" translate="no">${esc(x.title)}</a>`:`<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===chatId?' aria-current="page"':''}>${esc(x.title)}</a>`).join('')+(cut.more?sideMoreRow(key):''):''}</div>`}).join('');
+  return `<div class="side-group${key==='done'||key==='later'?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${CHEVRON}<span>${title}</span><span class="count">${count}</span></button>${open?cut.list.map(x=>sideRow(x,chatId)).join('')+(cut.more?sideMoreRow(key):''):''}</div>`}).join('');
  const html=`<div class="side-label"><span>To-dos</span>${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${parts||`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
  if(html!==sideHTML){sideHTML=html;const back=sideKeep(box);box.innerHTML=html;back();requestAnimationFrame(chatFades)}}
 // The card list scrolls in its own box (the computer's sidebar, the phone's drawer): a new card above keeps the rows in view where they were
-function sideKeep(box){const sc=[box,box.closest('.app-side')].find(x=>x&&x.scrollTop>0);if(!sc)return()=>{};const edge=sc.getBoundingClientRect().top,key=n=>n.getAttribute('href')||n.dataset.sideFold||n.dataset.sideMore;
- const row=[...box.querySelectorAll('a[href],[data-side-fold],[data-side-more]')].find(n=>n.getBoundingClientRect().bottom>edge);if(!row)return()=>{};const k=key(row),top=row.getBoundingClientRect().top;
- return()=>{const n=[...box.querySelectorAll('a[href],[data-side-fold],[data-side-more]')].find(x=>key(x)===k);if(n){const d=n.getBoundingClientRect().top-top;if(Math.abs(d)>=1)sc.scrollTop+=d}}}
+function sideKeep(box){const sc=[box,box.closest('.app-side')].find(x=>x&&x.scrollTop>0);if(!sc)return()=>{};const edge=sc.getBoundingClientRect().top,key=n=>n.getAttribute('href')||n.dataset.sideFold||n.dataset.sideMore||n.dataset.doneFold;
+ const row=[...box.querySelectorAll('a[href],[data-side-fold],[data-side-more],[data-done-fold]')].find(n=>n.getBoundingClientRect().bottom>edge);if(!row)return()=>{};const k=key(row),top=row.getBoundingClientRect().top;
+ return()=>{const n=[...box.querySelectorAll('a[href],[data-side-fold],[data-side-more],[data-done-fold]')].find(x=>key(x)===k);if(n){const d=n.getBoundingClientRect().top-top;if(Math.abs(d)>=1)sc.scrollTop+=d}}}
 $('#side-find').addEventListener('input',()=>sideCards());
 $('#side-find').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';sideCards()}if(e.key==='Enter'){const a=$('#side-cards a');if(a)a.click()}});
 $('#side-cards').addEventListener('click',e=>{const f=e.target.closest('[data-side-fold]');
@@ -8073,7 +8140,7 @@ function fuSplit(ready,needs,preparing){fuGroups.clear();const groups={},member=
 // The sidebar lists a board's group as one row that opens the review
 const fuGroups=new Map();
 function fuSide(items){return items.map(x=>typeof x==='string'&&fuGroups.has(x)?fuGroups.get(x):x)}
-function fuGroupCard(g,all){const list=all.filter(s=>s.status==='prepared'),writing=all.length-list.length,board=all[0].follow_up.board||'',names=all.map(s=>s.follow_up.project),first=names.slice(0,3);
+function fuGroupCard(g,all){const list=all.filter(s=>s.status==='prepared'),writing=all.length-list.length,board=all[0].follow_up.board||'',names=all.map(s=>s.follow_up.name||s.follow_up.project),first=names.slice(0,3);
  const title=list.length?t(['{} follow-up ready for {}','{} follow-ups ready for {}'],list.length,board):t('Follow-ups for {}',board);
  const card=`<h3>${list.length?`<button type="button" class="title-link fu-title" data-fu-review="${esc(g)}"><span translate="no">${esc(title)}</span></button>`:`<span translate="no">${esc(title)}</span>`}</h3>`
   +`<div class="meta"><div class="card-badges"><span class="meta-side">${time(all.map(s=>s.created_at).sort().pop(),true)}</span></div></div>`
@@ -8098,31 +8165,69 @@ document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-dismi
  b.closest('.fu-sending')?.remove();render()});
 let fr=null;
 const frDraft=s=>taskActions(s).find(a=>DRAFT_KINDS.includes(a.kind)&&draftText(a));
-const frList=()=>state.suggestions.filter(s=>s.follow_up?.group===fr.g&&s.follow_up.state==='open'&&s.status==='prepared'&&!fuBusy(s)&&!fr.gone.has(s.id));
+// A draft the review's Change is rewriting stays in the list while its to-do is back at work, and so does one that
+// couldn't be changed (its "try again" is here)
+const frList=()=>state.suggestions.filter(s=>s.follow_up?.group===fr.g&&s.follow_up.state==='open'&&!fr.gone.has(s.id)&&!fuBusy(s)
+ &&(s.status==='prepared'||(fr.changing.has(s.id)||fr.failed.has(s.id))&&['instructions','accepted'].includes(s.status)));
 // Every draft shows in full and the list is the only thing that scrolls; moving (j/k, a click) changes the current one
-// in place and scrolls it into view smoothly, a poll redraws only when the drafts changed and keeps where the list is
-const frSig=list=>list.map(s=>s.id+':'+(frDraft(s)?.revision||'')).join();
+// in place and scrolls it into view smoothly, a poll redraws only the drafts that changed and keeps where the list is
+const frPhase=s=>fr.changing.has(s.id)?'run':fr.failed.has(s.id)?'fail':fr.undo.has(s.id)?'done':'';
+const frItemSig=s=>s.id+':'+(frDraft(s)?.revision||'')+':'+s.status+':'+frPhase(s)+':'+(s.action_status?.error||'');
+const frSig=list=>list.map(s=>s.id).join();
+const frReady=s=>s.status==='prepared'&&!fr.changing.has(s.id);
 // Held right before it went because the thread got a new message (follow_ups.HELD): left out of Send all checked until the
 // owner ticks it again, and its Send is a plain one. "Couldn’t check the thread" stays checked: trying again is the point.
 const frStale=s=>s.action_status?.status==='blocked'&&s.action_status.error==='Not sent: new message in the thread.';
-function frOpen(g){fr={g,at:0,cur:null,checked:null,editing:null,gone:new Set(),sent:0,busy:false};const list=frList();fr.checked=new Set(list.filter(s=>!frStale(s)).map(s=>s.id));fr.seen=new Set(list.map(s=>s.id));
+// The project's name without the board's in front (follow_ups.short_name): the title names the board already
+const frName=f=>f.name||f.project;
+function frOpen(g){fr={g,at:0,cur:null,checked:null,editing:null,gone:new Set(),sent:0,busy:false,box:null,changing:new Map(),failed:new Map(),undo:new Map()};
+ const list=frList();fr.checked=new Set(list.filter(s=>!frStale(s)).map(s=>s.id));fr.seen=new Set(list.map(s=>s.id));
  const d=$('#fu-review');d.innerHTML='';frDraw();const ol=d.querySelector('.fr-list');if(!ol)return;if(!d.open)d.showModal();ol.scrollTop=0;d.querySelector('.fr-item.on')?.focus({preventScroll:true})}
-function frItem(s,i){const a=frDraft(s),f=s.follow_up,on=i===fr.at,edit=fr.editing===s.id,to=a?[a.to_name||(a.to||[]).join(', ')?t('To {}',a.to_name||(a.to||[]).join(', ')):'',a.from_options?.length>1&&a.from?t('From {}',a.from):''].filter(Boolean).join(' · '):'';
- return `<li class="fr-item${on?' on':''}" data-fr="${esc(s.id)}" data-fr-at="${i}" tabindex="${on?0:-1}" aria-current="${on}"><div class="fr-head"><input type="checkbox" data-fr-check="${esc(s.id)}"${fr.checked.has(s.id)?' checked':''} aria-label="${esc(t('Include {}',f.project))}"><b title="${esc(f.project)}">${esc(f.project)}</b><span class="fr-meta">${esc(t('Follow-up {} of {}',f.n,f.max))} · ${esc(FU_CHANNELS[f.channel]||f.channel)}</span></div>`
-  +`<div class="fr-sub"><p class="fr-to" title="${esc(to)}">${esc(to)}</p><div class="fr-actions">${edit?`<button type="button" class="primary" data-fr-save="${esc(s.id)}">${esc(t('Save'))}</button><button type="button" class="ghost" data-fr-cancel>${esc(t('Cancel'))}</button>`:`<button type="button" class="${frStale(s)?'fr-plain':'primary'}" data-fr-send="${esc(s.id)}"${a?'':' disabled'}>${esc(t('Send'))}</button><button type="button" class="ghost" data-fr-edit="${esc(s.id)}"${a?'':' disabled'}>${esc(t('Edit'))}</button><button type="button" class="ghost" data-fr-skip="${esc(s.id)}">${esc(t('Skip'))}</button>`}</div></div>`
-  +(s.action_status?.status==='blocked'&&s.action_status.error?`<p class="fr-held" role="status">${esc(t(s.action_status.error))}</p>`:'')
-  +(a?(edit?`<textarea class="fr-edit" data-fr-text="${esc(s.id)}" rows="6" aria-label="${esc(t('Follow-up text'))}">${esc(plainDraft(draftText(a)))}</textarea>`:`<p class="fr-body">${esc(plainDraft(draftText(a)))}</p>`):`<p class="muted fr-none">${esc(t('No draft yet.'))}</p>`)+'</li>'}
+// A draft's text in paragraphs: a blank line is the space between two, not a line of its own, and the closing
+// ("Regards,") sits right above the name (the same closing next_actions.closing_spaced puts a blank line before)
+const FR_NAME=/^\p{Lu}[\p{L}\p{N}_.'-]*(?: \p{Lu}[\p{L}\p{N}_.'-]*)?$/u;
+function frBody(text){const ps=String(text).split(/\n[ \t]*(?:\n[ \t]*)+/).map(p=>p.replace(/^\n+|\s+$/g,'')).filter(p=>p.trim()),n=ps.length;
+ const close=n>=2?ps[n-2].split('\n').pop().trim():'';
+ if(n>=2&&close.endsWith(',')&&close.length<=40&&!ps[n-1].includes('\n')&&FR_NAME.test(ps[n-1].trim()))ps.splice(n-2,2,ps[n-2]+'\n'+ps[n-1].trim());
+ return ps.map(p=>`<p>${esc(p)}</p>`).join('')}
+function frState(s){const ph=frPhase(s);
+ if(ph==='run')return `<p class="fr-state run" role="status"><i class="fr-spin" aria-hidden="true"></i>${esc(t('Rewriting…'))}</p>`;
+ if(ph==='fail')return `<p class="fr-state fail" role="status">${esc(t('Couldn’t change this one, try again'))}<button type="button" class="link" data-fr-retry="${esc(s.id)}">${esc(t('Try again'))}</button></p>`;
+ if(ph==='done')return `<p class="fr-state done"><button type="button" class="link" data-fr-undo="${esc(s.id)}">${esc(t('Undo change'))}</button></p>`;
+ return ''}
+function frItem(s,i){const a=frDraft(s),f=s.follow_up,on=i===fr.at,edit=fr.editing===s.id,to=a?[a.to_name||(a.to||[]).join(', ')?t('To {}',a.to_name||(a.to||[]).join(', ')):'',a.from_options?.length>1&&a.from?t('From {}',a.from):''].filter(Boolean).join(' · '):'',ready=frReady(s);
+ return `<li class="fr-item${on?' on':''}${fr.changing.has(s.id)?' rewriting':''}" data-fr="${esc(s.id)}" data-fr-at="${i}" tabindex="${on?0:-1}" aria-current="${on}" aria-busy="${fr.changing.has(s.id)}"><div class="fr-head"><input type="checkbox" data-fr-check="${esc(s.id)}"${fr.checked.has(s.id)?' checked':''} aria-label="${esc(t('Include {}',frName(f)))}"><b title="${esc(f.project)}">${esc(frName(f))}</b><span class="fr-meta">${esc(t('Follow-up {} of {}',f.n,f.max))} · ${esc(FU_CHANNELS[f.channel]||f.channel)}</span></div>`
+  +`<div class="fr-sub"><p class="fr-to" title="${esc(to)}">${esc(to)}</p><div class="fr-actions">${edit?`<button type="button" class="primary" data-fr-save="${esc(s.id)}">${esc(t('Save'))}</button><button type="button" class="ghost" data-fr-cancel>${esc(t('Cancel'))}</button>`:`<button type="button" class="${frStale(s)?'fr-plain':'primary'}" data-fr-send="${esc(s.id)}"${a&&ready?'':' disabled'}>${esc(t('Send'))}</button><button type="button" class="ghost" data-fr-edit="${esc(s.id)}"${a&&ready?'':' disabled'}>${esc(t('Edit'))}</button><button type="button" class="ghost" data-fr-skip="${esc(s.id)}"${fr.changing.has(s.id)?' disabled':''}>${esc(t('Skip'))}</button>`}</div></div>`
+  +(s.action_status?.status==='blocked'&&s.action_status.error&&!fr.changing.has(s.id)?`<p class="fr-held" role="status">${esc(t(s.action_status.error))}</p>`:'')+frState(s)
+  +(a?(edit?`<textarea class="fr-edit" data-fr-text="${esc(s.id)}" rows="6" aria-label="${esc(t('Follow-up text'))}">${esc(plainDraft(draftText(a)))}</textarea>`:`<div class="fr-body">${frBody(plainDraft(draftText(a)))}</div>`):`<p class="muted fr-none">${esc(t('No draft yet.'))}</p>`)+'</li>'}
+// Change: what should change, for all checked drafts or only the current one (the c key opens it)
+function frBox(list){if(!fr.box)return '';const n=list.filter(s=>fr.checked.has(s.id)&&frReady(s)).length,one=list.find(s=>s.id===fr.box.one)||list[fr.at];
+ if(!n&&fr.box.scope==='all')fr.box.scope='one';
+ return `<div class="fr-change" role="group" aria-labelledby="fr-change-q"><label class="fr-change-q" id="fr-change-q" for="fr-change-text">${esc(t('What should change?'))}</label>`
+  +`<div class="mic-wrap"><textarea id="fr-change-text" rows="2" maxlength="2000" enterkeyhint="send">${esc(fr.box.text)}</textarea>${micBtn()}</div>`
+  +`<div class="fr-scope"><label class="fu-radio"><input type="radio" name="fr-scope" value="all"${fr.box.scope==='all'?' checked':''}${n?'':' disabled'}><span>${esc(t('All checked ({})',n))}</span></label>`
+  +`<label class="fu-radio"><input type="radio" name="fr-scope" value="one"${fr.box.scope==='one'?' checked':''}><span class="fr-one" translate="no">${esc(t('Only this one: {}',one?frName(one.follow_up):''))}</span></label></div>`
+  +`<div class="fr-change-actions"><button type="button" class="ghost" data-fr-box-cancel>${esc(t('Cancel'))}</button><button type="button" class="primary" data-fr-box-go>${esc(t('Rewrite'))}</button></div></div>`}
 // The control that has focus, as a selector that finds it again after a redraw
-const frFocusSel=d=>{const a=document.activeElement;if(!a||!d.contains(a))return null;for(const k of ['frCheck','frSend','frEdit','frSkip'])if(a.dataset?.[k])return `[data-${k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${CSS.escape(a.dataset[k])}"]`;return null};
+const frFocusSel=d=>{const a=document.activeElement;if(!a||!d.contains(a))return null;if(a.id==='fr-change-text')return '#fr-change-text';if(a.name==='fr-scope')return `[name=fr-scope][value=${a.value}]`;
+ for(const k of ['frCheck','frSend','frEdit','frSkip','frUndo','frRetry'])if(a.dataset?.[k])return `[data-${k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${CSS.escape(a.dataset[k])}"]`;
+ if(a.matches('.fr-item'))return `.fr-item[data-fr="${CSS.escape(a.dataset.fr)}"]`;return null};
 function frDraw(reveal){const d=$('#fu-review'),list=frList();if(!list.length){if(d.open)d.close();if(fr.sent)toast(t(['{} follow-up on its way','{} follow-ups on their way'],fr.sent));return}
- const was=list.findIndex(s=>s.id===fr.cur);if(was>=0)fr.at=was;fr.at=Math.max(0,Math.min(fr.at,list.length-1));fr.cur=list[fr.at].id;fr.sig=frSig(list);
- const n=list.filter(s=>fr.checked.has(s.id)).length,board=list[0].follow_up.board||'',keep=d.querySelector('.fr-list')?.scrollTop,back=frFocusSel(d);
+ const was=list.findIndex(s=>s.id===fr.cur);if(was>=0)fr.at=was;fr.at=Math.max(0,Math.min(fr.at,list.length-1));fr.cur=list[fr.at].id;fr.sig=frSig(list);fr.item=new Map(list.map(s=>[s.id,frItemSig(s)]));
+ const n=list.filter(s=>fr.checked.has(s.id)&&frReady(s)).length,board=list[0].follow_up.board||'',keep=d.querySelector('.fr-list')?.scrollTop,back=frFocusSel(d);
  d.innerHTML=`<div class="snooze-heading"><h2 id="fu-review-title" title="${esc(board)}">${esc(t(['{} follow-up for {}','{} follow-ups for {}'],list.length,board))}</h2><button type="button" data-fr-close aria-label="${esc(t('Close'))}">×</button></div>`
-  +`<p class="fu-keys">${esc(t('Keys: j and k move, Enter sends, e edits, s skips.'))}</p><ol class="fr-list">${list.map(frItem).join('')}</ol><p class="ed-note warn" data-fr-error role="alert" hidden></p>`
-  +`<div class="ed-actions"><span class="grow"></span><button type="button" class="ghost" data-fr-close>${esc(t('Close'))}</button><button type="button" class="primary" data-fr-all${n?'':' disabled'}>${esc(t('Send all checked ({})',n))}</button></div>`;
+  +`<p class="fu-keys">${esc(t('Keys: j and k move, Enter sends, e edits, s skips, c changes.'))}</p><ol class="fr-list">${list.map(frItem).join('')}</ol>${frBox(list)}<p class="ed-note warn" data-fr-error role="alert" hidden></p>`
+  +`<div class="ed-actions"><button type="button" class="ghost" data-fr-change aria-expanded="${!!fr.box}">${esc(t('Change…'))}</button><span class="grow"></span><button type="button" class="ghost" data-fr-close>${esc(t('Close'))}</button><button type="button" class="primary" data-fr-all${n?'':' disabled'}>${esc(t('Send all checked ({})',n))}</button></div>`;
  if(keep)d.querySelector('.fr-list').scrollTop=keep;const on=d.querySelector('.fr-item.on');
  if(fr.editing)d.querySelector('.fr-edit')?.focus({preventScroll:true});else (back&&d.querySelector(back)||on)?.focus({preventScroll:true});
  if(reveal)frReveal(on)}
+// One draft drawn again where it is (a rewrite came back, Undo, a failure): the rest of the list, its scroll and focus stay
+function frPatch(s){const d=$('#fu-review'),el=d.querySelector(`.fr-item[data-fr="${CSS.escape(s.id)}"]`);if(!el)return false;
+ const back=el.contains(document.activeElement)?frFocusSel(d):null,i=+el.dataset.frAt,box=document.createElement('template');box.innerHTML=frItem(s,i);
+ // the draft at the top of the view stays where it is, also when one above it got shorter or longer
+ const ol=el.closest('.fr-list'),top=ol.getBoundingClientRect().top,pin=[...ol.children].find(x=>x.getBoundingClientRect().bottom>top),pinId=pin?.dataset.fr,pinAt=pin?.getBoundingClientRect().top;
+ el.replaceWith(box.content.firstElementChild);
+ if(pinId){const n=ol.querySelector(`.fr-item[data-fr="${CSS.escape(pinId)}"]`),dy=n?n.getBoundingClientRect().top-pinAt:0;if(Math.abs(dy)>=1)ol.scrollTop+=dy}fr.item.set(s.id,frItemSig(s));if(back)(d.querySelector(back)||d.querySelector(`.fr-item[data-fr="${CSS.escape(s.id)}"]`))?.focus({preventScroll:true});return true}
 // Bring the current draft into view: nothing when it's already in view; a tall one lines up its top (for a click, only
 // when it isn't in view at all, so a click never pulls the text away from under the pointer)
 function frReveal(el,click){const ol=el?.closest('.fr-list');if(!ol)return;const v=ol.getBoundingClientRect(),r=el.getBoundingClientRect(),pad=8,fits=r.height<=v.height-2*pad;let dy=0;
@@ -8131,16 +8236,41 @@ function frReveal(el,click){const ol=el?.closest('.fr-list');if(!ol)return;const
  if(Math.abs(dy)>1)ol.scrollBy({top:dy,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
 function frMove(i,click){const d=$('#fu-review'),items=[...d.querySelectorAll('.fr-item')];if(!items.length)return;i=Math.max(0,Math.min(i,items.length-1));
  fr.at=i;fr.cur=items[i].dataset.fr;items.forEach((el,j)=>{const on=j===i;el.classList.toggle('on',on);el.tabIndex=on?0:-1;el.setAttribute('aria-current',on)});
+ if(fr.box){fr.box.one=fr.cur;const s=frList().find(x=>x.id===fr.cur),one=d.querySelector('.fr-one');if(s&&one)one.textContent=t('Only this one: {}',frName(s.follow_up))}
  if(!items[i].contains(document.activeElement))items[i].focus({preventScroll:true});frReveal(items[i],click)}
-function frCount(){const n=frList().filter(s=>fr.checked.has(s.id)).length,all=$('#fu-review [data-fr-all]');if(all){all.textContent=t('Send all checked ({})',n);all.disabled=!n}}
-// A poll: new drafts join (checked), sent or changed ones update; not while editing or sending
-function frRefresh(){const d=$('#fu-review');if(!fr||!d.open||fr.editing||fr.busy)return;const list=frList();
- for(const s of list)if(!fr.seen.has(s.id)){fr.seen.add(s.id);if(!frStale(s))fr.checked.add(s.id)}if(frSig(list)!==fr.sig)frDraw()}
+function frCount(){const list=frList(),n=list.filter(s=>fr.checked.has(s.id)&&frReady(s)).length,all=$('#fu-review [data-fr-all]');if(all){all.textContent=t('Send all checked ({})',n);all.disabled=!n}
+ const scope=$('#fu-review [name=fr-scope][value=all]');if(scope){scope.disabled=!n;scope.nextElementSibling.textContent=t('All checked ({})',n);if(!n&&scope.checked){scope.checked=false;fr.box.scope='one';$('#fu-review [name=fr-scope][value=one]').checked=true}}}
+// Where each rewrite stands, from the to-do itself: a new draft revision is done (the old text kept for Undo change); its
+// run stuck, or a reply that left the draft as it was, couldn't change it. A to-do that closed meanwhile leaves the list.
+function frTrack(){for(const [id,c] of fr.changing){const s=state.suggestions.find(x=>x.id===id);
+  if(!s||s.follow_up?.state!=='open'||['completed','rejected','snoozed'].includes(s.status)){fr.changing.delete(id);fr.gone.add(id);continue}
+  if(s.status!=='prepared')c.seen=true;const a=frDraft(s);
+  if(s.status==='prepared'&&a&&a.revision!==c.from){fr.changing.delete(id);fr.undo.set(id,{body:c.body,subject:c.subject})}
+  else if(c.seen&&(s.status==='prepared'||s.preparation_status==='blocked')){fr.changing.delete(id);fr.failed.set(id,c.text)}}}
+// A poll: new drafts join (checked), sent or changed ones update in place; the draft being edited is left as it is
+function frRefresh(){const d=$('#fu-review');if(!fr||!d.open||fr.busy)return;frTrack();const list=frList();
+ for(const s of list)if(!fr.seen.has(s.id)){fr.seen.add(s.id);if(!frStale(s))fr.checked.add(s.id)}
+ if(frSig(list)===fr.sig){let n=0;for(const s of list)if(s.id!==fr.editing&&fr.item.get(s.id)!==frItemSig(s)&&frPatch(s))n++;if(n)frCount();return}
+ if(!fr.editing)frDraw()}
 const frSay=x=>{const p=$('#fu-review [data-fr-error]');if(p){p.textContent=x;p.hidden=!x}};
-async function frSend(id,quiet){const s=state.suggestions.find(x=>x.id===id),a=s&&frDraft(s);if(!a)return false;
+async function frSend(id,quiet){const s=state.suggestions.find(x=>x.id===id),a=s&&frDraft(s);if(!a||!frReady(s))return false;
  if(a.to_options?.length){if(quiet)return false;$('#fu-review').close();openSend(id,a.revision);return false}  /* who gets it is the owner's pick: the send dialog asks; the From is the draft's own (shown in the list) */
  await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision:a.revision,approval_id:crypto.randomUUID()}})});
- fr.gone.add(id);fr.sent++;return true}
+ fr.gone.add(id);fr.undo.delete(id);fr.sent++;return true}
+// The Change box opens and closes in place: the drafts, their scroll and any rewrite under way stay as they are
+function frBoxOpen(){const d=$('#fu-review');if(!fr.box){const n=frList().filter(s=>fr.checked.has(s.id)&&frReady(s)).length;fr.box={text:'',scope:n?'all':'one',one:fr.cur}}
+ if(!d.querySelector('.fr-change'))d.querySelector('[data-fr-error]')?.insertAdjacentHTML('beforebegin',frBox(frList()));d.querySelector('[data-fr-change]')?.setAttribute('aria-expanded','true');
+ const box=$('#fr-change-text');box?.focus({preventScroll:true});box?.closest('.fr-change')?.scrollIntoView({block:'nearest'})}
+// Rewrite: each draft in scope goes through its to-do's chat path (follow_up_change), at most a few at once on the
+// Machine; each shows "Rewriting…" where it is until its new text is back. Nothing is sent.
+function frBoxClose(){const d=$('#fu-review');fr.box=null;d.querySelector('.fr-change')?.remove();d.querySelector('[data-fr-change]')?.setAttribute('aria-expanded','false');
+ d.querySelector('.fr-item.on')?.focus({preventScroll:true})}
+async function frChange(ids,text){const list=frList(),pick=list.filter(s=>ids.includes(s.id)&&(frReady(s)||fr.failed.has(s.id)));if(!pick.length||!text)return;
+ const before=new Map(pick.map(s=>{const a=frDraft(s);return [s.id,{from:a?.revision,body:a?draftText(a):'',subject:a?.subject,text,seen:false}]}));
+ const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'follow_up_change',args:{ids:pick.map(s=>s.id),text}})});
+ for(const c of r.changing||[]){const b=before.get(c.id);if(!b)continue;fr.changing.set(c.id,{...b,from:c.revision});fr.failed.delete(c.id);fr.undo.delete(c.id)}
+ for(const id of r.skipped||[])if(before.has(id))fr.failed.set(id,text);
+ for(const s of list)if(before.has(s.id))frPatch(s);frCount();sendWatch()}
 async function frAct(b){const d=$('#fu-review');frSay('');fr.busy=true;try{
  if(b.dataset.frSend){b.disabled=true;await frSend(b.dataset.frSend);if(d.open)frDraw(true)}
  else if(b.dataset.frSkip){b.disabled=true;await decidePost(b.dataset.frSkip,{choice:'reject',feedback:'',decision_id:crypto.randomUUID()});fr.gone.add(b.dataset.frSkip);frDraw(true)}
@@ -8148,21 +8278,33 @@ async function frAct(b){const d=$('#fu-review');frSay('');fr.busy=true;try{
  else if(b.hasAttribute('data-fr-cancel')){fr.editing=null;frDraw()}
  else if(b.dataset.frSave){const id=b.dataset.frSave,s=state.suggestions.find(x=>x.id===id),a=frDraft(s),text=d.querySelector('.fr-edit').value;b.disabled=true;
   const body=unplainDraft(text,draftText(a)),r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:id,revision:a.revision,body}})});
-  Object.assign(a,{revision:r.revision,body:r.body??body});fr.editing=null;frDraw()}
- else if(b.hasAttribute('data-fr-all')){b.disabled=true;let left=0;for(const s of frList().filter(s=>fr.checked.has(s.id)))if(!await frSend(s.id,true))left++;frDraw();if(left&&d.open)frSay(t(['{} needs you to pick who gets it: send it on its own.','{} need you to pick who gets them: send them on their own.'],left))}
+  Object.assign(a,{revision:r.revision,body:r.body??body});fr.editing=null;fr.undo.delete(id);frDraw()}
+ else if(b.hasAttribute('data-fr-change')){if(fr.box)frBoxClose();else frBoxOpen()}
+ else if(b.hasAttribute('data-fr-box-cancel'))frBoxClose()
+ else if(b.hasAttribute('data-fr-box-go')){const text=($('#fr-change-text')?.value||'').trim();if(!text){$('#fr-change-text')?.focus();return}
+  const scope=d.querySelector('[name=fr-scope]:checked')?.value||'one',list=frList(),ids=scope==='all'?list.filter(s=>fr.checked.has(s.id)&&frReady(s)).map(s=>s.id):[fr.box.one||fr.cur];
+  b.disabled=true;await frChange(ids,text);frBoxClose()}
+ else if(b.dataset.frRetry){const id=b.dataset.frRetry;b.disabled=true;await frChange([id],fr.failed.get(id)||'')}
+ else if(b.dataset.frUndo){const id=b.dataset.frUndo,s=state.suggestions.find(x=>x.id===id),a=s&&frDraft(s),was=fr.undo.get(id);if(!a||!was)return;b.disabled=true;
+  const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:id,revision:a.revision,body:was.body,...(was.subject&&a.subject!==was.subject?{subject:was.subject}:{})}})});
+  Object.assign(a,{revision:r.revision,body:r.body??was.body,...(r.subject?{subject:r.subject}:{})});fr.undo.delete(id);frPatch(s)}
+ else if(b.hasAttribute('data-fr-all')){b.disabled=true;let left=0;for(const s of frList().filter(s=>fr.checked.has(s.id)&&frReady(s)))if(!await frSend(s.id,true))left++;frDraw();if(left&&d.open)frSay(t(['{} needs you to pick who gets it: send it on its own.','{} need you to pick who gets them: send them on their own.'],left))}
  else if(b.hasAttribute('data-fr-close'))d.close()}catch(x){errCaught(x);frSay(x.message);b.disabled=false}finally{if(fr)fr.busy=false}}
 $('#fu-review').addEventListener('click',e=>{const b=e.target.closest('button');if(b){frAct(b);return}const item=e.target.closest('[data-fr-at]');if(item&&!e.target.closest('input,textarea')&&fr.at!==+item.dataset.frAt)frMove(+item.dataset.frAt,true)});
-$('#fu-review').addEventListener('change',e=>{const c=e.target.closest('[data-fr-check]');if(!c)return;c.checked?fr.checked.add(c.dataset.frCheck):fr.checked.delete(c.dataset.frCheck);frCount()});
+$('#fu-review').addEventListener('change',e=>{if(e.target.name==='fr-scope'&&fr.box){fr.box.scope=e.target.value;return}const c=e.target.closest('[data-fr-check]');if(!c)return;c.checked?fr.checked.add(c.dataset.frCheck):fr.checked.delete(c.dataset.frCheck);frCount()});
+$('#fu-review').addEventListener('input',e=>{if(e.target.id==='fr-change-text'&&fr?.box)fr.box.text=e.target.value});
 $('#fu-review').addEventListener('keydown',e=>{if(!fr||e.isComposing||e.altKey||e.metaKey)return;const d=$('#fu-review'),list=frList(),cur=list[fr.at];
+ if(e.target.id==='fr-change-text'){if(e.key==='Escape'){e.preventDefault();frBoxClose()}else if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();d.querySelector('[data-fr-box-go]')?.click()}return}
  if(e.target.matches('textarea')){if(e.key==='Escape'){e.preventDefault();fr.editing=null;frDraw()}else if(e.key==='Enter'&&e.ctrlKey){e.preventDefault();d.querySelector('[data-fr-save]')?.click()}return}
  if(e.ctrlKey||e.target.matches('input[type=text]'))return;const k=e.key;
  if(k==='j'||k==='ArrowDown'){e.preventDefault();frMove(fr.at+1)}
  else if(k==='k'||k==='ArrowUp'){e.preventDefault();frMove(fr.at-1)}
  else if(k==='Enter'&&cur&&!e.target.matches('button')){e.preventDefault();d.querySelector(`[data-fr-send="${CSS.escape(cur.id)}"]`)?.click()}
- else if(k==='e'&&cur){e.preventDefault();fr.editing=cur.id;frDraw(true)}
+ else if(k==='e'&&cur&&frReady(cur)){e.preventDefault();fr.editing=cur.id;frDraw(true)}
  else if(k==='s'&&cur){e.preventDefault();d.querySelector(`[data-fr-skip="${CSS.escape(cur.id)}"]`)?.click()}
+ else if(k==='c'){e.preventDefault();frBoxOpen()}
  else if(k==='x'&&cur){e.preventDefault();const on=!fr.checked.has(cur.id);on?fr.checked.add(cur.id):fr.checked.delete(cur.id);const c=$(`#fu-review [data-fr-check="${CSS.escape(cur.id)}"]`);if(c)c.checked=on;frCount()}});
-$('#fu-review').addEventListener('close',()=>{const sent=fr?.sent||fr?.gone.size;fr=null;if(sent)refresh().catch(()=>{})});
+$('#fu-review').addEventListener('close',()=>{const sent=fr?.sent||fr?.gone.size||fr?.changing.size;fr=null;if(sent)refresh().catch(()=>{})});
 document.addEventListener('click',e=>{const w=e.target.closest?.('[data-fu-card]');if(w){e.preventDefault();e.stopPropagation();fuShow(w.dataset.fuCard);return}});
 // A board's follow-ups still being written: back to the to-do list, at their to-do
 function fuShow(g){if(chatId)location.hash='';document.querySelector('nav [data-tab="inbox"]')?.click();folded.delete('preparing');render();

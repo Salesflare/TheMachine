@@ -13,7 +13,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
 const day=n=>new Date(Date.now()+n*864e5).toISOString();
 const draft=(i,body,extra={})=>({kind:'email',label:'Send',account_id:'work',from:'owner@example.com',to:[`person${i}@client.example`],subject:'Re: Alpha',body,revision:'r'+i,...extra});
-const card=(i,project,body,extra={})=>({id:('f'+i).padEnd(16,'0'),title:'Follow up on '+project,body:'No reply for 4 days. Follow-up 1 of at most 3.',status:'prepared',early:1,scope:'work',event_ids:[i],
+const card=(i,project,body,extra={})=>({id:('f'+i).padEnd(16,'0'),title:'Follow up with '+project,body:'No reply for 4 days. Follow-up 1 of at most 3.',status:'prepared',early:1,scope:'work',event_ids:[i],
  created_at:day(-0.1),next_action:draft(i,body),follow_up:{project,project_id:'project:'+i,board:'Alpha testers',group:'board:1',n:1,max:3,channel:'email',auto:false,state:'open'},...extra});
 let suggestions,progress=[];
 const reset=()=>{progress=[];suggestions=[card(1,'Acme pilot','Hi Sam, did the alpha build install fine on your side? Happy to do a quick call this week.'),
@@ -44,6 +44,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(c.action==='follow_up_settings'||c.action==='follow_up_save'){const v=panel(a.scope,a.id);if(boardsNow&&a.scope==='board')v.settings.on=false;res.end(JSON.stringify(v));return}
   if(c.action==='revise_draft'){const s=suggestions.find(x=>x.id===a.suggestion_id);s.next_action={...s.next_action,body:a.body,revision:a.revision+'e'};res.end(JSON.stringify({revision:a.revision+'e',body:a.body}));return}
   if(c.action==='confirm_action'){suggestions=suggestions.filter(x=>x.id!==a.suggestion_id);res.end(JSON.stringify({status:'queued'}));return}
+  if(c.action==='follow_up_change'){const changing=[];for(const id of a.ids){const s=suggestions.find(x=>x.id===id);if(!s)continue;changing.push({id,revision:s.next_action.revision});
+   suggestions=suggestions.map(x=>x.id===id?{...x,status:'instructions',preparation_status:'queued'}:x)}res.end(JSON.stringify({changing,skipped:[]}));return}
   if(c.action==='decide'){suggestions=suggestions.filter(x=>x.id!==c.args.suggestion_id);res.end(JSON.stringify({status:'rejected'}));return}
   res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
@@ -70,7 +72,7 @@ try{
   assert.equal(await page.locator('#task-f100000000000000').count(),0);
   assert.equal(await page.locator('#task-f400000000000000').count(),1);
   assert.equal((await page.locator('#badge-inbox').textContent()).trim(),'3');  // the group, Delta's own and the other one
-  assert.deepEqual(await page.locator('#side-cards a').evaluateAll(l=>l.map(a=>a.textContent)),['3 follow-ups ready for Alpha testers','Follow up on Delta renewal','Reply to the venue about Friday']);
+  assert.deepEqual(await page.locator('#side-cards a').evaluateAll(l=>l.map(a=>a.textContent)),['3 follow-ups ready for Alpha testers','Follow up with Delta renewal','Reply to the venue about Friday']);
   assert.match(await page.locator('#suggestions').evaluate(()=>document.querySelector('.app-side, body').textContent),/2 ready for you · 1 to decide/);
   await fits(page,'1440 to-dos');await shot(page,'grouped-todo-1440-light');
   // The fast review: the first is current; j moves, Enter sends it (one confirm_action with its revision)
@@ -231,7 +233,7 @@ try{
   assert.equal(await group.locator('[data-fu-review]').count(),0);  // nothing to review yet
   assert.equal(await page.locator('#section-preparing .count').textContent(),'1');
   for(const i of [1,2,3])assert.equal(await page.locator(`#task-f${i}00000000000000`).count(),0);
-  assert.equal(await page.locator('#side-cards a').evaluateAll(l=>l.filter(a=>/^Follow up on (Acme|Bolt|Cobalt)/.test(a.textContent)).length),0);
+  assert.equal(await page.locator('#side-cards a').evaluateAll(l=>l.filter(a=>/^Follow up with (Acme|Bolt|Cobalt)/.test(a.textContent)).length),0);
   assert.equal((await page.locator('#badge-inbox').textContent()).trim(),'3');
   await fits(page,width+' writing');await shot(page,`writing-${width}x${height}-light`);await group.scrollIntoViewIfNeeded();await shot(page,`writing-card-${width}x${height}-light`,group);
   // A to-do's chat lists the same: the board's follow-ups as one row
@@ -266,7 +268,8 @@ try{
   progress=[];suggestions=[];await page.reload();await page.locator('#suggestions .all-clear').waitFor();
   await context.close()}
  // The review reads top to bottom: every draft at full height, the list the only thing that scrolls (nothing inside a
- // draft does), the footer in reach; j moves and scrolls the current one into view, a poll keeps where the list is
+ // draft does), the footer in reach; j moves and scrolls the current one into view, a poll keeps where the list is and
+ // changes only the draft that changed
  const para='Thanks again for the call last week. I wrote up the notes and the two options we talked about, so the team can pick one before the next sprint starts.';
  const many=n=>Array.from({length:n},(_,i)=>card(10+i,['Acme pilot','Bolt trial','Cobalt rollout','Delta renewal','Ember labs','Fjord studio','Grove co','Harbor works'][i],
   `Hi ${['Sam','Kim','Lee','Ana','Bo','Cy','Di','Ed'][i]},\n\n`+Array.from({length:1+(i*3)%5},()=>para).join('\n\n')+'\n\nRegards,\n\nAlex'));
@@ -301,7 +304,7 @@ try{
    await page.evaluate(()=>refresh());assert.equal(await page.evaluate(el=>el.isConnected,first),true,'a poll with no changes redrew the list');
    suggestions=suggestions.map(s=>s.id==='f130000000000000'?{...s,next_action:{...s.next_action,body:'Hi Ana, a fresh line.',revision:'r13b'}}:s);
    await page.evaluate(()=>refresh());await dlg.locator('.fr-body',{hasText:'a fresh line'}).waitFor();
-   assert.equal(await page.evaluate(el=>el.isConnected,first),false);assert.ok(Math.abs(await list.evaluate(l=>l.scrollTop)-at)<=1,'the poll moved the list');
+   assert.equal(await page.evaluate(el=>el.isConnected,first),true,'a changed draft redrew the whole list');assert.ok(Math.abs(await list.evaluate(l=>l.scrollTop)-at)<=1,'the poll moved the list');
    assert.equal(await dlg.locator('.fr-item.on b').textContent(),'Fjord studio')}
   await context.close()}
  // Follow-ups off: the board's line says "Follow-ups off" and opens the same settings; a stage with no-reply projects offers
@@ -355,6 +358,100 @@ try{
    assert.equal(await page.locator('.board-sub .fu-state').count(),0);assert.equal(await page.locator('.fu-nudge').count(),0);
    await context.close()}
   boardsNow=null}
+ // Change: c (or Change…) opens "What should change?" with the scope (all checked, or only this one); Rewrite asks
+ // follow_up_change and sends nothing. Each draft in scope says "Rewriting…" where it is; a poll puts each new text in
+ // place (same list, same scroll, still checked) with Undo change, and one that came back unchanged says so. The titles
+ // are the project alone (never "<board>: <project>"), and a draft reads as paragraphs with "Regards," over the name.
+ for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']]){reset();
+  suggestions=[...many(3).map((s,i)=>i?s:{...s,follow_up:{...s.follow_up,project:'Alpha testers: Acme pilot',name:'Acme pilot'}}),...suggestions.filter(s=>!s.follow_up)];
+  const ids=suggestions.filter(s=>s.follow_up).map(s=>s.id);
+  const {context,page}=await open(width,height,scheme);
+  await page.locator('#suggestions .fu-group button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  assert.equal(await dlg.locator('.fr-item b').first().textContent(),'Acme pilot');
+  assert.equal((await dlg.locator('.fu-keys').textContent()).trim(),'Keys: j and k move, Enter sends, e edits, s skips, c changes.');
+  const paras=await dlg.locator('.fr-item').first().locator('.fr-body p').evaluateAll(l=>l.map(p=>p.textContent));
+  assert.equal(paras.length,3);assert.equal(paras[0],'Hi Sam,');assert.equal(paras.at(-1),'Regards,\nAlex');
+  const gap=await dlg.locator('.fr-item').first().locator('.fr-body p').evaluateAll(l=>l[1].getBoundingClientRect().top-l[0].getBoundingClientRect().bottom);
+  assert.ok(gap>0&&gap<14,`paragraph gap ${gap}`);
+  calls=[];await page.keyboard.press('c');const box=dlg.locator('.fr-change');await box.waitFor();
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'fr-change-text');
+  assert.equal((await box.locator('.fr-change-q').textContent()).trim(),'What should change?');
+  assert.equal(await box.locator('.mic-wrap #fr-change-text').count(),1);
+  assert.equal(await box.locator('[name=fr-scope][value=all]').isChecked(),true);
+  assert.deepEqual(await box.locator('.fr-scope label').evaluateAll(l=>l.map(x=>x.textContent.trim())),['All checked (3)','Only this one: Acme pilot']);
+  await page.keyboard.type('Shorter, and mention the new pricing page');await fits(page,`${width} change box`);await page.mouse.move(2,2);await shot(page,`change-open-${width}-${scheme}`);
+  await page.keyboard.press('Enter');await dlg.locator('.fr-item.rewriting').nth(2).waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.ids,c.args.text]),[['follow_up_change',ids,'Shorter, and mention the new pricing page']]);
+  assert.equal(await box.count(),0);
+  assert.deepEqual(await dlg.locator('.fr-state').evaluateAll(l=>l.map(p=>p.textContent.trim())),['Rewriting…','Rewriting…','Rewriting…']);
+  assert.equal(await dlg.locator('[data-fr-send]').first().isDisabled(),true);assert.equal(await dlg.locator('[data-fr-all]').isDisabled(),true);
+  const list=await dlg.locator('.fr-list').elementHandle();await dlg.locator('.fr-list').evaluate(l=>{l.scrollTop=Math.min(60,l.scrollHeight-l.clientHeight)});
+  // the draft at the top of the view, and where it is (the list may get too short to stay scrolled that far)
+  const pin=()=>dlg.locator('.fr-list').evaluate(l=>{const t=l.getBoundingClientRect().top,p=[...l.children].find(x=>x.getBoundingClientRect().bottom>t);return {id:p.dataset.fr,top:Math.round(p.getBoundingClientRect().top-t),end:l.scrollTop>=l.scrollHeight-l.clientHeight-1}});
+  const at=await pin();
+  await page.mouse.move(2,2);await shot(page,`change-rewriting-${width}-${scheme}`);
+  // a poll while they're being written, then two come back rewritten and one came back as it was
+  await page.evaluate(()=>refresh());await page.waitForTimeout(150);
+  suggestions=suggestions.map((s,i)=>!ids.includes(s.id)?s:i<2?{...s,status:'prepared',preparation_status:'done',next_action:{...s.next_action,body:`Hi ${['Sam','Kim'][i]},\n\nShort one: the new pricing page is up. Worth a look?\n\nRegards,\n\nAlex`,revision:s.next_action.revision+'c'}}
+   :{...s,status:'prepared',preparation_status:'done'});
+  await page.evaluate(()=>refresh());await dlg.locator('[data-fr-undo]').nth(1).waitFor();
+  assert.equal(await page.evaluate(el=>el.isConnected,list),true,'a rewrite redrew the whole list');
+  {const now=await pin();assert.ok(now.id===at.id&&(Math.abs(now.top-at.top)<=1||now.end),`a rewrite moved the list ${JSON.stringify([at,now])}`)}
+  assert.match(await dlg.locator('.fr-item').first().locator('.fr-body').textContent(),/new pricing page/);
+  assert.deepEqual(await dlg.locator('.fr-state').evaluateAll(l=>l.map(p=>p.textContent.trim())),['Undo change','Undo change','Couldn’t change this one, try againTry again']);
+  assert.deepEqual(await dlg.locator('[data-fr-check]').evaluateAll(l=>l.map(c=>c.checked)),[true,true,true]);
+  assert.equal((await dlg.locator('[data-fr-all]').textContent()).trim(),'Send all checked (3)');
+  assert.equal(calls.filter(c=>c.action==='confirm_action').length,0,'a Change sent something');
+  await fits(page,`${width} change done`);await page.mouse.move(2,2);await shot(page,`change-done-${width}-${scheme}`);
+  // Undo change puts the earlier text back (revise_draft with it); Try again asks for that one alone
+  calls=[];await dlg.locator('[data-fr-undo]').first().click();await dlg.locator('.fr-item').first().locator('.fr-body',{hasText:'Thanks again'}).waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.suggestion_id,c.args.revision]),[['revise_draft',ids[0],'r10c']]);assert.match(calls[0].args.body,/^Hi Sam,\n\nThanks again/);
+  assert.equal(await dlg.locator('.fr-item').first().locator('.fr-state').count(),0);
+  calls=[];await dlg.locator('[data-fr-retry]').click();await dlg.locator('.fr-item').nth(2).locator('.fr-state',{hasText:'Rewriting…'}).waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.ids,c.args.text]),[['follow_up_change',[ids[2]],'Shorter, and mention the new pricing page']]);
+  // Only this one: the current draft alone
+  suggestions=suggestions.map(s=>s.id===ids[2]?{...s,status:'prepared',preparation_status:'done',next_action:{...s.next_action,revision:'r12d'}}:s);await page.evaluate(()=>refresh());await dlg.locator('.fr-item').nth(2).locator('[data-fr-undo]').waitFor();
+  await dlg.locator('.fr-item').nth(1).click({position:{x:200,y:12}});calls=[];await dlg.locator('[data-fr-change]').click();await box.waitFor();
+  await box.locator('[name=fr-scope][value=one]').check();assert.match(await box.locator('.fr-one').textContent(),/^Only this one: Bolt trial$/);
+  await box.locator('#fr-change-text').fill('Add a line about Friday');await box.locator('[data-fr-box-go]').click();await dlg.locator('.fr-item.rewriting').first().waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.ids]),[['follow_up_change',[ids[1]]]]);
+  assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
+  await context.close()}
+ // Done: the board's sent and skipped follow-ups of a day are one row ("13 follow-ups sent for Alpha testers", "2 skipped"),
+ // projects' own ones one row per day, a single one stays itself; opening a row lists project, to and when, each linking
+ // to its to-do; the sidebar's Find still finds each one. The Suggestions page's Done list folds the same way.
+ {const at=(d,m)=>{const x=new Date();x.setDate(x.getDate()+d);x.setHours(9,m,0,0);return x.toISOString()};
+  const names=['Acme pilot','Bolt trial','Cobalt rollout','Delta renewal','Ember labs','Fjord studio','Grove co','Harbor works','Iris media','Juno apps','Kite labs','Lumen co','Mesa group','Nova inc','Orbit io'];
+  const sent=(i,project,state,group,when)=>({...card(40+i,project,'Hi, a quick follow-up.'),status:state==='sent'?'completed':'rejected',closed_at:when,
+   follow_up:{project:group?'Alpha testers: '+project:project,name:project,project_id:'project:'+(40+i),board:group?'Alpha testers':null,group:group?'board:1':null,n:1,max:3,channel:'email',auto:true,state}});
+  const done=()=>[...names.map((p,i)=>sent(i,p,i<13?'sent':'skipped','board',at(0,i))),sent(20,'Quartz labs','sent',null,at(0,30)),sent(21,'Raven co','sent',null,at(0,31)),
+   sent(22,'Sable inc','sent','board',at(-1,5)),{id:'done000000000000',title:'Send the deck to the board',body:'',status:'completed',scope:'work',event_ids:[8],created_at:at(-1,0),closed_at:at(-1,40)}];
+  for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']]){reset();suggestions=[...suggestions,...done()];
+   const {context,page}=await open(width,height,scheme);
+   if(width<600){await page.locator('#drawer-open').click();await page.locator('#side-cards').waitFor()}
+   const doneHead=page.locator('#side-cards [data-side-fold=done]');await doneHead.waitFor();
+   assert.equal((await doneHead.locator('.count').textContent()).trim(),'19');  // every to-do counts, folded or not
+   if(await doneHead.getAttribute('aria-expanded')==='false')await doneHead.click();
+   const rows=page.locator('#side-cards .done-fold');await rows.first().waitFor();
+   assert.deepEqual(await rows.evaluateAll(l=>l.map(b=>b.textContent.trim())),['2 follow-ups sent','13 follow-ups sent for Alpha testers2 skipped']);
+   const doneRows=await page.locator('#side-cards .side-group').last().locator(':scope>a,:scope>.done-fold').evaluateAll(l=>l.map(a=>a.textContent.trim()));
+   assert.deepEqual(doneRows,['2 follow-ups sent','13 follow-ups sent for Alpha testers2 skipped','Send the deck to the board','Follow up with Sable inc']);
+   await fits(page,`${width} done folded`);await shot(page,`done-side-${width}-${scheme}`,width<600?null:page.locator('.app-side'));
+   await rows.nth(1).click();const sub=page.locator('#side-cards .done-fold-list a');await sub.first().waitFor();
+   assert.equal(await sub.count(),15);assert.equal(await rows.nth(1).getAttribute('aria-expanded'),'true');
+   assert.equal(await page.evaluate(()=>document.activeElement.dataset.doneFold),await page.evaluate(()=>'board:1@'+localDay(new Date())));
+   assert.match(await sub.first().textContent(),/^Orbit ioTo person54@client\.example · Skipped$/);  // newest first
+   assert.match(await sub.last().textContent(),/^Acme pilotTo person40@client\.example · \d{1,2}:\d\d/);assert.equal(await sub.last().getAttribute('href'),'#chat='+card(40,'','').id);
+   await fits(page,`${width} done open`);await shot(page,`done-side-open-${width}-${scheme}`,width<600?null:page.locator('.app-side'));
+   if(width>600){await page.locator('#side-find').fill('kite');await page.waitForTimeout(50);
+    assert.deepEqual(await page.locator('#side-cards a').evaluateAll(l=>l.map(a=>a.textContent)),['Follow up with Kite labs']);
+    await page.locator('#side-find').fill('');await page.locator('#side-find').dispatchEvent('input')}
+   if(width<600)await page.keyboard.press('Escape');
+   if(width>600){await page.locator('#finished-head').click();const fold=page.locator('#suggestions .fu-done');await fold.first().waitFor();
+    assert.deepEqual(await fold.locator('h3').evaluateAll(l=>l.map(h=>h.textContent)),['2 follow-ups sent','13 follow-ups sent for Alpha testers']);assert.equal(await fold.nth(1).locator('.done-fold-n').textContent(),'2 skipped');
+    assert.equal(await fold.nth(1).locator('details').getAttribute('open'),null);await fold.nth(1).locator('summary').click();assert.equal(await fold.nth(1).locator('details').getAttribute('open'),'');assert.equal(await fold.nth(1).locator('li').count(),15);
+    await fold.nth(1).scrollIntoViewIfNeeded();await fits(page,`${width} done page`);await shot(page,`done-page-${width}-${scheme}`,fold.nth(1))}
+   await context.close()}}
  reset();
  // Phone, light and dark: the same pieces fit the screen
  for(const scheme of ['light','dark']){reset();const {context,page}=await open(390,844,scheme);

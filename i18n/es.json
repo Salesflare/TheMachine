@@ -254,6 +254,7 @@
  "Alias": "Alias",
  "All": "Todo",
  "All accounts": "Todas las cuentas",
+ "All checked ({})": "Todos los marcados ({})",
  "All clear": "Todo en orden",
  "All clear.": "Todo en orden.",
  "All day": "Todo el día",
@@ -742,6 +743,7 @@
  "Could not install the Telegram libraries ({})": "No se pudieron instalar las bibliotecas de Telegram ({})",
  "Could not start the Telegram login ({})": "No se pudo iniciar el inicio de sesión en Telegram ({})",
  "Couldn’t add the to-do": "No se pudo añadir la tarea",
+ "Couldn’t change this one, try again": "No se pudo cambiar este, inténtalo de nuevo",
  "Couldn’t check the thread, try again.": "No se pudo revisar el hilo, inténtalo de nuevo.",
  "Couldn’t check your accounts this time.": "Esta vez no se pudieron revisar tus cuentas.",
  "Couldn’t copy automatically. Select the command to copy it.": "No se pudo copiar automáticamente. Selecciona el comando para copiarlo.",
@@ -1052,8 +1054,8 @@
  "Folder": "Carpeta",
  "Follow them up": "Hacerles seguimiento",
  "Follow up at least {} and at most {} times": "Hacer seguimiento al menos {} y como máximo {} veces",
- "Follow up on {}": "Seguimiento de {}",
  "Follow up when there’s no reply": "Hacer seguimiento si no hay respuesta",
+ "Follow up with {}": "Seguimiento con {}",
  "Follow up: {}": "Seguimiento: {}",
  "Follow-up labels describe drafting, checking, research or applying the task’s change": "Las etiquetas de seguimiento describen redactar borradores, comprobar, investigar o aplicar el cambio de la tarea",
  "Follow-up ready": "Seguimiento listo",
@@ -1539,7 +1541,7 @@
  "Kept. It stays if they leave.": "Conservado. Se queda aunque se vayan.",
  "Keyboard": "Teclado",
  "Keyboard shortcuts": "Atajos de teclado",
- "Keys: j and k move, Enter sends, e edits, s skips.": "Teclas: j y k mueven, Enter envía, e edita, s omite.",
+ "Keys: j and k move, Enter sends, e edits, s skips, c changes.": "Teclas: j y k mueven, Enter envía, e edita, s omite, c cambia.",
  "Known about {}": "Lo que se sabe de {}",
  "Language": "Idioma",
  "Language and region": "Idioma y región",
@@ -2233,6 +2235,7 @@
  "Only the owner can edit what was learned, on the dashboard": "Solo el propietario puede editar lo aprendido, en el panel",
  "Only the owner can remove a fact, on the dashboard": "Solo el propietario puede quitar un dato, en el panel",
  "Only the owner changes a picture, on the dashboard": "Solo el propietario cambia una imagen, en el panel",
+ "Only the owner changes follow-ups, on the dashboard": "Solo el propietario cambia los seguimientos, en el panel",
  "Only the owner changes owners, merges organizations and imports, on the dashboard": "Solo el propietario cambia propietarios, fusiona organizaciones e importa, en el panel",
  "Only the owner changes region and time format, on the dashboard (Settings, General)": "Solo el propietario cambia la región y el formato de hora, en el panel (Ajustes, General)",
  "Only the owner changes security settings, in Settings on the dashboard": "Solo el propietario cambia los ajustes de seguridad, en Ajustes del panel",
@@ -2271,6 +2274,7 @@
  "Only the vote goes, with its short reason. Nothing about you.": "Solo se envía el voto, con su breve motivo. Nada sobre ti.",
  "Only this event changes. Nobody gets an update.": "Solo cambia este evento. Nadie recibe una actualización.",
  "Only this event goes. Nobody gets an update.": "Solo se elimina este evento. Nadie recibe aviso.",
+ "Only this one: {}": "Solo este: {}",
  "Only what needs you, where you want it.": "Solo lo que te necesita, donde lo quieras.",
  "Only you": "Solo tú",
  "Only you and {}": "Solo tú y {}",
@@ -2798,6 +2802,8 @@
  "Reviews wait to save your {} week.": "Las revisiones esperan para ahorrar tu semana de {}.",
  "Reviews wait until {} to save your {} 5-hour limit.": "Las revisiones esperan hasta las {} para ahorrar tu límite de 5 horas de {}.",
  "Reviews wait until {} to save your {} week.": "Las revisiones esperan hasta las {} para ahorrar tu semana de {}.",
+ "Rewrite": "Reescribir",
+ "Rewriting…": "Reescribiendo…",
  "Right: {}": "Persona adecuada: {}",
  "Role": "Cargo",
  "Roles your Machine picked up. Confirm or edit; it learns from your edits.": "Roles que tu Machine detectó. Confírmalos o edítalos; aprende de tus ediciones.",
@@ -2869,6 +2875,7 @@
  "Say when to use it, in 10 to {} characters": "Di cuándo usarla, en 10 a {} caracteres",
  "Say which board or project": "Di qué tablero o proyecto",
  "Say which board the project is on (board; with stages when the board is new)": "Di en qué tablero está el proyecto (board; con stages si el tablero es nuevo)",
+ "Say which follow-ups": "Di qué seguimientos",
  "Say which projects belong in one sentence (up to 200 characters)": "Di en una frase qué proyectos encajan (hasta 200 caracteres)",
  "Say who you would like to be introduced to": "Di a quién te gustaría que te presentaran",
  "Say yes to send what’s on screen.": "Di sí para enviar lo que está en pantalla.",
@@ -3930,6 +3937,7 @@
  "Underline": "Subrayado",
  "Undo": "Deshacer",
  "Undo Not needed": "Deshacer No hace falta",
+ "Undo change": "Deshacer cambio",
  "Undo has expired; use Reopen for a completed item": "Deshacer ha caducado; usa Reabrir para un elemento completado",
  "Undo last import": "Deshacer la última importación",
  "Undo merge": "Deshacer fusión",
@@ -4146,6 +4154,7 @@
  "What it is to you": "Qué es para ti",
  "What needs doing?": "¿Qué hay que hacer?",
  "What should I change?": "¿Qué debo cambiar?",
+ "What should change?": "¿Qué debería cambiar?",
  "What should it help with?": "¿Con qué debería ayudar?",
  "What should {} change?": "¿Qué debería cambiar {}?",
  "What the Fleet saw": "Lo que vio el Fleet",
@@ -4950,6 +4959,22 @@
   "one": "{} seguimiento listo para {}",
   "other": "{} seguimientos listos para {}"
  },
+ "{} follow-ups sent": {
+  "one": "{} seguimiento enviado",
+  "other": "{} seguimientos enviados"
+ },
+ "{} follow-ups sent for {}": {
+  "one": "{} seguimiento enviado para {}",
+  "other": "{} seguimientos enviados para {}"
+ },
+ "{} follow-ups skipped": {
+  "one": "{} seguimiento omitido",
+  "other": "{} seguimientos omitidos"
+ },
+ "{} follow-ups skipped for {}": {
+  "one": "{} seguimiento omitido para {}",
+  "other": "{} seguimientos omitidos para {}"
+ },
  "{} for you under Suggestions.": "{} para ti en Sugerencias.",
  "{} for {} did not check out ({})": "{} para {} no se pudo comprobar ({})",
  "{} found": "{} encontrados",
@@ -5195,6 +5220,7 @@
   "other": "{} habilidades"
  },
  "{} skills wait for you to read them.": "{} habilidades esperan que las leas.",
+ "{} skipped": "{} omitidos",
  "{} skipped as too slow": "{} omitidas por lentas",
  "{} stages on": {
   "one": "{} etapa activada",

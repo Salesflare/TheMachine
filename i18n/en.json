@@ -254,6 +254,7 @@
  "Alias": "Alias",
  "All": "All",
  "All accounts": "All accounts",
+ "All checked ({})": "All checked ({})",
  "All clear": "All clear",
  "All clear.": "All clear.",
  "All day": "All day",
@@ -742,6 +743,7 @@
  "Could not install the Telegram libraries ({})": "Could not install the Telegram libraries ({})",
  "Could not start the Telegram login ({})": "Could not start the Telegram login ({})",
  "Couldn’t add the to-do": "Couldn’t add the to-do",
+ "Couldn’t change this one, try again": "Couldn’t change this one, try again",
  "Couldn’t check the thread, try again.": "Couldn’t check the thread, try again.",
  "Couldn’t check your accounts this time.": "Couldn’t check your accounts this time.",
  "Couldn’t copy automatically. Select the command to copy it.": "Couldn’t copy automatically. Select the command to copy it.",
@@ -1052,8 +1054,8 @@
  "Folder": "Folder",
  "Follow them up": "Follow them up",
  "Follow up at least {} and at most {} times": "Follow up at least {} and at most {} times",
- "Follow up on {}": "Follow up on {}",
  "Follow up when there’s no reply": "Follow up when there’s no reply",
+ "Follow up with {}": "Follow up with {}",
  "Follow up: {}": "Follow up: {}",
  "Follow-up labels describe drafting, checking, research or applying the task’s change": "Follow-up labels describe drafting, checking, research or applying the task’s change",
  "Follow-up ready": "Follow-up ready",
@@ -1539,7 +1541,7 @@
  "Kept. It stays if they leave.": "Kept. It stays if they leave.",
  "Keyboard": "Keyboard",
  "Keyboard shortcuts": "Keyboard shortcuts",
- "Keys: j and k move, Enter sends, e edits, s skips.": "Keys: j and k move, Enter sends, e edits, s skips.",
+ "Keys: j and k move, Enter sends, e edits, s skips, c changes.": "Keys: j and k move, Enter sends, e edits, s skips, c changes.",
  "Known about {}": "Known about {}",
  "Language": "Language",
  "Language and region": "Language and region",
@@ -2233,6 +2235,7 @@
  "Only the owner can edit what was learned, on the dashboard": "Only the owner can edit what was learned, on the dashboard",
  "Only the owner can remove a fact, on the dashboard": "Only the owner can remove a fact, on the dashboard",
  "Only the owner changes a picture, on the dashboard": "Only the owner changes a picture, on the dashboard",
+ "Only the owner changes follow-ups, on the dashboard": "Only the owner changes follow-ups, on the dashboard",
  "Only the owner changes owners, merges organizations and imports, on the dashboard": "Only the owner changes owners, merges organizations and imports, on the dashboard",
  "Only the owner changes region and time format, on the dashboard (Settings, General)": "Only the owner changes region and time format, on the dashboard (Settings, General)",
  "Only the owner changes security settings, in Settings on the dashboard": "Only the owner changes security settings, in Settings on the dashboard",
@@ -2271,6 +2274,7 @@
  "Only the vote goes, with its short reason. Nothing about you.": "Only the vote goes, with its short reason. Nothing about you.",
  "Only this event changes. Nobody gets an update.": "Only this event changes. Nobody gets an update.",
  "Only this event goes. Nobody gets an update.": "Only this event goes. Nobody gets an update.",
+ "Only this one: {}": "Only this one: {}",
  "Only what needs you, where you want it.": "Only what needs you, where you want it.",
  "Only you": "Only you",
  "Only you and {}": "Only you and {}",
@@ -2798,6 +2802,8 @@
  "Reviews wait to save your {} week.": "Reviews wait to save your {} week.",
  "Reviews wait until {} to save your {} 5-hour limit.": "Reviews wait until {} to save your {} 5-hour limit.",
  "Reviews wait until {} to save your {} week.": "Reviews wait until {} to save your {} week.",
+ "Rewrite": "Rewrite",
+ "Rewriting…": "Rewriting…",
  "Right: {}": "Right: {}",
  "Role": "Role",
  "Roles your Machine picked up. Confirm or edit; it learns from your edits.": "Roles your Machine picked up. Confirm or edit; it learns from your edits.",
@@ -2869,6 +2875,7 @@
  "Say when to use it, in 10 to {} characters": "Say when to use it, in 10 to {} characters",
  "Say which board or project": "Say which board or project",
  "Say which board the project is on (board; with stages when the board is new)": "Say which board the project is on (board; with stages when the board is new)",
+ "Say which follow-ups": "Say which follow-ups",
  "Say which projects belong in one sentence (up to 200 characters)": "Say which projects belong in one sentence (up to 200 characters)",
  "Say who you would like to be introduced to": "Say who you would like to be introduced to",
  "Say yes to send what’s on screen.": "Say yes to send what’s on screen.",
@@ -3930,6 +3937,7 @@
  "Underline": "Underline",
  "Undo": "Undo",
  "Undo Not needed": "Undo Not needed",
+ "Undo change": "Undo change",
  "Undo has expired; use Reopen for a completed item": "Undo has expired; use Reopen for a completed item",
  "Undo last import": "Undo last import",
  "Undo merge": "Undo merge",
@@ -4146,6 +4154,7 @@
  "What it is to you": "What it is to you",
  "What needs doing?": "What needs doing?",
  "What should I change?": "What should I change?",
+ "What should change?": "What should change?",
  "What should it help with?": "What should it help with?",
  "What should {} change?": "What should {} change?",
  "What the Fleet saw": "What the Fleet saw",
@@ -4950,6 +4959,22 @@
   "one": "{} follow-up ready for {}",
   "other": "{} follow-ups ready for {}"
  },
+ "{} follow-ups sent": {
+  "one": "{} follow-up sent",
+  "other": "{} follow-ups sent"
+ },
+ "{} follow-ups sent for {}": {
+  "one": "{} follow-up sent for {}",
+  "other": "{} follow-ups sent for {}"
+ },
+ "{} follow-ups skipped": {
+  "one": "{} follow-up skipped",
+  "other": "{} follow-ups skipped"
+ },
+ "{} follow-ups skipped for {}": {
+  "one": "{} follow-up skipped for {}",
+  "other": "{} follow-ups skipped for {}"
+ },
  "{} for you under Suggestions.": "{} for you under Suggestions.",
  "{} for {} did not check out ({})": "{} for {} did not check out ({})",
  "{} found": "{} found",
@@ -5195,6 +5220,7 @@
   "other": "{} skills"
  },
  "{} skills wait for you to read them.": "{} skills wait for you to read them.",
+ "{} skipped": "{} skipped",
  "{} skipped as too slow": "{} skipped as too slow",
  "{} stages on": {
   "one": "{} stage on",
