@@ -350,6 +350,19 @@ class Dashboard(unittest.TestCase):
             with self.assertRaises(ValueError):
                 app.action('connect_signin', {'name': name}, owner_dashboard=True)
 
+    def test_google_meet_shows_only_where_the_control_plane_opens_it(self):
+        # It has no other way to connect: while its Google app is in Testing, the control plane opens it for some owners only
+        def offered(app):
+            return 'google_meet' in [x['service'] for x in app.action('connect_sources', {}, owner_dashboard=True)['sources']]
+        app = self.app()
+        app.fleet.relay.signins = ['google', 'google_meet']
+        self.assertTrue(offered(app))
+        app = self.app()
+        app.fleet.relay.signins = ['google']  # not open for this owner
+        self.assertFalse(offered(app))
+        self.assertFalse(offered(self.app()))  # a control plane that can't say
+        self.assertFalse(offered(self.app(paired=False)))  # not paired: nothing to sign in through
+
     def test_one_the_control_plane_has_no_app_for_shows_the_other_way(self):
         app = self.app()
         app.fleet.relay.signins = ['intercom', 'google', 'microsoft', 'microsoft_docs', 'zoom']  # no Stripe app there

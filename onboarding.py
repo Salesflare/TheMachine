@@ -302,6 +302,8 @@ def catalog(config):
         service = SERVICES.get(name, name)
         if service == 'docs' and config.get('manage_url') and not config.get('docs_consent'):
             continue  # a hosted Machine: Docs waits until its account page offers the Docs consent (assistant.docs_offered)
+        if service == 'google_meet' and config.get('manage_url') and not config.get('google_meet_broker'):
+            continue  # a hosted Machine: Google Meet waits until its control plane has its own sign-in for it
         setup = setup_of(service) or {}
         found.append({'name': name, 'service': service, 'label': label(service), 'note': setup.get('note'), 'what': setup.get('what'),
                       'connected': have.get(service, 0), 'broker': service in brokered or bool(setup.get('broker')),
@@ -785,10 +787,11 @@ def missing(config, account):
         if not (config.get('microsoft_broker') or {}).get('url'):
             return 'microsoft_broker url is not set'
         names.append('microsoft-broker')
-    elif account.get('transport') == 'broker' and account.get('service') == 'zoom':
-        if not (config.get('zoom_broker') or {}).get('url'):
-            return 'zoom_broker url is not set'
-        names.append('zoom-broker')
+    elif account.get('transport') == 'broker' and account.get('service') in ('zoom', 'google_meet'):
+        key = account['service'] + '_broker'  # Zoom and Google Meet: each with its own sign-in and broker
+        if not (config.get(key) or {}).get('url'):
+            return f'{key} url is not set'
+        names.append(account['service'] + '-broker')
     elif account.get('transport') == 'broker' and account.get('service') == 'stripe':
         if not (config.get('stripe_broker') or {}).get('url'):
             return 'stripe_broker url is not set'
@@ -2215,9 +2218,10 @@ def enable_replies(config_path, account_id, token):
     return admin, name
 
 
-# Google, Microsoft, Zoom, Stripe and Slack signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
-GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',), 'stripe': ('stripe',), 'slack': ('slack',)}
-GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack'}
+# Google, Microsoft, Zoom, Stripe, Slack and Google Meet signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
+GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',), 'stripe': ('stripe',), 'slack': ('slack',),
+                  'google_meet': ('google_meet',)}  # Google Meet: its own Google sign-in, apart from Gmail's
+GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack', 'google_meet': 'Google Meet'}
 SLACK_KEY = r'[te][a-z0-9]{6,20}:[uw][a-z0-9]{6,20}'  # a Slack sign-in's name: '<team id>:<user id>' (slack_api.key)
 DELIVERED = {'intercom', 'trello', 'microsoft_docs', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
@@ -2321,7 +2325,7 @@ def connect_grant(config_path, provider, args):
     config[key] = {'url': url}
     config.setdefault('credentials', {})[provider + '-broker'] = device_token  # its own device token, as for the Network
     same = [a for a in config.get('accounts', []) if str(a.get('email', '')).lower() == email and a.get('boundary')]
-    boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider == 'zoom' else 'personal'))
+    boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider in ('zoom', 'google_meet') else 'personal'))
     if provider == 'stripe':
         return _connect_stripe_grant(config_path, config, email, refresh, previous)
     if provider == 'slack':
@@ -2332,11 +2336,13 @@ def connect_grant(config_path, provider, args):
         for service in GRANT_SERVICES[provider]:
             account = next((a for a in config.get('accounts', []) if a.get('service') == service and str(a.get('email', '')).lower() == email), None)
             if account is None:
-                account = new_account(config, service, ui=AnswersUI({'part of your life': boundary, 'company': boundary, 'sign-in': email}))
+                account = new_account(config, service, ui=AnswersUI({'part of your life': boundary, 'company': boundary, 'sign-in': email,
+                                                                     'address': email}))
                 account['boundary'] = boundary
                 account['boundary_by'] = 'guess'  # guessed from the address; Work or Personal stays the owner's to set
             account = {**account, 'email': email, 'transport': 'broker'}
-            account.pop('client', None)
+            for kept in ('client', 'credential', 'credential_variable'):
+                account.pop(kept, None)  # gog's client, or a token pasted before: the sign-in reads it now
             if service in ('calendar', 'outlook_calendar'):
                 account.setdefault('calendar_id', 'primary')
             if provider == 'microsoft':  # a refused sign-in right after this is Microsoft still settling (ms_graph.py)

@@ -45,6 +45,14 @@ READ = {
     'drive.comments.list': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments'),
     'drive.comments.get': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments/{commentId}'),
     'docs.documents.get': ('GET', 'https://docs.googleapis.com/v1/documents/{documentId}'),
+    # Google Meet (connectors/google_meet.py), with meetings.space.readonly from Meet's own Google sign-in; the Gemini
+    # notes doc is read with docs.documents.get and documents.readonly, never a Drive scope
+    'meet.conferenceRecords.list': ('GET', 'https://meet.googleapis.com/v2/conferenceRecords'),
+    'meet.conferenceRecords.participants.list': ('GET', 'https://meet.googleapis.com/v2/conferenceRecords/{conference}/participants'),
+    'meet.conferenceRecords.transcripts.list': ('GET', 'https://meet.googleapis.com/v2/conferenceRecords/{conference}/transcripts'),
+    'meet.conferenceRecords.transcripts.entries.list': (
+        'GET', 'https://meet.googleapis.com/v2/conferenceRecords/{conference}/transcripts/{transcript}/entries'),
+    'meet.conferenceRecords.smartNotes.list': ('GET', 'https://meet.googleapis.com/v2/conferenceRecords/{conference}/smartNotes'),
 }
 WRITE = {
     'gmail.users.messages.send': ('POST', 'https://gmail.googleapis.com/gmail/v1/users/{userId}/messages/send'),
@@ -59,7 +67,7 @@ WRITE = {
 }
 # Where requests may go: Google's API hosts, over HTTPS. A URL built from a method template and its parameters is
 # checked once more before it's opened, and the broker's address must be HTTPS too (it gets this machine's token).
-GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com', 'docs.googleapis.com'})
+GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com', 'docs.googleapis.com', 'meet.googleapis.com'})
 _tokens: dict = {}
 _lock = threading.Lock()
 
@@ -72,9 +80,10 @@ class BrokerError(Exception):
         self.category, self.status = category, status
 
 
-def broker_url(config):
-    """The broker's address from config: only an HTTPS URL with a host, never a file, plain HTTP or other scheme."""
-    url = str((config.get('google_broker') or {}).get('url') or '').strip()
+def broker_url(config, provider='google'):
+    """The broker's address from config: only an HTTPS URL with a host, never a file, plain HTTP or other scheme.
+    provider: 'google' (Gmail, Calendar, Docs), or 'google_meet', Meet's own sign-in and broker (google_meet_broker)."""
+    url = str((config.get(provider + '_broker') or {}).get('url') or '').strip()
     if not url:
         raise BrokerError('google_broker_not_configured')
     parts = urllib.parse.urlsplit(url)
@@ -91,10 +100,10 @@ def google_url(url):
     return parts.geturl()
 
 
-def _broker(config, credential, payload, timeout=20):
-    url = broker_url(config)
+def _broker(config, credential, payload, timeout=20, provider='google'):
+    url = broker_url(config, provider)
     request = urllib.request.Request(url, data=json.dumps(payload).encode(), method='POST',
-                                     headers={'Authorization': 'Bearer ' + credential(config, 'google-broker'),
+                                     headers={'Authorization': 'Bearer ' + credential(config, provider + '-broker'),
                                               'Content-Type': 'application/json', 'Accept': 'application/json'})
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -106,26 +115,27 @@ def _broker(config, credential, payload, timeout=20):
         raise BrokerError('google_broker_unreachable') from None
 
 
-def scopes(config, credential, account):
+def scopes(config, credential, account, provider='google'):
     """The scopes the owner granted this account at the broker."""
-    return set(_broker(config, credential, {'email': account['email']}).get('scopes') or [])
+    return set(_broker(config, credential, {'email': account['email']}, provider=provider).get('scopes') or [])
 
 
-def token(config, credential, account, scope, fresh=False):
-    key = (account['email'].lower(), scope)
+def token(config, credential, account, scope, fresh=False, provider='google'):
+    key = (provider, account['email'].lower(), scope)
     with _lock:
         hit = _tokens.get(key)
         if hit and not fresh and hit[1] > time.monotonic():
             return hit[0]
     try:
-        kept = mail_grants.get(config, 'google', account['email'])
+        kept = mail_grants.get(config, provider, account['email'])
     except mail_grants.GrantError:
         raise BrokerError('google_signin_unreadable') from None
-    answer = _broker(config, credential, {'email': account['email'], 'scope': scope, **({'refresh_token': kept} if kept else {})})
+    answer = _broker(config, credential, {'email': account['email'], 'scope': scope, **({'refresh_token': kept} if kept else {})},
+                     provider=provider)
     if not answer.get('access_token'):
         raise BrokerError('google_broker')
     if kept and answer.get('refresh_token') and answer['refresh_token'] != kept:
-        mail_grants.rotate(config, 'google', account['email'], kept, answer['refresh_token'])
+        mail_grants.rotate(config, provider, account['email'], kept, answer['refresh_token'])
     with _lock:
         _tokens[key] = (answer['access_token'], time.monotonic() + max(0, int(answer.get('expires_in') or 0) - 120))
     return answer['access_token']
@@ -145,11 +155,13 @@ def url_for(method, params, write=False):
     return verb, google_url(template + ('?' + query if query else ''))
 
 
-def call(config, credential, account, method, params, scope, body=None, write=False, timeout=60, raw=False, limit=None):
-    """One Google API call as the account's owner; the parsed JSON answer, or with raw=True the bytes (at most `limit`)."""
+def call(config, credential, account, method, params, scope, body=None, write=False, timeout=60, raw=False, limit=None,
+         provider='google'):
+    """One Google API call as the account's owner; the parsed JSON answer, or with raw=True the bytes (at most `limit`).
+    provider: whose sign-in (broker_url)."""
     verb, url = url_for(method, params, write)
     for attempt in (0, 1):
-        access = token(config, credential, account, scope, fresh=bool(attempt))
+        access = token(config, credential, account, scope, fresh=bool(attempt), provider=provider)
         request = urllib.request.Request(url, method=verb, data=json.dumps(body).encode() if body is not None else None,
                                          headers={'Authorization': 'Bearer ' + access, 'Accept': 'application/json',
                                                   **({'Content-Type': 'application/json'} if body is not None else {})})

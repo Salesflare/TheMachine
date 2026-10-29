@@ -1,40 +1,50 @@
-"""Read generated Meet transcripts and Gemini notes through Meet and Drive GETs.
+"""Google Meet transcripts and Gemini notes, read with Meet's own Google sign-in.
 
-Only conferences organized by the authorized user are discoverable. Artifacts
-must already have been generated; this connector never enables transcription.
-The credential is an OAuth access token, not an API key. It must be renewed
-externally when it expires; no refresh token or write scope is used here.
-Each poll replays the recent window to catch delayed artifacts and edited Docs.
+Meet signs in on its own, apart from Gmail and Calendar: The Machine's Google Meet app asks for two read-only scopes,
+and nothing else asks for them. Its refresh token is kept here (mail_grants.py, provider google_meet) and access tokens
+come from its own broker (google_meet_broker, google_api.py), as for Zoom. Gmail's and gog's scopes stay as they are.
+
+- https://www.googleapis.com/auth/meetings.space.readonly: conference records, their participants, transcripts and
+  transcript entries, and smart notes (the Meet REST API).
+- https://www.googleapis.com/auth/documents.readonly: the Gemini notes Google Doc, by the document id its smart notes
+  record names (the Docs API). No Drive scope: never drive.readonly or the restricted drive.meet.readonly.
+
+Only conferences the owner can see are discoverable. Artifacts must already have been generated; this connector never
+enables transcription and never writes. Each poll replays the recent window to catch delayed artifacts and edited Docs.
 Meet conference records expire after 30 days, even though Docs can live longer.
 The calendar meeting at the same time shows them (meeting_notes.py): Gemini's notes under Notes, the transcript
 under Transcript, marked From Google Meet, next to anything the owner added there and never in its place.
+
+Config (a hosted Machine gets it from its control plane; a paired self-hosted one from pairing):
+    "google_meet_broker": {"url": "https://app.example.com/api/google-meet/token"},
+    "credentials": {"google_meet-broker": "~/.local/share/personal-assistant/google-broker"}
 """
 import copy
 import datetime as dt
 import hashlib
 import json
 import re
-import urllib.error
-import urllib.parse
-import urllib.request
 
 KINDS = {'google_meet.transcript': 'Meet transcript', 'google_meet.notes': 'Meet notes'}
+MEET_SCOPE = 'https://www.googleapis.com/auth/meetings.space.readonly'
+DOCS_SCOPE = 'https://www.googleapis.com/auth/documents.readonly'
+SCOPES = (MEET_SCOPE, DOCS_SCOPE)
+PROVIDER = 'google_meet'  # its own sign-in and broker (google_api.py), never Gmail's
 SETUP = {
     'label': 'Google Meet',
     'what': 'Meeting transcripts and Gemini notes from Google Meet.',
-    'account': {'id': 'google-meet', 'service': 'google_meet', 'transport': 'api',
-                'boundary': 'work', 'credential': 'google_meet', 'poll_seconds': 900},
-    'ask': [],
-    'secret': 'Google OAuth access token',
-    'note': 'Turn on the Google Meet API and the Google Drive API at https://console.cloud.google.com/apis/library . '
-            'Get an access token at https://developers.google.com/oauthplayground/ with the scopes '
-            'https://www.googleapis.com/auth/meetings.space.readonly and '
-            'https://www.googleapis.com/auth/drive.meet.readonly . An API key can\'t read private meetings. '
-            'The token expires after about an hour: paste a new one then. '
-            'It reads transcripts and notes of meetings you organized in the last 7 days. Meet keeps them for 30 days.',
-    'hints': {'google_meet_http:HTTP_401': 'Google rejected the access token: paste a new one',
-              'google_meet_http:HTTP_403': 'Google refused: turn on both APIs and allow both read-only scopes'}}
+    'account': {'id': 'google-meet', 'service': 'google_meet', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 900},
+    'note': 'Sign in with Google and allow reading Meet and Google Docs.',
+    'ask': [('email', 'The Google address you meet with')],
+    # Connect Google Meet: on a hosted Machine under + Add (its control plane's own sign-in); on a paired self-hosted one
+    # the same through the control plane (fleet.SIGNIN_OF, onboarding.connect_grant)
+    'account_page': 'source-google_meet',
+    'hints': {'google_meet_not_connected': 'Connect Google Meet again',
+              'google_meet_signin_expired': 'Connect Google Meet again'}}
 PAGE_SIZE = 10
+ENTRY_PAGE = 100     # transcript entries per request (Google's most)
+ENTRY_PAGES = 60     # at most 6,000 entries of one transcript
+PEOPLE_PAGES = 5     # participants per conference: 5 pages of 100
 PAGES = 20
 MAX_BYTES = 10_000_000
 NOTES_CHARS = 40_000
@@ -53,66 +63,52 @@ def timestamp(value, helpers):
         raise helpers.SourceError('google_meet_invalid_timestamp') from None
 
 
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        # Never forward the access token to a location supplied by a response.
-        return None
+def signin(config, account, helpers):
+    """The sign-in to call with: Meet's own, for the account's address (mail_grants provider google_meet)."""
+    email = str(account.get('email') or '').strip().lower()
+    if not email or account.get('transport') != 'broker':
+        raise helpers.SourceError('google_meet_not_connected')  # a token pasted before: connect Google Meet again
+    return {'id': account['id'], 'email': email, 'transport': 'broker'}
 
 
 class Source:
     def __init__(self, config, account, helpers):
-        self.helpers = helpers
-        try:
-            token = helpers.credential(config, account.get('credential', 'google_meet')).strip()
-            if not re.fullmatch(r'[A-Za-z0-9._~+/-]+=*', token):
-                raise ValueError
-        except Exception:
-            raise helpers.SourceError('google_meet_credential_unavailable') from None
-        self.headers = {'Authorization': 'Bearer ' + token, 'User-Agent': 'TheMachine/1'}
-        self.opener = urllib.request.build_opener(NoRedirect())
+        import google_api
+        self.api, self.config, self.helpers = google_api, config, helpers
+        self.signin = signin(config, account, helpers)
+        self.people = {}  # participant resource name -> display name, for this run only
 
-    def get(self, path, params=None, document=False):
-        if document:
-            allowed = re.fullmatch(r'files/' + ID + r'/export', path)
-            base = 'https://www.googleapis.com/drive/v3/'
-            params = {'mimeType': 'text/plain'}
-        else:
-            allowed = re.fullmatch(CONFERENCE + r'/(?:transcripts|smartNotes)', path) or path == 'conferenceRecords'
-            base = 'https://meet.googleapis.com/v2/'
-        if not allowed:
-            raise self.helpers.SourceError('google_meet_path_not_allowed')
-        url = base + path + ('?' + urllib.parse.urlencode(params) if params else '')
-        request = urllib.request.Request(url, headers={**self.headers,
-                                         'Accept': 'text/plain' if document else 'application/json'}, method='GET')
+    def get(self, method, params, scope=MEET_SCOPE):
+        """One GET through google_api (fixed methods, Google's hosts only, never a redirect elsewhere): parsed JSON."""
+        helpers = self.helpers
         try:
-            with self.opener.open(request, timeout=30) as response:
-                raw = response.read(MAX_BYTES + 1)
-            if len(raw) > MAX_BYTES:
-                raise self.helpers.SourceError('google_meet_response_too_large')
-            return raw.decode('utf-8-sig') if document else json.loads(raw)
-        except urllib.error.HTTPError as error:
-            retry = error.headers.get('Retry-After', '') if error.headers else ''
-            # A generic 400/404/410 is not evidence of cursor expiry.
-            expired = False
-            if error.code == 400 and (params or {}).get('pageToken'):
-                try:
-                    message = json.loads(error.read(100_000))['error']['message'].lower()
-                    expired = bool(re.search(r'page[ _-]?token', message) and
-                                   re.search(r'\b(?:invalid|expired)\b', message))
-                except (ValueError, KeyError, TypeError, AttributeError, OSError):
-                    pass
-            error.close()
-            if expired:
-                raise self.helpers.SourceError('google_meet_cursor_expired') from None
-            delay = min(3600, max(1, int(retry))) if retry.isdigit() else (60 if error.code == 429 else None)
-            raise self.helpers.SourceError('google_meet_http', error.code, retry_after=delay) from None
-        except (urllib.error.URLError, TimeoutError, OSError):
-            raise self.helpers.SourceError('google_meet_network') from None
+            raw = self.api.call(self.config, helpers.credential, self.signin, method, params, scope, timeout=30,
+                                raw=True, limit=MAX_BYTES, provider=PROVIDER)
+        except self.api.BrokerError as error:
+            category, status = error.category, error.status
+            if category == 'google_scope_not_granted':
+                raise helpers.SourceError('google_meet_not_connected', status) from None
+            if category in ('google_broker_not_configured', 'google_broker_not_https', 'google_signin_unreadable') or \
+                    (category == 'google_broker' and status == 404):
+                raise helpers.SourceError('google_meet_not_connected') from None
+            if status == 401:
+                raise helpers.SourceError('google_meet_signin_expired', 401) from None
+            if category == 'response_too_large':
+                raise helpers.SourceError('google_meet_response_too_large') from None
+            if category in ('unsupported_google_method', 'unsupported_google_url', 'missing_google_parameter'):
+                raise helpers.SourceError('google_meet_path_not_allowed') from None
+            if status == 400 and (params or {}).get('pageToken'):
+                raise helpers.SourceError('google_meet_cursor_expired') from None
+            if status:
+                raise helpers.SourceError('google_meet_http', status, retry_after=60 if status == 429 else None) from None
+            raise helpers.SourceError('google_meet_network') from None
+        try:
+            return json.loads(raw.decode('utf-8-sig'))
         except (ValueError, UnicodeError):
-            raise self.helpers.SourceError('google_meet_invalid_response') from None
+            raise helpers.SourceError('google_meet_invalid_response') from None
 
-    def page(self, path, key, params=None):
-        page = self.get(path, params)
+    def page(self, method, params, key, scope=MEET_SCOPE):
+        page = self.get(method, params, scope)
         if not isinstance(page, dict):
             raise self.helpers.SourceError('google_meet_invalid_page')
         items, token = page.get(key, []), page.get('nextPageToken', '')
@@ -120,6 +116,82 @@ class Source:
                 or not isinstance(token, str) or (token and token == (params or {}).get('pageToken'))):
             raise self.helpers.SourceError('google_meet_invalid_page')
         return items, token
+
+    def names(self, conference):
+        """Who spoke: each participant's display name, as Meet shows it."""
+        if conference in self.people:
+            return self.people[conference]
+        found, token = {}, ''
+        for _ in range(PEOPLE_PAGES):
+            items, token = self.page('meet.conferenceRecords.participants.list',
+                                     {'conference': conference.split('/', 1)[1], 'pageSize': 100, **({'pageToken': token} if token else {})},
+                                     'participants')
+            for item in items:
+                person = item.get('signedinUser') or item.get('anonymousUser') or item.get('phoneUser') or {}
+                name = person.get('displayName') if isinstance(person, dict) else None
+                if isinstance(item.get('name'), str) and isinstance(name, str) and name.strip():
+                    found[item['name']] = ' '.join(name.split())[:80]
+            if not token:
+                break
+        self.people[conference] = found
+        return found
+
+    def transcript(self, conference, name):
+        """The transcript's text from its entries (Meet REST API), one line per turn: "Name: what they said"."""
+        people, lines, token, size = self.names(conference), [], '', 0
+        for _ in range(ENTRY_PAGES):
+            items, token = self.page('meet.conferenceRecords.transcripts.entries.list',
+                                     {'conference': conference.split('/', 1)[1], 'transcript': name.rsplit('/', 1)[1],
+                                      'pageSize': ENTRY_PAGE, **({'pageToken': token} if token else {})}, 'transcriptEntries')
+            for item in items:
+                text = ' '.join(str(item.get('text') or '').split())
+                if not text:
+                    continue
+                speaker = people.get(item.get('participant'), 'Someone')
+                if lines and lines[-1][0] == speaker:
+                    lines[-1][1].append(text)
+                else:
+                    lines.append((speaker, [text]))
+                size += len(text) + 1
+            if not token or size > TRANSCRIPT_CHARS:
+                break
+        return '\n'.join(f'{speaker}: {" ".join(said)}' for speaker, said in lines)
+
+    def document(self, document):
+        """The Gemini notes doc's text (Docs API, documents.readonly): its first tab, paragraphs and tables in order."""
+        doc = self.get('docs.documents.get', {'documentId': document}, DOCS_SCOPE)
+        if not isinstance(doc, dict):
+            raise self.helpers.SourceError('google_meet_invalid_response')
+        return doc_text((doc.get('body') or {}).get('content') if isinstance(doc.get('body'), dict) else None)
+
+
+def doc_text(content, depth=0):
+    """Plain text of a Docs API body: text runs, people and links as their names, table cells on their own lines."""
+    out = []
+    for element in content if isinstance(content, list) and depth < 8 else []:
+        if not isinstance(element, dict):
+            continue
+        paragraph = element.get('paragraph')
+        if isinstance(paragraph, dict):
+            for part in paragraph.get('elements') or []:
+                if not isinstance(part, dict):
+                    continue
+                run = part.get('textRun') or {}
+                person = (part.get('person') or {}).get('personProperties') or {}
+                link = (part.get('richLink') or {}).get('richLinkProperties') or {}
+                text = run.get('content') if isinstance(run, dict) else None
+                text = text if isinstance(text, str) else person.get('name') or person.get('email') or link.get('title') or ''
+                out.append(text if isinstance(text, str) else '')
+        table = element.get('table')
+        if isinstance(table, dict):
+            for row in table.get('tableRows') or []:
+                for cell in (row.get('tableCells') or []) if isinstance(row, dict) else []:
+                    if isinstance(cell, dict):
+                        out.append(doc_text(cell.get('content'), depth + 1).strip() + '\n')
+        toc = element.get('tableOfContents')
+        if isinstance(toc, dict):
+            out.append(doc_text(toc.get('content'), depth + 1))
+    return ''.join(out)
 
 
 def artifact_event(source, account, conference, item, collection):
@@ -129,16 +201,16 @@ def artifact_event(source, account, conference, item, collection):
         raise helpers.SourceError('google_meet_invalid_artifact')
     if item.get('state') != 'FILE_GENERATED':
         return None
+    notes = collection == 'smartNotes'
     destination = item.get('docsDestination')
     document = destination.get('document') if isinstance(destination, dict) else None
-    if not isinstance(document, str) or not re.fullmatch(ID, document):
-        raise helpers.SourceError('google_meet_invalid_document')
+    if notes and not isinstance(document, str) or document is not None and not (isinstance(document, str) and re.fullmatch(ID, document)):
+        raise helpers.SourceError('google_meet_invalid_document')  # a transcript's doc is only linked: its entries are read
     occurred = timestamp(item.get('startTime') or conference['startTime'], helpers).isoformat()
-    body = source.get('files/' + document + '/export', document=True).strip()
+    body = (source.document(document) if notes else source.transcript(conference['name'], name)).strip()
     # Do not collect explicitly labeled passwords or one-time codes in Docs.
     body = re.sub(r'(?i)\b(password|passcode|one[- ]time code|verification code|otp)\s*[:=]\s*\S+',
                   r'\1: [omitted]', body)
-    notes = collection == 'smartNotes'
     cap = NOTES_CHARS if notes else TRANSCRIPT_CHARS
     # The conference's own times, so the calendar meeting is matched by when the call ran
     span = {'start_at': conference['startTime'], **({'end_at': conference['endTime']} if conference.get('endTime') else {})}
@@ -146,7 +218,7 @@ def artifact_event(source, account, conference, item, collection):
             'kind': 'google_meet.notes' if notes else 'google_meet.transcript',
             'occurred_at': occurred, 'title': ('Meeting notes' if notes else 'Meeting transcript') + ' · ' + occurred[:10],
             'body': body[:cap], 'deleted': False,
-            'metadata': {'source_url': 'https://docs.google.com/document/d/' + document + '/edit',
+            'metadata': {**({'source_url': 'https://docs.google.com/document/d/' + document + '/edit'} if document else {}),
                          'thread_id': hashlib.sha256(conference['name'].encode()).hexdigest(),
                          'conference': conference['name'], 'artifact': name,
                          'truncated': len(body) > cap, 'body_chars': len(body), **span}}
@@ -170,7 +242,7 @@ def collect_page(source, account, current):
                   'filter': f'start_time>="{current["after"]}" AND start_time<="{current["before"]}"'}
         if current['conference_token']:
             params['pageToken'] = current['conference_token']
-        records, token = source.page('conferenceRecords', 'conferenceRecords', params)
+        records, token = source.page('meet.conferenceRecords.list', params, 'conferenceRecords')
         pending = []
         after = timestamp(current['after'], source.helpers)
         before = timestamp(current['before'], source.helpers)
@@ -189,7 +261,8 @@ def collect_page(source, account, current):
     params = {'pageSize': PAGE_SIZE}
     if current['artifact_token']:
         params['pageToken'] = current['artifact_token']
-    items, token = source.page(conference['name'] + '/' + collection, collection, params)
+    items, token = source.page('meet.conferenceRecords.' + collection + '.list',
+                               {'conference': conference['name'].split('/', 1)[1], **params}, collection)
     events = [event for item in items if (event := artifact_event(source, account, conference, item, collection))]
     current['artifact_token'] = token
     if not token:
@@ -247,15 +320,24 @@ def sync(store, config, account, helpers):
 
 
 def check(config, account, helpers):
-    """Read-only setup check; it does not create events or advance a checkpoint."""
+    """Read-only setup check; it does not create events or advance a checkpoint. Both scopes must be granted: the
+    notes doc is read with the second one, which a first meeting without notes would not show."""
     source = Source(config, account, helpers)
-    records, _ = source.page('conferenceRecords', 'conferenceRecords', {'pageSize': 1})
+    try:
+        granted = source.api.scopes(config, helpers.credential, source.signin, provider=PROVIDER)
+    except source.api.BrokerError as error:
+        not_here = error.status == 404 or error.category in ('google_broker_not_configured', 'google_broker_not_https')
+        raise helpers.SourceError('google_meet_not_connected' if not_here else 'google_meet_network', error.status) from None
+    if not set(SCOPES) <= granted:
+        raise helpers.SourceError('google_meet_not_connected', 403)
+    records, _ = source.page('meet.conferenceRecords.list', {'pageSize': 1}, 'conferenceRecords')
     if records:
         record = records[0]
         name = record.get('name')
         if not isinstance(name, str) or not re.fullmatch(CONFERENCE, name):
             raise helpers.SourceError('google_meet_invalid_conference')
         for collection in ('transcripts', 'smartNotes'):
-            items, _ = source.page(name + '/' + collection, collection, {'pageSize': 1})
+            items, _ = source.page('meet.conferenceRecords.' + collection + '.list',
+                                   {'conference': name.split('/', 1)[1], 'pageSize': 1}, collection)
             for item in items:
                 artifact_event(source, account, record, item, collection)

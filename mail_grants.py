@@ -33,7 +33,7 @@ RECEIPTS = 'revocations.json'
 PENDING = 'revoke:'  # a sign-in forgotten here whose revoke Google hasn't confirmed yet: kept only to try again
 RECEIPT_DAYS = 30
 RETRY_MINUTES = 60
-PROVIDERS = ('google', 'microsoft', 'zoom', 'stripe', 'slack')  # Zoom, Stripe and Slack (connectors/zoom.py, connectors/stripe.py, slack_api.py): forgotten here; the owner can remove the app there
+PROVIDERS = ('google', 'microsoft', 'zoom', 'stripe', 'slack', 'google_meet')  # Google Meet: its own Google sign-in, revoked at Google too. Zoom, Stripe and Slack (connectors/zoom.py, connectors/stripe.py, slack_api.py): forgotten here; the owner can remove the app there
 GOOGLE_REVOKE = 'https://oauth2.googleapis.com/revoke'
 GOOGLE_REMOVE = 'myaccount.google.com/permissions'
 MICROSOFT_REMOVE = 'myapps.microsoft.com (work) or account.live.com/consent/Manage (personal)'
@@ -208,7 +208,7 @@ def forget(config, provider, email, revoke=True):
     outcome = None
     if token:
         outcome = 'forgotten'
-        if revoke and provider == 'google':
+        if revoke and provider in ('google', 'google_meet'):
             outcome = 'revoked' if _revoke_google(token) else 'not_revoked'
     with _Locked(config):
         data = _read(config)

@@ -3,8 +3,8 @@ title: Google Meet
 area: connections
 summary: Transcripts en Gemini-notities van Meet-meetings die je organiseert. Het leest alleen.
 covers: connector:google_meet
-code: connectors/google_meet.py
-site: Connect, More sources, Remove
+code: connectors/google_meet.py, onboarding.py
+site: Sign in with Google
 ---
 ## Wat het leest
 
@@ -16,22 +16,32 @@ Elk wordt gekoppeld aan de meeting in je agenda op hetzelfde moment. De Gemini-n
 
 ## Wat het kan doen
 
-Niets in Meet of Drive. Het leest alleen, en zet zelf nooit transcripts aan.
+Niets in Meet, Docs of Drive. Het leest alleen, en zet zelf nooit transcripts aan.
+
+## Waar het om vraagt
+
+Een eigen OK, los van je mail-login. Google vraagt of The Machine mag:
+
+- Je Google Meet-meetings zien, met hun transcripts en Gemini-notities.
+- Je Google Docs zien, om het document met de Gemini-notities te lezen.
+
+Het vraagt nooit om je Drive. Je toegang tot Gmail en Agenda blijft zoals hij is.
 
 ## Koppelen
 
-1. Zet in Google Cloud de Google Meet API en de Google Drive API aan.
-2. Haal in de OAuth Playground een toegangstoken met de twee alleen-lezen-scopes die het koppelscherm toont.
-3. Op een gehoste Machine: open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen** en open Google Meet. Op je eigen computer: **Koppelingen**, **+ Toevoegen**, Google Meet, of `assistant connect google_meet`.
-4. Plak het token en druk op **Verbinden**.
+Gmail hoeft niet gekoppeld te zijn. Zo koppel je het:
 
-Het token verloopt na ongeveer een uur. Als Koppelingen zegt dat het geweigerd is, plak je een nieuw.
+- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Google Meet** en druk op **Inloggen met Google**. Google vraagt om de OK hierboven, daarna kom je terug in het dashboard.
+- Je eigen computer, gekoppeld aan je account: dezelfde stappen. De login opent in een nieuw tabblad.
+
+Hij controleert of de login Meet mag lezen. Zonder die OK wordt het niet toegevoegd. De login blijft werken: je hoeft niets te plakken of te vernieuwen.
+
+Trek je de OK later in, dan vraagt de kaart van Google Meet om opnieuw in te loggen.
 
 ## Verwijderen
 
-- In het dashboard: **Koppelingen**, open Google Meet, **Details**, dan **Ontkoppelen**. Wat al binnengehaald is, blijft.
-- Op een gehoste Machine kun je ook op **Verwijderen** ernaast drukken op je setuppagina.
+In het dashboard: **Koppelingen**, open Google Meet, **Details**, dan **Ontkoppelen**. Wat het al binnenhaalde, blijft.
 
 ## Intrekken bij Google
 
-Open myaccount.google.com/permissions en verwijder de toegang van de OAuth Playground.
+Open myaccount.google.com/permissions en verwijder de toegang van The Machine tot Google Meet. Gmail en Agenda blijven werken.

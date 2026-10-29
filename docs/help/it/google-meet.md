@@ -3,8 +3,8 @@ title: Google Meet
 area: connections
 summary: Trascrizioni e note di Gemini delle riunioni Meet che organizzi. Legge soltanto.
 covers: connector:google_meet
-code: connectors/google_meet.py
-site: Connect, More sources, Remove
+code: connectors/google_meet.py, onboarding.py
+site: Sign in with Google
 ---
 ## Cosa legge
 
@@ -16,22 +16,32 @@ Ognuna viene abbinata alla riunione del tuo calendario alla stessa ora. Le note 
 
 ## Cosa può fare
 
-Niente in Meet o Drive. Legge soltanto e non attiva mai le trascrizioni da solo.
+Niente in Meet, Docs o Drive. Legge soltanto e non attiva mai le trascrizioni da sola.
+
+## Cosa chiede
+
+Un OK a parte, separato dall’accesso alla posta. Google chiede di consentire a The Machine di:
+
+- Vedere le tue riunioni Google Meet, con trascrizioni e note di Gemini.
+- Vedere i tuoi Google Docs, per leggere il documento con le note di Gemini.
+
+Non chiede mai il tuo Drive. L’accesso a Gmail e Calendar resta com’è.
 
 ## Collegalo
 
-1. In Google Cloud, attiva l'API di Google Meet e l'API di Google Drive.
-2. Nell'OAuth Playground, ottieni un token di accesso con i due scope di sola lettura mostrati nella schermata di collegamento.
-3. Su una Machine in hosting: apri la tua pagina di configurazione su app.themachine.computer/setup, vai su **Altre fonti** e apri Google Meet. Sul tuo computer: **Connessioni**, **+ Aggiungi**, Google Meet, oppure `assistant connect google_meet`.
-4. Incolla il token e premi **Collegati**.
+Non serve avere Gmail collegato. Per collegarlo:
 
-Il token scade dopo circa un'ora. Quando Connessioni dice che è stato rifiutato, incollane uno nuovo.
+- Machine in hosting: nella dashboard, apri **Connessioni**, **+ Aggiungi**, scegli **Google Meet** e premi **Accedi con Google**. Google chiede l’OK qui sopra, poi torni alla dashboard.
+- Il tuo computer, abbinato al tuo account: gli stessi passaggi. L’accesso si apre in una nuova scheda.
+
+Verifica che l’accesso possa leggere Meet. Senza quell’OK non viene aggiunto. L’accesso continua a funzionare: non c’è niente da incollare o rinnovare.
+
+Se più avanti revochi l’OK, la scheda di Google Meet ti chiede di accedere di nuovo.
 
 ## Rimuovilo
 
-- Nella dashboard: **Connessioni**, apri Google Meet, **Dettagli**, poi **Disconnetti**. Ciò che ha già importato resta.
-- Su una Machine in hosting puoi anche premere **Rimuovi** accanto a Google Meet nella tua pagina di configurazione.
+Nella dashboard: **Connessioni**, apri Google Meet, **Dettagli**, poi **Disconnetti**. Quello che ha già portato resta.
 
 ## Revocalo in Google
 
-Apri myaccount.google.com/permissions e rimuovi l'accesso dell'OAuth Playground.
+Apri myaccount.google.com/permissions e rimuovi l’accesso di The Machine a Google Meet. Gmail e Calendar continuano a funzionare.
