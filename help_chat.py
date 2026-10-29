@@ -331,15 +331,15 @@ def prompt(question, history, sections, snippets, audience=None, lang='en'):
     return '\n'.join(parts)
 
 
-def openclaw_model_run(config, text, model=None, thinking=None):
-    """One raw model turn through the Gateway (its own session, no tools); the reply's text."""
+def openclaw_model_run(config, text, model=None, thinking=None, timeout=TIMEOUT):
+    """One raw model turn through the Gateway (its own session, no tools); the reply's text. timeout: seconds."""
     args = [str((config or {}).get('openclaw') or 'openclaw'), 'infer', 'model', 'run', '--gateway', '--json', '--prompt', text]
     if model:
         args += ['--model', model]
     if thinking:
         args += ['--thinking', thinking]
     try:
-        result = subprocess.run(args, capture_output=True, text=True, timeout=TIMEOUT)
+        result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
         data = json.loads(result.stdout or '{}')
     except subprocess.TimeoutExpired:
         raise Unavailable(t('Help took too long to answer. Try again.')) from None

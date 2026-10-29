@@ -3,7 +3,7 @@ title: Calendario
 area: calendar
 summary: La semana que viene en un solo sitio: reuniones, tareas que vencen, tareas pospuestas y promesas.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py
 order: 1
 ---
 ## Qué muestra
@@ -40,6 +40,10 @@ Los detalles de una reunión tienen dos partes. **Notas** es el resumen: decisio
 Cada una tiene su propio **Añadir notas** o **Añadir transcripción**, **Subir archivo** para un archivo Markdown o de texto, **Editar** y **Quitar** (toca dos veces). Lo que va en una se queda ahí. En una reunión que puedes cambiar, **Notas** debajo de su formulario las abre.
 
 Con [Zoom](zoom.md) o [Google Meet](google-meet.md) conectado, sus notas aparecen en Notas y su transcripción en Transcripción, marcadas **De Zoom** o **De Google Meet**. Nunca reemplazan lo que añadiste: cuando están los dos, se ven los dos.
+
+Una reunión con transcripción y sin notas tiene **Generar notas**. The Machine las escribe a partir de la transcripción: un resumen corto, las decisiones y las tareas con quién las hace, en el idioma de la reunión.
+
+The Machine muestra **Escribiendo notas…** y sigue aunque cierres la reunión; una larga tarda unos minutos. Usa tu propio modelo y espera si llegas a tu límite de uso. Las notas dicen **Escritas por The Machine**, nunca reemplazan las que añadiste, y los seguimientos salen de ellas como de las de Zoom.
 
 The Machine también puede añadirlas. Pídeselo en una tarea, como "añade esta transcripción a la reunión del consejo de hoy". Una transcripción va en Transcripción, un resumen en Notas. Una reunión con ellas muestra **Notas** o **Transcripción** en el calendario.
 

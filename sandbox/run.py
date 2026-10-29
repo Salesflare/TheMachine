@@ -113,6 +113,49 @@ def fake_help(config, prompt, model=None, thinking=None):
     return ' '.join(re.split(r'(?<=[.!?])\s+', ' '.join(text.split()))[:3]) + ' [1]'
 
 
+def seed_transcript(app):
+    """Generate notes in the Calendar: the latest past meeting with guests has a long made-up transcript (2h 15m) and no
+    notes yet."""
+    import assistant
+    now = dt.datetime.now(dt.timezone.utc)
+    with app.store.connect() as db:
+        rows = db.execute("SELECT id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND occurred_at<? "
+                          "ORDER BY occurred_at DESC LIMIT 40", (now.isoformat(),)).fetchall()
+    for r in rows:
+        m = json.loads(r['metadata'] or '{}')
+        guests = [g for g in m.get('attendees') or [] if isinstance(g, dict) and not g.get('self')]
+        if len(guests) >= 1 and not m.get('all_day'):
+            break
+    else:
+        return
+    names = ['Alex Morgan'] + [str(g.get('displayName') or g.get('email', '').split('@')[0].replace('.', ' ').title()) for g in guests[:2]]
+    topics = ['the pilot timeline', 'reminders on shared inboxes', 'the rollout to the second team', 'pricing for the larger plan',
+              'the security questions from IT', 'who owns the onboarding checklist', 'the go-live date']
+    lines = []
+    for minute in range(135):
+        for second in range(0, 60, 6):
+            who = names[(minute + second // 6) % len(names)]
+            topic = topics[minute // 20]
+            lines.append(f'[{minute // 60}:{minute % 60:02d}:{second:02d}] {who}: On {topic}, we went through what is open and what comes next.')
+    lines.append(f'[2:14:30] {names[0]}: So we go live on the 15th, and I send the rollout plan by Friday.')
+    app.meeting_notes({'event_id': r['id'], 'field': 'transcript', 'text': '\n'.join(lines)}, True)
+    print(f"sandbox: a 2h 15m transcript on \"{r['title']}\" ({r['occurred_at'][:16]})", flush=True)
+
+
+def fake_notes(config, prompt):
+    """Generate notes' stand-in model: a few seconds per turn (so the dialog shows Writing notes…), then made-up notes in
+    the shape the prompt asks for. No model runs."""
+    import re
+    time.sleep(4)
+    if 'This is part' in prompt:
+        part = re.search(r'This is part (\d+) of (\d+)', prompt)
+        return f'- Part {part[1]}: went through what is open and what comes next.'
+    title = re.search(r'^Meeting: (.+?), \d{4}-', prompt, re.M)
+    return (f"## Summary\n\n{title[1] if title else 'The meeting'}: the team went through the pilot, the rollout and pricing, and agreed on a go-live date.\n\n"
+            '## Decisions\n\n- Go live on the 15th\n- Start the rollout with the second team\n\n'
+            '## Action items\n\n- **Alex Morgan**: send the rollout plan by Friday\n- **Unassigned**: answer the security questions from IT')
+
+
 def proxy(public_port, app_port, config):
     """Signs each request in as the owner on the dashboard's own host (what Tailscale Serve does for real)."""
     host, owner = config['dashboard_host'], config['tailscale_owner']
@@ -266,6 +309,8 @@ def main():
     quiet_workers(app, sent)
     seed_model(app)
     app.help_model = fake_help
+    app.notes_model = fake_notes
+    seed_transcript(app)
     fixture = json.loads((HERE / 'fixture.json').read_text())
     net = None
     if load.groups(states):
