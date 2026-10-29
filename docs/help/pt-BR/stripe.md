@@ -28,6 +28,8 @@ Ou cole uma chave restrita:
 2. Encontre o ID da sua conta (acct_...) em Settings, Business details.
 3. Abra Stripe como acima (ou rode `assistant connect stripe`), abra **Ou cole uma chave restrita**, cole o ID da conta e a chave, depois clique em **Conectar**.
 
+No seu próprio computador, se entrar com Stripe ainda não estiver disponível, + Add avisa e abre este formulário na hora.
+
 ## Conectar uma vez para sua equipe
 
 Em um Fleet de Trabalho, um proprietário ou admin conecta o Stripe uma vez e compartilha com a equipe:

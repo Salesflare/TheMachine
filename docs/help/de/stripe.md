@@ -28,6 +28,8 @@ Oder füge stattdessen einen eingeschränkten Schlüssel ein:
 2. Deine Konto-ID (acct_...) findest du unter Settings, Business details.
 3. Öffne Stripe wie oben (oder führe `assistant connect stripe` aus), öffne **Oder einen eingeschränkten Schlüssel einfügen**, füge die Konto-ID und den Schlüssel ein und tippe dann auf **Verbinden**.
 
+Auf deinem eigenen Computer: Ist die Anmeldung mit Stripe noch nicht verfügbar, sagt + Add das und öffnet direkt dieses Formular.
+
 ## Einmal für dein Team verbinden
 
 In einer Work Fleet verbindet ein Owner oder Admin Stripe einmal und teilt es mit dem Team:

@@ -28,6 +28,8 @@ O pega una clave restringida:
 2. Busca el ID de tu cuenta (acct_...) en Settings, Business details.
 3. Abre Stripe como arriba (o ejecuta `assistant connect stripe`), abre **O pega una clave restringida**, pega el ID de la cuenta y la clave; luego pulsa **Conectar**.
 
+En tu propio ordenador, si iniciar sesión con Stripe aún no está disponible, + Add lo dice y abre este formulario directamente.
+
 ## Conéctalo una vez para tu equipo
 
 En un Work Fleet, un propietario o administrador conecta Stripe una vez y lo comparte con el equipo:

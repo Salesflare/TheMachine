@@ -28,6 +28,8 @@ Of plak in plaats daarvan een beperkte sleutel:
 2. Zoek je account-ID (acct_...) onder Settings, Business details.
 3. Open Stripe zoals hierboven (of voer `assistant connect stripe` uit), open **Of plak een beperkte sleutel**, plak het account-ID en de sleutel en druk op **Verbinden**.
 
+Op je eigen computer: kan inloggen met Stripe nog niet, dan zegt + Add dat en opent het meteen dit formulier.
+
 ## Eén keer koppelen voor je team
 
 In een Werk-Fleet koppelt een eigenaar of beheerder Stripe één keer en deelt het met het team:

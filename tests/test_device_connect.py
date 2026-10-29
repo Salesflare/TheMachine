@@ -52,10 +52,17 @@ class Relay:
     def __init__(self, private, items):
         self.private, self.items, self.calls = private, items, []
         self.start_url = 'https://app.themachine.computer/connect/start/' + 'A' * 32
+        self.signins, self.refuse = None, ()  # GET /signins (None: a control plane from before), starts it refuses
 
     def call(self, method, path, body=None, timeout=40):
         self.calls.append((method, path, body))
+        if (method, path) == ('GET', '/signins'):
+            if self.signins is None:
+                raise fleet.Off()
+            return {'signins': self.signins}
         if (method, path) == ('POST', '/connect-start'):
+            if body['source'] in self.refuse:
+                raise ValueError(fleet.SIGNIN_REFUSED)  # as the control plane's 400 reaches fleet.NetworkClient.call
             return {'url': self.start_url}
         if (method, path) == ('GET', '/connects'):
             items, self.items = self.items, []
@@ -130,6 +137,54 @@ class Start(unittest.TestCase):
         with self.assertRaises(ValueError):
             f.connect_start('intercom')
         self.assertEqual(f.relay.calls, [])
+
+
+class Available(unittest.TestCase):
+    """Only the sign-ins the control plane has an app for are offered (GET /signins, kept a few minutes); one it
+    refuses anyway is SigninUnavailable, so the dashboard opens the other way instead of a tab."""
+
+    def test_the_list_is_asked_once_kept_and_asked_again_later(self):
+        f = fleet_with(self, [])
+        f.relay.signins = ['intercom', 'google', 'not-a-source']
+        self.assertEqual(f.signins(clock=lambda: 1000), frozenset({'intercom', 'google'}))
+        f.relay.signins = ['intercom']
+        self.assertEqual(f.signins(clock=lambda: 1000 + fleet.SIGNINS_FRESH - 1), frozenset({'intercom', 'google'}))
+        self.assertEqual(len(f.relay.calls), 1)
+        self.assertEqual(f.signins(clock=lambda: 1000 + fleet.SIGNINS_FRESH + 1), frozenset({'intercom'}))
+        self.assertEqual(f.relay.calls, [('GET', '/signins', None)] * 2)
+
+    def test_a_control_plane_that_cannot_say_offers_each(self):
+        f = fleet_with(self, [])  # GET /signins: 404 there
+        self.assertIsNone(f.signins())
+        self.assertEqual(f.connect_start('stripe'), f.relay.start_url)
+
+    def test_a_refused_start_is_unavailable_and_not_asked_again(self):
+        f = fleet_with(self, [])
+        f.relay.refuse = ('stripe',)
+        with self.assertRaises(fleet.SigninUnavailable):
+            f.connect_start('stripe')
+        self.assertEqual(f.signin_state('stripe'), {'state': 'none'})
+        self.assertNotIn('stripe', f.signins())  # kept as refused, no list asked for
+        calls = len(f.relay.calls)
+        with self.assertRaises(fleet.SigninUnavailable):
+            f.connect_start('stripe')
+        self.assertEqual(len(f.relay.calls), calls)  # known now: no request that is refused anyway
+        self.assertEqual(f.connect_start('intercom'), f.relay.start_url)
+
+    def test_one_not_in_the_list_is_not_started(self):
+        f = fleet_with(self, [])
+        f.relay.signins = ['intercom']
+        f.signins()
+        with self.assertRaises(fleet.SigninUnavailable):
+            f.connect_start('stripe')
+        self.assertNotIn('/connect-start', [c[1] for c in f.relay.calls])
+
+    def test_other_refusals_stay_as_they_are(self):
+        f = fleet_with(self, [])
+        f.relay.call = lambda *a, **k: (_ for _ in ()).throw(ValueError('That Machine is not paired.'))
+        with self.assertRaisesRegex(ValueError, 'not paired') as caught:
+            f.connect_start('intercom')
+        self.assertNotIsInstance(caught.exception, fleet.SigninUnavailable)
 
 
 class Round(unittest.TestCase):
@@ -245,6 +300,26 @@ class Dashboard(unittest.TestCase):
         for name in ('github', 'slack', ''):  # Gmail signs in with Google: test_device_grants.py
             with self.assertRaises(ValueError):
                 app.action('connect_signin', {'name': name}, owner_dashboard=True)
+
+    def test_one_the_control_plane_has_no_app_for_shows_the_other_way(self):
+        app = self.app()
+        app.fleet.relay.signins = ['intercom', 'google', 'microsoft', 'microsoft_docs', 'zoom']  # no Stripe app there
+        found = app.action('connect_sources', {}, owner_dashboard=True)
+        marks = {x['service']: (x.get('signin'), bool(x.get('signin_off'))) for x in found['sources'] if x.get('signin')}
+        self.assertEqual(marks['stripe'], ('stripe', True))
+        self.assertEqual(marks['intercom'], ('intercom', False))
+        self.assertEqual(marks['gmail'], ('google', False))
+        self.assertEqual(app.action('connect_signin', {'name': 'stripe'}, owner_dashboard=True), {'state': 'unavailable'})
+        self.assertNotIn('/connect-start', [c[1] for c in app.fleet.relay.calls])
+
+    def test_a_start_refused_anyway_is_unavailable_not_an_error(self):
+        app = self.app()  # a control plane from before: no list, so each is offered
+        app.fleet.relay.refuse = ('stripe',)
+        found = app.action('connect_sources', {}, owner_dashboard=True)
+        self.assertFalse(any(x.get('signin_off') for x in found['sources']))
+        self.assertEqual(app.action('connect_signin', {'name': 'stripe'}, owner_dashboard=True), {'state': 'unavailable'})
+        [stripe] = [x for x in app.action('connect_sources', {}, owner_dashboard=True)['sources'] if x['service'] == 'stripe']
+        self.assertTrue(stripe['signin_off'])
 
     def test_not_paired_it_says_pair_first(self):
         app = self.app(paired=False)

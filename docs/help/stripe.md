@@ -28,6 +28,8 @@ Or paste a restricted key instead:
 2. Find your account ID (acct_...) under Settings, Business details.
 3. Open Stripe as above (or run `assistant connect stripe`), open **Or paste a restricted key**, paste the account ID and the key, then press **Connect**.
 
+On your own computer, when Sign in with Stripe isn't available yet, + Add says so and opens this form straight away.
+
 ## Connect it once for your team
 
 In a Work Fleet, an owner or admin connects Stripe once and shares it with the team:
