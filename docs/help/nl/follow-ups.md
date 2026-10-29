@@ -48,7 +48,9 @@ Opvolging stopt als ze antwoorden, als het project gewonnen, verloren, gearchive
 
 Na de laatste opvolging zonder antwoord toont het project "Geen antwoord na 3 opvolgingen" en gaat het naar Vastgelopen of afgewezen als dat aanstaat.
 
-Kwam hun e-mail terug, dan gaan opvolgingen verder op LinkedIn of WhatsApp als dat mag en jullie daar praten. Anders stoppen ze met "E-mail kwam terug". Is het project belangrijk, dan krijg je een to-do om een nieuw adres te vinden.
+Kwam hun e-mail terug en is er een ander adres, dan gaat de opvolging daarheen ("Teruggekomen, nu naar <adres>"). Een concept waarvan het adres terugkomt voor het vertrekt, wordt tegengehouden: "Niet verstuurd: <adres> kwam terug", en gaat naar hun andere adres, waar het wacht op jouw Versturen.
+
+Zonder ander adres gaan opvolgingen verder op LinkedIn of WhatsApp als dat mag en jullie daar praten. Anders stoppen ze met "E-mail kwam terug". Is het project belangrijk, dan krijg je een to-do om een nieuw adres te vinden.
 
 ## Waar je het ziet
 

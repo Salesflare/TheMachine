@@ -420,14 +420,49 @@ def steer(db, raw, options):
     return raw, options
 
 
+def moved(db, to):
+    """{address: the bounced one it stands in for}: a draft's To that is a working address of someone whose other address
+    bounced ("Bounced, now to <address>")."""
+    to = addresses_in(to)
+    if not to or not _table(db):
+        return {}
+    out = {}
+    # From each bounced address to its person's other ones (an address the owner added is no identifier to look up by)
+    for r in db.execute('SELECT address FROM email_bounces WHERE cleared_at IS NULL ORDER BY bounced_at'):
+        for other in person_emails(db, r['address']):
+            if other in to and other != r['address']:
+                out[other] = r['address']
+    bad = flags(db, list(out))
+    return {a: b for a, b in out.items() if a not in bad}
+
+
 def mark_draft(db, action):
-    """A draft as the send sheet shows it: 'bounced' {address: when} for its recipients that bounced."""
+    """A draft as the send sheet shows it: 'bounced' {address: when} for its recipients that bounced, 'moved' {address:
+    the bounced one} when it goes to someone's working address instead of one that bounced."""
     if not isinstance(action, dict) or action.get('kind') != 'email':
         return action
     found = flags(db, list(action.get('to') or []) + list(action.get('to_options') or []))
-    if not found:
-        return action
-    return {**action, 'bounced': {a: f['at'] for a, f in found.items()}}
+    instead = moved(db, action.get('to') or [])
+    if found:
+        action = {**action, 'bounced': {a: f['at'] for a, f in found.items()}}
+    if instead:
+        action = {**action, 'moved': instead}
+    return action
+
+
+def retarget(db, action):
+    """A ready email draft whose To bounced, sent to the same person's working address instead: the draft under a new
+    revision (so it waits for the owner's Send again), or None when there is no working address to move to."""
+    if not isinstance(action, dict) or action.get('kind') != 'email':
+        return None
+    new = steer(db, action, [])[0]
+    if [str(a).lower() for a in new.get('to') or ()] == [str(a).lower() for a in action.get('to') or ()]:
+        return None
+    import hashlib
+    import next_actions
+    new = {k: v for k, v in new.items() if k != 'revision'}
+    new['revision'] = hashlib.sha256(next_actions.canonical(new).encode()).hexdigest()[:12]
+    return new
 
 
 def requeue_lookup(db, address):

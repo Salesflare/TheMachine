@@ -48,7 +48,9 @@ Das Nachfassen hört auf, wenn die Person antwortet, wenn das Projekt gewonnen, 
 
 Nach dem letzten Nachfassen ohne Antwort zeigt das Projekt „Keine Antwort nach 3 Mal Nachfassen“ und wechselt zu Ins Stocken geraten oder abgelehnt, wenn das an ist.
 
-Kam ihre E-Mail zurück, geht das Nachfassen auf LinkedIn oder WhatsApp weiter, wenn das erlaubt ist und ihr dort schreibt. Sonst hört es auf mit "E-Mail kam zurück". Ist das Projekt wichtig, bekommst du ein To-do, eine neue Adresse zu finden.
+Kam ihre E-Mail zurück und gibt es eine andere Adresse, geht das Nachfassen dorthin ("Zurückgekommen, jetzt an <Adresse>"). Ein Entwurf, dessen Adresse vor dem Senden zurückkommt, wird angehalten: "Nicht gesendet: <Adresse> kam zurück", und geht an die andere Adresse, wo er auf dein Senden wartet.
+
+Ohne andere Adresse geht das Nachfassen auf LinkedIn oder WhatsApp weiter, wenn das erlaubt ist und ihr dort schreibt. Sonst hört es auf mit "E-Mail kam zurück". Ist das Projekt wichtig, bekommst du ein To-do, eine neue Adresse zu finden.
 
 ## Wo du es siehst
 

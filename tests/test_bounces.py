@@ -383,5 +383,96 @@ class FollowUpsAfterABounce(Recording):
             self.assertEqual(db.execute("SELECT choice FROM decisions WHERE id=?", ('follow-up-bounced:' + sid,)).fetchone()[0], 'bounced')
 
 
+
+class AnotherAddress(FollowUpsAfterABounce):
+    """The bounced person has a working address: email follow-ups go on there ("Bounced, now to <address>")."""
+
+    def other_address(self):
+        self.build()
+        with self.store.connect() as db:
+            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, a.now())
+        self.build()
+
+    def test_the_follow_up_goes_on_by_email_to_the_working_address(self):
+        self.add(report('dsn1', '2026-10-13T09:00:05+00:00'))
+        self.other_address()
+        self.turn_on()
+        self.app().bounce_step()
+        item = self.plan()[self.acme]
+        self.assertEqual((item['state'], item['channel']), ('due', 'email'))
+        self.assertEqual(self.app().follow_up_step()['drafted'], 1)  # the report in the thread holds nothing up
+        draft = {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Re: Pilot', 'body': 'Any news?'}
+        with self.store.connect() as db:
+            steered = bounces.steer(db, draft, [])[0]
+            self.assertEqual(steered['to'], ['sam@newco.example'])
+            self.assertEqual(bounces.mark_draft(db, steered)['moved'], {'sam@newco.example': 'sam@client.example'})  # "Bounced, now to ..."
+            self.assertEqual(db.execute('SELECT state FROM follow_up_cards').fetchone()[0], 'open')  # not stopped
+
+
+# The follow-ups harness (a board, two projects, a fake outbox and mailbox), without running its own tests again here
+import test_follow_ups as tfu
+_Harness = type('_Harness', (tfu.FollowUps,), {k: None for k in dir(tfu.FollowUps) if k.startswith('test_')})
+
+
+class HeldBeforeItGoes(_Harness):
+    """A follow-up drafted before its address bounced is held by the check right before it goes (as for a new message)."""
+
+    def bounce(self, at='2026-10-19T08:50:00+00:00'):
+        self.store.commit_page('work', {}, [report('dsn1', at)])
+        self.app().bounce_step()
+
+    def draft_of(self, sid):
+        with self.store.connect() as db:
+            return json.loads(db.execute('SELECT next_action FROM suggestions WHERE id=?', (sid,)).fetchone()[0])
+
+    def test_it_moves_to_the_working_address_and_waits_for_send_again(self):
+        transport = tfu.FakeOutbox()
+        acme, _ = self.drafted(auto=True)
+        self.send(acme)
+        for step in ('build', 'edit', 'build'):
+            with self.store.connect() as db:
+                if step == 'build':
+                    graph.build(db, self.app().config, a.now())
+                else:
+                    graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, a.now())
+        self.bounce()
+        step = self.outbox(transport)
+        self.assertEqual(step('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+        self.assertEqual(self.hold_of(acme), {'status': 'blocked', 'error': 'Not sent: sam@client.example bounced.', 'why': 'bounced', 'card': 'prepared'})
+        draft = self.draft_of(acme)
+        self.assertEqual(draft['to'], ['sam@newco.example'])
+        self.assertNotEqual(draft['revision'], 'r-' + acme[:6])
+        with self.store.connect() as db:
+            self.assertEqual(bounces.mark_draft(db, draft)['moved'], {'sam@newco.example': 'sam@client.example'})
+        self.assertEqual({c['project_id']: c['state'] for c in self.cards()}[self.acme], 'open')
+        self.assertNotIn(acme, [sid for sid, _ in self.app().follow_up_send()])  # Send without asking is on, but this one waits for the owner
+        # The owner's Send: it goes to the working address, and the report in the thread is no new message
+        self.assertEqual(self.store.confirm_action(acme, draft['revision'], 'tap-again', 'dashboard')['status'], 'queued')
+        for at in ('2026-10-19T09:05:00+00:00', '2026-10-19T09:06:00+00:00'):  # the other project's went alone first, then a gap
+            step(at)
+        self.assertIn(acme, [sid for sid, _ in transport.sent])
+        with self.store.connect() as db:
+            sent = db.execute("SELECT payload FROM action_jobs WHERE suggestion_id=? AND status='sent'", (acme,)).fetchone()
+        self.assertEqual(json.loads(sent[0])['to'], ['sam@newco.example'])
+
+    def test_with_no_other_address_it_is_held_and_stops(self):
+        transport = tfu.FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.bounce()
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+        self.assertEqual((self.hold_of(acme)['error'], self.hold_of(acme)['why']), ('Not sent: sam@client.example bounced.', 'bounced'))
+        self.assertEqual(self.draft_of(acme)['to'], ['sam@client.example'])
+        card = {c['project_id']: (c['state'], c['why']) for c in self.cards()}[self.acme]
+        self.assertEqual(card, ('stopped', 'bounced'))  # "Email bounced"
+
+    def test_a_delivery_report_in_the_thread_is_no_new_message(self):
+        base = {'at': '2026-10-13T09:00:00+00:00', 'source_id': 'out1', 'seen': ['in1', 'out1']}
+        dsn = tfu.FakeMailbox.head('dsn1', '2026-10-19T08:50:00+00:00', 'Mail Delivery Subsystem <mailer-daemon@googlemail.com>', ['INBOX'])
+        self.assertEqual(follow_ups.thread_since({'messages': [dsn]}, base, {'owner@example.com'}), [])
+
+
 if __name__ == '__main__':
     unittest.main()

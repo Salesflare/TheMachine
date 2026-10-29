@@ -10494,6 +10494,8 @@ def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), 
             if row['kind'] == 'slack.message' and m.get('thread_ts') and em.get('thread_ts') != m['thread_ts'] and em.get('ts') != m['thread_ts']:
                 continue
             seen.add(e['id'])
+            if row['kind'] == 'gmail.message' and bounces.system_sender(em.get('from')):
+                continue  # a delivery report answers nothing (bounces.py tells what bounced)
             address = _address(em.get('from'))
             if own_message(dict(e), owner_slack_ids):
                 who = 'the owner'
@@ -15737,6 +15739,11 @@ class App:
             if not current or current['status']!='queued':return
             if current['suggestion_status']!='prepared' or not next_actions.selected(current['next_action'],job['revision']):
                 db.execute("UPDATE action_jobs SET status='cancelled' WHERE id=?",(job['id'],));return
+            if recheck and recheck[0]=='bounced':
+                follow_ups.hold_bounced(db,job,current['next_action'],recheck[1],now())
+                follow_ups.settle(db,now(),self.follow_up_mine())  # no working address: the draft stops ("Email bounced")
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
+                return 'held'
             if recheck and recheck[0]:
                 follow_ups.hold(db,job['id'],job['suggestion_id'],recheck[0],recheck[1],now())
                 follow_ups.settle(db,now(),self.follow_up_mine())  # a reply ends the round; the owner's own send counts as this one
@@ -16114,7 +16121,8 @@ class App:
 
     def follow_up_recheck(self, job, action):
         """Right before a follow-up goes out: is the thread still as it was when the draft was written (follow_ups.basis)?
-        None for a send that isn't a follow-up; else (why, news): why None (nothing new: it goes), 'changed' (a message
+        None for a send that isn't a follow-up; else (why, news): why None (nothing new: it goes), 'bounced' (its To
+        bounced since: news is the addresses; hold_bounced), 'changed' (a message
         was added since, by anyone: collected here, or in Gmail's thread or Outlook's conversation read fresh, or in the
         WhatsApp chat) or 'unchecked' (the fresh read failed: it doesn't go). LinkedIn and other channels: the collected
         messages. Outside any transaction."""
@@ -16122,6 +16130,10 @@ class App:
             card, found = follow_ups.basis_of(db, job['suggestion_id'])
             if card is None:
                 return None
+            # Its To bounced since the draft (bounces.py): held, and moved to a working address when there is one
+            bad = bounces.flags(db, action.get('to') or []) if action.get('kind') == 'email' else {}
+            if bad:
+                return 'bounced', sorted(bad)
             news = follow_ups.collected_since(db, card['project_id'], found, self.follow_up_mine())
             own = self.follow_up_own(db)
         channels = found.get('channels') or {}

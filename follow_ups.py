@@ -26,9 +26,12 @@ most: follow_up_cards is UNIQUE on (project, that message); the follow-up the ow
 Waiting points older than STALE_DAYS past their date are left alone: turning follow-ups on never chases old threads,
 and a round only ends by itself (note, Stalled) after a follow-up that went out from here.
 
-A bounced address (bounces.py) gets no follow-up by email: when every To of the owner's last email in the project
-bounced, the follow-up moves to another allowed channel where the conversation already is (as switch does), else the
-project shows "Email bounced" (state off, reason bounced). An open email draft closes with why 'bounced', and a sent
+A bounced address (bounces.py) gets no follow-up by email. When the person has another working address the follow-up
+goes there (the draft's To moves: bounces.steer; "Bounced, now to <address>"). When every To of the owner's last email
+in the project bounced with no working address, it moves to another allowed channel where the conversation already is
+(as switch does), else the project shows "Email bounced" (state off, reason bounced). A draft whose To bounced after it
+was written is held right before it goes ("Not sent: <address> bounced", hold_bounced) and moved to the working address
+under a new revision, which waits for the owner's Send again. An open email draft closes with why 'bounced', and a sent
 follow-up that bounced is marked the same way (bounced). A delivery report is never a reply.
 
 App.follow_up_step drafts in a low-priority background pass: only while no other preparation waits and the model's
@@ -76,6 +79,8 @@ import difflib
 import json
 import random
 import re
+
+import bounces
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS follow_up_rules(scope TEXT NOT NULL,ref INTEGER NOT NULL,settings TEXT NOT NULL,updated_at TEXT NOT NULL,
@@ -125,7 +130,6 @@ def ensure(db):
     for statement in SCHEMA.split(';'):
         if statement.strip():
             db.execute(statement)
-    import bounces
     bounces.ensure(db)  # a delivery report is never a reply, and a bounced address gets no follow-up by email
 
 
@@ -596,6 +600,7 @@ def earlier_sends(db, msgs, own=None):
 
 SEEN = 20               # source ids per channel a basis keeps, to tell a fresh read's known messages from new ones
 HELD = 'Not sent: new message in the thread.'
+BOUNCED_HELD = 'Not sent: {} bounced.'
 UNCHECKED = 'Couldn’t check the thread, try again.'
 
 
@@ -657,7 +662,7 @@ def collected_since(db, project_id, found, mine=mine_default):
 
 def thread_since(thread, channel_basis, own_emails):
     """The messages in a freshly read email thread (Gmail's threads.get, format metadata; an Outlook conversation in
-    the same shape) added after the basis: [{'id', 'at', 'mine'}]. Drafts don't count."""
+    the same shape) added after the basis: [{'id', 'at', 'mine'}]. Drafts and delivery reports don't count."""
     seen = set(channel_basis.get('seen') or ()) | {str(channel_basis.get('source_id') or '')}
     since = parse(channel_basis['at']) if channel_basis.get('at') else None
     out = []
@@ -672,6 +677,8 @@ def thread_since(thread, channel_basis, own_emails):
         if since is not None and at is not None and at <= since:
             continue
         sender = next((h.get('value') for h in (m.get('payload') or {}).get('headers') or () if str(h.get('name')).casefold() == 'from'), '')
+        if bounces.system_sender(sender):
+            continue  # a delivery report is no message in the thread: a bounce is checked on its own (hold_bounced)
         address = ADDRESS.findall(str(sender or ''))
         out.append({'id': str(m.get('id')), 'at': at.isoformat() if at else None,
                     'mine': 'SENT' in labels or bool(address and address[-1].casefold() in own_emails)})
@@ -704,14 +711,32 @@ def news_kind(news):
     return 'reply' if any(not n.get('mine') for n in news) else 'own'
 
 
-def hold(db, job_id, suggestion_id, why, news, now):
-    """A follow-up is held before it goes (nothing sent): why 'changed' (a new message in the thread) or 'unchecked'
-    (the thread couldn't be read). The outbox job waits, blocked, with the line the to-do shows; a new Send checks
-    again."""
-    line = HELD if why == 'changed' else UNCHECKED
+def hold(db, job_id, suggestion_id, why, news, now, line=None):
+    """A follow-up is held before it goes (nothing sent): why 'changed' (a new message in the thread), 'unchecked'
+    (the thread couldn't be read) or 'bounced' (its To bounced since the draft). The outbox job waits, blocked, with
+    the line the to-do shows; a new Send checks again."""
+    line = line or (HELD if why == 'changed' else UNCHECKED)
     db.execute("UPDATE action_jobs SET status='blocked',error=?,retry_at=NULL,updated_at=? WHERE id=? AND status='queued'", (line, now, job_id))
     db.execute('INSERT OR REPLACE INTO follow_up_holds(job_id,suggestion_id,why,news,at) VALUES(?,?,?,?,?)',
                (job_id, suggestion_id, why, json.dumps(news) if news is not None else None, now))
+    return line
+
+
+def hold_bounced(db, job, next_action, addresses, now):
+    """A follow-up whose To bounced after it was drafted, held right before it went: "Not sent: <address> bounced". When
+    the person has a working address the draft moves there under a new revision ("Bounced, now to <address>"), which
+    waits for the owner's Send again (an earlier attempt means it never goes alone: may_send_alone). Returns the line."""
+    import next_actions
+    line = hold(db, job['id'], job['suggestion_id'], 'bounced', addresses, now, BOUNCED_HELD.format(addresses[0]))
+    action = next_actions.selected(next_action, job['revision'])
+    new = bounces.retarget(db, action)
+    if new:
+        current = json.loads(next_action) if isinstance(next_action, str) else next_action
+        if current.get('kind') == 'menu':
+            current = {**current, 'actions': [new if a.get('revision') == job['revision'] else a for a in current['actions']]}
+        else:
+            current = new
+        db.execute('UPDATE suggestions SET next_action=? WHERE id=?', (next_actions.canonical(current), job['suggestion_id']))
     return line
 
 
@@ -726,8 +751,8 @@ def owned_by_other(db, project_id):
 
 def email_bounced(db, msgs):
     """The project's email can't reach them: every To of the owner's latest email in it bounced and didn't work since
-    (bounces.flags). Then no follow-up goes by email: another allowed channel where the conversation is, or none."""
-    import bounces
+    (bounces.flags), and none of them has another working address. Then no follow-up goes by email: another allowed
+    channel where the conversation is, or none."""
     ours = [x for x in msgs if x['mine'] and x['channel'] == 'email']
     if not ours:
         return False
@@ -735,7 +760,8 @@ def email_bounced(db, msgs):
     if not row:
         return False
     to = bounces.addresses_in(_meta(row['metadata']).get('to'))
-    return bool(to) and set(bounces.flags(db, to)) >= set(to)
+    # With a working address for any of them, email goes on there (the draft's To moves: bounces.steer)
+    return bool(to) and set(bounces.flags(db, to)) >= set(to) and not any(bounces.working(db, a) for a in to)
 
 
 def bounced(db, event_id, address, now):

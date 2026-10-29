@@ -48,7 +48,9 @@ I ricontatti si fermano quando la persona risponde, quando il progetto è vinto,
 
 Dopo l’ultimo ricontatto senza risposta, il progetto mostra “Nessuna risposta dopo 3 ricontatti” e passa a Fermi o rifiutati, se è attivo.
 
-Se la sua email è stata respinta, i ricontatti passano a LinkedIn o WhatsApp quando è permesso e vi scrivete lì. Altrimenti si fermano con "Email non recapitata". Quando il progetto conta, ricevi un to-do per trovare un nuovo indirizzo.
+Se la sua email è stata respinta e c'è un altro indirizzo, il ricontatto va lì ("Respinto, ora a <indirizzo>"). Una bozza il cui indirizzo viene respinto prima dell'invio resta ferma: "Non inviato: <indirizzo> è stato respinto", e passa all'altro indirizzo, dove aspetta il tuo invio.
+
+Senza un altro indirizzo, i ricontatti passano a LinkedIn o WhatsApp quando è permesso e vi scrivete lì. Altrimenti si fermano con "Email non recapitata". Quando il progetto conta, ricevi un to-do per trovare un nuovo indirizzo.
 
 ## Dove lo vedi
 

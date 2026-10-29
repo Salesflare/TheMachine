@@ -48,7 +48,9 @@ Os follow-ups param quando a pessoa responde, quando o projeto é ganho, perdido
 
 Depois do último follow-up sem resposta, o projeto mostra “Sem resposta após 3 follow-ups” e passa para Parado ou recusado, se isso estiver ligado.
 
-Se o email da pessoa voltou, os follow-ups passam para o LinkedIn ou WhatsApp quando isso é permitido e vocês conversam lá. Senão, param com "O email voltou". Quando o projeto importa, você recebe um to-do para achar um novo endereço.
+Se o email da pessoa voltou e há outro endereço, o follow-up vai para ele ("Voltou, agora para <endereço>"). Um rascunho cujo endereço volta antes de sair fica retido: "Não enviado: <endereço> voltou", e passa para o outro endereço, onde espera o seu Enviar.
+
+Sem outro endereço, os follow-ups passam para o LinkedIn ou WhatsApp quando isso é permitido e vocês conversam lá. Senão, param com "O email voltou". Quando o projeto importa, você recebe um to-do para achar um novo endereço.
 
 ## Onde você vê
 

@@ -48,7 +48,9 @@ Follow-ups stop when they reply, when the project is won, lost, archived or move
 
 After the last follow-up with no reply, the project shows "No reply after 3 follow-ups" and moves to Stalled or declined if that's on.
 
-If their email bounced, follow-ups move to LinkedIn or WhatsApp when that's allowed and you talk there. Otherwise they stop with "Email bounced". When the project matters, you get a to-do to find a new address.
+If their email bounced and they have another address, the follow-up goes there instead ("Bounced, now to <address>"). A draft whose address bounces before it goes is held: "Not sent: <address> bounced", and moves to their other address to wait for your Send.
+
+With no other address, follow-ups move to LinkedIn or WhatsApp when that's allowed and you talk there. Otherwise they stop with "Email bounced". When the project matters, you get a to-do to find a new address.
 
 ## Where you see it
 
