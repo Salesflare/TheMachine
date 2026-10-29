@@ -537,6 +537,43 @@ class Enrichment(unittest.TestCase):
         enrichment.site_logos_step(self.store.connect, day(31), fetch=fetch)
         self.assertEqual(asked[3:], ['initech.example'])
 
+    def test_a_lookup_without_a_logo_is_asked_once_more_after_a_week_and_its_logo_wins(self):
+        # Hosted lookups from before the control plane passed logos on came back without one; each gets one more ask a
+        # week later, a few per pass after what is due anyway. A logo found then wins over the site's own icon.
+        PNG = b'\x89PNG\r\n\x1a\n' + b'0' * 40
+        orgs = ('globex.com', 'hooli.example', 'initech.example', 'umbrella.example', 'vandelay.example', 'wonka.example', 'stark.example')
+        self.add(*[m for n, d in enumerate(orgs) for m in (tg.mail(3, f'P{n} <p{n}@{d}>', 'sam@acme.com'),
+                                                             tg.mail(2, 'Sam <sam@acme.com>', f'P{n} <p{n}@{d}>', ('SENT',)))],
+                 tg.mail(1, 'New <new@newco.example>', 'sam@acme.com'), tg.mail(1, 'Sam <sam@acme.com>', 'New <new@newco.example>', ('SENT',)))
+        day = lambda n: (tg.NOW + tg.dt.timedelta(days=n)).isoformat()
+        with self.store.connect() as db:
+            for d in orgs:
+                enrichment.save(db, d, 'found', {'name': d.split('.')[0].title()}, day(-8))
+            enrichment.save(db, 'stark.example', 'found', {'name': 'Stark', 'logo': 'https://media.example/stark.png'}, day(-8))
+            enrichment.save(db, 'wonka.example', 'found', {'name': 'Wonka'}, day(-3))  # not a week yet
+        self.build()
+        with self.store.connect() as db:
+            graph.set_picture(db, 'org:vandelay.example', None, day(0))  # the owner took the picture off: left alone
+        enrichment.site_logos_step(self.store.connect, day(0), fetch=lambda domain: (PNG, 'image/png'))
+        self.build()
+        self.assertTrue(self.node('org:globex.com')['profile']['logo'].startswith('api/person-photo?p='))  # the site's, for now
+        with self.store.connect() as db:
+            due = enrichment.due(db, day(0), 25)
+            self.assertEqual(due[0], 'newco.example')  # never looked up: first
+            self.assertEqual(sorted(due[1:]), ['globex.com', 'hooli.example', 'initech.example', 'umbrella.example'])
+            self.assertEqual(len(enrichment.due(db, day(0), 3)), 3)  # within the pass's limit
+            enrichment.save(db, 'newco.example', 'none', None, day(0))
+            enrichment.save(db, 'globex.com', 'found', {'name': 'Globex', 'logo': 'https://media.example/globex.png'}, day(0))
+            enrichment.save(db, 'hooli.example', 'found', {'name': 'Hooli'}, day(0))  # still none: asked once, not again
+            enrichment.save(db, 'initech.example', 'error', None, day(0))             # an error: tried again as usual
+            self.assertEqual(enrichment.due(db, day(0), 25), ['umbrella.example'])
+            self.assertEqual(enrichment.due(db, day(30), 25), ['initech.example', 'umbrella.example', 'wonka.example'])
+            enrichment.save(db, 'initech.example', 'found', {'name': 'Initech'}, day(30))
+            self.assertNotIn('hooli.example', enrichment.due(db, day(60), 25))
+        self.build()
+        self.assertEqual(self.node('org:globex.com')['profile']['logo'], 'https://media.example/globex.png')  # the lookup's wins
+        self.assertTrue(self.node('org:hooli.example')['profile']['logo'].startswith('api/person-photo?p='))
+
     def test_a_site_logo_is_the_icon_its_home_page_names_never_an_svg(self):
         page = """<html><head><link rel="icon" href="/dark.png" sizes="192x192" media="(prefers-color-scheme: dark)">
             <link rel="icon" type="image/svg+xml" href="/logo.svg"><link rel="shortcut icon" href="/small.png">

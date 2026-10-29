@@ -13,7 +13,7 @@ order: 2
 
 Viene inviato solo l'indirizzo web dell'organizzazione, mai i tuoi messaggi o chi conosci lì. Ne vengono cercate poche alla volta, al massimo 50 al giorno, e aggiornate ogni 90 giorni. Le persone hanno una ricerca a parte: vedi [Qualifica e foto](graph.md#job-title-and-photo). Hosting condivisi e provider di posta, come google.com, sites.google.com o gmail.com, non vengono mai cercati: non sono il sito di una singola azienda.
 
-Se la ricerca non trova un logo, o non c'è ricerca, il logo arriva dal sito dell'organizzazione stessa: l'icona indicata dalla sua home page. Viene salvato sulla tua Machine, così nessun servizio di loghi sa con chi hai a che fare. Un sito senza icona viene interpellato di nuovo dopo 30 giorni.
+Se la ricerca non trova un logo, o non c'è ricerca, il logo arriva dal sito dell'organizzazione stessa: l'icona indicata dalla sua home page. Viene salvato sulla tua Machine, così nessun servizio di loghi sa con chi hai a che fare. Un sito senza icona viene interpellato di nuovo dopo 30 giorni. Se la ricerca ha trovato l'organizzazione ma non un logo, viene ripetuta una volta dopo una settimana, e il logo che trova allora sostituisce l'icona del sito.
 
 ## Correggi un dettaglio sbagliato
 

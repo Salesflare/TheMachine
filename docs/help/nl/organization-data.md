@@ -13,7 +13,7 @@ order: 2
 
 Alleen het webadres van een organisatie wordt verstuurd, nooit je berichten of wie je daar kent. Er worden er een paar tegelijk opgezocht, maximaal 50 per dag, en ze worden elke 90 dagen ververst. Personen worden apart opgezocht: zie [Functie en foto](graph.md#job-title-and-photo). Gedeelde hosts en mailproviders, zoals google.com, sites.google.com of gmail.com, worden nooit opgezocht: ze zijn niet de website van één bedrijf.
 
-Heeft de opzoeking geen logo, of is er geen opzoeking, dan komt het logo van de eigen website van de organisatie: het icoon dat de homepage noemt. Het wordt op je Machine bewaard, zodat geen logodienst te weten komt met wie je te maken hebt. Een site zonder icoon wordt na 30 dagen opnieuw gevraagd.
+Heeft de opzoeking geen logo, of is er geen opzoeking, dan komt het logo van de eigen website van de organisatie: het icoon dat de homepage noemt. Het wordt op je Machine bewaard, zodat geen logodienst te weten komt met wie je te maken hebt. Een site zonder icoon wordt na 30 dagen opnieuw gevraagd. Vond de opzoeking de organisatie maar geen logo, dan wordt ze na een week nog één keer gedaan, en een logo dat ze dan vindt, vervangt het icoon van de site.
 
 ## Een foute corrigeren
 

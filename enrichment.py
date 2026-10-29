@@ -36,6 +36,10 @@ PER_DAY = 50
 # Paired with the Network, a self-hosted Machine gets hosted's organization budget (the control plane's 1,000 a day).
 PAIRED_PER_PASS = 50
 PAIRED_PER_DAY = 1000
+# A lookup that found the organization but brought no logo (hosted lookups before 2026-10-23 never passed one on) is
+# asked once more after LOGO_RETRY_DAYS, a few per pass after everything else that is due (logo_retries_due).
+LOGO_RETRY_DAYS = 7
+LOGO_RETRIES_PER_PASS = 5
 PRESETS = {
     'apollo': {'url': 'https://api.apollo.io/api/v1/organizations/enrich?domain={domain}', 'headers': {'X-Api-Key': '{key}'}},
     'peopledatalabs': {'url': 'https://api.peopledatalabs.com/v5/company/enrich?website={domain}', 'headers': {'X-Api-Key': '{key}'},
@@ -272,8 +276,10 @@ def due(db, now, limit):
                       "LEFT JOIN org_profiles p ON p.domain=d.value "
                       "WHERE n.kind='org' AND d.value IS NOT NULL AND (p.domain IS NULL OR (p.status NOT IN ('error','wrong') AND p.fetched_at<?) OR (p.status='error' AND p.fetched_at<?))",
                       (fresh, retry)).fetchall()
-    if not rows or limit <= 0:
+    if limit <= 0:
         return []
+    if not rows:
+        return logo_retries_due(db, now, min(LOGO_RETRIES_PER_PASS, limit))
     people = {}
     for org, info in db.execute("SELECT l.b,n.info FROM graph_links l JOIN graph_nodes n ON n.id=l.a WHERE l.kind='member' AND n.kind='person'"):
         try:
@@ -287,15 +293,44 @@ def due(db, now, limit):
             score += 3
         if score:
             ranked.append((-score, -(strength or 0), domain))
-    return [domain for _, _, domain in sorted(ranked)[:limit]]
+    picked = [domain for _, _, domain in sorted(ranked)[:limit]]
+    return picked + logo_retries_due(db, now, min(LOGO_RETRIES_PER_PASS, limit - len(picked)), picked)
+
+
+def logo_tables(db):
+    db.execute('CREATE TABLE IF NOT EXISTS org_logo_retries(domain TEXT PRIMARY KEY,asked_at TEXT NOT NULL)')
+
+
+def logo_retries_due(db, now, limit, skip=()):
+    """Organizations looked up more than LOGO_RETRY_DAYS ago that were found without a logo and not asked again for
+    one yet, strongest first; not when the owner set or took off the picture themselves. A logo found then wins over
+    the icon from its own site (site_logos_step)."""
+    if limit <= 0:
+        return []
+    logo_tables(db)
+    before = (dt.datetime.fromisoformat(now) - dt.timedelta(days=LOGO_RETRY_DAYS)).isoformat()
+    rows = db.execute("SELECT p.domain,max(n.strength) s FROM graph_nodes n,"
+                      "json_each(coalesce(json_extract(n.info,'$.domains'),json_array(json_extract(n.info,'$.domain')))) d "
+                      "JOIN org_profiles p ON p.domain=d.value WHERE n.kind='org' AND p.status='found' AND json_extract(p.profile,'$.logo') IS NULL AND p.fetched_at<? "
+                      "AND NOT EXISTS(SELECT 1 FROM org_logo_retries r WHERE r.domain=p.domain) "
+                      "AND NOT EXISTS(SELECT 1 FROM org_edits e WHERE e.domain=p.domain AND json_type(e.fields,'$.logo') IS NOT NULL) "
+                      "GROUP BY p.domain ORDER BY s DESC,p.domain LIMIT ?", (before, limit + len(skip))).fetchall()
+    return [r[0] for r in rows if r[0] not in skip][:limit]
 
 
 def save(db, domain, status, profile, now):
     """Stores a look-up. A domain the owner marked as the wrong company keeps that mark. Every answer is checked here
-    (usable), also one the hosting agent brings from the control plane's cache."""
+    (usable), also one the hosting agent brings from the control plane's cache. An answer that replaces one found
+    without a logo more than LOGO_RETRY_DAYS ago uses up that organization's one ask for a logo."""
     if status == 'found':
         profile = usable(domain, profile)
         status = 'found' if profile else 'none'
+    if status != 'error':
+        before = (dt.datetime.fromisoformat(now) - dt.timedelta(days=LOGO_RETRY_DAYS)).isoformat()
+        if db.execute("SELECT 1 FROM org_profiles WHERE domain=? AND status='found' AND json_extract(profile,'$.logo') IS NULL "
+                      "AND fetched_at<?", (domain, before)).fetchone():
+            logo_tables(db)
+            db.execute('INSERT OR IGNORE INTO org_logo_retries(domain,asked_at) VALUES(?,?)', (domain, now))
     db.execute('INSERT INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,?,?,?) '
                "ON CONFLICT(domain) DO UPDATE SET status=excluded.status,profile=CASE WHEN excluded.status='error' THEN org_profiles.profile ELSE excluded.profile END,fetched_at=excluded.fetched_at "
                "WHERE org_profiles.status!='wrong'",
