@@ -28,9 +28,15 @@ For one project, **Follow-ups…** in its card's **⋯** or on its page. **For t
 
 ## Reviewing them
 
-A board's follow-ups come as one to-do: "8 follow-ups ready for Alpha testers". **Review** shows them one under the other, each with **Send**, **Edit** and **Skip**. On a keyboard, j and k (or the arrows) move, Enter sends, e edits and s skips. **Send all checked** sends the ones still ticked. A single project's follow-up is a normal to-do.
+A board's follow-ups come as one to-do, never one per email. While they're drafted it says "Writing 3 follow-ups…", then "8 follow-ups ready for Alpha testers".
+
+**Review** shows them one under the other, each with **Send**, **Edit** and **Skip**. On a keyboard, j and k (or the arrows) move, Enter sends, e edits and s skips. **Send all checked** sends the ones still ticked. A single project's follow-up is a normal to-do.
 
 When several go out in a row, also with Send without asking, each mailbox sends one every 30 to 45 seconds, and the to-do shows how far it got: "Sending 3 of 8…".
+
+## Emails sent before your Machine
+
+Emails you sent from another app, before your Machine read that mailbox, count too. It reads the conversation itself (or, when it can't, the earlier emails quoted in your last one), so three emails with no reply count as three, and "No reply for" counts from the first. If you already reached the maximum, it doesn't draft another one.
 
 ## When it stops
 

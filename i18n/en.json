@@ -4274,6 +4274,10 @@
  "Write your part of the follow-up": "Write your part of the follow-up",
  "Writing": "Writing",
  "Writing it down…": "Writing it down…",
+ "Writing {} follow-ups…": {
+  "one": "Writing {} follow-up…",
+  "other": "Writing {} follow-ups…"
+ },
  "Wrong company, clear details": "Wrong company, clear details",
  "Wrong export code or passphrase, or the file is damaged": "Wrong export code or passphrase, or the file is damaged",
  "Wrong facts": "Wrong facts",

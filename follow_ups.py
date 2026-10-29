@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS follow_up_ends(project_id INTEGER NOT NULL,after_even
 CREATE TABLE IF NOT EXISTS follow_up_sends(job_id TEXT PRIMARY KEY,batch TEXT NOT NULL,grp TEXT NOT NULL,sender TEXT NOT NULL,queued_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS follow_up_sends_batch ON follow_up_sends(grp,batch);
 CREATE TABLE IF NOT EXISTS follow_up_pace(sender TEXT PRIMARY KEY,next_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS follow_up_threads(event_id INTEGER PRIMARY KEY,sends TEXT,at TEXT NOT NULL);
 '''
 SCOPES = ('board', 'project')
 # The channels a follow-up can go out on, in the order "switch channel" moves through them
@@ -242,7 +243,7 @@ def effective(db, project, boards=None):
 
 # ------------------------------------------------------------------ the schedule
 
-def schedule(messages, settings, now, days=None):
+def schedule(messages, settings, now, days=None, prior=0, since=None):
     """Where a project's follow-ups stand, from its messages (oldest first, each {'id', 'at', 'mine', 'channel'}).
 
     Returns {'state', 'next_at', 'latest_at', 'end_at', 'n', 'judge', 'late', 'after', 'after_at', 'channel', 'tail'}:
@@ -250,7 +251,11 @@ def schedule(messages, settings, now, days=None):
     on them), 'last' (the maximum went out; waiting for a reply to it until end_at), 'ended' (no reply to the last one),
     'stale' (more than STALE_DAYS past its date: left alone). n is the follow-up this would be (1 for the first), judge
     whether it's past the minimum (worth another one is judged), late whether it reached its longest wait, after the
-    owner's last message (the waiting point) and tail the channels of the owner's messages since their reply."""
+    owner's last message (the waiting point) and tail the channels of the owner's messages since their reply.
+
+    prior: the owner's earlier unanswered sends in the thread that weren't collected (sent before The Machine read the
+    mailbox, earlier_sends), since the first of them when known: they count as sent in this round, and the round
+    starts there (round_at, the first unanswered message)."""
     days = int(days or settings['days'])
     longest = max(days, int(settings.get('max_days') or days))
     now = parse(now)
@@ -258,10 +263,12 @@ def schedule(messages, settings, now, days=None):
     tail = messages[last_theirs + 1:]
     none = {'next_at': None, 'latest_at': None, 'end_at': None, 'judge': False, 'late': False}
     if not tail:
-        return {**none, 'state': 'replied', 'n': 0, 'after': None, 'after_at': None, 'channel': None, 'tail': []}
+        return {**none, 'state': 'replied', 'n': 0, 'after': None, 'after_at': None, 'round_at': None, 'prior': 0, 'channel': None, 'tail': []}
     last = tail[-1]
-    n = len(tail)  # the first is the message itself, the rest follow-ups
-    base = {**none, 'n': n, 'after': last['id'], 'after_at': last['at'], 'channel': last.get('channel'), 'tail': [m.get('channel') for m in tail]}
+    n = len(tail) + max(0, int(prior or 0))  # the first is the message itself, the rest follow-ups
+    round_at = min([parse(tail[0]['at'])] + ([parse(since)] if since and prior else []))
+    base = {**none, 'n': n, 'after': last['id'], 'after_at': last['at'], 'round_at': round_at.isoformat(), 'prior': max(0, int(prior or 0)),
+            'channel': last.get('channel'), 'tail': [m.get('channel') for m in tail]}
     wait_from = parse(last['at'])
     if n - 1 >= int(settings['max']):
         end_at = wait_from + dt.timedelta(days=days)
@@ -358,6 +365,197 @@ def messages(db, project_id, mine=mine_default):
     return [{'id': r['id'], 'at': r['occurred_at'], 'mine': mine(dict(r)), 'channel': CHANNEL_KINDS.get(r['kind'], 'x')} for r in rows]
 
 
+# ------------------------------------------------------------------ earlier sends in the thread
+# A thread the owner started from another app, before The Machine read this mailbox, only shows its earlier messages
+# as quoted history in the latest one. They still count: three unanswered emails are three, not one. The real thread
+# (Gmail's thread, Outlook's conversation: metadata only, read once per waiting point by the App, follow_up_threads) is
+# preferred; otherwise the quoted headers in the owner's latest email are read, newest first, until the first message
+# from someone else.
+
+WROTE = re.compile(r'^(?:On|Le|Op|Am|El|Il|Em|Den|Dnia)\b(?P<rest>.{0,400}?)\s(?:wrote|a\s+écrit|schreef|schrieb|escribió|ha\s+scritto|'
+                   r'skrev|escreveu|napisał)\s*:\s*$', re.I)
+FROM_LINE = re.compile(r'^\*?(?:From|Von|De|Van|Da|Fra|Från|Od)\s*:\*?\s*(?P<who>\S.*)$', re.I)
+SENT_LINE = re.compile(r'^\*?(?:Sent|Date|Gesendet|Datum|Envoyé|Verzonden|Enviado|Enviada|Fecha|Inviato|Data|Sendt|Skickat|Wysłano)\s*:\*?\s*(?P<at>\S.*)$', re.I)
+FORWARDED = re.compile(r'^-{2,}\s*(?:Forwarded message|Doorgestuurd bericht|Message transféré|Weitergeleitete Nachricht|Mensaje reenviado|'
+                       r'Messaggio inoltrato|Mensagem encaminhada|Videresendt melding)', re.I)
+ADDRESS = re.compile(r'[\w.+\'-]+@[\w-]+(?:\.[\w-]+)+')
+MONTHS = {1: ('jan', 'ene', 'gen'), 2: ('feb', 'fév', 'fev'), 3: ('mar', 'mär', 'maa', 'mrt'), 4: ('apr', 'avr', 'abr'), 5: ('may', 'mai', 'mei', 'mag'),
+          6: ('jun', 'juin', 'giu'), 7: ('jul', 'juil', 'lug'), 8: ('aug', 'aoû', 'aou', 'ago'), 9: ('sep', 'set'), 10: ('oct', 'okt', 'out', 'ott'),
+          11: ('nov',), 12: ('dec', 'déc', 'dez', 'dic')}
+DAY_MONTH_YEAR = re.compile(r'\b(\d{1,2})\.?\s+(?:de\s+)?([^\W\d_]{3,})\.?,?\s+(?:de\s+)?(\d{4})\b')
+MONTH_DAY_YEAR = re.compile(r'\b([^\W\d_]{3,})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b')
+ISO_DAY = re.compile(r'\b(\d{4})-(\d{2})-(\d{2})\b')
+CLOCK = re.compile(r'\b(\d{1,2})[:.h](\d{2})(?::(\d{2}))?\s*([ap]\.?\s?m\.?)?', re.I)
+ZONE = re.compile(r'(?:\s|GMT|UTC)([+-])(\d{2}):?(\d{2})\b')
+
+
+def _month(word):
+    word = word.casefold()
+    return next((n for n, stems in MONTHS.items() if any(word.startswith(s) for s in stems)), None)
+
+
+def quoted_date(text):
+    """The date in a quoted header ("Mon, 21 Sep 2026 08:24:10 -0500", "Mon, Sep 21, 2026 at 3:24 PM", "lun. 21 sept.
+    2026 à 08:24", "Monday, September 21, 2026 3:24 PM"...), ISO, or None when it can't be read. Without a zone: UTC."""
+    text = str(text or '')
+    day = None
+    for found in DAY_MONTH_YEAR.finditer(text):
+        if _month(found[2]):
+            day, end = (int(found[3]), _month(found[2]), int(found[1])), found.end()
+            break
+    if day is None:
+        for found in MONTH_DAY_YEAR.finditer(text):
+            if _month(found[1]):
+                day, end = (int(found[3]), _month(found[1]), int(found[2])), found.end()
+                break
+    if day is None and (found := ISO_DAY.search(text)):
+        day, end = (int(found[1]), int(found[2]), int(found[3])), found.end()
+    if day is None:
+        return None
+    hour = minute = second = 0
+    clock = CLOCK.search(text, end)
+    if clock:
+        hour, minute, second = int(clock[1]), int(clock[2]), int(clock[3] or 0)
+        half = (clock[4] or '').casefold().replace('.', '').replace(' ', '')
+        hour = (hour % 12) + (12 if half == 'pm' else 0) if half else hour
+    zone = dt.timezone.utc
+    if (z := ZONE.search(text, end)):
+        zone = dt.timezone((1 if z[1] == '+' else -1) * dt.timedelta(hours=int(z[2]), minutes=int(z[3])))
+    try:
+        return dt.datetime(*day, hour % 24, minute % 60, second % 60, tzinfo=zone).astimezone(dt.timezone.utc).isoformat()
+    except ValueError:
+        return None
+
+
+def quoted_headers(body):
+    """The quoted messages' headers in an email body, newest first: [{'who', 'address', 'at'}]. Reply lines in any of
+    the common forms ("On <date>, <name> wrote:", over up to three lines, in several languages; Outlook's "From: ...
+    Sent: ..."), at any quote depth. Stops at a forwarded message: what's below it isn't this conversation."""
+    lines = [re.sub(r'^(?:\s*>)+\s?', '', line).strip() for line in str(body or '').splitlines()]
+    out, i = [], 0
+    while i < len(lines):
+        line = lines[i]
+        if FORWARDED.match(line):
+            break
+        found = None
+        for width in (1, 2, 3):
+            joined = ' '.join(x for x in lines[i:i + width] if x)
+            if (match := WROTE.match(joined)):
+                found = (match['rest'], width)
+                break
+        if found:
+            rest, width = found
+            address = ADDRESS.findall(rest)
+            out.append({'who': rest, 'address': address[-1].casefold() if address else None, 'at': quoted_date(rest)})
+            i += width
+            continue
+        match = FROM_LINE.match(line)
+        if match:
+            sent = next((SENT_LINE.match(x) for x in lines[i + 1:i + 4] if SENT_LINE.match(x)), None)
+            if sent:
+                address = ADDRESS.findall(match['who'])
+                out.append({'who': match['who'], 'address': address[-1].casefold() if address else None, 'at': quoted_date(sent['at'])})
+                i += 2
+                continue
+        i += 1
+    return out
+
+
+def own_header(header, own):
+    """A quoted header is the owner's: their address, or, with no address in it, their full name."""
+    if header['address']:
+        return header['address'] in own['emails']
+    who = ' '.join(re.sub(r'[^\w@.\s-]', ' ', header['who']).split()).casefold()
+    return any(name and name in who for name in own['names'])
+
+
+def quoted_sends(body, own):
+    """The owner's earlier sends quoted in their email, newest first ([ISO date or None]): consecutive headers that are
+    theirs, until the first quoted message from someone else (they replied there: the count starts again)."""
+    out = []
+    for header in quoted_headers(body):
+        if not own_header(header, own):
+            break
+        out.append(header['at'])
+    return out
+
+
+def thread_sends(thread, message_id, own_emails):
+    """The owner's earlier sends in a real thread before message_id, newest first ([ISO date]), until a message from
+    someone else. thread: Gmail's threads.get answer (format metadata, the From header; an Outlook conversation is
+    answered in the same shape). None when the message isn't in it."""
+    items = []
+    for m in (thread or {}).get('messages') or ():
+        labels = m.get('labelIds') or []
+        if 'DRAFT' in labels:
+            continue
+        sender = next((h.get('value') for h in (m.get('payload') or {}).get('headers') or () if str(h.get('name')).casefold() == 'from'), '')
+        address = ADDRESS.findall(str(sender or ''))
+        mine = 'SENT' in labels or bool(address and address[-1].casefold() in own_emails)
+        try:
+            at = dt.datetime.fromtimestamp(int(m.get('internalDate')) / 1000, dt.timezone.utc).isoformat()
+        except (TypeError, ValueError):
+            at = None
+        items.append((at or '', str(m.get('id')), mine))
+    items.sort()
+    ids = [x[1] for x in items]
+    if str(message_id) not in ids:
+        return None
+    out = []
+    for at, _, mine in reversed(items[:ids.index(str(message_id))]):
+        if not mine:
+            break
+        out.append(at or None)
+    return out
+
+
+def owner(own=None):
+    """{'emails', 'names'} from what the App knows about the owner (their addresses, their full name)."""
+    own = own or {}
+    return {'emails': {str(e).strip().casefold() for e in own.get('emails') or () if e},
+            'names': {' '.join(str(n).split()).casefold() for n in own.get('names') or () if n and len(str(n).split()) >= 2}}
+
+
+def latest_email(db, tail):
+    """The owner's latest collected email in the round (index in the tail, event row), or (None, None)."""
+    for i in range(len(tail) - 1, -1, -1):
+        if tail[i]['channel'] == 'email':
+            row = db.execute('SELECT id,source_id,account_id,body,metadata FROM events WHERE id=?', (tail[i]['id'],)).fetchone()
+            if row:
+                return i, row
+    return None, None
+
+
+def earlier_sends(db, msgs, own=None):
+    """(prior, since): how many of the owner's unanswered sends in this round weren't collected, and the first one's
+    date. From the real thread when the App read it (follow_up_threads), else the quoted history of their latest email.
+    The collected ones are never counted twice: the quoted chain covers the tail before that email."""
+    last_theirs = max((i for i, m in enumerate(msgs) if not m['mine']), default=-1)
+    tail = msgs[last_theirs + 1:]
+    if not tail:
+        return 0, None
+    index, row = latest_email(db, tail)
+    if row is None:
+        return 0, None
+    sends = None
+    try:
+        cached = db.execute('SELECT sends FROM follow_up_threads WHERE event_id=?', (row['id'],)).fetchone()
+        sends = json.loads(cached[0]) if cached and cached[0] else None
+    except Exception:  # noqa: BLE001 - no table yet, or a damaged row: the quoted history
+        sends = None
+    if sends is None:
+        who = owner(own)
+        try:
+            meta = json.loads(row['metadata'] or '{}') if not isinstance(row['metadata'], dict) else row['metadata']
+        except ValueError:
+            meta = {}
+        who['emails'] |= {a.casefold() for a in ADDRESS.findall(str(meta.get('from') or ''))}  # it's theirs: its From is too
+        sends = quoted_sends(row['body'], who)
+    prior = max(0, len(sends) - index)
+    dated = [s for s in sends[index:] if s]
+    return prior, (min(dated) if prior and dated else None)
+
+
 def owned_by_other(db, project_id):
     """A teammate owns the project (record_owners), so their Machine follows it up, not this one."""
     try:
@@ -372,16 +570,18 @@ def open_card(db, project_id):
                       'ORDER BY f.created_at DESC LIMIT 1', (project_id,)).fetchone()
 
 
-def plan(db, now, sendable, mine=mine_default):
+def plan(db, now, sendable, mine=mine_default, own=None):
     """Every project follow-ups are on for, with where it stands: [{'project', 'board', 'settings', 'source', 'state',
     'next_at', 'n', 'after', 'after_at', 'channel', 'reason'}]. state as schedule's, or 'off' with a reason, or 'open'
-    when a follow-up to-do is out for it already."""
+    when a follow-up to-do is out for it already. own: the owner's {'emails', 'names'}, to read quoted history
+    (earlier_sends)."""
     if not any_on(db):
         return []
     boards = {b['id']: b for b in db.execute('SELECT * FROM boards').fetchall()}
     on_boards = {r[0] for r in db.execute("SELECT ref FROM follow_up_rules WHERE scope='board'")}
-    own = {r[0] for r in db.execute("SELECT ref FROM follow_up_rules WHERE scope='project'")}
-    ids = sorted(own | {r[0] for r in db.execute(f"SELECT id FROM projects WHERE board_id IN ({','.join('?' * len(on_boards))})", tuple(on_boards))} if on_boards else own)
+    own_rules = {r[0] for r in db.execute("SELECT ref FROM follow_up_rules WHERE scope='project'")}
+    ids = sorted(own_rules | {r[0] for r in db.execute(f"SELECT id FROM projects WHERE board_id IN ({','.join('?' * len(on_boards))})", tuple(on_boards))}
+                 if on_boards else own_rules)
     out = []
     for pid in ids:
         p = db.execute('SELECT * FROM projects WHERE id=?', (pid,)).fetchone()
@@ -396,7 +596,8 @@ def plan(db, now, sendable, mine=mine_default):
             continue
         days = stage_rule(settings, board, p['stage'])[1] if source == 'board' and board is not None else settings['days']
         msgs = messages(db, pid, mine)
-        found = schedule(msgs, settings, now, days)
+        prior, since = earlier_sends(db, msgs, own)
+        found = schedule(msgs, settings, now, days, prior, since)
         if found['state'] in ('due', 'waiting') and found['after'] is not None:
             done = db.execute('SELECT state FROM follow_up_cards WHERE project_id=? AND after_event=?', (pid, found['after'])).fetchone()
             if done:  # this waiting point was followed up already (or skipped): the next one is the follow-up itself
@@ -409,7 +610,8 @@ def plan(db, now, sendable, mine=mine_default):
             # Only a round that went out from here ends by itself: a follow-up sent since their last reply
             theirs = max((m['at'] for m in msgs if not m['mine']), default='')
             ours = db.execute("SELECT 1 FROM follow_up_cards WHERE project_id=? AND state='sent' AND after_at>=?", (pid, theirs)).fetchone()
-            found = {**found, 'state': 'end' if ours else 'done'}
+            # ...or one the thread itself shows: the owner's earlier sends already reached the maximum
+            found = {**found, 'state': 'end' if ours or found.get('prior') else 'done'}
         elif found['state'] == 'last':
             found = {**found, 'state': 'done'}
         reachable = {m['channel'] for m in msgs}
@@ -441,8 +643,8 @@ def end(db, item, now, judged=False):
     return {'n': n, 'moved': moved}
 
 
-def due(db, now, sendable, mine=mine_default):
-    return [x for x in plan(db, now, sendable, mine) if x['state'] == 'due']
+def due(db, now, sendable, mine=mine_default, own=None):
+    return [x for x in plan(db, now, sendable, mine, own) if x['state'] == 'due']
 
 
 # ------------------------------------------------------------------ what the dashboard shows
@@ -477,14 +679,14 @@ def panel(db, scope, ref, sendable, now):
     return view
 
 
-def views(db, now, sendable, mine=mine_default):
+def views(db, now, sendable, mine=mine_default, own=None):
     """{'boards': {board_id: {'on', 'next_at'}}, 'projects': {project_id: {'on', 'state', 'next_at', 'n', 'max', 'own', 'end'}}}:
     next_at the next follow-up's date (due or waiting), end the quiet note when a round ended without a reply."""
     out = {'boards': {}, 'projects': {}}
     try:
         for r in db.execute("SELECT ref,settings FROM follow_up_rules WHERE scope='board'"):
             out['boards'][r[0]] = {'on': bool(json.loads(r[1]).get('on')), 'next_at': None}
-        items = plan(db, now, sendable, mine)
+        items = plan(db, now, sendable, mine, own)
     except Exception:  # noqa: BLE001 - the board shows without it
         return out
     for x in items:

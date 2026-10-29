@@ -28,9 +28,15 @@ Für ein einzelnes Projekt: **Nachfassen…** im **⋯** seiner Karte oder auf s
 
 ## Prüfen
 
-Die Entwürfe eines Boards kommen als eine Aufgabe: „8 Nachfassen bereit für Alpha testers“. **Prüfen** zeigt sie untereinander, jeweils mit **Senden**, **Bearbeiten** und **Überspringen**. Auf der Tastatur bewegst du dich mit j und k (oder den Pfeiltasten), Enter sendet, e bearbeitet und s überspringt. **Alle markierten senden** sendet die, die noch angehakt sind. Ein einzelnes Projekt bekommt eine normale Aufgabe.
+Die Entwürfe eines Boards kommen als eine Aufgabe, nie eine pro E-Mail. Während sie geschrieben werden, steht dort „3 Nachfassen werden geschrieben…“, danach „8 Nachfassen bereit für Alpha testers“.
+
+**Prüfen** zeigt sie untereinander, jeweils mit **Senden**, **Bearbeiten** und **Überspringen**. Auf der Tastatur bewegst du dich mit j und k (oder den Pfeiltasten), Enter sendet, e bearbeitet und s überspringt. **Alle markierten senden** sendet die, die noch angehakt sind. Ein einzelnes Projekt bekommt eine normale Aufgabe.
 
 Gehen mehrere nacheinander raus, auch mit Ohne Nachfrage senden, sendet jedes Postfach nur alle 30 bis 45 Sekunden eine, und die Aufgabe zeigt den Stand: „3 von 8 wird gesendet…“.
+
+## E-Mails von vor deiner Machine
+
+E-Mails, die du aus einer anderen App gesendet hast, bevor deine Machine dieses Postfach gelesen hat, zählen mit. Sie liest den Verlauf selbst (oder, wenn das nicht geht, die zitierten früheren E-Mails in deiner letzten), also zählen drei E-Mails ohne Antwort als drei, und „Seit … keine Antwort“ zählt ab der ersten. Ist das Maximum schon erreicht, schreibt sie kein weiteres.
 
 ## Wann es aufhört
 

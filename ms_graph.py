@@ -554,6 +554,16 @@ def gmail_call(config, credential, account, method, params):
         return send_as(call(config, credential, account, 'me', {'$select': 'mail,userPrincipalName,proxyAddresses'}))
     if method == 'gmail.users.messages.get':
         return gmail_message(config, credential, account, params['id'], params.get('format', 'full'))
+    if method == 'gmail.users.threads.get':  # a conversation's messages: who sent each and when (follow_ups.thread_sends)
+        cid = str(params['id'])
+        page = call(config, credential, account, 'messages.list', {
+            '$filter': f"conversationId eq '{cid.replace(chr(39), chr(39) * 2)}'",
+            '$select': 'id,from,receivedDateTime,parentFolderId,isDraft,isRead', '$top': 50})
+        known = folders(config, credential, account)
+        return {'id': cid, 'messages': [{'id': m['id'], 'threadId': cid, 'labelIds': labels(m, known),
+                                         'internalDate': str(int(_stamp(m.get('receivedDateTime')).timestamp() * 1000)),
+                                         'payload': {'headers': [{'name': 'From', 'value': ((m.get('from') or {}).get('emailAddress') or {}).get('address') or ''}]}}
+                                        for m in page.get('value', []) if m.get('receivedDateTime')]}
     if method == 'gmail.users.messages.attachments.get':
         raise GraphError('outlook', 404)  # every part's data is already in the message's payload
     if method == 'gmail.users.messages.list':

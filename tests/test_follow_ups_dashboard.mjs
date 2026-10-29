@@ -53,7 +53,7 @@ const open=async(width,height,scheme='light')=>{const mobile=width<600;
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',colorScheme:scheme});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));await page.goto(base);
- await page.locator('#suggestions article').first().waitFor();return {context,page}};
+ await page.locator('#suggestions article, #suggestions .all-clear').first().waitFor();return {context,page}};
 const toBoard=async page=>{await page.evaluate(()=>document.querySelector('nav [data-tab="people"]').click());await page.locator('#people-view').waitFor({state:'attached'});
  await page.evaluate(()=>document.querySelector('[data-graph-sub="projects"]').click());await page.locator('#people-view .pboard').first().waitFor()};
 const fits=(page,where)=>page.evaluate(()=>({page:document.documentElement.scrollWidth,vw:innerWidth})).then(s=>assert.ok(s.page<=s.vw,`${where}: wider than the screen ${JSON.stringify(s)}`));
@@ -152,6 +152,52 @@ try{
   assert.equal(await sending.locator('.fu-bar').count(),0);await shot(page,`sent-${width}-light`);
   progress=[{group:'board:1',board:'Alpha testers',total:8,done:8,sent:7,going:false}];await page.reload();await sending.waitFor();
   assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sent 7 of 8');
+  await context.close()}
+ // Drafts being written: the board's follow-ups are already one to-do ("Follow-ups for …", "Writing 3 follow-ups…"), never
+ // one per email in Preparing, the sidebar or a to-do's chat; once one is written it moves to Ready with the rest still writing
+ for(const [width,height] of [[1440,900],[1440,700],[390,844]]){reset();
+  const writing=s=>s.follow_up?.group==='board:1'?{...s,status:'accepted',next_action:null,preparation_status:'running'}:s;
+  suggestions=suggestions.map(writing);
+  const {context,page}=await open(width,height);const group=page.locator('#suggestions .fu-group');await group.waitFor();
+  assert.equal(await group.count(),1);
+  assert.equal((await group.locator('h3').textContent()).trim(),'Follow-ups for Alpha testers');
+  assert.equal((await group.locator('.fu-progress').textContent()).trim(),'Writing 3 follow-ups…');
+  assert.equal(await group.locator('[data-fu-review]').count(),0);  // nothing to review yet
+  assert.equal(await page.locator('#section-preparing .count').textContent(),'1');
+  for(const i of [1,2,3])assert.equal(await page.locator(`#task-f${i}00000000000000`).count(),0);
+  assert.equal(await page.locator('#side-cards a').evaluateAll(l=>l.filter(a=>/^Follow up on (Acme|Bolt|Cobalt)/.test(a.textContent)).length),0);
+  assert.equal((await page.locator('#badge-inbox').textContent()).trim(),'3');
+  await fits(page,width+' writing');await shot(page,`writing-${width}x${height}-light`);await group.scrollIntoViewIfNeeded();await shot(page,`writing-card-${width}x${height}-light`,group);
+  // A to-do's chat lists the same: the board's follow-ups as one row
+  await page.evaluate(()=>{location.hash='#chat=f400000000000000'});await page.locator('.chat-side').waitFor({state:'attached'});
+  assert.deepEqual(await page.locator('.chat-side a').evaluateAll(l=>l.map(a=>a.textContent).filter(x=>/Alpha|Acme|Bolt|Cobalt/.test(x))),['Follow-ups for Alpha testers']);
+  await shot(page,`writing-chat-${width}x${height}-light`);
+  // Its row leads back to the board's to-do
+  if(await page.locator('.chat-side [data-fu-card]').isVisible()){await page.locator('.chat-side [data-fu-card]').click();await page.locator('#suggestions .fu-group').waitFor();assert.equal(await page.locator('.chat-side').count(),0)}
+  await context.close()}
+ {reset();suggestions=suggestions.map(s=>s.id==='f300000000000000'?{...s,status:'accepted',next_action:null,preparation_status:'running'}:s);
+  const {context,page}=await open(1440,900);const group=page.locator('#suggestions .fu-group');await group.waitFor();
+  assert.equal((await group.locator('h3').textContent()).trim(),'2 follow-ups ready for Alpha testers');
+  assert.equal((await group.locator('.fu-progress').textContent()).trim(),'Writing 1 follow-up…');
+  assert.equal(await page.locator('#section-preparing').count(),0);await shot(page,'ready-and-writing-card-1440-light',group);
+  await group.locator('button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  assert.equal(await dlg.locator('.fr-item').count(),2);  // only the written ones
+  await shot(page,'ready-and-writing-1440-light');await context.close()}
+ // One alone is still the board's to-do, and a link to it (its notification) lands there
+ {reset();suggestions=suggestions.filter(s=>!['f200000000000000','f300000000000000'].includes(s.id));
+  const {context,page}=await open(1440,900);await page.locator('#suggestions .fu-group').waitFor();
+  assert.equal((await page.locator('#suggestions .fu-group h3').textContent()).trim(),'1 follow-up ready for Alpha testers');
+  assert.equal(await page.locator('#task-f100000000000000').count(),0);
+  await page.evaluate(()=>{location.hash='#card=f100000000000000'});await page.waitForFunction(()=>document.querySelector('#suggestions .fu-group.flash'));
+  await context.close()}
+ // Only follow-ups open (being written, or on their way): their to-do shows, never a blank page; nothing open: All clear
+ {reset();suggestions=suggestions.filter(s=>s.follow_up?.group==='board:1').map(s=>({...s,status:'accepted',next_action:null,preparation_status:'running'}));
+  const {context,page}=await open(1440,900);await page.locator('#suggestions .fu-group').waitFor();
+  assert.equal(await page.locator('#suggestions .all-clear').count(),0);
+  suggestions=suggestions.map(s=>({...s,status:'prepared',next_action:draft(1,'Hi'),preparation_status:'done',action_status:{status:'queued'},next_actions:[{...draft(1,'Hi'),state:{status:'queued'}}]}));
+  progress=[{group:'board:1',board:'Alpha testers',total:3,done:0,sent:0,going:true}];await page.reload();
+  await page.locator('#suggestions .fu-sending').waitFor();assert.equal(await page.locator('#suggestions .all-clear').count(),0);
+  progress=[];suggestions=[];await page.reload();await page.locator('#suggestions .all-clear').waitFor();
   await context.close()}
  reset();
  // Phone, light and dark: the same pieces fit the screen
