@@ -969,7 +969,7 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .card .body{font-size:1.02rem;line-height:1.55;color:var(--text)}
 .card .source{font-size:.86rem;color:var(--muted)}.card .note{font-size:.92rem;color:var(--muted)}
 .card .note.handled{color:var(--mint);font-weight:600}
-.card .note.status-line{margin:2px 0 6px;font-weight:600}.ask-line .ask-q p{margin:4px 0}.ask-line .reason-chips{margin:6px 0 8px}.card a.card-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.card .note.status-line{margin:2px 0 6px;font-weight:600}.card .note.status-line.done-line{color:var(--muted);font-weight:500}.ask-line .ask-q p{margin:4px 0}.ask-line .reason-chips{margin:6px 0 8px}.card a.card-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .card .saved-feedback blockquote{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .card .meta time{font-size:.8rem;color:var(--muted)}.card .read-original{font-size:.85rem}
 .card .chip{font-size:.78rem}.chip.scope{--c:var(--muted)}
@@ -3272,6 +3272,10 @@ function dueChip(s){if(!s.due||closed(s))return '';const today=new Date(localDay
   :days===0?'Due today':days===1?'Due tomorrow':'Due '+due.toLocaleDateString(DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
  return `<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${esc(due.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):''))}">${esc(text)}</span>`}
 const closed=s=>['completed','rejected'].includes(s.status);
+// A done to-do keeps its title (what needed doing); how it ended goes under it: what went out has its own line
+// (outboxLine), the sign that it was handled is this one.
+const doneLine=s=>{if(s.status!=='completed')return '';let why='';try{why=JSON.parse(s.handled_hint||'{}').reason||''}catch{}
+ return why?`<p class="note status-line done-line">${esc(t('Done: {}',why))}</p>`:''};
 const ICONS={x:'<path d="M4 4l16 16M20 4L4 20"/>',plugin:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/>',gateway:'<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>',gmail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',slack:'<path d="M10 3 8 21M16 3l-2 18M4 9h16M3.5 15h16"/>',salesflare:'<path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-5h6v5M9 11h.01M15 11h.01"/>',android:'<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18h2"/>',whatsapp:'<path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.2-4.2A8 8 0 1 1 20 12z"/>',telegram:'<path d="M21 4L3 11l6 2.5L11 20l3.5-4.5L19 19z"/><path d="M9 13.5L21 4"/>',linkedin:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10v7M8 7h.01M12 17v-7M12 13a3 3 0 0 1 6 0v4"/>',github:'<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M18 10.2c0 4-6 3-10.5 6.3"/>',stripe:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>'};
 ICONS.docs='<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/>';ICONS.outlook=ICONS.gmail;ICONS.outlook_calendar=ICONS.calendar;ICONS.zoom='<rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 10.5 5-3v9l-5-3"/>';
 const icon=s=>`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${ICONS[s]||ICONS.plugin}</svg></span>`;
@@ -3472,7 +3476,7 @@ const status=cardState(s);
 const statusLine=(()=>{const line=(text,cls='')=>`<p class="note status-line${cls}">${format(text)}</p>`;
  // Snoozed from a Change ("remind me about this on Tuesday"): the card says until when, like the Snooze button's.
  if(s.status==='snoozed'&&s.snoozed_until&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='snoozed'}catch{return false}})())return line('Snoozed until '+snoozedUntil(s.snoozed_until));
- if(closed(s)||s.status==='snoozed')return '';let o=null;if(s.status==='prepared'&&s.outcome)try{o=JSON.parse(s.outcome)}catch{}
+ if(closed(s))return doneLine(s);if(s.status==='snoozed')return '';let o=null;if(s.status==='prepared'&&s.outcome)try{o=JSON.parse(s.outcome)}catch{}
  if(o?.state==='already_done')return line('Looks done already. Mark it done if that’s right.',' outcome done');
  if(hint)return line((handled.fleet?'Done: ':'Looks handled: ')+hint,' handled');
  if(ask&&s.preparation_status==='blocked')return askLine(s,ask);
@@ -5509,7 +5513,7 @@ function chatParts(s){const t=document.createElement('template');t.innerHTML=sug
  if(lead?.dataset.smart&&chatFailed(sends.find(x=>String(x.a.revision)===lead.dataset.smart)?.st))lead.textContent='Try again';
  const rest=acts.filter(n=>n!==lead&&n!==back);
  const decide=rest.filter(n=>['complete','snooze','reject','accept','retry'].includes(n.dataset.choice)||n.dataset.smart!=null);
- const status=card?.querySelector('.status-line:not(.ask-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
+ const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
  const panel=[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>n.outerHTML).join('')
   +(['blocked','running','starting'].includes(s.preparation_status)&&s.preparation_browser?`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:'');

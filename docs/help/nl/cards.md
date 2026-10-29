@@ -40,6 +40,8 @@ Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet w
 
 Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, hun organisatie, het project, Werk of Privé (onder **Alle**) en wanneer hij binnenkwam, en waar hij staat als de groep dat niet al zegt. Tik op een naam om de pagina in de Graph te openen.
 
+Een titel zegt wat er moet gebeuren. Hij verandert alleen als dat verandert, zoals bij een nieuwe vraag. Een to-do die gedaan is houdt zijn titel, met eronder hoe hij afliep, zoals wat er verstuurd is of "Gedaan: Sam heeft dinsdag getekend".
+
 **Details** toont het bericht waar hij uit komt (tik erop om de thread te lezen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is.
 
 Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste bericht aan die persoon, het bericht waarop je een antwoord verwacht: "E-mail aan Pat · di".

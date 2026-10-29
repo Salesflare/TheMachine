@@ -400,10 +400,18 @@ def queue_thread_snooze(db, action, job):
 
 
 def current_title(card, title):
-    """The title a refresh gives a card: the new one for a title The Machine wrote, so it keeps describing where things
-    stand now; the owner's own title (title_source 'user', set when they rename a card) is never replaced. A card the
-    owner made stays 'auto': the review may clean its title up, their words stay in owner_words."""
+    """The title a refresh gives a card: the new one for a title The Machine wrote, so it keeps saying what needs doing
+    when that changes (a new ask, a new next step); the owner's own title (title_source 'user', set when they rename a
+    card) is never replaced. A card the owner made stays 'auto': the review may clean its title up, their words stay in
+    owner_words. Finishing never retitles a card (title_kept): how it ended goes in its status line, so Done still shows
+    what the to-do was. A done or dismissed card only takes a new title when a new signal reopens it (update_card)."""
     return card['title'] if 'title_source' in card.keys() and card['title_source'] == 'user' else title
+
+
+def title_kept(outcome=None, finish_state=None, send_now=False):
+    """A result that only finishes the to-do (done, done already, its final step or approved send went through) never
+    retitles it: the title says what needed doing, the status line how it ended (2026-10-29)."""
+    return (outcome or {}).get('state') in ('done', 'already_done') or finish_state == 'completed' or send_now
 
 
 NOTHING_SENT = re.compile(r'\s*Nothing (?:was |has been )?(?:sent|submitted|posted)(?: or (?:changed|submitted|posted|sent))?(?: yet)?\.?\s*$', re.I)
@@ -5489,8 +5497,10 @@ class Store:
         step, people, threads and project, and a draft prepared ahead when it helps. Their words (owner_words), their
         due date and where the card is (snoozed, done) stay as they were; nothing is sent to anyone."""
         stamp, sid = now(), card['id']
-        db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,due=coalesce(due,?) WHERE id=?',
-                   (title[:300], title[:300], body[:5000], encoded(ids), encoded(accounts), source_line(evidence), due, sid))
+        # Done or dismissed, it keeps the title it had: Done shows what the to-do was, its status line how it ended.
+        retitle = KEEP_OWNER_TITLE + ',' if card['status'] not in ('completed', 'rejected') else ''
+        db.execute('UPDATE suggestions SET ' + retitle + 'body=?,event_ids=?,account_ids=?,source_line=?,due=coalesce(due,?) WHERE id=?',
+                   ((title[:300], title[:300]) if retitle else ()) + (body[:5000], encoded(ids), encoded(accounts), source_line(evidence), due, sid))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    ('update:' + uuid.uuid4().hex, sid, 'update', f"Filled in by the review. Before: {card['title'][:150]}", 'assistant', stamp))
         if project:
@@ -7574,9 +7584,11 @@ class Store:
             db.execute('UPDATE suggestions SET feedback_prompt_message_id=? WHERE id=? AND feedback_request_id=? AND feedback_until>?',
                        (str(message_id),suggestion_id,request_id,now()))
 
-    def prepare(self, suggestion_id, body, job_id=None, next_action=None, outcome=None, note_kind=None, require_note=False, finish_state=None, title=None):
+    def prepare(self, suggestion_id, body, job_id=None, next_action=None, outcome=None, note_kind=None, require_note=False, finish_state=None, title=None, send_now=False):
         if not body.strip():
             raise ValueError('A concrete local preparation is required')
+        if title is not None and title_kept(outcome, finish_state, send_now):
+            title = None  # a result that only finishes it keeps the title; the result and status line say how it ended
         if title is not None:
             title = ' '.join(str(title).split())
             if not title or len(title) > 90:
@@ -12359,7 +12371,7 @@ For this job:
 - Before a follow-up, nudge or handoff, check the conversation for newer activity by anyone else: their reply, a teammate's send or answer, or a teammate's Machine that handled it (the Work Fleet lines). Read the newer messages listed below first when there are any. When it's handled, save outcome:'already_done' saying who did it and when, instead of drafting.
 - When the result is a document, sheet, page or record you made or changed that has its own address (a Google Doc, a live page, a CRM record), add {{kind:open,label:'Open <what it is>',url:<its exact address>}} so the to-do opens it in one tap.
 - When a login code, a two-step code or a missing permission stops a step, record a blocker whose reason says exactly what is needed in one short line, with where to do it, e.g. "Enter the code Acme texted you in your Machine's browser, then tap Continue" or "Give this Machine edit access to the Q3 budget sheet, then tap Try again". Never stop without saying what is needed.
-- When the card's title no longer says where things stand after this result (the situation changed, not just the wording), add title=<a new short title for now, under 90 characters>; otherwise leave title out.
+- The title says what needs doing. Only when that changed after this result (a new ask or next step, not just the wording), add title=<a new short title, under 90 characters>; never to say it is done, sent or handled (the status line says that); otherwise leave title out.
 - When latest_feedback is a Change note, also give note_kind: style (how it was written), fact (something you didn't know), continue (keep going or finish the job) or new_ask (something else to do). A style note that holds beyond this card (how they write on a channel or with this kind of person: length, tone, greeting, sign-off, language, capitals, punctuation, links, formatting; "always…", "next time…", or what they asked on an earlier card) updates that channel's voice: assistant_signals remember_fact args kind=voice, channel=<the channel it is about: Email, Slack, WhatsApp, Telegram, LinkedIn, X DM, another channel's name, or All when it holds everywhere>, text=<that channel's whole voice block (up to {VOICE_LINES} short lines, at most {VOICE_CHARS} characters): the current block with the note worked in, everything else kept, only what it contradicts dropped>, decision_id=<that note's decision>. {VOICE_PRECISE} How a kind of task is done (what to include, where things go) is a draft rule instead: remember_fact kind=draft, text=<the rule, general>. A fact note that holds beyond this card goes in remember_fact as a fact. A note about how to do a kind of task next time ("next time keep it open for me") is a draft rule, also when it is not about writing. The card's chat shows what remember_fact saved, with Undo: the body never says you noted, saved or will remember something, and never claims it when nothing was saved.
 - When the owner's note means they want this task itself back later (remind me about it next week, later, on Tuesday), that is this card's snooze, not a reminder: save with outcome:'snoozed' and snooze_until:<their local date and time, e.g. 2026-10-27T09:00, or a date alone for their morning>, and a one-line body. The card leaves their list and comes back then. Do not also add an automation, cron job or reminder for it. A separate reminder about something else, or a recurring one, stays an automation. Their time zone is {getattr(local_tz(),'key','UTC')}; it is now {dt.datetime.fromisoformat(now()).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')} there.
 - A first message to someone who doesn't know about it yet says what it is about before it asks.
@@ -14482,7 +14494,7 @@ class App:
                 if not 3<=len(advice)<=follow_ups.ADVICE_MAX:raise ValueError(f"follow_up:'stop' needs follow_up_why: why you would stop, 3 to {follow_ups.ADVICE_MAX} characters")
                 if not any(a['kind'] in ('email',)+next_actions.TEXT_KINDS for a in next_actions.actions(action)):
                     raise ValueError("follow_up:'stop' still comes with the draft: write the follow-up, the owner decides")
-            saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'))
+            saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True)
             if following and not saved.get('replayed'):
                 with self.store.connect() as db:
                     follow_ups.advise(db,args['suggestion_id'],advice,now())

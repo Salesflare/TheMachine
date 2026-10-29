@@ -40,6 +40,8 @@ On your first to-dos, a short tip under the buttons shows the key moves: **Do it
 
 Each to-do starts with its title. The line under it says who it's about, their organization, the project, Work or Personal (under **All**) and when it came in, plus where it stands when its group doesn't say so. Tap a name to open its page in the Graph.
 
+A title says what needs doing. It changes only when that does, like a new ask. A done to-do keeps its title, with how it ended under it, like what went out or "Done: Sam signed it on Tuesday".
+
 **Details** shows the message it came from (tap it to read the thread), your last note and a coding agent's result. **Chat ›** at the end of that row opens the chat. A done to-do stays short: its title, one line and what went out.
 
 A "Waiting on" to-do (someone promised you something) links your own last message to them, the one you're waiting on an answer to: "Email to Pat · Tue".
