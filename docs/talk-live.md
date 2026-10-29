@@ -1,8 +1,8 @@
 # Talk live
 
 A spoken conversation with The Machine in a to-do's chat, with OpenAI's Realtime voice. It can read the to-do and
-look up other to-dos, hand a request to the to-do's chat (which follows its usual rules), and send the draft on screen
-after a confirm question and a clear yes. The help
+look up other to-dos, hand a request to the to-do's chat (which follows its usual rules), and send its draft after
+reading it out in full, a confirm question and a clear yes. **Talk** in the sidebar reaches the whole Machine. The help
 article is [docs/help/talk-live.md](help/talk-live.md); the code is `talk_live.py`, `talk-live-run.mjs` and the
 `talk*` functions in `dashboard.html`.
 
@@ -50,10 +50,12 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 `talk_live.TOOLS`, called by the voice as Realtime function calls:
 
 - `todo_details`: the to-do's title, state, its last 25 messages and its current draft, through `talk_tool` (read only).
-- `find_todos`: open to-dos by words in their title, by `state`, or both (read only), each with its state in plain words
+- `find_todos`: to-dos by words in their title, by `state`, or both (read only), each with its state in plain words
   (`talk_live.STATES`: ready, to decide, preparing, waiting on others, snoozed, looks done; `todo_state` places it the
   way the dashboard's lists do), what needs the owner first, at most 20, with `count`. Words that name a state and match
-  no title ("anything preparing?") find that state.
+  no title ("anything preparing?") find that state. Closed ones (`talk_live.CLOSED`: done, dismissed) come from the
+  Done / dismissed list (`Store.done_rows`, latest closed first) when asked for by state or by name, or when no open one
+  matches.
 - `create_todo`: a new to-do, handled in the browser (`talkCreate`) with New to-do's own `card_new` (title, then the
   note on the next line; Work or Personal as the list's filter, as New to-do). Nothing is sent and the focus stays. For
   anything new or about something else: `ask_chat` is only for the to-do in focus, and the instructions say so.
@@ -79,20 +81,22 @@ conversation that isn't tied to a to-do (`talk_start` with `main: true`, session
 - Tools (`talk_live.MAIN_TOOLS`): `list_todos` (the page's own: every open to-do the lists show, in their order: Ready,
   To decide, Preparing, Waiting on others, Later, Look done; at most 30, each with its id, state, title and who it's
   from, and `counts` per state), `open_todo` (the page shows that to-do in Talk's view, tells the Machine with `talk_focus`, and
-  returns `todo_details`), then the same `todo_details`, `find_todos` (with ids here), `ask_chat`, `ask_to_send` and
-  `send_answer`, `create_todo` and `end_talk`. Instructions: `talk_live.main_instructions` (the same voice and rules,
+  returns `todo_details`; a closed one too, even one the page hasn't loaded), then the same `todo_details`, `find_todos`
+  (with ids here), `ask_chat`, `ask_to_send` and `send_answer`, `create_todo` and `end_talk`, and the tools in
+  [The rest of the Machine](#the-rest-of-the-machine). Instructions: `talk_live.main_instructions` (the same voice and rules,
   plus going through the to-dos one by one: ready and to decide first, then in a few words how many are still
   preparing; one that is preparing can be opened, but has no draft to send yet). Replies are one or two sentences,
   without lists of options.
 - Focus: the conversation works on the to-do on screen. The Machine keeps it (`Talk.focus`); `todo_details`,
   `talk_ask_send` and `talk_send` act on it only, and before one is open they refuse. When the owner opens another
   to-do, the page moves the focus there (`openChatLink`); a confirm question about the previous one is dropped, so a
-  yes can only send the draft on screen. All the rules in [Sending by voice](#sending-by-voice) hold as they are.
+  yes can only send the draft the voice read out. All the rules in [Sending by voice](#sending-by-voice) hold as they are.
 - Talk's view (`#talk-view`, hash `#talk`): Talk opens its own page with one transcript for the whole conversation
   (kept in the page, `talkLog`), a small mark when it moves to another to-do, and a card on top with the to-do it's
   about (**Talking about**, its title, its current draft and **Open the chat**). The card stays in sight while the
   transcript scrolls. `open_todo` changes the card, never the page, so the owner isn't moved from chat to chat. The
-  draft in the card is what `ask_to_send` checks, as in a chat (`.chat-draft.current`, its revision). `ask_chat`
+  draft in the card, when it shows, is the one `ask_to_send` asks about, as in a chat (`.chat-draft.current`, its
+  revision). `ask_chat`
   follows the chat in the background (`talkFollow`, `card_chat`) when it isn't open. After **End** the view keeps the
   transcript with **Start again**.
 - Lines: `talk_line` keeps each line under the to-do in focus, so each to-do's chat shows what was said about it,
@@ -105,11 +109,62 @@ conversation that isn't tied to a to-do (`talk_start` with `main: true`, session
   `input_audio_buffer.speech_stopped`). One that was preparing gets `talk_live.READY_NOTE` instead ("is ready now"),
   also once (`v.known`; `v.prep` remembers what was preparing). One Talk made itself (`create_todo`) isn't told, and
   the transcript gets a mark: **Added a to-do: …**.
-- The bar's hint, **Say yes to send what's on screen.**, shows only while a send question is open (`ask_to_send`
-  asked, not answered, under `ASK_SECONDS`, its draft still on screen); **Muted** while muted; otherwise none.
+- The bar's hint, **Say yes to send it.**, shows only while a send question is open (`ask_to_send` asked, not
+  answered, under `ASK_SECONDS`); **Muted** while muted; otherwise none.
 - Ending: when the owner clearly says they're done, the voice says one short goodbye and calls `end_talk` (also in a
   to-do's own Talk live). The page sends no new response, waits until the goodbye has played
   (`output_audio_buffer.stopped`, at most 10 s), then ends as **End** does.
+
+## The rest of the Machine
+
+Talk can reach what the dashboard shows, not only the to-dos. Read tools answer from the stores and views the pages
+already read (`App.talk_machine_tool`, `talk_live.MACHINE_TOOLS`, main conversation only), short and with ids:
+
+- `search` (`words`, `kind`: anything, person, organization, project, message, meeting, promise): the Graph's search
+  (`graph_find`), Events (the `events` action, meetings by `calendar.event`, messages by meaning) or open promises.
+- `open_record` (`id`): one person, organization or project (`graph_action`: who, when you last talked, open to-dos,
+  recent lines), a meeting (`Store.meeting`, what the Calendar shows, not the invite's notes), a message or a promise
+  (`promise_page`). Its `card` is the page's: Talk's transcript shows it as a small card linking to its page or opening
+  the meeting or message. The to-do in focus stays.
+- `calendar` (`day`, `days` up to 14): meetings from `Store.calendar` in the owner's time zone, at most 25.
+- `machine_status` (the page's own): each connection's health as Connections shows it (`connectorHealth`), the
+  reviews, and what **Needs you** lists.
+
+Doing things:
+
+- `todo_action` (the page's own, `talkDo`): what a to-do's buttons do, through the same actions and the same checks
+  (`decide`, through `decideOrWait` for the outbox's choices, and `card_rename`): `mark_done` (complete), `dismiss`
+  (reject, with `why`), `snooze` (`snooze` option or `snooze_until`), `unsnooze` (accept on a snoozed one), `reopen`
+  (as the Done / dismissed list: `reopen` for a done one, `undo` inside the undo window; one dismissed longer ago can't
+  come back, as on the page), `rename`, `do_it` (accept on one that waits for a decision), `try_again` (retry when
+  preparing is stuck) and `not_done` (one that looks done). Each only where the page offers it. Never a send.
+- `ask_machine` (`talkMachine`): anything else. It makes a new to-do the way New to-do does (`card_new`) and hands the
+  request to that to-do's chat as a decision `other` whose id starts with `talk_live.ASK_PREFIX`, shown there as the
+  owner's message. The chat's prompt gets `RELAY_NOTE` and `ASK_MACHINE_NOTE`: do it now, look things up, change the
+  Graph, snooze or mark to-dos done, never send, and mark this to-do done when nothing is left. The page follows that
+  chat (`talkWatch`) and tells the voice its answer (`DONE_NOTE`, or `STOPPED_NOTE`). The to-do in focus is never used
+  for it.
+
+The instructions (`# The rest of the Machine`) say to use the direct tool when one fits, never to guess about someone
+before looking them up, and to use `ask_machine`, never `ask_chat`, for anything not about the to-do in focus.
+
+## In the background
+
+Talk keeps going when the page isn't on screen, on computers and on Android (Chrome or the installed app):
+
+- The screen stays on while it is live (`navigator.wakeLock.request('screen')`), taken again when the page shows again
+  and let go at the end.
+- The Media Session shows it on the lock screen or in the notification (**Talk**, The Machine, the app icon): pause and
+  play mute and unmute, stop and hang up end it (`setMicrophoneActive` follows Mute where it exists). The voice plays
+  through an audio element, so Android shows the controls.
+- Browsers slow timers in the background, so what happens at a moment runs on the voice's own events
+  (`talkDue` on each one: the goodbye heard, the limit from the wall clock) and when the page shows again; `talkTick` is
+  a backstop.
+- Back on screen it checks the connection, the data channel and the microphone. One that went away while hidden ends
+  cleanly with **Talk stopped while in the background.** and **Start again**. On an iPhone the microphone stops when the
+  app leaves the screen, and it ends the same way.
+
+Where a browser has none of this, nothing changes.
 - Limit: 30 minutes (`MAIN_LIMIT_SECONDS`), a warning a minute before. OpenAI allows a Realtime session up to 60
   minutes; 30 keeps an API key's per-minute cost bounded.
 
@@ -136,26 +191,28 @@ to speak".
 
 ## Sending by voice
 
-The rule is the same as for a tap: only what the owner has seen or heard, and approved.
+The rule is the same as for a tap: only what the owner has heard, and approved. It works without the screen: a phone
+in a pocket, another page, or Talk's view without the card.
 
-1. **The question.** The owner asks to send. `ask_to_send` (browser, `talkAskSend`) works only for the current draft
-   shown in this to-do's chat (`.chat-draft.current`, not with the send sheet open) and scrolls it into view. It posts
-   that draft's revision as `talk_ask_send`, with `read_aloud` on a phone or with the page hidden. The service checks
-   the draft is ready, a kind that goes to people (`talk_live.SEND_KINDS`) and with its recipients set (no
-   `to_options`), and keeps the question in memory: the revision, a digest of who, how and what
-   (`talk_live.digest`), and the time. The voice gets the question naming who and how ("Send this reply to Lotte by
-   email?"), to ask in the owner's language, after reading the draft out in full when `read_aloud` is set.
-2. **The answer.** After the owner answers, the voice calls `send_answer`. The browser checks the same draft is still on
-   screen, waits until the owner's words are kept (`talk_line`), then posts `talk_send`. The service reads its own
-   record (`talk_lines` since the question): the voice's line that asked it (it must name the recipient), then the
-   owner's next utterance. `talk_live.judge_answer` asks the model (`openclaw infer model run`, the background model)
-   whether that answer clearly means yes, in any language, and accepts only one of three exact JSON answers; anything
-   else, or no model, is `unclear`. The question is used up by any answer.
-3. **The send.** A yes for an unchanged draft goes through `confirm_action` with source `voice` and approval
+1. **The question.** The owner asks to send. `ask_to_send` (browser, `talkAskSend`) posts `talk_ask_send`: with the
+   revision of the draft that shows (this to-do's `.chat-draft.current`, in its chat or Talk's card), else none, and
+   then the Machine picks the to-do's only draft, or asks which by number when there are several (`draft`). The service
+   checks the draft is ready, a kind that goes to people (`talk_live.SEND_KINDS`) and with its recipients set (no
+   `to_options`), and pins it: the revision, a digest of who, how and what (`talk_live.digest`), and the time. The
+   voice gets the whole draft (every recipient, the subject, the full text) to read out word for word, then the
+   question naming who and how ("Send this reply to Lotte by email?"), to ask in the owner's language.
+2. **The answer.** After the owner answers, the voice calls `send_answer`. The browser waits until the owner's words
+   are kept (`talk_line`), then posts `talk_send`. The service reads its own record (`talk_lines` since the question):
+   the voice's line that asked it (it must name the recipient), then the owner's next utterance. `talk_live.judge_answer`
+   asks the model (`openclaw infer model run`, the background model) whether that answer clearly means yes, in any
+   language, and accepts only one of three exact JSON answers; anything else, or no model, is `unclear`. The question
+   is used up by any answer, expires after `ASK_SECONDS` (3 minutes), and is dropped when the focus moves.
+3. **The send.** A yes for the pinned draft, unchanged, goes through `confirm_action` with source `voice` and approval
    `voice:<id>`, held `UNDO_SECONDS` (10) through the job's `retry_at`, so pacing and the outbox's checks before sending
    apply as for a tap. The chat shows **Approved by voice** with **Undo** while it waits (`talk_undo`,
    `Store.undo_voice_send`, which cancels the job). Otherwise the voice is told why nothing went: `no`, `unclear` (ask
-   again), `changed` (the draft changed after the question: ask again), `not_asked` or `no_answer`.
+   again), `changed` (the draft changed after the question: read it out and ask again), `expired`, `not_asked` or
+   `no_answer`.
 
 One yes sends one draft: there is no "send all" by voice here. "Send without asking" settings are not touched.
 `confirm_action` from the dashboard still only takes the owner's controls (an approval ID of their own); `voice:` comes
@@ -170,4 +227,8 @@ nothing; the judge accepts only exact JSON) and `tests/test_talk_live_dashboard.
 `getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).
 `tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, Talk's view, listing and opening to-dos (the
 card changes, the page doesn't; **Open the chat** and back), a send by voice about the to-do on screen, a new to-do told at a pause, following the owner to
-another to-do, its 30-minute limit (its toast only then), End, **Start again** and `end_talk` (the goodbye kept in the transcript) (390x844 and 1440x900, light and dark).
+another to-do, its 30-minute limit (its toast only then), End, **Start again** and `end_talk` (the goodbye kept in the transcript); a person and a meeting looked up
+and shown as cards, `machine_status`, `ask_machine` (its own to-do, its answer back to the voice), the to-do actions and reopening a dismissed one; in the background
+(mocked Wake Lock, Media Session, visibility and frozen timers): the lock screen's controls, the goodbye and the limit on events, and a clean end when the connection or
+the microphone went away (390x844 and 1440x900, light and dark). `tests/test_talk_live.py` also covers search, records and the calendar, done and dismissed
+to-dos, and sending without the screen: the pinned revision, a draft picked by number, a changed draft and an expired question.

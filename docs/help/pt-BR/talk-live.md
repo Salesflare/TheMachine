@@ -23,7 +23,9 @@ Falar tem uma página própria: uma conversa do começo ao fim, com a tarefa de 
 
 Peça para ler um rascunho, mudar, adiar, marcar como feita ou ir para a próxima. Enviar funciona como no chat de uma tarefa: um rascunho por pergunta, depois de um sim claro. O que você diz sobre uma tarefa fica no chat dessa tarefa. Quando chega uma tarefa nova, ela avisa numa pausa. Diga "crie uma tarefa para..." e ela cria uma nova, sem sair da que está aberta.
 
-Enquanto isso você pode ir para outra página: a barra fica embaixo, e **Falar** na barra lateral traz você de volta. Esta conversa dura até 30 minutos.
+Ela também alcança o resto da The Machine. Pergunte sobre uma pessoa, uma organização, um projeto, uma reunião ou uma promessa, e ela procura e mostra. Ela pode adiar uma tarefa, marcar como feita, dispensar, renomear ou reabrir, até uma em **Feito / dispensado**. Para todo o resto, ela cria uma tarefa, deixa o chat dela cuidar disso e conta a resposta.
+
+Enquanto isso você pode ir para outra página: a barra fica embaixo, e **Falar** na barra lateral traz você de volta. Esta conversa dura até 30 minutos. Ela continua em segundo plano no computador e no Android. No iPhone, ela para quando o app sai da tela.
 
 ## Peça coisas e envie com um sim
 
@@ -31,9 +33,9 @@ Quando você pede algo, como "escreva uma resposta dizendo que quinta está bom"
 
 O chat também pode procurar coisas, como o horário de uma loja na web. Enquanto isso, mostra **Trabalhando nisso…**, e você pode continuar falando. Quando a resposta fica pronta, a The Machine conta para você, e onde a encontrou. Se você pedir outra coisa enquanto isso, ela espera a vez.
 
-Para enviar um rascunho, diga isso. A The Machine pergunta antes, dizendo para quem e como, por exemplo "Enviar esta resposta para a Lotte por e-mail?". No celular, ela lê o rascunho inteiro em voz alta antes. Responda com um sim claro, em qualquer idioma, e esse rascunho é enviado.
+Para enviar um rascunho, diga isso. A The Machine pergunta antes, dizendo para quem e como, por exemplo "Enviar esta resposta para a Lotte por e-mail?". Antes, ela lê o rascunho inteiro em voz alta: para quem vai, o assunto e o texto. Assim funciona também com o celular no bolso. Responda com um sim claro, em qualquer idioma, e esse rascunho é enviado.
 
-- Ela só pergunta sobre o rascunho que aparece no chat. Se ele mudar depois da pergunta, ela pergunta de novo.
+- Ela envia exatamente o rascunho que leu. Se ele mudar depois da pergunta, ela lê de novo e pergunta de novo. Uma pergunta sem resposta em 3 minutos expira.
 - Se a resposta não for um sim claro, nada é enviado e ela pergunta de novo. "Não" não envia nada.
 - Um sim sempre envia um só rascunho. Para enviar vários, use a revisão de follow-ups.
 - O chat mostra **Aprovado por voz** com **Desfazer** por alguns segundos antes do envio.

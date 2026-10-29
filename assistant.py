@@ -12179,9 +12179,9 @@ def waits_on_others(row):
 
 def todo_state(row):
     """An open to-do's state in plain words (talk_live.STATES), as the dashboard's lists place it: looksDone,
-    waitsOnOthers and placeOf in dashboard.html. Closed ones are 'done'."""
+    waitsOnOthers and placeOf in dashboard.html. A closed one is 'done' or 'dismissed' (Done / dismissed)."""
     if row['status'] in ('completed', 'rejected'):
-        return 'done'
+        return 'done' if row['status'] == 'completed' else 'dismissed'
     if looks_done(row):
         return 'looks done'
     if row['status'] == 'snoozed':
@@ -12191,6 +12191,19 @@ def todo_state(row):
     if row['status'] == 'pending' or row.get('preparation_status') == 'blocked':
         return 'to decide'
     return 'ready' if row['status'] == 'prepared' else 'preparing'
+
+
+# Talk's records by kind, as the voice says them, and their one line ("CTO at Acme", "acme.com", "a project, active")
+TALK_KINDS = {'person': 'person', 'org': 'organization', 'project': 'project'}
+
+
+def talk_about(node):
+    if node.get('kind') == 'person':
+        org = node.get('org_name') or (node['org'].split(':', 1)[-1] if isinstance(node.get('org'), str) else '')
+        return ' at '.join(x for x in (str(node.get('role') or ''), str(org or '')) if x)
+    if node.get('kind') == 'org':
+        return ' · '.join(x for x in (str(node.get('role') or ''), str(node.get('domain') or ''), str(node.get('about') or '')) if x)
+    return str(node.get('state') or '')
 
 
 def first_sentence(text):
@@ -17329,6 +17342,7 @@ class App:
                         if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1500:request['message']+='\n\n'+lines
                     except Exception as error:LOG.error('skill hint error=%s',type(error).__name__)
             if str(job.get('decision_id') or '').startswith(talk_live.RELAY_PREFIX):request['message']+='\n\n'+talk_live.RELAY_NOTE  # asked in Talk live: look it up now, answer for the ear
+            elif str(job.get('decision_id') or '').startswith(talk_live.ASK_PREFIX):request['message']+='\n\n'+talk_live.RELAY_NOTE+'\n'+talk_live.ASK_MACHINE_NOTE  # Talk's ask_machine: its own new to-do
             try:
                 lines=self.agent_work(job['suggestion_id'])
                 if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
@@ -20559,25 +20573,44 @@ class App:
             return None
         return action
 
+    def talk_drafts(self, suggestion_id):
+        """This to-do's drafts Talk live may ask to send, in the order the chat shows them."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT status,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        if not row or row['status'] != 'prepared':
+            return []
+        return [a for a in next_actions.visible_actions(row['next_action'])
+                if a.get('kind') in talk_live.SEND_KINDS and not a.get('to_options') and a.get('revision')]
+
     def talk_ask_send(self, args):
-        """The voice asks to send the draft on screen (the dashboard says which revision it shows, and whether the owner
-        may not see it: then the voice reads it out first). The question is kept for the owner's next answer."""
+        """The voice asks to send this to-do's draft: the one the screen shows when it shows one (revision), else its
+        only draft, or the one named by its number. The Machine pins that revision and hands the voice the whole draft to
+        read out, so it works without the screen; the question is kept for the owner's next answer."""
         found = self.talk.get(args.get('id'))
         sid, revision = talk_live.subject(found), str(args.get('revision') or '')
-        action = self.talk_draft(sid, revision) if sid else None
+        drafts = self.talk_drafts(sid) if sid else []
+        if not revision and len(drafts) > 1 and not args.get('draft'):
+            return {'error': 'This to-do has more than one draft. Ask which one, then call ask_to_send with its number.',
+                    'drafts': [{'draft': n + 1, 'label': clamp(next_actions.label(a), 80)} for n, a in enumerate(drafts[:5])]}
+        if not revision and drafts:
+            try:
+                revision = drafts[max(0, int(args.get('draft') or 1) - 1)]['revision']
+            except (IndexError, TypeError, ValueError):
+                return {'error': 'No draft with that number.'}
+        action = self.talk_draft(sid, revision) if sid and revision else None
         if not action:
-            return {'error': 'No draft ready to send by voice. It needs a tap on Approve on screen.'}
+            return {'error': 'No draft ready to send by voice. Ask the chat to draft one first.'}
+        to = [str(x) for x in action.get('to') or []]
         names = {}
-        if len(action.get('to') or []) == 1 and str(action.get('to_name') or '').strip():
-            names[_address(action['to'][0])] = chat_person(str(action['to_name']).strip())
-        name = chat_name((action.get('to') or [''])[0], names, str(action.get('to_name') or '')) if action.get('to') else ''
-        name = name if len(action.get('to') or []) <= 1 else name + ' and %d more' % (len(action['to']) - 1)
+        if len(to) == 1 and str(action.get('to_name') or '').strip():
+            names[_address(to[0])] = chat_person(str(action['to_name']).strip())
+        everyone = [chat_name(x, names, str(action.get('to_name') or '') if len(to) == 1 else '') for x in to]
+        name = everyone[0] if everyone else ''
+        name = name if len(to) <= 1 else name + ' and %d more' % (len(to) - 1)
         asked = self.talk.ask(args.get('id'), sid, revision, action, name, int(time.time() * 1000))
-        read = args.get('read_aloud') is True
-        draft = {'to': name, 'how': talk_live.CHANNELS.get(action['kind'], ''), 'subject': action.get('subject') or '',
+        draft = {'to': everyone[:20], 'how': talk_live.CHANNELS.get(action['kind'], ''), **({'subject': action['subject']} if action.get('subject') else {}),
                  'text': clamp(str(action.get('body') or action.get('message') or ''), 4000)}
-        return {'question': asked, 'read_aloud': read, 'draft': draft,
-                'say': (talk_live.SAY['read'] if read else '') + talk_live.SAY['ask'] + asked}
+        return {'question': asked, 'revision': revision, 'draft': draft, 'say': talk_live.SAY['read'] + talk_live.SAY['ask'] + asked}
 
     def talk_send(self, args):
         """The owner answered the confirm question: the Machine judges it from its own record, and a clear yes for the
@@ -20624,28 +20657,149 @@ class App:
         if name == 'find_todos':
             words = [w for w in re.findall(r'\w+', str(args.get('words') or '').lower()) if len(w) > 1][:6]
             want = str(args.get('state') or '').strip().lower()
-            want = want if want in talk_live.STATES else ''
+            want = want if want in talk_live.STATES + talk_live.CLOSED else ''
             if not words and not want:
                 return {'todos': []}
-            with self.store.connect() as db:
-                rows = [dict(r) for r in db.execute(
-                    "SELECT s.id,s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s "
-                    "LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.status NOT IN ('completed','rejected') "
-                    "ORDER BY s.created_at DESC LIMIT 500")]
-            for r in rows:
-                r['state'] = todo_state(r)
-            if want:
-                rows = [r for r in rows if r['state'] == want]
-            found = rows if not words else [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
+            named = next((st for st in talk_live.STATES + talk_live.CLOSED if set(st.split()) <= set(words)), '') if not want else ''
+            match = lambda rows: rows if not words else [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
                 [r for r in rows if any(w in (r['title'] or '').lower() for w in words)]
-            named = next((st for st in talk_live.STATES if set(st.split()) <= set(words)), '') if not want else ''
-            if not found and named:  # "anything preparing?": no title has the word, so the state it names
-                found = [r for r in rows if r['state'] == named]
-            found.sort(key=lambda r: talk_live.STATES.index(r['state']))  # the dashboard's order: what needs the owner first
+            found = []
+            if want not in talk_live.CLOSED:
+                with self.store.connect() as db:
+                    rows = [dict(r) for r in db.execute(
+                        "SELECT s.id,s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s "
+                        "LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.status NOT IN ('completed','rejected') "
+                        "ORDER BY s.created_at DESC LIMIT 500")]
+                for r in rows:
+                    r['state'] = todo_state(r)
+                if want:
+                    rows = [r for r in rows if r['state'] == want]
+                found = match(rows)
+                if not found and named in talk_live.STATES:  # "anything preparing?": no title has the word, so the state it names
+                    found = [r for r in rows if r['state'] == named]
+                found.sort(key=lambda r: talk_live.STATES.index(r['state']))  # the dashboard's order: what needs the owner first
+            if not found and (want in talk_live.CLOSED or named in talk_live.CLOSED or (words and not want)):
+                # Done / dismissed, latest closed first (the dashboard's list): asked for, or no open one matches
+                with self.store.connect() as db:
+                    closed = self.store.done_rows(db, titles=True)[:500]
+                    status = {r['id']: r['status'] for r in db.execute(
+                        'SELECT id,status FROM suggestions WHERE id IN (SELECT value FROM json_each(?))', (json.dumps([r['id'] for r in closed]),))}
+                rows = [{**r, 'state': todo_state({'status': status.get(r['id'], 'completed')})} for r in closed]
+                kind = want if want in talk_live.CLOSED else named if named in talk_live.CLOSED else ''
+                if kind:
+                    rows = [r for r in rows if r['state'] == kind]
+                found = (match(rows) if words else rows) or (rows if kind else [])   # "anything dismissed?": that list
             # the main conversation opens one by its id (open_todo)
             return {'todos': [{**({'id': r['id']} if ids else {}), 'title': clamp(r['title'], 200), 'state': r['state']}
                               for r in found[:20]], 'count': len(found)}
+        if name in talk_live.MACHINE_TOOLS and ids:  # the main conversation's own: the rest of the Machine, read only
+            return self.talk_machine_tool(name, args)
         raise ValueError('Unknown tool')
+
+    def talk_when(self, value):
+        """A moment as the voice says it: 'Thu 29 Oct 14:30', in the owner's time zone (English: the model says it in theirs)."""
+        try:
+            moment = dt.datetime.fromisoformat(str(value).replace('Z', '+00:00')).astimezone(local_tz())
+        except (TypeError, ValueError):
+            return ''
+        return locale_prefs.day_text(moment, lang='en') + moment.strftime(' %H:%M')
+
+    def talk_machine_tool(self, name, args):
+        """Talk's read tools for the rest of the Machine (talk_live.MACHINE_TOOLS), through the stores and views the
+        dashboard reads: the Graph's search and pages, Events, the Calendar, Promises. Short, speakable rows with ids for
+        open_record; nothing here changes anything."""
+        accounts = [a['id'] for a in self.config.get('accounts', [])]
+        if name == 'calendar':
+            try:
+                day = dt.date.fromisoformat(str(args.get('day') or '')) if args.get('day') else dt.datetime.now(local_tz()).date()
+            except ValueError:
+                return {'error': 'day is YYYY-MM-DD'}
+            days = max(1, min(int(args.get('days') or 1), 14))
+            start = dt.datetime.combine(day, dt.time(), local_tz())
+            rows = self.store.calendar(accounts, start.isoformat(), (start + dt.timedelta(days=days)).isoformat(), self.owner_emails()) if accounts else []
+            return {'meetings': [{'id': 'event:%d' % m['id'], 'title': clamp(m['title'], 160), 'when': 'all day' if m['all_day'] else self.talk_when(m['start']),
+                                  **({'until': self.talk_when(m['end'])[-5:]} if not m['all_day'] else {}),
+                                  **({'where': clamp(m['location'], 100)} if m['location'] else {}), 'with': m['people'][:6]} for m in rows[:25]],
+                    'from': day.isoformat(), 'days': days, 'count': len(rows)}
+        if name == 'search':
+            words, kind = ' '.join(str(args.get('words') or '').split())[:200], str(args.get('kind') or 'anything')
+            if not words:
+                return {'error': 'Say what to look for.'}
+            if kind in ('message', 'meeting'):
+                if not accounts:
+                    return {'found': []}
+                rows = self.action('events', {'account_ids': accounts, 'query': words, 'full': True, 'limit': 20,
+                                              **({'kinds': ['calendar.event']} if kind == 'meeting' else {'semantic': True})})
+                rows = [r for r in rows if (r['kind'] == 'calendar.event') == (kind == 'meeting')][:8]
+                return {'found': [{'id': 'event:%d' % r['id'], 'kind': kind, 'title': clamp(' '.join(str(r['title'] or '').split()), 160),
+                                   'what': source_text(r)} for r in rows]}
+            if kind == 'promise':
+                found = [x for x in self.store.promises() if x['state'] in ('open', 'card')
+                         and all(w in (str(x['who']) + ' ' + str(x['what'])).lower() for w in words.lower().split())][:8]
+                return {'found': [{'id': 'promise:%d' % x['id'], 'kind': 'promise', 'who': clamp(str(x['who']), 80), 'what': clamp(str(x['what']), 200),
+                                   'direction': 'the owner promised' if x['direction'] == 'mine' else 'promised to the owner',
+                                   **({'due': x['due']} if x.get('due') else {})} for x in found]}
+            want = {'person': 'person', 'organization': 'org', 'project': 'project'}.get(kind)
+            hits = [h for h in self.graph_find(words, 0, 20)['found'] if h['kind'] in ('person', 'org', 'project') and (not want or h['kind'] == want)][:8]
+            return {'found': [{'id': h['id'], 'kind': TALK_KINDS[h['kind']], 'name': clamp(h['name'], 120),
+                               **({'about': clamp(x, 160)} if (x := talk_about(h)) else {}),
+                               **({'last': self.talk_when(h['last_at'])} if h.get('last_at') else {})} for h in hits]}
+        if name == 'open_record':
+            return self.talk_record(str(args.get('id') or ''), accounts)
+        raise ValueError('Unknown tool')
+
+    def talk_record(self, rid, accounts):
+        """One record for the voice, from what its own page shows: a person, organization or project (the Graph's page),
+        a meeting (the Calendar's details), a message (its original) or a promise. card is what Talk's transcript shows."""
+        if rid.startswith('event:') and rid[6:].isdigit() and accounts:
+            meeting = self.store.meeting(accounts, int(rid[6:]), self.owner_emails())
+            if meeting:
+                when = 'all day ' + self.talk_when(meeting['start'])[:-6] if meeting['all_day'] else self.talk_when(meeting['start'])
+                return {'id': rid, 'kind': 'meeting', 'title': clamp(meeting['title'], 200), 'when': when,
+                        **({'where': clamp(meeting['location'], 160)} if meeting.get('location') else {}), 'with': meeting['people'][:12],
+                        'card': {'kind': 'meeting', 'title': clamp(meeting['title'], 200), 'line': when, 'event': int(rid[6:])}}
+            rows = self.store.events(accounts, event_ids=[int(rid[6:])])
+            if rows:
+                r = rows[0]
+                return {'id': rid, 'kind': 'message', 'title': clamp(' '.join(str(r['title'] or '').split()), 200), 'what': source_text(r),
+                        'text': clamp(str(r['body'] or ''), 1500),
+                        'card': {'kind': 'message', 'title': clamp(' '.join(str(r['title'] or '').split()), 200), 'line': source_text(r), 'event': r['id']}}
+            return {'error': 'That message or meeting is not there anymore.'}
+        if rid.startswith('promise:') and rid[8:].isdigit():
+            try:
+                x = self.store.promise_page(int(rid[8:]))
+            except ValueError:
+                return {'error': 'No such promise.'}
+            return {'id': rid, 'kind': 'promise', 'who': clamp(str(x['who']), 80), 'what': clamp(str(x['what']), 300),
+                    'direction': 'the owner promised' if x['direction'] == 'mine' else 'promised to the owner', 'state': promise_state(x),
+                    **({'due': x['due']} if x.get('due') else {}), 'made': self.talk_when(x['made_at']),
+                    'card': {'kind': 'promise', 'title': clamp(str(x['what']), 200), 'line': clamp(str(x['who']), 80), 'promise': int(rid[8:])}}
+        if not rid or rid.startswith(('team:', 'event:', 'promise:')):
+            return {'error': 'No record with that id. Use search first.'}
+        try:
+            n = self.graph_action({'node_id': rid, 'limit': 6, 'events': 8})
+        except ValueError:
+            return {'error': 'No record with that id. Use search first.'}
+        if n.get('kind') not in TALK_KINDS:
+            return {'error': 'No record with that id. Use search first.'}
+        about = talk_about(n)
+        out = {'id': n['id'], 'kind': TALK_KINDS[n['kind']], 'name': clamp(n['name'], 120), **({'about': clamp(about, 200)} if about else {})}
+        for key, size in (('headline', 200), ('bio', 400), ('notes', 600), ('from_gbrain', 600), ('closeness', 40), ('state', 60)):
+            if n.get(key):
+                out[key] = clamp(' '.join(str(n[key]).split()), size)
+        for key in ('last_at', 'next_meeting'):
+            moment = n[key].get('at') if isinstance(n.get(key), dict) else n.get(key)
+            if moment and (said := self.talk_when(moment)):
+                out[{'last_at': 'last', 'next_meeting': 'next_meeting'}[key]] = said + (
+                    ' · ' + clamp(n[key]['title'], 120) if isinstance(n.get(key), dict) and n[key].get('title') else '')
+        todos = [c for c in (n.get('todos') or (n.get('open') or {}).get('cards') or []) if isinstance(c, dict)]
+        if todos:
+            out['open_todos'] = [{'id': c.get('id'), 'title': clamp(str(c.get('title') or ''), 160)} for c in todos[:5]]
+        out['recent'] = [clamp(line.split(' ', 2)[-1], 200) for line in (n.get('recent') or [])[:8]]
+        around = [x for x in (n.get('around') or []) if isinstance(x, dict) and x.get('name')]
+        if around:
+            out['around'] = [clamp(x['name'], 80) for x in around[:6]]
+        return {**out, 'card': {'kind': out['kind'], 'title': out['name'], 'line': out.get('about') or out.get('headline') or '', 'node': n['id']}}
 
     def lookups_view(self):
         """Settings, Look up work contacts: whether this Machine can look people up, and whether the owner has it on."""

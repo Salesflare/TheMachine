@@ -23,7 +23,9 @@ Parla ha una pagina sua: una conversazione dall'inizio alla fine, con in alto l'
 
 Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L'invio funziona come nella chat di un'attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un'attività finisce nella chat di quell'attività. Quando arriva una nuova attività, te lo dice in una pausa. Di' "aggiungi un'attività per..." e ne crea una nuova, senza lasciare quella su cui sei.
 
-Intanto puoi andare su un'altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti.
+Arriva anche al resto di The Machine. Chiedi di una persona, un'organizzazione, un progetto, una riunione o una promessa, e la cerca e te la mostra. Può rimandare un'attività, segnarla come fatta, ignorarla, rinominarla o riaprirla, anche una in **Fatte / ignorate**. Per tutto il resto crea un'attività, lascia che se ne occupi la sua chat e ti dice la risposta.
+
+Intanto puoi andare su un'altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti. Continua in background su computer e Android. Su iPhone si ferma quando l'app lascia lo schermo.
 
 ## Chiedi le cose, e invia con un sì
 
@@ -31,9 +33,9 @@ Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" 
 
 La chat può anche cercare informazioni, come gli orari di un negozio sul web. Nel frattempo mostra **Ci sto lavorando…**, e puoi continuare a parlare. Quando la risposta è pronta, The Machine te la dice, e dove l’ha trovata. Se nel frattempo chiedi altro, aspetta il suo turno.
 
-Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Lotte per email?". Su un telefono, prima legge ad alta voce tutta la bozza. Rispondi con un sì chiaro, in qualsiasi lingua, e quella bozza parte.
+Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Lotte per email?". Prima legge ad alta voce tutta la bozza: a chi va, l'oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, in qualsiasi lingua, e quella bozza parte.
 
-- Chiede solo per la bozza mostrata nella chat. Se cambia dopo la domanda, chiede di nuovo.
+- Invia esattamente la bozza che ha letto. Se cambia dopo la domanda, la rilegge e chiede di nuovo. Una domanda senza risposta entro 3 minuti scade.
 - Se la risposta non è un sì chiaro, non parte niente e chiede di nuovo. "No" non invia niente.
 - Un sì invia sempre una sola bozza. Per inviarne diverse, usa la revisione dei follow-up.
 - La chat mostra **Approvato a voce** con **Annulla** per qualche secondo prima dell’invio.
