@@ -611,7 +611,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .lane-sum{margin:0;padding:0 4px 10px;color:var(--c-orange);font-size:var(--fs-xs)}
 /* "N with no reply in 10+ days" is a tap that keeps exactly those (the No reply filter); again shows all */
 .lane-sum button{display:inline;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:inherit;font:inherit;text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
-.lane-sum button:hover{text-decoration-color:currentColor}.lane-sum button[aria-pressed=true]{background:none;color:inherit;font-weight:650}
+.lane-sum button:hover{text-decoration-color:currentColor}.lane-sum .fu-nudge{color:var(--c-text-2);white-space:nowrap}.lane-sum button[aria-pressed=true]{background:none;color:inherit;font-weight:650}
 .tiles{display:flex;flex-direction:column;gap:8px}
 .lane.side{grid-column:1/-1;margin-top:12px}
 .lane.side .tiles{display:grid;grid-template-columns:repeat(var(--lanes),minmax(0,1fr));gap:8px}
@@ -7505,7 +7505,7 @@ const lane=(b,s,items,on)=>{const key=b.name+'|'+s.name,oneOwner=items.length>1&
   return `<section class="lane${s.side?' side':''}${on?' on':''}" data-lane="${esc(s.name)}" aria-label="${esc(s.name)}"><div class="lane-h"><h4>${esc(s.name)}</h4><span>${v==='all'?items.length:`${hit.length}/${items.length}`}</span></div>`
    +`<div class="tiles">${shown.length?shown.map(r=>r.group?groupRow(b,s,r,oneOwner):tile(r,b,oneOwner)).join(''):more>0?'':'<p class="lane-empty">Nothing here yet</p>'}</div>${more>0?`<button type="button" class="lane-more" data-lane-more="${esc(key)}">Show ${more} more</button>`:''}</section>`}
  const all=boardOpen.has(key)||s.side&&!matchMedia('(max-width:560px)').matches,shown=all?items:items.slice(0,LANE_ROWS()),stuck=items.filter(stuckDays).length;
- return `<section class="lane${s.side?' side':''}${on?' on':''}" data-lane="${esc(s.name)}" aria-label="${esc(s.name)}"><div class="lane-h"><h4>${esc(s.name)}</h4><span>${items.length}</span>${items.some(p=>p.value!=null)?`<span class="lane-total" title="Total value">${esc(money(items.reduce((t,p)=>t+(p.value||0),0)))}</span>`:''}</div>${s.hint?`<p class="lane-hint">${esc(s.hint)}</p>`:''}${stuck?`<p class="lane-sum"><button type="button" class="link" data-crm-waiting aria-pressed="${!!crmF('projects').waiting}" title="${crmF('projects').waiting?'Show all':'Show only these'}">${stuck} with no reply in 10+ days</button></p>`:''}`
+ return `<section class="lane${s.side?' side':''}${on?' on':''}" data-lane="${esc(s.name)}" aria-label="${esc(s.name)}"><div class="lane-h"><h4>${esc(s.name)}</h4><span>${items.length}</span>${items.some(p=>p.value!=null)?`<span class="lane-total" title="Total value">${esc(money(items.reduce((t,p)=>t+(p.value||0),0)))}</span>`:''}</div>${s.hint?`<p class="lane-hint">${esc(s.hint)}</p>`:''}${stuck?`<p class="lane-sum"><button type="button" class="link" data-crm-waiting aria-pressed="${!!crmF('projects').waiting}" title="${crmF('projects').waiting?'Show all':'Show only these'}">${stuck} with no reply in 10+ days</button>${fuNudge(b,s)}</p>`:''}`
   +`<div class="tiles">${items.length?shown.map(p=>tile(p,b,oneOwner)).join(''):'<p class="lane-empty">Nothing here yet</p>'}</div>${items.length>shown.length?`<button type="button" class="lane-more" data-lane-more="${esc(key)}">Show ${items.length-shown.length} more</button>`:''}${b.team||s.side?'':`<button type="button" class="lane-add" data-proj-new data-proj-stage="${esc(s.name)}" aria-label="Add a project to ${esc(s.name)}">+ Add</button>`}</section>`};
 // A new board looks through the history once: "Looking through your history…", then what it found (graph.backfill_view)
 // "N projects could belong here": Add or Leave out one, or tick some (or Select all) and do them at once. A project that bundles several
@@ -7858,7 +7858,10 @@ const FU_CHANNELS={email:'Email',linkedin:'LinkedIn',whatsapp:'WhatsApp',slack:'
 const fuDay=v=>{if(!v)return '';const d=new Date(v),n=new Date();if(d<=n||localDay(d)===localDay(n))return t('today');return (d-n)/864e5<6?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{day:'numeric',month:'short'})};
 const fuNoReply=n=>n?t(['No reply after {} follow-up','No reply after {} follow-ups'],n):t('No reply, so follow-ups stopped');
 const fuTile=f=>!f?'':f.end?`<p class="tile-fu quiet">${esc(fuNoReply(f.end.n))}</p>`:f.state==='open'?`<p class="tile-fu">${esc(t('Follow-up ready'))}</p>`:['due','waiting'].includes(f.state)&&f.next_at?`<p class="tile-fu">${esc(t('Next follow-up: {}',fuDay(f.next_at)))}</p>`:'';
-const fuBoardLine=b=>b.follow_ups?.on?` · <button type="button" class="link fu-state" data-fu-open="board:${b.id}">${esc(b.follow_ups.next_at?t('Follow-ups on, next {}',fuDay(b.follow_ups.next_at)):t('Follow-ups on'))}</button>`:'';
+// On or off, the board's line says so and opens its settings; a stage with no-reply projects on a board with follow-ups off
+// offers "Follow them up" (the owner's own boards only: a Team board isn't theirs to change)
+const fuBoardLine=b=>b.follow_ups?` · <button type="button" class="link fu-state${b.follow_ups.on?'':' off'}" data-fu-open="board:${b.id}">${esc(!b.follow_ups.on?t('Follow-ups off'):b.follow_ups.next_at?t('Follow-ups on, next {}',fuDay(b.follow_ups.next_at)):t('Follow-ups on'))}</button>`:'';
+const fuNudge=(b,s)=>b.team||!b.follow_ups||b.follow_ups.on?'':` · <button type="button" class="fu-nudge" data-fu-open="board:${b.id}" data-fu-for="${esc(s.name)}">${esc(t('Follow them up'))}</button>`;
 const fuAct=a=>{const ch=FU_CHANNELS[a.channel]||a.channel;return a.state==='sent'?(a.auto?t('Follow-up {} sent automatically ({})',a.n,ch):t('Follow-up {} sent ({})',a.n,ch)):a.state==='open'?t('Follow-up {} ready to review',a.n):a.state==='skipped'?t('Follow-up {} skipped',a.n):a.why==='replied'?t('They replied before follow-up {}',a.n):t('Follow-up {} not needed',a.n)};
 const fuBox=n=>{const f=n.follow_up;if(!f)return '';const end=f.ends?.[0];
  const line=!f.on?t('Follow-ups off'):f.state==='open'?t('Follow-up ready'):f.next_at?t('Next follow-up: {}',fuDay(f.next_at)):end&&f.state==='stopped'?fuNoReply(end.n):t('Follow-ups on');
@@ -7866,8 +7869,10 @@ const fuBox=n=>{const f=n.follow_up;if(!f)return '';const end=f.ends?.[0];
  return `<div class="graph-fu"><p><span>${esc(line)}</span> <button type="button" class="link" data-fu-open="${esc(n.id)}">${esc(t('Follow-ups…'))}</button></p>${acts?`<ol aria-label="${esc(t('Follow-ups'))}">${acts}</ol>`:''}</div>`};
 const fuMoveReason=(m,n)=>{const end=(n.follow_up?.ends||[]).find(e=>String(e.at).slice(0,16)===String(m.at).slice(0,16));return end?fuNoReply(end.n):m.reason||''};
 let fu=null;
-async function fuOpen(ref){const i=ref.indexOf(':'),scope=ref.slice(0,i),id=ref.slice(i+1);
+// From a stage's "Follow them up": on is ticked, and that stage too when it isn't on already (nothing is saved before Save)
+async function fuOpen(ref,stage){const i=ref.indexOf(':'),scope=ref.slice(0,i),id=ref.slice(i+1);
  try{const r=await graphPost('follow_up_settings',{scope,id});fu={...r,s:{...r.settings,stages:{...(r.settings.stages||{})}},custom:Object.keys(r.settings.stages||{}).length>0,mode:r.scope==='project'?(r.own?(r.settings.on?'on':'off'):r.board?'board':'off'):''};
+  const st=stage&&scope==='board'&&fu.stages?.find(x=>x.name===stage);if(stage&&scope==='board'){fu.s.on=true;if(st&&!(fu.s.stages[st.name]?.on??st.open)){fu.custom=true;fu.s.stages[st.name]={...fu.s.stages[st.name],on:true}}}
   fuDraw();const d=$('#fu-dialog');if(!d.open)d.showModal();d.querySelector('input:not(:disabled)')?.focus()}catch(e){errCaught(e);toast(e.message,true)}}
 function fuDraw(){const f=$('#fu-form'),s=fu.s,proj=fu.scope==='project',on=proj?fu.mode==='on':s.on,stagesOn=fu.stages?.filter(x=>(s.stages[x.name]?.on??x.open)).length;
  const num=(name,v,min,max,label)=>`<input type="number" inputmode="numeric" name="${name}" value="${esc(v)}" min="${min}" max="${max}" aria-label="${esc(label)}">`;
@@ -7900,7 +7905,7 @@ $('#fu-form').addEventListener('submit',async e=>{e.preventDefault();if(!fu)retu
  btn.disabled=true;try{await graphPost('follow_up_save',{scope:fu.scope,id:fu.id,settings});$('#fu-dialog').close();toast(t('Follow-ups saved.'));if(!$('#people').hidden)await people(graphNode,true);refresh().catch(()=>{})}
  catch(x){errCaught(x);err.textContent=x.message;err.hidden=false}finally{btn.disabled=false}});
 $('#fu-dialog').addEventListener('close',()=>{fu=null});
-document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-open]');if(!b)return;e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');fuOpen(b.dataset.fuOpen)},true);
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-open]');if(!b)return;e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');fuOpen(b.dataset.fuOpen,b.dataset.fuFor)},true);
 // The board's follow-ups as one to-do: "8 follow-ups ready for <board>", in Ready once one is written, else in Preparing
 // as "Follow-ups for <board>". Each is in it from the start, also alone: never a to-do of its own in any list, so a board
 // with follow-ups on is one to-do to review, not one per email. While drafts are written it says "Writing 3 follow-ups…".

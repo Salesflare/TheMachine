@@ -10,7 +10,7 @@ When a person on a board stops replying, your Machine drafts the follow-up for y
 
 ## Turn it on
 
-**⋯** on a board, then **Follow-ups…**, and tick **Follow up when there’s no reply**. It covers every project on that board.
+**⋯** on a board, then **Follow-ups…**, and tick **Follow up when there’s no reply**. It covers every project on that board. Or tap **Follow-ups off** under the board's name, or **Follow them up** in a stage with projects that got no reply in 10+ days.
 
 For one project, **Follow-ups…** in its card's **⋯** or on its page. **For this project** picks **On**, **Off**, or the board's setting. A project's own setting wins over its board's.
 

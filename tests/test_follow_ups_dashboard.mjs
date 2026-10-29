@@ -7,7 +7,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Automated follow-ups on the dashboard (follow_ups.py): a board's ready follow-ups are ONE to-do ("3 follow-ups ready
 // for …") that opens a fast review: j/k or arrows move, Enter sends (confirm_action), e edits (revise_draft), s skips
 // (decide reject), Send all checked sends the checked ones; a project's own follow-up stays a normal to-do. The board
-// header says "Follow-ups on, next …", a tile "Next follow-up: …", the project page what went out. The settings panel
+// header says "Follow-ups on, next …" (or "Follow-ups off"), a stage with no-reply projects "Follow them up", a tile "Next follow-up: …", the project page what went out. The settings panel
 // for a board and for a project posts follow_up_save. Nothing is wider than the screen. FOLLOW_UPS_SHOT=<dir> writes
 // screenshots at 390 and 1440, light and dark.
 const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
@@ -24,6 +24,7 @@ const reset=()=>{progress=[];suggestions=[card(1,'Acme pilot','Hi Sam, did the a
 reset();
 const stages=[{name:'Invited'},{name:'Testing'},{name:'Live'},{name:'Stalled or declined',side:true}];
 const proj=(i,name,stage,follow_up)=>({id:'project:'+i,name,stage,reason:'they replied to the invite',by:'review',at:day(-3),event_id:100+i,first:false,days:3,no_reply_days:0,org:{name,logo:null},follow_up});
+let boardsNow=null;
 const boards=[{id:1,name:'Alpha testers',stages,side:true,visibility:'team',follow_ups:{on:true,next_at:day(2)},projects:[
  proj(1,'Acme pilot','Invited',{state:'open',n:1,max:3}),proj(2,'Bolt trial','Testing',{state:'open',n:1,max:3}),proj(5,'Ember labs','Testing',{state:'waiting',next_at:day(2),n:1,max:3}),
  proj(6,'Fjord studio','Invited',{state:'stopped',end:{n:3,moved:0,judged:0,at:day(-1)}}),proj(7,'Grove co','Live')]}];
@@ -38,9 +39,9 @@ let calls=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,follow_up_progress:progress,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
- if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');res.end(JSON.stringify(n?detail:{projects:[],people:[],quiet:[],new:[],orgs:[],boards}));return}
+ if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');res.end(JSON.stringify(n?detail:{projects:[],people:[],quiet:[],new:[],orgs:[],boards:boardsNow||boards}));return}
  if(req.method==='POST'&&url.pathname==='/api/action'){const c=JSON.parse(body||'{}');calls.push(c);const a=c.args||{};
-  if(c.action==='follow_up_settings'||c.action==='follow_up_save'){res.end(JSON.stringify(panel(a.scope,a.id)));return}
+  if(c.action==='follow_up_settings'||c.action==='follow_up_save'){const v=panel(a.scope,a.id);if(boardsNow&&a.scope==='board')v.settings.on=false;res.end(JSON.stringify(v));return}
   if(c.action==='revise_draft'){const s=suggestions.find(x=>x.id===a.suggestion_id);s.next_action={...s.next_action,body:a.body,revision:a.revision+'e'};res.end(JSON.stringify({revision:a.revision+'e',body:a.body}));return}
   if(c.action==='confirm_action'){suggestions=suggestions.filter(x=>x.id!==a.suggestion_id);res.end(JSON.stringify({status:'queued'}));return}
   if(c.action==='decide'){suggestions=suggestions.filter(x=>x.id!==c.args.suggestion_id);res.end(JSON.stringify({status:'rejected'}));return}
@@ -238,6 +239,57 @@ try{
    assert.equal(await page.evaluate(el=>el.isConnected,first),false);assert.ok(Math.abs(await list.evaluate(l=>l.scrollTop)-at)<=1,'the poll moved the list');
    assert.equal(await dlg.locator('.fr-item.on b').textContent(),'Fjord studio')}
   await context.close()}
+ // Follow-ups off: the board's line says "Follow-ups off" and opens the same settings; a stage with no-reply projects offers
+ // "Follow them up", which opens them with on ticked and that stage on (Live isn't an open stage, so it's customized to on).
+ // Not with follow-ups on, not in a stage without no-reply projects, never on a Team board (not theirs to change).
+ {const stuck=(i,name,stage)=>({...proj(i,name,stage),no_reply_days:12});
+  const off={id:1,name:'Alpha testers',stages,side:true,visibility:'team',follow_ups:{on:false,next_at:null},
+   projects:[stuck(1,'Acme pilot','Testing'),stuck(2,'Bolt trial','Testing'),proj(3,'Cobalt rollout','Invited'),stuck(4,'Delta renewal','Live')]};
+  const team={id:9,name:'Team pipeline',team:true,stages,visibility:'team',owner_name:'Sam',projects:[stuck(11,'Hollow inc','Testing')]};
+  for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']]){
+   reset();boardsNow=[off];const {context,page}=await open(width,height,scheme);await toBoard(page);
+   assert.equal((await page.locator('.board-sub .fu-state').textContent()).trim(),'Follow-ups off');
+   await fits(page,width+' board off');await shot(page,`board-off-${width}-${scheme}`);
+   if(width>600){
+    assert.deepEqual(await page.locator('.lane').evaluateAll(l=>l.map(x=>[x.dataset.lane,x.querySelector('.fu-nudge')?.textContent||''])),
+     [['Invited',''],['Testing','Follow them up'],['Live','Follow them up'],['Stalled or declined','']]);
+    assert.match(await page.locator('.lane[data-lane="Testing"] .lane-sum').textContent(),/^2 with no reply in 10\+ days · Follow them up$/);
+    await shot(page,`lane-nudge-${width}-${scheme}`,page.locator('.lane[data-lane="Testing"]'))}
+   else{assert.equal(await page.locator('.lane.on .fu-nudge').count(),0);  // Invited: no no-reply projects
+    await page.locator('[data-stage-tab="Testing"]').click();await page.locator('.lane.on[data-lane="Testing"] .fu-nudge').waitFor();
+    await fits(page,'390 nudge');await shot(page,`lane-nudge-${width}-${scheme}`)}
+   // The line opens the board's settings as they are
+   calls=[];await page.locator('.board-sub .fu-state').click();const fu=page.locator('#fu-dialog');await fu.locator('[name=on]').waitFor();
+   assert.deepEqual(calls.map(c=>[c.action,c.args.scope,c.args.id]),[['follow_up_settings','board','1']]);
+   assert.equal(await fu.locator('[name=on]').isChecked(),false);assert.equal(await fu.locator('[name=days]').isDisabled(),true);
+   await page.keyboard.press('Escape');await fu.waitFor({state:'hidden'});
+   if(width>600){
+    // "Follow them up" in Live: on ticked, Live customized on, the open stages as they were; nothing saved before Save
+    calls=[];await page.locator('.lane[data-lane="Live"] .fu-nudge').click();await fu.locator('[data-fu-stage]').first().waitFor();
+    assert.deepEqual(calls.map(c=>c.action),['follow_up_settings']);
+    assert.equal(await fu.locator('[name=on]').isChecked(),true);
+    assert.deepEqual(await fu.locator('[data-fu-stage]').evaluateAll(l=>l.map(i=>i.checked)),[true,true,true]);
+    await fits(page,width+' nudge settings');await shot(page,`settings-from-nudge-${width}-${scheme}`,fu);
+    calls=[];await fu.locator('button.primary').click();await fu.waitFor({state:'hidden'});
+    const save=calls.find(c=>c.action==='follow_up_save');assert.equal(save.args.settings.on,true);
+    assert.deepEqual(save.args.settings.stages,{Invited:{on:true},Testing:{on:true},Live:{on:true}});
+    // In Testing (an open stage): on ticked, the stages stay "All open stages"
+    await page.locator('.lane[data-lane="Testing"] .fu-nudge').click();await fu.locator('[name=on]').waitFor();
+    assert.equal(await fu.locator('[name=on]').isChecked(),true);assert.equal(await fu.locator('[data-fu-stage]').count(),0);
+    assert.match(await fu.locator('.fu-line').textContent(),/All open stages/);
+    await page.keyboard.press('Escape');await fu.waitFor({state:'hidden'})}
+   else{calls=[];await page.locator('.lane.on .fu-nudge').click();await fu.locator('[name=on]').waitFor();
+    assert.equal(await fu.locator('[name=on]').isChecked(),true);await fits(page,'390 nudge settings');await shot(page,`settings-from-nudge-${width}-${scheme}`);
+    await page.keyboard.press('Escape');await fu.waitFor({state:'hidden'})}
+   // On: no nudge, the line as before
+   boardsNow=[{...off,follow_ups:{on:true,next_at:day(2)}}];await page.reload();await toBoard(page);
+   assert.match(await page.locator('.board-sub .fu-state').textContent(),/^Follow-ups on, next \w{3}$/);
+   assert.equal(await page.locator('.fu-nudge').count(),0);await shot(page,`board-on-${width}-${scheme}`);
+   // A Team board: neither the line nor the nudge
+   boardsNow=[team];await page.reload();await toBoard(page);
+   assert.equal(await page.locator('.board-sub .fu-state').count(),0);assert.equal(await page.locator('.fu-nudge').count(),0);
+   await context.close()}
+  boardsNow=null}
  reset();
  // Phone, light and dark: the same pieces fit the screen
  for(const scheme of ['light','dark']){reset();const {context,page}=await open(390,844,scheme);
