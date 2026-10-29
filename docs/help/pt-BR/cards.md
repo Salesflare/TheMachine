@@ -36,6 +36,8 @@ Uma tarefa nova tem **Fazer**, **Marcar como feita**, **Adiar**, **Fazer de outr
 
 Uma tarefa fechada pode voltar com **Reabrir**. Ela também volta sozinha quando acontece algo novo, como uma nova mensagem da pessoa. Uma resposta sua não faz a tarefa voltar.
 
+Uma tarefa que só importava até um certo momento, como uma confirmação antes de uma reunião, fecha sozinha quando esse momento passa. Ela vai para as feitas com "Não precisa mais" e quando foi. **Desfazer** traz a tarefa de volta por um dia.
+
 Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencial: **Fazer de outro jeito** (ou **Pedir mudanças**) e **Não precisa** quando uma tarefa não está bem certa, e no seu primeiro rascunho pronto, que nada sai até você tocar em **Enviar**. Uma dica some de vez assim que você usa o botão dela ou toca no ×, em todos os seus aparelhos.
 
 Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização, o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph.

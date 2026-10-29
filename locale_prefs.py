@@ -15,6 +15,7 @@ shows the same list; None until it is first set (a dashboard then brings the one
 The dashboard gets view() and formats with the same rules (dashboard.html, applyLocale)."""
 from __future__ import annotations
 
+import datetime as dt
 import functools
 import re
 import zoneinfo
@@ -268,3 +269,60 @@ def range_text(start, end):
     """'2:00 PM–3:00 PM' or '14:00–15:00'."""
     return clock_text(start) + '–' + clock_text(end)
 
+
+
+# Relative day words, which go stale once the day they were written on has passed ("Today at 13:30" read a day later).
+# Text that is stored and read later (a to-do's title and summary) names the day instead: undated() rewrites these.
+# French "hier" is left out: it is also Dutch and German for "here".
+RELATIVE_DAYS = {
+    'en': {'today': 0, 'tomorrow': 1, 'yesterday': -1},
+    'nl': {'vandaag': 0, 'morgen': 1, 'gisteren': -1},
+    'fr': {"aujourd'hui": 0, 'aujourd’hui': 0, 'demain': 1},
+    'de': {'heute': 0, 'morgen': 1, 'gestern': -1},
+    'es': {'hoy': 0, 'mañana': 1, 'ayer': -1},
+    'it': {'oggi': 0, 'domani': 1, 'ieri': -1},
+    'pt-BR': {'hoje': 0, 'amanhã': 1, 'ontem': -1},
+}
+# "mañana" and "Morgen" also mean the morning: after these words they stay ("esta mañana", "am Morgen", "goede morgen").
+MORNING_BEFORE = frozenset('la esta cada una media toda am den jeden guten heute diesen dem der einen goede iedere elke'.split())
+# Small words that tell Dutch from German when "morgen" alone could be either.
+_HINTS = {'nl': frozenset('om de het en met van een op voor naar is'.split()), 'de': frozenset('um der die das und mit von ein für nach ist'.split())}
+_WORDS = sorted({w for words in RELATIVE_DAYS.values() for w in words}, key=len, reverse=True)
+_RELATIVE = re.compile(r"(?<![\w'’])(" + '|'.join(re.escape(w) for w in _WORDS) + r")(?![\w'’-])", re.I)
+_QUOTED = re.compile(r'“[^”]*”|"[^"]*"|„[^“”]*[“”]|«[^»]*»')
+
+
+def _language_of(word, text, hint):
+    langs = [code for code, words in RELATIVE_DAYS.items() if word in words]
+    if len(langs) == 1:
+        return langs[0]
+    if hint in langs:
+        return hint
+    tokens = re.findall(r'\w+', text.lower())
+    return max(langs, key=lambda code: sum(t in _HINTS.get(code, ()) for t in tokens))
+
+
+def undated(text, moment, hint=None):
+    """(text, found): stored text with its relative day words ("today", "morgen", "domani") replaced by that day as a
+    date in the same language ('Vandaag om 13:30' written on Wed Oct 28 -> 'Wo 28 okt om 13:30'), so it stays true on
+    later days. moment is when it was written, in the owner's time zone. Quoted words ("see you tomorrow") and a
+    possessive ("today's") stay as they are. found lists the words that were replaced."""
+    text = str(text or '')
+    quoted = [m.span() for m in _QUOTED.finditer(text)]
+    found, out, last = [], [], 0
+    for m in _RELATIVE.finditer(text):
+        word, start = m.group(1), m.start()
+        lower = word.lower()
+        before = re.findall(r'\w+', text[:start].lower())[-1:]
+        if any(a <= start < b for a, b in quoted) or text[m.end():m.end() + 2] in ("'s", '’s'):
+            continue
+        if lower in ('mañana', 'morgen') and before and before[0] in MORNING_BEFORE:
+            continue
+        lang = _language_of(lower, text, hint)
+        day = day_text(moment + dt.timedelta(days=RELATIVE_DAYS[lang][lower]), lang=lang)
+        if word[0].isupper():
+            day = day[0].upper() + day[1:]
+        out.append(text[last:start] + day)
+        last = m.end()
+        found.append(word)
+    return ''.join(out) + text[last:], found

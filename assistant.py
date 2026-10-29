@@ -414,6 +414,58 @@ def title_kept(outcome=None, finish_state=None, send_now=False):
     return (outcome or {}).get('state') in ('done', 'already_done') or finish_state == 'completed' or send_now
 
 
+def undated_card(*texts):
+    """([texts], found): a review's title and summary with relative day words ("today", "morgen") replaced by the day
+    itself, in the words' own language, so the to-do still reads right on later days (locale_prefs.undated)."""
+    moment, hint, out, found = dt.datetime.fromisoformat(now()).astimezone(local_tz()), locale_prefs.language(), [], []
+    for text in texts:
+        if text is None:
+            out.append(text)
+            continue
+        text, words = locale_prefs.undated(text, moment, hint)
+        out.append(text)
+        found.extend(words)
+    return out, found
+
+
+def event_start(rows):
+    """The start of the first timed calendar event among a card's evidence (in its order), as UTC; None without one."""
+    for row in rows:
+        if row['kind'] != 'calendar.event':
+            continue
+        try:
+            meta = json.loads(row['metadata'] or '{}')
+            if meta.get('status') == 'cancelled' or not (meta.get('start') or {}).get('dateTime'):
+                continue
+            return calendar_time(meta['start'], meta.get('timezone') or str(local_tz()))
+        except (ValueError, TypeError, KeyError, AttributeError):
+            continue
+    return None
+
+
+def expiry_moment(at, what, rows=()):
+    """(expires_at as UTC, expires_what) for a card whose whole point is a moment: an ISO time (its offset, or the
+    owner's time zone without one) or a day (its end). When the card's evidence has a calendar event, its start is the
+    moment, whatever time the review wrote: the calendar is the truth. Raises for a moment that already passed."""
+    what = ' '.join(str(what or '').split())
+    at = event_start(rows) or at
+    if not at or not what or len(what) > 80:
+        raise ValueError('expires_at (the moment, e.g. 2026-10-28T13:30+01:00) goes with expires_what (what it is, '
+                         'in a few words: "the meeting with Sam")')
+    try:
+        text = str(at)
+        moment = (dt.datetime.combine(dt.date.fromisoformat(text), dt.time(23, 59)) if len(text) == 10
+                  else dt.datetime.fromisoformat(text))
+    except ValueError:
+        raise ValueError('expires_at is an ISO time with its offset, like 2026-10-28T13:30+01:00, or a day') from None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=local_tz())
+    moment = moment.astimezone(dt.timezone.utc)
+    if moment.isoformat() <= now():
+        raise ValueError('That moment has passed already, so this to-do is not needed')
+    return moment.isoformat(timespec='seconds'), undated_card(what)[0][0]
+
+
 NOTHING_SENT = re.compile(r'\s*Nothing (?:was |has been )?(?:sent|submitted|posted)(?: or (?:changed|submitted|posted|sent))?(?: yet)?\.?\s*$', re.I)
 
 
@@ -3602,6 +3654,11 @@ class Store:
             for column in ['closed_from','closed_decision_id','undo_until','closed_state']:
                 if column not in columns:
                     db.execute('ALTER TABLE suggestions ADD COLUMN '+column+' TEXT')
+            # A to-do whose whole point is a moment (a confirmation or reminder before a meeting): the review's expires_at and
+            # expires_what ("the meeting with Sam"). Once it passes the to-do closes by itself (Store.expire_passed: expired_at).
+            for column in ['expires_at','expires_what','expired_at']:
+                if column not in columns:
+                    db.execute('ALTER TABLE suggestions ADD COLUMN '+column+' TEXT')
             delivery_columns = {r['name'] for r in db.execute('PRAGMA table_info(deliveries)')}
             if 'reminder' not in delivery_columns:
                 db.execute('ALTER TABLE deliveries ADD COLUMN reminder INTEGER NOT NULL DEFAULT 0')
@@ -5272,16 +5329,19 @@ class Store:
         return {'status': 'complete', **({'stages': moved} if moved else {})}
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
-                card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None):
+                card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None):
         """A new card, or with match (the review) the existing card about the same matter brought up to date:
         card_id names the card the reviewer judged to be the same matter, separate says it is a different one.
         suggestion_id: the new card's id, when the caller made its evidence first (owner_card). owner_step: the step is
-        one only the owner can do (True), one The Machine can do (False), or unchanged on an update (None)."""
+        one only the owner can do (True), one The Machine can do (False), or unchanged on an update (None).
+        expires_at, expires_what: the moment the card's whole point is tied to, and what it is ("the meeting with Sam");
+        once it has passed the card closes by itself (expire_passed)."""
         if _db is None:
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 return self.suggest(dedupe_key, title, body, event_ids, when, digest_at, work, urgent, due, ahead, awaiting, project,
-                                    card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step)
+                                    card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step,
+                                    expires_at=expires_at, expires_what=expires_what)
         if not dedupe_key or not title or not body or not event_ids:
             raise ValueError('Evidence, title, body and stable dedupe_key are required')
         if due is not None:
@@ -5299,6 +5359,8 @@ class Store:
             rows = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchall()
             if {r['id'] for r in rows} != set(event_ids):
                 raise ValueError('Every evidence event must exist and be live')
+            expiry = expiry_moment(expires_at, expires_what, sorted(rows, key=lambda r: event_ids.index(r["id"]))) \
+                if expires_at is not None or expires_what is not None else None
             if all(r['kind'] == 'calendar.event' and not calendar_owned(json.loads(r['metadata'])) for r in rows):
                 raise ValueError("That meeting is on someone else's calendar that the owner can see, and they aren't on it: "
                                  'not theirs, so no card for it')
@@ -5341,6 +5403,8 @@ class Store:
                 saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen)
                 if owner_step is not None and not saved.get('attached'):
                     db.execute('UPDATE suggestions SET owner_step=? WHERE id=?', (int(bool(owner_step)), target['id']))
+                if expiry and not saved.get('attached'):
+                    db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, target['id']))
                 return saved
             if due:
                 # A deadline within three days goes out now; one that the
@@ -5367,6 +5431,8 @@ class Store:
                        (suggestion_id, dedupe_key[:240], title[:300], body[:5000], encoded(event_ids),
                         encoded(sorted({r['account_id'] for r in rows})), now(), deliver_after, source_line(sorted([dict(r) for r in rows],key=lambda r:event_ids.index(r['id']))), int(urgent), due,
                         int(bool(owner_step))))
+            if expiry:
+                db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, suggestion_id))
             db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)',
                        (suggestion_id, 'previewed' if preview else 'queued', now()))
             if preview and wanted:
@@ -5438,7 +5504,7 @@ class Store:
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,deliver_after=?,urgent=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ',status=?,'
                    'early=?,outcome=CASE WHEN status=? THEN outcome ELSE NULL END,snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
-                   'feedback_until=NULL WHERE id=?',
+                   'feedback_until=NULL,expires_at=CASE WHEN expired_at IS NULL THEN expires_at END,expired_at=NULL WHERE id=?',
                    (suggested[:300], suggested[:300], body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence]),
                     deliver_after, int(urgent or bool(card['urgent'])), due, status, int(bool(ahead)), status, sid))
         was = (f"Updated with a new signal{' and brought back' if waiting else ' and reopened' if closed else ''}."
@@ -6400,7 +6466,7 @@ class Store:
         with self.connect() as db:
             cards = [dict(r) for r in db.execute(
                 "SELECT s.id,s.status,(SELECT e.kind FROM events e WHERE e.id=json_extract(s.event_ids,'$[0]')) kind FROM suggestions s "
-                "WHERE s.created_at>=? AND s.created_at<? AND s.id NOT IN (SELECT suggestion_id FROM decisions WHERE id LIKE 'followed-up:%')", (since, end))]
+                "WHERE s.created_at>=? AND s.created_at<? AND s.id NOT IN (SELECT suggestion_id FROM decisions WHERE id LIKE 'followed-up:%' OR id LIKE 'expired:%')", (since, end))]
             choices = collections.defaultdict(list)
             for d in db.execute("SELECT d.suggestion_id,d.choice,k.kind FROM decisions d LEFT JOIN note_kinds k ON k.decision_id=d.id "
                                 "WHERE d.source IN ('telegram','dashboard') AND d.created_at>=? ORDER BY d.created_at", (since,)):
@@ -7362,6 +7428,7 @@ class Store:
             previous=json.loads(row['closed_state'] or '{}')
             db.execute('UPDATE suggestions SET status=?,snoozed_until=?,resume_status=?,undo_until=NULL,feedback_until=NULL WHERE id=?',
                        (restored,previous.get('snoozed_until'),previous.get('resume_status'),suggestion_id))
+            db.execute('UPDATE suggestions SET expires_at=NULL,expired_at=NULL WHERE id=? AND expired_at IS NOT NULL',(suggestion_id,))  # theirs now: it stays
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
             prior=previous.get('preparation') or {}
             if restored in ('accepted','instructions') and prior.get('status') == 'blocked' and db.execute(
@@ -7411,6 +7478,7 @@ class Store:
                        (decision_id,suggestion_id,choice,feedback[:5000],source,now()))
             db.execute('UPDATE suggestions SET status=?,completed_from=?,snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,feedback_request_id=NULL,undo_until=NULL WHERE id=?',
                        (restored,restored,suggestion_id))
+            db.execute('UPDATE suggestions SET expires_at=NULL,expired_at=NULL WHERE id=? AND expired_at IS NOT NULL',(suggestion_id,))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             if restored in ('accepted','instructions'):
                 self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
@@ -7457,6 +7525,38 @@ class Store:
         if choice in ['reject','complete']:
             db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'",(suggestion_id,))
         return {'status': status, 'snoozed_until': until, 'note': 'Preference saved. Acceptance does not execute or authorize an unspecified external action.'}
+
+    def expire_passed(self, undo_hours=24):
+        """To-dos whose whole point was a moment that has passed (a confirmation or reminder before a meeting: the review's
+        expires_at) close by themselves: Done, "No longer needed", with Undo for a day. Not while a send of theirs is
+        under way. Returns the closed ids."""
+        stamp, closed = now(), []
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rows = db.execute("SELECT * FROM suggestions WHERE expires_at IS NOT NULL AND expires_at<=? AND expired_at IS NULL "
+                              "AND status IN ('pending','accepted','instructions','prepared','snoozed')", (stamp,)).fetchall()
+            for row in rows:
+                sid = row['id']
+                if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
+                    continue  # a send on its way settles first
+                decision_id = 'expired:' + uuid.uuid4().hex
+                prior_job = db.execute('SELECT job_id,status FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()
+                resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
+                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                           (decision_id, sid, 'complete', 'No longer needed: its moment passed.', 'expiry', stamp))
+                db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
+                           'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,expired_at=? WHERE id=?',
+                           (resume if resume in ('pending', 'accepted', 'prepared', 'instructions') else 'pending', row['status'], decision_id,
+                            (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
+                            encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}),
+                            stamp, sid))
+                db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, sid))
+                pause_idle_steps(db, sid)
+                db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
+                db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (sid,))
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
+                closed.append(sid)
+        return closed
 
     def wake_snoozed(self):
         with self.connect() as db:
@@ -10921,6 +11021,13 @@ def merge_state(row, state):
     return any(a.get('kind') == 'merge' and (a.get('state') or row.get('action_status')) == state for a in items)
 
 
+def expired_text(row):
+    """The Done line of a to-do that closed by itself once its moment passed. A Telegram message keeps it as written, so
+    it names the day; the dashboard says today or yesterday from the stored time when it shows it."""
+    at = dt.datetime.fromisoformat(row['expires_at']).astimezone(local_tz())
+    return i18n.t('No longer needed: {} was on {} at {}.', row.get('expires_what') or '', locale_prefs.day_text(at), locale_prefs.clock_text(at))
+
+
 def card(row):
     title = row['title'].replace('*', '').replace('_', '')
     t = i18n.t  # what Telegram shows, in the owner's language
@@ -10991,6 +11098,8 @@ def card(row):
             status = t('{} replied, so I closed this.', handed['name'])
         elif row['status'] == 'prepared':
             status = t('No reply from {} yet.', handed['name'])
+    if row['status'] == 'completed' and row.get('expired_at') and row.get('expires_at'):
+        status = expired_text(row)  # its moment passed: closed by itself (Store.expire_passed)
     if row['status'] not in ('completed','rejected','snoozed') and row.get('change_prompt',{}).get('status')=='uncertain':
         status+='\n'+t('I couldn’t confirm the message asking what to change. If it arrived, reply to it; otherwise use Change on the dashboard.')
     # A hashtag, so tapping it in Telegram lists every #work or #personal card.
@@ -13048,6 +13157,7 @@ Team: when begin_analysis lists team (Work messages, shared with the owner's Wor
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
 Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
 When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
+Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
 Meeting notes and transcripts (Zoom's, or added to the meeting: meeting.notes, meeting.transcript) are that meeting's own record: use them for follow-ups on it, its next steps and who took them on, with the notes and the calendar event as evidence.
 Promises: when a message in this batch commits the owner to doing something for someone, or someone to doing something for the owner, record it with promise (direction, event_id, who, what: the promised action alone, without who confirmed it or how, due when a date was said, owner_step as above). Judge what a message means between these people in its conversation, not its wording: most commitments are never spelled out (agreeing to a request, taking on something the owner asked, accepting a plan), and the same reply can commit one person and be politeness from another, depending on language, habits and the relationship. Read earlier_in_conversation for what was asked. It is not a card; the service checks it when due. When a signal shows an open promise below kept, canceled or moved, update it with promise and its id.
 Messages are disabled in this turn. Do not work on anything else. End with exactly NO_REPLY.''' + sources + (f'''
@@ -14356,13 +14466,19 @@ class App:
             with self.store.connect() as db:
                 source_accounts={r[0] for r in db.execute('SELECT account_id FROM events WHERE id IN ('+','.join('?' for _ in args['event_ids'])+')',args['event_ids'])} if args['event_ids'] else set()
             work=any(a['id'] in source_accounts and a.get('boundary','').startswith('work:') for a in self.config['accounts'])
-            saved = self.store.suggest(args['dedupe_key'], args['title'], args['body'], args['event_ids'], args.get('when') or 'digest',
+            # A title or summary that says "today" or "tomorrow" is wrong the day after: saved with the day itself
+            (title, body), stale = undated_card(str(args['title'] or ''), str(args['body'] or ''))
+            saved = self.store.suggest(args['dedupe_key'], title, body, args['event_ids'], args.get('when') or 'digest',
                                        self.config.get('digest_at', '08:30'),work=work,urgent=args.get('urgent') is True,due=args.get('due'),
                                        ahead=args.get('prepare_ahead') is True and self.config.get('prepare_ahead', True) is not False
                                        and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10))),
                                        awaiting=args.get('awaiting_event_id'),project=args.get('project'),card_id=args.get('card_id'),
                                        separate=args.get('separate') is True,reopen=args.get('reopen') is True,match=True,
-                                       owner_step=(args['owner_step'] is True) if 'owner_step' in args else None)
+                                       owner_step=(args['owner_step'] is True) if 'owner_step' in args else None,
+                                       expires_at=args.get('expires_at'), expires_what=args.get('expires_what'))
+            if isinstance(saved, dict) and stale:
+                saved['dates'] = (f"Saved {', '.join(sorted({w.lower() for w in stale}))} as the day itself: a to-do is read on later days, so name "
+                                  'the weekday or date, never today, tomorrow or yesterday.')
             if isinstance(saved, dict) and saved.get('id') and args.get('skill_hint') and getattr(self, 'skills', None):
                 saved['skill_hint'] = self.skills.hint(saved['id'], args['skill_hint'])  # "There's a skill for this", if it clearly helps
             unknown = self.store.no_role_yet(args['event_ids'])
@@ -14382,6 +14498,9 @@ class App:
             if not str(args.get('body') or '').strip():
                 if not str(args.get('reply') or '').strip():raise ValueError('A concrete local preparation is required')
                 args={**args,'body':row['body'] or args['reply']}
+            # The card's status and title stay true on later days: "tomorrow" is saved as that day (undated_card)
+            (body,title),_=undated_card(str(args['body']),args['title'] if isinstance(args.get('title'),str) else None)
+            args={**args,'body':body,**({'title':title} if title is not None else {})}
             if args.get('next_action') and args.get('next_actions'):raise ValueError('Use next_action or next_actions, not both')
             with self.store.connect() as db:
                 emails=db.execute("SELECT e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='gmail.message' ORDER BY e.occurred_at DESC",(row['event_ids'],)).fetchall()
@@ -17474,9 +17593,12 @@ class App:
         about = max(((i['at'], i['from']) for i in owner if i['kind'] == 'source' and not i['mine'] and i['from']), default=(0, ''))[1]  # the latest who wrote
         waiting = False  # with a teammate: Later means back to check in, not a snooze of the owner's
         sent_files = chat_files.listed(db, [r['id'] for r in db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice='other' AND source='dashboard'", (suggestion_id,))])
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
+            if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
+                owner.append({'kind': 'event', 'text': 'Closed by itself: no longer needed', 'choice': 'complete', 'at': at})
+                continue
             if r['source'] == 'fleet' or r['choice'] != 'snooze':
                 was, waiting = waiting, r['source'] == 'fleet' and r['id'].startswith('fleet-handoff-wait-')
                 if r['source'] == 'fleet':
@@ -17747,6 +17869,15 @@ class App:
             except Exception as error:LOG.error('sign-in watch error=%s',type(error).__name__)
             try:self.seal_attachments()
             except Exception as error:LOG.error('attachment seal error=%s',type(error).__name__)
+            try:self.expire_step()
+            except Exception as error:LOG.error('expiry error=%s',type(error).__name__)
+
+    def expire_step(self, every=30):
+        """To-dos whose moment passed close by themselves (Store.expire_passed), about every half minute."""
+        if time.monotonic() - self.__dict__.get('expired_swept', -every) < every:
+            return
+        self.expired_swept = time.monotonic()
+        self.store.expire_passed()
 
     def seal_attachments(self, every=60):
         """Email attachments that ended runs took are sealed in place and the runs' readable copies removed
