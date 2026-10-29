@@ -17,7 +17,7 @@ Voor één project: **Opvolging…** in de **⋯** van de kaart of op de project
 ## Instellingen
 
 - Wacht 3 tot 7 dagen zonder antwoord. Na de kortste wachttijd komt er een concept. De langste is het uiterste moment waarop de opvolging vertrekt, ook als je verbruik krap zit.
-- Volg minstens 1 en hoogstens 3 keer op. Het minimum gaat altijd weg. Daartussen leest hij het gesprek en het project en volgt hij alleen op als dat nog zin heeft. Nooit meer dan het maximum.
+- Volg minstens 1 en hoogstens 3 keer op. Het minimum gaat altijd weg. Daartussen schrijft hij toch elke opvolging. Denkt hij dat je beter stopt, dan staat bij het concept waarom ("The Machine zou hier stoppen: 9 onbeantwoorde e-mails sinds augustus") en is het niet aangevinkt: verstuur het, sla het over of kies **Opvolgingen hier stoppen**. Vraag je er toch een in de chat van een opvolging, dan schrijft hij er een. Nooit meer dan het maximum.
 - **Fases**: **Alle open fases**, dus niet de laatste fase van het bord en niet Vastgelopen of afgewezen. **Aanpassen** zet fases aan of uit en geeft een fase een eigen wachttijd.
 - **Kanalen**: de gekoppelde kanalen die kunnen versturen. Een opvolging gaat via hetzelfde kanaal als het laatste bericht. **Ander kanaal als er geen antwoord komt** probeert het volgende toegestane.
 - **Na de laatste naar Vastgelopen of afgewezen verplaatsen**: staat aan als het bord die rij heeft.
@@ -32,11 +32,13 @@ Vlak voor het versturen wordt de thread opnieuw gecontroleerd, en als iemand sin
 
 De opvolgingen van een bord komen als één to-do, nooit één per e-mail. Terwijl ze geschreven worden staat er "3 opvolgingen worden geschreven…", daarna "8 opvolgingen klaar voor Alpha testers".
 
-**Nakijken** toont ze volledig onder elkaar, zodat je ze in één keer doorleest. **Versturen**, **Bewerken** en **Overslaan** staan bij de huidige. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt, s slaat over en c wijzigt. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is. De opvolging van één project is een gewone to-do.
+**Nakijken** toont ze volledig onder elkaar, zodat je ze in één keer doorleest. **Versturen**, **Bewerken** en **Overslaan** staan bij de huidige. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt, s slaat over en c wijzigt. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is.
 
-**Wijzigen…** herschrijft alle aangevinkte concepten, of alleen het huidige, zoals jij het zegt; er wordt niets verstuurd en **Wijziging ongedaan maken** zet de oude tekst terug.
+**Overslaan** vinkt een concept uit en zet het onderaan, met Overgeslagen en **Ongedaan maken**; het is pas echt overgeslagen als je het nakijken sluit. Een overgeslagen opvolging komt terug met **Terughalen** bij de opvolgingen van het project of op de to-do in Gedaan, zolang er geen nieuwere opvolging is. De opvolging van één project is een gewone to-do.
 
-Gaan er meerdere na elkaar weg, ook met Versturen zonder te vragen, dan verstuurt elke mailbox er één per 30 tot 45 seconden en de to-do toont hoe ver het is: "3 van 8 versturen…".
+**Wijzigen…** herschrijft alle aangevinkte concepten, of alleen het huidige, zoals jij het zegt; er wordt niets verstuurd en **Wijziging ongedaan maken** zet de oude tekst terug. Zolang het wijzigvak open is of er herschreven wordt, gaat er niets weg, en een concept dat veranderde zie je eerst opnieuw.
+
+Gaan er meerdere na elkaar weg, ook met Versturen zonder te vragen, dan verstuurt elke mailbox er één per 30 tot 45 seconden en de to-do toont hoe ver het is: "3 van 8 versturen…". **Stop met versturen** stopt de rest: een die al onderweg is gaat nog, de andere staan weer als concept in het nakijken, om later te versturen ("Gestopt. 1 verstuurd, 11 bewaard als concepten.").
 
 ## E-mails van voor je Machine
 

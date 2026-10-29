@@ -46,6 +46,9 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(c.action==='confirm_action'){suggestions=suggestions.filter(x=>x.id!==a.suggestion_id);res.end(JSON.stringify({status:'queued'}));return}
   if(c.action==='follow_up_change'){const changing=[];for(const id of a.ids){const s=suggestions.find(x=>x.id===id);if(!s)continue;changing.push({id,revision:s.next_action.revision});
    suggestions=suggestions.map(x=>x.id===id?{...x,status:'instructions',preparation_status:'queued'}:x)}res.end(JSON.stringify({changing,skipped:[]}));return}
+  if(c.action==='follow_up_stop'){progress=progress.map(p=>p.batch===a.batch?{...p,going:false,done:p.total,stopped:p.total-p.sent}:p);res.end(JSON.stringify({stopped:1,sent:1}));return}
+  if(c.action==='follow_up_end'){suggestions=suggestions.filter(x=>x.id!==a.id);res.end(JSON.stringify({id:a.id,state:'stopped'}));return}
+  if(c.action==='follow_up_bring_back'){res.end(JSON.stringify({id:a.id,status:'prepared'}));return}
   if(c.action==='decide'){suggestions=suggestions.filter(x=>x.id!==c.args.suggestion_id);res.end(JSON.stringify({status:'rejected'}));return}
   res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
@@ -91,11 +94,25 @@ try{
   await page.keyboard.press('e');const box=dlg.locator('.fr-edit');await box.waitFor();await box.fill('Hi Kim, short one: did the guide help?');await shot(page,'review-edit-1440-light');
   await page.keyboard.press('Control+Enter');await dlg.locator('.fr-edit').waitFor({state:'detached'});
   assert.deepEqual(calls.map(c=>c.action),['revise_draft']);assert.match(await dlg.locator('.fr-item.on .fr-body').textContent(),/did the guide help\?/);
-  // s skips (Not needed), and unchecking leaves one out of Send all checked
-  await page.keyboard.press('j');calls=[];await page.keyboard.press('s');await page.waitForFunction(()=>document.querySelectorAll('#fu-review .fr-item').length===1);
-  assert.deepEqual(calls.map(c=>[c.action,c.args.choice,c.args.suggestion_id]),[['decide','reject','f300000000000000']]);
-  calls=[];await dlg.locator('[data-fr-all]').click();await dlg.waitFor({state:'hidden'});
-  assert.deepEqual(calls.map(c=>[c.action,c.args.suggestion_id,c.args.revision]),[['confirm_action','f200000000000000','r2e']]);
+  // s skips: the draft stays, unchecked, dimmed and at the bottom, "Skipped" with an Undo; nothing is decided yet
+  await page.keyboard.press('k');assert.equal(await dlg.locator('.fr-item.on b').textContent(),'Bolt trial');
+  calls=[];await page.keyboard.press('s');await dlg.locator('.fr-item.skipped').waitFor();
+  assert.deepEqual(await dlg.locator('.fr-item b').evaluateAll(l=>l.map(b=>b.textContent)),['Cobalt rollout','Bolt trial']);
+  assert.equal(await dlg.locator('.fr-item.on b').textContent(),'Cobalt rollout');
+  assert.equal(await dlg.locator('.fr-item.skipped [data-fr-check]').isChecked(),false);assert.equal(await dlg.locator('.fr-item.skipped [data-fr-check]').isDisabled(),true);
+  assert.equal((await dlg.locator('.fr-item.skipped .fr-state').textContent()).trim(),'SkippedUndo');
+  assert.ok(+(await dlg.locator('.fr-item.skipped .fr-body').evaluate(el=>getComputedStyle(el).opacity))<1);
+  assert.equal((await dlg.locator('[data-fr-all]').textContent()).trim(),'Send all checked (1)');assert.deepEqual(calls,[]);
+  await shot(page,'review-skipped-1440-light');
+  // Undo puts it back where it was, checked; s again skips it
+  await dlg.locator('[data-fr-unskip]').click();await dlg.locator('.fr-item.skipped').waitFor({state:'detached'});
+  assert.deepEqual(await dlg.locator('.fr-item b').evaluateAll(l=>l.map(b=>b.textContent)),['Bolt trial','Cobalt rollout']);
+  assert.equal((await dlg.locator('[data-fr-all]').textContent()).trim(),'Send all checked (2)');
+  await page.keyboard.press('s');await dlg.locator('.fr-item.skipped').waitFor();
+  // Send all checked sends the rest; with only skipped ones left the review closes, and only then is the skip final
+  calls=[];await dlg.locator('[data-fr-all]').click();await dlg.waitFor({state:'hidden'});await page.waitForFunction(()=>true);
+  await page.waitForTimeout(100);
+  assert.deepEqual(calls.filter(c=>c.action!=='client_error').map(c=>[c.action,c.args.suggestion_id,c.args.revision||c.args.choice]),[['confirm_action','f300000000000000','r3'],['decide','f200000000000000','reject']]);
   // The board: "Follow-ups on, next …" in the header, a tile's next follow-up, ready and a round that ended quietly
   reset();await toBoard(page);
   assert.match(await page.locator('.board-sub .fu-state').textContent(),/^Follow-ups on, next \w{3}$/);
@@ -369,16 +386,19 @@ try{
   await page.locator('#suggestions .fu-group button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
   assert.equal(await dlg.locator('.fr-item b').first().textContent(),'Acme pilot');
   assert.equal((await dlg.locator('.fu-keys').textContent()).trim(),'Keys: j and k move, Enter sends, e edits, s skips, c changes.');
-  const paras=await dlg.locator('.fr-item').first().locator('.fr-body p').evaluateAll(l=>l.map(p=>p.textContent));
-  assert.equal(paras.length,3);assert.equal(paras[0],'Hi Sam,');assert.equal(paras.at(-1),'Regards,\nAlex');
-  const gap=await dlg.locator('.fr-item').first().locator('.fr-body p').evaluateAll(l=>l[1].getBoundingClientRect().top-l[0].getBoundingClientRect().bottom);
-  assert.ok(gap>0&&gap<14,`paragraph gap ${gap}`);
+  // The preview is exactly the text that goes, every blank line too ("Regards," a blank line, then the name)
+  const shown=await dlg.locator('.fr-item').first().locator('.fr-body').evaluate(el=>({text:el.textContent,inner:el.innerText}));
+  assert.equal(shown.text,suggestions.find(s=>s.id===ids[0]).next_action.body);assert.match(shown.inner,/Regards,\n\nAlex$/);
   calls=[];await page.keyboard.press('c');const box=dlg.locator('.fr-change');await box.waitFor();
   assert.equal(await page.evaluate(()=>document.activeElement.id),'fr-change-text');
   assert.equal((await box.locator('.fr-change-q').textContent()).trim(),'What should change?');
   assert.equal(await box.locator('.mic-wrap #fr-change-text').count(),1);
   assert.equal(await box.locator('[name=fr-scope][value=all]').isChecked(),true);
   assert.deepEqual(await box.locator('.fr-scope label').evaluateAll(l=>l.map(x=>x.textContent.trim())),['All checked (3)','Only this one: Acme pilot']);
+  // One row of buttons at a time: the Send row is hidden while Change is open, and no draft sends
+  assert.equal(await dlg.locator('[data-fr-all]').isVisible(),false);assert.equal(await dlg.locator('.fr-main').isVisible(),false);
+  assert.deepEqual(await dlg.locator('[data-fr-send]').evaluateAll(l=>l.map(b=>b.disabled)),[true,true,true]);
+  assert.equal((await dlg.locator('button:visible').evaluateAll(l=>l.filter(b=>/Send/.test(b.textContent)&&!b.disabled).length)),0);
   await page.keyboard.type('Shorter, and mention the new pricing page');await fits(page,`${width} change box`);await page.mouse.move(2,2);await shot(page,`change-open-${width}-${scheme}`);
   await page.keyboard.press('Enter');await dlg.locator('.fr-item.rewriting').nth(2).waitFor();
   assert.deepEqual(calls.map(c=>[c.action,c.args.ids,c.args.text]),[['follow_up_change',ids,'Shorter, and mention the new pricing page']]);
@@ -416,6 +436,69 @@ try{
   await box.locator('#fr-change-text').fill('Add a line about Friday');await box.locator('[data-fr-box-go]').click();await dlg.locator('.fr-item.rewriting').first().waitFor();
   assert.deepEqual(calls.map(c=>[c.action,c.args.ids]),[['follow_up_change',[ids[1]]]]);
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
+  await context.close()}
+ // Stop sending on the progress to-do: follow_up_stop with the batch, then "Stopped. 1 sent, 11 kept as drafts." (no
+ // bar, no button); the kept ones are back as the board's ready to-do
+ for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']]){reset();
+  progress=[{group:'board:1',board:'Alpha testers',batch:'board:1@2026-10-29T09:00:00+00:00',total:12,done:1,sent:1,going:true,held:0,held_new:0,stopped:0,done_at:day(0.005)}];
+  const {context,page}=await open(width,height,scheme);const card=page.locator('#suggestions .fu-sending');await card.waitFor();
+  assert.equal((await card.locator('.fu-progress').textContent()).trim(),'Sending 2 of 12…');
+  const stop=card.locator('[data-fu-stop]');assert.equal((await stop.textContent()).trim(),'Stop sending');
+  await fits(page,`${width} sending`);await shot(page,`sending-${width}-${scheme}`,width<600?null:card);
+  calls=[];await stop.click();await card.locator('.fu-progress',{hasText:'Stopped'}).waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.batch]),[['follow_up_stop','board:1@2026-10-29T09:00:00+00:00']]);
+  assert.equal((await page.locator('#suggestions .fu-sending .fu-progress').textContent()).trim(),'Stopped. 1 sent, 11 kept as drafts.');
+  assert.equal(await page.locator('#suggestions .fu-sending [data-fu-stop]').count(),0);assert.equal(await page.locator('#suggestions .fu-sending .fu-bar').count(),0);
+  await fits(page,`${width} stopped`);await shot(page,`stopped-${width}-${scheme}`,width<600?null:page.locator('#suggestions .fu-sending'));
+  progress=[{...progress[0],sent:11,stopped:1}];await page.evaluate(()=>refresh());
+  assert.equal((await page.locator('#suggestions .fu-sending .fu-progress').textContent()).trim(),'Stopped. 11 sent, 1 kept as a draft.');
+  await context.close()}
+ // Send never sends a draft other than the one on screen: one that changed under the review (a poll it hadn't drawn yet)
+ // is drawn again instead, and the rest go
+ {reset();const {context,page}=await open(1440,900);
+  await page.locator('#suggestions .fu-group button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  await page.evaluate(()=>{const s=state.suggestions.find(x=>x.id==='f200000000000000');s.next_action={...s.next_action,body:'Hi Kim, a text not seen yet.',revision:'r2x'}});
+  calls=[];await dlg.locator('[data-fr-all]').click();await dlg.locator('[data-fr-error]:not([hidden])').waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='confirm_action').map(c=>c.args.suggestion_id),['f100000000000000','f300000000000000']);
+  assert.equal((await dlg.locator('[data-fr-error]').textContent()).trim(),'1 draft changed: read it, then send.');
+  assert.match(await dlg.locator('.fr-item').first().locator('.fr-body').textContent(),/not seen yet/);
+  await context.close()}
+ // Bring back: a skipped follow-up on the project's page (its follow-ups) and on its to-do in Done
+ {reset();const was=detail.follow_up.activity;detail.follow_up.activity=[{n:1,of_max:3,channel:'email',state:'skipped',auto:0,created_at:day(-1),closed_at:day(-1),back:'f500000000000000'},...was];
+  suggestions=[...suggestions,{...card(5,'Ember labs','Hi Bo, a short follow-up.'),status:'rejected',closed_at:day(-0.5),follow_up:{project:'Ember labs',name:'Ember labs',project_id:'project:5',board:null,group:null,n:1,max:3,channel:'email',auto:false,state:'skipped',back:true}}];
+  const {context,page}=await open(1440,900);await toBoard(page);
+  await page.locator('.tile[data-node="project:5"]').click();const back=page.locator('.graph-fu [data-fu-back]');await back.waitFor();
+  assert.match(await page.locator('.graph-fu li').first().textContent(),/Follow-up 1 skipped · Bring back$/);await shot(page,'bring-back-project-1440-light',page.locator('.graph-fu'));
+  calls=[];await back.click();await page.locator('#toast',{hasText:'Back to review.'}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='follow_up_bring_back').map(c=>c.args.id),['f500000000000000']);
+  await page.goto(base+'#chat=f500000000000000');const b2=page.locator('[data-fu-back="f500000000000000"]:visible').first();await b2.waitFor();
+  assert.equal((await b2.textContent()).trim(),'Bring back');
+  calls=[];await b2.click();await page.locator('#toast',{hasText:'Back to review.'}).waitFor();
+  assert.deepEqual(calls.filter(c=>c.action==='follow_up_bring_back').map(c=>c.args.id),['f500000000000000']);
+  detail.follow_up.activity=was;await context.close()}
+ // The Machine would stop here: the draft is still there, with why, and unchecked (Send all leaves it); the owner sends
+ // it, skips it or picks Stop follow-ups here (follow_up_end), which ends that one without sending. Its to-do says it too.
+ for(const [width,height,scheme] of [[1440,900,'light'],[1440,700,'dark'],[390,844,'light']]){reset();
+  suggestions=suggestions.map(s=>s.id==='f300000000000000'?{...s,follow_up:{...s.follow_up,advice:'9 unanswered emails since August'}}:s);
+  const {context,page}=await open(width,height,scheme);
+  await page.locator('#suggestions .fu-group button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  const item=dlg.locator('.fr-item[data-fr="f300000000000000"]');
+  assert.equal((await item.locator('.fr-advice span').textContent()).trim(),'The Machine would stop here: 9 unanswered emails since August');
+  assert.equal(await item.locator('[data-fr-check]').isChecked(),false);
+  assert.equal((await dlg.locator('[data-fr-all]').textContent()).trim(),'Send all checked (2)');
+  assert.equal(await item.locator('[data-fr-send]').getAttribute('class'),'fr-plain');
+  await item.click();await item.locator('[data-fr-end]').waitFor();
+  await fits(page,`${width} advice`);await shot(page,`advice-review-${width}x${height}-${scheme}`,width<600?null:dlg);
+  // While Change is open nothing ends either
+  await dlg.locator('[data-fr-change]').click();assert.equal(await item.locator('[data-fr-end]').isDisabled(),true);await dlg.locator('[data-fr-box-cancel]').click();
+  calls=[];await item.locator('[data-fr-end]').click();await page.locator('#toast',{hasText:'Follow-ups stopped here.'}).waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.id]),[['follow_up_end','f300000000000000']]);
+  await dlg.locator('.fr-item[data-fr="f300000000000000"]').waitFor({state:'detached'});
+  assert.equal(await dlg.locator('.fr-item').count(),2);assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
+  await context.close()}
+ {reset();suggestions=suggestions.map(s=>s.id==='f400000000000000'?{...s,follow_up:{...s.follow_up,advice:'No answer to four emails'}}:s);
+  const {context,page}=await open(1440,900);const todo=page.locator('#task-f400000000000000');await todo.waitFor();
+  assert.match(await todo.textContent(),/The Machine would stop here: No answer to four emails/);await shot(page,'advice-todo-1440-light',todo);
   await context.close()}
  // Done: the board's sent and skipped follow-ups of a day are one row ("13 follow-ups sent for Alpha testers", "2 skipped"),
  // projects' own ones one row per day, a single one stays itself; opening a row lists project, to and when, each linking
