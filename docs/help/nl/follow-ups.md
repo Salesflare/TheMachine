@@ -32,7 +32,9 @@ Vlak voor het versturen wordt de thread opnieuw gecontroleerd, en als iemand sin
 
 De opvolgingen van een bord komen als één to-do, nooit één per e-mail. Terwijl ze geschreven worden staat er "3 opvolgingen worden geschreven…", daarna "8 opvolgingen klaar voor Alpha testers".
 
-**Nakijken** toont ze volledig onder elkaar, zodat je ze in één keer doorleest. **Versturen**, **Bewerken** en **Overslaan** staan bij de huidige. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt, s slaat over en c wijzigt. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is. **Overslaan** vinkt een concept uit en zet het onderaan, met Overgeslagen en **Ongedaan maken**; het is pas echt overgeslagen als je het nakijken sluit. Een overgeslagen opvolging komt terug met **Terughalen** bij de opvolgingen van het project of op de to-do in Gedaan, zolang er geen nieuwere opvolging is. De opvolging van één project is een gewone to-do.
+**Nakijken** toont ze volledig onder elkaar, zodat je ze in één keer doorleest. **Versturen**, **Bewerken** en **Overslaan** staan bij de huidige. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt, s slaat over en c wijzigt. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is.
+
+**Overslaan** vinkt een concept uit en zet het onderaan, met Overgeslagen en **Ongedaan maken**; het is pas echt overgeslagen als je het nakijken sluit. Een overgeslagen opvolging komt terug met **Terughalen** bij de opvolgingen van het project of op de to-do in Gedaan, zolang er geen nieuwere opvolging is. De opvolging van één project is een gewone to-do.
 
 **Wijzigen…** herschrijft alle aangevinkte concepten, of alleen het huidige, zoals jij het zegt; er wordt niets verstuurd en **Wijziging ongedaan maken** zet de oude tekst terug. Zolang het wijzigvak open is of er herschreven wordt, gaat er niets weg, en een concept dat veranderde zie je eerst opnieuw.
 
