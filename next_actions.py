@@ -1571,7 +1571,8 @@ def same_person(name, user):
 
 
 class SlackTransport:
-    """Sends one owner-approved Slack direct message as the owner, through the Maton Slack connection.
+    """Sends one owner-approved Slack direct message as the owner, with their own Slack sign-in (slack_api.py) or
+    through the Maton Slack connection they had before.
     Separate from the read-only Slack source: only these methods (look up, open the DM, post, read it
     back), and only a direct message to one person; never a channel post."""
     METHODS = {'users.info': 'GET', 'users.lookupByEmail': 'GET', 'conversations.open': 'POST', 'chat.postMessage': 'POST', 'conversations.history': 'GET'}
@@ -1586,21 +1587,34 @@ class SlackTransport:
         import urllib.parse
         import urllib.request
         account = self.account(action)
-        secret = self.credential(self.config, account['credential'])
-        found = re.findall(r'^' + re.escape(account['credential_variable']) + r'=(.*)$', secret, re.M)
-        if len(found) != 1:
-            raise RuntimeError('Slack credential unavailable')
-        headers = {'Authorization': 'Bearer ' + found[0].strip().strip('"\''), 'Maton-Connection': account['connection_id'], 'Accept': 'application/json'}
-        url = 'https://api.maton.ai/slack/api/' + method
+        broker = account.get('transport') == 'broker'  # signed in with Slack (slack_api.py): straight to Slack's Web API
+        if broker:
+            import slack_api
+            try:
+                token = slack_api.broker_token(self.config, account)[0]
+            except slack_api.TokenError as error:
+                raise RuntimeError('Slack sign-in unavailable: ' + error.label) from None
+            headers, url = {'Authorization': 'Bearer ' + token, 'Accept': 'application/json'}, slack_api.API + method
+        else:
+            secret = self.credential(self.config, account['credential'])
+            found = re.findall(r'^' + re.escape(account['credential_variable']) + r'=(.*)$', secret, re.M)
+            if len(found) != 1:
+                raise RuntimeError('Slack credential unavailable')
+            headers = {'Authorization': 'Bearer ' + found[0].strip().strip('"\''), 'Maton-Connection': account['connection_id'], 'Accept': 'application/json'}
+            url = 'https://api.maton.ai/slack/api/' + method
         if self.METHODS[method] == 'GET':
             request = urllib.request.Request(url + '?' + urllib.parse.urlencode(params), headers=headers)
         else:
             request = urllib.request.Request(url, data=json.dumps(params).encode(), method='POST',
                                              headers={**headers, 'Content-Type': 'application/json; charset=utf-8'})
         with urllib.request.urlopen(request, timeout=45) as response:
-            if response.headers.get('Maton-Connection') != account['connection_id']:
+            if not broker and response.headers.get('Maton-Connection') != account['connection_id']:
                 raise RuntimeError('Slack connection mismatch')
-            return json.load(response)
+            data = json.load(response)
+        if broker and isinstance(data, dict) and data.get('error') in ('invalid_auth', 'token_expired'):
+            import slack_api
+            slack_api.forget_token(account)  # Slack refused it before doing anything: the next try gets a fresh one
+        return data
 
     def person(self, action):
         reply = (self.call(action, 'users.info', {'user': action['user_id']}) if action.get('user_id')

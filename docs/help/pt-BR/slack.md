@@ -3,8 +3,8 @@ title: Slack
 area: connections
 summary: Os canais e as mensagens diretas de que você participa. Envia uma mensagem direta só depois que você aprova.
 covers: connector:slack
-code: assistant.py, next_actions.py, onboarding.py
-site: Connect, More sources, Remove
+code: assistant.py, slack_api.py, next_actions.py, onboarding.py
+site: Sign in with Slack, Connect, More sources, Remove
 ---
 ## O que ele lê
 
@@ -16,11 +16,20 @@ Uma mensagem direta para uma pessoa, em seu nome, e só depois que você aprova 
 
 ## Conecte
 
-O Slack é lido pelo Maton, que guarda o login do Slack.
+Entre com o Slack, o jeito fácil:
+
+1. No painel: **Conexões**, **+ Adicionar**, Slack. Ou na página de configuração de uma Machine hospedada em app.themachine.computer/setup: **Mais fontes**, Slack. No seu próprio computador, vincule-o à sua conta antes.
+2. Clique em **Entrar com Slack**. O Slack pergunta qual workspace e mostra o que The Machine pode ler e enviar.
+3. Clique em **Allow**. Você volta para onde estava, e o Slack está conectado.
+
+Em alguns workspaces só admins aprovam apps novos. O Slack pede antes a um admin; depois que aprovar, entre de novo.
+
+Ou use o Maton:
 
 1. Entre em maton.ai, conecte o Slack lá e copie sua chave de API do Maton em Home.
-2. Em uma Machine hospedada: abra sua página de configuração em app.themachine.computer/setup, vá até **Mais fontes**, abra o Slack, cole a chave e clique em **Conectar**.
-3. No seu próprio computador: rode `assistant connect slack`, ou **Conexões**, **+ Adicionar**, Slack.
+2. Abra o Slack como acima (ou rode `assistant connect slack`), abra **Ou use uma chave de API do Maton**, cole a chave e clique em **Conectar**.
+
+Já conectou o Slack pelo Maton? Continua funcionando. Conexões mostra **Reconectar Slack**: clique e entre com o Slack para parar de usar o Maton. O que o Slack já trouxe fica.
 
 ## Remova
 
@@ -29,4 +38,5 @@ O Slack é lido pelo Maton, que guarda o login do Slack.
 
 ## Desinstale no Slack
 
-Remova a conexão do Slack no Maton e exclua a chave de API do Maton que você forneceu. Um admin do Slack também pode remover o app do workspace, em Manage apps.
+- Com login do Slack: no Slack, abra a página Manage apps do seu workspace (ou Configurações, Apps), encontre The Machine e remova. Um admin do Slack também pode remover para todo o workspace.
+- Pelo Maton: remova a conexão do Slack no Maton e apague a chave de API do Maton que você deu.

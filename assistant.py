@@ -2903,26 +2903,44 @@ class Slack:
         if method in self.limited_reads:
             self.last_limited = self.last_call
 
-    def get(self, method, params=None):
-        if method not in self.METHODS:
-            raise SourceError('slack_method_not_allowed')
-        self.pace(method)
-        values = urllib.parse.urlencode(params or {})
+    def request(self, method, values, fresh=False):
+        """The GET for one Web API method: straight to Slack with the owner's own sign-in (Sign in with Slack,
+        slack_api.py), or through Maton for an account connected there before."""
+        if self.account.get('transport') == 'broker':
+            import slack_api
+            try:
+                token = slack_api.broker_token(self.config, self.account, fresh=fresh)[0]
+            except slack_api.TokenError as error:
+                raise SourceError(error.label, error.status, error.retry_after) from None
+            return urllib.request.Request(slack_api.API + method + ('?' + values if values else ''),
+                                          headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/json'})
         secret = credential(self.config, self.account['credential'])
         variable = self.account['credential_variable']
         matches = re.findall(r'^' + re.escape(variable) + r'=(.*)$', secret, re.M)
         if len(matches) != 1:
             raise SourceError('slack_credential_unavailable')
         secret = matches[0].strip().strip('"\'')
-        request = urllib.request.Request('https://api.maton.ai/slack/api/' + method +
+        return urllib.request.Request('https://api.maton.ai/slack/api/' + method +
             ('?' + values if values else ''), headers={
                 'Authorization': 'Bearer ' + secret,
                 'Maton-Connection': self.account['connection_id'], 'Accept': 'application/json'})
+
+    def get(self, method, params=None):
+        if method not in self.METHODS:
+            raise SourceError('slack_method_not_allowed')
+        self.pace(method)
+        values = urllib.parse.urlencode(params or {})
+        broker = self.account.get('transport') == 'broker'
+        request = self.request(method, values)
         try:
             with urllib.request.urlopen(request, timeout=45) as response:
-                if response.headers.get('Maton-Connection') != self.account['connection_id']:
+                if not broker and response.headers.get('Maton-Connection') != self.account['connection_id']:
                     raise SourceError('connection_identity_mismatch')
                 data = json.load(response)
+            if broker and isinstance(data, dict) and data.get('error') in ('invalid_auth', 'token_expired', 'token_revoked'):
+                # the access token ran out early or the sign-in was renewed elsewhere: one fresh one, then Slack's answer
+                with urllib.request.urlopen(self.request(method, values, fresh=True), timeout=45) as response:
+                    data = json.load(response)
         except urllib.error.HTTPError as error:
             try:
                 retry_after = max(60, min(3600, int(error.headers.get('Retry-After', '300'))))
@@ -2947,7 +2965,7 @@ class Slack:
         if not isinstance(data, dict) or not data.get('ok'):
             label = data.get('error') if isinstance(data, dict) else None
             known = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found',
-                     'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked'}
+                     'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked', 'token_expired'}
             if label == 'ratelimited' and method in self.limited_reads:
                 self.read_went(True)
             raise SourceError('slack_' + (label if label in known else 'invalid_response') + ':' + method,
@@ -13326,9 +13344,14 @@ def reconnect_help(account, manage, docs_consent=False):
     if manage and service == 'docs':  # its Connect Microsoft documents consent, once the account page offers it
         return {'account_page': urllib.parse.urljoin(manage, '#docs'), 'hosted_signin': 'microsoft_docs'} if docs_consent else {}
     if manage and account.get('transport') == 'broker':
-        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe') else 'google'
+        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack') else 'google'
         return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),
                 'hosted_signin': provider}
+    if service == 'slack':
+        # Sign in with Slack (slack_api.py) through the control plane's own Slack app: on a hosted Machine from + Add, on
+        # a self-hosted one once paired. One still read through Maton gets a nudge to switch (`slack_upgrade`).
+        found = {'connect_name': 'slack', **({'hosted_signin': 'slack'} if manage else {'signin': 'slack'})}
+        return {**found, 'slack_upgrade': True} if account.get('transport') == 'maton' else found
     if manage and service in ON_DASHBOARD:  # GitHub, WhatsApp, the phone: their code on the dashboard; Disconnect here
         return {'connect_name': service, 'hosted_signin': service}
     return {'connect_name': 'crm' if service == 'salesflare' else service}
@@ -19337,19 +19360,24 @@ class App:
         return result
 
     def forget_device_grant(self, account):
-        """A Google, Microsoft or Zoom account signed in from this paired Machine's dashboard (onboarding.connect_grant),
+        """A Google, Microsoft, Zoom, Stripe or Slack account signed in from this paired Machine's dashboard (onboarding.connect_grant),
         disconnected: once no account on that sign-in is left, its refresh token is forgotten here (Google's revoked) and
         the control plane forgets this Machine had it, so nothing refreshes it again."""
         import mail_grants
         provider = {'microsoft_docs': 'microsoft'}.get(fleet.SIGNIN_OF.get(account.get('service')), fleet.SIGNIN_OF.get(account.get('service')))
-        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe'):
+        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe', 'slack'):
             return
-        email = str(account.get('stripe_account' if provider == 'stripe' else 'email') or '').lower()
+        import slack_api
+
+        def signin_of(a):  # what the sign-in is kept under: Stripe's account id, Slack's team and user, else the address
+            return slack_api.key(a) if provider == 'slack' else str(a.get('stripe_account' if provider == 'stripe' else 'email') or '').lower()
+        email = signin_of(account)
         # Docs for a Microsoft address reads with the same sign-in as its Outlook mail and calendar
         services = {s for s, p in fleet.SIGNIN_OF.items() if p == provider} | ({'docs'} if provider == 'microsoft' else set())
-        if any(a.get('id') != account['id'] and a.get('service') in services
-               and str(a.get('stripe_account' if provider == 'stripe' else 'email', '')).lower() == email for a in self.config.get('accounts', [])):
+        if any(a.get('id') != account['id'] and a.get('service') in services and signin_of(a) == email for a in self.config.get('accounts', [])):
             return
+        if provider == 'slack':
+            slack_api.forget_token(account)
         try:
             mail_grants.forget(self.config, provider, email)
         except (mail_grants.GrantError, OSError) as error:

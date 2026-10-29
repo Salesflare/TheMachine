@@ -100,6 +100,8 @@ HINTS = (
     ('outlook', 'Microsoft Graph did not answer as expected; it retries by itself'),
     ('gmail', 'gog could not read Gmail: authorize again, and check the keyring password file'),
     ('calendar', 'gog could not read the calendar: authorize again, and check the keyring password file'),
+    ('slack_signin_expired', 'the Slack sign-in ended or was removed in Slack; sign in with Slack again'),
+    ('slack_broker', 'the control plane could not give a Slack token; it retries by itself'),
     ('slack_invalid_auth', 'Maton rejected the API key'),
     ('slack_token_revoked', 'the Slack sign-in in Maton was revoked; reconnect Slack in Maton'),
     ('slack_credential_unavailable', 'the Maton credential file needs exactly one MATON_API_KEY=… line'),
@@ -791,6 +793,10 @@ def missing(config, account):
         if not (config.get('stripe_broker') or {}).get('url'):
             return 'stripe_broker url is not set'
         names.append('stripe-broker')
+    elif account.get('transport') == 'broker' and account.get('service') == 'slack':
+        if not (config.get('slack_broker') or {}).get('url'):
+            return 'slack_broker url is not set'
+        names.append('slack-broker')
     elif account.get('transport') == 'broker':
         if not (config.get('google_broker') or {}).get('url'):
             return 'google_broker url is not set'
@@ -2174,9 +2180,10 @@ def enable_replies(config_path, account_id, token):
     return admin, name
 
 
-# Google, Microsoft, Zoom and Stripe signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
-GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',), 'stripe': ('stripe',)}
-GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe'}
+# Google, Microsoft, Zoom, Stripe and Slack signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
+GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',), 'stripe': ('stripe',), 'slack': ('slack',)}
+GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack'}
+SLACK_KEY = r'[te][a-z0-9]{6,20}:[uw][a-z0-9]{6,20}'  # a Slack sign-in's name: '<team id>:<user id>' (slack_api.key)
 DELIVERED = {'intercom', 'microsoft_docs', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
 
@@ -2260,7 +2267,7 @@ def connect_grant(config_path, provider, args):
     grant = args.get('grant') if isinstance(args.get('grant'), dict) else {}
     email = str(grant.get('email') or '').strip().lower()
     refresh = grant.get('refresh_token')
-    shape = r'acct_[a-z0-9]{6,40}' if provider == 'stripe' else r'[^@\s]{1,200}@[^@\s]{1,200}\.[^@\s]{2,63}'  # Stripe: the account id
+    shape = {'stripe': r'acct_[a-z0-9]{6,40}', 'slack': SLACK_KEY}.get(provider, r'[^@\s]{1,200}@[^@\s]{1,200}\.[^@\s]{2,63}')  # Stripe: the account id; Slack: team and user
     if (grant.get('provider') != provider or not re.fullmatch(shape, email)
             or not isinstance(refresh, str) or not 8 <= len(refresh) <= 4096):
         raise SetupError(f'No {name} sign-in came with it', 'sign in again from Connections, + Add')
@@ -2282,6 +2289,8 @@ def connect_grant(config_path, provider, args):
     boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider == 'zoom' else 'personal'))
     if provider == 'stripe':
         return _connect_stripe_grant(config_path, config, email, refresh, previous)
+    if provider == 'slack':
+        return _connect_slack_grant(config_path, config, email, refresh, previous)
     mail_grants.put(config, provider, email, refresh)
     checked = []
     try:
@@ -2388,6 +2397,66 @@ def _connect_stripe_grant(config_path, config, key, refresh, previous):
             mail_grants.forget(config, 'stripe', key, revoke=False)
         raise
     return {'ok': True, 'name': account.get('account_name') or 'Stripe'}
+
+
+def slack_signed_in(config, key, boundary=''):
+    """The Slack account for a sign-in with Slack (slack_api.py), its refresh token already kept in mail_grants.py under
+    `key` ('<team id>:<user id>'): the one this Machine reads through Maton for the same person in the same workspace is
+    switched over (same id, same history, Reconnect Slack done), else a new one. Who it is and the workspace come from
+    Slack itself (auth.test, users.info), then the account is checked with a real read like any other. Returns the
+    account, not saved yet; raises SetupError when it does not check out."""
+    if not re.fullmatch(SLACK_KEY, str(key or '')):
+        raise SetupError('No Slack sign-in came with it', 'sign in with Slack again')
+    team_id, user_id = (part.upper() for part in key.split(':', 1))
+    account = next((a for a in config.get('accounts', []) if a.get('service') == 'slack' and not a.get('shared')
+                    and str(a.get('team_id', '')).upper() == team_id and str(a.get('user_id', '')).upper() == user_id), None)
+    account = dict(account) if account else {'service': 'slack', 'new': True}
+    account.update(transport='broker', team_id=team_id, user_id=user_id)
+    for name in ('credential', 'credential_variable', 'connection_id'):
+        account.pop(name, None)  # the Maton key and connection: not used for this account any more
+    slack = assistant().Slack(config, account)
+    try:
+        me = slack.get('auth.test')
+        user = slack.get('users.info', {'user': user_id}).get('user') or {}
+    except assistant().SourceError as error:
+        raise SetupError(f'Slack did not answer: {error}', hint(error)) from None
+    if str(me.get('team_id', '')).upper() != team_id or str(me.get('user_id', '')).upper() != user_id:
+        raise SetupError('Slack answered for another account', 'sign in with Slack again')
+    if account.pop('new', None):
+        guess = boundary_label(boundary or me.get('team') or 'work')
+        account = {**new_account(config, 'slack', ui=AnswersUI({'part of your life': guess, 'company': guess})), **account}
+        account.pop('slack_host', None)  # the example's or a sibling's workspace: this one's comes from Slack below
+        account['boundary'] = guess
+        account['boundary_by'] = 'owner' if boundary else 'guess'
+    for name in ('credential', 'credential_variable', 'connection_id'):
+        account.pop(name, None)  # not even from the example or a sibling account it started from
+    account.update(transport='broker', team_id=team_id, user_id=user_id)
+    account['email'] = (user.get('profile') or {}).get('email') or ''
+    account['slack_host'] = urllib.parse.urlparse(me.get('url') or '').netloc or account.get('slack_host', '')
+    if me.get('team'):
+        account['display_name'] = account.get('display_name') or f"{me['team']} Slack"
+    error = check(config, account)
+    if error and not error.startswith(BUSY):
+        raise SetupError(f'Slack did not check out ({error})', 'sign in with Slack again')
+    return account
+
+
+def _connect_slack_grant(config_path, config, key, refresh, previous):
+    """connect_grant for Slack: one account per workspace and person, checked with a real read first (slack_signed_in)."""
+    import mail_grants
+    mail_grants.put(config, 'slack', key, refresh)
+    try:
+        account = slack_signed_in(config, key)
+        known = any(a.get('id') == account['id'] for a in config.get('accounts', []))
+        config['accounts'] = [account if a.get('id') == account['id'] else a for a in config.get('accounts', [])] + ([] if known else [account])
+        save(config_path, config)
+    except BaseException:
+        if previous:
+            mail_grants.put(config, 'slack', key, previous)
+        else:
+            mail_grants.forget(config, 'slack', key, revoke=False)
+        raise
+    return {'ok': True, 'name': account.get('slack_host') or 'Slack'}
 
 
 # ---------------------------------------------------------------- service, first sync

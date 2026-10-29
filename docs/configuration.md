@@ -33,6 +33,7 @@
 | `microsoft_broker` | — | `url` of a Microsoft token broker, for Outlook accounts with `"transport": "broker"` |
 | `zoom_broker` | — | `url` of a Zoom token broker, for Zoom accounts (meeting notes, [sources](sources.md)) |
 | `stripe_broker` | — | `url` of a Stripe token broker, for Stripe accounts signed in with Sign in with Stripe ([sources](sources.md)) |
+| `slack_broker` | — | `url` of a Slack token broker, for Slack accounts signed in with Sign in with Slack ([sources](sources.md)) |
 | `zoom_transcripts` | `true` | Also store Zoom transcripts, next to the summaries |
 | `microsoft_graph` | — | `client_id` and `tenant` (`common`) of your own Entra app, for Outlook accounts with `"transport": "graph"` |
 | `salesflare_server` | — | `api_base` and `app_base` a new Salesflare account starts on instead of Salesflare's own (a hosted machine's control plane sets it for a team on staging). Only https addresses on salesflare.com subdomains count. An address typed when a key is rejected must be https too |
