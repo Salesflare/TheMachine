@@ -154,7 +154,7 @@ try{
   await ctx.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto(base);await p.locator('#suggestions article[id]').first().waitFor();
   await poll(p,async()=>!!(await localCache.read('status')),null,'kept');
-  await p.evaluate(()=>navigator.serviceWorker.ready);await poll(p,async()=>(await (await caches.open('tm-assets-1')).keys()).length>=16,null,'the brand files are kept up front');
+  await p.evaluate(()=>navigator.serviceWorker.ready);await poll(p,async()=>(await (await caches.open('tm-assets-2')).keys()).length>=16,null,'the brand files are kept up front');
   await p.reload();await until(p,()=>!!navigator.serviceWorker.controller,null,'controlled');await poll(p,async()=>!!(await (await caches.open('tm-shell-2')).match(location.origin+'/')),null,'the page is kept');
   await ctx.setOffline(true);await p.reload();await p.locator('#suggestions article[id]').first().waitFor();
   await until(p,()=>!document.querySelector('#offline-bar').hidden,null,'banner');

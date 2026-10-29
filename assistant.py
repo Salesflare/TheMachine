@@ -114,14 +114,14 @@ BRAND_ASSETS = {
     '/brand/avatar-blink.png': ROOT / 'brand/avatar-blink.png',  # the same robot, eyes closed: replace it with avatar.png
     '/brand/favicon-32.png': ROOT / 'brand/app-icon-192.png',
     '/brand/favicon-512.png': ROOT / 'brand/app-icon-maskable-512.png',
-    # Empty-state stickers: any image works; the defaults reuse the app icon.
-    '/brand/sleepy.webp': ROOT / 'brand/app-icon-192.png',
-    '/brand/sad.webp': ROOT / 'brand/app-icon-192.png',
-    '/brand/thinking.webp': ROOT / 'brand/app-icon-192.png',
+    # The robot's moods (stickers, 256 px): nothing to do, can't reach the assistant, nothing found.
+    '/brand/sleepy.webp': ROOT / 'brand/sleepy.webp',
+    '/brand/sad.webp': ROOT / 'brand/sad.webp',
+    '/brand/thinking.webp': ROOT / 'brand/thinking.webp',
     # Inbox-zero game: poked awake, catching a Z, a new best.
-    '/brand/wave.webp': ROOT / 'brand/app-icon-192.png',
-    '/brand/laugh.webp': ROOT / 'brand/app-icon-192.png',
-    '/brand/party.webp': ROOT / 'brand/app-icon-192.png',
+    '/brand/wave.webp': ROOT / 'brand/wave.webp',
+    '/brand/laugh.webp': ROOT / 'brand/laugh.webp',
+    '/brand/party.webp': ROOT / 'brand/party.webp',
     # Home-screen app icons; maskable ones keep the robot inside Android's crop.
     '/brand/app-icon-192.png': ROOT / 'brand/app-icon-192.png',
     '/brand/app-icon-maskable-192.png': ROOT / 'brand/app-icon-maskable-192.png',
