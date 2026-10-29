@@ -20,7 +20,7 @@ const found={...base,network:{find:true,discoverable:true,asked:true,last:'2026-
  {email:'sam@acme.example',username:'samb',name:'Sam Beam',hint:'colleague',role:null,relation:null,status:'new',found_at:'x',reasons:[{kind:'card',card:'s1',title:'Send the quote'}]},
  {email:'zed@zed.example',username:'zed',name:'Zed Zee',hint:'personal',role:null,relation:null,status:'new',found_at:'x',reasons:[]}],
  addresses:[{email:'sam@work.example',account:true,on:true,findable:true},{email:'sam.doe-with-a-long-address@personal-mail.example',account:false,on:true,findable:true},
-  {email:'sam@other.example',account:false,on:false,findable:false}]}};
+  {email:'sam@other.example',account:false,on:false,findable:false},{email:'info@work.example',account:false,on:false,findable:false,shared:true}]}};
 const calls=[];let shown=ask;
 const firstCall=async()=>{for(let i=0;i<100&&!calls.length;i++)await new Promise(r=>setTimeout(r,50));return calls[0]};  // the call lands, also on a busy runner
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
@@ -59,14 +59,29 @@ try{
   assert.match(await block.locator('.net-addrs').innerText(),/Findable by/);
   assert.ok(await block.locator('[data-net-addr="sam@work.example"]').isDisabled());
   assert.equal(await block.locator('[data-net-addr="sam@other.example"]').isChecked(),false);
+  assert.equal(await block.locator('[data-net-addr="info@work.example"]').isChecked(),false);  // shared: off unless turned on
+  assert.match(await block.locator('label:has([data-net-addr="info@work.example"])').innerText(),/Shared address/);
+  assert.doesNotMatch(await block.locator('label:has([data-net-addr="sam@other.example"])').innerText(),/Shared address/);
   calls.length=0;await block.locator('[data-net-addr="sam.doe-with-a-long-address@personal-mail.example"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'address_off',email:'sam.doe-with-a-long-address@personal-mail.example'}});
+  assert.equal(await block.locator('.net-default').count(),0);  // turned on by the owner: no line
   calls.length=0;await block.locator('[data-net-toggle="discoverable_off"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'discoverable_off'}});
   calls.length=0;await block.locator('[data-net-do="leave"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'leave',email:'',relation:''}});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px Fleet tab scrolls sideways`);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/network-${scheme}-${width}.png`,fullPage:true});
+  // Turned on by default (Standard): one quiet line with Turn off, no card under Suggestions
+  shown={...found,network:{...found.network,asked:false,default_at:new Date().toISOString(),people:[]}};
+  await page.reload();await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('[data-fleet-pane="network"]').click();
+  const line=page.locator('#fleet-network .net-default');await line.waitFor();
+  assert.match(await line.innerText(),/Now findable by people who have your email\./);
+  calls.length=0;await line.locator('[data-net-do="discoverable_off"]').click();
+  assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'discoverable_off',email:'',relation:''}});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px default line scrolls sideways`);
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/network-default-${scheme}-${width}.png`,fullPage:true});
+  await navClick(page.locator('nav [data-tab="inbox"]'));
+  assert.equal(await page.locator('.net-card').count(),0);
   assert.deepEqual(errors,[]);
  }
  console.log('ok network dashboard');

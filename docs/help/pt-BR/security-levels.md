@@ -20,6 +20,7 @@ Um nível é um ponto de partida. Se depois você mudar qualquer configuração,
 - **Texto nas notificações** desligado: uma notificação diz "Nova tarefa" ou "Pronta", não o que a tarefa diz.
 - **Oferecer para salvar logins** desligado. Os sites com login salvo continuam até você tocar em **Esquecer todos os logins salvos**.
 - **Buscar contatos de trabalho**, **Oferecer compartilhar aprendizados** e **Compartilhar o que se pergunta à ajuda** desligados.
+- **Verificar quais dos meus contatos têm uma Machine** e **Deixar quem tem meu e-mail me encontrar** desligados.
 - **Manter detalhes de Fazer por 90 dias** desligado: eles são guardados por 30 dias.
 - Em uma Família, os horários livres e ocupados perguntam a você antes. Com Amigos, o contexto de reuniões é recusado.
 
@@ -32,6 +33,7 @@ O proprietário ou um admin do Fleet escolhe o nível na página da conta, nas c
 - O Graph da equipe compartilha e-mails de clientes sem os anexos.
 - As notificações de tarefas de trabalho não mostram texto.
 - Contatos de trabalho não são buscados.
+- Sua Machine não verifica seus contatos na Network nem deixa que encontrem você por e-mail, a não ser que você tenha ligado isso.
 - Todos entram de novo a cada 7 dias.
 - Um link de convite só funciona para o e-mail para o qual foi enviado.
 

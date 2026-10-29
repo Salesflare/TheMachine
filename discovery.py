@@ -1,12 +1,16 @@
 """Finding people you know on the Network, privately, and suggesting a connection only when it would help (docs/network.md).
 
-Two switches, both off until the owner turns them on:
+Two switches, both on by default at the Standard security level and off at Careful (the owner's own level, or a Careful
+Work Fleet they are in). A switch the owner set themselves keeps their choice; picking a level again resets both to
+its default. A Machine from before, where the owner never touched a switch, turns it on with its next round, and says
+so once, quietly: a line in the Fleet log and in the Fleet tab's Network block, never a card.
 - Check which of my contacts have a Machine: daily, and soon after someone new turns up in the graph or becomes findable on the Network, the
   Machine checks its strongest contacts against the Network without uploading them. Each address is hashed onto a group and blinded with a secret only this Machine knows; the Network raises
-  them to its own secret and returns them with its (blinded) list of people who chose to be found; the Machine
+  them to its own secret and returns them with its (blinded) list of people who are findable; the Machine
   compares. Only the matches are then looked up by address, to learn their username and name.
 - Let people who have my email find me: the Network adds the owner's account email to that list, and the addresses
-  of the mail and calendar accounts this Machine connected (it says which; each can be turned off in the Fleet tab).
+  of the mail and calendar accounts this Machine connected (it says which; each can be turned off in the Fleet tab),
+  except shared ones (info@, sales@, a team inbox: shared_addresses), which stay off until the owner turns one on.
   The Network keeps those blinded only, and an address that is someone else's sign-in finds nobody.
 
 Someone in a Work or Family Fleet with the owner is connected already: never suggested (nor by the Network, which
@@ -49,6 +53,9 @@ FRESH_CARDS = 5              # at most this many of them at once: the strongest 
 STATUSES = ('new', 'requested', 'connected', 'later', 'never')
 MAILBOXES = ('gog', 'broker', 'graph')  # transports that sign in to the owner's own mailbox or calendar (OAuth)
 ADDRESS_DAYS = 7             # how often the findable addresses are sent again (also right away when they change)
+SWITCHES = ('find', 'discoverable')  # Check which of my contacts have a Machine; Let people who have my email find me
+DEFAULT_RETRY = 3600         # seconds before a default that could not be set (no username yet, the Network away) is tried again
+DEFAULT_NOTE_DAYS = 30       # the Network block says it was turned on by default this long
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS network_people(email TEXT PRIMARY KEY,node_id TEXT,username TEXT NOT NULL,name TEXT NOT NULL,
@@ -209,9 +216,28 @@ class Discovery:
                 found.append(email)
         return found
 
+    def shared_addresses(self):
+        """The connected addresses other people read too, so not findable unless the owner turns one on: a role or team
+        inbox by its name (info@, sales@, support@: own_addresses.ROLE), a mailbox shared from a Fleet, an address a
+        Fleet teammate also has, and one the owner or the Machine marked as the team's or shared (Settings, Account)."""
+        import own_addresses as known
+        out = {e for e in self.own_addresses() if known.role_like(e)}
+        out |= {normal(a.get('email')) for a in self.config.get('accounts', []) if isinstance(a, dict) and a.get('shared')}
+        out |= self.fleet_mates()[1]
+        try:
+            with self.connect() as db:
+                known.ensure(db)
+                out |= known.team(db, self.config)
+                out |= {r[0] for r in db.execute("SELECT address FROM own_addresses WHERE state='shared'")}
+        except Exception:  # noqa: BLE001 - no address table yet: by name and Fleet only
+            pass
+        return out & set(self.own_addresses())
+
     def _findable_wanted(self):
-        off = set(self.network_settings().get('address_off') or [])
-        return [e for e in self.own_addresses() if e not in off]
+        """The connected addresses to be findable by: each one the owner turned on, and the rest unless turned off or shared."""
+        found = self.network_settings()
+        off, on, shared = set(found.get('address_off') or []), set(found.get('address_on') or []), self.shared_addresses()
+        return [e for e in self.own_addresses() if e in on or (e not in off and e not in shared)]
 
     def send_findable(self):
         """Tell the Network which connected addresses the owner can be found by (the ones not turned off)."""
@@ -227,6 +253,60 @@ class Discovery:
         found = self.network_settings()
         return bool(found.get('discoverable')) and (found.get('findable_sent') != self._findable_wanted() or not found.get('findable_at') or
                                                      found['findable_at'] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=ADDRESS_DAYS)).isoformat(timespec='seconds'))
+
+    # -- the defaults: on at Standard, off at Careful, the owner's own choice kept
+    def network_chosen(self):
+        """The switches the owner set themselves. Before the defaults, a switch only had a value once the owner set it
+        (and Not now on the card was their answer to checking contacts), so that is what counts there."""
+        found = self.network_settings()
+        if isinstance(found.get('chosen'), list):
+            return set(found['chosen'])
+        return {k for k in SWITCHES if k in found} | ({'find'} if found.get('asked') else set())
+
+    def _choose(self, *switches):
+        self._set_network(chosen=sorted(self.network_chosen() | set(switches)))
+
+    def network_default(self):
+        """What both switches are when the owner hasn't chosen: off at Careful (their own level or a Careful Work Fleet's), else on."""
+        import security_levels
+        with self.connect() as db:
+            return not (security_levels.label(db) == 'careful' or security_levels.careful_fleets(db))
+
+    def network_defaults(self):
+        """Set each switch the owner hasn't chosen to its default; one quiet line in the Fleet log when that changes something.
+        Returns the switches it changed."""
+        found, chosen = self.network_settings(), self.network_chosen()
+        if not isinstance(found.get('chosen'), list):
+            self._set_network(chosen=sorted(chosen))
+        todo = [k for k in SWITCHES if k not in chosen]
+        if not todo:
+            return []
+        on, changed = self.network_default(), []
+        if 'find' in todo and bool(found.get('find')) != on:
+            self._set_network(find=on)
+            changed.append('find')
+        if 'discoverable' in todo and bool(found.get('discoverable')) != on and self._ago(found.get('default_failed'), DEFAULT_RETRY):
+            try:
+                if on:
+                    self.send_findable()
+                else:
+                    answer = self.relay.call('POST', '/discover', {'action': 'discoverable', 'on': False}, timeout=30)
+                    self._set_network(discoverable=bool((answer or {}).get('discoverable')), findable=[], findable_sent=None)
+            except Exception:  # noqa: BLE001 - no username yet, or the Network away: tried again within the hour
+                self._set_network(default_failed=now())
+            if bool(self.network_settings().get('discoverable')) == on:
+                changed.insert(0, 'discoverable')
+        if changed:
+            self._set_network(default_at=now(), default_on=on, **({'default_failed': None} if 'discoverable' in changed else {}))
+            what = {(True, ('discoverable', 'find')): 'Now findable by people who have your email, and checking your contacts privately',
+                    (True, ('discoverable',)): 'Now findable by people who have your email',
+                    (True, ('find',)): 'Now checking your contacts privately',
+                    (False, ('discoverable', 'find')): 'Careful level: not findable by email, contacts not checked',
+                    (False, ('discoverable',)): 'Careful level: not findable by email',
+                    (False, ('find',)): 'Careful level: contacts not checked'}[(on, tuple(changed))]
+            with self.connect() as db:
+                self.log(db, 'out', self.friends_ref() or 'friends', None, 'Network', 'discover', what, 'default')
+        return changed
 
     # -- the lookups
     def _ago(self, value, seconds):
@@ -250,6 +330,7 @@ class Discovery:
         """With "Check which of my contacts have a Machine" on: look all the contacts up daily (or now, when forced), and every NEW_EVERY the ones
         not looked up yet or in a bucket where someone became findable; every time, bring the reasons of the people
         found up to date, and mark the ones who became friends."""
+        self.network_defaults()
         if self._findable_due():
             try:
                 self.send_findable()  # a new or removed account, or a week on
@@ -364,6 +445,7 @@ class Discovery:
         email = normal(email)
         if do in ('find_on', 'find_off'):
             self._set_network(find=do == 'find_on', asked=True)
+            self._choose('find')
             with self.connect() as db:
                 self.log(db, 'out', self.friends_ref() or 'friends', None, 'Network', 'discover',
                          'Check which of my contacts have a Machine: ' + ('on' if do == 'find_on' else 'off'), 'done')
@@ -376,8 +458,10 @@ class Discovery:
         if do in ('address_on', 'address_off'):
             if email not in self.own_addresses():
                 raise ValueError('Not one of your connected addresses')
-            off = set(self.network_settings().get('address_off') or []) - {email} | ({email} if do == 'address_off' else set())
-            self._set_network(address_off=sorted(off))
+            found = self.network_settings()  # the owner's word on this address, kept whatever it looks like
+            off = set(found.get('address_off') or []) - {email} | ({email} if do == 'address_off' else set())
+            on = set(found.get('address_on') or []) - {email} | ({email} if do == 'address_on' else set())
+            self._set_network(address_off=sorted(off), address_on=sorted(on))
             if self.network_settings().get('discoverable'):
                 self.send_findable()
             with self.connect() as db:
@@ -385,6 +469,7 @@ class Discovery:
                          f'Findable by {email}: ' + ('on' if do == 'address_on' else 'off'), 'done')
             return {'email': email, 'findable': email in (self.network_settings().get('findable') or [])}
         if do in ('discoverable_on', 'discoverable_off'):
+            self._choose('discoverable')
             if do == 'discoverable_on':
                 self.send_findable()
             else:
@@ -397,6 +482,7 @@ class Discovery:
         if do == 'leave':
             self.relay.call('POST', '/discover', {'action': 'leave'}, timeout=60)
             self._set_network(find=False, discoverable=False, asked=True, findable=[], findable_sent=None)
+            self._choose(*SWITCHES)
             with self.connect() as db:
                 ensure(db)
                 db.execute('DELETE FROM network_people')
@@ -406,6 +492,7 @@ class Discovery:
             return {'left': True}
         if do == 'asked':
             self._set_network(asked=True)
+            self._choose('find')
             return {'asked': True}
         with self.connect() as db:
             ensure(db)
@@ -435,6 +522,11 @@ class Discovery:
                       if r['status'] not in ('new', 'later') or not self.in_my_fleet(mates, r['username'], r['email'])]
         findable, off, account = set(found.get('findable') or []), set(found.get('address_off') or []), found.get('account_email')
         addresses = [{'email': account, 'account': True, 'on': True, 'findable': account in findable}] if account else []
-        addresses += [{'email': e, 'account': False, 'on': e not in off, 'findable': e in findable} for e in self.own_addresses() if e != account]
-        return {'find': found.get('find'), 'discoverable': found.get('discoverable'), 'asked': bool(found.get('asked')),
+        wanted, shared = set(self._findable_wanted()), self.shared_addresses()
+        addresses += [{'email': e, 'account': False, 'on': e in wanted, 'findable': e in findable, 'shared': e in shared}
+                      for e in self.own_addresses() if e != account]
+        # Turned on by default (not by the owner) in the last DEFAULT_NOTE_DAYS: the Network block says so, with Turn off
+        note = found.get('default_at') if found.get('default_on') and found.get('discoverable') and 'discoverable' not in self.network_chosen() \
+            and not self._ago(found.get('default_at'), DEFAULT_NOTE_DAYS * 86400) else None
+        return {'find': found.get('find'), 'discoverable': found.get('discoverable'), 'asked': bool(found.get('asked')), 'default_at': note,
                 'last': max(filter(None, (found.get('last'), found.get('checked'))), default=None), 'people': people, 'addresses': addresses}

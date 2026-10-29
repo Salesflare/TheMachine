@@ -18,6 +18,8 @@ On the Network pane:
 - "Check which of my contacts have a Machine" suggests people you know.
 - "Let people who have my email find me" lets them find you.
 
+Both are on by default, and off at the Careful security level. Turn either off any time; your choice stays. People can find you by your sign-in email and your connected addresses, except shared ones like info@, which stay off until you turn them on.
+
 People you know who are on the Network are suggested right away when you turn it on, and when someone joins later. Your Machine checks every 15 minutes for new contacts and people who just joined, and goes through all your contacts once a day. A match comes with Connect, Not now or **Never suggest**. **Leave the Network** takes you off it.
 
 ## A Machine on your own computer

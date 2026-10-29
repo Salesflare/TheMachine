@@ -1,4 +1,4 @@
-"""Finding people you know on the Network (discovery.py): off until turned on, contacts go out blinded, only matches are
+"""Finding people you know on the Network (discovery.py): on by default at Standard, off at Careful, the owner's choice kept; contacts go out blinded, only matches are
 looked up, a card only with a concrete reason, colleague read from structure, connect is a friend request, Not now,
 Never, findable, and leaving. A fake Network stands in for the control plane; no network, no sends."""
 import datetime as dt
@@ -128,16 +128,122 @@ class Discovery(unittest.TestCase):
             with self.store.connect() as db:
                 self.assertEqual(db.execute('SELECT count(*) FROM network_looked').fetchone()[0], 105)
 
-    def test_off_until_turned_on(self):
+    def level(self, name):
+        with self.store.connect() as db:
+            rules = tf.a.security_levels.apply(db, name)
+        for ref, kind, rule in rules:  # as the dashboard does (assistant.py, security_level)
+            self.fleet.set_rule(ref, tf.a.security_levels.ALL, kind, rule)
+        self.fleet.network_defaults()
+
+    def defaults_log(self):
+        with self.store.connect() as db:
+            return [r['what'] for r in db.execute("SELECT what FROM fleet_log WHERE outcome='default' ORDER BY id")]
+
+    def test_careful_level_leaves_both_off(self):
+        self.level('careful')
         self.assertEqual(self.fleet.discovery_round(force=True), 0)
         self.assertEqual(self.relay.sent('/discover'), [])
         view = self.fleet.view()['network']
-        self.assertEqual(view, {'find': None, 'discoverable': None, 'asked': False, 'last': None, 'people': [], 'addresses': view['addresses']})
+        self.assertEqual(view, {'find': None, 'discoverable': None, 'asked': False, 'default_at': None, 'last': None, 'people': [],
+                                'addresses': view['addresses']})
         self.assertFalse(any(a['findable'] for a in view['addresses']))
+        self.assertEqual(self.defaults_log(), [])
+
+    def test_standard_turns_both_on_and_says_so_once(self):
+        self.fleet.discovery_round()
+        found = self.relay.sent('/discover')
+        self.assertEqual(found[0], {'action': 'discoverable', 'on': True, 'emails': ['owner@acme.example', 'owner@gmail.com']})
+        self.assertEqual([b['action'] for b in found[1:]], ['match', 'resolve'])  # and the first lookup, in the same round
+        view = self.fleet.network_view()
+        self.assertEqual((view['find'], view['discoverable'], view['asked']), (True, True, False))
+        self.assertTrue(view['default_at'])  # the Network block: "Now findable by people who have your email. Turn off"
+        self.assertEqual(self.defaults_log(), ['Now findable by people who have your email, and checking your contacts privately'])
+        self.ago(new_at=discovery.NEW_EVERY + 1)
+        self.fleet.discovery_round()
+        self.assertEqual(len(self.defaults_log()), 1)  # once
+        self.assertEqual(self.fleet.network_settings()['chosen'], [])  # still the default: a level change moves it
+        # Turn off is the owner's own choice: kept, and the line goes
+        self.fleet.network_action('discoverable_off')
+        self.ago(new_at=discovery.NEW_EVERY + 1)
+        self.fleet.discovery_round()
+        view = self.fleet.network_view()
+        self.assertEqual((view['find'], view['discoverable'], view['default_at']), (True, False, None))
+        self.assertEqual(len(self.defaults_log()), 1)
+
+    def test_an_earlier_choice_is_kept(self):
+        """A Machine from before the defaults: a switch with a value was set by the owner (and Not now answered the
+        contacts check); only a switch they never touched turns on."""
+        for before, want in [({'find': False, 'discoverable': False, 'asked': True}, (False, False)),
+                             ({'find': True}, (True, True)),
+                             ({'asked': True}, (None, True)),
+                             ({'discoverable': False}, (True, False))]:
+            with self.subTest(before=before):
+                self.fleet.set_meta('network', before)
+                self.fleet.discovery_round()
+                view = self.fleet.network_view()
+                self.assertEqual((view['find'], view['discoverable']), want)
+
+    def test_picking_a_level_resets_the_switches_to_its_default(self):
+        self.fleet.network_action('discoverable_off')  # the owner's choice, kept by the rounds
+        self.fleet.discovery_round()
+        self.assertEqual(self.fleet.network_view()['discoverable'], False)
+        self.level('careful')
+        self.assertEqual(self.fleet.network_view()['find'], False)
+        self.assertEqual(self.defaults_log()[-1], 'Careful level: contacts not checked')
+        self.level('standard')
+        view = self.fleet.network_view()
+        self.assertEqual((view['find'], view['discoverable']), (True, True))
+        self.assertEqual(self.defaults_log()[-1], 'Now findable by people who have your email, and checking your contacts privately')
+
+    def test_a_careful_work_fleet_keeps_them_off(self):
+        self.relay.directory['fleets'][0]['security'] = {'level': 'careful'}
+        self.fleet.directory(refresh=True)
+        self.fleet.discovery_round()
+        self.assertEqual(self.relay.sent('/discover'), [])
+
+    def test_no_username_yet_is_tried_again_within_the_hour(self):
+        real, asked = self.relay.call, []
+        def refused(method, path, body=None, timeout=40):
+            if path == '/discover' and body['action'] == 'discoverable':
+                asked.append(body)
+                raise ValueError('Choose your username first: people connect to you by it.')
+            return real(method, path, body, timeout)
+        self.relay.call = refused
+        self.fleet.discovery_round()
+        tries = lambda: len(asked) + len([b for b in self.relay.sent('/discover') if b['action'] == 'discoverable'])
+        self.assertEqual((self.fleet.network_view()['find'], self.fleet.network_view()['discoverable'], tries()), (True, None, 1))
+        self.assertEqual(self.defaults_log(), ['Now checking your contacts privately'])
+        self.fleet.discovery_round()
+        self.assertEqual(tries(), 1)  # not every round
+        self.relay.call = real
+        self.ago(default_failed=discovery.DEFAULT_RETRY + 1)
+        self.fleet.discovery_round()
+        self.assertEqual((self.fleet.network_view()['discoverable'], tries()), (True, 2))
+        self.assertEqual(self.defaults_log()[-1], 'Now findable by people who have your email')
+
+    def test_someone_findable_by_default_is_suggested_with_their_family_role(self):
+        """Both Machines on the defaults: the other one becomes findable, this one looks up their bucket within 15 minutes
+        and suggests them right away (FRESH_CARDS). Someone the owner calls Father: friend or family, the owner picks."""
+        self.fleet.discovery_round()  # this Machine joined earlier
+        self.person('p-dad', 'dad@home.example', strength=8)
+        with self.store.connect() as db:
+            tf.a.graph.set_role(db, 'p-dad', 'Father', 'owner', discovery.now())
+        self.ago(first_done=60, new_at=discovery.NEW_EVERY + 1, joined_checked=discovery.JOINED_EVERY + 1)
+        self.fleet.discovery_round()
+        self.assertNotIn('dad', self.people())  # not findable yet: nothing
+        ON_NETWORK['dad@home.example'] = ('dad', 'Dad', False)  # their Machine turned "find me" on by default
+        self.addCleanup(ON_NETWORK.pop, 'dad@home.example')
+        self.relay.found['dad@home.example'] = discovery.hexed(pow(discovery.to_group('dad@home.example'), self.relay.b, discovery.P))
+        self.relay.joined = [discovery.bucket('dad@home.example')]
+        self.ago(new_at=discovery.NEW_EVERY + 1, joined_checked=discovery.JOINED_EVERY + 1)
+        self.fleet.discovery_round()
+        dad = self.people()['dad']
+        self.assertEqual((dad['status'], dad['hint'], dad['role'], [r['kind'] for r in dad['reasons']]), ('new', 'personal', 'Father', ['joined']))
+        self.assertEqual(self.fleet.network_action('connect', 'dad@home.example', 'family'), {'status': 'requested', 'relation': 'family'})
 
     def test_lookup_is_blinded_and_only_matches_are_resolved(self):
         self.fleet.network_action('find_on')
-        match, resolve = self.relay.sent('/discover')
+        match, resolve = [b for b in self.relay.sent('/discover') if b['action'] in ('match', 'resolve')]
         self.assertEqual(match['action'], 'match')
         with self.store.connect() as db:
             contacts = [c[0] for c in self.fleet.network_contacts(db)]
@@ -153,7 +259,7 @@ class Discovery(unittest.TestCase):
         self.assertEqual((people['sam']['hint'], [r['kind'] for r in people['sam']['reasons']]), ('colleague', ['contact']))  # same work domain; found on joining: suggested now
         # A day has not passed and nobody new: no second lookup
         self.fleet.discovery_round()
-        self.assertEqual(len(self.relay.sent('/discover')), 2)
+        self.assertEqual(len(self.relay.sent('/discover')), 3)  # with "find me", on by default
         with self.store.connect() as db:
             self.assertIn(f'Checked {len(contacts)} contacts privately; 3 on the Network', [r['what'] for r in db.execute('SELECT what FROM fleet_log')])
 
@@ -338,15 +444,47 @@ class Discovery(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fleet.network_action('address_off', 'someone@else.example')  # only the owner's own
         # A newly connected account goes out with the next round, without asking again
-        sent = len(self.relay.sent('/discover'))
+        sent = len([b for b in self.relay.sent('/discover') if b['action'] == 'discoverable'])
         self.fleet.discovery_round()
-        self.assertEqual(len(self.relay.sent('/discover')), sent)  # nothing changed
+        self.assertEqual(len([b for b in self.relay.sent('/discover') if b['action'] == 'discoverable']), sent)  # nothing changed
         self.fleet.config = {**self.fleet.config, 'accounts': self.fleet.config['accounts'] + [
             {'id': 'side', 'email': 'owner@side.example', 'transport': 'gog'}, {'id': 'chat', 'email': 'owner@chat.example', 'service': 'slack'}]}
         self.fleet.discovery_round()
         self.assertEqual(self.relay.sent('/discover')[-1]['emails'], ['owner@acme.example', 'owner@side.example'])  # not the chat login
         self.fleet.network_action('discoverable_off')
         self.assertEqual(self.fleet.network_view()['addresses'][0]['findable'], False)
+
+    def test_shared_addresses_stay_off_unless_the_owner_turns_one_on(self):
+        """Findable by the sign-in and every connected address, except shared ones: a role or team inbox by its name,
+        one a Fleet teammate also has, one marked as the team's in Settings. Listed off, with the reason."""
+        self.fleet.config = {**self.fleet.config, 'accounts': self.fleet.config['accounts'] + [
+            {'id': 'info', 'email': 'info@acme.example', 'transport': 'gog'}, {'id': 'desk', 'email': 'desk@acme.example', 'transport': 'gog'},
+            {'id': 'pat', 'email': 'pat@acme.example', 'transport': 'gog'}]}
+        with self.store.connect() as db:
+            tf.a.own_addresses.ensure(db)
+            db.execute("INSERT INTO own_address_choices(address,choice,at) VALUES('desk@acme.example','team',?)", (discovery.now(),))
+        self.fleet.discovery_round()  # on by default
+        sent = [b for b in self.relay.sent('/discover') if b['action'] == 'discoverable'][-1]
+        self.assertEqual(sent['emails'], ['owner@acme.example', 'owner@gmail.com'])
+        view = {a['email']: (a['on'], a['shared']) for a in self.fleet.network_view()['addresses'] if not a['account']}
+        self.assertEqual(view, {'owner@gmail.com': (True, False), 'info@acme.example': (False, True), 'desk@acme.example': (False, True),
+                                'pat@acme.example': (False, True)})  # pat: the Work Fleet teammate's address
+        # The owner turns one on: kept, whatever it looks like
+        self.fleet.network_action('address_on', 'info@acme.example')
+        self.assertIn('info@acme.example', self.relay.sent('/discover')[-1]['emails'])
+        self.fleet.discovery_round()
+        self.assertIn('info@acme.example', self.fleet._findable_wanted())
+        self.fleet.network_action('address_off', 'info@acme.example')
+        self.assertNotIn('info@acme.example', self.relay.sent('/discover')[-1]['emails'])
+
+    def test_upgrade_stops_a_shared_address_the_owner_never_chose(self):
+        """A Machine findable before by every connected address: its next round sends them again without the shared ones."""
+        self.fleet.config = {**self.fleet.config, 'accounts': self.fleet.config['accounts'] + [{'id': 'sales', 'email': 'sales@acme.example', 'transport': 'gog'}]}
+        everything = ['owner@acme.example', 'owner@gmail.com', 'sales@acme.example']
+        self.fleet.set_meta('network', {'find': True, 'discoverable': True, 'findable': everything, 'findable_sent': everything,
+                                        'findable_at': discovery.now(), 'account_email': 'owner@acme.example'})
+        self.fleet.discovery_round()
+        self.assertEqual([b for b in self.relay.sent('/discover') if b['action'] == 'discoverable'][-1]['emails'], ['owner@acme.example', 'owner@gmail.com'])
 
     def test_group_matches_the_network(self):
         a, items, buckets = discovery.blind(['x@example.com'], secret=7)

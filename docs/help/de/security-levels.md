@@ -20,6 +20,7 @@ Eine Stufe ist ein Ausgangspunkt. Änderst du danach eine Einstellung, zeigt die
 - **Text in Benachrichtigungen** aus: Eine Benachrichtigung sagt „Neue Aufgabe“ oder „Bereit“, nicht, was in der Aufgabe steht.
 - **Speichern von Anmeldungen anbieten** aus. Websites mit gespeicherter Anmeldung bleiben, bis du auf **Alle gespeicherten Anmeldungen vergessen** tippst.
 - **Arbeitskontakte nachschlagen**, **Anbieten, Erkenntnisse zu teilen** und **Teilen, was die Hilfe gefragt wird** aus.
+- **Prüfen, welche meiner Kontakte eine Machine haben** und **Leute, die meine E-Mail-Adresse haben, dürfen mich finden** aus.
 - **Ausführen-Details 90 Tage behalten** aus: Sie werden 30 Tage aufbewahrt.
 - In einer Familie wirst du bei freien und belegten Zeiten zuerst gefragt. Bei Freunden wird Kontext zu Meetings abgelehnt.
 
@@ -32,6 +33,7 @@ Der Owner der Fleet oder ein Admin wählt sie auf der Kontoseite, unter Fleet-Ei
 - Der Team-Graph teilt Kunden-E-Mails ohne ihre Anhänge.
 - Benachrichtigungen zu Arbeitsaufgaben zeigen keinen Text.
 - Arbeitskontakte werden nicht nachgeschlagen.
+- Deine Machine prüft deine Kontakte nicht im Network und macht dich nicht per E-Mail auffindbar, außer du hast das selbst eingeschaltet.
 - Alle melden sich alle 7 Tage neu an.
 - Ein Einladungslink funktioniert nur für die E-Mail-Adresse, an die er geschickt wurde.
 

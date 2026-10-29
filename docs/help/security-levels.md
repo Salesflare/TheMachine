@@ -20,6 +20,7 @@ A level is a starting point. Change any setting after, and the level shows **Cus
 - **Text in notifications** off: a notification says "New to-do" or "Ready", not what the to-do says.
 - **Offer to save sign-ins** off. Signed-in sites you saved stay until you tap **Forget all saved sign-ins**.
 - **Look up work contacts**, **Offer to share learnings** and **Share what Help is asked** off.
+- **Check which of my contacts have a Machine** and **Let people who have my email find me** off.
 - **Keep Do it details 90 days** off: they're kept 30 days.
 - In a Family, free/busy times ask you first. With Friends, meeting context is declined.
 
@@ -32,6 +33,7 @@ The Fleet's owner or an admin picks it on the account page, under Fleet settings
 - The team Graph shares client emails without their attachments.
 - Notifications for work to-dos show no text.
 - Work contacts aren't looked up.
+- Your Machine doesn't check your contacts on the Network or make you findable by email, unless you turned that on yourself.
 - Everyone signs in again every 7 days.
 - An invite link only works for the email it was sent to.
 

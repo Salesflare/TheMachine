@@ -20,6 +20,7 @@ Un niveau est un point de départ. Changez un paramètre ensuite, et le niveau a
 - **Texte dans les notifications** désactivé : une notification indique « Nouvelle tâche » ou « Prête », pas le contenu de la tâche.
 - **Proposer d’enregistrer les identifiants** désactivé. Les sites connectés que vous avez enregistrés restent jusqu’à ce que vous appuyiez sur **Oublier tous les identifiants enregistrés**.
 - **Rechercher les contacts pro**, **Proposer de partager des apprentissages** et **Partager ce qu’on demande à l’aide** désactivés.
+- **Vérifier lesquels de mes contacts ont une Machine** et **Laisser les personnes qui ont mon e-mail me trouver** désactivés.
 - **Garder les détails de Faire 90 jours** désactivé : ils sont gardés 30 jours.
 - Dans une Famille, les disponibilités vous sont d’abord demandées. Avec les Amis, le contexte des réunions est refusé.
 
@@ -32,6 +33,7 @@ Le propriétaire ou un admin de la Fleet le choisit sur la page du compte, sous 
 - Le Graph d’équipe partage les e-mails clients sans leurs pièces jointes.
 - Les notifications des tâches de travail n’affichent aucun texte.
 - Les contacts pro ne sont pas recherchés.
+- Votre Machine ne vérifie pas vos contacts sur le Network et ne vous rend pas trouvable par e-mail, sauf si vous l’avez activé vous-même.
 - Tout le monde se reconnecte tous les 7 jours.
 - Un lien d’invitation ne fonctionne que pour l’adresse e-mail à laquelle il a été envoyé.
 

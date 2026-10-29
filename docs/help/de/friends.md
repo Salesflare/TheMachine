@@ -18,6 +18,8 @@ Im Bereich Network:
 - „Prüfen, welche meiner Kontakte eine Machine haben“ schlägt Leute vor, die du kennst.
 - „Leute, die meine E-Mail-Adresse haben, dürfen mich finden“ lässt sie dich finden.
 
+Beide sind standardmäßig an, bei der Sicherheitsstufe Vorsichtig aus. Du kannst sie jederzeit ausschalten; deine Wahl bleibt. Man findet dich über deine Anmelde-E-Mail und deine verbundenen Adressen, außer geteilten wie info@, die aus bleiben, bis du sie einschaltest.
+
 Bekannte, die im Network sind, werden sofort vorgeschlagen, wenn du das einschaltest, und auch, wenn später jemand beitritt. Ein Treffer kommt mit Verbinden, Nicht jetzt oder **Nie vorschlagen**. **Network verlassen** nimmt dich heraus.
 
 ## Eine Machine auf deinem eigenen Computer

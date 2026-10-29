@@ -14765,6 +14765,11 @@ class App:
             for ref, kind, rule in rules:
                 if ref and self.fleet:
                     self.fleet.set_rule(ref, security_levels.ALL, kind, rule)
+            if name == 'security_level' and self.fleet:  # the Network switches follow the level now, not on the next round
+                try:
+                    self.fleet.network_defaults()
+                except Exception as error:  # noqa: BLE001 - the next Network round sets them
+                    LOG.info('network defaults after a level change failed error=%s', type(error).__name__)
             return {'security': self.security_view(), 'lookups': self.lookups_view(), 'team_learnings': self.learnings_view()}
         if name == 'own_address':
             if not owner_dashboard:

@@ -20,6 +20,7 @@ Een niveau is een vertrekpunt. Wijzig je daarna een instelling, dan toont het ni
 - **Tekst in meldingen** uit: een melding zegt "Nieuwe to-do" of "Klaar", niet wat er in de to-do staat.
 - **Aanbieden om logins op te slaan** uit. Opgeslagen ingelogde sites blijven tot je op **Alle opgeslagen logins vergeten** tikt.
 - **Werkcontacten opzoeken**, **Aanbieden om inzichten te delen** en **Delen wat aan Help gevraagd wordt** uit.
+- **Checken welke van mijn contacten een Machine hebben** en **Laat mensen die mijn e-mailadres hebben mij vinden** uit.
 - **Details van Doe het 90 dagen bewaren** uit: ze worden 30 dagen bewaard.
 - In een Familie vragen vrije en bezette tijden het je eerst. Bij Vrienden wordt context voor afspraken geweigerd.
 
@@ -32,6 +33,7 @@ De eigenaar van de Fleet of een beheerder kiest het op de accountpagina, onder d
 - De team-Graph deelt e-mails van klanten zonder hun bijlagen.
 - Meldingen voor werk-to-do's tonen geen tekst.
 - Werkcontacten worden niet opgezocht.
+- Je Machine checkt je contacten niet op het Network en maakt je niet vindbaar via e-mail, tenzij je dat zelf hebt aangezet.
 - Iedereen logt elke 7 dagen opnieuw in.
 - Een uitnodigingslink werkt alleen voor het e-mailadres waarnaar hij verstuurd is.
 

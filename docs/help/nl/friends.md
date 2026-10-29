@@ -18,6 +18,8 @@ In het paneel Network:
 - "Kijk welke van mijn contacten een Machine hebben" stelt mensen voor die je kent.
 - "Laat mensen die mijn e-mailadres hebben me vinden" laat hen jou vinden.
 
+Allebei staan standaard aan, en uit bij het beveiligingsniveau Voorzichtig. Zet ze uit wanneer je wilt; je keuze blijft. Mensen vinden je via je login-e-mailadres en je gekoppelde adressen, behalve gedeelde zoals info@: die blijven uit tot je ze aanzet.
+
 Mensen die je kent en die op het Network zitten, worden meteen voorgesteld als je het aanzet, en wanneer iemand later aansluit. Een match komt met Verbinden, Niet nu of **Nooit voorstellen**. **Het Network verlaten** haalt je eraf.
 
 ## Een Machine op je eigen computer
