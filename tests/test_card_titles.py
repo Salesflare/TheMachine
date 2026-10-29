@@ -1,5 +1,5 @@
-"""A title The Machine wrote keeps describing where things stand: a review that brings a card up to date
-and a preparation result can give it a new one. A title the owner chose (title_source 'user') is never replaced.
+"""A title The Machine wrote keeps saying what needs doing: a review that brings a card up to date and a
+preparation result can give it a new one when that changed (finishing it never does: test_title_on_done.py). A title the owner chose (title_source 'user') is never replaced.
 A prepared-ahead card that falls back to a normal suggestion goes out as the card, not as a "Reminder"."""
 import importlib.util
 from pathlib import Path
