@@ -141,9 +141,21 @@ class Sessions(unittest.TestCase):
 
 
 class Tools(unittest.TestCase):
+    def test_it_ends_itself_after_a_goodbye_and_lets_an_okay_be(self):
+        # Like a person on the phone: an "all right" needs no paragraph back, a filler before a tool once at most, and
+        # a clear goodbye ends the call (end_talk, which the page handles like End)
+        end = [x for x in t.TOOLS if x['name'] == 'end_talk'][0]
+        self.assertIn('the same as the owner pressing End', end['description'])
+        self.assertIn('end_talk', [x['name'] for x in t.MAIN_TOOLS])
+        for text in (t.instructions('Reply to Lotte', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
+            self.assertIn('only acknowledges or fills a pause', text)
+            self.assertIn('Say one word at most, or nothing, and wait for them.', text)
+            self.assertIn('Before a tool call, say one short line at most', text)
+            self.assertIn('say one short goodbye and call end_talk', text)
+
     def test_reading_tools_the_chat_and_a_confirmed_send(self):
         names = [tool['name'] for tool in t.TOOLS]
-        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer'])
+        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer', 'end_talk'])
         self.assertIn('never sends', [tool for tool in t.TOOLS if tool['name'] == 'ask_chat'][0]['description'])
         self.assertIn('a clear yes to your confirm question', t.ASK_NOTE)
 
@@ -299,7 +311,7 @@ class Api(unittest.TestCase):
         self.assertEqual(self.gateway.calls[-1]['session_key'], t.SESSION_PREFIX + 'main')
         self.assertEqual((started['limit'], started['warn']), (1800, 1740))   # OpenAI allows 60 minutes
         self.assertEqual([x['name'] for x in started['tools']],
-                         ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer'])
+                         ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer', 'end_talk'])
         for words in ('Start with list_todos', 'One to-do at a time', 'never say something was sent unless send_answer says so',
                       'call ask_to_send and ask its question', 'never poll', 'contractions'):
             self.assertIn(words, started['instructions'])
@@ -473,7 +485,7 @@ class Api(unittest.TestCase):
         started = self.act('talk_start', {'suggestion_id': SID})
         self.assertNotIn(SECRET, json.dumps(started))
         self.assertEqual((started['limit'], started['warn'], started['per_use']), (600, 540, True))
-        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer'])
+        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat', 'ask_to_send', 'send_answer', 'end_talk'])
         self.assertIn('Reply to Dana about the offsite', started['instructions'])
         self.assertEqual(self.act('talk_offer', {'id': started['id'], 'sdp': OFFER}), {'sdp': ANSWER})
         self.act('talk_line', {'id': started['id'], 'role': 'user', 'text': 'What does Dana want?'})
@@ -492,6 +504,7 @@ class Api(unittest.TestCase):
         started = self.act('talk_start', {'suggestion_id': SID})
         self.assertEqual((started['voice'], self.gateway.calls[-1]['voice']), ('cedar', 'cedar'))
         self.assertEqual(started['speed'], t.SPEED)            # the page sets it in session.update
+        self.assertEqual(started['turn'], {'type': 'semantic_vad', 'eagerness': 'low', 'create_response': True, 'interrupt_response': True})
         self.assertNotIn('speed', self.gateway.calls[-1])      # talk.client.create takes no speed
         self.act('talk_end', {'id': started['id']})
         saved = self.act('voice_prefs', {'talk_voice': 'marin'})

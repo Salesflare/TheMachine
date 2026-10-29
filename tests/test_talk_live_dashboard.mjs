@@ -24,7 +24,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(demo&&r.action.startsWith('talk_')){res.end(JSON.stringify({ok:true,demo:true}));return}
   const answer={
    talk_status:()=>({ready,limit:600,warn:540}),
-   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',voice:'cedar',speed:0.95,ask_note:'Drafts wait for Approve.',notes:{queued:'Joins the last request.',done:'The chat finished. Its answer: "{answer}" Tell the owner now.',stopped:'The chat stopped.'},ready:true},
+   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',voice:'cedar',speed:0.95,turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},ask_note:'Drafts wait for Approve.',notes:{queued:'Joins the last request.',done:'The chat finished. Its answer: "{answer}" Tell the owner now.',stopped:'The chat stopped.'},ready:true},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_line:()=>{lines.push({kind:a.role==='user'?'you':'reply',text:a.text,via:'live',at:Date.now()});return {ok:true}},
    talk_tool:()=>({output:{title:cards[0].title,messages:[{from:'Lotte',text:'When can I pick it up?'}]}}),
@@ -104,6 +104,7 @@ try{
   assert.equal(setup.session.instructions,'You are The Machine, talking live.');
   assert.ok(setup.session.audio.input.transcription.model,'what the owner says is written down');
   assert.deepEqual(setup.session.audio.output,{voice:'cedar',speed:0.95},'the owner\'s voice, a touch slower than the default');
+  assert.deepEqual(setup.session.audio.input.turn_detection,{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},'a short filler or pause doesn\'t end the owner\'s turn');
   assert.ok(await page.locator(bar+' .talk-cost').isVisible(),'an API key: the cost note shows');
 
   // What both sides say lands in the chat, as normal messages: the voice's once its response is done
@@ -241,6 +242,21 @@ try{
    assert.equal(await page.locator(bar+' .talk-cost').count(),0,'a ChatGPT sign-in: no cost note');
    await tap(bar+' [data-talk-end]');await page.waitForFunction(()=>!document.querySelector('.chat-compose .talk'));await page.waitForTimeout(300);
    assert.equal(actions.filter(a=>a.action==='talk_end').length,2);
+
+   // A goodbye ends it by itself (end_talk), the same as End, once the goodbye has been heard
+   await tap(wave);await page.waitForFunction(()=>document.querySelector('.chat-compose .talk-live strong')?.textContent==='Live');
+   await page.evaluate(()=>{__say({type:'response.created',response:{id:'bye'}});__say({type:'output_audio_buffer.started'})});
+   const before=await page.evaluate(()=>window.__dc.sent.filter(x=>x.type==='response.create').length);
+   await call('bye1','end_talk');
+   await page.evaluate(()=>__say({type:'response.done',response:{id:'bye',status:'completed'}}));
+   await page.waitForTimeout(1800);
+   assert.equal(await page.locator(bar+' .talk-live strong').textContent(),'Live','not while its goodbye still plays');
+   assert.equal(await page.evaluate(()=>window.__dc.sent.filter(x=>x.type==='response.create').length),before,'no new answer after end_talk');
+   await page.evaluate(()=>__say({type:'output_audio_buffer.stopped'}));
+   await page.waitForFunction(()=>!document.querySelector('.chat-compose .talk'));
+   for(let i=0;i<40&&actions.filter(a=>a.action==='talk_end').length<3;i++)await page.waitForTimeout(50);
+   assert.equal(actions.filter(a=>a.action==='talk_end').length,3,'ended at the Machine too, like End');
+   await page.evaluate(()=>{window.__closed=0});
 
    // The microphone is blocked, or the Machine can't start it: it says so
    await page.evaluate(()=>{window.__mic.mode='denied'});await tap(wave);

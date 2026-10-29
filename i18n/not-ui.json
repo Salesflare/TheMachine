@@ -87,6 +87,7 @@
  "The draft on screen changed or is gone, so nothing was sent. Call ask_to_send again.",
  "The signal review is still unfinished.",
  "This to-do is gone.",
+ "This to-do is no longer open.",
  "This uses 1 of your {} reset{}. Your ChatGPT usage limits start over now.",
  "Trello",
  "UTC",

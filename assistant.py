@@ -20501,7 +20501,7 @@ class App:
             LOG.info('talk live start via=%s main=%s', started.get('via'), main)
             view = self.talk_view()
             now, language = time.strftime('%A %d %B %Y, %H:%M'), locale_prefs.language() or 'en'
-            return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'per_use': started.get('via') == 'key',
+            return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'turn': talk_live.TURN, 'per_use': started.get('via') == 'key',
                     'limit': talk_live.MAIN_LIMIT_SECONDS if main else talk_live.LIMIT_SECONDS,
                     'warn': talk_live.MAIN_WARN_SECONDS if main else talk_live.WARN_SECONDS,
                     'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,

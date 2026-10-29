@@ -71,21 +71,32 @@ conversation that isn't tied to a to-do (`talk_start` with `main: true`, session
 `agent:main:assistant-talk-main`). One at a time; a to-do's own Talk live can run beside it (two in all).
 
 - Tools (`talk_live.MAIN_TOOLS`): `list_todos` (the page's own: what Ready and To decide show, in that order, with ids
-  and who it's from), `open_todo` (the page opens that to-do's chat, tells the Machine with `talk_focus`, and returns
-  `todo_details`), then the same `todo_details`, `find_todos` (with ids here), `ask_chat`, `ask_to_send` and
-  `send_answer`. Instructions: `talk_live.main_instructions` (the same voice and rules, plus going through the to-dos
+  and who it's from), `open_todo` (the page shows that to-do in Talk's view, tells the Machine with `talk_focus`, and
+  returns `todo_details`), then the same `todo_details`, `find_todos` (with ids here), `ask_chat`, `ask_to_send` and
+  `send_answer`, and `end_talk`. Instructions: `talk_live.main_instructions` (the same voice and rules, plus going through the to-dos
   one by one).
 - Focus: the conversation works on the to-do on screen. The Machine keeps it (`Talk.focus`); `todo_details`,
   `talk_ask_send` and `talk_send` act on it only, and before one is open they refuse. When the owner opens another
   to-do, the page moves the focus there (`openChatLink`); a confirm question about the previous one is dropped, so a
   yes can only send the draft on screen. All the rules in [Sending by voice](#sending-by-voice) hold as they are.
+- Talk's view (`#talk-view`, hash `#talk`): Talk opens its own page with one transcript for the whole conversation
+  (kept in the page, `talkLog`), a small mark when it moves to another to-do, and a card on top with the to-do it's
+  about (**Talking about**, its title, its current draft and **Open the chat**). The card stays in sight while the
+  transcript scrolls. `open_todo` changes the card, never the page, so the owner isn't moved from chat to chat. The
+  draft in the card is what `ask_to_send` checks, as in a chat (`.chat-draft.current`, its revision). `ask_chat`
+  follows the chat in the background (`talkFollow`, `card_chat`) when it isn't open. After **End** the view keeps the
+  transcript with **Start again**.
 - Lines: `talk_line` keeps each line under the to-do in focus, so each to-do's chat shows what was said about it,
   after its own **Talked live** line. Lines before any to-do is open are kept with no to-do (not shown in a chat).
-- The bar: in the open chat's message box, as for a to-do's own; with no chat open it floats at the bottom of the page
-  (`#talk-dock`). Leaving a chat doesn't end Talk.
+- The bar: at the bottom of Talk's view; in an open chat's message box; on any other page it floats at the bottom
+  (`#talk-dock`). Leaving the view or a chat doesn't end Talk; **Talk** in the sidebar goes back to the view, and **T**
+  ends it.
 - New to-dos: a to-do that shows up in Ready or To decide while Talk is live is told to the voice as a system note
   (`talk_live.NEW_NOTE`), once, when neither side is talking (`response.done`, and 1.2 s after
   `input_audio_buffer.speech_stopped`).
+- Ending: when the owner clearly says they're done, the voice says one short goodbye and calls `end_talk` (also in a
+  to-do's own Talk live). The page sends no new response, waits until the goodbye has played
+  (`output_audio_buffer.stopped`, at most 10 s), then ends as **End** does.
 - Limit: 30 minutes (`MAIN_LIMIT_SECONDS`), a warning a minute before. OpenAI allows a Realtime session up to 60
   minutes; 30 keeps an API key's per-minute cost bounded.
 
@@ -101,7 +112,14 @@ OpenAI recommends `marin` and `cedar` for best quality; `cedar` stays the defaul
 `talk_live.instructions`, laid out as OpenAI's Realtime prompting guide suggests: labeled sections (personality and tone,
 length, pacing, variety, speaking not reading) before the rules, which are unchanged. It talks in short, warm turns with
 contractions, varies its openers, says what a to-do is about instead of reading its title, and never reads out lists or
-links, except a draft it is asked to read in full before a send question.
+links, except a draft it is asked to read in full before a send question. A plain acknowledgment ("okay", "all
+right") gets a word at most, or nothing; before a tool it says one short line at most, once.
+
+Turn detection: the Gateway's `talk.client.create` sets `server_vad` (silence only) and takes no other kind, so the page
+sets `audio.input.turn_detection` to `talk_live.TURN` in its `session.update`: `semantic_vad` with `eagerness: low`.
+It judges from the words whether the owner has finished, so a short filler or a pause mid-thought doesn't start a reply.
+OpenAI's [VAD guide](https://developers.openai.com/api/docs/guides/realtime-vad): "low will let the user take their time
+to speak".
 
 ## Sending by voice
 
@@ -134,9 +152,9 @@ only from `talk_send`.
 
 `tests/test_talk_live.py` (the Gateway helper stubbed: status, start, a single offer, the limit, the transcript in the
 chat, the tools, owner only, the secret never returned; by voice: a yes after the question sends one draft, with Undo;
-a yes without a question, an unclear answer, a no, a changed draft and a question that doesn't name who all send
+ending itself after a goodbye, the turn detection; a yes without a question, an unclear answer, a no, a changed draft and a question that doesn't name who all send
 nothing; the judge accepts only exact JSON) and `tests/test_talk_live_dashboard.mjs` (a fake
 `getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).
-`tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, listing and opening to-dos (the
-screen follows), a send by voice about the to-do on screen, a new to-do told at a pause, following the owner to
-another to-do, and its 30-minute limit (390x844 and 1440x900, light and dark).
+`tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, Talk's view, listing and opening to-dos (the
+card changes, the page doesn't; **Open the chat** and back), a send by voice about the to-do on screen, a new to-do told at a pause, following the owner to
+another to-do, its 30-minute limit (its toast only then), End, **Start again** and `end_talk` (the goodbye kept in the transcript) (390x844 and 1440x900, light and dark).

@@ -1748,11 +1748,22 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .talk-dot{width:10px;height:10px;border-radius:50%;background:var(--c-red,#d93025);animation:mic-pulse 1.4s ease-in-out infinite}.talk-dot.wait{background:var(--muted);animation:none}
 .talk-time{min-width:2.4em;font-variant-numeric:tabular-nums;color:var(--muted)}
 .talk-hint{flex:1;min-width:0;overflow:hidden;color:var(--muted);font:400 .9rem/1.3 var(--sans);text-overflow:ellipsis;white-space:nowrap}
-.talk-mute,.talk-end{flex:none;width:auto;min-height:36px;margin:0;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .88rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
-.talk-mute{margin-left:auto}.talk-mute[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.talk-mute,.talk-end,.talk-again-btn{flex:none;width:auto;min-height:36px;margin:0;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .88rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
+.talk-mute{margin-left:auto}@media(hover:hover){.talk-again-btn:hover{background:var(--c-hover)}}.talk-mute[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 8%,transparent)}
 .talk-end{border-color:transparent;background:var(--c-red,#d93025);color:#fff}
 .talk-err{border-color:var(--orange)}.talk-err .grow{color:var(--orange);font:600 .88rem/1.3 var(--sans)}.talk-err .talk-end{background:none;border-color:var(--c-line-strong);color:var(--text)}
 .talk-cost{padding:0 14px;color:var(--muted);font-size:.8rem}
+/* Talk's own view: one column like a chat, the to-do it is about on top (with its draft), the transcript, the bar at the bottom */
+.talk-view{--chat-col:min(100%,680px);display:flex;flex-direction:column;min-height:calc(100dvh - 170px)}.talk-view[hidden]{display:none}
+.talk-head{display:flex;align-items:center;gap:12px;width:var(--chat-col);margin:0 auto}.talk-head h2{flex:1;margin:0}.talk-head button{width:auto;margin:0}
+/* The to-do stays in sight while the transcript scrolls under it */
+.talk-about-slot{position:sticky;top:var(--talk-top,0px);z-index:4;padding:14px 0 6px;background:var(--bg)}.talk-about-slot:empty{display:none}
+.talk-about{width:var(--chat-col);box-sizing:border-box;margin:0 auto;padding:12px 16px;border:1px solid var(--c-line);border-radius:14px;background:var(--surface)}
+.talk-about-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:var(--chat-meta,.8rem);color:var(--muted)}.talk-about-top a{flex:none;color:var(--c-accent,var(--mint));font-weight:500}
+.talk-about h3{margin:4px 0 0;font-size:1rem;line-height:1.35}.talk-about .chat-draft{margin-top:10px}.talk-about .chat-clamp{max-height:9.5em;overflow:auto}
+.talk-view .chat-log{--chat-meta:.75rem;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));flex:1;padding-top:8px;line-height:1.5}
+.talk-mark{align-self:center;margin-top:26px;font-size:var(--chat-meta);color:var(--chat-quiet);text-align:center}
+.talk-foot{position:sticky;bottom:0;z-index:5;width:var(--chat-col);margin:0 auto;padding:8px 0 calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg)}.talk-foot .talk{margin:0}
 /* Talk (the main conversation) outside a to-do's chat: the same bar, floating at the bottom of the page */
 #talk-dock{position:fixed;z-index:60;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100vw - 32px));margin:0;transform:translateX(-50%)}
 #talk-dock .talk-bar{box-shadow:0 6px 24px rgba(0,0,0,.14)}
@@ -2014,6 +2025,7 @@ body main{padding-top:0}
 /* A phone and a tablet: a slim top bar with the menu button, the page's title in the column, and the sidebar as a drawer */
 @media(max-width:1023px){
   :root{--side-bg:var(--bg)}
+  .talk-view{--talk-top:calc(52px + env(safe-area-inset-top));min-height:calc(100dvh - 250px)}
   .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;height:calc(52px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(1.1px,env(safe-area-inset-right)) 0 max(2.5px,env(safe-area-inset-left));background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
   .topbar-title{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 26px);transform:translate(-50%,-50%);display:flex;align-items:center;gap:7px;padding:4px 8px;border-radius:var(--r-sm);color:var(--text);font:var(--fw-heading) 17px/1 var(--serif);letter-spacing:-.01em;text-decoration:none;white-space:nowrap}
   .topbar-title img{width:22px;height:22px;object-fit:contain}
@@ -2789,6 +2801,7 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><details id="review-run-history"><summary>Recent runs</summary
 ><div id="review-runs" class="list"></div></details><div class="section-head"><h2>Delivery</h2></div
 ><div id="deliveries" class="list"></div><p class="footnote">Reviews read your new messages in small batches, so a busy or failed run can delay them. Sources keep collecting while OpenClaw, the engine The Machine runs on, is offline, except Android, which needs it and your phone. <a class="learn" href="https://themachine.computer/help/reviews-paused" target="_blank" rel="noopener">Learn more</a></p></div></section
+><section id="talk-view" class="talk-view" hidden aria-label="Talk"></section
 ><section id="browser-pane" class="browser-pane" hidden aria-label="Browser"><div class="bp-head"><h2>Browser</h2
 ><button type="button" id="bp-full" class="bp-full" aria-pressed="false">Full size</button
 ><a id="bp-tab" target="_blank" rel="noopener">Open in new tab ↗</a
@@ -5138,7 +5151,7 @@ const decisionVia=source=>DECISION_VIA[source]?t(DECISION_VIA[source]):t('via {}
 const listOpenKept={};const listOpen=id=>{const d=document.getElementById(id);if(d)listOpenKept[id]=d.open;return !!listOpenKept[id]};
 // Feedback's rows name where the to-dos came from (assistant.py TODO_SOURCE); the ones that need it say a little more
 const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Problems in The Machine, like an error','Phone notifications':'Texts and alerts on your phone','Other':'The source is gone or unknown'};
-function render(){scopeSync(state.locale);try{talkFromStatus()}catch{}applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();
+function render(){scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),lookOpen=listOpen('lookdone-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
@@ -5999,10 +6012,45 @@ async function talkLoad(){if(talkInfo.busy||Date.now()-talkInfo.at<600000)return
 // Whether this Machine can talk live also comes with the page's status (talk_ready), so Talk shows without asking
 function talkFromStatus(){if(typeof state.talk_ready==='boolean'&&talkInfo.ready!==state.talk_ready&&!talkInfo.busy){talkInfo.ready=state.talk_ready;talkSide()}}
 // Talk in the sidebar, or T: starts the main conversation, or ends it while it's live (the same as End)
-function talkMain(){const was=talk?.main;if(talk)talkEnd();if(!was)talkStart(true)}
-function talkSide(){const b=$('#side-talk');if(b){b.hidden=!talkOk();b.setAttribute('aria-pressed',String(!!talk?.main))}}
+function talkMain(){const was=talk?.main,first=chatOpen()?.id||null;if(talk)talkEnd();if(was||!talkOk())return;talkLog=[];
+ talkAfterDrawer(()=>{talkGoView();talkStart(true,first)})}
+// The phone drawer closes with a step back in history: Talk's view goes on after that, or that step would undo it
+function talkAfterDrawer(go){if(typeof drawerPopping!=='undefined'&&drawerPopping)addEventListener('popstate',()=>setTimeout(go),{once:true});else go()}
+function talkSide(){const b=$('#side-talk');if(b){b.hidden=!talkOk()&&!talk?.main;b.setAttribute('aria-pressed',String(!!talk?.main));b.setAttribute('aria-current',talkViewOn()?'page':'false')}}
+// Talk's own view (#talk): one transcript for the whole conversation, the to-do it is about now (with its draft: the one
+// a spoken yes can send) and the bar. The voice opening a to-do changes that card, never the page the owner is on.
+// Each to-do's chat still gets what was said about it, what was decided and what was sent.
+let talkLog=[];  // this page's transcript of the main conversation: {role,text}, and {about,title} where the to-do changes
+const talkViewOn=()=>!!$('#talk-view')&&!$('#talk-view').hidden;
+let talkBack='inbox';
+function talkGoView(){if(location.hash==='#talk')talkViewShow();else location.hash='#talk'}
+function talkViewShow(){const sec=$('#talk-view');if(sec.hidden)talkBack=!$('#settings').hidden?'settings':document.querySelector('nav button.active')?.dataset.tab||'inbox';
+ for(const x of document.querySelectorAll('main>section'))x.hidden=x!==sec;
+ for(const b of document.querySelectorAll('nav button')){b.classList.remove('active');b.setAttribute('aria-current','false')}
+ $('#open-settings')?.setAttribute('aria-current','false');talkViewPaint();talkPaint();talkSide();requestAnimationFrame(()=>scrollTo(0,document.documentElement.scrollHeight))}
+function talkLeave(){if(!talkViewOn())return;if(talkBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${talkBack}"]`)?.click()}
+function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body):null;if(!a)return '';
+ const to=a.to_name||(Array.isArray(a.to)?a.to.join(', '):a.to||''),mail=a.kind==='email';
+ return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span>${to?`<div class="chat-draft-head"><span>${esc(t('To: {}',to))}</span></div>`:''}${a.subject&&!a.reply&&!/^re:/i.test(a.subject)?`<div class="chat-draft-subject">${esc(a.subject)}</div>`:''}<div class="chat-clamp${mail?' mail-text':''}">${mail?mailHtml(a.body):chatMarkdown(a.body)}</div></div>`}
+function talkViewPaint(){const sec=$('#talk-view');if(!sec||sec.hidden)return;const v=talk,live=!!v?.main;
+ if(!sec.firstElementChild)sec.innerHTML='<div class="talk-head"><h2></h2><span class="talk-again"></span></div><div class="talk-about-slot"></div><div class="chat-log talk-log" aria-live="polite"></div><div class="talk-foot"></div>';
+ sec.querySelector('h2').textContent=t('Talk');
+ const again=live||!talkOk()?'':`<button type="button" class="talk-again-btn" data-talk-main>${esc(t('Start again'))}</button>`,ag=sec.querySelector('.talk-again');if(ag.innerHTML!==again)ag.innerHTML=again;
+ const s=live&&v.sid?state.suggestions?.find(x=>x.id===v.sid):null;
+ const about=s?`<div class="talk-about" data-about="${esc(s.id)}"><div class="talk-about-top"><span>${esc(t('Talking about'))}</span><a href="#chat=${esc(s.id)}">${esc(t('Open the chat'))}</a></div><h3 translate="no">${esc(s.title)}</h3>${talkDraftHtml(s)}</div>`:'';
+ const slot=sec.querySelector('.talk-about-slot');if(slot.dataset.k!==about){slot.dataset.k=about;slot.innerHTML=about}
+ const log=sec.querySelector('.talk-log'),key=talkLog.length+'|'+live;if(log.dataset.k===key)return;log.dataset.k=key;
+ log.innerHTML=talkLog.map(x=>x.about?`<p class="talk-mark" translate="no">${esc(x.title)}</p>`:`<div class="chat-msg ${x.role==='user'?'you':'machine'}"><div class="bubble" translate="no">${esc(x.text)}</div></div>`).join('')
+  +(!talkLog.length||!live?`<p class="talk-mark">${esc(live?t('Say something to start.'):t('Talk ended.'))}</p>`:'');
+ requestAnimationFrame(()=>scrollTo(0,document.documentElement.scrollHeight))}
+addEventListener('hashchange',e=>{if(location.hash==='#talk'){if(talk?.main||talkLog.length)talkViewShow();else history.replaceState(null,'',location.pathname+location.search)}
+ else if(/#talk$/.test(e.oldURL)&&!/^#chat=/.test(location.hash))talkLeave()});
+// "Open the chat" stays in the page, also when the page's base is another path
+$('#talk-view')?.addEventListener('click',e=>{const a=e.target.closest('a[href^="#chat="]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();chatGo(a.getAttribute('href').slice(6))});
+if(location.hash==='#talk')history.replaceState(null,'',location.pathname+location.search);  // a reload: the conversation ended with the page
+{const sec=document.getElementById('talk-view');if(sec)new MutationObserver(()=>{talkSide();if(!sec.hidden)return;if(location.hash==='#talk')history.replaceState(null,'',location.pathname+location.search);if(talk)talkPaint()}).observe(sec,{attributes:true,attributeFilter:['hidden']})}
 // The bar sits above the chat's message box; Talk's own floats at the bottom of the page when no chat is open
-function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector('.chat-compose');
+function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$('#talk-view .talk-foot'):document.querySelector('.chat-compose');
  if(!box&&!v.main){talkEnd();return}
  let host=box,bar=box?.querySelector(':scope>.talk');
  if(!box){host=$('#talk-dock');if(!host){host=document.createElement('div');host.id='talk-dock';document.body.append(host)}bar=host.querySelector('.talk')}
@@ -6023,16 +6071,18 @@ function talkPaint(){const v=talk;if(!v)return;const box=document.querySelector(
 function talkFail(v,msg){if(talk!==v)return;talkClose(v);v.state='error';v.error=msg;talk=v;talkPaint()}
 function talkClose(v){clearInterval(v.tick);try{v.dc?.close()}catch{}try{v.pc?.close()}catch{}try{v.stream?.getTracks().forEach(x=>x.stop())}catch{}
  if(v.audio){v.audio.srcObject=null;v.audio.remove()}if(v.id&&!v.ended){v.ended=true;micPost('talk_end',{id:v.id}).catch(()=>{})}}
-function talkEnd(){const v=talk;if(!v)return;talk=null;talkClose(v);document.querySelector('.chat-compose>.talk')?.remove();$('#talk-dock')?.remove();document.body.style.removeProperty('--talk-dock-h');talkSide()}
-async function talkStart(main){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;micCancel();
- const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],known:new Set(talkTodos.map(([x])=>x.id))};talkPaint();talkSide();
+let talkLimitToast='';  // the limit's toast is about that session only: cleared when another starts or ends
+function talkToastClear(){const t=$('#toast');if(talkLimitToast&&t?.textContent===talkLimitToast)t.classList.remove('show');talkLimitToast=''}
+function talkEnd(){const v=talk;if(!v)return;talk=null;talkToastClear();talkClose(v);document.querySelectorAll('.chat-compose>.talk,.talk-foot>.talk').forEach(x=>x.remove());$('#talk-dock')?.remove();document.body.style.removeProperty('--talk-dock-h');talkSide();talkViewPaint()}
+async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;talkToastClear();micCancel();
+ const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],known:new Set(talkTodos.map(([x])=>x.id))};talkPaint();talkSide();talkViewPaint();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
  catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',main?{main:true}:{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
-  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0});talkPaint();
-  if(v.main&&chatOpen())talkFocus(v,chatOpen().id);  // started with a to-do open: that one first
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null});talkPaint();
+  if(v.main&&(first||chatOpen()))talkFocus(v,first||chatOpen().id);  // started from a to-do's chat: that one first
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0]};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
   pc.onconnectionstatechange=()=>{if(talk===v&&['failed','disconnected'].includes(pc.connectionState))talkFail(v,t('Talk live lost its connection. Start it again to go on.'))};
@@ -6042,20 +6092,22 @@ async function talkStart(main){const s=main?null:chatOpen();if(talk||!main&&!s||
  catch(err){if(err.offline)netSet(true,err.restarting);talkFail(v,err.offline?t('Offline. Start it again when you’re back online.'):err.message||t('Talk live couldn’t start. Try again.'))}}
 // The voice's own setup: this page's instructions and tools (never the Gateway's agent), and what the owner says written down
 function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();
- v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'}},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'},...(v.turn?{turn_detection:v.turn}:{})},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));
  v.tick=setInterval(()=>talkTick(v),250);talkPaint()}
 function talkTick(v){if(talk!==v)return;if(!v.main&&chatOpen()?.id!==v.sid){talkEnd();return}v.secs=(Date.now()-v.t0)/1000;
+ if(v.ending&&(Date.now()-v.ending>10000||!v.playing&&!v.responding&&Date.now()-v.ending>1500)){talkEnd();return}  // end_talk: once its goodbye has been heard
  if(v.relay&&!chat?.active&&Date.now()-v.relay.at>20000)talkTurnDone();  // a turn that ended between two looks
  if(v.main)talkNew(v);
- if(v.secs>=v.limit){talkEnd();toast(v.main?t('Talk ends after 30 minutes. Start it again to go on.'):t('Talk live ends after 10 minutes. Start it again to go on.'));return}talkPaint()}
+ if(v.secs>=v.limit){talkEnd();talkLimitToast=v.main?t('Talk ends after 30 minutes. Start it again to go on.'):t('Talk live ends after 10 minutes. Start it again to go on.');toast(talkLimitToast);return}talkPaint()}
 // Talk works on the to-do on screen: the one the voice opens, or the one the owner opens. A send question about another is dropped.
 function talkFocus(v,id){if(talk!==v||v.sid===id)return v.focusing;v.sid=id;v.asked=null;v.queue=[];v.relay=null;
+ if(v.main){talkLog.push({about:id,title:String(state.suggestions?.find(x=>x.id===id)?.title||'').slice(0,200)});talkViewPaint()}
  return v.focusing=micPost('talk_focus',{id:v.id,suggestion_id:id}).catch(()=>{})}
 // What needs the owner, in the order the dashboard shows it (Ready, then To decide)
 const talkWho=s=>String((s.people||[])[0]?.name||'').slice(0,80);
 function talkList(){return {todos:talkTodos.slice(0,20).map(([s,list])=>({id:s.id,list:list==='ready'?'Ready':'To decide',title:String(s.title||'').slice(0,200),...(talkWho(s)?{from:talkWho(s)}:{})})),count:talkTodos.length}}
 async function talkOpen(v,id){if(!state.suggestions?.some(s=>s.id===id))return {error:'No to-do with that id. Use list_todos or find_todos.'};
- if(chatOpen()?.id!==id)chatGo(id);await talkFocus(v,id);
+ if(chatOpen()&&chatOpen().id!==id)talkGoView();await talkFocus(v,id);
  try{return (await micPost('talk_tool',{id:v.id,name:'todo_details',args:{}})).output}catch(err){return {error:err.message}}}
 // A to-do that comes in while Talk is open: a short heads-up at the next pause (talkTellNext waits while either side talks)
 function talkNew(v){if(!v.dc||v.state!=='live')return;for(const [s] of talkTodos)if(!v.known.has(s.id)){v.known.add(s.id);
@@ -6070,12 +6122,17 @@ async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)
  else if(e.type==='response.output_audio_transcript.done')(v.heard[e.response_id]||=[]).push([e.transcript,e.item_id]);
  else if(e.type==='response.done'){v.responding=false;const id=e.response?.id,said=v.heard[id]||[];delete v.heard[id];
   if(e.response?.status!=='cancelled')said.forEach(([text,item])=>talkLine(v,'assistant',text,item));talkTellNext(v)}
+ else if(e.type==='output_audio_buffer.started')v.playing=true;
+ else if(e.type==='output_audio_buffer.stopped'||e.type==='output_audio_buffer.cleared')v.playing=false;
  else if(e.type==='response.function_call_arguments.done')talkTool(v,e)}
 // What one side said goes into the chat as an ordinary message (and is kept by the Machine, talk_line)
 function talkLine(v,role,text,item){text=String(text||'').trim();const key=role+':'+(item||text);if(!text||v.said.has(key))return;v.said.add(key);
  v.posting=Promise.all([v.posting,micPost('talk_line',{id:v.id,role,text}).catch(()=>{})]);  // kept before the Machine judges an answer
+ if(v.main){talkLog.push({role,text});talkViewPaint()}
  if(chat&&chatOpen()?.id===v.sid){chat={...chat,items:[...(chat.items||[]),{kind:role==='user'?'you':'reply',text,via:'live',at:Date.now()}]};paintChat();chatToEnd()}}
 async function talkTool(v,e){let args={},output;try{args=JSON.parse(e.arguments||'{}')}catch{}
+ // The owner said they're done: it ends the way End does, once its goodbye has been heard (talkTick)
+ if(e.name==='end_talk'){v.ending=Date.now();if(v.dc?.readyState==='open')v.dc.send(JSON.stringify({type:'conversation.item.create',item:{type:'function_call_output',call_id:e.call_id,output:JSON.stringify({ok:true})}}));return}
  if(e.name==='ask_chat'){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkAsk(v,req):{error:'Say what to ask.'};if(output.ok)output.note=output.queued?v.notes.queued||v.note:v.note}
  else if(e.name==='list_todos'&&v.main)output=talkList();
  else if(e.name==='open_todo'&&v.main)output=await talkOpen(v,String(args.id||''));
@@ -6088,8 +6145,11 @@ async function talkTool(v,e){let args={},output;try{args=JSON.parse(e.arguments|
  v.dc.send(JSON.stringify({type:'response.create'}))}
 // The draft the voice may ask to send: the current one in this chat, on screen (scrolled into view). On a phone or with
 // the screen off, the owner may not see it, so the voice reads it out in full before the question.
-const talkShown=v=>chatOpen()?.id===v.sid&&!$('#send-dialog')?.open?document.querySelector('#chat-log .chat-draft.current [data-smart]'):null;
-async function talkAskSend(v){const b=talkShown(v);if(!b)return {error:'No draft on screen to send. Ask the chat to draft one first.'};
+const talkShown=v=>$('#send-dialog')?.open?null:chatOpen()?.id===v.sid?document.querySelector('#chat-log .chat-draft.current [data-smart]')
+ :v.main&&v.sid&&talkViewOn()?document.querySelector(`#talk-view .talk-about[data-about="${CSS.escape(v.sid)}"] .chat-draft.current [data-smart]`):null;
+async function talkAskSend(v){let b=talkShown(v);
+ if(!b&&v.main&&v.sid){talkGoView();for(let i=0;i<20&&!(b=talkShown(v));i++)await new Promise(ok=>setTimeout(ok,50))}  // elsewhere: Talk's view shows the draft first
+ if(!b)return {error:'No draft on screen to send. Ask the chat to draft one first.'};
  b.closest('.chat-draft')?.scrollIntoView({block:'nearest'});
  try{const r=await micPost('talk_ask_send',{id:v.id,revision:b.dataset.smart,read_aloud:document.hidden||matchMedia('(max-width:640px)').matches});if(r.question)v.asked=b.dataset.smart;return r}
  catch(err){return {error:err.message}}}
@@ -6109,17 +6169,24 @@ async function talkAnswer(v){let r={status:'not_asked'};
 async function talkAsk(v,req){const s=state.suggestions?.find(x=>x.id===v.sid);if(!s)return {error:'This to-do is gone.'};
  if(v.relay||chat?.active&&chatOpen()?.id===s.id){v.queue.push(req);return {ok:true,queued:true}}
  return talkRelay(v,s,[req])}
-const talkReplies=()=>(chat?.items||[]).filter(i=>i.kind==='reply'&&i.via!=='live');
-async function talkRelay(v,s,reqs){v.relay={at:Date.now(),replies:talkReplies().length};
+const talkReplies=(items=chat?.items||[])=>items.filter(i=>i.kind==='reply'&&i.via!=='live');
+const talkChatRead=id=>micPost('card_chat',{suggestion_id:id}).catch(()=>null);
+async function talkRelay(v,s,reqs){const here=chatOpen()?.id===s.id,seen=here?null:await talkChatRead(s.id);if(talk!==v||v.sid!==s.id)return {error:'This to-do is no longer open.'};
+ const relay=v.relay={at:Date.now(),replies:talkReplies(here?undefined:seen?.items||[]).length,sid:s.id};
  const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:reqs.join('\n'),decision_id:'chat-talk-'+crypto.randomUUID()}];
  try{const r=await decideOrWait(s.id,steps,'other');
   if(chatOpen()?.id===s.id){chat={...(chat||{}),active:!r?.waiting,cursor:null};changing.delete(s.id)}
-  if(!r?.waiting){await refresh();if(chatOpen()?.id===s.id){paintChat();chatToEnd();chatPoll()}}
+  if(!r?.waiting){await refresh();if(chatOpen()?.id===s.id){paintChat();chatToEnd();chatPoll()}else talkFollow(v,relay)}
   return {ok:true,waiting:!!r?.waiting}}
  catch(err){v.relay=null;return {error:err.message}}}
 // The chat's turn ended: its answer goes to the voice at once (no checking back), then what waited goes
-function talkTurnDone(){const v=talk;if(!v||talk.state!=='live'||chatOpen()?.id!==v.sid)return;
- if(v.relay){const said=talkReplies().slice(v.relay.replies).map(i=>String(i.text||'').trim()).filter(Boolean).join(' ').slice(0,3000);v.relay=null;
+// The chat isn't on screen (Talk's own view, another page): its turn is followed here, the way an open chat polls it
+async function talkFollow(v,relay){let busy=false;
+ for(let n=0;n<400&&talk===v&&v.relay===relay;n++){await new Promise(ok=>setTimeout(ok,1500));if(talk!==v||v.relay!==relay||chatOpen()?.id===relay.sid)return;  // an open chat takes over
+  const r=await talkChatRead(relay.sid);if(!r||r.unavailable||talk!==v||v.relay!==relay)continue;if(r.active){busy=true;continue}
+  if(busy||talkReplies(r.items||[]).length>relay.replies||Date.now()-relay.at>20000){refresh();talkTurnDone(r.items||[]);return}}}
+function talkTurnDone(items){const v=talk;if(!v||talk.state!=='live')return;if(!items){if(chatOpen()?.id!==v.sid)return;items=chat?.items||[]}
+ if(v.relay){const said=talkReplies(items).slice(v.relay.replies).map(i=>String(i.text||'').trim()).filter(Boolean).join(' ').slice(0,3000);v.relay=null;
   talkTell(v,said?(v.notes.done||'{answer}').replace('{answer}',said):v.notes.stopped||'')}
  if(v.queue.length){const s=state.suggestions?.find(x=>x.id===v.sid),reqs=v.queue;v.queue=[];if(s)talkRelay(v,s,reqs)}}
 // A note for the voice, as a message it answers aloud; while it is talking, after that
@@ -6131,7 +6198,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-voic
  try{await micPost('talk_undo',{suggestion_id:b.dataset.sid,approval_id:b.dataset.voiceUndo});toast(t('Canceled. It won’t be sent.'))}catch(err){errCaught(err);toast(err.message,true)}
  await refresh();if(chatOpen())chatPoll()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-main],[data-talk-end],[data-talk-close],[data-talk-mute]');if(!b)return;e.preventDefault();
- if(b.hasAttribute('data-talk-main')){if(typeof drawerClose==='function')drawerClose();talkMain();return}
+ if(b.hasAttribute('data-talk-main')){if(typeof drawerClose==='function')drawerClose();if(talk?.main&&!talkViewOn()&&b.id==='side-talk'){talkAfterDrawer(talkGoView);return}talkMain();return}  // live, from another page: back to Talk
  if(b.hasAttribute('data-talk')){if(talk)talkEnd();else talkStart();return}
  if(b.hasAttribute('data-talk-end')||b.hasAttribute('data-talk-close')){talkEnd();return}
  const v=talk;if(!v)return;
