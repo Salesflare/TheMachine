@@ -3,7 +3,7 @@ title: Agenda
 area: calendar
 summary: De komende week op één plek: afspraken, to-do's die moeten gebeuren, gesnoozede to-do's en beloftes.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py
 order: 1
 ---
 ## Wat het toont
@@ -40,6 +40,10 @@ De details van een vergadering hebben twee delen. **Notities** is de samenvattin
 Elk heeft zijn eigen **Notities toevoegen** of **Transcript toevoegen**, **Bestand uploaden** voor een Markdown- of tekstbestand, **Bewerken** en **Verwijderen** (tik twee keer). Wat in het ene staat, blijft daar. Bij een vergadering die je kunt wijzigen opent **Notities** onder het formulier ze.
 
 Met [Zoom](zoom.md) of [Google Meet](google-meet.md) gekoppeld staan de notities in Notities en het transcript in Transcript, met **Van Zoom** of **Van Google Meet** erbij. Ze vervangen nooit wat jij toevoegde: staan ze er allebei, dan zie je ze allebei.
+
+Een vergadering met een transcript en zonder notities heeft **Notities maken**. The Machine schrijft ze dan uit het transcript: een korte samenvatting, beslissingen en actiepunten met wie ze doet, in de taal van de vergadering.
+
+Je ziet **Notities schrijven…** en The Machine werkt door als je de vergadering sluit; een lange duurt een paar minuten. Hij gebruikt je eigen model en wacht als je je gebruikslimiet bereikt. Bij de notities staat **Door The Machine geschreven**. Ze vervangen nooit notities die jij toevoegde, en de opvolging komt eruit zoals uit die van Zoom.
 
 The Machine kan ze ook toevoegen. Vraag het op een to-do, zoals "zet dit transcript bij de bestuursvergadering van vandaag". Een transcript komt in Transcript, een samenvatting in Notities. Een vergadering met een van beide toont **Notities** of **Transcript** in de agenda.
 

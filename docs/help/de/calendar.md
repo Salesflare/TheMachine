@@ -3,7 +3,7 @@ title: Kalender
 area: calendar
 summary: Die kommende Woche an einem Ort: Meetings, fällige Aufgaben, zurückgestellte Aufgaben und Versprechen.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py
 order: 1
 ---
 ## Was er zeigt
@@ -40,6 +40,10 @@ Die Details eines Termins haben zwei Teile. **Notizen** ist die Zusammenfassung:
 Jeder Teil hat sein eigenes **Notizen hinzufügen** oder **Transkript hinzufügen**, **Datei hochladen** für eine Markdown- oder Textdatei, **Bearbeiten** und **Entfernen** (zweimal tippen). Was in einem Teil steht, bleibt dort. Bei einem Termin, den du ändern kannst, öffnet **Notizen** unter seinem Formular sie.
 
 Ist [Zoom](zoom.md) oder [Google Meet](google-meet.md) verbunden, stehen seine Notizen in Notizen und sein Transkript in Transkript, markiert mit **Von Zoom** oder **Von Google Meet**. Sie ersetzen nie, was du hinzugefügt hast: Gibt es beides, siehst du beides.
+
+Ein Termin mit Transkript und ohne Notizen hat **Notizen erstellen**. The Machine schreibt sie dann aus dem Transkript: eine kurze Zusammenfassung, Entscheidungen und nächste Schritte mit dem, der sie übernimmt, in der Sprache des Termins.
+
+The Machine zeigt **Notizen werden geschrieben…** und macht weiter, wenn du den Termin schließt; ein langer dauert ein paar Minuten. Sie nutzt dein eigenes Modell und wartet, wenn du dein Nutzungslimit erreichst. Bei den Notizen steht **Von The Machine geschrieben**. Sie ersetzen nie Notizen, die du hinzugefügt hast, und die Nachfassungen kommen daraus wie aus denen von Zoom.
 
 The Machine kann sie auch hinzufügen. Frag sie bei einer Aufgabe, etwa "füge dieses Transkript zur heutigen Vorstandssitzung hinzu". Ein Transkript kommt in Transkript, eine Zusammenfassung in Notizen. Ein Termin damit zeigt **Notizen** oder **Transkript** im Kalender.
 

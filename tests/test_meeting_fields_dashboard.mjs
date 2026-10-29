@@ -20,6 +20,7 @@ const meetings=[
   with:[{name:'Dana Board',email:'dana@board.example'},{name:'Sam Investor',email:'sam@fund.example'}],url:'https://calendar.google.com/calendar/event?eid=board',
   notes:{by:'machine',at:now,chars:120},transcript:{by:'machine',at:now,chars:turns.length}},
  {id:202,account_id:'cal',title:'Pilot call with Northwind',start:iso(at(0,15)),end:iso(at(0,15,45)),all_day:false,location:'Zoom',guests:1,url:null},
+ {id:204,account_id:'cal',title:'Quarterly planning',start:iso(at(0,13)),end:iso(at(0,15,15)),all_day:false,location:'Room 4',guests:2,url:null,transcript:{by:'owner',at:now,chars:turns.length}},
  {id:203,account_id:'cal',title:'Design review',start:iso(at(0,16)),end:iso(at(0,17)),all_day:false,location:'Google Meet',guests:2,url:null,notes:{by:'owner',at:now,chars:30}}];
 const owned={
  201:{notes:{id:9,text:'## Decisions\n\n- Hire two engineers in Q1\n- Budget approved as proposed\n\n## Action items\n\n- Dana sends the updated deck by Friday\n- Sam shares the term sheet draft',by:'machine',at:now,chars:120,next_offset:null},
@@ -28,6 +29,7 @@ const owned={
  203:{notes:{id:30,text:'Ask Robin for the final mockups.',by:'owner',at:now,chars:32,next_offset:null},transcript:null,zoom:null,
       google_meet:{notes:{id:31,title:'Meeting notes',text:'### Summary\n\nThe team picked the second layout and moves the launch to next week.',chars:80,next_offset:null,url:'https://docs.google.com/document/d/notes-doc/edit'},
        transcript:{id:32,title:'Meeting transcript',text:'Robin: The second layout reads better.\nAlex: Agreed, let’s move the launch.',chars:75,next_offset:null,minutes:52,truncated:false,url:'https://docs.google.com/document/d/tr-doc/edit'},url:'https://docs.google.com/document/d/notes-doc/edit'}},
+ 204:{notes:null,transcript:{id:40,text:turns,by:'owner',at:now,chars:turns.length,next_offset:null,minutes:135},zoom:null,google_meet:null,writing:null},
  202:{notes:null,transcript:null,zoom:{notes:{id:12,title:'Pilot call',text:'Northwind starts the pilot on Monday.',chars:36,next_offset:null},transcript:{id:13,title:'Pilot call',text:'Robin: We can start Monday.\nOwner: Great, I’ll send the plan.',chars:60,next_offset:null,minutes:44,truncated:false},url:null}}};
 let posts=[];const notes201={...owned[201].notes};
 const state=()=>({suggestions:[{id:'a'.repeat(16),title:'Prep the board follow-ups',body:'Made-up card.',status:'pending',scope:'work',created_at:now,event_ids:[]}],promises:[],connectors:[{id:'cal',email:'owner@example.com',service:'calendar',status:'ok'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]}});
@@ -40,6 +42,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');if(r.action==='meeting_notes'){posts.push({...r.args,upload:req.headers['x-upload']});
    const a=r.args,o=owned[a.event_id],key=a.field==='transcript'?'transcript':'notes';
    o[key]=a.remove?null:{id:20,text:a.text,by:'owner',at:now,chars:a.text.length,next_offset:null,...(key==='transcript'?{minutes:2}:{})};res.end(JSON.stringify({event_id:a.event_id,field:key}));return}
+  if(r.action==='meeting_notes_write'){posts.push({action:r.action,...r.args});const o=owned[r.args.event_id];o.writing={status:'running',done:1,total:4,until:null,error:null};
+   res.end(JSON.stringify({event_id:r.args.event_id,writing:o.writing}));return}
   res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -132,6 +136,52 @@ try{
   assert.equal(await page.locator('#cal-v-tr-meet-open').getAttribute('href'),'https://docs.google.com/document/d/tr-doc/edit');
   await fits(page);
   if(process.env.MEETING_SHOT)for(const scheme of ['dark','light']){await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(300);await page.screenshot({path:`${process.env.MEETING_SHOT}/meeting-1440x900-${scheme}-meet.png`})}
+  await context.close()}
+ // Generate notes: only on a meeting with a transcript and no notes. It runs on The Machine: the dialog says it writes,
+ // shows it again when opened later, and shows the notes when they are there, marked as The Machine's
+ {const {context,page}=await open(1440,900,'light');
+  for(const id of [201,202,203]){await view(page,id);assert.ok(!await shown(page,'#cal-v-notes-gen'),'no Generate notes on meeting '+id);await page.keyboard.press('Escape')}
+  await view(page,204);
+  assert.ok(await shown(page,'#cal-v-notes-gen'));assert.equal(await page.locator('#cal-v-notes-gen').textContent(),'Generate notes');
+  assert.ok(await shown(page,'#cal-v-notes-add'));assert.ok(await shown(page,'#cal-v-notes-file'));
+  assert.equal(await page.locator('#cal-v-tr-h').textContent(),'Transcript · 2h 15m');
+  await fits(page);
+  if(process.env.MEETING_SHOT)await page.screenshot({path:`${process.env.MEETING_SHOT}/generate-1440x900-light-ready.png`});
+  await page.locator('#cal-v-notes-gen').click();
+  await page.waitForFunction(()=>!$('#cal-v-notes-writing').hidden);
+  assert.deepEqual(posts.at(-1),{action:'meeting_notes_write',event_id:204});
+  assert.equal(await page.locator('#cal-v-notes-writing').textContent(),'Writing notes…');
+  assert.ok(!await shown(page,'#cal-v-notes-gen'));assert.ok(!await shown(page,'#cal-v-notes-none'));
+  if(process.env.MEETING_SHOT)await page.screenshot({path:`${process.env.MEETING_SHOT}/generate-1440x900-light-writing.png`});
+  // Closed and opened again: it still says so (the service writes on)
+  await page.keyboard.press('Escape');await view(page,204);
+  assert.equal(await page.locator('#cal-v-notes-writing').textContent(),'Writing notes…');
+  // A usage limit: it says it waits for it
+  owned[204].writing={status:'waiting',done:2,total:4,until:Date.now()/1000+3600,error:null};
+  await page.waitForFunction(()=>/usage limit/.test($('#cal-v-notes-writing').textContent),null,{timeout:8000});
+  // Done: the notes show, marked as written by The Machine, and Generate is gone
+  owned[204].writing=null;owned[204].notes={id:41,text:'## Summary\n\nThe plan for next quarter is set.\n\n## Decisions\n\n- Two hires in Q1\n\n## Action items\n\n- **Dana**: send the budget by Friday',
+   by:'machine',written_from:'transcript',at:now,chars:110,next_offset:null};
+  await page.waitForFunction(()=>!$('#cal-v-notes-body').hidden,null,{timeout:8000});
+  assert.match(await page.locator('#cal-v-notes-by').textContent(),/^Written by The Machine · /);
+  assert.match(await page.locator('#cal-v-notes-body').textContent(),/send the budget by Friday/);
+  assert.ok(!await shown(page,'#cal-v-notes-gen'));assert.ok(!await shown(page,'#cal-v-notes-writing'));
+  assert.match(await page.locator('#toast').textContent(),/Notes written\./);
+  await fits(page);
+  if(process.env.MEETING_SHOT)await page.screenshot({path:`${process.env.MEETING_SHOT}/generate-1440x900-light-done.png`});
+  // It failed: it says so, and Generate notes is there again
+  owned[204].notes=null;owned[204].writing={status:'failed',done:0,total:1,until:null,error:'model'};
+  await page.keyboard.press('Escape');await view(page,204);
+  assert.equal(await page.locator('#cal-v-notes-writing').textContent(),'Couldn’t write the notes. Try again.');assert.ok(await shown(page,'#cal-v-notes-gen'));
+  owned[204].writing=null;
+  await context.close()}
+ for(const [w,h,scheme] of [[1440,900,'dark'],[1440,700,'dark'],[390,844,'light'],[390,844,'dark']]){const {context,page}=await open(w,h,scheme);
+  owned[204].writing={status:'running',done:1,total:4,until:null,error:null};
+  await view(page,204);await fits(page);
+  if(process.env.MEETING_SHOT)await page.screenshot({path:`${process.env.MEETING_SHOT}/generate-${w}x${h}-${scheme}-writing.png`});
+  owned[204].writing=null;await page.keyboard.press('Escape');await view(page,204);await fits(page);
+  assert.ok(await shown(page,'#cal-v-notes-gen'));
+  if(process.env.MEETING_SHOT)await page.screenshot({path:`${process.env.MEETING_SHOT}/generate-${w}x${h}-${scheme}-ready.png`});
   await context.close()}
  for(const [w,h] of [[1440,700],[390,844]])for(const scheme of ['dark','light']){const {context,page}=await open(w,h,scheme);
   owned[201].transcript={id:10,text:turns,by:'machine',at:now,chars:turns.length,next_offset:null,minutes:123};owned[201].notes={...notes201};

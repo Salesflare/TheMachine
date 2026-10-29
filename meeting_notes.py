@@ -184,10 +184,11 @@ def _people_meta(em):
             'attendees': [people(a) for a in em.get('attendees') or [] if isinstance(a, dict)][:200]}
 
 
-def plan(db, event_id, text, by, at, append=False, field='notes'):
+def plan(db, event_id, text, by, at, append=False, field='notes', written_from=None):
     """What saving a meeting's notes (or its transcript: field) changes: (result, write). Adds it, or replaces the one it
     has (append: below it); empty text removes it. Only that field: the other is never touched, whatever the text
-    looks like. by: 'owner' or 'machine'. write is None (nothing changes), ('remove', id), ('update', id, row) or
+    looks like. by: 'owner' or 'machine'; written_from: 'transcript' when The Machine wrote the notes from the
+    meeting's transcript (meeting_writer.py), shown as such. write is None (nothing changes), ('remove', id), ('update', id, row) or
     ('insert', row): Store.save_meeting_notes makes it, as only assistant.py writes events (sealed). It becomes a new
     version of its signal, so the next review reads it."""
     kind = field_kind(field)
@@ -209,6 +210,7 @@ def plan(db, event_id, text, by, at, append=False, field='notes'):
     em = json.loads(event['metadata'] or '{}')
     meta = {'event_id': event['id'], 'start_at': event['occurred_at'], 'end_at': em.get('end_at'), 'format': 'markdown', 'field': result['field'],
             'added_by': 'owner' if by == 'owner' else 'machine', 'added_at': at,
+            **({'written_from': 'transcript'} if written_from == 'transcript' and by != 'owner' else {}),
             **_people_meta(em)}  # the meeting's people, so sharing judges it by the same people as the meeting
     digest = hashlib.sha256(text.encode()).hexdigest()
     row = db.execute('SELECT id,content_hash,deleted FROM events WHERE account_id=? AND source_id=?', (event['account_id'], source_id)).fetchone()
@@ -273,7 +275,7 @@ def _page(body, offset, limit):
 
 def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
     """A meeting and its two records: notes and transcript, each the one added to it ({text, by, at, chars,
-    next_offset}; the transcript also with minutes, how long it runs) or None, and the meeting app's that match it
+    next_offset}, and written_from when The Machine wrote the notes from the transcript; the transcript also with minutes, how long it runs) or None, and the meeting app's that match it
     under zoom and google_meet ({notes, transcript, url}, each item with its own url, or None). field ('notes' or 'transcript') reads only that one, from offset."""
     event = meeting(db, event_id)
     if not event:
@@ -291,6 +293,7 @@ def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
         if row:
             m, body = json.loads(row['metadata'] or '{}'), row['body'] or ''
             out[key] = {'id': row['id'], **_page(body, offset, limit), 'by': m.get('added_by') or 'owner', 'at': m.get('added_at') or row['ingested_at'],
+                        **({'written_from': m['written_from']} if m.get('written_from') == 'transcript' else {}),
                         **({'minutes': spoken_minutes(body) or meeting_minutes} if kind == TRANSCRIPT else {})}
     start = stamp(event['occurred_at'])
     for name, kinds in SOURCES.items():

@@ -3,7 +3,7 @@ title: Calendario
 area: calendar
 summary: La settimana che arriva in un solo posto: riunioni, attività in scadenza, attività posticipate e promesse.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py
 order: 1
 ---
 ## Cosa mostra
@@ -40,6 +40,10 @@ I dettagli di una riunione hanno due parti. **Note** è il riepilogo: decisioni 
 Ognuna ha il suo **Aggiungi note** o **Aggiungi trascrizione**, **Carica file** per un file Markdown o di testo, **Modifica** e **Rimuovi** (tocca due volte). Quello che va in una resta lì. Su una riunione che puoi modificare, **Note** sotto il suo modulo le apre.
 
 Con [Zoom](zoom.md) o [Google Meet](google-meet.md) collegato, le sue note compaiono in Note e la sua trascrizione in Trascrizione, segnate **Da Zoom** o **Da Google Meet**. Non sostituiscono mai ciò che hai aggiunto: quando ci sono entrambi, si vedono entrambi.
+
+Una riunione con trascrizione e senza note ha **Genera note**. The Machine le scrive dalla trascrizione: un breve riepilogo, le decisioni e le azioni con chi le fa, nella lingua della riunione.
+
+The Machine mostra **Sto scrivendo le note…** e continua anche se chiudi la riunione; una lunga richiede qualche minuto. Usa il tuo modello e aspetta se raggiungi il limite di utilizzo. Le note riportano **Scritte da The Machine**, non sostituiscono mai quelle che hai aggiunto, e i follow-up nascono da loro come da quelle di Zoom.
 
 Anche The Machine può aggiungerle. Chiediglielo su un’attività, come "aggiungi questa trascrizione al consiglio di amministrazione di oggi". Una trascrizione va in Trascrizione, un riepilogo in Note. Una riunione che le ha mostra **Note** o **Trascrizione** nel calendario.
 

@@ -3,7 +3,7 @@ title: Agenda
 area: calendar
 summary: La semaine à venir en un seul endroit : réunions, tâches à échéance, tâches en attente et promesses.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py
 order: 1
 ---
 ## Ce qu’il affiche
@@ -40,6 +40,10 @@ Les détails d’une réunion ont deux parties. **Notes** est le résumé : déc
 Chacune a son propre **Ajouter des notes** ou **Ajouter une transcription**, **Importer un fichier** pour un fichier Markdown ou texte, **Modifier** et **Retirer** (touchez deux fois). Ce qui est dans l’une y reste. Sur une réunion que vous pouvez modifier, **Notes** sous son formulaire les ouvre.
 
 Avec [Zoom](zoom.md) ou [Google Meet](google-meet.md) connecté, ses notes apparaissent dans Notes et sa transcription dans Transcription, marquées **De Zoom** ou **De Google Meet**. Elles ne remplacent jamais ce que vous avez ajouté : quand les deux existent, les deux s’affichent.
+
+Une réunion avec une transcription et sans notes propose **Générer les notes**. The Machine les rédige à partir de la transcription : un court résumé, les décisions et les actions avec qui s’en charge, dans la langue de la réunion.
+
+The Machine affiche **Rédaction des notes…** et continue quand vous fermez la réunion ; une longue prend quelques minutes. Elle utilise votre propre modèle et attend si vous atteignez votre limite d’utilisation. Les notes indiquent **Rédigées par The Machine**, ne remplacent jamais celles que vous avez ajoutées, et les suivis en découlent comme de celles de Zoom.
 
 The Machine peut aussi les ajouter. Demandez-le sur une tâche, par exemple "ajoute cette transcription au conseil d’administration d’aujourd’hui". Une transcription va dans Transcription, un résumé dans Notes. Une réunion qui en a affiche **Notes** ou **Transcription** dans le calendrier.
 

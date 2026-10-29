@@ -3,7 +3,7 @@ title: Calendar
 area: calendar
 summary: The week ahead in one place: meetings, to-dos that are due, snoozed to-dos and promises.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py
 order: 1
 ---
 ## What it shows
@@ -40,6 +40,10 @@ A meeting's details have two parts. **Notes** is the summary: decisions and acti
 Each has its own **Add notes** or **Add transcript**, **Upload file** for a Markdown or text file, **Edit** and **Remove** (tap twice). What goes in one stays there. On a meeting you can change, **Notes** under its form opens them.
 
 With [Zoom](zoom.md) or [Google Meet](google-meet.md) connected, its notes show in Notes and its transcript in Transcript, marked **From Zoom** or **From Google Meet**. They never replace what you added: when both are there, both show.
+
+A meeting with a transcript and no notes has **Generate notes**. The Machine writes them from the transcript: a short summary, decisions, and action items with who does them, in the meeting's language.
+
+The Machine shows **Writing notes…** and keeps going when you close the meeting; a long one takes a few minutes. It uses your own model and waits if you reach your usage limit. The notes say **Written by The Machine**, never replace notes you added, and follow-ups come from them like from Zoom's.
 
 The Machine can add them too. Ask on a to-do, like "add this transcript to today's board meeting". A transcript goes in Transcript, a summary in Notes. A meeting with them says **Notes** or **Transcript** in the Calendar.
 
