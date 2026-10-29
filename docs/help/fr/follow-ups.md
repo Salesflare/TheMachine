@@ -28,9 +28,15 @@ Pour un seul projet : **Relances…** dans le **⋯** de sa carte ou sur sa page
 
 ## Les vérifier
 
-Les relances d’un tableau arrivent en une seule tâche : « 8 relances prêtes pour Alpha testers ». **Vérifier** les affiche les unes sous les autres, chacune avec **Envoyer**, **Modifier** et **Ignorer**. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie et s ignore. **Envoyer tout ce qui est coché** envoie celles encore cochées. La relance d’un seul projet est une tâche normale.
+Les relances d’un tableau arrivent en une seule tâche, jamais une par e-mail. Pendant la rédaction, elle indique « Rédaction de 3 relances… », puis « 8 relances prêtes pour Alpha testers ».
+
+**Vérifier** les affiche les unes sous les autres, chacune avec **Envoyer**, **Modifier** et **Ignorer**. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie et s ignore. **Envoyer tout ce qui est coché** envoie celles encore cochées. La relance d’un seul projet est une tâche normale.
 
 Quand plusieurs partent à la suite, aussi avec Envoyer sans demander, chaque boîte mail en envoie une toutes les 30 à 45 secondes, et la tâche montre où on en est : « Envoi de 3 sur 8… ».
+
+## E-mails envoyés avant votre Machine
+
+Les e-mails envoyés depuis une autre app, avant que votre Machine lise cette boîte, comptent aussi. Elle lit la conversation (ou, si elle ne peut pas, les e-mails précédents cités dans votre dernier), donc trois e-mails sans réponse comptent pour trois, et « Pas de réponse depuis » compte à partir du premier. Si le maximum est déjà atteint, elle n’en rédige pas d’autre.
 
 ## Quand elles s’arrêtent
 

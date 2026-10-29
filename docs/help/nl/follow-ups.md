@@ -28,9 +28,15 @@ Voor één project: **Opvolging…** in de **⋯** van de kaart of op de project
 
 ## Nakijken
 
-De opvolgingen van een bord komen als één to-do: "8 opvolgingen klaar voor Alpha testers". **Nakijken** toont ze onder elkaar, elk met **Versturen**, **Bewerken** en **Overslaan**. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt en s slaat over. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is. De opvolging van één project is een gewone to-do.
+De opvolgingen van een bord komen als één to-do, nooit één per e-mail. Terwijl ze geschreven worden staat er "3 opvolgingen worden geschreven…", daarna "8 opvolgingen klaar voor Alpha testers".
+
+**Nakijken** toont ze onder elkaar, elk met **Versturen**, **Bewerken** en **Overslaan**. Op een toetsenbord ga je met j en k (of de pijltjes) verder, Enter verstuurt, e bewerkt en s slaat over. **Alle aangevinkte versturen** verstuurt wat nog aangevinkt is. De opvolging van één project is een gewone to-do.
 
 Gaan er meerdere na elkaar weg, ook met Versturen zonder te vragen, dan verstuurt elke mailbox er één per 30 tot 45 seconden en de to-do toont hoe ver het is: "3 van 8 versturen…".
+
+## E-mails van voor je Machine
+
+E-mails die je uit een andere app stuurde, voor je Machine die mailbox las, tellen ook mee. Hij leest het gesprek zelf (of, als dat niet lukt, de eerdere e-mails die in je laatste geciteerd staan), dus drie e-mails zonder antwoord tellen als drie, en "Al … dagen geen antwoord" telt vanaf de eerste. Is het maximum al bereikt, dan schrijft hij er geen nieuwe.
 
 ## Wanneer het stopt
 

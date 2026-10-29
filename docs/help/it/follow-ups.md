@@ -28,9 +28,15 @@ Per un solo progetto, **Ricontatti…** nel **⋯** della sua scheda o nella sua
 
 ## Rivederli
 
-I ricontatti di una bacheca arrivano come un’unica attività: “8 ricontatti pronti per Alpha testers”. **Rivedi** li mostra uno sotto l’altro, ognuno con **Invia**, **Modifica** e **Salta**. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica e s salta. **Invia tutti i selezionati** invia quelli ancora spuntati. Il ricontatto di un singolo progetto è un’attività normale.
+I ricontatti di una bacheca arrivano come un’unica attività, mai una per email. Mentre li scrive mostra “Scrittura di 3 ricontatti…”, poi “8 ricontatti pronti per Alpha testers”.
+
+**Rivedi** li mostra uno sotto l’altro, ognuno con **Invia**, **Modifica** e **Salta**. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica e s salta. **Invia tutti i selezionati** invia quelli ancora spuntati. Il ricontatto di un singolo progetto è un’attività normale.
 
 Quando ne partono diversi di seguito, anche con Invia senza chiedere, ogni casella ne invia uno ogni 30-45 secondi e l’attività mostra a che punto è: “Invio 3 di 8…”.
+
+## Email inviate prima della tua Machine
+
+Contano anche le email inviate da un’altra app, prima che la tua Machine leggesse quella casella. Legge la conversazione (o, se non può, le email precedenti citate nella tua ultima), quindi tre email senza risposta contano come tre, e “Nessuna risposta da” conta dalla prima. Se hai già raggiunto il massimo, non ne scrive un altro.
 
 ## Quando si fermano
 

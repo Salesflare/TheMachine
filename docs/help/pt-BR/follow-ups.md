@@ -28,9 +28,15 @@ Para um projeto só, **Follow-ups…** no **⋯** do cartão dele ou na página 
 
 ## Revisar
 
-Os follow-ups de um quadro chegam como uma tarefa só: “8 follow-ups prontos para Alpha testers”. **Revisar** mostra um embaixo do outro, cada um com **Enviar**, **Editar** e **Pular**. No teclado, j e k (ou as setas) navegam, Enter envia, e edita e s pula. **Enviar todos os marcados** envia os que continuam marcados. O follow-up de um único projeto é uma tarefa normal.
+Os follow-ups de um quadro chegam como uma tarefa só, nunca uma por e-mail. Enquanto são escritos aparece “Escrevendo 3 follow-ups…”, depois “8 follow-ups prontos para Alpha testers”.
+
+**Revisar** mostra um embaixo do outro, cada um com **Enviar**, **Editar** e **Pular**. No teclado, j e k (ou as setas) navegam, Enter envia, e edita e s pula. **Enviar todos os marcados** envia os que continuam marcados. O follow-up de um único projeto é uma tarefa normal.
 
 Quando vários saem em sequência, também com Enviar sem perguntar, cada caixa de e-mail envia um a cada 30 a 45 segundos, e a tarefa mostra o andamento: “Enviando 3 de 8…”.
+
+## E-mails enviados antes da sua Machine
+
+E-mails que você enviou de outro app, antes de a sua Machine ler essa caixa, também contam. Ela lê a conversa (ou, quando não dá, os e-mails anteriores citados no seu último), então três e-mails sem resposta contam como três, e “Sem resposta há” conta a partir do primeiro. Se você já chegou ao máximo, ela não escreve outro.
 
 ## Quando para
 

@@ -4274,6 +4274,10 @@
  "Write your part of the follow-up": "Schrijf jouw deel van de opvolging",
  "Writing": "Schrijven",
  "Writing it down…": "Aan het uitschrijven…",
+ "Writing {} follow-ups…": {
+  "one": "{} opvolging wordt geschreven…",
+  "other": "{} opvolgingen worden geschreven…"
+ },
  "Wrong company, clear details": "Verkeerd bedrijf, details wissen",
  "Wrong export code or passphrase, or the file is damaged": "Verkeerde exportcode of wachtwoordzin, of het bestand is beschadigd",
  "Wrong facts": "Feiten kloppen niet",
