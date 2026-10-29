@@ -26,6 +26,8 @@ For one project, **Follow-ups…** in its card's **⋯** or on its page. **For t
 
 **Ask me before sending** is the default: drafts wait in your to-dos. **Send without asking** is a standing yes for that board or project. Anything unusual still waits for you, and so does anything that fails. With Careful mode on, it always asks. A follow-up never goes out twice.
 
+Right before one goes, the thread is checked again, and if anyone wrote since the draft it isn’t sent: "Not sent: new message in the thread".
+
 ## Reviewing them
 
 A board's follow-ups come as one to-do, never one per email. While they're drafted it says "Writing 3 follow-ups…", then "8 follow-ups ready for Alpha testers".

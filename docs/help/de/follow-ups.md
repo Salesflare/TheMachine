@@ -26,6 +26,8 @@ Für ein einzelnes Projekt: **Nachfassen…** im **⋯** seiner Karte oder auf s
 
 **Vor dem Senden fragen** ist der Standard: Entwürfe warten in deinen Aufgaben. **Ohne Nachfrage senden** ist ein dauerhaftes Ja für dieses Board oder Projekt. Alles Ungewöhnliche wartet trotzdem auf dich, genau wie alles, was fehlschlägt. Im Modus Vorsichtig fragt sie immer. Nichts geht doppelt raus.
 
+Direkt vor dem Senden wird der Thread noch einmal geprüft, und wenn seit dem Entwurf jemand geschrieben hat, geht nichts raus: „Nicht gesendet: neue Nachricht im Thread“.
+
 ## Prüfen
 
 Die Entwürfe eines Boards kommen als eine Aufgabe, nie eine pro E-Mail. Während sie geschrieben werden, steht dort „3 Nachfassen werden geschrieben…“, danach „8 Nachfassen bereit für Alpha testers“.

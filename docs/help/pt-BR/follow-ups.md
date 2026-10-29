@@ -26,6 +26,8 @@ Para um projeto só, **Follow-ups…** no **⋯** do cartão dele ou na página 
 
 **Perguntar antes de enviar** é o padrão: os rascunhos esperam nas suas tarefas. **Enviar sem perguntar** é um sim permanente para aquele quadro ou projeto. O que for fora do comum continua esperando por você, assim como o que falhar. Com o modo Cuidadoso ativo, ela sempre pergunta. Um follow-up nunca sai duas vezes.
 
+Logo antes do envio, a conversa é verificada de novo, e se alguém escreveu depois do rascunho, ele não sai: "Não enviado: nova mensagem na conversa".
+
 ## Revisar
 
 Os follow-ups de um quadro chegam como uma tarefa só, nunca uma por e-mail. Enquanto são escritos aparece “Escrevendo 3 follow-ups…”, depois “8 follow-ups prontos para Alpha testers”.

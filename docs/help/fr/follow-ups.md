@@ -26,6 +26,8 @@ Pour un seul projet : **Relances…** dans le **⋯** de sa carte ou sur sa page
 
 **Me demander avant d’envoyer** est le réglage par défaut : les brouillons attendent dans vos tâches. **Envoyer sans demander** est un oui permanent pour ce tableau ou ce projet. Ce qui sort de l’ordinaire vous attend quand même, tout comme ce qui échoue. En mode Prudent, elle demande toujours. Une relance ne part jamais deux fois.
 
+Juste avant l’envoi, le fil est vérifié à nouveau, et si quelqu’un a écrit depuis le brouillon, elle ne part pas : « Non envoyé : nouveau message dans le fil ».
+
 ## Les vérifier
 
 Les relances d’un tableau arrivent en une seule tâche, jamais une par e-mail. Pendant la rédaction, elle indique « Rédaction de 3 relances… », puis « 8 relances prêtes pour Alpha testers ».

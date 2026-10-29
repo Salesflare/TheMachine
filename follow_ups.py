@@ -41,6 +41,15 @@ are kept here (follow_up_sends, follow_up_pace), so after a restart the rest goe
 goes twice (a send that was under way is only checked, as for every outbox send). A failed one stays a to-do that asks;
 the rest of the batch goes on. The dashboard shows each batch's progress ("Sending 3 of 8...", then "Sent 8").
 
+Nothing new since the draft (basis, recheck): each draft remembers what it was written against, the thread's latest
+message per channel (follow_up_basis). Right before a follow-up goes out (one Send, Send all checked, Send without
+asking: all through the outbox, assistant.action_step) the thread is read again from its source: the collected messages,
+Gmail's thread or Outlook's conversation read fresh, and the WhatsApp chat (LinkedIn has no cheap read: its collected
+messages count). When anything was added after the basis, by anyone (the owner from Gmail or another app, the contact,
+a teammate's Machine), the draft is held, not sent: "Not sent: new message in the thread" (follow_up_holds). A reply
+ends the round as before; the owner's own send counts as that round, and the next follow-up waits from it (settle, plan).
+When the thread can't be read (offline, signed out), it isn't sent either: "Couldn’t check the thread, try again".
+
 Open follow-up to-dos close by themselves (settle) when the person replies, someone else answered or the owner wrote
 again, the project is won, lost, Stalled, archived or its stage turned off, or follow-ups were turned off. Snoozing
 the to-do holds it; Skip ends that round.
@@ -68,6 +77,8 @@ CREATE TABLE IF NOT EXISTS follow_up_sends(job_id TEXT PRIMARY KEY,batch TEXT NO
 CREATE INDEX IF NOT EXISTS follow_up_sends_batch ON follow_up_sends(grp,batch);
 CREATE TABLE IF NOT EXISTS follow_up_pace(sender TEXT PRIMARY KEY,next_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS follow_up_threads(event_id INTEGER PRIMARY KEY,sends TEXT,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS follow_up_basis(suggestion_id TEXT PRIMARY KEY,basis TEXT NOT NULL,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS follow_up_holds(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,why TEXT NOT NULL,news TEXT,at TEXT NOT NULL);
 '''
 SCOPES = ('board', 'project')
 # The channels a follow-up can go out on, in the order "switch channel" moves through them
@@ -562,6 +573,129 @@ def earlier_sends(db, msgs, own=None):
     return prior, (min(dated) if prior and dated else None), True
 
 
+# ------------------------------------------------------------------ nothing new since the draft
+
+SEEN = 20               # source ids per channel a basis keeps, to tell a fresh read's known messages from new ones
+HELD = 'Not sent: new message in the thread.'
+UNCHECKED = 'Couldn’t check the thread, try again.'
+
+
+def _meta(value):
+    if isinstance(value, dict):
+        return value
+    try:
+        return json.loads(value or '{}')
+    except ValueError:
+        return {}
+
+
+def basis(db, project_id, upto=None):
+    """What a draft is written against: the project's latest collected message overall and per channel ({'at', 'id',
+    'channels': {channel: {'at', 'id', 'source_id', 'account_id', 'thread_id', 'chat_id', 'seen'}}}). upto: only messages
+    until then (a draft from before bases were kept: its waiting point)."""
+    marks = ','.join('?' for _ in MESSAGE_KINDS)
+    rows = db.execute(f"SELECT e.id,e.kind,e.source_id,e.account_id,e.occurred_at,e.metadata FROM events e WHERE e.deleted=0 AND e.kind IN ({marks}) "
+                      "AND e.id IN (SELECT event_id FROM event_projects WHERE project_id=? UNION SELECT event_id FROM graph_events WHERE node_id=? "
+                      'AND probable=0) ORDER BY e.occurred_at,e.id', (*MESSAGE_KINDS, int(project_id), 'project:' + str(project_id))).fetchall()
+    if upto:
+        rows = [r for r in rows if parse(r['occurred_at']) <= parse(upto)]
+    out = {'at': None, 'id': None, 'channels': {}}
+    for r in rows:
+        channel = CHANNEL_KINDS.get(r['kind'], 'x')
+        meta = _meta(r['metadata'])
+        seen = (out['channels'].get(channel) or {}).get('seen') or []
+        out['channels'][channel] = {'at': r['occurred_at'], 'id': r['id'], 'source_id': str(r['source_id'] or ''), 'account_id': r['account_id'],
+                                    'thread_id': meta.get('thread_id') or meta.get('threadId') or meta.get('conversation_id'),
+                                    'chat_id': meta.get('chat_id') or meta.get('chat'), 'seen': (seen + [str(r['source_id'] or '')])[-SEEN:]}
+        out['at'], out['id'] = r['occurred_at'], r['id']
+    return out
+
+
+def remember(db, suggestion_id, found, now):
+    """Keep a draft's basis (follow_up_card, when its preparation starts)."""
+    db.execute('INSERT OR IGNORE INTO follow_up_basis(suggestion_id,basis,at) VALUES(?,?,?)', (suggestion_id, json.dumps(found), now))
+
+
+def basis_of(db, suggestion_id):
+    """(card, basis) for a follow-up to-do, or (None, None) when it isn't one. A to-do from before bases were kept
+    gets its waiting point's."""
+    card = db.execute('SELECT * FROM follow_up_cards WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+    if not card:
+        return None, None
+    row = db.execute('SELECT basis FROM follow_up_basis WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+    try:
+        return card, json.loads(row[0])
+    except (TypeError, ValueError):
+        return card, basis(db, card['project_id'], card['after_at'])
+
+
+def collected_since(db, project_id, found, mine=mine_default):
+    """The project's collected messages added after the basis, oldest first ({'id', 'at', 'mine', 'channel'})."""
+    known = {c.get('id') for c in (found.get('channels') or {}).values()} | {found.get('id')}
+    since = parse(found['at']) if found.get('at') else None
+    return [m for m in messages(db, project_id, mine) if m['id'] not in known and (since is None or parse(m['at']) > since)]
+
+
+def thread_since(thread, channel_basis, own_emails):
+    """The messages in a freshly read email thread (Gmail's threads.get, format metadata; an Outlook conversation in
+    the same shape) added after the basis: [{'id', 'at', 'mine'}]. Drafts don't count."""
+    seen = set(channel_basis.get('seen') or ()) | {str(channel_basis.get('source_id') or '')}
+    since = parse(channel_basis['at']) if channel_basis.get('at') else None
+    out = []
+    for m in (thread or {}).get('messages') or ():
+        labels = m.get('labelIds') or []
+        if 'DRAFT' in labels or str(m.get('id')) in seen:
+            continue
+        try:
+            at = dt.datetime.fromtimestamp(int(m.get('internalDate')) / 1000, dt.timezone.utc)
+        except (TypeError, ValueError):
+            at = None
+        if since is not None and at is not None and at <= since:
+            continue
+        sender = next((h.get('value') for h in (m.get('payload') or {}).get('headers') or () if str(h.get('name')).casefold() == 'from'), '')
+        address = ADDRESS.findall(str(sender or ''))
+        out.append({'id': str(m.get('id')), 'at': at.isoformat() if at else None,
+                    'mine': 'SENT' in labels or bool(address and address[-1].casefold() in own_emails)})
+    return out
+
+
+def chat_since(rows, channel_basis):
+    """The messages in a freshly read chat (wacli messages list: MsgID, Timestamp, FromMe) added after the basis."""
+    seen = {str(s) for s in channel_basis.get('seen') or ()} | {str(channel_basis.get('source_id') or '')}
+    since = parse(channel_basis['at']) if channel_basis.get('at') else None
+    out = []
+    for r in rows or ():
+        msg_id = str(r.get('MsgID') or '')
+        if not msg_id or any(msg_id == s or s.endswith(':' + msg_id) for s in seen if s):
+            continue
+        try:
+            at = parse(r.get('Timestamp'))
+        except (TypeError, ValueError):
+            continue
+        if since is not None and at <= since:
+            continue
+        out.append({'id': msg_id, 'at': at.isoformat(), 'mine': r.get('FromMe') is True})
+    return out
+
+
+def news_kind(news):
+    """'reply' when someone else wrote since the basis, 'own' when only the owner did, None when nothing is new."""
+    if not news:
+        return None
+    return 'reply' if any(not n.get('mine') for n in news) else 'own'
+
+
+def hold(db, job_id, suggestion_id, why, news, now):
+    """A follow-up is held before it goes (nothing sent): why 'changed' (a new message in the thread) or 'unchecked'
+    (the thread couldn't be read). The outbox job waits, blocked, with the line the to-do shows; a new Send checks
+    again."""
+    line = HELD if why == 'changed' else UNCHECKED
+    db.execute("UPDATE action_jobs SET status='blocked',error=?,retry_at=NULL,updated_at=? WHERE id=? AND status='queued'", (line, now, job_id))
+    db.execute('INSERT OR REPLACE INTO follow_up_holds(job_id,suggestion_id,why,news,at) VALUES(?,?,?,?,?)',
+               (job_id, suggestion_id, why, json.dumps(news) if news is not None else None, now))
+    return line
+
+
 def owned_by_other(db, project_id):
     """A teammate owns the project (record_owners), so their Machine follows it up, not this one."""
     try:
@@ -914,7 +1048,9 @@ def going_out(db, job_id, now, draw=random.uniform):
 
 def progress(db, now):
     """The latest batch per board (and of the projects' own follow-ups) while it goes, and PROGRESS_KEEP after: [{group,
-    board, total, done, sent, going}]. Batches of one aren't shown: that to-do says how its send went."""
+    board, batch, total, done, sent, going, held, held_new, done_at}] (batch: its id, so a finished one can be dismissed): held the ones not sent because the thread changed
+    (held_new) or couldn't be checked; done_at, while it goes, about when the last one goes (done_around). Batches of one
+    aren't shown: that to-do says how its send went."""
     out = []
     try:
         groups = [r[0] for r in db.execute('SELECT DISTINCT grp FROM follow_up_sends')]
@@ -923,13 +1059,29 @@ def progress(db, now):
     since = (parse(now) - dt.timedelta(seconds=PROGRESS_KEEP)).isoformat()
     for grp in groups:
         batch = db.execute('SELECT batch FROM follow_up_sends WHERE grp=? ORDER BY queued_at DESC,rowid DESC LIMIT 1', (grp,)).fetchone()[0]
-        jobs = db.execute('SELECT j.status,j.updated_at FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id WHERE s.batch=?', (batch,)).fetchall()
+        jobs = db.execute('SELECT j.status,j.updated_at,s.sender,h.why held FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id '
+                          "LEFT JOIN follow_up_holds h ON h.job_id=s.job_id AND j.status='blocked' WHERE s.batch=?", (batch,)).fetchall()
         if len(jobs) < 2:
             continue
         going = sum(j['status'] in GOING for j in jobs)
         if not going and max(j['updated_at'] for j in jobs) < since:
             continue
         board = db.execute('SELECT name FROM boards WHERE id=?', (int(grp.split(':')[1]),)).fetchone() if grp.startswith('board:') else None
-        out.append({'group': grp if grp.startswith('board:') else None, 'board': board[0] if board else None, 'total': len(jobs),
-                    'done': len(jobs) - going, 'sent': sum(j['status'] == 'sent' for j in jobs), 'going': going > 0})
+        out.append({'group': grp if grp.startswith('board:') else None, 'board': board[0] if board else None, 'batch': batch, 'total': len(jobs),
+                    'done': len(jobs) - going, 'sent': sum(j['status'] == 'sent' for j in jobs), 'going': going > 0,
+                    'held': sum(j['held'] is not None for j in jobs), 'held_new': sum(j['held'] == 'changed' for j in jobs),
+                    'done_at': done_around(db, jobs, now) if going else None})
     return out
+
+
+def done_around(db, jobs, now):
+    """About when a batch's last follow-up goes: per account, its first queued one when the spacing lets it (follow_up_pace,
+    else now), then one every average gap; the latest of the accounts. ISO."""
+    start, out = parse(now), parse(now)
+    mean = (SEND_GAP[0] + SEND_GAP[1]) / 2
+    for who in {j['sender'] for j in jobs if j['status'] == 'queued'}:
+        left = sum(j['sender'] == who and j['status'] == 'queued' for j in jobs)
+        row = db.execute('SELECT next_at FROM follow_up_pace WHERE sender=?', (who,)).fetchone()
+        first = max(start, parse(row[0])) if row else start
+        out = max(out, first + dt.timedelta(seconds=mean * (left - 1)))
+    return out.replace(microsecond=0).isoformat()

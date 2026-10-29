@@ -138,11 +138,13 @@ try{
  for(const [width,height] of [[1440,900],[390,844]]){reset();
   const going=s=>({...s,action_status:{status:'queued'},next_actions:[{...s.next_action,state:{status:'queued'}}]});
   suggestions=suggestions.map(s=>s.follow_up?.group==='board:1'?going(s):s);
-  progress=[{group:'board:1',board:'Alpha testers',total:8,done:2,sent:2,going:true}];
+  progress=[{group:'board:1',board:'Alpha testers',total:8,done:2,sent:2,going:true,done_at:new Date(Date.now()+4*60e3).toISOString()}];
   const {context,page}=await open(width,height);const sending=page.locator('#suggestions .fu-sending');await sending.waitFor();
   assert.equal(await sending.count(),1);assert.equal(await page.locator('#suggestions .fu-group').count(),0);
   assert.equal((await sending.locator('h3').textContent()).trim(),'Follow-ups for Alpha testers');
   assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sending 3 of 8…');
+  assert.equal(await sending.locator('[data-fu-dismiss]').count(),0);  // no × while sending
+  assert.match((await sending.locator('.fu-spaced').textContent()).trim(),/^Spaced out so they don’t look automated · done around \d{1,2}:\d{2}( [AP]M)?$/);
   assert.equal(await sending.locator('.fu-progress').getAttribute('role'),'status');
   assert.equal(await page.locator('#task-f100000000000000').count(),0);assert.equal(await page.locator('#task-f400000000000000').count(),1);
   assert.equal(await page.locator('#side-cards a').evaluateAll(l=>l.filter(a=>/Alpha testers/.test(a.textContent)).length),0);
@@ -153,6 +155,69 @@ try{
   assert.equal(await sending.locator('.fu-bar').count(),0);await shot(page,`sent-${width}-light`);
   progress=[{group:'board:1',board:'Alpha testers',total:8,done:8,sent:7,going:false}];await page.reload();await sending.waitFor();
   assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sent 7 of 8');
+  // Done: its × dismisses that batch's card, also after a reload; another batch shows again
+  progress=[{group:'board:1',board:'Alpha testers',batch:'board:1@b1-'+width,total:8,done:8,sent:8,going:false}];await page.reload();await sending.waitFor();
+  const x=sending.locator('[data-fu-dismiss]');assert.equal(await x.getAttribute('aria-label'),'Dismiss');await shot(page,`sent-dismiss-${width}-light`);
+  await x.click();await sending.waitFor({state:'detached'});
+  await page.reload();await page.locator('#suggestions article').first().waitFor();assert.equal(await page.locator('#suggestions .fu-sending').count(),0);
+  progress=[{group:'board:1',board:'Alpha testers',batch:'board:1@b2-'+width,total:3,done:3,sent:3,going:false}];await page.reload();await sending.waitFor();
+  assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sent 3');
+  await context.close()}
+ // Held right before it went (a new message in the thread since the draft, or the thread couldn't be checked): the batch says
+ // "Sent 5 · 1 held (new message)", the held one is back in the board's to-do with its line, ready to send again; a project's
+ // own follow-up that couldn't be checked says so on its to-do. Light and dark, 1440 and 390.
+ for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']]){reset();
+  const held=(s,error)=>({...s,action_status:{status:'blocked',error},next_actions:[{...s.next_action,state:{status:'blocked',error}}]});
+  suggestions=suggestions.filter(s=>!['f200000000000000','f300000000000000'].includes(s.id)).map(s=>s.id==='f100000000000000'?held(s,'Not sent: new message in the thread.')
+   :s.id==='f400000000000000'?held(s,'Couldn’t check the thread, try again.'):s);
+  progress=[{group:'board:1',board:'Alpha testers',total:6,done:6,sent:5,going:false,held:1,held_new:1}];
+  const {context,page}=await open(width,height,scheme);const sending=page.locator('#suggestions .fu-sending');await sending.waitFor();
+  assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sent 5 · 1 held (new message)');
+  const group=page.locator('#suggestions .fu-group');assert.equal((await group.locator('h3').textContent()).trim(),'1 follow-up ready for Alpha testers');
+  assert.match(await page.locator('#task-f400000000000000').textContent(),/Couldn’t check the thread, try again\./);
+  assert.equal(await page.locator('#task-f400000000000000 [data-smart]').count(),1);  // still ready: Send checks again
+  await fits(page,width+' held');await shot(page,`held-${width}-${scheme}`);
+  await group.locator('button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  assert.equal((await dlg.locator('.fr-held').textContent()).trim(),'Not sent: new message in the thread.');
+  assert.equal(await dlg.locator('[data-fr-send]').isEnabled(),true);
+  // A new message in the thread: left out of Send all checked, and its Send is a plain one
+  assert.equal(await dlg.locator('[data-fr-check]').isChecked(),false);
+  assert.equal((await dlg.locator('[data-fr-all]').textContent()).trim(),'Send all checked (0)');
+  assert.equal(await dlg.locator('[data-fr-send]').evaluate(b=>b.classList.contains('primary')),false);
+  await fits(page,width+' held review');await shot(page,`held-review-${width}-${scheme}`);
+  await page.keyboard.press('Escape');await dlg.waitFor({state:'hidden'});
+  // Couldn't check the thread: stays checked, since trying again is the point
+  suggestions=suggestions.map(s=>s.id==='f100000000000000'?held(s,'Couldn’t check the thread, try again.'):s);await page.reload();
+  await group.locator('button.primary').click();await dlg.locator('.fr-item').first().waitFor();
+  assert.equal((await dlg.locator('.fr-held').textContent()).trim(),'Couldn’t check the thread, try again.');
+  assert.equal(await dlg.locator('[data-fr-check]').isChecked(),true);
+  assert.equal((await dlg.locator('[data-fr-all]').textContent()).trim(),'Send all checked (1)');
+  assert.equal(await dlg.locator('[data-fr-send]').evaluate(b=>b.classList.contains('primary')),true);
+  await shot(page,`unchecked-review-${width}-${scheme}`);
+  progress=[{group:'board:1',board:'Alpha testers',total:3,done:3,sent:1,going:false,held:2,held_new:1}];await page.reload();await sending.waitFor();
+  assert.equal((await sending.locator('.fu-progress').textContent()).trim(),'Sent 1 · 2 held');
+  await context.close()}
+ // Send all checked: a draft with several possible senders goes out from the one it shows ("From …"); only one with no
+ // recipient yet (to_options) is left for a send on its own. A queued follow-up whose draft sits in a menu (its state on
+ // the draft, no action_status) leaves the ready to-do at once.
+ {reset();
+  const menu=(s,st)=>{const d={...s.next_action,...(st?{state:{status:st}}:{})};return {...s,next_action:{kind:'menu',actions:[s.next_action]},next_actions:[d]}};
+  suggestions=suggestions.map(s=>s.id==='f100000000000000'?{...s,next_action:draft(1,s.next_action.body,{from_options:['owner@example.com','sales@example.com']})}
+   :s.id==='f200000000000000'?{...s,next_action:draft(2,s.next_action.body,{to:[],to_options:['kim@other.example','ops@other.example']})}
+   :s.id==='f300000000000000'?menu(s,'queued'):s);
+  const {context,page}=await open(1440,900);const group=page.locator('#suggestions .fu-group');await group.waitFor();
+  assert.equal((await group.locator('h3').textContent()).trim(),'2 follow-ups ready for Alpha testers');  // Cobalt is queued: not ready any more
+  await group.locator('button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  assert.equal(await dlg.locator('.fr-item').count(),2);
+  assert.equal((await dlg.locator('.fr-item').first().locator('.fr-to').textContent()).trim(),'To person1@client.example · From owner@example.com');
+  calls=[];await dlg.locator('[data-fr-all]').click();await dlg.locator('[data-fr-error]:not([hidden])').waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.suggestion_id,c.args.sender]),[['confirm_action','f100000000000000',undefined]]);
+  assert.equal((await dlg.locator('[data-fr-error]').textContent()).trim(),'1 needs you to pick who gets it: send it on its own.');
+  assert.deepEqual(await dlg.locator('.fr-item b').allTextContents(),['Bolt trial']);
+  await shot(page,'send-all-from-1440-light');
+  // The same menu-shaped follow-up before it's queued is ready again
+  await page.keyboard.press('Escape');suggestions=suggestions.map(s=>s.id==='f300000000000000'?menu(card(3,'Cobalt rollout','Hi Lee')):s);await page.reload();
+  await group.waitFor();assert.equal((await group.locator('h3').textContent()).trim(),'2 follow-ups ready for Alpha testers');  // Bolt and Cobalt
   await context.close()}
  // Drafts being written: the board's follow-ups are already one to-do ("Follow-ups for …", "Writing 3 follow-ups…"), never
  // one per email in Preparing, the sidebar or a to-do's chat; once one is written it moves to Ready with the rest still writing

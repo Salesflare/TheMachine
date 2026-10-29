@@ -15651,12 +15651,20 @@ class App:
                 db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id=? AND status='queued'",(reason,now(),job['id']))
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             return 'blocked'
+        # An automated follow-up: the thread read again, right before it goes; anything new since the draft holds it (follow_ups.py)
+        recheck=self.follow_up_recheck(job,action)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             current=db.execute("SELECT j.status,s.status suggestion_status,s.next_action FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id WHERE j.id=?",(job['id'],)).fetchone()
             if not current or current['status']!='queued':return
             if current['suggestion_status']!='prepared' or not next_actions.selected(current['next_action'],job['revision']):
                 db.execute("UPDATE action_jobs SET status='cancelled' WHERE id=?",(job['id'],));return
+            if recheck and recheck[0]:
+                follow_ups.hold(db,job['id'],job['suggestion_id'],recheck[0],recheck[1],now())
+                follow_ups.settle(db,now(),self.follow_up_mine())  # a reply ends the round; the owner's own send counts as this one
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
+                return 'held'
+            if recheck:db.execute('DELETE FROM follow_up_holds WHERE job_id=?',(job['id'],))
             # Commit admission before the one write. Later cancellation cannot recall
             # an admitted email, and restart/repeated clicks only reconcile it.
             if action['kind'] in ('whatsapp', 'intercom'):
@@ -16010,13 +16018,49 @@ class App:
             account, sends = accounts.get(account_id), None
             if account and thread_id and account.get('service', 'gmail') in ('gmail', *MICROSOFT_SERVICES):
                 try:
-                    thread = Gmail(self.config, account).get('threads/' + str(thread_id), {'format': 'metadata', 'metadataHeaders': ['From']})
-                    sends = follow_ups.thread_sends(thread, message_id, own['emails'] | {str(account.get('email') or '').lower()})
+                    sends = follow_ups.thread_sends(self.follow_up_thread(account, thread_id), message_id, own['emails'] | {str(account.get('email') or '').lower()})
                 except (SourceError, OSError, ValueError, KeyError) as error:
                     LOG.info('follow-up thread not read event=%s why=%s', event_id, str(error)[:80])
             with self.store.connect() as db:
                 db.execute('INSERT OR REPLACE INTO follow_up_threads(event_id,sends,at) VALUES(?,?,?)',
                            (event_id, None if sends is None else json.dumps(sends), now()))
+
+    def follow_up_thread(self, account, thread_id):
+        """An email thread read now from its source, never from a cache: Gmail's thread or Outlook's conversation, who sent
+        each message and when, nothing else."""
+        return Gmail(self.config, account).get('threads/' + str(thread_id), {'format': 'metadata', 'metadataHeaders': ['From']})
+
+    def follow_up_chat(self, action):
+        """A WhatsApp chat's newest messages, read now (read-only)."""
+        return next_actions.WhatsAppTransport(self.config).read(action, ['messages', 'list', '--chat', action['chat_id'], '--limit', '20']).get('messages') or []
+
+    def follow_up_recheck(self, job, action):
+        """Right before a follow-up goes out: is the thread still as it was when the draft was written (follow_ups.basis)?
+        None for a send that isn't a follow-up; else (why, news): why None (nothing new: it goes), 'changed' (a message
+        was added since, by anyone: collected here, or in Gmail's thread or Outlook's conversation read fresh, or in the
+        WhatsApp chat) or 'unchecked' (the fresh read failed: it doesn't go). LinkedIn and other channels: the collected
+        messages. Outside any transaction."""
+        with self.store.connect() as db:
+            card, found = follow_ups.basis_of(db, job['suggestion_id'])
+            if card is None:
+                return None
+            news = follow_ups.collected_since(db, card['project_id'], found, self.follow_up_mine())
+            own = self.follow_up_own(db)
+        channels = found.get('channels') or {}
+        here = channels.get(action.get('kind')) or {'at': found.get('at')}
+        try:
+            if action.get('kind') == 'email':
+                account_id, thread_id = (action.get('account_id'), action['thread_id']) if action.get('thread_id') else (here.get('account_id'), here.get('thread_id'))
+                account = next((x for x in self.config.get('accounts') or () if isinstance(x, dict) and x.get('id') == account_id), None)
+                if account and thread_id and account.get('service', 'gmail') in ('gmail', *MICROSOFT_SERVICES):
+                    news = news + follow_ups.thread_since(self.follow_up_thread(account, thread_id), here,
+                                                          own['emails'] | {str(account.get('email') or '').lower()})
+            elif action.get('kind') == 'whatsapp':
+                news = news + follow_ups.chat_since(self.follow_up_chat(action), here)
+        except Exception as error:  # noqa: BLE001 - offline, signed out, an odd answer: fail closed
+            LOG.info('follow-up thread not checked job=%s why=%s', job['id'], type(error).__name__)
+            return 'unchecked', None
+        return ('changed', news) if news else (None, [])
 
     def follow_up_pause(self, late=False):
         """None when an automated follow-up may be drafted now (model_budget.follow_up_pause): a usage limit holds it,
@@ -16104,6 +16148,7 @@ class App:
         db.execute('INSERT OR IGNORE INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,state,created_at) '
                    "VALUES(?,?,?,?,?,?,?,?,?,'open',?)", (saved['id'], p['id'], p['board_id'], int(grouped), item['n'], settings['max'], item['channel'],
                                                           item['after'], item['after_at'], now()))
+        follow_ups.remember(db, saved['id'], follow_ups.basis(db, p['id']), now())  # what the draft is written against: checked again before it goes
         if batch:
             db.execute("UPDATE deliveries SET status='grouped',updated_at=? WHERE suggestion_id=? AND status='queued'", (now(), saved['id']))
         return saved['id']

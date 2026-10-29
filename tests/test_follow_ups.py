@@ -219,6 +219,14 @@ class FollowUps(unittest.TestCase):
         unread = patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline'))  # no live reads: the quoted history
         unread.start()
         self.addCleanup(unread.stop)
+        # The fresh read right before a send (App.follow_up_thread): a fake mailbox once a test goes online (the outbox
+        # tests), else the offline Gmail above. Never a live read.
+        self.mailbox = FakeMailbox(self)
+        real = a.App.follow_up_thread
+        fresh = patch.object(a.App, 'follow_up_thread', autospec=True,
+                             side_effect=lambda app, account, thread_id: self.mailbox.read(account, thread_id) if self.mailbox.online else real(app, account, thread_id))
+        fresh.start()
+        self.addCleanup(fresh.stop)
         self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [msg('in1', '2026-10-08T09:00:00+00:00'), msg('out1', '2026-10-13T09:00:00+00:00', mine=True),
                                             msg('in2', '2026-10-09T09:00:00+00:00', who='kim@other.example', thread='t2', title='Trial'),
@@ -654,6 +662,7 @@ class FollowUps(unittest.TestCase):
         return sids
 
     def outbox(self, transport):
+        self.mailbox.online = True
         app = self.app()
         return lambda at: (self.at(at), app.action_step(transport))[1]
 
@@ -679,12 +688,14 @@ class FollowUps(unittest.TestCase):
             self.assertEqual(step('2026-10-19T09:00:00+00:00'), 'sent')  # the first goes at once: no wait for a single send
             self.assertIsNone(step('2026-10-19T09:00:03+00:00'))  # the next waits its gap: nothing goes, nothing is lost
             self.assertIsNone(step('2026-10-19T09:00:39+00:00'))
-            self.assertEqual(self.progress(), [{'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'total': 3, 'done': 1, 'sent': 1, 'going': True}])
+            self.assertEqual(self.progress(), [{'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'batch': self.progress()[0]['batch'], 'total': 3, 'done': 1, 'sent': 1, 'going': True,
+                                                'held': 0, 'held_new': 0, 'done_at': '2026-10-19T09:01:17+00:00'}])
             self.assertEqual(step('2026-10-19T09:00:40+00:00'), 'sent')
             self.assertIsNone(step('2026-10-19T09:01:10+00:00'))
             self.assertEqual(step('2026-10-19T09:01:20+00:00'), 'sent')
         self.assertEqual([(sid, at[11:19]) for sid, at in transport.sent], [(sids[0], '09:00:00'), (sids[1], '09:00:40'), (sids[2], '09:01:20')])
-        self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'total': 3, 'done': 3, 'sent': 3, 'going': False})
+        self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'batch': self.progress()[0]['batch'], 'total': 3, 'done': 3, 'sent': 3, 'going': False,
+                                              'held': 0, 'held_new': 0, 'done_at': None})
         self.at('2026-10-19T09:07:00+00:00')
         self.assertEqual(self.progress(), [])  # "Sent 3" stays a few minutes, then goes
 
@@ -736,7 +747,8 @@ class FollowUps(unittest.TestCase):
             self.assertEqual(step('2026-10-19T09:02:16+00:00'), 'sent')  # the fourth, one gap after the third
         self.assertEqual([sid for sid, _ in transport.sent], [sids[0], sids[2], sids[3]])
         self.assertEqual(transport.attempts[sids[1]], 1)  # tried once, before the kill
-        self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'total': 4, 'done': 4, 'sent': 4, 'going': False})
+        self.assertEqual(self.progress()[0], {'group': 'board:%d' % self.board, 'board': 'Alpha testers', 'batch': self.progress()[0]['batch'], 'total': 4, 'done': 4, 'sent': 4, 'going': False,
+                                              'held': 0, 'held_new': 0, 'done_at': None})
 
     def test_a_claimed_send_with_no_trace_asks_instead_of_sending_twice(self):
         transport = FakeOutbox(die=True)
@@ -783,6 +795,224 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(row['status'], 'prepared')
         self.assertIn('Nothing was sent', row['error'])
         self.assertEqual({c['project_id']: c['state'] for c in self.cards()}, {self.acme: 'open', self.kim: 'sent'})
+
+    # ------------------------------------------------------------------ nothing new since the draft: checked right before it goes
+
+    def drafted(self, auto=False):
+        """Both projects' follow-ups drafted (their basis kept) and prepared: Acme on thread t1, Kim on t2."""
+        self.turn_on(auto=auto)
+        self.app().follow_up_step()
+        acme, kim = self.cards()
+        self.prepared(acme['suggestion_id'], thread_id='t1')
+        self.prepared(kim['suggestion_id'], to=['kim@other.example'], body='Hi Kim, here is the guide.', thread_id='t2')
+        return acme['suggestion_id'], kim['suggestion_id']
+
+    def send(self, sid, approval='tap'):
+        return self.store.confirm_action(sid, 'r-' + sid[:6], approval + '-' + sid, 'dashboard')
+
+    def collect(self, source_id, at, mine, thread='t1', project='Acme pilot', who='sam@client.example'):
+        """A message the mailbox sync brings in (into the project, as a review labels it)."""
+        self.store.commit_page('work', {}, [msg(source_id, at, mine=mine, thread=thread, who=who)])
+        with self.store.connect() as db:
+            graph.label(db, [db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]], project, 'review', NOW)
+
+    def hold_of(self, sid):
+        with self.store.connect() as db:
+            return dict(db.execute('SELECT j.status,j.error,h.why,s.status card FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id '
+                                   'LEFT JOIN follow_up_holds h ON h.job_id=j.id WHERE j.suggestion_id=?', (sid,)).fetchone())
+
+    def test_each_draft_keeps_what_it_was_written_against(self):
+        acme, _ = self.drafted()
+        with self.store.connect() as db:
+            card, found = follow_ups.basis_of(db, acme)
+        email = found['channels']['email']
+        self.assertEqual((found['id'], found['at']), (self.ev['out1'], '2026-10-13T09:00:00+00:00'))
+        self.assertEqual((email['source_id'], email['thread_id'], email['account_id'], email['seen']), ('out1', 't1', 'work', ['in1', 'out1']))
+        self.assertEqual(found['id'], card['after_event'])
+
+    def test_an_owner_send_in_between_holds_it_and_counts_as_that_round(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        # The owner wrote in Gmail itself (or another app) after the draft: only the fresh read knows so far
+        self.mailbox.add('t1', 'phone1', '2026-10-19T08:30:00+00:00', mine=True)
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+        self.assertEqual(self.hold_of(acme), {'status': 'blocked', 'error': 'Not sent: new message in the thread.', 'why': 'changed', 'card': 'prepared'})
+        # Once the sync brings it in, it counts as that round: this to-do closes and the next follow-up waits from it
+        self.collect('phone1', '2026-10-19T08:30:00+00:00', mine=True)
+        self.app().follow_up_step()
+        card = [c for c in self.cards() if c['project_id'] == self.acme][0]
+        self.assertEqual((card['state'], card['why']), ('stopped', 'handled'))
+        with self.store.connect() as db:
+            item = [x for x in follow_ups.plan(db, a.now(), {'email'}) if x['project']['id'] == self.acme][0]
+        self.assertEqual((item['state'], item['n'], item['after_at'], item['next_at']),
+                         ('waiting', 2, '2026-10-19T08:30:00+00:00', '2026-10-22T08:30:00+00:00'))
+
+    def test_an_owner_send_already_collected_closes_it_at_once(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.collect('phone1', '2026-10-19T08:30:00+00:00', mine=True)
+        self.mailbox.add('t1', 'phone1', '2026-10-19T08:30:00+00:00', mine=True)
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+        self.assertEqual({c['project_id']: (c['state'], c['why']) for c in self.cards()}[self.acme], ('stopped', 'handled'))
+
+    def test_a_reply_in_between_holds_it_and_ends_the_follow_up(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.collect('in3', '2026-10-19T08:45:00+00:00', mine=False)  # Sam replied (collected; the thread shows it too)
+        self.mailbox.add('t1', 'in3', '2026-10-19T08:45:00+00:00', mine=False)
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+        self.assertEqual({c['project_id']: (c['state'], c['why']) for c in self.cards()}[self.acme], ('stopped', 'replied'))
+
+    def test_a_reply_only_the_fresh_read_shows_holds_it_too(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.mailbox.add('t1', 'in3', '2026-10-19T08:58:00+00:00', mine=False)  # not synced yet
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+        with self.store.connect() as db:
+            news = json.loads(db.execute('SELECT news FROM follow_up_holds').fetchone()[0])
+        self.assertEqual(follow_ups.news_kind(news), 'reply')
+
+    def test_a_teammate_or_anyone_else_in_the_thread_holds_it(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.mailbox.add('t1', 'mate1', '2026-10-19T08:50:00+00:00', mine=False, who='Alex <alex@example.org>')
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+
+    def test_a_failed_read_doesnt_send_and_a_new_send_checks_again(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.mailbox.fail = True  # offline, or signed out
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(transport.sent, [])
+        self.assertEqual(self.hold_of(acme), {'status': 'blocked', 'error': 'Couldn’t check the thread, try again.', 'why': 'unchecked', 'card': 'prepared'})
+        self.assertEqual({c['project_id']: c['state'] for c in self.cards()}[self.acme], 'open')  # still ready
+        self.assertIsNone(self.outbox(transport)('2026-10-19T09:00:03+00:00'))  # nothing goes by itself
+        self.mailbox.fail = False
+        self.assertEqual(self.send(acme, 'again')['status'], 'blocked')  # the owner's new Send queues it again...
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:01:00+00:00'), 'sent')  # ...checked again, and it goes
+        self.assertEqual([sid for sid, _ in transport.sent], [acme])
+        self.assertEqual(self.hold_of(acme)['why'], None)
+
+    def test_whatsapp_reads_the_chat_and_a_failed_read_holds_it(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.prepared(acme, kind='whatsapp', account_id='wa', chat_id='3247@s.whatsapp.net', body='Hi Sam, a short follow-up.')
+        self.send(acme)
+        rows = [{'MsgID': 'w1', 'Timestamp': '2026-10-12T09:00:00Z', 'FromMe': True}]
+        with patch.object(a.App, 'follow_up_chat', return_value=rows + [{'MsgID': 'w2', 'Timestamp': '2026-10-19T08:00:00Z', 'FromMe': False}]):
+            self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.send(acme, 'again')
+        with patch.object(a.App, 'follow_up_chat', side_effect=ValueError('I couldn’t reach WhatsApp on this computer.')):
+            self.assertEqual(self.outbox(transport)('2026-10-19T09:01:00+00:00'), 'held')
+        self.assertEqual(self.hold_of(acme)['why'], 'unchecked')
+        self.send(acme, 'third')
+        with patch.object(a.App, 'follow_up_chat', return_value=rows):
+            self.assertEqual(self.outbox(transport)('2026-10-19T09:02:00+00:00'), 'sent')
+        self.assertEqual(len(transport.sent), 1)
+
+    def test_send_all_skips_the_changed_ones_and_sends_the_rest(self):
+        transport = FakeOutbox()
+        acme, kim = self.drafted()
+        self.send(acme), self.send(kim)  # Send all checked: one confirm each
+        self.mailbox.add('t2', 'kim-in', '2026-10-19T08:40:00+00:00', mine=False, who='kim@other.example')
+        step = self.outbox(transport)
+        with patch.object(follow_ups, 'gap', return_value=40):
+            results = [step('2026-10-19T09:00:00+00:00'), step('2026-10-19T09:00:40+00:00')]
+        self.assertEqual(sorted(results), ['held', 'sent'])
+        self.assertEqual([sid for sid, _ in transport.sent], [acme])
+        self.assertEqual(self.job_states(), {acme: 'sent', kim: 'blocked'})
+        self.assertEqual({k: self.progress()[0][k] for k in ('total', 'sent', 'held', 'held_new', 'going')},
+                         {'total': 2, 'sent': 1, 'held': 1, 'held_new': 1, 'going': False})  # "Sent 1 · 1 held (new message)"
+
+    def test_send_without_asking_is_checked_too_and_never_retried_by_itself(self):
+        transport = FakeOutbox()
+        acme, kim = self.drafted(auto=True)
+        self.assertEqual(len(self.app().follow_up_send()), 2)
+        self.mailbox.add('t1', 'phone1', '2026-10-19T08:30:00+00:00', mine=True)
+        step = self.outbox(transport)
+        with patch.object(follow_ups, 'gap', return_value=40):
+            step('2026-10-19T09:00:00+00:00'), step('2026-10-19T09:00:40+00:00')
+        self.assertEqual([sid for sid, _ in transport.sent], [kim])
+        self.assertEqual(self.app().follow_up_send(), [])  # the held one now waits for the owner
+        self.assertEqual(self.job_states()[acme], 'blocked')
+
+    def test_a_double_submit_or_a_retry_after_a_restart_sends_once(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.assertEqual(self.send(acme)['status'], 'queued')
+        self.assertTrue(self.send(acme)['duplicate'])  # the same tap twice
+        self.assertTrue(self.send(acme, 'other')['duplicate'])  # a second tap while it's queued
+        self.store = a.Store(self.store.path)  # a restart
+        self.assertTrue(self.send(acme, 'after-restart')['duplicate'])
+        self.assertEqual(len(self.jobs()), 1)
+        step = self.outbox(transport)
+        self.assertEqual(step('2026-10-19T09:00:00+00:00'), 'sent')
+        self.assertIsNone(step('2026-10-19T09:00:50+00:00'))
+        self.assertTrue(self.send(acme, 'late')['duplicate'])
+        self.assertIsNone(step('2026-10-19T09:01:40+00:00'))
+        self.assertEqual(transport.attempts, {acme: 1})
+        # A held one: the same tap again doesn't queue it twice either
+        _, kim = self.cards()[0]['suggestion_id'], self.cards()[1]['suggestion_id']
+        self.send(kim)
+        self.mailbox.add('t2', 'kim-in', '2026-10-19T09:02:00+00:00', mine=False, who='kim@other.example')
+        self.assertEqual(step('2026-10-19T09:03:00+00:00'), 'held')
+        self.assertTrue(self.send(kim)['duplicate'])
+        self.assertEqual(self.job_states()[kim], 'blocked')
+        self.assertIsNone(step('2026-10-19T09:04:00+00:00'))
+        self.assertEqual(transport.attempts, {acme: 1})
+
+    def test_reading_what_is_new_in_a_thread_or_chat(self):
+        head = lambda i, at, who, labels=(): {'id': i, 'internalDate': str(int(follow_ups.parse(at).timestamp() * 1000)), 'labelIds': list(labels),
+                                              'payload': {'headers': [{'name': 'From', 'value': who}]}}
+        base = {'at': '2026-10-13T09:00:00+00:00', 'source_id': 'out1', 'seen': ['in1', 'out1']}
+        thread = {'messages': [head('in1', '2026-10-08T09:00:00+00:00', 'sam@client.example'), head('out1', '2026-10-13T09:00:01+00:00', 'Me <owner@example.com>'),
+                               head('d1', '2026-10-14T09:00:00+00:00', 'owner@example.com', ['DRAFT'])]}
+        self.assertEqual(follow_ups.thread_since(thread, base, {'owner@example.com'}), [])  # its own message a second off, a draft: nothing new
+        thread['messages'].append(head('n1', '2026-10-15T09:00:00+00:00', 'Me <owner@example.com>'))
+        self.assertEqual(follow_ups.news_kind(follow_ups.thread_since(thread, base, {'owner@example.com'})), 'own')
+        thread['messages'].append(head('n2', '2026-10-16T09:00:00+00:00', 'Sam <sam@client.example>'))
+        self.assertEqual(follow_ups.news_kind(follow_ups.thread_since(thread, base, {'owner@example.com'})), 'reply')
+        chat = {'at': '2026-10-13T09:00:00+00:00', 'source_id': 'whatsapp:w1', 'seen': ['whatsapp:w1']}
+        self.assertEqual(follow_ups.chat_since([{'MsgID': 'w1', 'Timestamp': '2026-10-13T09:00:00Z', 'FromMe': True}], chat), [])
+        self.assertEqual(follow_ups.news_kind(follow_ups.chat_since([{'MsgID': 'w2', 'Timestamp': '2026-10-14T09:00:00Z', 'FromMe': True}], chat)), 'own')
+        self.assertIsNone(follow_ups.news_kind([]))
+
+
+class FakeMailbox:
+    """Gmail threads as the fake source answers them: the collected messages of that thread, plus the ones a test adds
+    (sent or received elsewhere, not synced yet). `fail` is a read that doesn't work (offline, signed out)."""
+
+    def __init__(self, test):
+        self.test, self.online, self.fail, self.extra, self.reads = test, False, False, {}, 0
+
+    def add(self, thread, source_id, at, mine, who='sam@client.example'):
+        self.extra.setdefault(thread, []).append(self.head(source_id, at, 'owner@example.com' if mine else who, ['SENT'] if mine else ['INBOX']))
+
+    @staticmethod
+    def head(source_id, at, who, labels):
+        return {'id': source_id, 'internalDate': str(int(follow_ups.parse(at).timestamp() * 1000)), 'labelIds': labels,
+                'payload': {'headers': [{'name': 'From', 'value': who}]}}
+
+    def read(self, account, thread_id):
+        self.reads += 1
+        if self.fail:
+            raise a.SourceError('offline')
+        with self.test.store.connect() as db:
+            rows = db.execute("SELECT source_id,occurred_at,metadata FROM events WHERE json_extract(metadata,'$.thread_id')=?", (thread_id,)).fetchall()
+        known = [self.head(r['source_id'], r['occurred_at'], json.loads(r['metadata'])['from'], json.loads(r['metadata'])['labels']) for r in rows]
+        ids = {m['id'] for m in known}
+        return {'messages': known + [m for m in self.extra.get(thread_id, []) if m['id'] not in ids]}
 
 
 class FakeOutbox:

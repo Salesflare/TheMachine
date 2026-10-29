@@ -26,6 +26,8 @@ Per un solo progetto, **Ricontatti…** nel **⋯** della sua scheda o nella sua
 
 **Chiedimi prima di inviare** è l’impostazione predefinita: le bozze aspettano nelle tue attività. **Invia senza chiedere** è un sì permanente per quella bacheca o quel progetto. Ciò che è insolito aspetta comunque te, e così ciò che non va a buon fine. Con la modalità Prudente attiva, chiede sempre. Un ricontatto non parte mai due volte.
 
+Subito prima dell’invio il thread viene ricontrollato, e se qualcuno ha scritto dopo la bozza non parte: «Non inviato: nuovo messaggio nel thread».
+
 ## Rivederli
 
 I ricontatti di una bacheca arrivano come un’unica attività, mai una per email. Mentre li scrive mostra “Scrittura di 3 ricontatti…”, poi “8 ricontatti pronti per Alpha testers”.
