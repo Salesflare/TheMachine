@@ -60,7 +60,7 @@ actionAdd(
  {id:'go-connections-reviews',group:'Go to',label:'Connections: Reviews',keywords:'signal reviews runs delivery',run:()=>showTab('health','reviews')});
 // Actions
 actionAdd(
- {id:'new-card',group:'Actions',label:'New to-do',keywords:'add task todo card create',keys:'c',run:()=>ncOpen()},
+ {id:'new-card',group:'Actions',label:'New to-do',keywords:'add task todo card create',keys:'n',run:()=>ncOpen()},
  {id:'talk',group:'Actions',label:'Talk',keywords:'talk live voice speak conversation',keys:'t',when:()=>talkOk()||!!talk?.main,run:()=>talkMain()},  // on the Calendar, T stays Today (it comes first)
  {id:'add-connection',group:'Actions',label:'Add a connection',keywords:'connect source account gmail slack',run:()=>{showTab('health','add');$('#connect-add')?.scrollIntoView({block:'start'})}},
  {id:'open-browser',group:'Actions',label:'Open the browser',keywords:'browser /browser chrome',when:()=>kbHas($('#open-browser'))&&!!$('#open-browser').getAttribute('href'),run:()=>$('#open-browser').click()},

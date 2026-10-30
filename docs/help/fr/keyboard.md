@@ -17,7 +17,7 @@ Sur un téléphone, appuyez sur l’icône de recherche dans la barre du haut.
 Appuyez sur `?` pour **Raccourcis clavier**, la liste complète pour votre ordinateur.
 
 - Aller à une page : `G` puis `S` Suggestions, `C` Agenda, `E` Événements, `P` Personnes, `O` Organisations, `J` Projets, `F` Fleet, `B` Commentaires, `N` Connexions, `,` Paramètres.
-- `C` ajoute une nouvelle tâche. `T` lance Parler, ou l’arrête pendant qu’il est en cours. Dans l’Agenda, `T` va à aujourd’hui. `J` et `K` (ou `↓` et `↑`) parcourent une liste, Entrée ouvre.
+- `N` ajoute une nouvelle tâche. `T` lance Parler, ou l’arrête pendant qu’il est en cours. Dans l’Agenda, `T` va à aujourd’hui. `J` et `K` (ou `↓` et `↑`) parcourent une liste, Entrée ouvre.
 - Sur une tâche : `E` la renomme, `S` la met en attente, `D` la marque comme faite, `R` écrit dans son chat.
 
 Les touches ne fonctionnent pas pendant la saisie dans un champ.

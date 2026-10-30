@@ -105,14 +105,14 @@ try{
   await page.locator('#side-find').focus();await page.keyboard.type('gc');assert.equal(await tab(page),'inbox');assert.equal(await page.locator('#side-find').inputValue(),'gc');
   await page.locator('#side-find').fill('');
   await page.evaluate(()=>{const d=document.createElement('div');d.id='ce';d.contentEditable='true';document.body.append(d)});await page.locator('#ce').focus();
-  for(const k of ['c','?','/','g','e','j','d'])await page.keyboard.press(k);
+  for(const k of ['n','c','?','/','g','e','j','d'])await page.keyboard.press(k);
   assert.ok(!(await isOpen(page))&&!(await page.locator('#new-card').isVisible())&&!(await page.locator('#keys-sheet').count()),'nothing fired in contenteditable');
   await page.evaluate(()=>document.querySelector('#ce').remove());
-  await page.evaluate(()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'c',isComposing:true,bubbles:true})));assert.ok(!(await page.locator('#new-card').isVisible()),'not while composing');
+  await page.evaluate(()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'n',isComposing:true,bubbles:true})));assert.ok(!(await page.locator('#new-card').isVisible()),'not while composing');
   // The ? sheet: grouped, platform-aware
   await page.locator('body').click({position:{x:700,y:5}});await page.keyboard.press('?');const sheet=page.locator('#keys-sheet');await sheet.waitFor();
   assert.deepEqual(await sheet.locator('h3').allTextContents(),['General','Go to','Calendar','Lists and to-dos']);
-  const st=await sheet.textContent();assert.match(st,/Search and commandsCtrlKor\//);assert.match(st,/SettingsGthen,/);assert.match(st,/New to-doC/);assert.match(st,/SnoozeS/);assert.ok(!st.includes('⌘'));
+  const st=await sheet.textContent();assert.match(st,/Search and commandsCtrlKor\//);assert.match(st,/SettingsGthen,/);assert.match(st,/New to-doN/);assert.match(st,/SnoozeS/);assert.ok(!st.includes('⌘'));
   await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
   // Hints: tooltips on the sidebar, a quiet key in the card's More menu
   assert.equal(await page.locator('nav [data-tab="calendar"]').getAttribute('title'),'Calendar (G then C)');

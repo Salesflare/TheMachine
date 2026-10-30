@@ -305,7 +305,7 @@ try{
   assert.match(await page.locator('#talk-view .talk-log').textContent(),/Talk ended\./);
   assert.equal(await limitToast(),false,'End is not the limit');
 
-  // T, like C for New to-do: shown on the row on a computer (not in the phone drawer), starts Talk, and ends it while live
+  // T, like N for New to-do: shown on the row on a computer (not in the phone drawer), starts Talk, and ends it while live
   if(phone){await page.evaluate(()=>drawerOpen());assert.equal(await page.locator('#side-talk kbd').isVisible(),false,'no key hint on a phone');await page.evaluate(()=>drawerClose())}
   else{assert.equal(await page.locator('#side-talk kbd').textContent(),'T');assert.equal(await page.locator('#side-talk kbd').isVisible(),true)
    await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());

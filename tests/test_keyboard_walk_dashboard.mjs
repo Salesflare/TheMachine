@@ -70,12 +70,13 @@ try{
   await press(page,'Enter');await page.waitForFunction(()=>document.activeElement?.id==='chat-input');
   await page.waitForFunction(()=>document.querySelector('#chat-input')?.value==='half a thought');
   await page.fill('#chat-input','');await press(page,'Escape');await page.waitForFunction(()=>document.activeElement?.id==='task-b1b1b1b1b1b1b1b1');
-  // New to-do (C), the shortcut sheet (?) and the palette (Ctrl K) close on Esc and give focus back
-  await press(page,'c');await page.locator('#new-card[open]').waitFor();assert.equal(await focus(page),'nc-text');
+  // New to-do (N), the shortcut sheet (?) and the palette (Ctrl K) close on Esc and give focus back
+  await press(page,'n');await page.locator('#new-card[open]').waitFor();assert.equal(await focus(page),'nc-text');
   await press(page,'Escape');await page.locator('#new-card').waitFor({state:'hidden'});assert.equal(await focus(page),'task-b1b1b1b1b1b1b1b1');
   await press(page,'Shift+?');await page.locator('#keys-sheet[open]').waitFor();
   const sheet=await page.locator('#keys-sheet').innerText();
   for(const s of ['Close a chat or dialog','Open a folded list','Fold it again','↓','↑'])assert.ok(sheet.includes(s),'the sheet lists '+s);
+  assert.deepEqual(await page.locator('#keys-sheet p').filter({hasText:/^New to-do/}).locator('kbd').allInnerTexts(),['N'],'New to-do is N in the sheet');
   if(process.env.SHOT_DIR)await page.screenshot({path:process.env.SHOT_DIR+'/keys-sheet.png'});
   await press(page,'Escape');await page.locator('#keys-sheet').waitFor({state:'hidden'});assert.equal(await focus(page),'task-b1b1b1b1b1b1b1b1');
   await press(page,'Control+k');await page.locator('#palette[open]').waitFor();
