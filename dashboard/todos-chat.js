@@ -481,6 +481,10 @@ $('#talk-view')?.addEventListener('click',e=>{const b=e.target.closest('[data-ta
 if(location.hash==='#talk')history.replaceState(null,'',location.pathname+location.search);  // a reload: the conversation ended with the page
 {const sec=document.getElementById('talk-view');if(sec)new MutationObserver(()=>{talkSide();if(!sec.hidden)return;if(location.hash==='#talk')history.replaceState(null,'',location.pathname+location.search);if(talk)talkPaint()}).observe(sec,{attributes:true,attributeFilter:['hidden']})}
 // The bar sits above the chat's message box; Talk's own floats at the bottom of the page when no chat is open
+// Who Talk's yes sends to, on its Undo bar: "Sending to Sam in 10 s", then "Sent to Sam"; several, "Sending 3 emails in 10 s"
+function talkSendingText(x,wait){const items=x.items||[],n=items.length,mail=items.every(i=>i.kind==='email'),to=n===1?String(items[0].to||''):'';
+ if(wait==null)return n>1?t(mail?'Sent {} emails':'Sent {} messages',n):to?t('Sent to {}',to):t('Sent');
+ return n>1?t(mail?'Sending {} emails in {} s':'Sending {} messages in {} s',n,wait):to?t('Sending to {} in {} s',to,wait):t('Sending in {} s',wait)}
 function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$('#talk-view .talk-foot'):document.querySelector('.chat-compose');
  if(!box&&!v.main){talkEnd();return}
  let host=box,bar=box?.querySelector(':scope>.talk');
@@ -503,8 +507,8 @@ function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$(
  let u=bar.querySelector('.talk-undo');if(!u){u=document.createElement('div');u.className='talk-undo';bar.querySelector('.talk-bar')?.after(u)}
  if(u.dataset.kind!==kind){u.dataset.kind=kind;  // the button stays the same element while the count goes down, so a tap never misses
   u.innerHTML=kind==='undo'?`<span class="talk-sending" role="status"></span><button type="button" class="talk-undo-btn" data-talk-undo>${esc(t('Undo'))}</button>`
-   :kind==='sent'?`<span class="talk-sending sent" role="status">${esc(t('Sent'))}</span>`:kind==='undone'?`<span class="talk-sending" role="status">${esc(t('Canceled. It won’t be sent.'))}</span>`:''}
- if(kind==='undo'){const c=u.querySelector('.talk-sending'),text=t('Sending in {} s',wait);if(c.textContent!==text)c.textContent=text}
+   :kind==='sent'?`<span class="talk-sending sent" role="status">${esc(talkSendingText(x))}</span>`:kind==='undone'?`<span class="talk-sending" role="status">${esc(t('Canceled. It won’t be sent.'))}</span>`:''}
+ if(kind==='undo'){const c=u.querySelector('.talk-sending'),text=talkSendingText(x,wait);if(c.textContent!==text)c.textContent=text}
  u.hidden=!kind;
  bar.querySelector('.talk-live').classList.toggle('near',near)}
 function talkFail(v,msg){if(talk!==v)return;talkClose(v);v.state='error';v.error=msg;talk=v;talkPaint()}
@@ -655,7 +659,7 @@ async function talkUndoLast(v){const l=v.last;if(!l||Date.now()-l.at>600000)retu
  return {ok:true,undid:how[1],id:l.id,title:l.title,note:`Undid "${how[1]}" on "${l.title}" and opened it again. Say what you undid in a few words, then do what the owner meant on this to-do.`}}
 // Undo, by voice or on the bar: every send still waiting from Talk's last yes (talk_undo, as the chat's Undo)
 async function talkUndoSend(v){const x=v.sent;if(!x||x.undone||Date.now()>x.until)return {error:'Nothing is waiting to send any more.'};x.undone=true;talkPaint();let n=0;
- for(const item of x.items)try{await micPost('talk_undo',item);n++}catch{}
+ for(const item of x.items)try{await micPost('talk_undo',{suggestion_id:item.suggestion_id,approval_id:item.approval_id});n++}catch{}
  refresh().catch(()=>{});if(chatOpen())chatPoll();
  return n?{ok:true,canceled:n,note:'Canceled. Nothing was sent. Say so in a few words.'}:{error:'It was already on its way.'}}
 // Report a bug, by voice (report_bug): the same report Help's Report a bug sends, with what the owner agreed to add

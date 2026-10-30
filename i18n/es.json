@@ -3063,7 +3063,10 @@
  "Sending approval must come from the owner’s controls": "La aprobación de envío debe venir de los controles del propietario",
  "Sending automatically is off": "El envío automático está desactivado",
  "Sending in {} s": "Se envía en {} s",
+ "Sending to {} in {} s": "Se envía a {0} en {1} s",
  "Sending your approved draft…": "Enviando tu borrador aprobado…",
+ "Sending {} emails in {} s": "Se envían {0} correos en {1} s",
+ "Sending {} messages in {} s": "Se envían {0} mensajes en {1} s",
  "Sending {} of {}…": "Enviando {} de {}…",
  "Sending {} votes.": {
   "one": "Enviando {} voto.",
@@ -3102,10 +3105,12 @@
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Enviado a {}. Esperando su respuesta hasta {}; se cierra cuando responda.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Enviado a {}. Esperando su respuesta; se cierra cuando conteste.",
  "Sent {}": "{} enviados",
+ "Sent {} emails": "{} correos enviados",
  "Sent {} learnings. New ones go automatically now.": {
   "one": "{} aprendizaje enviado. Los nuevos se envían automáticamente.",
   "other": "{} aprendizajes enviados. Los nuevos se envían automáticamente."
  },
+ "Sent {} messages": "{} mensajes enviados",
  "Sent {} of {}": "{} de {} enviados",
  "Sent {} · {} held": "{} enviados · {} retenidos",
  "Sent {} · {} held (new message)": "{} enviados · {} retenidos (mensaje nuevo)",

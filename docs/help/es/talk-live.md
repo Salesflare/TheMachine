@@ -41,7 +41,7 @@ Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y
 - Si tu respuesta no es un sí claro, no se envía nada y vuelve a preguntar. "No" no envía nada.
 - Un borrador que ya viste en pantalla, o que oíste en esta conversación, no se vuelve a leer: solo pregunta, por ejemplo "¿Se lo envío a Nick?".
 - Di "envía los dos" o "envía todos los listos" y nombra a todos en una pregunta. Un sí envía cada uno.
-- Hablar muestra **Deshacer** con una cuenta atrás unos segundos antes de que salga, y luego **Enviado**. Tócalo, o di "deshacer" o "espera".
+- Hablar muestra **Deshacer** con el destinatario y una cuenta atrás unos segundos antes de que salga, y luego **Enviado a** esa persona. Tócalo, o di "deshacer" o "espera".
 
 Siempre puedes tocar **Aprobar** en su lugar.
 

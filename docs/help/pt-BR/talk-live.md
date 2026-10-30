@@ -41,7 +41,7 @@ Para enviar um rascunho, diga isso. A The Machine pergunta antes, dizendo para q
 - Se a resposta não for um sim claro, nada é enviado e ela pergunta de novo. "Não" não envia nada.
 - Um rascunho que você já viu na tela, ou ouviu nesta conversa, não é lido de novo: ela só pergunta, por exemplo "Enviar para o Nick?".
 - Diga "envie os dois" ou "envie todos os prontos" e ela cita todos em uma pergunta. Um sim envia cada um.
-- Falar mostra **Desfazer** com uma contagem regressiva por alguns segundos antes do envio, depois **Enviado**. Toque nele, ou diga "desfazer" ou "espera".
+- Falar mostra **Desfazer** com o destinatário e uma contagem regressiva por alguns segundos antes do envio, depois **Enviado para** essa pessoa. Toque nele, ou diga "desfazer" ou "espera".
 
 Você sempre pode tocar em **Aprovar** em vez disso.
 

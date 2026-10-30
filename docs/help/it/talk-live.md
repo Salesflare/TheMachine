@@ -41,7 +41,7 @@ Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, pe
 - Se la risposta non è un sì chiaro, non parte niente e chiede di nuovo. "No" non invia niente.
 - Una bozza che hai già visto sullo schermo, o sentito in questa conversazione, non viene riletta: chiede solo, per esempio "La invio a Nick?".
 - Di' "invia entrambe" o "invia tutte quelle pronte" e nomina tutti in una domanda. Un sì le invia tutte.
-- Parla mostra **Annulla** con un conto alla rovescia per qualche secondo prima dell’invio, poi **Inviato**. Toccalo, o di' "annulla" o "aspetta".
+- Parla mostra **Annulla** con il destinatario e un conto alla rovescia per qualche secondo prima dell’invio, poi **Inviato a** quella persona. Toccalo, o di' "annulla" o "aspetta".
 
 Puoi sempre toccare **Approva** invece.
 

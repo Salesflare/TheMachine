@@ -3063,7 +3063,10 @@
  "Sending approval must come from the owner’s controls": "Goedkeuring om te versturen moet van de knoppen van de eigenaar komen",
  "Sending automatically is off": "Automatisch versturen staat uit",
  "Sending in {} s": "Wordt verstuurd over {} s",
+ "Sending to {} in {} s": "Wordt over {1} s verstuurd naar {0}",
  "Sending your approved draft…": "Je goedgekeurde concept versturen…",
+ "Sending {} emails in {} s": "{0} e-mails worden over {1} s verstuurd",
+ "Sending {} messages in {} s": "{0} berichten worden over {1} s verstuurd",
  "Sending {} of {}…": "{} van {} versturen…",
  "Sending {} votes.": {
   "one": "{} stem wordt verstuurd.",
@@ -3102,10 +3105,12 @@
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Verstuurd naar {}. Wacht op hun antwoord tot {}; het sluit zodra ze antwoorden.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Verstuurd naar {}. Wacht op hun antwoord; het sluit wanneer ze antwoorden.",
  "Sent {}": "{} verstuurd",
+ "Sent {} emails": "{} e-mails verstuurd",
  "Sent {} learnings. New ones go automatically now.": {
   "one": "{} inzicht verstuurd. Nieuwe gaan voortaan automatisch.",
   "other": "{} inzichten verstuurd. Nieuwe gaan voortaan automatisch."
  },
+ "Sent {} messages": "{} berichten verstuurd",
  "Sent {} of {}": "{} van {} verstuurd",
  "Sent {} · {} held": "{} verstuurd · {} tegengehouden",
  "Sent {} · {} held (new message)": "{} verstuurd · {} tegengehouden (nieuw bericht)",
