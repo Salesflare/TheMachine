@@ -265,7 +265,9 @@ def restart_later(unit=UNIT_NAME, delay=5):
         target = _target(unit)
     else:
         if shutil.which('systemd-run') and not default_run(['systemd-run', '--user', '--quiet', '--collect', f'--on-active={delay}',
-                                                            'systemctl', '--user', 'restart', unit], timeout=20).returncode:
+                                                            # on time: a user manager's timers default to a minute's accuracy,
+                                                            # which put a new connection's restart 7 to 13 s out instead of 3
+                                                            '--timer-property=AccuracySec=100ms', 'systemctl', '--user', 'restart', unit], timeout=20).returncode:
             return True
         command = f'sleep {int(delay)}; exec systemctl --user restart "$0"'
         target = unit

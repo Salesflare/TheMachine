@@ -101,8 +101,9 @@ class SharedConnectors:
 
     def trust(self, group):
         """(trusted admins {member: key}, unconfirmed admin ids) for one directory entry, keeping the pins."""
-        trusted, unconfirmed, pins = ft.admins(group, self.meta(self._pins_key(group['id'])))
-        self.set_meta(self._pins_key(group['id']), pins)
+        kept = self.meta(self._pins_key(group['id']))
+        trusted, unconfirmed, pins = ft.admins(group, kept)
+        self.keep_meta(self._pins_key(group['id']), kept, pins)
         return trusted, unconfirmed
 
     def _work_groups(self):

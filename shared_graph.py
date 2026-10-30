@@ -1214,14 +1214,16 @@ class SharedGraph:
     def confirmed(self, group):
         """(confirmed members {id: sign key}, trusted admins {id: key}, waiting [ids]) for a Work Fleet entry."""
         trusted, _ = self.trust(group)
-        found, waiting, pins = ft.members(group, trusted, self.meta('graph_members:' + group['id']), self.graph_gone(group, trusted))
-        self.set_meta('graph_members:' + group['id'], pins)
+        kept = self.meta('graph_members:' + group['id'])
+        found, waiting, pins = ft.members(group, trusted, kept, self.graph_gone(group, trusted))
+        self.keep_meta('graph_members:' + group['id'], kept, pins)
         return found, trusted, waiting
 
     def graph_gone(self, group, trusted):
         """{member: at} removed from the team's Graph by a trusted admin, kept here so the Network can't take it back."""
-        gone = ft.removed(group, trusted, self.meta('graph_removed:' + group['id']) or {})
-        self.set_meta('graph_removed:' + group['id'], gone)
+        kept = self.meta('graph_removed:' + group['id'])
+        gone = ft.removed(group, trusted, kept or {})
+        self.keep_meta('graph_removed:' + group['id'], kept, gone)
         return gone
 
     def _sign_remove(self, group, me, mid):
@@ -1413,9 +1415,10 @@ class SharedGraph:
         may sign the switch on for such a Fleet."""
         if trusted is None:
             trusted, _ = self.trust(group)
-        found = ft.paused(group, trusted, self.meta('graph_pause:' + group['id']))
+        kept = self.meta('graph_pause:' + group['id'])
+        found = ft.paused(group, trusted, kept)
         if found:
-            self.set_meta('graph_pause:' + group['id'], found)
+            self.keep_meta('graph_pause:' + group['id'], kept, found)
         if not found:
             if self.graph_policy(group, trusted):
                 return None  # an admin requires the members' Work email or calendar: that is turning it on, no second switch
@@ -1457,9 +1460,10 @@ class SharedGraph:
         """What this Fleet's admins require every member to share: a list, some of ft.REQUIRABLE."""
         if trusted is None:
             trusted, _ = self.trust(group)
-        found = ft.policy_of(group, trusted, self.meta('graph_policy:' + group['id']))
+        kept = self.meta('graph_policy:' + group['id'])
+        found = ft.policy_of(group, trusted, kept)
         if found:
-            self.set_meta('graph_policy:' + group['id'], found)
+            self.keep_meta('graph_policy:' + group['id'], kept, found)
         return list((found or {}).get('require') or [])
 
     def graph_set_policy(self, fleet, require):
