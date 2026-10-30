@@ -17,6 +17,7 @@ El correo de Otros y los boletines reciben primero un vistazo rápido: remitente
 ## Qué puede enviar y cambiar
 
 - Un correo desde una tarea, solo después de que lo apruebes en la vista previa.
+- Una respuesta va en la conversación de Outlook del correo al que responde.
 - Cuando pospones una tarea sobre un correo, los mensajes del hilo pasan a una carpeta Snoozed en Outlook y vuelven cuando vuelve la tarea.
 
 El calendario nunca se cambia.

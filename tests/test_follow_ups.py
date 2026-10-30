@@ -25,7 +25,7 @@ def msg(source_id, at, mine=False, who='sam@client.example', thread='t1', title=
     return {'account_id': 'work', 'source_id': source_id, 'kind': 'gmail.message', 'occurred_at': at, 'title': title,
             'body': 'About the pilot.', 'deleted': False,
             'metadata': {'from': 'owner@example.com' if mine else who, 'to': who if mine else 'owner@example.com',
-                         'thread_id': thread, 'labels': ['SENT'] if mine else ['INBOX']}}
+                         'thread_id': thread, 'labels': ['SENT'] if mine else ['INBOX'], 'message-id': f'<{source_id}@mail.example>'}}
 
 
 def m(i, day, mine=True, channel='email'):
@@ -494,6 +494,10 @@ class FollowUps(unittest.TestCase):
             app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         self.assertEqual(calls, [])
 
+    def title(self, sid):
+        with self.store.connect() as db:
+            return db.execute('SELECT title FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
+
     def model_turns(self, app, rewrite, **extra):
         """One preparation pass with a fake model: each started turn saves what rewrite(suggestion_id, message, draft)
         returns as its result (assistant_signals prepare), as the agent would. No live model, nothing sent. Returns the
@@ -619,8 +623,9 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(app.follow_up_step()['drafted'], 2)
         seen = {}
         draft = {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Re: Pilot', 'body': 'Hi Sam, early access is yours.'}
+        kim = {**draft, 'to': ['kim@other.example'], 'subject': 'Re: Trial'}  # each follow-up answers its own person's email
         with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
-            starts, refused = self.model_turns(app, lambda sid, message, current: seen.setdefault(sid, message) and draft)
+            starts, refused = self.model_turns(app, lambda sid, message, current: seen.setdefault(sid, message) and (kim if 'Kim' in self.title(sid) else draft))
         self.assertEqual((len(starts), refused), (2, []))
         for message in seen.values():
             self.assertIn('Automated follow-up 1', message)

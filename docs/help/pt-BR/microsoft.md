@@ -17,6 +17,7 @@ E-mails em Outros e newsletters passam primeiro por uma olhada rápida: remetent
 ## O que ele pode enviar e mudar
 
 - Um e-mail a partir de uma tarefa, só depois que você aprova na prévia.
+- Uma resposta vai para a conversa do Outlook do e-mail que ela responde.
 - Quando você adia uma tarefa sobre um e-mail, as mensagens da conversa vão para uma pasta Snoozed no Outlook e voltam quando a tarefa volta.
 
 A agenda nunca é alterada.

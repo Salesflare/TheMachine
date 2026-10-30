@@ -17,6 +17,7 @@ Les e-mails du dossier Autres et les newsletters ont d’abord droit à un coup 
 ## Ce qu’il peut envoyer et modifier
 
 - Un e-mail depuis une tâche, seulement après votre accord dans l’aperçu.
+- Une réponse arrive dans la conversation Outlook de l’e-mail auquel elle répond.
 - Quand vous mettez en attente une tâche liée à un e-mail, les messages du fil vont dans un dossier Snoozed dans Outlook et reviennent en même temps que la tâche.
 
 L’agenda n’est jamais modifié.

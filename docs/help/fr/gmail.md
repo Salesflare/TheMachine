@@ -17,6 +17,8 @@ Les e-mails Promotions, newsletters, Mises à jour et Forums ont d’abord droit
 
 Un e-mail depuis une tâche, et seulement après votre accord. **Faire** prépare un brouillon ; **Vérifier et envoyer** l’ouvre, prêt à être modifié, et rien ne part avant que vous appuyiez sur **Envoyer maintenant**. **Se connecter avec Google** demande aussi à Google le droit d’envoyer. Avec votre propre app sur votre propre ordinateur, la connexion est en lecture seule jusqu’à ce que vous ajoutiez l’envoi vous-même.
 
+Une réponse arrive dans le fil de l’e-mail auquel elle répond. Si elle part d’une autre boîte que celle où l’e-mail est arrivé, la tâche l’indique avant l’envoi : chez eux, elle arrive quand même dans le même fil.
+
 ## Le connecter
 
 Sur une Machine hébergée :

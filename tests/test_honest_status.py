@@ -40,7 +40,7 @@ class HonestStatus(unittest.TestCase):
         return app
 
     DRAFT = {'kind': 'email', 'label': 'Send reply', 'account_id': 'work', 'to': ['customer@client.example'], 'subject': 'Re: Invoice',
-             'body': 'Hi,\n\nThe invoice is fixed.\n\nCheers,\n\nAlex'}
+             'body': 'Hi,\n\nThe invoice is fixed.\n\nCheers,\n\nAlex', 'in_reply_to': '<m1@x>'}
 
     def save(self, **args):
         return self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Reply drafted.', **args})

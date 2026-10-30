@@ -139,7 +139,7 @@ class SentCard(unittest.TestCase):
     def test_a_card_with_another_waiting_send_stays_ready(self):
         self.decide('accept')
         self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Two replies ready.', 'next_actions': [
-            self.draft(label='Send reply'), self.draft(label='Send to finance', to=['finance@example.com'], body='Second approved draft.')]})
+            self.draft(label='Send reply', in_reply_to='<m1@example.com>'), self.draft(label='Send to finance', to=['finance@example.com'], body='Second approved draft.')]})
         first = self.row()['next_actions'][0]
         self.confirm(first['revision']);self.app().action_step(self.transport(send=lambda *_: {'message_id': 'm-1'}))
         self.assertEqual(self.row()['status'], 'prepared')

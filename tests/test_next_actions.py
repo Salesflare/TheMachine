@@ -288,7 +288,7 @@ class NextActions(unittest.TestCase):
 
     def menu(self,with_email=True):
         self.decide('accept')
-        self.app().action('prepare',{'suggestion_id':self.sid,'body':'The fix proposal is ready.','next_actions':([self.draft(label='Send reply')] if with_email else [])+[
+        self.app().action('prepare',{'suggestion_id':self.sid,'body':'The fix proposal is ready.','next_actions':([self.draft(label='Send reply',in_reply_to='<m1@example.com>')] if with_email else [])+[
             {'kind':'prepare','label':'Draft support email','instructions':'Draft an email about the exact field-mapping error; do not send it.'},
             {'kind':'open','label':'Open the Zap','url':'https://example.com/zap'}]})
         return self.row()['next_actions']

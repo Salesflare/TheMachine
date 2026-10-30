@@ -17,6 +17,7 @@ La posta in Altra e le newsletter ricevono prima una rapida occhiata: mittente, 
 ## Cosa può inviare e cambiare
 
 - Un'email da un'attività, solo dopo che l'hai approvata nell'anteprima.
+- Una risposta finisce nella conversazione Outlook dell’email a cui risponde.
 - Quando posticipi un'attività su un'email, i messaggi del thread vanno in una cartella Posticipati in Outlook e tornano quando torna l'attività.
 
 Il calendario non viene mai cambiato.

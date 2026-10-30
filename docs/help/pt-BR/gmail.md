@@ -17,6 +17,8 @@ E-mails de Promoções, newsletters, Atualizações e Fóruns recebem primeiro u
 
 Um e-mail a partir de uma tarefa, e só depois que você aprova. **Fazer** prepara um rascunho. **Revisar e enviar** abre o rascunho pronto para editar, e nada sai até você tocar em **Enviar agora**. **Entrar com o Google** também pede permissão de envio ao Google. Com o seu próprio app no seu próprio computador, o login é só de leitura até você mesmo adicionar o envio.
 
+Uma resposta vai para a conversa do e-mail que ela responde. Se ela sai de outra caixa diferente da que recebeu o e-mail, a tarefa avisa antes do envio: mesmo assim, chega para eles na mesma conversa.
+
 ## Conectar
 
 Em uma Machine hospedada:
