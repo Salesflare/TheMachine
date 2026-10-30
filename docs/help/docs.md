@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## What it reads
 
-The **Microsoft Word** connection reads Word files in OneDrive and SharePoint, with the Microsoft sign-in of an Outlook address you connected. That works on a hosted Machine and on your own computer paired with your account. Google Docs come later: The Machine's Google sign-in can't read docs yet. It brings in:
+The **Microsoft Word** connection reads Word files in OneDrive and SharePoint. You sign in with Microsoft for it, with or without Outlook connected. That works on a hosted Machine and on your own computer paired with your account. Google Docs come later: The Machine's Google sign-in can't read docs yet. It brings in:
 
 - Docs someone shares with you.
 - Comments and replies on docs you own, and comments that mention you.
@@ -35,22 +35,22 @@ Your Machine can write a new Word doc, or change a doc one of your to-dos is abo
 
 It replaces text, adds text and adds paragraphs and headings. It leaves tables, images, tracked changes and fields alone. A new doc lands in your OneDrive and stays private until you share it.
 
-To turn it on, press **Allow edits** on the Microsoft Word card in **Connections**. Microsoft asks to let it change your files, which is a separate OK from reading. Signing in again keeps it.
+Connecting Microsoft Word already allows this: there is no separate step. A Microsoft Word connection from before that only reads shows **Allow edits** on its card in **Connections**. Press it once and accept.
 
 ## What it asks for
 
-Reading docs needs its own OK, apart from your mail sign-in: Microsoft asks to let it read your files, including the ones shared with you in OneDrive and SharePoint. Your mail and calendar access stay as they are.
+Microsoft Word asks Microsoft for one OK, apart from your mail sign-in: to read and change your files, including the ones shared with you in OneDrive and SharePoint. Each change still waits for your OK on its to-do. Your mail and calendar access stay as they are. Without Outlook, the sign-in only covers your files, never your mail or calendar.
 
 If that OK is taken back later, the Microsoft Word card says **Waiting for your OK to read docs**.
 
 ## Connect it
 
-Connect Outlook for the address first. Then:
+Outlook doesn't need to be connected for it.
 
-- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Microsoft Word** and press **Sign in with Microsoft**. Microsoft asks you to allow reading your files, then you come back to the dashboard.
+- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Microsoft Word** and press **Sign in with Microsoft**. Microsoft asks you to allow reading and editing your files, then you come back to the dashboard.
 - Your own computer, paired with your account: open **Connections**, **+ Add**, pick **Microsoft Word** and press **Sign in with Microsoft**.
 
-It checks that the sign-in may read docs. Without that OK it isn't added.
+It checks that the sign-in may read docs. Without that OK it isn't added. If you press **Allow edits** and Microsoft doesn't allow edits, it says so instead of Connected.
 
 ## Work or personal
 

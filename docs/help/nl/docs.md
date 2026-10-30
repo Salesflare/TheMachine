@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## Wat het leest
 
-De koppeling **Microsoft Word** leest Word-bestanden in OneDrive en SharePoint, met de Microsoft-login van een Outlook-adres dat je gekoppeld hebt. Dat werkt op een gehoste Machine en op je eigen computer die aan je account gekoppeld is. Google Docs komen later: de Google-login van The Machine kan nog geen documenten lezen. Het haalt binnen:
+De koppeling **Microsoft Word** leest Word-bestanden in OneDrive en SharePoint. Je logt er apart voor in met Microsoft, met of zonder gekoppelde Outlook. Dat werkt op een gehoste Machine en op je eigen computer die aan je account gekoppeld is. Google Docs komen later: de Google-login van The Machine kan nog geen documenten lezen. Het haalt binnen:
 
 - Documenten die iemand met je deelt.
 - Reacties en antwoorden op documenten van jou, en reacties die jou vermelden.
@@ -35,22 +35,22 @@ Je Machine kan een nieuw Word-document schrijven, of een document aanpassen waar
 
 Hij vervangt tekst, voegt tekst toe en voegt alinea's en koppen toe. Tabellen, afbeeldingen, bijgehouden wijzigingen en velden laat hij met rust. Een nieuw document komt in je OneDrive en blijft privé tot je het deelt.
 
-Zet het aan met **Bewerken toestaan** op de kaart van Microsoft Word bij **Koppelingen**. Microsoft vraagt of hij je bestanden mag wijzigen, los van lezen. Opnieuw aanmelden houdt dat.
+Microsoft Word koppelen staat dit al toe: er is geen aparte stap. Een oudere koppeling van Microsoft Word die alleen leest, toont **Bewerken toestaan** op haar kaart bij **Koppelingen**. Druk er één keer op en accepteer.
 
 ## Waar het om vraagt
 
-Documenten lezen heeft een eigen OK nodig, los van je login voor mail: Microsoft vraagt je om het lezen van je bestanden toe te staan, ook die met je gedeeld zijn in OneDrive en SharePoint. Je toegang tot je mail en je agenda blijft zoals ze is.
+Microsoft Word vraagt Microsoft om één OK, los van je login voor mail: om je bestanden te lezen en te wijzigen, ook die met je gedeeld zijn in OneDrive en SharePoint. Elke wijziging wacht nog altijd op je OK in haar taak. Je toegang tot je mail en je agenda blijft zoals ze is. Zonder Outlook geldt de login alleen voor je bestanden, nooit voor je mail of agenda.
 
 Wordt die OK later ingetrokken, dan zegt de kaart van Microsoft Word **Wacht op je OK om documenten te lezen**.
 
 ## Koppelen
 
-Koppel eerst Outlook voor het adres. Dan:
+Je hebt er geen gekoppelde Outlook voor nodig.
 
-- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Microsoft Word** en druk op **Inloggen met Microsoft**. Microsoft vraagt je om het lezen van je bestanden toe te staan, daarna kom je terug in het dashboard.
+- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Microsoft Word** en druk op **Inloggen met Microsoft**. Microsoft vraagt je om het lezen en bewerken van je bestanden toe te staan, daarna kom je terug in het dashboard.
 - Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Microsoft Word** en druk op **Inloggen met Microsoft**.
 
-Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd.
+Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd. Druk je op **Bewerken toestaan** en staat Microsoft bewerken niet toe, dan zegt hij dat in plaats van Gekoppeld.
 
 ## Werk of privé
 

@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## Cosa legge
 
-La connessione **Microsoft Word** legge i file Word in OneDrive e SharePoint, con l’accesso Microsoft di un indirizzo Outlook che hai collegato. Funziona su una Machine ospitata e sul tuo computer collegato al tuo account. Google Docs arriverà più avanti: l’accesso Google di The Machine non può ancora leggere i documenti. Porta dentro:
+La connessione **Microsoft Word** legge i file Word in OneDrive e SharePoint. Accedi con Microsoft apposta, con o senza Outlook collegato. Funziona su una Machine ospitata e sul tuo computer collegato al tuo account. Google Docs arriverà più avanti: l’accesso Google di The Machine non può ancora leggere i documenti. Porta dentro:
 
 - I documenti che qualcuno condivide con te.
 - Commenti e risposte sui documenti di cui sei proprietario, e i commenti che ti menzionano.
@@ -35,22 +35,22 @@ La tua Machine può scrivere un nuovo documento Word, o modificare un documento 
 
 Sostituisce testo, aggiunge testo e aggiunge paragrafi e titoli. Lascia stare tabelle, immagini, revisioni e campi. Un nuovo documento finisce nel tuo OneDrive e resta privato finché non lo condividi.
 
-Per attivarlo, tocca **Consenti le modifiche** sulla scheda Microsoft Word in **Connessioni**. Microsoft chiede di poter modificare i tuoi file, separatamente dalla lettura. Accedere di nuovo lo mantiene.
+Collegare Microsoft Word lo consente già: non c’è un passaggio a parte. Una connessione Microsoft Word di prima che legge soltanto mostra **Consenti le modifiche** sulla sua scheda in **Connessioni**. Toccalo una volta e accetta.
 
 ## Cosa chiede
 
-Leggere i documenti richiede un OK a parte, distinto dall’accesso alla posta: Microsoft ti chiede di consentire la lettura dei tuoi file, compresi quelli condivisi con te in OneDrive e SharePoint. Il tuo accesso alla posta e al calendario resta com’è.
+Microsoft Word chiede a Microsoft un solo OK, distinto dall’accesso alla posta: leggere e modificare i tuoi file, compresi quelli condivisi con te in OneDrive e SharePoint. Ogni modifica aspetta comunque il tuo OK nella sua attività. Il tuo accesso alla posta e al calendario resta com’è. Senza Outlook, l’accesso copre solo i tuoi file, mai la posta o il calendario.
 
 Se in seguito quell’OK viene revocato, la scheda Microsoft Word dice **In attesa del tuo OK per leggere i documenti**.
 
 ## Collegalo
 
-Collega prima Outlook per quell’indirizzo. Poi:
+Non serve avere Outlook collegato.
 
-- Machine in hosting: nella dashboard, apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft Word** e premi **Accedi con Microsoft**. Microsoft ti chiede di consentire la lettura dei tuoi file, poi torni alla dashboard.
+- Machine in hosting: nella dashboard, apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft Word** e premi **Accedi con Microsoft**. Microsoft ti chiede di consentire la lettura e la modifica dei tuoi file, poi torni alla dashboard.
 - Il tuo computer, abbinato al tuo account: apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft Word** e premi **Accedi con Microsoft**.
 
-Verifica che l’accesso possa leggere i documenti. Senza quell’OK non viene aggiunto.
+Verifica che l’accesso possa leggere i documenti. Senza quell’OK non viene aggiunto. Se tocchi **Consenti le modifiche** e Microsoft non le consente, lo dice invece di mostrare Connesso.
 
 ## Lavoro o personale
 

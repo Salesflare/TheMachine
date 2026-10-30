@@ -123,12 +123,12 @@ try{
   assert.match(await page.locator('#connect-add').innerText(),/Reads only\./);
   await page.locator('#connect-add details.connect-other summary').click();
   await shot(page,`add-zoom-own-app-${tag}`);
-  // Docs on a Microsoft address: its own consent, signed in with Microsoft through The Machine's app; no own app to fold away
+  // Microsoft Word on a Microsoft address, Outlook or not: its own consent, signed in with Microsoft through The Machine's app; no own app to fold away
   await page.goto('about:blank');await page.goto(base+'/#connections=add');
   await page.locator('#connect-add [data-connect-signin="docs"]').click();
   await page.getByRole('button',{name:'Sign in with Microsoft'}).waitFor();
   assert.equal(await page.locator('#connect-add h3').innerText(),'Microsoft Word');
-  assert.match(await page.locator('#connect-add').innerText(),/Word, OneDrive and SharePoint, for an Outlook address you connected\. Reads only\./);
+  assert.match(await page.locator('#connect-add').innerText(),/Word, OneDrive and SharePoint\. Outlook isn’t needed\. Edits wait for your OK\./);
   assert.equal(await page.locator('#connect-add details.connect-other').count(),0);
   // Stripe, which the control plane has no app for: no Sign in button, pasting a restricted key open at once
   let opened=0;context.on('page',()=>opened++);

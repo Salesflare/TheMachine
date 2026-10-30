@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## Was es liest
 
-Die Verbindung **Microsoft Word** liest Word-Dateien in OneDrive und SharePoint, mit der Microsoft-Anmeldung einer Outlook-Adresse, die du verbunden hast. Das geht auf einer gehosteten Machine und auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist. Google Docs kommen später: Die Google-Anmeldung von The Machine kann noch keine Dokumente lesen. Es bringt rein:
+Die Verbindung **Microsoft Word** liest Word-Dateien in OneDrive und SharePoint. Du meldest dich dafür mit Microsoft an, mit oder ohne verbundenes Outlook. Das geht auf einer gehosteten Machine und auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist. Google Docs kommen später: Die Google-Anmeldung von The Machine kann noch keine Dokumente lesen. Es bringt rein:
 
 - Dokumente, die jemand mit dir teilt.
 - Kommentare und Antworten in Dokumenten, die dir gehören, und Kommentare, die dich erwähnen.
@@ -35,22 +35,22 @@ Deine Machine kann ein neues Word-Dokument schreiben oder ein Dokument ändern, 
 
 Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem OneDrive und bleibt privat, bis du es teilst.
 
-Zum Einschalten tippst du auf der Microsoft-Word-Karte unter **Verbindungen** auf **Bearbeiten erlauben**. Microsoft fragt, ob sie deine Dateien ändern darf, getrennt vom Lesen. Eine neue Anmeldung behält das bei.
+Das Verbinden von Microsoft Word erlaubt das schon: Es gibt keinen eigenen Schritt. Eine ältere Microsoft-Word-Verbindung, die nur liest, zeigt auf ihrer Karte unter **Verbindungen** **Bearbeiten erlauben**. Tippe einmal darauf und stimme zu.
 
 ## Worum es fragt
 
-Das Lesen von Dokumenten braucht ein eigenes OK, getrennt von deiner Mail-Anmeldung: Microsoft bittet dich, das Lesen deiner Dateien zu erlauben, auch der Dateien, die in OneDrive und SharePoint mit dir geteilt sind. Dein Zugriff auf Mail und Kalender bleibt, wie er ist.
+Microsoft Word fragt Microsoft nach einem OK, getrennt von deiner Mail-Anmeldung: deine Dateien zu lesen und zu ändern, auch die, die in OneDrive und SharePoint mit dir geteilt sind. Jede Änderung wartet trotzdem auf dein OK in ihrer Aufgabe. Dein Zugriff auf Mail und Kalender bleibt, wie er ist. Ohne Outlook gilt die Anmeldung nur für deine Dateien, nie für Mail oder Kalender.
 
 Wird dieses OK später zurückgenommen, zeigt die Microsoft-Word-Karte **Wartet auf dein OK, um Dokumente zu lesen**.
 
 ## Verbinden
 
-Verbinde zuerst Outlook für die Adresse. Dann:
+Du brauchst dafür kein verbundenes Outlook.
 
-- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft Word** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
+- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft Word** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen und Bearbeiten deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
 - Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft Word** und tippe auf **Mit Microsoft anmelden**.
 
-Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt.
+Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt. Tippst du auf **Bearbeiten erlauben** und Microsoft erlaubt keine Änderungen, sagt es das, statt Verbunden zu zeigen.
 
 ## Arbeit oder privat
 

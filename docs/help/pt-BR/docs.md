@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## O que ela lê
 
-A conexão **Microsoft Word** lê arquivos do Word no OneDrive e no SharePoint, com o login da Microsoft de um endereço do Outlook que você conectou. Funciona em uma Machine hospedada e no seu próprio computador vinculado à sua conta. O Google Docs vem depois: o login do Google da The Machine ainda não consegue ler documentos. Ela traz:
+A conexão **Microsoft Word** lê arquivos do Word no OneDrive e no SharePoint. Você entra com a Microsoft para ela, com ou sem o Outlook conectado. Funciona em uma Machine hospedada e no seu próprio computador vinculado à sua conta. O Google Docs vem depois: o login do Google da The Machine ainda não consegue ler documentos. Ela traz:
 
 - Documentos que alguém compartilha com você.
 - Comentários e respostas em documentos seus, e comentários que mencionam você.
@@ -35,22 +35,22 @@ Sua Machine pode escrever um novo documento do Word, ou alterar um documento de 
 
 Ela substitui texto, adiciona texto e adiciona parágrafos e títulos. Não mexe em tabelas, imagens, alterações controladas nem campos. Um novo documento fica no seu OneDrive e é privado até você compartilhá-lo.
 
-Para ativar, toque em **Permitir edições** no cartão do Microsoft Word em **Conexões**. A Microsoft pede para deixar alterar seus arquivos, separado da leitura. Entrar de novo mantém isso.
+Conectar o Microsoft Word já permite isso: não há um passo à parte. Uma conexão antiga do Microsoft Word que só lê mostra **Permitir edições** no cartão dela em **Conexões**. Toque uma vez e aceite.
 
 ## O que ela pede
 
-Ler documentos precisa de um OK próprio, separado do login do seu e-mail: a Microsoft pede para você permitir a leitura dos seus arquivos, incluindo os compartilhados com você no OneDrive e no SharePoint. Seu acesso ao e-mail e à agenda continua como está.
+O Microsoft Word pede um único OK à Microsoft, separado do login do seu e-mail: ler e alterar seus arquivos, incluindo os compartilhados com você no OneDrive e no SharePoint. Cada alteração ainda espera seu OK na tarefa dela. Seu acesso ao e-mail e à agenda continua como está. Sem o Outlook, o login só cobre seus arquivos, nunca seu e-mail ou sua agenda.
 
 Se esse OK for retirado depois, o cartão do Microsoft Word mostra **Aguardando seu OK para ler documentos**.
 
 ## Conecte
 
-Conecte primeiro o Outlook desse endereço. Depois:
+Você não precisa do Outlook conectado.
 
-- Machine hospedada: no painel, abra **Conexões**, **+ Adicionar**, escolha **Microsoft Word** e clique em **Entrar com a Microsoft**. A Microsoft pede para você permitir a leitura dos seus arquivos, e você volta para o painel.
+- Machine hospedada: no painel, abra **Conexões**, **+ Adicionar**, escolha **Microsoft Word** e clique em **Entrar com a Microsoft**. A Microsoft pede para você permitir a leitura e a edição dos seus arquivos, e você volta para o painel.
 - Seu próprio computador, pareado com sua conta: abra **Conexões**, **+ Adicionar**, escolha **Microsoft Word** e clique em **Entrar com a Microsoft**.
 
-Ela confere se o login pode ler documentos. Sem esse OK, o Microsoft Word não é adicionado.
+Ela confere se o login pode ler documentos. Sem esse OK, o Microsoft Word não é adicionado. Se você tocar em **Permitir edições** e a Microsoft não permitir edições, ela avisa em vez de mostrar Conectado.
 
 ## Trabalho ou pessoal
 
