@@ -97,13 +97,13 @@ function sideRow(x,cur){
  if(x.fuFold){const open=doneOpen.has(x.fuFold);
   const n=doneFoldSkipped(x);
   return `<button type="button" class="done-fold" data-done-fold="${esc(x.fuFold)}" aria-expanded="${open}" title="${esc([x.title,n].filter(Boolean).join(' · '))}"><span translate="no">${esc(x.title)}</span>${n?`<small>${esc(n)}</small>`:''}${CHEVRON}</button>`
-   +(open?`<div class="done-fold-list">${x.items.map(s=>`<a href="#chat=${s.id}" title="${esc(s.title)}"${s.id===cur?' aria-current="page"':''}><span translate="no">${esc(frName(s.follow_up))}</span><small>${esc([doneFoldWho(s),doneFoldWhen(s)].filter(Boolean).join(' · '))}</small></a>`).join('')}</div>`:'')}
- return `<a href="#chat=${x.id}" title="${esc(x.title)}" translate="no"${x.id===cur?' aria-current="page"':''}>${esc(x.title)}</a>`}
+   +(open?`<div class="done-fold-list">${x.items.map(s=>`<a href="#chat=${esc(s.id)}" title="${esc(s.title)}"${s.id===cur?' aria-current="page"':''}><span translate="no">${esc(frName(s.follow_up))}</span><small>${esc([doneFoldWho(s),doneFoldWhen(s)].filter(Boolean).join(' · '))}</small></a>`).join('')}</div>`:'')}
+ return `<a href="#chat=${esc(x.id)}" title="${esc(x.title)}" translate="no"${x.id===cur?' aria-current="page"':''}>${esc(x.title)}</a>`}
 // The Done list on the Suggestions page: the same fold, a quiet to-do that opens to the list
 function doneRows(items){return doneFold(items).map(x=>x.fuFold?doneFoldCard(x):suggestionCard(x)).join('')}
 function doneFoldCard(g){const open=donePageOpen.has(g.fuFold);
  return `<article class="card todo t-faint fu-done" id="${esc(g.id.replace(/[^\w-]/g,'-'))}" data-status="completed"><details data-done-fold-card="${esc(g.fuFold)}"${open?' open':''}><summary><h3 translate="no">${esc(g.title)}</h3>${doneFoldSkipped(g)?`<span class="done-fold-n">${esc(doneFoldSkipped(g))}</span>`:''}<span class="meta-side">${time(g.closed_at,true)}</span></summary>`
-  +`<ul class="fu-done-list">${g.items.map(s=>`<li><a href="#chat=${s.id}" translate="no">${esc(frName(s.follow_up))}</a><span>${esc(doneFoldWho(s))}</span><span class="muted">${esc(doneFoldWhen(s))}</span></li>`).join('')}</ul></details></article>`}
+  +`<ul class="fu-done-list">${g.items.map(s=>`<li><a href="#chat=${esc(s.id)}" translate="no">${esc(frName(s.follow_up))}</a><span>${esc(doneFoldWho(s))}</span><span class="muted">${esc(doneFoldWhen(s))}</span></li>`).join('')}</ul></details></article>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-done-fold]');if(!b)return;e.preventDefault();const k=b.dataset.doneFold;doneOpen.has(k)?doneOpen.delete(k):doneOpen.add(k);const inSide=!!b.closest('#side-cards');sideCards();if(chatOpen())render();
  (inSide?$('#side-cards'):document).querySelector(`[data-done-fold="${CSS.escape(k)}"]`)?.focus()});
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches?.('[data-done-fold-card]'))return;d.open?donePageOpen.add(d.dataset.doneFoldCard):donePageOpen.delete(d.dataset.doneFoldCard)},true);
