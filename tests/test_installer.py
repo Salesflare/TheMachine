@@ -68,7 +68,8 @@ class InstallerTest(unittest.TestCase):
             config.write_text('{agents: {defaults: {utilityModel: "openai/gpt-6.1-sol"}}, // set by the owner\n}')
             with mock.patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(config)}):
                 self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp),
-                                 ['agents.defaults.heartbeat.every', 'skills.workshop.autonomous.mode'])
+                                 ['agents.defaults.heartbeat.every', 'skills.workshop.autonomous.mode', 'mcp.sessionIdleTtlMs'])
+                self.assertIn(['config', 'set', 'mcp.sessionIdleTtlMs', '1800000', '--strict-json'], calls)  # 2026-10-30: 256 live MCP runtimes
                 self.assertIn(['config', 'set', 'skills.workshop.autonomous.mode', '"off"', '--strict-json'], calls)
                 self.assertIn(['config', 'set', 'agents.defaults.heartbeat.every', '"0m"', '--strict-json'], calls)
                 self.assertFalse(any('utilityModel' in c for call in calls for c in call))  # theirs stays

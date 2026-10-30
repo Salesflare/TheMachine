@@ -11313,6 +11313,8 @@ def owner_reports_handled(text):
 REVIEW_FAILURES = {'runtime_error','runtime_timeout','runtime_aborted','runtime_lost',
                    'model_idle_timeout','bridge_error','rate_limited','usage_limited','connection_error','prompt_too_long'}
 REVIEW_FAILURE_PHASES = {'runtime','model','bridge','connection','queue','provider','tool','gateway_draining'}
+# Why a generic runtime_error happened, from a fixed list (REASONS in preparation-run.mjs): logged, never the raw text.
+REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','auth_failed','auth_missing','unclassified'}
 
 
 def merge_state(row, state):
@@ -18827,7 +18829,9 @@ class App(*APP_MIXINS):
                     error_feed.record(db, 'review', error, phase or '', 'assistant.py', 'review_step', None, self.store.code_version)
                     saved = db.execute("SELECT count(*) FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete'",
                                        (run['run_id'],REVIEW_SESSION_PREFIX+run['run_id'])).fetchone()[0]
-                    LOG.warning('review runtime outcome=%s error=%s phase=%s saved_claims=%s',result,error,phase,saved)
+                    reason = receipt.get('reason') if receipt.get('reason') in REVIEW_REASONS else None
+                    LOG.warning('review runtime outcome=%s error=%s phase=%s saved_claims=%s' + (' reason=%s' if reason else ''),
+                                result, error, phase, saved, *([reason] if reason else []))
             elif result == 'unavailable':
                 db.execute("UPDATE review_runs SET status=CASE WHEN ? THEN 'recovering' ELSE status END,error='openclaw_unavailable',error_phase='connection',last_error='connection_error',last_error_phase='connection',error_at=?,unavailable_since=coalesce(unavailable_since,?),retry_at=?,updated_at=? WHERE run_id=?",
                            (int(expired), now(), now(), (stamp + dt.timedelta(seconds=60)).isoformat(), now(), run['run_id']))

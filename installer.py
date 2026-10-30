@@ -834,10 +834,16 @@ QUIET_OPENCLAW = {
     'skills.workshop.autonomous.mode': 'off',
     'agents.defaults.utilityModel': '',
 }
+# Each Gateway session keeps its MCP tool connections until it is stopped or reset, unless an idle time is set, and the
+# Gateway holds at most 256: past that every new turn fails (2026-10-30, after three days of to-do chats and reviews on
+# one Gateway). Idle sessions let theirs go after 30 minutes; they reconnect on their next turn. Same rules as above.
+OPENCLAW_UPKEEP = {
+    'mcp.sessionIdleTtlMs': 30 * 60 * 1000,
+}
 
 
 def quiet_openclaw(facts, stamp):
-    """QUIET_OPENCLAW into openclaw.json where nothing is set yet (OpenClaw reloads these without a restart). The keys
+    """QUIET_OPENCLAW and OPENCLAW_UPKEEP into openclaw.json where nothing is set yet (OpenClaw reloads these without a restart). The keys
     set once are kept in `stamp`. Returns the keys set now."""
     openclaw = facts.get('openclaw')
     if not openclaw:
@@ -848,7 +854,7 @@ def quiet_openclaw(facts, stamp):
     except (OSError, ValueError, TypeError):
         done = set()
     changed = []
-    for key, value in QUIET_OPENCLAW.items():
+    for key, value in {**QUIET_OPENCLAW, **OPENCLAW_UPKEEP}.items():
         node = settings
         for part in key.split('.'):
             node = node.get(part, None) if isinstance(node, dict) else None
@@ -866,8 +872,11 @@ def quiet_openclaw(facts, stamp):
         stamp.write_text(json.dumps(sorted(done)) + '\n')
     except OSError:
         pass
-    if changed:
-        say('OpenClaw background turns that only use your AI limits are off: ' + ', '.join(changed))
+    quiet = [key for key in changed if key in QUIET_OPENCLAW]
+    if quiet:
+        say('OpenClaw background turns that only use your AI limits are off: ' + ', '.join(quiet))
+    if any(key in OPENCLAW_UPKEEP for key in changed):
+        say('Idle OpenClaw sessions release their tool connections after 30 minutes')
     return changed
 
 

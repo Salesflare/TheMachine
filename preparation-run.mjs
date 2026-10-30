@@ -63,7 +63,26 @@ function failure(result,status){
   // A CLI runtime (Claude Code) fails a turn whose final answer is only NO_REPLY this way, after its tool calls ran.
   // Background turns end exactly so: the service judges from what the turn saved (assistant.py review_step).
   const silentEnd=status==='error'&&/^CLI backend returned an empty response\.?$/.test(String(result?.error??'').trim());
-  return {error,error_phase:phase,...(silentEnd?{silent_end:true}:{})};
+  // A generic runtime error keeps a short reason from a fixed list, for the service log (never the text itself).
+  const reason=error==='runtime_error'&&!silentEnd?(REASONS.find(([pattern])=>pattern.test(text))?.[1]||'unclassified'):null;
+  return {error,error_phase:phase,...(silentEnd?{silent_end:true}:{}),...(reason?{reason}:{})};
+}
+// Kept in sync with REVIEW_REASONS in assistant.py.
+const REASONS=[
+  [/live runtime limit|runtime limit \(\d+\) reached/i,'mcp_runtime_limit'],
+  [/context (?:window|length|overflow)|maximum context|too many tokens|prompt is too long/i,'context_overflow'],
+  [/unknown model|model[^.]{0,40}not (?:found|available|allowed|supported)/i,'model_unavailable'],
+  [/unauthori[sz]ed|\b40[13]\b|forbidden|invalid api key|authentication|sign in again|not signed in/i,'auth_failed'],
+  [/no (?:api key|credentials|auth profile)|missing (?:api key|credentials)/i,'auth_missing'],
+];
+// Every Gateway session keeps its own MCP connections until it is stopped or reset, and the Gateway holds at most 256
+// (2026-10-30: past that every new turn failed, reviews stalled for hours). A review, profile or skills session is
+// used for exactly one run, so once that run is over its connections are released. A preparation's session is a
+// to-do's chat and is used again; it is left alone. Best effort: a failed release only means the Gateway keeps it.
+const TERMINAL=['ok','error','aborted','timed_out','lost'];
+async function release(status){
+  if (kind==='preparation' || !TERMINAL.includes(status)) return;
+  try { await callGatewayFromCli('sessions.abort',{timeout:'15000'},{key:session+sessionId,agentId:'main',clearQueued:true},scope); } catch {}
 }
 try {
   let result;
@@ -122,6 +141,7 @@ try {
       // model timing out. Reviews keep timed_out: their tries and back-off count it.
       status=outcome?.endedAt && ['ok','error','aborted','timeout'].includes(outcome?.status) ? (kind==='preparation'?'aborted':'timed_out'):'pending';
     }
+    await release(status);
     process.stdout.write(JSON.stringify({run_id:request.job_id,status,...failure(outcome,status)}));
   } else {
     result=await callGatewayFromCli('agent.wait',{timeout:'15000'}, {runId:request.job_id,timeoutMs:0},scope);
@@ -139,6 +159,7 @@ try {
         }
       } catch {}  // unknown: stay pending
     }
+    await release(status);
     process.stdout.write(JSON.stringify({run_id:request.job_id,status,...failure(result,status)}));
   }
 } catch (error) {
