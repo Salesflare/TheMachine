@@ -3376,6 +3376,24 @@ def trim_quoted_history(text, subject=''):
             'Earlier messages in this thread are separate signals.]\n' + kept), len(quoted)
 
 
+# The line trim_quoted_history puts between a reply and its quoted history. It tells the model the earlier messages are
+# separate signals; people never see it (shown_body).
+QUOTED_MARK = re.compile(r'\n*\[Quoted earlier messages(?::[^\]\n]*)?\]\n?')
+
+
+def shown_body(text):
+    """A stored body as people read it: (text, clipped). The quoted-history marker is left out, the history under it
+    kept; clipped when the marker says part of that history was cut."""
+    text = str(text or '')
+    match = QUOTED_MARK.search(text)
+    if not match:
+        return text, False
+    counts = re.search(r'first ([\d,]+) of ([\d,]+)', match[0])
+    clipped = bool(counts) and int(counts[1].replace(',', '')) < int(counts[2].replace(',', ''))
+    before, after = text[:match.start()].rstrip(), text[match.end():].lstrip('\n')
+    return (before + '\n\n' + after if before and after else before or after), clipped
+
+
 # Zero-width and filler characters newsletters use to pad preview text.
 INVISIBLE = re.compile('[\u200b-\u200f\u2060\u034f\u00ad\ufeff\u2007\u180e]')
 
@@ -11685,7 +11703,7 @@ def event_glance(event, accounts, own=(), chars=240):
         event.get('kind') == 'gmail.message' and _address(m.get('from')) in own)
     sender = str(m.get('sender_display') or m.get('from') or '')
     who = 'You' if mine else (email.utils.parseaddr(sender)[0] or sender if '@' in sender else sender)
-    text = str(event.get('body') or '')
+    text = shown_body(event.get('body'))[0]
     if event.get('kind') == 'calendar.event':
         text = ' · '.join(v for v in (str(m.get('location') or ''), text) if v)
     text = SLACK_LINK.sub(lambda g: g.group(2) or g.group(1), MAIL_HEAD.sub('', text, count=1) if text.startswith('From: ') else text)
@@ -13809,6 +13827,8 @@ class App(*APP_MIXINS):
         items = self.store.originals(suggestion_id) if suggestion_id else self.store.event_views(event_ids or [event_id])
         cache = self.__dict__.setdefault('_attachments', {})
         for item in items:
+            body, cut = shown_body(item['body'])  # read by people: never the model's quoted-history marker
+            item.update(body=body, clipped=item['clipped'] or cut)
             source = item.pop('gmail')
             item['attachments'] = []
             if not source:
@@ -17725,6 +17745,7 @@ class App(*APP_MIXINS):
             if _address(m.get('from')) and name and '@' not in name and not m.get('from_me'):
                 names[_address(m.get('from'))] = name
         for v in self.store.event_views(ids) if ids else []:
+            v['body'] = shown_body(v['body'])[0]  # the model's quoted-history marker never shows in the chat
             kind = kinds.get(v.get('event_id'), '')
             via = v['kind'] if v['kind'] != 'signal' else kind.split('.')[0]
             who, at, text = chat_person(v['from'].split('<')[0]) or v['from'], chat_ms(v['occurred_at']), None
@@ -17737,12 +17758,15 @@ class App(*APP_MIXINS):
                 text = '' if found else None
                 if found:
                     continue
+            # The new part leads; a reply's quoted history folds under it
+            quoted = chat_text(split_quoted_history(v['body'] or '', v['title'])[1], chars=3000) if text is None else ''
             text = chat_excerpt(v['body'], v['title']) if text is None else text
             if text or v['title']:
                 # The owner's own words (New to-do) carry the files they made it with
                 made = own_files.pop(suggestion_id, None) if kind == 'owner.card' else None
                 owner.append({'kind': 'source', 'from': clamp(who, 120), 'via': via, 'title': clamp(v['title'], 200),
-                              'text': text, 'mine': v['from'] == 'You', 'at': at, **({'files': made} if made else {})})
+                              'text': text, 'mine': v['from'] == 'You', 'at': at, **({'files': made} if made else {}),
+                              **({'quoted': quoted} if quoted and text else {})})
         # A chat source has only its channel and handle ("#DM U…"): name it after the person the card's sends go to
         for r in db.execute('SELECT payload FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:
@@ -21006,8 +21030,9 @@ class App(*APP_MIXINS):
                         # With words, search by meaning and keywords together; "all" searches every account. kind=email:
                         # emails only, by keywords (New to-do's Email pill: subjects and senders, at once).
                         email = args.get('kind', [''])[0] == 'email'
-                        self.output(200, app.action('events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
-                                                               'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})}))
+                        rows = app.action('events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
+                                                     'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})})
+                        self.output(200, [{**r, 'body': shown_body(r.get('body'))[0]} for r in rows])  # read by people: no model marker
                     except (ValueError, sqlite3.OperationalError):
                         self.output(400, {'error': 'Select accounts and use a valid search'})
                 elif path.path == '/api/account':

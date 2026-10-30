@@ -10,6 +10,10 @@ order: 4
 
 Tik op een telefoon op de titel van de to-do. Gebruik op een computer de chatlink van de to-do of **Bekijk in chat ›**. Op een computer hernoem je de to-do door op de titel te klikken.
 
+## E-mails in de chat
+
+Elke e-mail toont alleen wat er nieuw in staat. De eerdere berichten die erin geciteerd worden, zitten ingeklapt onder **Eerdere berichten**. **Lees de thread** opent de e-mails volledig.
+
 ## Wat je kunt vragen
 
 - Over de thread, de personen of de achtergrond: "Wat vroegen ze de vorige keer?"

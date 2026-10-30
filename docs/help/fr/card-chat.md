@@ -10,6 +10,10 @@ order: 4
 
 Sur un téléphone, appuyez sur le titre de la tâche. Sur ordinateur, utilisez le lien du chat de la tâche ou **Voir dans le chat ›**. Sur ordinateur, cliquer sur le titre renomme la tâche.
 
+## Les e-mails dans le chat
+
+Chaque e-mail ne montre que ce qui est nouveau. Les messages précédents qu’il cite sont repliés sous **Messages précédents**. **Lire le fil** ouvre les e-mails en entier.
+
 ## Quoi demander
 
 - Sur le fil, les personnes ou le contexte : « Qu’ont-ils demandé la dernière fois ? »

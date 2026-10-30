@@ -10,6 +10,10 @@ order: 4
 
 Su un telefono, tocca il titolo dell'attività. Su un computer, usa il link alla chat dell'attività o **Vedi nella chat ›**. Su un computer, fare clic sul titolo rinomina l'attività.
 
+## Le email nella chat
+
+Ogni email mostra solo ciò che contiene di nuovo. I messaggi precedenti che cita sono chiusi sotto **Messaggi precedenti**. **Leggi il thread** apre le email per intero.
+
 ## Cosa chiedere
 
 - Sulla conversazione, sulle persone o sul contesto: "Cosa hanno chiesto l'ultima volta?"

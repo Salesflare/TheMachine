@@ -1616,6 +1616,8 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 #chat-log button.link,.chat-status button.link{display:inline;white-space:nowrap;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-accent);font:500 var(--chat-meta)/1.5 var(--sans);cursor:pointer}
 #chat-log button.link:hover,.chat-status button.link:hover{text-decoration:underline}
 .chat-more,.chat-source .read-original{margin:6px 14px 0 0!important}
+.chat-quoted{margin-top:10px;padding-top:8px;border-top:1px dashed color-mix(in srgb,var(--text) 14%,transparent);font-size:.82rem;color:var(--chat-quiet)}.chat-quoted summary{cursor:pointer;list-style:none;width:max-content;font-weight:400;font-size:inherit;color:inherit}.chat-quoted summary::-webkit-details-marker{display:none}.chat-quoted summary::before{content:none}.chat-quoted summary::after{content:' ›'}.chat-quoted[open] summary::after{content:' ‹'}
+.chat-quoted-text{margin-top:6px;max-height:24em;overflow:auto;opacity:.8;overflow-wrap:anywhere}.chat-quoted-text p+p{margin-top:8px}
 .chat-noted{margin:6px 0 0;font-size:var(--chat-meta);color:var(--chat-quiet)}.chat-noted+.chat-noted{margin-left:8px}.chat-msg>.chat-stopped:first-child{margin-top:0}.chat-files .chat-noted{margin:0 0 0 4px;align-self:center}
 .chat-q{margin:0!important;font-weight:600}
 .chat-agent-name{margin:0 0 4px;font-size:var(--chat-meta);font-weight:600;color:var(--chat-quiet)}
