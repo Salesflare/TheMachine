@@ -823,8 +823,11 @@ async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
  if(id===chatId)chatTimer=setTimeout(chatPoll,chat?.active?1000:chat?.unavailable||chat?.stale?4000:10000)}
 // Whether this page put the open chat on the history (so back can take it off again instead of adding an entry)
 let chatPushed=false;
-function openChatLink(){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
+function openChatLink(refreshed){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
+ // Only a link or a step back closes the chat on screen, never a refresh (a sent message, a job that starts or moves the
+ // to-do to another list): an address that lost the chat's link on the way gets it back
+ if(refreshed&&!location.hash&&chatId&&!$('#inbox').hidden&&chatOpen()){history.replaceState(history.state,'',location.pathname+location.search+'#chat='+chatId);return}
  if(id===chatId)return;const was=chatId;chatId=id;chat=null;if(talk?.main){if(id&&talk.sid!==id)talkFocus(talk,id)}else if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
  if(id){document.querySelector('nav [data-tab="inbox"]').click();render();scrollTo(0,0);chatKept(id);chatDraftBack(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render();const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
