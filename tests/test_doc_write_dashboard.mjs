@@ -16,7 +16,7 @@ const edit={kind:'doc_write',op:'edit',label:'Save changes',revision:'1234567890
    {after:'Pricing',insert:'## Renewals\nRenewals before December keep the old seat price.',before:'Pricing'},
    {append:'Owner: sales ops'}]};
 const create={kind:'doc_write',op:'create',label:'Create doc',revision:'abcdefabcdef',account_id:'docs',provider:'google',account_name:'owner@example.com',
-  title:'Launch notes',body:'# Launch notes\nThe launch moves to week 3.\n## Next steps\nTell the partners on Friday.'};
+  title:'Launch notes',url:'javascript:alert(1)',body:'# Launch notes\nThe launch moves to week 3.\n## Next steps\nTell the partners on Friday.'};
 const saved={...edit,revision:'555555555555',state:{status:'sent',message_id:'docwrite:d1!i1',sent_at:new Date().toISOString()}};
 const docs=(extra)=>({id:'docs',display_name:'Work docs',email:'owner@example.com',service:'docs',transport:'broker',boundary:'work',events:3,recent_events:3,
   last_success:new Date().toISOString(),docs_provider:'microsoft',docs_replies:false,docs_writes:[],...extra});
@@ -57,6 +57,8 @@ try{
   assert.ok((await box.textContent()).includes('Add at the end'));
   assert.equal(await task.locator(`[data-smart="${edit.revision}"]`).textContent(),'Review changes');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll at '+name);
+  assert.equal(await box.locator('a').getAttribute('href'),edit.url);
+  assert.equal(await page.locator(`#task-${newId} .draft.doc-write a`).count(),0,'a javascript: link is not a link');
   if(shots)await task.screenshot({path:`${shots}/edit-todo-${name}.png`});
   // Review changes: the dialog shows the whole change again; nothing is written before Save
   await task.locator(`[data-smart="${edit.revision}"]`).click();
