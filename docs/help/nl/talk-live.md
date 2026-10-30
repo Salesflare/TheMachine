@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Tik in de chat van een to-do op de golf naast de microfoon. Sta de microfoon toe als je browser erom vraagt. Als de balk **Live** toont, praat je zoals bij een telefoongesprek. The Machine antwoordt hardop, en je kunt erdoorheen praten om hem te onderbreken.
 
-Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan ook je andere to-do's opzoeken.
+Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan ook je andere to-do's opzoeken. Zeg "markeer dit als klaar", "snooze het" of "niet nodig" en hij doet het zelf. Zeg meteen daarna "nee, niet dat" om het terug te draaien.
 
 Er wordt geluisterd in jouw talen: die van de app en die je browser opgeeft. Een geluid, een kuch of een klank in een andere taal krijgt geen antwoord en komt niet in het verslag.
 
@@ -35,14 +35,17 @@ Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past" of "snooze d
 
 De chat kan ook dingen opzoeken, zoals de openingsuren van een winkel op het web. Intussen toont hij **Ermee bezig…**, en je kan gewoon verder praten. Als het antwoord klaar is, zegt The Machine het je, en waar hij het vond. Vraag je intussen iets anders, dan wacht dat zijn beurt af.
 
-Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Lotte sturen?". Eerst leest hij het hele concept voor: naar wie het gaat, het onderwerp en de tekst. Zo werkt het ook met je telefoon in je zak. Antwoord met een duidelijke ja, in elke taal, en dat ene concept gaat weg.
+Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Lotte sturen?". Eerst leest hij het hele concept voor: naar wie het gaat, het onderwerp en de tekst. Zo werkt het ook met je telefoon in je zak. Antwoord met een duidelijke ja, zoals "ja, verstuur maar", en dat concept gaat weg.
 
 - Hij verstuurt precies het concept dat hij voorlas. Verandert het na de vraag, dan leest hij het opnieuw voor en vraagt hij het opnieuw. Een vraag die je niet binnen 3 minuten beantwoordt, vervalt.
 - Is je antwoord geen duidelijke ja, dan gaat er niets weg en vraagt hij het opnieuw. "Nee" verstuurt niets.
-- Eén ja verstuurt altijd één concept. Wil je er meerdere versturen, gebruik dan de follow-upreview.
-- De chat toont een paar seconden **Goedgekeurd met je stem** met **Ongedaan maken** voor het weggaat.
+- Een concept dat je al op het scherm zag, of in dit gesprek hoorde, leest hij niet opnieuw voor: hij vraagt het alleen, zoals "Naar Nick sturen?".
+- Zeg "verstuur ze allebei" of "verstuur alle klare" en hij noemt iedereen in één vraag. Eén ja verstuurt ze allemaal.
+- Praten toont een paar seconden **Ongedaan maken** met een aftelling voor het weggaat, daarna **Verstuurd**. Tik erop, of zeg "ongedaan maken" of "wacht".
 
 Je kunt altijd ook op **Goedkeuren** tikken.
+
+"Doe het" laat The Machine aan de to-do beginnen, zoals **Doe het**, ook in de browser. "Markeer als klaar" sluit hem af. Zeg "meld een bug" en hij stuurt een bugmelding, zoals **Een bug melden** in Help, en vraagt eerst of er meer bij mag.
 
 ## Kies een stem
 

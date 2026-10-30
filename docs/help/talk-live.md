@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 In a to-do's chat, tap the wave next to the mic. Allow the microphone if your browser asks. When the bar says **Live**, talk as you would on a call. The Machine answers out loud, and you can talk over it to interrupt.
 
-It knows the to-do you're in: its messages, its draft and its chat. It can also look up your other to-dos.
+It knows the to-do you're in: its messages, its draft and its chat. It can also look up your other to-dos. Say "mark this as done", "snooze it" or "not needed" and it does that itself. Say "no, not that" right after to take it back.
 
 It listens in your languages: the app's language and the ones your browser lists. A noise, a cough or a sound in another language gets no answer and stays out of the transcript.
 
@@ -35,14 +35,17 @@ When you ask for something, like "write a reply saying Thursday works" or "snooz
 
 The chat can also look things up, like a store's opening hours on the web. It shows **Working on it…** meanwhile, and you can keep talking. When the answer is ready, The Machine tells you, and where it found it. Ask something else meanwhile and it waits its turn.
 
-To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Lotte by email?". It first reads the whole draft out: who it goes to, the subject and the text. So it works with your phone in your pocket, too. Answer with a clear yes, in any language, and that one draft goes.
+To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Lotte by email?". It first reads the whole draft out: who it goes to, the subject and the text. So it works with your phone in your pocket, too. Answer with a clear yes, like "yes, send it", and that draft goes.
 
 - It sends exactly the draft it read out. If the draft changes after the question, it reads it again and asks again. A question you don't answer within 3 minutes expires.
 - If your answer isn't a clear yes, nothing is sent and it asks again. "No" sends nothing.
-- A yes always sends one draft. To send several, use the follow-up review.
-- The chat shows **Approved by voice** with **Undo** for a few seconds before it goes.
+- A draft you already saw on screen, or heard in this conversation, isn't read out again: it only asks, like "Send it to Nick?".
+- Say "send both" or "send all the ready ones" and it names everyone in one question. One yes sends each of them.
+- Talk shows **Undo** with a countdown for a few seconds before it goes, then **Sent**. Tap it, or say "undo" or "wait".
 
 Tapping **Approve** works too.
+
+"Do it" starts The Machine on the to-do, as **Do it** does, browser work included. "Mark it done" closes it. Say "report a bug" and it sends a bug report, like **Report a bug** in Help, and asks first whether to add more.
 
 ## Pick a voice
 

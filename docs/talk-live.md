@@ -51,7 +51,8 @@ At most one conversation per to-do and two in all. A session's secret is forgott
 
 `talk_live.TOOLS`, called by the voice as Realtime function calls:
 
-- `todo_details`: the to-do's title, state, its last 25 messages and its current draft, through `talk_tool` (read only).
+- `todo_details`: the to-do's title, state, its last 25 messages and who its drafts go to, through `talk_tool` (read
+  only). Never a draft's text: `read_draft` reads one out (Sending by voice).
 - `find_todos`: to-dos by words in their title, by `state`, or both (read only), each with its state in plain words
   (`talk_live.STATES`: ready, to decide, preparing, waiting on others, snoozed, looks done; `todo_state` places it the
   way the dashboard's lists do), what needs the owner first, at most 20, with `count`. Words that name a state and match
@@ -72,7 +73,9 @@ At most one conversation per to-do and two in all. A session's secret is forgott
   browser sends the chat's new reply to the session as a system message (`talk_live.DONE_NOTE`, or `STOPPED_NOTE`)
   with `response.create`, so the voice says the answer at once. The voice says one short line while waiting and never
   polls. If the voice is speaking, the note waits for `response.done`.
-- `ask_to_send` and `send_answer`: sending by voice, below. A doc write (`doc_write`, a new doc or an edit) counts as a
+- `read_draft`, `ask_to_send`, `ask_to_send_all`, `send_answer` and `undo_send`: sending by voice, below. `do_it`,
+  `undo_last_action` and `report_bug`: What Talk does itself, below.
+- A doc write (`doc_write`, a new doc or an edit) counts as a
   draft here: the voice reads the whole change (`doc_writes.spoken`, every change before and after) and asks "Save these
   changes to “<doc>”?" or "Create this doc?". A change too long to read in full (over 4,000 characters) is refused by voice.
 
@@ -220,42 +223,97 @@ voice answered it ("Right."). Now:
   voice is still giving to it is cancelled (`response.cancel`, `output_audio_buffer.clear`). The page knows which reply
   answers which words (`input_audio_buffer.committed`, then `response.created`); a reply that ends before its words are
   written down waits for them (at most 4 s) and is dropped with them.
+- **Short answers always pass.** "yes", "no", "ok", "send it", "stop", "undo", "ja", "nee", "doe maar" and the like
+  (`TALK_SHORT`, three words or fewer) are never noise, however unsure the transcript.
+- **Another language** (`talkForeign`). A few words with marker words of only an app language the owner doesn't speak
+  ("Ja, liebe den Movon." for someone speaking English and Dutch) are dropped like noise, and the voice says only
+  "Sorry, say that again?" (`talk_live.AGAIN_NOTE`). So is a line with a letter none of their languages writes
+  (`TALK_LETTERS`: "Güzel." for English and Dutch) and no word of their own ("Send it to José." stays).
+- **No dashes.** The instructions forbid em dashes; `talkNoDash` replaces any left in either side's transcript.
 
 ## Sending by voice
 
-The rule is the same as for a tap: only what the owner has heard, and approved. It works without the screen: a phone
-in a pocket, another page, or Talk's view without the card.
+The rule is the same as for a tap: only what the owner has seen or heard, and approved. It works without the screen: a
+phone in a pocket, another page, or Talk's view without the card.
 
-1. **The question.** The owner asks to send. `ask_to_send` (browser, `talkAskSend`) posts `talk_ask_send`: with the
+1. **Hearing the draft.** `todo_details` never carries a draft's text, so the voice can't read one out on its own (it
+   once did, and then the send read it again). "Read it to me" is `read_draft`: the browser posts `talk_ask_send` with
+   `read: true`, the Machine pins the revision and records the reading (`Talk.reading`), and the voice reads the full
+   draft out word for word.
+2. **The question.** The owner asks to send. `ask_to_send` (browser, `talkAskSend`) posts `talk_ask_send`: with the
    revision of the draft that shows (this to-do's `.chat-draft.current`, in its chat or Talk's card), else none, and
    then the Machine picks the to-do's only draft, or asks which by number when there are several (`draft`). The service
    checks the draft is ready, a kind that goes to people (`talk_live.SEND_KINDS`) and with its recipients set (no
-   `to_options`), and pins it: the revision, a digest of who, how and what (`talk_live.digest`), and the time. The
-   voice gets the whole draft (every recipient, the subject, the full text) to read out word for word, then the
-   question naming who and how ("Send this reply to Lotte by email?"), to ask in the owner's language.
-2. **The answer.** After the owner answers, the voice calls `send_answer`. The browser waits until the owner's words
-   are kept (`talk_line`), then posts `talk_send`. The service reads its own record (`talk_lines` since the question):
-   the voice's line that asked it (it must name the recipient), then the owner's next utterance. `talk_live.judge_answer`
-   asks the model (`openclaw infer model run`, the background model) whether that answer clearly means yes, in any
-   language, and accepts only one of three exact JSON answers; anything else, or no model, is `unclear`. The question
-   is used up by any answer, expires after `ASK_SECONDS` (3 minutes), and is dropped when the focus moves.
-3. **The send.** A yes for the pinned draft, unchanged, goes through `confirm_action` with source `voice` and approval
-   `voice:<id>`, held `UNDO_SECONDS` (10) through the job's `retry_at`, so pacing and the outbox's checks before sending
-   apply as for a tap. The chat shows **Approved by voice** with **Undo** while it waits (`talk_undo`,
-   `Store.undo_voice_send`, which cancels the job). Otherwise the voice is told why nothing went: `no`, `unclear` (ask
-   again), `changed` (the draft changed after the question: read it out and ask again), `expired`, `not_asked` or
-   `no_answer`.
+   `to_options`), and pins it: the revision, a digest of who, how and what (`talk_live.digest`), and the time. When
+   the owner has already **seen** this revision (`draft_seen`, below) or **heard** it (read out in this session: the
+   voice's lines since the reading hold most of its words, `talk_live.read_out`), the voice only asks the question
+   ("Send it to Nick at DragApp?"). Otherwise it gets the whole draft to read out first. The same pinned revision is
+   never read twice.
+3. **The answer.** After the owner answers, the voice calls `send_answer`. The browser waits until the owner's words
+   are kept (`talk_line`, up to about 10 s), then posts `talk_send`. The service reads its own record (`talk_lines`
+   since the question): the voice's line that asked it (it must name the recipient), then the owner's last line, which
+   must be a clear yes in the owner's languages (`talk_live.clear_answer`): every word from a short list of yes words
+   and fillers (`talk_live.YES`: "yes", "yeah", "ok, send it", "go ahead", "ja", "ja hoor", "doe maar", "verstuur
+   maar", "please", the recipient's name…), no negation, no question. "Jasne.", "Ja, ist gut, das endet." or "yes, but
+   change the date" send nothing. `no` drops the question; `unclear` keeps it open and the voice asks again in a few
+   words ("Say yes to send it to Dana."), without reading the draft again. The question expires after `ASK_SECONDS`
+   (3 minutes) and is dropped when the focus moves. While it is open, turn detection runs at `eagerness: high`
+   (`talkEager`), so a lone "yes" ends the turn at once.
+4. **The send.** A yes for the pinned draft, unchanged, goes through `confirm_action` with source `voice` and its own
+   approval `voice:<id>`, held `UNDO_SECONDS` (10) through the job's `retry_at`, so pacing and the outbox's checks
+   apply as for a tap. Talk's bar shows **Sending in 10 s** with **Undo**, then **Sent** (or **Canceled. It won’t be
+   sent.**); the chat shows **Approved by voice** with **Undo**. Both use `talk_undo` (`Store.undo_voice_send`). Saying
+   "undo", "stop", "wait" or "don't send" calls `undo_send`, which cancels every send of that yes. A changed draft is
+   refused (`changed`) and read out again; one never shown or read is refused too (`not_read`).
 
-One yes sends one draft: there is no "send all" by voice here. "Send without asking" settings are not touched.
-`confirm_action` from the dashboard still only takes the owner's controls (an approval ID of their own); `voice:` comes
-only from `talk_send`.
+**Seen on screen** (`draftSeenTick` in `dashboard/todos-chat.js`): a draft on its to-do, in its chat or on Talk's card
+that showed in full for 1.5 s (top and end on screen, not cut short by Show more, its own scroll box scrolled to the end)
+is posted as `draft_seen` with the text it showed. The Machine keeps it (`draft_seen` table: suggestion, revision and
+digest) only when that text matches the current draft (`Assistant.draft_seen`); a changed draft has a new digest and
+counts as unseen.
+
+**Several at once** (main Talk only): "send all the ready follow-ups" or "send both" is `ask_to_send_all` with at most
+5 to-do ids. One question names every recipient ("Send all 3, to Dana, Sam and Nick?"); only unseen drafts are read
+out, and the answer waits until they have been. One clear yes sends each with its own pinned revision and approval,
+and Undo in Talk cancels all of them.
+
+"Send without asking" settings are not touched. `confirm_action` from the dashboard still only takes the owner's
+controls (an approval ID of their own); `voice:` comes only from `talk_send`.
+
+## What Talk does itself
+
+- **Do it vs done.** "Do it", "go ahead and do it", "handle it", "start it" are `do_it` (`talkDoIt`): the to-do's own
+  **Do it** (`decide accept`, or `retry` when stuck), which starts The Machine's job, browser work included; the voice
+  says it started and that it can be followed on the to-do. "Mark it done", "it's done", "I did it" are
+  `todo_action mark_done`. A job already running is left to run. A draft waiting goes through `ask_to_send`.
+- **Corrections.** Talk keeps the last action it took (`v.last`: to-do, action, title). "No, I meant…" right after is
+  `undo_last_action`: the action is taken back on that to-do (reopen, unsnooze, the old title), which opens again, and
+  the voice says what it undid before doing what was meant. "Do this and move on" moves on only after the tool said ok.
+- **Navigation.** "Next one", "move on", "previous", "go back", "stop", "leave it" are Talk's own (`list_todos`,
+  `open_todo`, nothing). `ask_chat` refuses them (`TALK_NAV`), so they never reach a chat: "move on to the next one"
+  once had a payroll to-do's chat research the next to-do. `ask_chat` carries a clean instruction about the focused
+  to-do, and `RELAY_NOTE` tells the chat to work on that to-do only. "Continue" on a to-do not started is its Do it.
+- **Chat answers.** The answer is told with the to-do's title (`DONE_NOTE`). A to-do closed or snoozed meanwhile (by
+  Talk or on screen) drops what its chat was on, silently, also after a reopen. A chat that stopped on its own is told
+  once (`STOPPED_NOTE`, with what was asked, so "ask again" asks that again with `ask_chat`, never `create_todo`).
+- **Report a bug.** "Report a bug" or "send feedback" is `report_bug` (`talkBug`), never a to-do. It sends the same
+  report as Help's **Report a bug** (`bug_send`, or the hosted path): "From Talk: " and the owner's words. The to-do
+  in focus and the last 8 Talk lines go only when the owner agreed (`context`), the support report only when they
+  agreed (`support_report`), the voice asks once. It says "Sent the bug report." and never that it is being looked into.
+- **In a to-do's own Talk** (the wave in its chat): `todo_action` (mark done, dismiss, snooze, reopen; that to-do only)
+  and `undo_last_action` too. "Mark this as done" is the owner's own decision, so Talk marks it done itself, with the
+  to-do's usual undo, instead of handing it to the chat (which only offered **Mark done** buttons). The chat stays open.
+- **Unclear words.** Before `create_todo`, `todo_action`, `do_it`, `undo_last_action`, `report_bug` or `ask_machine`,
+  the page checks the owner's last words: a dropped noise, or one odd word ("Azk."), returns "Sorry, say that again?"
+  and nothing is done. `end_talk` is checked the same way: a sound or one odd word is never a goodbye or a wrap-up
+  ("Güzel." once ended a to-do's Talk). The instructions say never to claim an action no tool result confirmed.
 
 ## Tests
 
 `tests/test_talk_live.py` (the Gateway helper stubbed: status, start, a single offer, the limit, the transcript in the
 chat, the tools, owner only, the secret never returned; by voice: a yes after the question sends one draft, with Undo;
 ending itself after a goodbye, the turn detection; a yes without a question, an unclear answer, a no, a changed draft and a question that doesn't name who all send
-nothing; the judge accepts only exact JSON) and `tests/test_talk_live_dashboard.mjs` (a fake
+nothing; only a clear yes in the owner's languages counts; read once, then a yes sends without a second reading; a changed draft is read again; a draft seen on screen sends without reading; a batch of 3 with one unseen, and Undo cancelling it) and `tests/test_talk_live_dashboard.mjs` (a fake
 `getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).
 `tests/test_talk_hearing_dashboard.mjs` covers hearing the owner and the card: the session's transcription, noise reduction, turns, speed and
 logprobs; what counts as noise (Korean, Thai, marks only, an unsure made-up word; a Dutch or French sentence and a short yes count); a noise
@@ -268,3 +326,9 @@ and shown as cards, `machine_status`, `ask_machine` (its own to-do, its answer b
 (mocked Wake Lock, Media Session, visibility and frozen timers): the lock screen's controls, the goodbye and the limit on events, and a clean end when the connection or
 the microphone went away (390x844 and 1440x900, light and dark). `tests/test_talk_live.py` also covers search, records and the calendar, done and dismissed
 to-dos, and sending without the screen: the pinned revision, a draft picked by number, a changed draft and an expired question.
+`tests/test_talk_actions_dashboard.mjs` covers what Talk does itself: "do it" is Do it (not done, a running one left alone), a correction
+reopens the to-do the last action touched, "next one" and "stop" never reach a chat and "let it continue" starts Do it, a dismissed to-do's
+chat says nothing when it stops while one that stops on its own is told once, one odd word changes nothing, a short unsure "yes" is kept and
+German words get "say that again", no dashes, `report_bug` with and without context, and Undo in Talk with its countdown for a batch,
+tapped or said, then **Sent**; in a to-do's own Talk, "Güzel." dropped and never an end, and "mark this as done" marking it done with the chat
+still open (390x844 and 1440x900, light and dark).

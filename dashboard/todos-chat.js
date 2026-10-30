@@ -498,6 +498,14 @@ function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$(
  const left=v.limit-v.secs,near=v.state==='live'&&left<=v.limit-v.warn;
  bar.querySelector('.talk-time').textContent=near?t('{} left',micClock(Math.max(0,Math.ceil(left)))):v.state==='live'?micClock(v.secs):'';
  bar.querySelector('.talk-hint').textContent=v.muted?t('Muted'):v.state==='live'&&talkAsking(v)?t('Say yes to send it.'):'';
+ // A send by voice waits UNDO_SECONDS with Undo here (tap, or say "undo"), then says Sent for a moment
+ const x=v.sent,wait=x?Math.ceil((x.until-Date.now())/1000):0,kind=x&&!x.undone&&wait>0?'undo':x&&!x.undone&&wait>-3?'sent':x?.undone&&wait>-3?'undone':'';
+ let u=bar.querySelector('.talk-undo');if(!u){u=document.createElement('div');u.className='talk-undo';bar.querySelector('.talk-bar')?.after(u)}
+ if(u.dataset.kind!==kind){u.dataset.kind=kind;  // the button stays the same element while the count goes down, so a tap never misses
+  u.innerHTML=kind==='undo'?`<span class="talk-sending" role="status"></span><button type="button" class="talk-undo-btn" data-talk-undo>${esc(t('Undo'))}</button>`
+   :kind==='sent'?`<span class="talk-sending sent" role="status">${esc(t('Sent'))}</span>`:kind==='undone'?`<span class="talk-sending" role="status">${esc(t('Canceled. It won’t be sent.'))}</span>`:''}
+ if(kind==='undo'){const c=u.querySelector('.talk-sending'),text=t('Sending in {} s',wait);if(c.textContent!==text)c.textContent=text}
+ u.hidden=!kind;
  bar.querySelector('.talk-live').classList.toggle('near',near)}
 function talkFail(v,msg){if(talk!==v)return;talkClose(v);v.state='error';v.error=msg;talk=v;talkPaint()}
 function talkClose(v){clearInterval(v.tick);v.closed=true;talkWake(v);talkMedia(v);try{v.dc?.close()}catch{}try{v.pc?.close()}catch{}try{v.stream?.getTracks().forEach(x=>x.stop())}catch{}
@@ -506,13 +514,13 @@ let talkLimitToast='';  // the limit's toast is about that session only: cleared
 function talkToastClear(){const t=$('#toast');if(talkLimitToast&&t?.textContent===talkLimitToast)t.classList.remove('show');talkLimitToast=''}
 function talkEnd(){const v=talk;if(!v)return;talk=null;talkToastClear();talkClose(v);document.querySelectorAll('.chat-compose>.talk,.talk-foot>.talk').forEach(x=>x.remove());$('#talk-dock')?.remove();document.body.style.removeProperty('--talk-dock-h');talkSide();talkViewPaint()}
 async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;talkToastClear();micCancel();
- const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],pending:new Set(),dropped:new Set(),respFor:{},after:{},known:new Set(talkNeeds().map(x=>x.id)),prep:new Set()};talkPaint();talkSide();talkViewPaint();
+ const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],pending:new Set(),dropped:new Set(),respFor:{},after:{},known:new Set(talkNeeds().map(x=>x.id)),prep:new Set(),sent:null,last:null,told:new Set(),lastUser:''};talkPaint();talkSide();talkViewPaint();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
  catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',{...(main?{main:true}:{suggestion_id:s.id}),languages:[...(navigator.languages||[])].slice(0,8)});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
-  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null,noise:r.noise||null,transcription:r.transcription||null});talkPaint();
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null,noise:r.noise||null,transcription:r.transcription||null,languages:r.languages||['en']});talkPaint();
   if(v.main&&(first||chatOpen()))talkFocus(v,first||chatOpen().id);  // started from a to-do's chat: that one first
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0];v.audio.play?.().catch(()=>{})};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
@@ -565,7 +573,7 @@ document.addEventListener('visibilitychange',()=>{const v=talk;if(!v)return;
  if(['failed','closed','disconnected'].includes(v.pc?.connectionState)||v.dc&&v.dc.readyState!=='open'||mic?.readyState==='ended'){v.hiddenAt=1;talkLost(v);return}
  if(!talkDue(v)){talkWake(v);talkPaint()}});
 // Talk works on the to-do on screen: the one the voice opens, or the one the owner opens. A send question about another is dropped.
-function talkFocus(v,id){if(talk!==v||v.sid===id)return v.focusing;v.sid=id;v.asked=null;v.askedAt=0;v.queue=[];v.relay=null;
+function talkFocus(v,id){if(talk!==v||v.sid===id)return v.focusing;v.sid=id;v.asked=null;v.askedAt=0;v.queue=[];v.relay=null;talkEager(v,false);
  if(v.main){talkLog.push({about:id,title:String(state.suggestions?.find(x=>x.id===id)?.title||'').slice(0,200)});talkViewPaint()}
  return v.focusing=micPost('talk_focus',{id:v.id,suggestion_id:id}).catch(()=>{})}
 // Every open to-do, in the order the dashboard shows them, each with its state in plain words (talk_live.STATES):
@@ -592,11 +600,16 @@ async function talkCreate(v,args){const title=String(args.title||'').replace(/\s
  catch(err){return {error:err.message||'Couldn’t add the to-do.'}}}
 // A to-do's own buttons, by voice (todo_action): the same decide and card_rename actions the card and the Done /
 // dismissed list use, offered only where the page offers them. Never a send.
+const talkGo=(id,choice,extra={},feedback='')=>{const step={choice,feedback,decision_id:crypto.randomUUID(),...extra};
+ return OUTBOX_CHOICES.includes(choice)?decideOrWait(id,[step],choice):decidePost(id,step)};
+// What Talk did last (undo_last_action takes it back on that to-do). A to-do Talk closes or snoozes takes what its chat
+// was still on with it: no answer, no "the chat stopped" later.
+function talkDid(v,id,act,s){if(act==='reopen'||act==='unsnooze')v.told.delete('quiet:'+id);v.last={id,act,title:String(s?.title||'').slice(0,200),at:Date.now()};if(['mark_done','dismiss','snooze'].includes(act))talkDrop(v,id)}
+function talkDrop(v,id){if(v.relay?.sid===id)v.relay=null;if(v.sid===id)v.queue=[];v.told.add('quiet:'+id)}
 async function talkDo(v,args){const id=String(args.id||v.sid||''),act=String(args.action||''),s=state.suggestions?.find(x=>x.id===id);
  if(!/^[a-f0-9]{16}$/.test(id))return {error:'Say which to-do: open it first, or give its id.'};
- const say=(text,extra={})=>{refresh().catch(()=>{});return {ok:true,...extra,note:text}};
- const go=async(choice,extra={},feedback='')=>{const step={choice,feedback,decision_id:crypto.randomUUID(),...extra};
-  return OUTBOX_CHOICES.includes(choice)?decideOrWait(id,[step],choice):decidePost(id,step)};
+ const say=(text,extra={})=>{refresh().catch(()=>{});talkDid(v,id,act,s);return {ok:true,...extra,note:text}};
+ const go=(choice,extra={},feedback='')=>talkGo(id,choice,extra,feedback);
  const open=s&&!closed(s);
  try{
   if(act==='rename'){const title=String(args.title||'').replace(/\s+/g,' ').trim().slice(0,200);if(!title)return {error:'Say the new title.'};
@@ -613,11 +626,50 @@ async function talkDo(v,args){const id=String(args.id||v.sid||''),act=String(arg
   if(act==='snooze'){const until=String(args.snooze_until||''),when=until&&!isNaN(Date.parse(until))?{snoozed_until:new Date(until).toISOString()}:{snooze_option:['2h','tomorrow','3d','1w'].includes(args.snooze)?args.snooze:'tomorrow'};
    const r=await go('snooze',when);return say('Snoozed. Say so in a few words.',r?.snoozed_until?{until:r.snoozed_until}:{})}
   if(act==='unsnooze'){if(s.status!=='snoozed')return {error:'It isn’t snoozed.'};await go('accept');return say('Back on the list. Say so in a few words.')}
-  if(act==='do_it'){if(s.status!=='pending')return {error:'It doesn’t wait for a decision.'};await go('accept');return say('The Machine will prepare it. Say so in a few words.')}
   if(act==='try_again'){if(s.preparation_status!=='blocked')return {error:'Nothing is stuck there.'};await go('retry');return say('Trying again. Say so in a few words.')}
   if(act==='not_done'){if(!looksDone(s))return {error:'It doesn’t look done.'};await go('not_done');return say('Back on the list. Say so in a few words.')}
   return {error:'Unknown action.'}}
  catch(err){refresh().catch(()=>{});return {error:err.message||'That didn’t work.'}}}
+// The to-do's Do it, by voice (do_it): the same accept the button sends, where the page offers it (waiting for a decision,
+// or a result that only answered). The Machine's job does the work, browser included, and shows on the to-do. "Continue"
+// on one that is already running lets it run.
+const talkRunning=s=>['queued','starting','running'].includes(s.preparation_status)||['queued','starting','running'].includes(s.agent?.status);
+const talkAnswered=s=>{try{return s.status==='prepared'&&JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}};
+async function talkDoIt(v,args={}){const id=String(args.id||v.sid||''),s=state.suggestions?.find(x=>x.id===id);
+ if(!/^[a-f0-9]{16}$/.test(id)||!s)return {error:'Say which to-do: open it first, or give its id.'};
+ if(closed(s))return {error:'It is closed. Reopen it first (todo_action reopen).'};
+ if(talkRunning(s))return {ok:true,running:true,note:'It is already running. Let it run: say so in a few words, and that they can follow it on the to-do.'};
+ if(s.status==='snoozed')return {error:'It is snoozed. Bring it back first (todo_action unsnooze).'};
+ if(s.status==='prepared'&&!talkAnswered(s)&&s.preparation_status!=='blocked')return {error:'It has a draft ready. Sending goes through ask_to_send; changes through ask_chat.'};
+ if(s.status!=='pending'&&!talkAnswered(s)&&s.preparation_status!=='blocked')return {error:'There is nothing to start on it.'};
+ try{await talkGo(id,s.preparation_status==='blocked'&&s.status!=='pending'?'retry':'accept');s.preparation_status='queued';refresh().catch(()=>{});talkDid(v,id,'do_it',s);  // started: a second "do it" before the refresh lets it run
+  return {ok:true,started:true,note:'The Machine started on it, browser work included. Say so in a few words, and that they can follow it on the to-do.'}}
+ catch(err){refresh().catch(()=>{});return {error:err.message||'That didn’t work.'}}}
+// A correction right after an action (undo_last_action): taken back on the to-do that action touched, which opens again
+const TALK_UNDO={mark_done:['reopen','Marked done'],dismiss:['reopen','Dismissed'],snooze:['unsnooze','Snoozed'],rename:['rename','Renamed']};
+async function talkUndoLast(v){const l=v.last;if(!l||Date.now()-l.at>600000)return {error:'Nothing you did is left to undo.'};
+ const how=TALK_UNDO[l.act];if(!how)return {error:l.act==='do_it'?'The Machine’s job has started; it can be stopped on the to-do itself.':'That can’t be undone from here.'};
+ const r=await talkDo(v,{id:l.id,action:how[0],...(l.act==='rename'?{title:l.title}:{})});v.last=null;if(r.error)return r;
+ if(v.main)await talkOpen(v,l.id);
+ return {ok:true,undid:how[1],id:l.id,title:l.title,note:`Undid "${how[1]}" on "${l.title}" and opened it again. Say what you undid in a few words, then do what the owner meant on this to-do.`}}
+// Undo, by voice or on the bar: every send still waiting from Talk's last yes (talk_undo, as the chat's Undo)
+async function talkUndoSend(v){const x=v.sent;if(!x||x.undone||Date.now()>x.until)return {error:'Nothing is waiting to send any more.'};x.undone=true;talkPaint();let n=0;
+ for(const item of x.items)try{await micPost('talk_undo',item);n++}catch{}
+ refresh().catch(()=>{});if(chatOpen())chatPoll();
+ return n?{ok:true,canceled:n,note:'Canceled. Nothing was sent. Say so in a few words.'}:{error:'It was already on its way.'}}
+// Report a bug, by voice (report_bug): the same report Help's Report a bug sends, with what the owner agreed to add
+async function talkBug(v,args={}){const summary=String(args.summary||'').trim().slice(0,3000);if(!summary)return {error:'Say what went wrong first.'};
+ if(typeof bugHosted!=='function'||!bugHosted()&&!state.fleet)return {error:'This Machine isn’t linked to an account, so the report can’t go from here. Say they can email support@themachine.computer.'};
+ const s=v.sid&&state.suggestions?.find(x=>x.id===v.sid),parts=[`From Talk: ${summary}`];
+ if(args.context===true){if(s)parts.push(`To-do in focus: ${String(s.title||'').slice(0,200)}`);if(v.recent?.length)parts.push('Last lines in Talk:\n'+v.recent.join('\n'))}
+ const body={description:parts.join('\n\n').slice(0,8000),screenshot:null},diag=args.support_report===true;
+ const saved={ok:true,status:'saved',note:'Saved, it goes out by itself soon. Say exactly that in a few words, nothing more.'};
+ try{const r=bugHosted()?await bugHostedKeep(body,diag):await bugAction('bug_send',{...body,diagnostics:diag});
+  if(r?.queued)return saved;
+  if(r?.completed){const done=await Promise.race([r.completed,new Promise(ok=>setTimeout(()=>ok({later:true}),10000))]);
+   if(done.error)return {error:`The report didn’t go out: ${String(done.error.message||'').slice(0,200)}`};if(done.later||done.sent?.queued)return saved}
+  return {ok:true,status:'sent',note:'Say only: "Sent the bug report." Don’t say it is being looked into or fixed.'}}
+ catch(err){return {error:err.message||'The report didn’t go out.'}}}
 // How the Machine is doing, as Connections and Needs you show it (machine_status)
 function talkStatus(){const rh=state.review_health||{};
  return {connections:(state.connectors||[]).slice(0,30).map(c=>{const h=connectorHealth(c);return {name:String(c.display_name||c.email||c.id).slice(0,80),source:service(c.service),state:String(h.text||'Connected').slice(0,120),...(h.tone==='orange'?{needs_owner:true}:{})}}),
@@ -629,15 +681,15 @@ async function talkMachine(v,req){
  try{const made=await micPost('card_new',{text:req,scope:scopeFilter==='work'||scopeFilter==='personal'?scopeFilter:null,due:null,due_at:null,about:[],attach:[]});v.known.add(made.id);
   if(talk===v){talkLog.push({made:made.id,title:req.split('\n')[0].slice(0,200)});talkViewPaint()}
   const r=await decideOrWait(made.id,[{choice:'other',feedback:req,decision_id:'chat-voice-'+crypto.randomUUID()}],'other');
-  refresh().catch(()=>{});talkWatch(v,made.id);
+  refresh().catch(()=>{});talkWatch(v,made.id,req);
   return {ok:true,waiting:!!r?.waiting,note:v.note}}
  catch(err){return {error:err.message||'Couldn’t add the to-do.'}}}
 // Its answer is the chat's reply; a turn that ended without one, or never started in two minutes, says it stopped.
-async function talkWatch(v,id){const at=Date.now();let busy=false;
+async function talkWatch(v,id,req=''){const at=Date.now();let busy=false;
  for(let n=0;n<400&&talk===v;n++){await new Promise(ok=>setTimeout(ok,1500));if(talk!==v)return;
   const r=await talkChatRead(id);if(!r||r.unavailable)continue;if(r.active){busy=true;continue}
   const said=talkReplies(r.items||[]).map(i=>String(i.text||'').trim()).filter(Boolean);
-  if(said.length||busy||Date.now()-at>120000){talkTell(v,said.length?(v.notes.done||'{answer}').replace('{answer}',said.join(' ').slice(0,3000)):v.notes.stopped||'');refresh().catch(()=>{});return}}}
+  if(said.length||busy||Date.now()-at>120000){await refresh().catch(()=>{});talkChatSaid(v,id,said.join(' ').slice(0,3000),req);return}}}
 // A record the voice opened (open_record): a small card in the transcript, opening its own page or the meeting
 const TALK_KIND={person:'Person',organization:'Organization',project:'Project',meeting:'Meeting',message:'Message',promise:'Promise'};
 function talkRecordHtml(c){const title=esc(c.title||''),go=c.node?`<a href="${esc(graphHash(c.node))}">${title}</a>`:c.promise?`<a href="${esc(promiseHref({id:c.promise}))}">${title}</a>`
@@ -671,38 +723,77 @@ async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)
 // (gpt-realtime heard "음력?" or "แก" in a rustle) isn't kept, and the voice's reply to it is stopped and dropped too.
 // transcript null: the transcript never came (a reply waiting on it is kept).
 function talkHeard(v,e){const item=e.item_id;if(!v.pending.has(item)&&e.transcript==null)return;v.pending.delete(item);
- const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt);
- if(noise){v.dropped.add(item);if(v.dc?.readyState==='open'){
+ const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt),foreign=!noise&&e.transcript!=null&&talkForeign(e.transcript,v.languages);
+ if(noise||foreign){v.dropped.add(item);if(v.dc?.readyState==='open'){
    if(item)v.dc.send(JSON.stringify({type:'conversation.item.delete',item_id:item}));  // out of what the voice remembers
-   for(const [id,to] of Object.entries(v.respFor))if(to===item&&v.responding){v.dc.send(JSON.stringify({type:'response.cancel',response_id:id}));v.dc.send(JSON.stringify({type:'output_audio_buffer.clear'}))}}}
- else if(e.transcript)talkLine(v,'user',e.transcript,item);
- const after=v.after[item]||[];delete v.after[item];if(!noise)after.forEach(f=>f())}
+   for(const [id,to] of Object.entries(v.respFor))if(to===item&&v.responding){v.dc.send(JSON.stringify({type:'response.cancel',response_id:id}));v.dc.send(JSON.stringify({type:'output_audio_buffer.clear'}))}}
+  if(foreign)talkTell(v,v.notes.again||'')}  // words, but not in a language the owner speaks: "Sorry, say that again?"
+ else if(e.transcript){v.lastUser=String(e.transcript).trim();talkLine(v,'user',e.transcript,item)}
+ const after=v.after[item]||[];delete v.after[item];if(!noise&&!foreign)after.forEach(f=>f())}
+// The short answers and commands Talk listens for (yes, no, ok, send it, stop, undo, next…, in the app's languages): never
+// taken for noise, however unsure the transcript is (talk_live.YES has the same yes words)
+const TALK_SHORT=new Set(`yes yeah yep yup ok okay sure send it go ahead no nope nah stop undo wait cancel next previous back skip done dismiss snooze again please now do them all both ja jawel jep oke okee nee neen niet doe maar verstuur stuur hoor prima goed klopt wacht volgende vorige terug klaar nein jawohl klar genau gut bitte oui non daccord si vale claro sim nao certo bye goodbye thanks thank cheers doei dag bedankt tschuss danke merci ciao grazie adios gracias tchau obrigado`.split(' '));
+const talkWords=text=>String(text||'').toLowerCase().normalize('NFKD').replace(/\p{M}/gu,'').replace(/[’']/g,'').match(/[\p{L}\p{N}]+/gu)||[];
+const talkShort=text=>{const w=talkWords(text);return w.length>0&&w.length<=3&&w.every(x=>TALK_SHORT.has(x))};
 // Whether a transcript is noise rather than words: nothing but marks, mostly letters of another script than Latin (the
 // app's languages all write in it), the transcription prompt itself, or a short line the model was unsure of (its
-// average logprob, when OpenAI sends them).
+// average logprob, when OpenAI sends them). A short answer or command ("yes", "ja", "send it", "undo") is never noise.
 function talkNoise(text,logprobs,prompt){const s=String(text||'').normalize('NFC').trim();
  const letters=s.match(/\p{L}/gu)||[];if(!letters.length&&!/\p{N}/u.test(s))return true;
  const latin=letters.filter(c=>/\p{Script=Latin}/u.test(c)).length;if(latin*2<letters.length)return true;
+ if(talkShort(s))return false;
  const flat=x=>String(x||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();if(prompt&&flat(s)&&flat(prompt).includes(flat(s))&&flat(s).split(' ').length>2)return true;
  const lp=(Array.isArray(logprobs)?logprobs:[]).map(x=>+x?.logprob).filter(Number.isFinite);
  return lp.length>0&&s.split(/\s+/).length<=3&&lp.reduce((a,b)=>a+b,0)/lp.length<-1.2}
+// A few words in a language the owner doesn't speak ("Ja, liebe den Movon.", "Nun liebt's." when they speak English and
+// Dutch): the transcription guessed from noise or a mumble. Words only one app language uses tell; shared ones ("ja") don't.
+const TALK_MARK={en:'the and you this that what with have please thanks yes yeah okay next send would could should',
+ nl:'het een ik niet wat dat maar voor ook nog wel toch goed doe stuur volgende graag hoor alsjeblieft bedankt zeker jij',
+ de:'ich nicht und ist das nun auch wir mit auf fur aber noch schon sehr bitte danke liebe liebt gibt doch kein keine jetzt mich dich uns euch haben habe hat wird gut endet ein eine einen dem',
+ fr:'je tu nous vous est le la les une oui mais avec pour cest merci tres ca qui que quoi dans sur du des au aux il elle',
+ es:'el los las una por para con pero muy gracias esta yo usted hola bueno como porque tambien',
+ it:'lo gli che sono non ma grazie ciao molto questo questa perche anche',
+ pt:'nao sim obrigado obrigada voce uma isso estou tudo bem tambem'};
+const talkMarks=(()=>{const seen={},out={};for(const [l,w] of Object.entries(TALK_MARK))for(const x of w.split(' '))(seen[x]||=new Set()).add(l);
+ for(const [x,ls] of Object.entries(seen))if(ls.size===1)out[x]=[...ls][0];return out})();
+// Letters with marks each app language writes; one none of the owner's languages has ("Güzel." for English and Dutch,
+// Turkish from a mumble) tells too, unless a word of their own is in the line ("send it to José").
+const TALK_LETTERS={en:'',nl:'éëïèóáêöç',de:'äöüß',fr:'éèêàâçëïîôûùœÿ',es:'áéíóúñü',it:'àèéìòù',pt:'áâãàçéêíóôõú'};
+function talkForeign(text,languages){const mine=new Set((languages||['en']).map(x=>String(x).slice(0,2))),w=talkWords(text);if(!w.length||w.length>10||talkShort(text))return false;
+ const langs=w.map(x=>talkMarks[x]).filter(Boolean);if(langs.some(l=>mine.has(l)))return false;if(langs.length)return true;
+ const ok=new Set([...mine].map(l=>TALK_LETTERS[l]||'').join('')),odd=[...String(text).toLowerCase().normalize('NFC')].filter(c=>/\p{L}/u.test(c)&&!/[a-z]/.test(c));
+ return w.length<=4&&odd.some(c=>!ok.has(c))}
 // What one side said goes into the chat as an ordinary message (and is kept by the Machine, talk_line)
-function talkLine(v,role,text,item){text=String(text||'').trim();if(role==='assistant')text=text.replace(/\s*\u2014\s*|\s+\u2013\s+/g,', ').replace(/,\s*([.,!?])/g,'$1');  // spoken style: no dashes
+const talkNoDash=text=>String(text||'').replace(/\s*\u2014\s*|\s+\u2013\s+/g,', ').replace(/,\s*([.,!?])/g,'$1').replace(/^,\s*/,'');
+function talkLine(v,role,text,item){text=talkNoDash(String(text||'').trim());  // spoken style: no dashes, either side
  const key=role+':'+(item||text);if(!text||v.said.has(key))return;v.said.add(key);
  v.posting=Promise.all([v.posting,micPost('talk_line',{id:v.id,role,text}).catch(()=>{})]);  // kept before the Machine judges an answer
+ (v.recent||=[]).push((role==='user'?'Owner: ':'Talk: ')+text.slice(0,300));v.recent=v.recent.slice(-8);
  if(v.main){talkLog.push({role,text});talkViewPaint()}
  if(chat&&chatOpen()?.id===v.sid){chat={...chat,items:[...(chat.items||[]),{kind:role==='user'?'you':'reply',text,via:'live',at:Date.now()}]};paintChat();chatToEnd()}}
+// Before anything that changes something: the owner's latest words must be words. A noise dropped after their last line,
+// or one odd word ("azk" taken as "ask"), gets "Sorry, say that again?" and nothing is done.
+const TALK_CHANGES=['create_todo','todo_action','do_it','undo_last_action','report_bug','ask_machine'];
+const talkUnclear=(v,e)=>v.dropped.has(v.respFor[e.response_id])||!!v.lastUser&&talkWords(v.lastUser).length===1&&!talkShort(v.lastUser);
 async function talkTool(v,e){let args={},output;try{args=JSON.parse(e.arguments||'{}')}catch{}
  // The owner said they're done: it ends the way End does, once its goodbye has been heard (talkTick)
+ if(e.name==='end_talk'&&talkUnclear(v,e)){if(v.dc?.readyState==='open'){v.dc.send(JSON.stringify({type:'conversation.item.create',item:{type:'function_call_output',call_id:e.call_id,output:JSON.stringify({error:'What the owner said wasn’t clear, so Talk goes on.',note:v.notes.again||'Say only: "Sorry, say that again?"'})}}));v.dc.send(JSON.stringify({type:'response.create'}))}return}
  if(e.name==='end_talk'){v.ending=Date.now();if(v.dc?.readyState==='open')v.dc.send(JSON.stringify({type:'conversation.item.create',item:{type:'function_call_output',call_id:e.call_id,output:JSON.stringify({ok:true})}}));return}
- if(e.name==='ask_chat'){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkAsk(v,req):{error:'Say what to ask.'};if(output.ok)output.note=output.queued?v.notes.queued||v.note:v.note}
+ if(TALK_CHANGES.includes(e.name)&&talkUnclear(v,e))output={error:'What the owner said wasn’t clear, so nothing was done.',note:v.notes.again||'Say only: "Sorry, say that again?"'};
+ else if(e.name==='ask_chat'){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkAsk(v,req):{error:'Say what to ask.'};if(output.ok&&!output.note)output.note=output.queued?v.notes.queued||v.note:v.note}
  else if(e.name==='list_todos'&&v.main)output=talkList();
  else if(e.name==='create_todo')output=await talkCreate(v,args);
  else if(e.name==='machine_status'&&v.main)output=talkStatus();
- else if(e.name==='todo_action'&&v.main)output=await talkDo(v,args);
+ else if(e.name==='todo_action')output=await talkDo(v,v.main?args:{...args,id:v.sid});  // a to-do's own Talk: that to-do only
+ else if(e.name==='do_it'&&v.main)output=await talkDoIt(v,args);
+ else if(e.name==='undo_last_action')output=await talkUndoLast(v);
+ else if(e.name==='undo_send')output=await talkUndoSend(v);
+ else if(e.name==='report_bug')output=await talkBug(v,args);
  else if(e.name==='ask_machine'&&v.main){const req=String(args.request||'').trim().slice(0,2000);output=req?await talkMachine(v,req):{error:'Say what to ask.'}}
  else if(e.name==='open_todo'&&v.main)output=await talkOpen(v,String(args.id||''));
- else if(v.main&&!v.sid&&['ask_chat','ask_to_send','send_answer'].includes(e.name))output={error:'No to-do is open. Call open_todo first.'};
+ else if(e.name==='ask_to_send_all'&&v.main)output=await talkAskSend(v,{ids:Array.isArray(args.ids)?args.ids.map(String).slice(0,8):[]});
+ else if(v.main&&!v.sid&&['ask_chat','read_draft','ask_to_send'].includes(e.name))output={error:'No to-do is open. Call open_todo first.'};
+ else if(e.name==='read_draft')output=await talkAskSend(v,{...args,read:true});
  else if(e.name==='ask_to_send')output=await talkAskSend(v,args);
  else if(e.name==='send_answer')output=await talkAnswer(v);
  else try{output=(await micPost('talk_tool',{id:v.id,name:e.name,args})).output}catch(err){output={error:err.message}}
@@ -719,28 +810,41 @@ const talkAsking=v=>!!v.asked&&Date.now()-(v.askedAt||0)<180000;  // the Machine
 // The voice reads the whole draft out, so the screen isn't needed (a phone in a pocket, another page). When this
 // to-do's draft shows (Talk's card, its chat), that one is asked about; else the Machine picks it (its only one, or the
 // number the voice gives). The Machine pins the revision; a changed draft is asked about again.
-async function talkAskSend(v,args={}){const b=talkShown(v);b?.closest('.chat-draft')?.scrollIntoView({block:'nearest'});
- try{const r=await micPost('talk_ask_send',{id:v.id,...(b?{revision:b.dataset.smart}:{}),...(Number.isInteger(args.draft)?{draft:args.draft}:{})});if(r.question){v.asked=r.revision;v.askedAt=Date.now()}return r}
+async function talkAskSend(v,args={}){const b=args.ids?null:talkShown(v);b?.closest('.chat-draft')?.scrollIntoView({block:'nearest'});
+ try{const r=await micPost('talk_ask_send',{id:v.id,...(args.ids?{ids:args.ids}:{}),...(b?{revision:b.dataset.smart}:{}),...(Number.isInteger(args.draft)?{draft:args.draft}:{}),...(args.read?{read:true}:{})});
+  if(r.question){v.asked=r.revision||'all';v.askedAt=Date.now();talkEager(v,true)}return r}
  catch(err){return {error:err.message}}}
+// While a yes or no is expected, the turn ends sooner after a short answer (semantic_vad's high eagerness): a lone "yes"
+// isn't left waiting for more, so the owner doesn't say it twice. Otherwise Talk waits patiently (low).
+function talkEager(v,on){if(!v.turn||v.dc?.readyState!=='open'||!!v.eager===on)return;v.eager=on;
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',audio:{input:{turn_detection:on?{...v.turn,eagerness:'high'}:v.turn}}}}))}
 // The owner answered: what was said is kept first, then the Machine judges it (its own record, not the voice's word).
 // The answer can still be on its way from OpenAI, so it asks again for a few seconds.
 async function talkAnswer(v){let r={status:'not_asked'};
- for(let i=0,tries=v.asked?8:1;i<tries&&talk===v;i++){
+ for(let i=0,tries=v.asked?14:1;i<tries&&talk===v;i++){  // the owner's words can still be on their way from OpenAI (up to ~10 s)
   await v.posting;try{r=await micPost('talk_send',{id:v.id})}catch(err){return {error:err.message}}
   if(!['no_answer','not_asked'].includes(r.status))break;await new Promise(ok=>setTimeout(ok,700))}
- if(r.status==='queued'){v.asked=null;await refresh();if(chatOpen()?.id===v.sid)chatPoll()}else if(r.status!=='no_answer'&&r.status!=='not_asked')v.asked=null;
+ if(r.status==='queued'){v.asked=null;v.sent={items:r.sent||[{suggestion_id:v.sid,approval_id:r.approval_id}],until:Date.now()+(r.undo_seconds||10)*1000};talkPaint();await refresh();if(chatOpen()?.id===v.sid)chatPoll()}
+ else if(!['no_answer','not_asked','unclear'].includes(r.status))v.asked=null;
+ if(!v.asked)talkEager(v,false);
  return r}
 // What the voice asks the chat goes the way a typed message does (chatSubmit's decideOrWait, so it can wait offline
 // too), as a hand-off (talk_live.RELAY_PREFIX): the chat doesn't show it as the owner's message (what they said is
 // there already), and its drafts wait for their Approve. A request while the chat is still on one never stops it:
 // it waits and goes when that turn ends. Then the chat's answer goes straight to the voice, which tells the owner.
+// Talk's own commands never go to a chat: moving between to-dos, stopping, leaving it ("next one" once had the payroll
+// chat research the next to-do). "Continue" on one whose Do it hasn't started is its Do it; on a running one, nothing.
+const TALK_NAV=/^(?:(?:ok(?:ay)?|oké|ja|yes|so|alright|right|and|en)[,.!]?\s+)?(?:let'?s\s+|laten we\s+)?(?:(?:go\s+(?:to\s+)?)?(?:the\s+)?next(?:\s+one)?|move\s+on(?:\s+to\s+(?:the\s+)?next(?:\s+one)?)?|skip(?:\s+(?:it|this(?:\s+one)?))?|(?:the\s+)?previous(?:\s+one)?|go\s+back|back|stop|leave\s+it|never\s?mind|(?:de\s+)?volgende|ga\s+(?:maar\s+)?door(?:\s+naar\s+de\s+volgende)?|vorige|terug|overslaan|laat\s+(?:het|maar)(?:\s+maar)?|stop\s+maar)(?:\s+(?:please|now|then|maar|dan|alsjeblieft))*[.!]?$/i;
+const TALK_GO_ON=/^(?:(?:ok(?:ay)?|ja|yes)[,.!]?\s+)?(?:(?:please\s+)?(?:continue|carry\s+on|let\s+it\s+(?:continue|run|go\s+on)|go\s+on\s+with\s+it|ga\s+verder|doorgaan|laat\s+(?:het|hem)\s+(?:maar\s+)?(?:verder\s+gaan|doorgaan|lopen)))(?:\s+(?:please|now|maar))?[.!]?$/i;
 async function talkAsk(v,req){const s=state.suggestions?.find(x=>x.id===v.sid);if(!s)return {error:'This to-do is gone.'};
+ if(TALK_NAV.test(req.trim()))return {error:'That is for you, not the chat: move between to-dos with list_todos and open_todo, and for "stop" or "leave it" do nothing more. Nothing was asked.'};
+ if(TALK_GO_ON.test(req.trim())&&v.main){const r=await talkDoIt(v,{id:s.id});return r.error&&!talkRunning(s)?{error:`Nothing to continue there. ${r.error}`}:r}
  if(v.relay||chat?.active&&chatOpen()?.id===s.id){v.queue.push(req);return {ok:true,queued:true}}
  return talkRelay(v,s,[req])}
 const talkReplies=(items=chat?.items||[])=>items.filter(i=>i.kind==='reply'&&i.via!=='live');
 const talkChatRead=id=>micPost('card_chat',{suggestion_id:id}).catch(()=>null);
 async function talkRelay(v,s,reqs){const here=chatOpen()?.id===s.id,seen=here?null:await talkChatRead(s.id);if(talk!==v||v.sid!==s.id)return {error:'This to-do is no longer open.'};
- const relay=v.relay={at:Date.now(),replies:talkReplies(here?undefined:seen?.items||[]).length,sid:s.id};
+ const relay=v.relay={at:Date.now(),replies:talkReplies(here?undefined:seen?.items||[]).length,sid:s.id,request:reqs.join(' ').slice(0,300)};
  const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:reqs.join('\n'),decision_id:'chat-talk-'+crypto.randomUUID()}];
  try{const r=await decideOrWait(s.id,steps,'other');
   if(chatOpen()?.id===s.id){chat={...(chat||{}),active:!r?.waiting,cursor:null};changing.delete(s.id)}
@@ -752,11 +856,39 @@ async function talkRelay(v,s,reqs){const here=chatOpen()?.id===s.id,seen=here?nu
 async function talkFollow(v,relay){let busy=false;
  for(let n=0;n<400&&talk===v&&v.relay===relay;n++){await new Promise(ok=>setTimeout(ok,1500));if(talk!==v||v.relay!==relay||chatOpen()?.id===relay.sid)return;  // an open chat takes over
   const r=await talkChatRead(relay.sid);if(!r||r.unavailable||talk!==v||v.relay!==relay)continue;if(r.active){busy=true;continue}
-  if(busy||talkReplies(r.items||[]).length>relay.replies||Date.now()-relay.at>20000){refresh();talkTurnDone(r.items||[]);return}}}
+  if(busy||talkReplies(r.items||[]).length>relay.replies||Date.now()-relay.at>20000){await refresh().catch(()=>{});talkTurnDone(r.items||[]);return}}}
 function talkTurnDone(items){const v=talk;if(!v||talk.state!=='live')return;if(!items){if(chatOpen()?.id!==v.sid)return;items=chat?.items||[]}
- if(v.relay){const said=talkReplies(items).slice(v.relay.replies).map(i=>String(i.text||'').trim()).filter(Boolean).join(' ').slice(0,3000);v.relay=null;
-  talkTell(v,said?(v.notes.done||'{answer}').replace('{answer}',said):v.notes.stopped||'')}
+ if(v.relay){const relay=v.relay,said=talkReplies(items).slice(relay.replies).map(i=>String(i.text||'').trim()).filter(Boolean).join(' ').slice(0,3000);v.relay=null;
+  talkChatSaid(v,relay.sid,said,relay.request)}
  if(v.queue.length){const s=state.suggestions?.find(x=>x.id===v.sid),reqs=v.queue;v.queue=[];if(s)talkRelay(v,s,reqs)}}
+// What a chat Talk asked came back with, told about that to-do (its title, so an answer never passes for another one's).
+// A to-do that was closed or snoozed meanwhile (by Talk or on screen) says nothing; a chat that stopped on its own is
+// told once per to-do, with what was asked, so "ask again" asks that again.
+function talkChatSaid(v,id,said,request){const s=state.suggestions?.find(x=>x.id===id);
+ if(!s||closed(s)||s.status==='snoozed'||v.told.has('quiet:'+id))return;
+ const title=String(s.title||'').slice(0,200);
+ if(said){v.told.delete('stop:'+id);talkTell(v,(v.notes.done||'{answer}').replace('{title}',title).replace('{answer}',said));return}
+ if(v.told.has('stop:'+id))return;v.told.add('stop:'+id);
+ talkTell(v,(v.notes.stopped||'').replace('{title}',title).replace('{request}',String(request||'').slice(0,300)))}
+// Seen on screen: a draft shown in full (on its to-do, in its chat or on Talk's card) for a moment is told to the Machine
+// (draft_seen) with the text it showed. A send by voice then only asks its question; a changed draft counts as new.
+// Cut short (Show more, Show all) isn't seen; a draft in its own scroll box is seen once scrolled from top to end.
+const draftSeen={done:new Set(),seen:new Map()};
+function draftSeenBoxes(){const out=[],c=chatOpen();
+ for(const box of document.querySelectorAll('article.card .draft[data-rev]')){const id=(box.closest('article')?.id||'').replace(/^task-/,'');if(id)out.push([box,id,box.dataset.rev,box.querySelector('.db')])}
+ if(c)for(const box of document.querySelectorAll('#chat-log .chat-draft.current')){const r=box.querySelector('[data-smart]')?.dataset.smart;if(r)out.push([box,c.id,r,box.querySelector('.chat-clamp')])}
+ for(const box of document.querySelectorAll('#talk-view .talk-about .chat-draft.current')){const id=box.closest('[data-about]')?.dataset.about,r=box.querySelector('[data-smart]')?.dataset.smart;if(id&&r)out.push([box,id,r,box.querySelector('.chat-clamp')])}
+ return out}
+function draftSeenTick(){if(document.hidden||!state.suggestions)return;const now=Date.now(),H=innerHeight;
+ for(const [box,id,rev,text] of draftSeenBoxes()){const s=state.suggestions.find(x=>x.id===id),a=s?.status==='prepared'&&(s.next_actions||[]).find(x=>x.revision===rev);
+  if(!a||a.kind==='doc_write'||!Array.isArray(a.to))continue;const body=String(a.body??a.message??''),key=id+'|'+rev+'|'+body;if(draftSeen.done.has(key))continue;
+  const r=box.getBoundingClientRect(),el=text||box;if(!r.height||r.bottom<=0||r.top>=H||box.classList.contains('clamp')||box.closest('details:not([open])'))continue;
+  const over=el.scrollHeight>el.clientHeight+2,scrolls=over&&/auto|scroll/.test(getComputedStyle(el).overflowY);if(over&&!scrolls)continue;
+  let k=draftSeen.seen.get(key);if(!k)draftSeen.seen.set(key,k={top:false,end:false,ms:0,last:now,from:!scrolls,to:!scrolls});
+  if(now-k.last<2000)k.ms+=now-k.last;k.last=now;if(r.top>=0)k.top=true;if(r.bottom<=H)k.end=true;
+  if(scrolls){if(el.scrollTop<4)k.from=true;if(el.scrollTop+el.clientHeight>=el.scrollHeight-4)k.to=true}
+  if(k.top&&k.end&&k.from&&k.to&&k.ms>=1500){draftSeen.done.add(key);micPost('draft_seen',{suggestion_id:id,revision:rev,to:a.to.map(String),subject:String(a.subject||''),body}).catch(()=>{})}}}
+setInterval(draftSeenTick,500);
 // A note for the voice, as a message it answers aloud; while it is talking, after that
 function talkTell(v,text){if(!text)return;v.tell.push(text);talkTellNext(v)}
 function talkTellNext(v){if(talk!==v||v.responding||v.speaking||!v.tell.length||v.dc?.readyState!=='open')return;const text=v.tell.shift();v.responding=true;
@@ -765,7 +897,8 @@ function talkTellNext(v){if(talk!==v||v.responding||v.speaking||!v.tell.length||
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-voice-undo]');if(!b)return;e.preventDefault();b.disabled=true;
  try{await micPost('talk_undo',{suggestion_id:b.dataset.sid,approval_id:b.dataset.voiceUndo});toast(t('Canceled. It won’t be sent.'))}catch(err){errCaught(err);toast(err.message,true)}
  await refresh();if(chatOpen())chatPoll()});
-document.addEventListener('click',e=>{const b=e.target.closest('[data-talk],[data-talk-main],[data-talk-end],[data-talk-close],[data-talk-mute]');if(!b)return;e.preventDefault();
+document.addEventListener('click',e=>{if(e.target.closest('[data-talk-undo]')&&talk){e.preventDefault();talkUndoSend(talk).then(r=>{if(r.error)toast(t('It was already on its way.'),true)});return}
+ const b=e.target.closest('[data-talk],[data-talk-main],[data-talk-end],[data-talk-close],[data-talk-mute]');if(!b)return;e.preventDefault();
  if(b.hasAttribute('data-talk-main')){if(typeof drawerClose==='function')drawerClose();if(talk?.main&&!talkViewOn()&&b.id==='side-talk'){talkAfterDrawer(talkGoView);return}talkMain();return}  // live, from another page: back to Talk
  if(b.hasAttribute('data-talk')){if(talk)talkEnd();else talkStart();return}
  if(b.hasAttribute('data-talk-end')||b.hasAttribute('data-talk-close')){talkEnd();return}

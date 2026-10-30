@@ -1519,6 +1519,7 @@
  "It starts once your main model can run: sign in for it or add a key.": "It starts once your main model can run: sign in for it or add a key.",
  "It starts when your mail is in.": "It starts when your mail is in.",
  "It syncs again within a minute after.": "It syncs again within a minute after.",
+ "It was already on its way.": "It was already on its way.",
  "It was open in the Codex app, so this goes on in a copy of the thread there": "It was open in the Codex app, so this goes on in a copy of the thread there",
  "It will be looked up again soon.": "It will be looked up again soon.",
  "It won’t count as yours.": "It won’t count as yours.",
@@ -3056,6 +3057,7 @@
  "Sending": "Sending",
  "Sending approval must come from the owner’s controls": "Sending approval must come from the owner’s controls",
  "Sending automatically is off": "Sending automatically is off",
+ "Sending in {} s": "Sending in {} s",
  "Sending your approved draft…": "Sending your approved draft…",
  "Sending {} of {}…": "Sending {} of {}…",
  "Sending {} votes.": {

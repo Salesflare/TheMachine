@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Tippe im Chat einer Aufgabe auf die Welle neben dem Mikrofon. Erlaube das Mikrofon, wenn dein Browser fragt. Wenn die Leiste **Live** zeigt, sprich wie bei einem Anruf. The Machine antwortet laut, und du kannst dazwischenreden, um sie zu unterbrechen.
 
-Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren Chat. Sie kann auch deine anderen Aufgaben nachschlagen.
+Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren Chat. Sie kann auch deine anderen Aufgaben nachschlagen. Sag „als erledigt markieren“, „zurückstellen“ oder „nicht nötig“, und sie macht das selbst. Sag gleich danach „nein, nicht das“, um es zurückzunehmen.
 
 Es hört in deinen Sprachen zu: der Sprache der App und denen, die dein Browser nennt. Ein Geräusch, ein Husten oder ein Laut in einer anderen Sprache bekommt keine Antwort und bleibt aus dem Verlauf.
 
@@ -35,14 +35,17 @@ Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“
 
 Der Chat kann auch Dinge nachschlagen, etwa die Öffnungszeiten eines Geschäfts im Web. Währenddessen zeigt er **Bin dran…**, und du kannst weiterreden. Wenn die Antwort da ist, sagt The Machine sie dir, und wo sie sie gefunden hat. Fragst du inzwischen etwas anderes, kommt das danach dran.
 
-Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Lotte senden?“. Vorher liest sie den ganzen Entwurf vor: an wen er geht, den Betreff und den Text. So klappt es auch mit dem Handy in der Tasche. Antworte mit einem klaren Ja, in jeder Sprache, und genau dieser Entwurf geht raus.
+Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Lotte senden?“. Vorher liest sie den ganzen Entwurf vor: an wen er geht, den Betreff und den Text. So klappt es auch mit dem Handy in der Tasche. Antworte mit einem klaren Ja, etwa „ja, senden“, und genau dieser Entwurf geht raus.
 
 - Sie sendet genau den Entwurf, den sie vorgelesen hat. Ändert er sich nach der Frage, liest sie ihn neu vor und fragt erneut. Eine Frage, die du nicht innerhalb von 3 Minuten beantwortest, verfällt.
 - Ist deine Antwort kein klares Ja, geht nichts raus und sie fragt erneut. „Nein“ sendet nichts.
-- Ein Ja sendet immer genau einen Entwurf. Für mehrere nimm die Follow-up-Prüfung.
-- Der Chat zeigt ein paar Sekunden lang **Per Sprache freigegeben** mit **Rückgängig**, bevor er rausgeht.
+- Einen Entwurf, den du schon auf dem Bildschirm gesehen oder in diesem Gespräch gehört hast, liest sie nicht noch einmal vor: Sie fragt nur, etwa „An Nick senden?“.
+- Sag „beide senden“ oder „alle fertigen senden“, und sie nennt alle in einer Frage. Ein Ja sendet jeden davon.
+- Sprechen zeigt ein paar Sekunden lang **Rückgängig** mit einem Countdown, bevor er rausgeht, dann **Gesendet**. Tippe darauf oder sag „rückgängig“ oder „warte“.
 
 Du kannst auch jederzeit auf **Freigeben** tippen.
+
+„Mach es“ lässt The Machine mit der Aufgabe anfangen, wie **Ausführen**, auch im Browser. „Als erledigt markieren“ schließt sie. Sag „Fehler melden“, und sie sendet eine Fehlermeldung wie **Fehler melden** in der Hilfe und fragt vorher, ob mehr dazu darf.
 
 ## Eine Stimme wählen
 

@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 En el chat de una tarea, toca la onda junto al micro. Permite el micro si tu navegador lo pide. Cuando la barra diga **En vivo**, habla como en una llamada. The Machine responde en voz alta, y puedes hablar encima para interrumpirla.
 
-Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas.
+Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas. Di "márcala como hecha", "posponla" o "no hace falta" y lo hace ella misma. Di "no, eso no" justo después para deshacerlo.
 
 Escucha en tus idiomas: el de la app y los que indica tu navegador. Un ruido, una tos o un sonido en otro idioma no recibe respuesta y no queda en la transcripción.
 
@@ -35,14 +35,17 @@ Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien
 
 El chat también puede buscar cosas, como el horario de una tienda en la web. Mientras tanto muestra **Trabajando en ello…**, y puedes seguir hablando. Cuando la respuesta está lista, The Machine te la dice, y dónde la encontró. Si pides otra cosa mientras tanto, espera su turno.
 
-Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Lotte por correo?". Primero lee el borrador entero en voz alta: a quién va, el asunto y el texto. Así funciona también con el teléfono en el bolsillo. Responde con un sí claro, en cualquier idioma, y ese borrador se envía.
+Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Lotte por correo?". Primero lee el borrador entero en voz alta: a quién va, el asunto y el texto. Así funciona también con el teléfono en el bolsillo. Responde con un sí claro, como "sí, envíalo", y ese borrador se envía.
 
 - Envía exactamente el borrador que leyó. Si cambia después de la pregunta, lo vuelve a leer y vuelve a preguntar. Una pregunta sin respuesta en 3 minutos caduca.
 - Si tu respuesta no es un sí claro, no se envía nada y vuelve a preguntar. "No" no envía nada.
-- Un sí envía siempre un solo borrador. Para enviar varios, usa la revisión de seguimientos.
-- El chat muestra **Aprobado por voz** con **Deshacer** unos segundos antes de que salga.
+- Un borrador que ya viste en pantalla, o que oíste en esta conversación, no se vuelve a leer: solo pregunta, por ejemplo "¿Se lo envío a Nick?".
+- Di "envía los dos" o "envía todos los listos" y nombra a todos en una pregunta. Un sí envía cada uno.
+- Hablar muestra **Deshacer** con una cuenta atrás unos segundos antes de que salga, y luego **Enviado**. Tócalo, o di "deshacer" o "espera".
 
 Siempre puedes tocar **Aprobar** en su lugar.
+
+"Hazlo" pone a The Machine con la tarea, como **Hazlo**, también en el navegador. "Márcala como hecha" la cierra. Di "informa de un error" y envía un informe, como **Informar de un error** en Ayuda, preguntando antes si puede añadir más.
 
 ## Elige una voz
 
