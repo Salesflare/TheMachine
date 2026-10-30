@@ -1707,18 +1707,22 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 /* The menu a picker opens: the app's menu (.fact-menu-list), fixed to the screen, up when the trigger is low */
 .fact-menu-list.cm-menu{position:fixed;inset:auto;margin:0;color:var(--text);z-index:90;gap:1px;min-width:200px;max-width:calc(100vw - 16px);overflow-y:auto;overscroll-behavior:contain;box-shadow:var(--shadow-pop,0 12px 30px #0005)}
 .fact-menu-list.cm-menu[hidden]{display:none}
-.cm-menu [role="menuitemradio"]{grid-template-columns:16px minmax(0,1fr);column-gap:8px;align-items:center;padding:7px 14px 7px 9px;font-weight:var(--fw-medium,500);white-space:nowrap}
-.cm-menu [role="menuitemradio"]>span{grid-column:2;overflow:hidden;text-overflow:ellipsis}
-.cm-menu [role="menuitemradio"]>small{grid-column:2;white-space:normal}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]){grid-template-columns:16px minmax(0,1fr);column-gap:8px;align-items:center;padding:7px 14px 7px 9px;font-weight:var(--fw-medium,500);white-space:nowrap}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"])>span{grid-column:2;overflow:hidden;text-overflow:ellipsis}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"])>small{grid-column:2;white-space:normal}
 .cm-menu .cm-check{grid-column:1;grid-row:1;width:16px;height:16px;fill:none;stroke:var(--c-accent,var(--mint));stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
 .cm-menu [aria-checked="true"] .cm-check{visibility:visible}
-.cm-menu [role="menuitemradio"]:is(:hover,:focus-visible){outline:0;box-shadow:none;background:var(--tile)}
-.cm-menu [role="menuitemradio"]:focus{outline:0}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]):is(:hover,:focus-visible){outline:0;box-shadow:none;background:var(--tile)}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]):focus{outline:0}
+.cm-menu [aria-disabled="true"]{cursor:default;color:var(--c-text-3,var(--muted))}
+.cm-menu [aria-disabled="true"]:hover{background:none}
+.model-pick .cm-fast-on{flex:none;margin-left:5px;padding:0 6px;border-radius:999px;background:var(--tile);color:var(--text);font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);line-height:18px}
 /* A provider: a section heading above its models, a line between providers */
 .cm-menu .cm-section{display:flex;flex-direction:column;gap:1px}
 .cm-menu .cm-section+.cm-section,.cm-menu [role="menuitemradio"]+.cm-section{margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
+.cm-menu .cm-speed{display:flex;flex-direction:column;margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
 .cm-menu .cm-group{margin:0;padding:6px 10px 3px 9px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);letter-spacing:.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(pointer:coarse){.cm-menu [role="menuitemradio"]{min-height:44px}}
+@media(pointer:coarse){.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]){min-height:44px}}
 @media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .settings-list>div{flex-wrap:wrap}#model-chats .grow{flex-basis:100%}#model-chats .select-like{width:100%}}
 .chat-status:not(:empty){margin:0 0 12px}
 .chat-picks{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.chat-picks::-webkit-scrollbar{display:none}.chat-picks:empty,.chat-picks[hidden]{display:none}

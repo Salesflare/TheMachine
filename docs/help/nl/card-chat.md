@@ -27,6 +27,8 @@ Op een computer verstuurt Enter of Ctrl+Enter (Cmd+Enter op een Mac) je bericht,
 
 Onder het berichtvak toont de chat zijn model en denkniveau, zoals "GPT-6.1 Sol" en "Weinig denkwerk". Tik op een van beide om een ander te kiezen, alleen voor deze chat. De modellen staan onder hun aanbieder. Nieuwe chats gebruiken wat je instelde in **Instellingen**, **Model** (zie [Model](model.md)).
 
+**Snel**, onderaan het modelmenu, laat je to-do-chats sneller antwoorden, tegen een hogere prijs (ongeveer het dubbele, of meer van je abonnement). Het geldt voor al je to-do-chats, alleen voor de berichten die je stuurt en voor Doe het, nooit voor werk op de achtergrond. Standaard uit. Bij een model zonder snelle optie staat het grijs.
+
 ## Een antwoord stoppen
 
 Terwijl een antwoord geschreven wordt, verandert de verstuurknop in **Stoppen**. Stoppen beëindigt het meteen en houdt wat er tot dan geschreven is, gemarkeerd als **Gestopt**. Schrijf een nieuw bericht om verder te gaan, of tik op **Opnieuw proberen**.

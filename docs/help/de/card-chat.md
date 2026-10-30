@@ -27,6 +27,8 @@ Auf einem Computer sendet Enter oder Strg+Enter (Cmd+Enter auf dem Mac), und Ums
 
 Unter dem Nachrichtenfeld zeigt der Chat sein Modell und seine Nachdenkstufe, etwa „GPT-6.1 Sol“ und „Wenig Nachdenken“. Tippe auf eins davon, um nur für diesen Chat etwas anderes zu wählen. Die Modelle stehen unter ihrem Anbieter. Neue Chats nutzen, was du in **Einstellungen**, **Modell** festgelegt hast (siehe [Modell](model.md)).
 
+**Schnell**, am Ende des Modellmenüs, lässt die Chats deiner Aufgaben schneller antworten, zu höheren Kosten (etwa doppelt so teuer oder mehr von deinem Tarif). Es gilt für alle Chats deiner Aufgaben, nur für deine Nachrichten und für Ausführen, nie für Arbeit im Hintergrund. Standardmäßig aus. Bei einem Modell ohne schnelle Option ist es ausgegraut.
+
 ## Eine Antwort stoppen
 
 Während eine Antwort geschrieben wird, wird der Senden-Button zu **Stopp**. Stopp beendet sie sofort und behält, was bis dahin geschrieben ist, markiert mit **Gestoppt**. Schreib eine neue Nachricht, um weiterzumachen, oder tippe auf **Erneut versuchen**.

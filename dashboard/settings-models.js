@@ -33,10 +33,17 @@ function cmChoices(which,cur){if(which==='think')return (cmEntry(cur.model)?.lev
  // Each provider once, its models under it, in the order the Gateway first lists each provider
  const order=[...new Set(ms.map(m=>m.ref.split('/')[0]))],sorted=[...ms].sort((a,b)=>order.indexOf(a.ref.split('/')[0])-order.indexOf(b.ref.split('/')[0]));
  return [...(cur.model&&!cmEntry(cur.model)?[{...one(cur.model),group:''}]:[]),...sorted.map(m=>one(m.ref))]}
-const cmTrigger=(kind,which,label,cls,extra='')=>`<button type="button" class="${cls}" data-cm-pick="${which}" data-cm-kind="${kind}" aria-haspopup="menu" aria-expanded="false"${extra}><span>${esc(label)}</span>${CHEV}</button>`;
-// The pill: "Model  Thinking", each part a quiet button over the menu
+const cmTrigger=(kind,which,label,cls,extra='',after='')=>`<button type="button" class="${cls}" data-cm-pick="${which}" data-cm-kind="${kind}" aria-haspopup="menu" aria-expanded="false"${extra}><span>${esc(label)}</span>${after}${CHEV}</button>`;
+// Fast (chat_model.py): the person's own choice for to-do chats only, off by default, at the end of a chat's model menu.
+// Only a model the Gateway says has a fast option takes it; for any other the item stays, disabled, with why.
+const cmFastOk=ref=>!!cmEntry(ref)?.fast,cmFastShown=(kind,cur)=>kind==='chat'&&!!state.chat_model?.fast&&cmFastOk(cur?.model);
+const cmFastItem=cur=>{const ok=cmFastOk(cur.model),on=!!state.chat_model?.fast&&ok;
+ return `<div class="cm-speed" role="group" aria-label="${esc(t('Speed'))}"><button type="button" role="menuitemcheckbox" aria-checked="${on}" data-cm-fast${ok?'':' aria-disabled="true"'}>${CM_CHECK}<span>${esc(t('Fast'))}</span><small>${esc(t(ok?'Quicker replies, at a higher cost':'Not offered for this model'))}</small></button></div>`};
+async function cmFastSave(on){try{state.chat_model=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_fast_set',args:{fast:on}})});cmPaint('chat')}
+ catch(err){errCaught(err);toast(err.message,true);cmPaint('chat')}}
+// The pill: "Model  Thinking", each part a quiet button over the menu; a to-do chat's model says Fast when it runs fast
 function cmPill(kind){const cm=state.chat_model,cur=cmCurrent(kind);if(!cm?.known||!cm.models.length||!cur?.model)return '';const levels=cmEntry(cur.model)?.levels||[];
- return cmTrigger(kind,'model',modelName(cur.model),'model-pick',` title="${esc(cur.model)}" translate="no"`)
+ return cmTrigger(kind,'model',modelName(cur.model),'model-pick',` title="${esc(cur.model)}" translate="no"`,cmFastShown(kind,cur)?`<span class="cm-fast-on" translate="yes">${esc(t('Fast'))}</span>`:'')
   +(levels.length>1&&cur.thinking?cmTrigger(kind,'think',THINKING[cur.thinking]||cur.thinking,'model-pick'):'')}
 // Repainted with the state and the chat, never while its menu is open; a focused picker keeps the focus
 function cmSwap(box,h){if(cmOpen?.box===box||box.dataset.html===h)return;const f=document.activeElement?.closest?.('[data-cm-pick]'),had=f&&box.contains(f)?f.dataset.cmPick:null;
@@ -75,16 +82,17 @@ function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,c
  // A provider's models sit in a group under its heading, so a heading never reads as the line under the model above it
  const item=c=>`<button type="button" role="menuitemradio" aria-checked="${c.value===sel}" data-cm-value="${esc(c.value)}"${c.name?' translate="no"':''}>${CM_CHECK}<span>${esc(c.label)}</span>${c.hint?`<small>${esc(c.hint)}</small>`:''}</button>`;
  const groups=[];for(const c of cmChoices(which,cur)){const g=groups.at(-1);if(g&&g.name===c.group)g.items.push(c);else groups.push({name:c.group,items:[c]})}
- m.innerHTML=groups.map((g,i)=>g.name?`<div class="cm-section" role="group" aria-labelledby="cm-g-${i}"><p class="cm-group" id="cm-g-${i}" translate="no">${esc(g.name)}</p>${g.items.map(item).join('')}</div>`:g.items.map(item).join('')).join('');
+ m.innerHTML=groups.map((g,i)=>g.name?`<div class="cm-section" role="group" aria-labelledby="cm-g-${i}"><p class="cm-group" id="cm-g-${i}" translate="no">${esc(g.name)}</p>${g.items.map(item).join('')}</div>`:g.items.map(item).join('')).join('')+(kind==='chat'&&which==='model'?cmFastItem(cur):'');
  cmOpen={box,kind,which};b.setAttribute('aria-expanded','true');m.hidden=false;if(m.showPopover&&!m.matches(':popover-open'))m.showPopover();cmPlace(m,b);
- const items=[...m.querySelectorAll('[role=menuitemradio]')];(last?items.at(-1):items.find(i=>i.getAttribute('aria-checked')==='true')||items[0])?.focus({preventScroll:true})}
+ const items=[...m.querySelectorAll('[role=menuitemradio],[role=menuitemcheckbox]')];(last?items.at(-1):items.find(i=>i.getAttribute('aria-checked')==='true')||items[0])?.focus({preventScroll:true})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cm-pick]');
  if(b){e.preventDefault();const same=cmOpen&&cmOpen.box.contains(b)&&cmOpen.which===b.dataset.cmPick;cmMenuClose(false);if(!same)cmMenuOpen(b);return}
+ const f=e.target.closest('#cm-menu [data-cm-fast]');if(f){e.preventDefault();if(f.getAttribute('aria-disabled')==='true')return;const on=f.getAttribute('aria-checked')!=='true';cmMenuClose(true);cmFastSave(on);return}
  const it=e.target.closest('#cm-menu [data-cm-value]');if(it){e.preventDefault();const o=cmOpen,v=it.dataset.cmValue,was=it.getAttribute('aria-checked')==='true';cmMenuClose(true);if(o&&!was)cmSave(o.kind,o.which,v);return}
  if(cmOpen&&!e.target.closest('#cm-menu'))cmMenuClose(false)});
 document.addEventListener('keydown',e=>{const b=e.target.closest?.('[data-cm-pick]');
  if(b&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();cmMenuClose(false);cmMenuOpen(b,e.key==='ArrowUp');return}
- const m=$('#cm-menu');if(!cmOpen||!m||m.hidden||!m.contains(e.target))return;const items=[...m.querySelectorAll('[role=menuitemradio]')],i=items.indexOf(document.activeElement);
+ const m=$('#cm-menu');if(!cmOpen||!m||m.hidden||!m.contains(e.target))return;const items=[...m.querySelectorAll('[role=menuitemradio],[role=menuitemcheckbox]')],i=items.indexOf(document.activeElement);
  if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cmMenuClose(true);return}
  if(e.key==='Tab'){cmMenuClose(true);return}
  const to={ArrowDown:(i+1)%items.length,ArrowUp:(i-1+items.length)%items.length,Home:0,End:items.length-1}[e.key];if(to!==undefined){e.preventDefault();items[to].focus()}},true);

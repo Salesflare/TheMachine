@@ -27,6 +27,8 @@ Sur ordinateur, Entrée ou Ctrl+Entrée (Cmd+Entrée sur Mac) envoie, et Maj+Ent
 
 Sous la zone de message, le chat affiche son modèle et son niveau de réflexion, comme « GPT-6.1 Sol » et « Réflexion faible ». Appuyez sur l’un ou l’autre pour en choisir un autre pour ce chat seulement. Les modèles sont rangés sous leur fournisseur. Les nouveaux chats utilisent ce que vous avez réglé dans **Paramètres**, **Modèle** (voir [Modèle](model.md)).
 
+**Rapide**, en bas du menu des modèles, fait répondre les chats de vos tâches plus vite, pour un coût plus élevé (environ le double, ou plus de votre forfait). Cela vaut pour tous les chats de vos tâches, seulement pour les messages que vous envoyez et pour Faire, jamais pour le travail en arrière-plan. Désactivé par défaut. Pour un modèle sans option rapide, il est grisé.
+
 ## Arrêter une réponse
 
 Pendant qu’une réponse s’écrit, le bouton d’envoi devient **Arrêter**. Arrêter la termine tout de suite et garde ce qui est déjà écrit, marqué **Arrêté**. Écrivez un nouveau message pour continuer, ou appuyez sur **Réessayer**.
