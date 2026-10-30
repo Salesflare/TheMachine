@@ -1519,6 +1519,7 @@
  "It starts once your main model can run: sign in for it or add a key.": "Es startet, sobald dein Hauptmodell laufen kann: Melde dich dafür an oder füge einen Schlüssel hinzu.",
  "It starts when your mail is in.": "Es startet, sobald deine E-Mails da sind.",
  "It syncs again within a minute after.": "Danach synchronisiert es innerhalb einer Minute wieder.",
+ "It was already on its way.": "Es war schon unterwegs.",
  "It was open in the Codex app, so this goes on in a copy of the thread there": "Es war in der Codex-App offen, deshalb geht es dort in einer Kopie des Threads weiter",
  "It will be looked up again soon.": "Wird bald neu nachgeschlagen.",
  "It won’t count as yours.": "Sie zählt nicht als deine.",
@@ -3056,6 +3057,7 @@
  "Sending": "Senden",
  "Sending approval must come from the owner’s controls": "Die Freigabe zum Senden muss von den Bedienelementen des Besitzers kommen",
  "Sending automatically is off": "Automatisch senden ist aus",
+ "Sending in {} s": "Wird in {} s gesendet",
  "Sending your approved draft…": "Dein freigegebener Entwurf wird gesendet…",
  "Sending {} of {}…": "{} von {} wird gesendet…",
  "Sending {} votes.": {

@@ -858,6 +858,7 @@ OWNER_ACTIONS |= VOICE_ACTIONS
 # to-do's chat as a typed message would, and sends one draft on screen only after a confirm question and a clear yes.
 VOICE_WARM_QUIET = 3   # 5-minute checks in a row that a live Machine is quiet before voice gets ready in the background
 TALK_ACTIONS = {
+    'draft_seen',
     'talk_ask_send',
     'talk_end',
     'talk_focus',
@@ -20500,18 +20501,23 @@ class App(*APP_MIXINS):
             if not card and not main:
                 raise ValueError('Unknown suggestion')
             with self.store.connect() as db:
-                voice = voice_input.prefs(db)['talk_voice']
-            started = self.talk.start(None if main else sid, env, voice)
+                voice_prefs = voice_input.prefs(db)
+            voice = voice_prefs['talk_voice']
+            now, language = time.strftime('%A %d %B %Y, %H:%M'), locale_prefs.language() or 'en'
+            # What the owner speaks: the UI language, Voice input's language, the locale's and the browser's languages
+            browser = [str(x)[:20] for x in args.get('languages') or [] if isinstance(x, str)][:8] if isinstance(args.get('languages'), list) else []
+            spoken = talk_live.spoken(language, voice_prefs['language'], locale_prefs.view().get('locale'), browser)
+            started = self.talk.start(None if main else sid, env, voice, spoken)
             LOG.info('talk live start via=%s main=%s', started.get('via'), main)
             view = self.talk_view()
-            now, language = time.strftime('%A %d %B %Y, %H:%M'), locale_prefs.language() or 'en'
             return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'turn': talk_live.TURN, 'per_use': started.get('via') == 'key',
+                    'noise': talk_live.NOISE, 'transcription': talk_live.transcription(spoken), 'transcription_next': talk_live.transcription_next(spoken), 'languages': spoken,
                     'limit': talk_live.MAIN_LIMIT_SECONDS if main else talk_live.LIMIT_SECONDS,
                     'warn': talk_live.MAIN_WARN_SECONDS if main else talk_live.WARN_SECONDS,
                     'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,
                     'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE,
-                              'ready': talk_live.READY_NOTE},
-                    'instructions': talk_live.main_instructions(language, now) if main else talk_live.instructions(card['title'], language, now),
+                              'ready': talk_live.READY_NOTE, 'again': talk_live.AGAIN_NOTE},
+                    'instructions': talk_live.main_instructions(language, now, spoken) if main else talk_live.instructions(card['title'], language, now, spoken),
                     'main': main, 'ready': view.get('ready')}
         if name == 'talk_focus':
             sid = str(args.get('suggestion_id') or '')
@@ -20532,6 +20538,8 @@ class App(*APP_MIXINS):
             return self.talk_send(args)
         if name == 'talk_undo':
             return self.store.undo_voice_send(args.get('suggestion_id'), args.get('approval_id'))
+        if name == 'draft_seen':
+            return self.draft_seen(args)
         found = self.talk.get(args.get('id'))
         tool = str(args.get('name') or '')
         if tool == 'todo_details' and not talk_live.subject(found):
@@ -20556,10 +20564,49 @@ class App(*APP_MIXINS):
         return [a for a in next_actions.visible_actions(row['next_action'])
                 if a.get('kind') in talk_live.SEND_KINDS and not a.get('to_options') and a.get('revision')]
 
+    def draft_seen(self, args):
+        """The dashboard showed this draft in full (its to-do, its chat or Talk's card), long enough to read: kept for
+        this exact text, so a send by voice needn't read it out again. What the page showed must be the draft as it is."""
+        sid, revision = str(args.get('suggestion_id') or ''), str(args.get('revision') or '')
+        action = self.talk_draft(sid, revision) if re.fullmatch(r'[a-f0-9]{16}', sid) and revision else None
+        shown = {'to': [str(x) for x in args.get('to') or []] if isinstance(args.get('to'), list) else [],
+                 'subject': str(args.get('subject') or ''), 'body': str(args.get('body') or '')}
+        if not action or shown != {'to': [str(x) for x in action.get('to') or []], 'subject': str(action.get('subject') or ''),
+                                   'body': str(action.get('body') or action.get('message') or '')}:
+            return {'ok': False}
+        with self.store.connect() as db:
+            talk_live.saw(db, sid, revision, talk_live.digest(action), int(time.time() * 1000))
+        return {'ok': True}
+
+    def talk_seen(self, talk_id, sid, revision, action):
+        """Whether the owner has seen this exact draft on screen or heard it read out in this conversation."""
+        with self.store.connect() as db:
+            if talk_live.seen(db, sid, revision, talk_live.digest(action)):
+                return True
+            return self.talk.heard(db, talk_id, sid, revision, talk_live.digest(action))
+
+    def talk_who(self, action):
+        """Who a draft goes to, as the voice says it: their names, or the addresses."""
+        to = [str(x) for x in action.get('to') or []]
+        names = {}
+        if len(to) == 1 and str(action.get('to_name') or '').strip():
+            names[_address(to[0])] = chat_person(str(action['to_name']).strip())
+        everyone = [chat_name(x, names, str(action.get('to_name') or '') if len(to) == 1 else '') for x in to]
+        name = everyone[0] if everyone else ''
+        return everyone, (name if len(to) <= 1 else name + ' and %d more' % (len(to) - 1))
+
+    def talk_spoken(self, action, everyone):
+        """A draft as the voice reads it out."""
+        return {'to': everyone[:20], 'how': talk_live.CHANNELS.get(action['kind'], ''), **({'subject': action['subject']} if action.get('subject') else {}),
+                'text': doc_writes.spoken(action) if action['kind'] == 'doc_write' else clamp(str(action.get('body') or action.get('message') or ''), 4000)}
+
     def talk_ask_send(self, args):
         """The voice asks to send this to-do's draft: the one the screen shows when it shows one (revision), else its
-        only draft, or the one named by its number. The Machine pins that revision and hands the voice the whole draft to
-        read out, so it works without the screen; the question is kept for the owner's next answer."""
+        only draft, or the one named by its number. The Machine pins that revision. A draft the owner hasn't seen on
+        screen or heard in this conversation comes whole, to read out first (read: the owner asked to hear it); one they
+        have comes without its text, so it is never read twice. With ids: several to-dos' drafts under one question."""
+        if isinstance(args.get('ids'), list):
+            return self.talk_ask_send_all(args)
         found = self.talk.get(args.get('id'))
         sid, revision = talk_live.subject(found), str(args.get('revision') or '')
         drafts = self.talk_drafts(sid) if sid else []
@@ -20576,43 +20623,82 @@ class App(*APP_MIXINS):
             return {'error': 'No draft ready to send by voice. Ask the chat to draft one first.'}
         if action['kind'] == 'doc_write' and len(doc_writes.spoken(action)) > 4000:  # read in full, or not by voice
             return {'error': 'This doc change is too long to read aloud. The owner reviews it on the screen.'}
-        to = [str(x) for x in action.get('to') or []]
-        names = {}
-        if len(to) == 1 and str(action.get('to_name') or '').strip():
-            names[_address(to[0])] = chat_person(str(action['to_name']).strip())
-        everyone = [chat_name(x, names, str(action.get('to_name') or '') if len(to) == 1 else '') for x in to]
-        name = everyone[0] if everyone else ''
-        name = name if len(to) <= 1 else name + ' and %d more' % (len(to) - 1)
-        asked = self.talk.ask(args.get('id'), sid, revision, action, name, int(time.time() * 1000))
-        draft = {'to': everyone[:20], 'how': talk_live.CHANNELS.get(action['kind'], ''), **({'subject': action['subject']} if action.get('subject') else {}),
-                 'text': doc_writes.spoken(action) if action['kind'] == 'doc_write' else clamp(str(action.get('body') or action.get('message') or ''), 4000)}
+        everyone, name = self.talk_who(action)
+        at, d = int(time.time() * 1000), talk_live.digest(action)
+        draft = self.talk_spoken(action, everyone)
+        read = args.get('read') is True or not self.talk_seen(args.get('id'), sid, revision, action)
+        if read:
+            self.talk.reading(args.get('id'), sid, revision, d, draft['text'], at)
+        asked = self.talk.ask(args.get('id'), [{'sid': sid, 'revision': revision, 'digest': d, 'read': read}], talk_live.question(action, name), name, at, sid)
+        if not read:
+            return {'question': asked, 'revision': revision, 'seen': True, 'draft': {k: v for k, v in draft.items() if k != 'text'},
+                    'say': talk_live.SAY['seen'] + talk_live.SAY['ask'] + asked}
         return {'question': asked, 'revision': revision, 'draft': draft, 'say': talk_live.SAY['read'] + talk_live.SAY['ask'] + asked}
 
+    def talk_ask_send_all(self, args):
+        """Several ready drafts under one question (the main conversation): each to-do's only draft, pinned; the ones the
+        owner hasn't seen or heard come whole, to read out first."""
+        found = self.talk.get(args.get('id'))
+        if not found.get('main'):
+            return {'error': 'Only Talk sends several at once.'}
+        ids = list(dict.fromkeys(str(x) for x in args.get('ids') or [] if re.fullmatch(r'[a-f0-9]{16}', str(x))))
+        if not ids or len(ids) > 5:
+            return {'error': 'Give the to-dos’ ids, at most 5 at once.'}
+        at, items, drafts, skipped, names = int(time.time() * 1000), [], [], [], []
+        with self.store.connect() as db:
+            titles = {r['id']: r['title'] for r in db.execute('SELECT id,title FROM suggestions WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(ids),))}
+        for sid in ids:
+            mine = self.talk_drafts(sid)
+            if len(mine) != 1 or (mine[0]['kind'] == 'doc_write' and len(doc_writes.spoken(mine[0])) > 4000):
+                skipped.append({'id': sid, 'title': clamp(titles.get(sid) or '', 120),
+                                'why': 'more than one draft' if len(mine) > 1 else 'no draft ready to send by voice'})
+                continue
+            action = mine[0]
+            everyone, name = self.talk_who(action)
+            d, draft = talk_live.digest(action), self.talk_spoken(action, everyone)
+            read = not self.talk_seen(args.get('id'), sid, action['revision'], action)
+            if read:
+                self.talk.reading(args.get('id'), sid, action['revision'], d, draft['text'], at)
+            items.append({'sid': sid, 'revision': action['revision'], 'digest': d, 'read': read})
+            names.append(name)
+            drafts.append({'id': sid, 'title': clamp(titles.get(sid) or '', 120), **(draft if read else {k: v for k, v in draft.items() if k != 'text'})})
+        if not items:
+            return {'error': 'None of these has one draft ready to send by voice.', 'skipped': skipped}
+        if len(items) == 1:
+            asked = talk_live.question(self.talk_draft(items[0]['sid'], items[0]['revision']), names[0])
+        else:
+            asked = 'Send all %d, to %s?' % (len(items), ', '.join(names[:-1]) + ' and ' + names[-1])
+        self.talk.ask(args.get('id'), items, asked, names[0], at)
+        unseen = any(i['read'] for i in items)
+        return {'question': asked, 'drafts': drafts, **({'skipped': skipped} if skipped else {}),
+                'say': (talk_live.SAY['read_some'] if unseen else talk_live.SAY['seen']) + talk_live.SAY['ask'] + asked}
+
     def talk_send(self, args):
-        """The owner answered the confirm question: the Machine judges it from its own record, and a clear yes for the
-        unchanged draft goes the normal way (confirm_action, source 'voice', held for Undo)."""
-        import help_chat
+        """The owner answered the confirm question: the Machine judges their own last words (talk_live.clear_answer), and
+        a clear yes for the unchanged drafts goes the normal way (confirm_action, source 'voice', each held for Undo)."""
         talk_id = args.get('id')
         found = self.talk.get(talk_id)
-        sid = talk_live.subject(found)
-        if not sid:
+        if not found.get('confirm') and not talk_live.subject(found):
             return {'status': 'not_asked', 'say': talk_live.SAY['not_asked']}
-        run = getattr(self, 'talk_judge', None)
-        if not run:
-            swap = background_model(self.config)
-            run = lambda prompt: help_chat.openclaw_model_run(self.config, prompt, '/'.join(swap) if swap else None)
         with self.store.connect() as db:
-            status, asked = self.talk.answer(db, talk_id, int(time.time() * 1000), lambda revision: self.talk_draft(sid, revision),
-                                             lambda answer, q: talk_live.judge_answer(answer, q, run))
+            status, asked = self.talk.answer(db, talk_id, int(time.time() * 1000), lambda sid, revision: self.talk_draft(sid, revision))
         LOG.info('talk live answer %s', status)
         if status != 'yes':
-            return {'status': status, 'say': talk_live.SAY[status]}
-        approval = 'voice:' + uuid.uuid4().hex
-        try:
-            self.store.confirm_action(sid, asked['revision'], approval, 'voice', hold=talk_live.UNDO_SECONDS)
-        except ValueError:
+            return {'status': status, 'say': talk_live.SAY[status].replace('{name}', (asked or {}).get('name') or 'them')}
+        sent = []
+        for item in asked['items']:
+            approval = 'voice:' + uuid.uuid4().hex
+            try:
+                self.store.confirm_action(item['sid'], item['revision'], approval, 'voice', hold=talk_live.UNDO_SECONDS)
+            except ValueError:
+                continue
+            sent.append({'suggestion_id': item['sid'], 'approval_id': approval})
+        if not sent:
             return {'status': 'changed', 'say': talk_live.SAY['changed']}
-        return {'status': 'queued', 'approval_id': approval, 'undo_seconds': talk_live.UNDO_SECONDS, 'say': talk_live.SAY['queued']}
+        many = len(asked['items']) > 1
+        return {'status': 'queued', 'approval_id': sent[0]['approval_id'], 'sent': sent, 'undo_seconds': talk_live.UNDO_SECONDS,
+                **({'not_sent': len(asked['items']) - len(sent)} if len(sent) < len(asked['items']) else {}),
+                'say': talk_live.SAY['queued_all' if many else 'queued']}
 
     def talk_tool(self, suggestion_id, name, args, ids=False):
         """Talk live's tools that read (talk_live.TOOLS): this to-do, or finding others. Never anything that sends or
@@ -20628,8 +20714,10 @@ class App(*APP_MIXINS):
                 if who and str(i.get('text') or '').strip():
                     said.append({'from': clamp(str(who), 80), 'text': clamp(str(i['text']), 800)})
                 drafts = i.get('drafts') or drafts
+            # The draft's text isn't here: read_draft reads it out (and keeps that it was), so it is never told twice
             return {'title': card['title'] if card else '', 'state': todo_state(dict(card)) if card else '', 'messages': said[-25:],
-                    'drafts': [{k: d.get(k) for k in ('kind', 'to', 'subject', 'body')} for d in drafts[:3]]}
+                    'drafts': [{k: d.get(k) for k in ('kind', 'to', 'subject')} for d in drafts[:3]],
+                    **({'draft_note': 'To hear a draft, call read_draft.'} if drafts else {})}
         if name == 'find_todos':
             words = [w for w in re.findall(r'\w+', str(args.get('words') or '').lower()) if len(w) > 1][:6]
             want = str(args.get('state') or '').strip().lower()

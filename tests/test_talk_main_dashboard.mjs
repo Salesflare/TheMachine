@@ -35,7 +35,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/action'){const r=JSON.parse(body);actions.push(r);const a=r.args||{};
   const answer={
    talk_status:()=>({ready:true,limit:600,warn:540}),
-   talk_start:()=>({id:'feedfeedfeedfeed',via:'signin',per_use:false,limit:a.main?1800:600,warn:a.main?1740:540,tools:MAIN_TOOLS,main:!!a.main,instructions:'You are The Machine, going through the to-dos.',voice:'cedar',speed:0.95,turn:{type:'semantic_vad',eagerness:'low'},turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},
+   talk_start:()=>({id:'feedfeedfeedfeed',via:'signin',per_use:false,limit:a.main?1800:600,warn:a.main?1740:540,tools:MAIN_TOOLS,main:!!a.main,instructions:'You are The Machine, going through the to-dos.',voice:'cedar',speed:1.1,turn:{type:'semantic_vad',eagerness:'low'},turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},
     ask_note:'Drafts wait for Approve.',notes:{queued:'Joins.',done:'Done: "{answer}"',stopped:'Stopped.',new:'A new to-do needs the owner: "{title}" (from: {from}). At a natural pause, mention it.',ready:'A to-do that was preparing is ready now: "{title}" (from: {from}).'},ready:true}),
    card_new:()=>{const id=cards.some(c=>c.id===N)?M:N,made={id,title:a.text.split('\n')[0],body:a.text,status:'accepted',origin:'owner',scope:a.scope||'personal',created_at:new Date().toISOString(),event_ids:[9]};cards.push(made);return {id}},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
@@ -100,7 +100,7 @@ try{
   await page.waitForSelector('#side-talk:not([hidden])');await page.waitForTimeout(300);
   await shot('m0-talk-in-the-sidebar');
   await tap('#side-talk');await inView();await live(viewBar);
-  assert.deepEqual(actions.find(a=>a.action==='talk_start').args,{main:true});
+  assert.equal(actions.find(a=>a.action==='talk_start').args.main,true);
   const setup=await page.evaluate(()=>window.__dc.sent[0]);
   assert.deepEqual(setup.session.tools.map(x=>x.name),MAIN_TOOLS.map(x=>x.name));
   assert.deepEqual(setup.session.audio.input.turn_detection,{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true});
@@ -315,7 +315,7 @@ try{
    await page.locator('#side-find').fill('');await page.evaluate(()=>document.activeElement.blur());
    for(const k of ['Control+t','Alt+t'])await page.keyboard.press(k);await page.waitForTimeout(200);assert.equal(starts(),n,'not with Ctrl or Alt held');
    await page.keyboard.press('t');await inView();await live(viewBar);
-   assert.deepEqual(actions.filter(a=>a.action==='talk_start').at(-1).args,{main:true});
+   assert.equal(actions.filter(a=>a.action==='talk_start').at(-1).args.main,true);
    await page.keyboard.press('t');await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));
    await until(()=>ended()===4);}
   await context.close()}

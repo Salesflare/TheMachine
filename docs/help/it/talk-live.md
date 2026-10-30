@@ -11,7 +11,9 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il microfono se il browser lo chiede. Quando la barra dice **Dal vivo**, parla come in una chiamata. The Machine risponde ad alta voce, e puoi parlarle sopra per interromperla.
 
-Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività.
+Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività. Di' "segnala come fatta", "rimandala" o "non serve" e lo fa da sola. Di' "no, non quello" subito dopo per tornare indietro.
+
+Ascolta nelle tue lingue: quella dell’app e quelle indicate dal browser. Un rumore, un colpo di tosse o un suono in un’altra lingua non riceve risposta e resta fuori dalla trascrizione.
 
 La barra ha **Silenzia** e **Fine**. Saluta, o di' che hai finito, e si chiude da sola. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
 
@@ -33,14 +35,17 @@ Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" 
 
 La chat può anche cercare informazioni, come gli orari di un negozio sul web. Nel frattempo mostra **Ci sto lavorando…**, e puoi continuare a parlare. Quando la risposta è pronta, The Machine te la dice, e dove l’ha trovata. Se nel frattempo chiedi altro, aspetta il suo turno.
 
-Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Lotte per email?". Prima legge ad alta voce tutta la bozza: a chi va, l'oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, in qualsiasi lingua, e quella bozza parte.
+Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Lotte per email?". Prima legge ad alta voce tutta la bozza: a chi va, l'oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, come "sì, invia", e quella bozza parte.
 
 - Invia esattamente la bozza che ha letto. Se cambia dopo la domanda, la rilegge e chiede di nuovo. Una domanda senza risposta entro 3 minuti scade.
 - Se la risposta non è un sì chiaro, non parte niente e chiede di nuovo. "No" non invia niente.
-- Un sì invia sempre una sola bozza. Per inviarne diverse, usa la revisione dei follow-up.
-- La chat mostra **Approvato a voce** con **Annulla** per qualche secondo prima dell’invio.
+- Una bozza che hai già visto sullo schermo, o sentito in questa conversazione, non viene riletta: chiede solo, per esempio "La invio a Nick?".
+- Di' "invia entrambe" o "invia tutte quelle pronte" e nomina tutti in una domanda. Un sì le invia tutte.
+- Parla mostra **Annulla** con un conto alla rovescia per qualche secondo prima dell’invio, poi **Inviato**. Toccalo, o di' "annulla" o "aspetta".
 
 Puoi sempre toccare **Approva** invece.
+
+"Fallo" fa partire The Machine sull’attività, come **Fallo**, anche nel browser. "Segnala come fatta" la chiude. Di' "segnala un bug" e invia una segnalazione, come **Segnala un bug** nell’Aiuto, chiedendo prima se può aggiungere altro.
 
 ## Scegli una voce
 

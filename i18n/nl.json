@@ -1519,6 +1519,7 @@
  "It starts once your main model can run: sign in for it or add a key.": "Het start zodra je hoofdmodel kan draaien: log ervoor in of voeg een sleutel toe.",
  "It starts when your mail is in.": "Het start wanneer je mail binnen is.",
  "It syncs again within a minute after.": "Binnen een minuut daarna synct het weer.",
+ "It was already on its way.": "Het was al onderweg.",
  "It was open in the Codex app, so this goes on in a copy of the thread there": "Het stond open in de Codex-app, dus dit gaat verder in een kopie van de thread daar",
  "It will be looked up again soon.": "Het wordt binnenkort opnieuw opgezocht.",
  "It won’t count as yours.": "Het telt niet als van jou.",
@@ -3056,6 +3057,7 @@
  "Sending": "Versturen",
  "Sending approval must come from the owner’s controls": "Goedkeuring om te versturen moet van de knoppen van de eigenaar komen",
  "Sending automatically is off": "Automatisch versturen staat uit",
+ "Sending in {} s": "Wordt verstuurd over {} s",
  "Sending your approved draft…": "Je goedgekeurde concept versturen…",
  "Sending {} of {}…": "{} van {} versturen…",
  "Sending {} votes.": {
