@@ -16998,6 +16998,21 @@ class App(*APP_MIXINS):
             lines.append('Earlier follow-ups said (newest first; say something else):\n' + '\n'.join('- ' + ' '.join(t.split())[:300] for t in earlier))
         return '\n'.join(lines)
 
+    def follow_up_skill_lines(self, suggestion_id, rules='', room=None):
+        """The owner's skills that are on and fit this open follow-up (follow_ups.fitting_skills: by the board's or the
+        project's name, or named in the draft rules shown for it), with their instructions, ranked above the follow-up
+        defaults (follow_ups.skill_note). '' when none fits or it isn't an open follow-up."""
+        with self.store.connect() as db:
+            f = db.execute("SELECT project_id,board_id FROM follow_up_cards WHERE suggestion_id=? AND state='open'", (suggestion_id,)).fetchone()
+            if not f or not db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone():
+                return ''
+            p = db.execute('SELECT name FROM projects WHERE id=?', (f['project_id'],)).fetchone()
+            b = db.execute('SELECT name FROM boards WHERE id=?', (f['board_id'],)).fetchone() if f['board_id'] else None
+            on = [dict(r) for r in db.execute("SELECT name,slug,description,body FROM skills WHERE status='on' ORDER BY name")]
+        fitting = follow_ups.fitting_skills(on, [b['name'] if b else '', p['name'] if p else ''], rules)
+        root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
+        return follow_ups.skill_note([{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in fitting], room)
+
     def follow_up_change_note(self, job):
         """What a rewrite from the follow-up review's Change adds to its turn (follow_ups.change_note), else '': the
         rewrite rules and the skills that are on now, read from the database at the start of the turn, so a skill the
@@ -17302,8 +17317,9 @@ class App(*APP_MIXINS):
                 except Exception as error:  # a draft without the owner's voice beats no preparation
                     LOG.error('style context error=%s',type(error).__name__);style=''
                 known=embeddings.settings(self.config)  # what was learned that this card needs, not all of it
+                rules=self.store.facts_for(job['suggestion_id'],'draft',known)
                 request['message']=preparation_prompt(job,self.store.facts_for(job['suggestion_id'],'fact',known),self.config,'' if style else self.store.draft_edits_text(),
-                                                      self.store.facts_for(job['suggestion_id'],'draft',known),style)
+                                                      rules,style)
                 try:  # how to read the card's own sources (its accounts' notes only)
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
@@ -17326,6 +17342,10 @@ class App(*APP_MIXINS):
                     lines=self.follow_up_lines(job['suggestion_id'])+changing
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('follow-up lines error=%s',type(error).__name__)
+                try:  # a skill of the owner's that fits this follow-up: its instructions, ranked above the follow-up defaults
+                    lines=self.follow_up_skill_lines(job['suggestion_id'],rules,PROMPT_LIMIT-1000-len(request['message']))
+                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                except Exception as error:LOG.error('follow-up skill error=%s',type(error).__name__)
                 if getattr(self, 'fleet', None):
                     try:
                         lines=self.fleet.lines(job['suggestion_id'])
