@@ -13,6 +13,8 @@ Dans le chat d’une tâche, touchez l’onde à côté du micro. Autorisez le m
 
 Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches.
 
+L’écoute se fait dans vos langues : celle de l’app et celles que votre navigateur indique. Un bruit, une toux ou un son dans une autre langue ne reçoit pas de réponse et reste hors de la transcription.
+
 La barre a **Couper le micro** et **Fin**. Dites au revoir, ou que vous avez fini, et elle s’arrête d’elle-même. Une conversation dure jusqu’à 10 minutes. Une minute avant la fin, le minuteur montre le temps restant. Relancez-la pour continuer.
 
 ## Passer en revue toutes vos tâches à voix haute

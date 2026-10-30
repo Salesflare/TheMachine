@@ -13,6 +13,8 @@ Tippe im Chat einer Aufgabe auf die Welle neben dem Mikrofon. Erlaube das Mikrof
 
 Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren Chat. Sie kann auch deine anderen Aufgaben nachschlagen.
 
+Es hört in deinen Sprachen zu: der Sprache der App und denen, die dein Browser nennt. Ein Geräusch, ein Husten oder ein Laut in einer anderen Sprache bekommt keine Antwort und bleibt aus dem Verlauf.
+
 Die Leiste hat **Stummschalten** und **Ende**. Verabschiede dich oder sag, dass du fertig bist, und es endet von selbst. Ein Gespräch dauert bis zu 10 Minuten. Eine Minute vor dem Ende zeigt der Timer, wie viel Zeit übrig ist. Starte es neu, um weiterzumachen.
 
 ## Alle Aufgaben durchsprechen

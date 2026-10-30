@@ -13,6 +13,8 @@ Tik in de chat van een to-do op de golf naast de microfoon. Sta de microfoon toe
 
 Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan ook je andere to-do's opzoeken.
 
+Er wordt geluisterd in jouw talen: die van de app en die je browser opgeeft. Een geluid, een kuch of een klank in een andere taal krijgt geen antwoord en komt niet in het verslag.
+
 De balk heeft **Dempen** en **Einde**. Zeg gedag, of dat je klaar bent, en hij stopt vanzelf. Een gesprek duurt hoogstens 10 minuten. Een minuut voor het einde toont de timer hoeveel tijd er nog is. Start opnieuw om verder te gaan.
 
 ## Al je to-do's doorpraten

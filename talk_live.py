@@ -176,7 +176,8 @@ ASK_NOTE = ('The chat is on it. Say one short line, like "Looking that up", and 
 QUEUED_NOTE = 'The chat is still on the last request; this one joins it. Its answer comes to you as a message.'
 # The chat's answer, pushed into the conversation when its turn ends (the dashboard sends it as a message)
 DONE_NOTE = ('The chat finished what you asked. Its answer: "{answer}" Tell the owner now, in a sentence or two in '
-             'their language, with where it came from if it says. Don’t read out links.')
+             'their language, with where it came from if it says. Don’t read out links. Say it once; if you already told '
+             'them this, don’t repeat it.')
 # A to-do that came in during the main conversation (the dashboard says it at a pause, never while either side talks)
 NEW_NOTE = ('A new to-do needs the owner: "{title}" (from: {from}). At a natural pause, mention it in one short line, like "A new one '
             'just came in from Pieter. Want to hear it?", and only open it if they say so.')
@@ -214,14 +215,47 @@ JUDGE = ('Someone was just asked aloud: "{question}"\n'
          'Does the answer clearly mean yes, send it now? Judge the meaning, in any language. A hesitant, conditional or '
          'partial answer, a question, a change request, or anything unrelated is "unclear". A refusal or "wait" is "no".\n'
          'Reply with only this JSON and nothing else: {{"approve": "yes"}} or {{"approve": "no"}} or {{"approve": "unclear"}}')
-# The voice's playback speed (session.update audio.output.speed, 0.25 to 1.5, 1.0 by default): a touch slower than
-# OpenAI's default, never slow. How it phrases things (pacing, length) is in instructions().
-SPEED = 0.95
+# The voice's playback speed (session.update audio.output.speed, 0.25 to 1.5, 1.0 by default): a little quicker than
+# OpenAI's default, natural and never rushed. How it phrases things (pacing, length) is in instructions().
+SPEED = 1.1
 # When the owner's turn ends (session.update audio.input.turn_detection): OpenAI's semantic VAD judges from the words
 # whether they are done, instead of a fixed silence. "low" eagerness lets them take their time, so a short filler or a
 # pause mid-thought doesn't start a reply. The Gateway's session starts with server_vad; the dashboard sets this.
 TURN = {'type': 'semantic_vad', 'eagerness': 'low', 'create_response': True, 'interrupt_response': True}
+# The microphone's audio is cleaned before turn detection and the model hear it (audio.input.noise_reduction), so a
+# rustle, a cough or a room's hum starts fewer turns. far_field: a phone held in the hand or on the table, or a laptop
+# (near_field is for a headset close to the mouth).
+NOISE = {'type': 'far_field'}
+# What the owner says is written down by this model (audio.input.transcription), in the languages they speak
+# (transcription()) instead of guessing among every language, which turned short sounds into Korean or Thai.
+TRANSCRIBE_MODEL = 'gpt-4o-mini-transcribe'
+# The languages the app speaks, as ISO 639-1 codes (what transcription takes); all of them write in Latin script
+SPOKEN = ('de', 'en', 'es', 'fr', 'it', 'nl', 'pt')
 LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese'}
+
+
+def spoken(*wanted):
+    """The owner's spoken languages, in order and at most three, as ISO 639-1 codes: from the UI language, the voice
+    input language (Settings), the locale and the browser's languages ('nl-BE' -> 'nl'). English when none fits."""
+    out = []
+    for each in wanted:
+        for tag in (each if isinstance(each, (list, tuple)) else [each]):
+            code = str(tag or '').strip().lower()[:2]
+            if code in SPOKEN and code not in out:
+                out.append(code)
+    return out[:3] or ['en']
+
+
+def transcription(languages):
+    """audio.input.transcription for the owner's languages. One language is pinned (`language`, which OpenAI says
+    improves accuracy and latency); with several, pinning one would turn a sentence in another into a wrong
+    transcript, so the prompt names them instead. Either way the model no longer picks among every language."""
+    names = [LANGUAGE_NAMES.get(code) or {'pt': 'Portuguese'}.get(code, code) for code in languages]
+    said = names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' or ' + names[-1]
+    found = {'model': TRANSCRIBE_MODEL, 'prompt': 'One person talking with their assistant in %s.' % said}
+    if len(languages) == 1:
+        found['language'] = languages[0]
+    return found
 
 
 def initialize(db):
@@ -241,7 +275,16 @@ def lines(db, suggestion_id):
     return out
 
 
-def instructions(title, language, now_text):
+def hearing(languages):
+    """What the voice does with what it can't take as the owner talking: in the owner's languages, a noise or another
+    language gets no answer (the dashboard also cancels a reply to a line it drops)."""
+    names = [LANGUAGE_NAMES.get(code) or {'pt': 'Portuguese'}.get(code, code) for code in spoken(languages)]
+    said = names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' or ' + names[-1]
+    return ['- The owner speaks %s. A noise, a breath, a cough, a cut-off word or a few words in another language aren’t '
+            'meant for you: don’t answer them, say nothing and wait.' % said]
+
+
+def instructions(title, language, now_text, languages=None):
     """The voice's instructions, laid out the way OpenAI's Realtime prompting guide suggests (short labeled sections of
     bullets, a Variety rule, pacing in words): how it sounds first, then the rules, which stay word for word."""
     lang = LANGUAGE_NAMES.get(language, 'the owner’s language')
@@ -254,9 +297,12 @@ def instructions(title, language, now_text):
         '- Warm, relaxed and natural, like a capable friend on the phone. Confident, never fawning or formal.',
         '- Talk the way people talk: contractions, plain everyday words, no stock assistant phrases.',
         '- Speak %s unless the owner speaks another language.' % lang,
+        *hearing(languages or [language]),
         '',
         '## Length',
         '- Keep it short and spoken: a sentence or two at a time, then let the owner talk.',
+        '- One reply per turn, said once. Never follow it with a second reply that says the same thing again in other words.',
+        '- No em dashes or en dashes: use a comma or a period, the way people pause when they talk.',
         '- Answer the question first. Leave out what they didn’t ask for.',
         '- When the owner only acknowledges or fills a pause ("okay", "all right", "cool", "mm-hm"), don’t answer with a '
         'sentence. Say one word at most, or nothing, and wait for them.',
@@ -284,6 +330,8 @@ def instructions(title, language, now_text):
         'up (opening hours, an address, anything on the web), call ask_chat with their request. Say one short line, like '
         '"Looking that up", then keep talking about anything else; never poll or say you will check. The chat’s answer '
         'comes to you as a message when it is done: tell the owner then.',
+        '- When the chat’s answer comes, say what is new in it once, in a sentence or two. If you already said it, or it '
+        'says what you just told the owner, don’t say it again.',
         '- ask_chat is only for this to-do. Never hand it a request about something else. For anything new (a reminder, '
         'a new task) call create_todo; for another existing to-do, find it and open it first.',
         '- Creating: when they give something usable as a title, create it right away. Ask one short question at most, '
@@ -298,7 +346,7 @@ def instructions(title, language, now_text):
     ])
 
 
-def main_instructions(language, now_text):
+def main_instructions(language, now_text, languages=None):
     """The main conversation: the same voice and rules, going through the to-dos that need the owner one by one."""
     lang = LANGUAGE_NAMES.get(language, 'the owner’s language')
     return '\n'.join([
@@ -310,9 +358,12 @@ def main_instructions(language, now_text):
         '- Warm, relaxed and natural, like a capable friend on the phone. Confident, never fawning or formal.',
         '- Talk the way people talk: contractions, plain everyday words, no stock assistant phrases.',
         '- Speak %s unless the owner speaks another language.' % lang,
+        *hearing(languages or [language]),
         '',
         '## Length',
         '- Keep it short and spoken: one or two sentences, then let the owner talk.',
+        '- One reply per turn, said once. Never follow it with a second reply that says the same thing again in other words.',
+        '- No em dashes or en dashes: use a comma or a period, the way people pause when they talk.',
         '- Answer the question first. Leave out what they didn’t ask for.',
         '- Don’t list options or what you could do next. Ask one short question at most.',
         '- When the owner only acknowledges or fills a pause ("okay", "all right", "cool", "mm-hm"), don’t answer with a '
@@ -367,6 +418,8 @@ def main_instructions(language, now_text):
         'up (opening hours, an address, anything on the web), call ask_chat with their request. Say one short line, like '
         '"Looking that up", then keep talking about anything else; never poll or say you will check. The chat’s answer '
         'comes to you as a message when it is done: tell the owner then.',
+        '- When the chat’s answer comes, say what is new in it once, in a sentence or two. If you already said it, or it '
+        'says what you just told the owner, don’t say it again.',
         '- ask_chat is only for this to-do. Never hand it a request about something else. For anything new (a reminder, '
         'a new task) call create_todo; for another existing to-do, find it and open it first.',
         '- Creating: when they give something usable as a title, create it right away. Ask one short question at most, '

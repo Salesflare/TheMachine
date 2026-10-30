@@ -506,13 +506,13 @@ let talkLimitToast='';  // the limit's toast is about that session only: cleared
 function talkToastClear(){const t=$('#toast');if(talkLimitToast&&t?.textContent===talkLimitToast)t.classList.remove('show');talkLimitToast=''}
 function talkEnd(){const v=talk;if(!v)return;talk=null;talkToastClear();talkClose(v);document.querySelectorAll('.chat-compose>.talk,.talk-foot>.talk').forEach(x=>x.remove());$('#talk-dock')?.remove();document.body.style.removeProperty('--talk-dock-h');talkSide();talkViewPaint()}
 async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;talkToastClear();micCancel();
- const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],known:new Set(talkNeeds().map(x=>x.id)),prep:new Set()};talkPaint();talkSide();talkViewPaint();
+ const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],pending:new Set(),dropped:new Set(),respFor:{},after:{},known:new Set(talkNeeds().map(x=>x.id)),prep:new Set()};talkPaint();talkSide();talkViewPaint();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
  catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
- try{const r=await micPost('talk_start',main?{main:true}:{suggestion_id:s.id});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
-  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null});talkPaint();
+ try{const r=await micPost('talk_start',{...(main?{main:true}:{suggestion_id:s.id}),languages:[...(navigator.languages||[])].slice(0,8)});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null,noise:r.noise||null,transcription:r.transcription||null});talkPaint();
   if(v.main&&(first||chatOpen()))talkFocus(v,first||chatOpen().id);  // started from a to-do's chat: that one first
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0];v.audio.play?.().catch(()=>{})};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
@@ -524,7 +524,8 @@ async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||
  catch(err){if(err.offline)netSet(true,err.restarting);talkFail(v,err.offline?t('Offline. Start it again when you’re back online.'):err.message||t('Talk live couldn’t start. Try again.'))}}
 // The voice's own setup: this page's instructions and tools (never the Gateway's agent), and what the owner says written down
 function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();talkWake(v);talkMedia(v);
- v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:{model:'gpt-4o-mini-transcribe'},...(v.turn?{turn_detection:v.turn}:{})},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:v.transcription||{model:'gpt-4o-mini-transcribe'},...(v.noise?{noise_reduction:v.noise}:{}),...(v.turn?{turn_detection:v.turn}:{})},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',include:['item.input_audio_transcription.logprobs']}}));  // how sure the transcript is (talkNoise); alone, so a refusal changes nothing else
  v.tick=setInterval(()=>talkTick(v),250);talkPaint()}
 function talkTick(v){if(talk!==v)return;if(!v.main&&chatOpen()?.id!==v.sid){talkEnd();return}
  if(talkDue(v))return;
@@ -652,18 +653,42 @@ function talkNew(v){if(!v.dc||v.state!=='live')return;for(const [s,l] of talkTod
 async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)}catch{return}
  if(e.type==='input_audio_buffer.speech_started')v.speaking=true;
  else if(e.type==='input_audio_buffer.speech_stopped'){v.speaking=false;setTimeout(()=>talkTellNext(v),1200)}
- else if(e.type==='conversation.item.input_audio_transcription.completed')talkLine(v,'user',e.transcript,e.item_id);
- else if(e.type==='response.created')v.responding=true;
+ else if(e.type==='input_audio_buffer.committed'){v.lastItem=e.item_id;if(e.item_id)v.pending.add(e.item_id)}
+ else if(e.type==='conversation.item.input_audio_transcription.completed')talkHeard(v,e);
+ else if(e.type==='conversation.item.input_audio_transcription.failed')talkHeard(v,{item_id:e.item_id,transcript:'',failed:true});
+ else if(e.type==='response.created'){v.responding=true;if(e.response?.id&&v.lastItem)v.respFor[e.response.id]=v.lastItem;v.lastItem=null}
  else if(e.type==='response.output_audio_transcript.done')(v.heard[e.response_id]||=[]).push([e.transcript,e.item_id]);
- else if(e.type==='response.done'){v.responding=false;const id=e.response?.id,said=v.heard[id]||[];delete v.heard[id];
-  if(e.response?.status!=='cancelled')said.forEach(([text,item])=>talkLine(v,'assistant',text,item));talkTellNext(v)}
+ else if(e.type==='response.done'){v.responding=false;const id=e.response?.id,said=v.heard[id]||[],to=v.respFor[id];delete v.heard[id];delete v.respFor[id];
+  if(e.response?.status!=='cancelled'&&!v.dropped.has(to)){const keep=()=>said.forEach(([text,item])=>talkLine(v,'assistant',text,item));
+   if(to&&v.pending.has(to)){(v.after[to]||=[]).push(keep);setTimeout(()=>talkHeard(v,{item_id:to,transcript:null}),4000)}else keep()}  // a reply to words not yet written down waits for them
+  talkTellNext(v)}
  else if(e.type==='output_audio_buffer.started')v.playing=true;
  else if(e.type==='output_audio_buffer.stopped'||e.type==='output_audio_buffer.cleared')v.playing=false;
  else if(e.type==='response.function_call_arguments.done')talkTool(v,e);
  if(v.ending&&e.type==='output_audio_buffer.stopped')v.byeHeard=true;
  talkDue(v,false)}  // every event of the voice's: the goodbye heard, the limit (a waiting note goes on response.done)
+// What the owner said, once written down. A noise, a sound or a few words in a script the owner's languages don't use
+// (gpt-realtime heard "음력?" or "แก" in a rustle) isn't kept, and the voice's reply to it is stopped and dropped too.
+// transcript null: the transcript never came (a reply waiting on it is kept).
+function talkHeard(v,e){const item=e.item_id;if(!v.pending.has(item)&&e.transcript==null)return;v.pending.delete(item);
+ const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt);
+ if(noise){v.dropped.add(item);if(v.dc?.readyState==='open'){
+   if(item)v.dc.send(JSON.stringify({type:'conversation.item.delete',item_id:item}));  // out of what the voice remembers
+   for(const [id,to] of Object.entries(v.respFor))if(to===item&&v.responding){v.dc.send(JSON.stringify({type:'response.cancel',response_id:id}));v.dc.send(JSON.stringify({type:'output_audio_buffer.clear'}))}}}
+ else if(e.transcript)talkLine(v,'user',e.transcript,item);
+ const after=v.after[item]||[];delete v.after[item];if(!noise)after.forEach(f=>f())}
+// Whether a transcript is noise rather than words: nothing but marks, mostly letters of another script than Latin (the
+// app's languages all write in it), the transcription prompt itself, or a short line the model was unsure of (its
+// average logprob, when OpenAI sends them).
+function talkNoise(text,logprobs,prompt){const s=String(text||'').normalize('NFC').trim();
+ const letters=s.match(/\p{L}/gu)||[];if(!letters.length&&!/\p{N}/u.test(s))return true;
+ const latin=letters.filter(c=>/\p{Script=Latin}/u.test(c)).length;if(latin*2<letters.length)return true;
+ const flat=x=>String(x||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();if(prompt&&flat(s)&&flat(prompt).includes(flat(s))&&flat(s).split(' ').length>2)return true;
+ const lp=(Array.isArray(logprobs)?logprobs:[]).map(x=>+x?.logprob).filter(Number.isFinite);
+ return lp.length>0&&s.split(/\s+/).length<=3&&lp.reduce((a,b)=>a+b,0)/lp.length<-1.2}
 // What one side said goes into the chat as an ordinary message (and is kept by the Machine, talk_line)
-function talkLine(v,role,text,item){text=String(text||'').trim();const key=role+':'+(item||text);if(!text||v.said.has(key))return;v.said.add(key);
+function talkLine(v,role,text,item){text=String(text||'').trim();if(role==='assistant')text=text.replace(/\s*\u2014\s*|\s+\u2013\s+/g,', ').replace(/,\s*([.,!?])/g,'$1');  // spoken style: no dashes
+ const key=role+':'+(item||text);if(!text||v.said.has(key))return;v.said.add(key);
  v.posting=Promise.all([v.posting,micPost('talk_line',{id:v.id,role,text}).catch(()=>{})]);  // kept before the Machine judges an answer
  if(v.main){talkLog.push({role,text});talkViewPaint()}
  if(chat&&chatOpen()?.id===v.sid){chat={...chat,items:[...(chat.items||[]),{kind:role==='user'?'you':'reply',text,via:'live',at:Date.now()}]};paintChat();chatToEnd()}}

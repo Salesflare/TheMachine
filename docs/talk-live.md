@@ -36,10 +36,12 @@ action as the agent sees fit. Here the dashboard sets its own tools instead, and
 2. The browser opens the microphone, makes a WebRTC offer with an `oai-events` data channel and posts it as
    `talk_offer`. The service hands it on once, with the secret, and returns OpenAI's answer. The dashboard's CSP keeps
    `connect-src 'self'`; the audio then goes directly between the browser and OpenAI over WebRTC.
-3. On the data channel the dashboard sends `session.update` with the instructions, the tools, input transcription and
-   the voice and speed.
+3. On the data channel the dashboard sends `session.update` with the instructions, the tools, input transcription,
+   noise reduction, the turn detection and the voice and speed; then a second one asking for the transcript's logprobs
+   (`include`), alone, so a refusal leaves the rest in place. See [Hearing the owner](#hearing-the-owner).
 4. What each side says (`conversation.item.input_audio_transcription.completed`, `response.output_audio_transcript.done`)
    is posted as `talk_line` (the voice's lines once their response is done, so an interrupted fragment isn't kept) and kept in `talk_lines`; the to-do's chat shows it after a **Talked live** line.
+   A line of the owner's that is noise (`talkNoise`) isn't posted, and neither is the voice's reply to it.
 5. **End**, leaving the chat, or 10 minutes end it (`talk_end`, `talk.client.close`). The timer warns a minute before.
    **Mute** turns the microphone track off.
 
@@ -96,7 +98,9 @@ conversation that isn't tied to a to-do (`talk_start` with `main: true`, session
 - Talk's view (`#talk-view`, hash `#talk`): Talk opens its own page with one transcript for the whole conversation
   (kept in the page, `talkLog`), a small mark when it moves to another to-do, and a card on top with the to-do it's
   about (**Talking about**, its title, its current draft and **Open the chat**). The card stays in sight while the
-  transcript scrolls. `open_todo` changes the card, never the page, so the owner isn't moved from chat to chat. The
+  transcript scrolls. The draft shows whole, as a block that scrolls inside the card (up to `clamp(9.5em, 36dvh, 26em)`:
+  a normal email reads on a phone with room left for the transcript); a line clamp there laid later lines over earlier
+  ones. `open_todo` changes the card, never the page, so the owner isn't moved from chat to chat. The
   draft in the card, when it shows, is the one `ask_to_send` asks about, as in a chat (`.chat-draft.current`, its
   revision). `ask_chat`
   follows the chat in the background (`talkFollow`, `card_chat`) when it isn't open. After **End** the view keeps the
@@ -177,19 +181,45 @@ ChatGPT-only `gpt-live-1-codex` route, where the Gateway owns the tools), so `ce
 short sample for each, `brand/voices/<voice>.mp3`, recorded once from the Realtime API.
 
 OpenAI recommends `marin` and `cedar` for best quality; `cedar` stays the default. The page sets
-`audio.output.speed` to `talk_live.SPEED` (0.95, a touch under OpenAI's 1.0, never slow) in its `session.update`:
+`audio.output.speed` to `talk_live.SPEED` (1.1, a little quicker than OpenAI's 1.0: 0.95 sounded slow) in its `session.update`:
 `talk.client.create` takes no speed. Speed only changes playback, so how the voice talks is in
 `talk_live.instructions`, laid out as OpenAI's Realtime prompting guide suggests: labeled sections (personality and tone,
 length, pacing, variety, speaking not reading) before the rules, which are unchanged. It talks in short, warm turns with
 contractions, varies its openers, says what a to-do is about instead of reading its title, and never reads out lists or
 links, except a draft it is asked to read in full before a send question. A plain acknowledgment ("okay", "all
-right") gets a word at most, or nothing; before a tool it says one short line at most, once.
+right") gets a word at most, or nothing; before a tool it says one short line at most, once. One reply per turn, said
+once, never a second one restating it; no em or en dashes (the page also turns any into a comma in the transcript);
+when the chat's answer comes (`DONE_NOTE`) it says what is new once and doesn't repeat what it already told the owner.
 
 Turn detection: the Gateway's `talk.client.create` sets `server_vad` (silence only) and takes no other kind, so the page
 sets `audio.input.turn_detection` to `talk_live.TURN` in its `session.update`: `semantic_vad` with `eagerness: low`.
 It judges from the words whether the owner has finished, so a short filler or a pause mid-thought doesn't start a reply.
 OpenAI's [VAD guide](https://developers.openai.com/api/docs/guides/realtime-vad): "low will let the user take their time
 to speak".
+
+## Hearing the owner
+
+With auto-detection, a rustle or a breath was written down as Korean ("음력?"), Thai ("แก") or a made-up word, and the
+voice answered it ("Right."). Now:
+
+- **Their languages.** `talk_start` gets the browser's `navigator.languages`; `talk_live.spoken` takes the UI language,
+  Voice input's language (Settings), the locale's and the browser's, those the app speaks, at most three (English when
+  none fits). `talk_live.transcription` pins `language` when there is one (OpenAI: better accuracy and latency). With
+  several it names them in the `prompt` instead: `language` takes one code, and pinning English turns a Dutch sentence
+  into a wrong transcript. `languages` (a list) exists only on `gpt-transcribe` and `gpt-live-transcribe`, which the
+  Gateway's sessions aren't known to take, and a refused `session.update` would drop the instructions and tools too, so
+  the model stays `gpt-4o-mini-transcribe`. The instructions name the languages and say a noise, a cut-off word or a few
+  words in another language get no answer.
+- **Noise reduction.** `audio.input.noise_reduction` is `talk_live.NOISE`, `far_field` (a phone in the hand or on the
+  table, or a laptop; `near_field` is for a headset). It cleans the audio before turn detection and the model hear it,
+  so fewer noises start a turn. Turn detection stays `semantic_vad` with `eagerness: low` (it has no threshold to raise).
+- **Dropping noise** (`talkNoise`, `talkHeard` in `dashboard/todos-chat.js`). A transcript is noise when it has no
+  letters or digits, when most of its letters aren't Latin script (every app language writes in it), when it is the
+  transcription prompt echoed back, or when it is three words or fewer and its average logprob is under -1.2. A noise
+  line isn't shown or kept, its item is deleted from the conversation (`conversation.item.delete`), and a reply the
+  voice is still giving to it is cancelled (`response.cancel`, `output_audio_buffer.clear`). The page knows which reply
+  answers which words (`input_audio_buffer.committed`, then `response.created`); a reply that ends before its words are
+  written down waits for them (at most 4 s) and is dropped with them.
 
 ## Sending by voice
 
@@ -227,7 +257,11 @@ chat, the tools, owner only, the secret never returned; by voice: a yes after th
 ending itself after a goodbye, the turn detection; a yes without a question, an unclear answer, a no, a changed draft and a question that doesn't name who all send
 nothing; the judge accepts only exact JSON) and `tests/test_talk_live_dashboard.mjs` (a fake
 `getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).
-`tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, Talk's view, listing and opening to-dos (the
+`tests/test_talk_hearing_dashboard.mjs` covers hearing the owner and the card: the session's transcription, noise reduction, turns, speed and
+logprobs; what counts as noise (Korean, Thai, marks only, an unsure made-up word; a Dutch or French sentence and a short yes count); a noise
+line dropped with the voice's reply to it (cancelled, or waiting for its words), a Dutch turn kept; no em dashes in the voice's lines; and a whole
+email draft in the card with no line box overlapping another, at the top and scrolled to its end, tall enough and with room for the transcript
+(390x844 and 1440x900, light and dark). `tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, Talk's view, listing and opening to-dos (the
 card changes, the page doesn't; **Open the chat** and back), a send by voice about the to-do on screen, a new to-do told at a pause, following the owner to
 another to-do, its 30-minute limit (its toast only then), End, **Start again** and `end_talk` (the goodbye kept in the transcript); a person and a meeting looked up
 and shown as cards, `machine_status`, `ask_machine` (its own to-do, its answer back to the voice), the to-do actions and reopening a dismissed one; in the background

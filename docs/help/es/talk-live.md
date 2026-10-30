@@ -13,6 +13,8 @@ En el chat de una tarea, toca la onda junto al micro. Permite el micro si tu nav
 
 Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas.
 
+Escucha en tus idiomas: el de la app y los que indica tu navegador. Un ruido, una tos o un sonido en otro idioma no recibe respuesta y no queda en la transcripción.
+
 La barra tiene **Silenciar** y **Fin**. Despídete, o di que ya terminaste, y termina sola. Una conversación dura hasta 10 minutos. Un minuto antes del final, el temporizador muestra cuánto queda. Vuelve a empezarla para seguir.
 
 ## Repasa todas tus tareas hablando

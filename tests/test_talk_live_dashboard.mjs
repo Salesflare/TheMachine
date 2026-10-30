@@ -25,7 +25,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(demo&&r.action.startsWith('talk_')){res.end(JSON.stringify({ok:true,demo:true}));return}
   const answer={
    talk_status:()=>({ready,limit:600,warn:540}),
-   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',voice:'cedar',speed:0.95,turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},ask_note:'Drafts wait for Approve.',notes:{queued:'Joins the last request.',done:'The chat finished. Its answer: "{answer}" Tell the owner now.',stopped:'The chat stopped.'},ready:true},
+   talk_start:()=>startFails?null:{id:'feedfeedfeedfeed',via:perUse?'key':'signin',per_use:perUse,limit:600,warn:540,tools:TOOLS,instructions:'You are The Machine, talking live.',voice:'cedar',speed:1.1,turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},ask_note:'Drafts wait for Approve.',notes:{queued:'Joins the last request.',done:'The chat finished. Its answer: "{answer}" Tell the owner now.',stopped:'The chat stopped.'},ready:true},
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_line:()=>{lines.push({kind:a.role==='user'?'you':'reply',text:a.text,via:'live',at:Date.now()});return {ok:true}},
    talk_tool:()=>({output:{title:cards[0].title,messages:[{from:'Lotte',text:'When can I pick it up?'}]}}),
@@ -100,14 +100,14 @@ try{
   await page.waitForFunction(()=>document.querySelector('.chat-compose .talk-live strong')?.textContent==='Connecting…');
   await shot('t2-connecting');release();hold=null;
   await page.waitForFunction(()=>document.querySelector('.chat-compose .talk-live strong')?.textContent==='Live');
-  const start=actions.find(a=>a.action==='talk_start');assert.deepEqual(start.args,{suggestion_id:id});
+  const start=actions.find(a=>a.action==='talk_start');assert.equal(start.args.suggestion_id,id);assert.ok(Array.isArray(start.args.languages),'the browser\'s languages go along');
   assert.equal(actions.find(a=>a.action==='talk_offer').args.sdp,'v=0\r\noffer\r\n');
   const setup=await page.evaluate(()=>window.__dc.sent[0]);
   assert.equal(setup.type,'session.update');
   assert.deepEqual(setup.session.tools.map(x=>x.name),['todo_details','find_todos','ask_chat'],'the page sets its own tools');
   assert.equal(setup.session.instructions,'You are The Machine, talking live.');
   assert.ok(setup.session.audio.input.transcription.model,'what the owner says is written down');
-  assert.deepEqual(setup.session.audio.output,{voice:'cedar',speed:0.95},'the owner\'s voice, a touch slower than the default');
+  assert.deepEqual(setup.session.audio.output,{voice:'cedar',speed:1.1},'the owner\'s voice, a little quicker than the default');
   assert.deepEqual(setup.session.audio.input.turn_detection,{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},'a short filler or pause doesn\'t end the owner\'s turn');
   assert.ok(await page.locator(bar+' .talk-cost').isVisible(),'an API key: the cost note shows');
 

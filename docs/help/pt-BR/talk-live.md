@@ -13,6 +13,8 @@ No chat de uma tarefa, toque na onda ao lado do microfone. Permita o microfone s
 
 Ela conhece a tarefa em que você está: as mensagens, o rascunho e o chat dela. Também pode consultar suas outras tarefas.
 
+Ouve nos seus idiomas: o do app e os que o seu navegador indica. Um ruído, uma tosse ou um som em outro idioma não recebe resposta e fica fora da transcrição.
+
 A barra tem **Silenciar** e **Fim**. Diga tchau, ou que já terminou, e ela termina sozinha. Uma conversa dura até 10 minutos. Um minuto antes do fim, o cronômetro mostra quanto falta. Comece de novo para continuar.
 
 ## Repasse todas as suas tarefas falando

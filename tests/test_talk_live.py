@@ -214,8 +214,30 @@ class Tools(unittest.TestCase):
         self.assertIn('Read it in full, word for word', text)   # a draft asked about is still read out whole
         self.assertNotIn('—', text)
 
-    def test_the_voice_plays_a_touch_slower_never_slow(self):
-        self.assertTrue(0.95 <= t.SPEED < 1.0)
+    def test_the_voice_plays_a_little_quicker_never_rushed(self):
+        self.assertTrue(1.05 <= t.SPEED <= 1.15)
+
+    def test_the_instructions_keep_replies_single_and_without_dashes(self):
+        for text in (t.instructions('Reply to Dana', 'en', 'now', ['en', 'nl']), t.main_instructions('en', 'now', ['en', 'nl'])):
+            self.assertIn('One reply per turn, said once', text)
+            self.assertIn('No em dashes or en dashes', text)
+            self.assertIn('If you already said it', text)              # the chat's answer isn't restated
+            self.assertIn('The owner speaks English or Dutch', text)   # noise and other languages get no answer
+            self.assertNotIn('—', text)
+        self.assertIn('don’t repeat it', t.DONE_NOTE)
+
+    def test_the_owner_is_heard_in_their_own_languages(self):
+        self.assertEqual(t.spoken('en', '', 'en-BE', ['en-US', 'nl-BE', 'nl', 'ko']), ['en', 'nl'])
+        self.assertEqual(t.spoken('pt-BR', None, None, []), ['pt'])
+        self.assertEqual(t.spoken(None, '', None, ['ko-KR', 'th']), ['en'])   # nothing the app speaks: English
+        self.assertEqual(len(t.spoken('en', 'nl', 'fr-BE', ['de', 'es'])), 3)
+        one = t.transcription(['nl'])
+        self.assertEqual((one['model'], one['language']), ('gpt-4o-mini-transcribe', 'nl'))   # one language: pinned
+        two = t.transcription(['en', 'nl'])
+        self.assertNotIn('language', two)                     # pinning one would garble a sentence in the other
+        self.assertIn('English or Dutch', two['prompt'])
+        self.assertIn(t.NOISE['type'], ('near_field', 'far_field'))
+        self.assertEqual((t.TURN['type'], t.TURN['eagerness']), ('semantic_vad', 'low'))
 
     def test_the_question_names_who_and_how(self):
         self.assertEqual(t.question({'kind': 'email', 'subject': 'Re: Offsite'}, 'Dana'), 'Send this reply to Dana by email?')
@@ -683,6 +705,14 @@ class Api(unittest.TestCase):
         self.assertEqual(started['speed'], t.SPEED)            # the page sets it in session.update
         self.assertEqual(started['turn'], {'type': 'semantic_vad', 'eagerness': 'low', 'create_response': True, 'interrupt_response': True})
         self.assertNotIn('speed', self.gateway.calls[-1])      # talk.client.create takes no speed
+        self.assertEqual(started['noise'], {'type': 'far_field'})
+        self.assertEqual(started['transcription']['model'], 'gpt-4o-mini-transcribe')
+        self.assertEqual(started['languages'][0], 'en')
+        self.act('talk_end', {'id': started['id']})
+        started = self.act('talk_start', {'suggestion_id': SID, 'languages': ['en-US', 'nl-BE', 7, 'x' * 99]})
+        self.assertEqual(started['languages'], ['en', 'nl'])   # the browser's languages, checked
+        self.assertIn('English or Dutch', started['instructions'])
+        self.assertNotIn('language', started['transcription'])
         self.act('talk_end', {'id': started['id']})
         saved = self.act('voice_prefs', {'talk_voice': 'marin'})
         self.assertEqual(saved['talk_voice'], 'marin')

@@ -1768,7 +1768,7 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 .talk-about-slot{position:sticky;top:var(--talk-top,0px);z-index:4;padding:14px 0 6px;background:var(--bg)}.talk-about-slot:empty{display:none}
 .talk-about{width:var(--chat-col);box-sizing:border-box;margin:0 auto;padding:12px 16px;border:1px solid var(--c-line);border-radius:14px;background:var(--surface)}
 .talk-about-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:var(--chat-meta,.8rem);color:var(--muted)}.talk-about-top a{flex:none;color:var(--c-accent,var(--mint));font-weight:500}
-.talk-about h3{margin:4px 0 0;font-size:1rem;line-height:1.35}.talk-about .chat-draft{margin-top:10px}.talk-about .chat-clamp{max-height:9.5em;overflow:auto}
+.talk-about h3{margin:4px 0 0;font-size:1rem;line-height:1.35}.talk-about .chat-draft{margin-top:10px}.talk-about .chat-clamp{display:block;-webkit-line-clamp:unset;max-height:clamp(9.5em,36dvh,26em);overflow:auto;overscroll-behavior:contain}  /* a whole draft, scrolled as a block: a line clamp here laid its later lines over the earlier ones */
 .talk-view .chat-log{--chat-meta:.75rem;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));flex:1;padding-top:8px;line-height:1.5}
 .talk-mark{align-self:center;margin-top:26px;font-size:var(--chat-meta);color:var(--chat-quiet);text-align:center}
 /* A record the voice opened (open_record): a small card in Talk's transcript, to its own page or the meeting */

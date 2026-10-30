@@ -13,6 +13,8 @@ In a to-do's chat, tap the wave next to the mic. Allow the microphone if your br
 
 It knows the to-do you're in: its messages, its draft and its chat. It can also look up your other to-dos.
 
+It listens in your languages: the app's language and the ones your browser lists. A noise, a cough or a sound in another language gets no answer and stays out of the transcript.
+
 The bar has **Mute** and **End**. Say goodbye, or that you're done, and it ends by itself. A conversation lasts up to 10 minutes. A minute before the end, the timer shows how much is left. Start it again to go on.
 
 ## Talk through all your to-dos

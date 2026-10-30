@@ -20480,18 +20480,23 @@ class App(*APP_MIXINS):
             if not card and not main:
                 raise ValueError('Unknown suggestion')
             with self.store.connect() as db:
-                voice = voice_input.prefs(db)['talk_voice']
+                voice_prefs = voice_input.prefs(db)
+            voice = voice_prefs['talk_voice']
             started = self.talk.start(None if main else sid, env, voice)
             LOG.info('talk live start via=%s main=%s', started.get('via'), main)
             view = self.talk_view()
             now, language = time.strftime('%A %d %B %Y, %H:%M'), locale_prefs.language() or 'en'
+            # What the owner speaks: the UI language, Voice input's language, the locale's and the browser's languages
+            browser = [str(x)[:20] for x in args.get('languages') or [] if isinstance(x, str)][:8] if isinstance(args.get('languages'), list) else []
+            spoken = talk_live.spoken(language, voice_prefs['language'], locale_prefs.view().get('locale'), browser)
             return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'turn': talk_live.TURN, 'per_use': started.get('via') == 'key',
+                    'noise': talk_live.NOISE, 'transcription': talk_live.transcription(spoken), 'languages': spoken,
                     'limit': talk_live.MAIN_LIMIT_SECONDS if main else talk_live.LIMIT_SECONDS,
                     'warn': talk_live.MAIN_WARN_SECONDS if main else talk_live.WARN_SECONDS,
                     'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,
                     'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE,
                               'ready': talk_live.READY_NOTE},
-                    'instructions': talk_live.main_instructions(language, now) if main else talk_live.instructions(card['title'], language, now),
+                    'instructions': talk_live.main_instructions(language, now, spoken) if main else talk_live.instructions(card['title'], language, now, spoken),
                     'main': main, 'ready': view.get('ready')}
         if name == 'talk_focus':
             sid = str(args.get('suggestion_id') or '')

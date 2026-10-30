@@ -13,6 +13,8 @@ Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il m
 
 Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività.
 
+Ascolta nelle tue lingue: quella dell’app e quelle indicate dal browser. Un rumore, un colpo di tosse o un suono in un’altra lingua non riceve risposta e resta fuori dalla trascrizione.
+
 La barra ha **Silenzia** e **Fine**. Saluta, o di' che hai finito, e si chiude da sola. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
 
 ## Ripassa tutte le attività a voce
