@@ -10,6 +10,8 @@ order: 1
 
 A aba **Conexões** agrupa suas fontes em **E-mail e agenda**, **Chat** e **Outras fontes**. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
 
+Abaixo do status, cada fonte diz em uma linha o que traz e, quando pode agir, que só faz isso depois que você toca em **Enviar** ou dá o seu OK.
+
 ## Adicionar uma
 
 Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Depois de conectada, sua Machine reinicia para começar a ler a fonte e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Documentos, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, o Codex, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.

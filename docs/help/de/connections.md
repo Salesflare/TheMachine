@@ -10,6 +10,8 @@ order: 1
 
 Der Tab **Verbindungen** gruppiert deine Quellen in **Mail und Kalender**, **Chat** und **Andere Quellen**. Jede zeigt, wie es ihr geht: Verbunden, Wartet auf die erste Synchronisierung, Verbindet sich automatisch neu oder Braucht deine Hilfe. Öffne **Details** für **Letzte Syncs**, wo ihre Synchronisierung in einfachen Worten steht (etwa „Auf dem neuesten Stand“ oder „Erstes Lesen“), und was zu tun ist.
 
+Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn sie etwas tun kann, dass sie es erst tut, wenn du auf **Senden** drückst oder zustimmst.
+
 ## Eine hinzufügen
 
 Öffne **+ Hinzufügen** und wähle eine Quelle. Sie fragt nach dem, was sie braucht, eine Frage nach der anderen. **Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft. Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Dokumente, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, melde dich an, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular.

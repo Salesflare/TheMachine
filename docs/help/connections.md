@@ -10,6 +10,8 @@ order: 1
 
 The **Connections** tab groups your sources into **Mail and calendar**, **Chat** and **Other sources**. Each one says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. Open **Details** for **Recent syncs**, where its sync is in plain words (like "Caught up" or "First read"), and what to do.
 
+Under its status, each source says in one line what it brings in and, when it can act, that it does so only after you press **Send** or OK it.
+
 ## Add one
 
 Open **+ Add** and pick a source. It shows one short form, like your setup page: what it needs (a key, an address), and **Work** with its company or **Personal**. Press **Connect**. A source that signs in, like LinkedIn or X, opens its sign-in on your Machine and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats a QR code to scan.

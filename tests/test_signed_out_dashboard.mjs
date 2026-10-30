@@ -14,7 +14,7 @@ const linkedin={id:'work-linkedin',service:'linkedin',boundary:'work',display_na
  signed_out:true,sign_in_hint:'the browser it reads with is not signed in to LinkedIn; sign in there, then connect again'};
 const x={id:'work-x',service:'x',boundary:'work',display_name:'Work X',error:'x_browser_busy',retry_at:later,last_success:ok};
 const xli={id:'own-linkedin',service:'linkedin',boundary:'personal',display_name:'Own LinkedIn',error:'linkedin_browser_unreachable',retry_at:later,last_success:ok};
-const gateway={id:'openclaw-gateway',service:'gateway',boundary:'owner:system',display_name:'OpenClaw Gateway',last_success:ok};
+const gateway={id:'openclaw-gateway',service:'gateway',boundary:'owner:system',display_name:'OpenClaw Gateway',what:"Your Machine's own log, so it spots its own trouble.",last_success:ok};
 const crm={id:'crm',service:'salesflare',boundary:'work',display_name:'CRM',error:'salesflare_read_failed',retry_at:later,last_success:ok};
 const stale={id:'brand-x',service:'x',boundary:'work',display_name:'Brand X',poll_seconds:3600,last_success:new Date(Date.now()-10*3600e3).toISOString()};
 let hosted=true;
@@ -44,7 +44,7 @@ try{
  assert.match(await page.locator('#connectors article',{hasText:'Brand X'}).locator('.connection-status').textContent(),/Waiting for a fresh sync/);
  assert.equal((await page.locator('#health-tabs [data-health-pane="other"]').textContent()).replace(/\D/g,''),'1');
  const card=page.locator('#connectors article',{hasText:'Work LinkedIn'});
- assert.match(await page.locator('#connectors article',{hasText:'OpenClaw Gateway'}).textContent(),/notices when it has trouble itself/);
+ assert.match(await page.locator('#connectors article',{hasText:'OpenClaw Gateway'}).textContent(),/Your Machine's own log, so it spots its own trouble\./);
  assert.match(await card.locator('.connection-status').textContent(),/Signed out of LinkedIn/);
  assert.equal(await card.locator('.alert a').getAttribute('href'),'https://app.example.test/open?to=browser&site=linkedin');
  // The alerts are in words (the raw code stays in Details, for whoever debugs).
