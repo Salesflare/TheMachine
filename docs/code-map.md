@@ -33,9 +33,15 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 
 ## Where new code goes
 
-- **A new action** (a dashboard button, a CLI or agent call): its branch in `App.action` in `assistant.py`, with the code
-  it calls in its domain's module when there is one. Add the name to the right `*_ACTIONS` set in `assistant.py`, one
-  name per line, sorted. Those sets are the security boundary and stay together in `assistant.py`.
+- **A new action** (a dashboard button, a CLI or agent call): in a domain that has an App mixin (`<domain>_app.py`,
+  listed in `APP_MIXINS` in `assistant.py`), a line in its `ACTIONS` (`'name': 'method'`) and the method there, called
+  as `method(name, args, owner_dashboard)`; `App.action` looks there first. Otherwise its branch in `App.action`, with
+  the code it calls in its domain's module when there is one. Either way, add the name to the right `*_ACTIONS` set in
+  `assistant.py`, one name per line, sorted. Those sets are the security boundary and stay together in `assistant.py`;
+  a handler still checks `owner_dashboard` itself where its branch did.
+- **App methods of a domain** (workers, reads, what its actions call): in its mixin when it has one. The mixins today:
+  `support_app.py` (`SupportApp`: Help and Report a bug) and `calendar_app.py` (`CalendarApp`: the Calendar's
+  actions). A mixin imports what it needs like any module, never `assistant`, and only `assistant.py` imports it.
 - **A new route:** `Handler.do_GET` or `do_POST` inside `App.serve`. JSON reads go through `App` methods; owner-only and
   CSP headers stay as the neighboring routes have them (`tests/test_owner_boundary.py`).
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in
@@ -57,8 +63,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 
 ## The rules and their checks
 
-Run them with `python3 scripts/test.py test_architecture.py test_message_seal.py test_dashboard_parts.py` (they run in
-CI with every suite).
+Run them with `python3 scripts/test.py test_architecture.py test_message_seal.py test_dashboard_parts.py
+test_app_mixins.py` (they run in CI with every suite).
 
 | rule | check |
 |---|---|
@@ -68,6 +74,7 @@ CI with every suite).
 | Only the owner writes a table. Today's other writers are listed in `OTHER_WRITERS`. That list may only shrink: a new writer fails with the owner's name, and an entry that no longer writes fails until it's removed. | `tests/test_architecture.py` |
 | Only `assistant.py` writes `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
 | Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once and parses on its own; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
+| No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, and every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`. | `tests/test_app_mixins.py` |
 | Every dashboard area in `scripts/i18n_extract.py` resolves. | `tests/test_architecture.py`, `python3 scripts/i18n_extract.py --area <name>` |
 
 The table checks read the SQL in each module's strings. A statement whose table name is computed
@@ -78,3 +85,9 @@ The table checks read the SQL in each module's strings. A statement whose table 
 - Move code as is, one domain per pull request, with no other change in it.
 - Keep names that other code or tests use from `assistant` available there until those callers move.
 - When the move takes a table's writes along, update `OTHER_WRITERS` in the same pull request.
+- App methods go to their domain's mixin with `scripts/move_app_methods.py <domain>_app.py <Class> <member> ...`. It
+  cuts each member (with the comment lines above it) from `App` and adds it, text unchanged, to the end of the mixin's
+  class, and checks that. Then add the imports `tests/test_architecture.py` says the moved code lacks. A method that
+  uses a helper defined in `assistant.py` (`now`, `local_tz`, `has_model`, `gog_read`, ...) stays until that helper
+  has a module of its own: tests patch those helpers on `assistant` (`patch.object(assistant, 'now', ...)`), and a
+  moved method would no longer see the patch.
