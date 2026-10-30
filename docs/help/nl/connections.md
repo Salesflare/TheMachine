@@ -10,6 +10,8 @@ order: 1
 
 Het tabblad **Koppelingen** groepeert je bronnen in **Mail en agenda**, **Chat** en **Andere bronnen**. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
 
+Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iets kan doen, dat ze dat pas doet nadat je op **Versturen** drukt of het goedkeurt.
+
 ## Een bron toevoegen
 
 Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Zodra hij gekoppeld is, herstart je Machine om hem te gaan lezen, en opent dan de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Documenten, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub, WhatsApp, Codex, Telegram-chats en je Android-telefoon tonen hun code meteen in dit formulier.

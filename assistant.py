@@ -9487,6 +9487,29 @@ def docs_health(config, account, state):
     return {'docs_provider': kind, 'docs_replies': bool(state.get('replies')) and kind == 'google', 'docs_writes': writes}
 
 
+# A connection's card, under Connected: what it brings in (the line + Add shows for it: onboarding.WHAT, a connector's
+# SETUP['what']) and what it can do, each only after the owner's OK: 'send' (email), 'reply' (a chat, LinkedIn, X or
+# Intercom message), 'calendar' (add or change an event). A connection a Fleet shares only reads. Docs says its own.
+REPLY_SERVICES = ('slack', 'whatsapp', 'telegram', 'linkedin', 'x')
+
+
+def connector_says(account, service):
+    import onboarding
+    try:
+        what = onboarding.setup_of(service).get('what')
+    except Exception:  # noqa: BLE001 - a card without its line, never a status without cards
+        what = None
+    acts = ''
+    if account and not account.get('shared'):
+        if next_actions.mail_account(account):
+            acts = 'send'
+        elif calendar_writes.writable(account):
+            acts = 'calendar'
+        elif service in REPLY_SERVICES or service == 'intercom' and next_actions.intercom_replies_on(account):
+            acts = 'reply'
+    return {**({'what': what} if isinstance(what, str) and what else {}), **({'acts': acts} if acts else {})}
+
+
 def docs_write_offered(config, kind):
     """Where Allow edits signs in: Microsoft's Files.ReadWrite.All through the control plane (microsoft_docs_write), on a
     hosted Machine once its account page offers it (`docs_write_consent`, like docs_consent), on a self-hosted one through
@@ -14494,6 +14517,7 @@ class App(*APP_MIXINS):
             for connector in result['connectors']:
                 connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))
                 account = by_id.get(connector['id'])
+                connector.update(connector_says(account, connector.get('service', 'gmail')))
                 kind = docs_provider(self.config, account)
                 connector.update(reconnect_help(account, result['manage_url'], docs_offered(self.config, kind)))
                 if kind == 'microsoft' and not result['manage_url'] and 'connect_name' in connector:

@@ -10,6 +10,8 @@ order: 1
 
 La pestaña **Conexiones** agrupa tus fuentes en **Correo y calendario**, **Chat** y **Otras fuentes**. Cada una indica cómo va: Conectada, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda. Abre **Detalles** para ver **Sincronizaciones recientes**, donde su sincronización se explica con palabras sencillas (como "Al día" o "Primera lectura"), y qué hacer.
 
+Debajo de su estado, cada fuente dice en una línea lo que trae y, cuando puede actuar, que solo lo hace después de que pulses **Enviar** o des el visto bueno.
+
 ## Añade una
 
 Abre **+ Añadir** y elige una fuente. Te pregunta lo que necesita, una pregunta cada vez. **Cancelar** deja de añadirla. Cuando ya está conectada, tu Machine se reinicia para empezar a leerla y luego abre la tarjeta nueva, que muestra cómo va su primera sincronización. En una Machine alojada, Google, Microsoft, Documentos, Zoom, Stripe e Intercom inician sesión aquí: elige **Trabajo** o **Personal**, inicia sesión y vuelves a este formulario, que muestra cómo va la conexión. GitHub, WhatsApp, Codex, Chats de Telegram y tu teléfono Android muestran su código en este mismo formulario.

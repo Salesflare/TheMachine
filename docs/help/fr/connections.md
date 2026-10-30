@@ -10,6 +10,8 @@ order: 1
 
 L’onglet **Connexions** regroupe vos sources en **Mail et agenda**, **Chat** et **Autres sources**. Chacune indique son état : Connectée, En attente de la première synchro, Reconnexion automatique ou Besoin de votre aide. Ouvrez **Détails** pour voir les **Synchros récentes**, où sa synchro est décrite en mots simples (comme « À jour » ou « Première lecture »), et quoi faire.
 
+Sous son état, chaque source dit en une ligne ce qu’elle apporte et, quand elle peut agir, qu’elle ne le fait qu’après que vous avez appuyé sur **Envoyer** ou donné votre accord.
+
 ## En ajouter une
 
 Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Une fois la source connectée, votre Machine redémarre pour commencer à la lire, puis ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google, Microsoft, Documents, Zoom, Stripe et Intercom se connectent ici : choisissez **Travail** ou **Perso**, connectez-vous et vous revenez à ce formulaire, qui montre où en est la connexion. GitHub, WhatsApp, Codex, Discussions Telegram et votre téléphone Android affichent leur code directement dans ce formulaire.
