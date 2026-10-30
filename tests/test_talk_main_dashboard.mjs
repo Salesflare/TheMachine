@@ -305,7 +305,7 @@ try{
   assert.match(await page.locator('#talk-view .talk-log').textContent(),/Talk ended\./);
   assert.equal(await limitToast(),false,'End is not the limit');
 
-  // T, like C for New to-do: shown on the row on a computer (not in the phone drawer), starts Talk, and ends it while live
+  // T, like N for New to-do: shown on the row on a computer (not in the phone drawer), starts Talk, and ends it while live
   if(phone){await page.evaluate(()=>drawerOpen());assert.equal(await page.locator('#side-talk kbd').isVisible(),false,'no key hint on a phone');await page.evaluate(()=>drawerClose())}
   else{assert.equal(await page.locator('#side-talk kbd').textContent(),'T');assert.equal(await page.locator('#side-talk kbd').isVisible(),true)
    await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());
@@ -314,6 +314,10 @@ try{
    assert.equal(starts(),n,'T while typing types a t');assert.equal(await page.locator('#side-find').inputValue(),'t');
    await page.locator('#side-find').fill('');await page.evaluate(()=>document.activeElement.blur());
    for(const k of ['Control+t','Alt+t'])await page.keyboard.press(k);await page.waitForTimeout(200);assert.equal(starts(),n,'not with Ctrl or Alt held');
+   // On the Calendar, T is Today there (the Calendar's own key comes first), not Talk; the ? sheet says so
+   await page.evaluate(()=>document.querySelector('nav [data-tab="calendar"]').click());await page.locator('#calendar').waitFor();
+   await page.keyboard.press('t');await page.waitForTimeout(300);assert.equal(starts(),n,'T on the Calendar is Today, not Talk');
+   await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());await page.locator('#inbox').waitFor();await page.evaluate(()=>document.activeElement.blur());
    await page.keyboard.press('t');await inView();await live(viewBar);
    assert.equal(actions.filter(a=>a.action==='talk_start').at(-1).args.main,true);
    await page.keyboard.press('t');await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));

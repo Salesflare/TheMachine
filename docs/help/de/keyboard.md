@@ -17,7 +17,7 @@ Auf dem Handy tippst du auf das Suchsymbol in der oberen Leiste.
 Drück `?` für **Tastenkürzel**, die vollständige Liste für deinen Computer.
 
 - Zu einer Seite springen: `G`, dann `S` Vorschläge, `C` Kalender, `E` Termine, `P` Personen, `O` Organisationen, `J` Projekte, `F` Fleet, `B` Feedback, `N` Verbindungen, `,` Einstellungen.
-- `C` legt eine neue Aufgabe an. `T` startet Sprechen oder beendet es, während es läuft. Im Kalender springt `T` zu heute. `J` und `K` (oder `↓` und `↑`) bewegen sich durch eine Liste, Enter öffnet.
+- `N` legt eine neue Aufgabe an. `T` startet Sprechen oder beendet es, während es läuft. Im Kalender springt `T` zu heute. `J` und `K` (oder `↓` und `↑`) bewegen sich durch eine Liste, Enter öffnet.
 - Bei einer Aufgabe: `E` benennt sie um, `S` stellt sie zurück, `D` markiert sie als erledigt, `R` schreibt in ihren Chat.
 
 Tasten funktionieren nicht, während du in ein Feld tippst.
