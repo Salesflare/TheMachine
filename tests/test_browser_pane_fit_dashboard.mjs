@@ -74,8 +74,13 @@ const viewer=async p=>p.frames().find(isViewer)||await p.waitForEvent('framenavi
 // The window fits the pane (its whole width or height), shows whole, sits in the middle across, and the cover leaves
 // exactly the window open
 async function fits(p,why){
- const f=await viewer(p);await f.waitForFunction(()=>window.look&&document.querySelector('.machine-view-mask:not([hidden])'));
- await p.waitForTimeout(250);const l=await f.evaluate(()=>window.look());const [x,y,w,h]=l.box,say=why+' '+JSON.stringify(l);
+ // The viewer refits a moment after the pane changes size (a short debounce, then the picture and the cover), later on
+ // a busy machine: wait until it is framed for the pane's current size, then check everything (a timeout fails below).
+ const f=await viewer(p);
+ await f.waitForFunction(([rw,rh])=>{if(!window.look||!document.querySelector('.machine-view-mask:not([hidden])'))return false;
+  const l=window.look(),want=l.h>l.w?l.w/rw:Math.min(l.w/rw,l.h/rh);
+  const [x,,w]=l.box;return Math.abs(l.scale-want)<1e-3&&Math.abs(x-(l.w-x-w))<=2&&l.hole?.every((v,i)=>Math.abs(v-l.box[i])<=2)},[region.w*3840,region.h*2160],{timeout:10000}).catch(()=>{});
+ const l=await f.evaluate(()=>window.look());const [x,y,w,h]=l.box,say=why+' '+JSON.stringify(l);
  const want=l.h>l.w?l.w/(region.w*3840):Math.min(l.w/(region.w*3840),l.h/(region.h*2160));
  assert.ok(Math.abs(l.scale-want)<1e-3,'framed for the pane: '+say);
  assert.ok(x>=-2&&y>=-2&&x+w<=l.w+2&&y+h<=l.h+2,'the whole window shows: '+say);
