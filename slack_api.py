@@ -19,6 +19,7 @@ transport use, nothing more: read the conversations the owner is in, the people 
 the owner approved."""
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import threading
@@ -96,7 +97,7 @@ def broker_token(config, account, fresh=False):
                         continue  # another process (a check while connecting) rolled it just now: the newer one
                     raise TokenError('slack_signin_expired', error.code) from None
                 raise TokenError('slack_broker', error.code, int(retry) if retry.isdigit() else None) from None
-            except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
                 raise TokenError('slack_broker_unreachable') from None
         access = answer.get('access_token') if isinstance(answer, dict) else None
         if not isinstance(access, str) or not access:

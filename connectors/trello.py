@@ -11,6 +11,7 @@ The initial import is bounded by bootstrap_days (default seven).
 import copy
 import datetime as dt
 import html
+import http.client
 import json
 import re
 import urllib.error
@@ -89,7 +90,7 @@ class Source:
             retry = error.headers.get('Retry-After', '') if error.headers else ''
             delay = min(3600, max(1, int(retry))) if retry.isdigit() else (60 if error.code == 429 else None)
             raise self.helpers.SourceError('trello_http', error.code, retry_after=delay) from None
-        except (urllib.error.URLError, TimeoutError, OSError):
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
             raise self.helpers.SourceError('trello_network') from None
         except (ValueError, UnicodeError):
             raise self.helpers.SourceError('trello_invalid_json') from None

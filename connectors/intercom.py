@@ -27,6 +27,7 @@ flagged. Attachments aren't collected.
 """
 import datetime as dt
 import html.parser
+import http.client
 import json
 import re
 import time
@@ -141,7 +142,7 @@ class Source:
             retry = error.headers.get('Retry-After', '') if error.headers else ''
             delay = min(max(int(retry), 1), 86400) if retry.isdigit() else (60 if error.code == 429 else None)
             raise SourceError('intercom', error.code, delay) from None
-        except (urllib.error.URLError, TimeoutError, OSError) as error:
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
             raise SourceError('network:' + type(error).__name__ + ':intercom_read') from None
         except (ValueError, UnicodeError):
             raise SourceError('intercom_invalid_json') from None

@@ -18,6 +18,7 @@ without one, as before."""
 from __future__ import annotations
 
 import base64
+import http.client
 import json
 import os
 import urllib.error
@@ -192,7 +193,7 @@ def _revoke_google(token, timeout=20):
     except urllib.error.HTTPError as error:
         error.close()
         return error.code == 400  # already revoked or expired: nothing left to revoke
-    except (urllib.error.URLError, TimeoutError, OSError):
+    except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
         return False
 
 

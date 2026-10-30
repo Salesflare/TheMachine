@@ -15,6 +15,7 @@ the server still refuses is set aside per event version (`event_vector_skips`, w
 so it never blocks the others."""
 from __future__ import annotations
 
+import http.client
 import json
 import math
 import re
@@ -127,7 +128,7 @@ def request(settings, texts, timeout=120):
     the configured model in /v1/models (llama-server echoes any requested name), so a swap never
     mixes vectors."""
     body = json.dumps({'model': settings.get('model', ''), 'input': texts}).encode()
-    http = urllib.request.Request(endpoint(settings), body, {'Content-Type': 'application/json'})
+    request = urllib.request.Request(endpoint(settings), body, {'Content-Type': 'application/json'})
     try:
         checked, served = SERVED.get(settings['url'], (-1e9, ()))
         if time.monotonic() - checked > 600:
@@ -136,11 +137,11 @@ def request(settings, texts, timeout=120):
             SERVED[settings['url']] = (time.monotonic(), served)
         if settings.get('model') not in served:
             raise EmbeddingError('model_mismatch')
-        with urllib.request.urlopen(http, timeout=timeout) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             data = json.load(response)['data']
     except urllib.error.HTTPError as error:
         raise EmbeddingError(f'http_{error.code}') from None
-    except (urllib.error.URLError, OSError) as error:
+    except (urllib.error.URLError, OSError, http.client.HTTPException) as error:
         raise EmbeddingError('timeout' if 'timed out' in str(error) else 'unreachable') from None
     except (ValueError, KeyError, TypeError):
         raise EmbeddingError('bad_response') from None

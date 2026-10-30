@@ -6,6 +6,7 @@ data. Only the typed text goes out, from this server (never the browser), at mos
 an honest User-Agent. Set "place_search": false in the config to keep every search local."""
 from __future__ import annotations
 
+import http.client
 import json
 import threading
 import time
@@ -137,6 +138,6 @@ def suggest(db, config, query, fetch=None):
         try:
             seen = {f['value'].casefold() for f in found}
             found += [p for p in photon(query, fetch) if p['value'].casefold() not in seen and not any(same(p, f) for f in found)]
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
             pass
     return found[:LIMIT + 2]

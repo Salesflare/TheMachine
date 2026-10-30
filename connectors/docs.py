@@ -22,6 +22,7 @@ Microsoft's Files.ReadWrite.All, which the owner grants with Allow edits on the 
 """
 import datetime as dt
 import hashlib
+import http.client
 import io
 import json
 import re
@@ -250,7 +251,7 @@ class Microsoft:
         except urllib.error.HTTPError as error:
             error.close()
             raise self.helpers.SourceError('docs_download', error.code) from None
-        except (urllib.error.URLError, TimeoutError, OSError):
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
             raise self.helpers.SourceError('docs_network') from None
         if len(data) > MAX_DOWNLOAD:
             raise self.helpers.SourceError('docs_file_too_large')

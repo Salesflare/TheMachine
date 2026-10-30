@@ -24,6 +24,7 @@ Optional: "large_subscription_monthly" (default 500, in the price currency): new
 at or above this monthly value become events; smaller ones are routine.
 """
 import datetime as dt
+import http.client
 import json
 import re
 import threading
@@ -101,7 +102,7 @@ def broker_token(config, account, helpers, fresh=False, min_left=0):
                         continue  # another process (a check while connecting) rolled it just now: the newer one
                     raise helpers.SourceError('stripe_signin_expired', error.code) from None
                 raise helpers.SourceError('stripe_broker', error.code, retry_after=int(retry) if retry.isdigit() else None) from None
-            except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
                 raise helpers.SourceError('stripe_broker_unreachable') from None
         access = answer.get('access_token') if isinstance(answer, dict) else None
         if not isinstance(access, str) or not access:
@@ -166,7 +167,7 @@ class Source:
                 if broker and error.code == 401 and not attempt:
                     continue  # the access token ran out early: one fresh one
                 raise SourceError('stripe', error.code, min(3600, max(60, int(retry))) if retry and retry.isdigit() else None) from None
-            except (urllib.error.URLError, TimeoutError, OSError) as error:
+            except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
                 raise SourceError('network:' + type(error).__name__ + ':stripe_read') from None
             except ValueError:
                 raise SourceError('stripe_invalid_json') from None
