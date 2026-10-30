@@ -685,12 +685,76 @@ class Replier(Google):
                          scope=REPLY_SCOPE, body={'content': body}, write=True)
 
 
+def gog_google(account):
+    """The owner's own Google sign-in through gog (a Gmail account, not one a Fleet shares): a place for a new Google Doc
+    with the scopes that sign-in already has (drive or drive.file). Nothing asks gog for more."""
+    return (account.get('service', 'gmail') == 'gmail' and account.get('transport') == 'gog' and bool(account.get('email'))
+            and not account.get('shared'))
+
+
+class GogGoogle:
+    """Google Docs and Drive calls with the owner's gog sign-in (`gog api call`), like the calendar and Gmail writes:
+    reads with --readonly, a write only with --allow-write, and only the scope it is given."""
+    VERSIONS = {'drive': 'v3', 'docs': 'v1'}
+
+    def __init__(self, config, account, helpers):
+        self.config, self.account, self.helpers = config, account, helpers
+        self.signin = account
+
+    def drive_scope(self):
+        """The Drive scope this sign-in already has for docs: drive, else drive.file. Every call uses it (gog's sign-in
+        may not hold drive.readonly), never a scope it doesn't have."""
+        if not hasattr(self, '_scope'):
+            import next_actions  # noqa: PLC0415
+            try:
+                granted = next_actions.granted_scopes(self.config, self.helpers.credential, self.account)
+            except Exception:  # noqa: BLE001
+                granted = set()
+            self._scope = REPLY_SCOPE if REPLY_SCOPE in granted else FILE_SCOPE
+        return self._scope
+
+    def call(self, method, params, scope=READ_SCOPE, body=None, write=False, **_):
+        scope = self.drive_scope() if scope in (READ_SCOPE, REPLY_SCOPE, FILE_SCOPE) else scope
+        import os  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
+        import tempfile  # noqa: PLC0415
+        api = method.split('.', 1)[0]
+        env = {**os.environ, 'GOG_KEYRING_BACKEND': 'file', 'GOG_KEYRING_PASSWORD': self.helpers.credential(self.config, 'gog-password')}
+        env.pop('DBUS_SESSION_BUS_ADDRESS', None)
+        with tempfile.NamedTemporaryFile('w', suffix='.json') as file:
+            file.write(json.dumps(body if body is not None else {}, ensure_ascii=False))
+            file.flush()
+            command = [self.config.get('gog') or 'gog', 'api', 'call', api, self.VERSIONS[api], method, '--params', json.dumps(params),
+                       *(['--body', '@' + file.name] if body is not None else []), '--scope', scope, '--account', self.account['email'],
+                       *(['--client', self.account['client']] if self.account.get('client') else []),
+                       *(['--allow-write', '--force'] if write else ['--readonly']), '--no-input', '--json']
+            try:
+                result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=60)
+            except subprocess.TimeoutExpired:
+                raise self.helpers.SourceError('docs_timeout') from None
+        if result.returncode:
+            found = re.search(r'"code":\s*(\d{3})', result.stdout or '') or re.search(r'\b(4\d\d|5\d\d)\b', result.stderr or '')
+            raise self.helpers.SourceError('docs_google', int(found[1]) if found else None)
+        try:
+            return json.loads(result.stdout or '{}')
+        except ValueError:
+            raise self.helpers.SourceError('docs_google') from None
+
+
 def writes_on(config, account, helpers):
     """What this Docs connection may write after the owner's OK: {'create', 'edit'}, a part, or nothing. Google: the
     drive scope (the same consent as posting replies) for both, drive.file for a new doc only. Microsoft:
-    Files.ReadWrite.All, from Allow edits. A Fleet-shared connection only reads; unknown means nothing."""
+    Files.ReadWrite.All, from Allow edits. A gog Google sign-in: a new doc only, when it has drive or drive.file
+    already. A Fleet-shared connection only reads; unknown means nothing."""
     if account.get('shared'):
         return set()
+    if gog_google(account):
+        try:
+            import next_actions  # noqa: PLC0415
+            granted = next_actions.granted_scopes(config, helpers.credential, account)
+        except Exception:  # noqa: BLE001 - unknown means off
+            return set()
+        return {'create'} if granted & {REPLY_SCOPE, FILE_SCOPE} else set()
     try:
         sign = signin(config, account, helpers)
         if provider(config, account) == 'microsoft':
@@ -711,16 +775,38 @@ class Writer:
         if account.get('shared'):
             raise helpers.SourceError('docs_writes_unsupported')
         self.provider, self.helpers, self.config, self.account = provider(config, account), helpers, config, account
-        self.source = (Microsoft if self.provider == 'microsoft' else Google)(config, account, helpers)
+        self.gog = gog_google(account)
+        self.source = (GogGoogle if self.gog else Microsoft if self.provider == 'microsoft' else Google)(config, account, helpers)
 
     def scope(self):
         """Google: drive when granted (any doc), else drive.file (only docs this app created)."""
+        if self.gog:
+            return self.source.drive_scope()
         import google_api
         try:
             granted = google_api.scopes(self.config, self.helpers.credential, self.source.signin)
         except google_api.BrokerError:
             granted = set()
         return REPLY_SCOPE if REPLY_SCOPE in granted or FILE_SCOPE not in granted else FILE_SCOPE
+
+    def make(self, file_id, title, body, upload, fill):
+        """A new Google Doc under the id generated before the write. Through the broker one upload of its HTML; with gog
+        (JSON bodies only) an empty doc under that id, then its text in one batchUpdate pinned to that empty doc."""
+        if not self.gog:
+            return self.upload(*upload)
+        made = self.source.call('drive.files.create', {'fields': 'id,name,webViewLink'}, scope=self.scope(), write=True,
+                                body={'id': file_id, 'name': title, 'mimeType': DOC_MIME})
+        self.fill(file_id, fill)
+        return made
+
+    def fill(self, file_id, fill):
+        """Writes the new doc's text into it while it is still empty (never twice: a doc with text is left as it is)."""
+        doc = self.document(file_id)
+        if ''.join(str((e.get('textRun') or {}).get('content') or '') for b in ((doc.get('body') or {}).get('content') or [])
+                   for e in ((b.get('paragraph') or {}).get('elements') or [])).strip():
+            return False
+        self.update(file_id, fill, str(doc.get('revisionId') or ''))
+        return True
 
     # Google Docs
     def document(self, file_id):

@@ -35,6 +35,10 @@ Your Machine can write a new Word doc, or change a doc one of your to-dos is abo
 
 It replaces text, adds text and adds paragraphs and headings. It leaves tables, images, tracked changes and fields alone. A new doc lands in your OneDrive and stays private until you share it.
 
+A new doc goes to an account in the to-do's own area: a Work to-do's doc to that company's account, the one the conversation is in when it can, never to a personal one. On your own computer, a Google account signed in for Gmail that already has Drive access can take a new Google Doc too. If no account fits, the to-do says **Connect Google Docs or Microsoft Word for Work**.
+
+When the doc isn't the end of the to-do, like a reply with its link, the to-do stays open and drafts that next step for your OK.
+
 Connecting Microsoft Word already allows this: there is no separate step. A Microsoft Word connection from before that only reads shows **Allow edits** on its card in **Connections**. Press it once and accept.
 
 ## What it asks for

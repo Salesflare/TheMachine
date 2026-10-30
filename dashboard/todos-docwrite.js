@@ -16,9 +16,13 @@ const docChange=(c,n,total)=>{const head=total>1?`<div class="dw-n">${esc(t('Cha
  if('find' in c)return head+`<div class="dw-k">${esc(t('Before'))}</div><p class="dw-p">${docMark(c.before,c.find,'del')}</p><div class="dw-k">${esc(t('After'))}</div><p class="dw-p">${docMark(c.after,c.replace,'ins')}</p>`;
  if('after' in c)return head+`<div class="dw-k">${esc(t('Add after “{}”',c.before.length>80?c.before.slice(0,79)+'…':c.before))}</div>${docLines(c.insert,'ins')}`;
  return head+`<div class="dw-k">${esc(t('Add at the end'))}</div>${docLines(c.append,'ins')}`};
-const docWriteHtml=a=>a.op==='create'?`<p class="dw-p dw-h1">${esc(a.title)}</p>${docLines(a.body)}`:(a.changes||[]).map((c,i,all)=>`<div class="dw-ch">${docChange(c,i+1,all.length)}</div>`).join('');
+// A new doc's text under its title: a first heading that only repeats the title shows once (doc_writes.untitled).
+const docSame=x=>String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
+const docBody=a=>{const ls=String(a.body||'').split('\n').filter(l=>l.trim()),m=ls.length?/^#{1,3} +(.*)$/.exec(ls[0].trim()):null;
+ return m&&docSame(m[1])===docSame(a.title)?ls.slice(1).join('\n'):String(a.body||'')};
+const docWriteHtml=a=>a.op==='create'?`<p class="dw-p dw-h1">${esc(a.title)}</p>${docLines(docBody(a))}`:(a.changes||[]).map((c,i,all)=>`<div class="dw-ch">${docChange(c,i+1,all.length)}</div>`).join('');
 // Plain text of the same, for chat and copy (doc_writes.preview).
-const docWriteText=a=>a.op==='create'?a.title+'\n\n'+(a.body||''):(a.changes||[]).map(c=>'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
+const docWriteText=a=>a.op==='create'?a.title+'\n\n'+docBody(a):(a.changes||[]).map(c=>'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
 function docWriteBox(s,a){const done=(a.state||s.action_status)?.status==='sent',key='draft-'+s.id+'-'+a.revision,open=expandedBodies.has(key);
  const size=a.op==='create'?String(a.body||'').split('\n').length:(a.changes||[]).length*4,fold=size>16;
  return `<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${esc(a.op==='create'?t('New doc'):t('Doc changes'))}"><div class="dm">${esc(docHead(a,done))}${safeURL(a.url)?` · <a href="${esc(safeURL(a.url))}" target="_blank" rel="noreferrer">${esc(t('Open the doc'))}</a>`:''}</div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?`<button type="button" class="more" data-more="${esc(key)}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}

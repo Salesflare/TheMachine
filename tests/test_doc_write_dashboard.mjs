@@ -18,13 +18,14 @@ const edit={kind:'doc_write',op:'edit',label:'Save changes',revision:'1234567890
 const create={kind:'doc_write',op:'create',label:'Create doc',revision:'abcdefabcdef',account_id:'docs',provider:'google',account_name:'owner@example.com',
   title:'Launch notes',url:'javascript:alert(1)',body:'# Launch notes\nThe launch moves to week 3.\n## Next steps\nTell the partners on Friday.'};
 const saved={...edit,revision:'555555555555',state:{status:'sent',message_id:'docwrite:d1!i1',sent_at:new Date().toISOString()}};
+const made={...create,revision:'666666666666',provider:'microsoft',state:{status:'sent',message_id:'docwrite:d1!n1',sent_at:new Date().toISOString()}},madeId='7766554433221100';
 const docs=(extra)=>({id:'docs',display_name:'Work docs',email:'owner@example.com',service:'docs',transport:'broker',boundary:'work',events:3,recent_events:3,
   last_success:new Date().toISOString(),docs_provider:'microsoft',docs_replies:false,docs_writes:[],...extra});
 let connectors=[docs({docs_write_signin:'microsoft_docs_write',connect_name:'docs'})];
 const card=(id,title,a,extra={})=>({id,title,body:'Drafted the change.',status:'prepared',event_ids:[1],next_action:a,next_actions:[a],
   outcome:JSON.stringify({state:'needs_you',needs:'Check the change and save it'}),scope:'work',created_at:new Date().toISOString(),...extra});
 const state=()=>({suggestions:[card(editId,'Move the launch in Q4 pricing',edit),card(newId,'Write up the launch notes',create),
-  card(doneId,'Fix the owner line',saved,{status:'completed',outcome:null})],
+  card(doneId,'Fix the owner line',saved,{status:'completed',outcome:null}),card(madeId,'Partner copy',made)],
   connectors,suggestion_counts:{prepared:2},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]});
 const calls=[],errors=[];
 const server=createServer(async(req,res)=>{
@@ -81,6 +82,7 @@ try{
   const fresh=page.locator(`#task-${newId}`);
   assert.match(await fresh.locator('.draft.doc-write .dm').textContent(),/^New doc in Google Docs/);
   assert.equal(await fresh.locator('.dw-h1').first().textContent(),'Launch notes');
+  assert.equal(await fresh.locator('.dw-h1').count(),1,'the title once, though the body starts with it too');
   assert.ok((await fresh.locator('.draft.doc-write').textContent()).includes('Tell the partners on Friday.'));
   if(shots)await fresh.screenshot({path:`${shots}/create-todo-${name}.png`});
   await fresh.locator(`[data-smart="${create.revision}"]`).click();
@@ -94,6 +96,11 @@ try{
   const text=await page.locator(`#task-${doneId}`).evaluate(n=>n.textContent);
   assert.match(text,/Changes saved in the doc( at \d\d:\d\d)?\./);
   assert.ok(!/\bYou (saved|changed|edited)/.test(text));
+  // A created doc on a to-do that goes on (the reply with its link): in Word, its title once
+  const madeBox=page.locator(`#task-${madeId} .draft.doc-write`);
+  assert.match(await madeBox.locator('.dm').textContent(),/^Created in Word/);
+  assert.equal(await madeBox.locator('.dw-h1').count(),1);
+  if(shots)await page.locator(`#task-${madeId}`).screenshot({path:`${shots}/created-todo-${name}.png`});
   // The Docs card: what it may write, and Allow edits until it may
   await page.evaluate(()=>document.querySelector('nav [data-tab="health"]').click());
   await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.textContent.trim()==='Other sources')?.click());

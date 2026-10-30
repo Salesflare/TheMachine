@@ -35,6 +35,10 @@ La tua Machine può scrivere un nuovo documento Word, o modificare un documento 
 
 Sostituisce testo, aggiunge testo e aggiunge paragrafi e titoli. Lascia stare tabelle, immagini, revisioni e campi. Un nuovo documento finisce nel tuo OneDrive e resta privato finché non lo condividi.
 
+Un nuovo documento va in un account dell’area dell’attività: il documento di un’attività di Lavoro nell’account di quell’azienda, quello della conversazione quando si può, mai in uno personale. Sul tuo computer, anche un account Google collegato per Gmail che ha già accesso a Drive può ricevere un nuovo Google Doc. Se nessun account va bene, l’attività dice **Collega Google Docs o Microsoft Word per Lavoro**.
+
+Quando il documento non è la fine dell’attività, come una risposta con il suo link, l’attività resta aperta e prepara quel passo successivo per il tuo OK.
+
 Collegare Microsoft Word lo consente già: non c’è un passaggio a parte. Una connessione Microsoft Word di prima che legge soltanto mostra **Consenti le modifiche** sulla sua scheda in **Connessioni**. Toccalo una volta e accetta.
 
 ## Cosa chiede
