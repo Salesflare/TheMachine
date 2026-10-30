@@ -86,4 +86,28 @@ class Exclusions(unittest.TestCase):
         self.assertEqual(sorted(e['source_id'] for e in store.events(['acc'])),['2','4'])
         self.assertEqual(store.checkpoint('acc'),{'cursor':'next'})
 
+    def test_a_routine_stand_up_stays_on_the_calendar_without_a_review(self):
+        # A daily stand-up with the team, an occurrence at its usual time: the default routine rule used to drop it,
+        # so it never showed on the Calendar or in Talk. It is kept, already reviewed; a title-only rule still drops.
+        tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup)
+        store=a.Store(Path(tmp.name)/'e.sqlite')
+        account={'id':'cal','service':'calendar','email':'owner@acme.example'}
+        store.exclusions={'cal':a.default_exclusions({'accounts':[account]},account)+[{'titles':['Dentist']}]}
+        at={'dateTime':'2026-10-30T09:30:00+01:00','timeZone':'Europe/Brussels'}
+        def raw(i,title,**k):return {'id':i,'status':'confirmed','summary':title,'start':at,'end':{**at,'dateTime':'2026-10-30T09:45:00+01:00'},
+            'htmlLink':'https://www.google.com/calendar/event?eid=x','attendees':[{'email':'owner@acme.example','self':True,'responseStatus':'accepted'},
+            {'email':'kim@acme.example','responseStatus':'accepted'}],**k}
+        series={'recurringEventId':'standup','originalStartTime':at}
+        page=[a.calendar_event(account,raw('standup_20261030','Stand up',**series),'Europe/Brussels')]
+        page.append(a.calendar_event(account,raw('roadmap','Roadmap review'),'Europe/Brussels'))
+        page.append(a.calendar_event(account,raw('dentist_20261030','Dentist',recurringEventId='dentist',originalStartTime=at),'Europe/Brussels'))
+        store.commit_page('cal',{'cursor':'next'},page)
+        day=store.calendar(['cal'],'2026-10-30T00:00:00+01:00','2026-10-31T00:00:00+01:00',owner=['owner@acme.example'])
+        self.assertEqual(sorted(r['title'] for r in day),['Roadmap review','Stand up'])
+        self.assertEqual([e['title'] for e in store.events(['cal'],pending=True)],['Roadmap review'])  # no review, no to-do
+        self.assertEqual(store.purge_excluded('cal',store.exclusions['cal']),0)
+        moved=raw('standup_20261030','Stand up',recurringEventId='standup',originalStartTime={**at,'dateTime':'2026-10-30T08:30:00+01:00'})
+        store.commit_page('cal',{'cursor':'later'},[a.calendar_event(account,moved,'Europe/Brussels')])
+        self.assertIn('Stand up',[e['title'] for e in store.events(['cal'],pending=True)])  # moved: something new, reviewed
+
 if __name__=='__main__':unittest.main()

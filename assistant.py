@@ -3048,7 +3048,8 @@ def routine_recurring_instance(metadata):
 
 
 def excluded_by_rules(rules, event):
-    """Owner-chosen noise that is never stored (account config `exclude`). A rule matches when
+    """Owner-chosen noise that is never stored (account config `exclude`; a routine_recurring rule only skips the review, see
+    routine_rules). A rule matches when
     all its conditions hold: `channels` (Slack channel names), `bots_only`, `packages`
     (Android package names), `chats` (WhatsApp or Telegram chat IDs), `senders` (email address substrings)
     or `routine_recurring` (calendar instances of a recurring event that weren't moved or canceled),
@@ -3080,9 +3081,16 @@ def excluded_by_rules(rules, event):
 # Android's own status notices (not storage or security warnings, which still come through).
 ANDROID_STATUS_NOTICES = {'packages': ['android'], 'text': [r'is displaying over other apps', r'charging this device via usb',
                                                            r'usb debugging connected', r'wireless debugging connected', r'serial console enabled']}
-# Recurring placeholders that weren't moved or canceled: the calendar says nothing new.
+# Recurring placeholders that weren't moved or canceled: the calendar says nothing new, so no review. They stay on the Calendar.
 ROUTINE_CALENDAR = {'routine_recurring': True, 'titles': ['Lunch', 'Block', 'Blocked', 'Busy', 'Focus', 'Focus time', 'Deep work', 'Home',
                                                           'Office', 'Commute', 'Gym', 'Stand up', 'Standup', 'Daily standup', 'Happy birthday!']}
+
+
+def routine_rules(rules):
+    """(dropping, keeping): a `routine_recurring` rule only keeps a meeting out of the review. The meeting is still on the
+    owner's day, so it is stored (already reviewed) for the Calendar and Talk. Every other rule means never stored."""
+    rules = rules or []
+    return [r for r in rules if not r.get('routine_recurring')], [r for r in rules if r.get('routine_recurring')]
 
 
 def default_exclusions(config, account):
@@ -4054,6 +4062,7 @@ class Store:
         """Remove already-stored signals matching the owner's exclude rules; checkpoints untouched."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
+            rules = routine_rules(rules)[0]
             ids = [r['source_id'] for r in db.execute('SELECT source_id,title,body,metadata FROM events WHERE account_id=?', (account,))
                    if excluded_by_rules(rules, {'title': r['title'], 'body': r['body'], 'metadata': json.loads(r['metadata'])})]
             return self.exclude_sources(db, account, ids, reason='owner_exclude_rule')
@@ -4379,11 +4388,14 @@ class Store:
     def commit_page(self, account, state, events, record_sync=True, excluded_source_ids=(), android_inbox_ids=()):
         # The page AND its next cursor commit together. A killed fetch replays the page.
         rules = self.exclusions.get(account)
+        routine = set()
         if rules:
-            dropped = [e['source_id'] for e in events if excluded_by_rules(rules, e)]
+            dropping, keeping = routine_rules(rules)
+            dropped = [e['source_id'] for e in events if excluded_by_rules(dropping, e)]
             if dropped:
                 events = [e for e in events if e['source_id'] not in set(dropped)]
                 excluded_source_ids = [*excluded_source_ids, *dropped]
+            routine = {e['source_id'] for e in events if excluded_by_rules(keeping, e)}
         with self.connect() as db:
             if events and graph.anyone_forgotten(db):  # someone the owner deleted permanently: what they send is not kept or learned from
                 gone, owner = graph.forgotten(db), graph.Owner({})
@@ -4420,6 +4432,8 @@ class Store:
                 else:
                     db.execute('INSERT INTO events(kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at,account_id,source_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
                                (*values, account, event['source_id']))
+                if event['source_id'] in routine:  # on the Calendar, never a review or a to-do
+                    db.execute('UPDATE events SET analyzed_version=version WHERE account_id=? AND source_id=?', (account, event['source_id']))
             if record_sync:
                 self.record_sync_activity(db, account, 'success', signals=len(changed))
                 self.note_first_import(db, account, state)
