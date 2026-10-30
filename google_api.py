@@ -81,9 +81,15 @@ _lock = threading.Lock()
 class BrokerError(Exception):
     """A content-free failure: `status` is Google's or the broker's HTTP status, None when unreachable."""
 
-    def __init__(self, category, status=None):
+    def __init__(self, category, status=None, retry_after=None):
         super().__init__(category)
-        self.category, self.status = category, status
+        self.category, self.status, self.retry_after = category, status, retry_after
+
+
+def retry_after(error):
+    """Seconds from an HTTP error's Retry-After (whole seconds only, 1 s to a day), or None."""
+    value = str((error.headers.get('Retry-After') if getattr(error, 'headers', None) else '') or '').strip()
+    return min(max(int(value), 1), 86400) if value.isdigit() else None
 
 
 def broker_url(config, provider='google'):
@@ -187,7 +193,7 @@ def call(config, credential, account, method, params, scope, body=None, write=Fa
             error.close()
             if error.code == 401 and not attempt and not write:
                 continue  # the access token expired early: one fresh one, for reads only
-            raise BrokerError(method.split('.')[0], error.code) from None
+            raise BrokerError(method.split('.')[0], error.code, retry_after(error)) from None
         except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
             raise BrokerError('timeout') from None
         except ValueError:

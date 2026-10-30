@@ -344,7 +344,7 @@ class Sources(Base):
 
     def test_a_rate_limited_sync_is_not_an_error_until_it_keeps_failing(self):
         store = a.Store(self.path)
-        for _ in range(a.RATE_LIMIT_REPORT_AFTER - 1):
+        for _ in range(a.TRANSIENT_REPORT_AFTER - 1):
             store.failed('work-slack', a.SourceError('slack:conversations.history', 429, 120))
             store.failed('work-slack-2', a.SourceError('slack_ratelimited:conversations.history', retry_after=60))
         with store.connect() as db:
@@ -355,6 +355,41 @@ class Sources(Base):
             rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
         self.assertEqual(rows, [('slack: conversations.history: HTTP forbidden', 'sync:other-slack'),
                                 ('slack: conversations.history: HTTP rate limited', 'sync:work-slack')])
+
+    def test_a_busy_service_or_network_is_not_an_error_until_it_keeps_failing(self):
+        store = a.Store(self.path)
+        store.failed('salesflare-google-meet', a.SourceError('google_meet_http', 503))
+        store.failed('work-trello', a.SourceError('trello_network'))
+        store.failed('work-stripe', a.SourceError('network:IncompleteRead:stripe_read'))
+        with store.connect() as db:  # one 503, one dropped connection: no report
+            self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
+        for _ in range(a.TRANSIENT_REPORT_AFTER - 2):
+            store.failed('salesflare-google-meet', a.SourceError('google_meet_http', 502))
+        with store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
+        store.failed('salesflare-google-meet', a.SourceError('google_meet_http', 503))  # the threshold: it keeps happening
+        with store.connect() as db:
+            rows = [tuple(r) for r in db.execute('SELECT message,location FROM error_feed')]
+        self.assertEqual(rows, [('google_meet_http: HTTP service unavailable', 'sync:salesflare-google-meet')])
+
+    def test_a_sign_in_or_permission_error_is_reported_at_once(self):
+        store = a.Store(self.path)
+        store.failed('salesflare-google-meet', a.SourceError('google_meet_signin_expired', 401))
+        store.failed('work-trello', a.SourceError('trello_http', 403))
+        with store.connect() as db:
+            rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
+        self.assertEqual(rows, [('google_meet_signin_expired: HTTP unauthorized', 'sync:salesflare-google-meet'),
+                                ('trello_http: HTTP forbidden', 'sync:work-trello')])
+
+    def test_what_counts_as_transient(self):
+        for status in (429, 500, 502, 503, 504):
+            self.assertTrue(a.upstream_busy(a.SourceError('google_meet_http', status)), status)
+        for status in (400, 401, 403, 404, 501):
+            self.assertFalse(a.transient(a.SourceError('google_meet_http', status)), status)
+        for category in ('network:URLError:intercom_read', 'shortcut_network', 'google_broker_unreachable', 'timeout'):
+            self.assertTrue(a.transient(a.SourceError(category)), category)
+            self.assertFalse(a.upstream_busy(a.SourceError(category)), category)  # the network: no quick retry, the normal wait
+        self.assertFalse(a.transient(a.SourceError('google_meet_invalid_response')))
 
     def test_a_failed_agent_job_names_the_tool_and_kind_only(self):
         store = a.Store(self.path)
