@@ -27,7 +27,7 @@ const server=createServer(async(req,res)=>{
   if(action==='connect_sources'){const hosted=mode==='hosted';res.end(JSON.stringify({saveable:true,manage_url:hosted?CP+'/setup':null,paired:true,pair_url:CP+'/account?tab=fleet#devices',sources:[
    {name:'gmail',service:'gmail',label:'Gmail',what:'Your email.',connected:0,broker:false,...(hosted?{hosted_signin:'google'}:{signin:'google'})},
    {name:'outlook',service:'outlook',label:'Outlook',what:'Your Outlook email.',connected:0,broker:false,...(hosted?{hosted_signin:'microsoft'}:{signin:'microsoft'})},
-   {name:'docs',service:'docs',label:'Docs',what:'Comments and shares on your docs.',connected:0,broker:true,signin:'microsoft_docs'}]}));return}
+   {name:'docs',service:'docs',label:'Microsoft Word',what:'Comments and shares on your docs.',connected:0,broker:true,signin:'microsoft_docs'}]}));return}
   if(action==='connect_signin'){res.end(JSON.stringify({url:base+'/connect/start/'+'A'.repeat(32),state:'started'}));return}
   if(action==='connect_signin_state'){res.end(JSON.stringify({state:'failed',error:'AADSTS90094: Admin consent is required'}));return}
   res.end('{}');return}

@@ -14,7 +14,7 @@ Sotto lo stato, ogni fonte dice in una riga cosa porta e, quando può agire, che
 
 ## Aggiungine una
 
-Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Una volta collegata, la tua Machine si riavvia per iniziare a leggerla, poi apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Documenti, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Codex, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
+Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Una volta collegata, la tua Machine si riavvia per iniziare a leggerla, poi apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Microsoft Word, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Codex, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
 
 **Riconnetti** su una fonte e in **Serve il tuo intervento** apre lo stesso modulo. Sul tuo computer, `assistant connect` fa lo stesso in un terminale.
 
@@ -24,7 +24,7 @@ Ogni fonte conta come lavoro (per un’azienda che indichi tu) o personale. Camb
 
 ## Rimuovine una
 
-Apri la fonte, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato dentro resta. Su una Machine in hosting, Google, Microsoft, Documenti, Zoom e Stripe mostrano **Disconnetti ↗**, che apre la tua pagina di configurazione.
+Apri la fonte, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato dentro resta. Su una Machine in hosting, Google, Microsoft, Microsoft Word, Zoom e Stripe mostrano **Disconnetti ↗**, che apre la tua pagina di configurazione.
 
 **Disconnesso di recente** elenca gli accessi Google, Microsoft e Zoom che hai rimosso. **Rimosso, confermato** significa che Google ha confermato la disconnessione, oppure, per Microsoft e Zoom, che non ne resta alcuna copia. **In sospeso** spiega il perché, e la tua Machine continua a riprovare.
 
