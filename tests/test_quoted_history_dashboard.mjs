@@ -52,12 +52,18 @@ try{
   assert.equal(await sources.count(),2);
   assert.doesNotMatch(await log.innerText(),MARK);
   assert.match(await sources.nth(1).locator('.say').innerText(),/^For ABC exchange, here is the alternative\./);
+  // The later email of the run has no name line but its own small time above its text, always shown
+  assert.equal(await sources.nth(1).locator('.chat-from:not(.chat-from-next)').count(),0);
+  const next=sources.nth(1).locator('.chat-from-next .chat-time');
+  assert.match(await next.innerText(),/^\d\d:\d\d$/);assert.notEqual(await next.innerText(),await sources.nth(0).locator('.chat-from .chat-time').innerText());
+  assert.ok(await sources.nth(1).evaluate(m=>{const t=m.querySelector('.chat-from-next .chat-time');return getComputedStyle(t).opacity==='1'&&t.getBoundingClientRect().bottom<=m.querySelector('.bubble').getBoundingClientRect().top+1}),'visible, above the text');
+  assert.equal(await sources.nth(1).locator(':scope>.chat-time').count(),0,'no second time under it');
   // Each one's quoted history is folded under it, apart from the new text and closed
   for(const n of [0,1]){const fold=sources.nth(n).locator('details.chat-quoted');
    assert.equal(await fold.count(),1);assert.equal(await fold.getAttribute('open'),null);
    assert.equal((await fold.locator('summary').innerText()).replace(/\s*[›‹]\s*$/,''),'Earlier messages');
    assert.ok(!(await fold.locator('.chat-quoted-text').isVisible()),'history hidden until opened');
-   assert.ok(await sources.nth(n).evaluate(m=>m.querySelector('details.chat-quoted').getBoundingClientRect().top>=m.querySelector('.say').getBoundingClientRect().bottom),'under the new text')}
+   assert.ok(await sources.nth(n).evaluate(m=>m.querySelector('details.chat-quoted').getBoundingClientRect().top>=m.querySelector('.chat-clamp,.say>p')?.getBoundingClientRect().bottom),'under the new text')}
   await log.evaluate(n=>n.scrollTop=0);await shot('closed');
   // More and Less on the long first email
   const more=sources.nth(0).locator('.chat-more');assert.equal(await more.innerText(),'More');
