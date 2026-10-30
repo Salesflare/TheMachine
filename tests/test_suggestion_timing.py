@@ -116,11 +116,11 @@ class RecapAndPreferences(unittest.TestCase):
             db.execute("UPDATE decisions SET created_at=? WHERE suggestion_id=?",(t(4),early))
             db.execute(job,('j4',early,'r4',t(3),t(3)))
             db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'file','PREPARATION.md edited','abc')",(t(2),))
-        self.assertIn('• Adjusted: 1 edit to the drafting guide. No drafts sent since then yet.',a.weekly_recap(self.store,{},None,None))
+        self.assertIn('• Adjusted: 1 edit to the drafting guide. No drafts sent since then yet.',a.weekly_recap(self.store,{},None))
         later=self.store.suggest('l','Answer Bo','Body.',[3])['id']
         with self.store.connect() as db: db.execute(job,('j5',later,'r5',t(1),t(1)))
         b=self.store.behaviour(7);self.assertEqual((b['since_rules']['as_written'],b['since_rules']['edited']),(1,0))
-        recap=a.weekly_recap(self.store,{},None,None)
+        recap=a.weekly_recap(self.store,{},None)
         self.assertIn('• Adjusted: 1 edit to the drafting guide. Since then, 1 of 1 drafts went out as written (0 of 1 before).\n',recap)
         with self.store.connect() as db: db.execute("DELETE FROM action_jobs WHERE id='j4'")  # every send after the change: nothing to compare
         self.assertIsNone(self.store.behaviour(7)['since_rules'])
@@ -149,32 +149,31 @@ class RecapAndPreferences(unittest.TestCase):
         edits=self.store.draft_edits_text()
         self.assertIn('Your draft: Dear Sir',edits);self.assertIn('The owner changed it to: Hi Tom, here it is.',edits)
         self.assertIn('The owner changed it to: Hi Tom',a.preparation_prompt({'job_id':'j'*16,'suggestion_id':self.sid},'',None,edits))
-        recap=a.weekly_recap(self.store,{},None,None)
+        recap=a.weekly_recap(self.store,{},None)
         self.assertIn('• Drafts: 0 of 1 went out as written.',recap)
-        self.assertIn(f'**Snoozed more than once**\n2. Review the Q4 budget, 2 times\n',recap)
+        self.assertIn('\n\n**Snoozed more than once**\nReview the Q4 budget, 2 times',recap)  # a choice of its own, no number
 
     def test_recap_content(self):
-        text=a.weekly_recap(self.store,{},None,{'input':1e6,'cacheRead':9e6,'output':4e4,'runs':3,'usd':3.3})
+        text=a.weekly_recap(self.store,{},None)
         self.assertTrue(text.startswith('**Your week with The Machine** · '));self.assertIn('0% of to-dos worth it (0 of 1).',text)
-        self.assertTrue(text.split('\n')[-1].startswith('_Behind the scenes: ') and '$3.30' in text)
-        self.assertIn('1. #leads (work): 24 this week, no to-dos',text)
+        self.assertIn('\n_Behind the scenes: ',text);self.assertNotIn('$',text)  # no cost: the recap may go to anyone
+        self.assertIn('**Busy without results**\n#leads (work): 24 this week, no to-dos',text)
 
     def test_recap_goes_out_once_on_friday_afternoon(self):
         sent=[]
-        sender=lambda m:(sent.append(m),{'messageId':'7'})[1]
+        sender=lambda m,b:(sent.append(m),{'messageId':'7'})[1]
         thursday=at(2026,10,15,17,0).astimezone(dt.timezone.utc);friday=at(2026,10,16,16,5).astimezone(dt.timezone.utc)
-        with patch.object(a,'assistant_token_usage',return_value=None):
-            self.assertIsNone(self.app.recap_step(sender,thursday))
-            self.assertIsNone(self.app.recap_step(sender,at(2026,10,16,15,0).astimezone(dt.timezone.utc)))
-            self.assertEqual(self.app.recap_step(sender,friday),'sent')
-            self.assertIsNone(self.app.recap_step(sender,friday+dt.timedelta(hours=1)))
-        self.assertEqual(len(sent),1)
+        self.assertIsNone(self.app.recap_step(sender,thursday))
+        self.assertIsNone(self.app.recap_step(sender,at(2026,10,16,15,0).astimezone(dt.timezone.utc)))
+        self.assertEqual(self.app.recap_step(sender,friday),'sent')
+        self.assertIsNone(self.app.recap_step(sender,friday+dt.timedelta(hours=1)))
+        self.assertEqual(sum(m.startswith('**Your week with The Machine**') for m in sent),1)
 
     def test_unknown_outcome_is_not_resent(self):
-        def sender(m):raise ValueError('unclear')
+        def sender(m,b):raise ValueError('unclear')
         friday=at(2026,10,16,16,5).astimezone(dt.timezone.utc)
-        with patch.object(a,'assistant_token_usage',return_value=None):
-            self.assertEqual(self.app.recap_step(sender,friday),'uncertain')
-            self.assertIsNone(self.app.recap_step(lambda m:{'messageId':'8'},friday+dt.timedelta(minutes=5)))
+        self.assertEqual(self.app.recap_step(sender,friday),'uncertain')
+        self.assertIsNone(self.app.recap_step(lambda m,b:{'messageId':'8'},friday+dt.timedelta(minutes=5)))
+        with self.app.store.connect() as db:self.assertEqual(db.execute('SELECT count(*) FROM recap_items').fetchone()[0],0)  # its choices didn't go out either
 
 if __name__=='__main__':unittest.main()

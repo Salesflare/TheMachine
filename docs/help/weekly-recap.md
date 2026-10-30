@@ -14,7 +14,8 @@ order: 1
 - Learnings to share with The Machine team, if any wait for you. See [Share learnings with the team](share-learnings.md).
 - People and projects, like who has gone quiet.
 - What I noticed: drafts sent as written or edited, to-dos dismissed within minutes, to-dos snoozed more than once.
-- Behind the scenes: what it reviewed, and what that cost.
+- Behind the scenes: how many signals it reviewed this week, and how many still wait.
+- Choices, each in its own message after the recap: a busy source without results (**Stop reviewing** or **Keep reviewing**) and a to-do snoozed more than once (**Drop**, **Do it now** or **Keep**). Nothing changes until you tap.
 
 ## When and where
 

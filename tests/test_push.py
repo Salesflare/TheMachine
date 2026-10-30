@@ -206,7 +206,7 @@ class PhoneNotifications(unittest.TestCase):
         friday = a.dt.datetime(2026, 10, 16, 17, 0, tzinfo=a.dt.timezone.utc)
         with patch.object(a, 'push_node', side_effect=lambda config, request: sent.append(request) or {'results': []}), \
                 patch.object(a, 'telegram_request', side_effect=AssertionError('no Telegram')), \
-                patch.object(a, 'local_tz', return_value=a.dt.timezone.utc), patch.object(a, 'assistant_token_usage', return_value=None):
+                patch.object(a, 'local_tz', return_value=a.dt.timezone.utc):
             self.assertEqual(self.app.recap_step(current=friday), 'sent')
         self.assertEqual((sent[0]['payload']['title'], sent[0]['payload']['url']), ('Your week', 'https://the-machine.example/assistant/'))
         with self.store.connect() as db:
