@@ -455,7 +455,8 @@ function talkViewShow(){const sec=$('#talk-view');if(sec.hidden)talkBack=!$('#se
  for(const b of document.querySelectorAll('nav button')){b.classList.remove('active');b.setAttribute('aria-current','false')}
  $('#open-settings')?.setAttribute('aria-current','false');talkViewPaint();talkPaint();talkSide();requestAnimationFrame(()=>scrollTo(0,document.documentElement.scrollHeight))}
 function talkLeave(){if(!talkViewOn())return;if(talkBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${talkBack}"]`)?.click()}
-function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body):null;if(!a)return '';
+function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&(['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body||a.kind==='doc_write')):null;if(!a)return '';
+ if(a.kind==='doc_write')return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span><div class="chat-draft-head"><span>${esc(docHead(a))}</span></div><div class="chat-clamp dw">${docWriteHtml(a)}</div></div>`;
  const to=a.to_name||(Array.isArray(a.to)?a.to.join(', '):a.to||''),mail=a.kind==='email';
  return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span>${to?`<div class="chat-draft-head"><span>${esc(t('To: {}',to))}</span></div>`:''}${a.subject&&!a.reply&&!/^re:/i.test(a.subject)?`<div class="chat-draft-subject">${esc(a.subject)}</div>`:''}<div class="chat-clamp${mail?' mail-text':''}">${mail?mailHtml(a.body):chatMarkdown(a.body)}</div></div>`}
 function talkViewPaint(){const sec=$('#talk-view');if(!sec||sec.hidden)return;const v=talk,live=!!v?.main;

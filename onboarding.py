@@ -2223,7 +2223,7 @@ GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'out
                   'google_meet': ('google_meet',)}  # Google Meet: its own Google sign-in, apart from Gmail's
 GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack', 'google_meet': 'Google Meet'}
 SLACK_KEY = r'[te][a-z0-9]{6,20}:[uw][a-z0-9]{6,20}'  # a Slack sign-in's name: '<team id>:<user id>' (slack_api.key)
-DELIVERED = {'intercom', 'trello', 'microsoft_docs', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
+DELIVERED = {'intercom', 'trello', 'microsoft_docs', 'microsoft_docs_write', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
 
 class AnswersUI(UI):
@@ -2268,7 +2268,7 @@ def connect_delivered(config_path, args):
     source = args.get('source') if isinstance(args, dict) else None
     if source in GRANT_SERVICES and source in DELIVERED:
         return connect_grant(config_path, source, args)
-    if source == 'microsoft_docs':
+    if source in ('microsoft_docs', 'microsoft_docs_write'):  # read, or Allow edits: the same Docs connection
         return connect_docs_grant(config_path, args)
     service = SERVICES.get(source, source)
     if source not in DELIVERED or not setup_of(service).get('secret'):

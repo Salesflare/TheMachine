@@ -3,7 +3,7 @@ title: Docs: Word, OneDrive e SharePoint
 area: connections
 summary: Commenti, menzioni, revisioni e condivisioni sui tuoi file Word in OneDrive e SharePoint. Google Docs arriverà più avanti.
 covers: connector:docs
-code: connectors/docs.py, next_actions.py, onboarding.py
+code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Cosa legge
@@ -22,7 +22,20 @@ Quando un’attività ha bisogno del testo di un documento, la tua Machine legge
 
 Può preparare una bozza di risposta a un commento. Nei file Word non si può pubblicare una risposta dall’esterno di Word, quindi la risposta resta una bozza da copiare in Word.
 
-Non modifica mai un documento, non accetta suggerimenti, non risolve commenti e non condivide file.
+Non accetta suggerimenti, non risolve commenti, non condivide file e non modifica mai un documento senza il tuo OK.
+
+## Creare e modificare documenti
+
+La tua Machine può scrivere un nuovo documento Word, o modificare un documento di cui parla una delle tue attività. Non scrive mai da sola:
+
+- Prepara la modifica nell’attività. Un nuovo documento si vede per intero. Una modifica mostra ogni paragrafo prima e dopo.
+- Tocca **Rivedi e crea** o **Rivedi le modifiche**, leggi, poi **Crea** o **Salva**.
+- Scrive una sola volta, e solo nel documento come l’hai visto. Se qualcuno l’ha cambiato nel frattempo, non viene scritto nulla e l’attività lo dice. Chiedi una nuova bozza.
+- In Talk legge ad alta voce tutta la modifica e aspetta un sì chiaro.
+
+Sostituisce testo, aggiunge testo e aggiunge paragrafi e titoli. Lascia stare tabelle, immagini, revisioni e campi. Un nuovo documento finisce nel tuo OneDrive e resta privato finché non lo condividi.
+
+Per attivarlo, tocca **Consenti le modifiche** sulla scheda Docs in **Connessioni**. Microsoft chiede di poter modificare i tuoi file, separatamente dalla lettura. Accedere di nuovo lo mantiene.
 
 ## Cosa chiede
 

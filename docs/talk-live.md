@@ -70,7 +70,9 @@ At most one conversation per to-do and two in all. A session's secret is forgott
   browser sends the chat's new reply to the session as a system message (`talk_live.DONE_NOTE`, or `STOPPED_NOTE`)
   with `response.create`, so the voice says the answer at once. The voice says one short line while waiting and never
   polls. If the voice is speaking, the note waits for `response.done`.
-- `ask_to_send` and `send_answer`: sending by voice, below.
+- `ask_to_send` and `send_answer`: sending by voice, below. A doc write (`doc_write`, a new doc or an edit) counts as a
+  draft here: the voice reads the whole change (`doc_writes.spoken`, every change before and after) and asks "Save these
+  changes to “<doc>”?" or "Create this doc?". A change too long to read in full (over 4,000 characters) is refused by voice.
 
 ## Talk: the main conversation
 

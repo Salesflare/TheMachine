@@ -3,7 +3,7 @@ title: Docs: Word, OneDrive and SharePoint
 area: connections
 summary: Comments, mentions, tracked changes and shares on your Word files in OneDrive and SharePoint. Google Docs come later.
 covers: connector:docs
-code: connectors/docs.py, next_actions.py, onboarding.py
+code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## What it reads
@@ -22,7 +22,20 @@ When a to-do needs a doc's text, your Machine reads that one doc, and only while
 
 It can draft a reply to a comment. Word files have no way to post a reply from outside Word, so the reply stays a draft for you to copy into Word.
 
-It never edits a doc, accepts a suggestion, resolves a comment or shares a file.
+It never accepts a suggestion, resolves a comment, shares a file or changes a doc without your OK.
+
+## Create and edit docs
+
+Your Machine can write a new Word doc, or change a doc one of your to-dos is about. It never writes on its own:
+
+- It prepares the change on the to-do. A new doc shows in full. An edit shows each paragraph before and after.
+- Press **Review and create** or **Review changes**, read it, then **Create** or **Save**.
+- It writes once, and only into the doc as you saw it. If someone changed the doc in the meantime, nothing is written and the to-do says so. Ask for a new draft.
+- In Talk, it reads the whole change aloud and waits for a clear yes.
+
+It replaces text, adds text and adds paragraphs and headings. It leaves tables, images, tracked changes and fields alone. A new doc lands in your OneDrive and stays private until you share it.
+
+To turn it on, press **Allow edits** on the Docs card in **Connections**. Microsoft asks to let it change your files, which is a separate OK from reading. Signing in again keeps it.
 
 ## What it asks for
 

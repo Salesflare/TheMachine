@@ -3,7 +3,7 @@ title: Docs : Word, OneDrive et SharePoint
 area: connections
 summary: Commentaires, mentions, modifications suivies et partages sur vos fichiers Word dans OneDrive et SharePoint. Google Docs viendra plus tard.
 covers: connector:docs
-code: connectors/docs.py, next_actions.py, onboarding.py
+code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Ce qu’il lit
@@ -22,7 +22,20 @@ Quand une tâche a besoin du texte d’un document, votre Machine lit ce documen
 
 Il peut rédiger une réponse à un commentaire. Les fichiers Word ne permettent pas de publier une réponse depuis l’extérieur de Word, donc la réponse reste un brouillon à copier dans Word.
 
-Il ne modifie jamais un document, n’accepte jamais une suggestion, ne résout jamais un commentaire et ne partage jamais un fichier.
+Il n’accepte jamais une suggestion, ne résout jamais un commentaire, ne partage jamais un fichier et ne modifie jamais un document sans votre accord.
+
+## Créer et modifier des documents
+
+Votre Machine peut écrire un nouveau document Word, ou modifier un document dont parle l’une de vos tâches. Elle n’écrit jamais d’elle-même :
+
+- Elle prépare la modification dans la tâche. Un nouveau document s’affiche en entier. Une modification montre chaque paragraphe avant et après.
+- Touchez **Relire et créer** ou **Relire les modifications**, lisez, puis **Créer** ou **Enregistrer**.
+- Elle écrit une seule fois, et seulement dans le document tel que vous l’avez vu. Si quelqu’un l’a modifié entre-temps, rien n’est écrit et la tâche le dit. Demandez un nouveau brouillon.
+- Dans Talk, elle lit toute la modification à voix haute et attend un oui clair.
+
+Elle remplace du texte, ajoute du texte et ajoute des paragraphes et des titres. Elle ne touche pas aux tableaux, images, modifications suivies et champs. Un nouveau document arrive dans votre OneDrive et reste privé tant que vous ne le partagez pas.
+
+Pour l’activer, touchez **Autoriser les modifications** sur la carte Docs dans **Connexions**. Microsoft demande l’autorisation de modifier vos fichiers, à part de la lecture. Se reconnecter la conserve.
 
 ## Ce qu’il demande
 

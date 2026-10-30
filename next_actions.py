@@ -1,6 +1,7 @@
 """Explicit, revision-bound next actions. No model or arbitrary command execution."""
 import base64
 import calendar_writes
+import doc_writes
 from contextlib import contextmanager
 import email.policy
 import portable
@@ -129,8 +130,9 @@ def attachment_bytes(record, config):
 
 # Owner-approved sends: each needs the Send review and Send now (Telegram) or the dashboard dialog.
 SEND_KINDS = ('email', 'email_demo', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
-# Owner-approved changes to The Machine's own code: Merge reviews the fix, Merge now applies it.
-APPROVE_KINDS = SEND_KINDS + ('merge', 'calendar')
+# Owner-approved changes to The Machine's own code: Merge reviews the fix, Merge now applies it. A calendar change and a
+# doc write (a new doc, or an edit) are approved the same way; never resent when unclear (not in SEND_KINDS).
+APPROVE_KINDS = SEND_KINDS + ('merge', 'calendar', 'doc_write')
 # The last step of a task taken up to it (a filled-in form, a cart, a payment): the owner reviews
 # what will be submitted, and their confirm runs only that step.
 FINISH_KINDS = ('finish',)
@@ -226,6 +228,8 @@ def label(value):
         return 'Reply on X' if value.get('reply_to') else 'Send'
     if value['kind'] == 'calendar':
         return calendar_writes.label(value)
+    if value['kind'] == 'doc_write':
+        return doc_writes.label(value)
     return value.get('label') or {'email':'Send','email_demo':'Send','linkedin':'Send','slack':'Send','whatsapp':'Send','telegram':'Send','intercom':'Send reply','doc_reply':'Post reply','merge':'Merge fix','prepare':'Prepare next step','open':'Open original','handoff':'Hand off'}.get(value['kind'],'Continue')
 
 
@@ -238,6 +242,8 @@ def preview(value):
         return merge_preview(value)
     if value['kind'] == 'calendar':
         return calendar_writes.preview(value)
+    if value['kind'] == 'doc_write':
+        return doc_writes.preview(value)
     if value['kind'] == 'finish':
         message = ('\n\n' + ('To ' + value['to_name'] + ':\n' if value.get('to_name') else '') + value['message']) if value.get('message') else ''
         files = '\n\nAttachments: ' + attachment_list(value) if value.get('attachments') else ''
@@ -311,13 +317,14 @@ def pick_sender(mailbox, options, replied):
 
 
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
-             intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None, telegram_chats=None):
+             intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None, telegram_chats=None,
+             doc_write_context=None):
     if value is None:
         return None
     if isinstance(value,list):
         if not 1<=len(value)<=3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
         if any(not isinstance(item,dict) for item in value):raise ValueError('Each next action must be one concrete choice')
-        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats) for item in value]
+        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats,doc_write_context) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
             raise ValueError('Next actions must be distinct concrete choices')
         return {'kind':'menu','actions':choices}
@@ -335,6 +342,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     if value.get('kind') == 'calendar':
         # An event added, changed or deleted on a calendar the owner can write: shown on the card, done on their tap.
         result = calendar_writes.validate(value, config, calendar_events)
+    elif value.get('kind') == 'doc_write':
+        # A new doc, or an edit pinned to the doc's version read just now: shown in full on the card, written on their tap.
+        result = doc_writes.validate(value, doc_write_context)
     elif value.get('kind') == 'open':
         if set(value) - {'kind', 'url', 'label'} or urlsplit(str(value.get('url', ''))).scheme != 'https':
             raise ValueError('Use an HTTPS original-page link, not executable instructions')
@@ -715,6 +725,8 @@ def check(value, result='', own_addresses=()):
     problems = []
     for action in actions(value):
         text = (action.get('subject') or '') + '\n' + (action.get('body') or action.get('preview') or '') + ('\n' + action['message'] if action.get('message') else '')
+        if action['kind'] == 'doc_write' and action['op'] == 'edit':
+            text += ''.join('\n' + str(c.get('replace', c.get('insert', c.get('append')))) for c in action['changes'])
         if PLACEHOLDER.search(text):
             problems.append(f"“{action.get('label') or action['kind']}” still has a placeholder ({PLACEHOLDER.search(text)[0]}): fill it in from the evidence")
         if re.search(r'\[[^\]]+\]\((?!https?://)[^)]*\)', text):
@@ -2037,11 +2049,16 @@ class ActionTransport:
     """Routes an approved send to Gmail, LinkedIn, Slack, X, WhatsApp, Telegram or Intercom, a calendar change to Google Calendar,
     or a fix to The Machine itself, by its kind."""
 
-    def __init__(self, email, linkedin, slack=None, x=None, merge=None, whatsapp=None, intercom=None, calendar=None, docs=None, telegram=None):
+    def __init__(self, email, linkedin, slack=None, x=None, merge=None, whatsapp=None, intercom=None, calendar=None, docs=None, telegram=None,
+                 doc_writes=None):
         self.email, self.linkedin, self.slack, self.x, self.merge, self.whatsapp = email, linkedin, slack, x, merge, whatsapp
-        self.intercom, self.calendar, self.docs, self.telegram = intercom, calendar, docs, telegram
+        self.intercom, self.calendar, self.docs, self.telegram, self.doc_writes = intercom, calendar, docs, telegram, doc_writes
 
     def pick(self, action):
+        if action['kind'] == 'doc_write':
+            if not self.doc_writes:
+                raise ValueError('Doc writes aren’t set up. Nothing was changed.')
+            return self.doc_writes
         if action['kind'] == 'calendar':
             if not self.calendar:
                 raise ValueError('Calendar changes aren’t set up. Nothing was changed.')

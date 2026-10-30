@@ -265,6 +265,30 @@ def cmd_doc(config, args):
         print('\n[cut: the doc is longer]')
 
 
+def cmd_doc_draft(config, args):
+    """Check a doc write for this preparation: an edit's doc as it is now, or the draft as the owner will see it."""
+    action = None
+    if args.changes or args.body:
+        def read(path):
+            return sys.stdin.read() if path == '-' else Path(path).read_text()
+        if args.body:
+            action = {'kind': 'doc_write', 'op': 'create', 'account_id': args.account, 'title': args.title, 'body': read(args.body)}
+        else:
+            changes = json.loads(read(args.changes))
+            action = {'kind': 'doc_write', 'op': 'edit', 'changes': changes.get('changes') if isinstance(changes, dict) else changes}
+    result = call(config, 'doc_write_draft', {'job_id': args.job, 'event_id': args.event, 'next_action': action})
+    if args.json:
+        return out_json(result)
+    if 'paragraphs' in result:
+        print(f"{result.get('title') or 'Untitled document'}  version {result['version']}" + (f"  {result['url']}" if result.get('url') else ''))
+        for p in result['paragraphs']:
+            print(f"\n[{p['n']}]{'' if p['editable'] else ' (not editable here)'} {p['text']}")
+        return
+    print(result['preview'])
+    print('\nnext_action:')
+    print(json.dumps(result['next_action'], ensure_ascii=False))
+
+
 def cmd_sources(config, args):
     connectors = call(config, 'status', {'full': True})['connectors']
     if args.json:
@@ -925,6 +949,14 @@ def parser():
     c = add('doc', "A doc's text (Google Docs or Word), read-only, for a preparation of the task it belongs to", cmd_doc)
     c.add_argument('--event', type=int, required=True, help="the doc event's id (a comment, mention, suggestion or share)")
     c.add_argument('--job', required=True, help='the preparation job id')
+    c = add('doc-draft', 'Check a new doc or an edit for the owner to approve (never writes): the doc as it is now, or the draft',
+            cmd_doc_draft)
+    c.add_argument('--job', required=True, help='the preparation job id')
+    c.add_argument('--event', type=int, help="the doc event's id, for an edit")
+    c.add_argument('--changes', help='JSON file (or -) with the edit: [{"find","replace"} | {"after","insert"} | {"append"}]')
+    c.add_argument('--account', help='the Docs connection id, for a new doc')
+    c.add_argument('--title', help='the new doc\'s title')
+    c.add_argument('--body', help='file (or -) with the new doc\'s text; "# " to "### " lines are headings')
     add('sources', 'Connection health per source', cmd_sources)
     add('busy', 'What is running now (agent jobs, sends, preparations); exit status 3 while something runs, for scripts', cmd_busy)
     c = add('reviews', 'Review backlog and recent review runs', cmd_reviews)

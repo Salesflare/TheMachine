@@ -1029,6 +1029,7 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .card .draft{max-width:680px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--sunken);font-size:.92rem;line-height:1.5;color:var(--text)}
 .card .draft .dm{margin:0 0 6px;font-size:.8rem;color:var(--faint);overflow-wrap:anywhere}
 .card .draft .db{white-space:pre-wrap;overflow-wrap:anywhere}
+.dw{white-space:normal}.dw .dw-p{margin:2px 0 6px;white-space:pre-wrap}.dw .dw-h1{font-weight:700;font-size:1.12em}.dw .dw-h2{font-weight:700;font-size:1.04em}.dw .dw-h3{font-weight:600}.dw .dw-ch+.dw-ch{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}.dw .dw-k,.dw .dw-n{font-size:.8rem;color:var(--faint);margin:6px 0 2px}.dw .dw-n{color:var(--muted);font-weight:600}.dw del{background:color-mix(in srgb,var(--danger,#e5484d) 22%,transparent);text-decoration:line-through;border-radius:3px}.dw ins{background:color-mix(in srgb,var(--mint) 30%,transparent);text-decoration:none;border-radius:3px}
 .draft.cal-change .cal-rows{margin:4px 0 0;font:400 var(--fs-md,.95rem)/1.5 var(--sans);color:var(--text)}.draft.cal-change .cal-rows div{display:flex;gap:12px;padding:2px 0}.draft.cal-change .cal-rows dt{flex:0 0 56px;color:var(--faint)}.draft.cal-change .cal-rows dd{margin:0;min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}
 .card .draft.sent{opacity:.75}
 .card .draft.clamp .db{max-height:calc(14*1.5em);overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
@@ -3098,6 +3099,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-revi
 function limitNote(m){if(!m?.limit_reached)return '';return `<p class="limit-note"><strong>${esc(t(m.chatgpt?'ChatGPT limit reached':'Model limit reached'))}</strong>${m.limit_resets_at?esc(t(', resets at {}',clockAt(m.limit_resets_at))):''}${resetAction(m)?' · '+resetAction(m):''}</p>`}
 /*@include dashboard/settings-models.js*/
 /*@include dashboard/todos-cards.js*/
+/*@include dashboard/todos-docwrite.js*/
 /*@include dashboard/settings-general.js*/
 // A lost connection, a cut-off or garbled answer or a server hiccup (5xx) is "offline": quiet, retried. Only a clear refusal
 // (a 4xx with its reason) is said out loud.
@@ -3450,7 +3452,7 @@ if(b.dataset.ldNot){lookNotDone(b);return}
 if(b.dataset.ldAll!=null){lookAllDone(b);return}
 if(['change','reject'].includes(b.dataset.choice))tipDone('change');if(b.dataset.smart)tipDone('send');
 if(b.dataset.unmerge){b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'undo_merge',args:{suggestion_id:id,approval_id:crypto.randomUUID()}})});toast('Undoing the merge…');await refresh()}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}return}
-if(b.dataset.smart){const a=taskActions(state.suggestions.find(s=>s.id===id)).find(a=>a.revision===b.dataset.smart);if(!a){toast('That result changed. Use its current buttons.',true);return}if(['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','calendar'].includes(a.kind)){openSend(id,b.dataset.smart);return}b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision:b.dataset.smart,approval_id:crypto.randomUUID()}})});toast('I’ll prepare that next.');await refresh()}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}return}
+if(b.dataset.smart){const a=taskActions(state.suggestions.find(s=>s.id===id)).find(a=>a.revision===b.dataset.smart);if(!a){toast('That result changed. Use its current buttons.',true);return}if(['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','calendar','doc_write'].includes(a.kind)){openSend(id,b.dataset.smart);return}b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision:b.dataset.smart,approval_id:crypto.randomUUID()}})});toast('I’ll prepare that next.');await refresh()}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}return}
 if(b.dataset.original){openEmail(id).catch(e=>toast(e.message,true));return}
 if(b.dataset.result){try{if(b.dataset.result==='copy')await copyResult(id);else await openResult(id,b.dataset.file?{name:b.dataset.fileName||'',path:b.dataset.file}:undefined)}catch(e){errCaught(e);toast(e.message,true)}return}
 // A Fleet item among the to-dos (Share, Not now: data-choice too) is not a to-do: its own handler (fleetOn) answers it

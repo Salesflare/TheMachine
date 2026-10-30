@@ -148,8 +148,8 @@ class Levels(unittest.TestCase):
         self.assertEqual(retention._keep_days(self.store.connect, retention.PREPARATION_DAYS), 30)
 
     def test_sends_need_the_owner_in_both_levels(self):
-        # The levels never touch what needs the owner's OK: every send, calendar write and final step.
-        self.assertEqual(a.next_actions.APPROVE_KINDS, a.next_actions.SEND_KINDS + ('merge', 'calendar'))
+        # The levels never touch what needs the owner's OK: every send, calendar write, doc write and final step.
+        self.assertEqual(a.next_actions.APPROVE_KINDS, a.next_actions.SEND_KINDS + ('merge', 'calendar', 'doc_write'))
         source = Path(__file__).parent.parent.joinpath('security_levels.py').read_text(encoding='utf-8')
         for word in ('APPROVE_KINDS', 'agent_jobs', 'confirm_action'):
             self.assertNotIn(word, source.split('"""', 2)[2])

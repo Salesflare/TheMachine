@@ -52,7 +52,7 @@ SCOPES_SEND = ('Mail.ReadWrite', 'Mail.Send')
 # An ask for the scope on the left is answered by any one on the right.
 ANSWERS = {'User.Read': {'User.Read'}, 'Mail.Read': {'Mail.Read', 'Mail.ReadWrite'}, 'Mail.ReadWrite': {'Mail.ReadWrite'},
            'Mail.Send': {'Mail.Send'}, 'Calendars.Read': {'Calendars.Read', 'Calendars.ReadWrite'},
-           'Files.Read.All': {'Files.Read.All', 'Files.ReadWrite.All'}}
+           'Files.Read.All': {'Files.Read.All', 'Files.ReadWrite.All'}, 'Files.ReadWrite.All': {'Files.ReadWrite.All'}}
 
 # name -> (verb, path, scope)
 READ = {
@@ -75,6 +75,7 @@ READ = {
     'drive.delta': ('GET', '/me/drive/root/delta', 'Files.Read.All'),
     'drive.shared': ('GET', '/me/drive/sharedWithMe', 'Files.Read.All'),
     'drives.item': ('GET', '/drives/{drive}/items/{id}', 'Files.Read.All'),
+    'drive.root.item': ('GET', '/me/drive/root:/{name}', 'Files.Read.All'),
 }
 WRITE = {
     'messages.create': ('POST', '/me/messages', 'Mail.ReadWrite'),        # a draft from MIME (never sent by itself)
@@ -83,6 +84,10 @@ WRITE = {
     'folders.create': ('POST', '/me/mailFolders', 'Mail.ReadWrite'),
     'messages.move': ('POST', '/me/messages/{id}/move', 'Mail.ReadWrite'),
     'messages.update': ('PATCH', '/me/messages/{id}', 'Mail.ReadWrite'),
+    # An owner-approved doc write (doc_writes.py through connectors/docs.py Writer), with Files.ReadWrite.All from Allow
+    # edits: a Word file's new content with If-Match on the eTag read right before, or a new .docx in the OneDrive root
+    'drives.item.content': ('PUT', '/drives/{drive}/items/{id}/content', 'Files.ReadWrite.All'),
+    'drive.root.upload': ('PUT', '/me/drive/root:/{name}:/content', 'Files.ReadWrite.All'),
 }
 LINK_HOSTS = ('outlook.office.com', 'outlook.office365.com', 'outlook.live.com')
 # Right after connecting, Microsoft can refuse a fresh sign-in for a few minutes while it takes the new permissions:
@@ -350,6 +355,7 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
         request = urllib.request.Request(url, method=verb, data=data, headers={
             'Authorization': 'Bearer ' + access, 'Accept': '*/*' if raw else 'application/json',
             'Prefer': 'IdType="ImmutableId"' + ''.join(', ' + h for h in (headers or {}).get('Prefer', [])),
+            **({'If-Match': str(headers['If-Match'])} if (headers or {}).get('If-Match') else {}),
             **({'Content-Type': kind} if kind else {})})
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:

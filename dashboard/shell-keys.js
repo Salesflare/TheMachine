@@ -72,7 +72,7 @@ actionAdd(
 const DEVICE_WORDS={'install-app':'install app pwa taskbar dock home screen pin','push-on':'notifications push bell alerts enable','push-test':'test notification push ping'};
 actionAdd(...DEVICE_ACTIONS.map(a=>({id:a.id,group:'Actions',label:a.label,keywords:DEVICE_WORDS[a.id],when:()=>a.available(),run:a.run})));
 // This card: only what the card itself offers (its own button is there), on the open chat's card or the picked one.
-const SEND_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','calendar'];
+const SEND_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','calendar','doc_write'];
 const SEND_WORD={email:'the email',email_demo:'the email',linkedin:'the LinkedIn message',slack:'the Slack message',x:'the post',whatsapp:'the WhatsApp message',telegram:'the Telegram message',intercom:'the Intercom reply',merge:'the fix',finish:'the last step',calendar:'the calendar change'};
 const kbChatInput=id=>{if(chatId!==id)chatGo(id);let n=0;const go=()=>{const i=$('#chat-input');if(i){i.focus();return}if(++n<40)setTimeout(go,50)};go()};
 actionAdd(

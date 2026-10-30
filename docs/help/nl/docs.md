@@ -3,7 +3,7 @@ title: Docs: Word, OneDrive en SharePoint
 area: connections
 summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint. Google Docs komen later.
 covers: connector:docs
-code: connectors/docs.py, next_actions.py, onboarding.py
+code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Wat het leest
@@ -22,7 +22,20 @@ Als een to-do de tekst van een document nodig heeft, leest je Machine dat ene do
 
 Hij kan een antwoord op een reactie schrijven. Bij Word-bestanden kan een antwoord niet van buiten Word geplaatst worden, dus het antwoord blijft een concept dat je zelf naar Word kopieert.
 
-Hij bewerkt nooit een document, aanvaardt nooit een suggestie, sluit nooit een reactie af en deelt nooit een bestand.
+Hij aanvaardt nooit een suggestie, sluit nooit een reactie af, deelt nooit een bestand en wijzigt nooit een document zonder je OK.
+
+## Documenten maken en bewerken
+
+Je Machine kan een nieuw Word-document schrijven, of een document aanpassen waar een van je to-do's over gaat. Hij schrijft nooit uit zichzelf:
+
+- Hij bereidt de wijziging voor op de to-do. Een nieuw document zie je helemaal. Een bewerking toont elke alinea voor en na.
+- Tik op **Nakijken en maken** of **Wijzigingen nakijken**, lees het en dan **Maken** of **Opslaan**.
+- Hij schrijft één keer, en alleen in het document zoals je het zag. Heeft iemand het intussen aangepast, dan wordt er niets geschreven en zegt de to-do dat. Vraag dan een nieuw concept.
+- In Talk leest hij de hele wijziging voor en wacht op een duidelijk ja.
+
+Hij vervangt tekst, voegt tekst toe en voegt alinea's en koppen toe. Tabellen, afbeeldingen, bijgehouden wijzigingen en velden laat hij met rust. Een nieuw document komt in je OneDrive en blijft privé tot je het deelt.
+
+Zet het aan met **Bewerken toestaan** op de Docs-kaart bij **Koppelingen**. Microsoft vraagt of hij je bestanden mag wijzigen, los van lezen. Opnieuw aanmelden houdt dat.
 
 ## Waar het om vraagt
 
