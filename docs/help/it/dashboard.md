@@ -22,6 +22,10 @@ order: 4
 
 La finestra in primo piano del browser compare al centro e il resto dello schermo è scuro; un pulsante nell'angolo mostra lo schermo intero. Su uno schermo basso l'intera barra laterale scorre come un'unica colonna, attività comprese, come il menu su un telefono.
 
+**Ferma** compare in alto mentre un’attività usa il browser, con il nome di quell’attività accanto a **Browser**. Un tocco la ferma subito, senza chiedere: non viene più cliccato, scritto o inviato nulla, e la chat dell’attività dice "Interrotta dal browser".
+
+Se più attività lo usano, si ferma quella sulla scheda in primo piano. Su un telefono la scheda del browser ha lo stesso pulsante in alto. Per continuare, scrivi nella chat o tocca **Riprova**.
+
 ## Nuove versioni
 
 Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre la usi. Aprire o ricaricare l’app carica la versione più recente. Una finestra aperta la carica quando la finestra passa in secondo piano, o dopo qualche minuto senza input, e mai mentre c'è qualcosa di scritto non ancora salvato o inviato, o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito. Un riavvio della tua Machine si limita a riconnettersi.

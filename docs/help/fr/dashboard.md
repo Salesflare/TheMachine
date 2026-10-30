@@ -22,6 +22,10 @@ order: 4
 
 La fenêtre au premier plan du navigateur s’affiche au milieu et le reste de l’écran est sombre ; un bouton dans le coin montre tout l’écran. Sur un petit écran, toute la barre latérale défile comme une seule colonne, tâches comprises, comme le menu sur un téléphone.
 
+**Arrêter** s’affiche en haut tant qu’une tâche utilise le navigateur, avec le nom de cette tâche à côté de **Navigateur**. Un appui l’arrête tout de suite, sans rien demander : plus rien n’est cliqué, saisi ni envoyé, et le chat de la tâche indique « Arrêtée depuis le navigateur ».
+
+Si plusieurs tâches l’utilisent, c’est celle de l’onglet au premier plan qui s’arrête. Sur un téléphone, l’onglet du navigateur a le même bouton en haut. Pour continuer, écrivez dans le chat ou appuyez sur **Réessayer**.
+
 ## Nouvelles versions
 
 Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. L’ouverture ou le rechargement de l’app charge la version la plus récente. Une fenêtre ouverte la charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais tant qu’un texte saisi n’est pas enregistré ou envoyé, ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.

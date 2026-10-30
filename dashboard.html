@@ -2334,6 +2334,11 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
   .bp-head button:hover{background:var(--c-hover)}.bp-head button svg{width:20px;height:20px}
   .bp-head .bp-full{display:block;width:auto;height:auto;margin-right:6px;padding:0;border-radius:0;color:var(--c-text-2);font:400 var(--fs-sm)/1 var(--sans)}.bp-head .bp-full:hover{background:none;color:var(--text)}
   .browser-pane iframe{flex:1 1 0;min-height:0;width:100%;border:0;background:#000}
+  /* Stop: only while a to-do's run is on the browser (its title beside Browser), the same dark look as the chat's Stop */
+  .bp-head .bp-job{margin-left:10px;color:var(--c-text-2);font-weight:400}
+  .bp-head .bp-stop{display:inline-flex;align-items:center;gap:7px;width:auto;margin-right:10px;padding:0 15px 0 12px;border-radius:999px;background:var(--text);color:var(--bg);font:600 var(--fs-sm)/1 var(--sans)}
+  .bp-head .bp-stop:hover{background:var(--text);opacity:.85}.bp-head .bp-stop svg{width:12px;height:12px}.bp-head .bp-stop:disabled{opacity:.5;cursor:default}
+  .bp-head .bp-stop[hidden],.bp-head .bp-job[hidden]{display:none}
 }
 /* New to-do: a row under Find a to-do on a computer, a "+" in the top bar on a phone, a composer like the chat's. */
 .side-new{display:none}
@@ -2814,7 +2819,8 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><div id="review-runs" class="list"></div></details><div class="section-head"><h2>Delivery</h2></div
 ><div id="deliveries" class="list"></div><p class="footnote">Reviews read your new messages in small batches, so a busy or failed run can delay them. Sources keep collecting while OpenClaw, the engine The Machine runs on, is offline, except Android, which needs it and your phone. <a class="learn" href="https://themachine.computer/help/reviews-paused" target="_blank" rel="noopener">Learn more</a></p></div></section
 ><section id="talk-view" class="talk-view" hidden aria-label="Talk"></section
-><section id="browser-pane" class="browser-pane" hidden aria-label="Browser"><div class="bp-head"><h2>Browser</h2
+><section id="browser-pane" class="browser-pane" hidden aria-label="Browser"><div class="bp-head"><h2>Browser<span id="bp-job" class="bp-job" translate="no" hidden></span></h2
+><button type="button" id="bp-stop" class="bp-stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor"/></svg>Stop</button
 ><button type="button" id="bp-full" class="bp-full" aria-pressed="false">Full size</button
 ><a id="bp-tab" target="_blank" rel="noopener">Open in new tab ↗</a
 ><button type="button" id="bp-close" aria-label="Close the browser" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div
@@ -3550,6 +3556,19 @@ const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchM
   $('#bp-tab').href=row.getAttribute('href')||src;pane.dataset.shown='1';
   if(location.hash!=='#browser'){from=location.hash;history.pushState(null,'',location.pathname+location.search+'#browser');pushed=true}return true};
  browserPane=show;
+ // Stop: what the browser shows a to-do's run doing (api/browser-now: the one on the tab in front first) ends at once,
+ // with the chat's own stop (chat_stop), said in that to-do's chat. Looked at every few seconds while the pane is open.
+ let bpJob=null,bpTimer=0;const stopBtn=$('#bp-stop'),jobEl=$('#bp-job');
+ const bpPaint=()=>{const w=bpJob;stopBtn.hidden=!w;jobEl.hidden=!w;jobEl.textContent=w?w.title:'';if(w){stopBtn.title=t('Stop “{}”',w.title);stopBtn.setAttribute('aria-label',stopBtn.title)}};
+ const bpNow=async()=>{clearTimeout(bpTimer);if(pane.hidden)return;
+  try{const r=await request('api/browser-now');const w=Array.isArray(r?.working)?r.working.find(x=>/^[a-f0-9]{16}$/.test(x?.id||'')):null;
+   if((w&&w.id)!==(bpJob&&bpJob.id))stopBtn.disabled=false;bpJob=w||null;bpPaint()}catch{}
+  if(!pane.hidden)bpTimer=setTimeout(bpNow,document.hidden?15000:3000)};
+ stopBtn.onclick=async()=>{const w=bpJob;if(!w)return;stopBtn.disabled=true;
+  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_stop',args:{suggestion_id:w.id,via:'browser'}})});
+   if(bpJob?.id===w.id){bpJob=null;bpPaint()}toast(r?.stopped?t('Stopped “{}”',w.title):t('“{}” had already finished.',w.title));refresh()}
+  catch(err){errCaught(err);toast(err.message,true);stopBtn.disabled=false}};
+ new MutationObserver(()=>{if(!pane.hidden)bpNow();else{clearTimeout(bpTimer);bpJob=null;bpPaint()}}).observe(pane,{attributes:true,attributeFilter:['hidden']});
  const leave=()=>{if(pane.hidden)return;if(bpBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${bpBack}"]`)?.click()};
  row.addEventListener('click',e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button)return;if(show())e.preventDefault()});
  // Settings from the pane goes on top of it, so Back shows the pane again (Settings itself replaces the address)
