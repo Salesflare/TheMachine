@@ -75,6 +75,11 @@ try{
   assert.match(await later.locator('.chat-quoted-text').innerText(),/Sam Z <sam@example\.net> wrote:[\s\S]*Here are my link details/);
   await page.evaluate(()=>paintChat());
   assert.equal(await sources.nth(1).locator('details.chat-quoted').getAttribute('open'),'');
+  // Also when the repaint comes right after the click, before the browser's toggle event (a poll at that moment)
+  await page.evaluate(()=>{document.querySelector('#chat-log .chat-source details.chat-quoted').open=true;paintChat()});
+  assert.equal(await sources.nth(0).locator('details.chat-quoted').getAttribute('open'),'','opened just before a repaint');
+  await page.evaluate(()=>{document.querySelector('#chat-log .chat-source details.chat-quoted').open=false;paintChat()});
+  assert.equal(await sources.nth(0).locator('details.chat-quoted').getAttribute('open'),null,'closed just before a repaint');
   assert.equal(await sources.nth(0).locator('.chat-more').innerText(),'Less');
   assert.doesNotMatch(await log.innerText(),MARK);
   await shot('open');

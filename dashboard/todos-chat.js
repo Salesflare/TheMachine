@@ -96,6 +96,11 @@ function chatQuestion(s){const body=String(s.body||'').trim(),offer=CHAT_OFFER.e
  const own=s.preparation_questions?.[0]?.question,ask=/\?\s*$/.test(rest)?'':own?String(own).trim().replace(/[.?!]?$/,'?'):m?`Your ${/answer/i.test(m[1])?'answer':/input|help/i.test(m[1])?'input':'call'}: ${m[2]}?`:/^(?:Decide|Choose|Pick|Approve|Confirm)\b/.test(s.title||'')?String(s.title).replace(/[.?!]?$/,'?'):'';
  return {ask,offer:ask&&offer?offer[1]:'',body:ask&&offer?rest:body}}
 const chatOpenSet=new Set();  // what is unfolded (steps, long messages, drafts, diffs, repeated taps), kept through a poll
+// What is unfolded on screen right now, read before the thread is built again: the toggle event that records a fold
+// comes a moment after it opens or closes, so a repaint in between (a poll, a draft preview loading) would undo it.
+// Only from this chat's own thread, since the keys are positions in it.
+function chatFoldsNow(id){const log=$('#chat-log');if(!log||log.closest('.chat-layout')?.dataset.chat!==id)return;
+ for(const d of log.querySelectorAll('details[data-fold-key]'))d.open?chatOpenSet.add(d.dataset.foldKey):chatOpenSet.delete(d.dataset.foldKey)}
 const chatFold=(key,cls,summary,body)=>`<details class="${cls}" data-fold-key="${esc(key)}"${chatOpenSet.has(key)?' open':''}><summary>${summary}</summary>${body}</details>`;
 const chatLong=(t,lines=4)=>String(t||'').split('\n').length>lines||String(t||'').length>lines*70;
 const chatViaIcon=(v,note)=>note?'note':/^(email|gmail|outlook|mail)/i.test(v||'')?'mail':/calendar/i.test(v||'')?'cal':'chat';
@@ -118,7 +123,7 @@ function chatLearned(i){const sep='<span class="learned-sep" aria-hidden="true">
  return `<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?`${sep}<button type="button" class="link" data-learned-edit="${i.id}" aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}
 // A reply that says it left a page open in the browser (a sign-in tab, a form)
 const CHAT_TAB=/\b(?:tab|browser)\b[^.]*\b(?:open|opened|reopened|ready)\b|\b(?:open|opened|reopened)\b[^.]*\b(?:tab|browser)\b|\bis open for\b/i;
-function chatLog(s=chatOpen()){if(!chat)return '<p class="chat-note">Loading…</p>';const p=s?chatParts(s):{},out=[];let day='',side='';
+function chatLog(s=chatOpen()){if(!chat)return '<p class="chat-note">Loading…</p>';if(s)chatFoldsNow(s.id);const p=s?chatParts(s):{},out=[];let day='',side='';
  const items=[...(chat.items||[])];
  // The card itself opens the conversation when no run has said anything yet: what it is about and what it needs
  if(s&&!items.some(i=>i.kind==='reply'))items.push({kind:'card',at:Date.parse(s.created_at)||0});
