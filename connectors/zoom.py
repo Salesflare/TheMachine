@@ -23,6 +23,7 @@ are listed instead. Summaries exist only for meetings with AI Companion on, on a
 """
 import datetime as dt
 import hashlib
+import http.client
 import json
 import re
 import threading
@@ -88,7 +89,7 @@ def broker_token(config, account, helpers, fresh=False):
             if error.code in (401, 404):
                 raise helpers.SourceError('zoom_signin_expired', error.code) from None
             raise helpers.SourceError('zoom_broker', error.code, retry_after=int(retry) if retry.isdigit() else None) from None
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
             raise helpers.SourceError('zoom_broker_unreachable') from None
         access = answer.get('access_token') if isinstance(answer, dict) else None
         if not isinstance(access, str) or not access:
@@ -128,7 +129,7 @@ class Source:
                     continue  # the access token expired early: one fresh one
                 delay = min(3600, max(1, int(retry))) if retry.isdigit() else (60 if error.code == 429 else None)
                 raise self.helpers.SourceError('zoom_http', error.code, retry_after=delay) from None
-            except (urllib.error.URLError, TimeoutError, OSError):
+            except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
                 raise self.helpers.SourceError('zoom_network') from None
             except (ValueError, UnicodeError):
                 raise self.helpers.SourceError('zoom_invalid_json') from None

@@ -10,6 +10,7 @@ import calendar
 import datetime as dt
 import email.utils
 import hashlib
+import http.client
 import re
 import urllib.error
 import urllib.request
@@ -57,7 +58,7 @@ def fetch(url, state, SourceError):
         if error.code == 304:
             return None, error.headers
         raise SourceError('rss_http', error.code, retry_after=3600 if error.code == 429 else None) from None
-    except (urllib.error.URLError, TimeoutError) as error:
+    except (urllib.error.URLError, TimeoutError, http.client.HTTPException) as error:
         raise SourceError('network:' + type(error).__name__ + ':rss_read') from None
 
 

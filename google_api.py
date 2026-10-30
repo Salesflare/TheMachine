@@ -14,6 +14,7 @@ An account connected before its sign-in was kept here asks without "refresh_toke
 below can be called; anything else is refused here, before a token is asked for."""
 from __future__ import annotations
 
+import http.client
 import json
 import threading
 import time
@@ -116,7 +117,7 @@ def _broker(config, credential, payload, timeout=20, provider='google'):
     except urllib.error.HTTPError as error:
         error.close()
         raise BrokerError('google_scope_not_granted' if error.code == 403 else 'google_broker', error.code) from None
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
         raise BrokerError('google_broker_unreachable') from None
 
 
@@ -187,7 +188,7 @@ def call(config, credential, account, method, params, scope, body=None, write=Fa
             if error.code == 401 and not attempt and not write:
                 continue  # the access token expired early: one fresh one, for reads only
             raise BrokerError(method.split('.')[0], error.code) from None
-        except (urllib.error.URLError, TimeoutError, OSError):
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
             raise BrokerError('timeout') from None
         except ValueError:
             raise BrokerError('invalid_json') from None

@@ -14,6 +14,7 @@ import functools
 import gzip
 import hashlib
 import hmac
+import http.client
 import importlib.util
 import html
 import email.utils
@@ -1987,7 +1988,7 @@ class Salesflare:
             retry = error.headers.get('Retry-After', '')
             raise SourceError('salesflare', error.code,
                               min(max(int(retry), 1), 86400) if retry.isdigit() else None) from None
-        except (urllib.error.URLError, TimeoutError, OSError) as error:
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
             raise SourceError('network:' + type(error).__name__ + ':salesflare_read') from None
         except ValueError:
             raise SourceError('salesflare_invalid_json') from None
@@ -2965,7 +2966,7 @@ class Slack:
                 if method in self.limited_reads:
                     self.read_went(True)
             raise SourceError('slack:' + method, error.code, retry_after) from None
-        except (urllib.error.URLError, TimeoutError) as error:
+        except (urllib.error.URLError, TimeoutError, http.client.HTTPException) as error:
             # Keep only the exception class and an allowlisted read method,
             # never exception messages, endpoints, credentials or response bodies.
             cause = error.reason if isinstance(error, urllib.error.URLError) else error

@@ -31,6 +31,7 @@ import base64
 import datetime as dt
 import email.parser
 import email.policy
+import http.client
 import portable
 import json
 import mail_grants
@@ -146,7 +147,7 @@ def _broker(config, credential, payload, timeout=20):
         if error.code in (429, 503):  # the broker says when to ask again (a grant Microsoft is still settling, say)
             raise GraphError('microsoft_broker_busy', error.code, retry_after=_retry_after(error.headers)) from None
         raise GraphError('microsoft_scope_not_granted' if error.code == 403 else 'microsoft_broker', error.code) from None
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
         raise GraphError('microsoft_broker_unreachable') from None
 
 
@@ -258,7 +259,7 @@ def _direct(config, account, scope):
             if code in ('invalid_grant', 'interaction_required'):
                 raise GraphError('outlook:microsoft_signin_expired_run_assistant_connect_outlook', error.code, retry_after=3600) from None
             raise GraphError('microsoft_signin', error.code) from None
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
             raise GraphError('microsoft_signin_unreachable') from None
         if answer.get('refresh_token') and answer['refresh_token'] != saved.get('refresh_token'):
             _write_signin(path, answer['refresh_token'], short_scopes(answer.get('scope')) or granted)
@@ -368,7 +369,7 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
             if error.code == 401 and not attempt and not write:
                 continue  # the access token expired early: one fresh one, for reads only
             raise GraphError('outlook', error.code, retry_after=_retry_after(error.headers) if error.code in (429, 503) else None) from None
-        except (urllib.error.URLError, TimeoutError, OSError):
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
             raise GraphError('timeout') from None
         except ValueError:
             raise GraphError('invalid_json') from None
@@ -722,7 +723,7 @@ def device_signin(app, scopes_wanted, say, wait=900, poll=None):
         start = _post_form(f'{LOGIN}/{tenant}/oauth2/v2.0/devicecode', {'client_id': app['client_id'], 'scope': scope})
     except urllib.error.HTTPError as error:
         raise GraphError('microsoft_signin:' + str(_error_code(error) or error.code)) from None
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
         raise GraphError('microsoft_signin_unreachable') from None
     say(f"Open {start.get('verification_uri', 'https://microsoft.com/devicelogin')} and enter the code {start.get('user_code', '')}")
     interval = int(start.get('interval') or 5)
@@ -742,7 +743,7 @@ def device_signin(app, scopes_wanted, say, wait=900, poll=None):
                 interval += 5
                 continue
             raise GraphError('microsoft_signin:' + str(code or error.code)) from None
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
             continue
         if not answer.get('refresh_token') or not answer.get('access_token'):
             raise GraphError('microsoft_signin:no_lasting_access')
@@ -751,7 +752,7 @@ def device_signin(app, scopes_wanted, say, wait=900, poll=None):
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 me = json.loads(response.read(200_000))
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
             raise GraphError('microsoft_signin:profile') from None
         return answer['refresh_token'], short_scopes(answer.get('scope')), identity(me)
     raise GraphError('microsoft_signin:timed_out')

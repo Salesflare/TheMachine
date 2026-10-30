@@ -24,6 +24,7 @@ import base64
 import datetime as dt
 import difflib
 import hashlib
+import http.client
 import io
 import json
 import logging
@@ -1044,7 +1045,7 @@ class Catalog:
         url = self.registry + route + ('?' + urllib.parse.urlencode(params) if params else '')
         try:
             return self.fetch(url)
-        except (OSError, urllib.error.URLError, ValueError):
+        except (OSError, urllib.error.URLError, ValueError, http.client.HTTPException):
             raise ValueError('ClawHub did not answer; try again in a minute') from None
 
     def hub(self, ref):

@@ -155,7 +155,7 @@ def answer(cfg, url, secret, timeout):
             return None
         raise EnrichmentError({401: 'the service rejected the key', 403: 'the service refused (key or plan)',
                                429: 'rate limited'}.get(error.code, f'HTTP {error.code}')) from None
-    except (urllib.error.URLError, TimeoutError, OSError) as error:
+    except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
         raise EnrichmentError('unreachable: ' + type(getattr(error, 'reason', error)).__name__) from None
 
 

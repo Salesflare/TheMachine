@@ -21,6 +21,7 @@ to email notifications"):
 from __future__ import annotations
 
 import datetime as dt
+import http.client
 import json
 import logging
 import threading
@@ -319,6 +320,6 @@ def mail(url, token, subject, text, opener=urllib.request.urlopen, delivery=None
             LOG.warning('notify mail not taken')
     except urllib.error.HTTPError as error:  # the control plane said no: 401 not paired, 404 no address, 429 enough today, 502/503 its mailer
         LOG.warning('notify mail status=%d', error.code)
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException) as error:
         LOG.warning('notify mail error=%s', type(error).__name__)
     return False
