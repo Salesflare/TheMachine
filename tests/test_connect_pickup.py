@@ -65,11 +65,12 @@ class Watch(unittest.TestCase):
             f.relay.items = [sealed(f, 'dc_1', BODY)]  # consent given: sealed for this Machine
             started = time.monotonic()
             self.assertTrue(delivered.wait(5))
-        self.assertLess(time.monotonic() - started, 2)
-        for _ in range(100):  # the watch ends once nothing waits
-            if not f.connects_watch_lock.locked():
-                break
-            time.sleep(0.02)
+            self.assertLess(time.monotonic() - started, 2)
+            # the watch ends once nothing waits. Still at the short interval: outside it, the watch's last wait is the
+            # real one (2 s), and on a busy machine it outlives a short poll and then finds its database gone.
+            until = time.monotonic() + 10
+            while f.connects_watch_lock.locked() and time.monotonic() < until:
+                time.sleep(0.02)
         self.assertFalse(f.connects_watch_lock.locked())
 
     def test_the_app_asks_for_the_watch_where_it_takes_connects(self):
