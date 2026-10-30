@@ -100,7 +100,8 @@ class Source:
             if status == 400 and (params or {}).get('pageToken'):
                 raise helpers.SourceError('google_meet_cursor_expired') from None
             if status:
-                raise helpers.SourceError('google_meet_http', status, retry_after=60 if status == 429 else None) from None
+                wait = getattr(error, 'retry_after', None)  # Google's Retry-After, when it gave one
+                raise helpers.SourceError('google_meet_http', status, retry_after=wait or (60 if status == 429 else None)) from None
             raise helpers.SourceError('google_meet_network') from None
         try:
             return json.loads(raw.decode('utf-8-sig'))

@@ -127,7 +127,7 @@ class Google:
             if error.status == 401:
                 raise self.helpers.SourceError('docs_signin_expired', 401) from None
             raise self.helpers.SourceError('docs_' + str(error.category), error.status,
-                                           retry_after=60 if error.status == 429 else None) from None
+                                           retry_after=getattr(error, 'retry_after', None) or (60 if error.status == 429 else None)) from None
 
     def me(self):
         about = self.call('drive.about.get', {'fields': 'user(displayName,emailAddress)'})

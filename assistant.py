@@ -597,14 +597,32 @@ def recover_browser(profile, own_cdp=False, config=None):
             pass  # the five-minute lease expires even if its helper is temporarily unavailable
 
 
-# Rate limits in a row before a sync's rate limit goes into the error reports (each waits its Retry-After, a minute or more).
-RATE_LIMIT_REPORT_AFTER = 20
+# Failures in a row before a transient sync failure (a rate limit, the service's own 5xx, the network) goes into the
+# error reports: each waits its Retry-After or the poll interval, so this is an hour or more of not reading.
+TRANSIENT_REPORT_AFTER = 20
+# The service's "busy, try again" statuses (5xx it recovers from by itself, 429): one quick retry, then the normal wait
+UPSTREAM_BUSY = {429, 500, 502, 503, 504}
+QUICK_RETRY_SECONDS = 15
+QUICK_RETRY_MAX = 60  # a Retry-After longer than this waits in the checkpoint instead
 
 
 def rate_limited(error):
     """The service asked to slow down (HTTP 429, or its own ratelimited label): expected, and retried after its wait."""
     category = str(getattr(error, 'category', '') or '')
     return getattr(error, 'status', None) == 429 or bool(re.match(r'[a-z0-9_]*rate_?limit', category))
+
+
+def upstream_busy(error):
+    """The service answered 429 or a transient 5xx (500, 502, 503, 504): its hiccup, not ours, and retried."""
+    return getattr(error, 'status', None) in UPSTREAM_BUSY or rate_limited(error)
+
+
+def transient(error):
+    """A sync failure that is no bug: the service busy (upstream_busy), or the network (network:..., *_network,
+    *_unreachable, a timeout). Retried; only reported when it keeps happening (TRANSIENT_REPORT_AFTER)."""
+    category = str(getattr(error, 'category', '') or '')
+    return upstream_busy(error) or category.startswith('network:') or category == 'timeout' or \
+        bool(re.fullmatch(r'[a-z0-9_]*_(?:network|unreachable)', category))
 
 
 class SourceError(Exception):
@@ -1754,7 +1772,7 @@ def gog_read(config, account, api, version, method, params, scope):
         try:
             return google_api.call(config, credential, account, method, params, scope)
         except google_api.BrokerError as error:
-            raise SourceError(error.category, error.status) from None
+            raise SourceError(error.category, error.status, getattr(error, 'retry_after', None)) from None
     if account['transport'] != 'gog':
         raise SourceError('unsupported_transport')
     env = os.environ.copy()
@@ -4527,11 +4545,12 @@ class Store:
             self.record_sync_activity(db, account, 'failed', error=str(error), retry_at=retry_at)
             try:  # the error reports: the source's service and the error type, never the account (error_feed.py)
                 service_name = str(account).split(':')[0]
-                # A rate limit is the service saying "later": the sync waits its Retry-After and reads on. Only one
-                # that keeps a source from reading for a long run of tries is worth a report.
+                # A rate limit, the service's own 503 or a dropped connection is the service or the network saying
+                # "later": the sync waits and reads on. Only one that keeps a source from reading for a long run of
+                # tries is worth a report; a sign-in or permission error (401, 403) is reported at once.
                 row = db.execute('SELECT failures FROM checkpoints WHERE account_id=?', (account,)).fetchone()
                 streak = (row[0] if row and row[0] else 0) + 1
-                if rate_limited(error) and streak < RATE_LIMIT_REPORT_AFTER:
+                if transient(error) and streak < TRANSIENT_REPORT_AFTER:
                     pass
                 elif re.fullmatch(r'[a-z0-9_-]{1,24}', service_name):
                     error_feed.record(db, 'sync', type(error).__name__, str(error), 'sync', service_name, None, self.code_version)
@@ -15673,6 +15692,23 @@ class App(*APP_MIXINS):
         with SYNC_LOCKS_LOCK:
             return SYNC_LOCKS.setdefault(account_id, threading.Lock())
 
+    def sync_retrying(self, account, source=None):
+        """One sync of the account; when the service answers 429 or a transient 5xx, one more try shortly after (its
+        Retry-After when that is short, else QUICK_RETRY_SECONDS). A second failure goes to the caller. Not for Slack's
+        rate limit: its reads keep their own round (Slack.read_went), and a quick extra read would spend the next one."""
+        for attempt in (0, 1):
+            try:
+                with self.sync_lock(account['id']):
+                    return sync_slack(self.store, self.config, account, source) if source else sync_source(self.store, self.config, account)
+            except SourceError as error:
+                wait = error.retry_after or QUICK_RETRY_SECONDS
+                if attempt or not upstream_busy(error) or (source and rate_limited(error)) or wait > QUICK_RETRY_MAX \
+                        or self.stop.is_set():
+                    raise
+                LOG.info('sync account=%s service busy (%s), retrying in %ds', account['id'], error, wait)
+                if self.stop.wait(wait):
+                    raise
+
     def collector(self, account):
         source = Slack(self.config, account, self.stop) if account.get('service') == 'slack' else None
         try:
@@ -15694,8 +15730,7 @@ class App(*APP_MIXINS):
                         break
                 delay = account.get('poll_seconds', self.config.get('poll_seconds', 300))
                 try:
-                    with self.sync_lock(account['id']):
-                        result = sync_slack(self.store, self.config, account, source) if source else sync_source(self.store, self.config, account)
+                    result = self.sync_retrying(account, source)
                     LOG.info('sync account=%s mode=%s read=%d filtered=%d', account['id'], result['mode'], result['events'], result.get('filtered', 0))
                     state = self.store.checkpoint(account['id'])
                     if not result.get('stopped') and (result.get('more') or state.get('mode', result['mode']) != 'incremental' or state.get('page_token')):  # a plugin's checkpoint may not keep a mode
