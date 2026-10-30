@@ -220,9 +220,6 @@ a.btn-link[hidden]{display:none}
 .chip.project-chip a{color:inherit;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .chip.project-chip a:hover{text-decoration:underline}
 .chip.project-chip .project-pick{border:0;background:none;color:inherit;padding:0 6px;min-height:0;font-size:.7rem;cursor:pointer}
-.project-picker{margin:8px 0;padding:10px 12px;border:1px solid var(--border-strong,var(--line));border-radius:12px;background:var(--surface,var(--bg));display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.project-picker select{max-width:100%;margin-left:6px}
-.project-picker .actions{display:flex;gap:6px;flex-wrap:wrap}
 .tile-todos{margin:6px 0 0;color:var(--muted);font-size:var(--fs-sm)}
 .project-todos .done a{color:var(--muted)}
 .lead::before{content:"";flex:none;width:14px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--amber) 0 25%,transparent 25% 37.5%,var(--amber) 37.5% 62.5%,transparent 62.5% 75%,var(--amber) 75%)}
@@ -1103,6 +1100,13 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
   .card .actions:not(.result-actions)>.more-actions{flex:1 1 28%;min-width:0}.card .more-actions>summary{min-height:44px;padding:8px 6px;font-size:.9rem}
   .card .foot-links{margin-left:0}
 }
+/* A to-do's project picker: the select takes the box's width (a long name is cut off inside it, never past the to-do),
+   and Save, No project and Cancel share one even row. After the .card .actions rules so it wins over them. */
+.project-picker{box-sizing:border-box;max-width:100%;min-width:0;margin:12px 0 0;padding:12px;border:1px solid var(--border-strong,var(--line));border-radius:12px;background:var(--surface,var(--bg));display:flex;flex-direction:column;gap:10px}
+.project-picker label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.project-picker select{box-sizing:border-box;display:block;width:100%;min-width:0;max-width:100%;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project-picker .actions,.card .project-picker .actions:not(.result-actions){display:flex;flex-wrap:wrap;gap:8px;margin:0}
+.project-picker .actions>button,.card .project-picker .actions:not(.result-actions)>button{flex:1 1 0;min-width:0;margin:0;padding:8px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* While sending, the site's sliding bar; once sent, the note in mint. */
 .card .note.sent-ok{color:var(--mint);font-weight:600}
 :is(.card,.chat-agent) .agent-job .note{margin-top:10px}:is(.card,.chat-agent) .agent-job .note.failed{color:var(--orange);font-weight:600}:is(.card,.chat-agent) .agent-progress{margin:2px 0 0;font-size:.86rem;overflow-wrap:anywhere}
