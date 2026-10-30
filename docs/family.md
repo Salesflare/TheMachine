@@ -38,6 +38,13 @@ A Family never asks or answers work questions: who knows someone, meeting contex
 follow-up splits, the team brief or free questions. The Network refuses them in a Family, and your Machine declines
 them there even if one arrives. A to-do or plan becomes a personal card, on a personal account when you have one.
 
+## Ask to review
+
+A Personal to-do can go to someone in your Family for a look before you send it: **Ask to review**, under More on the
+to-do. They edit the draft or add a comment on a to-do of their own; their changes come back for you to accept or
+ignore, and nothing goes out until you press Send. Work to-dos never go to the Family. See [The Fleet](fleet.md)
+(Ask to review) and `fleet_reviews.py`.
+
 ## Safety
 
 What a member sends is kept to a fixed shape (a title, a short note, a date or time, a place) and only ever shown,
