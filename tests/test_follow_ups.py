@@ -108,6 +108,33 @@ class Schedule(unittest.TestCase):
         self.assertTrue(follow_ups.repeats('Any news on the pilot?', ['any news on the pilot']))
         self.assertFalse(follow_ups.repeats('Here is the case study I mentioned.', ['Any news on the pilot?']))
 
+    def test_a_skill_fits_by_name_or_by_the_owners_draft_rules(self):
+        on = [{'name': 'Partner listings', 'slug': 'partner-listings', 'description': 'd', 'body': 'b'},
+              {'name': 'monthly-payroll', 'slug': 'monthly-payroll', 'description': 'd', 'body': 'b'},
+              {'name': 'Answers', 'slug': 'answers', 'description': 'd', 'body': 'b'}]
+        names = lambda found: [k['name'] for k in found]
+        self.assertEqual(names(follow_ups.fitting_skills(on, ['Partner listing', 'Partner listing: Acme'])), ['Partner listings'])  # plurals alike
+        self.assertEqual(names(follow_ups.fitting_skills(on, ['', 'Partner listings exchange: Acme'])), ['Partner listings'])  # the project's name
+        self.assertEqual(names(follow_ups.fitting_skills(on, ['Alpha testers', 'Acme pilot'])), [])
+        self.assertEqual(names(follow_ups.fitting_skills(on, ['Partners', 'Acme'])), [])  # one word is too little to match on
+        # Named in the owner's draft rules for the to-do, by its name or its slug
+        self.assertEqual(names(follow_ups.fitting_skills(on, ['Alpha testers'], '- For pilots, use the partner-listings skill.')), ['Partner listings'])
+        self.assertEqual(names(follow_ups.fitting_skills(on, ['Alpha testers'], '- Follow the Monthly payroll skill.')), ['monthly-payroll'])
+        self.assertEqual(follow_ups.fitting_skills(on, ['Alpha testers'], '- Short answers please.'), [])  # a one-word name isn't a mention
+
+    def test_a_fitting_skill_outranks_the_defaults_and_falls_back_to_its_file(self):
+        fit = [{'name': 'Partner listings', 'why': 'its name matches this board or project', 'path': '/w/skills/the-machine/partner-listings/SKILL.md',
+                'body': 'Open every email with what is in it for them.'}]
+        note = follow_ups.skill_note(fit)
+        self.assertIn('outranks the follow-up defaults above', note)
+        self.assertIn('Open every email with what is in it for them.', note)
+        self.assertIn('/w/skills/the-machine/partner-listings/SKILL.md', note)
+        short = follow_ups.skill_note(fit, room=len(note) - 1)  # no room for the text: read the file before drafting
+        self.assertNotIn('Open every email', short)
+        self.assertIn('read /w/skills/the-machine/partner-listings/SKILL.md now, before drafting', short)
+        self.assertIn('outranks the follow-up defaults above', short)
+        self.assertEqual(follow_ups.skill_note([]), '')
+
     def test_follow_ups_pause_before_other_background_work(self):
         now_s = 1_000_000
         usage = lambda short, week=2: [{'provider': 'anthropic', 'windows': [{'label': '5h', 'used': short, 'reset': now_s + 3600},
@@ -576,6 +603,37 @@ class FollowUps(unittest.TestCase):
         self.store.confirm_action(kim, after[kim]['revision'], 'tap', 'dashboard')
         self.assertEqual(app.action('follow_up_change', {'ids': [kim], 'text': 'Shorter.'}, owner_dashboard=True), {'changing': [], 'skipped': [kim]})
         self.assertEqual([j['status'] for j in self.jobs()], ['queued'])
+
+    def test_a_fitting_skill_reaches_the_drafting_prompt_and_outranks_the_follow_up_defaults(self):
+        """A skill for this kind of follow-up (its name matches the board's) is in every follow-up's drafting prompt, in
+        full, after the follow-up defaults and ranked above them and the owner's recent messages, so its structure
+        rules (what comes first) win. A skill that doesn't fit stays out."""
+        import skills
+        self.turn_on()
+        app = self.app(openclaw_workspace=self.tmp.name)
+        app.stop_stale_runs = lambda runner: None
+        app.skills = skills.Skills(self.store.connect, self.tmp.name)
+        app.skills.save(None, 'Alpha testers outreach', 'Reach out to alpha testers and follow up',
+                        '## Emails\nOpen every email, follow-ups too, with what is in it for them: early access to the next release. Then the ask.')
+        app.skills.save(None, 'Monthly payroll', 'Run the monthly payroll', 'Enter the vacation days, then submit.')
+        self.assertEqual(app.follow_up_step()['drafted'], 2)
+        seen = {}
+        draft = {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Re: Pilot', 'body': 'Hi Sam, early access is yours.'}
+        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+            starts, refused = self.model_turns(app, lambda sid, message, current: seen.setdefault(sid, message) and draft)
+        self.assertEqual((len(starts), refused), (2, []))
+        for message in seen.values():
+            self.assertIn('Automated follow-up 1', message)
+            self.assertIn('with what is in it for them: early access to the next release', message)  # the skill's own text
+            self.assertIn('Skill Alpha testers outreach (its name matches this board or project', message)
+            self.assertIn(str(Path(self.tmp.name) / 'skills' / skills.FOLDER / 'alpha-testers-outreach' / 'SKILL.md'), message)
+            # Ranked above the defaults: it comes after them and says it wins over them and over the owner's recent messages
+            self.assertGreater(message.index('early access to the next release'), message.index('refer to the last exchange'))
+            self.assertIn("outranks the follow-up defaults above (refer to the last exchange, keep it short, one easy question), the owner's recent messages", message)
+            self.assertIn('never drop what the skill says comes first', message)
+            self.assertNotIn('Enter the vacation days', message)  # a skill for other work stays out
+        # Not a follow-up: nothing added
+        self.assertEqual(app.follow_up_skill_lines('nope'), '')
 
     def test_a_change_takes_the_full_context_and_a_skill_added_after_the_drafts(self):
         """"I added a skill, use it now": the rewrite is a full preparation turn (style, the thread, earlier follow-ups),

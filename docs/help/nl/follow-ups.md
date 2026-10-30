@@ -6,7 +6,7 @@ covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 4
 ---
-Als iemand op een bord niet meer antwoordt, schrijft je Machine de opvolging voor je, in jouw stem en in hetzelfde gesprek. Staat uit tot je het aanzet.
+Als iemand op een bord niet meer antwoordt, schrijft je Machine de opvolging voor je, in jouw stem en in hetzelfde gesprek. Staat uit tot je het aanzet. Past een van je skills bij het bord, dan volgen de concepten die, ook in wat eerst komt in de e-mail.
 
 ## Aanzetten
 

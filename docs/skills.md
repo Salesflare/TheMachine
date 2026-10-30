@@ -14,6 +14,12 @@ Skills are plain [OpenClaw skills](https://docs.openclaw.ai/tools/skills). Each 
 skill, and its agent reads one when a task matches "when to use it". New and edited skills apply from the agent's next
 session; the Gateway doesn't need a restart.
 
+Automated follow-ups don't leave this to chance. When a skill that is on fits a follow-up (its name matches the board's
+or the project's, like "Partner listings" for the board "Partner listings", or your draft rules for that to-do name it),
+its full instructions go into the drafting prompt, ranked above the generic follow-up defaults ("refer to the last
+exchange, keep it short") and your recent messages. So the skill's rules on how the email is built, like what comes
+first, hold for every follow-up too.
+
 The `the-machine` folder belongs to The Machine: it is rewritten from Settings > Skills, so edit skills there. Your
 other skills in the workspace are left alone. If a name is already taken by one of them, The Machine's copy gets a
 different folder name (`-2`), so it never replaces yours. A whole `SKILL.md` can be pasted into the instructions box:

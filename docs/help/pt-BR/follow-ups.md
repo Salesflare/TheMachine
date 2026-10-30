@@ -6,7 +6,7 @@ covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 4
 ---
-Quando alguém de um quadro para de responder, sua Machine escreve o follow-up para você, no seu tom e na mesma conversa. Fica desligado até você ativar.
+Quando alguém de um quadro para de responder, sua Machine escreve o follow-up para você, no seu tom e na mesma conversa. Fica desligado até você ativar. Quando uma das suas habilidades combina com o quadro, os rascunhos a seguem, inclusive no que vem primeiro no email.
 
 ## Ativar
 
