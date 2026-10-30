@@ -953,12 +953,12 @@ def build(db, config, now, team=(), kin=None):
     addresses of the people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py).
     kin: which of them are in the owner's Work Fleets, Family or Friends (circles), so someone only in Family or
     Friends is Personal."""
-    for attempt in range(BUILD_TRIES + 1):
+    for _ in range(BUILD_TRIES):
         try:
-            return _build(db, config, now, team, kin, locked=attempt == BUILD_TRIES)
+            return _build(db, config, now, team, kin, locked=False)
         except Outdated:
             continue
-    raise AssertionError('unreachable: the last try holds the lock')
+    return _build(db, config, now, team, kin, locked=True)  # the last try holds the lock throughout
 
 
 def _watch(db):
