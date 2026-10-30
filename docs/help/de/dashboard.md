@@ -22,6 +22,10 @@ order: 4
 
 Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirms ist dunkel. Ein Button in der Ecke zeigt den ganzen Bildschirm. Auf einem niedrigen Bildschirm scrollt die ganze Seitenleiste als eine Spalte, Aufgaben eingeschlossen, wie das Menü auf dem Handy.
 
+**Stopp** steht oben, solange eine Aufgabe den Browser nutzt, mit dem Namen dieser Aufgabe neben **Browser**. Ein Druck beendet es sofort, ohne Rückfrage: Es wird nichts mehr geklickt, getippt oder gesendet, und der Chat der Aufgabe sagt "Im Browser gestoppt".
+
+Nutzen mehrere Aufgaben den Browser, stoppt er die auf dem vorderen Tab. Auf dem Handy hat der Tab des Browsers denselben Button oben. Um weiterzumachen, schreib in den Chat oder drück **Erneut versuchen**.
+
 ## Neue Versionen
 
 Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, solange etwas Getipptes noch nicht gespeichert oder gesendet ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.

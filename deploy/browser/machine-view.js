@@ -240,9 +240,21 @@ if (window.top === window) {
         '#machine-note a{color:#9cc3ff;margin-right:auto}' +
         '#machine-note button,#machine-note-pill{font:600 14px system-ui,sans-serif;border:0;border-radius:18px;height:36px;padding:0 14px;cursor:pointer}' +
         '#machine-note button{background:#fff;color:#1d2026}#machine-note-pill{max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-        '#machine-note[hidden],#machine-note-pill[hidden]{display:none}';
+        '#machine-note[hidden],#machine-note-pill[hidden]{display:none}' +
+        '#machine-stop{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:1002;display:flex;align-items:center;gap:7px;' +
+        'height:36px;max-width:calc(100% - 16px);padding:0 16px 0 13px;border:0;border-radius:18px;background:#1d2026f2;color:#fff;' +
+        'font:600 14px system-ui,sans-serif;box-shadow:0 2px 10px #0008;cursor:pointer}' +
+        '#machine-stop svg{flex:none;width:12px;height:12px}#machine-stop:disabled{opacity:.6;cursor:default}#machine-stop[hidden]{display:none}';
     document.head.append(css);
-    document.body.append(note, pill);
+    // Stop: while a to-do's run is on this browser (the one on the tab in front, from /api/browser-now), one tap ends
+    // it with the to-do chat's own stop (chat_stop, via the browser), at once and without asking.
+    const stop = document.createElement('button');
+    stop.type = 'button';
+    stop.id = 'machine-stop';
+    stop.hidden = true;
+    stop.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor"/></svg><span></span>';
+    stop.querySelector('span').textContent = t('Stop');
+    document.body.append(note, pill, stop);
     if (document.getElementById('machine-view-bar')) document.documentElement.style.setProperty('--machine-note-bottom', '56px');
 
     let now = {working: [], waiting: []}, shown = '', closed = localStorage.getItem(KEY) === 'idle' ? 'idle' : '';
@@ -264,7 +276,30 @@ if (window.top === window) {
         pill.textContent = wait ? t('Your turn: sign in') : work ? t('Working: {}', work.title) : t('What is this?');
         note.hidden = closed === key;
         pill.hidden = !note.hidden;
+        const job = work && /^[a-f0-9]{16}$/.test(work.id || '') ? work : null;
+        if ((job && job.id) !== stop.dataset.id) stop.disabled = false;
+        stop.dataset.id = job ? job.id : '';
+        stop.hidden = !job;
+        if (job) stop.title = t('Stop “{}”', job.title);
+        if (job) stop.setAttribute('aria-label', stop.title);
     }
+    stop.onclick = async () => {
+        const id = stop.dataset.id;
+        if (!id || stop.disabled) return;
+        stop.disabled = true;
+        try {
+            const session = await fetch('../api/session', {cache: 'no-store', credentials: 'same-origin'}).then((r) => r.json());
+            const r = await fetch('../api/action', {method: 'POST', credentials: 'same-origin',
+                headers: {'Content-Type': 'application/json', 'X-CSRF-Token': session.csrf || ''},
+                body: JSON.stringify({action: 'chat_stop', args: {suggestion_id: id, via: 'browser'}})});
+            if (!r.ok) throw new Error(String(r.status));
+            now = {...now, working: now.working.filter((w) => w.id !== id)};
+            paint();
+        } catch {
+            stop.disabled = false;
+        }
+        check();
+    };
     note.querySelector('button').onclick = () => {
         closed = shown;
         if (shown === 'idle') localStorage.setItem(KEY, 'idle');

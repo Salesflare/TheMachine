@@ -3906,6 +3906,8 @@ class Store:
             voice_input.initialize(db)
             talk_live.initialize(db)
             db.execute('CREATE TABLE IF NOT EXISTS chat_stops(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,text TEXT NOT NULL,at TEXT NOT NULL)')
+            if 'via' not in {r['name'] for r in db.execute('PRAGMA table_info(chat_stops)')}:  # where Stop was pressed: NULL the chat, 'browser'
+                db.execute('ALTER TABLE chat_stops ADD COLUMN via TEXT')
         os.chmod(self.path, 0o600)
         self.ensure_monotonic_event_ids()
         with self.connect() as db:
@@ -7401,11 +7403,12 @@ class Store:
                 follow_ups.reopen(db, suggestion_id)
             return result
 
-    def stop_chat(self, suggestion_id, job_id, text):
+    def stop_chat(self, suggestion_id, job_id, text, via=None):
         """The chat's Stop: the card's current run ends now, kept as it was. Its preparation waits (blocked, error
         'stopped', so Try again or a new message carries on), any further tool call of the run is refused
         (preparation_state.tool_intent) and the worker aborts it in its session at once (stop_stale_runs). What it had
-        said so far is kept for the chat. False when nothing was running any more."""
+        said so far is kept for the chat, and where Stop was pressed (`via`: None the chat, 'browser' the Browser view).
+        False when nothing was running any more."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             stamp = now()
@@ -7414,7 +7417,7 @@ class Store:
                                  (CHAT_STOPPED, stamp, suggestion_id, job_id)).rowcount
             if not stopped:
                 return False
-            db.execute('INSERT OR REPLACE INTO chat_stops(job_id,suggestion_id,text,at) VALUES(?,?,?,?)', (job_id, suggestion_id, text or '', stamp))
+            db.execute('INSERT OR REPLACE INTO chat_stops(job_id,suggestion_id,text,at,via) VALUES(?,?,?,?,?)', (job_id, suggestion_id, text or '', stamp, via))
             pause_idle_steps(db, suggestion_id)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             return True
@@ -9938,6 +9941,25 @@ def peek_tab(db, job_id):
     if not isinstance(last, dict) or last.get('action') == 'close':
         return None
     return own_tab(db, job_id, calls, last.get('targetId') or last.get('label'))
+
+
+def run_tab(db, job_id):
+    """The tab a running preparation last worked in, as (DevTools target ID, port), also between its browser steps
+    (peek_tab only while it is on one): the tab of its latest browser step, when this task opened it itself (own_tab).
+    None otherwise."""
+    try:
+        calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
+                           (job_id,)).fetchall()
+    except sqlite3.OperationalError:
+        return None
+    for call in calls:
+        try:
+            last = json.loads(call['params'] or '{}') if call['tool'] == 'browser' else None
+        except ValueError:
+            continue
+        if isinstance(last, dict):
+            return None if last.get('action') == 'close' else own_tab(db, job_id, calls, last.get('targetId') or last.get('label'))
+    return None
 
 
 def own_tab(db, job_id, calls, want):
@@ -15452,7 +15474,7 @@ class App(*APP_MIXINS):
                 self.store.note_activity('opened', args.get('suggestion_id'))  # a to-do opened (its chat's first read)
             return self.card_chat(args.get('suggestion_id'), args.get('cursor'))
         if name == 'chat_stop':
-            return self.chat_stop(args.get('suggestion_id'))
+            return self.chat_stop(args.get('suggestion_id'), via='browser' if args.get('via') == 'browser' else None)
         if name in ('chat_model_default', 'chat_model_set'):
             if not owner_dashboard:
                 raise ValueError('Only the owner picks the model, on the dashboard')
@@ -17367,7 +17389,12 @@ class App(*APP_MIXINS):
 
     def stop_stale_runs(self, runner, limit=5):
         """Canceled, replaced or finished runs live on in their Gateway session until stopped. Stop and
-        confirm each exact old run; only work in that same session or card waits for it."""
+        confirm each exact old run; only work in that same session or card waits for it. One round at a time: the
+        Browser view's Stop starts one at once, beside the worker's."""
+        with self.__dict__.setdefault('stale_lock', threading.Lock()):
+            self._stop_stale_runs(runner, limit)
+
+    def _stop_stale_runs(self, runner, limit):
         with self.store.connect() as db:
             stale=db.execute("""SELECT r.*,p.status prep_status,p.error prep_error,p.updated_at prep_updated
                 FROM preparation_runs r LEFT JOIN preparations p ON p.job_id=r.job_id
@@ -17724,9 +17751,12 @@ class App(*APP_MIXINS):
             LOG.error('chat model error=%s', type(error).__name__)
             return {}
 
-    def chat_stop(self, suggestion_id):
+    def chat_stop(self, suggestion_id, via=None):
         """The chat's Stop button: ends the card's running reply now and keeps what it said so far (its live text,
-        read from the Gateway first). {'stopped': False} when it had already finished."""
+        read from the Gateway first). {'stopped': False} when it had already finished. The Browser view's Stop
+        (via='browser', for the task on the tab it shows, browser_now) is the same stop, said in the chat as such, and
+        it doesn't wait for the worker's next round: the page load in the run's own tab stops and the run is aborted in
+        its session right away (stop_browser_run)."""
         if not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
             raise ValueError('Unknown suggestion')
         with self.store.connect() as db:
@@ -17739,7 +17769,25 @@ class App(*APP_MIXINS):
                                             'cursor': None, 'limit': 1})
             flight = found.get('inFlightRun') if isinstance(found, dict) and isinstance(found.get('inFlightRun'), dict) else None
             text = chat_reply(chat_text(flight.get('text'), chars=8000))[0] if flight else ''
-        return {'stopped': self.store.stop_chat(suggestion_id, job['job_id'], text)}
+        stopped = self.store.stop_chat(suggestion_id, job['job_id'], text, via)
+        if stopped and via == 'browser':
+            self.stop_browser_run(job['job_id'])
+        return {'stopped': stopped}
+
+    def stop_browser_run(self, job_id):
+        """Right after the Browser view's Stop: the run's own tab stops loading (a navigation or form post on its way
+        stops there), then its Gateway run is aborted now, in the background, instead of on the worker's next round.
+        Its next tool call is refused already (tool_intent), so nothing more is clicked, typed or sent."""
+        try:
+            with self.store.connect() as db:
+                tab = run_tab(db, job_id)
+            base = (browser_login.endpoints(self.config) or [None])[0]
+            if tab and base and urllib.parse.urlsplit(base).port == tab[1]:
+                with browser_login.browser_cdp.Session(base, tab[0], timeout=3) as session:
+                    session.call('Page.stopLoading')
+        except (browser_login.browser_cdp.CdpError, OSError, KeyError, TypeError, AttributeError, ValueError, sqlite3.Error):
+            pass  # the tab is gone or the browser is busy: the abort below still ends the run
+        threading.Thread(target=self.stop_stale_runs, args=(self.preparation_gateway,), daemon=True, name='browser-stop').start()
 
     def card_chat_service(self, db, suggestion_id):
         """What the service itself knows of a card's chat: the source messages, the owner's notes and taps, what
@@ -17892,7 +17940,13 @@ class App(*APP_MIXINS):
                                                        'at': chat_ms(r['started_at'])})
         # The chat's Stop: what the run had said so far stays (unless it had saved a result), cut off with "…" and
         # marked Stopped on the reply itself (the dashboard's small note under it), also when it had said nothing yet
-        for r in db.execute('SELECT job_id,text,at FROM chat_stops WHERE suggestion_id=? ORDER BY at', (suggestion_id,)):
+        # Stop in the Browser view says so as an event line; the reply shows only when the run had said something.
+        for r in db.execute('SELECT job_id,text,at,via FROM chat_stops WHERE suggestion_id=? ORDER BY at', (suggestion_id,)):
+            if r['via'] == 'browser':
+                owner.append({'kind': 'event', 'text': 'Stopped from the browser', 'mine': True, 'at': chat_ms(r['at'])})
+                if not (r['text'] or '').strip():
+                    results.setdefault(r['job_id'], [])
+                    continue
             if r['job_id'] not in results:
                 text = (r['text'] or '').rstrip()
                 results[r['job_id']] = [{'kind': 'reply', 'text': text + '…' if text and not text.endswith(('…', '...')) else text,
@@ -17983,10 +18037,11 @@ class App(*APP_MIXINS):
         return base, tab[0]
 
     def browser_now(self):
-        """What this Machine's own browser is doing, for the note in its viewer: the running tasks that use it (title
-        and latest step) and the ones waiting there for the owner to sign in (title and site). Nothing else."""
+        """What this Machine's own browser is doing, for the note in its viewer and its Stop (in the viewer and the
+        dashboard's Browser pane): the running tasks that use it (to-do ID, title and latest step), the one on the tab
+        in front first, and the ones waiting there for the owner to sign in (title and site). Nothing else."""
         with self.store.connect() as db:
-            rows = db.execute("SELECT p.job_id,p.session_job_id,p.status,p.reason,s.title FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
+            rows = db.execute("SELECT p.job_id,p.session_job_id,p.suggestion_id,p.status,p.reason,s.title FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
                               "WHERE p.status IN ('starting','running','blocked') ORDER BY p.updated_at DESC LIMIT 20").fetchall()
             waits = {r['job_id']: browser_wait(db, r['job_id'], r['status'], reason=r['reason']) for r in rows if r['status'] == 'blocked'}
             try:
@@ -17994,6 +18049,8 @@ class App(*APP_MIXINS):
                     "SELECT 1 FROM preparation_calls WHERE job_id=? AND tool='browser' LIMIT 1", (r['job_id'],)).fetchone()}
             except sqlite3.OperationalError:
                 used = set()
+            tabs = {j: run_tab(db, j) for j in used} if len(used) > 1 else {}
+        front = self.front_tab(tabs) if tabs else None
         working, waiting = [], []
         for r in rows:
             title = ' '.join(str(r['title'] or '').split())[:120]
@@ -18003,8 +18060,23 @@ class App(*APP_MIXINS):
                     waiting.append({'title': title, 'site': signin_name(r['reason'], wait['page'])})
             elif r['job_id'] in used:  # a run that has used the browser counts until it ends, so the note doesn't flicker
                 steps = preparation_steps(r['session_job_id'] or r['job_id'], self.config.get('agent_db'), 1)
-                working.append({'title': title, 'step': steps[-1]['title'] if steps else None})
+                item = {'id': r['suggestion_id'], 'title': title, 'step': steps[-1]['title'] if steps else None}
+                working.insert(0, item) if front and front == tabs.get(r['job_id']) else working.append(item)
         return {'working': working[:3], 'waiting': waiting[:3]}
+
+    def front_tab(self, tabs):
+        """Which of these runs' tabs (job ID: (target ID, port)) the browser shows now: the one whose page is visible,
+        read over DevTools without bringing anything to the front. None when none is, or the browser can't say."""
+        base = (browser_login.endpoints(self.config) or [None])[0]
+        port = urllib.parse.urlsplit(base).port if base else None
+        for tab in dict.fromkeys(t for t in tabs.values() if t and t[1] == port):
+            try:
+                with browser_login.browser_cdp.Session(base, tab[0], timeout=2) as session:
+                    if session.call('Runtime.evaluate', {'expression': 'document.visibilityState', 'returnByValue': True})['result'].get('value') == 'visible':
+                        return tab
+            except (browser_login.browser_cdp.CdpError, OSError, KeyError, TypeError, AttributeError, ValueError):
+                continue
+        return None
 
     def preparation_peek(self, suggestion_id):
         """A small, current picture of the tab a running preparation is on, for its card: {on, image (a JPEG data

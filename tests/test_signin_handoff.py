@@ -76,7 +76,7 @@ class SigninHandoff(unittest.TestCase):
             db.execute('DELETE FROM preparation_calls')
         self.steps(('browser', {'action': 'open', 'targetUrl': 'https://www.example.com/'}))
         with patch.object(a, 'preparation_steps', return_value=[{'title': 'Opening the account page', 'at': None}]):
-            self.assertEqual(self.app.browser_now()['working'], [{'title': 'Confirm your details', 'step': 'Opening the account page'}])
+            self.assertEqual(self.app.browser_now()['working'], [{'id': self.sid, 'title': 'Confirm your details', 'step': 'Opening the account page'}])
 
     def test_another_blocker_after_a_command_does_not(self):
         self.block('The export failed with an error; try again later.')

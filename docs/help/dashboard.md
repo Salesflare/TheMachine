@@ -22,6 +22,10 @@ order: 4
 
 The browser's front window shows in the middle and the rest of the screen is dark; a button in the corner shows the whole screen. The view fits again when the window changes size. **Full size** gives it the whole window; press it again to go back. The sign-in from a to-do has **Full size** too.
 
+**Stop** shows at the top while a to-do's run is using the browser, with that to-do's name beside **Browser**. One press ends the run right away, without asking: nothing more is clicked, typed or sent, and the to-do's chat says "Stopped from the browser".
+
+With more than one run, it stops the one on the tab in front. On a phone the browser's tab has the same **Stop** at the top. To carry on, write in the chat or press **Try again**.
+
 When the to-dos don't fit, the whole sidebar scrolls as one column, to-dos included, like the menu on a phone. The installed app does the same.
 
 ## New versions

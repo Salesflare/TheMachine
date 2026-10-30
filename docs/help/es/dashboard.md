@@ -22,6 +22,10 @@ order: 4
 
 La ventana delantera del navegador se muestra en el centro y el resto de la pantalla queda oscuro; un botón en la esquina muestra la pantalla entera. En una pantalla baja, toda la barra lateral se desplaza como una sola columna, tareas incluidas, como el menú en un teléfono.
 
+**Detener** aparece arriba mientras una tarea usa el navegador, con el nombre de esa tarea junto a **Navegador**. Un toque la detiene al momento, sin preguntar: no se hace clic, no se escribe ni se envía nada más, y el chat de la tarea dice "Detenida desde el navegador".
+
+Si varias tareas lo usan, se detiene la de la pestaña de delante. En un teléfono, la pestaña del navegador tiene el mismo botón arriba. Para seguir, escribe en el chat o toca **Reintentar**.
+
 ## Versiones nuevas
 
 Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas. Al abrir o recargar la app se carga la versión más nueva. Una ventana abierta la carga cuando la ventana pasa a segundo plano, o tras unos minutos sin actividad, y nunca mientras haya algo escrito sin guardar ni enviar, o un diálogo abierto. **Actualización lista**, arriba, la carga al momento. Un reinicio de tu Machine solo vuelve a conectar.
