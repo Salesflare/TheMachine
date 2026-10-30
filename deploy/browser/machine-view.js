@@ -24,6 +24,9 @@ if (framed) {
     let rfb = null, zoom = 1, region = null, touch = null, whole = false;
     const display = () => rfb && rfb._display;
     const screen = () => rfb._screenSize();
+    // The dashboard keeps this viewer loaded while another view is open, at size 0 (its pane hidden). Nothing is measured
+    // then: framed at 0x0, the window came back zoomed to 100% with its cover in the wrong place, until a size change.
+    const laidOut = () => { const s = rfb ? screen() : {}; return s.w > 0 && s.h > 0; };
     const fitAll = () => { const s = screen(), d = display(); return Math.min(s.w / d.width, s.h / d.height) || 1; };
 
     // Only the browser's window shows: the screen around it (other windows, often a dashboard with its own sidebar,
@@ -37,7 +40,7 @@ if (framed) {
         return el;
     });
     function placeMask() {
-        const d = display(), on = !!(rfb && region && !whole && d && d.width);
+        const d = display(), on = !!(rfb && region && !whole && d && d.width && laidOut());
         for (const el of mask) el.hidden = !on;
         if (!on) return;
         const vp = d._viewportLoc, c = rfb._canvas.getBoundingClientRect();
@@ -50,14 +53,18 @@ if (framed) {
         box(mask[3], 0, Math.max(0, top), Math.max(0, left), Math.min(H, bottom) - Math.max(0, top));
         box(mask[1], right, Math.max(0, top), W - right, Math.min(H, bottom) - Math.max(0, top));
     }
-    // The pane changes size (the dashboard's sidebar folds, the window is resized): frame the window again for the new
-    // size, unless the owner zoomed or moved around themselves. Never at size 0: a hidden pane keeps its framing, and
-    // shown again (another resize) it frames for the size it has then.
+    // The pane changes size (the dashboard's sidebar folds, the window is resized, Full size) or is shown again: frame
+    // the window again for the size it has, unless the owner zoomed or moved around themselves. Never at size 0: a
+    // hidden pane keeps its framing. Shown again the frame's own window often keeps its old size (no resize event), so
+    // the viewer's box is watched too.
     let moved = false, resizeTimer = 0;
-    addEventListener('resize', () => {
+    const refit = () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => { if (!innerWidth || !innerHeight) return; if (rfb && !moved) frame(whole); else placeMask(); }, 80);
-    });
+        resizeTimer = setTimeout(() => { if (!rfb || !laidOut()) return; if (!moved) frame(whole); else placeMask(); }, 80);
+    };
+    addEventListener('resize', refit);
+    const viewBox = document.getElementById('noVNC_container');
+    if (viewBox && window.ResizeObserver) new ResizeObserver(refit).observe(viewBox);
 
     function apply(z, focusX, focusY) {  // zoom to z, keeping the screen point under (focusX, focusY) in place
         const d = display(), vp = d._viewportLoc, s = screen();
@@ -75,6 +82,7 @@ if (framed) {
     function frame(all) {  // the browser's window, or the whole screen
         const d = display(), s = screen();
         moved = false;
+        if (!laidOut()) return;  // hidden: framed once it has a size again (refit)
         rfb._canvas.style.translate = '';
         if (all || !region) {
             zoom = fitAll();
@@ -110,9 +118,10 @@ if (framed) {
         rfb = next;
         rfb.scaleViewport = false;
         rfb.clipViewport = true;
-        rfb._updateScale = function () { this._display.scale = zoom; this._fixScrollbars(); };
+        rfb._updateScale = function () { this._display.scale = zoom; this._fixScrollbars(); placeMask(); };
         rfb._updateClip = function () {
             const s = this._screenSize();
+            if (!(s.w > 0 && s.h > 0)) return;  // hidden: keep the view as it is, not a 0x0 one
             this._display.clipViewport = true;
             this._display.viewportChangeSize(s.w / zoom, s.h / zoom);
             this._fixScrollbars();
