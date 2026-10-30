@@ -19,7 +19,7 @@ const DRAFT={kind:'email',label:'Reply to Sam',to:['sam@example.com'],to_name:'S
 const cards=[{id:A,title:'Sam proposes link insertions for the guide exchange',body:'Sam asked about link insertions.',status:'prepared',scope:'work',created_at:now,event_ids:[1],people:[{id:'p1',name:'Sam'}],next_actions:[DRAFT]}];
 const state=()=>({talk_ready:true,suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const actions=[],lines=[];
-const TRANSCRIPTION={model:'gpt-4o-mini-transcribe',prompt:'One person talking with their assistant in English or Dutch.'};
+const NEXT={model:'gpt-transcribe',languages:['en','nl']},TRANSCRIPTION={model:'gpt-4o-transcribe',prompt:'One person talking with their assistant in English or Dutch.'};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
@@ -27,7 +27,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   const answer={
    talk_status:()=>({ready:true,limit:600,warn:540}),
    talk_start:()=>({id:'feedfeedfeedfeed',via:'signin',per_use:false,limit:1800,warn:1740,tools:[{type:'function',name:'open_todo'}],main:true,instructions:'Talk.',voice:'cedar',speed:1.1,
-    turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},noise:{type:'far_field'},transcription:TRANSCRIPTION,languages:['en','nl'],ask_note:'',notes:{},ready:true}),
+    turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},noise:{type:'far_field'},transcription:TRANSCRIPTION,transcription_next:NEXT,languages:['en','nl'],ask_note:'',notes:{},ready:true}),
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_focus:()=>({ok:true}),
    talk_line:()=>{lines.push({role:a.role,text:a.text});return {ok:true}},
@@ -77,12 +77,14 @@ try{
 
   // The browser's languages go along; the session hears in the owner's languages, with noise reduction and calm turns
   assert.ok(Array.isArray(actions.find(a=>a.action==='talk_start').args.languages));
-  const [setup,extra]=await page.evaluate(()=>window.__dc.sent.slice(0,2));
+  const [setup,extra,next]=await page.evaluate(()=>window.__dc.sent.slice(0,3));
   assert.deepEqual(setup.session.audio.input.transcription,TRANSCRIPTION);
   assert.deepEqual(setup.session.audio.input.noise_reduction,{type:'far_field'});
   assert.equal(setup.session.audio.input.turn_detection.eagerness,'low');
   assert.equal(setup.session.audio.output.speed,1.1);
   assert.deepEqual(extra.session.include,['item.input_audio_transcription.logprobs']);
+  // the newer model, every language pinned, in an update of its own (refused, the one above stays)
+  assert.deepEqual(next.session,{type:'realtime',audio:{input:{transcription:NEXT}}});
 
   // What counts as noise
   const noise=await page.evaluate(()=>[['음력?'],['แก'],['...'],['  '],['Ladnialok.',[{logprob:-2.4},{logprob:-1.9},{logprob:-3.1}]],['Softer.'],['Yes.',[{logprob:-0.01}]],
@@ -118,12 +120,19 @@ try{
   await say({type:'response.done',response:{id:'r4',status:'completed'}});
   await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u4',transcript:'Kun je het wat korter maken?'});
   await until(()=>lines.length>=4);await page.waitForTimeout(300);
+  // gpt-transcribe says which language it heard: one the owner doesn't speak is dropped; a short answer never is
+  await say({type:'input_audio_buffer.committed',item_id:'u5'});
+  await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u5',transcript:'Güzel.',languages:['tr']});
+  await page.waitForFunction(()=>window.__dc.sent.some(x=>x.type==='conversation.item.delete'&&x.item_id==='u5'));
+  await say({type:'input_audio_buffer.committed',item_id:'u6'});
+  await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u6',transcript:'Ja.',languages:['de']});
+  await until(()=>lines.length>=5);assert.deepEqual(lines.pop(),{role:'user',text:'Ja.'});
   assert.deepEqual(lines,[{role:'user',text:'And in this deal we get a real listing, so I’m willing to do it.'},{role:'assistant',text:'Okay, that helps, let’s shape a reply around your policy.'},
    {role:'user',text:'Kun je het wat korter maken?'},{role:'assistant',text:'Goed, ik maak hem korter.'}]);
   const log=await page.locator('#talk-view .talk-log').textContent();
   for(const gone of ['음력','แก','Right.','Sure.','—'])assert.ok(!log.includes(gone),gone);
   const sent=await page.evaluate(()=>window.__dc.sent);
-  assert.deepEqual(sent.filter(x=>x.type==='conversation.item.delete').map(x=>x.item_id),['u2','u3']);
+  assert.deepEqual(sent.filter(x=>x.type==='conversation.item.delete').map(x=>x.item_id),['u2','u3','u5']);
   assert.deepEqual(sent.filter(x=>x.type==='response.cancel').map(x=>x.response_id),['r2']);
 
   // The card: the whole draft readable, no line on top of another, room left for the transcript

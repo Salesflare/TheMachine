@@ -20491,7 +20491,7 @@ class App(*APP_MIXINS):
             LOG.info('talk live start via=%s main=%s', started.get('via'), main)
             view = self.talk_view()
             return {**started, 'voice': voice, 'speed': talk_live.SPEED, 'turn': talk_live.TURN, 'per_use': started.get('via') == 'key',
-                    'noise': talk_live.NOISE, 'transcription': talk_live.transcription(spoken), 'languages': spoken,
+                    'noise': talk_live.NOISE, 'transcription': talk_live.transcription(spoken), 'transcription_next': talk_live.transcription_next(spoken), 'languages': spoken,
                     'limit': talk_live.MAIN_LIMIT_SECONDS if main else talk_live.LIMIT_SECONDS,
                     'warn': talk_live.MAIN_WARN_SECONDS if main else talk_live.WARN_SECONDS,
                     'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,

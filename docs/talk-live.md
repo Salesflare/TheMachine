@@ -209,9 +209,13 @@ voice answered it ("Right."). Now:
   Voice input's language (Settings), the locale's and the browser's, those the app speaks, at most three (English when
   none fits). `talk_live.transcription` pins `language` when there is one (OpenAI: better accuracy and latency). With
   several it names them in the `prompt` instead: `language` takes one code, and pinning English turns a Dutch sentence
-  into a wrong transcript. `languages` (a list) exists only on `gpt-transcribe` and `gpt-live-transcribe`, which the
-  Gateway's sessions aren't known to take, and a refused `session.update` would drop the instructions and tools too, so
-  the model stays `gpt-4o-mini-transcribe`. The instructions name the languages and say a noise, a cut-off word or a few
+  into a wrong transcript. The model is `gpt-4o-transcribe` (`talk_live.TRANSCRIBE_MODEL`). A second `session.update`
+  of its own then asks for `gpt-transcribe` (`talk_live.transcription_next`, OpenAI's newest, $0.0045 a minute) with
+  every language in `languages`, which pins them all; it is documented for WebSocket sessions, so a session that refuses
+  it keeps `gpt-4o-transcribe` and nothing else changes. When it says which language it heard (`languages` on the
+  transcript) and that isn't one of the owner's, the line is dropped as below. `gpt-realtime-2.1` itself doesn't write
+  down what the owner said: transcription is always a separate model. Dictation (Voice input) stays
+  `openai/gpt-4o-transcribe` through OpenClaw, whose catalog has nothing newer, with Whisper on the Machine offline. The instructions name the languages and say a noise, a cut-off word or a few
   words in another language get no answer.
 - **Noise reduction.** `audio.input.noise_reduction` is `talk_live.NOISE`, `far_field` (a phone in the hand or on the
   table, or a laptop; `near_field` is for a headset). It cleans the audio before turn detection and the model hear it,

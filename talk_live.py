@@ -352,7 +352,11 @@ TURN = {'type': 'semantic_vad', 'eagerness': 'low', 'create_response': True, 'in
 NOISE = {'type': 'far_field'}
 # What the owner says is written down by this model (audio.input.transcription), in the languages they speak
 # (transcription()) instead of guessing among every language, which turned short sounds into Korean or Thai.
-TRANSCRIBE_MODEL = 'gpt-4o-mini-transcribe'
+TRANSCRIBE_MODEL = 'gpt-4o-transcribe'
+# OpenAI's newest model for it, which takes the owner's languages as a list and says which one it heard. Asked for in a
+# session.update of its own (transcription_next()): one a session refuses (it is new, and documented for WebSocket)
+# changes nothing else, and TRANSCRIBE_MODEL stays.
+NEXT_TRANSCRIBE_MODEL = 'gpt-transcribe'
 # The languages the app speaks, as ISO 639-1 codes (what transcription takes); all of them write in Latin script
 SPOKEN = ('de', 'en', 'es', 'fr', 'it', 'nl', 'pt')
 LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese'}
@@ -380,6 +384,11 @@ def transcription(languages):
     if len(languages) == 1:
         found['language'] = languages[0]
     return found
+
+
+def transcription_next(languages):
+    """The newer transcription for the owner's languages (NEXT_TRANSCRIBE_MODEL): a list, so several are pinned at once."""
+    return {'model': NEXT_TRANSCRIBE_MODEL, 'languages': list(languages)}
 
 
 def initialize(db):

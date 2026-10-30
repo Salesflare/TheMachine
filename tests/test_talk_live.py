@@ -282,10 +282,11 @@ class Tools(unittest.TestCase):
         self.assertEqual(t.spoken(None, '', None, ['ko-KR', 'th']), ['en'])   # nothing the app speaks: English
         self.assertEqual(len(t.spoken('en', 'nl', 'fr-BE', ['de', 'es'])), 3)
         one = t.transcription(['nl'])
-        self.assertEqual((one['model'], one['language']), ('gpt-4o-mini-transcribe', 'nl'))   # one language: pinned
+        self.assertEqual((one['model'], one['language']), ('gpt-4o-transcribe', 'nl'))   # one language: pinned
         two = t.transcription(['en', 'nl'])
         self.assertNotIn('language', two)                     # pinning one would garble a sentence in the other
         self.assertIn('English or Dutch', two['prompt'])
+        self.assertEqual(t.transcription_next(['en', 'nl']), {'model': 'gpt-transcribe', 'languages': ['en', 'nl']})
         self.assertIn(t.NOISE['type'], ('near_field', 'far_field'))
         self.assertEqual((t.TURN['type'], t.TURN['eagerness']), ('semantic_vad', 'low'))
 
@@ -870,7 +871,8 @@ class Api(unittest.TestCase):
         self.assertEqual(started['turn'], {'type': 'semantic_vad', 'eagerness': 'low', 'create_response': True, 'interrupt_response': True})
         self.assertNotIn('speed', self.gateway.calls[-1])      # talk.client.create takes no speed
         self.assertEqual(started['noise'], {'type': 'far_field'})
-        self.assertEqual(started['transcription']['model'], 'gpt-4o-mini-transcribe')
+        self.assertEqual(started['transcription']['model'], 'gpt-4o-transcribe')
+        self.assertEqual(started['transcription_next'], {'model': 'gpt-transcribe', 'languages': started['languages']})
         self.assertEqual(started['languages'][0], 'en')
         self.act('talk_end', {'id': started['id']})
         started = self.act('talk_start', {'suggestion_id': SID, 'languages': ['en-US', 'nl-BE', 7, 'x' * 99]})

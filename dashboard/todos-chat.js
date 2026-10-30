@@ -520,7 +520,7 @@ async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',{...(main?{main:true}:{suggestion_id:s.id}),languages:[...(navigator.languages||[])].slice(0,8)});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
-  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null,noise:r.noise||null,transcription:r.transcription||null,languages:r.languages||['en']});talkPaint();
+  Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null,noise:r.noise||null,transcription:r.transcription||null,transcriptionNext:r.transcription_next||null,languages:r.languages||['en']});talkPaint();
   if(v.main&&(first||chatOpen()))talkFocus(v,first||chatOpen().id);  // started from a to-do's chat: that one first
   const pc=v.pc=new RTCPeerConnection();v.audio=document.createElement('audio');v.audio.autoplay=true;v.audio.hidden=true;document.body.append(v.audio);
   pc.ontrack=e=>{v.audio.srcObject=e.streams[0];v.audio.play?.().catch(()=>{})};pc.addTrack(v.stream.getAudioTracks()[0],v.stream);
@@ -533,7 +533,8 @@ async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||
 // The voice's own setup: this page's instructions and tools (never the Gateway's agent), and what the owner says written down
 function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();talkWake(v);talkMedia(v);
  v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:v.transcription||{model:'gpt-4o-mini-transcribe'},...(v.noise?{noise_reduction:v.noise}:{}),...(v.turn?{turn_detection:v.turn}:{})},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));
- v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',include:['item.input_audio_transcription.logprobs']}}));  // how sure the transcript is (talkNoise); alone, so a refusal changes nothing else
+ v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',include:['item.input_audio_transcription.logprobs']}}));
+ if(v.transcriptionNext)v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',audio:{input:{transcription:v.transcriptionNext}}}}));  // the newer model with every language pinned; refused, the one above stays  // how sure the transcript is (talkNoise); alone, so a refusal changes nothing else
  v.tick=setInterval(()=>talkTick(v),250);talkPaint()}
 function talkTick(v){if(talk!==v)return;if(!v.main&&chatOpen()?.id!==v.sid){talkEnd();return}
  if(talkDue(v))return;
@@ -723,7 +724,8 @@ async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)
 // (gpt-realtime heard "음력?" or "แก" in a rustle) isn't kept, and the voice's reply to it is stopped and dropped too.
 // transcript null: the transcript never came (a reply waiting on it is kept).
 function talkHeard(v,e){const item=e.item_id;if(!v.pending.has(item)&&e.transcript==null)return;v.pending.delete(item);
- const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt),foreign=!noise&&e.transcript!=null&&talkForeign(e.transcript,v.languages);
+ const heardIn=Array.isArray(e.languages)?e.languages.map(x=>String(x).slice(0,2).toLowerCase()):[],mine=(v.languages||['en']).map(x=>String(x).slice(0,2));
+ const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt),foreign=!noise&&e.transcript!=null&&!talkShort(e.transcript)&&(talkForeign(e.transcript,v.languages)||heardIn.length>0&&!heardIn.some(l=>mine.includes(l)));  // gpt-transcribe says which language it heard
  if(noise||foreign){v.dropped.add(item);if(v.dc?.readyState==='open'){
    if(item)v.dc.send(JSON.stringify({type:'conversation.item.delete',item_id:item}));  // out of what the voice remembers
    for(const [id,to] of Object.entries(v.respFor))if(to===item&&v.responding){v.dc.send(JSON.stringify({type:'response.cancel',response_id:id}));v.dc.send(JSON.stringify({type:'output_audio_buffer.clear'}))}}
