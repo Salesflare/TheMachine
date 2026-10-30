@@ -337,7 +337,11 @@ const elapsed=v=>{const t=Math.max(0,Math.floor((Date.now()-new Date(v))/1000));
 // (with the task's tab brought to the front there too), otherwise its tab brought to the front on this computer.
 // Sign in only while the run waits on a sign-in right now (b.sign_in); past that step, even while still on the
 // browser, it's only Open the browser.
-const browserLink=(id,b)=>!b?'':(b.sign_in?`<button type="button" class="browser-link" data-signin data-task="${esc(id)}" data-page="${esc(b.page||'')}">Sign in</button> `:'')+(safeURL(b.link)?`<a class="browser-link" href="${esc(b.link)}" target="_blank" rel="noopener" data-browser-focus="${esc(id)}" data-task="${esc(id)}" data-page="${esc(b.page||'')}" data-quiet>Open the browser</a>`:`<button type="button" class="browser-link" data-browser-focus="${esc(id)}" data-task="${esc(id)}" data-page="${esc(b.page||'')}">Open the browser</button>`);
+// Open the browser: a link to the viewer when there is one (the Browser pane on a computer), else a button that brings
+// the browser on this computer to the front. In the chat the run's live picture is that link (peekHTML).
+const browserOpen=(id,b,img='')=>{const at=`data-browser-focus="${esc(id)}" data-task="${esc(id)}" data-page="${esc(b.page||'')}"`,cls=img?'peek-thumb':'browser-link',lab=img?' aria-label="Open the browser" title="What the browser shows now"':'';
+ return safeURL(b.link)?`<a class="${cls}" href="${esc(b.link)}" target="_blank" rel="noopener" ${at}${lab} data-quiet>${img||'Open the browser'}</a>`:`<button type="button" class="${cls}" ${at}${lab}>${img||'Open the browser'}</button>`};
+const browserLink=(id,b)=>!b?'':(b.sign_in?`<button type="button" class="browser-link" data-signin data-task="${esc(id)}" data-page="${esc(b.page||'')}">Sign in</button> `:'')+browserOpen(id,b);
 // A run that stopped to ask: its questions as the Needs you line, each clear choice as quick picks that fill the answer box.
 function askLine(s,ask){const qs=s.preparation_questions||[];
  if(!qs.length)return `<p class="note status-line outcome">${esc('Needs you: '+sentence(ask))}</p>`;
@@ -362,9 +366,15 @@ return `<div class="prep"><div class="prep-main"><p class="note">Preparing… ${
 // While a preparation is on the browser, its card shows that tab live: a small picture every few seconds (right of
 // the steps; below them on a phone), larger on a click. Only the tab the run opened itself; gone when it stops.
 const peeks=new Map();
-const peekHTML=id=>{const p=peeks.get(id);return p?.on&&p.image?`<button type="button" class="peek-thumb" data-peek-open="${esc(id)}" aria-label="See the browser larger" title="What the browser shows now"><img alt="The Machine’s browser, now" src="${p.image}"></button>`:''};
-function paintPeek(id){const slot=document.querySelector(`[data-peek="${CSS.escape(id)}"]`),p=peeks.get(id),img=slot?.querySelector('img');
- if(img&&p?.on&&p.image){if(img.getAttribute('src')!==p.image)img.src=p.image}else if(slot)slot.innerHTML=peekHTML(id);
+// The chat shows the same picture where its Open the browser link is (a slot with data-peek-via): a click there opens
+// the Browser pane, as the link does; without a picture the slot holds the link itself.
+const peekHTML=(id,b)=>{const p=peeks.get(id);if(!(p?.on&&p.image))return b?browserLink(id,b):'';const img=`<img alt="The Machine’s browser, now" src="${esc(p.image)}">`;
+ return b?browserOpen(id,b,img):`<button type="button" class="peek-thumb" data-peek-open="${esc(id)}" aria-label="See the browser larger" title="What the browser shows now">${img}</button>`};
+function paintPeek(id){const p=peeks.get(id);for(const slot of document.querySelectorAll(`[data-peek="${CSS.escape(id)}"]`)){const img=slot.querySelector('img');
+ if(img&&p?.on&&p.image){if(img.getAttribute('src')!==p.image)img.src=p.image;continue}
+ // In the chat the picture coming or going keeps the thread where it is (at the end it stays at the end)
+ const html=peekHTML(id,'peekVia' in slot.dataset?JSON.parse(slot.dataset.peekVia||'{}'):null);if(slot.innerHTML===html)continue;
+ if(slot.closest('.chat-main'))chatKeepPlace(()=>{slot.innerHTML=html});else slot.innerHTML=html}
  const d=$('#peek-dialog');if(d.open&&d.dataset.task===id){if(p?.on&&p.image)$('#peek-image').src=p.image;else d.close()}}
 setInterval(async()=>{if(document.hidden)return;for(const [id,p] of peeks){if(!p.on)continue;if(!document.getElementById('task-'+id)){peeks.delete(id);continue}
  try{const r=await request('api/peek?id='+encodeURIComponent(id));p.on=r.on;if(r.image)p.image=r.image;paintPeek(id)}catch{}}},2500);

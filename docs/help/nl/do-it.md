@@ -10,6 +10,8 @@ order: 2
 
 **Doe het** vraagt je Machine om de to-do voor te bereiden: het antwoord schrijven, dingen opzoeken, een formulier invullen. Hij werkt met je eigen accounts en zijn eigen browser, zoals jij dat zou doen.
 
+Terwijl hij in zijn browser werkt, tonen de to-do en zijn chat die pagina live. Klik op de afbeelding om de browser te openen.
+
 Voor hij een opvolging schrijft of iets doorgeeft, kijkt hij in het gesprek of er nieuwere antwoorden zijn, ook van een teamgenoot. Is het al geregeld, dan zegt de to-do dat. Heeft hij een document of pagina gemaakt of gewijzigd, dan linkt de to-do er rechtstreeks naar.
 
 ## Niets gaat weg voor je ja zegt

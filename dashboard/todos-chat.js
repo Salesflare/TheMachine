@@ -82,7 +82,8 @@ function chatParts(s){const t=document.createElement('template');t.innerHTML=sug
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
  const panel=[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>n.outerHTML).join('')
-  +(['blocked','running','starting'].includes(s.preparation_status)&&s.preparation_browser?`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:'');
+  // A run on the browser: its live picture from the card (peekHTML), a click opens the browser; the link until there is one
+  +(!s.preparation_browser?'':s.preparation_status==='blocked'?`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:['running','starting'].includes(s.preparation_status)?`<div class="note peek chat-peek" data-peek="${esc(s.id)}" data-peek-via="${esc(JSON.stringify(s.preparation_browser))}">${peekHTML(s.id,s.preparation_browser)}</div>`:'');
  const html=n=>n?.outerHTML||'';
  return {sends,going,sheet:html(card?.querySelector('.agent-form')),lead:html(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:html(back),rest:rest.map(html).join(''),options:[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return n.outerHTML}).join(''),
   status,intro:body?.innerHTML||'',ask:html(card?.querySelector('.ask-line')),agent:html(card?.querySelector('.agent-job')),

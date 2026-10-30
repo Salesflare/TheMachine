@@ -10,6 +10,8 @@ order: 2
 
 **Do it** asks your Machine to prepare the to-do: draft the reply, look things up, fill in a form. It works with your own accounts and its own browser, as you would.
 
+While it works in its browser, the to-do and its chat show that page live. Click the picture to open the browser.
+
 Before it drafts a follow-up or hands something off, it checks the conversation for newer replies, also from a teammate. If it's already handled, the to-do says so instead. When it made or changed a document or page, the to-do links straight to it.
 
 ## Nothing goes out before your yes

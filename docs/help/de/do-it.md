@@ -10,6 +10,8 @@ order: 2
 
 **Ausführen** bittet deine Machine, die Aufgabe vorzubereiten: die Antwort entwerfen, Dinge nachschlagen, ein Formular ausfüllen. Sie arbeitet mit deinen eigenen Konten und ihrem eigenen Browser, so wie du es tun würdest.
 
+Während sie in ihrem Browser arbeitet, zeigen die Aufgabe und ihr Chat diese Seite live. Klicke auf das Bild, um den Browser zu öffnen.
+
 Bevor sie eine Nachfrage entwirft oder etwas übergibt, prüft sie den Verlauf auf neuere Antworten, auch von Teammitgliedern. Ist es schon erledigt, sagt die Aufgabe das stattdessen. Hat sie ein Dokument oder eine Seite erstellt oder geändert, verlinkt die Aufgabe direkt darauf.
 
 ## Nichts geht raus vor deinem Ja
