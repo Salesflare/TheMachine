@@ -29,6 +29,7 @@ never deleted; links that faded away are just not stored."""
 from __future__ import annotations
 
 import collections
+import contextlib
 import datetime as dt
 import email.utils
 import hashlib
@@ -929,27 +930,56 @@ def owner_tz(config):
         return dt.timezone.utc
 
 
+# A build computes from one snapshot of the database without its write lock, so syncs, the review, delivery and the
+# dashboard write on meanwhile; only the prepare steps and the publish take the lock, each for a moment. An edit to the
+# graph committed meanwhile (GRAPH_WATCHED, counted in graph_edits) makes the computed graph older than that edit:
+# computed again, BUILD_TRIES times at most, then once under the write lock throughout, as every build did before.
+BUILD_TRIES = 2
+# The owner's edits a build must never overwrite with an older graph: the ones made right in the graph's own tables
+# (a merge, a removal, a CRM owner) and the owner's choices it is made from. Only low-churn tables: a sync's new
+# events, the review's labels and enrichment are not overwritten by a build either, and are in the next one.
+GRAPH_WATCHED = ('graph_nodes', 'graph_same', 'graph_merges', 'graph_names', 'graph_relations', 'identity_names', 'manual_nodes',
+                 'org_edits', 'person_edits', 'person_orgs', 'person_roles', 'project_people', 'projects', 'forgotten_people',
+                 'graph_resources', 'hidden_domains', 'record_owners')
+
+
+class Outdated(Exception):
+    """The graph computed from a snapshot is older than an edit committed meanwhile, or the snapshot could not be
+    computed without writing: build tries again."""
+
+
 def build(db, config, now, team=(), kin=None):
-    """Publish one coherent graph. Concurrent edits cannot be overwritten by an older build. team: the addresses of the
-    people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py). kin: which
-    of them are in the owner's Work Fleets, Family or Friends (circles), so someone only in Family or Friends is
-    Personal."""
-    db.execute('BEGIN IMMEDIATE')
-    try:
-        return _build(db, config, now, team, kin)
-    except BaseException:
-        if db.in_transaction:
-            db.execute('ROLLBACK')
-        raise
+    """Publish one coherent graph. Concurrent edits cannot be overwritten by an older build (graph_edits). team: the
+    addresses of the people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py).
+    kin: which of them are in the owner's Work Fleets, Family or Friends (circles), so someone only in Family or
+    Friends is Personal."""
+    for attempt in range(BUILD_TRIES + 1):
+        try:
+            return _build(db, config, now, team, kin, locked=attempt == BUILD_TRIES)
+        except Outdated:
+            continue
+    raise AssertionError('unreachable: the last try holds the lock')
 
 
-def _build(db, config, now, team=(), kin=None):
-    """Recompute graph_nodes, graph_links and graph_events. Returns a short summary."""
-    import own_addresses
-    started = dt.datetime.now(dt.timezone.utc)
-    current = parse_time(now)
-    tz = owner_tz(config)
-    horizon = (current - dt.timedelta(days=HORIZON_DAYS)).isoformat()
+def _watch(db):
+    """graph_edits counts every change to GRAPH_WATCHED (triggers, made once per table that exists). Returns the count."""
+    db.execute('CREATE TABLE IF NOT EXISTS graph_edits(id INTEGER PRIMARY KEY CHECK(id=1),n INTEGER NOT NULL)')
+    db.execute('INSERT OR IGNORE INTO graph_edits(id,n) VALUES(1,0)')
+    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    made = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'graph_edit_%'")}
+    for table in GRAPH_WATCHED:
+        for op in ('insert', 'update', 'delete') if table in tables else ():
+            if f'graph_edit_{table}_{op}' not in made:
+                db.execute(f'CREATE TRIGGER graph_edit_{table}_{op} AFTER {op.upper()} ON {table} BEGIN UPDATE graph_edits SET n=n+1 WHERE id=1; END')
+    return _edits(db)
+
+
+def _edits(db):
+    row = db.execute('SELECT n FROM graph_edits WHERE id=1').fetchone()
+    return row[0] if row else 0
+
+
+def _signals(db, horizon):
     rows = db.execute("SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND occurred_at>=? ORDER BY occurred_at", (horizon,)).fetchall()
     signals = []
     for r in rows:
@@ -958,10 +988,58 @@ def _build(db, config, now, team=(), kin=None):
         except ValueError:
             continue
         signals.append((r['id'], r['account_id'], r['kind'], parse_time(r['occurred_at']), m if isinstance(m, dict) else {}))
+    return signals
+
+
+def _drop_unusable_profiles(db):
+    """Organization profiles saved before the check (a shared host's domain, another company): dropped."""
+    for r in db.execute("SELECT domain,profile FROM org_profiles WHERE profile IS NOT NULL AND status='found'").fetchall():
+        if not enrichment.usable(r['domain'], json.loads(r['profile'])):
+            db.execute("UPDATE org_profiles SET status='none',profile=NULL WHERE domain=? AND status='found'", (r['domain'],))
+
+
+def _build(db, config, now, team=(), kin=None, locked=True):
+    """Recompute graph_nodes, graph_links and graph_events. Returns a short summary. locked: in one write transaction
+    throughout; else computed from a read snapshot and published only when no edit came meanwhile (Outdated)."""
+    try:
+        if locked:
+            db.execute('BEGIN IMMEDIATE')
+        return _build_in(db, config, now, team, kin, locked)
+    except sqlite3.OperationalError as error:
+        if not locked and 'readonly' in str(error):  # something on the way writes after all: the next try holds the lock
+            raise Outdated() from None
+        raise
+    finally:
+        with contextlib.suppress(sqlite3.Error):
+            db.execute('PRAGMA query_only=OFF')
+        if db.in_transaction:
+            db.execute('ROLLBACK')
+
+
+def _build_in(db, config, now, team, kin, locked):
+    import own_addresses
+    started = dt.datetime.now(dt.timezone.utc)
+    current = parse_time(now)
+    tz = owner_tz(config)
+    horizon = (current - dt.timedelta(days=HORIZON_DAYS)).isoformat()
+    signals = _signals(db, horizon)  # one statement: its own snapshot, no lock
+    if not locked:
+        db.execute('BEGIN IMMEDIATE')
+    _watch(db)
     own_addresses.refresh(db, config, signals, team, now)  # the owner's own addresses, before anyone is told apart from them
+    _drop_unusable_profiles(db)
+    if not locked:
+        db.execute('COMMIT')
     owner = Owner(config, db)
     owner.learn(signals)
+    if not locked:
+        db.execute('BEGIN IMMEDIATE')
     fold_self_records(db, owner, now)  # a person made from the owner's own address goes into About you (2026-10-26)
+    if not locked:
+        db.execute('COMMIT')
+        db.execute('BEGIN')  # deferred: its first read below is the snapshot all of this build is computed from
+        seen = _edits(db)
+        db.execute('PRAGMA query_only=ON')  # computing writes nothing: no lock is taken until the publish
     wrote_to = set()
     for _, _, kind, _, m in signals:
         if kind == 'gmail.message' and ('SENT' in (m.get('labels') or ()) or any(a in owner.emails for _, a in addresses(m.get('from'))[:1])):
@@ -1260,15 +1338,11 @@ def _build(db, config, now, team=(), kin=None):
     role_rows = {r['identifier']: dict(r) for r in db.execute('SELECT * FROM person_roles')}
     said = {i: (r['role'] or None, 'owner' if r['source'] == 'owner' else 'review') for i, r in role_rows.items()}
     related = db.execute("SELECT a,b,relation,source FROM graph_relations ORDER BY source='owner',created_at").fetchall()
-    profiles, unusable = {}, []
+    profiles = {}
     for r in db.execute("SELECT domain,profile,status FROM org_profiles WHERE profile IS NOT NULL AND status!='wrong'").fetchall():
-        found = enrichment.usable(r['domain'], json.loads(r['profile']))
+        found = enrichment.usable(r['domain'], json.loads(r['profile']))  # one saved before the check: dropped before (_drop_unusable_profiles)
         if found:
             profiles[r['domain']] = found
-        elif r['status'] == 'found':
-            unusable.append(r['domain'])  # saved before the check (a shared host's domain, another company): dropped
-    for domain in unusable:
-        db.execute("UPDATE org_profiles SET status='none',profile=NULL WHERE domain=? AND status='found'", (domain,))
     wrong = {r[0] for r in db.execute("SELECT domain FROM org_profiles WHERE status='wrong'")}
     looked_up = {r['identifier']: r['profile'] for r in db.execute("SELECT identifier,profile FROM person_profiles WHERE status='found' AND profile IS NOT NULL")}
     photos = {r['identifier']: r['key'] for r in db.execute('SELECT identifier,key FROM person_photos')}
@@ -1516,29 +1590,31 @@ def _build(db, config, now, team=(), kin=None):
         unnamed_rows.append((min(group), json.dumps(sorted(group)), json.dumps([names_of[p] for p in people if p in names_of][:4]),
                              json.dumps(titles[:4]), len(group), last.isoformat()))
     took = int((dt.datetime.now(dt.timezone.utc) - started).total_seconds() * 1000)
-    side_rows = side_changes(db, nodes, now)
-    try:
-        if side_rows is not None:
-            db.executemany('INSERT OR REPLACE INTO side_changes(node_id,rule,before,after,why,at) VALUES(?,?,?,?,?,?)', side_rows)
-            db.execute('INSERT OR REPLACE INTO side_rule(id,rule,at) VALUES(1,?,?)', (SIDE_RULE, now))
-        db.execute('DELETE FROM graph_nodes')
-        db.execute('DELETE FROM graph_links')
-        db.execute('DELETE FROM graph_events')
-        db.execute('DELETE FROM graph_unnamed')
-        db.execute('DELETE FROM graph_same')
-        db.executemany('INSERT OR REPLACE INTO graph_same(a,b,why,score) VALUES(?,?,?,?)', same_rows)
-        db.executemany('INSERT OR REPLACE INTO graph_nodes(id,kind,name,strength,last_at,signals,gap_days,quiet,trend,info) VALUES(?,?,?,?,?,?,?,?,?,?)', nodes)
-        db.executemany('INSERT OR REPLACE INTO graph_links(a,b,kind,strength,last_at) VALUES(?,?,?,?,?)', links)
-        # A confirmed label wins over a probable one for the same signal.
-        db.executemany('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,?,?) '
-                       'ON CONFLICT(node_id,event_id) DO UPDATE SET probable=min(probable,excluded.probable),direct=max(direct,excluded.direct)', event_rows)
-        db.executemany('INSERT OR REPLACE INTO graph_unnamed(key,event_ids,people,titles,size,last_at) VALUES(?,?,?,?,?,?)', unnamed_rows)
-        db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
-        fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
+    if not locked:  # the publish: a moment under the write lock, and only when nothing it was computed from changed
+        db.execute('PRAGMA query_only=OFF')
         db.execute('COMMIT')
-    except BaseException:
-        db.execute('ROLLBACK')
-        raise
+        db.execute('BEGIN IMMEDIATE')
+        if _edits(db) != seen:
+            raise Outdated()
+    side_rows = side_changes(db, nodes, now)
+    if side_rows is not None:
+        db.executemany('INSERT OR REPLACE INTO side_changes(node_id,rule,before,after,why,at) VALUES(?,?,?,?,?,?)', side_rows)
+        db.execute('INSERT OR REPLACE INTO side_rule(id,rule,at) VALUES(1,?,?)', (SIDE_RULE, now))
+    db.execute('DELETE FROM graph_nodes')
+    db.execute('DELETE FROM graph_links')
+    db.execute('DELETE FROM graph_events')
+    db.execute('DELETE FROM graph_unnamed')
+    db.execute('DELETE FROM graph_same')
+    db.executemany('INSERT OR REPLACE INTO graph_same(a,b,why,score) VALUES(?,?,?,?)', same_rows)
+    db.executemany('INSERT OR REPLACE INTO graph_nodes(id,kind,name,strength,last_at,signals,gap_days,quiet,trend,info) VALUES(?,?,?,?,?,?,?,?,?,?)', nodes)
+    db.executemany('INSERT OR REPLACE INTO graph_links(a,b,kind,strength,last_at) VALUES(?,?,?,?,?)', links)
+    # A confirmed label wins over a probable one for the same signal.
+    db.executemany('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,?,?) '
+                   'ON CONFLICT(node_id,event_id) DO UPDATE SET probable=min(probable,excluded.probable),direct=max(direct,excluded.direct)', event_rows)
+    db.executemany('INSERT OR REPLACE INTO graph_unnamed(key,event_ids,people,titles,size,last_at) VALUES(?,?,?,?,?,?)', unnamed_rows)
+    db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
+    fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
+    db.execute('COMMIT')
     return {'people': sum(1 for n in nodes if n[1] == 'person'), 'projects': sum(1 for n in nodes if n[1] == 'project'),
             'links': len(links), 'signals': len(signals), 'probable': len(probable), 'unnamed': len(unnamed_rows), 'same': len(same_rows),
             'joined': sum(1 for _, _, why in union.edges if why in ('message', 'thread', 'profile', 'signature', 'name')), 'took_ms': took}
