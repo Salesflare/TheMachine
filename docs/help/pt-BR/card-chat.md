@@ -10,6 +10,10 @@ order: 4
 
 No celular, toque no título da tarefa. No computador, use o link do chat da tarefa ou **Ver no chat ›**. No computador, clicar no título renomeia a tarefa.
 
+## E-mails no chat
+
+Cada e-mail mostra só o que há de novo nele. As mensagens anteriores que ele cita ficam recolhidas em **Mensagens anteriores**. **Ler a conversa** abre os e-mails completos.
+
 ## O que perguntar
 
 - Sobre a conversa, as pessoas ou o contexto: "O que eles pediram da última vez?"

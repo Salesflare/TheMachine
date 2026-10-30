@@ -10,6 +10,10 @@ order: 4
 
 On a phone, tap the to-do's title. On a computer, use the to-do's chat link or **See in chat ›**. On a computer, clicking the title renames the to-do.
 
+## Emails in the chat
+
+Each email shows only what is new in it. The earlier messages it quotes are folded under **Earlier messages**. **Read the thread** opens the emails in full.
+
 ## What to ask
 
 - About the thread, the people or the background: "What did they ask last time?"

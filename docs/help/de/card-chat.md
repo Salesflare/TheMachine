@@ -10,6 +10,10 @@ order: 4
 
 Tippe auf dem Handy auf den Titel der Aufgabe. Auf einem Computer nutzt du den Chat-Link der Aufgabe oder **Im Chat ansehen ›**. Auf einem Computer benennt ein Klick auf den Titel die Aufgabe um.
 
+## E-Mails im Chat
+
+Jede E-Mail zeigt nur, was neu darin ist. Die früheren Nachrichten, die sie zitiert, sind unter **Frühere Nachrichten** eingeklappt. **Thread lesen** öffnet die E-Mails vollständig.
+
 ## Was du fragen kannst
 
 - Zum Verlauf, zu den Personen oder zum Hintergrund: „Was haben sie letztes Mal gefragt?“

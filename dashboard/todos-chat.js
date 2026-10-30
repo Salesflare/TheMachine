@@ -159,11 +159,13 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
  let lastTo='';
  rows.forEach((i,n)=>{stamp(i.at);const k=n+':'+i.kind,res=isResult(i,n),quiet=res&&n!==current;
   if(i.kind==='source'){const via=chatVia(i.via)+(i.note&&i.via?' note':''),who=[i.mine?'You':i.from,via].filter(Boolean).map(esc).join(' · ')||'Message';
-   // Several messages in a row from the same person: their name (and the time) on the first; the link to the thread once, under the last
+   // Several messages in a row from the same person: their name and time on the first, each later one its own small time line; the link to the thread once, under the last
    const same=j=>j?.kind==='source'&&j.from===i.from&&j.mine===i.mine&&!!j.note===!!i.note&&chatDayOf(j.at)===chatDayOf(i.at),first=!same(rows[n-1]);
    const last=!(rows[n+1]?.kind==='source'&&!rows[n+1].mine&&chatDayOf(rows[n+1].at)===chatDayOf(i.at));
    const body=clamp(k,i.text?chatMarkdown(i.text):`<p>${esc(i.title)}</p>`,chatLong(i.text,i.note?2:3));
-   push(i,`<div class="chat-msg ${i.mine?'you':'them'} chat-source${i.note?' note':''}">${first?`<div class="chat-from"><span><i class="via-ico via-${chatViaIcon(i.via,i.note)}" aria-hidden="true"></i>${who}</span>${tm(i.at)}</div>`:''}${i.files?chatAttHTML(i.files):''}<div class="bubble"><div class="say" translate="no">${body}</div>${last&&hasOriginal(s)&&!i.mine?`<button type="button" class="link read-original" data-id="${esc(s.id)}" data-original="read">Read the thread</button>`:''}</div>${first?'':tm(i.at)}</div>`)}
+   // A reply's quoted history is history, not a second message: folded under the new text
+   const quoted=i.quoted?chatFold(k+':quoted','chat-quoted',esc(t('Earlier messages')),`<div class="chat-quoted-text" translate="no">${chatMarkdown(i.quoted)}</div>`):'';
+   push(i,`<div class="chat-msg ${i.mine?'you':'them'} chat-source${i.note?' note':''}">${first?`<div class="chat-from"><span><i class="via-ico via-${chatViaIcon(i.via,i.note)}" aria-hidden="true"></i>${who}</span>${tm(i.at)}</div>`:`<div class="chat-from chat-from-next">${tm(i.at)}</div>`}${i.files?chatAttHTML(i.files):''}<div class="bubble"><div class="say" translate="no">${body}</div>${quoted}${last&&hasOriginal(s)&&!i.mine?`<button type="button" class="link read-original" data-id="${esc(s.id)}" data-original="read">Read the thread</button>`:''}</div></div>`)}
   else if(i.kind==='card'){const hasDraft=s.status==='prepared'&&p.send,intro=q.offer?chatMarkdown(q.body):p.intro;
    push(i,`<div class="chat-msg machine chat-card"><div class="bubble">${intro||`<p translate="no">${esc(s.title)}</p>`}</div>${res?'':options(n,hasDraft)+(hasDraft?`<div class="chat-card-send">${p.lead}</div>`:'')+tm(i.at)}</div>`);
    if(res)push(i,result(n,i,`${p.ask?`<div class="chat-ask">${p.ask}</div>`:q.ask?`<p class="chat-q chat-result-title" translate="no">${esc(q.ask)}</p>`:`<p class="chat-result-title" translate="no">${esc(s.title)}</p>`}${options(n,hasDraft)}${hasDraft?`<div class="chat-card-send">${p.lead}</div>`:''}`))}

@@ -10,6 +10,10 @@ order: 4
 
 En un teléfono, toca el título de la tarea. En un ordenador, usa el enlace al chat de la tarea o **Ver en el chat ›**. En un ordenador, hacer clic en el título cambia el nombre de la tarea.
 
+## Correos en el chat
+
+Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita quedan plegados bajo **Mensajes anteriores**. **Leer el hilo** abre los correos completos.
+
 ## Qué preguntar
 
 - Sobre el hilo, las personas o el contexto: "¿Qué pidieron la última vez?"
