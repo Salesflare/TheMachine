@@ -224,7 +224,7 @@ voice answered it ("Right."). Now:
   letters or digits, when most of its letters aren't Latin script (every app language writes in it), when it is the
   transcription prompt echoed back, or when it is three words or fewer and its average logprob is under -1.2. A noise
   line isn't shown or kept, its item is deleted from the conversation (`conversation.item.delete`), and a reply the
-  voice is still giving to it is cancelled (`response.cancel`, `output_audio_buffer.clear`). The page knows which reply
+  voice is still giving to it is canceled (`response.cancel`, `output_audio_buffer.clear`). The page knows which reply
   answers which words (`input_audio_buffer.committed`, then `response.created`); a reply that ends before its words are
   written down waits for them (at most 4 s) and is dropped with them.
 - **Short answers always pass.** "yes", "no", "ok", "send it", "stop", "undo", "ja", "nee", "doe maar" and the like
@@ -317,11 +317,11 @@ controls (an approval ID of their own); `voice:` comes only from `talk_send`.
 `tests/test_talk_live.py` (the Gateway helper stubbed: status, start, a single offer, the limit, the transcript in the
 chat, the tools, owner only, the secret never returned; by voice: a yes after the question sends one draft, with Undo;
 ending itself after a goodbye, the turn detection; a yes without a question, an unclear answer, a no, a changed draft and a question that doesn't name who all send
-nothing; only a clear yes in the owner's languages counts; read once, then a yes sends without a second reading; a changed draft is read again; a draft seen on screen sends without reading; a batch of 3 with one unseen, and Undo cancelling it) and `tests/test_talk_live_dashboard.mjs` (a fake
+nothing; only a clear yes in the owner's languages counts; read once, then a yes sends without a second reading; a changed draft is read again; a draft seen on screen sends without reading; a batch of 3 with one unseen, and Undo canceling it) and `tests/test_talk_live_dashboard.mjs` (a fake
 `getUserMedia`, `RTCPeerConnection` and data channel; the same cases from the page, and Undo; screenshots at 390x844 and 1440x900, light and dark).
 `tests/test_talk_hearing_dashboard.mjs` covers hearing the owner and the card: the session's transcription, noise reduction, turns, speed and
 logprobs; what counts as noise (Korean, Thai, marks only, an unsure made-up word; a Dutch or French sentence and a short yes count); a noise
-line dropped with the voice's reply to it (cancelled, or waiting for its words), a Dutch turn kept; no em dashes in the voice's lines; and a whole
+line dropped with the voice's reply to it (canceled, or waiting for its words), a Dutch turn kept; no em dashes in the voice's lines; and a whole
 email draft in the card with no line box overlapping another, at the top and scrolled to its end, tall enough and with room for the transcript
 (390x844 and 1440x900, light and dark). `tests/test_talk_main_dashboard.mjs` covers Talk: the sidebar entry, the floating bar, Talk's view, listing and opening to-dos (the
 card changes, the page doesn't; **Open the chat** and back), a send by voice about the to-do on screen, a new to-do told at a pause, following the owner to
