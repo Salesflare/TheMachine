@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## Ce qu’il lit
 
-La connexion **Microsoft Word** lit les fichiers Word dans OneDrive et SharePoint, avec la connexion Microsoft d’une adresse Outlook que vous avez connectée. Cela fonctionne sur une Machine hébergée et sur votre propre ordinateur associé à votre compte. Google Docs viendra plus tard : la connexion Google de The Machine ne peut pas encore lire les documents. Il récupère :
+La connexion **Microsoft Word** lit les fichiers Word dans OneDrive et SharePoint. Vous vous connectez avec Microsoft pour elle, avec ou sans Outlook connecté. Cela fonctionne sur une Machine hébergée et sur votre propre ordinateur associé à votre compte. Google Docs viendra plus tard : la connexion Google de The Machine ne peut pas encore lire les documents. Il récupère :
 
 - Les documents que quelqu’un partage avec vous.
 - Les commentaires et réponses sur vos documents, et les commentaires qui vous mentionnent.
@@ -35,22 +35,22 @@ Votre Machine peut écrire un nouveau document Word, ou modifier un document don
 
 Elle remplace du texte, ajoute du texte et ajoute des paragraphes et des titres. Elle ne touche pas aux tableaux, images, modifications suivies et champs. Un nouveau document arrive dans votre OneDrive et reste privé tant que vous ne le partagez pas.
 
-Pour l’activer, touchez **Autoriser les modifications** sur la carte Microsoft Word dans **Connexions**. Microsoft demande l’autorisation de modifier vos fichiers, à part de la lecture. Se reconnecter la conserve.
+Connecter Microsoft Word l’autorise déjà : il n’y a pas d’étape à part. Une ancienne connexion Microsoft Word qui ne fait que lire affiche **Autoriser les modifications** sur sa carte dans **Connexions**. Touchez-le une fois et acceptez.
 
 ## Ce qu’il demande
 
-La lecture des documents demande son propre accord, à part de votre connexion e-mail : Microsoft vous demande d’autoriser la lecture de vos fichiers, y compris ceux partagés avec vous dans OneDrive et SharePoint. Vos accès e-mail et agenda restent tels quels.
+Microsoft Word demande un seul accord à Microsoft, à part de votre connexion e-mail : lire et modifier vos fichiers, y compris ceux partagés avec vous dans OneDrive et SharePoint. Chaque modification attend quand même votre OK dans sa tâche. Vos accès e-mail et agenda restent tels quels. Sans Outlook, la connexion ne couvre que vos fichiers, jamais vos e-mails ni votre agenda.
 
 Si cet accord est retiré plus tard, la carte Microsoft Word indique **En attente de votre accord pour lire les documents**.
 
 ## Le connecter
 
-Connectez d’abord Outlook pour cette adresse. Ensuite :
+Outlook n’a pas besoin d’être connecté.
 
-- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft Word** et appuyez sur **Se connecter avec Microsoft**. Microsoft vous demande d’autoriser la lecture de vos fichiers, puis vous revenez au tableau de bord.
+- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft Word** et appuyez sur **Se connecter avec Microsoft**. Microsoft vous demande d’autoriser la lecture et la modification de vos fichiers, puis vous revenez au tableau de bord.
 - Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft Word** et appuyez sur **Se connecter avec Microsoft**.
 
-Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’est pas ajouté.
+Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’est pas ajouté. Si vous touchez **Autoriser les modifications** et que Microsoft ne les autorise pas, il le dit au lieu d’afficher Connecté.
 
 ## Travail ou perso
 

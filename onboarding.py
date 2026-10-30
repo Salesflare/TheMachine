@@ -2365,10 +2365,14 @@ def connect_grant(config_path, provider, args):
 
 
 def connect_docs_grant(config_path, args):
-    """Docs for a Microsoft account this paired Machine reads already (connect_grant): {source: microsoft_docs, grant:
-    {provider, email, refresh_token, scopes}}, the sign-in from its own consent, which now also reads files
-    (Files.Read.All). It replaces the one kept here (mail_grants.py), then the Docs connection is added and checked with
-    a real read. When that does not check out, the one kept before comes back and nothing is added. Returns {'ok', 'name'}."""
+    """Docs for a Microsoft account on this paired Machine: {source: microsoft_docs or microsoft_docs_write, grant:
+    {provider, email, refresh_token, scopes}}, the sign-in from its own consent, which reads and edits files
+    (Files.ReadWrite.All; Files.Read.All for a connection from before). With Outlook for that address signed in the same
+    way (connect_grant), it replaces that one's sign-in kept here (mail_grants.py), which now also reads files. Without
+    it, it is a sign-in of its own with only the Docs scopes: the Docs connection uses it (own_grant), and no Outlook
+    mail or calendar account comes with it. Then the Docs connection is added and checked with a real read. When that
+    does not check out, the one kept before comes back and nothing is added. microsoft_docs_write (Allow edits) without
+    Files.ReadWrite.All granted is refused: it never says Connected for edits it can't make. Returns {'ok', 'name'}."""
     import fleet
     import mail_grants
     grant = args.get('grant') if isinstance(args.get('grant'), dict) else {}
@@ -2381,12 +2385,19 @@ def connect_docs_grant(config_path, args):
     home = fleet.settings(config)
     if not home or not (config.get('credentials') or {}).get('fleet') or config.get('manage_url'):
         raise SetupError('Only a paired self-hosted Machine signs in this way', 'pair this Machine first')
+    scopes = grant.get('scopes') if isinstance(grant.get('scopes'), list) else None
+    if args.get('source') == 'microsoft_docs_write' and scopes is not None and 'Files.ReadWrite.All' not in scopes:
+        raise SetupError("Microsoft didn't allow edits", 'press Allow edits again and accept')
+    url = home['url'].rstrip('/') + '/microsoft-token'
+    paired = (config.get('microsoft_broker') or {}).get('url') == url
     # its Outlook signed in the same way, so the new sign-in refreshes at the same place
-    paired = (config.get('microsoft_broker') or {}).get('url') == home['url'].rstrip('/') + '/microsoft-token'
     mail = next((a for a in config.get('accounts', []) if a.get('service') in GRANT_SERVICES['microsoft'] and a.get('transport') == 'broker'
-                 and str(a.get('email', '')).lower() == email), None)
-    if not mail or not paired:
-        raise SetupError(f'Connect Outlook for {email} first', 'then Docs from Connections, + Add')
+                 and str(a.get('email', '')).lower() == email), None) if paired else None
+    if not mail:  # Docs alone: the same broker as Outlook's would use, and no Outlook account
+        if (config.get('microsoft_broker') or {}).get('url') not in (None, url):
+            raise SetupError('This Machine gets Microsoft access from another place', 'disconnect those Microsoft accounts first')
+        config['microsoft_broker'] = {'url': url}
+        config.setdefault('credentials', {})['microsoft-broker'] = config['credentials']['fleet']  # its own device token
     try:
         previous = mail_grants.get(config, 'microsoft', email)
     except mail_grants.GrantError:
@@ -2395,10 +2406,16 @@ def connect_docs_grant(config_path, args):
     try:
         account = next((a for a in config.get('accounts', []) if a.get('service') == 'docs' and str(a.get('email', '')).lower() == email), None)
         if account is None:
-            account = new_account(config, 'docs', ui=AnswersUI({'part of your life': mail.get('boundary') or '', 'company': mail.get('boundary') or ''}))
-            account['boundary'], account['boundary_by'] = mail.get('boundary') or account.get('boundary'), mail.get('boundary_by') or 'guess'
+            same = [a for a in config.get('accounts', []) if str(a.get('email', '')).lower() == email and a.get('boundary')]
+            boundary = (mail or {}).get('boundary') or (same[0]['boundary'] if same else boundary_label(company_of(email) or 'personal'))
+            account = new_account(config, 'docs', ui=AnswersUI({'part of your life': boundary, 'company': boundary}))
+            account['boundary'], account['boundary_by'] = boundary, (mail or {}).get('boundary_by') or 'guess'
         account = {**account, 'email': email, 'transport': 'broker', 'provider': 'microsoft',
                    'connected_at': dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')}
+        if mail:
+            account.pop('own_grant', None)  # Outlook's sign-in, which now also reads files
+        else:
+            account['own_grant'] = True
         error = check(config, account)
         if error and not error.startswith(BUSY):
             raise SetupError(f"Docs for {email} didn't check out ({error})", 'sign in again from Connections, + Add')
@@ -2408,6 +2425,8 @@ def connect_docs_grant(config_path, args):
     except BaseException:
         if previous:
             mail_grants.put(config, 'microsoft', email, previous)
+        else:
+            mail_grants.forget(config, 'microsoft', email, revoke=False)
         raise
     return {'ok': True, 'name': email}
 

@@ -105,11 +105,6 @@ class ConnectGrant(unittest.TestCase):
     def test_microsoft_docs_keeps_the_new_sign_in_and_adds_docs_with_the_mail_boundary(self):
         docs = {'source': 'microsoft_docs', 'grant': {'provider': 'microsoft', 'email': 'dee@acme.example',
                                                       'refresh_token': 'fixture-refresh-token-docs', 'scopes': ['Files.Read.All']}}
-        with self.assertRaisesRegex(onboarding.SetupError, 'Connect Outlook for dee@acme.example first'):
-            onboarding.connect_delivered(self.path, docs)  # paired, but no Outlook here: nothing to read files with
-        self.save({**self.config(), 'microsoft_broker': {'url': fleet.NETWORK + '/api/fleet/microsoft-token'}})
-        with self.assertRaisesRegex(onboarding.SetupError, 'Connect Outlook'):
-            onboarding.connect_delivered(self.path, docs)
         onboarding.connect_delivered(self.path, self.args('microsoft'))
         self.checked.clear()
         self.answer = 'docs_not_connected'  # Microsoft did not let it read files after all: the mail sign-in stays as it was
@@ -129,6 +124,52 @@ class ConnectGrant(unittest.TestCase):
         self.assertEqual(self.checked[-1][1]['service'], 'docs')  # checked with a real read before it is kept
         onboarding.connect_delivered(self.path, docs)
         self.assertEqual(len([x for x in self.config()['accounts'] if x['service'] == 'docs']), 1)  # again: the same one
+
+    def test_microsoft_docs_alone_signs_in_on_its_own_without_outlook(self):
+        docs = {'source': 'microsoft_docs', 'grant': {'provider': 'microsoft', 'email': 'dee@hotmail.example',
+                                                      'refresh_token': 'fixture-refresh-token-docs', 'scopes': ['Files.ReadWrite.All', 'User.Read']}}
+        self.answer = 'docs_not_connected'  # it doesn't check out: nothing stays behind
+        with self.assertRaisesRegex(onboarding.SetupError, "didn't check out"):
+            onboarding.connect_delivered(self.path, docs)
+        config = self.config()
+        self.assertEqual((config['accounts'], 'microsoft_broker' in config), ([], False))
+        self.assertIsNone(mail_grants.get(config, 'microsoft', 'dee@hotmail.example'))
+        self.answer = None
+        self.assertEqual(onboarding.connect_delivered(self.path, docs), {'ok': True, 'name': 'dee@hotmail.example'})
+        config = self.config()
+        [account] = config['accounts']  # Docs only: no Outlook mail or calendar comes with it
+        self.assertEqual((account['service'], account['provider'], account['transport'], account['own_grant']),
+                         ('docs', 'microsoft', 'broker', True))
+        self.assertTrue(account['boundary'])
+        self.assertEqual(config['microsoft_broker'], {'url': fleet.NETWORK + '/api/fleet/microsoft-token'})
+        self.assertEqual(config['credentials']['microsoft-broker'], config['credentials']['fleet'])
+        self.assertEqual(mail_grants.get(config, 'microsoft', 'dee@hotmail.example'), 'fixture-refresh-token-docs')
+        self.assertNotIn('fixture-refresh-token-docs', self.path.read_text())
+        # Outlook signed in later for that address: Docs reads with that sign-in from then on
+        onboarding.connect_delivered(self.path, self.args('microsoft', email='dee@hotmail.example'))
+        onboarding.connect_delivered(self.path, docs)
+        [account] = [x for x in self.config()['accounts'] if x['service'] == 'docs']
+        self.assertNotIn('own_grant', account)
+
+    def test_microsoft_docs_alone_keeps_another_microsoft_broker(self):
+        self.save({**self.config(), 'microsoft_broker': {'url': 'https://elsewhere.example/microsoft-token'}})
+        docs = {'source': 'microsoft_docs', 'grant': {'provider': 'microsoft', 'email': 'dee@acme.example',
+                                                      'refresh_token': 'fixture-refresh-token-docs', 'scopes': ['Files.ReadWrite.All']}}
+        with self.assertRaisesRegex(onboarding.SetupError, 'another place'):
+            onboarding.connect_delivered(self.path, docs)
+        self.assertEqual(self.config()['microsoft_broker']['url'], 'https://elsewhere.example/microsoft-token')
+
+    def test_allow_edits_without_files_readwrite_all_is_an_honest_failure(self):
+        onboarding.connect_delivered(self.path, self.args('microsoft'))
+        read = {'source': 'microsoft_docs', 'grant': {'provider': 'microsoft', 'email': 'dee@acme.example',
+                                                      'refresh_token': 'fixture-refresh-token-read', 'scopes': ['Files.Read.All']}}
+        onboarding.connect_delivered(self.path, read)
+        write = {'source': 'microsoft_docs_write', 'grant': {**read['grant'], 'refresh_token': 'fixture-refresh-token-write'}}
+        with self.assertRaisesRegex(onboarding.SetupError, "Microsoft didn't allow edits"):
+            onboarding.connect_delivered(self.path, write)
+        self.assertEqual(mail_grants.get(self.config(), 'microsoft', 'dee@acme.example'), 'fixture-refresh-token-read')
+        write['grant']['scopes'] = ['Files.Read.All', 'Files.ReadWrite.All']
+        self.assertEqual(onboarding.connect_delivered(self.path, write), {'ok': True, 'name': 'dee@acme.example'})
 
     def test_only_a_whole_grant_for_a_paired_self_hosted_machine(self):
         for args in (self.args(provider='microsoft') | {'source': 'google'}, self.args(email='not an address'),

@@ -319,6 +319,16 @@ class Microsoft(unittest.TestCase):
         docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T10:30:00+00:00'))
         self.assertEqual(len(self.events()), 3)
 
+    def test_docs_alone_reads_with_its_own_sign_in_and_mail_and_calendar_ignore_it(self):
+        import own_addresses
+        alone = {**ACCOUNT, 'provider': 'microsoft', 'transport': 'broker', 'own_grant': True}
+        config = {**self.config, 'accounts': [alone]}  # no Outlook on this Machine at all
+        self.assertEqual(docs.signin(config, alone, helpers_for()), {'id': 'acme-docs', 'email': OWNER, 'transport': 'broker'})
+        docs.sync(self.store, config, alone, helpers_for())
+        self.assertEqual([e['kind'] for e in self.events()], ['docs.shared'])
+        self.assertEqual(own_addresses.mail_accounts(config), [])  # no mail or calendar source comes with it
+        self.assertEqual({s for k, s in self.requests if k == 'BROKER' and s}, {'Files.Read.All'})  # files only, never Mail
+
     def test_a_word_mention_and_text(self):
         data = docx(comments=[('0', 'Sam Sharer', 'please look')], mention='0')
         self.assertEqual(docs.word_comments(data)[0]['mailto'], {OWNER})

@@ -141,7 +141,7 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Reads only.'},
  zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
- microsoft_docs:{label:'Microsoft',title:'Microsoft Word',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
+ microsoft_docs:{label:'Microsoft',title:'Microsoft Word',about:'Word, OneDrive and SharePoint. Outlook isn’t needed. Edits wait for your OK.'},
  microsoft_docs_write:{label:'Microsoft',title:'Microsoft Word',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
  google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
@@ -221,17 +221,17 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}${off&&!paste?`<div class="actions">${back}</div>`:''}</div>`;
  const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off,s.provider==='codex'&&connectList?.codex?.status]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'signin',html)}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;
- signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.source});if(!connectSignin)return;
+ signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.start||connectSignin.source});if(!connectSignin)return;
   if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}signinPoll()},2500)}
 async function signinGo(way){const s=connectSignin;if(!s)return;
  if(s.provider==='codex'&&!s.hosted)return codexGo(s);
  if(s.hosted){if(s.state==='intro')return hostedSigninGo(s,way);connectSignin={...s,state:'intro',error:''};$('#connect-add').dataset.sig='';return renderConnectSignin()}  // Try again: Work or Personal first
  // The tab opens only once there is a start link: one the control plane refuses opens no tab, and the other way shows.
  // Still within the click's few seconds of user activation; a browser that blocks it goes there in this tab instead.
- try{const r=await connectPost('connect_signin',{name:s.source});
+ try{const r=await connectPost('connect_signin',{name:s.start||s.source});
   if(r.state==='unavailable'){const x=connectList?.sources.find(v=>v.name===s.source);if(x)x.signin_off=true;connectSignin={...s,state:'intro',error:'',off:true}}
   else{const tab=window.open('about:blank','_blank');if(tab){tab.opener=null;tab.location.href=r.url}else location.assign(r.url);
-   connectSignin={source:s.source,provider:s.provider,label:s.label,own:s.own,state:'started'}}}catch(err){errCaught(err);connectSignin={...s,state:'failed',error:err.message}}
+   connectSignin={source:s.source,provider:s.provider,start:s.start,label:s.label,own:s.own,state:'started'}}}catch(err){errCaught(err);connectSignin={...s,state:'failed',error:err.message}}
  $('#connect-add').dataset.sig='';renderConnectSignin();signinPoll()}
 // The phone's pairing request, shown while its setup code waits: Approve, a POST from this page to the account
 async function phoneApprove(b){b.disabled=true;
@@ -245,8 +245,10 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-host
 const hostedReconnect=(c,label,cls)=>`<button type="button" class="${cls}" data-hosted-reconnect="${esc(c.hosted_signin)}"${c.email?` data-email="${esc(c.email)}"`:''}${c.service==='whatsapp'?` data-account="${esc(c.id)}"`:''}>${esc(label)}</button>`;
 // Reconnect on a card or in Needs you: the same steps as + Add, for that account, shown in the + Add pane.
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-reconnect]');if(!b)return;
- // a sign-in through the control plane (Docs from Microsoft on a self-hosted Machine): its Sign in step, in the + Add pane
- if(b.dataset.signin){const p=b.dataset.signin;connectRun=null;connectSignin={source:b.dataset.reconnect,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,state:'intro'};
+ // a sign-in through the control plane (Docs from Microsoft on a self-hosted Machine): its Sign in step, in the + Add pane.
+ // data-signin-source, not data-signin: that one opens the Machine browser's sign-in dialog (connections-signin.js).
+ // start: the sign-in it asks for, which may not be the source's own (Allow edits: microsoft_docs_write, not microsoft_docs)
+ if(b.dataset.signinSource){const p=b.dataset.signinSource;connectRun=null;connectSignin={source:b.dataset.reconnect,provider:p,start:p,label:SIGNIN_COPY[p]?.label||p,own:false,state:'intro'};
   showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();$('#connect-add').dataset.sig='';await connectAdd(true);
   if(connectSignin?.source===b.dataset.reconnect&&connectList?.sources.find(v=>v.name===b.dataset.reconnect)?.signin_off){connectSignin={...connectSignin,off:true};renderConnectSignin()}
   viewTop($('#connect-add'));return}
@@ -332,11 +334,11 @@ return t('Quiet conversations last: {} of {}',f.done,f.total)}
 // Signing in again and disconnecting: a hosted machine's account page for Google and Microsoft, else here.
 // Docs (connectors/docs.py): its own consent, pressed on the account page (or Add again on a self-hosted Machine)
 // What a Docs connection may write, each only after the owner's OK (doc_writes.py), or Allow edits to ask for it
-const docsWrites=c=>{const w=c.docs_writes||[],go=c.docs_write_signin&&!c.shared_by?(state.manage_url?hostedReconnect({...c,hosted_signin:c.docs_write_signin},'Allow edits','browser-link'):`<button type="button" class="browser-link" data-reconnect="docs" data-account="${esc(c.id)}" data-signin="${esc(c.docs_write_signin)}">Allow edits</button>`):'';
+const docsWrites=c=>{const w=c.docs_writes||[],go=c.docs_write_signin&&!c.shared_by?(state.manage_url?hostedReconnect({...c,hosted_signin:c.docs_write_signin},'Allow edits','browser-link'):`<button type="button" class="browser-link" data-reconnect="docs" data-account="${esc(c.id)}" data-signin-source="${esc(c.docs_write_signin)}">Allow edits</button>`):'';
  const line=w.includes('edit')?'Creates and edits docs only after you OK each change.':w.includes('create')?'Creates new docs only after you OK them.':go?'Can’t create or edit docs yet.':'';
  return line?`<p class="muted conn-what conn-writes">${esc(t(line))}${go?' '+go:''}</p>`:''};
 const docsConnect=c=>c.service!=='docs'||!/docs_not_connected/.test(c.error||'')?'Reconnect':c.docs_provider==='microsoft'?'Connect Microsoft documents':'Connect Google Docs';
-function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.manage_url?hostedReconnect(c,label,'browser-link'):c.account_page?`<a class="head-link" href="${esc(c.account_page)}" target="_blank" rel="noopener">${label} ↗</a>`:c.connect_name?`<button type="button" class="browser-link" data-reconnect="${esc(c.connect_name)}" data-account="${esc(c.id)}"${c.signin?` data-signin="${esc(c.signin)}"`:''}>${label}</button>`:''}
+function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.manage_url?hostedReconnect(c,label,'browser-link'):c.account_page?`<a class="head-link" href="${esc(c.account_page)}" target="_blank" rel="noopener">${label} ↗</a>`:c.connect_name?`<button type="button" class="browser-link" data-reconnect="${esc(c.connect_name)}" data-account="${esc(c.id)}"${c.signin?` data-signin-source="${esc(c.signin)}"`:''}>${label}</button>`:''}
 // Work (with its company) or Personal: the owner marks each sign-in. Leaving a Work Fleet removes that company's work
 // accounts from this Machine (work_removal.py); personal ones stay.
 const scopeLabel=b=>{b=String(b||'');return /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
@@ -351,7 +353,7 @@ function connActions(c){const name=esc(c.display_name||c.email||c.id);
  if(c.shared_by)return `<p class="note">${esc(t('Shared by {}. Its admins manage it.',c.shared_by))}</p>`;  // shared_connectors.py: no token, no Disconnect here
  if(c.hosted_signin&&state.manage_url)return `<div class="actions conn-actions">${hostedReconnect(c,docsConnect(c),'ghost')}${c.account_page?`<a class="btn-link" href="${esc(c.account_page)}" target="_blank" rel="noopener">Disconnect ↗</a>`:`<button type="button" class="ghost danger" data-disconnect="${esc(c.id)}" data-name="${name}">Disconnect</button>`}</div>`;  // Disconnect: the account page when it holds the grant
  if(c.account_page)return `<div class="actions conn-actions"><a class="btn-link" href="${esc(c.account_page)}" target="_blank" rel="noopener">Reconnect or disconnect ↗</a></div>`;
- return (c.shared_with?`<p class="note">Shared with ${esc(c.shared_with)}.</p>`:'')+(c.connect_name?`<div class="actions conn-actions"><button type="button" class="ghost" data-reconnect="${esc(c.connect_name)}" data-account="${esc(c.id)}"${c.signin?` data-signin="${esc(c.signin)}"`:''}>Reconnect</button><button type="button" class="ghost danger" data-disconnect="${esc(c.id)}" data-name="${name}">Disconnect</button></div>`:'')}
+ return (c.shared_with?`<p class="note">Shared with ${esc(c.shared_with)}.</p>`:'')+(c.connect_name?`<div class="actions conn-actions"><button type="button" class="ghost" data-reconnect="${esc(c.connect_name)}" data-account="${esc(c.id)}"${c.signin?` data-signin-source="${esc(c.signin)}"`:''}>Reconnect</button><button type="button" class="ghost danger" data-disconnect="${esc(c.id)}" data-name="${name}">Disconnect</button></div>`:'')}
 // Salesflare (assistant.py salesflare_progress): what it reads, the round of accounts it is on, Stop or Start, Restart
 // for a round that is stuck, and where its API keys are.
 function salesflareBox(c){const v=c.salesflare||{},r=v.round,id=esc(c.id),n=x=>Number(x||0).toLocaleString(DL);

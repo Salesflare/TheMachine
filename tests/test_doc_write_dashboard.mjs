@@ -101,7 +101,8 @@ try{
   await conn.waitFor();
   assert.ok((await conn.textContent()).includes('Can’t create or edit docs yet.'));
   const allow=conn.locator('button',{hasText:'Allow edits'});
-  assert.equal(await allow.getAttribute('data-signin'),'microsoft_docs_write');
+  assert.equal(await allow.getAttribute('data-signin-source'),'microsoft_docs_write');
+  assert.equal(await allow.getAttribute('data-signin'),null);  // not the Machine browser's sign-in dialog
   if(shots)await conn.screenshot({path:`${shots}/docs-card-${name}.png`});
   connectors=[docs({docs_writes:['create','edit']})];
   await page.evaluate(()=>refresh());await page.waitForTimeout(200);

@@ -7,18 +7,21 @@ or reply on a doc the owner owns or a thread they are in (docs.comment), a comme
 The sign-in is the one the Machine already has for that address: Google through its token broker (google_api.py), and
 Microsoft through its broker or the owner's own app (ms_graph.py). Gmail's and gog's scopes stay as they are. Reading
 documents needs one more scope, which the owner grants with its own consent (Connect Google Docs, or Connect Microsoft
-documents), and nothing else asks for it:
+documents), and nothing else asks for it. Microsoft documents need no Outlook: without one on that address, the Docs
+connection has a sign-in of its own (`own_grant`, onboarding.connect_docs_grant), with only the Docs scopes, which the
+Outlook mail and calendar connectors never use:
 
 - Google: https://www.googleapis.com/auth/drive.readonly (Drive file list, comments, a doc's text and its suggestions).
   Posting an owner-approved reply to a comment needs https://www.googleapis.com/auth/drive, a second, separate consent;
   without it a reply stays a draft to post by hand.
-- Microsoft: Files.Read.All (the owner's OneDrive, and files shared with them on OneDrive and SharePoint). Microsoft
-  Graph has no way to reply to a Word comment, so a reply there is always a draft to post by hand.
+- Microsoft: Files.ReadWrite.All, asked in the one Docs consent (it also reads: the owner's OneDrive, and files shared
+  with them on OneDrive and SharePoint); a connection from before reads with Files.Read.All only, until Allow edits.
+  Microsoft Graph has no way to reply to a Word comment, so a reply there is always a draft to post by hand.
 
 Writes, each only after the owner's OK on exactly that: drive.replies.create through Replier, for an approved doc_reply
 (next_actions.py), and a new doc or a pinned edit through Writer, for an approved doc_write (doc_writes.py). Writing docs
-needs one more consent: Google's drive scope (the same one as replies; a new doc also works with drive.file), and
-Microsoft's Files.ReadWrite.All, which the owner grants with Allow edits on the Microsoft Word connection.
+needs Google's drive scope (the same one as replies; a new doc also works with drive.file), and Microsoft's
+Files.ReadWrite.All, which comes with connecting Microsoft Word (Allow edits only for a connection from before).
 """
 import datetime as dt
 import hashlib
@@ -42,14 +45,14 @@ SETUP = {
     # Word files only for now, hosted and self-hosted alike: Google Docs come through the token broker, which doesn't
     # offer their consent yet (docs/help/docs.md)
     'what': 'Word files: comments, shares, and new docs or edits you approve.',
-    'note': 'Uses the Microsoft sign-in of an Outlook address you connected. Reading files needs its own OK: press '
-            'Connect documents on your setup page, or Sign in with Microsoft here.',
+    'note': 'Signs in with Microsoft for that address, with or without Outlook. Press Connect documents on your setup '
+            'page, or Sign in with Microsoft here.',
     'ask': [('email', 'The Microsoft address that owns the files')],
     # a hosted Machine: its account page's Docs tile has the consent (Connect documents); on a paired self-hosted one,
     # + Add signs in with Microsoft through the control plane (fleet.SIGNIN_OF, onboarding.connect_docs_grant)
     'account_page': 'docs',
     'hints': {'docs_not_connected': 'Press Connect Microsoft documents to let it read Word files',
-              'docs_no_signin': 'Connect Outlook for this address first',
+              'docs_no_signin': 'Sign in with Microsoft for this address',
               'docs_signin_expired': 'Sign in again for this address'}}
 READ_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 REPLY_SCOPE = 'https://www.googleapis.com/auth/drive'
@@ -86,11 +89,15 @@ def provider(config, account):
 
 def signin(config, account, helpers):
     """The sign-in to call with: the docs account itself, carrying the transport and credential of the owner's own Google
-    or Microsoft connection on the same address. Never one from a Fleet grant (someone else's)."""
+    or Microsoft connection on the same address, or its own sign-in (own_grant: Microsoft documents without Outlook,
+    kept under the same address in mail_grants.py). Never one from a Fleet grant (someone else's)."""
     email = str(account.get('email') or '').strip().lower()
     if not email:
         raise helpers.SourceError('docs_no_email')
     kind = provider(config, account)
+    if kind == 'microsoft' and account.get('own_grant') and account.get('transport') == 'broker':
+        return {'id': account['id'], 'email': email, 'transport': 'broker',
+                **{k: account[k] for k in ('connected_at',) if account.get(k)}}
     services = ('outlook', 'outlook_calendar') if kind == 'microsoft' else ('gmail', 'calendar')
     found = next((a for a in config.get('accounts', []) if a.get('service') in services and not a.get('shared')
                   and str(a.get('email') or '').lower() == email and a.get('transport') in ('broker', 'graph')), None)

@@ -33,7 +33,7 @@ function readableError(v){if(!v)return 'Sync error';const m=/^([a-z]+)[_:](.+)$/
 if(/signed_out$/.test(what))return 'Signed out of '+name;
 if(TELEGRAM_STOP[v])return TELEGRAM_STOP[v];
 if(v==='docs_not_connected')return 'Reading docs needs its own OK';
-if(v==='docs_no_signin')return 'Connect Outlook for this address first';
+if(v==='docs_no_signin')return 'Sign in with Microsoft for this address';
 if(v==='google_meet_not_connected'||v==='google_meet_signin_expired')return 'Connect Google Meet again';
 if(/google_signin_expired/.test(what))return name?t('Google sign-in for {} expired',name):t('Google sign-in for this account expired');
 if(/microsoft_signin_pending|microsoft_broker_busy/.test(v))return 'Microsoft is still setting up access; it retries by itself';
