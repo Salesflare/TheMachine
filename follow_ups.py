@@ -81,6 +81,15 @@ Open follow-up to-dos close by themselves (settle) when the person replies, some
 again, the project is won, lost, Stalled, archived or its stage turned off, or follow-ups were turned off. Snoozing
 the to-do holds it; Skip ends that round.
 
+Pause (follow_up_pauses, pause/resume): the owner holds a board's or a project's follow-ups without turning them off,
+until a date or until they resume. A board's pause holds every project on it, also one with its own setting. While
+paused nothing new is drafted, no follow-up to-do is prepared in the background, nothing is sent without the owner
+(Send without asking, and sends queued before the pause, also the rest of a batch) and no round ends. Open follow-up
+to-dos stay open: a pause never closes them (a reply still does), and the owner's own word on one (Send, Change) still
+counts. The clock stops: a wait counts only the time follow-ups weren't paused (active_after), so after a resume each
+project is as far along as when it was paused, never ended or stale because of the pause. What was due already comes
+one by one after a resume (spaced: RESUME_GAP apart per board or project for RESUME_WINDOW), not all at once.
+
 Tables (CREATE TABLE IF NOT EXISTS only: added beside the old ones, nothing existing changes, so a backup from before
 restores as it was and one made after opens on an older version, which simply doesn't read them)."""
 from __future__ import annotations
@@ -110,6 +119,8 @@ CREATE TABLE IF NOT EXISTS follow_up_basis(suggestion_id TEXT PRIMARY KEY,basis 
 CREATE TABLE IF NOT EXISTS follow_up_holds(job_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,why TEXT NOT NULL,news TEXT,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS follow_up_changes(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,revision TEXT NOT NULL,route TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS follow_up_advice(suggestion_id TEXT PRIMARY KEY,why TEXT NOT NULL,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS follow_up_pauses(scope TEXT NOT NULL,ref INTEGER NOT NULL,start_at TEXT NOT NULL,end_at TEXT,until TEXT,
+  PRIMARY KEY(scope,ref,start_at));
 '''
 SCOPES = ('board', 'project')
 # The channels a follow-up can go out on, in the order "switch channel" moves through them
@@ -136,6 +147,9 @@ PROGRESS_KEEP = 300      # "Sent 8" stays this long after a batch's last send
 GOING = ('queued', 'sending')  # outbox states of a follow-up still on its way
 STOPPED = 'Stopped by you'  # the error of a follow-up the owner stopped before it went (stop): its draft is back to review
 OPEN_STATES = ('open',)
+RESUME_GAP = 20 * 60     # seconds between two new drafts of a board or project right after its pause ended
+RESUME_WINDOW = 24 * 3600  # how long after a resume drafts are spaced that way
+PAUSE_RECHECK = 60       # seconds a send held by a pause waits before the outbox looks again
 STALLED = 'Stalled or declined'  # graph.STALLED
 
 
@@ -243,6 +257,8 @@ def save(db, scope, ref, raw, now):
         settings['stages'] = {}
     db.execute('INSERT INTO follow_up_rules(scope,ref,settings,updated_at) VALUES(?,?,?,?) ON CONFLICT(scope,ref) DO UPDATE SET '
                'settings=excluded.settings,updated_at=excluded.updated_at', (scope, ref, json.dumps(settings, sort_keys=True), now))
+    if not settings['on']:
+        resume(db, scope, ref, now)  # turned off: a pause doesn't wait to surprise them when it's turned on again
     return settings
 
 
@@ -287,7 +303,7 @@ def effective(db, project, boards=None):
 
 # ------------------------------------------------------------------ the schedule
 
-def schedule(messages, settings, now, days=None, prior=0, since=None):
+def schedule(messages, settings, now, days=None, prior=0, since=None, paused=()):
     """Where a project's follow-ups stand, from its messages (oldest first, each {'id', 'at', 'mine', 'channel'}).
 
     Returns {'state', 'next_at', 'latest_at', 'end_at', 'n', 'judge', 'late', 'after', 'after_at', 'channel', 'tail'}:
@@ -299,7 +315,10 @@ def schedule(messages, settings, now, days=None, prior=0, since=None):
 
     prior: the owner's earlier unanswered sends in the thread that weren't collected (sent before The Machine read the
     mailbox, earlier_sends), since the first of them when known: they count as sent in this round, and the round
-    starts there (round_at, the first unanswered message)."""
+    starts there (round_at, the first unanswered message).
+
+    paused: the times follow-ups were paused for this project (pauses_of, merged): waits count only the time outside
+    them, so a pause neither brings a follow-up closer nor ends a round, and a project paused long isn't stale for it."""
     days = int(days or settings['days'])
     longest = max(days, int(settings.get('max_days') or days))
     now = parse(now)
@@ -314,19 +333,20 @@ def schedule(messages, settings, now, days=None, prior=0, since=None):
     base = {**none, 'n': n, 'after': last['id'], 'after_at': last['at'], 'round_at': round_at.isoformat(), 'prior': max(0, int(prior or 0)),
             'channel': last.get('channel'), 'tail': [m.get('channel') for m in tail]}
     wait_from = parse(last['at'])
+    paused = list(paused or ())
     if n - 1 >= int(settings['max']):
-        end_at = wait_from + dt.timedelta(days=days)
+        end_at = active_after(wait_from, dt.timedelta(days=days), paused)
         if now < end_at:
             return {**base, 'state': 'last', 'end_at': end_at.isoformat()}
-        if (now - end_at).days > STALE_DAYS:
+        if active_between(end_at, now, paused).days > STALE_DAYS:
             return {**base, 'state': 'stale'}
         return {**base, 'state': 'ended', 'end_at': end_at.isoformat()}
-    next_at = wait_from + dt.timedelta(days=days)
-    latest_at = wait_from + dt.timedelta(days=longest)
+    next_at = active_after(wait_from, dt.timedelta(days=days), paused)
+    latest_at = active_after(wait_from, dt.timedelta(days=longest), paused)
     timing = {'next_at': next_at.isoformat(), 'latest_at': latest_at.isoformat(), 'judge': n > int(settings.get('min') or 0)}
     if now < next_at:
         return {**base, **timing, 'state': 'waiting'}
-    if (now - latest_at).days > STALE_DAYS:
+    if active_between(latest_at, now, paused).days > STALE_DAYS:
         return {**base, 'state': 'stale'}
     return {**base, **timing, 'state': 'due', 'late': now >= latest_at}
 
@@ -390,6 +410,193 @@ def repeats(text, earlier):
     norm = lambda s: re.sub(r'\W+', ' ', str(s or '').casefold()).strip()
     mine = norm(text)
     return bool(mine) and any(mine == norm(e) or difflib.SequenceMatcher(None, mine, norm(e)).ratio() >= REPEAT for e in earlier if norm(e))
+
+
+# ------------------------------------------------------------------ pausing
+
+def active_after(start, span, paused):
+    """When `span` of time outside the pauses (merged, oldest first) has gone by since start."""
+    at, left = start, span
+    for begin, end in paused:
+        if end <= at:
+            continue
+        if begin >= at + left:
+            break
+        if begin > at:
+            left -= begin - at
+        at = end
+    return at + left
+
+
+def active_between(start, end, paused):
+    """The time from start to end outside the pauses."""
+    total = end - start
+    for begin, stop_at in paused:
+        lo, hi = max(begin, start), min(stop_at, end)
+        if hi > lo:
+            total -= hi - lo
+    return total
+
+
+def _pause_rows(db, scope, ref):
+    return db.execute('SELECT start_at,end_at,until FROM follow_up_pauses WHERE scope=? AND ref=? ORDER BY start_at', (scope, int(ref))).fetchall()
+
+
+def _pause_end(row, now):
+    """When a pause ended: the owner's Resume, else its date once that passed; None while it holds."""
+    if row['end_at']:
+        return parse(row['end_at'])
+    if row['until'] and parse(row['until']) <= parse(now):
+        return parse(row['until'])
+    return None
+
+
+def _scopes(project):
+    out = [('project', project['id'])]
+    if project['board_id']:
+        out.append(('board', project['board_id']))
+    return out
+
+
+def current_pause(db, scope, ref, now):
+    """The pause holding this board or project now ({'scope', 'at', 'until'}), or None."""
+    for row in reversed(_pause_rows(db, scope, ref)):
+        if _pause_end(row, now) is None:
+            return {'scope': scope, 'at': row['start_at'], 'until': row['until']}
+    return None
+
+
+def paused(db, project, now):
+    """The pause holding a project now: its own, or its board's (which holds every project on it). None: not paused."""
+    for scope, ref in _scopes(project):
+        found = current_pause(db, scope, ref, now)
+        if found:
+            return found
+    return None
+
+
+def pauses_of(db, project, now):
+    """Every time this project's follow-ups were paused (its own and its board's), merged, oldest first: [(start, end)],
+    a pause that still holds ending now (so the time left stays what it was when paused)."""
+    now_at = parse(now)
+    spans = sorted((parse(r['start_at']), min(_pause_end(r, now) or now_at, now_at)) for scope, ref in _scopes(project) for r in _pause_rows(db, scope, ref))
+    out = []
+    for begin, end in spans:
+        if out and begin <= out[-1][1]:
+            out[-1] = (out[-1][0], max(out[-1][1], end))
+        elif end > begin:
+            out.append((begin, end))
+    return out
+
+
+def _until(value, now):
+    """A pause's date: None (until the owner resumes), a day (YYYY-MM-DD: its start, in the owner's time zone as `now`
+    has it) or a moment; always later than now."""
+    if value in (None, ''):
+        return None
+    text = str(value).strip()
+    try:
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', text):
+            when = dt.datetime.fromisoformat(text).replace(tzinfo=parse(now).tzinfo)
+        else:
+            when = parse(text)
+    except ValueError:
+        raise ValueError('Pick a date to resume, or none') from None
+    if when <= parse(now):
+        raise ValueError('Pick a date in the future')
+    if when > parse(now) + dt.timedelta(days=366):
+        raise ValueError('Pause for a year at most')
+    return when.isoformat()
+
+
+def pause(db, scope, ref, until, now):
+    """The owner pauses a board's or a project's follow-ups (only where they are on): nothing is drafted, sent or ended
+    for it until `until` (None: until they resume). Pausing again changes the date. Open follow-up to-dos stay open."""
+    if scope not in SCOPES:
+        raise ValueError('Follow-ups are set for a board or a project')
+    ref = int(ref or 0)
+    row = db.execute(f"SELECT * FROM {'boards' if scope == 'board' else 'projects'} WHERE id=?", (ref,)).fetchone()
+    if not row:
+        raise ValueError('That board is gone' if scope == 'board' else 'That project is gone')
+    settings = rule(db, 'board', ref) if scope == 'board' else effective(db, row)[0]
+    if not settings or not settings.get('on'):
+        raise ValueError('Follow-ups are off here, so there’s nothing to pause')
+    until = _until(until, now)
+    held = current_pause(db, scope, ref, now)
+    if held:
+        db.execute('UPDATE follow_up_pauses SET until=? WHERE scope=? AND ref=? AND start_at=?', (until, scope, ref, held['at']))
+    else:
+        db.execute('INSERT OR REPLACE INTO follow_up_pauses(scope,ref,start_at,end_at,until) VALUES(?,?,?,NULL,?)', (scope, ref, now, until))
+    return current_pause(db, scope, ref, now)
+
+
+def resume(db, scope, ref, now):
+    """The owner resumes: follow-ups go on where they were (the paused time doesn't count), what was due comes spaced."""
+    if scope not in SCOPES:
+        raise ValueError('Follow-ups are set for a board or a project')
+    held = current_pause(db, scope, int(ref or 0), now)
+    if held:
+        db.execute('UPDATE follow_up_pauses SET end_at=? WHERE scope=? AND ref=? AND start_at=?', (now, scope, int(ref), held['at']))
+    return None
+
+
+def resumed_at(db, project, now):
+    """(scope, ref, when) of this project's latest pause that ended within RESUME_WINDOW, or None."""
+    since = parse(now) - dt.timedelta(seconds=RESUME_WINDOW)
+    best = None
+    for scope, ref in _scopes(project):
+        for row in _pause_rows(db, scope, ref):
+            end = _pause_end(row, now)
+            if end is not None and end >= since and (best is None or end > best[2]):
+                best = (scope, ref, end)
+    return best
+
+
+def spaced(db, items, now):
+    """The due items that may be drafted now: right after a pause ended (RESUME_WINDOW), one per board or project every
+    RESUME_GAP, so what was due during the pause doesn't come all at once."""
+    out, taken = [], set()
+    for item in items:
+        back = resumed_at(db, item['project'], now)
+        if back is None:
+            out.append(item)
+            continue
+        key = back[:2]
+        if key in taken:
+            continue
+        column = 'project_id' if key[0] == 'project' else 'board_id'
+        since = (parse(now) - dt.timedelta(seconds=RESUME_GAP)).isoformat()
+        if db.execute(f'SELECT 1 FROM follow_up_cards WHERE {column}=? AND created_at>?', (key[1], since)).fetchone():
+            continue
+        taken.add(key)
+        out.append(item)
+    return out
+
+
+def paused_ids(db, now):
+    """{suggestion_id: pause} of open follow-up to-dos whose project is paused: their background preparation waits."""
+    if not db.execute("SELECT 1 FROM follow_up_pauses WHERE end_at IS NULL LIMIT 1").fetchone():
+        return {}
+    out = {}
+    for f in db.execute("SELECT f.suggestion_id,p.* FROM follow_up_cards f JOIN projects p ON p.id=f.project_id WHERE f.state='open'").fetchall():
+        held = paused(db, f, now)
+        if held:
+            out[f['suggestion_id']] = held
+    return out
+
+
+def paused_send(db, job_id, now):
+    """When a queued follow-up held by a pause may be looked at again, else None. A pause holds Send without asking and
+    every send queued before it began (the rest of a batch too); a Send the owner gives during the pause goes."""
+    row = db.execute('SELECT s.queued_at,j.source,p.* FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id JOIN follow_up_cards f '
+                     'ON f.suggestion_id=j.suggestion_id JOIN projects p ON p.id=f.project_id WHERE s.job_id=?', (job_id,)).fetchone()
+    if not row:
+        return None
+    held = paused(db, row, now)
+    if not held or (row['source'] != 'auto_follow_up' and parse(row['queued_at']) >= parse(held['at'])):
+        return None
+    again = parse(now) + dt.timedelta(seconds=PAUSE_RECHECK)
+    return min(again, parse(held['until'])).isoformat() if held['until'] else again.isoformat()
 
 
 # ------------------------------------------------------------------ reading a project
@@ -810,8 +1017,9 @@ def open_card(db, project_id):
 
 def plan(db, now, sendable, mine=mine_default, own=None):
     """Every project follow-ups are on for, with where it stands: [{'project', 'board', 'settings', 'source', 'state',
-    'next_at', 'n', 'after', 'after_at', 'channel', 'reason'}]. state as schedule's, or 'off' with a reason, or 'open'
-    when a follow-up to-do is out for it already. own: the owner's {'emails', 'names'}, to read quoted history
+    'next_at', 'n', 'after', 'after_at', 'channel', 'reason', 'pause'}]. state as schedule's, or 'off' with a reason, 'open'
+    when a follow-up to-do is out for it already, or 'paused' (pause: the pause that holds it) instead of due, waiting or
+    a round's end. own: the owner's {'emails', 'names'}, to read quoted history
     (earlier_sends)."""
     if not any_on(db):
         return []
@@ -835,7 +1043,10 @@ def plan(db, now, sendable, mine=mine_default, own=None):
         days = stage_rule(settings, board, p['stage'])[1] if source == 'board' and board is not None else settings['days']
         msgs = messages(db, pid, mine)
         prior, since, counted = earlier_sends(db, msgs, own)
-        found = {**schedule(msgs, settings, now, days, prior, since), 'counted': counted}
+        held = paused(db, p, now)
+        if held:
+            item['pause'] = held
+        found = {**schedule(msgs, settings, now, days, prior, since, pauses_of(db, p, now)), 'counted': counted}
         if found['state'] in ('due', 'waiting') and found['after'] is not None:
             done = db.execute('SELECT state FROM follow_up_cards WHERE project_id=? AND after_event=?', (pid, found['after'])).fetchone()
             if done:  # this waiting point was followed up already (or skipped): the next one is the follow-up itself
@@ -870,6 +1081,8 @@ def plan(db, now, sendable, mine=mine_default, own=None):
         if found['state'] == 'due' and not channel:
             found = {**found, 'state': 'off', 'next_at': None}
             item['reason'] = 'channel'
+        if held and found['state'] in ('due', 'waiting', 'end'):
+            found = {**found, 'state': 'paused', 'next_at': None}  # nothing drafted or ended while paused; the clock stands still
         out.append({**item, **found, 'channel': channel, 'messages': len(msgs)})
     return out
 
@@ -914,7 +1127,7 @@ def panel(db, scope, ref, sendable, now):
             raise ValueError('That board is gone')
         own = rule(db, 'board', ref)
         view = {'scope': 'board', 'id': ref, 'name': board['name'], 'settings': setting_view(own), 'stalled': bool(board['side']),
-                'stages': [{'name': n, 'open': o} for n, o in board_stages(board) if n != STALLED]}
+                'stages': [{'name': n, 'open': o} for n, o in board_stages(board) if n != STALLED], 'pause': current_pause(db, 'board', ref, now)}
     elif scope == 'project':
         p = db.execute('SELECT * FROM projects WHERE id=?', (ref,)).fetchone()
         if not p:
@@ -924,7 +1137,8 @@ def panel(db, scope, ref, sendable, now):
         board_rule = rule(db, 'board', board['id']) if board else None
         view = {'scope': 'project', 'id': ref, 'name': p['name'], 'settings': setting_view(own or board_rule), 'own': own is not None,
                 'stalled': bool(board and board['side']),
-                'board': {'id': board['id'], 'name': board['name'], 'on': bool(board_rule and board_rule.get('on'))} if board else None}
+                'board': {'id': board['id'], 'name': board['name'], 'on': bool(board_rule and board_rule.get('on'))} if board else None,
+                'pause': paused(db, p, now)}  # scope 'board': its board's pause holds it (resumed on the board)
     else:
         raise ValueError('Follow-ups are set for a board or a project')
     view.update(channels=[c for c in CHANNELS if c in sendable], careful=careful(db))
@@ -932,12 +1146,14 @@ def panel(db, scope, ref, sendable, now):
 
 
 def views(db, now, sendable, mine=mine_default, own=None):
-    """{'boards': {board_id: {'on', 'next_at'}}, 'projects': {project_id: {'on', 'state', 'next_at', 'n', 'max', 'own', 'end'}}}:
-    next_at the next follow-up's date (due or waiting), end the quiet note when a round ended without a reply."""
+    """{'boards': {board_id: {'on', 'next_at', 'pause'}}, 'projects': {project_id: {'on', 'state', 'next_at', 'n', 'max', 'own',
+    'end', 'pause'}}}: next_at the next follow-up's date (due or waiting), end the quiet note when a round ended without a
+    reply, pause the pause that holds it (current_pause, paused) or None."""
     out = {'boards': {}, 'projects': {}}
     try:
         for r in db.execute("SELECT ref,settings FROM follow_up_rules WHERE scope='board'"):
-            out['boards'][r[0]] = {'on': bool(json.loads(r[1]).get('on')), 'next_at': None}
+            on = bool(json.loads(r[1]).get('on'))
+            out['boards'][r[0]] = {'on': on, 'next_at': None, 'pause': current_pause(db, 'board', r[0], now) if on else None}
         items = plan(db, now, sendable, mine, own)
     except Exception:  # noqa: BLE001 - the board shows without it
         return out
@@ -946,7 +1162,8 @@ def views(db, now, sendable, mine=mine_default, own=None):
         state = x['state']
         due_at = x.get('next_at') if state in ('due', 'waiting') else None
         out['projects'][p['id']] = {'on': state != 'off', 'state': state, 'reason': x.get('reason'), 'next_at': due_at, 'n': x.get('n'),
-                                    'max': (x['settings'] or {}).get('max'), 'own': x['source'] == 'project', 'end': x.get('end')}
+                                    'max': (x['settings'] or {}).get('max'), 'own': x['source'] == 'project', 'end': x.get('end'),
+                                    'pause': x.get('pause')}
         b = out['boards'].get(p['board_id'])
         if b and b['on'] and x['source'] == 'board' and due_at:
             b['next_at'] = min(filter(None, [b['next_at'], due_at]))
@@ -1027,6 +1244,9 @@ def rewrite_judged(db, now, mine=mine_default):
                        "AND json_extract(s.outcome,'$.state')='already_done'").fetchall()
     for r in rows:
         sid = r['suggestion_id']
+        project = db.execute('SELECT * FROM projects WHERE id=?', (r['project_id'],)).fetchone()
+        if project and paused(db, project, now):
+            continue  # paused: drafted after the resume
         if any(not m['mine'] and parse(m['at']) > parse(r['after_at']) and m['id'] != r['after_event'] for m in messages(db, r['project_id'], mine)):
             continue  # they answered since: nothing to follow up
         if r['state'] == 'stopped' and not reopen(db, sid):
@@ -1102,7 +1322,8 @@ def close(db, suggestion_id, why, now, state='stopped', source='assistant', deci
 
 def settle(db, now, mine=mine_default):
     """Open follow-up to-dos: mark the ones the owner closed (sent, skipped), leave the ones a review took over as normal
-    to-dos, and close the rest when a stop condition holds. Returns [(suggestion_id, why)] closed by itself."""
+    to-dos, and close the rest when a stop condition holds. A pause is none: paused ones stay open. Returns
+    [(suggestion_id, why)] closed by itself."""
     closed = []
     stopped(db, now)
     for f in db.execute("SELECT f.*,s.status,s.created_at card_at FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
@@ -1300,7 +1521,7 @@ def progress(db, now):
     since = (parse(now) - dt.timedelta(seconds=PROGRESS_KEEP)).isoformat()
     for grp in groups:
         batch = db.execute('SELECT batch FROM follow_up_sends WHERE grp=? ORDER BY queued_at DESC,rowid DESC LIMIT 1', (grp,)).fetchone()[0]
-        jobs = db.execute('SELECT j.status,j.error,j.updated_at,s.sender,h.why held FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id '
+        jobs = db.execute('SELECT j.id,j.status,j.error,j.updated_at,s.sender,h.why held FROM follow_up_sends s JOIN action_jobs j ON j.id=s.job_id '
                           "LEFT JOIN follow_up_holds h ON h.job_id=s.job_id AND j.status='blocked' WHERE s.batch=?", (batch,)).fetchall()
         if len(jobs) < 2:
             continue
@@ -1312,7 +1533,8 @@ def progress(db, now):
                     'done': len(jobs) - going, 'sent': sum(j['status'] == 'sent' for j in jobs), 'going': going > 0,
                     'held': sum(j['held'] is not None for j in jobs), 'held_new': sum(j['held'] == 'changed' for j in jobs),
                     'stopped': sum(j['status'] in ('cancelled', 'blocked') and j['error'] == STOPPED for j in jobs),
-                    'done_at': done_around(db, jobs, now) if going else None})
+                    'done_at': done_around(db, jobs, now) if going else None,
+                    **({'paused': True} if going and any(j['status'] == 'queued' and paused_send(db, j['id'], now) for j in jobs) else {})})
     return out
 
 

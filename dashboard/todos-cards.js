@@ -359,7 +359,7 @@ function holdNote(h){if(!h)return '';const when=pauseWhen(h.until);
  if(h.why==='limit')return when?t('Waiting for the usage limit to reset. Starts around {}.',when):t('Waiting for the usage limit to reset.');
  if(h.why==='budget')return when?t('Saving usage for now. Starts around {}.',when):t('Saving usage for now. Starts when there’s room.');
  if(h.why==='retry')return when?t('Trying again around {}.',when):'';
- return {after:t('Starts after the current one.'),busy:t('Starts when one of the running to-dos finishes.'),others:t('Starts after the other to-dos.')}[h.why]||''}
+ return {after:t('Starts after the current one.'),busy:t('Starts when one of the running to-dos finishes.'),others:t('Starts after the other to-dos.'),paused:t('Follow-ups are paused.')}[h.why]||''}
 function preparationNote(s,ask=''){
 if(s.preparation_status==='queued')return `<p class="note">${esc(holdNote(s.preparation_hold)||(s.preparation_retried?'That attempt didn’t finish, so I’m trying once more…':s.preparation_signed_in?'Signed in. I’ll start shortly.':'I’ll start shortly.'))}</p>`;
 // A blocker that asks the owner already leads as the Needs you line: not said twice.

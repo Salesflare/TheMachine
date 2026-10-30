@@ -48,6 +48,8 @@ Contano anche le email inviate da un’altra app, prima che la tua Machine legge
 
 I ricontatti si fermano quando la persona risponde, quando il progetto è vinto, perso, archiviato o spostato in una fase chiusa, e quando ne posticipi o salti uno. Prima di scrivere, la tua Machine controlla se nella conversazione c’è qualcosa di più recente, così non insiste con chi ha già risposto altrove.
 
+**Metti in pausa** in **Ricontatti…** ferma una bacheca o un progetto senza disattivare i ricontatti: niente viene scritto o inviato, nessun giro finisce e le attività aperte restano aperte. Scegli un giorno per riprendere, o tocca **Riprendi** quando vuoi. L’attesa riparte da dove era, e ciò che era dovuto arriva uno alla volta. Nel frattempo si vede **In pausa**.
+
 Dopo l’ultimo ricontatto senza risposta, il progetto mostra “Nessuna risposta dopo 3 ricontatti” e passa a Fermi o rifiutati, se è attivo. Se si fermano prima che ne parta uno, mostra “Ricontatti fermati” e resta nella sua fase.
 
 Se la sua email è stata respinta e c'è un altro indirizzo, il ricontatto va lì ("Respinto, ora a <indirizzo>"). Una bozza il cui indirizzo viene respinto prima dell'invio resta ferma: "Non inviato: <indirizzo> è stato respinto", e passa all'altro indirizzo, dove aspetta il tuo invio.
