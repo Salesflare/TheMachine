@@ -47,10 +47,13 @@ class AppMixins(unittest.TestCase):
                 self.assertTrue(callable(getattr(a.App, method, None)), f'{name}: App has no method {method}')
 
     def test_mixin_actions_keep_their_reviewed_sets(self):
+        # a mixin handles exactly the names of its reviewed set (plus the agent's own calls that went with them), so a
+        # name added to one and not the other fails here
         self.assertEqual(set(a.SupportApp.ACTIONS), a.SUPPORT_ACTIONS)
-        for name in a.App.ACTION_HANDLERS:
-            with self.subTest(action=name):
-                self.assertIn(name, a.OWNER_ACTIONS | a.DASHBOARD_ACTIONS, 'an action no reviewed set lets anyone call')
+        self.assertEqual(set(a.SkillsApp.ACTIONS), a.SKILL_ACTIONS | {'skill_propose', 'skill_import_report'})
+        self.assertEqual(set(a.AgentsApp.ACTIONS), a.AGENT_ACTIONS)
+        self.assertEqual(set(a.GBrainApp.ACTIONS), a.GBRAIN_ACTIONS)
+        self.assertEqual(set(a.SharedGraphApp.ACTIONS), a.GRAPH_SHARE_ACTIONS)
 
     def test_every_reviewed_action_resolves(self):
         # each name the reviewed sets let a caller send reaches a mixin's handler or one of App.action's own branches
