@@ -1656,6 +1656,18 @@ class SharedGraph(unittest.TestCase):
         self.assertNotIn('Sidecorp pilot', self.received(self.mem))
         self.assertIn(BODY, self.received(self.mem))
 
+    def test_the_dashboards_read_writes_nothing_and_a_busy_database_is_no_error(self):
+        """GET /api/fleet (shared_view -> sharing) while another writer holds the database (a graph build after a
+        restart): what it keeps on the way is unchanged, so nothing is written and nothing waits on the lock."""
+        self.adm.graph_set_policy(FLEET, ['mail'])
+        self.rounds()
+        before = self.own.sharing()
+        def locked(key, value):
+            raise sqlite3.OperationalError('database is locked')
+        with patch.object(self.own, 'set_meta', side_effect=locked) as write:
+            self.assertEqual(self.own.sharing(), before)
+        self.assertEqual(write.call_count, 0)
+
     def test_a_gmail_account_without_a_service_is_work_email_the_fleet_can_require(self):
         for acc in self.own.config['accounts']:
             acc.pop('service', None)

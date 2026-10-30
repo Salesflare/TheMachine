@@ -9330,6 +9330,14 @@ def fault_event(account, row, config):
             'deleted': False}
 
 
+DB_BUSY_RETRY = 15  # seconds: a sync that found the database busy (another writer's long transaction) reads again then
+
+
+def db_busy(error):
+    """Whether a sqlite3 error is only another writer holding the database (locked or busy past the busy timeout)."""
+    return isinstance(error, sqlite3.OperationalError) and any(w in str(error).lower() for w in ('database is locked', 'database is busy', 'database table is locked'))
+
+
 def restart_self(delay=5):
     """Restart this service a few seconds from now, from outside its own process, so the merge result
     is saved first. Only when it runs under systemd or launchd; returns whether a restart was scheduled."""
@@ -13664,6 +13672,7 @@ class App(*APP_MIXINS):
             self.fleet.connector_profile = self.shared_connector_profile
             self.fleet.share_token = self.shared_connector_token  # Stripe signed in: a fresh access token to send
             self.fleet.connect_delivered = self.fleet_connect_delivered  # Sign in with Intercom for this Machine (fleet.py)
+            self.fleet.watch_connects = True  # and picked up a moment after consent, apart from the Fleet's loop (connects_watch)
             self.fleet.support_read = self.support_read  # Support access: the team's read, while the owner allows it (fleet.py)
         # Skills (skills.py): the owner's how-tos, written to the OpenClaw workspace; shared ones come in through the Fleet.
         self.skills = skills.Skills(self.store.connect, config.get('openclaw_workspace') or WORKSPACE, self.fleet, config=config)
@@ -15615,6 +15624,14 @@ class App(*APP_MIXINS):
                     # Ordinary failures and rate limits retain their normal backoff.
                     if re.search(r'(google|microsoft)_signin_(expired|pending)|microsoft_broker', str(error)):
                         continue
+                except sqlite3.OperationalError as error:
+                    if not db_busy(error):
+                        safe = SourceError(type(error).__name__, retry_after=delay)
+                        self.store.failed(account['id'], safe)
+                        LOG.error('sync account=%s error=%s', account['id'], safe)
+                    else:  # another writer held the database past the busy timeout: transient, read again soon
+                        LOG.info('sync account=%s waits: database busy', account['id'])
+                        delay = DB_BUSY_RETRY
                 except Exception as error:
                     safe = SourceError(type(error).__name__, retry_after=delay)
                     self.store.failed(account['id'], safe)

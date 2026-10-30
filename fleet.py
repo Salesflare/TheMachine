@@ -238,6 +238,11 @@ SIGNIN_SOURCES = {'intercom', 'google', 'microsoft', 'zoom', 'microsoft_docs', '
 SIGNIN_OF = {'intercom': 'intercom', 'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft', 'zoom': 'zoom',
              'docs': 'microsoft_docs', 'stripe': 'stripe', 'slack': 'slack', 'trello': 'trello', 'google_meet': 'google_meet'}
 SIGNIN_EXPIRES = 30 * 60  # a sign-in started on the dashboard and not finished by then is shown as stopped
+# While a sign-in started on the dashboard waits, this Machine asks the control plane for it this often itself
+# (Fleet.connects_watch), so it lands a moment after consent even while the Fleet's own loop is busy (a Shared Graph
+# round after a restart can take a minute or more). Only for the first CONNECTS_WATCH_FOR; the inbox hint covers the rest.
+CONNECTS_WATCH_EVERY = 2
+CONNECTS_WATCH_FOR = 10 * 60
 SIGNINS_FRESH = 5 * 60  # how long the control plane's list of the sign-ins it can start for this Machine is kept (Fleet.signins)
 # what the control plane says when it has no app for a sign-in (device_connect.start): an older one only says it this way
 SIGNIN_REFUSED = "That source can't be signed in this way here."
@@ -1713,6 +1718,15 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         with self.connect() as db:
             db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (key, json.dumps(value)))
         self._sharing = (0, {})  # whether the Team Graph is shared is read again (team_sharing)
+
+    def keep_meta(self, key, kept, value):
+        """set_meta for what a read keeps on the way (trust pins, admin statements: shared_connectors.trust,
+        shared_graph.confirmed, graph_paused...), which the dashboard's GETs ask for too: written only when it changed
+        from `kept` (what meta(key) gave). Unchanged, a read writes nothing, so it never waits on another writer (a
+        graph build holds the database for a while). A change still fails loudly when it cannot be kept: a pin or an
+        admin's newest statement that went unkept could be rolled back."""
+        if json.loads(json.dumps(value)) != kept:  # as meta gives it back: lists, string keys
+            self.set_meta(key, value)
 
     def directory(self, refresh=False, clock=None):
         import time
@@ -3195,7 +3209,46 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         import time
         self.set_meta('signin:' + source, {'state': 'started', 'at': time.time()})
         LOG.info('connect start source=%s', source)
+        self.connects_watch_start()
         return url
+
+    def signin_waiting(self, clock=None):
+        """Whether a sign-in started on the dashboard still waits for its grant (state started, not stopped)."""
+        import time
+        stamp = (clock or time.time)()
+        for source in SIGNIN_SOURCES:
+            found = self.meta('signin:' + source) or {}
+            if found.get('state') == 'started' and stamp - float(found.get('at') or 0) <= CONNECTS_WATCH_FOR:
+                return True
+        return False
+
+    def connects_watch_start(self):
+        """Starts connects_watch in its own thread, once at a time. Only on a Machine whose app takes connects and asks
+        for the watch (watch_connects, set where connect_delivered is)."""
+        if not getattr(self, 'watch_connects', False) or not getattr(self, 'connect_delivered', None):
+            return False
+        guard = self.__dict__.setdefault('connects_watch_lock', threading.Lock())
+        if not guard.acquire(blocking=False):
+            return False  # one watches already: it sees this sign-in too
+        threading.Thread(target=self.connects_watch, args=(guard,), name='connects-watch', daemon=True).start()
+        return True
+
+    def connects_watch(self, guard=None, wait=None, clock=None):
+        """While a sign-in started here waits: ask the control plane for it every CONNECTS_WATCH_EVERY seconds and
+        connect it at once (connects_round), apart from the Fleet's loop, which may be busy with a long round."""
+        import time
+        wait = wait or time.sleep
+        until = (clock or time.monotonic)() + CONNECTS_WATCH_FOR
+        try:
+            while (clock or time.monotonic)() < until and self.signin_waiting():
+                try:
+                    self.connects_round(now=True)
+                except Exception as error:  # noqa: BLE001 - the inbox hint still brings it
+                    LOG.info('connect watch error=%s', type(error).__name__)
+                wait(CONNECTS_WATCH_EVERY)
+        finally:
+            if guard is not None:
+                guard.release()
 
     def signin_state(self, source, clock=None):
         """How a sign-in started on the dashboard is going: {'state': 'started'|'connecting'|'done'|'failed'|'stopped', ...}."""
@@ -3205,13 +3258,24 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             return {'state': 'stopped'}
         return {k: found[k] for k in ('state', 'name', 'error', 'replies') if k in found} or {'state': 'none'}
 
-    def connects_round(self):
+    def connects_round(self, now=False):
         """Sign-ins for this paired self-hosted Machine: its owner pressed Sign in with Intercom, Google, Microsoft or Zoom on
         its dashboard (connect_start), and the control plane sealed the token for this Machine's own key (network_crypto.open_box). Each is
         handed out once; it is opened here, connected through connect_delivered (which checks it, GET /me, before
-        keeping it) and how it went is reported back, in a few words. Nothing of what it carries is logged."""
-        if not self.connects_due or not self.connect_delivered:
+        keeping it) and how it went is reported back, in a few words. Nothing of what it carries is logged.
+        now: asked by connects_watch, without the inbox's hint. One pickup at a time: the Fleet's loop and the watch
+        never open the same connect twice."""
+        if not (self.connects_due or now) or not self.connect_delivered:
             return []
+        lock = self.__dict__.setdefault('connects_lock', threading.Lock())
+        if not lock.acquire(blocking=False):
+            return []  # the other one is picking them up right now; a hint stays due for the next round
+        try:
+            return self._connects_round()
+        finally:
+            lock.release()
+
+    def _connects_round(self):
         self.connects_due = False
         private = getattr(self.relay, 'private', None)
         if not private:
