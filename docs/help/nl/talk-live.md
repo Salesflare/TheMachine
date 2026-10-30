@@ -69,3 +69,4 @@ Live praten gebruikt de realtime stem van OpenAI, dus OpenAI moet ingesteld zijn
 - **De microfoon is geblokkeerd**: sta de microfoon toe voor deze site in de instellingen van je browser.
 - **Live praten kon niet starten**: controleer OpenAI in OpenClaw en probeer opnieuw.
 - **Live praten verloor de verbinding**: start opnieuw. Wat tot nu toe gezegd is, blijft in de chat.
+- Zegt hij dat hij je niet verstaat, dan kwam wat je zei twee keer na elkaar niet door. Controleer je microfoon, of typ in de chat. Hij zegt dit één keer en wacht dan tot hij je hoort.

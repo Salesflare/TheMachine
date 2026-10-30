@@ -20713,7 +20713,8 @@ class App(*APP_MIXINS):
                     'warn': talk_live.MAIN_WARN_SECONDS if main else talk_live.WARN_SECONDS,
                     'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,
                     'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE,
-                              'ready': talk_live.READY_NOTE, 'again': talk_live.AGAIN_NOTE},
+                              'ready': talk_live.READY_NOTE, 'again': talk_live.AGAIN_NOTE,
+                              'unheard': talk_live.UNHEARD_NOTE},
                     'instructions': talk_live.main_instructions(language, now, spoken) if main else talk_live.instructions(card['title'], language, now, spoken),
                     'main': main, 'ready': view.get('ready')}
         if name == 'talk_focus':

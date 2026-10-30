@@ -69,3 +69,4 @@ Talk live uses OpenAI's realtime voice, so OpenAI has to be set up in OpenClaw:
 - **The microphone is blocked**: allow the microphone for this site in your browser's settings.
 - **Talk live couldn’t start**: check OpenAI in OpenClaw, then try again.
 - **Talk live lost its connection**: start it again. What was said so far stays in the chat.
+- If it says it can’t make out your words, what you said didn’t come through twice in a row. Check your microphone, or type in the chat. It says this once, then waits until it hears you.

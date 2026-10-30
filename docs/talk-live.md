@@ -213,7 +213,8 @@ voice answered it ("Right."). Now:
   of its own then asks for `gpt-transcribe` (`talk_live.transcription_next`, OpenAI's newest, $0.0045 a minute) with
   every language in `languages`, which pins them all; it is documented for WebSocket sessions, so a session that refuses
   it keeps `gpt-4o-transcribe` and nothing else changes. When it says which language it heard (`languages` on the
-  transcript) and that isn't one of the owner's, the line is dropped as below. `gpt-realtime-2.1` itself doesn't write
+  transcript, `[{"code": "en"}]`, an ISO 639-1 or 639-3 code, read by `talkLang`) and that isn't one of the owner's,
+  the line is dropped as below. An empty list (no reliable guess) drops nothing. `gpt-realtime-2.1` itself doesn't write
   down what the owner said: transcription is always a separate model. Dictation (Voice input) stays
   `openai/gpt-4o-transcribe` through OpenClaw, whose catalog has nothing newer, with Whisper on the Machine offline. The instructions name the languages and say a noise, a cut-off word or a few
   words in another language get no answer.
@@ -233,6 +234,10 @@ voice answered it ("Right."). Now:
   ("Ja, liebe den Movon." for someone speaking English and Dutch) are dropped like noise, and the voice says only
   "Sorry, say that again?" (`talk_live.AGAIN_NOTE`). So is a line with a letter none of their languages writes
   (`TALK_LETTERS`: "Güzel." for English and Dutch) and no word of their own ("Send it to José." stays).
+- **Never a loop of "say that again"** (`talkMiss`). The first line that doesn't come through gets "Sorry, say that
+  again?". A second in a row, or a failed transcription (`conversation.item.input_audio_transcription.failed`, logged in
+  the browser console), gets one plain line instead (`talk_live.UNHEARD_NOTE`): the voice can't make out what they say,
+  check the microphone or type in the chat. After that it stays quiet until a line comes through, which starts over.
 - **No dashes.** The instructions forbid em dashes; `talkNoDash` replaces any left in either side's transcript.
 
 ## Sending by voice

@@ -422,6 +422,11 @@ class Api(unittest.TestCase):
             self.assertIn(words, started['instructions'])
         self.assertIn('{title}', started['notes']['new'])
         self.assertIn('was preparing is ready now', started['notes']['ready'])   # told once when a preparing one is ready
+        self.assertIn('Sorry, say that again?', started['notes']['again'])
+        # words that keep not coming through: said once, plainly, what's wrong (never a loop of "say that again")
+        self.assertIn('check their microphone or type in the chat', started['notes']['unheard'])
+        self.assertIn('don’t say it again', started['notes']['unheard'])
+        self.assertNotIn('\u2014', started['notes']['unheard'])
         self.assertNotIn(SECRET, json.dumps(started))
         with self.assertRaisesRegex(ValueError, 'Talk is already open'):
             self.act('talk_start', {'main': True})

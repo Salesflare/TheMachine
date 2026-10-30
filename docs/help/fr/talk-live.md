@@ -69,3 +69,4 @@ Parler en direct utilise la voix en temps réel d’OpenAI, donc OpenAI doit êt
 - **Le micro est bloqué** : autorisez le micro pour ce site dans les paramètres de votre navigateur.
 - **Parler en direct n’a pas pu démarrer** : vérifiez OpenAI dans OpenClaw, puis réessayez.
 - **Parler en direct a perdu la connexion** : relancez-le. Ce qui a été dit jusque-là reste dans le chat.
+- Si elle dit qu’elle ne comprend pas vos mots, ce que vous avez dit n’est pas passé deux fois de suite. Vérifiez votre micro, ou écrivez dans le chat. Elle le dit une fois, puis attend de vous entendre.

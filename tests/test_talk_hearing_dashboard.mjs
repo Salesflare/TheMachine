@@ -27,7 +27,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   const answer={
    talk_status:()=>({ready:true,limit:600,warn:540}),
    talk_start:()=>({id:'feedfeedfeedfeed',via:'signin',per_use:false,limit:1800,warn:1740,tools:[{type:'function',name:'open_todo'}],main:true,instructions:'Talk.',voice:'cedar',speed:1.1,
-    turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},noise:{type:'far_field'},transcription:TRANSCRIPTION,transcription_next:NEXT,languages:['en','nl'],ask_note:'',notes:{},ready:true}),
+    turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},noise:{type:'far_field'},transcription:TRANSCRIPTION,transcription_next:NEXT,languages:['en','nl'],ask_note:'',notes:{again:'AGAIN',unheard:'UNHEARD'},ready:true}),
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_focus:()=>({ok:true}),
    talk_line:()=>{lines.push({role:a.role,text:a.text});return {ok:true}},
@@ -122,17 +122,42 @@ try{
   await until(()=>lines.length>=4);await page.waitForTimeout(300);
   // gpt-transcribe says which language it heard: one the owner doesn't speak is dropped; a short answer never is
   await say({type:'input_audio_buffer.committed',item_id:'u5'});
-  await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u5',transcript:'Güzel.',languages:['tr']});
+  await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u5',transcript:'Güzel.',languages:[{code:'tr'}]});
   await page.waitForFunction(()=>window.__dc.sent.some(x=>x.type==='conversation.item.delete'&&x.item_id==='u5'));
   await say({type:'input_audio_buffer.committed',item_id:'u6'});
-  await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u6',transcript:'Ja.',languages:['de']});
+  await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u6',transcript:'Ja.',languages:[{code:'de'}]});
   await until(()=>lines.length>=5);assert.deepEqual(lines.pop(),{role:'user',text:'Ja.'});
+  // gpt-transcribe's own shape, [{code}] (or a 639-3 code): a sentence in a language the owner speaks is kept. Read as
+  // "[object Object]", every sentence was taken for another language: "Sorry, say that again?" and nothing written down.
+  for(const [i,languages] of [[7,[{code:'en'}]],[8,[{code:'nld'}]],[9,['en']],[10,[]]]){
+   await say({type:'input_audio_buffer.committed',item_id:'u'+i});
+   await say({type:'conversation.item.input_audio_transcription.completed',item_id:'u'+i,transcript:'Read me the draft once more please.',languages});
+   await until(()=>lines.length>=5);assert.deepEqual(lines.pop(),{role:'user',text:'Read me the draft once more please.'})}
+  assert.deepEqual(await page.evaluate(()=>[talkLang({code:'fr'}),talkLang({code:'spa'}),talkLang('pt-BR'),talkLang({code:'tur'}),talkLang({}),talkLang(null)]),['fr','es','pt','tur','','']);
   assert.deepEqual(lines,[{role:'user',text:'And in this deal we get a real listing, so I’m willing to do it.'},{role:'assistant',text:'Okay, that helps, let’s shape a reply around your policy.'},
    {role:'user',text:'Kun je het wat korter maken?'},{role:'assistant',text:'Goed, ik maak hem korter.'}]);
+  // Words that don't come through: "say that again" once (the Turkish line above), then once what's wrong, then quiet;
+  // a line that comes through starts over. A failed transcription says what's wrong at once.
+  const told=()=>page.evaluate(()=>window.__dc.sent.filter(x=>x.type==='conversation.item.create'&&x.item?.role==='system').map(x=>x.item.content[0].text));
+  const tell=async(n)=>{for(let i=0;i<n;i++){await page.evaluate(()=>{talk.responding=false;talk.speaking=false;talkTellNext(talk)});await page.waitForTimeout(30)}};
+  const miss=async(id,e)=>{await say({type:'input_audio_buffer.committed',item_id:id});await say({item_id:id,...e});await tell(1)};
+  const before=(await told()).length;
+  await miss('m1',{type:'conversation.item.input_audio_transcription.completed',transcript:'Ich habe nicht genug Zeit dafür.',languages:[{code:'de'}]});
+  await miss('m2',{type:'conversation.item.input_audio_transcription.completed',transcript:'Ich habe nicht genug Zeit dafür.',languages:[{code:'de'}]});
+  await miss('m3',{type:'conversation.item.input_audio_transcription.completed',transcript:'Ich habe nicht genug Zeit dafür.',languages:[{code:'de'}]});
+  await miss('m4',{type:'conversation.item.input_audio_transcription.failed',error:{code:'transcription_failed',message:'x'}});
+  // u5 (Turkish) was the first miss, but "Ja." came through after it: again, then unheard once, then nothing
+  assert.deepEqual((await told()).slice(before),['AGAIN','UNHEARD']);
+  await say({type:'input_audio_buffer.committed',item_id:'k1'});
+  await say({type:'conversation.item.input_audio_transcription.completed',item_id:'k1',transcript:'Okay, read it to me.'});
+  await until(()=>lines.length>=5);lines.pop();
+  await miss('m5',{type:'conversation.item.input_audio_transcription.failed',error:{code:'transcription_failed',message:'x'}});
+  await miss('m6',{type:'conversation.item.input_audio_transcription.failed',error:{code:'transcription_failed',message:'x'}});
+  assert.deepEqual((await told()).slice(before),['AGAIN','UNHEARD','UNHEARD']);
   const log=await page.locator('#talk-view .talk-log').textContent();
   for(const gone of ['음력','แก','Right.','Sure.','—'])assert.ok(!log.includes(gone),gone);
   const sent=await page.evaluate(()=>window.__dc.sent);
-  assert.deepEqual(sent.filter(x=>x.type==='conversation.item.delete').map(x=>x.item_id),['u2','u3','u5']);
+  assert.deepEqual(sent.filter(x=>x.type==='conversation.item.delete').map(x=>x.item_id),['u2','u3','u5','m1','m2','m3','m4','m5','m6']);
   assert.deepEqual(sent.filter(x=>x.type==='response.cancel').map(x=>x.response_id),['r2']);
 
   // The card: the whole draft readable, no line on top of another, room left for the transcript

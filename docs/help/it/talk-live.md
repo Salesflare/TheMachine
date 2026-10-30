@@ -69,3 +69,4 @@ Parla dal vivo usa la voce in tempo reale di OpenAI, quindi OpenAI deve essere c
 - **Il microfono è bloccato**: consenti il microfono per questo sito nelle impostazioni del browser.
 - **Parla dal vivo non è partito**: controlla OpenAI in OpenClaw, poi riprova.
 - **Parla dal vivo ha perso la connessione**: riavvialo. Quello che è stato detto finora resta nella chat.
+- Se dice che non capisce le tue parole, quello che hai detto non è arrivato due volte di fila. Controlla il microfono, o scrivi nella chat. Lo dice una volta, poi aspetta di sentirti.
