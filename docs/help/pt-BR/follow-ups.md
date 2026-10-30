@@ -48,6 +48,8 @@ E-mails que você enviou de outro app, antes de a sua Machine ler essa caixa, ta
 
 Os follow-ups param quando a pessoa responde, quando o projeto é ganho, perdido, arquivado ou movido para uma etapa fechada, e quando você adia ou pula um. Antes de escrever, sua Machine confere se há algo mais novo na conversa, para não insistir com quem já respondeu em outro lugar.
 
+**Pausar** em **Follow-ups…** segura um quadro ou projeto sem desativar os follow-ups: nada é redigido nem enviado, nenhuma rodada termina e as tarefas abertas continuam abertas. Escolha um dia para retomar, ou toque em **Retomar** quando quiser. A espera continua de onde parou, e o que estava pendente vem um por um. Enquanto isso, aparece **Pausado**.
+
 Depois do último follow-up sem resposta, o projeto mostra “Sem resposta após 3 follow-ups” e passa para Parado ou recusado, se isso estiver ligado. Se parar antes de sair algum, mostra “Follow-ups parados” e fica na mesma etapa.
 
 Se o email da pessoa voltou e há outro endereço, o follow-up vai para ele ("Voltou, agora para <endereço>"). Um rascunho cujo endereço volta antes de sair fica retido: "Não enviado: <endereço> voltou", e passa para o outro endereço, onde espera o seu Enviar.

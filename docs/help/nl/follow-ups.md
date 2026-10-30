@@ -48,6 +48,8 @@ E-mails die je uit een andere app stuurde, voor je Machine die mailbox las, tell
 
 Opvolging stopt als ze antwoorden, als het project gewonnen, verloren, gearchiveerd of naar een gesloten fase verplaatst is, en als je er een snoozet of overslaat. Voor hij iets opstelt, kijkt je Machine of er iets nieuwers in het gesprek staat, zodat hij niemand lastigvalt die al ergens anders antwoordde.
 
+**Pauzeren** in **Opvolging…** zet een bord of project stil zonder opvolging uit te zetten: niets wordt opgesteld of verstuurd, geen ronde eindigt, en open to-do’s blijven open. Kies een dag om te hervatten, of tik op **Hervatten** wanneer je wilt. Het wachten gaat verder waar het was, en wat al moest komt een voor een. Intussen staat er **Gepauzeerd**.
+
 Na de laatste opvolging zonder antwoord toont het project "Geen antwoord na 3 opvolgingen" en gaat het naar Vastgelopen of afgewezen als dat aanstaat. Gestopt voor er een wegging, dan staat er "Opvolging gestopt" en blijft het in zijn fase.
 
 Kwam hun e-mail terug en is er een ander adres, dan gaat de opvolging daarheen ("Teruggekomen, nu naar <adres>"). Een concept waarvan het adres terugkomt voor het vertrekt, wordt tegengehouden: "Niet verstuurd: <adres> kwam terug", en gaat naar hun andere adres, waar het wacht op jouw Versturen.

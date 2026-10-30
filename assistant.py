@@ -710,6 +710,7 @@ OWNER_ACTIONS = {
     'follow_up_bring_back',
     'follow_up_change',
     'follow_up_end',
+    'follow_up_pause',
     'follow_up_save',
     'follow_up_settings',
     'follow_up_stop',
@@ -1026,6 +1027,7 @@ DASHBOARD_ACTIONS = frozenset({
     'follow_up_bring_back',
     'follow_up_change',
     'follow_up_end',
+    'follow_up_pause',
     'follow_up_save',
     'follow_up_settings',
     'follow_up_stop',
@@ -15029,6 +15031,26 @@ class App(*APP_MIXINS):
                 db.execute('BEGIN IMMEDIATE')
                 follow_ups.ensure(db)
                 return follow_ups.stop(db, args.get('batch'), now())
+        if name == 'follow_up_pause':
+            # Pause or Resume a board's or a project's follow-ups (follow_ups.pause): nothing drafted, sent or ended while
+            # paused, open ones stay open. The owner's own decision, on the dashboard (the CLI refuses OWNER_ACTIONS).
+            if not owner_dashboard:
+                raise ValueError('Only the owner pauses follow-ups, on the dashboard')
+            scope, ref = args.get('scope'), args.get('id')
+            if scope == 'project' and str(ref or '').startswith('project:'):
+                ref = str(ref).split(':', 1)[1]
+            if not str(ref or '').isdigit():
+                raise ValueError('Say which board or project')
+            if not isinstance(args.get('paused'), bool):
+                raise ValueError('Say pause or resume')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                follow_ups.ensure(db)
+                if args['paused']:
+                    follow_ups.pause(db, scope, ref, args.get('until'), now())
+                else:
+                    follow_ups.resume(db, scope, ref, now())
+                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now())
         if name in ('follow_up_settings', 'follow_up_save'):
             # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
             if not owner_dashboard:
@@ -16401,7 +16423,8 @@ class App(*APP_MIXINS):
             job=None
             for found in db.execute("SELECT * FROM action_jobs WHERE status IN ('queued','sending','uncertain') AND (retry_at IS NULL OR retry_at<=?) ORDER BY created_at",(now(),)).fetchall():
                 # Automated follow-ups in a row: the next from the same account waits its gap (follow_ups.SEND_GAP); another account's goes
-                held=follow_ups.held_until(db,found['id'],now()) if found['status']=='queued' else None
+                # A paused board or project: Send without asking and sends queued before the pause wait (follow_ups.paused_send)
+                held=(follow_ups.held_until(db,found['id'],now()) or follow_ups.paused_send(db,found['id'],now())) if found['status']=='queued' else None
                 if held:db.execute('UPDATE action_jobs SET retry_at=? WHERE id=?',(held,found['id']));continue
                 job=found;break
             if not job:return
@@ -16744,7 +16767,7 @@ class App(*APP_MIXINS):
             for p in b['projects']:
                 view = found['projects'].get(int(p['id'].split(':', 1)[1]))
                 if view and (view['on'] or view.get('end') or view.get('reason') == 'bounced'):
-                    p['follow_up'] = {k: view[k] for k in ('state', 'next_at', 'n', 'max', 'own', 'end', 'reason')}
+                    p['follow_up'] = {k: view[k] for k in ('state', 'next_at', 'n', 'max', 'own', 'end', 'reason', 'pause')}
 
     def follow_up_project(self, db, node_id):
         """A project page's follow-ups: the setting that applies (its own or its board's), the next one, the note when a
@@ -16759,6 +16782,7 @@ class App(*APP_MIXINS):
         ends = [dict(r) for r in db.execute('SELECT n,moved,judged,at FROM follow_up_ends WHERE project_id=? ORDER BY at DESC LIMIT 4', (pid,))]
         return {'on': bool(settings and settings.get('on')), 'source': source, 'next_at': view.get('next_at'), 'state': view.get('state'),
                 'reason': view.get('reason'), 'n': view.get('n'), 'max': (settings or {}).get('max'), 'ends': ends,
+                'pause': follow_ups.paused(db, p, now()) if settings and settings.get('on') else None,
                 'activity': follow_ups.activity(db, pid)}
 
     def follow_up_mine(self):
@@ -16905,6 +16929,7 @@ class App(*APP_MIXINS):
                     follow_ups.end(db, item, now())
             # Only once the round could be counted (its thread read or tried, or the quoted history read): never on a guess
             due = sorted((x for x in items if x['state'] == 'due' and x.get('counted', True)), key=lambda x: (not x['late'], x['next_at']))
+            due = follow_ups.spaced(db, due, now())  # just resumed from a pause: what was due comes one by one
             if not due:
                 return {'drafted': 0}
             # Normal work first: no follow-up while another preparation waits, and only a few drafted at once
@@ -17066,6 +17091,8 @@ class App(*APP_MIXINS):
             todo = []
             for f in rows:
                 p = db.execute('SELECT * FROM projects WHERE id=?', (f['project_id'],)).fetchone()
+                if p and follow_ups.paused(db, p, now()):
+                    continue  # paused: it waits for the owner's Send, or the resume
                 settings = follow_ups.effective(db, p)[0] if p else None
                 drafts = [a for a in next_actions.actions(f['next_action']) if a.get('kind') in follow_ups.CHANNELS] if f['next_action'] else []
                 draft = drafts[0] if len(drafts) == 1 else None
@@ -17197,6 +17224,7 @@ class App(*APP_MIXINS):
             following={r[0] for r in db.execute("SELECT suggestion_id FROM follow_up_cards WHERE state='open'")} if queued else set()
             queued.sort(key=lambda j:j['suggestion_id'] in following)
             late=follow_ups.late_ids(db,now()) if following else set()
+            pauses=follow_ups.paused_ids(db,now()) if following else {}  # a paused board or project: no follow-up prepared in the background
             admitted=[]
             held={}  # suggestion id: why its queued preparation waits ({'why', 'until'}), for its to-do (Store.card_views)
             # The owner's own message in a follow-up's chat (the review's Change too) is theirs, not background work: it
@@ -17209,6 +17237,9 @@ class App(*APP_MIXINS):
                         held[job['suggestion_id']]={'why':'busy'}
                         continue
                 elif job['suggestion_id'] in following:
+                    if job['suggestion_id'] in pauses:
+                        held[job['suggestion_id']]={'why':'paused','until':pauses[job['suggestion_id']].get('until')}
+                        continue
                     if any(j['suggestion_id'] not in following for j in queued if j not in admitted):
                         held[job['suggestion_id']]={'why':'others'}
                         continue

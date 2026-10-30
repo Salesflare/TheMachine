@@ -48,6 +48,8 @@ Los correos que enviaste desde otra app, antes de que tu Machine leyera ese buz�
 
 Los seguimientos se detienen cuando la persona responde, cuando el proyecto se gana, se pierde, se archiva o pasa a una etapa cerrada, y cuando pospones u omites uno. Antes de redactar, tu Machine busca algo más reciente en la conversación, para no insistir a quien ya respondió por otro lado.
 
+**Pausar** en **Seguimientos…** detiene un tablero o proyecto sin desactivar los seguimientos: no se redacta ni se envía nada, ninguna ronda termina y las tareas abiertas siguen abiertas. Elige un día para reanudar, o toca **Reanudar** cuando quieras. La espera sigue donde estaba y lo pendiente llega de uno en uno. Mientras tanto se ve **En pausa**.
+
 Tras el último seguimiento sin respuesta, el proyecto muestra “Sin respuesta tras 3 seguimientos” y pasa a Estancado o rechazado si eso está activado. Si se detienen antes de enviar alguno, muestra “Seguimientos detenidos” y se queda en su etapa.
 
 Si su email rebotó y tienen otra dirección, el seguimiento va allí ("Rebotó, ahora a <dirección>"). Un borrador cuya dirección rebota antes de salir se retiene: "No enviado: <dirección> rebotó", y pasa a su otra dirección, donde espera a que lo envíes.

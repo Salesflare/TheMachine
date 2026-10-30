@@ -48,6 +48,8 @@ Les e-mails envoyés depuis une autre app, avant que votre Machine lise cette bo
 
 Les relances s’arrêtent quand la personne répond, quand le projet est gagné, perdu, archivé ou déplacé vers une étape fermée, et quand vous en mettez une en attente ou l’ignorez. Avant de rédiger, votre Machine vérifie s’il y a du nouveau dans la conversation, pour ne pas relancer quelqu’un qui a déjà répondu ailleurs.
 
+**Mettre en pause** dans **Relances…** suspend un tableau ou un projet sans désactiver les relances : rien n’est rédigé ni envoyé, aucune série ne se termine, et les tâches ouvertes restent ouvertes. Choisissez un jour de reprise, ou touchez **Reprendre** quand vous voulez. L’attente reprend là où elle était, et ce qui était dû arrive une par une. Entre-temps, il affiche **En pause**.
+
 Après la dernière relance sans réponse, le projet affiche « Pas de réponse après 3 relances » et passe à Au point mort ou refusé si c’est activé. Arrêtées avant qu’une ne parte, il affiche « Relances arrêtées » et reste dans son étape.
 
 Si son e-mail a été rejeté et qu'il existe une autre adresse, la relance y va ("Rejetée, maintenant à <adresse>"). Un brouillon dont l'adresse est rejetée avant l'envoi est retenu : "Non envoyé : <adresse> a été rejetée", et passe à son autre adresse, où il attend ton envoi.

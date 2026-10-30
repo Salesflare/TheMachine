@@ -67,6 +67,27 @@ class Schedule(unittest.TestCase):
         self.assertEqual(follow_ups.schedule(msgs, self.rule(), '2026-10-17T10:00:00+00:00', days=5)['state'], 'due')
         self.assertEqual(follow_ups.schedule([m(1, 1, mine=False), m(2, 2)], self.rule(), '2026-10-29T09:00:00+00:00')['state'], 'stale')
 
+    def test_a_pause_stops_the_clock_and_it_goes_on_where_it_was(self):
+        s = follow_ups.defaults()
+        msgs = [m(1, 10, mine=False), m(2, 17)]  # the owner wrote on the 17th: due on the 20th
+        p = lambda a, b: (follow_ups.parse(f'2026-10-{a:02d}T09:00:00+00:00'), follow_ups.parse(f'2026-10-{b:02d}T09:00:00+00:00'))
+        # Paused on the 18th, resumed on the 28th: one day had gone, two are left, so it's due on the 30th
+        found = follow_ups.schedule(msgs, s, '2026-10-29T09:00:00+00:00', paused=[p(18, 28)])
+        self.assertEqual((found['state'], found['next_at'][:10]), ('waiting', '2026-10-30'))
+        # Still paused (the pause ends now): the time left stays two days
+        found = follow_ups.schedule(msgs, s, '2026-10-25T09:00:00+00:00', paused=[p(18, 25)])
+        self.assertEqual(found['next_at'][:10], '2026-10-27')
+        # A pause after it was due doesn't make it due later, and a long pause doesn't make it stale
+        msgs = [m(1, 1, mine=False), m(2, 2)]
+        self.assertEqual(follow_ups.schedule(msgs, s, '2026-10-30T09:00:00+00:00')['state'], 'stale')
+        self.assertEqual(follow_ups.schedule(msgs, s, '2026-10-30T09:00:00+00:00', paused=[p(6, 30)])['state'], 'due')
+        # No round ends while paused: the last one's wait stops too
+        s = {**s, 'max': 1}
+        msgs = [m(1, 10, mine=False), m(2, 13), m(3, 17)]
+        self.assertEqual(follow_ups.schedule(msgs, s, '2026-10-22T09:00:00+00:00')['state'], 'ended')
+        found = follow_ups.schedule(msgs, s, '2026-10-22T09:00:00+00:00', paused=[p(18, 22)])
+        self.assertEqual((found['state'], found['end_at'][:10]), ('last', '2026-10-24'))
+
     def test_clean_checks_both_pairs(self):
         self.assertEqual(follow_ups.clean({'on': True, 'min': 2, 'max': 4, 'days': 2, 'max_days': 5})['max'], 4)
         with self.assertRaises(ValueError):
@@ -1197,6 +1218,133 @@ class FollowUps(unittest.TestCase):
             follow_ups.settle(db, a.now())
         self.assertEqual(self.job_states()[sids[1]], 'cancelled')
         self.assertEqual(self.progress()[0]['stopped'], 2)
+
+    # ------------------------------------------------------------------ Pause and Resume
+
+    def pause(self, paused=True, scope='board', ref=None, **args):
+        return self.app().action('follow_up_pause', {'scope': scope, 'id': ref or self.board, 'paused': paused, **args}, owner_dashboard=True)
+
+    def states(self):
+        with self.store.connect() as db:
+            return {x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, self.app().follow_up_mine())}
+
+    def test_pause_is_the_owners_and_only_where_follow_ups_are_on(self):
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app().action('follow_up_pause', {'scope': 'board', 'id': self.board, 'paused': True}, owner_dashboard=False)
+        self.assertIn('follow_up_pause', a.DASHBOARD_ACTIONS)
+        self.assertIn('follow_up_pause', a.OWNER_ACTIONS)  # so the assistant CLI refuses it (cli.call), like every owner decision
+        with self.assertRaisesRegex(ValueError, 'Follow-ups are off here'):
+            self.pause()
+        self.turn_on()
+        with self.assertRaisesRegex(ValueError, 'in the future'):
+            self.pause(until='2026-10-18')
+        panel = self.pause(until='2026-10-25')
+        self.assertEqual((panel['pause']['scope'], panel['pause']['until'][:10]), ('board', '2026-10-25'))
+        # A project on that board shows its board's pause; the board resumes it
+        project = self.app().action('follow_up_settings', {'scope': 'project', 'id': 'project:%d' % self.kim}, owner_dashboard=True)
+        self.assertEqual(project['pause']['scope'], 'board')
+        self.assertIsNone(self.pause(False)['pause'])
+        # Turned off while paused: the pause ends with it, so turning them on again doesn't find them paused
+        self.pause()
+        self.assertIsNone(self.turn_on(on=False)['pause'])
+        self.assertIsNone(self.turn_on()['pause'])
+
+    def test_a_pause_keeps_open_to_dos_open_and_drafts_and_sends_nothing(self):
+        self.turn_on(auto=True)
+        self.assertEqual(self.app().follow_up_step()['drafted'], 2)
+        acme, kim = self.cards()
+        self.pause()
+        self.prepared(acme['suggestion_id'])
+        for _ in range(2):
+            self.app().follow_up_step()  # settle runs: nothing closes for the pause
+        self.assertEqual([(c['state'], c['why']) for c in self.cards()], [('open', None), ('open', None)])
+        self.assertEqual(self.jobs(), [])  # Send without asking waits too
+        self.assertEqual(self.states(), {self.acme: 'open', self.kim: 'open'})
+        with self.store.connect() as db:
+            self.assertEqual(set(follow_ups.paused_ids(db, a.now())), {acme['suggestion_id'], kim['suggestion_id']})  # no background preparation
+        # A hard fact still closes one: they replied
+        self.store.commit_page('work', {}, [msg('in3', '2026-10-19T08:30:00+00:00')])
+        with self.store.connect() as db:
+            graph.label(db, [db.execute("SELECT id FROM events WHERE source_id='in3'").fetchone()[0]], 'Acme pilot', 'review', NOW)
+        self.app().follow_up_step()
+        self.assertEqual([(c['state'], c['why']) for c in self.cards()], [('stopped', 'replied'), ('open', None)])
+        # Resumed: Send without asking goes on
+        self.pause(False)
+        self.prepared(kim['suggestion_id'])
+        self.app().follow_up_step()
+        self.assertEqual([j['source'] for j in self.jobs()], ['auto_follow_up'])
+
+    def test_nothing_new_is_drafted_while_paused_and_resume_spaces_out_what_is_due(self):
+        self.turn_on()
+        self.pause()
+        self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+        self.assertEqual(self.states(), {self.acme: 'paused', self.kim: 'paused'})
+        with self.store.connect() as db:
+            boards = graph.boards(db, a.now())
+            self.app().follow_up_annotate(db, boards)
+        self.assertEqual(boards[0]['follow_ups']['pause']['scope'], 'board')
+        self.assertEqual({p['follow_up']['state'] for p in boards[0]['projects']}, {'paused'})
+        # Three weeks later: without the pause both would be left alone as stale; the paused time doesn't count
+        self.at('2026-11-09T09:00:00+00:00')
+        self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+        self.pause(False)
+        self.assertEqual(self.states(), {self.acme: 'due', self.kim: 'due'})
+        self.assertEqual(self.app().follow_up_step()['drafted'], 1)  # one at a time after a resume, not both at once
+        self.at('2026-11-09T09:05:00+00:00')
+        self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+        self.at('2026-11-09T09:21:00+00:00')
+        self.assertEqual(self.app().follow_up_step()['drafted'], 1)
+        self.assertEqual(len(self.cards()), 2)
+
+    def test_a_pause_until_a_date_resumes_by_itself(self):
+        self.turn_on()
+        self.pause(until='2026-10-21T09:00:00+00:00')
+        self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+        self.at('2026-10-21T09:00:00+00:00')
+        with self.store.connect() as db:
+            p = db.execute('SELECT * FROM projects WHERE id=?', (self.acme,)).fetchone()
+            self.assertIsNone(follow_ups.paused(db, p, a.now()))
+            self.assertEqual(follow_ups.resumed_at(db, p, a.now())[2].isoformat(), '2026-10-21T09:00:00+00:00')
+        self.assertEqual(self.app().follow_up_step()['drafted'], 1)
+
+    def test_a_project_pause_holds_only_that_project(self):
+        self.turn_on()
+        self.pause(scope='project', ref='project:%d' % self.kim)
+        self.assertEqual(self.app().follow_up_step()['drafted'], 1)
+        self.assertEqual([c['project_id'] for c in self.cards()], [self.acme])
+        self.assertEqual(self.states()[self.kim], 'paused')
+
+    def test_a_pause_holds_a_queued_batch_and_a_send_given_during_it_goes(self):
+        transport = FakeOutbox()
+        step = self.outbox(transport)
+        self.turn_on()
+        self.at('2026-10-19T08:59:00+00:00')
+        sids = self.batch('owner@example.com', 'sales@example.com')  # Send all checked, a minute before the pause
+        self.at(NOW)
+        self.pause()
+        self.assertIsNone(step('2026-10-19T09:00:00+00:00'))
+        self.assertIsNone(step('2026-10-19T09:01:05+00:00'))
+        self.assertEqual(transport.sent, [])
+        self.assertEqual(set(self.job_states().values()), {'queued'})
+        self.assertTrue(self.progress()[0]['paused'])
+        # The owner's own Send during the pause is theirs: it goes
+        with self.store.connect() as db:
+            sid = 'fu-batch-during'
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at,status) VALUES(?,?,?,?,'[]','[]',?,'prepared')",
+                       (sid, 'k' + sid, 'Follow up on Kim trial', 'No reply.', NOW))
+            db.execute('INSERT INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,created_at) '
+                       "VALUES(?,?,?,1,1,3,'email',2000,'2026-10-14T09:00:00+00:00',?)", (sid, self.kim, self.board, NOW))
+        self.prepared(sid, body='Hi Kim, one short question.', **{'from': 'third@example.com'})
+        self.at('2026-10-19T09:02:00+00:00')
+        self.store.confirm_action(sid, 'r-' + sid[:6], 'tap-during', 'dashboard')
+        self.assertEqual(step('2026-10-19T09:02:00+00:00'), 'sent')
+        self.assertEqual([x[0] for x in transport.sent], [sid])
+        # Resumed: the rest of the batch goes, spaced as before
+        self.at('2026-10-19T09:03:00+00:00')
+        self.pause(False)
+        for at in ('09:04:10', '09:04:13', '09:04:16'):
+            step('2026-10-19T' + at + '+00:00')
+        self.assertEqual(sorted(x[0] for x in transport.sent), sorted([sid, *sids]))
 
     def test_a_skipped_follow_up_can_be_brought_back_while_it_is_the_latest(self):
         self.turn_on()
