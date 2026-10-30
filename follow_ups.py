@@ -69,6 +69,14 @@ style, what was learned, the thread and earlier follow-ups again, and the skills
 account and thread (route, checked when it is saved: change_problem), and it is never sent from there (no send_now). It
 comes back ready, still checked, for the owner to read and send (follow_up_changes).
 
+A skill that fits (fitting_skills, skill_note): every follow-up's drafting prompt carries the full instructions of the
+owner's skills that are on and fit this follow-up, right after the follow-up rules: its name matches the board's or the
+project's, or the owner's draft rules shown for the to-do name it. The skill outranks the follow-up defaults (refer to
+the last exchange, short, one easy question), the owner's recent messages and general notes on how the message is built:
+what comes first, the offer, the ask and the length follow the skill, also in a follow-up. "Never repeat an earlier
+follow-up" means new words, never dropping what the skill says comes first. Without room for the text, the note names
+its SKILL.md to read before drafting. The agent's own skill list stays as it was; this only makes sure it is applied.
+
 Open follow-up to-dos close by themselves (settle) when the person replies, someone else answered or the owner wrote
 again, the project is won, lost, Stalled, archived or its stage turned off, or follow-ups were turned off. Snoozing
 the to-do holds it; Skip ends that round.
@@ -1359,6 +1367,57 @@ def change_note(skills_on):
     return (CHANGE_NOTE + ' Write it like a new draft, with the owner\'s style and everything above. The owner\'s skills that are on now '
             '(also ones added since this session began) are below: when the owner\'s words point to one ("use the skill", its name or what '
             'it is for), or one is clearly for this kind of follow-up, read its SKILL.md now and follow it in the rewrite.\n' + listed)
+SKILL_FITS = 2  # fitting skills in one follow-up's prompt, at most
+# Words that say nothing about what a skill or board is for
+FILLER = {'a', 'an', 'and', 'the', 'of', 'for', 'to', 'in', 'on', 'with', 'my', 'our', 'your', 'its', 'by', 'at', 'from'}
+
+
+def name_words(text):
+    """The words of a name that say what it is about: lowercase, no filler, plurals alike (listings, listing)."""
+    out = set()
+    for word in re.findall(r'[a-z0-9]+', str(text or '').lower()):
+        if word in FILLER or len(word) < 2:
+            continue
+        out.add(word[:-1] if len(word) > 3 and word.endswith('s') and not word.endswith('ss') else word)
+    return out
+
+
+def fitting_skills(skills_on, names, rules=''):
+    """The owner's skills that are on ({name, slug, description, body}) that fit a follow-up, each with why, best
+    first, at most SKILL_FITS. A skill fits when its name and one of names (the board's, the project's) match: every
+    word of the shorter one is in the other, two words at least ("Partner listings" fits the board "Partner listing
+    deals"), or when the owner's draft rules for this to-do name it ("use the partner-listings skill")."""
+    said = ' ' + ' '.join(re.sub(r'[^a-z0-9]+', ' ', str(rules or '').lower()).split()) + ' '
+    targets = [w for w in (name_words(n) for n in names if n) if len(w) >= 2]
+    out = []
+    for k in skills_on:
+        own = name_words(k.get('name')) if len(name_words(k.get('name'))) >= 2 else name_words(str(k.get('slug') or '').replace('-', ' '))
+        spoken = {' '.join(re.sub(r'[^a-z0-9]+', ' ', str(x or '').lower()).split()) for x in (k.get('name'), k.get('slug'))}
+        if len(own) >= 2 and any(own <= t or t <= own for t in targets):
+            out.append({**k, 'why': 'its name matches this board or project'})
+        elif any(len(x.split()) >= 2 and ' ' + x + ' ' in said for x in spoken):  # one word is too common to be a mention
+            out.append({**k, 'why': "the owner's draft rules for this to-do name it"})
+    return out[:SKILL_FITS]
+
+
+def skill_note(fitting, room=None):
+    """The fitting skills for a follow-up's drafting prompt, ranked above the follow-up defaults and the owner's recent
+    messages: their full instructions while there is room (characters), else their SKILL.md to read first. '' for none."""
+    if not fitting:
+        return ''
+    head = ('\n\nA skill of the owner fits this follow-up. It is the owner\'s own way of doing this work, so for this draft it outranks '
+            'the follow-up defaults above (refer to the last exchange, keep it short, one easy question), the owner\'s recent messages and '
+            'general notes on how a message is built. Follow its rules for the structure of this follow-up too: what comes first (for '
+            'example what is in it for them before the ask), the offer, the ask, the call to action, length, greeting and sign-off. Where the '
+            'skill says how follow-ups differ, do that; the defaults only fill in what the skill leaves open. To say something new, change '
+            'the words or add a new reason, never drop what the skill says comes first or must be in the message. A "Guidance only" line in '
+            'a skill is about permissions: it never allows sending, and this Machine\'s approvals still apply.')
+    full = head + ''.join(f"\n\nSkill {k['name']} ({k['why']}; also in {k['path']}):\n<<<\n{str(k.get('body') or '').strip()}\n>>>" for k in fitting)
+    if room is None or len(full) <= room:
+        return full
+    return head + ''.join(f"\n- Skill {k['name']} ({k['why']}): read {k['path']} now, before drafting, and follow it." for k in fitting)
+
+
 # What a rewrite keeps: the channel, who gets it, from which account, and the thread or chat it goes in
 ROUTE = ('kind', 'account_id', 'from', 'to', 'cc', 'bcc', 'to_email', 'thread_id', 'conversation_id', 'chat_id', 'user_id', 'handle', 'profile')
 
