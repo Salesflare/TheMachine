@@ -9,7 +9,9 @@ first and needs a clear yes (talk_live.py).
 
 - create {op: create, account_id, title, body}: a new doc from plain text. A line starting with "# ", "## " or "### "
   is a heading, every other line a paragraph. Google: a Google Doc in the owner's My Drive (the drive.file scope, or
-  drive). Word: a .docx in the root of their OneDrive (Files.ReadWrite.All).
+  drive), through a Docs connection or the owner's own gog sign-in for Gmail when it already has that scope. Word: a
+  .docx in the root of their OneDrive (Files.ReadWrite.All). Only into a connection of the to-do's own area (Work at
+  that company, or Personal), and the conversation's own address when that one can: never another area's account.
 - edit {op: edit, file_id, changes}: at most 20 changes to one doc of the task's own doc events:
   {find, replace} text within one paragraph that is in the doc exactly once (an empty replace deletes it);
   {after, insert} new paragraphs after the paragraph that holds `after`; {append} new paragraphs at the end.
@@ -21,7 +23,11 @@ draft was saved; the to-do shows the changes against that version. If the doc ch
 the owner is asked for a new draft. Google checks the revision in the write itself (requiredRevisionId); Word uploads
 with If-Match on the eTag read right before, after checking the cTag.
 
-Once: a write whose outcome is unclear is checked by reading the doc back, never by writing again."""
+Once: a write whose outcome is unclear is checked by reading the doc back, never by writing again.
+
+After: a doc is rarely the whole to-do. {last: true} says it is, and the to-do is done once it is written; otherwise
+{then: <the step after it>} (a reply with its link, sharing it) and the to-do carries on with that step, drafted for the
+owner's OK again (assistant.settle_doc_write)."""
 from __future__ import annotations
 
 import bisect
@@ -33,7 +39,8 @@ import zipfile
 
 KIND = 'doc_write'
 OPS = ('create', 'edit')
-KEYS = {'kind', 'op', 'label', 'account_id', 'title', 'body', 'file_id', 'changes'}
+KEYS = {'kind', 'op', 'label', 'account_id', 'title', 'body', 'file_id', 'changes', 'last', 'then'}
+MAX_THEN = 300
 MAX_CHANGES = 20
 MAX_FIND = 2000
 MAX_REPLACE = 5000
@@ -168,6 +175,67 @@ def _changes(value):
     return out
 
 
+def kind_of(boundary):
+    """work, personal or '' (unknown) of an account's boundary: work:Acme, work, personal:me, personal:phone."""
+    head = str(boundary or '').split(':', 1)[0].lower()
+    return head if head in ('work', 'personal') else ''
+
+
+def fits(boundary, area):
+    """Whether an account with this boundary is in the to-do's area {boundaries, emails}: the same Work boundary (a bare
+    "work" fits any company, and any company fits it), or Personal for a personal to-do. No area known: any fits."""
+    boundaries = [b for b in ((area or {}).get('boundaries') or ()) if kind_of(b)]
+    if not boundaries:
+        return True
+    mine = str(boundary or '')
+    for b in boundaries:
+        if kind_of(b) != kind_of(mine):
+            continue
+        if kind_of(b) == 'personal' or b == mine or 'work' in (b, mine):
+            return True
+    return False
+
+
+def area_of(area):
+    return next((b for b in ((area or {}).get('boundaries') or ()) if kind_of(b) == 'work'),
+                next((b for b in ((area or {}).get('boundaries') or ()) if kind_of(b)), ''))
+
+
+def area_name(boundary):
+    """Work (at Acme), Personal: an area as the owner reads it."""
+    kind, _, org = str(boundary or '').partition(':')
+    if kind_of(kind) == 'work':
+        return 'Work' + (f' at {org}' if org else '')
+    return 'Personal' if kind_of(kind) == 'personal' else 'another area'
+
+
+def connect_line(area):
+    """What the owner does when no doc connection fits the to-do's area."""
+    return f'Connect Google Docs or Microsoft Word for {"Work" if kind_of(area_of(area)) == "work" else "Personal"}'
+
+
+def none_fits(area):
+    return (f'No Docs connection is in this to-do’s area ({area_name(area_of(area))}). Don’t draft a doc: give its text in the '
+            f'to-do and say needs: "{connect_line(area)}"')
+
+
+WHERE_WORDS = {'microsoft': re.compile(r'\bGoogle (?:Docs?|Drive)\b', re.I),
+               'google': re.compile(r'\b(?:Microsoft Word|Word (?:docs?|documents?|files?)|OneDrive)\b|\bin Word\b', re.I)}
+
+
+def wording(actions, texts):
+    """Problems where the to-do names another place than the doc write's own (Google Docs vs Word)."""
+    out = []
+    for action in actions:
+        if action.get('kind') != KIND:
+            continue
+        other = WHERE_WORDS.get(action.get('provider'))
+        said = [m.group(0) for text in texts for m in ([other.search(str(text or ''))] if other else []) if m]
+        if said:
+            out.append(f'the doc goes to {where(action)}, but the to-do says “{said[0]}”: name {where(action)}')
+    return out
+
+
 def validate(value, context):
     """A doc write as the owner will see it, without its revision. context (assistant.doc_write_context):
     accounts {id: {name, provider, writes}}: the owner's Docs connections and what each may write;
@@ -175,7 +243,7 @@ def validate(value, context):
     snapshots {file_id: snapshot, or the reason it couldn't be read}: each doc an edit names, read just now."""
     context = context or {}
     if set(value) - KEYS:
-        raise ValueError('A doc write has op, account_id and title and body (create), or file_id and changes (edit)')
+        raise ValueError('A doc write has op, account_id and title and body (create), or file_id and changes (edit), and last or then')
     op = value.get('op')
     if op not in OPS:
         raise ValueError('op is create (a new doc) or edit (a doc of this task)')
@@ -184,13 +252,32 @@ def validate(value, context):
         if not LABELS.match(value['label']):
             raise ValueError('Doc write button labels say Create, Save, Update, Add or Edit, such as Create doc')
         result['label'] = value['label']
+    if value.get('last') not in (None, True, False):
+        raise ValueError('last is true when this doc finishes the to-do (nothing to send or share after it)')
+    if value.get('last') is True:
+        result['last'] = True
+    elif value.get('then') is not None:
+        then = ' '.join(_text(value['then'], 'then', MAX_THEN, False).split())
+        if then:
+            result['then'] = then
     accounts = context.get('accounts') or {}
     if op == 'create':
-        if set(value) - {'kind', 'op', 'label', 'account_id', 'title', 'body'}:
-            raise ValueError('A new doc has account_id, title and body only')
+        if set(value) - {'kind', 'op', 'label', 'account_id', 'title', 'body', 'last', 'then'}:
+            raise ValueError('A new doc has account_id, title and body only (and last or then)')
+        area = context.get('area')
+        fitting = {k: a for k, a in accounts.items() if fits(a.get('boundary'), area)}
         account = accounts.get(value.get('account_id'))
         if not account:
-            raise ValueError('account_id is one of your Docs connections: ' + (', '.join(sorted(accounts)) or 'none connected'))
+            raise ValueError('account_id is one of your Docs connections: ' + (', '.join(sorted(fitting)) or none_fits(area)))
+        if not fits(account.get('boundary'), area):
+            raise ValueError(f'{account.get("name") or value["account_id"]} is {area_name(account.get("boundary"))}, not this '
+                             f'to-do’s area ({area_name(area_of(area))}). Never put its doc there. '
+                             + ('Use ' + ' or '.join(sorted(fitting)) + ' instead' if fitting else none_fits(area)))
+        own = (area or {}).get('emails') or ()
+        better = sorted(k for k, a in fitting.items() if str(a.get('email') or '').lower() in own and 'create' in a.get('writes', ()))
+        if better and str(account.get('email') or '').lower() not in own:
+            raise ValueError(f'This to-do’s conversation is in {", ".join(sorted(own))}: put the doc in {" or ".join(better)} '
+                             'instead')
         if 'create' not in account.get('writes', ()):
             raise ValueError('Creating docs is not allowed for this Docs connection yet (Allow edits on its connection). '
                              'Give the text in the to-do instead')
@@ -200,7 +287,7 @@ def validate(value, context):
         result.update(account_id=value['account_id'], provider=account['provider'], account_name=account.get('name', ''),
                       title=title, body=_new_text(value.get('body'), 'body'))
         return result
-    if set(value) - {'kind', 'op', 'label', 'file_id', 'changes', 'account_id'}:
+    if set(value) - {'kind', 'op', 'label', 'file_id', 'changes', 'account_id', 'last', 'then'}:
         raise ValueError('An edit has file_id and changes only')
     file_id = str(value.get('file_id') or '')
     known = (context.get('files') or {}).get(file_id)
@@ -248,10 +335,18 @@ def change_lines(change):
     return ['Add at the end:', change['append']]
 
 
+def untitled(action):
+    """A new doc's body under its title: a first heading that only repeats the title is said once, not twice."""
+    rows = [line for line in str(action.get('body') or '').split('\n') if line.strip()]
+    found = HEADING.fullmatch(rows[0].strip()) if rows else None
+    same = found and ' '.join(found[2].split()).lower() == ' '.join(str(action.get('title') or '').split()).lower()
+    return '\n'.join(rows[1:]) if same else str(action.get('body') or '')
+
+
 def preview(action):
     """The whole write as plain text: the new doc in full, or every change as before and after."""
     if action['op'] == 'create':
-        return f'New doc in {where(action)}: “{action["title"]}”\n\n{action["body"]}'
+        return f'New doc in {where(action)}: “{action["title"]}”\n\n{untitled(action)}'
     n = len(action['changes'])
     blocks = [f'Edit “{action["doc_title"]}” in {where(action)}: {n} change{"s" if n > 1 else ""}']
     for i, change in enumerate(action['changes'], 1):
@@ -404,6 +499,19 @@ def google_html(title, body):
     parts = ''.join(f'<{tags[s]}>{html.escape(t, quote=False)}</{tags[s]}>' for s, t in lines(body))
     return (f'<!DOCTYPE html><html><head><meta charset="utf-8"><title>{html.escape(title, quote=False)}</title></head>'
             f'<body>{parts}</body></html>')
+
+
+def google_fill(body):
+    """The batchUpdate requests that write a new doc's text into an empty Google Doc: its paragraphs, then each one's
+    style (headings as headings)."""
+    found = lines(body)
+    requests = [{'insertText': {'location': {'index': 1}, 'text': '\n'.join(text for _, text in found)}}]
+    start = 1
+    for style, text in found:
+        requests.append({'updateParagraphStyle': {'range': {'startIndex': start, 'endIndex': start + utf16(text) + 1},
+                                                  'paragraphStyle': {'namedStyleType': STYLE[style]}, 'fields': 'namedStyleType'}})
+        start += utf16(text) + 1
+    return requests
 
 
 def google_upload(file_id, title, body, boundary='tm-doc-write-boundary'):
@@ -663,7 +771,9 @@ class DocWriteTransport:
     def writer(self, action):
         if action.get('kind') != KIND:
             raise ValueError('Only an approved doc write uses the doc transport')
-        account = next((a for a in self.config.get('accounts', []) if a.get('id') == action['account_id'] and a.get('service') == 'docs'), None)
+        gog = getattr(self.connector, 'gog_google', lambda a: False)
+        account = next((a for a in self.config.get('accounts', []) if a.get('id') == action['account_id']
+                        and (a.get('service') == 'docs' or action['op'] == 'create' and gog(a))), None)
         if not account:
             raise ValueError('That Docs connection is no longer here. Nothing was changed.')
         if action['op'] not in self.connector.writes_on(self.config, account, self.helpers):
@@ -711,12 +821,14 @@ class DocWriteTransport:
     def create(self, writer, action, job):
         proof = action.get('proof') or {}
         if writer.provider == 'google':
-            data, kind = google_upload(proof['file_id'], action['title'], action['body'])
-            made = writer.upload(data, kind)
-            return {'message_id': 'docwrite:' + str(made.get('id') or proof['file_id'])}
+            made = writer.make(proof['file_id'], action['title'], action['body'],
+                               google_upload(proof['file_id'], action['title'], action['body']), google_fill(action['body']))
+            found = str(made.get('id') or proof['file_id'])
+            return {'message_id': 'docwrite:' + found, 'url': f'https://docs.google.com/document/d/{found}/edit'}
         made = writer.create(proof['name'], docx_new(action['body']))
         drive = ((made.get('parentReference') or {}).get('driveId') or '')
-        return {'message_id': 'docwrite:' + drive + '!' + str(made.get('id') or '')}
+        return {'message_id': 'docwrite:' + drive + '!' + str(made.get('id') or ''),
+                **({'url': made['webUrl']} if str(made.get('webUrl') or '').startswith('https://') else {})}
 
     def edit(self, writer, action):
         if writer.provider == 'google':
@@ -746,7 +858,12 @@ class DocWriteTransport:
                 proof = action.get('proof') or {}
                 if writer.provider == 'google':
                     found = writer.find(proof.get('file_id'))
-                    return {'message_id': 'docwrite:' + proof['file_id']} if found and not found.get('trashed') else {}
+                    if not found or found.get('trashed'):
+                        return {}
+                    if getattr(writer, 'gog', False):
+                        writer.fill(proof['file_id'], google_fill(action['body']))  # only while it is still empty
+                    return {'message_id': 'docwrite:' + proof['file_id'],
+                            'url': f'https://docs.google.com/document/d/{proof["file_id"]}/edit'}
                 found = writer.lookup(proof.get('name'))
                 if found and int(found.get('size') or -1) == len(docx_new(action['body'])):
                     return {'message_id': 'docwrite:' + ((found.get('parentReference') or {}).get('driveId') or '') + '!' + str(found.get('id'))}
@@ -770,18 +887,39 @@ def snapshot(writer, file_id):
         raise writer.helpers.SourceError(str(error)) from None
 
 
-def context(config, connector, helpers, files, value):
-    """What validate needs, read only when the next actions hold a doc write: the owner's Docs connections and what
-    each may write, and each doc an edit names, read now (its version is the one the owner approves)."""
+def targets(config, connector, helpers, check=True):
+    """{account id: {name, email, provider, boundary, writes}}: where a doc may be written. The owner's Docs connections,
+    and their own gog Google sign-ins that can already make a doc (drive or drive.file), never one a Fleet shares.
+    check=False leaves a Docs connection's writes unread (None: the prompt lists it, validate checks)."""
+    out = {}
+    gog = getattr(connector, 'gog_google', lambda a: False)
+    for a in config.get('accounts', []):
+        if a.get('shared') or not (a.get('service') == 'docs' or gog(a)):
+            continue
+        writes = sorted(connector.writes_on(config, a, helpers)) if check or a.get('service') != 'docs' else None
+        if a.get('service') != 'docs' and not writes:
+            continue
+        out[a['id']] = {'name': str(a.get('display_name') or a.get('email') or a['id']), 'email': str(a.get('email') or '').lower(),
+                        'provider': connector.provider(config, a) if a.get('service') == 'docs' else 'google',
+                        'boundary': a.get('boundary') or '', 'writes': writes}
+    return out
+
+
+def area(config, account_ids):
+    """The to-do's area: the boundaries and addresses of its own accounts."""
+    mine = [a for a in config.get('accounts', []) if a.get('id') in set(account_ids or ())]
+    return {'boundaries': sorted({a['boundary'] for a in mine if kind_of(a.get('boundary'))}),
+            'emails': sorted({str(a['email']).lower() for a in mine if '@' in str(a.get('email') or '')})}
+
+
+def context(config, connector, helpers, files, value, area=None):
+    """What validate needs, read only when the next actions hold a doc write: where docs may be written (targets), the
+    to-do's area, and each doc an edit names, read now (its version is the one the owner approves)."""
     items = value if isinstance(value, list) else [value] if isinstance(value, dict) else []
     wanted = [a for a in items if isinstance(a, dict) and a.get('kind') == KIND]
     if not wanted or not connector:
         return None
-    accounts = {}
-    for a in config.get('accounts', []):
-        if a.get('service') == 'docs' and not a.get('shared'):
-            accounts[a['id']] = {'name': str(a.get('display_name') or a.get('email') or a['id']),
-                                 'provider': connector.provider(config, a), 'writes': sorted(connector.writes_on(config, a, helpers))}
+    accounts = targets(config, connector, helpers)
     snapshots = {}
     for w in wanted:
         file_id = str(w.get('file_id') or '')
@@ -796,4 +934,4 @@ def context(config, connector, helpers, files, value):
                                   'docs_file_too_large': 'That file is too large to edit here',
                                   'docs_not_connected': 'Reading docs is not allowed for this connection'}.get(
                                       error.category, f'The doc could not be read ({error.category})')
-    return {'accounts': accounts, 'files': files, 'snapshots': snapshots}
+    return {'accounts': accounts, 'files': files, 'snapshots': snapshots, 'area': area}

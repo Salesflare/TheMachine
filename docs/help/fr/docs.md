@@ -35,6 +35,10 @@ Votre Machine peut écrire un nouveau document Word, ou modifier un document don
 
 Elle remplace du texte, ajoute du texte et ajoute des paragraphes et des titres. Elle ne touche pas aux tableaux, images, modifications suivies et champs. Un nouveau document arrive dans votre OneDrive et reste privé tant que vous ne le partagez pas.
 
+Un nouveau document va dans un compte du domaine de la tâche : le document d’une tâche Travail dans le compte de cette entreprise, celui de la conversation quand c’est possible, jamais dans un compte perso. Sur votre propre ordinateur, un compte Google connecté pour Gmail qui a déjà accès à Drive peut aussi recevoir un nouveau Google Doc. Si aucun compte ne convient, la tâche indique **Connectez Google Docs ou Microsoft Word pour Travail**.
+
+Quand le document n’est pas la fin de la tâche, par exemple une réponse avec son lien, la tâche reste ouverte et prépare cette étape suivante pour votre OK.
+
 Connecter Microsoft Word l’autorise déjà : il n’y a pas d’étape à part. Une ancienne connexion Microsoft Word qui ne fait que lire affiche **Autoriser les modifications** sur sa carte dans **Connexions**. Touchez-le une fois et acceptez.
 
 ## Ce qu’il demande

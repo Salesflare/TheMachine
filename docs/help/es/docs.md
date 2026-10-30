@@ -35,6 +35,10 @@ Tu Machine puede escribir un documento de Word nuevo o cambiar un documento del 
 
 Reemplaza texto, añade texto y añade párrafos y títulos. No toca tablas, imágenes, cambios con seguimiento ni campos. Un documento nuevo queda en tu OneDrive y es privado hasta que lo compartas.
 
+Un documento nuevo va a una cuenta del área de la tarea: el documento de una tarea de Trabajo a la cuenta de esa empresa, la de la conversación cuando se puede, nunca a una personal. En tu propio ordenador, una cuenta de Google conectada para Gmail que ya tiene acceso a Drive también puede recibir un Google Doc nuevo. Si ninguna cuenta encaja, la tarea dice **Conecta Google Docs o Microsoft Word para Trabajo**.
+
+Cuando el documento no es el final de la tarea, como una respuesta con su enlace, la tarea sigue abierta y prepara ese siguiente paso para tu OK.
+
 Conectar Microsoft Word ya lo permite: no hay un paso aparte. Una conexión de Microsoft Word anterior que solo lee muestra **Permitir cambios** en su tarjeta en **Conexiones**. Tócalo una vez y acepta.
 
 ## Qué pide

@@ -35,6 +35,10 @@ Je Machine kan een nieuw Word-document schrijven, of een document aanpassen waar
 
 Hij vervangt tekst, voegt tekst toe en voegt alinea's en koppen toe. Tabellen, afbeeldingen, bijgehouden wijzigingen en velden laat hij met rust. Een nieuw document komt in je OneDrive en blijft privé tot je het deelt.
 
+Een nieuw document gaat naar een account in het eigen gebied van de taak: een document voor een Werk-taak naar het account van dat bedrijf, het account van het gesprek als dat kan, nooit naar een privé-account. Op je eigen computer kan ook een Google-account dat voor Gmail is aangemeld en al toegang tot Drive heeft een nieuw Google-document krijgen. Past geen enkel account, dan zegt de taak **Koppel Google Docs of Microsoft Word voor Werk**.
+
+Is het document niet het einde van de taak, zoals een antwoord met de link, dan blijft de taak open en maakt hij die volgende stap klaar voor je OK.
+
 Microsoft Word koppelen staat dit al toe: er is geen aparte stap. Een oudere koppeling van Microsoft Word die alleen leest, toont **Bewerken toestaan** op haar kaart bij **Koppelingen**. Druk er één keer op en accepteer.
 
 ## Waar het om vraagt

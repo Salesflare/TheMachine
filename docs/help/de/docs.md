@@ -35,6 +35,10 @@ Deine Machine kann ein neues Word-Dokument schreiben oder ein Dokument ändern, 
 
 Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem OneDrive und bleibt privat, bis du es teilst.
 
+Ein neues Dokument kommt in ein Konto aus dem Bereich der Aufgabe: das Dokument einer Arbeitsaufgabe in das Konto dieser Firma, wenn möglich das Konto des Gesprächs, nie in ein privates. Auf deinem eigenen Computer kann auch ein Google-Konto, das für Gmail angemeldet ist und schon Zugriff auf Drive hat, ein neues Google-Dokument bekommen. Passt kein Konto, sagt die Aufgabe **Verbinde Google Docs oder Microsoft Word für Arbeit**.
+
+Ist das Dokument nicht das Ende der Aufgabe, etwa wenn noch eine Antwort mit dem Link fehlt, bleibt die Aufgabe offen und bereitet diesen nächsten Schritt für dein OK vor.
+
 Das Verbinden von Microsoft Word erlaubt das schon: Es gibt keinen eigenen Schritt. Eine ältere Microsoft-Word-Verbindung, die nur liest, zeigt auf ihrer Karte unter **Verbindungen** **Bearbeiten erlauben**. Tippe einmal darauf und stimme zu.
 
 ## Worum es fragt

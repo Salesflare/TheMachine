@@ -499,6 +499,33 @@ def settle_sent(store, db, suggestion_id, job_id, label='', note=None):
     return True
 
 
+def settle_doc_write(store, db, suggestion_id, job_id, action, url=None):
+    """A doc made or changed after the owner's OK. With last:true the doc was the whole to-do: done, like a send.
+    Otherwise something is left after it (a reply with its link, sharing it): the to-do stays open and carries on with
+    that step (then, or what is left), drafted again for the owner's OK, never sent by itself (2026-10-30)."""
+    if action.get('last') is True:
+        return settle_sent(store, db, suggestion_id, job_id, next_actions.label(action), doc_writes.done(action))
+    row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    if not row or row['status'] != 'prepared':
+        return False
+    finished = {r[0] for r in db.execute("SELECT revision FROM action_jobs WHERE suggestion_id=? AND status IN ('sent','done')", (suggestion_id,))}
+    if any(a['kind'] in next_actions.APPROVE_KINDS + next_actions.FINISH_KINDS and a['revision'] not in finished
+           for a in next_actions.visible_actions(row['next_action'])):
+        return False
+    note = doc_writes.done(action)
+    step = (f"{note}{' (' + url + ')' if url else ''}. Now: {action.get('then') or 'what is left of this to-do after the doc'}. "
+            'Draft it for the owner to approve, never send it; save outcome done only when nothing is left.')
+    body = NOTHING_SENT.sub('', row['body'] or '').strip() or row['body']
+    stamp = now()
+    db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+               ('sent:' + job_id, suggestion_id, 'update', note[:200], 'assistant', stamp))
+    db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+               ('after:' + job_id, suggestion_id, 'continue', step[:2000], 'assistant', stamp))
+    db.execute("UPDATE suggestions SET status='accepted',body=?,outcome=NULL,early=0,undo_until=NULL WHERE id=?", (body, suggestion_id))
+    store.queue_preparation(db, suggestion_id, 'after:' + job_id)
+    return True
+
+
 def queue_delegate_wait(db, action, job, result):
     """A task handed to someone: once the message is sent, the card waits for their answer. It
     closes when they reply (settle_awaiting) and comes back after wait_days if not."""
@@ -9594,13 +9621,23 @@ def doc_write_files(db, event_ids):
 
 
 def doc_write_prompt(config):
-    """The preparation's line about writing docs, when the owner has a Docs connection."""
-    names = ', '.join(sorted(a['id'] for a in (config or {}).get('accounts') or () if a.get('service') == 'docs' and not a.get('shared')))
-    if not names:
+    """The preparation's line about writing docs: where a doc can go (Docs connections, and gog Google sign-ins that can
+    already make one), each with its place and area, and the rules for picking one."""
+    plugin = load_connector('docs') if any(a.get('service') == 'docs' or a.get('transport') == 'gog' for a in (config or {}).get('accounts') or ()) else None
+    found = doc_writes.targets(config, plugin, CONNECTOR_HELPERS, check=False) if plugin else {}
+    if not found:
         return ''
-    return (f"\n- Docs connections: {names}. A new doc or an edit to one is a next action the owner approves, never a write of yours: "
-            "{kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings) or "
+    names = '; '.join(f"{k} ({doc_writes.WHERE.get(t['provider'], 'Docs')}, {t['email'] or t['name']}, {doc_writes.area_name(t['boundary'])})"
+                      for k, t in sorted(found.items()))
+    return (f"\n- Where a doc can go: {names}. A new doc or an edit to one is a next action the owner approves, never a write of yours: "
+            "{kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
+            "the to-do shows it, so the body doesn't start with it again) or "
             "{kind:'doc_write',op:'edit',file_id:<metadata.file_id of this task's doc event>,changes:[{find,replace} | {after,insert} | {append}]}. "
+            "A new doc goes only to a place in this to-do's own area (Work at that company, or Personal, as its accounts are), and to the one with "
+            "the conversation's own address when that one can; never to another area's account. When none fits, draft no doc: give its text in "
+            "the to-do and say needs:'Connect Google Docs or Microsoft Word for Work' (or for Personal). Name the place exactly as listed "
+            "(Google Docs or Word) in the body and needs, never the other. Add last:true only when the doc itself finishes the to-do; otherwise "
+            "then:<the step after it, e.g. reply to Sam with the link>: once the doc is made, the to-do carries on with that step as a new draft. "
             "Check an edit first: assistant doc-draft --job <job id> --event <event id> [--changes <file.json>] prints the doc's paragraphs "
             "and the before and after the owner will see. Only with Allow edits on; otherwise give the text in the to-do.")
 
@@ -14855,7 +14892,8 @@ class App(*APP_MIXINS):
                 calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
                 doc_files=doc_write_files(db,row['event_ids'])
             # A doc write: the owner's Docs connections, and each doc an edit names read now, its version pinned (doc_writes.py)
-            doc_context=doc_writes.context(self.config,load_connector('docs'),CONNECTOR_HELPERS,doc_files,args.get('next_actions',args.get('next_action')))
+            doc_context=doc_writes.context(self.config,load_connector('docs'),CONNECTOR_HELPERS,doc_files,args.get('next_actions',args.get('next_action')),
+                                           doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
             action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context)
             for item in next_actions.actions(action):
                 if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
@@ -14866,6 +14904,8 @@ class App(*APP_MIXINS):
                 if not evidence or any(e['kind']!='assistant.test' or json.loads(e['metadata']).get('test') is not True for e in evidence):
                     raise ValueError('Demo previews are only available on explicitly labeled assistant test tasks')
             problems=next_actions.check(action,args['body'],[a.get('email','') for a in self.config['accounts']])
+            # The to-do names the place the doc goes, never the other one (Google Docs vs Word)
+            problems+=doc_writes.wording(next_actions.actions(action),[args.get('body'),args.get('needs'),args.get('title')])
             if problems and args.get('checked') is not True:
                 # The run fixes these itself; checked:true saves anyway when one is deliberate.
                 raise ValueError('Check before saving: '+'; '.join(problems)+'. Fix and save again, or add checked:true if this is intended.')
@@ -16587,7 +16627,8 @@ class App(*APP_MIXINS):
                 if result.get('message_id'):
                     db.execute("UPDATE action_jobs SET status='sent',message_id=?,error=NULL,updated_at=? WHERE id=? AND status IN ('sending','uncertain')",(result['message_id'],now(),job['id']))
                     queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result)
-                    if action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
+                    if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
+                    elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
                     if action['kind']=='merge' and result.get('commit'):db.execute('INSERT OR IGNORE INTO merge_effects VALUES(?,?,?,?,?)',(job['id'],'merge',encoded(result),'pending',now()))
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
                 else:
@@ -16666,7 +16707,8 @@ class App(*APP_MIXINS):
                  result.get('rfc_message_id') if status=='sent' else None,job['id']))
             if status=='sent':
                 queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result)
-                if action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
+                if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
+                elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
             if status=='sent' and action['kind']=='merge' and result.get('commit'):db.execute('INSERT OR IGNORE INTO merge_effects VALUES(?,?,?,?,?)',(job['id'],'merge',encoded(result),'pending',now()))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
         if status=='sent' and action['kind']=='merge':
@@ -17456,6 +17498,10 @@ class App(*APP_MIXINS):
         if action=='start':
             with self.store.connect() as db:
                 chosen=db.execute("SELECT payload,source FROM action_jobs WHERE suggestion_id=? AND id=? AND status='local_preparation'",(job['suggestion_id'],job.get('action_id'))).fetchone()
+            if not chosen:  # carrying on after a doc the owner approved (settle_doc_write): that step is the next one
+                with self.store.connect() as db:
+                    after=db.execute("SELECT d.feedback FROM preparations p JOIN decisions d ON d.id=p.decision_id WHERE p.job_id=? AND d.choice='continue'",(job['job_id'],)).fetchone()
+                if after:job['next_step']=after[0]
             if chosen:
                 step=json.loads(chosen['payload'])
                 job['next_step']=step['instructions']

@@ -5,6 +5,7 @@ import io
 import json
 from pathlib import Path
 import tempfile
+import types
 import unittest
 import urllib.error
 import urllib.parse
@@ -309,7 +310,7 @@ class Google(unittest.TestCase):
     def test_an_approved_edit_is_written_once_into_the_version_the_owner_saw(self):
         self.fake.granted.add(docs.REPLY_SCOPE)
         self.decide('accept')
-        self.save()
+        self.save(last=True)  # the edit is the whole to-do: done once it is in
         action = self.row()['next_action']
         self.assertEqual((action['kind'], action['version']), ('doc_write', 'r1'))
         self.assertEqual(self.app().talk_draft(self.sid, action['revision']), action)  # voice: the same pinned revision
@@ -359,6 +360,48 @@ class Google(unittest.TestCase):
         self.assertEqual((self.job()['status'], self.job()['message_id']), ('sent', 'docwrite:new1'))
         broker = {r[1] for r in self.fake.requests if r[0] == 'BROKER' and r[1]}
         self.assertNotIn(docs.REPLY_SCOPE, broker)
+
+
+    def test_a_doc_with_a_step_after_it_keeps_the_to_do_open_for_that_step(self):
+        """2026-10-30: a doc made for a partner closed its to-do, though the reply with its link still had to go out.
+        Only last:true closes it; otherwise the to-do carries on with the step after the doc, drafted for the owner."""
+        self.fake.granted.add(docs.FILE_SCOPE)
+        self.decide('accept')
+        self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Doc ready in Google Docs.', 'next_action': {
+            'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'Launch notes', 'body': 'Week 3.',
+            'then': 'Reply to Robin with the link'}})
+        action = self.row()['next_action']
+        self.assertEqual(action['then'], 'Reply to Robin with the link')
+        self.confirm(action)
+        self.app().action_step(self.transport())
+        self.assertEqual(self.job()['status'], 'sent')
+        row = self.row()
+        self.assertEqual(row['status'], 'accepted')  # not done: the reply is still to do
+        with self.store.connect() as db:
+            prep = db.execute('SELECT status,decision_id,job_id FROM preparations WHERE suggestion_id=?', (self.sid,)).fetchone()
+            step = db.execute('SELECT choice,feedback,source FROM decisions WHERE id=?', (prep['decision_id'],)).fetchone()
+            closed = db.execute("SELECT count(*) FROM decisions WHERE suggestion_id=? AND choice='complete'", (self.sid,)).fetchone()[0]
+        self.assertEqual((prep['status'], step['choice'], step['source'], closed), ('queued', 'continue', 'assistant', 0))
+        self.assertIn('Created “Launch notes” in Google Docs (https://docs.google.com/document/d/new1/edit)', step['feedback'])
+        self.assertIn('Reply to Robin with the link', step['feedback'])
+        self.assertIn('never send it', step['feedback'])
+
+    def test_last_true_closes_the_to_do_once_the_doc_is_made(self):
+        self.fake.granted.add(docs.FILE_SCOPE)
+        self.decide('accept')
+        self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Doc ready.', 'next_action': {
+            'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'Launch notes', 'body': 'Week 3.', 'last': True}})
+        self.confirm(self.row()['next_action'])
+        self.app().action_step(self.transport())
+        self.assertEqual(self.row()['status'], 'completed')
+
+    def test_the_to_do_names_the_place_the_doc_goes(self):
+        self.fake.granted.add(docs.FILE_SCOPE)
+        self.decide('accept')
+        with self.assertRaises(ValueError) as caught:
+            self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Your notes are ready to put in Word.', 'next_action': {
+                'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'Launch notes', 'body': 'Week 3.', 'last': True}})
+        self.assertIn('name Google Docs', str(caught.exception))
 
 
 class Microsoft(unittest.TestCase):
@@ -455,6 +498,141 @@ class Microsoft(unittest.TestCase):
         self.assertEqual(self.transport.send(action, {}), {'message_id': 'docwrite:d1!n1'})
         self.assertEqual(self.created['Plan.docx'], b'someone else')
         self.assertEqual(self.transport.reconcile(action, {}), {'message_id': 'docwrite:d1!n1'})
+
+
+WORK = {'boundaries': ['work:Acme'], 'emails': [OWNER]}
+
+
+class Area(unittest.TestCase):
+    """A doc goes only where the to-do lives: its own area (Work at that company, or Personal), and the conversation's own
+    address when that one can. 2026-10-30: a Work to-do's doc went to a personal Hotmail OneDrive."""
+
+    def context(self, *targets, area=WORK):
+        return {'accounts': dict(targets), 'area': area}
+
+    HOTMAIL = ('home-docs', {'name': 'me@hotmail.example', 'email': 'me@hotmail.example', 'provider': 'microsoft',
+                             'boundary': 'personal:me', 'writes': ['create', 'edit']})
+    GOG = ('acme-gmail', {'name': OWNER, 'email': OWNER, 'provider': 'google', 'boundary': 'work:Acme', 'writes': ['create']})
+
+    def create(self, account_id, context):
+        return w.validate({'kind': 'doc_write', 'op': 'create', 'account_id': account_id, 'title': 'Plan', 'body': 'Hi'}, context)
+
+    def test_never_another_areas_account(self):
+        with self.assertRaises(ValueError) as caught:
+            self.create('home-docs', self.context(self.HOTMAIL, self.GOG))
+        self.assertIn('Personal, not this to-do’s area (Work at Acme)', str(caught.exception))
+        self.assertIn('Use acme-gmail instead', str(caught.exception))
+        self.assertEqual(self.create('acme-gmail', self.context(self.HOTMAIL, self.GOG))['provider'], 'google')
+
+    def test_none_in_the_area_says_so_plainly(self):
+        with self.assertRaises(ValueError) as caught:
+            self.create('home-docs', self.context(self.HOTMAIL))
+        self.assertIn('Connect Google Docs or Microsoft Word for Work', str(caught.exception))
+        # a personal to-do may use it
+        self.assertEqual(self.create('home-docs', self.context(self.HOTMAIL, area={'boundaries': ['personal:phone'], 'emails': []}))['provider'],
+                         'microsoft')
+
+    def test_the_conversations_own_address_first(self):
+        other = ('acme-docs', {'name': 'docs@acme.example', 'email': 'docs@acme.example', 'provider': 'microsoft',
+                               'boundary': 'work', 'writes': ['create']})
+        with self.assertRaises(ValueError) as caught:
+            self.create('acme-docs', self.context(other, self.GOG))
+        self.assertIn('put the doc in acme-gmail', str(caught.exception))
+        self.assertTrue(w.fits('work', WORK) and w.fits('work:Acme', {'boundaries': ['work']}))
+        self.assertFalse(w.fits('work:Other', WORK))
+
+    def test_area_of_a_to_do_and_wording(self):
+        config = {'accounts': [GMAIL, {'id': 'phone', 'service': 'android', 'boundary': 'personal:phone'}]}
+        self.assertEqual(w.area(config, ['acme-gmail']), WORK)
+        word = {'kind': 'doc_write', 'op': 'create', 'provider': 'microsoft', 'title': 'Plan', 'body': 'x'}
+        self.assertEqual(w.wording([word], ['Needs you: approve creating the Google Doc.']),
+                         ['the doc goes to Word, but the to-do says “Google Doc”: name Word'])
+        self.assertEqual(w.wording([word], ['Ready to put in Word.']), [])
+        self.assertTrue(w.wording([{**word, 'provider': 'google'}], ['A new Word doc is ready']))
+        self.assertEqual(w.wording([{**word, 'provider': 'google'}], ['Ready to put in Google Docs. A word on pricing.']), [])
+
+    def test_the_title_shows_once(self):
+        action = {'op': 'create', 'provider': 'microsoft', 'title': 'Salesflare inclusion for Partner',
+                  'body': '# Salesflare inclusion  for partner\nFor the guide\n## Search title'}
+        self.assertEqual(w.preview(action), 'New doc in Word: “Salesflare inclusion for Partner”\n\nFor the guide\n## Search title')
+        self.assertEqual(w.untitled({**action, 'body': '# Other\nx'}), '# Other\nx')
+
+
+class GogDocs(unittest.TestCase):
+    """A Google Doc through the owner's own gog sign-in for Gmail: only with the drive scope it already has, reads
+    --readonly, the writes --allow-write, the text written once into the empty doc made under the id generated first."""
+
+    def setUp(self):
+        self.account = {'id': 'acme-gmail', 'email': OWNER, 'transport': 'gog', 'client': 'acme', 'boundary': 'work:Acme'}
+        self.config = {'gog': '/usr/bin/gog-fake', 'accounts': [self.account]}
+        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, credential=lambda config, name: 'pw')
+        self.scopes = ['email', docs.REPLY_SCOPE, 'https://www.googleapis.com/auth/gmail.modify']
+        self.calls, self.doc, self.created, self.fail_fill = [], None, {}, False
+        patch('subprocess.run', side_effect=self.gog).start()
+        self.addCleanup(patch.stopall)
+
+    def gog(self, command, env=None, **_):
+        self.assertEqual(env['GOG_KEYRING_PASSWORD'], 'pw')
+        if command[1:3] == ['auth', 'list']:
+            return types.SimpleNamespace(returncode=0, stdout=json.dumps({'accounts': [{'email': OWNER, 'client': 'acme', 'scopes': self.scopes}]}), stderr='')
+        api, version, method = command[3:6]
+        flag = lambda name: command[command.index(name) + 1]
+        body = json.loads(Path(flag('--body')[1:]).read_text()) if '--body' in command else None
+        self.calls.append((method, flag('--scope'), '--allow-write' in command, '--readonly' in command, flag('--account')))
+        out = {}
+        if method == 'drive.files.generateIds':
+            out = {'ids': ['g1']}
+        elif method == 'drive.files.create':
+            self.created[body['id']] = body
+            self.doc = {'revisionId': 'r1', 'body': {'content': [{'paragraph': {'elements': [{'startIndex': 1, 'endIndex': 2, 'textRun': {'content': '\n'}}]}}]}}
+            out = {'id': body['id']}
+        elif method == 'docs.documents.get':
+            out = self.doc
+        elif method == 'docs.documents.batchUpdate':
+            if self.fail_fill:
+                return types.SimpleNamespace(returncode=1, stdout='', stderr='timeout')
+            self.fill = body
+            text = body['requests'][0]['insertText']['text']
+            self.doc = {'revisionId': 'r2', 'body': {'content': [{'paragraph': {'elements': [{'startIndex': 1, 'endIndex': 2 + len(text), 'textRun': {'content': text + '\n'}}]}}]}}
+        elif method == 'drive.files.get':
+            out = {'id': 'g1', 'trashed': False} if 'g1' in self.created else None
+            if out is None:
+                return types.SimpleNamespace(returncode=1, stdout='{"error":{"message":"{\\"code\\": 404}"}}', stderr='404')
+        return types.SimpleNamespace(returncode=0, stdout=json.dumps(out), stderr='')
+
+    def test_a_new_google_doc_with_the_gog_sign_in(self):
+        self.assertTrue(docs.gog_google(self.account))
+        found = w.targets(self.config, docs, self.helpers)
+        self.assertEqual(found['acme-gmail']['provider'], 'google')
+        self.assertEqual(found['acme-gmail']['writes'], ['create'])
+        context = w.context(self.config, docs, self.helpers, {}, {'kind': 'doc_write', 'op': 'create'}, WORK)
+        action = w.validate({'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-gmail', 'title': 'Plan',
+                             'body': '# Plan\nWeek 3.', 'then': 'Reply with the link'}, context)
+        transport = w.DocWriteTransport(self.config, docs, self.helpers)
+        transport.preflight(action)
+        self.assertEqual(transport.send(action, {}), {'message_id': 'docwrite:g1', 'url': 'https://docs.google.com/document/d/g1/edit'})
+        self.assertEqual(self.created['g1'], {'id': 'g1', 'name': 'Plan', 'mimeType': docs.DOC_MIME})
+        self.assertEqual(self.fill['requests'][0]['insertText']['text'], 'Plan\nWeek 3.')
+        self.assertEqual(self.fill['writeControl'], {'requiredRevisionId': 'r1'})
+        for method, scope, write, readonly, account in self.calls:
+            self.assertEqual((scope, account), (docs.REPLY_SCOPE, OWNER))  # only the drive scope it has, never Gmail's
+            self.assertEqual((write, readonly), (method in ('drive.files.create', 'docs.documents.batchUpdate'),
+                                                 method not in ('drive.files.create', 'docs.documents.batchUpdate')))
+
+    def test_an_unclear_fill_is_finished_once_and_a_sign_in_without_drive_is_no_place(self):
+        context = w.context(self.config, docs, self.helpers, {}, {'kind': 'doc_write', 'op': 'create'}, WORK)
+        action = w.validate({'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-gmail', 'title': 'Plan', 'body': 'Week 3.'}, context)
+        transport = w.DocWriteTransport(self.config, docs, self.helpers)
+        transport.preflight(action)
+        self.fail_fill = True
+        self.assertEqual(transport.send(action, {}), {})  # unclear: never written again by send
+        self.fail_fill = False
+        self.assertEqual(transport.reconcile(action, {})['message_id'], 'docwrite:g1')
+        self.assertEqual(transport.reconcile(action, {})['message_id'], 'docwrite:g1')
+        self.assertEqual(len([c for c in self.calls if c[0] == 'docs.documents.batchUpdate']), 2)  # the failed one, then once
+        self.assertEqual(len([c for c in self.calls if c[0] == 'drive.files.create']), 1)
+        self.scopes = ['email', 'https://www.googleapis.com/auth/gmail.modify']
+        self.assertEqual(w.targets(self.config, docs, self.helpers), {})
 
 
 if __name__ == '__main__':
