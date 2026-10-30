@@ -27,6 +27,17 @@ try{
  assert.equal(await accept.textContent(),'Update '+name);
  assert.equal(await page.locator('#task-s1 img[src="x"]').count(),0);
  await page.waitForTimeout(300);
+ // Ids and links that reach the card, its chat and the side list stay inside their attributes, and the browser link
+ // opens only http(s): anything else is the plain Open the browser button.
+ const odd='x" onmouseover="window.pwned=2';
+ const parsed=await page.evaluate(odd=>{const read=html=>{const t=document.createElement('template');t.innerHTML=html;return t.content};
+  const card=read(suggestionCard({...state.suggestions[0],id:odd,labels:{},skill_proposal:null},'To decide'));
+  const btn=card.querySelector('button[data-choice="reject"]');
+  const side=read(sideRow({id:odd,title:'Side'},''));
+  const bad=read(browserLink('s1',{link:'javascript:window.pwned=3'})),good=read(browserLink('s1',{link:'https://example.com/tab'}));
+  return {btn:btn&&[btn.dataset.id,btn.getAttribute('onmouseover')],side:[side.querySelector('a').getAttribute('href'),side.querySelector('[onmouseover]')],
+   bad:[bad.querySelectorAll('a').length,bad.querySelectorAll('button[data-browser-focus]').length],good:good.querySelector('a')?.getAttribute('href')}},odd);
+ assert.deepEqual(parsed,{btn:[odd,null],side:['#chat='+odd,null],bad:[0,1],good:'https://example.com/tab'});
  assert.equal(await page.evaluate(()=>window.pwned),undefined);
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
