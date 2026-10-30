@@ -57,6 +57,7 @@ import locale_prefs
 import ms_graph
 from i18n import t
 import fleet_requests
+import fleet_reviews
 import family
 import contact_share
 import friends
@@ -171,6 +172,11 @@ for _kind in ('work', 'family', 'friends'):
     ASKS[_kind] = ASKS[_kind] + (contact_share.KIND,)
 KIND_LABEL.update(contact='shared contacts')
 KIND_LABEL.update(skill='skills')
+# Ask to review (fleet_reviews.py): a Work to-do to a teammate, a Personal one to someone in the Family. Never by rule:
+# it is a to-do for that person. Offered only where the Network says it carries them (the directory's asks).
+for _kind in ('work', 'family'):
+    ASKS[_kind] = ASKS[_kind] + (fleet_reviews.KIND,)
+KIND_LABEL.update(review='reviews')
 
 
 class Off(Exception):
@@ -351,6 +357,7 @@ def now():
 def ensure(db):
     db.executescript(SCHEMA)
     fleet_requests.ensure(db)
+    fleet_reviews.ensure(db)
     discovery.ensure(db)
     contact_share.ensure(db)
     have = {r[1] for r in db.execute('PRAGMA table_info(fleet_in)')}
@@ -1083,6 +1090,8 @@ def free_draft(db, accounts, text, search=None, internal=()):
 
 def parse_question(kind, question):
     """A teammate's question in its fixed form, else None. Nothing else of it is ever read."""
+    if kind == fleet_reviews.KIND:
+        return fleet_reviews.parse(question)
     if kind in fleet_requests.STAGED:
         return fleet_requests.parse(kind, question)
     if kind == 'availability':
@@ -1158,6 +1167,8 @@ def clean_brief(answer):
 
 def clean_answer(kind, answer):
     """A teammate's answer, kept to the fields and shapes this Machine would send itself. None when it doesn't fit."""
+    if kind == fleet_reviews.KIND:
+        return fleet_reviews.clean_answer(answer)
     if kind in fleet_requests.STAGED:
         return fleet_requests.clean_answer(kind, answer)
     if kind == 'availability':
@@ -1208,6 +1219,8 @@ def clean_answer(kind, answer):
 
 
 def question_text(kind, question):
+    if kind == fleet_reviews.KIND:
+        return fleet_reviews.question_text(question)
     if kind in fleet_requests.STAGED:
         return fleet_requests.question_text(kind, question)
     if kind == 'availability':
@@ -1371,6 +1384,8 @@ def person(member):
 
 def answer_text(kind, answer):
     """One plain line of an answer: for the dashboard, the log and preparations."""
+    if kind == fleet_reviews.KIND:
+        return fleet_reviews.answer_text(answer)
     if kind in fleet_requests.STAGED:
         return fleet_requests.answer_text(kind, answer)
     if kind == 'availability':
@@ -1662,7 +1677,7 @@ def brief_text(view, today=None, hidden=()):
 
 # ---------------------------------------------------------------- the Fleet on this Machine
 
-class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
+class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
             shared_graph.SharedGraph):
     def __init__(self, connect, config, token, relay=None):
         self.connect, self.config = connect, config
@@ -2074,6 +2089,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         fleet = self.ref(asked_in)
         question = parse_question(kind, ask.get('question')) if kind in ASKS.get(self.kind_of(fleet), ()) else None
         name = clean(label(teammate) or ask.get('name'), 120) or 'A teammate'
+        if kind == fleet_reviews.KIND:  # a review request: a to-do of its own, never across work and personal
+            return self.take_review(ask, teammate, fleet, question, name)
         if kind in fleet_requests.STAGED:  # a request to do something: its own path
             return self.take_request(ask, teammate, fleet, kind, question, name)
         if kind == 'skill':  # a shared skill: kept for the owner to read (skills.py), never installed by itself
@@ -2514,6 +2531,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             if status != 'waiting':
                 self.log(db, 'out', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], json.loads(row['question'])),
                          ('answered: ' + answer_text(row['kind'], answer)) if answer is not None else status)
+        if row['kind'] == fleet_reviews.KIND:
+            self.review_answered(row, status, answer)
         if row['kind'] in fleet_requests.STAGED:
             if status == 'waiting' and row['kind'] == 'handoff':  # their Machine has it, and says whether it can ping them
                 self.ping_answered(row, fleet_requests.clean_ping(item.get('answer')))
@@ -3025,7 +3044,7 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         for item in found.get('withdrawn', []) or []:  # a handoff its sender took back (network.py checked the seal)
             try:
                 if item.get('ok'):
-                    self.take_withdrawn(item)
+                    self.take_review_withdrawn(item) if item.get('kind') == fleet_reviews.KIND else self.take_withdrawn(item)
                 if item.get('id'):  # one that doesn't check out is dropped too, never acted on
                     acknowledged['withdrawn'].append({'id': item['id']})
             except (ValueError, KeyError, TypeError) as error:
@@ -3571,7 +3590,8 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
         with self.connect() as db:
             waiting = db.execute("SELECT COUNT(*) FROM fleet_in WHERE status='waiting' AND kind NOT IN (%s)" % ','.join('?' * len(QUIET)), QUIET).fetchone()[0]
             waiting += db.execute("SELECT COUNT(*) FROM fleet_notices WHERE kind IN ('seat_request','friend_request') AND status='open'").fetchone()[0]
-        return {'on': True, 'waiting': waiting + self.proposals()}
+        # Which to-dos Ask to review is offered on: 'work', 'personal', by the Fleets whose Network carries reviews
+        return {'on': True, 'waiting': waiting + self.proposals(), 'reviews': [x for x in ('work', 'personal') if self.review_fleets(x)]}
 
     def annotate(self, db, suggestions):
         """Who else is on a card's email, and what the Fleet said about its meeting."""
@@ -3592,10 +3612,11 @@ class Fleet(fleet_requests.Requests, friends.Friends, contact_share.ContactShare
             if context.get(s['id']):
                 s['fleet_context'] = context[s['id']][:5]
         self.annotate_requests(db, suggestions)
+        self.annotate_reviews(db, suggestions)
 
     def lines(self, suggestion_id):
         """What teammates' Machines said about this card's meeting, for a preparation; and who it can be handed to."""
-        return self.meeting_lines(suggestion_id) + self.teammate_lines(suggestion_id)
+        return self.meeting_lines(suggestion_id) + self.teammate_lines(suggestion_id) + self.review_lines(suggestion_id)
 
     def meeting_lines(self, suggestion_id):
         if self.request_lines(suggestion_id):

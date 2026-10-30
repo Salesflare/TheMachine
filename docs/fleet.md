@@ -61,7 +61,8 @@ See [Family](family.md). Work questions never travel in a Family.
 ## Asking a teammate to do something
 
 Besides questions, a Work Fleet carries three kinds of requests. Each has its own rule in the Fleet (Ask me first by
-default, Always accept, Never), and nothing happens on your side until you accept one.
+default, Always accept, Never), and nothing happens on your side until you accept one. Review requests (7) are cards
+to answer, with no rule.
 
 4. **Warm intros.** When "who knows someone at X?" finds a teammate who does, **Ask <teammate> for an intro** (with a
    line why, if you like) asks that one teammate. Their Suggestions, phone and Telegram show "An intro to someone at X"
@@ -150,6 +151,19 @@ default, Always accept, Never), and nothing happens on your side until you accep
    nor its id leaves your Machine. With [Zoom](sources.md) connected, the meeting's summary fills in the empty parts: the
    review reads its next steps and gives each to the person it names (a step that is unclear stays empty). The card
    says it was filled in from the Zoom notes; you check and edit it, and nothing goes until you press Send the split.
+
+7. **Ask to review.** **Ask to review** (under More on any open card, at any step: before Do it, on a ready draft,
+   just before Send) asks one teammate to look at that card: its draft (subject, recipients, text) or, without a draft,
+   its text, plus a note and the card's sources (× leaves one out). Nothing else goes. A Work card goes only to a Work
+   Fleet, a Personal card only to the Family (see [Family](family.md)); the other side is refused on your Machine and
+   again on theirs. Their Machine makes a card of its own, "Review: <title>", where they edit the text in place, add a
+   comment, and pick **Approve**, **Send changes**, **Send comment** or **Decline**; their Machine can help in that card's
+   chat but never sends or acts for you (Send is refused on a review card). What comes back is a tracked change: your
+   card says "Waiting for Pat's review", then "Pat suggested 3 changes", and **See changes** shows each change (word by
+   word, who and when) to **Accept all**, **Accept selected** or **Ignore**. Accepting writes a new revision of your
+   draft (changes go in where they still fit if you edited it meanwhile); it never sends: your own Send does. **Withdraw**
+   takes the request back and their review card goes. One open review per card; a request expires after 3 days.
+   Reviews carry no per-teammate rule: each request is a card the reviewer answers or declines.
 
 A request's text (an intro note, a handoff summary, a follow-up part) is your teammate's own words. It is kept short,
 shown quoted as their words, and never read as an instruction: it reaches no model, tool or Do it by itself. A card

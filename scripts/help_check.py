@@ -63,6 +63,7 @@ FEATURES = {
     'network': ('network.py', 'def '),
     'friends': ('friends.py', 'def '),
     'family': ('family.py', 'def '),
+    'ask-to-review': ('fleet_reviews.py', 'def apply_review'),
     'handoffs': ('fleet_requests.py', 'def '),
     'task-pages': ('task_pages.py', 'def '),
     'saved-signins': ('dashboard.html', 'Saved sign-ins'),

@@ -61,6 +61,7 @@ import mail_attachments
 import message_seal
 import enrichment
 import fleet
+import fleet_reviews
 import shared_graph
 import agent_jobs
 import codex_signin
@@ -769,6 +770,12 @@ FLEET_REQUEST_ACTIONS = {
     'fleet_handoff_not_mine',
     'fleet_handoff_take_back',
     'fleet_intro',
+    'fleet_review_apply',
+    'fleet_review_ask',
+    'fleet_review_options',
+    'fleet_review_reply',
+    'fleet_review_view',
+    'fleet_review_withdraw',
     'fleet_split',
     'fleet_split_adjust',
     'fleet_split_dismiss',
@@ -7876,6 +7883,15 @@ class Store:
                 return {'status':'completed','note':'Result saved; the confirmed step went through, so the card is done.'}
         return {'status': 'prepared', 'note': 'Result saved. The service itself executed nothing.'}
 
+    def review_body(self, suggestion_id, body):
+        """An open to-do's text as the owner accepted it from a review (fleet_reviews.py): its plan or result, never a send."""
+        with self.connect() as db:
+            done = db.execute(f"UPDATE suggestions SET body=? WHERE id=? AND status IN ({','.join('?' * len(fleet.OPEN_CARD))})",
+                              (str(body)[:5000], suggestion_id, *fleet.OPEN_CARD)).rowcount
+        if not done:
+            raise ValueError('This to-do is closed')
+        return {'status': 'revised'}
+
     def revise_draft(self,suggestion_id,revision,source,subject=None,body=None,agent_job=None):
         # The owner edits a ready draft themselves: the edit replaces that draft under a new
         # revision, so Send always sends exactly what they last saw; the before/after teaches later drafts.
@@ -7928,6 +7944,9 @@ class Store:
             done=db.execute("SELECT status FROM action_jobs WHERE suggestion_id=? AND revision=? AND status IN ('sent','done')",(suggestion_id,revision)).fetchone() if row and row['status']=='completed' else None
             if done:
                 return {'status':done['status'],'duplicate':True}
+            # A review to-do (fleet_reviews.py) never sends or acts for anyone: the review goes back to the one who asked.
+            if row and str(row['dedupe_key']).startswith('fleet-review:'):
+                raise ValueError('A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.')
             if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','prepare','finish','calendar','doc_write'):
                 raise ValueError('This result changed or is no longer ready. Use its current buttons.')
             if action.get('to_options'):
@@ -13689,6 +13708,10 @@ class App(*APP_MIXINS):
             self.fleet.release = running_release  # said when it asks whether a bug the owner reported is fixed here
             self.fleet.language = lambda: locale_prefs.language_of(self.config)
             self.fleet.make_card, self.fleet.tell = self.fleet_card, self.fleet_tell  # Fleet requests (fleet_requests.py)
+            # Ask to review (fleet_reviews.py): what a review of a to-do shows, accepted changes into the owner's own draft
+            # (a new revision: Send stays theirs), and a review to-do closed once its reviewer answered
+            self.fleet.review_subject, self.fleet.review_write = self.review_subject, self.review_write
+            self.fleet.done_card = lambda card_id, choice, why, key: self.store.decide(card_id, choice, why, key, 'fleet')
             self.fleet.task_pages = self.task_pages.round
             self.fleet.mail_files = self.share_files  # a shared client thread's attachments, read-only (shared_graph.py)
             # A handoff the teammate accepted is theirs now: the owner's card is done, saying to whom (Undo brings it back).
@@ -15995,7 +16018,8 @@ class App(*APP_MIXINS):
                     db.execute('UPDATE suggestions SET event_ids=?,body=? WHERE id=?',
                                (json.dumps([*ids, *[c for c in copies if c not in ids], event_id]), ((row['body'] or '') + '\n\n' + body[:700])[:2400], into))
             return into
-        card = self.store.suggest('fleet:' + str(ask_id), title[:90], body[:700], [*copies, event_id, *[e for e in evidence if e != event_id]], when='now',
+        # A review to-do has its own key: confirm_action refuses any send from it (fleet_reviews.py)
+        card = self.store.suggest(('fleet-review:' if kind == fleet_reviews.KIND else 'fleet:') + str(ask_id), title[:90], body[:700], [*copies, event_id, *[e for e in evidence if e != event_id]], when='now',
                                   work=not family and account in fleet.work_accounts(self.config), due=due)
         if action and not card.get('duplicate'):
             with self.store.connect() as db:
@@ -16006,6 +16030,37 @@ class App(*APP_MIXINS):
                                            f"introduction. Read it, change it if you like, and send it yourself.", next_action=draft,
                                outcome={'state': 'needs_you', 'needs': 'read and send the intro email'})
         return card['id']
+
+    def review_subject(self, card_id):
+        """What Ask to review shows of an open to-do (fleet_reviews.py): its ready draft (to, subject, text, revision) when
+        it has one, else its result or plan (the to-do's text); and whether it is Work or Personal."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
+        if not row:
+            raise ValueError('No such to-do')
+        if row['status'] not in fleet.OPEN_CARD or str(row['dedupe_key']).startswith('fleet-review:'):
+            raise ValueError(i18n.t('This to-do can’t be reviewed'))
+        scope = suggestion_scope(row['account_ids'], self.config.get('accounts', []))
+        found = {'scope': scope, 'title': row['title'], 'what': 'result', 'body': fleet_reviews._text(row['body'], fleet_reviews.BODY, True)}
+        try:
+            value = json.loads(row['next_action'] or 'null')
+        except ValueError:
+            value = None
+        actions = value.get('actions') if isinstance(value, dict) and value.get('kind') == 'menu' else [value]
+        draft = next((a for a in actions or [] if isinstance(a, dict) and a.get('kind') in fleet_reviews.DRAFT_KINDS and a.get('revision')), None)
+        if row['status'] == 'prepared' and draft:
+            to = draft.get('to') if isinstance(draft.get('to'), list) else [draft.get('to_name') or draft.get('to_email') or '']
+            found.update(what='draft', body=fleet_reviews._text(next_actions.draft_text(draft), fleet_reviews.BODY, True),
+                         subject=' '.join(str(draft.get('subject') or '').split()), to=', '.join(str(x) for x in to if x),
+                         revision=draft['revision'])
+        return found
+
+    def review_write(self, card_id, what, subject, body, revision):
+        """Changes the owner accepted from a review: into their draft (revise_draft, a new revision they read before Send)
+        or into the to-do's text. Nothing is sent."""
+        if what == 'draft':
+            return self.store.revise_draft(str(card_id), revision, 'fleet-review', subject=subject, body=body)
+        return self.store.review_body(str(card_id), body)
 
     def new_card(self, args):
         """New card: what the owner typed, with optional Work or Personal, a due date (YYYY-MM-DD; the dashboard reads
@@ -16215,6 +16270,22 @@ class App(*APP_MIXINS):
             if row and row['status'] == 'snoozed':
                 self.store.decide(card, 'accept', '', 'fleet-take-back-' + secrets.token_hex(6), 'dashboard')
             return done
+        if name == 'fleet_review_options':  # Ask to review: who can review this to-do, and what goes
+            return self.fleet.review_options(str(args.get('suggestion_id') or ''))
+        if name == 'fleet_review_ask':  # one person in the matching Fleet: Work to Work, Personal to the Family
+            return self.fleet.ask_review(str(args.get('suggestion_id') or ''), str(args.get('fleet') or ''), str(args.get('member_id') or ''),
+                                         str(args.get('note') or ''), args['sources'] if isinstance(args.get('sources'), list) else args.get('sources') is not False)
+        if name == 'fleet_review_withdraw':
+            return self.fleet.withdraw_review(str(args.get('suggestion_id') or ''))
+        if name == 'fleet_review_view':  # the tracked changes: who, when, the comment and each change
+            return self.fleet.review_view(str(args.get('suggestion_id') or ''))
+        if name == 'fleet_review_apply':  # 'all', a list of change ids, or 'ignore'; the owner's Send stays theirs
+            picks = args.get('picks')
+            return self.fleet.apply_review(str(args.get('suggestion_id') or ''), picks if picks in ('all', 'ignore') or isinstance(picks, list) else None)
+        if name == 'fleet_review_reply':  # the reviewer: approved, changes, commented or declined; never a send
+            return self.fleet.reply_review(str(args.get('suggestion_id') or ''), str(args.get('stage') or ''), str(args.get('comment') or ''),
+                                           args.get('subject') if isinstance(args.get('subject'), str) else None,
+                                           args.get('body') if isinstance(args.get('body'), str) else None)
         if name == 'fleet_split':  # send a follow-up split as the owner filled it in
             return self.fleet.send_split(str(args.get('id') or ''), args.get('items'))
         if name == 'fleet_split_dismiss':
@@ -18046,6 +18117,7 @@ class App(*APP_MIXINS):
                 owner.append({'kind': 'event', 'text': said + via + why,
                               'choice': choice, 'mine': True, 'at': at})
         owner.extend(card_chat_handoffs(db, suggestion_id))
+        owner.extend({**x, 'at': chat_ms(x['at'])} for x in fleet_reviews.chat_lines(db, suggestion_id))
         owner.extend(self.card_chat_learned(db, suggestion_id))
         for r in db.execute('SELECT payload,status,source,created_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:
