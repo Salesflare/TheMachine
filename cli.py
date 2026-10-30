@@ -754,7 +754,8 @@ def cmd_skills(config, args):
 def cmd_skills_propose(config, args):
     body = sys.stdin.read() if args.file == '-' else Path(args.file).read_text()
     out = call(config, 'skill_propose', {'name': args.name or '', 'description': args.description or '', 'body': body, 'why': args.why or '',
-                                         'update': args.update, 'related': args.related, 'relation': args.relation, 'new': args.new, 'base': args.base})
+                                         'update': args.update, 'related': args.related, 'relation': args.relation, 'new': args.new, 'base': args.base,
+                                         **({'job_id': args.job} if args.job else {})})
     if args.json:
         return out_json(out)
     if out.get('rewrite'):  # an update: the skill as it is now, to rewrite as one and send again with --base
@@ -1029,6 +1030,8 @@ def parser():
     c.add_argument('--new', action='store_true', help='none of the skills here does this job')
     c.add_argument('--file', required=True, help='markdown file with the instructions, or - for stdin')
     c.add_argument('--why', help='one line for the owner: what repeated work this comes from')
+    c.add_argument('--job', help='the preparation job id, when a to-do asked for this skill: its card then offers Create skill '
+                                 '(a newer proposal from the same to-do replaces its earlier one)')
     c = add('skills-found', 'Report from the Find my skills turn: the owner\'s account skills and the ones worth importing', cmd_skills_found)
     c.add_argument('--run', required=True, help='the skills run ID from the turn\'s message')
     c.add_argument('--file', required=True, help='the JSON report, or - for stdin')

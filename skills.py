@@ -32,6 +32,7 @@ import os
 import re
 import secrets
 import shutil
+import sqlite3
 import subprocess
 import tempfile
 import threading
@@ -103,6 +104,8 @@ def ensure(db):
         db.execute('ALTER TABLE skills ADD COLUMN base_sha TEXT')
     if 'related' not in have:  # a proposed skill next to another one: {"id", "name", "relation"}
         db.execute('ALTER TABLE skills ADD COLUMN related TEXT')
+    if 'task' not in have:  # a proposal made by a to-do's run: that to-do's id, so its card offers Create skill
+        db.execute('ALTER TABLE skills ADD COLUMN task TEXT')
 
 
 def one_line(value, chars):
@@ -320,6 +323,32 @@ def update_view(ref, target, after, base_sha):
     stale = bool(base_sha) and target['sha'] != base_sha
     return {'skill': target['name'], 'before': target['body'], 'after': after, 'changes': changes(target['body'], after),
             **({'stale': True} if stale else {'review': review_token(ref, target['sha'])})}
+
+
+def for_task(db, task):
+    """The skill a to-do's run proposed (propose with task), as its card shows it before the owner decides: its name,
+    when it is used and its instructions; for an update, the before and after (update_view, None once that skill is gone)."""
+    try:
+        row = db.execute("SELECT * FROM skills WHERE task=? AND status='proposed' AND origin='proposed' ORDER BY created_at DESC LIMIT 1",
+                         (task,)).fetchone()
+    except sqlite3.OperationalError:  # before the task column: nothing was proposed from a to-do yet
+        return None
+    if not row:
+        return None
+    out = {'id': row['id'], 'name': row['name'], 'description': row['description'], 'body': row['body']}
+    if row['replaces']:
+        target = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off')", (row['replaces'],)).fetchone()
+        out['update'] = update_view(row['id'], dict(target), row['body'], row['base_sha']) if target else None
+    return out
+
+
+def task_of(db, skill_id):
+    """The to-do whose run proposed this skill, if any."""
+    try:
+        row = db.execute("SELECT task FROM skills WHERE id=? AND status='proposed'", (str(skill_id or ''),)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    return row and row['task']
 
 
 def other_names(skills_dir):
@@ -602,12 +631,17 @@ class Skills:
         """Every skill kept here (on or off), a teammate's included: what a proposal is checked against."""
         return [dict(r) for r in db.execute("SELECT id,name,slug,description,origin,body,sha FROM skills WHERE status IN ('on','off') ORDER BY name")]
 
-    def propose(self, name, description, body, why='', update=None, related=None, relation=None, new=False, base=None):
+    def propose(self, name, description, body, why='', update=None, related=None, relation=None, new=False, base=None, task=None):
         """The agent noticed repeated work: a skill for the owner to approve, checked first against the skills here
         (check_against): an update to one of the owner's own, a new one related to another, or a new one. Never on, and
-        no skill changed, before the owner's Approve (an update's after the before and after: Update skill)."""
+        no skill changed, before the owner's Approve (an update's after the before and after: Update skill).
+        task: the to-do whose run proposes it (the owner asked for this skill there). Its card then offers Create skill or
+        Update skill, and a newer proposal from that to-do replaces its earlier one (a corrected name, say)."""
         name, description, body = validate(name if not update else name or 'Update', description if not update else description or 'An update to a skill.', body)
         with self.connect() as db:
+            ensure(db)
+            if task:
+                db.execute("DELETE FROM skills WHERE status='proposed' AND origin='proposed' AND task=?", (task,))
             if db.execute("SELECT COUNT(*) FROM skills WHERE status='proposed'").fetchone()[0] >= OPEN_PROPOSALS:
                 raise ValueError(f'{OPEN_PROPOSALS} proposed skills already wait for the owner')
             on_hand = self.on_hand(db)
@@ -625,10 +659,11 @@ class Skills:
                     return {'ok': True, 'duplicate': True}
             stamp, sha = now(), digest(name, description, body)
             skill_id = 'sk_' + secrets.token_hex(8)
-            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,replaces,base_sha,related,created_at,updated_at) "
-                       "VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?,?,?,?)",
+            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,replaces,base_sha,related,task,created_at,updated_at) "
+                       "VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?,?,?,?,?)",
                        (skill_id, slug_of(name), name, description, body, sha, one_line(why, NOTE_CHARS) or None, target and target['id'],
-                        target and target['sha'], json.dumps({'id': linked['id'], 'name': linked['name'], 'relation': relation}) if linked else None, stamp, stamp))
+                        target and target['sha'], json.dumps({'id': linked['id'], 'name': linked['name'], 'relation': relation}) if linked else None,
+                        task or None, stamp, stamp))
         return {'ok': True, 'id': skill_id, **({'update': target['name']} if target else {})}
 
     # -- shared over the Network

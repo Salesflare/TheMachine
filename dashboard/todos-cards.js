@@ -3,7 +3,7 @@ const cardFiles=s=>(s.files||[]).length?`<div class="chat-files card-files">${s.
 function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;let text=s.step_stopped||resultBody(s),lead='';
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
 const html=(lead?`<p class="lead-line" translate="no">${esc(lead)}</p>`:'')+cardLinks(text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>`<p>${format(p).replace(/\n/g,'<br>')}</p>`).join(''),s);
-const proposal=skillProposal(s);
+const proposal=skillProposal(s)+proposedSkillBox(s);
 // Short by default: the status line says where it stands; the rest folds behind Show more.
 const lines=2,per=innerWidth<600?38:72,rows=text.split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):.6),0);
 if(closed(s)||rows<=lines+.5)return `<div class="body" translate="no">${html}</div>${proposal}`;const open=expandedBodies.has(s.id);
@@ -100,7 +100,9 @@ const actionNote=(a,kind,action)=>kind==='doc_write'?({queued:'Writing the doc�
 const safeURL=u=>{try{return ['https:','http:'].includes(new URL(u).protocol)?u:''}catch{return ''}};
 const resultLink=/\[[^\]]*\]\((?:\/[^\s<>"\)]*\/workspace\/)?memory\/assistant\/[^\s\)]+\)|(?:\/[^\s<>"\)]*\/workspace\/)?memory\/assistant\/[^\s<>"\)]+/g;
 // Result links become the Read result button; drop the lines they leave empty and the gaps after them (same rule as Telegram).
-const resultBody=s=>s.body.split('\n').flatMap(line=>{const kept=line.replace(resultLink,'').replace(/  /g,' ').trimEnd();return kept!==line.trimEnd()&&(/^[\s·•|,;:()\-–—]*$/.test(kept)||/^\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:$/.test(kept))?[]:[kept]}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+// A sentence the link ended ("The draft is at <path>.") points at nothing without it, so it goes too (strip_result_links).
+const danglingPointer=/(^|[.!?]\s+)[^.!?]*\b(?:at|in|to|under|into|on|see|here)\s*[.:]?\s*$/i;
+const resultBody=s=>s.body.split('\n').flatMap(line=>{let kept=line.replace(resultLink,'').replace(/  /g,' ').trimEnd();if(kept!==line.trimEnd())kept=kept.replace(danglingPointer,'$1').trimEnd();return kept!==line.trimEnd()&&(/^[\s·•|,;:()\-–—]*$/.test(kept)||/^\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:$/.test(kept))?[]:[kept]}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
 const needsDecision=s=>s.status==='pending'||(!closed(s)&&s.status!=='snoozed'&&s.preparation_status==='blocked');
 // Where an open to-do sits: Ready, Needs your decision or Preparing. One that starts preparing (Do it, Ask for changes)
 // stays where it was until the run is done, so it doesn't jump to another section and back while it works.
@@ -182,10 +184,22 @@ const CHAT_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" s
 const chatHad=s=>!!(s.agent_job||s.latest_feedback||s.change_prompt||s.preparation_status&&s.preparation_status!=='queued');
 const chatLink=s=>`<a class="card-chat-link${chatHad(s)?' had':''}" href="#chat=${s.id}" title="${chatHad(s)?'Open the conversation':'Open as a chat'}">${CHAT_ICON}<span>Chat</span><span aria-hidden="true">›</span></a>`;
 // A ready draft the Machine can't send itself (no send path, such as an internal note): Copy draft leads, with why.
-const copyLead=(s,smart)=>s.status==='prepared'&&!smart.some(a=>a.kind!=='open')&&/\bdraft/i.test(s.body||'')&&(s.result_files||[]).some(f=>!/\.pdf$/i.test(f.name));
+// A skill the to-do's run proposed (proposed_skill): what is in it on the card, and Create skill (or Update skill, its before
+// and after first) leads. It goes through the owner's own Approve (skill_decide); nothing is installed before that tap.
+const skillLead=s=>s.status==='prepared'&&!!s.proposed_skill;
+const proposedSkillBox=s=>{const p=s.proposed_skill;if(!p||closed(s))return '';
+ if(p.update)return `<details class="skill-notes"><summary>${esc(t('Read the change'))}</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div></details>`;
+ return `<details class="skill-notes"><summary>${esc(t('Read the skill'))}</summary><p><strong translate="no">${esc(p.name)}</strong></p><p class="note" translate="no">${esc(t('When: {}',p.description))}</p><div translate="no">${p.body.replace(/^#{1,6}\s+(.+)$/gm,'**$1**').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${format(x).replace(/\n/g,'<br>')}</p>`).join('')}</div></details>`};
+const skillButton=s=>{const p=s.proposed_skill;return 'update' in p?`<button class="primary" data-skill-update="${esc(p.id)}" data-settings>${esc(t('Update skill'))}</button>`
+ :`<button class="primary" data-skill-create="${esc(p.id)}" data-card="${esc(s.id)}">${esc(t('Create skill'))}</button>`};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-skill-create]');if(!b)return;e.preventDefault();b.disabled=true;
+ try{await skillAct('skill_decide',{id:b.dataset.skillCreate,choice:'approve'});toast(t('Skill created. Your Machine uses it from now on.'));await refresh()}
+ catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+const copyLead=(s,smart)=>!s.proposed_skill&&s.status==='prepared'&&!smart.some(a=>a.kind!=='open')&&/\bdraft/i.test(s.body||'')&&(s.result_files||[]).some(f=>!/\.pdf$/i.test(f.name));
 const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
-function cardActions(s,choices,smartButtons,unmerge,hint,smart){const copy=copyLead(s,smart);
- if(copy)smartButtons=`<button class="primary" data-id="${s.id}" data-result="copy">Copy draft</button>`+smartButtons;
+function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill;
+ if(skill)smartButtons=skillButton(s)+smartButtons;
+ else if(copy)smartButtons=`<button class="primary" data-id="${s.id}" data-result="copy">Copy draft</button>`+smartButtons;
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
  const ask=askQuestion(s,smart,hint);
  const mine=ownerStep(s)&&!ask;
@@ -204,7 +218,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const copy=copyL
  const rename=`<button type="button" class="ghost" data-rename="${esc(s.id)}">Rename</button>`;
  const project=s.project_node?`<button type="button" class="ghost" data-card-project="${esc(s.id)}">Change project</button>`:'';
  const menu=`<details class="more-actions"><summary aria-label="More actions">More</summary><div class="more-menu" role="group" aria-label="More actions">${more.map(btn).join('')}${project}${rename}${unmerge}</div></details>`;
- return `<div class="actions">${smartButtons}${head.map(btn).join('')}${shown.map(btn).join('')}${menu}</div>${copy?`<p class="copy-why">${COPY_WHY}</p>`:''}`}
+ return `<div class="actions">${smartButtons}${head.map(btn).join('')}${shown.map(btn).join('')}${menu}</div>${copy&&!skill?`<p class="copy-why">${COPY_WHY}</p>`:''}`}
 // A Needs you line ends with one mark: a question keeps its "?" instead of getting ".".
 const sentence=t=>{t=String(t).trim();return /[.?!…]$/.test(t)?t:t+'.'};
 // A card waiting on the owner's answer: Answer leads and opens the Change editor under the question; Mark done and
@@ -310,7 +324,7 @@ const statusLine=(()=>{const line=(text,cls='')=>`<p class="note status-line${cl
 const drafts=s.status==='prepared'&&!tpSent?smart.filter(a=>DRAFT_KINDS.includes(a.kind)&&draftText(a)):[];
 // One faint line, like the site: the source itself opens the original; Read result and Copy draft (when there is a draft or file) sit at its end.
     const calOnly=smart.length&&smart.every(a=>a.kind==='calendar')&&!s.result_files?.length;
-    const results=(s.status==='prepared'&&!calOnly)||s.result_files?.length?`<span class="foot-links"><button type="button" class="link" data-id="${s.id}" data-result="read">Read result</button>${(messageDrafts(s).length||s.result_files?.length)&&!copyLead(s,smart)?`<button type="button" class="link" data-id="${s.id}" data-result="copy">Copy draft</button>`:''}</span>`:'';
+    const results=(s.status==='prepared'&&!calOnly)||s.result_files?.length?`<span class="foot-links"><button type="button" class="link" data-id="${s.id}" data-result="read">Read result</button>${(messageDrafts(s).length||s.result_files?.length)&&!copyLead(s,smart)&&!s.proposed_skill?`<button type="button" class="link" data-id="${s.id}" data-result="copy">Copy draft</button>`:''}</span>`:'';
     const readLabel=isEmail(s)?'Read email':'Read message',src=s.source_line?sourceHtml(s.source_line):'';
     const original=hasOriginal(s)?`<button type="button" class="link read-original via-${cardViaIcon(s)}" data-id="${s.id}" data-original="read" aria-label="${readLabel}" title="${readLabel}">${src||readLabel}<span aria-hidden="true"> ↗</span></button>`:src?`<p class="source">${src}</p>`:'';
 // What only matters on a second look folds behind one Details: a closed to-do's coding agent result and the files it was

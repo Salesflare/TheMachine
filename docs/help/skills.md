@@ -34,6 +34,10 @@ When many notes are about one kind of task, a to-do suggests a skill. It checks 
 
 **Not now** keeps the notes as they are. Skills your Machine proposes in Settings > Skills get the same check.
 
+## From a to-do
+
+Ask for a skill in a to-do, and your Machine writes it there. Open **Read the skill** on the to-do, then press **Create skill** (or **Update skill** for one you have). Nothing is installed before you do, and the to-do is then done.
+
 ## Share one
 
 Share a skill with a friend or teammate. They read it and choose to install it. Later edits go out only if you share again.

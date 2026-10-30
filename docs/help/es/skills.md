@@ -34,6 +34,10 @@ Cuando muchas notas tratan de un mismo tipo de tarea, una tarea te sugiere una h
 
 **Ahora no** deja las notas como están. Las habilidades que propone tu Machine en Ajustes > Habilidades pasan la misma revisión.
 
+## Desde una tarea
+
+Pide una habilidad en una tarea y tu Machine la escribe ahí. Abre **Leer la habilidad** en la tarea y pulsa **Crear habilidad** (o **Actualizar habilidad** si ya la tienes). No se instala nada antes, y después la tarea queda hecha.
+
 ## Comparte una
 
 Comparte una habilidad con un amigo o un compañero. La leen y deciden si la instalan. Los cambios posteriores solo les llegan si vuelves a compartirla.

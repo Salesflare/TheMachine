@@ -5,6 +5,9 @@ skill_import_report), the skills kept here, and the end of a Find my skills turn
 the reviewed list of the owner's skill actions. What still uses helpers defined in assistant.py (the Find my skills
 browser turn, skills_read, the notes prompt) stays there for now."""
 import json
+import re
+
+import skills as skills_module
 
 
 class SkillsApp:
@@ -39,11 +42,37 @@ class SkillsApp:
     def skills_action(self, name, args, owner_dashboard):
         return self.skill_action(name, args)
 
+    def skill_job_task(self, job):
+        """The to-do a preparation run proposes a skill for (skills-propose --job): only its own running preparation."""
+        job = str(job or '')
+        if not job:
+            return None
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
+            raise ValueError('Give the job_id of this preparation')
+        with self.store.connect() as db:
+            run = db.execute("SELECT suggestion_id FROM preparations WHERE job_id=? AND status IN ('queued','starting','running','blocked')",
+                             (job,)).fetchone()
+        if not run:
+            raise ValueError('A skill is proposed for a to-do only from its running preparation')
+        return run['suggestion_id']
+
+    def skill_task_done(self, task, skill_id):
+        """The owner created the skill their to-do asked for: that to-do is done."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT status FROM suggestions WHERE id=?', (task,)).fetchone()
+        if not row or row['status'] != 'prepared':
+            return
+        try:
+            self.store.decide(task, 'complete', '', 'skill-created:' + skill_id, 'dashboard')
+        except ValueError:
+            pass  # closed meanwhile: nothing left to finish
+
     def skill_action(self, name, args):
         keeper = self.skills
         if name == 'skill_propose':  # from the agent: waits for the owner's Approve
             return keeper.propose(args.get('name'), args.get('description'), args.get('body'), args.get('why') or '', args.get('update'),
-                                  args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'))
+                                  args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'),
+                                  task=self.skill_job_task(args.get('job_id')))
         if name == 'skill_save':  # id: an existing skill; body may be a whole pasted SKILL.md
             return keeper.save(str(args.get('id') or ''), args.get('name') or '', args.get('description') or '', args.get('body') or '')
         if name == 'skill_get':
@@ -58,7 +87,13 @@ class SkillsApp:
             to = args.get('to')
             return keeper.share(str(args.get('id') or ''), str(args.get('fleet') or ''), to if isinstance(to, list) else None, str(args.get('note') or ''))
         if name == 'skill_decide':
-            return keeper.decide(str(args.get('id') or ''), str(args.get('choice') or ''), str(args.get('reviewed') or '')[:64] or None)
+            skill_id, choice = str(args.get('id') or ''), str(args.get('choice') or '')
+            with self.store.connect() as db:
+                task = skills_module.task_of(db, skill_id)
+            view = keeper.decide(skill_id, choice, str(args.get('reviewed') or '')[:64] or None)
+            if task and choice == 'approve':
+                self.skill_task_done(task, skill_id)
+            return view
         if name == 'skill_installed':  # refresh: read OpenClaw's list again now
             return keeper.installed(args.get('refresh') is True)
         if name == 'skill_installed_get':

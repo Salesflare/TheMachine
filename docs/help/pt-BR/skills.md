@@ -34,6 +34,10 @@ Quando muitas notas são sobre um mesmo tipo de tarefa, uma tarefa sugere uma ha
 
 **Agora não** mantém as notas como estão. Habilidades que sua Machine propõe em Configurações > Habilidades passam pela mesma verificação.
 
+## A partir de uma tarefa
+
+Peça uma habilidade em uma tarefa e sua Machine a escreve ali. Abra **Ler a habilidade** na tarefa e toque em **Criar habilidade** (ou **Atualizar habilidade** para uma que você já tem). Nada é instalado antes, e depois a tarefa fica concluída.
+
 ## Compartilhar uma
 
 Compartilhe uma habilidade com um amigo ou colega. A pessoa lê e escolhe se quer instalar. Edições depois só chegam se você compartilhar de novo.

@@ -34,6 +34,10 @@ Quando molte note riguardano un solo tipo di compito, un'attività suggerisce un
 
 **Non ora** lascia le note come sono. Le skill che la tua Machine propone in Impostazioni > Skill passano lo stesso controllo.
 
+## Da un'attività
+
+Chiedi una skill in un'attività e la tua Machine la scrive lì. Apri **Leggi la skill** nell'attività, poi premi **Crea skill** (o **Aggiorna skill** per una che hai già). Prima non viene installato nulla, e poi l'attività è fatta.
+
 ## Condividine una
 
 Condividi una skill con un amico o un collega. La legge e sceglie se installarla. Le modifiche successive partono solo se la condividi di nuovo.
