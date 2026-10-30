@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Feedback, What I've learned: one block per kind with a heading and count, channels show 2 lines with More,
 // long blocks fold after 5 with Show all, Edit rewrites a fact in place (on a phone Remove sits in its editor), and Remove still works. All mocked; LEARNED_SHOTS=dir saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const t=d=>`2026-10-${String(d).padStart(2,'0')}T09:00:00+00:00`;
 const voices=[
  {channel:'LinkedIn',text:'English, or Dutch when they write Dutch\nOpen with Hi + first name, no small talk\nTwo short paragraphs at most\nWarm but direct, no exclamation marks\nEnd with a question when a reply is wanted',updated_at:t(22)},

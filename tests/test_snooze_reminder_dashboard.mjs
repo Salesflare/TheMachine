@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // After a snooze the dashboard says how the card comes back, as delivery really does it: Telegram when it is on, a
 // notification when some device (this one or another) has them, both when both. With neither it says when the card is
 // back here, and offers Turn on notifications when this browser can have them (iPhone Safari: Add to Home Screen first;
 // blocked: nothing to offer). SHOTS=<folder> saves phone and desktop screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const ID='cd'.repeat(8),now=new Date().toISOString();
 const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);tomorrow.setHours(9,0,0,0);
 let reminders={telegram:false,push:0};

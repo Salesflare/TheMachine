@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings, Signatures: one card per mailbox with a rich editor in a frame that runs nothing. With nothing kept yet,
 // the mailbox's own signature is imported on load; Save shows only after a change; "Use mailbox signature" goes back
 // to the imported one; the HTML toggle edits the source. All mocked.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const GMAIL='<div><b>Owner Name</b></div><div>Example Inc</div>';
 let signatures=[{account_id:'work-outlook',email:'owner@example.com',service:'outlook',html:'<b>Owner Name</b>',source:'detected',saveable:true},
  {account_id:'work-gmail',email:'owner@example.org',service:'gmail',html:'',source:'',saveable:true}];

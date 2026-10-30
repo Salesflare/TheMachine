@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Small things in the dashboard's shell, measured the way they look. Week or Month and back to Agenda opens the agenda
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // no scroll box of its own: the whole sidebar scrolls as one column, as the phone's drawer. A board's ⋯ sits on the middle of its
 // name. A Feedback row keeps its text and Edit and Remove on one middle line, also when the text wraps. Opening a person
 // on the Graph keeps the head (its count, + New person) until the person's page is there. SHELL_SHOTS=<dir> saves shots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),shotDir=process.env.SHELL_SHOTS,errors=[];
 const card=i=>({id:String(i).padStart(16,'0'),title:'To-do number '+i+' with a longer title',body:'Made-up.',status:i%3?'pending':'prepared',scope:'work',created_at:now,event_ids:[]});
 const meetings=Array.from({length:4},(_,i)=>{const a=new Date();a.setHours(9+i*2,0,0,0);const b=new Date(a);b.setHours(a.getHours()+1);return {id:i+1,account_id:'cal',title:'Meeting '+i,start:a.toISOString(),end:b.toISOString(),all_day:false,guests:1,url:''}});

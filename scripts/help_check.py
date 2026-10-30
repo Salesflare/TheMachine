@@ -38,6 +38,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+import dashboard_parts  # noqa: E402  (the dashboard's source, assembled from its parts)
+
 HELP = ROOT / 'docs' / 'help'
 # The areas of the help, in the order the site shows them.
 AREAS = {'getting-started': 'Getting started', 'cards': 'To-dos and chat', 'calendar': 'Calendar', 'graph': 'Graph',
@@ -120,20 +123,26 @@ def literal(path, name):
 
 def features():
     """Every feature id the code has today."""
-    html = (ROOT / 'dashboard.html').read_text(encoding='utf-8')
+    html = dashboard_parts.assemble(ROOT)
     nav = re.search(r'<nav aria-label="Sections">(.*?)</nav\s*>', html, re.S)[1]
     settings = re.search(r'const SETTINGS_TABS=(\[.*?\]);', html)[1]
     found = {f'connector:{s}' for s in literal('onboarding.py', 'SERVICES').values()}
     found |= {f'connector:{p.stem}' for p in (ROOT / 'connectors').glob('*.py') if 'SETUP' in p.read_text(encoding='utf-8')}
     found |= {f'tab:{t}' for t in re.findall(r'data-tab="([a-z]+)"', nav)}
     found |= {f'settings:{t}' for t in re.findall(r"\['([a-z]+)','", settings)}
-    gone = [f for f, (path, needle) in FEATURES.items() if not (ROOT / path).is_file() or needle not in (ROOT / path).read_text(encoding='utf-8')]
+    gone = [f for f, (path, needle) in FEATURES.items() if not (ROOT / path).is_file() or needle not in source(ROOT / path)]
     return found | (set(FEATURES) - set(gone)), gone
 
 
+def source(path):
+    """A file's text; dashboard.html as the page it assembles to, its parts filled in (dashboard_parts)."""
+    if path == ROOT / dashboard_parts.PAGE:
+        return dashboard_parts.assemble(ROOT)
+    return path.read_text(encoding='utf-8', errors='replace')
+
+
 def app_text():
-    return '\n'.join(p.read_text(encoding='utf-8', errors='replace') for pattern in TEXT_FILES for p in ROOT.glob(pattern)
-                     if not p.name.startswith('test_'))
+    return '\n'.join(source(p) for pattern in TEXT_FILES for p in ROOT.glob(pattern) if not p.name.startswith('test_'))
 
 
 def commands():
@@ -180,7 +189,8 @@ def heading_id(text):
 
 def app_files():
     """The app's own code, where people read links: the dashboard, task pages, setup and CLI copy."""
-    return sorted(p for p in [*ROOT.glob('*.py'), *ROOT.glob('*.mjs'), *ROOT.glob('*.html'), *ROOT.glob('connectors/*.py')]
+    return sorted(p for p in [*ROOT.glob('*.py'), *ROOT.glob('*.mjs'), *ROOT.glob('*.html'), *ROOT.glob('dashboard/*.js'),
+                              *ROOT.glob('connectors/*.py')]
                   if not p.name.startswith('test') and p.parent.name != 'scripts')
 
 
@@ -230,7 +240,7 @@ def check(folder=HELP):
             if m and m[1] not in cli:
                 problems.append(f'{where}: names `assistant {m[1]}`, not a command of cli.py')
         problems += [f'{where}: {p}' for p in check_copy(name, fields, body, found)]
-    html = (ROOT / 'dashboard.html').read_text(encoding='utf-8')
+    html = dashboard_parts.assemble(ROOT)
     for tab, slug in re.findall(r"(\w+):'([a-z0-9-]+)'", (re.search(r'HELP_FOR=\{(.*?)\}', html) or [None, ''])[1]):
         if slug not in found:
             problems.append(f'dashboard.html: HELP_FOR sends {tab} to the help article {slug}, which docs/help/ does not have')

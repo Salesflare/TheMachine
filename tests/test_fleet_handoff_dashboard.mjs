@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A ready card whose preparation wrote a handoff to a Fleet teammate: its main button is Hand off to them (the Fleet
 // form, with that message to read and edit), not a Slack or email send; the message shows as the draft. Once handed
 // off, the card waits under Later and offers no Review and send. No network beyond this fake server.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),TEXT='Confirmed P1: the export leaks rows. Can you get someone on this today?';
 const view={on:true,kinds:{handoff:'handoffs'},ask_meetings:false,fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',asks:['handoff'],people:[],
  members:[{member_id:'k',name:'Kim',rules:{}}],rules:{},exceptions:{}}],waiting:[],asked:[],intro_offers:[],splits:[],log:[],notices:[]};

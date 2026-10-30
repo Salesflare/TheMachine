@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Hand to Claude Code / Hand to Codex on a card: shown only for the tools this Machine has; the brief opens to read and
 // edit; the card follows the job (running, then a short result line with file chips and the rest folded away). The
 // card's own Send stays, the one change box goes to the job and says so, and no local path ever shows. No network
 // beyond this fake server.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const card={id:'c1',title:'Sum up the quarterly numbers',body:'Sam asks for a summary.',status:'prepared',event_ids:[1],scope:'work',created_at:new Date().toISOString(),
  next_actions:[{kind:'email',revision:'v1',label:'Send to Sam',to:['sam@client.example'],to_name:'Sam',subject:'Numbers',body:'Hi Sam'}]};
 const state={suggestions:[card],connectors:[],suggestion_counts:{prepared:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],

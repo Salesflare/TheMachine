@@ -98,6 +98,7 @@ import bounces
 import pacing
 import portable
 import service
+import dashboard_parts
 
 ROOT = Path(__file__).resolve().parent
 # How reviews and Do it work; edits show as markers on the hit-rate chart.
@@ -10097,14 +10098,15 @@ _DASHBOARD_VERSION = {}
 
 
 def dashboard_version():
-    """A short hash of the dashboard page being served: an open page that runs another one reloads itself."""
-    path = ROOT / 'dashboard.html'
+    """A short hash of the dashboard page being served (dashboard.html with its parts, dashboard_parts): an open page
+    that runs another one reloads itself."""
     try:
-        mtime = path.stat().st_mtime_ns
+        mtime = tuple(path.stat().st_mtime_ns for path in dashboard_parts.files(ROOT))
     except OSError:
         return ''
     if _DASHBOARD_VERSION.get('mtime') != mtime:
-        _DASHBOARD_VERSION.update(mtime=mtime, version=hashlib.sha256(path.read_bytes()).hexdigest()[:12])
+        page = dashboard_parts.assemble(ROOT).encode('utf-8')
+        _DASHBOARD_VERSION.update(mtime=mtime, version=hashlib.sha256(page).hexdigest()[:12])
     return _DASHBOARD_VERSION['version']
 
 
@@ -11687,10 +11689,10 @@ def dashboard_cache_scope(token, owner):
 
 
 def dashboard_page(token, owner, base):
-    """dashboard.html as served: the release, the base path and the device cache's scope filled in. Never the CSRF
-    token: the page asks api/session for it (as a page opened from the app's on-device copy always did), so the page
-    holds no secret and can go compressed (compressible below)."""
-    return ((ROOT / 'dashboard.html').read_text().replace('__CSRF__', '')
+    """dashboard.html as served (with its parts, dashboard_parts): the release, the base path and the device cache's
+    scope filled in. Never the CSRF token: the page asks api/session for it (as a page opened from the app's on-device
+    copy always did), so the page holds no secret and can go compressed (compressible below)."""
+    return (dashboard_parts.assemble(ROOT).replace('__CSRF__', '')
             .replace('__UI_VERSION__', dashboard_version()).replace('__BASE__', base)
             .replace('__CACHE_SCOPE__', dashboard_cache_scope(token, owner)))
 

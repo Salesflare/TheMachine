@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Every Graph header (person, organization, project, board), in view and edit mode, on a phone and a desktop: the name
 // stays on one line, never broken mid-word (a long one ends in an ellipsis, the full name on hover); a short one shows
 // whole; the actions never cover it; while editing only Cancel and Save are offered. HEADERS_SHOT=<dir> writes screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const LONG={person:'Maximiliane Konstantinopoulou-Vandenberghe',org:'Internationale Vereniging voor Duurzame Materiaalwetenschappen',project:'Battery materials rollout for the second production line',board:'Enterprise partnerships and strategic accounts'};
 const node=(kind,id,name,extra={})=>({id,kind,name,strength:2,last_at:day(1),signals:3,ids:[],links:[],recent:[],around:[],open:{},...extra});

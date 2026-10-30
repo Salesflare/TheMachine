@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 // On a touch screen a tap leaves nothing highlighted in the drawer: no hover sticks to Graph's chevron or a row after
 // the finger lifts (hover styles are for a mouse only), and the chevron's box starts after the word Graph, never under
 // it. With a mouse, hovering the chevron lights the Graph row as one and only darkens the arrow.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=Array.from({length:3},(_,n)=>({id:String(n).padStart(2,'0').repeat(8),title:'Card '+n,body:'Text.',status:'prepared',scope:'work',created_at:now,event_ids:[n+1]}));
 const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');

@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Nothing on the Graph's People, Organizations and Projects pages runs past the screen or out of its box on a 360 px
 // phone: List and Board, Mine and Team, the "could belong here" box with one project (no tick box: Add and Leave out
 // under the text, inside the box) and with several, the filter / stages / new project row, stage chips, tiles with a long
 // organization name (it ends in …), and the order, board and tile menus once open. OVERFLOW_SHOT=<dir> writes screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const LONG_ORG='Hazelbrook Digital Marketing, Development and Growth Consultancy International';
 const stages=[{name:'Invited'},{name:'Trying it'},{name:'Feedback received'},{name:'Validated'},{name:'Stalled',side:true}];

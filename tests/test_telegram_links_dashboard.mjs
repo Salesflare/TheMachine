@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A link from Telegram or a phone notification opens the card's own page (#chat=<id>), as a tap on the card in the
 // list does, on a phone and on a computer. #result=<id> in messages sent before does the same, never the old Result
 // modal with Copy draft over the list. Read result on the card itself still opens that modal. SHOTS=<dir> saves
 // screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const manifest=JSON.parse(await readFile(new URL('../manifest.webmanifest',import.meta.url),'utf8'));
 assert.equal(manifest.handle_links,'preferred');assert.deepEqual(manifest.launch_handler,{client_mode:['focus-existing','auto']});
 const now=new Date().toISOString(),t0=Date.now()-3600e3,S='5a5a5a5a5a5a5a5a',R='6b6b6b6b6b6b6b6b';

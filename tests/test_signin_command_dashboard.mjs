@@ -3,13 +3,14 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections: an expired Google sign-in names the problem with a Reconnect button that runs the sign-in from here,
 // and keeps the exact terminal command (the file keyring, by its password file's path) as a fallback with a copy button.
 // Each card's Details can reconnect or disconnect it; a hosted machine sends Google and Microsoft to its account page,
 // and never shows a terminal command. All mocked.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const command='GOG_KEYRING_BACKEND=file GOG_KEYRING_PASSWORD="$(cat /home/owner/private/keyring-password)" gog auth add owner@example.com --client existing';
 let statusCalls=0,manage=null;const actions=[];
 const connectors=[{id:'work-gmail',service:'gmail',email:'owner@example.com',boundary:'work:Example',boundary_by:'guess',display_name:'owner@example.com',

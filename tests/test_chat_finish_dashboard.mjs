@@ -5,9 +5,10 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const sid='1234567890abcdef',legacy='fedcba0987654321',sent='0011223344556677',revision='1234567890ab',edited='abcdefabcdef';
 const message='Hi Sam,\n\nThanks, the export is fixed.\n\nBest,\nAlex';
 const chat={kind:'finish',label:'Submit inbox reply',revision,instructions:'Open conversation 7 and post the message.',preview:'Customer-visible reply in conversation 7.',

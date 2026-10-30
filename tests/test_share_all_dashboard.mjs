@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Share with all in the Team Graph box (shared_connectors.member_oks): every ask goes at once and one line says
@@ -10,7 +11,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // "Shared with 4." and the line is gone. A single Share says "Sharing…" at once. A member's link to their page in the
 // owner's own Graph reads Profile, not "In Graph", so it isn't read as being in the team's Graph. Optional SHOT_DIR:
 // screenshots of the box at 390, light and dark.
-const dashboard=await readFile(new URL(process.env.DASHBOARD_FILE||'../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage(process.env.DASHBOARD_FILE&&new URL(process.env.DASHBOARD_FILE,import.meta.url));
 const FL='fl_'+'d'.repeat(16),SHOTS=process.env.SHOT_DIR||'';
 const names=['Rae Moss','Andi Vale','Yuki Bay','Sam Doe (test@acme.example)'];
 const prompts=()=>names.map((name,i)=>({id:'p'+i,kind:'member',fleet:FL,fleet_name:'Acme',name,email:`m${i}@acme.example`,fp:'ab12 cd34 ef56 ab12 cd34 ef5'+i}));

@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings > Skills with everything OpenClaw has: grouped (yours, workspace, bundled, other) with what each still needs,
 // one search over names and descriptions, OpenClaw's own on/off, ClawHub search shown as third-party, read before
 // installing, and "There's a skill for this" as a quiet line on its card. 390px and 1280px wide.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const shots=process.env.SKILLS_SHOTS||'';
 const MD='---\nname: Meeting Prep\ndescription: Prepares briefings\n---\n# Meeting Prep\n<b>Research</b> people before a meeting.';
 let hints=[{id:'sh_1',suggestion_id:'s1',skill:'@kim/meeting-prep',kind:'clawhub',name:'Meeting Prep',summary:'Prepares briefings',why:'Briefings before client meetings'},

@@ -5,6 +5,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Error reports from the dashboard, the whole way (error_feed.py, docs/help/error-reports.md): a bug in the page's own
@@ -14,7 +15,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // to api/action client_error; the real app (assistant.py) records them and builds the batch for the Network, and what
 // it sends carries no name, address or query.
 const root=new URL('..',import.meta.url);
-const dashboard=await readFile(new URL('dashboard.html',root),'utf8');
+const dashboard=await dashboardPage();
 const posted=[];
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');

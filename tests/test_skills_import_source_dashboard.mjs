@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings > Skills > Import: the source picked above Find my skills is the only account it looks in, and the note
 // says so. An account that gave nothing says exactly where it looked and why, and opens the way to bring one in by
 // hand with a one-line how-to for that site.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const calls=[];let list=null;
 const skills={skills:[],waiting:0,targets:[],folder:'skills/the-machine',openclaw:true,import_local:true,hints:[]};
 const server=createServer((req,res)=>{

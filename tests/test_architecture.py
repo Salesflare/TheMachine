@@ -337,7 +337,7 @@ class Architecture(unittest.TestCase):
     def test_every_i18n_area_resolves(self):
         sys.path.insert(0, str(ROOT / 'scripts'))
         import i18n_extract
-        source = i18n_extract.DASHBOARD.read_text(encoding='utf-8')
+        source = i18n_extract.dashboard_parts.assemble(ROOT)
         for area in i18n_extract.AREAS:
             with self.subTest(area=area):
                 self.assertTrue(i18n_extract.area_strings(area, source), f'area {area} finds no strings')

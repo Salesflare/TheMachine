@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Projects like a CRM: New project from the board header, a lane's + Add, a person's page and the command palette; Edit,
 // Won and Lost with why, Archive and Delete from a tile's ⋯ and the project page; a board to open on; the projects a
 // review thought could belong here (Add or Leave out); value on tiles and lanes; on a phone the stage tabs start on a
 // whole tab and the active one shows. Each action posts exactly one call. CRM_SHOT=<dir> also writes screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const stages=[{name:'Discovery'},{name:'Demo'},{name:'Trial'},{name:'Decision'},{name:'Won'},{name:'Stalled or declined',side:true}];
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const proj=(i,name,stage,extra={})=>({id:'project:'+i,name,stage,reason:'asked for a demo',by:'review',at:day(2),event_id:100+i,days:2,no_reply_days:0,org:{name,logo:null},...extra});

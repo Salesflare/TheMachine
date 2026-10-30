@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A Graph page with nothing on it yet still opens when its row is clicked: Projects with no projects (a bug report: the
 // row did nothing and People stayed), Organizations with none, People with nobody. Each says in one short line how it
 // fills, and its head keeps + New. EMPTY_SHOT=<dir> writes screenshots (desktop and phone, light and dark).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const sticker=await readFile(new URL('../brand/thinking.webp',import.meta.url));
 const ann={id:'email:ann@client.example',kind:'person',name:'Ann Example',strength:2,closeness:'regular',last_at:new Date().toISOString(),signals:3,ids:['ann@client.example']};
 let anyone=true;

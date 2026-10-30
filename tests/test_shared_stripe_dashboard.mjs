@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Stripe for the team on the Fleet tab (shared_connectors.py): an admin without Stripe gets Connect Stripe, which opens
 // Connections, + Add at Sign in with Stripe; with it connected, Share Stripe ticks everyone; once shared, the admin reads
 // that their Machine renews it and a member reads who shared it, read only. Never scrolls sideways.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'b'.repeat(16);
 const members=[{member_id:'a',name:'Ada Park',email:'ada@acme.example',role:'admin',keys:true,confirmed:true},
  {member_id:'k',name:'Kim Lee',email:'kim@acme.example',role:'member',keys:true,confirmed:false},

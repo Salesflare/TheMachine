@@ -3,13 +3,14 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Send learnings automatically (team_learnings.set_auto, auto_send, shared, withdraw): the offer's "Send automatically
 // from now on" tick goes with Send, never the email; the Settings switch under Offer to share learnings, held off by a
 // Careful Work Fleet; and Fleet, Activity lists exactly what was sent, with Withdraw. All mocked, nothing leaves the
 // test. SHOTS=dir saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const CASE={given:'a first reply to a customer who has not heard of the owner yet',when:'the owner opens the draft',then:'the draft says who the owner is before the ask'};
 const ask=()=>({id:'tl_1',created_at:'2026-10-27T09:00:00+00:00',error:null,items:[
  {n:1,text:'Drafts for people who don’t know the context yet should introduce it first.',example:'A first email to a new supplier opens with who we are.',area:'drafts',taken:'',log:null,use_cases:[CASE]},

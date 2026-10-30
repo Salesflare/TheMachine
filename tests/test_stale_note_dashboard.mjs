@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // On a phone the side bar's "Offline · updated 10:42" is out of sight, so the same line shows at the top of every
 // view (Suggestions, Calendar, Events, Graph, Fleet, Connections, Feedback, Settings), not only Suggestions. On a desktop the
 // side bar says it and the line stays hidden. Live again, it goes.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const shots=process.env.SHOTS||'';
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}

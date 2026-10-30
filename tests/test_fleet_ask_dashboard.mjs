@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A teammate's ask under Suggestions: Share once, Always share and Decline are visible buttons (Never under More). A brief
 // ask is never a to-do: it waits quietly in its Fleet's pane (Brief requests), the latest per teammate, with Share once first and no nudge toward Always.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),Q=n=>'q_'+String(n).repeat(16);
 const preview='1 company you were in touch with, 0 that went quiet, 1 unanswered email, 1 meeting with outside people. Company names, counts and dates only.';
 const brief=n=>({id:Q(n),fleet:FL,member_id:'p',name:'Alexandra Longname-Whitfield (alexandra@acme.example)',kind:'brief',status:'waiting',at:'2026-10-2'+n+'T08:00:00+00:00',

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A card's chat says what a note there taught, from what was stored (the service's `learned` items), never from what
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // opens that learning on What I've learned (its block unfolded, the row lit), Edit opens it there in its editor, Undo
 // removes it and the line then says so. No line starts with "You".
 // All mocked; LEARNED_CHAT_SHOTS=dir saves phone and desktop screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),t0=Date.now()-60000;
 const card={id:'d1d1d1d1d1d1d1d1',title:'NDA signed, awaiting Sam',body:'Signed it; the confirmation page said it went through.',status:'prepared',scope:'work',created_at:now,event_ids:[1]};
 const rule='Browser tasks: after signing, submitting, paying or booking something, leave the confirmation page open in its tab so the owner can check it; do not close that tab.';

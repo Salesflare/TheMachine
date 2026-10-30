@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A person's page in the Graph keeps the dashboard's header and tabs, with a breadcrumb back; it has its own link and
 // the browser's back button works. Facts about them sit apart from what is open, each with Not about them and Forget.
 // Events come by day, each row with its source, who wrote it and the start of the text.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 // The page's clock is today at noon whatever the hour the test runs at, so a run of messages minutes apart a day ago
 // never straddles midnight (a run just after midnight split it in two days)
 const now=new Date();now.setHours(12,0,0,0);const hour=n=>new Date(now-n*6e4).toISOString(),daysAgo=d=>new Date(now-d*864e5).toISOString();

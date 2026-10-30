@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // To-dos that look done already (a run found it done, or a later message suggests it's handled) don't sit as full
 // to-dos between real work: one folded "Look done" group right above Done, a short line each (title and what shows it)
 // with Not done and Done, and Mark all done with one line and Undo. Never Overdue, never in the counts. Nothing closes
 // without the owner. The sidebar has the same group above Done, folded too.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),late=new Date(Date.now()-3*864e5).toISOString().slice(0,10);
 const hint=reason=>JSON.stringify({reason,event_ids:[9],at:now});
 const done=(id,title,body,extra={})=>({id,title,body,status:'prepared',scope:'work',created_at:now,event_ids:[1],due:late,outcome:JSON.stringify({state:'already_done'}),...extra});

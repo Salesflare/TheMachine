@@ -3,13 +3,14 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet tab layout with a full Fleet, friends and history: one pill per view (the Fleet, Friends, Sharing, Activity),
 // one view shown at a time, the choice remembered, every view without sideways scroll (390px and 1000px, light and
 // dark), and an open Fleet tab redrawn by the background refresh without losing what you type.
 // FLEET_SHOTS=<dir> saves a screenshot of each view.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),FR='fr_'+'b'.repeat(16),at='2026-10-20T08:00:00+00:00';
 const rules=()=>({relationships:{rule:'ask',details:false},meeting:{rule:'always',details:true},handling:{rule:'ask',details:false},intro:{rule:'ask',details:false},handoff:{rule:'ask',details:false},brief:{rule:'never',details:false}});
 const frules=()=>({relationships:{rule:'ask',details:false},availability:{rule:'always',details:false}});

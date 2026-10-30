@@ -14,6 +14,7 @@ import family
 import fleet_requests
 import installer
 import locale_prefs
+import dashboard_parts
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 AFTERNOON = dt.datetime(2026, 10, 24, 14, 5, 9)
@@ -167,7 +168,7 @@ class InstallerTest(unittest.TestCase):
 class DashboardTest(unittest.TestCase):
     """The dashboard's own helpers, run in node: the same strings as the server for the same setting."""
     def run_js(self, locale, script):
-        html = (ROOT / 'dashboard.html').read_text()
+        html = dashboard_parts.assemble(ROOT)
         start = html.index("let DL='en-US',H12=false;")
         helpers = html[start:html.index('\n', html.index('const fmtDHM=', start))]
         cal = html[html.index('const calHourLabel='):].split('\n', 1)[0]

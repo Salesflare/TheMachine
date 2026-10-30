@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 // The tagline is a quiet line over the cards, not a headline: about body size, muted, on one line where it fits, with
 // the count readable under it
@@ -26,7 +27,7 @@ const foldedRow=async(page,label,tap)=>{const g=await page.evaluate(()=>{const r
 // folded or not. Graph has its own rows (People, Organizations, Projects) whose pane is in the address. Below 1024px the
 // same sidebar is a drawer under a slim top bar: it opens from the menu button or a swipe from the edge, and closes on
 // ✕, the shade, Esc, back, a swipe or a pick; nothing is wider than the screen.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const card=(n,status,scope,extra={})=>({id:(n+'').padStart(2,'0').repeat(8),title:'Card number '+n+' with a long title that does not fit the sidebar',body:'Some text for card '+n+'.',status,scope,created_at:now,event_ids:[n+1],...extra});
 const cards=[...Array.from({length:12},(_,n)=>card(n,n%3?'pending':'prepared',n%2?'work':'personal')),...Array.from({length:12},(_,n)=>card(20+n,'completed','work'))];

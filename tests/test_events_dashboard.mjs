@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Events opens with the latest signals, newest first by when they arrived or happened, the way a person's timeline
 // reads: meetings still to come never sit on top of the list but apart under Coming up, soonest first, three at a
 // time. The Machine lists upcoming meetings first (reviews want them); the page sorts them out.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const shots=process.env.SHOTS||'';
 const at=h=>new Date(Date.now()+h*36e5).toISOString();
 const ev=(id,kind,title,h)=>({id,account_id:'mail',kind,title,body:title,occurred_at:at(h),metadata:{}});

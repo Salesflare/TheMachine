@@ -3,6 +3,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+import dashboard_parts
 
 HERE = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location('help_check', HERE / 'scripts' / 'help_check.py')
@@ -36,7 +37,7 @@ class HelpArticles(unittest.TestCase):
             return [p for p in help_check.check(Path(d)) if p.startswith('docs/help/gmail.md')]
 
     def test_links_go_to_help_articles_never_to_docs_on_github(self):
-        html = (HERE / 'dashboard.html').read_text(encoding='utf-8')
+        html = dashboard_parts.assemble(HERE)
         self.assertNotRegex(html, r'github\.com/Salesflare/TheMachine/(blob|tree)/[^/]+/docs/')
         self.assertIn('href="https://themachine.computer/help/work-hours"', html)
         found = help_check.articles()

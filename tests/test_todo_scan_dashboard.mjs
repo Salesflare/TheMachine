@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A to-do reads at a glance: its title first, then one quiet line (state, who, organization, project, when) instead of a
 // pile of chips; the project is a link and changing it sits in More. What matters on a second look (a coding agent's
 // result, its files, your note, the source) folds behind one Details, and a done to-do is compact: its title, one line,
 // what went out, and Details with Reopen on one row. An open to-do keeps its draft and its first button in sight.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
 const who=[{id:'p:robin',name:'Robin Example',org:{id:'o:acme',name:'Acme Modular Buildings Developer International'}}];
 const project={node_id:'proj:listing',name:'Editorial listing exchange'};

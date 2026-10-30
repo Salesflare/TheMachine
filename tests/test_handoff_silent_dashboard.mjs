@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Silent acceptance on the dashboard. The receiver: a handoff that became theirs by what they did says so, with Not
 // mine to undo it. The sender: their card is done, saying the teammate is on it, where and when; the card chat shows
 // the same line. Fakes only; no network beyond this fake server. SHOT_DIR=... saves screenshots (390 and 1440, dark).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),LINE='Pat is on it · talked to Sam on Slack, Fri\u00a010:12';
 const mine={id:'a1a1a1a1a1a1a1a1',title:'Send Sam the pricing',body:'Kim asks you to take this on: “Sam wants the 40-seat price this week.”',handoff_contact:'sam@client.example',
  status:'pending',event_ids:[1],scope:'work',created_at:now,next_actions:[],handoff_silent:{line:'Marked as yours, since you talked to Sam about it'}};

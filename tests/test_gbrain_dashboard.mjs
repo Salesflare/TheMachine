@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections, + Add, GBrain: one optional tile, only when the Machine says so (self-hosted, or already on). Not
 // installed shows how to install it; installed asks first (what goes in, that GBrain may send it to its own AI
 // providers) and "Connect GBrain" stays off until the owner agrees; connected shows the brain, the sync and Turn off.
 // Without connect_sources' gbrain (a hosted Machine) there's no tile at all. SHOTS=<folder> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 let calls=[],tile=true,state;
 const OFF={on:false,installed:true,work:false,linked:null,saveable:true,version:'gbrain 0.60.479.0',brain:'/home/owner/.gbrain'};
 const ON={...OFF,on:true,linked:'machine',pages:42,kept:2,last_sync:new Date(Date.now()-5*60000).toISOString(),last_error:null};

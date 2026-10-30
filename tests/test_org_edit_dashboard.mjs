@@ -3,12 +3,13 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Editing an organization whose looked-up values are longer than the owner may type (About, Size) or not a year
 // (Founded): they never block Save. Save and Cancel take Edit's place in the header, which stays in view on a phone
 // while the form scrolls. Only changed fields are sent; a bad one shows its error under the field.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const made=new Date(Date.now()-3600e3).toISOString();
 const about='Example Labs is a synthetic research company that builds reliable, interpretable and steerable example systems for testing. '.repeat(7);
 const org={id:'org:labs.example',kind:'org',name:'Example Labs',strength:3,last_at:made,signals:3,links:[],open:{},recent:[],around:[],about:'Research Services, 1001-5000 people',

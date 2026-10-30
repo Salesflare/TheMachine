@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {mkdir, readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Support access on a self-hosted Machine: given where it's needed, with the support report in Report a bug (one box,
 // ticked by default; unticked gives nothing), through the app and only after Send; Settings, Security shows it only
 // while it's on, with each look and Turn off. Not offered when the Machine isn't paired (the app refuses).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 let paired=true,until=null;const actions=[];
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');let body='';

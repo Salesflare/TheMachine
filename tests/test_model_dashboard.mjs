@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings > Model: the model in use, the plan's windows with when each starts over, the usage limit resets with
 // "Use a reset" behind a confirm, and a failed run on a usage limit says when it lifts. All mocked; nothing is sent.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const t=Date.now()/1000|0;
 let status={model:'openai/example-model',provider:'openai',chatgpt:true,plan:'pro',limit_reached:true,limit_resets_at:t+2*3600+14*60,
  windows:[{label:'5h',used:100,reset:t+2*3600+14*60+20},{label:'Week',used:40,reset:t+3*86400+3700}],

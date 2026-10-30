@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections: an Intercom card says who replies go out as (the owner's own sign-in), or that it only reads (a Fleet
 // share, a pasted token). Its count reads "conversations", never broken mid-word. SHOTS=<folder> saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const at=new Date().toISOString();
 const card=(id,name,more)=>({id,service:'intercom',display_name:name,boundary:'work:Acme',total:361,signals_24h:150,pending:0,last_success:at,sync_activity:[],...more});
 const connectors=[card('intercom','Acme',{replies_as:'Alex Example'}),card('intercom-fleet','Acme Support',{replies_as:'',shared_by:'Acme'})];

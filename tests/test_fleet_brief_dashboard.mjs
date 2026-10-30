@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet tab: the team brief card and its setting, free questions asked and answered per teammate; under Suggestions a teammate's free
 // question shown as quoted text (never markup) with a draft only the owner's Send sends. No Always for free questions.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16);
 const rules={relationships:{rule:'ask',details:false},meeting:{rule:'ask',details:false},handling:{rule:'ask',details:false},
  brief:{rule:'always',details:false},anything:{rule:'ask',details:false}};

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {dashboardPage} from './dashboard-page.mjs';
 // The header tagline only jokes about sources this install has connected.
-const html=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const html=await dashboardPage();
 const block=html.slice(html.indexOf('// taglines:start'),html.indexOf('// taglines:end'));
 const {TAGLINES,taglinePool}=new Function(block+';return {TAGLINES,taglinePool}')();
 const generic=TAGLINES.filter(([,s,w])=>!s&&!w).map(([t])=>t);

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // An organization's page is built as a person's: logo, name and its fact line in the header with Edit, then one plain
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // and Related (People, Projects) as their own sections. "Ask the Fleet who knows" uses its name. Edit opens one form
 // grouped the same way, What it is to you included, and Save sends only what changed. At 390 and 1440, light and dark.
 // SHOT_DIR=… saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()+n*864e5).toISOString();
 const fresh=()=>({id:'org:lumen.example',kind:'org',name:'Lumen',domain:'lumen.example',strength:3,last_at:day(-2),signals:4,role:'accounting firm',role_by:'review',
  role_quote:'Lumen does our books',edited:[],wrong:false,about:'Accounting, 11-50 people, Ghent, founded 2009',

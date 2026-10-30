@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections, Sign-ins: one row per saved sign-in (a letter tile, the site, the username, "Password saved" and the
 // day), Forget as a quiet button, one line on what they are for, and an empty state once the last one is forgotten.
 // No password value, nor a mask of its length, ever reaches the page: even a list that wrongly carried one shows
 // only "Password saved". Made-up sign-ins only. SHOTS=<folder> saves 1280 and 390 shots, light and dark, 0/1/4.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const LEAK='fixture-pass-7Q2x';
 const four=[
  {site:'crm.example.org',username:'owner@example.org',saved_at:'2026-03-04T09:00:00+00:00',password_saved:true,password:LEAK},

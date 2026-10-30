@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A browser source that is signed out says so on Connections (counted in its badge) and at the top, with a link to
 // sign in again on a hosted install or what to do without one; other errors read as words, not codes. The badge counts
 // only what needs the owner: a busy browser, a failed read or a read paused overnight retries by itself (amber).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const ok=new Date().toISOString(),later=new Date(Date.now()+6e5).toISOString();
 const linkedin={id:'work-linkedin',service:'linkedin',boundary:'work',display_name:'Work LinkedIn',error:'linkedin_signed_out',error_at:ok,retry_at:later,
  signed_out:true,sign_in_hint:'the browser it reads with is not signed in to LinkedIn; sign in there, then connect again'};

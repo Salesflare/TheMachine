@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Help: Ask shows the answer with links to the help pages it used (only themachine.computer/help and the app's code);
 // Report a bug sends on Send at once: the form closes and a quiet line says so, while the Machine adds the support
 // report (one box, ticked by default) without the owner waiting for it; nothing is lost when it is slow or fails. An
 // error toast opens it.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const actions=[];let limit=false,queued=[],cpOk=false,previewMs=0,previewFails=false;  // limit: the control plane said 429, so the Machine keeps the report
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');let body='';
  req.on('data',c=>body+=c);req.on('end',()=>{

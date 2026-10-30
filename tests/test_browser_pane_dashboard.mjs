@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // On a computer Browser shows the Machine's browser in the main area beside the sidebar (from 1024px) or under the top
 // bar (a narrower window, like the desktop app on half a screen), with Full size, Open in new tab and close. The
 // Browser row is the active one; another row, back and close leave it, and the viewer stays loaded meanwhile. On a
 // phone, or without a viewer on the dashboard's own address, it stays a new tab.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 let embed='/browser/';const loads=[];
 const card={id:'aaaaaaaaaaaaaaa1',title:'Reply to the venue',body:'Drafted a reply.',status:'prepared',scope:'work',created_at:new Date().toISOString(),event_ids:[1]};
 const state=()=>({suggestions:[card],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]},

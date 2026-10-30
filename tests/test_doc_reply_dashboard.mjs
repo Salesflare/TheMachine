@@ -5,9 +5,10 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const sid='1234567890abcdef',done='0011223344556677',revision='1234567890ab';
 const body='Yes, renewals before December keep the old seat price. I will add it to section 3.';
 const reply={kind:'doc_reply',label:'Post reply',revision,account_id:'docs',comment_id:'c1',file_id:'f1',to_name:'Casey Customer',doc_title:'Q4 pricing',max_length:4000,body};

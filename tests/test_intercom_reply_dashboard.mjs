@@ -5,9 +5,10 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const sid='1234567890abcdef',done='0011223344556677',viaMail='8899aabbccddeeff',revision='1234567890ab',mailRevision='abcdefabcdef';
 const body='Hi Casey,\n\nYes: Settings, then Export. You get a CSV by email.\n\nAlex';
 const reply={kind:'intercom',label:'Send reply',revision,account_id:'intercom',conversation_id:'7',to_name:'Casey Customer',as_name:'Alex Example',admin_id:'42',max_length:10000,body};

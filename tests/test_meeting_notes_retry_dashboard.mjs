@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A meeting's notes and transcript that fail to load (The Machine restarting) load again by themselves: 2, 4, 8 and
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // couldn't load, with Try again. Once loaded, Generate notes is back. RETRY_SHOT=<dir> writes the failed dialog at
 // 1440x900 and 390x844 in light and dark.
 process.env.TZ='Europe/Brussels';
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const at=(h,m=0)=>{const d=new Date();d.setHours(h,m,0,0);return d.toISOString()},now=new Date().toISOString();
 const meetings=[{id:204,account_id:'cal',title:'Quarterly planning',start:at(13),end:at(15,15),all_day:false,location:'Room 4',guests:2,url:null,transcript:{by:'owner',at:now,chars:60}}];

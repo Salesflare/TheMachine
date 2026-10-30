@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Every way to send in a chat sends the message the same way: Enter, Ctrl+Enter, Cmd+Enter and the Send button each
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // chat: the Machine started working while the text stayed in the box and no bubble showed. On a phone Enter is a new
 // line and Ctrl+Enter (a keyboard on a tablet) still sends. The Help chat asks on Enter and Ctrl+Enter too.
 // SHOT_DIR=<folder> also saves screenshots; DASHBOARD=<file> runs another dashboard.html (for before shots).
-const dashboard=await readFile(process.env.DASHBOARD||new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage(process.env.DASHBOARD);
 const now=new Date().toISOString(),t0=Date.now()-60000,ID='c1c1c1c1c1c1c1c1',BUSY='c2c2c2c2c2c2c2c2';
 let cards,said,running,actions;
 const reset=()=>{cards=[{id:ID,title:'Prepare for the demo with the venue',body:'Thursday at 14:00. They want to see reminders.',status:'pending',scope:'work',created_at:now,event_ids:[1]},

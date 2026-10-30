@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The Graph as a CRM on the dashboard: Filter on the lists (the filters go to the Machine), the filter sheet, no Mine
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // keep) with No reply in 10+ days a tap on a stage, owners on tiles, an owner on a page and its change in the timeline, an organization's websites with
 // Split off, Same organization? and Add a website…, and a CSV import with its preview, mapping and Undo. On a phone and
 // a desktop. CRM_SHOT=<dir> writes screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const node=(kind,id,name,extra={})=>({id,kind,name,strength:2,last_at:day(1),signals:3,ids:[],links:[],recent:[],around:[],open:{},...extra});
 const owners=[{id:'m-kim',name:'Kim Vale',fleet:'Acme'},{id:'m-ola',name:'Ola Berg',fleet:'Acme'}];

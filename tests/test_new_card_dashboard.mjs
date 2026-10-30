@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // New card and Rename on the dashboard. New card: a row under Find a to-do on a computer, "+" in the top bar on a
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // with card_new and nothing else (no send). Rename: the sidebar row (⋯, double click, right click, long press on a
 // phone), the chat's title and header menu, and the card (More, and a click on its title on a computer only).
 // Optimistic, Esc cancels, empty keeps the old title, markup stays text, a failure puts the old title back.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const id=n=>(n+'').padStart(2,'0').repeat(8);
 const base0=()=>[

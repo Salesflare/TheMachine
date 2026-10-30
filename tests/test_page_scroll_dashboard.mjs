@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Every tab scrolls as a normal page when its content is taller than the window, on a computer and on a phone, also
 // after a card chat was open (the chat's fixed, window-high layout belongs to the Suggestions tab only). With the chat
 // itself open on a computer, the page stays put and the thread scrolls instead.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=Array.from({length:30},(_,n)=>({id:(n+'').padStart(2,'0').repeat(8),title:'Card number '+n,body:'Some text for card '+n+'.',status:'pending',scope:'work',created_at:now,event_ids:[n+1]}));
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});

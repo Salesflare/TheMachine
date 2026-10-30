@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Catch the Zzz with a mouse: a Z catches on pointerdown (no click needed) anywhere in an invisible area of at least
 // 44px around it, best follows the score during a round and is kept when the dialog closes early. On a phone the Z
 // keeps its own box (the browser's touch targeting already helps a finger), and the rise follows the board height.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const state={suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}};
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}

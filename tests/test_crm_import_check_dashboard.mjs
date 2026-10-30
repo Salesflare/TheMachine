@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A CSV import checked by the owner's own model (a fake here): the rules' guess shows first with "Your model is
 // checking the columns…", then the model's mapping with its reasons; easy fixes as "N fixes suggested · Review",
 // each kind and each row with its own checkbox, and Import sends only the ones kept. On a phone and a desktop.
 // CRM_SHOT=<dir> writes screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const fields=[{id:'name',name:'Name'},{id:'org',name:'Organization'},{id:'value',name:'Value'},{id:'stage',name:'Stage'},{id:'close_date',name:'Expected close'},{id:'tags',name:'Tags'}];
 const cols=(ai)=>[{index:0,header:'Klant',field:ai?'name':null,samples:['TEAL ROBOTICS','umber bv'],...(ai?{reason:'Klant is Dutch for client: the deal is named after them'}:{})},
  {index:1,header:'Bedrag',field:ai?'value':null,samples:['€12k','ongeveer vijf'],...(ai?{reason:'Bedrag means amount'}:{})},

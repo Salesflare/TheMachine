@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The dashboard with the keyboard only, the way someone without a mouse walks it. Suggestions lands on the first to-do;
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // leaves the box and closes the chat, and the to-do gets focus back. Esc closes New to-do, the shortcut sheet and the
 // palette and focus goes back to where it was. The ring shows on whatever has focus. Nothing is sent from a key.
 // SHOT_DIR=<folder> also saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),soon=new Date(Date.now()+86400000).toISOString();
 const card=(id,title,status,more={})=>({id,title,body:'A short note about it.',status,scope:'work',created_at:now,event_ids:[1],...more});
 const cards=[card('a1a1a1a1a1a1a1a1','Reply to the venue about the dates','prepared',{preparation_status:'done'}),

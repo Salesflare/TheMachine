@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A Fleet item among the to-dos ("Rae Moss joined Acme. Share the team's Graph with them?"): Share and Not now carry
 // data-choice like a to-do's buttons, and the to-dos' own click handler once took them for a to-do decision too. It
 // posted decide without a to-do, which failed as "Invalid request" while the share itself went through. Now only the
 // Fleet's action goes, and the owner sees the share's own line, no error. Optional SHOT_DIR: a screenshot after Share.
-const dashboard=await readFile(new URL(process.env.DASHBOARD_FILE||'../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage(process.env.DASHBOARD_FILE&&new URL(process.env.DASHBOARD_FILE,import.meta.url));
 const FL='fl_'+'d'.repeat(16),SHOTS=process.env.SHOT_DIR||'';
 const prompts=()=>[{id:'p0',kind:'member',fleet:FL,fleet_name:'Acme',name:'Rae Moss',email:'rae@acme.example',fp:'ab12 cd34 ef56 ab12 cd34 ef56'},
  {id:'p1',kind:'member',fleet:FL,fleet_name:'Acme',name:'Andi Vale',email:'andi@acme.example',fp:'ab12 cd34 ef56 ab12 cd34 ef57'}];

@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The first look once cards exist: a slim strip under the counters, not loose text above the filters. Its row on
 // Connections names each account once. A running review never sits next to
 // "No reviews yet", and the summary says it once: "0 waiting · 0 reviewed · last not yet".
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const started=new Date(Date.now()-60e3).toISOString();
 const run={run_id:'r1',status:'running',started_at:started,preview:1,auto:1,planned:67,done_count:5,account_ids:['gmail','calendar'],steps:[]};
 let runs=[],cards=[];

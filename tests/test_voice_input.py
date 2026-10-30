@@ -17,6 +17,7 @@ import unittest
 import wave
 from pathlib import Path
 from unittest.mock import patch
+import dashboard_parts
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('voice_assistant', ROOT / 'assistant.py')
@@ -689,7 +690,7 @@ class Api(unittest.TestCase):
 
 class Dashboard(unittest.TestCase):
     def test_every_message_box_has_the_mic(self):
-        html = (ROOT / 'dashboard.html').read_text()
+        html = dashboard_parts.assemble(ROOT)
         self.assertGreaterEqual(html.count('micBtn()}'), 4)   # to-do chat, New to-do, Help, change a draft
         # The browser's own speech recognition only as the stopgap on Automatic (voice_view's use 'browser'), never otherwise
         self.assertEqual(html.count('window.SpeechRecognition'), 1)

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {dashboardPage} from './dashboard-page.mjs';
 // A queued to-do that has to wait says why and roughly when (s.preparation_hold from preparation_step), instead of
 // "I'll start shortly." for minutes (2026-10-29: one sat there 8 minutes). Every line is in all seven catalogs.
-const html=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const html=await dashboardPage();
 const fmt=html.slice(html.indexOf("let DL='en-US'"),html.indexOf('\n',html.indexOf('const fmtDHM=')));
 const when=html.slice(html.indexOf('const pauseWhen='),html.indexOf('\n',html.indexOf('const pauseWhen=')));
 const block=html.slice(html.indexOf('function holdNote('),html.indexOf('function preparationNote('));

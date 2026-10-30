@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A card a teammate already handled (their own Machine closed theirs on the same email): it says Done, Mark done leads,
 // and it offers no handoff to them. Drafts show links as the recipient gets them: a real link in an email, words (URL)
 // in a Fleet handoff. No network beyond this fake server.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const URL_='https://dashboard.vendor.example/settings/tax?x=1&y=2',LINK='[the tax settings]('+URL_+')';
 const handoff=id=>({kind:'handoff',label:'Hand off to Kim',revision:'h0000000000'+id,to_email:'kim@acme.example',to_name:'Kim',body:'Can you check '+LINK+' with the accountant?'});
 const email={kind:'email',label:'Send reply',revision:'e00000000001',account_id:'work',from:'owner@acme.example',to:['sam@client.example'],subject:'Tax',body:'See '+LINK+'.'};

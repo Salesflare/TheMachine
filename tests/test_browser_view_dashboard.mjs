@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A ready card whose run worked on a page in the Machine's browser opens that page there (View in browser), not in
 // your own browser: the link is the browser's viewer and the click asks the service to bring the task's tab to the
 // front. A link the run added to that site does the same. A final click left to you says so in the status line, and
 // then the page leads instead of Mark done. #browser-for=<task> (from Telegram) does it and goes on to the viewer.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=[
  {id:'aaaaaaaaaaaaaaa1',title:'Get the quarterly report ready',body:'Filled in the report.',status:'prepared',scope:'work',created_at:now,event_ids:[1],

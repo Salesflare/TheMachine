@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Card chat: the card's title, its Chat › link or its "Asked" note opens #chat=<id>: a header with back, the title
@@ -11,7 +12,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // polled once a second while the run goes, one compact bottom (a status line with its one way back, at most two
 // suggestions, a slim message box), and the task list beside it (a drawer on a phone). A message is a Change: decide
 // with choice other, a chat- decision id and the CSRF token; on a done card Reopen goes first.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),t0=Date.now()-60000;
 const cards=[
  {id:'c1c1c1c1c1c1c1c1',title:'Reply to the venue',body:'They asked for a date.',status:'prepared',scope:'work',created_at:now,event_ids:[1],

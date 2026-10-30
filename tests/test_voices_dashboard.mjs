@@ -3,11 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings, How you write: one line per channel. Save shows only after a change; Remove clears a line; a new channel
 // is added with its line. All mocked.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const start=[{channel:'All',text:'Natural dates.',source:'assistant',updated_at:'2026-10-20T10:00:00+00:00'},
  {channel:'Email',text:'English: Hi or Hey + first name\nRegards, a blank line, then the name\nShort paragraphs',source:'study',updated_at:'2026-10-20T10:00:00+00:00'}];
 let voices=start;

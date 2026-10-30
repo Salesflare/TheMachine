@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A to-do whose moment passed closed by itself (Store.expire_passed): it sits in Done with "No longer needed" and when
 // that was, said from the stored time on the day it is read (today, yesterday, or the date), with Undo while it lasts,
 // and never Overdue. SHOTS=<folder> saves screenshots, light and dark, at 1440 and 390 wide.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=(n,h,m)=>{const d=new Date();d.setDate(d.getDate()+n);d.setHours(h,m,0,0);return d.toISOString()};
 const now=new Date().toISOString(),later=new Date(Date.now()+20*3600e3).toISOString();
 const expired=(id,title,n,what,undo)=>({id,title,body:'The meeting with Kevin is in your calendar, 13:30 to 15:00. The room is confirmed.',status:'completed',scope:'work',

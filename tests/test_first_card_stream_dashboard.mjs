@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The first card shows while the first look still runs: the dashboard looks every 5 s while a review runs and refreshes
 // as soon as the review saved a card, instead of waiting for its 30 s refresh or the end of the review. While the
 // owner types, it waits. Nothing is sent anywhere: the fixture server answers everything.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const started=new Date(Date.now()-60e3).toISOString();
 const run={run_id:'r1',status:'running',started_at:started,preview:1,auto:1,window_hours:48,planned:20,done_count:4,account_ids:['gmail'],steps:[]};
 let cards=[],statusCalls=0,running=true;

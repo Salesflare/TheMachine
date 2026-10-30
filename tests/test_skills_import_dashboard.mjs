@@ -3,6 +3,7 @@ import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings > Skills > Import: Find my skills shows a short list first (Recommended with the reason, then Yours), the
@@ -13,7 +14,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Install in OpenClaw. Upload sends the file marked as an upload. Once imported, a skill shows under Imported with
 // View, never under Can't import; one already here is info with Replace; files left out are named. Fits a 390px phone
 // and a 1280px desktop.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const LONG='~/Private/some-project-with-a-really-long-folder-name/.claude/skills/answer-customer-questions-from-the-knowledge-base';
 const item=(over)=>({key:'claude:x',name:'x',description:'When to use it',from:'claude',from_label:'Claude',source:'~/.claude/skills/x',url:'',group:'yours',files:1,
  scripts:[],script_count:0,depends:false,references:[],left_out:[],flags:[],licence:'',blocked:'',duplicate:'',recommended:false,why:'',...over});

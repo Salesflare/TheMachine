@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The command palette and the keyboard shortcuts (made-up data). ⌘K on a Mac and Ctrl+K elsewhere open and close it;
 // / opens it too; fuzzy match over one action registry, plus cards and the Graph's own search (api/graph?q=, stale
 // answers dropped); arrows, Enter runs, Esc puts focus back; recent commands first; no key fires while typing or
 // composing; g-sequences; the ? sheet; J/K and E/S/D on a card; and send-type actions only open the review.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const id=n=>(n+'').padStart(2,'0').repeat(8);
 const base0=()=>[

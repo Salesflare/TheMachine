@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The sign-in dialog says which one-time code the page wants (a text message, an authenticator app, an email, or
 // "the code it asks for"), quotes the site's own sentence, offers the page's own "another way" links as buttons and
 // keeps the dialog open with the site's words when a code is rejected. All mocked; made-up values only.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const SHOTS=process.env.SIGNIN_SHOTS||'';
 const base={id:'0:tab',host:'dashboard.stripe.com',site:'dashboard.stripe.com',brand:'Stripe',secure:true,title:'Verify',username:false,password:false,code:true,error:'',saved:null};
 const PAGES={

@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // LinkedIn's sign-in from a hosted setup page (#signin-site=linkedin): the password, then the code LinkedIn emails,
 // with the code field left alone while the owner types; LinkedIn going back to the start says so with the form to try
 // again; a robot check goes to the browser itself; an approval that never comes offers Try again, which starts
 // LinkedIn's sign-in page afresh. All mocked; made-up values only.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const SHOTS=process.env.SIGNIN_SHOTS||'';
 const base={id:'0:tab',host:'www.linkedin.com',site:'linkedin.com',brand:'LinkedIn',secure:true,error:'',saved:null};
 const LOGIN={...base,title:'LinkedIn Login',username:true,password:true,code:false};

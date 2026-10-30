@@ -2,6 +2,7 @@ import tempfile, unittest
 from pathlib import Path
 import assistant as a
 from unittest.mock import patch
+import dashboard_parts
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 
@@ -178,7 +179,7 @@ class PhoneNotifications(unittest.TestCase):
         # Without a dashboard address push_notify sends nothing, so a subscription promises nothing either.
         self.assertEqual(say({'accounts': [], 'telegram_owner': ''}), 'It’ll be back on the dashboard then.')
         # The dashboard's own line says the same in each case.
-        html = (Path(a.__file__).with_name('dashboard.html')).read_text()
+        html = dashboard_parts.assemble(Path(a.__file__).parent)
         for line in ('I’ll remind you on Telegram and as a notification.', 'I’ll remind you on Telegram.', 'I’ll send you a notification.'):
             self.assertIn(line, html)
 

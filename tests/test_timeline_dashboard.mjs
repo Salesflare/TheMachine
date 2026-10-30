@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The timeline on a person's page: every source in one list, a chip row to filter by source, an Intercom conversation
 // with its state and link, a Zoom summary, cards, promises and project moves among them; Show more loads the next page.
 // A person with nothing yet still has the section.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date();now.setHours(12,0,0,0);const daysAgo=d=>new Date(now-d*864e5).toISOString();
 const mails=Array.from({length:50},(_,i)=>({id:100+i,type:'event',account_id:'work',kind:'gmail.message',source:'email',occurred_at:daysAgo(10+i),title:'Update '+i,from:'Ivy Park',from_me:false,preview:'Here it is.'}));
 const first=[

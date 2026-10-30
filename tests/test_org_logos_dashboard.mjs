@@ -3,11 +3,12 @@ import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Organizations show their logo from enrichment: https only, no referrer, lazy and fixed size, the initial behind it,
 // and the initial alone when there is no logo, it isn't https, or it fails to load. SHOT_DIR=… also saves screenshots.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const day=new Date(Date.now()-864e5).toISOString();
 const LOGO=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#2b59c3"/><circle cx="32" cy="32" r="16" fill="none" stroke="#fff" stroke-width="7"/></svg>`;
 const org=(id,name,logo,extra={})=>({id:'org:'+id,kind:'org',name,domain:id,signals:3,last_at:day,role:null,strength:1,

@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The line under the sleeping robot on an empty list is one short line in the robot's voice with when it last
 // looked ("Peeked at everything 52 minutes ago. All quiet."), no signal or pending counts. The wording changes per
 // day, not per render. Before any review it says "I’ll add something when it’s useful.". Also in Dutch.
 // SHOTS=<folder> saves screenshots at 1440x900 and 390x844, light and dark.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const cats={};for(const l of ['en','nl'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const DAY=Date.UTC(2026,9,28,12,0,0);
 let reviewHealth,language;

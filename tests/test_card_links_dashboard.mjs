@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Card text shows [words](https://...) as a link on the words and makes bare web addresses clickable (a long one by
 // its domain), next to the highlighted **values**: in the body, the Needs you line, the Asked note, a blocker and
 // its details, the result and a teammate's answer. Only http(s) and mailto become links; the rest stays inert text.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),doc='https://docs.google.com/document/d/abc123/edit';
 const cards=[
  {id:'l1',title:'Agreed to the listing exchange',body:`Updated your [Google Doc](${doc}): removed Sources and kept **3 listings**. See https://example.com/a/very/long/path/to/the/listing/page?ref=card. Ask [Sam](mailto:sam@example.com).`,

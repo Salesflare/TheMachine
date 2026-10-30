@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Share board… on a board's ⋯ menu: a sheet with the Work Fleet's confirmed teammates, one line saying what they get
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // the editor keeps it; Stop sharing takes it back to Only you. On a phone the sheet fits the screen. The board editor's
 // Who sees it has the same three choices (Only you, Chosen people with the same picker inline, Your team) and always
 // agrees with the sheet: Chosen people saves through graph_board_share, leaving it takes the board back first.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const shots=process.env.SHOTS||'';
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const stages=[{name:'First talks'},{name:'Due diligence'},{name:'Offer'},{name:'Stalled or declined',side:true}];

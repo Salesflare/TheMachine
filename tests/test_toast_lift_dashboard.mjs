@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // On a phone the toast never covers buttons (a card's actions at the bottom of the screen, the chat box): it moves just
 // above them, or to the top under the bar when buttons fill the bottom of the screen, and back down for the next one when nothing is in the way. On a desktop it stays where it is. The send
 // confirm (Confirm / Edit / Cancel) is a bottom sheet on a phone, like the other editors.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const shots=process.env.SHOTS||'';
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}

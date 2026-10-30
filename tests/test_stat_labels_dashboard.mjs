@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Connections: a card's figure labels ("conversations", "notifications", "not reviewed") never break inside a word or
 // hyphenate, with the dashboard's own fonts, for every source, at 1280, 390 and 320. Between words is fine.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const at=new Date().toISOString();
 const services=['gmail','calendar','outlook','outlook_calendar','slack','salesflare','whatsapp','linkedin','android','gateway','github','stripe','rss','x','intercom','zoom'];

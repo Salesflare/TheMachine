@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A preparing to-do's status row (Preparing… and its clock, the browser links, the latest step, the live look at the
@@ -9,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Sign in here Open the browser › Pu…" ran off a 390px screen). Sign in shows only while the run waits on a sign-in
 // right now; a run that's past it, still on the browser, offers only Open the browser. The row is there only while
 // the run is going: done, or not running, it's gone, links and all.
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const ID='a1a1a1a1a1a1a1a1';
 const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 const card={id:ID,title:'The partner’s setup guide is ready for review',body:'The article update is drafted, with the partner link preserved.',

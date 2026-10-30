@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A skill suggested from notes (a card) or by the agent (Settings > Skills) is checked against the skills you have: a new
 // one, a new one with a line on the related skill it sits next to, or Update <skill>: the whole skill rewritten as one,
 // shown before and after with what changed marked, applied only on Update skill there (with what was shown as
 // `reviewed`). All mocked; SKILL_UPDATE_SHOTS=dir saves the cards, the Settings rows and the dialog.
-const dashboard=await readFile(process.env.SKILL_UPDATE_DASHBOARD||new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage(process.env.SKILL_UPDATE_DASHBOARD);
 const before=!!process.env.SKILL_UPDATE_BEFORE;  // the same cards as the previous version shaped them, for before shots
 const now=new Date().toISOString(),posts=[];
 const notes=n=>Array.from({length:n},(_,i)=>`For listing exchanges, rule ${i+1}: ask for their listing link before sending ours.`);

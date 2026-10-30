@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A card's chat on a phone: the message box stays at the bottom of what you see while the conversation scrolls under
@@ -11,7 +12,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // The keyboard is played with a visual viewport the test drives: on an iPhone the window keeps its height and the
 // visible part (visualViewport) shrinks and slides (offsetTop); Android Chrome resizes the window
 // (interactive-widget=resizes-content).
-const dashboard=await readFile(new URL('../dashboard.html',import.meta.url),'utf8');
+const dashboard=await dashboardPage();
 const now=new Date().toISOString(),id='c1c1c1c1c1c1c1c1';
 const cards=[{id,title:'Come by the paint shop in the afternoon for the order',body:'Lotte confirmed you can come this afternoon.',status:'prepared',scope:'personal',created_at:now,event_ids:[1]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
