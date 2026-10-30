@@ -58,7 +58,7 @@ class SkillFromTodo(unittest.TestCase):
         self.assertEqual([(s['name'], s['status']) for s in self.app.skills.view()['skills']], [('Payroll', 'on')])
         card = self.card()
         self.assertEqual(card['status'], 'completed')
-        self.assertNotIn('proposed_skill', card)
+        self.assertEqual(card['proposed_skill'], {'created': True, 'name': 'Payroll'})
 
     def test_a_corrected_proposal_from_the_same_todo_replaces_the_earlier_one(self):
         first = self.propose('Sales rep payroll')
@@ -106,7 +106,7 @@ class SkillFromTodo(unittest.TestCase):
         self.assertEqual(shown['update']['after'], BODY)
         self.app.action('skill_decide', {'id': out['id'], 'choice': 'approve', 'reviewed': shown['update']['review']}, owner_dashboard=True)
         self.assertEqual([(s['id'], s['status']) for s in self.app.skills.view()['skills']], [(mine['id'], 'on')])
-        self.assertEqual(self.card()['status'], 'completed')
+        self.assertEqual((self.card()['status'], self.card()['proposed_skill']), ('completed', {'created': True, 'name': 'Payroll'}))
 
     def test_a_sentence_that_only_pointed_at_a_stripped_path_goes_too(self):
         self.assertEqual(a.strip_result_links('Proposed for approval, replacing the earlier version. The draft is at memory/assistant/x.md.'),

@@ -18,7 +18,11 @@ let cards=[
  {id:'s2',title:'Improve the expenses skill',body:'The update is ready. The draft is at memory/assistant/261030-expenses.md.',status:'prepared',scope:'work',origin:'owner',created_at:now,event_ids:[2],
   result_files:[{name:'261030-expenses.md',path:'memory/assistant/261030-expenses.md'}],proposed_skill:{id:'sk_2',name:'Expenses',description:'Expenses',body:update.after,update}},
  {id:'s4',title:'Create an onboarding skill',body:'Your onboarding skill is proposed for approval. The draft is at memory/assistant/261030-onboarding.md.',status:'prepared',scope:'work',origin:'owner',created_at:now,event_ids:[4],
+  outcome:'{"state":"needs_you","needs":"approve the onboarding skill proposal"}',
   result_files:[{name:'261030-onboarding.md',path:'memory/assistant/261030-onboarding.md'}],proposed_skill:{dismissed:true,name:'Onboarding'}},
+ {id:'s5',title:'Create a hiring skill',body:'Your hiring skill is proposed for approval. The draft is at memory/assistant/261030-hiring.md.',status:'prepared',scope:'work',origin:'owner',created_at:now,event_ids:[5],
+  outcome:'{"state":"needs_you","needs":"approve the hiring skill proposal"}',
+  result_files:[{name:'261030-hiring.md',path:'memory/assistant/261030-hiring.md'}],proposed_skill:{created:true,name:'Hiring'}},
  {id:'s3',title:'Write the team note',body:'Here is the note. The draft is at memory/assistant/261030-note.md.',status:'prepared',scope:'work',created_at:now,event_ids:[3],
   result_files:[{name:'261030-note.md',path:'memory/assistant/261030-note.md'}]}];
 const skillsView={skills:[{id:'sk_1',name,description:'Each month',status:'proposed',origin:'proposed',update:false,note:'',version:1,chars:40},
@@ -79,6 +83,16 @@ try{
  assert.equal(await s4.locator('[data-result="copy"]').count(),0);
  assert.equal(await s4.locator('.copy-why').count(),0);
  assert.equal(await s4.locator('[data-skill-create],[data-skill-update],details.skill-notes').count(),0);
+ // The run's saved "Needs you: approve …" no longer holds once the skill is decided: not shown
+ assert.match(await s1.evaluate(()=>suggestionCard({...state.suggestions.find(c=>c.id==='s1')??{},status:'prepared',outcome:'{"state":"needs_you","needs":"approve it"}',proposed_skill:{id:'sk_1',name:'P',description:'d',body:'1. Step one here.'}},'Ready')),/Needs you: approve it/);
+ assert.equal(await s4.locator('.status-line').count(),0);
+ assert.doesNotMatch(await s4.textContent(),/Needs you/);
+ // Created (in Settings, Skills, or before the to-do closed): says so, Mark done leads, nothing to create or copy
+ const s5=page.locator('#task-s5');
+ assert.equal((await s5.locator('.skill-created').textContent()).trim(),'Skill created. Your Machine uses it from now on.');
+ assert.equal(await s5.locator('.status-line').count(),0);
+ assert.equal(await s5.locator('.actions button.primary').first().getAttribute('data-choice'),'complete');
+ assert.equal(await s5.locator('[data-result="copy"],.copy-why,[data-skill-create],[data-skill-update]').count(),0);
  // A real draft without a send path still leads with Copy draft
  const s3=page.locator('#task-s3');
  assert.equal((await s3.locator('.actions button.primary').first().textContent()).trim(),'Copy draft');

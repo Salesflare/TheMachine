@@ -186,9 +186,11 @@ const chatLink=s=>`<a class="card-chat-link${chatHad(s)?' had':''}" href="#chat=
 // A ready draft the Machine can't send itself (no send path, such as an internal note): Copy draft leads, with why.
 // A skill the to-do's run proposed (proposed_skill): what is in it on the card, and Create skill (or Update skill, its before
 // and after first) leads. It goes through the owner's own Approve (skill_decide); nothing is installed before that tap.
-const skillLead=s=>s.status==='prepared'&&!!s.proposed_skill&&!s.proposed_skill.dismissed;
-// Dismissed in Settings, Skills: the to-do says so and Mark done leads; closing it stays the owner's call.
-const proposedSkillBox=s=>{const p=s.proposed_skill;if(!p||closed(s))return '';if(p.dismissed)return `<p class="note skill-dismissed">${esc(t('Skill dismissed'))}</p>`;
+const skillDecided=s=>!!(s.proposed_skill?.dismissed||s.proposed_skill?.created);
+const skillLead=s=>s.status==='prepared'&&!!s.proposed_skill&&!skillDecided(s);
+// Created or dismissed (here or in Settings, Skills): the to-do says so and Mark done leads; closing it stays the owner's call.
+// The run's saved "Needs you: approve …" no longer holds then, so the status line leaves it out (the stored text stays).
+const proposedSkillBox=s=>{const p=s.proposed_skill;if(!p||closed(s))return '';if(p.dismissed)return `<p class="note skill-dismissed">${esc(t('Skill dismissed'))}</p>`;if(p.created)return `<p class="note skill-created">${esc(t('Skill created. Your Machine uses it from now on.'))}</p>`;
  if(p.update)return `<details class="skill-notes"><summary>${esc(t('Read the change'))}</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div></details>`;
  return `<details class="skill-notes"><summary>${esc(t('Read the skill'))}</summary><p><strong translate="no">${esc(p.name)}</strong></p><p class="note" translate="no">${esc(t('When: {}',p.description))}</p><div translate="no">${p.body.replace(/^#{1,6}\s+(.+)$/gm,'**$1**').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${format(x).replace(/\n/g,'<br>')}</p>`).join('')}</div></details>`};
 const skillButton=s=>{const p=s.proposed_skill;return 'update' in p?`<button class="primary" data-skill-update="${esc(p.id)}" data-settings>${esc(t('Update skill'))}</button>`
@@ -310,7 +312,7 @@ const statusLine=(()=>{const line=(text,cls='')=>`<p class="note status-line${cl
  if(smart.some(a=>sendBusy(a.state||s.action_status)&&!['local_preparation','paused'].includes((a.state||s.action_status)?.status)))return '';
  // With a teammate (and nothing new to send them): their line says where it is, not an older "Needs you".
  if(withTeammate(s)||['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s)&&['needs_you','your_step'].includes(o?.state))return '';
- if(o?.state==='needs_you')return line('Needs you: '+sentence(o.needs),' outcome');
+ if(o?.state==='needs_you'&&!skillDecided(s))return line('Needs you: '+sentence(o.needs),' outcome');
  // Waiting on a step still open elsewhere (a review, a merge, their reply): an open to-do, never "Looks done"
  if(o?.state==='waiting')return line(t('Waiting on: {}',sentence(o.waiting_on||'')),' outcome');
  if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return line('Ready to approve. Nothing goes out until you do.');
