@@ -67,11 +67,14 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS||'';const errors=[];let browser;
 const near=(a,b,by=2)=>Math.abs(a-b)<=by;
-const viewer=p=>p.frames().find(f=>f.url().endsWith('/browser/'));
+// The viewer's frame. The pane sets the iframe's address when it shows, and the frame only has it once that navigation
+// commits, so on a first open (or a slow machine) wait for it instead of reading it at once.
+const isViewer=f=>f.url().endsWith('/browser/');
+const viewer=async p=>p.frames().find(isViewer)||await p.waitForEvent('framenavigated',{predicate:isViewer,timeout:15000});
 // The window fits the pane (its whole width or height), shows whole, sits in the middle across, and the cover leaves
 // exactly the window open
 async function fits(p,why){
- const f=viewer(p);await f.waitForFunction(()=>window.look&&document.querySelector('.machine-view-mask:not([hidden])'));
+ const f=await viewer(p);await f.waitForFunction(()=>window.look&&document.querySelector('.machine-view-mask:not([hidden])'));
  await p.waitForTimeout(250);const l=await f.evaluate(()=>window.look());const [x,y,w,h]=l.box,say=why+' '+JSON.stringify(l);
  const want=l.h>l.w?l.w/(region.w*3840):Math.min(l.w/(region.w*3840),l.h/(region.h*2160));
  assert.ok(Math.abs(l.scale-want)<1e-3,'framed for the pane: '+say);
@@ -96,7 +99,7 @@ try{
   await p.locator('#bp-full').click();await fits(p,size+' full size');await shoot(p,size+'-full');
   await p.locator('#bp-full').click();await fits(p,size+' out of full size');
   // Another view, the viewer reconnects meanwhile (at size 0), then Browser again: Jeroen's case
-  await away();await viewer(p).evaluate(()=>window.reconnect());await p.waitForTimeout(800);
+  await away();await (await viewer(p)).evaluate(()=>window.reconnect());await p.waitForTimeout(800);
   await open();await fits(p,size+' shown again after a reconnect');await shoot(p,size+'-reconnected');
   // Hidden and shown again without a reconnect: still framed
   await away();await p.waitForTimeout(300);await open();await fits(p,size+' shown again');
@@ -104,16 +107,16 @@ try{
   await p.setViewportSize({width:Math.round(W*.8),height:Math.round(H*.9)});await fits(p,size+' resized');
   await p.setViewportSize({width:W,height:H});await fits(p,size+' resized back');
   // Zoomed in by hand: the zoom stays across hiding, the cover still follows the picture, and Browser window frames again
-  await viewer(p).locator('#machine-view-bar [data-v="in"]').click();await p.waitForTimeout(200);
-  const zoomed=await viewer(p).evaluate(()=>window.look());
-  await away();await viewer(p).evaluate(()=>window.reconnect());await p.waitForTimeout(500);await open();
+  await (await viewer(p)).locator('#machine-view-bar [data-v="in"]').click();await p.waitForTimeout(200);
+  const zoomed=await (await viewer(p)).evaluate(()=>window.look());
+  await away();await (await viewer(p)).evaluate(()=>window.reconnect());await p.waitForTimeout(500);await open();
   await fits(p,size+' a reconnect frames again, also after a zoom');
-  await viewer(p).locator('#machine-view-bar [data-v="in"]').click();await away();await p.waitForTimeout(300);await open();await p.waitForTimeout(300);
-  const kept=await viewer(p).evaluate(()=>window.look());
+  await (await viewer(p)).locator('#machine-view-bar [data-v="in"]').click();await away();await p.waitForTimeout(300);await open();await p.waitForTimeout(300);
+  const kept=await (await viewer(p)).evaluate(()=>window.look());
   assert.ok(Math.abs(kept.scale-zoomed.scale)<1e-3,size+' a zoom by hand stays: '+JSON.stringify([zoomed,kept]));
   {const [x,y,w,h]=kept.box,open=[Math.max(0,x),Math.max(0,y),x+w-Math.max(0,x),y+h-Math.max(0,y)];
    assert.ok(kept.hole&&kept.hole.every((v,i)=>near(v,open[i])),size+' the cover follows the zoomed picture: '+JSON.stringify(kept))}
-  await viewer(p).locator('#machine-view-bar [data-v="whole"]').click();await viewer(p).locator('#machine-view-bar [data-v="whole"]').click();
+  await (await viewer(p)).locator('#machine-view-bar [data-v="whole"]').click();await (await viewer(p)).locator('#machine-view-bar [data-v="whole"]').click();
   await fits(p,size+' Browser window after a zoom');
   await context.close();
  }
