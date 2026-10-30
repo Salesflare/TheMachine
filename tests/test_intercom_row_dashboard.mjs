@@ -5,12 +5,12 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Connections: an Intercom card says who replies go out as (the owner's own sign-in), or that it only reads (a Fleet
-// share, a pasted token). Its count reads "conversations", never broken mid-word. SHOTS=<folder> saves screenshots.
+// Connections: an Intercom card says what it brings in, and that it replies only after Send (who it replies as under
+// Details: the owner's own sign-in), or only what it brings in when it only reads (a Fleet share, a pasted token). Its count reads "conversations", never broken mid-word. SHOTS=<folder> saves screenshots.
 const dashboard=await dashboardPage();
 const at=new Date().toISOString();
-const card=(id,name,more)=>({id,service:'intercom',display_name:name,boundary:'work:Acme',total:361,signals_24h:150,pending:0,last_success:at,sync_activity:[],...more});
-const connectors=[card('intercom','Acme',{replies_as:'Alex Example'}),card('intercom-fleet','Acme Support',{replies_as:'',shared_by:'Acme'})];
+const card=(id,name,more)=>({id,service:'intercom',what:'Customer conversations in your Intercom workspace.',display_name:name,boundary:'work:Acme',total:361,signals_24h:150,pending:0,last_success:at,sync_activity:[],...more});
+const connectors=[card('intercom','Acme',{replies_as:'Alex Example',acts:'reply'}),card('intercom-fleet','Acme Support',{replies_as:'',shared_by:'Acme'})];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -30,11 +30,13 @@ try{
   await page.goto(base+'/#connections');
   const other=page.locator('#connections button',{hasText:'Other sources'});
   if(await other.count())await other.first().click();
-  const own=page.locator('article',{hasText:'Alex Example'});
+  const own=page.locator('article[data-conn="intercom"]');
   await own.waitFor();
-  assert.match(await own.locator('.conn-replies').innerText(),/^Replies as Alex Example, only after you press Send\.$/);
+  assert.equal(await own.locator('.conn-what').innerText(),'Customer conversations in your Intercom workspace. Replies only after you press Send.');
+  assert.equal(await own.locator('.conn-replies-as').textContent(),'Replies as Alex Example, only after you press Send.');  // under Details
+  assert.equal(await page.locator('article',{hasText:'Acme Support'}).locator('.conn-replies-as').count(),0);
   assert.match(await own.innerText(),/Intercom · Work · Acme/);
-  assert.equal(await page.locator('article',{hasText:'Acme Support'}).locator('.conn-replies').innerText(),'Reads only. Never replies.');
+  assert.equal(await page.locator('article',{hasText:'Acme Support'}).locator('.conn-what').innerText(),'Customer conversations in your Intercom workspace.');
   const label=own.locator('.figures span').first();
   assert.equal(await label.innerText().then(t=>t.replace(/[­\n-]/g,'')),'conversations');
   // a break, if any, is a hyphenation, never a bare split inside the word

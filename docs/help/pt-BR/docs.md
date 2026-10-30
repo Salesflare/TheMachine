@@ -1,14 +1,14 @@
 ---
-title: Docs: Word, OneDrive e SharePoint
+title: Microsoft Word: arquivos do Word no OneDrive e no SharePoint
 area: connections
-summary: Comentários, menções, alterações controladas e compartilhamentos nos seus arquivos do Word no OneDrive e no SharePoint. O Google Docs vem depois.
+summary: Comentários, menções, alterações controladas e compartilhamentos nos seus arquivos do Word no OneDrive e no SharePoint, além de novos documentos e edições que você aprova. O Google Docs vem depois.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## O que ela lê
 
-Docs lê arquivos do Word no OneDrive e no SharePoint, com o login da Microsoft que você já tem para esse endereço. Funciona em uma Machine hospedada e no seu próprio computador vinculado à sua conta. O Google Docs vem depois: o login do Google da The Machine ainda não consegue ler documentos. Ela traz:
+A conexão **Microsoft Word** lê arquivos do Word no OneDrive e no SharePoint, com o login da Microsoft de um endereço do Outlook que você conectou. Funciona em uma Machine hospedada e no seu próprio computador vinculado à sua conta. O Google Docs vem depois: o login do Google da The Machine ainda não consegue ler documentos. Ela traz:
 
 - Documentos que alguém compartilha com você.
 - Comentários e respostas em documentos seus, e comentários que mencionam você.
@@ -35,27 +35,27 @@ Sua Machine pode escrever um novo documento do Word, ou alterar um documento de 
 
 Ela substitui texto, adiciona texto e adiciona parágrafos e títulos. Não mexe em tabelas, imagens, alterações controladas nem campos. Um novo documento fica no seu OneDrive e é privado até você compartilhá-lo.
 
-Para ativar, toque em **Permitir edições** no cartão do Docs em **Conexões**. A Microsoft pede para deixar alterar seus arquivos, separado da leitura. Entrar de novo mantém isso.
+Para ativar, toque em **Permitir edições** no cartão do Microsoft Word em **Conexões**. A Microsoft pede para deixar alterar seus arquivos, separado da leitura. Entrar de novo mantém isso.
 
 ## O que ela pede
 
 Ler documentos precisa de um OK próprio, separado do login do seu e-mail: a Microsoft pede para você permitir a leitura dos seus arquivos, incluindo os compartilhados com você no OneDrive e no SharePoint. Seu acesso ao e-mail e à agenda continua como está.
 
-Se esse OK for retirado depois, o cartão do Docs mostra **Aguardando seu OK para ler documentos**.
+Se esse OK for retirado depois, o cartão do Microsoft Word mostra **Aguardando seu OK para ler documentos**.
 
 ## Conecte
 
 Conecte primeiro o Outlook desse endereço. Depois:
 
-- Machine hospedada: no painel, abra **Conexões**, **+ Adicionar**, escolha **Documentos** e clique em **Entrar com a Microsoft**. A Microsoft pede para você permitir a leitura dos seus arquivos, e você volta para o painel.
-- Seu próprio computador, pareado com sua conta: abra **Conexões**, **+ Adicionar**, escolha **Documentos** e clique em **Entrar com a Microsoft**.
+- Machine hospedada: no painel, abra **Conexões**, **+ Adicionar**, escolha **Microsoft Word** e clique em **Entrar com a Microsoft**. A Microsoft pede para você permitir a leitura dos seus arquivos, e você volta para o painel.
+- Seu próprio computador, pareado com sua conta: abra **Conexões**, **+ Adicionar**, escolha **Microsoft Word** e clique em **Entrar com a Microsoft**.
 
-Ela confere se o login pode ler documentos. Sem esse OK, Docs não é adicionado.
+Ela confere se o login pode ler documentos. Sem esse OK, o Microsoft Word não é adicionado.
 
 ## Trabalho ou pessoal
 
-Docs segue o rótulo de trabalho ou pessoal da conexão dele, como o e-mail. Documentos de trabalho podem chegar ao Graph da sua equipe conforme suas [regras de compartilhamento](sharing-rules.md). Os pessoais nunca chegam.
+Microsoft Word segue o rótulo de trabalho ou pessoal da conexão dele, como o e-mail. Documentos de trabalho podem chegar ao Graph da sua equipe conforme suas [regras de compartilhamento](sharing-rules.md). Os pessoais nunca chegam.
 
 ## Remova
 
-No painel: **Conexões**, abra Docs, **Detalhes** e depois **Desconectar**. Ela para de ler. O que já foi trazido continua lá.
+No painel: **Conexões**, abra Microsoft Word, **Detalhes** e depois **Desconectar**. Ela para de ler. O que já foi trazido continua lá.

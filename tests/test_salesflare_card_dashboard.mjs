@@ -6,14 +6,14 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// - The Salesflare card says what it reads, how far its round of accounts is (stuck after a long while), and has Stop
+// - The Salesflare card says what it brings in (its + Add line), how far its round of accounts is (stuck after a long while), and has Stop
 //   (then Start), Restart sync and a link to Salesflare's API keys; Stop posts connector_sync and the card says Stopped.
 // - Relative times follow the dashboard's region, not the browser's language: a French browser still reads "3 hours ago".
 // - Feedback, What you decided: the cards start on the same left edge as the sections above, at both widths.
 // - What's shared, Your connections: another person's calendar read through the owner's sign-in is named for it.
 const dashboard=await dashboardPage();
 const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
-const sf={id:'work-crm',service:'salesflare',email:'owner@acme.example',display_name:'CRM',boundary:'work:Acme',last_success:ago(0.05),total:12,signals_24h:2,pending:0,
+const sf={id:'work-crm',service:'salesflare',what:'Accounts, contacts and deals, so it knows who matters.',email:'owner@acme.example',display_name:'CRM',boundary:'work:Acme',last_success:ago(0.05),total:12,signals_24h:2,pending:0,
  salesflare:{stopped:null,synced_until:ago(5),round:{since:ago(170),started:ago(3),accounts:42,done:12,stuck:true,failing:1},slow_accounts:2,no_access:0,keys_url:'https://app.salesflare.com/#/settings/apikeys'}};
 const decisions=[1,2,3].map(i=>({suggestion_id:'c'+i,choice:'complete',source:'dashboard',created_at:ago(i)}));
 const state={suggestions:[1,2,3].map(i=>({id:'c'+i,title:'To-do '+i,body:'Made-up.',status:'completed',scope:'work',created_at:ago(i)})),promises:[],connectors:[sf],suggestion_counts:{},decisions,analyses:[],deliveries:[],
@@ -46,7 +46,7 @@ try{
   await page.evaluate(()=>showTab('health','other'));
   const card=page.locator('#connectors article',{hasText:'Salesflare CRM'});
   await card.waitFor().catch(async e=>{throw await why(e)});
-  assert.match(await card.innerText(),/Reads accounts, contacts, emails and meetings\. Changes nothing\./);
+  assert.equal(await card.locator('.conn-what').innerText(),'Accounts, contacts and deals, so it knows who matters.');
   assert.match(await card.locator('.sf-line').innerText(),/^Reading 12 of 42 accounts\. Started 3 hours ago, may be stuck\.$/);
   assert.equal(await card.locator('.sf-aside').innerText(),'2 skipped as too slow');
   assert.equal(await card.locator('a.head-link').getAttribute('href'),'https://app.salesflare.com/#/settings/apikeys');

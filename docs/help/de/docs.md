@@ -1,14 +1,14 @@
 ---
-title: Docs: Word, OneDrive und SharePoint
+title: Microsoft Word: Word-Dateien in OneDrive und SharePoint
 area: connections
-summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint. Google Docs kommen später.
+summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint, dazu neue Dokumente und Änderungen, die du freigibst. Google Docs kommen später.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Was es liest
 
-Docs liest Word-Dateien in OneDrive und SharePoint, mit der Microsoft-Anmeldung, die du für diese Adresse schon hast. Das geht auf einer gehosteten Machine und auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist. Google Docs kommen später: Die Google-Anmeldung von The Machine kann noch keine Dokumente lesen. Es bringt rein:
+Die Verbindung **Microsoft Word** liest Word-Dateien in OneDrive und SharePoint, mit der Microsoft-Anmeldung einer Outlook-Adresse, die du verbunden hast. Das geht auf einer gehosteten Machine und auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist. Google Docs kommen später: Die Google-Anmeldung von The Machine kann noch keine Dokumente lesen. Es bringt rein:
 
 - Dokumente, die jemand mit dir teilt.
 - Kommentare und Antworten in Dokumenten, die dir gehören, und Kommentare, die dich erwähnen.
@@ -35,27 +35,27 @@ Deine Machine kann ein neues Word-Dokument schreiben oder ein Dokument ändern, 
 
 Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem OneDrive und bleibt privat, bis du es teilst.
 
-Zum Einschalten tippst du auf der Docs-Karte unter **Verbindungen** auf **Bearbeiten erlauben**. Microsoft fragt, ob sie deine Dateien ändern darf, getrennt vom Lesen. Eine neue Anmeldung behält das bei.
+Zum Einschalten tippst du auf der Microsoft-Word-Karte unter **Verbindungen** auf **Bearbeiten erlauben**. Microsoft fragt, ob sie deine Dateien ändern darf, getrennt vom Lesen. Eine neue Anmeldung behält das bei.
 
 ## Worum es fragt
 
 Das Lesen von Dokumenten braucht ein eigenes OK, getrennt von deiner Mail-Anmeldung: Microsoft bittet dich, das Lesen deiner Dateien zu erlauben, auch der Dateien, die in OneDrive und SharePoint mit dir geteilt sind. Dein Zugriff auf Mail und Kalender bleibt, wie er ist.
 
-Wird dieses OK später zurückgenommen, zeigt die Docs-Karte **Wartet auf dein OK, um Dokumente zu lesen**.
+Wird dieses OK später zurückgenommen, zeigt die Microsoft-Word-Karte **Wartet auf dein OK, um Dokumente zu lesen**.
 
 ## Verbinden
 
 Verbinde zuerst Outlook für die Adresse. Dann:
 
-- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **+ Hinzufügen**, wähle **Dokumente** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
-- Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **+ Hinzufügen**, wähle **Dokumente** und tippe auf **Mit Microsoft anmelden**.
+- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft Word** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
+- Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft Word** und tippe auf **Mit Microsoft anmelden**.
 
 Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt.
 
 ## Arbeit oder privat
 
-Docs folgt der Kennzeichnung Arbeit oder privat seiner Verbindung, wie bei Mail. Arbeitsdokumente können nach deinen [Freigaberegeln](sharing-rules.md) in den Graph deines Teams gelangen. Private nie.
+Microsoft Word folgt der Kennzeichnung Arbeit oder privat seiner Verbindung, wie bei Mail. Arbeitsdokumente können nach deinen [Freigaberegeln](sharing-rules.md) in den Graph deines Teams gelangen. Private nie.
 
 ## Entfernen
 
-Im Dashboard: **Verbindungen**, Docs öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
+Im Dashboard: **Verbindungen**, Microsoft Word öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.

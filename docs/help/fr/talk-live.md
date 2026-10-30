@@ -11,7 +11,9 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Dans le chat d’une tâche, touchez l’onde à côté du micro. Autorisez le micro si votre navigateur le demande. Quand la barre affiche **En direct**, parlez comme lors d’un appel. The Machine répond à voix haute, et vous pouvez parler par-dessus pour l’interrompre.
 
-Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches.
+Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches. Dites « marque-la comme faite », « reporte-la » ou « pas nécessaire » et elle le fait elle-même. Dites « non, pas ça » juste après pour revenir en arrière.
+
+L’écoute se fait dans vos langues : celle de l’app et celles que votre navigateur indique. Un bruit, une toux ou un son dans une autre langue ne reçoit pas de réponse et reste hors de la transcription.
 
 La barre a **Couper le micro** et **Fin**. Dites au revoir, ou que vous avez fini, et elle s’arrête d’elle-même. Une conversation dure jusqu’à 10 minutes. Une minute avant la fin, le minuteur montre le temps restant. Relancez-la pour continuer.
 
@@ -33,14 +35,17 @@ Quand vous demandez quelque chose, comme « écris une réponse pour dire que je
 
 Le chat peut aussi chercher des choses, comme les horaires d’un magasin sur le web. Pendant ce temps, il affiche **Je m’en occupe…**, et vous pouvez continuer à parler. Quand la réponse est prête, The Machine vous la dit, avec l’endroit où elle l’a trouvée. Si vous demandez autre chose entre-temps, cela attend son tour.
 
-Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Lotte par e-mail ? ». Elle lit d’abord tout le brouillon à voix haute : à qui il va, l’objet et le texte. Ça marche donc aussi avec le téléphone dans la poche. Répondez par un oui clair, dans n’importe quelle langue, et ce brouillon part.
+Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Lotte par e-mail ? ». Elle lit d’abord tout le brouillon à voix haute : à qui il va, l’objet et le texte. Ça marche donc aussi avec le téléphone dans la poche. Répondez par un oui clair, comme « oui, envoie-le », et ce brouillon part.
 
 - Elle envoie exactement le brouillon qu’elle a lu. S’il change après la question, elle le relit et redemande. Une question sans réponse au bout de 3 minutes expire.
 - Si votre réponse n’est pas un oui clair, rien ne part et elle redemande. « Non » n’envoie rien.
-- Un oui envoie toujours un seul brouillon. Pour en envoyer plusieurs, utilisez la revue des relances.
-- Le chat affiche **Approuvé à la voix** avec **Annuler** pendant quelques secondes avant l’envoi.
+- Un brouillon déjà vu à l’écran, ou entendu dans cette conversation, n’est pas relu : elle demande seulement, par exemple « L’envoyer à Nick ? ».
+- Dites « envoie les deux » ou « envoie tous ceux qui sont prêts », et elle nomme tout le monde en une question. Un oui les envoie chacun.
+- Parler affiche **Annuler** avec un compte à rebours pendant quelques secondes avant l’envoi, puis **Envoyé**. Touchez-le, ou dites « annule » ou « attends ».
 
 Vous pouvez toujours appuyer sur **Approuver** à la place.
+
+« Fais-le » lance The Machine sur la tâche, comme **Faire**, y compris dans le navigateur. « Marque-la comme faite » la ferme. Dites « signale un bug » et elle envoie un signalement, comme **Signaler un bug** dans l’aide, en demandant d’abord si elle peut ajouter plus.
 
 ## Choisir une voix
 

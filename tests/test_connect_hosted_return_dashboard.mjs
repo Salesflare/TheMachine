@@ -28,7 +28,7 @@ const server=createServer(async(req,res)=>{
   if(action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:MANAGE,sources:[
    {name:'gmail',service:'gmail',label:'Gmail',connected:0,broker:true,hosted_signin:'google'},
    {name:'outlook',service:'outlook',label:'Outlook',connected:1,broker:true,hosted_signin:'microsoft'},
-   {name:'docs',service:'docs',label:'Docs',connected:0,broker:false,account_page:'docs',hosted_signin:'microsoft_docs'},
+   {name:'docs',service:'docs',label:'Microsoft Word',connected:0,broker:false,account_page:'docs',hosted_signin:'microsoft_docs'},
    {name:'github',service:'github',label:'GitHub',what:'Review requests, mentions and failed CI runs.',connected:0,broker:false,hosted_signin:'github'},
    {name:'zoom',service:'zoom',label:'Zoom',what:'Your meetings.',connected:0,broker:true,hosted_signin:'zoom'},
    {name:'stripe',service:'stripe',label:'Stripe',what:'Payments.',connected:0,broker:false,hosted_signin:'stripe'},

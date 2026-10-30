@@ -157,9 +157,24 @@ class Tools(unittest.TestCase):
 
     def test_reading_tools_the_chat_and_a_confirmed_send(self):
         names = [tool['name'] for tool in t.TOOLS]
-        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'create_todo', 'ask_to_send', 'send_answer', 'end_talk'])
+        self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'create_todo', 'todo_action', 'undo_last_action', 'read_draft', 'ask_to_send', 'send_answer',
+                                 'undo_send', 'report_bug', 'end_talk'])
         self.assertIn('never sends', [tool for tool in t.TOOLS if tool['name'] == 'ask_chat'][0]['description'])
         self.assertIn('a clear yes to your confirm question', t.ASK_NOTE)
+
+    def test_a_todos_own_talk_marks_it_done_itself(self):
+        # Jeroen, by voice in the payroll to-do's chat: "mark this as done" went to the chat, which only offered Mark done
+        # buttons. Its own Talk marks it done (the owner's own decision), and a sound is never a wrap-up.
+        action = t.TOOL['todo_action']
+        self.assertEqual(action['parameters']['properties']['action']['enum'], ['mark_done', 'dismiss', 'snooze', 'reopen'])
+        self.assertNotIn('id', action['parameters']['properties'])
+        self.assertIn('"mark this as done"', action['description'])
+        text = t.instructions('Check the payroll', 'en', 'Thursday', ['en', 'nl'])
+        self.assertIn('call todo_action and say what it returns', text)
+        self.assertIn('Never hand that to the chat.', text)
+        self.assertIn('never a goodbye or a wrap-up: ask what they meant', text)
+        self.assertNotIn('marked done) or looked', text)
+        self.assertNotIn('—', text)
 
     def test_talk_sees_every_open_todo_and_starts_with_what_needs_the_owner(self):
         # Jeroen, live: "let's go through the to-dos" said nothing needs him while one was still Preparing. Talk sees
@@ -181,7 +196,7 @@ class Tools(unittest.TestCase):
         create = [x for x in t.MAIN_TOOLS if x['name'] == 'create_todo'][0]
         self.assertEqual(create['parameters']['required'], ['title'])
         self.assertIn('Nothing is sent', create['description'])
-        self.assertIn('Only for a request about this to-do.', [x for x in t.MAIN_TOOLS if x['name'] == 'ask_chat'][0]['description'])
+        self.assertIn('Only for a real question or instruction about this to-do.', [x for x in t.MAIN_TOOLS if x['name'] == 'ask_chat'][0]['description'])
         for text in (t.instructions('Reply to Lotte', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
             self.assertIn('ask_chat is only for this to-do. Never hand it a request about something else.', text)
             self.assertIn('create it right away. Ask one short question at most', text)
@@ -201,8 +216,43 @@ class Tools(unittest.TestCase):
         text = t.instructions('Reply to Dana', 'nl', 'Tuesday 28 October 2026, 10:00')
         self.assertIn('"Reply to Dana"', text)
         self.assertIn('Speak Dutch', text)
-        self.assertIn('call ask_to_send, read the draft out in full', text)
+        self.assertIn('call ask_to_send. If it says the owner has seen or heard this draft, only ask its question; otherwise '
+                      'read the draft out in full first.', text)
         self.assertIn('never say something was sent unless send_answer says so', text)
+        self.assertIn('Never read the same draft twice.', text)
+        self.assertIn('call read_draft and read out what it gives you, word for word', text)
+        self.assertIn('ask the question again in a few words, without reading the draft again', text)
+
+    def test_talk_never_claims_what_no_tool_did_and_routes_its_own_commands(self):
+        # Jeroen, live: "report a bug" became a to-do with "it's filed and being looked into"; "do it" marked a to-do
+        # done; "move on to the next one" went to a to-do's chat; "azk" became a new to-do
+        for text in (t.instructions('Reply to Dana', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
+            for words in ('Never say something happened (sent, filed, done, started, reported) unless a tool result says it did.',
+                          'call report_bug, never create_todo', 'If it was unclear or a single odd word, say "Sorry, say that again?" and do nothing.',
+                          'call undo_send at once', '"Ask again" means ask_chat again with the same request.'):
+                self.assertIn(words, text)
+        main = t.main_instructions('en', 'Thursday')
+        for words in ('"Do it", "go ahead and do it", "handle it", "start it", "continue": call do_it.',
+                      '"I did it": todo_action mark_done.', 'Never say you can’t use the browser.', 'call undo_last_action',
+                      'open the next to-do only when it says ok', 'never ask_chat. "Stop" or "leave it" means do nothing more on it.',
+                      'call ask_to_send_all'):
+            self.assertIn(words, main)
+        tools = {x['name']: x for x in t.MAIN_TOOLS}
+        self.assertNotIn('do_it', t.TODO_ACTIONS)
+        self.assertIn('"go ahead and do it", "handle it", "start it", "continue"', tools['do_it']['description'])
+        self.assertIn('Not for "mark it done", "it’s done" or "I did it"', tools['do_it']['description'])
+        self.assertIn('browser work included', tools['do_it']['description'])
+        self.assertIn('never for "do it"', tools['todo_action']['description'])
+        self.assertIn('Never for "ask again", "report a bug"', tools['create_todo']['description'])
+        self.assertIn('Never for moving between to-dos', tools['ask_chat']['description'])
+        self.assertIn('ask once whether to add a support report', tools['report_bug']['description'])
+        self.assertEqual(tools['report_bug']['parameters']['required'], ['summary'])
+        self.assertIn('never read it out from here', t.TOOL['todo_details']['description'])
+        self.assertIn('Work only on this to-do', t.RELAY_NOTE)
+        for note in (t.DONE_NOTE, t.STOPPED_NOTE):
+            self.assertIn('{title}', note)
+        self.assertIn('{request}', t.STOPPED_NOTE)
+        self.assertIn('never create_todo', t.STOPPED_NOTE)
 
     def test_the_instructions_sound_like_a_conversation(self):
         text = t.instructions('Reply to Dana', 'en', 'Tuesday 28 October 2026, 10:00')
@@ -214,27 +264,52 @@ class Tools(unittest.TestCase):
         self.assertIn('Read it in full, word for word', text)   # a draft asked about is still read out whole
         self.assertNotIn('—', text)
 
-    def test_the_voice_plays_a_touch_slower_never_slow(self):
-        self.assertTrue(0.95 <= t.SPEED < 1.0)
+    def test_the_voice_plays_a_little_quicker_never_rushed(self):
+        self.assertTrue(1.05 <= t.SPEED <= 1.15)
+
+    def test_the_instructions_keep_replies_single_and_without_dashes(self):
+        for text in (t.instructions('Reply to Dana', 'en', 'now', ['en', 'nl']), t.main_instructions('en', 'now', ['en', 'nl'])):
+            self.assertIn('One reply per turn, said once', text)
+            self.assertIn('No em dashes or en dashes', text)
+            self.assertIn('If you already said it', text)              # the chat's answer isn't restated
+            self.assertIn('The owner speaks English or Dutch', text)   # noise and other languages get no answer
+            self.assertNotIn('—', text)
+        self.assertIn('don’t repeat it', t.DONE_NOTE)
+
+    def test_the_owner_is_heard_in_their_own_languages(self):
+        self.assertEqual(t.spoken('en', '', 'en-BE', ['en-US', 'nl-BE', 'nl', 'ko']), ['en', 'nl'])
+        self.assertEqual(t.spoken('pt-BR', None, None, []), ['pt'])
+        self.assertEqual(t.spoken(None, '', None, ['ko-KR', 'th']), ['en'])   # nothing the app speaks: English
+        self.assertEqual(len(t.spoken('en', 'nl', 'fr-BE', ['de', 'es'])), 3)
+        one = t.transcription(['nl'])
+        self.assertEqual((one['model'], one['language']), ('gpt-4o-transcribe', 'nl'))   # one language: pinned
+        two = t.transcription(['en', 'nl'])
+        self.assertNotIn('language', two)                     # pinning one would garble a sentence in the other
+        self.assertIn('English or Dutch', two['prompt'])
+        self.assertEqual(t.transcription_next(['en', 'nl']), {'model': 'gpt-transcribe', 'languages': ['en', 'nl']})
+        self.assertIn(t.NOISE['type'], ('near_field', 'far_field'))
+        self.assertEqual((t.TURN['type'], t.TURN['eagerness']), ('semantic_vad', 'low'))
 
     def test_the_question_names_who_and_how(self):
         self.assertEqual(t.question({'kind': 'email', 'subject': 'Re: Offsite'}, 'Dana'), 'Send this reply to Dana by email?')
         self.assertEqual(t.question({'kind': 'slack'}, 'Robin'), 'Send this message to Robin on Slack?')
         self.assertEqual(t.question({'kind': 'whatsapp', 'reply': True}, 'Sam'), 'Send this reply to Sam on WhatsApp?')
 
-    def test_only_a_clear_yes_from_the_model_counts(self):
-        judge = lambda out: t.judge_answer('ja, doe maar', 'Send this reply to Dana by email?', lambda prompt: out)
-        self.assertEqual(judge('{"approve": "yes"}'), 'yes')
-        self.assertEqual(judge('```json\n{"approve":"no"}\n```'), 'no')
-        for out in ('yes', '{"approve": "YES"}', '{"approve": "yes", "why": "ok"}', '{"approve": true}', '', 'Sure! {"approve": "yes"}'):
-            self.assertEqual(judge(out), 'unclear', out)
-        def down(prompt):
-            raise OSError('no model')
-        self.assertEqual(t.judge_answer('yes', 'Send it?', down), 'unclear')
-        seen = []
-        t.judge_answer('Oui, envoie-le', 'Send this reply to Dana by email?', lambda prompt: seen.append(prompt) or '{"approve":"yes"}')
-        self.assertIn('Oui, envoie-le', seen[0])
-        self.assertIn('in any language', seen[0])
+    def test_only_a_clear_yes_in_the_owners_languages_counts(self):
+        # Jeroen, live: "Jasne." and "Ja, ist gut, das endet." (noise, transcribed as Polish and German) sent a draft.
+        # The Machine judges the owner's own words itself: plain yes words and fillers only, in their languages.
+        yes = lambda text, langs=('en', 'nl'): t.clear_answer(text, langs, ['Dana'])
+        for text in ('Yes, send it.', 'yes, send it', 'Ok, send it.', 'Ja, verstuur maar.', 'Ja.', 'Go ahead.', 'Yep',
+                     'Yes, send it to Dana.', 'Oké, doe maar.', 'Yes please', 'Sure, send them all.'):
+            self.assertEqual(yes(text), 'yes', text)
+        for text in ('Jasne.', 'Ja, ist gut, das endet.', 'Ja ist gut das endet', 'yes but change X', 'Yes, but change the date.',
+                     'Hmm, maybe, what did it say again?', 'Yes?', '', 'Send it to Kim instead.', 'Oui, envoie-le'):
+            self.assertEqual(yes(text), 'unclear', text)
+        for text in ('no', 'No.', 'Nee, wacht even.', 'Wait.', 'Don’t send it.', 'Stop'):
+            self.assertEqual(yes(text), 'no', text)
+        self.assertEqual(yes('Oui, envoie-le', ['en', 'fr']), 'yes')       # their language, when they speak it
+        self.assertEqual(yes('Ja, ist gut.', ['de']), 'yes')
+
 
 
 TOKEN = 'test-token'
@@ -274,12 +349,12 @@ class Api(unittest.TestCase):
             db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), SID))
         return draft
 
-    def asked(self, answer=None, judged='{"approve": "yes"}', spoken='Send this reply to Dana by email?'):
-        """A conversation where the voice asked to send the draft on screen, and the owner answered."""
+    READ = 'To Dana, re Offsite: Hi Dana, Thursday works. See you then. '
+
+    def asked(self, answer=None, spoken=READ + 'Send this reply to Dana by email?'):
+        """A conversation where the voice read out the draft, asked to send it, and the owner answered."""
         self.ready_draft()
-        self.app.talk_judge = lambda prompt: self.judged.append(prompt) or judged
-        self.judged = []
-        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        talk_id = self.act('talk_start', {'suggestion_id': SID, 'languages': ['en-US', 'nl-BE']})['id']   # English and Dutch
         asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})
         if spoken:
             self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': spoken})
@@ -299,7 +374,6 @@ class Api(unittest.TestCase):
         self.assertTrue(asked['say'].endswith('Send this reply to Dana by email?'))
         sent = self.act('talk_send', {'id': talk_id})
         self.assertEqual(sent['status'], 'queued')
-        self.assertIn('Ja, verstuur maar.', self.judged[0])   # the Machine judged the owner's own words
         jobs = self.jobs()
         self.assertEqual(len(jobs), 1)
         self.assertEqual((jobs[0]['status'], jobs[0]['source'], jobs[0]['revision'], jobs[0]['approval_id']), ('queued', 'voice', 'r1', sent['approval_id']))
@@ -339,11 +413,12 @@ class Api(unittest.TestCase):
         self.assertEqual((started['limit'], started['warn']), (1800, 1740))   # OpenAI allows 60 minutes
         self.assertEqual([x['name'] for x in started['tools']],
                          ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'search', 'open_record', 'calendar', 'machine_status',
-                          'ask_chat', 'create_todo', 'todo_action', 'ask_machine', 'ask_to_send', 'send_answer', 'end_talk'])
+                          'ask_chat', 'create_todo', 'do_it', 'todo_action', 'undo_last_action', 'ask_machine', 'read_draft',
+                          'ask_to_send', 'ask_to_send_all', 'send_answer', 'undo_send', 'report_bug', 'end_talk'])
         action = [x for x in started['tools'] if x['name'] == 'todo_action'][0]['parameters']['properties']['action']['enum']
         self.assertFalse([x for x in action if 'send' in x or 'approve' in x])   # a to-do's buttons, never a send
         for words in ('Start with list_todos', 'One to-do at a time', 'never say something was sent unless send_answer says so',
-                      'call ask_to_send, read the draft out in full', 'never poll', 'contractions'):
+                      'call ask_to_send. If it says the owner has seen or heard this draft', 'never poll', 'contractions'):
             self.assertIn(words, started['instructions'])
         self.assertIn('{title}', started['notes']['new'])
         self.assertIn('was preparing is ready now', started['notes']['ready'])   # told once when a preparing one is ready
@@ -498,7 +573,6 @@ class Api(unittest.TestCase):
 
     def test_talk_sends_one_draft_by_voice_under_the_same_rules(self):
         self.ready_draft()
-        self.app.talk_judge = lambda prompt: '{"approve": "yes"}'
         talk_id = self.act('talk_start', {'main': True})['id']
         self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')   # nothing open, nothing asked
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': SID})
@@ -514,7 +588,7 @@ class Api(unittest.TestCase):
         # Back on Dana's: asked, a clear yes, that one draft waits with Undo, and the chat says so
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': SID})
         self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})
-        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': self.READ + 'Send this reply to Dana by email?'})
         self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes, send it.'})
         sent = self.act('talk_send', {'id': talk_id})
         self.assertEqual(sent['status'], 'queued')
@@ -543,9 +617,108 @@ class Api(unittest.TestCase):
             self.act('talk_undo', {'suggestion_id': SID, 'approval_id': approval})
         self.assertNotIn('undo_voice', [i for i in self.app.card_chat(SID)['items'] if i.get('text') == 'Approved by voice'][0])
 
+    # Read once, seen counts: the owner approves what they saw or heard, and never hears the same draft twice
+
+    def test_read_then_yes_sends_without_a_second_reading(self):
+        # Jeroen, live: Talk read the draft, then ask_to_send read it again and wanted another yes
+        self.ready_draft()
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        read = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read': True})
+        self.assertEqual(read['draft']['text'], 'Hi Dana, Thursday works. See you then.')
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': self.READ + 'Send this reply to Dana by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'No, hold on.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'no')
+        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})    # "ok, send it now": heard, so only the question
+        self.assertTrue(asked['seen'])
+        self.assertNotIn('text', asked['draft'])
+        self.assertTrue(asked['say'].startswith(t.SAY['seen']))
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send it to Dana?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'queued')
+
+    def test_read_then_the_draft_changed_reads_it_again(self):
+        self.ready_draft()
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read': True})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': self.READ})
+        self.ready_draft(body='Hi Dana, Friday works instead. See you then.')       # same revision, other words
+        asked = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1'})
+        self.assertNotIn('seen', asked)
+        self.assertEqual(asked['draft']['text'], 'Hi Dana, Friday works instead. See you then.')
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})   # not read out
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_read')
+        self.assertEqual(self.jobs(), [])
+
+    def test_a_draft_seen_on_screen_sends_without_reading(self):
+        self.ready_draft()
+        shown = {'suggestion_id': SID, 'revision': 'r1', 'to': ['dana@example.com'], 'subject': 'Re: Offsite', 'body': self.DRAFT['body']}
+        self.assertEqual(self.act('draft_seen', {**shown, 'body': 'Something else'}), {'ok': False})   # not what is there
+        self.assertEqual(self.act('draft_seen', shown), {'ok': True})
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        asked = self.act('talk_ask_send', {'id': talk_id})
+        self.assertTrue(asked['seen'])
+        self.assertNotIn('text', asked['draft'])
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Ok, send it.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'queued')
+
+    def test_a_draft_changed_after_it_was_seen_is_read_out(self):
+        self.ready_draft()
+        self.act('draft_seen', {'suggestion_id': SID, 'revision': 'r1', 'to': ['dana@example.com'], 'subject': 'Re: Offsite', 'body': self.DRAFT['body']})
+        self.ready_draft(body='Hi Dana, Friday it is.')
+        talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
+        asked = self.act('talk_ask_send', {'id': talk_id})
+        self.assertEqual(asked['draft']['text'], 'Hi Dana, Friday it is.')
+        self.assertTrue(asked['say'].startswith(t.SAY['read']))
+
+    def batch(self):
+        """Three ready to-dos, one draft each: Dana's and Kim's seen on screen, Robin's not."""
+        drafts = {SID: {**self.DRAFT}, 'b' * 16: {**self.DRAFT, 'to': ['kim@example.com'], 'to_name': 'Kim Lee', 'body': 'Hi Kim, booked.', 'revision': 'r2'},
+                  'd' * 16: {**self.DRAFT, 'kind': 'slack', 'to': ['U1'], 'to_name': 'Robin', 'subject': '', 'body': 'Robin, the deck is in the folder now.', 'revision': 'r3'}}
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES(?,?,?,'','[]','[]',?,?)",
+                       ('d' * 16, 'Deck for Robin', 'Deck for Robin', 'pending', '2026-10-28T09:00:00Z'))
+            for sid, d in drafts.items():
+                db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(d), sid))
+        for sid in (SID, 'b' * 16):
+            d = drafts[sid]
+            self.assertEqual(self.act('draft_seen', {'suggestion_id': sid, 'revision': d['revision'], 'to': d['to'], 'subject': d['subject'], 'body': d['body']}), {'ok': True})
+        return list(drafts)
+
+    def test_send_all_reads_only_the_unseen_one_and_one_yes_sends_each(self):
+        ids = self.batch()
+        talk_id = self.act('talk_start', {'main': True})['id']
+        asked = self.act('talk_ask_send', {'id': talk_id, 'ids': ids})
+        self.assertEqual(asked['question'], 'Send all 3, to Dana, Kim and Robin?')
+        self.assertEqual([('text' in d) for d in asked['drafts']], [False, False, True])
+        self.assertTrue(asked['say'].startswith(t.SAY['read_some']))
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'To Robin on Slack: Robin, the deck is in the folder now. Send all 3, to Dana, Kim and Robin?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes, send them all.'})
+        sent = self.act('talk_send', {'id': talk_id})
+        self.assertEqual(sent['status'], 'queued')
+        self.assertEqual([x['suggestion_id'] for x in sent['sent']], ids)
+        jobs = self.jobs()
+        self.assertEqual(sorted(j['revision'] for j in jobs), ['r1', 'r2', 'r3'])
+        self.assertTrue(all(j['status'] == 'queued' and j['source'] == 'voice' and j['retry_at'] > a.now() for j in jobs))
+        self.assertEqual(len({j['approval_id'] for j in jobs}), 3)        # each its own approval and Undo
+        # Undo (spoken or tapped) cancels the batch: each one still waiting
+        for x in sent['sent']:
+            self.assertEqual(self.act('talk_undo', x), {'status': 'cancelled'})
+        self.assertEqual({j['status'] for j in self.jobs()}, {'cancelled'})
+
+    def test_send_all_waits_for_the_unseen_one_to_be_read(self):
+        ids = self.batch()
+        talk_id = self.act('talk_start', {'main': True})['id']
+        self.act('talk_ask_send', {'id': talk_id, 'ids': ids})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send all 3, to Dana, Kim and Robin?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_read')
+        self.assertEqual(self.jobs(), [])
+        self.assertIn('error', self.act('talk_ask_send', {'id': talk_id, 'ids': ids + ['e' * 16, 'f' * 16, '0' * 16]}))   # at most 5
+
     def test_yes_without_a_question_sends_nothing(self):
         self.ready_draft()
-        self.app.talk_judge = lambda prompt: '{"approve": "yes"}'
         talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
         self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Thursday after two works for Dana.'})
         self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes, send it.'})
@@ -556,7 +729,7 @@ class Api(unittest.TestCase):
         talk_id, _ = self.asked(spoken=None)
         self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes'})   # before the question was even asked
         self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')
-        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to Dana by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': self.READ + 'Send this reply to Dana by email?'})
         self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'no_answer')
         self.assertEqual(self.jobs(), [])
         self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Go ahead.'})
@@ -576,21 +749,36 @@ class Api(unittest.TestCase):
         self.assertEqual(self.act('talk_send', {'id': talk_id2})['status'], 'changed')
         self.assertEqual(self.jobs(), [])
 
-    def test_an_unclear_answer_asks_again(self):
-        talk_id, _ = self.asked('Hmm, maybe, what did it say again?', judged='{"approve": "unclear"}')
+    def test_an_unclear_answer_asks_again_without_reading_again(self):
+        talk_id, _ = self.asked('Ja, ist gut, das endet.')
         sent = self.act('talk_send', {'id': talk_id})
         self.assertEqual(sent['status'], 'unclear')
-        self.assertIn('ask once more', sent['say'])
+        self.assertIn('Don’t read the draft again', sent['say'])
+        self.assertIn('Say yes to send it to Dana.', sent['say'])
         self.assertEqual(self.jobs(), [])
-        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')   # a new question first
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'no_answer')   # the question waits for a new answer
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Say yes to send it to Dana.'})
+        self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes.'})
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'queued')
 
-    def test_a_model_that_answers_oddly_is_not_a_yes(self):
-        talk_id, _ = self.asked('Yes', judged='Yes, they approved.')
-        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'unclear')
+    def test_garbled_or_partial_answers_never_send(self):
+        for answer in ('Jasne.', 'Ja ist gut das endet', 'yes but change X'):
+            talk_id, _ = self.asked(answer)
+            self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'unclear', answer)
+            self.act('talk_end', {'id': talk_id})
+        talk_id, _ = self.asked('no')
+        self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'no')
         self.assertEqual(self.jobs(), [])
+        for answer in ('yes, send it', 'ja, verstuur maar', 'Ok, send it.'):
+            self.act('talk_end', {'id': talk_id})
+            talk_id, _ = self.asked(answer)
+            self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'queued', answer)
+            with self.store.connect() as db:
+                db.execute('DELETE FROM action_jobs')
+                db.execute("UPDATE suggestions SET status='prepared' WHERE id=?", (SID,))
 
     def test_no_sends_nothing(self):
-        talk_id, _ = self.asked('Nee, wacht even.', judged='{"approve": "no"}')
+        talk_id, _ = self.asked('Nee, wacht even.')
         self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'no')
         self.assertEqual(self.jobs(), [])
 
@@ -620,9 +808,8 @@ class Api(unittest.TestCase):
         self.assertEqual(asked['revision'], 'r1')
         self.assertEqual(asked['draft']['to'], ['dana@example.com', 'kim@example.com'])   # every recipient, read out
         self.assertIn('Hi Dana, Thursday works.', asked['draft']['text'])
-        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': 'Send this reply to dana@example.com and 1 more by email?'})
+        self.act('talk_line', {'id': talk_id, 'role': 'assistant', 'text': self.READ + 'Send this reply to dana@example.com and 1 more by email?'})
         self.act('talk_line', {'id': talk_id, 'role': 'user', 'text': 'Yes.'})
-        self.app.talk_judge = lambda prompt: '{"approve": "yes"}'
         self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'queued')
         self.assertEqual(self.jobs()[0]['revision'], 'r1')   # the revision it pinned, nothing else
 
@@ -642,7 +829,7 @@ class Api(unittest.TestCase):
         self.app._talk.open[talk_id]['confirm']['at'] -= (t.ASK_SECONDS + 1) * 1000
         sent = self.act('talk_send', {'id': talk_id})
         self.assertEqual(sent['status'], 'expired')
-        self.assertIn('read the draft out and ask once more', sent['say'])
+        self.assertIn('Call ask_to_send again and ask once more', sent['say'])
         self.assertEqual(self.jobs(), [])
 
     def test_the_voice_cannot_approve_through_the_normal_controls(self):
@@ -662,7 +849,7 @@ class Api(unittest.TestCase):
         started = self.act('talk_start', {'suggestion_id': SID})
         self.assertNotIn(SECRET, json.dumps(started))
         self.assertEqual((started['limit'], started['warn'], started['per_use']), (600, 540, True))
-        self.assertEqual([tool['name'] for tool in started['tools']], ['todo_details', 'find_todos', 'ask_chat', 'create_todo', 'ask_to_send', 'send_answer', 'end_talk'])
+        self.assertEqual([tool['name'] for tool in started['tools']], [x['name'] for x in t.TOOLS])
         self.assertIn('Reply to Dana about the offsite', started['instructions'])
         self.assertEqual(self.act('talk_offer', {'id': started['id'], 'sdp': OFFER}), {'sdp': ANSWER})
         self.act('talk_line', {'id': started['id'], 'role': 'user', 'text': 'What does Dana want?'})
@@ -683,6 +870,15 @@ class Api(unittest.TestCase):
         self.assertEqual(started['speed'], t.SPEED)            # the page sets it in session.update
         self.assertEqual(started['turn'], {'type': 'semantic_vad', 'eagerness': 'low', 'create_response': True, 'interrupt_response': True})
         self.assertNotIn('speed', self.gateway.calls[-1])      # talk.client.create takes no speed
+        self.assertEqual(started['noise'], {'type': 'far_field'})
+        self.assertEqual(started['transcription']['model'], 'gpt-4o-transcribe')
+        self.assertEqual(started['transcription_next'], {'model': 'gpt-transcribe', 'languages': started['languages']})
+        self.assertEqual(started['languages'][0], 'en')
+        self.act('talk_end', {'id': started['id']})
+        started = self.act('talk_start', {'suggestion_id': SID, 'languages': ['en-US', 'nl-BE', 7, 'x' * 99]})
+        self.assertEqual(started['languages'], ['en', 'nl'])   # the browser's languages, checked
+        self.assertIn('English or Dutch', started['instructions'])
+        self.assertNotIn('language', started['transcription'])
         self.act('talk_end', {'id': started['id']})
         saved = self.act('voice_prefs', {'talk_voice': 'marin'})
         self.assertEqual(saved['talk_voice'], 'marin')
@@ -725,7 +921,8 @@ class Api(unittest.TestCase):
             details = self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']
         self.assertEqual(details['title'], 'Reply to Dana about the offsite')
         self.assertEqual(details['messages'][0], {'from': 'Dana', 'text': 'Does Thursday work for the offsite?'})
-        self.assertEqual(details['drafts'], [{'kind': 'email', 'to': 'dana@example.com', 'subject': 'Offsite', 'body': 'Thursday works.'}])
+        self.assertEqual(details['drafts'], [{'kind': 'email', 'to': 'dana@example.com', 'subject': 'Offsite'}])   # read_draft reads it
+        self.assertIn('read_draft', details['draft_note'])
         found = self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': {'words': 'offsite venue'}})['output']
         self.assertEqual([x['title'] for x in found['todos']], ['Book the offsite venue'])
         found = self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': {'words': 'offsite'}})['output']
