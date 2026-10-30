@@ -34,6 +34,10 @@ Wenn viele Notizen dieselbe Art von Aufgabe betreffen, schlägt eine Aufgabe ein
 
 **Nicht jetzt** lässt die Notizen, wie sie sind. Skills, die deine Machine in Einstellungen > Skills vorschlägt, bekommen dieselbe Prüfung.
 
+## Aus einer Aufgabe
+
+Bitte in einer Aufgabe um einen Skill, und deine Machine schreibt ihn dort. Öffne **Skill lesen** in der Aufgabe und drücke dann **Skill erstellen** (oder **Skill aktualisieren** für einen, den du schon hast). Vorher wird nichts installiert, und danach ist die Aufgabe erledigt. Verwirfst du ihn stattdessen in Einstellungen > Skills, zeigt die Aufgabe **Skill verworfen** und bleibt offen, bis du sie schließt.
+
 ## Einen teilen
 
 Teile einen Skill mit einem Freund oder Teammitglied. Die Person liest ihn und entscheidet, ob sie ihn installiert. Spätere Änderungen gehen nur raus, wenn du erneut teilst.

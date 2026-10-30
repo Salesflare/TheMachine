@@ -8141,6 +8141,10 @@ class Store:
                 extra['skill_proposal']['related'] = {'name': proposal['related_name'], 'relation': proposal['relation'] or ''}
             if proposal['status'] in ('pending', 'declined', 'failed'):
                 extra['labels'] = skill_labels(proposal)
+        # A skill this to-do's run proposed (skills-propose --job): the card shows it and offers Create skill or Update skill
+        proposed = skills.for_task(db, suggestion['id'])
+        if proposed:
+            extra['proposed_skill'] = proposed
         action=suggestion.get('next_action');action=json.loads(action) if isinstance(action,str) else action
         if action:
             states={r['revision']:{**{k:r[k] for k in ('status','error','message_id','snooze_status','snooze_until','snooze_error') if r[k] is not None or k in ('status','error','message_id')},
@@ -10786,6 +10790,10 @@ def thread_recipients(rows, own):
     return seen[:6]
 
 
+# A sentence the link ended ("The draft is at <path>."): without the link it points at nothing, so it goes too.
+DANGLING_POINTER = re.compile(r'(^|[.!?]\s+)[^.!?]*\b(?:at|in|to|under|into|on|see|here)\s*[.:]?\s*$', re.I)
+
+
 def strip_result_links(text):
     """Drop local result-file links (the card gets one Read result link instead) and the gaps they leave."""
     def strip(line):
@@ -10794,6 +10802,8 @@ def strip_result_links(text):
     lines=[]
     for line in text.split('\n'):
         kept=strip(line)
+        if kept!=line.rstrip():
+            kept=DANGLING_POINTER.sub(r'\1', kept).rstrip()
         # A line left with only separators or a dangling label ("Draft:") carried nothing but the link.
         if kept!=line.rstrip() and (re.fullmatch(r'[\s·•|,;:()\-–—]*', kept) or re.fullmatch(r'\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:', kept)):
             continue

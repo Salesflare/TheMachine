@@ -34,6 +34,10 @@ Quand beaucoup de notes portent sur un même type de tâche, une tâche suggère
 
 **Pas maintenant** garde les notes telles quelles. Les compétences que votre Machine propose dans Paramètres > Compétences passent la même vérification.
 
+## Depuis une tâche
+
+Demandez une compétence dans une tâche, et votre Machine l’écrit là. Ouvrez **Lire la compétence** dans la tâche, puis appuyez sur **Créer la compétence** (ou **Mettre à jour la compétence** pour une que vous avez déjà). Rien n’est installé avant, et la tâche est ensuite terminée. Si vous l’ignorez dans Réglages > Compétences, la tâche affiche **Compétence ignorée** et reste ouverte jusqu’à ce que vous la fermiez.
+
 ## En partager une
 
 Partagez une compétence avec un ami ou un collègue. La personne la lit et choisit de l’installer. Les modifications ultérieures ne partent que si vous la partagez à nouveau.

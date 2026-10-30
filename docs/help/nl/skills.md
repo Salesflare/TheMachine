@@ -34,6 +34,10 @@ Gaan veel notities over één soort taak, dan stelt een to-do een skill voor. Hi
 
 **Niet nu** laat de notities zoals ze zijn. Skills die je Machine voorstelt in Instellingen > Skills krijgen dezelfde controle.
 
+## Vanuit een to-do
+
+Vraag in een to-do om een skill, en je Machine schrijft hem daar. Open **Skill lezen** in de to-do en druk dan op **Skill maken** (of **Skill bijwerken** voor een die je al hebt). Daarvoor wordt niets geïnstalleerd, en daarna is de to-do klaar. Zet je hem weg in Instellingen > Skills, dan toont de to-do **Skill weggezet** en blijft hij open tot je hem sluit.
+
 ## Er een delen
 
 Deel een skill met een vriend of teamgenoot. Die leest hem en kiest of hij geïnstalleerd wordt. Latere wijzigingen gaan alleen mee als je opnieuw deelt.

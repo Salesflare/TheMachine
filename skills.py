@@ -32,6 +32,7 @@ import os
 import re
 import secrets
 import shutil
+import sqlite3
 import subprocess
 import tempfile
 import threading
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS skills(id TEXT PRIMARY KEY,slug TEXT NOT NULL,name TE
   status TEXT NOT NULL,origin TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 1,sha TEXT NOT NULL,author TEXT,fleet TEXT,member_id TEXT,
   ask_id TEXT,their_slug TEXT,replaces TEXT,note TEXT,shared TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS skills_status ON skills(status);
+CREATE TABLE IF NOT EXISTS skill_task_decided(task TEXT PRIMARY KEY,name TEXT NOT NULL,choice TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS skill_hints(id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,skill TEXT NOT NULL,kind TEXT NOT NULL,name TEXT NOT NULL,
   summary TEXT,why TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 '''
@@ -103,6 +105,8 @@ def ensure(db):
         db.execute('ALTER TABLE skills ADD COLUMN base_sha TEXT')
     if 'related' not in have:  # a proposed skill next to another one: {"id", "name", "relation"}
         db.execute('ALTER TABLE skills ADD COLUMN related TEXT')
+    if 'task' not in have:  # a proposal made by a to-do's run: that to-do's id, so its card offers Create skill
+        db.execute('ALTER TABLE skills ADD COLUMN task TEXT')
 
 
 def one_line(value, chars):
@@ -320,6 +324,36 @@ def update_view(ref, target, after, base_sha):
     stale = bool(base_sha) and target['sha'] != base_sha
     return {'skill': target['name'], 'before': target['body'], 'after': after, 'changes': changes(target['body'], after),
             **({'stale': True} if stale else {'review': review_token(ref, target['sha'])})}
+
+
+def for_task(db, task):
+    """The skill a to-do's run proposed (propose with task), as its card shows it before the owner decides: its name,
+    when it is used and its instructions; for an update, the before and after (update_view, None once that skill is gone)."""
+    try:
+        row = db.execute("SELECT * FROM skills WHERE task=? AND status='proposed' AND origin='proposed' ORDER BY created_at DESC LIMIT 1",
+                         (task,)).fetchone()
+    except sqlite3.OperationalError:  # before the task column: nothing was proposed from a to-do yet
+        return None
+    if not row:
+        try:
+            decided = db.execute('SELECT name,choice FROM skill_task_decided WHERE task=?', (task,)).fetchone()
+        except sqlite3.OperationalError:
+            return None
+        return {decided['choice']: True, 'name': decided['name']} if decided else None
+    out = {'id': row['id'], 'name': row['name'], 'description': row['description'], 'body': row['body']}
+    if row['replaces']:
+        target = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off')", (row['replaces'],)).fetchone()
+        out['update'] = update_view(row['id'], dict(target), row['body'], row['base_sha']) if target else None
+    return out
+
+
+def task_of(db, skill_id):
+    """The to-do whose run proposed this skill, if any."""
+    try:
+        row = db.execute("SELECT task FROM skills WHERE id=? AND status='proposed'", (str(skill_id or ''),)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    return row and row['task']
 
 
 def other_names(skills_dir):
@@ -602,12 +636,18 @@ class Skills:
         """Every skill kept here (on or off), a teammate's included: what a proposal is checked against."""
         return [dict(r) for r in db.execute("SELECT id,name,slug,description,origin,body,sha FROM skills WHERE status IN ('on','off') ORDER BY name")]
 
-    def propose(self, name, description, body, why='', update=None, related=None, relation=None, new=False, base=None):
+    def propose(self, name, description, body, why='', update=None, related=None, relation=None, new=False, base=None, task=None):
         """The agent noticed repeated work: a skill for the owner to approve, checked first against the skills here
         (check_against): an update to one of the owner's own, a new one related to another, or a new one. Never on, and
-        no skill changed, before the owner's Approve (an update's after the before and after: Update skill)."""
+        no skill changed, before the owner's Approve (an update's after the before and after: Update skill).
+        task: the to-do whose run proposes it (the owner asked for this skill there). Its card then offers Create skill or
+        Update skill, and a newer proposal from that to-do replaces its earlier one (a corrected name, say)."""
         name, description, body = validate(name if not update else name or 'Update', description if not update else description or 'An update to a skill.', body)
         with self.connect() as db:
+            ensure(db)
+            if task:
+                db.execute("DELETE FROM skills WHERE status='proposed' AND origin='proposed' AND task=?", (task,))
+                db.execute('DELETE FROM skill_task_decided WHERE task=?', (task,))  # a new proposal: the to-do offers it again
             if db.execute("SELECT COUNT(*) FROM skills WHERE status='proposed'").fetchone()[0] >= OPEN_PROPOSALS:
                 raise ValueError(f'{OPEN_PROPOSALS} proposed skills already wait for the owner')
             on_hand = self.on_hand(db)
@@ -625,10 +665,11 @@ class Skills:
                     return {'ok': True, 'duplicate': True}
             stamp, sha = now(), digest(name, description, body)
             skill_id = 'sk_' + secrets.token_hex(8)
-            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,replaces,base_sha,related,created_at,updated_at) "
-                       "VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?,?,?,?)",
+            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,replaces,base_sha,related,task,created_at,updated_at) "
+                       "VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?,?,?,?,?)",
                        (skill_id, slug_of(name), name, description, body, sha, one_line(why, NOTE_CHARS) or None, target and target['id'],
-                        target and target['sha'], json.dumps({'id': linked['id'], 'name': linked['name'], 'relation': relation}) if linked else None, stamp, stamp))
+                        target and target['sha'], json.dumps({'id': linked['id'], 'name': linked['name'], 'relation': relation}) if linked else None,
+                        task or None, stamp, stamp))
         return {'ok': True, 'id': skill_id, **({'update': target['name']} if target else {})}
 
     # -- shared over the Network
@@ -727,7 +768,9 @@ class Skills:
                 db.execute('UPDATE skills SET body=?,sha=?,version=version+1,updated_at=? WHERE id=?',
                            (row['body'], digest(target['name'], target['description'], row['body']), now(), target['id']))
                 db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
+                self._task_decided(db, row, 'created')
             elif choice in ('install', 'approve'):
+                self._task_decided(db, row, 'created')
                 if row['replaces'] and db.execute('SELECT 1 FROM skills WHERE id=?', (row['replaces'],)).fetchone():
                     db.execute('UPDATE skills SET name=?,description=?,body=?,sha=?,version=?,author=?,updated_at=? WHERE id=?',
                                (row['name'], row['description'], row['body'], row['sha'], row['version'], row['author'], now(), row['replaces']))
@@ -738,6 +781,7 @@ class Skills:
                     db.execute("UPDATE skills SET status='on',slug=?,updated_at=? WHERE id=?", (self._slug(db, row['name']), now(), row['id']))
             elif choice in ('decline', 'dismiss'):
                 db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
+                self._task_decided(db, row, 'dismissed')
             else:
                 raise ValueError('Choose install or decline')
         if row['status'] == 'incoming' and row['ask_id'] and self.fleet:
@@ -749,6 +793,13 @@ class Skills:
                 LOG.warning('skill answer error=%s', type(error).__name__)
         self.sync()
         return self.view()
+
+    @staticmethod
+    def _task_decided(db, row, choice):
+        """A to-do's proposal decided (created or dismissed): its card says so instead of offering it again or as a draft."""
+        if row['status'] == 'proposed' and 'task' in row.keys() and row['task']:
+            ensure(db)
+            db.execute('INSERT OR REPLACE INTO skill_task_decided(task,name,choice,at) VALUES(?,?,?,?)', (row['task'], row['name'], choice, now()))
 
     def shares_out(self, db, skill_id):
         rows = db.execute("SELECT name,status,answer,context FROM fleet_out WHERE kind='skill' AND context LIKE ? ORDER BY at DESC LIMIT 20",

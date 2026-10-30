@@ -77,6 +77,11 @@ When your agent notices the same kind of work coming back, it can propose a skil
 (`assistant skills-propose --name ... --description ... --file -`). A proposal stays off and waits in Settings > Skills
 with **Approve** and **Dismiss**; at most three wait at a time. Only your tap on the dashboard turns it on.
 
+When you ask for a skill in a to-do, its run proposes it with `--job <job id>`. The to-do then shows the skill under
+**Read the skill** (or **Read the change** for an update) and leads with **Create skill** (or **Update skill**, which opens
+the before and after first). That tap is the same Approve as in Settings > Skills, and it marks the to-do done. A corrected
+proposal from the same to-do replaces its earlier one, so a renamed draft doesn't leave the old name waiting.
+
 It runs the same check as a suggestion from your notes (below): the agent has to say whether one of your skills already
 does that job (`--update <skill>`), is related but separate (`--related <skill> --relation "..."`), or neither (`--new`).
 An update first returns the skill's instructions; the agent sends the whole skill back rewritten with `--base`, and
