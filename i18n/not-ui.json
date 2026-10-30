@@ -133,6 +133,7 @@
  "Stages{}",
  "Switch to {}? This changes {} setting{}.",
  "Talk:",
+ "Talk: transcription failed",
  "That can’t be undone from here.",
  "That didn’t work.",
  "That doc belongs to another Docs connection",

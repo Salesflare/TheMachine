@@ -717,7 +717,7 @@ async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)
  else if(e.type==='input_audio_buffer.speech_stopped'){v.speaking=false;setTimeout(()=>talkTellNext(v),1200)}
  else if(e.type==='input_audio_buffer.committed'){v.lastItem=e.item_id;if(e.item_id)v.pending.add(e.item_id)}
  else if(e.type==='conversation.item.input_audio_transcription.completed')talkHeard(v,e);
- else if(e.type==='conversation.item.input_audio_transcription.failed')talkHeard(v,{item_id:e.item_id,transcript:'',failed:true});
+ else if(e.type==='conversation.item.input_audio_transcription.failed')talkHeard(v,{item_id:e.item_id,transcript:'',failed:true,error:e.error});
  else if(e.type==='response.created'){v.responding=true;if(e.response?.id&&v.lastItem)v.respFor[e.response.id]=v.lastItem;v.lastItem=null}
  else if(e.type==='response.output_audio_transcript.done')(v.heard[e.response_id]||=[]).push([e.transcript,e.item_id]);
  else if(e.type==='response.done'){v.responding=false;const id=e.response?.id,said=v.heard[id]||[],to=v.respFor[id];delete v.heard[id];delete v.respFor[id];
@@ -733,14 +733,27 @@ async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)
 // (gpt-realtime heard "음력?" or "แก" in a rustle) isn't kept, and the voice's reply to it is stopped and dropped too.
 // transcript null: the transcript never came (a reply waiting on it is kept).
 function talkHeard(v,e){const item=e.item_id;if(!v.pending.has(item)&&e.transcript==null)return;v.pending.delete(item);
- const heardIn=Array.isArray(e.languages)?e.languages.map(x=>String(x).slice(0,2).toLowerCase()):[],mine=(v.languages||['en']).map(x=>String(x).slice(0,2));
+ const heardIn=Array.isArray(e.languages)?e.languages.map(talkLang).filter(Boolean):[],mine=(v.languages||['en']).map(talkLang);
  const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt),foreign=!noise&&e.transcript!=null&&!talkShort(e.transcript)&&(talkForeign(e.transcript,v.languages)||heardIn.length>0&&!heardIn.some(l=>mine.includes(l)));  // gpt-transcribe says which language it heard
  if(noise||foreign){v.dropped.add(item);if(v.dc?.readyState==='open'){
    if(item)v.dc.send(JSON.stringify({type:'conversation.item.delete',item_id:item}));  // out of what the voice remembers
    for(const [id,to] of Object.entries(v.respFor))if(to===item&&v.responding){v.dc.send(JSON.stringify({type:'response.cancel',response_id:id}));v.dc.send(JSON.stringify({type:'output_audio_buffer.clear'}))}}
-  if(foreign)talkTell(v,v.notes.again||'')}  // words, but not in a language the owner speaks: "Sorry, say that again?"
- else if(e.transcript){v.lastUser=String(e.transcript).trim();talkLine(v,'user',e.transcript,item)}
+  if(e.failed&&e.error)console.warn('Talk: transcription failed',e.error?.code||'',e.error?.message||'');
+  if(foreign||e.failed)talkMiss(v,e.failed)}
+ else if(e.transcript){v.misses=0;v.unheardTold=false;v.lastUser=String(e.transcript).trim();talkLine(v,'user',e.transcript,item)}
  const after=v.after[item]||[];delete v.after[item];if(!noise&&!foreign)after.forEach(f=>f())}
+// Words that didn't come through (another language, or a transcription that failed): the first time "Sorry, say that
+// again?" (notes.again). Twice in a row, or a failed transcription, says once what's wrong instead (notes.unheard: it
+// can't make out their words, check the microphone or type), then stays quiet until a line comes through, never a loop.
+function talkMiss(v,failed){v.misses=(v.misses||0)+1;
+ if(v.unheardTold)return;
+ if(!failed&&v.misses<2){talkTell(v,v.notes.again||'');return}
+ v.unheardTold=true;talkTell(v,v.notes.unheard||v.notes.again||'')}
+// A language gpt-transcribe says it heard: [{code:'fr'}] in its events, an ISO 639-1 code ('fr', 'pt-BR') or a 639-3
+// one ('fra'); a plain string too. Read as 'fr', or as the 639-3 code when the app has no such language.
+const TALK_ISO3={eng:'en',nld:'nl',dut:'nl',deu:'de',ger:'de',fra:'fr',fre:'fr',spa:'es',ita:'it',por:'pt'};
+const talkLang=x=>{const c=String((x&&typeof x==='object'?x.code??x.language:x)??'').trim().toLowerCase().split(/[-_]/)[0];
+ return /^[a-z]{2,3}$/.test(c)?TALK_ISO3[c]||c:''};
 // The short answers and commands Talk listens for (yes, no, ok, send it, stop, undo, next…, in the app's languages): never
 // taken for noise, however unsure the transcript is (talk_live.YES has the same yes words)
 const TALK_SHORT=new Set(`yes yeah yep yup ok okay sure send it go ahead no nope nah stop undo wait cancel next previous back skip done dismiss snooze again please now do them all both ja jawel jep oke okee nee neen niet doe maar verstuur stuur hoor prima goed klopt wacht volgende vorige terug klaar nein jawohl klar genau gut bitte oui non daccord si vale claro sim nao certo bye goodbye thanks thank cheers doei dag bedankt tschuss danke merci ciao grazie adios gracias tchau obrigado`.split(' '));

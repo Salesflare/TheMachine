@@ -256,6 +256,11 @@ STOPPED_NOTE = ('The chat of the to-do "{title}" stopped before it answered "{re
                 'and offer to ask again. If they say "ask again", call ask_chat with that same request; never create_todo.')
 # What the owner said didn't come through (a few words in a language they don't speak, or one odd word before an action)
 AGAIN_NOTE = 'The owner’s last words didn’t come through clearly. Say only: "Sorry, say that again?" and do nothing else.'
+# Their words didn't come through twice in a row, or the transcription failed: said once, plainly, instead of a loop of
+# "Sorry, say that again?"
+UNHEARD_NOTE = ('Talk can’t make out the owner’s words: the last ones didn’t come through. Say once, in one short plain '
+                'sentence in their language, that you can’t make out what they say, and that they can check their microphone '
+                'or type in the chat instead. Do nothing else, and don’t say it again.')
 # A request Talk live hands to the chat: a decision id with this prefix (still a chat- turn), never shown as the
 # owner's message (their own words are the talk lines), with this note in the chat's prompt
 RELAY_PREFIX = 'chat-talk-'

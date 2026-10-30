@@ -69,3 +69,4 @@ Hablar en vivo usa la voz en tiempo real de OpenAI, así que OpenAI tiene que es
 - **El micro está bloqueado**: permite el micro para este sitio en los ajustes de tu navegador.
 - **Hablar en vivo no pudo empezar**: revisa OpenAI en OpenClaw e inténtalo de nuevo.
 - **Hablar en vivo perdió la conexión**: vuelve a empezarlo. Lo dicho hasta ahora sigue en el chat.
+- Si dice que no entiende lo que dices, lo que dijiste no llegó dos veces seguidas. Revisa el micrófono o escribe en el chat. Lo dice una vez y luego espera hasta oírte.

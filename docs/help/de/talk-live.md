@@ -69,3 +69,4 @@ Live sprechen nutzt die Echtzeitstimme von OpenAI, deshalb muss OpenAI in OpenCl
 - **Das Mikrofon ist blockiert**: Erlaube das Mikrofon für diese Seite in den Einstellungen deines Browsers.
 - **Live sprechen konnte nicht starten**: Prüfe OpenAI in OpenClaw und versuch es noch mal.
 - **Live sprechen hat die Verbindung verloren**: Starte es neu. Was bisher gesagt wurde, bleibt im Chat.
+- Wenn sie sagt, dass sie dich nicht versteht, kam das Gesagte zweimal hintereinander nicht an. Prüfe dein Mikrofon oder schreib im Chat. Sie sagt das einmal und wartet dann, bis sie dich hört.
