@@ -18,7 +18,7 @@ documents), and nothing else asks for it:
 Writes, each only after the owner's OK on exactly that: drive.replies.create through Replier, for an approved doc_reply
 (next_actions.py), and a new doc or a pinned edit through Writer, for an approved doc_write (doc_writes.py). Writing docs
 needs one more consent: Google's drive scope (the same one as replies; a new doc also works with drive.file), and
-Microsoft's Files.ReadWrite.All, which the owner grants with Allow edits on the Docs connection.
+Microsoft's Files.ReadWrite.All, which the owner grants with Allow edits on the Microsoft Word connection.
 """
 import datetime as dt
 import hashlib
@@ -36,13 +36,14 @@ from xml.parsers import expat
 KINDS = {'docs.comment': 'Doc comment', 'docs.mention': 'Doc mention', 'docs.suggestion': 'Suggested edit',
          'docs.shared': 'Shared doc'}
 SETUP = {
-    'label': 'Docs',
+    # Microsoft only for now, so the tile says so; a Google Docs one gets its own name once the broker offers it
+    'label': 'Microsoft Word',
     'account': {'id': 'docs', 'service': 'docs', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 900},
     # Word files only for now, hosted and self-hosted alike: Google Docs come through the token broker, which doesn't
     # offer their consent yet (docs/help/docs.md)
-    'what': 'Comments and shares on Word files in OneDrive and SharePoint.',
-    'note': 'Uses the Microsoft sign-in this Machine already has for that address. Reading files needs its own consent: '
-            'press Connect documents on your setup page, or Sign in with Microsoft here.',
+    'what': 'Word files: comments, shares, and new docs or edits you approve.',
+    'note': 'Uses the Microsoft sign-in of an Outlook address you connected. Reading files needs its own OK: press '
+            'Connect documents on your setup page, or Sign in with Microsoft here.',
     'ask': [('email', 'The Microsoft address that owns the files')],
     # a hosted Machine: its account page's Docs tile has the consent (Connect documents); on a paired self-hosted one,
     # + Add signs in with Microsoft through the control plane (fleet.SIGNIN_OF, onboarding.connect_docs_grant)

@@ -141,8 +141,8 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Reads only.'},
  zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
- microsoft_docs:{label:'Microsoft',title:'Docs',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
- microsoft_docs_write:{label:'Microsoft',title:'Docs',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
+ microsoft_docs:{label:'Microsoft',title:'Microsoft Word',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
+ microsoft_docs_write:{label:'Microsoft',title:'Microsoft Word',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
  google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
@@ -378,7 +378,7 @@ function telegramNote(c){const stop=c.error==='telegram_app_blocked'?t('Telegram
  return `<p class="note">${esc(t('Private chats and small groups. Replies only when you press Send on a to-do.'))}</p>${stop?`<p class="alert">${esc(stop)} ${reconnectButton(c)}</p>`:''}`}
 function connectorCard(c,open){
 const unit={calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings',trello:'card changes'}[c.service]||'messages',tone=connectorTone(c);
-return `<article data-group="${healthGroup(c.service)}" data-conn="${esc(c.id)}"><div class="conn-head">${icon(c.service)}<div><h3>${esc(c.display_name||c.email)}</h3><small>${service(c.service)} · ${esc(scopeLabel(c.boundary))}</small></div><span class="state-dot t-${tone}" title="${esc(connectorHealth(c).text)}"></span></div>
+return `<article data-group="${healthGroup(c.service)}" data-conn="${esc(c.id)}"><div class="conn-head">${icon(c.service)}<div><h3>${esc(c.display_name||c.email)}</h3><small>${c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service)} · ${esc(scopeLabel(c.boundary))}</small></div><span class="state-dot t-${tone}" title="${esc(connectorHealth(c).text)}"></span></div>
 <p class="connection-status">${esc(connectorHealth(c).text)}</p>
 ${c.service==='intercom'?`<p class="muted conn-replies">${c.replies_as?`Replies as ${esc(c.replies_as)}, only after you press Send.`:'Reads only. Never replies.'}</p>`:''}
 ${c.service==='salesflare'?'<p class="muted conn-replies">Reads accounts, contacts, emails and meetings. Changes nothing.</p>':''}

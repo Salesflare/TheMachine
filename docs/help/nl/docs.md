@@ -1,14 +1,14 @@
 ---
-title: Docs: Word, OneDrive en SharePoint
+title: Microsoft Word: Word-bestanden in OneDrive en SharePoint
 area: connections
-summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint. Google Docs komen later.
+summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint, plus nieuwe documenten en wijzigingen die je goedkeurt. Google Docs komen later.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Wat het leest
 
-Docs leest Word-bestanden in OneDrive en SharePoint, met de Microsoft-login die je al hebt voor dat adres. Dat werkt op een gehoste Machine en op je eigen computer die aan je account gekoppeld is. Google Docs komen later: de Google-login van The Machine kan nog geen documenten lezen. Het haalt binnen:
+De koppeling **Microsoft Word** leest Word-bestanden in OneDrive en SharePoint, met de Microsoft-login van een Outlook-adres dat je gekoppeld hebt. Dat werkt op een gehoste Machine en op je eigen computer die aan je account gekoppeld is. Google Docs komen later: de Google-login van The Machine kan nog geen documenten lezen. Het haalt binnen:
 
 - Documenten die iemand met je deelt.
 - Reacties en antwoorden op documenten van jou, en reacties die jou vermelden.
@@ -35,27 +35,27 @@ Je Machine kan een nieuw Word-document schrijven, of een document aanpassen waar
 
 Hij vervangt tekst, voegt tekst toe en voegt alinea's en koppen toe. Tabellen, afbeeldingen, bijgehouden wijzigingen en velden laat hij met rust. Een nieuw document komt in je OneDrive en blijft privé tot je het deelt.
 
-Zet het aan met **Bewerken toestaan** op de Docs-kaart bij **Koppelingen**. Microsoft vraagt of hij je bestanden mag wijzigen, los van lezen. Opnieuw aanmelden houdt dat.
+Zet het aan met **Bewerken toestaan** op de kaart van Microsoft Word bij **Koppelingen**. Microsoft vraagt of hij je bestanden mag wijzigen, los van lezen. Opnieuw aanmelden houdt dat.
 
 ## Waar het om vraagt
 
 Documenten lezen heeft een eigen OK nodig, los van je login voor mail: Microsoft vraagt je om het lezen van je bestanden toe te staan, ook die met je gedeeld zijn in OneDrive en SharePoint. Je toegang tot je mail en je agenda blijft zoals ze is.
 
-Wordt die OK later ingetrokken, dan zegt de kaart van Docs **Wacht op je OK om documenten te lezen**.
+Wordt die OK later ingetrokken, dan zegt de kaart van Microsoft Word **Wacht op je OK om documenten te lezen**.
 
 ## Koppelen
 
 Koppel eerst Outlook voor het adres. Dan:
 
-- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Documenten** en druk op **Inloggen met Microsoft**. Microsoft vraagt je om het lezen van je bestanden toe te staan, daarna kom je terug in het dashboard.
-- Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Documenten** en druk op **Inloggen met Microsoft**.
+- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Microsoft Word** en druk op **Inloggen met Microsoft**. Microsoft vraagt je om het lezen van je bestanden toe te staan, daarna kom je terug in het dashboard.
+- Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Microsoft Word** en druk op **Inloggen met Microsoft**.
 
 Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd.
 
 ## Werk of privé
 
-Docs volgt het label werk of privé van de koppeling, net als mail. Werkdocumenten kunnen in de Graph van je team terechtkomen volgens je [deelregels](sharing-rules.md). Privédocumenten nooit.
+Microsoft Word volgt het label werk of privé van de koppeling, net als mail. Werkdocumenten kunnen in de Graph van je team terechtkomen volgens je [deelregels](sharing-rules.md). Privédocumenten nooit.
 
 ## Verwijderen
 
-In het dashboard: **Koppelingen**, open Docs, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft.
+In het dashboard: **Koppelingen**, open Microsoft Word, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft.

@@ -1,14 +1,14 @@
 ---
-title: Docs : Word, OneDrive et SharePoint
+title: Microsoft Word : fichiers Word dans OneDrive et SharePoint
 area: connections
-summary: Commentaires, mentions, modifications suivies et partages sur vos fichiers Word dans OneDrive et SharePoint. Google Docs viendra plus tard.
+summary: Commentaires, mentions, modifications suivies et partages sur vos fichiers Word dans OneDrive et SharePoint, ainsi que les nouveaux documents et modifications que vous approuvez. Google Docs viendra plus tard.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Ce qu’il lit
 
-Docs lit les fichiers Word dans OneDrive et SharePoint, avec la connexion Microsoft que vous avez déjà pour cette adresse. Cela fonctionne sur une Machine hébergée et sur votre propre ordinateur associé à votre compte. Google Docs viendra plus tard : la connexion Google de The Machine ne peut pas encore lire les documents. Il récupère :
+La connexion **Microsoft Word** lit les fichiers Word dans OneDrive et SharePoint, avec la connexion Microsoft d’une adresse Outlook que vous avez connectée. Cela fonctionne sur une Machine hébergée et sur votre propre ordinateur associé à votre compte. Google Docs viendra plus tard : la connexion Google de The Machine ne peut pas encore lire les documents. Il récupère :
 
 - Les documents que quelqu’un partage avec vous.
 - Les commentaires et réponses sur vos documents, et les commentaires qui vous mentionnent.
@@ -35,27 +35,27 @@ Votre Machine peut écrire un nouveau document Word, ou modifier un document don
 
 Elle remplace du texte, ajoute du texte et ajoute des paragraphes et des titres. Elle ne touche pas aux tableaux, images, modifications suivies et champs. Un nouveau document arrive dans votre OneDrive et reste privé tant que vous ne le partagez pas.
 
-Pour l’activer, touchez **Autoriser les modifications** sur la carte Docs dans **Connexions**. Microsoft demande l’autorisation de modifier vos fichiers, à part de la lecture. Se reconnecter la conserve.
+Pour l’activer, touchez **Autoriser les modifications** sur la carte Microsoft Word dans **Connexions**. Microsoft demande l’autorisation de modifier vos fichiers, à part de la lecture. Se reconnecter la conserve.
 
 ## Ce qu’il demande
 
 La lecture des documents demande son propre accord, à part de votre connexion e-mail : Microsoft vous demande d’autoriser la lecture de vos fichiers, y compris ceux partagés avec vous dans OneDrive et SharePoint. Vos accès e-mail et agenda restent tels quels.
 
-Si cet accord est retiré plus tard, la carte Docs indique **En attente de votre accord pour lire les documents**.
+Si cet accord est retiré plus tard, la carte Microsoft Word indique **En attente de votre accord pour lire les documents**.
 
 ## Le connecter
 
 Connectez d’abord Outlook pour cette adresse. Ensuite :
 
-- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter**, choisissez **Documents** et appuyez sur **Se connecter avec Microsoft**. Microsoft vous demande d’autoriser la lecture de vos fichiers, puis vous revenez au tableau de bord.
-- Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **+ Ajouter**, choisissez **Documents** et appuyez sur **Se connecter avec Microsoft**.
+- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft Word** et appuyez sur **Se connecter avec Microsoft**. Microsoft vous demande d’autoriser la lecture de vos fichiers, puis vous revenez au tableau de bord.
+- Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft Word** et appuyez sur **Se connecter avec Microsoft**.
 
 Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’est pas ajouté.
 
 ## Travail ou perso
 
-Docs suit l’étiquette travail ou perso de sa connexion, comme les e-mails. Les documents de travail peuvent rejoindre le Graph de votre équipe selon vos [règles de partage](sharing-rules.md). Les documents perso, jamais.
+Microsoft Word suit l’étiquette travail ou perso de sa connexion, comme les e-mails. Les documents de travail peuvent rejoindre le Graph de votre équipe selon vos [règles de partage](sharing-rules.md). Les documents perso, jamais.
 
 ## Le retirer
 
-Dans le tableau de bord : **Connexions**, ouvrez Docs, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste.
+Dans le tableau de bord : **Connexions**, ouvrez Microsoft Word, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste.

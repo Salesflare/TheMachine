@@ -45,7 +45,7 @@ if(/rate_?limit/.test(what))return t('{} asked to slow down',name||t('The source
 if(/read_failed$/.test(what))return name?t('Couldn’t read {}',name):t('Couldn’t read the source');
 if(/^HTTP_5/.test(what))return t('{} had a problem on its side',name||t('The source'));
 const words=v.replace(/[_:]+/g,' ').trim();return words[0].toUpperCase()+words.slice(1)}
-const service=v=>({gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',slack:'Slack',salesflare:'Salesflare CRM',whatsapp:'WhatsApp',telegram:'Telegram chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'OpenClaw Gateway',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',trello:'Trello',stripe:'Stripe',rss:'Feed',docs:'Docs',x:'X'}[v]||v);
+const service=v=>({gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',slack:'Slack',salesflare:'Salesflare CRM',whatsapp:'WhatsApp',telegram:'Telegram chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'OpenClaw Gateway',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',trello:'Trello',stripe:'Stripe',rss:'Feed',docs:'Microsoft Word',x:'X'}[v]||v);
 const label=v=>({pending:'Needs your decision',accepted:'Accepted',prepared:'Ready for you',rejected:'Not needed',snoozed:'Later',instructions:'Changes requested',completed:'Done'}[v]||v);
 const tone=v=>({pending:'amber',accepted:'lavender',instructions:'lavender',prepared:'mint',snoozed:'lavender',completed:'mint',rejected:'muted'}[v]||'muted');
 // A blocker waiting on the owner (a sign-in in the kept tab) resumes with Continue; same rule as the service.
