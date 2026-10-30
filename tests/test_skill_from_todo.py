@@ -70,6 +70,20 @@ class SkillFromTodo(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'gone'):
             self.app.action('skill_decide', {'id': first['id'], 'choice': 'approve'}, owner_dashboard=True)
 
+    def test_a_dismissed_proposal_leaves_the_todo_open_and_says_so(self):
+        out = self.propose('Payroll')
+        self.finish_run('Your payroll skill is ready. The draft is at memory/assistant/261030-payroll.md.')
+        self.app.action('skill_decide', {'id': out['id'], 'choice': 'dismiss'}, owner_dashboard=True)
+        card = self.card()
+        self.assertEqual(card['proposed_skill'], {'dismissed': True, 'name': 'Payroll'})
+        self.assertEqual(card['status'], 'prepared')  # closing it is the owner's call
+        self.assertEqual(self.app.skills.view()['skills'], [])
+        # A new proposal from the same to-do offers it again
+        self.start_run('job2')
+        again = self.propose('Payroll', job='job2')
+        self.finish_run('Ready again.')
+        self.assertEqual(self.card()['proposed_skill']['id'], again['id'])
+
     def test_a_proposal_names_its_todo_only_from_that_todos_running_preparation(self):
         with self.assertRaisesRegex(ValueError, 'running preparation'):
             self.propose('Payroll', job='not-a-run')

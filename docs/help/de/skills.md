@@ -36,7 +36,7 @@ Wenn viele Notizen dieselbe Art von Aufgabe betreffen, schlägt eine Aufgabe ein
 
 ## Aus einer Aufgabe
 
-Bitte in einer Aufgabe um einen Skill, und deine Machine schreibt ihn dort. Öffne **Skill lesen** in der Aufgabe und drücke dann **Skill erstellen** (oder **Skill aktualisieren** für einen, den du schon hast). Vorher wird nichts installiert, und danach ist die Aufgabe erledigt.
+Bitte in einer Aufgabe um einen Skill, und deine Machine schreibt ihn dort. Öffne **Skill lesen** in der Aufgabe und drücke dann **Skill erstellen** (oder **Skill aktualisieren** für einen, den du schon hast). Vorher wird nichts installiert, und danach ist die Aufgabe erledigt. Verwirfst du ihn stattdessen in Einstellungen > Skills, zeigt die Aufgabe **Skill verworfen** und bleibt offen, bis du sie schließt.
 
 ## Einen teilen
 

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS skills(id TEXT PRIMARY KEY,slug TEXT NOT NULL,name TE
   status TEXT NOT NULL,origin TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 1,sha TEXT NOT NULL,author TEXT,fleet TEXT,member_id TEXT,
   ask_id TEXT,their_slug TEXT,replaces TEXT,note TEXT,shared TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS skills_status ON skills(status);
+CREATE TABLE IF NOT EXISTS skill_task_dismissed(task TEXT PRIMARY KEY,name TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS skill_hints(id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,skill TEXT NOT NULL,kind TEXT NOT NULL,name TEXT NOT NULL,
   summary TEXT,why TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
 '''
@@ -334,7 +335,11 @@ def for_task(db, task):
     except sqlite3.OperationalError:  # before the task column: nothing was proposed from a to-do yet
         return None
     if not row:
-        return None
+        try:
+            gone = db.execute('SELECT name FROM skill_task_dismissed WHERE task=?', (task,)).fetchone()
+        except sqlite3.OperationalError:
+            return None
+        return {'dismissed': True, 'name': gone['name']} if gone else None
     out = {'id': row['id'], 'name': row['name'], 'description': row['description'], 'body': row['body']}
     if row['replaces']:
         target = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off')", (row['replaces'],)).fetchone()
@@ -642,6 +647,7 @@ class Skills:
             ensure(db)
             if task:
                 db.execute("DELETE FROM skills WHERE status='proposed' AND origin='proposed' AND task=?", (task,))
+                db.execute('DELETE FROM skill_task_dismissed WHERE task=?', (task,))  # a new proposal: the to-do offers it again
             if db.execute("SELECT COUNT(*) FROM skills WHERE status='proposed'").fetchone()[0] >= OPEN_PROPOSALS:
                 raise ValueError(f'{OPEN_PROPOSALS} proposed skills already wait for the owner')
             on_hand = self.on_hand(db)
@@ -773,6 +779,9 @@ class Skills:
                     db.execute("UPDATE skills SET status='on',slug=?,updated_at=? WHERE id=?", (self._slug(db, row['name']), now(), row['id']))
             elif choice in ('decline', 'dismiss'):
                 db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
+                if row['status'] == 'proposed' and 'task' in row.keys() and row['task']:  # its to-do says so, and doesn't offer it as a draft
+                    ensure(db)
+                    db.execute('INSERT OR REPLACE INTO skill_task_dismissed(task,name,at) VALUES(?,?,?)', (row['task'], row['name'], now()))
             else:
                 raise ValueError('Choose install or decline')
         if row['status'] == 'incoming' and row['ask_id'] and self.fleet:

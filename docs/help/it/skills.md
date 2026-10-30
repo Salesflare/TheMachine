@@ -36,7 +36,7 @@ Quando molte note riguardano un solo tipo di compito, un'attività suggerisce un
 
 ## Da un'attività
 
-Chiedi una skill in un'attività e la tua Machine la scrive lì. Apri **Leggi la skill** nell'attività, poi premi **Crea skill** (o **Aggiorna skill** per una che hai già). Prima non viene installato nulla, e poi l'attività è fatta.
+Chiedi una skill in un'attività e la tua Machine la scrive lì. Apri **Leggi la skill** nell'attività, poi premi **Crea skill** (o **Aggiorna skill** per una che hai già). Prima non viene installato nulla, e poi l'attività è fatta. Se invece la ignori in Impostazioni > Skill, l'attività mostra **Skill ignorata** e resta aperta finché non la chiudi.
 
 ## Condividine una
 

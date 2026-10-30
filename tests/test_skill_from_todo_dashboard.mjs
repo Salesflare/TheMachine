@@ -17,6 +17,8 @@ let cards=[
   proposed_skill:{id:'sk_1',name,description:'Each month, when payroll is due',body:'1. Open the payroll site.\n2. Enter the vacation days.'}},
  {id:'s2',title:'Improve the expenses skill',body:'The update is ready. The draft is at memory/assistant/261030-expenses.md.',status:'prepared',scope:'work',origin:'owner',created_at:now,event_ids:[2],
   result_files:[{name:'261030-expenses.md',path:'memory/assistant/261030-expenses.md'}],proposed_skill:{id:'sk_2',name:'Expenses',description:'Expenses',body:update.after,update}},
+ {id:'s4',title:'Create an onboarding skill',body:'Your onboarding skill is proposed for approval. The draft is at memory/assistant/261030-onboarding.md.',status:'prepared',scope:'work',origin:'owner',created_at:now,event_ids:[4],
+  result_files:[{name:'261030-onboarding.md',path:'memory/assistant/261030-onboarding.md'}],proposed_skill:{dismissed:true,name:'Onboarding'}},
  {id:'s3',title:'Write the team note',body:'Here is the note. The draft is at memory/assistant/261030-note.md.',status:'prepared',scope:'work',created_at:now,event_ids:[3],
   result_files:[{name:'261030-note.md',path:'memory/assistant/261030-note.md'}]}];
 const skillsView={skills:[{id:'sk_1',name,description:'Each month',status:'proposed',origin:'proposed',update:false,note:'',version:1,chars:40},
@@ -70,6 +72,13 @@ try{
  await page.locator('#skill-update-ok').click();
  await page.waitForFunction(()=>!document.querySelector('#skill-update').open);
  assert.deepEqual(actions.filter(a=>a.action==='skill_decide').map(a=>a.args)[1],{id:'sk_2',choice:'approve',reviewed:'rev-1'});
+ // Dismissed in Settings, Skills: the to-do says so, Mark done leads, never Copy draft; it stays open
+ const s4=page.locator('#task-s4');
+ assert.equal((await s4.locator('.skill-dismissed').textContent()).trim(),'Skill dismissed');
+ assert.equal(await s4.locator('.actions button.primary').first().getAttribute('data-choice'),'complete');
+ assert.equal(await s4.locator('[data-result="copy"]').count(),0);
+ assert.equal(await s4.locator('.copy-why').count(),0);
+ assert.equal(await s4.locator('[data-skill-create],[data-skill-update],details.skill-notes').count(),0);
  // A real draft without a send path still leads with Copy draft
  const s3=page.locator('#task-s3');
  assert.equal((await s3.locator('.actions button.primary').first().textContent()).trim(),'Copy draft');

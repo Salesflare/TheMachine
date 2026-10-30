@@ -186,8 +186,9 @@ const chatLink=s=>`<a class="card-chat-link${chatHad(s)?' had':''}" href="#chat=
 // A ready draft the Machine can't send itself (no send path, such as an internal note): Copy draft leads, with why.
 // A skill the to-do's run proposed (proposed_skill): what is in it on the card, and Create skill (or Update skill, its before
 // and after first) leads. It goes through the owner's own Approve (skill_decide); nothing is installed before that tap.
-const skillLead=s=>s.status==='prepared'&&!!s.proposed_skill;
-const proposedSkillBox=s=>{const p=s.proposed_skill;if(!p||closed(s))return '';
+const skillLead=s=>s.status==='prepared'&&!!s.proposed_skill&&!s.proposed_skill.dismissed;
+// Dismissed in Settings, Skills: the to-do says so and Mark done leads; closing it stays the owner's call.
+const proposedSkillBox=s=>{const p=s.proposed_skill;if(!p||closed(s))return '';if(p.dismissed)return `<p class="note skill-dismissed">${esc(t('Skill dismissed'))}</p>`;
  if(p.update)return `<details class="skill-notes"><summary>${esc(t('Read the change'))}</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div></details>`;
  return `<details class="skill-notes"><summary>${esc(t('Read the skill'))}</summary><p><strong translate="no">${esc(p.name)}</strong></p><p class="note" translate="no">${esc(t('When: {}',p.description))}</p><div translate="no">${p.body.replace(/^#{1,6}\s+(.+)$/gm,'**$1**').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${format(x).replace(/\n/g,'<br>')}</p>`).join('')}</div></details>`};
 const skillButton=s=>{const p=s.proposed_skill;return 'update' in p?`<button class="primary" data-skill-update="${esc(p.id)}" data-settings>${esc(t('Update skill'))}</button>`

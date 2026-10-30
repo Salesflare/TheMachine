@@ -36,7 +36,7 @@ When many notes are about one kind of task, a to-do suggests a skill. It checks 
 
 ## From a to-do
 
-Ask for a skill in a to-do, and your Machine writes it there. Open **Read the skill** on the to-do, then press **Create skill** (or **Update skill** for one you have). Nothing is installed before you do, and the to-do is then done.
+Ask for a skill in a to-do, and your Machine writes it there. Open **Read the skill** on the to-do, then press **Create skill** (or **Update skill** for one you have). Nothing is installed before you do, and the to-do is then done. Dismiss it in Settings > Skills instead, and the to-do says **Skill dismissed** and stays open for you to close.
 
 ## Share one
 

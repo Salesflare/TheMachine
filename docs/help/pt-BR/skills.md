@@ -36,7 +36,7 @@ Quando muitas notas são sobre um mesmo tipo de tarefa, uma tarefa sugere uma ha
 
 ## A partir de uma tarefa
 
-Peça uma habilidade em uma tarefa e sua Machine a escreve ali. Abra **Ler a habilidade** na tarefa e toque em **Criar habilidade** (ou **Atualizar habilidade** para uma que você já tem). Nada é instalado antes, e depois a tarefa fica concluída.
+Peça uma habilidade em uma tarefa e sua Machine a escreve ali. Abra **Ler a habilidade** na tarefa e toque em **Criar habilidade** (ou **Atualizar habilidade** para uma que você já tem). Nada é instalado antes, e depois a tarefa fica concluída. Se você a dispensar em Configurações > Habilidades, a tarefa mostra **Habilidade dispensada** e fica aberta até você fechá-la.
 
 ## Compartilhar uma
 

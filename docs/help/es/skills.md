@@ -36,7 +36,7 @@ Cuando muchas notas tratan de un mismo tipo de tarea, una tarea te sugiere una h
 
 ## Desde una tarea
 
-Pide una habilidad en una tarea y tu Machine la escribe ahí. Abre **Leer la habilidad** en la tarea y pulsa **Crear habilidad** (o **Actualizar habilidad** si ya la tienes). No se instala nada antes, y después la tarea queda hecha.
+Pide una habilidad en una tarea y tu Machine la escribe ahí. Abre **Leer la habilidad** en la tarea y pulsa **Crear habilidad** (o **Actualizar habilidad** si ya la tienes). No se instala nada antes, y después la tarea queda hecha. Si la descartas en Ajustes > Habilidades, la tarea muestra **Habilidad descartada** y sigue abierta hasta que la cierres.
 
 ## Comparte una
 
