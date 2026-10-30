@@ -314,7 +314,7 @@ class Microsoft(unittest.TestCase):
         self.assertEqual(kinds, ['docs.shared', 'docs.comment', 'docs.suggestion'])
         self.assertEqual(self.events()[1]['body'], 'Robin Reviewer: Is this final?')
         self.assertIn('Add: net 30', self.events()[2]['body'])
-        self.assertEqual({s for k, s in self.requests if k == 'BROKER'}, {'Files.Read.All'})
+        self.assertEqual({s for k, s in self.requests if k == 'BROKER' and s}, {'Files.Read.All'})  # tokens; None asks which were granted
         # the same file again: nothing twice
         docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T10:30:00+00:00'))
         self.assertEqual(len(self.events()), 3)

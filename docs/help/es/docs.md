@@ -3,7 +3,7 @@ title: Docs: Word, OneDrive y SharePoint
 area: connections
 summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint. Google Docs llegará más adelante.
 covers: connector:docs
-code: connectors/docs.py, next_actions.py, onboarding.py
+code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Qué lee
@@ -22,7 +22,20 @@ Cuando una tarea necesita el texto de un documento, tu Machine lee ese documento
 
 Puede redactar una respuesta a un comentario. Los archivos de Word no permiten publicar una respuesta desde fuera de Word, así que la respuesta se queda como borrador para que la copies en Word.
 
-Nunca edita un documento, acepta una sugerencia, resuelve un comentario ni comparte un archivo.
+Nunca acepta una sugerencia, resuelve un comentario, comparte un archivo ni cambia un documento sin tu OK.
+
+## Crear y editar documentos
+
+Tu Machine puede escribir un documento de Word nuevo o cambiar un documento del que trata una de tus tareas. Nunca escribe por su cuenta:
+
+- Prepara el cambio en la tarea. Un documento nuevo se ve completo. Una edición muestra cada párrafo antes y después.
+- Toca **Revisar y crear** o **Revisar cambios**, léelo y luego **Crear** o **Guardar**.
+- Escribe una sola vez, y solo en el documento tal como lo viste. Si alguien lo cambió entretanto, no se escribe nada y la tarea lo dice. Pide un borrador nuevo.
+- En Talk, lee el cambio completo en voz alta y espera un sí claro.
+
+Reemplaza texto, añade texto y añade párrafos y títulos. No toca tablas, imágenes, cambios con seguimiento ni campos. Un documento nuevo queda en tu OneDrive y es privado hasta que lo compartas.
+
+Para activarlo, toca **Permitir cambios** en la tarjeta de Docs en **Conexiones**. Microsoft pide permiso para cambiar tus archivos, aparte del de leer. Volver a iniciar sesión lo mantiene.
 
 ## Qué pide
 

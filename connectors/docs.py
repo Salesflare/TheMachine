@@ -15,7 +15,10 @@ documents), and nothing else asks for it:
 - Microsoft: Files.Read.All (the owner's OneDrive, and files shared with them on OneDrive and SharePoint). Microsoft
   Graph has no way to reply to a Word comment, so a reply there is always a draft to post by hand.
 
-Writes: only drive.replies.create, only through Replier, only for an owner-approved doc_reply (next_actions.py).
+Writes, each only after the owner's OK on exactly that: drive.replies.create through Replier, for an approved doc_reply
+(next_actions.py), and a new doc or a pinned edit through Writer, for an approved doc_write (doc_writes.py). Writing docs
+needs one more consent: Google's drive scope (the same one as replies; a new doc also works with drive.file), and
+Microsoft's Files.ReadWrite.All, which the owner grants with Allow edits on the Docs connection.
 """
 import datetime as dt
 import hashlib
@@ -49,6 +52,9 @@ SETUP = {
 READ_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 REPLY_SCOPE = 'https://www.googleapis.com/auth/drive'
 MS_SCOPE = 'Files.Read.All'
+FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'  # Google: only files this app created (a new doc)
+MS_WRITE_SCOPE = 'Files.ReadWrite.All'
+DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 DOC_MIME = 'application/vnd.google-apps.document'
 EXPORT = {DOC_MIME: 'text/plain', 'application/vnd.google-apps.presentation': 'text/plain',
           'application/vnd.google-apps.spreadsheet': 'text/csv'}
@@ -102,10 +108,10 @@ class Google:
         self.api, self.config, self.account, self.helpers = google_api, config, account, helpers
         self.signin = signin(config, account, helpers)
 
-    def call(self, method, params, scope=READ_SCOPE, raw=False, limit=None, body=None, write=False):
+    def call(self, method, params, scope=READ_SCOPE, raw=False, limit=None, body=None, write=False, content_type=None):
         try:
             return self.api.call(self.config, self.helpers.credential, self.signin, method, params, scope, body=body,
-                                 write=write, raw=raw, limit=limit)
+                                 write=write, raw=raw, limit=limit, **({'content_type': content_type} if content_type else {}))
         except self.api.BrokerError as error:
             if error.category == 'google_scope_not_granted':
                 raise self.helpers.SourceError('docs_not_connected', error.status) from None
@@ -190,9 +196,9 @@ class Microsoft:
         self.api, self.config, self.account, self.helpers = ms_graph, config, account, helpers
         self.signin = signin(config, account, helpers)
 
-    def call(self, method, params=None):
+    def call(self, method, params=None, **write):
         try:
-            return self.api.call(self.config, self.helpers.credential, self.signin, method, params)
+            return self.api.call(self.config, self.helpers.credential, self.signin, method, params, **write)
         except self.api.GraphError as error:
             if error.category == 'microsoft_scope_not_granted' or error.status == 403:
                 raise self.helpers.SourceError('docs_not_connected', error.status) from None
@@ -612,6 +618,7 @@ def sync(store, config, account, helpers):
     more = kept.pop('more', False)
     caught_up_at = kept.pop('caught_up_at', now.isoformat())
     state.update(kept, provider=kind, coverage_complete=not more, replies=replies_on(config, account, helpers),
+                 writes=sorted(writes_on(config, account, helpers)),
                  coverage=('Word and OneDrive' if kind == 'microsoft' else 'Google Docs') + (' catching up.' if more else ' caught up.'))
     if not more:
         state['since'] = caught_up_at
@@ -667,3 +674,96 @@ class Replier(Google):
     def reply(self, file_id, comment_id, body):
         return self.call('drive.replies.create', {'fileId': file_id, 'commentId': comment_id, 'fields': 'id,content,createdTime'},
                          scope=REPLY_SCOPE, body={'content': body}, write=True)
+
+
+def writes_on(config, account, helpers):
+    """What this Docs connection may write after the owner's OK: {'create', 'edit'}, a part, or nothing. Google: the
+    drive scope (the same consent as posting replies) for both, drive.file for a new doc only. Microsoft:
+    Files.ReadWrite.All, from Allow edits. A Fleet-shared connection only reads; unknown means nothing."""
+    if account.get('shared'):
+        return set()
+    try:
+        sign = signin(config, account, helpers)
+        if provider(config, account) == 'microsoft':
+            import ms_graph
+            granted = {str(s).rsplit('/', 1)[-1] for s in ms_graph.scopes(config, helpers.credential, sign)}
+            return {'create', 'edit'} if MS_WRITE_SCOPE in granted else set()
+        import google_api
+        granted = google_api.scopes(config, helpers.credential, sign)
+        return {'create', 'edit'} if REPLY_SCOPE in granted else {'create'} if FILE_SCOPE in granted else set()
+    except Exception:  # noqa: BLE001 - unknown means off: the change stays text in the to-do
+        return set()
+
+
+class Writer:
+    """The doc writes (doc_writes.py decides what): a new doc, or an edit pinned to the version the owner approved."""
+
+    def __init__(self, config, account, helpers):
+        if account.get('shared'):
+            raise helpers.SourceError('docs_writes_unsupported')
+        self.provider, self.helpers, self.config, self.account = provider(config, account), helpers, config, account
+        self.source = (Microsoft if self.provider == 'microsoft' else Google)(config, account, helpers)
+
+    def scope(self):
+        """Google: drive when granted (any doc), else drive.file (only docs this app created)."""
+        import google_api
+        try:
+            granted = google_api.scopes(self.config, self.helpers.credential, self.source.signin)
+        except google_api.BrokerError:
+            granted = set()
+        return REPLY_SCOPE if REPLY_SCOPE in granted or FILE_SCOPE not in granted else FILE_SCOPE
+
+    # Google Docs
+    def document(self, file_id):
+        return self.source.call('docs.documents.get', {'documentId': file_id})
+
+    def update(self, file_id, requests, revision):
+        return self.source.call('docs.documents.batchUpdate', {'documentId': file_id}, scope=REPLY_SCOPE, write=True,
+                                body={'requests': requests, 'writeControl': {'requiredRevisionId': revision}})
+
+    def new_id(self):
+        ids = self.source.call('drive.files.generateIds', {'count': 1, 'space': 'drive', 'type': 'files'}, scope=self.scope())
+        found = (ids.get('ids') or [None])[0] if isinstance(ids, dict) else None
+        if not found:
+            raise self.helpers.SourceError('docs_google')
+        return str(found)
+
+    def upload(self, data, content_type):
+        return self.source.call('drive.files.upload', {'uploadType': 'multipart', 'fields': 'id,name,webViewLink'},
+                                scope=self.scope(), body=data, content_type=content_type, write=True)
+
+    def find(self, file_id):
+        try:
+            return self.source.call('drive.files.get', {'fileId': file_id, 'fields': 'id,name,trashed', 'supportsAllDrives': True},
+                                    scope=self.scope())
+        except self.helpers.SourceError as error:
+            if error.status == 404:
+                return None
+            raise
+
+    # Word on OneDrive and SharePoint
+    def item_and_bytes(self, file_id):
+        drive, _, item_id = str(file_id).partition('!')
+        item = self.source.item(drive, item_id)
+        if not str(item.get('name') or '').lower().endswith('.docx'):
+            raise self.helpers.SourceError('docs_edit_unsupported')
+        return item, self.source.download(item)
+
+    def put(self, file_id, data, etag):
+        drive, _, item_id = str(file_id).partition('!')
+        if not etag:
+            raise self.helpers.SourceError('docs_microsoft', 412)
+        return self.source.call('drives.item.content', {'drive': drive, 'id': item_id}, body=data, content_type=DOCX_MIME,
+                                write=True, headers={'If-Match': etag})
+
+    def lookup(self, name):
+        try:
+            return self.source.call('drive.root.item', {'name': name})
+        except self.helpers.SourceError as error:
+            if error.status == 404:
+                return None
+            raise
+
+    def create(self, name, data):
+        return self.source.call('drive.root.upload', {'name': name, '@microsoft.graph.conflictBehavior': 'fail'}, body=data,
+                                content_type=DOCX_MIME, write=True)

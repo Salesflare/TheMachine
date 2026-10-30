@@ -45,6 +45,7 @@ READ = {
     'drive.comments.list': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments'),
     'drive.comments.get': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments/{commentId}'),
     'docs.documents.get': ('GET', 'https://docs.googleapis.com/v1/documents/{documentId}'),
+    'drive.files.generateIds': ('GET', 'https://www.googleapis.com/drive/v3/files/generateIds'),
     # Google Meet (connectors/google_meet.py), with meetings.space.readonly from Meet's own Google sign-in; the Gemini
     # notes doc is read with docs.documents.get and documents.readonly, never a Drive scope
     'meet.conferenceRecords.list': ('GET', 'https://meet.googleapis.com/v2/conferenceRecords'),
@@ -64,6 +65,10 @@ WRITE = {
     'calendar.events.delete': ('DELETE', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}'),
     # An owner-approved reply to a comment on a Google Doc (connectors/docs.py Replier), only with the separate reply consent
     'drive.replies.create': ('POST', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments/{commentId}/replies'),
+    # An owner-approved doc write (doc_writes.py through connectors/docs.py Writer): an edit pinned to the approved
+    # revision, or a new doc uploaded as HTML that Drive converts
+    'docs.documents.batchUpdate': ('POST', 'https://docs.googleapis.com/v1/documents/{documentId}:batchUpdate'),
+    'drive.files.upload': ('POST', 'https://www.googleapis.com/upload/drive/v3/files'),
 }
 # Where requests may go: Google's API hosts, over HTTPS. A URL built from a method template and its parameters is
 # checked once more before it's opened, and the broker's address must be HTTPS too (it gets this machine's token).
@@ -156,15 +161,19 @@ def url_for(method, params, write=False):
 
 
 def call(config, credential, account, method, params, scope, body=None, write=False, timeout=60, raw=False, limit=None,
-         provider='google'):
+         provider='google', content_type=None):
     """One Google API call as the account's owner; the parsed JSON answer, or with raw=True the bytes (at most `limit`).
-    provider: whose sign-in (broker_url)."""
+    provider: whose sign-in (broker_url). `body` is JSON, or bytes sent as `content_type` (an upload)."""
     verb, url = url_for(method, params, write)
+    if isinstance(body, (bytes, bytearray)):
+        data, kind = bytes(body), content_type or 'application/octet-stream'
+    else:
+        data, kind = (json.dumps(body).encode(), 'application/json') if body is not None else (None, None)
     for attempt in (0, 1):
         access = token(config, credential, account, scope, fresh=bool(attempt), provider=provider)
-        request = urllib.request.Request(url, method=verb, data=json.dumps(body).encode() if body is not None else None,
+        request = urllib.request.Request(url, method=verb, data=data,
                                          headers={'Authorization': 'Bearer ' + access, 'Accept': 'application/json',
-                                                  **({'Content-Type': 'application/json'} if body is not None else {})})
+                                                  **({'Content-Type': kind} if kind else {})})
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 if raw:

@@ -142,6 +142,7 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Reads only.'},
  zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  microsoft_docs:{label:'Microsoft',title:'Docs',about:'Word, OneDrive and SharePoint, for an Outlook address you connected. Reads only.'},
+ microsoft_docs_write:{label:'Microsoft',title:'Docs',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
  google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
@@ -159,7 +160,7 @@ const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',s
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
-const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','codex'];
+const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','microsoft_docs_write','codex'];
 const STARTING={github:'Getting a sign-in code from GitHub…',whatsapp:'Getting a code from WhatsApp…',android:'Making a setup code…'};
 const qrImg=s=>`<img class="connect-qr" src="/_machine/connect-qr?s=${encodeURIComponent(s.provider)}&amp;c=${encodeURIComponent(s.command)}&amp;v=${encodeURIComponent(String(s.until||''))}" alt="QR code">`;
 function phoneBody(s,back){let html='';
@@ -186,7 +187,7 @@ function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('
  form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
  if(!NO_SCOPE_SIGNIN.includes(s.provider)){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
  if((s.provider==='intercom'||s.provider==='trello')&&s.another)add('another','1');
- if(s.provider==='microsoft_docs'&&s.email)add('email',s.email);  // Reconnect on its card: that address
+ if(['microsoft_docs','microsoft_docs_write'].includes(s.provider)&&s.email)add('email',s.email);  // Reconnect on its card: that address
  if(s.provider==='whatsapp'&&way==='code'){add('way','code');add('phone',box.querySelector('input[name="signin-phone"]')?.value||'')}
  if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);  // Link again: the one that is not linked any more
  document.body.append(form);form.submit()}
@@ -197,9 +198,10 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
-async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|google_meet|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|google_meet|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
- const x=m[1]==='codex'?connectList?.codex&&codexSource():connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
+ const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent
+ const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
  connectSignin=signinOf(x,command.startsWith('f_')?'checking':command?ON_DASHBOARD.includes(m[1])?'starting':'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();viewTop($('#connect-add'))}
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
  const back='<button type="button" data-connect-back>Back</button>';let body;
@@ -329,6 +331,10 @@ if(f.step==='deepen')return t(later?'Now the rest of the week: {} of {} active c
 return t('Quiet conversations last: {} of {}',f.done,f.total)}
 // Signing in again and disconnecting: a hosted machine's account page for Google and Microsoft, else here.
 // Docs (connectors/docs.py): its own consent, pressed on the account page (or Add again on a self-hosted Machine)
+// What a Docs connection may write, each only after the owner's OK (doc_writes.py), or Allow edits to ask for it
+const docsWrites=c=>{const w=c.docs_writes||[],go=c.docs_write_signin&&!c.shared_by?(state.manage_url?hostedReconnect({...c,hosted_signin:c.docs_write_signin},'Allow edits','browser-link'):`<button type="button" class="browser-link" data-reconnect="docs" data-account="${esc(c.id)}" data-signin="${esc(c.docs_write_signin)}">Allow edits</button>`):'';
+ const line=w.includes('edit')?'Creates and edits docs only after you OK each change.':w.includes('create')?'Creates new docs only after you OK them.':go?'Can’t create or edit docs yet.':'';
+ return line?`<p class="muted conn-replies">${esc(t(line))}${go?' '+go:''}</p>`:''};
 const docsConnect=c=>c.service!=='docs'||!/docs_not_connected/.test(c.error||'')?'Reconnect':c.docs_provider==='microsoft'?'Connect Microsoft documents':'Connect Google Docs';
 function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.manage_url?hostedReconnect(c,label,'browser-link'):c.account_page?`<a class="head-link" href="${esc(c.account_page)}" target="_blank" rel="noopener">${label} ↗</a>`:c.connect_name?`<button type="button" class="browser-link" data-reconnect="${esc(c.connect_name)}" data-account="${esc(c.id)}"${c.signin?` data-signin="${esc(c.signin)}"`:''}>${label}</button>`:''}
 // Work (with its company) or Personal: the owner marks each sign-in. Leaving a Work Fleet removes that company's work
@@ -376,7 +382,7 @@ return `<article data-group="${healthGroup(c.service)}" data-conn="${esc(c.id)}"
 <p class="connection-status">${esc(connectorHealth(c).text)}</p>
 ${c.service==='intercom'?`<p class="muted conn-replies">${c.replies_as?`Replies as ${esc(c.replies_as)}, only after you press Send.`:'Reads only. Never replies.'}</p>`:''}
 ${c.service==='salesflare'?'<p class="muted conn-replies">Reads accounts, contacts, emails and meetings. Changes nothing.</p>':''}
-${c.service==='docs'?`<p class="muted conn-replies">${c.docs_provider==='microsoft'?'Word, OneDrive and SharePoint. Reads comments, mentions, tracked changes and shares. Replies stay drafts for you to post in Word.':'Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only when you OK it.'}</p>`:''}
+${c.service==='docs'?`<p class="muted conn-replies">${c.docs_provider==='microsoft'?'Word, OneDrive and SharePoint. Reads comments, mentions, tracked changes and shares. Replies stay drafts for you to post in Word.':'Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only when you OK it.'}</p>${docsWrites(c)}`:''}
 ${c.service==='gateway'?'<p class="muted">The Gateway\'s own log, so The Machine notices when it has trouble itself and tells you.</p>':''}
 <div class="figures"><div><b>${(c.total??0).toLocaleString(DL)}</b><span>${esc(t(unit))}</span></div><div><b>${c.signals_24h||0}</b><span>last 24h</span></div><div><b>${c.pending||0}</b><span>not reviewed</span></div></div>
 ${spark(c)}<div class="conn-foot"><small>${c.last_success?t('Last sync {}',time(c.last_success,true)):t('Not synced yet')}</small>${c.last_sync_signals==null?'':`<small title="${esc(t('New or changed messages and events, without duplicates. Last 24h counts when they came in here, not when they were sent.'))}">${esc(t('{} in last sync',c.last_sync_signals))}</small>`}</div>

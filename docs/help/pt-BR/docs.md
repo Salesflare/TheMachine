@@ -3,7 +3,7 @@ title: Docs: Word, OneDrive e SharePoint
 area: connections
 summary: Comentários, menções, alterações controladas e compartilhamentos nos seus arquivos do Word no OneDrive e no SharePoint. O Google Docs vem depois.
 covers: connector:docs
-code: connectors/docs.py, next_actions.py, onboarding.py
+code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## O que ela lê
@@ -22,7 +22,20 @@ Quando uma tarefa precisa do texto de um documento, sua Machine lê só esse doc
 
 Ela pode escrever o rascunho de uma resposta a um comentário. Arquivos do Word não permitem publicar uma resposta de fora do Word, então a resposta fica como rascunho para você copiar no Word.
 
-Ela nunca edita um documento, aceita uma sugestão, resolve um comentário ou compartilha um arquivo.
+Ela nunca aceita uma sugestão, resolve um comentário, compartilha um arquivo ou altera um documento sem o seu OK.
+
+## Criar e editar documentos
+
+Sua Machine pode escrever um novo documento do Word, ou alterar um documento de que trata uma das suas tarefas. Ela nunca escreve sozinha:
+
+- Ela prepara a alteração na tarefa. Um novo documento aparece inteiro. Uma edição mostra cada parágrafo antes e depois.
+- Toque em **Revisar e criar** ou **Revisar alterações**, leia e depois **Criar** ou **Salvar**.
+- Ela escreve uma vez só, e só no documento como você o viu. Se alguém o alterou nesse meio-tempo, nada é escrito e a tarefa avisa. Peça um novo rascunho.
+- No Talk, ela lê a alteração inteira em voz alta e espera um sim claro.
+
+Ela substitui texto, adiciona texto e adiciona parágrafos e títulos. Não mexe em tabelas, imagens, alterações controladas nem campos. Um novo documento fica no seu OneDrive e é privado até você compartilhá-lo.
+
+Para ativar, toque em **Permitir edições** no cartão do Docs em **Conexões**. A Microsoft pede para deixar alterar seus arquivos, separado da leitura. Entrar de novo mantém isso.
 
 ## O que ela pede
 

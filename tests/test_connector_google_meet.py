@@ -344,7 +344,10 @@ class GoogleMeetTests(unittest.TestCase):
         self.assertEqual(verb, 'GET')
         self.assertEqual(url, 'https://meet.googleapis.com/v2/conferenceRecords/r%2F..%2Fx/transcripts/t/entries?pageSize=100')
         self.assertTrue(all(v[0] == 'GET' for k, v in google_api.READ.items() if k.startswith('meet.')))
-        self.assertFalse([k for k in google_api.WRITE if k.startswith(('meet.', 'docs.'))])
+        self.assertFalse([k for k in google_api.WRITE if k.startswith('meet.')])
+        # the one Docs write is the Docs connection's approved edit (doc_writes.py), under the drive scope Meet never asks for
+        self.assertEqual([k for k in google_api.WRITE if k.startswith('docs.')], ['docs.documents.batchUpdate'])
+        self.assertNotIn('write=True', (Path(google_api.__file__).parent / 'connectors' / 'google_meet.py').read_text())
 
     def test_response_limits_and_clipping_are_explicit(self):
         self.fake.entries[('artifact-1', '')] = {'transcriptEntries': [entry(1, 'p1', 'x' * 400_001)]}

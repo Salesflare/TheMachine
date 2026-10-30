@@ -3,7 +3,7 @@ title: Docs: Word, OneDrive und SharePoint
 area: connections
 summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint. Google Docs kommen später.
 covers: connector:docs
-code: connectors/docs.py, next_actions.py, onboarding.py
+code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Was es liest
@@ -22,7 +22,20 @@ Wenn eine Aufgabe den Text eines Dokuments braucht, liest deine Machine genau di
 
 Es kann eine Antwort auf einen Kommentar entwerfen. Word-Dateien bieten keinen Weg, von außerhalb von Word zu antworten. Die Antwort bleibt also ein Entwurf, den du in Word kopierst.
 
-Es bearbeitet nie ein Dokument, nimmt keine Vorschläge an, löst keine Kommentare auf und teilt keine Dateien.
+Es nimmt keine Vorschläge an, löst keine Kommentare auf, teilt keine Dateien und ändert kein Dokument ohne dein OK.
+
+## Dokumente erstellen und bearbeiten
+
+Deine Machine kann ein neues Word-Dokument schreiben oder ein Dokument ändern, um das es in einer deiner Aufgaben geht. Sie schreibt nie von selbst:
+
+- Sie bereitet die Änderung in der Aufgabe vor. Ein neues Dokument siehst du ganz, eine Bearbeitung als jeden Absatz vorher und nachher.
+- Tippe auf **Prüfen und erstellen** oder **Änderungen prüfen**, lies alles und dann **Erstellen** oder **Speichern**.
+- Sie schreibt einmal, und nur in das Dokument, wie du es gesehen hast. Hat jemand es inzwischen geändert, wird nichts geschrieben und die Aufgabe sagt es dir. Bitte dann um einen neuen Entwurf.
+- In Talk liest sie die ganze Änderung vor und wartet auf ein klares Ja.
+
+Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem OneDrive und bleibt privat, bis du es teilst.
+
+Zum Einschalten tippst du auf der Docs-Karte unter **Verbindungen** auf **Bearbeiten erlauben**. Microsoft fragt, ob sie deine Dateien ändern darf, getrennt vom Lesen. Eine neue Anmeldung behält das bei.
 
 ## Worum es fragt
 

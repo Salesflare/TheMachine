@@ -46,9 +46,9 @@ ROLES = ('user', 'assistant')
 SESSION_PREFIX = 'agent:main:assistant-talk-'
 UNDO_SECONDS = 10            # a send approved by voice waits this long, with Undo in the chat
 ASK_SECONDS = 180            # a confirm question older than this needs asking again
-SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
+SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply', 'doc_write')
 CHANNELS = {'email': 'by email', 'linkedin': 'on LinkedIn', 'slack': 'on Slack', 'x': 'on X', 'whatsapp': 'on WhatsApp',
-            'telegram': 'on Telegram', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc'}
+            'telegram': 'on Telegram', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc', 'doc_write': 'in the doc'}
 # An open to-do's state, in plain words, as the dashboard's lists show it (Ready, To decide, Preparing, Waiting on others,
 # Later, Look done), in that order
 STATES = ('ready', 'to decide', 'preparing', 'waiting on others', 'snoozed', 'looks done')
@@ -383,7 +383,8 @@ def main_instructions(language, now_text):
 
 def digest(action):
     """What a confirm question was about: who, how and what. Any change after the question means asking again."""
-    keep = {k: action.get(k) for k in ('kind', 'to', 'cc', 'bcc', 'from', 'subject', 'body', 'message', 'thread_id', 'channel')}
+    keep = {k: action.get(k) for k in ('kind', 'to', 'cc', 'bcc', 'from', 'subject', 'body', 'message', 'thread_id', 'channel',
+                                       'op', 'title', 'file_id', 'version', 'changes')}
     return hashlib.sha256(json.dumps(keep, sort_keys=True, default=str).encode()).hexdigest()
 
 
@@ -392,6 +393,9 @@ def question(action, name):
     what = 'reply' if action.get('reply') or str(action.get('subject') or '').lower().startswith('re:') else 'message'
     if action.get('kind') == 'doc_reply':
         return 'Post this reply as a comment in the doc?'
+    if action.get('kind') == 'doc_write':  # a new doc or an edit, read aloud in full first (doc_writes.spoken)
+        return ('Create this doc?' if action.get('op') == 'create'
+                else 'Save these changes to “%s”?' % action.get('doc_title', 'the doc'))
     return 'Send this %s to %s %s?' % (what, name, CHANNELS.get(action.get('kind'), ''))
 
 
