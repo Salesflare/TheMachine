@@ -10,6 +10,8 @@ order: 2
 
 **Hazlo** pide a tu Machine que prepare la tarea: redactar la respuesta, buscar información, rellenar un formulario. Trabaja con tus propias cuentas y su propio navegador, como lo harías tú.
 
+Mientras trabaja en su navegador, la tarea y su chat muestran esa página en vivo. Haz clic en la imagen para abrir el navegador.
+
 Antes de redactar un seguimiento o pasar algo a otra persona, revisa la conversación por si hay respuestas más nuevas, también de un compañero. Si ya está resuelto, la tarea lo dice. Cuando creó o cambió un documento o una página, la tarea enlaza directo a él.
 
 ## No sale nada antes de tu sí
