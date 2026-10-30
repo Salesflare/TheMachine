@@ -47,6 +47,28 @@ for(const [response,error,phase] of [
   assert.equal(r.result.error,error);assert.equal(r.result.error_phase,phase);
   assert.ok(!JSON.stringify(r.result).includes('private'));assert.ok(!JSON.stringify(r.result).includes('abc'));
 }
+// A generic runtime error keeps a reason from a fixed list (2026-10-30: the Gateway's MCP runtime limit stalled reviews).
+for(const [text,reason] of [
+  ['bundle-mcp: live runtime limit (256) reached; stop or reset unused sessions private','mcp_runtime_limit'],
+  ['unexpected private email text','unclassified'],
+]){
+  r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:text}]);
+  assert.equal(r.result.error,'runtime_error');assert.equal(r.result.reason,reason);assert.ok(!JSON.stringify(r.result).includes('private'));
+}
+r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:'HTTP 429 rate limit'}]);assert.equal(r.result.reason,undefined);
+// A finished review, profile or skills run releases its one-off session's MCP connections; a pending one and a
+// preparation (a to-do's chat, used again) keep theirs, and a failed release changes nothing.
+for(const [kind,prefix] of [['review','signals'],['profile','profile'],['skills','skills']]){
+  r=await run({kind,job_id:id,action:'status'},[{status:'ok'},{ok:true,status:'no-active-run'}]);
+  assert.equal(r.result.status,'ok');assert.equal(r.calls[1].method,'sessions.abort');
+  assert.deepEqual(r.calls[1].args,{key:`agent:main:assistant-review-${prefix}-`+id,agentId:'main',clearQueued:true});
+}
+r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:'x'},new Error('offline')]);
+assert.equal(r.result.status,'error');assert.equal(r.calls.length,2);
+r=await run({kind:'review',job_id:id,action:'stop'},[{ok:true,status:'no-active-run',abortedRunId:null},{ok:true,status:'no-active-run'}]);
+assert.equal(r.result.status,'lost');assert.equal(r.calls[1].args.runId,undefined);
+r=await run({kind:'review',job_id:id,action:'status'},[{status:'timeout'}]);assert.equal(r.calls.length,1);
+r=await run({kind:'preparation',job_id:id,action:'status'},[{status:'ok'}]);assert.equal(r.calls.length,1);
 // Claude Code's runtime fails a NO_REPLY-only final as an empty response: marked, so the service can judge by what was saved
 r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:'CLI backend returned an empty response.'}]);
 assert.deepEqual(r.result,{run_id:id,status:'error',error:'runtime_error',error_phase:'runtime',silent_end:true});

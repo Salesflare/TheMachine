@@ -185,6 +185,17 @@ class ReviewWorker(unittest.TestCase):
         self.assertEqual(history['claimed_count'],1)
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT status FROM analyses').fetchone()[0],'retryable')
 
+    def test_runtime_error_logs_its_reason_from_the_fixed_list_only(self):
+        # 2026-10-30: every review failed for hours as a bare runtime_error; the Gateway's MCP runtime limit was the cause.
+        self.step(Runner('admitted'),T)
+        with self.assertLogs(a.LOG,'WARNING') as logs:
+            self.step(lambda request:{'status':'error','error':'runtime_error','error_phase':'runtime','reason':'mcp_runtime_limit'},T+dt.timedelta(minutes=1))
+        self.assertIn('error=runtime_error phase=runtime saved_claims=0 reason=mcp_runtime_limit',logs.output[-1])
+        self.step(Runner('admitted'),T+dt.timedelta(hours=2))
+        with self.assertLogs(a.LOG,'WARNING') as logs:
+            self.step(lambda request:{'status':'error','error':'runtime_error','reason':'private token=abc'},T+dt.timedelta(hours=2,minutes=1))
+        self.assertNotIn('reason=',logs.output[-1]);self.assertNotIn('private',logs.output[-1])
+
     def test_success_clears_outage_error_and_history_survives_reopen(self):
         self.step(Runner('admitted','unavailable'),T)
         self.step(Runner('unavailable'),T+dt.timedelta(seconds=11))
