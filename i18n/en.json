@@ -3081,7 +3081,10 @@
  "Sending approval must come from the owner’s controls": "Sending approval must come from the owner’s controls",
  "Sending automatically is off": "Sending automatically is off",
  "Sending in {} s": "Sending in {} s",
+ "Sending to {} in {} s": "Sending to {} in {} s",
  "Sending your approved draft…": "Sending your approved draft…",
+ "Sending {} emails in {} s": "Sending {} emails in {} s",
+ "Sending {} messages in {} s": "Sending {} messages in {} s",
  "Sending {} of {}…": "Sending {} of {}…",
  "Sending {} votes.": {
   "one": "Sending {} vote.",
@@ -3120,10 +3123,12 @@
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Sent to {}. Waiting for their reply until {}; it closes when they answer.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Sent to {}. Waiting for their reply; it closes when they answer.",
  "Sent {}": "Sent {}",
+ "Sent {} emails": "Sent {} emails",
  "Sent {} learnings. New ones go automatically now.": {
   "one": "Sent {} learning. New ones go automatically now.",
   "other": "Sent {} learnings. New ones go automatically now."
  },
+ "Sent {} messages": "Sent {} messages",
  "Sent {} of {}": "Sent {} of {}",
  "Sent {} · {} held": "Sent {} · {} held",
  "Sent {} · {} held (new message)": "Sent {} · {} held (new message)",

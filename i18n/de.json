@@ -3081,7 +3081,10 @@
  "Sending approval must come from the owner’s controls": "Die Freigabe zum Senden muss von den Bedienelementen des Besitzers kommen",
  "Sending automatically is off": "Automatisch senden ist aus",
  "Sending in {} s": "Wird in {} s gesendet",
+ "Sending to {} in {} s": "Wird in {1} s an {0} gesendet",
  "Sending your approved draft…": "Dein freigegebener Entwurf wird gesendet…",
+ "Sending {} emails in {} s": "{0} E-Mails werden in {1} s gesendet",
+ "Sending {} messages in {} s": "{0} Nachrichten werden in {1} s gesendet",
  "Sending {} of {}…": "{} von {} wird gesendet…",
  "Sending {} votes.": {
   "one": "{} Stimme wird gesendet.",
@@ -3120,10 +3123,12 @@
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "An {} gesendet. Wartet bis {} auf eine Antwort; schließt sich, sobald sie kommt.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "An {} gesendet. Wartet auf die Antwort; schließt sich, sobald sie antworten.",
  "Sent {}": "{} gesendet",
+ "Sent {} emails": "{} E-Mails gesendet",
  "Sent {} learnings. New ones go automatically now.": {
   "one": "{} Erkenntnis gesendet. Neue gehen ab jetzt automatisch.",
   "other": "{} Erkenntnisse gesendet. Neue gehen ab jetzt automatisch."
  },
+ "Sent {} messages": "{} Nachrichten gesendet",
  "Sent {} of {}": "{} von {} gesendet",
  "Sent {} · {} held": "{} gesendet · {} zurückgehalten",
  "Sent {} · {} held (new message)": "{} gesendet · {} zurückgehalten (neue Nachricht)",

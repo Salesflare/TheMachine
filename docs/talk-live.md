@@ -265,7 +265,8 @@ phone in a pocket, another page, or Talk's view without the card.
    (`talkEager`), so a lone "yes" ends the turn at once.
 4. **The send.** A yes for the pinned draft, unchanged, goes through `confirm_action` with source `voice` and its own
    approval `voice:<id>`, held `UNDO_SECONDS` (10) through the job's `retry_at`, so pacing and the outbox's checks
-   apply as for a tap. Talk's bar shows **Sending in 10 s** with **Undo**, then **Sent** (or **Canceled. It won’t be
+   apply as for a tap. Talk's bar says who it goes to, **Sending to Sam in 10 s** (a batch: **Sending 3 emails in
+   10 s**) with **Undo**, then **Sent to Sam** (or **Canceled. It won’t be
    sent.**); the chat shows **Approved by voice** with **Undo**. Both use `talk_undo` (`Store.undo_voice_send`). Saying
    "undo", "stop", "wait" or "don't send" calls `undo_send`, which cancels every send of that yes. A changed draft is
    refused (`changed`) and read out again; one never shown or read is refused too (`not_read`).

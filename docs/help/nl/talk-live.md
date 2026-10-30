@@ -41,7 +41,7 @@ Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie
 - Is je antwoord geen duidelijke ja, dan gaat er niets weg en vraagt hij het opnieuw. "Nee" verstuurt niets.
 - Een concept dat je al op het scherm zag, of in dit gesprek hoorde, leest hij niet opnieuw voor: hij vraagt het alleen, zoals "Naar Nick sturen?".
 - Zeg "verstuur ze allebei" of "verstuur alle klare" en hij noemt iedereen in één vraag. Eén ja verstuurt ze allemaal.
-- Praten toont een paar seconden **Ongedaan maken** met een aftelling voor het weggaat, daarna **Verstuurd**. Tik erop, of zeg "ongedaan maken" of "wacht".
+- Praten toont een paar seconden **Ongedaan maken** met de ontvanger en een aftelling voor het weggaat, daarna **Verstuurd naar** die persoon. Tik erop, of zeg "ongedaan maken" of "wacht".
 
 Je kunt altijd ook op **Goedkeuren** tikken.
 

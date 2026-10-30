@@ -698,6 +698,8 @@ class Api(unittest.TestCase):
         sent = self.act('talk_send', {'id': talk_id})
         self.assertEqual(sent['status'], 'queued')
         self.assertEqual([x['suggestion_id'] for x in sent['sent']], ids)
+        self.assertEqual([x['to'] for x in sent['sent']], ['Dana', 'Kim', 'Robin'])   # Talk's Undo bar says who
+        self.assertEqual(sent['sent'][2]['kind'], 'slack')
         jobs = self.jobs()
         self.assertEqual(sorted(j['revision'] for j in jobs), ['r1', 'r2', 'r3'])
         self.assertTrue(all(j['status'] == 'queued' and j['source'] == 'voice' and j['retry_at'] > a.now() for j in jobs))

@@ -41,7 +41,7 @@ To send a draft, say so. The Machine asks first, naming who it goes to and how, 
 - If your answer isn't a clear yes, nothing is sent and it asks again. "No" sends nothing.
 - A draft you already saw on screen, or heard in this conversation, isn't read out again: it only asks, like "Send it to Nick?".
 - Say "send both" or "send all the ready ones" and it names everyone in one question. One yes sends each of them.
-- Talk shows **Undo** with a countdown for a few seconds before it goes, then **Sent**. Tap it, or say "undo" or "wait".
+- Talk shows **Undo** and who it goes to, with a countdown for a few seconds before it goes, then **Sent to** that person. Tap it, or say "undo" or "wait".
 
 Tapping **Approve** works too.
 

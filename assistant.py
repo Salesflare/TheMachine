@@ -20782,11 +20782,13 @@ class App(*APP_MIXINS):
         sent = []
         for item in asked['items']:
             approval = 'voice:' + uuid.uuid4().hex
+            action = self.talk_draft(item['sid'], item['revision']) or {}
             try:
                 self.store.confirm_action(item['sid'], item['revision'], approval, 'voice', hold=talk_live.UNDO_SECONDS)
             except ValueError:
                 continue
-            sent.append({'suggestion_id': item['sid'], 'approval_id': approval})
+            sent.append({'suggestion_id': item['sid'], 'approval_id': approval, 'to': self.talk_who(action)[1] if action else '',
+                         'kind': str(action.get('kind') or '')})   # Talk's Undo bar says who it goes to
         if not sent:
             return {'status': 'changed', 'say': talk_live.SAY['changed']}
         many = len(asked['items']) > 1

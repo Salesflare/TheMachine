@@ -52,7 +52,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    talk_ask_send:()=>{if(a.ids){asked='all';return {question:'Send both, to Dana and Sam?',revision:'all',say:'Ask exactly this.'}}
     asked='r1';return {question:'Send it to Dana?',revision:'r1',say:'Ask exactly this.'}},
    talk_send:()=>{if(!asked)return {status:'not_asked'};const all=asked==='all';asked=null;
-    return {status:'queued',approval_id:'voice:1',undo_seconds:10,sent:all?[{suggestion_id:A,approval_id:'voice:1'},{suggestion_id:H,approval_id:'voice:2'}]:[{suggestion_id:A,approval_id:'voice:1'}],say:'Queued.'}},
+    return {status:'queued',approval_id:'voice:1',undo_seconds:10,sent:all?[{suggestion_id:A,approval_id:'voice:1',to:'Dana',kind:'email'},{suggestion_id:H,approval_id:'voice:2',to:'Sam',kind:'email'}]:[{suggestion_id:A,approval_id:'voice:1',to:'Dana',kind:'email'}],say:'Queued.'}},
    talk_undo:()=>({ok:true}),
    bug_send:()=>({ok:true,sent:true}),
   }[r.action];
@@ -169,23 +169,25 @@ try{
   assert.ok(await page.evaluate(()=>window.__dc.sent.some(x=>x.type==='session.update'&&x.session?.audio?.input?.turn_detection?.eagerness==='high')),'a lone yes ends the turn sooner');
   const queued=await call('send_answer');assert.equal(queued.status,'queued',JSON.stringify(queued));
   await page.waitForSelector(viewBar+' .talk-undo-btn');
-  assert.match(await page.locator(viewBar+' .talk-sending').textContent(),/^Sending in \d+ s$/);
+  assert.match(await page.locator(viewBar+' .talk-sending').textContent(),/^Sending 2 emails in \d+ s$/,'a batch: how many');
   const box=await page.locator(viewBar+' .talk-undo-btn').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=w&&box.y>=0&&box.y+box.height<=h,'Undo on screen');
   assert.ok(box.height>=(phone?36:28),'a button to tap');
   await page.waitForTimeout(300);await shot('a1-talk-undo');
   await tap(viewBar+' .talk-undo-btn');
   await until(()=>actions.filter(x=>x.action==='talk_undo').length===2);
-  assert.deepEqual(actions.filter(x=>x.action==='talk_undo').map(x=>[x.args.suggestion_id,x.args.approval_id]),[[A,'voice:1'],[H,'voice:2']]);
+  assert.deepEqual(actions.filter(x=>x.action==='talk_undo').map(x=>x.args),[{suggestion_id:A,approval_id:'voice:1'},{suggestion_id:H,approval_id:'voice:2'}]);
   await page.waitForFunction(sel=>document.querySelector(sel+' .talk-sending')?.textContent==='Canceled. It won’t be sent.',viewBar);
   await shot('a2-talk-undone');
-  if(full){
+  if(full||SHOTS){   // every size and theme when taking screenshots
    // Said instead of tapped: undo_send; and once the time is up, Sent
    await call('open_todo',{id:A});const q1=await call('ask_to_send');const a1=await call('send_answer');assert.equal(a1.status,'queued',JSON.stringify([q1,a1]));
    const u=await call('undo_send');assert.equal(u.canceled,1);assert.equal(actions.filter(x=>x.action==='talk_undo').length,3);
    assert.match((await call('undo_send')).error,/Nothing is waiting/);
    await call('ask_to_send');assert.equal((await call('send_answer')).status,'queued');
+   await page.waitForFunction(sel=>/^Sending to Dana in \d+ s$/.test(document.querySelector(sel+' .talk-sending')?.textContent||''),viewBar);
+   await shot('a4-talk-undo-one');
    await page.evaluate(()=>{window.__skew=11000});
-   await page.waitForFunction(sel=>document.querySelector(sel+' .talk-sending.sent')?.textContent==='Sent'&&!document.querySelector(sel+' .talk-undo-btn'),viewBar);
+   await page.waitForFunction(sel=>document.querySelector(sel+' .talk-sending.sent')?.textContent==='Sent to Dana'&&!document.querySelector(sel+' .talk-undo-btn'),viewBar);
    await shot('a3-talk-sent');
    assert.match((await call('undo_send')).error,/Nothing is waiting/);
    await page.evaluate(()=>{window.__skew=0});
