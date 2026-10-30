@@ -96,3 +96,22 @@ r=await run({kind:'preparation',job_id:id,action:'stop'},[{ok:true,status:'no-ac
 assert.equal(r.result.status,'lost');assert.equal(r.calls[0].args.key,'agent:main:assistant-review-preparation-'+id);assert.equal(r.calls[0].args.runId,id);
 await assert.rejects(()=>run({kind:'other',job_id:id,action:'stop'},[]));
 console.log('Exact-run recovery, wait-only timeout, cancellation proof and admission idempotency passed.');
+// Fast (chat_model.py): the session's speed is set right before a to-do chat's turn; OpenClaw sends each provider's own
+// fast option. Back to standard for the next turn of a session that ran fast: when that fails, nothing starts, so
+// background work never runs fast. A failed "fast" leaves the turn at standard speed.
+{
+  const msg={kind:'preparation',job_id:id,action:'start',message:'hi'},key='agent:main:assistant-review-preparation-'+id,admitted={runId:id};
+  r=await run({...msg,fast:true},[{ok:true},admitted]);
+  assert.deepEqual(r.calls.map(c=>c.method),['sessions.patch','agent']);assert.deepEqual(r.calls[0].args,{key,fastMode:true});
+  assert.equal(r.calls[1].args.fastMode,undefined);assert.deepEqual(r.result,{run_id:id,status:'admitted',fast:'fast'});
+  r=await run({...msg,fast:false},[{ok:true},admitted]);
+  assert.deepEqual(r.calls[0].args,{key,fastMode:false});assert.equal(r.result.fast,'standard');
+  r=await run({...msg,fast:false},[new Error('offline')]);
+  assert.deepEqual(r.calls.map(c=>c.method),['sessions.patch']);assert.equal(r.result.status,'unavailable');
+  r=await run({...msg,fast:true},[new Error('offline'),admitted]);
+  assert.deepEqual(r.calls.map(c=>c.method),['sessions.patch','agent']);assert.equal(r.result.fast,'unavailable');
+  r=await run(msg,[admitted]);  // no choice sent: the turn goes as before, no session change
+  assert.deepEqual(r.calls.map(c=>c.method),['agent']);assert.equal(r.result.fast,undefined);
+  r=await run({kind:'review',job_id:id,action:'start',message:'hi',fast:true},[admitted]);  // never for a review
+  assert.deepEqual(r.calls.map(c=>c.method),['agent']);
+}

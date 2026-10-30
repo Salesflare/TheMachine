@@ -76,6 +76,20 @@ try {
     if (attachments.length>5 || attachments.some(a=>a?.type!=='image' || !IMAGE.test(a.mimeType||'') || typeof a.fileName!=='string' ||
         a.fileName.length>200 || typeof a.content!=='string' || a.content.length>7*1024*1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(a.content)) ||
         attachments.reduce((n,a)=>n+a.content.length,0)>20*1024*1024) throw new Error('Invalid attachments');
+    // Fast (assistant.py chat_turn_fast, chat_model.py): the session's speed, set just before the turn. true for a turn
+    // the person waits on in a to-do chat with Fast on; false sets a session that ran fast back to standard, and when
+    // that can't be done the turn doesn't start (unavailable: tried again in a minute), so background work never runs
+    // fast. OpenClaw sends each provider's own fast option (OpenAI service_tier priority, Codex fast, Anthropic speed fast).
+    let speed;
+    if (kind==='preparation' && typeof request.fast==='boolean') {
+      try {
+        await callGatewayFromCli('sessions.patch',{timeout:'15000'},{key:session+sessionId,fastMode:request.fast},scope);
+        speed=request.fast?'fast':'standard';
+      } catch (error) {
+        if (!request.fast) throw error;
+        speed='unavailable';  // this turn runs at standard speed
+      }
+    }
     result=await callGatewayFromCli('agent',{timeout:'20000'}, {
       agentId:'main', sessionKey:session+sessionId,
       message:request.message, idempotencyKey:request.job_id, timeout:runSeconds,
@@ -89,7 +103,7 @@ try {
       ...(typeof request.thinking==='string' && /^(off|minimal|low|medium|high|xhigh|adaptive|max|ultra)$/.test(request.thinking) ? {thinking:request.thinking}:{}),
     },scope);
     if (result?.runId!==request.job_id) throw new Error('Unconfirmed admission');
-    process.stdout.write(JSON.stringify({run_id:request.job_id,status:'admitted'}));
+    process.stdout.write(JSON.stringify({run_id:request.job_id,status:'admitted',...(speed?{fast:speed}:{})}));
   } else if (request.action==='stop') {
     // After the normal runtime plus an outage grace period, stop only our exact
     // isolated turn. A successful no-active-run receipt also reconciles a run

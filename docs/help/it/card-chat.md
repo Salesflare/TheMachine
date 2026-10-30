@@ -27,6 +27,8 @@ Su un computer, Invio o Ctrl+Invio (Cmd+Invio su Mac) invia e Maiusc+Invio va a 
 
 Sotto la casella del messaggio, la chat mostra il suo modello e il livello di ragionamento, come "GPT-6.1 Sol" e "Ragionamento basso". Tocca uno dei due per sceglierne un altro solo per questa chat. I modelli sono elencati sotto il loro provider. Le nuove chat usano ciò che hai impostato in **Impostazioni**, **Modello** (vedi [Modello](model.md)).
 
+**Veloce**, in fondo al menu dei modelli, fa rispondere più in fretta le chat delle tue attività, a un costo più alto (circa il doppio, o più del tuo piano). Vale per tutte le chat delle tue attività, solo per i messaggi che invii e per Fallo, mai per il lavoro in background. Disattivato di default. Per un modello senza opzione veloce appare in grigio.
+
 ## Ferma una risposta
 
 Mentre una risposta viene scritta, il pulsante di invio diventa **Ferma**. Ferma la interrompe subito e tiene ciò che ha scritto fin lì, segnato come **Interrotta**. Scrivi un nuovo messaggio per continuare, oppure tocca **Riprova**.

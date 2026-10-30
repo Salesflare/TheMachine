@@ -21,7 +21,7 @@ writes it; other modules call the owner's functions.
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
 | do it and preparation | `next_actions`, `preparation_state`, `agent_jobs`, `agent_remote`, `agents_app`, `calendar_writes`, `calendar_app`, `doc_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
 | reviews and learning | `learning_loop`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
-| chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_files`, `talk_lines`, `voice_prefs` |
+| chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_fast_sessions`, `chat_files`, `talk_lines`, `voice_prefs` |
 | fleet and network | `fleet`, `fleet_requests`, `fleet_trust`, `shared_graph`, `shared_graph_app`, `shared_connectors`, `network`, `friends`, `family`, `contact_share`, `discovery`, `security_levels` | `fleet_*`, `network_request_nodes` (fleet); `share_*`, `team_*` (shared_graph); `network_*` (network, discovery); `contact_*`; `security_prefs` |
 | skills, support | `skills`, `skills_app`, `support`, `support_app`, `bug_queue`, `error_feed`, `help_topics` | `skills`, `skill_hints`, `error_feed*`, `help_topics` |
 | notify, Telegram | `notify`, `telegram_mirror`, `telegram_store`, `pacing` | `notify_*`, `pacing_*`; `telegram_store` keeps its own database (`chats`, `messages`, `outbox`, ...) |

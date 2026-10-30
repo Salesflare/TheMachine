@@ -27,6 +27,8 @@ On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter st
 
 Under the message box, the chat shows its model and thinking level, like "GPT-6.1 Sol" and "Low thinking". Tap either to pick another for this chat only. Models are listed under their provider. New chats use what you set in **Settings**, **Model** (see [Model](model.md)).
 
+**Fast**, at the end of the model menu, makes your to-do chats answer quicker, at a higher cost (about twice the price, or more of your plan). It applies to all your to-do chats, only to the messages you send and to Do it, never to work done in the background. Off by default. A model without a fast option shows it grayed out.
+
 ## Stop a reply
 
 While a reply is being written, the send button turns into **Stop**. Stop ends it right away and keeps what it wrote so far, marked **Stopped**. Write a new message to carry on, or tap **Try again**.

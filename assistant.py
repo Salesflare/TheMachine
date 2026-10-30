@@ -834,8 +834,10 @@ CARD_ACTIONS = {
 }
 OWNER_ACTIONS |= CARD_ACTIONS
 # A card chat's Stop button and the files added to a message (chat_files.py): the owner's own, from the dashboard.
-# The model and thinking level for chats (chat_model.py): the default (Settings, Model) and one to-do chat's own.
+# The model and thinking level for chats (chat_model.py): the default (Settings, Model) and one to-do chat's own;
+# the person's Fast choice for to-do chats.
 CHAT_ACTIONS = {
+    'chat_fast_set',
     'chat_file_remove',
     'chat_model_default',
     'chat_model_set',
@@ -15475,9 +15477,11 @@ class App(*APP_MIXINS):
             return self.card_chat(args.get('suggestion_id'), args.get('cursor'))
         if name == 'chat_stop':
             return self.chat_stop(args.get('suggestion_id'), via='browser' if args.get('via') == 'browser' else None)
-        if name in ('chat_model_default', 'chat_model_set'):
+        if name in ('chat_model_default', 'chat_model_set', 'chat_fast_set'):
             if not owner_dashboard:
                 raise ValueError('Only the owner picks the model, on the dashboard')
+            if name == 'chat_fast_set':
+                return self.chat_fast_set(args)
             return self.chat_model_default(args) if name == 'chat_model_default' else self.chat_model_set(args)
         if name in VOICE_ACTIONS:
             if not owner_dashboard:
@@ -17254,7 +17258,7 @@ class App(*APP_MIXINS):
             request['probe']=(dt.datetime.fromisoformat(now())-dt.datetime.fromisoformat(job['started_at'])).total_seconds()>=PREPARATION_PROBE_SECONDS
         if action=='start':
             with self.store.connect() as db:
-                chosen=db.execute("SELECT payload FROM action_jobs WHERE suggestion_id=? AND id=? AND status='local_preparation'",(job['suggestion_id'],job.get('action_id'))).fetchone()
+                chosen=db.execute("SELECT payload,source FROM action_jobs WHERE suggestion_id=? AND id=? AND status='local_preparation'",(job['suggestion_id'],job.get('action_id'))).fetchone()
             if chosen:
                 step=json.loads(chosen['payload'])
                 job['next_step']=step['instructions']
@@ -17273,6 +17277,13 @@ class App(*APP_MIXINS):
             # A Change from the follow-up review is a new draft, never a bare text edit: it takes the full context again
             # (the owner's current style, what was learned, the thread, earlier follow-ups and the skills on right now).
             changing=self.follow_up_change_note(job)
+            # Fast (chat_model.py) only for a turn the person waits on in the chat. The runner sets the session's speed
+            # before the turn: on for this one, and back to standard for the next turn in a session that ran fast, so
+            # work prepared ahead in it never runs fast.
+            fast=self.chat_turn_fast(job,changing,chosen['source'] if chosen else None)
+            if not fast:
+                with self.store.connect() as db:fast=False if chat_model.fast_reset(db,request['session_job_id']) else None
+            if fast is not None:request['fast']=fast
             if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead'] and not changing:
                 request['message']=chat_prompt(job,self.config)
             else:
@@ -17335,6 +17346,11 @@ class App(*APP_MIXINS):
                 request['message']+=lines
             except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
         result=runner(request)
+        if 'fast' in request and result.get('status')=='admitted':
+            with self.store.connect() as db:  # the session's speed as the runner set it (chat_model.fast_ran)
+                if request['fast']:chat_model.fast_ran(db,request['session_job_id'],now())
+                else:chat_model.fast_cleared(db,request['session_job_id'])
+            if request['fast']:LOG.info('chat turn fast requested job=%s speed=%s',job['job_id'],result.get('fast','unknown'))
         with self.store.connect() as db:
             current=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(job['suggestion_id'],)).fetchone()
             status=result.get('status','unavailable')
@@ -17737,6 +17753,36 @@ class App(*APP_MIXINS):
                 raise ValueError('Unknown suggestion')
             chat_model.set_card(db, suggestion_id, keep, now())
         return {'model': keep, 'resolved': chat_model.resolve(self.config, models, keep)}
+
+    def chat_fast_set(self, args):
+        """The person's Fast choice for to-do chats (the model menu under a chat's message box), kept in config.json
+        (`chat_fast`, chat_model.fast_on) for every to-do chat, from the next message. Off removes it."""
+        if not getattr(self, 'config_path', None):
+            raise ValueError('Fast can only be changed in config.json here')
+        if not isinstance(args.get('fast'), bool):
+            raise ValueError('Say on or off')
+        value = True if args['fast'] else None
+        save_hours(self.config_path, {'chat_fast': value})
+        self.config['chat_fast'] = value
+        return self.chat_model_view()
+
+    def chat_turn_fast(self, job, changing='', do_it_source=None):
+        """Whether this to-do's turn runs fast (chat_model.fast_turn): only a turn the person waits on in its chat (a
+        message, or a Do it they started there), with Fast on and a model that has a fast option. Background work
+        (prepared ahead, reviews, a follow-up review's Change) never is. Logged with what the provider last served."""
+        interactive = chat_model.interactive_turn(job.get('decision_id'), job.get('ahead'), bool(changing), do_it_source)
+        if not interactive or not chat_model.fast_on(self.config):
+            return False
+        try:
+            with self.store.connect() as db:
+                own = chat_model.card_choice(db, job['suggestion_id'])
+            fast, entry = chat_model.fast_turn(self.config, self.chat_models(), own, interactive)
+        except (sqlite3.Error, OSError, ValueError) as error:
+            LOG.error('chat fast error=%s', type(error).__name__)
+            return False
+        LOG.info('chat turn fast=%s model=%s%s', fast, (entry or {}).get('ref') or 'unknown',
+                 ' last_served=' + entry['served'] if entry and entry.get('served') else '')
+        return fast
 
     def chat_turn_args(self, suggestion_id):
         """provider, model and thinking for an owner's turn in this to-do's chat (chat_model.turn_args); {} when

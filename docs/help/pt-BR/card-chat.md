@@ -27,6 +27,8 @@ No computador, Enter ou Ctrl+Enter (Cmd+Enter no Mac) envia, e Shift+Enter come�
 
 Abaixo da caixa de mensagem, o chat mostra o modelo e o nível de raciocínio, como "GPT-6.1 Sol" e "Raciocínio baixo". Toque em um deles para escolher outro só para este chat. Os modelos aparecem sob o provedor deles. Chats novos usam o que você definiu em **Configurações**, **Modelo** (veja [Modelo](model.md)).
 
+**Rápido**, no fim do menu de modelos, faz seus chats de tarefas responderem mais rápido, a um custo maior (cerca do dobro, ou mais do seu plano). Vale para todos os seus chats de tarefas, só para as mensagens que você envia e para Fazer, nunca para o trabalho em segundo plano. Desligado por padrão. Em um modelo sem opção rápida, aparece em cinza.
+
 ## Parar uma resposta
 
 Enquanto uma resposta está sendo escrita, o botão de enviar vira **Parar**. Parar encerra na hora e mantém o que já foi escrito, marcado como **Parada**. Escreva uma nova mensagem para continuar, ou toque em **Tentar de novo**.

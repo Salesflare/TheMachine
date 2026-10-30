@@ -27,6 +27,8 @@ En un ordenador, Enter o Ctrl+Enter (Cmd+Enter en un Mac) envía, y Mayús+Enter
 
 Debajo del cuadro de mensaje, el chat muestra su modelo y su nivel de razonamiento, como "GPT-6.1 Sol" y "Razonamiento bajo". Toca cualquiera de los dos para elegir otro solo para este chat. Los modelos aparecen bajo su proveedor. Los chats nuevos usan lo que pusiste en **Ajustes**, **Modelo** (consulta [Modelo](model.md)).
 
+**Rápido**, al final del menú de modelos, hace que tus chats de tareas respondan más rápido, a un costo mayor (cerca del doble, o más de tu plan). Vale para todos tus chats de tareas, solo para los mensajes que envías y para Hazlo, nunca para el trabajo en segundo plano. Desactivado por defecto. En un modelo sin opción rápida aparece en gris.
+
 ## Detén una respuesta
 
 Mientras se escribe una respuesta, el botón de enviar se convierte en **Detener**. Detener la termina al momento y guarda lo que llevaba escrito, marcado como **Detenida**. Escribe un mensaje nuevo para seguir, o toca **Reintentar**.

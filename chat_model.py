@@ -11,7 +11,14 @@ takes --model and --thinking), so nothing in OpenClaw's own config changes and t
 Without any choice, turns run exactly as before: OpenClaw's main model and thinking level. The default for chats is
 `chat_model` in config.json ({"model": "provider/id", "thinking": "high"}, either may be missing: then OpenClaw's); a
 to-do's own choice is in the chat_models table, and Help's lives in the dashboard for that Help conversation. Background
-work (reviews, drafts prepared ahead, the profile) keeps its own model (assistant.background_model)."""
+work (reviews, drafts prepared ahead, the profile) keeps its own model (assistant.background_model).
+
+Fast (the person's own choice, in the model menu under a to-do chat's message box; `chat_fast` in config.json, off by
+default) runs the turns they wait on in a to-do chat on the provider's fast option, at a higher price: OpenAI's Fast
+mode (service_tier "priority"), Codex's fast mode on a ChatGPT sign-in, Anthropic's fast mode (speed "fast") on Opus
+with an API key. OpenClaw sends the right one for the model; the Gateway's model list says which models have one
+(`supportsFastMode`, or a "priority" service tier). Only chat messages and a Do it the person started on the dashboard
+are fast (fast_turn); preparations, reviews, syncs and everything else in the background never are."""
 from __future__ import annotations
 
 import json
@@ -25,10 +32,26 @@ LEVELS = ('off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'adaptive', 'max',
 REF = re.compile(r'[a-z0-9-]{1,40}/[A-Za-z0-9._:/-]{1,120}')
 CATALOG_SECONDS = 600  # how long one reading of the Gateway's model list holds
 MAX_MODELS = 80
+FAST_TIERS = {'priority', 'fast', 'ultrafast'}  # service tiers that are a model's fast option
 
 
 def initialize(db):
     db.execute('CREATE TABLE IF NOT EXISTS chat_models(suggestion_id TEXT PRIMARY KEY,model TEXT,thinking TEXT,updated_at TEXT NOT NULL)')
+    # Preparation sessions a fast turn ran in: their next turn sets the session back to standard first (fast_reset)
+    db.execute('CREATE TABLE IF NOT EXISTS chat_fast_sessions(session_job_id TEXT PRIMARY KEY,at TEXT NOT NULL)')
+
+
+def fast_ran(db, session_job_id, at):
+    db.execute('INSERT OR REPLACE INTO chat_fast_sessions(session_job_id,at) VALUES(?,?)', (session_job_id, at))
+
+
+def fast_reset(db, session_job_id):
+    """Whether this session ran a fast turn whose speed still needs setting back to standard."""
+    return bool(db.execute('SELECT 1 FROM chat_fast_sessions WHERE session_job_id=?', (session_job_id,)).fetchone())
+
+
+def fast_cleared(db, session_job_id):
+    db.execute('DELETE FROM chat_fast_sessions WHERE session_job_id=?', (session_job_id,))
 
 
 def openclaw_settings(config):
@@ -79,10 +102,32 @@ def parse_catalog(reply, config=None):
         levels = [x for x in LEVELS if x in levels]  # in order, only the ones OpenClaw knows
         seen.add(ref)
         out.append({'ref': ref, 'name': str(row.get('name') or row.get('id'))[:80], 'levels': levels,
-                    'default': row.get('thinkingDefault') if row.get('thinkingDefault') in levels else (levels[0] if levels else None)})
+                    'default': row.get('thinkingDefault') if row.get('thinkingDefault') in levels else (levels[0] if levels else None),
+                    'fast': has_fast(row), **served(row)})
         if len(out) >= MAX_MODELS:
             break
     return out
+
+
+def has_fast(row):
+    """Whether the Gateway says this model has a fast option with this sign-in: `supportsFastMode` (OpenClaw's own
+    check: OpenAI's API, Anthropic's API key on a model with fast mode), or, when it doesn't say, a fast service tier
+    the account lists (Codex on a ChatGPT sign-in). A Claude plan (Claude CLI, a sign-in token) has none."""
+    said = row.get('supportsFastMode')
+    if said is not None:
+        return said is True
+    tiers = row.get('serviceTiers')
+    return isinstance(tiers, list) and bool(FAST_TIERS & {t for t in tiers if isinstance(t, str)})
+
+
+def served(row):
+    """{'served': tier} when the provider served this model's last fast request at another tier than asked (OpenClaw
+    notes that, `serviceTierObservation`); else {}."""
+    seen = row.get('serviceTierObservation')
+    if not isinstance(seen, dict) or not isinstance(seen.get('requestedTier'), str):
+        return {}
+    got = seen.get('responseTier')
+    return {} if got == seen['requestedTier'] else {'served': str(got or 'rejected')[:40]}
 
 
 def gateway_call(config, method, params, run=subprocess.run):
@@ -263,8 +308,32 @@ def minimal(config, models, choice, base=None):
     return {k: found[k] for k in ('model', 'thinking') if found[k] and found[k] != base[k]}
 
 
+def fast_on(config):
+    """The person's Fast choice for to-do chats (config.json `chat_fast`); off unless turned on."""
+    return (config or {}).get('chat_fast') is True
+
+
+def interactive_turn(decision_id, ahead=False, changing=False, do_it_source=None):
+    """Whether a preparation turn is one the person waits on in a to-do chat: a message they sent there (a `chat-`
+    decision, also from Talk or the mic), or a Do it they started on the dashboard. Never work done ahead, a follow-up
+    review's Change (a batch rewrite) or anything else that runs on its own."""
+    if ahead or changing:
+        return False
+    return str(decision_id or '').startswith('chat-') or do_it_source == 'dashboard'
+
+
+def fast_turn(config, models, own=None, interactive=False):
+    """Whether this turn runs fast: Fast is on, the turn is interactive (interactive_turn) and the model it runs on
+    has a fast option (has_fast). Returns (fast, model entry or None)."""
+    if not interactive or not fast_on(config):
+        return False, None
+    model = resolve(config, models, own)['model']
+    entry = next((m for m in models or [] if m['ref'] == model), None)
+    return bool(entry and entry.get('fast')), entry
+
+
 def view(config, models):
     """What the dashboard shows: the models to pick from, OpenClaw's own, and the default for chats as it resolves."""
     main_model, main_thinking = main(config)
     return {'models': models or [], 'known': models is not None, 'main': {'model': main_model, 'thinking': main_thinking},
-            'default': resolve(config, models), 'saved': saved_default(config)}
+            'default': resolve(config, models), 'saved': saved_default(config), 'fast': fast_on(config)}

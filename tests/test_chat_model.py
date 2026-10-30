@@ -73,7 +73,7 @@ class Catalog(unittest.TestCase):
             return subprocess.CompletedProcess(args, 0, json.dumps(bare if args[3] == 'models.list' else session), '')
         models = chat_model.read_catalog(self.config, run)
         self.assertEqual(seen, ['models.list', 'sessions.list'])
-        self.assertEqual(models[0], {'ref': 'acme/lm-2', 'name': 'LM-2', 'levels': ['low', 'medium', 'high', 'ultra'], 'default': 'high'})
+        self.assertEqual(models[0], {'ref': 'acme/lm-2', 'name': 'LM-2', 'levels': ['low', 'medium', 'high', 'ultra'], 'default': 'high', 'fast': False})
         self.assertEqual(chat_model.resolve(self.config, models)['thinking'], 'medium')
         # Not listed at all (no "available" yet), though every turn runs on it: it is offered with its session's levels
         missing = {'models': [REPLY['models'][1]]}
