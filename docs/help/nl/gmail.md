@@ -17,6 +17,8 @@ Mail in Promoties, nieuwsbrieven, Updates en Forums krijgt eerst een snelle blik
 
 Een e-mail vanuit een to-do, en pas nadat je hem goedkeurt. **Doe het** bereidt een concept voor; **Nakijken en versturen** opent het, klaar om te bewerken, en er gaat niets weg tot je op **Nu versturen** drukt. **Inloggen met Google** vraagt Google ook om te mogen versturen. Met je eigen app op je eigen computer is de login alleen-lezen tot je versturen zelf toevoegt.
 
+Een antwoord komt in het gesprek van de e-mail waarop het antwoordt. Gaat het via een andere mailbox dan die waarin de e-mail binnenkwam, dan zegt de to-do dat voor je verstuurt: bij hen komt het toch in hetzelfde gesprek.
+
 ## Koppelen
 
 Op een gehoste Machine:

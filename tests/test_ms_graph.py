@@ -128,6 +128,21 @@ class FakeGraph:
             self.add(mid, 'f-drafts', '2026-10-21T09:00:00Z', '2026-10-21T09:00:00Z', raw, internet_id=internet)
             self.messages[mid]['isDraft'] = True
             return {'id': mid}
+        if path.endswith('/createReply') and verb == 'POST':  # a reply draft in the original's conversation
+            original = self.messages.get(urllib.parse.unquote(path.split('/')[3]))
+            if not original:
+                raise http_error(path, 404)
+            mid = f'reply-{len(self.messages)}'
+            self.add(mid, 'f-drafts', '2026-10-21T09:00:00Z', '2026-10-21T09:00:00Z', conversation=original['conversationId'],
+                     internet_id=f'<{mid}@outlook.test>')
+            self.messages[mid].update(isDraft=True, _reply=json.loads(data)['message'], _files=[])
+            return {'id': mid, 'conversationId': original['conversationId'], 'internetMessageId': f'<{mid}@outlook.test>'}
+        if path.endswith('/attachments') and verb == 'POST':
+            self.messages[urllib.parse.unquote(path.split('/')[3])]['_files'].append(json.loads(data))
+            return {'id': 'file-1'}
+        if verb == 'DELETE' and path.startswith('/me/messages/'):
+            del self.messages[urllib.parse.unquote(path.split('/')[3])]
+            return b''
         if path.endswith('/send') and verb == 'POST':
             message = self.messages[urllib.parse.unquote(path.split('/')[3])]
             message.update(parentFolderId=SENT, isDraft=False)
@@ -380,6 +395,81 @@ class Sending(Base):
         with self.assertRaisesRegex(ValueError, 'thread header'):
             n.validate({'kind': 'email', 'account_id': 'acme-gmail', 'to': ['bo@client.test'], 'subject': 'Re', 'body': 'x',
                         'thread_id': 'AAQk+=', 'in_reply_to': '<m1@client.test>'}, self.config, ['acme-gmail'])
+
+
+class ReplyInItsConversation(Base):
+    """A reply goes into the conversation of the email it answers: createReply on that email when it is in this
+    mailbox, the MIME draft with In-Reply-To and References when it isn't (Jeroen, 2026-10-30)."""
+
+    def setUp(self):
+        super().setUp()
+        self.fake.granted |= {'Mail.ReadWrite', 'Mail.Send'}
+        self.fake.sent_html = [SENT_SIGNED.format(i) for i in range(3)]
+        self.fake.add('in1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', conversation='conv-9', internet_id='<m1@client.test>')
+
+    def email(self, account_id='acme-outlook'):
+        return {'metadata': json.dumps({'from': 'Bo <bo@client.test>', 'to': 'alex@acme.test', 'message-id': '<m1@client.test>',
+                                        'thread_id': 'conv-9' if account_id == 'acme-outlook' else 'beef01', 'labels': ['INBOX']}),
+                'account_id': account_id, 'source_id': 'in1' if account_id == 'acme-outlook' else 'g1', 'title': 'Quote'}
+
+    def reply(self, rows, allowed=('acme-outlook',)):
+        replied = a.replied_to(rows)
+        value = {'kind': 'email', 'label': 'Send reply', 'account_id': 'acme-outlook', 'to': ['bo@client.test'],
+                 'subject': 'Re: Quote', 'body': 'Yes, 10 works.\n\nAlex'}
+        return n.validate(n.fill_reply(value, replied), self.config, list(allowed), replied=replied)
+
+    def posted(self, path):
+        return [c for c in self.fake.calls if c[0] == 'POST' and c[1] == G + path]
+
+    def test_a_reply_in_the_same_mailbox_goes_out_with_create_reply(self):
+        action = self.reply([self.email()])
+        self.assertEqual((action['in_reply_to'], action['thread_id'], action['reply_to_id']), ('<m1@client.test>', 'conv-9', 'in1'))
+        email = n.EmailTransport(self.config, a.credential, a.gog_read)
+        email.preflight(action)
+        result = email.send(action, {'rfc_message_id': '<job-1@acme.test>'})
+        self.assertEqual(result['rfc_message_id'], f"<{result['message_id']}@outlook.test>")  # Outlook's own, kept on the job
+        sent = self.fake.messages[result['message_id']]
+        self.assertEqual((sent['parentFolderId'], sent['conversationId']), (SENT, 'conv-9'))
+        self.assertEqual((sent['_reply']['subject'], sent['_reply']['toRecipients']), ('Re: Quote', [{'emailAddress': {'address': 'bo@client.test'}}]))
+        self.assertIn('Yes, 10 works.', sent['_reply']['body']['content'])
+        self.assertIn('Alex Smith', sent['_reply']['body']['content'])  # the signature found in the sent mail
+        self.assertEqual(self.posted('/me/messages'), [])  # never a new message
+
+    def test_files_go_on_the_reply_draft_and_a_failed_one_leaves_no_draft(self):
+        root = Path(self.temp.name)
+        (root / 'files').mkdir()
+        (root / 'files' / 'receipt.pdf').write_bytes(b'%PDF receipt')
+        self.config.update(attachment_sources=[str(root / 'files')], attachment_dir=str(root / 'store'))
+        action = self.reply([self.email()])
+        action = {**action, 'attachments': n.store_attachments([str(root / 'files' / 'receipt.pdf')], self.config)}
+        email = n.EmailTransport(self.config, a.credential, a.gog_read)
+        result = email.send(action, {'rfc_message_id': '<job-4@acme.test>'})
+        files = self.fake.messages[result['message_id']]['_files']
+        self.assertEqual((files[0]['name'], base64.b64decode(files[0]['contentBytes'])), ('receipt.pdf', b'%PDF receipt'))
+        self.fake.fail = {f'POST /me/messages/reply-{len(self.fake.messages)}/attachments': 503}
+        self.assertEqual(email.send(action, {'rfc_message_id': '<job-5@acme.test>'}), {'not_sent': True})
+        self.assertFalse([m for m in self.fake.messages.values() if m['isDraft']])  # the half-filled draft is gone
+
+    def test_an_original_gone_from_the_mailbox_still_threads_by_its_headers(self):
+        action = self.reply([self.email()])
+        del self.fake.messages['in1']
+        result = n.EmailTransport(self.config, a.credential, a.gog_read).send(action, {'rfc_message_id': '<job-2@acme.test>'})
+        self.assertTrue(result['message_id'].startswith('draft-'))
+        sent = base64.b64decode(self.posted('/me/messages')[0][3]).decode()
+        self.assertIn('In-Reply-To: <m1@client.test>', sent)
+        self.assertIn('References: <m1@client.test>', sent)
+
+    def test_a_reply_to_mail_that_came_in_elsewhere_keeps_its_headers_and_says_so(self):
+        gmail = {'id': 'acme-gmail', 'service': 'gmail', 'transport': 'broker', 'email': 'alex@acme.example', 'boundary': 'work:Acme'}
+        self.config['accounts'].append(gmail)
+        action = self.reply([self.email('acme-gmail')], ('acme-gmail', 'acme-outlook'))
+        self.assertEqual((action['in_reply_to'], action['reply_elsewhere']), ('<m1@client.test>', 'alex@acme.example'))
+        self.assertNotIn('thread_id', action)
+        self.assertNotIn('reply_to_id', action)
+        result = n.EmailTransport(self.config, a.credential, a.gog_read).send(action, {'rfc_message_id': '<job-3@acme.test>'})
+        self.assertTrue(result['message_id'].startswith('draft-'))
+        self.assertEqual([c for c in self.fake.calls if c[1].endswith('/createReply')], [])
+        self.assertIn('In-Reply-To: <m1@client.test>', base64.b64decode(self.posted('/me/messages')[0][3]).decode())
 
 
 class Snooze(Base):

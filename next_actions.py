@@ -316,6 +316,87 @@ def pick_sender(mailbox, options, replied):
     return next((a for a in addressed if a in offered[1:]), mailbox)
 
 
+# Reply and forward prefixes mail apps put before a subject (English, German, Dutch, Nordic, Polish, Italian).
+SUBJECT_PREFIX = re.compile(r'\s*(?:re|aw|antw|antwort|sv|vs|odp|rif|fwd?|wg|doorst)\s*(?:\[\d+\]|\(\d+\))?\s*:', re.I)
+REPLY_PREFIX = re.compile(r'\s*(?:re|aw|antw|antwort|sv|vs|odp|rif)\s*(?:\[\d+\]|\(\d+\))?\s*:', re.I)
+MESSAGE_ID = re.compile(r'<[^\s<>\r\n]+>')
+# On the card and in the Send preview when a reply goes from another mailbox than the one the email came in on.
+REPLY_ELSEWHERE = 'Goes from {}, not {} where the email came in. It still lands in their thread.'
+# Each file of a createReply reply goes up in one Graph request (under 3 MB); a larger one goes in the MIME draft instead.
+OUTLOOK_INLINE_FILE = 2_500_000
+UNLINKED_REPLY = 'This reply isn’t linked to the email it answers, so it would start a new thread. Nothing was sent.'
+
+
+def base_subject(subject):
+    """A subject without its Re:/AW:/Fwd: prefixes, spaces and case: what a reply and the email it answers share."""
+    text = str(subject or '')
+    while (found := SUBJECT_PREFIX.match(text)):
+        text = text[found.end():]
+    return ' '.join(text.split()).casefold()
+
+
+def reads_as_reply(action):
+    """An email drafted as a reply: a Re:/AW: subject or a Send reply button. It must answer a known email."""
+    return action.get('kind') == 'email' and bool(REPLY_PREFIX.match(str(action.get('subject') or '')) or action.get('label') == 'Send reply')
+
+
+def fill_reply(value, replied):
+    """A draft that reads as a reply but names no email it answers gets the one it answers from the to-do's own emails
+    (replied, newest first: assistant.replied_to): the same subject from or to a recipient, else the newest email from
+    a recipient; with a thread_id, the email of that thread. Its Message-ID becomes In-Reply-To and References, so the
+    reply never goes out as a new email with a Re: subject. validate adds the thread and says when it can't."""
+    def fix(item):
+        if not isinstance(item, dict) or item.get('kind') != 'email' or item.get('in_reply_to') or not (
+                reads_as_reply(item) or item.get('thread_id')):
+            return item
+        people = {str(a).lower() for a in [*(item.get('to') or ()), *(item.get('cc') or ())] if isinstance(a, str)}
+        known = [(mid, info) for mid, info in (replied or {}).items() if MESSAGE_ID.fullmatch(mid)]
+        talks = lambda info: info.get('from') in people or bool(set(info.get('to') or ()) & people)
+        subject = base_subject(item.get('subject'))
+        found = next((mid for mid, info in known if any(h.get('thread_id') == item['thread_id'] for h in [info, *(info.get('homes') or {}).values()]
+                                                         if h.get('account_id') in (None, item.get('account_id')))), None) if item.get('thread_id') else None
+        found = found or next((mid for mid, info in known if subject and base_subject(info.get('subject')) == subject and talks(info)), None)
+        found = found or next((mid for mid, info in known if not info.get('sent') and info.get('from') in people), None)
+        if not found:
+            return item
+        refs = [r for r in str(replied[found].get('in_reply_to') or '').split() if MESSAGE_ID.fullmatch(r) and r != found]
+        return {**item, 'in_reply_to': found, 'references': ' '.join([*refs[-1:], found])}
+    if isinstance(value, list):
+        return [fix(x) for x in value]
+    if isinstance(value, dict) and isinstance(value.get('actions'), list):
+        return {**value, 'actions': [fix(x) for x in value['actions']]}
+    return fix(value)
+
+
+def unlinked_reply(value):
+    """Why a saved result can't keep its reply as it is, or None: an email drafted as a reply that answers no email would
+    start a new thread, in this mailbox and theirs (Jeroen, 2026-10-30). Send refuses it too (EmailTransport.preflight)."""
+    if any(reads_as_reply(item) and not item.get('in_reply_to') for item in actions(value)):
+        return ('This email reads as a reply (a Re: subject or Send reply) but answers no email: set in_reply_to to the '
+                'Message-ID of the email it answers, from this to-do’s emails, or write it as a new email without Re:')
+    return None
+
+
+def reply_origin(result, account, config, replied):
+    """Where the email a reply answers came in. Same mailbox: its Gmail thread (threadId) or Outlook message (createReply)
+    and conversation. Another mailbox: no thread of this one fits, so only In-Reply-To and References thread it (for the
+    recipient), and the card says so (reply_elsewhere)."""
+    original = (replied or {}).get(str(result.get('in_reply_to') or '').strip())
+    if not original or not original.get('account_id'):
+        return
+    original = (original.get('homes') or {}).get(account['id']) or original
+    if original['account_id'] != account['id']:
+        result.pop('thread_id', None)
+        home = next((a for a in config['accounts'] if a['id'] == original['account_id']), {})
+        result['reply_elsewhere'] = str(home.get('email') or original['account_id'])
+        return
+    thread = str(original.get('thread_id') or '')
+    if re.fullmatch(r'[A-Za-z0-9+/=_-]{1,400}' if outlook(account) else r'[a-fA-F0-9]{1,64}', thread):
+        result['thread_id'] = thread
+    if outlook(account) and re.fullmatch(r'[A-Za-z0-9+/=_-]{1,400}', str(original.get('id') or '')):
+        result['reply_to_id'] = original['id']
+
+
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
              intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None, telegram_chats=None,
              doc_write_context=None):
@@ -463,6 +544,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                 result[field] = text
         if result.get('thread_id') and not result.get('in_reply_to'):
             raise ValueError('Thread replies need the original RFC Message-ID, not only a Gmail thread ID')
+        reply_origin(result, account, config, replied)
         # From: the mailbox address, or an alias of the owner's that Gmail confirms this mailbox sends as (senders,
         # own_addresses.senders). The service picks it, never the draft; the owner can change it in the review.
         offered = [a for a in (senders or {}).get(account['id']) or () if a and a.lower() != account['email'].lower()]
@@ -947,6 +1029,8 @@ def signature_text(signature):
 
 def email_preview(action):
     why = INTERCOM_FALLBACK.get(action.get('intercom_fallback'))
+    if action.get('reply_elsewhere'):
+        why = ' '.join(filter(None, [why, i18n.t(REPLY_ELSEWHERE, action['from'], action['reply_elsewhere'])]))
     lines = ([why, ''] if why else []) + ['From: ' + action['from'], 'To: ' + (', '.join(action['to']) or 'you choose: ' + ', '.join(action.get('to_options', [])))]
     for field in ('cc', 'bcc'):
         if action.get(field):
@@ -961,6 +1045,15 @@ def email_preview(action):
 def snooze_note(action):
     days = action['snooze_days']
     return f"After sending, the thread leaves your inbox for {days} day{'s' if days > 1 else ''} (a weekday morning; a reply brings it back sooner)." 
+
+
+def mail_page(action, signature=''):
+    """The email's HTML: the body as drafted or edited (mail_html: links behind their words, lists, bold), a blank line,
+    the real signature."""
+    page = '<div dir="ltr">' + mail_html(action['body']) + '\n<br>\n'
+    if signature and action.get('signature'):
+        page += '<div class="gmail_signature">' + signature + '</div>'
+    return page + '</div>'
 
 
 def mime_bytes(action, job, signature='', config=None):
@@ -980,11 +1073,7 @@ def mime_bytes(action, job, signature='', config=None):
     signature = signature if action.get('signature') else ''
     text = mail_text(action['body']) + ('\n\n' + signature_text(signature) if signature else '')
     message.set_content(text, charset='utf-8')
-    # The body as drafted or edited (mail_html: links behind their words, lists, bold), a blank line, the real signature.
-    page = '<div dir="ltr">' + mail_html(action['body']) + '\n<br>\n'
-    if signature:
-        page += '<div class="gmail_signature">' + signature + '</div>'
-    message.add_alternative(page + '</div>', subtype='html', charset='utf-8')
+    message.add_alternative(mail_page(action, signature), subtype='html', charset='utf-8')
     for record in action.get('attachments', []):
         maintype, _, subtype = record['type'].partition('/')
         message.add_attachment(attachment_bytes(record, config or {}), maintype=maintype, subtype=subtype or 'octet-stream',
@@ -1039,6 +1128,8 @@ class EmailTransport:
 
     def preflight(self, action):
         account = self.account(action)
+        if reads_as_reply(action) and not action.get('in_reply_to'):
+            raise ValueError(i18n.t(UNLINKED_REPLY))  # never a reply quietly sent as a new thread
         if outlook(account):
             return self.outlook_preflight(action, account)
         if not (granted_scopes(self.config, self.credential, account) & SEND_SCOPES):
@@ -1115,6 +1206,11 @@ class EmailTransport:
             granted = ms_graph.scopes(self.config, self.credential, account)
         except ms_graph.GraphError:
             return {'not_sent': True}
+        if 'Mail.ReadWrite' in granted and action.get('reply_to_id') and all(
+                r.get('size', OUTLOOK_INLINE_FILE + 1) <= OUTLOOK_INLINE_FILE for r in action.get('attachments', [])):
+            done = self.outlook_reply(action, account, call, rejected)
+            if done is not None:
+                return done
         if 'Mail.ReadWrite' in granted:
             try:
                 draft = call('messages.create', {}, body=mime, content_type='text/plain', write=True)
@@ -1138,6 +1234,41 @@ class EmailTransport:
             if found:
                 return found
         return {}
+
+    def outlook_reply(self, action, account, call, rejected):
+        """A reply in the conversation it answers (same mailbox): Graph's createReply on that email, with this draft's
+        recipients, subject, body and files, then sent. Outlook keeps it in that conversation and sets In-Reply-To and
+        References itself. None when that email can't be found here any more: the MIME draft goes instead, with the
+        same In-Reply-To and References."""
+        address = lambda field: [{'emailAddress': {'address': a}} for a in action.get(field) or ()]
+        message = {'subject': action['subject'], 'toRecipients': address('to'), 'ccRecipients': address('cc'),
+                   'bccRecipients': address('bcc'),
+                   'body': {'contentType': 'HTML', 'content': mail_page(action, self.signature(action, account))}}
+        try:
+            draft = call('messages.createReply', {'id': action['reply_to_id']}, body={'message': message}, write=True)
+        except ms_graph.GraphError as error:
+            if error.status == 404:
+                return None
+            return {'rejected': error.status} if rejected(error) else {'not_sent': True}
+        if not draft.get('id'):
+            return {'not_sent': True}
+        try:
+            for record in action.get('attachments', []):
+                call('messages.attachments.add', {'id': draft['id']}, write=True,
+                     body={'@odata.type': '#microsoft.graph.fileAttachment', 'name': record['name'], 'contentType': record['type'],
+                           'contentBytes': base64.b64encode(attachment_bytes(record, self.config)).decode()})
+        except (ms_graph.GraphError, ValueError, OSError) as error:
+            with contextlib.suppress(ms_graph.GraphError):  # an unsent draft: never left behind half-filled
+                call('messages.delete', {'id': draft['id']}, write=True)
+            return {'rejected': error.status} if isinstance(error, ms_graph.GraphError) and rejected(error) else {'not_sent': True}
+        try:
+            call('messages.send', {'id': draft['id']}, body=b'', content_type='application/json', write=True)
+        except ms_graph.GraphError as error:
+            return {'rejected': error.status} if rejected(error) else {}
+        sent = {'message_id': draft['id']}
+        if MESSAGE_ID.fullmatch(str(draft.get('internetMessageId') or '')):
+            sent['rfc_message_id'] = draft['internetMessageId']  # Outlook's own Message-ID: how a reply to it is found
+        return sent
 
     def send(self, action, job):
         account = self.account(action)

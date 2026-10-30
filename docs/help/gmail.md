@@ -19,6 +19,8 @@ An email from a to-do, and only after you approve it. **Do it** prepares a draft
 
 **From** in the review is a small picker when Gmail lets this mailbox send as an alias of yours (one marked **Mine** in Settings, [Your addresses](settings.md#your-addresses)). A reply to mail that came to that alias starts from it; new mail starts from your mailbox address. Right before sending, Gmail is asked again: if it doesn't confirm the address, nothing is sent.
 
+A reply goes into the thread of the email it answers. When it goes from another of your mailboxes than the one that email came in on, the to-do says so before you send. It still lands in their thread.
+
 ## Connect it
 
 On a hosted Machine:

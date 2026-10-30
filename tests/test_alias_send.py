@@ -111,7 +111,7 @@ class DefaultFrom(unittest.TestCase):
 class StrictCheck(unittest.TestCase):
     def action(self, sender='partnerships@example.com', options=(MAILBOX, 'partnerships@example.com')):
         return {'kind': 'email', 'account_id': 'work', 'from': sender, 'from_options': list(options), 'to': ['pat@client.test'],
-                'cc': [], 'bcc': [], 'subject': 'Re: Partnership', 'body': 'Thanks.', 'signature': False}
+                'cc': [], 'bcc': [], 'subject': 'Re: Partnership', 'body': 'Thanks.', 'signature': False, 'in_reply_to': '<m1@client.test>'}
 
     def preflight(self, action, alias_answer):
         def read(config, account, api, version, method, params, scope):

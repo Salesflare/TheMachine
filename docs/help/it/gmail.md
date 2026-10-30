@@ -17,6 +17,8 @@ La posta di Promozioni, newsletter, Aggiornamenti e Forum riceve prima un'occhia
 
 Un'email da un'attività, e solo dopo la tua approvazione. **Fallo** prepara una bozza; **Rivedi e invia** la apre pronta da modificare, e non parte niente finché non premi **Invia ora**. **Accedi con Google** chiede a Google anche il permesso di inviare. Con la tua app sul tuo computer, l'accesso è di sola lettura finché non aggiungi tu l'invio.
 
+Una risposta finisce nella conversazione dell’email a cui risponde. Se parte da una casella diversa da quella in cui è arrivata l’email, l’attività lo dice prima dell’invio: per loro finisce comunque nella stessa conversazione.
+
 ## Collegalo
 
 Su una Machine in hosting:

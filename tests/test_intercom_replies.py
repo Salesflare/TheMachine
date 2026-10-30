@@ -338,7 +338,7 @@ class Channel(Send):
     def email(self, **extra):
         self.store.decide(self.sid, 'accept', '', 'accept-' + self.sid, 'dashboard')
         self.save(kind='email', account_id='mail', to=['casey@example.org'], subject='Re: Export question', label='Send reply',
-                  conversation_id=None, **extra)
+                  conversation_id=None, in_reply_to='<casey-1@example.org>', **extra)
         with self.store.connect() as db:
             return json.loads(db.execute('SELECT next_action FROM suggestions WHERE id=?', (self.sid,)).fetchone()[0])
 
@@ -349,7 +349,8 @@ class Channel(Send):
         self.assertEqual((action['kind'], action['label'], action.get('intercom_fallback')), ('email', 'Send reply', None))
         with self.assertRaises(ValueError):
             self.save(kind='email', account_id='mail', to=['casey@example.org'], subject='Hi', conversation_id=None, by_email='yes')
-        other = self.save(kind='email', account_id='mail', to=['finance@example.com'], subject='Refund for Casey', conversation_id=None)
+        other = self.save(kind='email', account_id='mail', to=['finance@example.com'], subject='Refund for Casey', conversation_id=None,
+                          label='Send')
         self.assertIsNotNone(other)  # someone else: not the conversation's customer
 
     def test_when_intercom_here_only_reads_the_email_says_why_and_is_labeled_email(self):

@@ -17,6 +17,8 @@ El correo de Promociones, los boletines, Notificaciones y Foros reciben primero 
 
 Un correo desde una tarea, y solo después de que lo apruebes. **Hazlo** prepara un borrador; **Revisar y enviar** lo abre listo para editar, y no sale nada hasta que pulses **Enviar ahora**. **Iniciar sesión con Google** también pide a Google permiso para enviar. Con tu propia app en tu propio ordenador, el inicio de sesión es de solo lectura hasta que añadas tú el envío.
 
+Una respuesta va en el hilo del correo al que responde. Si sale desde otro buzón distinto del que recibió el correo, la tarea lo dice antes de enviar: aun así les llega en el mismo hilo.
+
 ## Conéctalo
 
 En una Machine alojada:

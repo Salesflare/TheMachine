@@ -17,6 +17,7 @@ Mail in Overige en nieuwsbrieven krijgen eerst een snelle blik: afzender, onderw
 ## Wat het kan versturen en wijzigen
 
 - Een e-mail vanuit een to-do, pas nadat je hem goedkeurt in het voorbeeld.
+- Een antwoord komt in het Outlook-gesprek van de e-mail waarop het antwoordt.
 - Als je een to-do over een e-mail snoozet, gaan de berichten van de thread naar een map Snoozed in Outlook en komen ze terug wanneer de to-do terugkomt.
 
 De agenda wordt nooit gewijzigd.

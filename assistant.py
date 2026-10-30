@@ -10729,10 +10729,13 @@ def reply_lead(db, suggestion_id, next_action):
 
 
 def replied_to(rows):
-    """{Message-ID: {'to', 'from', 'sent'}} for the task's emails: who each was addressed to (To, then Cc) and sent
-    from, and whether the owner sent it. A reply's default From comes from the one it answers (next_actions.pick_sender)."""
+    """{Message-ID: {'to', 'from', 'sent', ...}} for the task's emails, newest first: who each was addressed to (To, then
+    Cc) and sent from, and whether the owner sent it. A reply's default From comes from the one it answers
+    (next_actions.pick_sender). With the rows' account_id, source_id and title also the mailbox it is in, its message
+    and thread there, its subject and In-Reply-To: what threads a reply to it (next_actions.fill_reply, reply_origin)."""
     out = {}
     for row in rows:
+        has = row.keys() if hasattr(row, 'keys') else ()
         try:
             m = json.loads(row['metadata']) if isinstance(row['metadata'], str) else row['metadata']
         except ValueError:
@@ -10740,8 +10743,14 @@ def replied_to(rows):
         if not isinstance(m, dict) or not m.get('message-id'):
             continue
         get = lambda field: [a.strip().lower() for _, a in email.utils.getaddresses([str(m.get(field) or '')]) if '@' in a]
-        out.setdefault(str(m['message-id']).strip(), {'to': get('to') + get('cc'), 'from': (get('from') or [''])[0],
-                                                      'sent': 'SENT' in (m.get('labels') or ())})
+        home = {'account_id': row['account_id'] if 'account_id' in has else None, 'id': row['source_id'] if 'source_id' in has else None,
+                'thread_id': m.get('thread_id')}
+        found = out.setdefault(str(m['message-id']).strip(), {'to': get('to') + get('cc'), 'from': (get('from') or [''])[0],
+                                                              'sent': 'SENT' in (m.get('labels') or ()), **home, 'homes': {},
+                                                              'subject': row['title'] if 'title' in has else None,
+                                                              'in_reply_to': m.get('in-reply-to')})
+        if home['account_id']:  # the same email in two of the owner's mailboxes (both addressed): each its own thread
+            found['homes'].setdefault(home['account_id'], home)
     return out
 
 
@@ -14758,10 +14767,10 @@ class App(*APP_MIXINS):
             args={**args,'body':body,**({'title':title} if title is not None else {})}
             if args.get('next_action') and args.get('next_actions'):raise ValueError('Use next_action or next_actions, not both')
             with self.store.connect() as db:
-                emails=db.execute("SELECT e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='gmail.message' ORDER BY e.occurred_at DESC",(row['event_ids'],)).fetchall()
+                emails=db.execute("SELECT e.metadata,e.account_id,e.source_id,e.title FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='gmail.message' ORDER BY e.occurred_at DESC",(row['event_ids'],)).fetchall()
             options=thread_recipients(emails,[a.get('email','') for a in self.config['accounts']])
-            for key in ('next_actions','next_action'):
-                if args.get(key):args={**args,key:reply_to_newest(emails,args[key])}
+            for key in ('next_actions','next_action'):  # a reply always answers its email, in its thread (next_actions.fill_reply)
+                if args.get(key):args={**args,key:reply_to_newest(emails,next_actions.fill_reply(args[key],replied_to(emails)))}
             with self.store.connect() as db:  # never a bounced address as To when the person has a working one (bounces.py)
                 for key in ('next_actions','next_action'):
                     if args.get(key):
@@ -14858,6 +14867,8 @@ class App(*APP_MIXINS):
                 why=follow_ups.change_problem(follow_ups.change_of(db,args['suggestion_id'],args.get('job_id')),
                                               [a for a in next_actions.actions(action) if a['kind'] in ('email',)+next_actions.TEXT_KINDS],args.get('send_now') is True)
             if why:raise ValueError(why+'.')
+            why=next_actions.unlinked_reply(action)  # never a reply that would go out as a new thread
+            if why:raise ValueError(why)
             if args.get('send_now') is True:
                 # Only a draft the owner already had in front of them, approved in a later message of theirs. A draft
                 # written or changed in this turn is saved and shown first: the owner reads it and taps Send.
@@ -16513,8 +16524,9 @@ class App(*APP_MIXINS):
                                                            '' if result.get('restarted') else 'Restart The Machine to use it.') if note) or None,
                        'failed':'The fix no longer applies to the running code. Nothing was merged; tap Change to redo it.',
                        'uncertain':'I couldn’t confirm whether the fix was merged. I won’t merge it again.'}[status]
-            db.execute('UPDATE action_jobs SET status=?,message_id=?,error=?,updated_at=?,retry_at=? WHERE id=?',
-                (status,result.get('message_id'),error,now(),None if status=='failed' else (dt.datetime.fromisoformat(now())+dt.timedelta(minutes=5)).isoformat(),job['id']))
+            db.execute('UPDATE action_jobs SET status=?,message_id=?,error=?,updated_at=?,retry_at=?,rfc_message_id=COALESCE(?,rfc_message_id) WHERE id=?',
+                (status,result.get('message_id'),error,now(),None if status=='failed' else (dt.datetime.fromisoformat(now())+dt.timedelta(minutes=5)).isoformat(),
+                 result.get('rfc_message_id') if status=='sent' else None,job['id']))
             if status=='sent':
                 queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result)
                 if action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)

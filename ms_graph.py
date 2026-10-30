@@ -81,6 +81,9 @@ READ = {
 WRITE = {
     'messages.create': ('POST', '/me/messages', 'Mail.ReadWrite'),        # a draft from MIME (never sent by itself)
     'messages.send': ('POST', '/me/messages/{id}/send', 'Mail.Send'),
+    'messages.createReply': ('POST', '/me/messages/{id}/createReply', 'Mail.ReadWrite'),  # a reply draft in its conversation
+    'messages.attachments.add': ('POST', '/me/messages/{id}/attachments', 'Mail.ReadWrite'),  # a file on that draft
+    'messages.delete': ('DELETE', '/me/messages/{id}', 'Mail.ReadWrite'),  # only that draft, when it can't be filled
     'sendMail': ('POST', '/me/sendMail', 'Mail.Send'),
     'folders.create': ('POST', '/me/mailFolders', 'Mail.ReadWrite'),
     'messages.move': ('POST', '/me/messages/{id}/move', 'Mail.ReadWrite'),
