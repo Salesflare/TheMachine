@@ -39,7 +39,7 @@ const server=createServer(async(req,res)=>{res.setHeader('Content-Type','applica
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
 const sizes=SHOTS?[[1440,900],[390,844]]:[[390,844]],schemes=SHOTS?['light','dark']:['light'];
-const shot=async(page,card,name,w,scheme)=>{if(!SHOTS)return;await page.locator('#task-'+card).scrollIntoViewIfNeeded();
+const shot=async(page,card,name,w,scheme)=>{if(!SHOTS)return;await page.evaluate(()=>{clearTimeout(toastTimer);$('#toast').classList.remove('show')});await page.waitForFunction(()=>getComputedStyle($('#toast')).opacity==='0'||getComputedStyle($('#toast')).visibility==='hidden');await page.locator('#task-'+card).scrollIntoViewIfNeeded();
  await page.locator('#task-'+card).screenshot({path:`${SHOTS}/${name}-${w}-${scheme}.png`});await page.screenshot({path:`${SHOTS}/${name}-${w}-${scheme}-page.png`})};
 const reset=()=>{delete owner.review;state.suggestions=[owner];state.suggestion_counts={prepared:1};Object.assign(reviewer,{status:'pending'});reviewer.review_in.stage='open'};
 try{for(const [w,h] of sizes)for(const colorScheme of schemes){reset();
@@ -83,7 +83,12 @@ try{for(const [w,h] of sizes)for(const colorScheme of schemes){reset();
  assert.equal(await tc.locator('input[name=pick]').count(),3);
  assert.equal(await tc.locator('del').first().innerText(),'your');assert.equal(await tc.locator('ins').nth(1).innerText(),'the');
  assert.match(await page.locator('#task-c1').innerText(),/Lower price, they are a good fit\./);
+ assert.equal(await tc.locator('[data-review-hide]').innerText().then(x=>/Pat’s changes/.test(x)),true);  // the header folds it; no Hide button
+ assert.deepEqual(await tc.locator('.actions button').allInnerTexts(),['Accept all','Ignore']);  // all ticked: Accept selected would say the same
  await tc.locator('input[name=pick]').nth(1).uncheck();
+ assert.equal(await tc.locator('.review-hunk').nth(1).getAttribute('class'),'review-hunk off');  // dimmed: it won't go in
+ assert.deepEqual(await tc.locator('.actions button').allInnerTexts(),['Accept selected','Accept all','Ignore']);
+ assert.equal(await tc.locator('button.primary').innerText(),'Accept selected');
  await shot(page,'c1','4-owner-changes',w,colorScheme);
  await tc.locator('[data-review-apply=some]').click();await page.waitForTimeout(300);
  assert.deepEqual(last(),{action:'fleet_review_apply',args:{suggestion_id:'c1',picks:['s','b1']}});

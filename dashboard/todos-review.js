@@ -23,12 +23,14 @@ function reviewEditor(s){const d=reviewing.get(s.id);if(!d||closed(s))return'';c
  <div class="agent-sheet-foot"><button type="button" class="ghost" data-review-cancel="${id}">${esc(t('Cancel'))}</button><button class="primary">${esc(t('Ask'))}</button></div></form>`}
 const reviewWords=w=>w.map(([k,x])=>k==='='?esc(x):k==='-'?`<del>${esc(x)}</del>`:`<ins>${esc(x)}</ins>`).join('');
 // The owner's tracked changes: who and when, their comment, each change with a box (all ticked), then Accept or Ignore.
-function reviewChanges(s,v){const who=firstName(v.name);
- const rows=v.hunks.map(h=>`<li class="review-hunk"><label><input type="checkbox" name="pick" value="${esc(h.id)}" checked><span class="review-diff" translate="no">${h.field==='subject'?`<span class="review-field">${esc(t('Subject'))}</span> `:''}${reviewWords(h.words)}</span></label></li>`).join('');
- return`<form class="review-changes" data-card="${esc(s.id)}" aria-label="${esc(t('{}’s changes',who))}"><p class="review-by">${esc(t('{}’s changes',who))} · ${time(v.at,true)}</p>
+// The owner's tracked changes: who and when (the header folds it away), their comment, each change with a box (all
+// ticked; an unticked one is dimmed). Accept all and Ignore; Accept selected only while some, not all, are ticked.
+function reviewChanges(s,v){const who=firstName(v.name),off=v.off||[],some=off.length>0&&off.length<v.hunks.length;
+ const rows=v.hunks.map(h=>{const on=!off.includes(h.id);return`<li class="review-hunk${on?'':' off'}"><label><input type="checkbox" name="pick" value="${esc(h.id)}"${on?' checked':''}><span class="review-diff" translate="no">${h.field==='subject'?`<span class="review-field">${esc(t('Subject'))}</span> `:''}${reviewWords(h.words)}</span></label></li>`}).join('');
+ return`<form class="review-changes" data-card="${esc(s.id)}" aria-label="${esc(t('{}’s changes',who))}"><button type="button" class="review-by" data-review-hide="${esc(s.id)}" aria-expanded="true">${esc(t('{}’s changes',who))} · ${time(v.at,true)}</button>
  ${v.changed_since?`<p class="note">${esc(t('The draft changed since. Changes go in where they still fit.'))}</p>`:''}<ul class="review-hunks">${rows}</ul>
  <p class="muted review-after">${esc(t('Accepting changes the draft only. Send it yourself after.'))}</p>
- <div class="actions"><button class="primary" data-review-apply="all">${esc(t('Accept all'))}</button>${v.hunks.length>1?`<button class="ghost" data-review-apply="some">${esc(t('Accept selected'))}</button>`:''}<button class="ghost" data-review-apply="ignore">${esc(t('Ignore'))}</button><button type="button" class="quiet" data-review-hide="${esc(s.id)}">${esc(t('Hide'))}</button></div></form>`}
+ <div class="actions">${some?`<button class="primary" data-review-apply="some">${esc(t('Accept selected'))}</button><button class="ghost" data-review-apply="all">${esc(t('Accept all'))}</button>`:`<button class="primary" data-review-apply="all">${esc(t('Accept all'))}</button>`}<button class="ghost" data-review-apply="ignore">${esc(t('Ignore'))}</button></div></form>`}
 // On the owner's to-do: how the review goes, the reviewer's comment, and Withdraw or See changes.
 function reviewOwner(s){const r=s.review;if(!r)return'';const pending=r.stage==='changes'&&!r.decided&&r.changes>0;
  const comment=r.comment?`<blockquote class="review-comment" translate="no">${esc(r.comment)}</blockquote>`:'';
@@ -69,6 +71,9 @@ $('#suggestions').addEventListener('click',async e=>{
  if(rp){e.preventDefault();const form=rp.closest('form'),id=form.dataset.card,stage=rp.dataset.reviewReply;
   const args={suggestion_id:id,stage,comment:form.elements.comment.value.trim(),body:form.elements.body.value,...(form.elements.subject?{subject:form.elements.subject.value}:{})};
   rp.disabled=true;try{await fleetPost('fleet_review_reply',args);reviewDrafts.delete(id);toast(stage==='declined'?t('Declined.'):t('Sent back. Nothing else goes anywhere.'));await refresh()}catch(err){errCaught(err);rp.disabled=false;toast(err.message,true)}}});
+$('#suggestions').addEventListener('change',e=>{const box=e.target.closest?.('.review-changes input[name=pick]');if(!box)return;
+ const v=reviewViews.get(box.closest('form').dataset.card);if(!v)return;const off=new Set(v.off||[]);box.checked?off.delete(box.value):off.add(box.value);v.off=[...off];const id=box.closest('form').dataset.card,val=box.value;render();
+ document.querySelector(`.review-changes[data-card="${CSS.escape(id)}"] input[value="${CSS.escape(val)}"]`)?.focus()});
 $('#suggestions').addEventListener('input',e=>{const f=e.target.closest('.review-form');const d=f&&reviewing.get(f.dataset.card);
  if(d){const moved=d.to!==f.elements.to.value;Object.assign(d,{to:f.elements.to.value,note:f.elements.note.value});if(moved)render();return}
  const r=e.target.closest('.review-in');if(!r)return;const id=r.dataset.card,had=reviewDrafts.get(id)||{};
