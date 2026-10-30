@@ -14,7 +14,8 @@ order: 1
 - Aprendizados para compartilhar com a equipe da The Machine, se algum estiver esperando por você. Veja [Compartilhar aprendizados com a equipe](share-learnings.md).
 - Pessoas e projetos, como quem sumiu.
 - O que eu notei: rascunhos enviados como estavam ou editados, tarefas dispensadas em poucos minutos, tarefas adiadas mais de uma vez.
-- Nos bastidores: o que ela revisou e quanto isso custou.
+- Nos bastidores: quantos sinais ela revisou nesta semana e quantos ainda aguardam.
+- Opções, cada uma em sua própria mensagem depois do resumo: uma fonte movimentada sem resultados (**Parar de revisar** ou **Continuar revisando**) e uma tarefa adiada mais de uma vez (**Descartar**, **Fazer agora** ou **Manter**). Nada muda até você tocar.
 
 ## Quando e onde
 

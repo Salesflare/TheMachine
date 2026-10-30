@@ -14,7 +14,8 @@ order: 1
 - Apprentissages à partager avec l’équipe The Machine, s’il y en a qui vous attendent. Voir [Partager des apprentissages avec l’équipe](share-learnings.md).
 - Personnes et projets, comme qui ne donne plus de nouvelles.
 - Ce que j’ai remarqué : brouillons envoyés tels quels ou modifiés, tâches écartées en quelques minutes, tâches mises en attente plus d’une fois.
-- En coulisses : ce qu’elle a passé en revue, et ce que cela a coûté.
+- En coulisses : combien de signaux elle a examinés cette semaine, et combien attendent encore.
+- Des choix, chacun dans son propre message après le récapitulatif : une source très active sans résultat (**Ne plus examiner** ou **Continuer à examiner**) et une tâche mise en attente plus d’une fois (**Abandonner**, **Faire maintenant** ou **Garder**). Rien ne change tant que vous ne touchez pas.
 
 ## Quand et où
 

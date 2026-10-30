@@ -14,7 +14,8 @@ order: 1
 - Inzichten om te delen met het team van The Machine, als er op je wachten. Zie [Inzichten delen met het team](share-learnings.md).
 - Personen en projecten, zoals wie stil is gevallen.
 - Wat me opviel: concepten die verstuurd zijn zoals ze geschreven waren of na bewerking, to-do's die binnen enkele minuten genegeerd zijn, to-do's die meer dan eens gesnoozed zijn.
-- Achter de schermen: wat hij bekeken heeft, en wat dat kostte.
+- Achter de schermen: hoeveel signalen hij deze week bekeken heeft, en hoeveel er nog wachten.
+- Keuzes, elk in een eigen bericht na het overzicht: een drukke bron zonder resultaat (**Niet meer bekijken** of **Blijven bekijken**) en een to-do die meer dan eens gesnoozed is (**Laten vallen**, **Doe het nu** of **Houden**). Er verandert niets tot je tikt.
 
 ## Wanneer en waar
 

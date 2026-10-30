@@ -24,8 +24,7 @@ class WeeklyRecap(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        for p in (patch.object(a, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch.object(a, 'now', return_value=FRIDAY),
-                  patch.object(a, 'assistant_token_usage', return_value=None)):
+        for p in (patch.object(a, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch.object(a, 'now', return_value=FRIDAY)):
             p.start()
             self.addCleanup(p.stop)
         self.path = Path(self.tmp.name) / 'config.json'
@@ -65,14 +64,21 @@ class WeeklyRecap(unittest.TestCase):
         return sid
 
     def send(self):
+        """The recap (message 555), then each choice as its own message (556, 557, ...), as sent to Telegram."""
         sent = []
-        with patch.object(a, 'telegram_request', side_effect=lambda config, args: sent.append(args) or {'messageId': '555'}):
+        with patch.object(a, 'telegram_request', side_effect=lambda config, args: sent.append(args) or {'messageId': str(555 + len(sent) - 1)}):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
-        self.assertEqual(len(sent), 1)
-        return sent[0]
+        self.assertTrue(sent[0]['message'].startswith('**Your week with The Machine**'))
+        self.assertEqual([m['action'] for m in sent], ['send'] * len(sent))
+        return sent
 
-    def tap(self, item, choice, message_id='555', decision='telegram:1'):
-        with patch.object(a, 'telegram_request', side_effect=lambda config, args: self.edits.append(args) or {'messageId': '555'}), \
+    @staticmethod
+    def labels(message):
+        return [[b['label'] for b in r['buttons']] for r in message['presentation']['blocks'] if r['buttons']]
+
+    def tap(self, item, choice, message_id=None, decision='telegram:1'):
+        message_id = message_id or next(i['message_id'] for i in self.items() if i['id'] == item)
+        with patch.object(a, 'telegram_request', side_effect=lambda config, args: self.edits.append(args) or {'messageId': args.get('messageId')}), \
                 patch.object(a.threading, 'Thread', side_effect=lambda target, args, daemon: type('T', (), {'start': lambda s: target(*args)})()):
             return self.app.action('recap_decide', {'id': item, 'choice': choice, 'source': 'telegram', 'message_id': message_id, 'decision_id': decision})
 
@@ -151,35 +157,48 @@ class WeeklyRecap(unittest.TestCase):
                 self.store.decide(sid, then, 'Shorter please', f'q{i}b', 'telegram')
         with self.store.connect() as db:
             db.execute("INSERT INTO rule_changes(at,kind,text) VALUES(?,'draft_rule','Draft rule: keep it short')", (ago(3),))
-        text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1), {'input': 1e6, 'cacheRead': 9e6, 'output': 4e4, 'runs': 3, 'usd': 3.3})
+        text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))
         self.assertIn('**What changed**\n• 67% of to-dos worth it (2 of 3). Do it was right first time in 1 of 2.\n• Adjusted: 1 writing rule.\n', text)
         self.assertNotIn('got it right the first time', text)
-        last = text.split('\n')[-1]
-        self.assertTrue(last.startswith('_Behind the scenes: ') and '$3.30' in last, last)  # one short line, at the end
+        recap = a.weekly_recap_message(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))['text']
+        self.assertEqual(recap.split('\n')[-1], '_Behind the scenes: 0 signals reviewed this week, 61 still waiting._')  # one short line, at the end
         self.assertEqual(text.count('Behind the scenes'), 1)
+
+    def test_no_brief_ever_shows_a_cost(self):
+        # The recap may go to anyone with a Machine: what it reviewed, never an API price estimate, on Telegram or the push.
+        self.snoozed_card('Pay the painter', 3)
+        self.assertNotRegex(a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)), r'[$€]|list price|subscription')
+        self.assertFalse(hasattr(a, 'assistant_token_usage'))
+        sent = self.send()
+        self.assertFalse([m for m in sent if '$' in m['message'] or 'price' in m['message']])
 
     def test_filter_and_keep_are_one_tap_and_only_change_the_owners_filters(self):
         self.edits = []
-        sent = self.send()
-        self.assertIn('**Busy without results**\n1. School parents (Phone WhatsApp): 30 this week, no to-dos\nNothing changes until you tap.', sent['message'])
-        self.assertNotIn('Ann', sent['message'])  # a person's own chat is never offered as noise
-        rows = sent['presentation']['blocks']
+        recap, choice = self.send()
+        self.assertTrue(recap['message'].endswith('\n\n_Choices follow below. Nothing changes until you tap._'))
+        self.assertEqual(self.labels(recap), [])  # the recap itself has no buttons
+        self.assertNotIn('School parents', recap['message'])
+        # The choice is its own message: what it is about, and buttons that say what they do, without a number.
+        self.assertEqual(choice['message'], '**Busy without results**\nSchool parents (Phone WhatsApp): 30 this week, no to-dos')
+        self.assertNotIn('Ann', choice['message'])  # a person's own chat is never offered as noise
+        rows = choice['presentation']['blocks']
         item = self.items()[0]
-        self.assertEqual([[b['label'] for b in r['buttons']] for r in rows], [['Filter 1', 'Keep 1']])
+        self.assertEqual(item['message_id'], '556')
+        self.assertEqual(self.labels(choice), [['Stop reviewing', 'Keep reviewing']])
         self.assertEqual(rows[0]['buttons'][0]['action'], {'type': 'callback', 'value': f"assistant:recap:{item['id']}:filter"})
         self.assertLessEqual(len(('tgcb1:xxxxx:' + rows[0]['buttons'][0]['action']['value']).encode()), 64)  # Telegram's callback limit
         with self.assertRaisesRegex(ValueError, 'not the recap'):
-            self.tap(item['id'], 'filter', message_id='999')
+            self.tap(item['id'], 'filter', message_id='555')  # the recap itself, not the choice's own message
         self.assertEqual(json.loads(self.path.read_text())['accounts'][0].get('exclude'), None)  # refused: nothing changed
 
         self.assertEqual(self.tap(item['id'], 'filter')['status'], 'filtered')
         self.assertEqual(json.loads(self.path.read_text())['accounts'][0]['exclude'], [{'chats': ['123@g.us']}])
         self.assertEqual(self.store.exclusions['wa'], [{'chats': ['123@g.us']}])  # new messages from it are skipped from now on
         edit = self.edits.pop()
-        self.assertEqual((edit['action'], edit['messageId']), ('edit', '555'))  # the recap itself shows it; nothing new is sent
-        self.assertIn('1. School parents (Phone WhatsApp): 30 this week, no to-dos · **Filtered**', edit['message'])
-        self.assertEqual([[b['label'] for b in r['buttons']] for r in edit['presentation']['blocks']], [['Undo 1']])
-        self.assertEqual(self.tap(item['id'], 'keep', decision='telegram:2').get('reason'), 'Already done: filtered.')
+        self.assertEqual((edit['action'], edit['messageId']), ('edit', '556'))  # the choice's own message shows it; nothing new is sent
+        self.assertEqual(edit['message'], '**Busy without results**\nSchool parents (Phone WhatsApp): 30 this week, no to-dos · **No longer reviewed**')
+        self.assertEqual(self.labels(edit), [['Undo']])
+        self.assertEqual(self.tap(item['id'], 'keep', decision='telegram:2').get('reason'), 'Already done: no longer reviewed.')
         self.assertEqual(self.tap(item['id'], 'filter', decision='telegram:1').get('duplicate'), True)  # a replayed tap
 
         self.assertEqual(self.tap(item['id'], 'undo', decision='telegram:3')['status'], 'open')
@@ -200,16 +219,17 @@ class WeeklyRecap(unittest.TestCase):
                                + chat('8@g.us', 'Cousins', 40, 5)  # a handful of people: a circle, even when the owner only reads
                                + chat('7@g.us', 'Street announcements', 25, 20))  # many people, the owner never writes: a feed
         text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
-        busy = text.split('**Busy without results**\n')[1].split('\nNothing changes')[0]
-        self.assertEqual(busy, '1. School parents (Phone WhatsApp): 30 this week, no to-dos\n2. Street announcements (Phone WhatsApp): 25 this week, no to-dos')
+        busy = [m.split('\n')[1] for m in text.split('\n\n') if m.startswith('**Busy without results**')]
+        self.assertEqual(busy, ['School parents (Phone WhatsApp): 30 this week, no to-dos', 'Street announcements (Phone WhatsApp): 25 this week, no to-dos'])
 
     def test_cards_snoozed_again_and_again_drop_do_it_now_or_keep(self):
         self.edits = []
         drop, now, keep = (self.snoozed_card(t, n) for t, n in (('Share the tow-bar cost', 4), ('Pay the painter', 3), ('Book the dentist', 2)))
         sent = self.send()
-        self.assertIn(f'**Snoozed more than once**\n2. [Share the tow-bar cost](https://m.example/assistant/#chat={drop}), 4 times', sent['message'])
+        self.assertEqual(sent[2]['message'], f'**Snoozed more than once**\n[Share the tow-bar cost](https://m.example/assistant/#chat={drop}), 4 times')
         items = {i['ref']: i for i in self.items() if i['kind'] == 'snoozed'}
-        self.assertEqual([b['label'] for b in sent['presentation']['blocks'][1]['buttons']], ['Drop 2', 'Do it now 2', 'Keep 2'])
+        self.assertEqual(self.labels(sent[2]), [['Drop', 'Do it now', 'Keep']])
+        self.assertEqual([items[x]['message_id'] for x in (drop, now, keep)], ['557', '558', '559'])
         with self.store.connect() as db:
             status = lambda sid: db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
             self.assertEqual([status(x) for x in (drop, now, keep)], ['snoozed'] * 3)  # nothing changed by sending it
@@ -220,7 +240,10 @@ class WeeklyRecap(unittest.TestCase):
             status = lambda sid: db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
             self.assertEqual([status(x) for x in (drop, now, keep)], ['rejected', 'accepted', 'snoozed'])
             self.assertEqual(db.execute('SELECT count(*) FROM action_jobs').fetchone()[0], 0)  # Do it prepares; nothing is sent
-        self.assertIn('· **Dropped**', self.edits[-1]['message'])
+        self.assertEqual([(e['messageId'], e['message'].split(' · ')[-1], self.labels(e)) for e in self.edits],
+                         [('557', '**Dropped**', []), ('558', '**Started**', []), ('559', '**Kept**', [])])  # each edit on its own message
+        with self.assertRaisesRegex(ValueError, 'not the recap'):
+            self.tap(items[now]['id'], 'keep', message_id='557', decision='telegram:5')  # another choice's message
         with self.store.connect() as db:
             db.execute('DELETE FROM recaps')
         self.assertNotIn('Book the dentist', a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)))  # kept until snoozed again
@@ -246,6 +269,46 @@ class WeeklyRecap(unittest.TestCase):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
         self.assertTrue(pushed[0]['payload']['body'].startswith('Needs you • Promised Alex: send the Q3 deck, due Mon, Oct 26'), pushed[0]['payload']['body'])
         self.assertEqual(self.items(), [])  # no buttons to tap without Telegram
+        self.assertNotIn('Choices follow', pushed[0]['payload']['body'])
+
+    def test_a_choice_that_did_not_go_out_is_forgotten(self):
+        self.snoozed_card('Pay the painter', 3)
+        sent = []
+        def deliver(config, args):
+            sent.append(args)
+            if len(sent) == 2:
+                raise a.DeliveryNotSent('delivery_not_admitted')
+            return {'messageId': str(554 + len(sent))}
+        with patch.object(a, 'telegram_request', side_effect=deliver):
+            self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
+        self.assertEqual([(i['kind'], i['message_id']) for i in self.items()], [('snoozed', '557')])  # the busy source comes up next week
+
+    def test_a_recap_sent_before_keeps_its_numbered_buttons(self):
+        # Sent by an older version: the choices are lines in the recap, their buttons under it. A tap still works there.
+        self.edits = []
+        with self.store.connect() as db:
+            db.execute("INSERT INTO recaps(week,status,created_at,text,message_id) VALUES('2026-W43','sent',?,?,'444')",
+                       (FRIDAY, '**Busy without results**\n1. School parents (Phone WhatsApp): 30 this week, no to-dos\nNothing changes until you tap.'))
+            db.execute("INSERT INTO recap_items(id,week,n,kind,ref,line,data,status) VALUES('r_0123456789ab','2026-W43',1,'noise','wa',?,?,'open')",
+                       ('1. School parents (Phone WhatsApp): 30 this week, no to-dos', json.dumps({'account': 'wa', 'rule': {'chats': ['123@g.us']}, 'label': 'School parents'})))
+        self.assertEqual(self.tap('r_0123456789ab', 'filter', message_id='444')['status'], 'filtered')
+        edit = self.edits.pop()
+        self.assertEqual(edit['messageId'], '444')
+        self.assertIn('1. School parents (Phone WhatsApp): 30 this week, no to-dos · **Filtered**', edit['message'])
+        self.assertEqual(self.labels(edit), [['Undo 1']])
+
+    def test_layout_dump(self):
+        """The brief as Telegram gets it, message by message with its button rows (printed with RECAP_DUMP=1)."""
+        import os
+        self.promise('mine', 'Alex', 'send the Q3 deck', due='2026-10-26')
+        for title, n in (('Order leaf-basket supplies', 3), ('Pay the painter', 2)):
+            self.snoozed_card(title, n)
+        sent = self.send()
+        dump = '\n\n'.join(f"--- message {i + 1} ---\n{m['message']}" + ''.join(f"\n  [ {' | '.join(r)} ]" for r in self.labels(m)) for i, m in enumerate(sent))
+        if os.environ.get('RECAP_DUMP'):
+            print('\n' + dump)
+        self.assertEqual(len(sent), 4)
+        self.assertNotRegex(dump, r'\[ (Filter|Keep|Drop|Undo) \d')  # no numbered buttons
 
 
 if __name__ == '__main__':

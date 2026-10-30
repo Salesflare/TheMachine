@@ -3845,6 +3845,9 @@ class Store:
                 db.execute('ALTER TABLE recaps ADD COLUMN text TEXT')
             db.execute('CREATE TABLE IF NOT EXISTS recap_items(id TEXT PRIMARY KEY,week TEXT NOT NULL,n INTEGER NOT NULL,kind TEXT NOT NULL,ref TEXT,'
                        'line TEXT NOT NULL,data TEXT NOT NULL,status TEXT NOT NULL,decision_id TEXT,decided_at TEXT)')
+            # Each choice goes out as its own message (with its own buttons), so a tap is checked against that one.
+            if 'message_id' not in {r[1] for r in db.execute('PRAGMA table_info(recap_items)')}:
+                db.execute('ALTER TABLE recap_items ADD COLUMN message_id TEXT')
             # How the owner writes, a short block per channel (and All): learned from their style notes, their edits
             # and their own messages, editable in Settings. Like facts, what was learned, not what messages say.
             db.execute('CREATE TABLE IF NOT EXISTS voices(channel TEXT PRIMARY KEY,text TEXT NOT NULL,source TEXT NOT NULL,ref TEXT,updated_at TEXT NOT NULL)')
@@ -12896,40 +12899,6 @@ def compact_status(result):
         'note': 'Compact view. Read signals with events; suggestions show their first 400 characters.'}
 
 
-# Azure list price for GPT-6.1 Sol, Global Standard, Sweden Central (USD per million tokens,
-# prompts up to 272K), checked October 11, 2026. Used only to show an API-price equivalent.
-API_PRICE = {'input': 2.00, 'cacheRead': 0.10, 'output': 10.00}
-
-
-def assistant_token_usage(since_ms, path=None):
-    """Tokens used by review and preparation sessions, read from OpenClaw's own records."""
-    from compression import zstd
-    path = path or str(Path.home() / '.openclaw/agents/main/agent/openclaw-agent.sqlite')
-    totals, seen = {'input': 0, 'cacheRead': 0, 'output': 0, 'runs': 0}, set()
-    def walk(o):
-        if isinstance(o, dict):
-            u = o.get('usage')
-            if isinstance(u, dict) and 'input' in u and 'cacheRead' in u:
-                key = encoded(u) + str(o.get('timestamp', o.get('id', '')))
-                if key not in seen:
-                    seen.add(key)
-                    for k in ('input', 'cacheRead', 'output'):
-                        totals[k] += u.get(k) or 0
-            for v in o.values():
-                walk(v)
-        elif isinstance(o, list):
-            for v in o:
-                walk(v)
-    with contextlib.closing(sqlite3.connect('file:' + path + '?mode=ro', uri=True, timeout=5)) as db:
-        sessions = [r[0] for r in db.execute("SELECT session_id FROM session_windows WHERE session_key LIKE 'agent:main:assistant-review-%' AND created_at>=?", (since_ms,))]
-        totals['runs'] = len(sessions)
-        for sid in sessions:
-            for ej, z in db.execute('SELECT event_json,event_zstd FROM transcript_events WHERE session_id=?', (sid,)):
-                walk(json.loads(ej) if ej else json.loads(zstd.decompress(z)))
-    totals['usd'] = round(sum(totals[k] * API_PRICE[k] for k in API_PRICE) / 1e6, 2)
-    return totals
-
-
 def recap_escape(text):
     """Owner data in the recap's Telegram markdown: shown as written, never as formatting or a link."""
     return re.sub(r'([\\`*_\[\]~])', r'\\\1', str(text))
@@ -13060,29 +13029,41 @@ def recap_share_lines(store, config):
 
 RECAP_CIRCLE = 8  # a group chat with this many others or fewer is a circle of people, not a broadcast
 RECAP_CHOICES = {'noise': ('filter', 'keep', 'undo'), 'snoozed': ('drop', 'now', 'keep')}
-RECAP_DONE = {'filtered': 'Filtered', 'kept': 'Kept', 'dropped': 'Dropped', 'started': 'Started'}
+RECAP_DONE = {'filtered': 'No longer reviewed', 'kept': 'Kept', 'dropped': 'Dropped', 'started': 'Started'}
+# Recaps sent before each choice had its own message: their buttons sit under the recap, numbered like its lines.
+RECAP_DONE_NUMBERED = {**RECAP_DONE, 'filtered': 'Filtered'}
 
 
-def recap_buttons(items):
-    """One row per line still open: Filter / Keep for a busy source, Drop / Do it now / Keep for a card snoozed again and
-    again; a filtered source keeps Undo. The number matches the line's number in the text."""
+def recap_buttons(items, numbered=False):
+    """One row per line still open: Stop reviewing / Keep reviewing for a busy source, Drop / Do it now / Keep for a
+    card snoozed again and again; a filtered source keeps Undo. Each choice is its own message, so a label needs no
+    number; numbered is for a recap sent before that, whose buttons sit under the whole recap."""
     rows = []
     for item in items:
-        n, value = item['n'], f"assistant:recap:{item['id']}:"
+        value = f"assistant:recap:{item['id']}:"
+        label = (lambda text: f"{i18n.t(text)} {item['n']}") if numbered else i18n.t
         if item['status'] == 'open':
-            labels = [('Filter', 'filter'), ('Keep', 'keep')] if item['kind'] == 'noise' else [('Drop', 'drop'), ('Do it now', 'now'), ('Keep', 'keep')]
-            rows.append([{'text': f'{i18n.t(label)} {n}', 'value': value + choice} for label, choice in labels])
+            choices = ([('Filter', 'filter'), ('Keep', 'keep')] if numbered else [('Stop reviewing', 'filter'), ('Keep reviewing', 'keep')]) \
+                if item['kind'] == 'noise' else [('Drop', 'drop'), ('Do it now', 'now'), ('Keep', 'keep')]
+            rows.append([{'text': label(text), 'value': value + choice} for text, choice in choices])
         elif item['status'] == 'filtered':
-            rows.append([{'text': f"{i18n.t('Undo')} {n}", 'value': value + 'undo'}])
+            rows.append([{'text': label('Undo'), 'value': value + 'undo'}])
     return rows
 
 
 def recap_view(text, items):
-    """The recap as it stands now: each decided line says what was done, and only open lines keep their buttons."""
+    """A recap sent before each choice had its own message, as it stands now: each decided line says what was done,
+    and only open lines keep their (numbered) buttons."""
     for item in items:
-        if item['status'] in RECAP_DONE:
-            text = text.replace(item['line'], item['line'] + ' · **' + i18n.t(RECAP_DONE[item['status']]) + '**', 1)
-    return {'text': text, 'buttons': recap_buttons(items)}
+        if item['status'] in RECAP_DONE_NUMBERED:
+            text = text.replace(item['line'], item['line'] + ' · **' + i18n.t(RECAP_DONE_NUMBERED[item['status']]) + '**', 1)
+    return {'text': text, 'buttons': recap_buttons(items, numbered=True)}
+
+
+def recap_choice_view(item):
+    """One choice's own message as it stands now: its line, what was done once decided, and the buttons still open."""
+    done = ' · **' + i18n.t(RECAP_DONE[item['status']]) + '**' if item['status'] in RECAP_DONE else ''
+    return {'text': item['line'] + done, 'buttons': recap_buttons([item])}
 
 
 def recap_presentation(buttons):
@@ -13122,11 +13103,12 @@ def recap_meetings(db, start, end, cards):
     return out
 
 
-def weekly_recap_message(store, config, current=None, usage=None):
+def weekly_recap_message(store, config, current=None):
     """Friday recap, made to act on: what needs the owner first (late promises, their own with a date), the week ahead,
-    what changed and whether it works, then busy sources and cards snoozed again and again, each with a one-tap choice
-    that changes only the owner's own filters or cards. Behind the scenes in one line at the end.
-    Returns {'text', 'items'}: items are the numbered lines with a choice (not stored yet)."""
+    what changed and whether it works, and behind the scenes in one short line (no cost: the recap may go to anyone
+    with a Machine). Then busy sources and cards snoozed again and again, each a choice of its own that changes only
+    the owner's own filters or cards. Returns {'text', 'items'}: text is the recap message, and each item one choice
+    with its own short message ('line', read without the recap) and buttons (not stored yet)."""
     current = current or dt.datetime.fromisoformat(now())
     tz = local_tz()
     since = (current - dt.timedelta(days=7)).isoformat()
@@ -13140,7 +13122,6 @@ def weekly_recap_message(store, config, current=None, usage=None):
     link = lambda text, card: f'[{recap_escape(text)}]({root}#chat={card})' if root and card else recap_escape(text)
     names = {x['id']: x.get('display_name') or x.get('email') or x['id'] for x in config.get('accounts', [])}
     with store.connect() as db:
-        runs = db.execute("SELECT count(*) FROM review_runs WHERE started_at>=?", (since,)).fetchone()[0]
         batches = [json.loads(r[0]) for r in db.execute("SELECT items FROM analyses WHERE status='complete' AND finished_at>=?", (since,))]
         reviewed = sum(sum(1 for i in items if not i.get('deferred') and not i.get('excluded')) for items in batches)
         backlog = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version').fetchone()[0]
@@ -13235,37 +13216,35 @@ def weekly_recap_message(store, config, current=None, usage=None):
     if alive:
         lines += ['', '**' + t('People and projects') + '**', *alive]
 
-    # 4. One-tap choices: nothing changes until the owner taps, and a tap changes only their own filters or cards.
+    # 4. Behind the scenes, in one short line: what was read, never what it cost.
+    tail = t('{} signals reviewed this week, {} still waiting', f'{reviewed:,}', f'{backlog:,}') if backlog else t('{} signals reviewed this week', f'{reviewed:,}')
+    lines += ['', '_' + t('Behind the scenes: {}.', tail) + '_']
+
+    # 5. One-tap choices, each its own message with its own buttons, so it reads without scrolling back: nothing
+    # changes until the owner taps, and a tap changes only their own filters or cards.
     items = []
     busy = [(k, v) for k, v in sorted(noise.items(), key=lambda kv: -kv[1]['n']) if k[0] and v['n'] >= 20 and v['rule'] not in kept_rules][:3]
     for (account, where), v in busy:
         items.append({'kind': 'noise', 'ref': account, 'data': {'account': account, 'rule': v['rule'], 'label': f'{where} ({names.get(account, account)})'},
-                      'line': f"{len(items) + 1}. {recap_escape(where)} ({recap_escape(names.get(account, account))}): " + t('{} this week, no to-dos', f"{v['n']:,}")})
-    if items:
-        lines += ['', '**' + t('Busy without results') + '**', *(i['line'] for i in items)]
+                      'line': '**' + t('Busy without results') + f"**\n{recap_escape(where)} ({recap_escape(names.get(account, account))}): "
+                              + t('{} this week, no to-dos', f"{v['n']:,}")})
     again = [s for s in snoozed if s['id'] in open_cards and not (s['id'] in kept_cards and s['last'] <= kept_cards[s['id']])][:3]
-    first_card = len(items)
     for s in again:
         items.append({'kind': 'snoozed', 'ref': s['id'], 'data': {'title': open_cards[s['id']]['title']},
-                      'line': f"{len(items) + 1}. {link(recap_clip(open_cards[s['id']]['title']), s['id'])}, " + t('{} times', s['n'])})
-    if len(items) > first_card:
-        lines += ['', '**' + t('Snoozed more than once') + '**', *(i['line'] for i in items[first_card:])]
-    if items:
-        lines.append(t('Nothing changes until you tap.'))
-
-    # 5. Behind the scenes, in one line.
-    tail = t('{} signals reviewed in {} runs, {} waiting', f'{reviewed:,}', f'{runs:,}', f'{backlog:,}')
-    if usage:
-        tail += t('; about ${} at API list price, on your subscription', f"{usage['usd']:.2f}")
-    lines += ['', '_' + t('Behind the scenes: {}.', tail) + '_']
+                      'line': '**' + t('Snoozed more than once') + f"**\n{link(recap_clip(open_cards[s['id']]['title']), s['id'])}, " + t('{} times', s['n'])})
     for n, item in enumerate(items, 1):
         item.update(id='r_' + secrets.token_hex(6), n=n, status='open')
     return {'text': '\n'.join(lines), 'items': items}
 
 
-def weekly_recap(store, config, current=None, usage=None):
-    """The recap's text (weekly_recap_message without storing its choices)."""
-    return weekly_recap_message(store, config, current, usage)['text']
+RECAP_CHOICES_NOTE = 'Choices follow below. Nothing changes until you tap.'
+
+
+def weekly_recap(store, config, current=None):
+    """The recap as the owner reads it on Telegram, its messages one after the other (without storing its choices)."""
+    recap = weekly_recap_message(store, config, current)
+    note = ['_' + i18n.t(RECAP_CHOICES_NOTE) + '_'] if recap['items'] else []
+    return '\n\n'.join([recap['text'], *note, *(i['line'] for i in recap['items'])])
 
 
 def profile_prompt(run_id, counts, room=PROFILE_ROOM):
@@ -19095,8 +19074,9 @@ class App(*APP_MIXINS):
         return {'messageId': 'web-recap-' + week}
 
     def recap_step(self, sender=None, current=None):
-        """Send the weekly recap once, Fridays from 16:00. Its choices are stored with it, so a tap on one of its
-        buttons is checked against the message it came from."""
+        """Send the weekly recap once, Fridays from 16:00: the recap, then each choice as its own short message with
+        its own buttons. Its choices are stored with it, so a tap on a button is checked against the message it came
+        from. sender(message, buttons) stands in for the delivery (tests)."""
         settings = self.config.get('weekly_recap') or {}
         if not settings.get('enabled'):
             return None
@@ -19110,29 +19090,26 @@ class App(*APP_MIXINS):
             if db.execute('SELECT 1 FROM recaps WHERE week=?', (week,)).fetchone():
                 return None
             db.execute("INSERT INTO recaps(week,status,created_at) VALUES(?,'sending',?)", (week, now()))
-        try:
-            usage = assistant_token_usage(int((current - dt.timedelta(days=7)).timestamp() * 1000))
-        except Exception:
-            usage = None
-        recap = weekly_recap_message(self.store, self.config, current, usage)
+        recap = weekly_recap_message(self.store, self.config, current)
         text, items = recap['text'], recap['items']
         on_telegram = sender is not None or telegram_on(self.config)
-        if not on_telegram:  # the dashboard app gets the text; its buttons need Telegram
+        if not on_telegram:  # the dashboard app gets the text; its choices need Telegram's buttons
             items = []
+        if items:
+            text += '\n\n_' + i18n.t(RECAP_CHOICES_NOTE) + '_'
         with self.store.connect() as db:
             db.execute('UPDATE recaps SET text=? WHERE week=?', (text, week))
             for item in items:
                 db.execute("INSERT INTO recap_items(id,week,n,kind,ref,line,data,status) VALUES(?,?,?,?,?,?,?,'open')",
                            (item['id'], week, item['n'], item['kind'], item['ref'], item['line'], encoded(item['data'])))
         if sender is None and not on_telegram:
-            sender = lambda message: self.recap_push(message, week)
-        buttons = recap_buttons(items)
-        sender = sender or (lambda message: telegram_request(self.config, {'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config),
-                                                                           'target': self.config.get('telegram_owner'), 'message': message,
-                                                                           'presentation': recap_presentation(buttons)}))
+            sender = lambda message, buttons: self.recap_push(message, week)
+        sender = sender or (lambda message, buttons: telegram_request(self.config, {
+            'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config), 'target': self.config.get('telegram_owner'),
+            'message': message, 'presentation': recap_presentation(buttons)}))
         status, message_id, error = 'uncertain', None, None
         try:
-            receipt = sender(text)
+            receipt = sender(text, [])
             message_id = receipt.get('messageId') or receipt.get('message_id')
             status = 'sent' if message_id else 'uncertain'
         except DeliveryNotSent as failure:
@@ -19145,18 +19122,36 @@ class App(*APP_MIXINS):
                 db.execute('DELETE FROM recaps WHERE week=?', (week,))  # nothing went out; try again later
             else:
                 db.execute('UPDATE recaps SET status=?,message_id=?,error=? WHERE week=?', (status, message_id, error, week))
+        for item in items if status != 'not_sent' else []:
+            # Each choice after the recap, as its own message with its own buttons. One that didn't go out (or may not
+            # have) is forgotten, so a stray tap on it does nothing; it comes up again next week.
+            try:
+                receipt = sender(item['line'], recap_buttons([item]))
+                sent_id = receipt.get('messageId') or receipt.get('message_id')
+            except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError):
+                sent_id = None
+            with self.store.connect() as db:
+                if sent_id:
+                    db.execute('UPDATE recap_items SET message_id=? WHERE id=?', (str(sent_id), item['id']))
+                else:
+                    db.execute('DELETE FROM recap_items WHERE id=?', (item['id'],))
         return status
 
-    def recap_view(self, week):
+    def recap_view(self, item_id):
+        """What a tap's message shows now, and that message: a choice's own message, or for a recap sent before each
+        choice had one, the whole recap with its numbered buttons."""
         with self.store.connect() as db:
-            row = db.execute('SELECT text,message_id FROM recaps WHERE week=?', (week,)).fetchone()
-            items = [dict(r) for r in db.execute('SELECT * FROM recap_items WHERE week=? ORDER BY n', (week,))]
+            item = db.execute('SELECT * FROM recap_items WHERE id=?', (item_id,)).fetchone()
+            row = item and db.execute('SELECT text,message_id FROM recaps WHERE week=?', (item['week'],)).fetchone()
+            if item and item['message_id']:
+                return recap_choice_view(dict(item)), item['message_id']
+            items = [dict(r) for r in db.execute('SELECT * FROM recap_items WHERE week=? ORDER BY n', (item['week'],))] if row else []
         return (recap_view(row['text'] or '', items), row['message_id']) if row else (None, None)
 
-    def recap_retell(self, week):
-        """The recap message brought up to date after a tap: the line says what was done, its buttons go."""
+    def recap_retell(self, item_id):
+        """The message a tap came from brought up to date: the line says what was done, its buttons go."""
         try:
-            view, message_id = self.recap_view(week)
+            view, message_id = self.recap_view(item_id)
             if view and message_id and telegram_on(self.config) and not str(message_id).startswith('web-'):
                 telegram_request(self.config, {'action': 'edit', 'channel': 'telegram', 'accountId': telegram_account(self.config),
                                                'target': self.config.get('telegram_owner'), 'messageId': str(message_id),
@@ -19193,11 +19188,12 @@ class App(*APP_MIXINS):
         if not owner_dashboard and args.get('source') != 'telegram':
             raise ValueError('Recap choices come from the recap message')
         with self.store.connect() as db:
-            item = db.execute('SELECT i.*,r.message_id FROM recap_items i JOIN recaps r ON r.week=i.week WHERE i.id=?', (item_id,)).fetchone()
+            item = db.execute('SELECT i.*,r.message_id recap_message_id FROM recap_items i JOIN recaps r ON r.week=i.week WHERE i.id=?', (item_id,)).fetchone()
         if not item:
             raise ValueError('That recap line is no longer known')
         item = dict(item)
-        if not owner_dashboard and str(item['message_id'] or '') != str(args.get('message_id') or ''):
+        offered_in = item['message_id'] or item['recap_message_id']  # its own message, or the whole recap (sent before each choice had one)
+        if not owner_dashboard and str(offered_in or '') != str(args.get('message_id') or ''):
             raise ValueError('That Telegram message is not the recap this line was sent in')
         if choice not in RECAP_CHOICES[item['kind']]:
             raise ValueError('Unknown choice')
@@ -19231,11 +19227,11 @@ class App(*APP_MIXINS):
             if reason:
                 with self.store.connect() as db:
                     db.execute('UPDATE recap_items SET status=?,decision_id=?,decided_at=? WHERE id=?', (status, decision, now(), item['id']))
-                threading.Thread(target=self.recap_retell, args=(item['week'],), daemon=True).start()
+                threading.Thread(target=self.recap_retell, args=(item['id'],), daemon=True).start()
                 return {'status': status, 'reason': reason}
         with self.store.connect() as db:
             db.execute('UPDATE recap_items SET status=?,decision_id=?,decided_at=? WHERE id=?', (status, decision, now(), item['id']))
-        threading.Thread(target=self.recap_retell, args=(item['week'],), daemon=True).start()
+        threading.Thread(target=self.recap_retell, args=(item['id'],), daemon=True).start()
         return {'status': status}
 
     def profile_step(self, runner=None):

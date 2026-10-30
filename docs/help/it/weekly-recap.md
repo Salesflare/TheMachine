@@ -14,7 +14,8 @@ order: 1
 - Apprendimenti da condividere con il team di The Machine, se ce ne sono in attesa. Vedi [Condividi gli apprendimenti con il team](share-learnings.md).
 - Persone e progetti, per esempio chi non si fa più sentire.
 - Cosa ho notato: bozze inviate così com'erano o modificate, attività scartate in pochi minuti, attività posticipate più di una volta.
-- Dietro le quinte: cosa ha esaminato e quanto è costato.
+- Dietro le quinte: quanti segnali ha esaminato questa settimana e quanti sono ancora in attesa.
+- Scelte, ognuna in un suo messaggio dopo il riepilogo: una fonte molto attiva senza risultati (**Smetti di esaminare** o **Continua a esaminare**) e un'attività posticipata più di una volta (**Lascia perdere**, **Fallo ora** o **Tieni**). Non cambia nulla finché non tocchi.
 
 ## Quando e dove
 
