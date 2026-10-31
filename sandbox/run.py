@@ -114,7 +114,7 @@ def fake_help(config, prompt, model=None, thinking=None):
 
 
 def seed_ai(app):
-    """Settings, AIs (ai_access.py): Claude connected for Work with Read & draft, and a key for a script that only
+    """Settings, AIs (ai_access.py): Claude connected for Work with Read & edit, and a key for a script that only
     reads, with a few calls each and one refused. Writes only through ai_access."""
     import ai_access
     now = dt.datetime.now(dt.timezone.utc)
@@ -135,6 +135,20 @@ def seed_ai(app):
             ai_access.log(db, connection, tool, outcome, detail, at=now - dt.timedelta(hours=hours))
         ai_access.used(db, cid, at=now - dt.timedelta(minutes=12))
         ai_access.used(db, key, at=now - dt.timedelta(hours=13))
+        claude = dict(db.execute('SELECT * FROM ai_connections WHERE id=?', (cid,)).fetchone())
+        people = [r['node_id'] for r in db.execute('SELECT node_id FROM person_summaries ORDER BY node_id')]
+    # Its Graph changes, each with Undo in Activity: through the same tools an AI calls, on a Work person it may see
+    for node in people:
+        try:
+            changes = [app.ai_tool(claude, 'save_fact', {'id': node, 'text': 'Prefers a call over email for contract questions',
+                                                         'kind': 'preference'}),
+                       app.ai_tool(claude, 'add_summary_line', {'id': node, 'text': 'Asked for the renewal terms before the board meeting'})]
+        except ValueError:
+            continue
+        with app.store.connect() as db:
+            for (_, said, write), (tool, minutes) in zip(changes, (('save_fact', 9), ('add_summary_line', 8))):
+                ai_access.log(db, cid, tool, 'ok', said, at=now - dt.timedelta(minutes=minutes), write=write)
+        break
 
 
 def seed_transcript(app):

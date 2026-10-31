@@ -909,7 +909,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('[data-about-addresse
 // needs none. Your edit wins: a later rewrite waits under it as a suggested update, Use it or Keep mine.
 const sumSrc=s=>s.type==='event'?`<button type="button" class="link" data-quote-event="${s.id}" title="${esc(t('Read the message'))}">${esc(shortDay(s.at))}</button>`
  :s.type==='promise'?`<a href="${promiseHref(s)}">${esc(t('Promise'))}</a>`:`<span title="${esc(s.text)}">${esc(t('Your note'))}</span>`;
-const sumLines=lines=>`<ul class="summary-lines">${lines.map(l=>`<li><span class="sl-text" translate="no">${esc(l.text)}</span> <span class="sl-src">${l.sources.filter(x=>x.type!=='owner').map(sumSrc).join(' · ')}</span></li>`).join('')}</ul>`;
+const sumLines=lines=>`<ul class="summary-lines">${lines.map(l=>`<li><span class="sl-text" translate="no">${esc(l.text)}</span> <span class="sl-src">${l.by?esc(t('AI: {}',l.by)):l.sources.filter(x=>x.type!=='owner').map(sumSrc).join(' · ')}</span></li>`).join('')}</ul>`;
 const personSummary=n=>{const s=n.summary;if(!s?.lines?.length)return '';
  return `<section class="detail-section person-summary" data-summary-node="${esc(n.id)}"><div class="summary-head"><h4>Summary</h4><button type="button" class="link" data-summary-edit>Edit</button></div>${sumLines(s.lines)}`
   +`<p class="graph-sub summary-meta">${s.by==='owner'?esc(t('Edited by you')):esc(t('Updated {}',shortDay(s.at)))}</p>`

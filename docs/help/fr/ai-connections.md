@@ -11,7 +11,11 @@ order: 95
 
 D’autres IA peuvent se connecter à votre Machine via MCP : Claude, ChatGPT, Cursor, Codex, GBrain et d’autres. Elles peuvent lire vos tâches, vos promesses, les briefings d’équipe et les personnes et entreprises de votre Graph.
 
-Au plus, elles ajoutent une tâche, ou une tâche avec un brouillon d’e-mail. Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuyiez vous-même sur **Envoyer**. Une IA connectée n’envoie jamais rien et n’agit jamais à votre place. Do it et les agents de votre Machine n’en font pas partie.
+Avec **Lecture et modification**, elles peuvent aussi ajouter une tâche, ou une tâche avec un brouillon d’e-mail, et modifier votre Graph : enregistrer un fait sur une personne ou une entreprise, corriger ses détails, champs et tags, ou ajouter une ligne au résumé d’une personne.
+
+Chaque modification apparaît dans **Activité** avec **Annuler**. Elles ne fusionnent, ne suppriment et ne partagent jamais de fiches. Ce qu’elles enregistrent affiche **IA :** et leur nom, dans leur périmètre. Vous pouvez le modifier ou le retirer, et The Machine peut réécrire une ligne de résumé plus tard. Votre Machine le traite comme leur affirmation, jamais comme votre instruction.
+
+Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuyiez vous-même sur **Envoyer**. Une IA connectée n’envoie jamais rien et n’agit jamais à votre place. Do it et les agents de votre Machine n’en font pas partie.
 
 ## En connecter une
 
@@ -27,7 +31,7 @@ Les IA d’un appareil de votre tailnet, comme Claude Code ou Cursor, peuvent au
 
 L’IA vous envoie vers votre Machine pour vous connecter. Votre Machine montre de quelle IA il s’agit. Une IA qu’elle ne reconnaît pas montre l’adresse d’où elle vient : connectez seulement si vous venez de lancer cela vous-même.
 
-Choisissez ce qu’elle peut faire, **Lire** ou **Lecture et brouillons**. Avec des comptes Travail et personnels, choisissez aussi ce qu’elle peut voir. Puis choisissez la durée : **1 jour**, **7 jours**, **30 jours** ou **1 an**. Appuyez sur **Se connecter**, ou sur **Annuler** pour la renvoyer sans rien.
+Choisissez ce qu’elle peut faire, **Lire** ou **Lecture et modification**. Avec des comptes Travail et personnels, choisissez aussi ce qu’elle peut voir. Puis choisissez la durée : **1 jour**, **7 jours**, **30 jours** ou **1 an**. Appuyez sur **Se connecter**, ou sur **Annuler** pour la renvoyer sans rien.
 
 ## Ce qu’elle voit
 

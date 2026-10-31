@@ -11,7 +11,11 @@ order: 95
 
 Andere AI's kunnen via MCP met je Machine koppelen: Claude, ChatGPT, Cursor, Codex, GBrain en meer. Ze kunnen je to-do's, beloftes, teambriefings en de mensen en bedrijven in je Graph lezen.
 
-Hoogstens voegen ze een to-do toe, of een to-do met een e-mailconcept. Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt. Een gekoppelde AI verstuurt nooit iets en doet nooit iets in jouw naam. Do it en de agents van je Machine zelf horen hier niet bij.
+Met **Lezen en bewerken** kunnen ze ook een to-do toevoegen, of een to-do met een e-mailconcept, en je Graph aanpassen: een feit over een persoon of bedrijf bewaren, gegevens, velden en tags verbeteren, of een regel aan iemands samenvatting toevoegen.
+
+Elke wijziging staat in **Activiteit** met **Ongedaan maken**. Ze voegen nooit records samen, verwijderen of delen ze nooit. Wat ze bewaren toont **AI:** en hun naam, in hun gebied. Je kunt het aanpassen of verwijderen, en The Machine kan een samenvattingsregel later herschrijven. Je Machine ziet het als hun bewering, nooit als jouw opdracht.
+
+Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt. Een gekoppelde AI verstuurt nooit iets en doet nooit iets in jouw naam. Do it en de agents van je Machine zelf horen hier niet bij.
 
 ## Er een koppelen
 
@@ -27,7 +31,7 @@ AI's op een apparaat in je tailnet, zoals Claude Code of Cursor, kunnen ook het 
 
 De AI stuurt je naar je Machine om in te loggen. Je Machine toont welke AI het is. Een AI die hij niet herkent, toont het adres waar hij vandaan komt: koppel alleen als je dit net zelf hebt gestart.
 
-Kies wat hij mag doen, **Lezen** of **Lezen en concepten**. Met zowel werk- als privéaccounts kies je ook wat hij mag zien. Kies daarna hoe lang: **1 dag**, **7 dagen**, **30 dagen** of **1 jaar**. Druk op **Verbinden**, of op **Annuleren** om hem zonder iets terug te sturen.
+Kies wat hij mag doen, **Lezen** of **Lezen en bewerken**. Met zowel werk- als privéaccounts kies je ook wat hij mag zien. Kies daarna hoe lang: **1 dag**, **7 dagen**, **30 dagen** of **1 jaar**. Druk op **Verbinden**, of op **Annuleren** om hem zonder iets terug te sturen.
 
 ## Wat hij ziet
 

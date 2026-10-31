@@ -11,7 +11,11 @@ order: 95
 
 Altre IA possono collegarsi alla tua Machine via MCP: Claude, ChatGPT, Cursor, Codex, GBrain e altre. Possono leggere le tue attività, promesse, briefing del team e le persone e aziende nel tuo Graph.
 
-Al massimo aggiungono un’attività, o un’attività con una bozza di email. Una bozza aspetta nella tua Machine finché non la leggi e premi tu **Invia**. Un’IA collegata non invia mai nulla e non agisce mai al posto tuo. Do it e gli agenti della tua Machine non ne fanno parte.
+Con **Lettura e modifica** possono anche aggiungere un’attività, o un’attività con una bozza di email, e modificare il tuo Graph: salvare un fatto su una persona o un’azienda, correggerne dettagli, campi e tag, o aggiungere una riga al riepilogo di una persona.
+
+Ogni modifica compare in **Attività** con **Annulla**. Non uniscono, eliminano né condividono mai schede. Ciò che salvano mostra **IA:** e il loro nome, nella loro area. Puoi modificarlo o toglierlo, e The Machine può riscrivere una riga del riepilogo più avanti. La tua Machine lo tratta come una loro affermazione, mai come una tua istruzione.
+
+Una bozza aspetta nella tua Machine finché non la leggi e premi tu **Invia**. Un’IA collegata non invia mai nulla e non agisce mai al posto tuo. Do it e gli agenti della tua Machine non ne fanno parte.
 
 ## Collegarne una
 
@@ -27,7 +31,7 @@ Le IA su un dispositivo nella tua tailnet, come Claude Code o Cursor, possono us
 
 L’IA ti manda alla tua Machine per accedere. La tua Machine mostra quale IA è. Un’IA che non riconosce mostra l’indirizzo da cui arriva: collega solo se l’hai appena avviato tu.
 
-Scegli cosa può fare, **Leggi** o **Lettura e bozze**. Con account di lavoro e personali, scegli anche cosa può vedere. Poi scegli per quanto: **1 giorno**, **7 giorni**, **30 giorni** o **1 anno**. Premi **Collegati**, o **Annulla** per rimandarla indietro senza nulla.
+Scegli cosa può fare, **Leggi** o **Lettura e modifica**. Con account di lavoro e personali, scegli anche cosa può vedere. Poi scegli per quanto: **1 giorno**, **7 giorni**, **30 giorni** o **1 anno**. Premi **Collegati**, o **Annulla** per rimandarla indietro senza nulla.
 
 ## Cosa vede
 
