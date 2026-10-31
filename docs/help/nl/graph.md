@@ -21,6 +21,12 @@ De adressen en chats van iemand worden vanzelf samengevoegd als duidelijk is dat
 
 De tabbladen **Werk** en **Privé** tonen alleen die contacten. **CSV downloaden**, onder het sorteermenu, bewaart het tabblad waarop je bent als spreadsheet, ook voor Organisaties en Projecten.
 
+### Samenvatting
+
+Een paar korte regels bovenaan iemands pagina: wie die persoon voor je is, hoe het ervoor staat en wat er in beide richtingen openstaat. The Machine herschrijft ze op de achtergrond als er iets nieuws is, alleen voor mensen met wie je echt contact hebt. Elke regel linkt naar waar hij vandaan komt.
+
+**Bewerken** om het in je eigen woorden te zeggen. Jouw woorden blijven staan: bij nieuws toont The Machine een **Voorgestelde update** met **Gebruiken** en **Mijn versie houden**. **Laat The Machine het schrijven** geeft het terug. Voorbereidingen van meetings gebruiken ze, alleen de regels van de kant van die to-do (Werk of Privé). Ze blijft op je Machine; je team ziet ze nooit.
+
 ### Tijdlijn
 
 Elke pagina van een persoon en organisatie heeft er een, nieuwste eerst: e-mail, afspraken en hun Zoom-samenvattingen, Intercom-gesprekken (open of gesloten, met **Openen in Intercom**), chats op WhatsApp, Telegram, Slack, LinkedIn en X, to-do's, beloftes en verplaatsingen van projecten. De labels bovenaan tonen één bron tegelijk. **Meer tonen** laadt oudere items.

@@ -452,6 +452,15 @@ dialog input{display:block;width:100%;margin-top:8px}
 .person-page .person-job .node{display:inline;padding:0;margin:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px}.person-page .person-job .node:hover{text-decoration-color:currentColor}
 .person-place{margin:2px 0 0;color:var(--faint);font-size:var(--fs-sm)}
 .person-rel{margin:14px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.5}
+/* A person's summary (person_summary.py): its lines in the text color, each with its sources quietly after it; Edit opens the lines as one field */
+.person-summary .summary-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-2)}.person-summary .summary-head h4{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-strong);color:var(--faint);letter-spacing:.01em}
+.person-summary button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;color:var(--muted);font:inherit;font-size:var(--fs-sm);text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+.person-summary button.link:hover{color:var(--text)}.person-summary.editing [data-summary-edit],.person-summary.editing>.summary-lines,.person-summary.editing>.summary-meta{display:none}
+.summary-lines{list-style:none;margin:6px 0 0;padding:0}.summary-lines li{margin:0;padding:3px 0;line-height:1.5;overflow-wrap:anywhere}
+.summary-lines .sl-src{color:var(--faint);font-size:var(--fs-xs);white-space:nowrap}.summary-lines .sl-src :is(a,button.link,span){font-size:var(--fs-xs);color:var(--faint)}.summary-lines .sl-src a{text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px}
+.person-summary .summary-meta{margin:4px 0 0;color:var(--faint);font-size:var(--fs-xs)}
+.summary-proposal{margin:10px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px}.summary-proposal>p{margin:0;white-space:normal}.summary-proposal .summary-lines{color:var(--muted)}.summary-proposal .role-row{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}
+.summary-form{margin:8px 0 0}.summary-form[hidden]{display:none}.summary-form textarea{display:block;width:100%;box-sizing:border-box;min-height:7.5em;margin:0;padding:8px 12px;font:inherit;line-height:1.5;resize:vertical;field-sizing:content}.summary-form .role-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 0}.summary-form .field-error{color:var(--c-red,#b3261e)}
 .detail-section{margin:18px 0 0;padding:14px 0 0;border-top:1px solid var(--border)}.detail-section>h4{margin:0 0 4px;font-size:var(--fs-sm);font-weight:var(--fw-strong);color:var(--faint);letter-spacing:.01em}
 .detail-section .graph-links{margin-top:6px}.detail-section .relations .relation{margin-top:2px}
 .bounce-note{display:inline-block;margin-left:6px;font-size:var(--fs-xs);font-weight:500;color:var(--amber);white-space:nowrap}

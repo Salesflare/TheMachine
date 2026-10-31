@@ -21,6 +21,12 @@ Adressen und Chats einer Person werden von selbst zusammengeführt, wenn klar is
 
 Die Tabs **Arbeit** und **Privat** listen nur diese Kontakte. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle, auch für Organisationen und Projekte.
 
+### Zusammenfassung
+
+Ein paar kurze Zeilen oben auf der Seite einer Person: wer sie für dich ist, wo ihr steht und was in beide Richtungen offen ist. The Machine schreibt sie im Hintergrund neu, wenn es Neues gibt, nur für Menschen, mit denen du wirklich in Kontakt bist. Jede Zeile verlinkt ihre Quelle.
+
+**Bearbeiten**, um es mit deinen Worten zu sagen. Deine Worte bleiben: Gibt es Neues, zeigt The Machine eine **Vorgeschlagene Aktualisierung** mit **Übernehmen** und **Meine behalten**. **The Machine schreiben lassen** gibt sie ihr zurück. Meeting-Vorbereitungen nutzen sie, nur die Zeilen von der Seite dieser Aufgabe (Arbeit oder Privat). Sie bleibt auf deiner Machine; dein Team sieht sie nie.
+
 ### Verlauf
 
 Jede Seite einer Person und Organisation hat einen, das Neueste zuerst: E-Mails, Meetings und ihre Zoom-Zusammenfassungen, Intercom-Unterhaltungen (offen oder geschlossen, mit **In Intercom öffnen**), Chats auf WhatsApp, Telegram, Slack, LinkedIn und X, Aufgaben, Versprechen und Projektbewegungen. Die Chips oben zeigen jeweils eine Quelle. **Mehr anzeigen** lädt ältere Einträge.

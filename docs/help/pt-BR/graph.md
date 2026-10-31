@@ -21,6 +21,12 @@ Os endereços e chats de alguém são unidos sozinhos quando fica claro que são
 
 As abas **Trabalho** e **Pessoal** listam só esses contatos. **Baixar CSV**, no menu de ordem, salva a aba em que você está como planilha, também para Organizações e Projetos.
 
+### Resumo
+
+Algumas linhas curtas no topo da página de uma pessoa: quem ela é para você, como estão as coisas e o que está em aberto dos dois lados. The Machine o reescreve em segundo plano quando há algo novo, só para pessoas com quem você tem contato de verdade. Cada linha leva à sua origem.
+
+**Editar** para dizer do seu jeito. Suas palavras ficam: quando há novidades, The Machine mostra uma **Atualização sugerida** com **Usar** e **Manter a minha**. **Deixar The Machine escrever** devolve a ela. As preparações de reunião o usam, só as linhas do lado dessa tarefa (Trabalho ou Pessoal). Ele fica na sua Machine; sua equipe nunca o vê.
+
 ### Linha do tempo
 
 Toda página de pessoa e de organização tem uma, as mais recentes primeiro: e-mails, reuniões e os resumos do Zoom delas, conversas do Intercom (abertas ou fechadas, com **Abrir no Intercom**), chats do WhatsApp, Telegram, Slack, LinkedIn e X, tarefas, promessas e mudanças em projetos. Os chips no topo mostram uma fonte por vez. **Mostrar mais** carrega as mais antigas.

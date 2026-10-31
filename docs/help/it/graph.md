@@ -21,6 +21,12 @@ Gli indirizzi e le chat di una persona si uniscono da soli quando è chiaro che 
 
 Le schede **Lavoro** e **Personale** mostrano solo quei contatti. **Scarica CSV**, nel menu di ordinamento, salva la scheda in cui sei come foglio di calcolo, anche per Organizzazioni e Progetti.
 
+### Riepilogo
+
+Poche righe brevi in cima alla pagina di una persona: chi è per te, a che punto siete e cosa resta aperto da entrambe le parti. The Machine lo riscrive in background quando c’è qualcosa di nuovo, solo per le persone con cui sei davvero in contatto. Ogni riga rimanda alla sua fonte.
+
+**Modifica** per dirlo a modo tuo. Le tue parole restano: quando ci sono novità, The Machine mostra un **Aggiornamento suggerito** con **Usalo** e **Tieni la mia**. **Lascia che lo scriva The Machine** glielo restituisce. Le preparazioni delle riunioni lo usano, solo le righe dal lato di quell’attività (Lavoro o Personale). Resta sulla tua Machine; il tuo team non lo vede mai.
+
 ### Cronologia
 
 Ogni pagina di persona e organizzazione ne ha una, dalla più recente: email, riunioni e i loro riepiloghi Zoom, conversazioni Intercom (aperte o chiuse, con **Apri in Intercom**), chat WhatsApp, Telegram, Slack, LinkedIn e X, attività, promesse e spostamenti di progetto. I chip in alto mostrano una fonte alla volta. **Mostra altro** carica quelle più vecchie.

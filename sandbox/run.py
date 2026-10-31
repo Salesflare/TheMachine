@@ -156,6 +156,39 @@ def fake_notes(config, prompt):
             '## Action items\n\n- **Alex Morgan**: send the rollout plan by Friday\n- **Unassigned**: answer the security questions from IT')
 
 
+def fake_summary(config, prompt):
+    """Person summaries' stand-in model (person_summary.py): lines about substance, never what the page shows already
+    (role, organization, how often you talk), each citing the evidence it was given. Organizations by their display name
+    from the fixture. No model runs."""
+    people = json.loads(prompt.split('\nPeople:\n', 1)[1])
+    names = {c['domain']: c['name'] for c in json.loads((HERE / 'fixture.json').read_text())['companies']}
+    out = []
+    for p in people:
+        signals, promises, facts = p.get('signals') or [], p.get('open_promises') or [], p.get('facts') or []
+        org = names.get(p['node_id'].rpartition('@')[2]) or p.get('organization')
+        title = lambda m: (m.get('title') or 'a message').strip().rstrip('.')[:100]
+        lines = []
+        if signals:
+            first, latest = signals[-1], signals[0]
+            lines.append({'kind': 'who', 'text': f"You first worked together on {title(first)}.", 'sources': [first['id']] + [f['id'] for f in facts[:1]]})
+            lines.append({'kind': 'now', 'text': f"Latest with {org}: {title(latest)}." if org else f"Latest: {title(latest)}.", 'sources': [latest['id']]})
+        for promise in promises[:2]:
+            who = 'You promised' if promise['who_promised'] == 'the owner' else 'They promised'
+            lines.append({'kind': 'open', 'text': f"{who}: {promise['what'][:140]}", 'sources': [promise['id']]})
+        out.append({'node_id': p['node_id'], 'lines': lines})
+    return json.dumps({'people': out})
+
+
+def seed_summaries(app):
+    """The person summaries on top of their pages, written once by the stand-in for everyone with real activity."""
+    import person_summary
+    with app.store.connect() as db:
+        people = person_summary.due(db, limit=40)
+    if people:
+        written = app.summary_run(people)
+        print(f'sandbox: {written} person summaries', flush=True)
+
+
 def proxy(public_port, app_port, config):
     """Signs each request in as the owner on the dashboard's own host (what Tailscale Serve does for real)."""
     host, owner = config['dashboard_host'], config['tailscale_owner']
@@ -310,7 +343,9 @@ def main():
     seed_model(app)
     app.help_model = fake_help
     app.notes_model = fake_notes
+    app.summary_model = fake_summary
     seed_transcript(app)
+    seed_summaries(app)
     fixture = json.loads((HERE / 'fixture.json').read_text())
     net = None
     if load.groups(states):

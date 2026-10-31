@@ -21,6 +21,12 @@ Las direcciones y chats de alguien se unen solos cuando está claro que son una 
 
 Las pestañas **Trabajo** y **Personal** solo listan esos contactos. **Descargar CSV**, en el menú de orden, guarda la pestaña en la que estás como hoja de cálculo, también para Organizaciones y Proyectos.
 
+### Resumen
+
+Unas pocas líneas cortas arriba en la página de una persona: quién es para ti, cómo están las cosas y qué queda pendiente por ambas partes. The Machine lo reescribe en segundo plano cuando hay algo nuevo, solo para las personas con las que tienes contacto real. Cada línea enlaza a su origen.
+
+**Editar** para decirlo a tu manera. Tus palabras se quedan: cuando hay novedades, The Machine muestra una **Actualización sugerida** con **Usarla** y **Mantener la mía**. **Que lo escriba The Machine** se lo devuelve. Las preparaciones de reuniones lo usan, solo las líneas del lado de esa tarea (Trabajo o Personal). Se queda en tu Machine; tu equipo nunca lo ve.
+
 ### Cronología
 
 Cada página de persona y de organización tiene una, lo más reciente primero: correos, reuniones y sus resúmenes de Zoom, conversaciones de Intercom (abiertas o cerradas, con **Abrir en Intercom**), chats de WhatsApp, Telegram, Slack, LinkedIn y X, tareas, promesas y movimientos de proyectos. Las etiquetas de arriba muestran una fuente cada vez. **Mostrar más** carga las más antiguas.

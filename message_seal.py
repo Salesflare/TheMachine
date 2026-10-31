@@ -59,14 +59,14 @@ SEALED_KEY = 'mc1_sealed'
 # Metadata keys the app queries in SQL (json_extract, instr): routing and identity, never what a message says
 PLAIN_METADATA = frozenset({'thread_id', 'from', 'to', 'labels', 'notification_key_hash', 'user_id', 'from_me',
                             'channel_id', 'chat_id', 'conversation_id'})
-# Text the app derives from messages: card text and the drafts behind it, edits, what a preparation's tools returned,
+# Text the app derives from messages: card text and the drafts behind it, edits, what a preparation's tools returned, a person's summary (person_summary.py),
 # a review's own summary (and its answer on a board check), what teammates' Machines asked and answered, what they shared in the team's Graph (and the review's
 # line for each shared thread), a Claude Code or Codex job's brief and result, a task page's record (with its link's key), the weekly recap as sent and the lines it offers a choice on, the line a role or an organization was read from, promises (what
 # and the note closing one), and the messages a profile, roles or skills run was given. JSON columns keep the named
 # keys in the clear. Not here, on purpose: columns the app matches in SQL, and what the Machine learned (facts, rules,
 # feedback, skills, profile, voices, roles), which support may read (docs/configuration.md).
 DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'title_suggested', 'expires_what'), 'feedback_prompts': ('title',),
-           'person_roles': ('quote',), 'person_orgs': ('quote',), 'person_facts': ('value',), 'promises': ('what', 'note'), 'profile_runs': ('evidence',),
+           'person_roles': ('quote',), 'person_orgs': ('quote',), 'person_summaries': ('lines', 'proposal'), 'person_facts': ('value',), 'promises': ('what', 'note'), 'profile_runs': ('evidence',),
            'draft_edits': ('before_subject', 'before_body', 'after_subject', 'after_body'),
            'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
            'fleet_in': ('question', 'draft'), 'fleet_out': ('question', 'answer'), 'network_replies': ('body',),
