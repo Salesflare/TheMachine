@@ -2,8 +2,8 @@
 title: Conectar outras IAs
 area: connections
 summary: Deixe Claude, ChatGPT, Cursor, Codex ou GBrain lerem suas tarefas e seu Graph por MCP, cada uma com seu acesso e prazo.
-covers: ai-connections
-code: ai_access.py, ai_app.py
+covers: ai-connections, settings:ai
+code: ai_access.py, ai_app.py, pairing.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -15,7 +15,13 @@ No máximo elas adicionam uma tarefa, ou uma tarefa com um rascunho de e-mail. U
 
 ## Conectar uma
 
-Na outra IA, adicione um conector personalizado ou servidor MCP com o endereço da sua Machine seguido de `/mcp`. Numa Machine hospedada é `https://<seu nome>.app.themachine.computer/mcp`. Numa Machine no seu próprio computador é o endereço do seu painel, que só dispositivos da sua tailnet alcançam.
+Abra **Configurações**, **IAs**. No topo fica o endereço da sua Machine para IAs, `https://<seu nome>.mcp.themachine.computer/mcp`, com **Copiar**. Numa Machine no seu próprio computador, toque antes em **Obter seu endereço**. Abre uma página da sua conta: confira se ela mostra o mesmo código, confirme e escolha um nome. Sua Machine se pareia sozinha, sem reiniciar.
+
+No ChatGPT, abra chatgpt.com/plugins, toque em + e depois em Add custom MCP server. Chame de The Machine, cole o endereço e escolha OAuth. Confirme o aviso e toque em Create as a plugin. Seu plano ou workspace precisa permitir servidores MCP personalizados.
+
+No Claude, abra Customize, Connectors, toque em + Add e depois em Add custom connector. Chame de The Machine, cole o endereço, toque em Continue e depois em Add. No Team e no Enterprise, um proprietário adiciona em Organization settings.
+
+IAs num dispositivo da sua tailnet, como Claude Code ou Cursor, também podem usar o endereço do seu painel seguido de `/mcp`. **Desfazer pareamento** tira da sua conta uma Machine no seu próprio computador.
 
 A IA leva você à sua Machine para entrar. Sua Machine mostra qual IA é. Uma IA que ela não reconhece mostra o endereço de onde vem: conecte só se você acabou de iniciar isso.
 
@@ -26,6 +32,12 @@ Escolha o que ela pode fazer, **Ler** ou **Ler e rascunhos**. Com contas de trab
 Uma conexão só vê a sua área. Trabalho cobre as tarefas e promessas das suas contas de trabalho, contatos de trabalho, empresas, projetos e o resumo da equipe da sua Work Fleet. Pessoal cobre o resto. O texto das mensagens fica na sua Machine: uma IA vê as fontes de uma tarefa só por remetente, assunto e data.
 
 Os dados do Team Graph dos seus colegas nunca vão para uma IA de fora.
+
+## Em Configurações
+
+Abra **Configurações**, **IAs** para ver cada IA conectada, com o último uso e quantas chamadas fez. Mude ali o acesso, a área ou a duração. A próxima chamada já usa isso. **Desativar agora** encerra todos os logins dela de uma vez. **Atividade** lista cada chamada, as recusadas também. **Remover** tira a IA.
+
+Uma IA que não consegue entrar sozinha pode usar uma chave. Em **Adicionar uma chave**, dê um nome, escolha o acesso e a duração e toque em **Criar chave**. Copie a chave na hora: ela aparece só uma vez. A IA envia como `Authorization: Bearer <key>`.
 
 ## Segurança
 

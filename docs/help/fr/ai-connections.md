@@ -2,8 +2,8 @@
 title: Connecter d’autres IA
 area: connections
 summary: Laissez Claude, ChatGPT, Cursor, Codex ou GBrain lire vos tâches et votre Graph via MCP, chacun avec son accès et sa durée.
-covers: ai-connections
-code: ai_access.py, ai_app.py
+covers: ai-connections, settings:ai
+code: ai_access.py, ai_app.py, pairing.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -15,7 +15,13 @@ Au plus, elles ajoutent une tâche, ou une tâche avec un brouillon d’e-mail. 
 
 ## En connecter une
 
-Dans l’autre IA, ajoutez un connecteur personnalisé ou un serveur MCP avec l’adresse de votre Machine suivie de `/mcp`. Sur une Machine hébergée, c’est `https://<votre nom>.app.themachine.computer/mcp`. Sur une Machine sur votre propre ordinateur, c’est l’adresse de votre tableau de bord, que seuls les appareils de votre tailnet atteignent.
+Ouvrez **Paramètres**, **IA**. En haut se trouve l’adresse de votre Machine pour les IA, `https://<votre nom>.mcp.themachine.computer/mcp`, avec **Copier**. Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage.
+
+Dans ChatGPT, ouvrez chatgpt.com/plugins, appuyez sur +, puis sur Add custom MCP server. Nommez-le The Machine, collez l’adresse et choisissez OAuth. Confirmez l’avertissement et appuyez sur Create as a plugin. Votre forfait ou votre espace de travail doit autoriser les serveurs MCP personnalisés.
+
+Dans Claude, ouvrez Customize, Connectors, appuyez sur + Add, puis sur Add custom connector. Nommez-le The Machine, collez l’adresse, appuyez sur Continue, puis sur Add. Sur Team et Enterprise, un propriétaire l’ajoute dans Organization settings.
+
+Les IA d’un appareil de votre tailnet, comme Claude Code ou Cursor, peuvent aussi utiliser l’adresse de votre tableau de bord suivie de `/mcp`. **Dissocier** retire de votre compte une Machine installée sur votre ordinateur.
 
 L’IA vous envoie vers votre Machine pour vous connecter. Votre Machine montre de quelle IA il s’agit. Une IA qu’elle ne reconnaît pas montre l’adresse d’où elle vient : connectez seulement si vous venez de lancer cela vous-même.
 
@@ -26,6 +32,12 @@ Choisissez ce qu’elle peut faire, **Lire** ou **Lecture et brouillons**. Avec 
 Une connexion ne voit que son domaine. Travail couvre les tâches et promesses de vos comptes de travail, les contacts de travail, les entreprises, les projets et le briefing d’équipe de votre Work Fleet. Personnel couvre le reste. Le texte des messages reste sur votre Machine : une IA voit les sources d’une tâche seulement par expéditeur, objet et date.
 
 Les données Team Graph de vos coéquipiers ne vont jamais à une IA extérieure.
+
+## Dans Paramètres
+
+Ouvrez **Paramètres**, **IA** pour voir chaque IA connectée, avec sa dernière utilisation et son nombre d’appels. Modifiez-y son accès, son domaine ou sa durée. L’appel suivant en tient compte. **Désactiver maintenant** ferme toutes ses connexions d’un coup. **Activité** liste chaque appel, les refusés aussi. **Retirer** la supprime.
+
+Une IA qui ne peut pas se connecter seule peut utiliser une clé. Sous **Ajouter une clé**, nommez-la, choisissez l’accès et la durée, puis appuyez sur **Créer la clé**. Copiez la clé tout de suite : elle ne s’affiche qu’une fois. L’IA l’envoie comme `Authorization: Bearer <key>`.
 
 ## Sécurité
 

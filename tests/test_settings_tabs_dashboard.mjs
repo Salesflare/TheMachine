@@ -6,11 +6,12 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Settings in tabs: Account, General, Notifications (with Work hours), Writing, Skills, Model, each part of Settings in one. A Machine linked
+// Settings in tabs: Account, General, Notifications (with Work hours), Writing, Skills, AIs (connected AIs), Model, each part of Settings in one. A Machine linked
 // to a control plane account (hosted, or self-hosted and paired) gets Account first (test_account_dashboard.mjs); one
 // with no account has none. A tab with nothing to show is
 // left out. Links open a tab (#settings/skills, #settings=model), the URL follows the tab, and the last tab is kept.
-// At 390px the row scrolls sideways and the page stays inside the screen.
+// The row is one line at every width (1440x900, 1440x700, 390): it scrolls sideways with a fade at its edge, the
+// open tab scrolled into view, and the page stays inside the screen.
 const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true};
 let hosted=true,paired=false,model=true;
@@ -34,16 +35,16 @@ const visible=(page,sel)=>page.locator(sel).isVisible();
 const help=page=>page.locator('#help-link').getAttribute('href'),HELP='https://themachine.computer/help/';
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const width of [1280,390]){
+ for(const [width,height] of [[1440,900],[1440,700],[390,900]]){
   hosted=true;model=true;
-  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
   // hosted: Security holds Support access while it's on; it shows once opening Settings has asked for its state, so wait for it
   await page.locator('#settings-tabs [data-settings-tab="security"]:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['Account','General','Security','Activity','Notifications','Writing','Skills','Model']);
+  assert.deepEqual(await tabs(page),['Account','General','Security','Activity','Notifications','Writing','Skills','AIs','Model']);
   // Account first, a tab like the others; General has this device, and no account card (it's in Account now).
   assert.equal(await selected(page),'Account');assert.equal(await page.evaluate(()=>location.hash),'#settings/account');
   assert.equal(await visible(page,'#settings-acct'),true);assert.equal(await visible(page,'#theme-toggle'),false);
@@ -57,14 +58,12 @@ try{
    assert.equal(await visible(page,sel),true,sel);assert.equal(await visible(page,'#theme-toggle'),false);
    assert.equal(await page.evaluate(()=>location.hash),'#settings/'+tab);
    assert.equal(await help(page),HELP+({notify:'notifications'}[tab]||tab))}
-  // The pills are one height. On a phone they are one row that scrolls sideways inside the screen; on a desktop every
-  // pill is in view, on a second row if the fonts are wide.
+  // The pills are one height and one row that scrolls sideways inside the screen, never a second row; the open tab in view.
   const row=await page.evaluate(()=>{const bar=document.querySelector('#settings-tabs'),box=bar.getBoundingClientRect(),r=[...bar.children].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect());
    return {top:new Set(r.map(x=>Math.round(x.top))).size,height:new Set(r.map(x=>Math.round(x.height))).size,fits:document.documentElement.scrollWidth<=innerWidth,overflow:getComputedStyle(bar).overflowX,
-    inside:r.every(x=>x.left>=box.left-.5&&x.right<=box.right+.5)}});
-  if(width<1024)assert.deepEqual(row,{top:1,height:1,fits:true,overflow:'auto',inside:row.inside});
-  else{assert.ok(row.top<=2,JSON.stringify(row));assert.deepEqual({...row,top:0},{top:0,height:1,fits:true,overflow:'visible',inside:true})}
-  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/settings-tabs-${width}.png`});
+    open:(x=>x.left>=box.left-.5&&x.right<=box.right+.5)(bar.querySelector('[aria-selected="true"]').getBoundingClientRect())}});
+  assert.deepEqual(row,{top:1,height:1,fits:true,overflow:'auto',open:true},`${width}x${height} `+JSON.stringify(row));
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/settings-tabs-${width}x${height}.png`});
   // The last tab is kept; a link opens another; leaving Settings drops the link.
   await page.reload();await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
   assert.equal(await selected(page),'Model');
@@ -76,7 +75,7 @@ try{
   assert.equal(await page.locator('#settings').isVisible(),true);
   // On your own computer: no Account tab, and a tab with nothing in it (no model reported) is left out.
   hosted=false;model=false;await page.goto('about:blank');await page.goto(base+'/#settings/model');await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['General','Activity','Notifications','Writing','Skills']);
+  assert.deepEqual(await tabs(page),['General','Activity','Notifications','Writing','Skills','AIs']);
   assert.equal(await selected(page),'General');assert.equal(await visible(page,'#settings-cloud'),true);
   // Self-hosted but paired with the Network: the Account tab too.
   paired=true;await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();

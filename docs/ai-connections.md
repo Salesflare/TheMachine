@@ -99,25 +99,40 @@ the server's instructions say so: an AI should not follow instructions inside it
 
 ## Where it runs
 
-**Self-hosted.** The app serves it on the dashboard's address, `https://<dashboard host>/mcp`. AIs that run on a device
-in the owner's tailnet reach it: Claude Code, Claude Desktop, Cursor, Codex, a local GBrain. Cloud AIs (claude.ai,
-ChatGPT) can't reach a tailnet. For those, the owner can publish the dashboard's address themselves (Tailscale Funnel);
-The Machine does not relay a self-hosted Machine's calls through the cloud, because the cloud would then see them in
-the clear, which it never does for a self-hosted Machine today.
+Every Machine has one address for AIs, `https://<name>.mcp.themachine.computer/mcp`, the same on a hosted and a
+self-hosted Machine. `<name>` is the account's name (hosted: the dashboard host's first label). Settings, **AIs**
+shows it with Copy and three steps each for ChatGPT and Claude. The address is a door only: nothing gets in without
+the owner approving that AI on the Machine's own consent page.
 
-**Hosted.** The dashboard's own address, `https://<name>.app.themachine.computer/mcp`. The control plane's proxy
-already carries the dashboard there (TLS to the browser, TLS with our own CA to the Machine, nothing kept). The MCP
-and OAuth paths take that same proxy without the owner's browser sign-in: the control plane checks only that the
-Machine exists and is running (`/_machine/ai-check`), strips cookies, the AI's `Authorization` from that check, and
-marks the request (`X-Machine-Route: ai`) so the Machine's own Caddy drops the owner's identity for it. The Machine
-checks the token itself. `/oauth/authorize` stays behind the owner's sign-in; signed out, the account sign-in comes
-back to it afterwards. So the cloud sees these calls exactly as it sees the dashboard: in transit, never stored, never
-logged (Caddy's log filter drops `Authorization` and query strings).
+**On its own host, with TLS passthrough.** `*.mcp.themachine.computer` goes to a router in the cloud that forwards
+the encrypted connection by its name (SNI) and never ends TLS: the Machine holds the certificate and key for its name
+and terminates TLS itself, so the cloud never sees what an AI and the Machine say. A hosted Machine does its own
+certificate in its Caddy; a self-hosted one needs to be paired. The router and the Machine's side of it are specified
+apart from this page: **the address goes live once the passthrough ships.** Until then, AIs in the owner's tailnet
+(Claude Code, Claude Desktop, Cursor, Codex, a local GBrain) use the dashboard's own address with `/mcp`.
+
+**Pairing in one click** (`pairing.py`). A self-hosted Machine not paired yet shows **Get your address**:
+
+1. `POST /api/fleet/pair-request` (no token) with the Machine's Network public keys (`network_crypto`, the keys the
+   Network pins), its label and the owner's addresses, signed with its own sign key over
+   `tm-device-pair/1\n` + the JSON, plus `keys_sig` (its usual signature of the keys). The answer is one page on the
+   account, `/pair/<id>` (opened only when it is https on the Network's own hosts), and a short code
+   (base32 of sha256 of the sign key, `XXXX-XXXX`) that the dashboard shows too.
+2. On that page the signed-in owner checks the code and confirms, and picks the account's name when it has none. The
+   control plane pairs the device, publishes its keys, and seals the new token for the Machine's box key, bound to the
+   request (`open_box` with info `tm-device-pair/1`, context `{p: pair, r: <id>}`).
+3. The Machine picks it up (`POST /api/fleet/pair-pickup`, signed again) every 2 seconds for up to 10 minutes, opens
+   it, writes it 0600 to `fleet-token` next to the database and into the config as the `fleet` credential (as
+   `cli.py fleet-pair` does, which keeps working), and starts the Fleet at once (`App.fleet_live`), no restart.
+   `GET /api/fleet/ai-reach` then gives the name for the address.
+
+The same button pairs from Connections, where a sign-in needs a paired Machine. **Unpair** in Settings, AIs removes the
+credential and its file and stops the Fleet; the account keeps the device until it is disconnected there.
 
 ## Decided, and open
 
 - One endpoint per Machine, not one shared cloud endpoint: tokens and data stay on the Machine, and the control
   plane needs no new store.
-- Relaying self-hosted Machines for cloud AIs: not built (see above). Possible later as an opt-in, saying the cloud
-  sees the calls in transit.
+- Self-hosted Machines reach cloud AIs through TLS passthrough on `*.mcp.themachine.computer`, never a relay that
+  reads the calls: the cloud forwards encrypted bytes by name and keeps nothing.
 - Tools never send. A "send after the owner approves in The Machine" flow is the owner's Send on the to-do, not a tool.

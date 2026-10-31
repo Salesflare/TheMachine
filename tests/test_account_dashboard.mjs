@@ -72,7 +72,7 @@ try{
   // Cancel is a quiet text link under the buttons: easy to find, not an equal-weight button
   assert.equal(await page.locator('.acct-cancel .acct-quiet[data-acct-go="cancel"]').count(),1);
   // No Security tab here: this Machine sends no security levels, and support access shows only while it's on
-  assert.deepEqual((await page.locator('#settings-tabs>:not([hidden])').allInnerTexts()),['Account','General','Activity','Notifications','Writing','Skills','Model']);
+  assert.deepEqual((await page.locator('#settings-tabs>:not([hidden])').allInnerTexts()),['Account','General','Activity','Notifications','Writing','Skills','AIs','Model']);
   assert.equal(await page.locator('#settings-account-block').isHidden(),true);  // General no longer says "on your account page"
   const fits=await page.evaluate(()=>{const r=document.querySelector('#acct-list').getBoundingClientRect();
    return document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll('#settings-acct button,#settings-acct a')].every(b=>{const x=b.getBoundingClientRect();return x.right<=innerWidth&&x.left>=0})});

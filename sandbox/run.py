@@ -113,6 +113,30 @@ def fake_help(config, prompt, model=None, thinking=None):
     return ' '.join(re.split(r'(?<=[.!?])\s+', ' '.join(text.split()))[:3]) + ' [1]'
 
 
+def seed_ai(app):
+    """Settings, AIs (ai_access.py): Claude connected for Work with Read & draft, and a key for a script that only
+    reads, with a few calls each and one refused. Writes only through ai_access."""
+    import ai_access
+    now = dt.datetime.now(dt.timezone.utc)
+    with app.store.connect() as db:
+        if ai_access.connections(db):
+            return
+        client = ai_access.register(db, {'redirect_uris': ['https://claude.ai/api/mcp/auth_callback'], 'client_name': 'Claude'})
+        req = {'client_id': client['client_id'], 'redirect_uri': 'https://claude.ai/api/mcp/auth_callback', 'name': 'Claude',
+               'challenge': 'x' * 43, 'state': ''}
+        ai_access.approve(db, req, 'draft', 'work', '30d', 'http://127.0.0.1')
+        cid = next(c['id'] for c in ai_access.connections(db) if c['kind'] == 'oauth')
+        key = ai_access.new_key(db, 'Morning script', 'read', 'both', '7d')['id']
+        lines = [(cid, 25, 'list_todos', 'ok', '6 to-dos'), (cid, 24, 'search_graph', 'ok', 'Searched the Graph: 2 found'),
+                 (cid, 20, 'get_todo', 'ok', 'Read “Send the renewal quote”'),
+                 (cid, 15, 'create_draft', 'ok', 'Added a draft to buyer@example.com: “Renewal quote”'),
+                 (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
+        for connection, hours, tool, outcome, detail in lines:
+            ai_access.log(db, connection, tool, outcome, detail, at=now - dt.timedelta(hours=hours))
+        ai_access.used(db, cid, at=now - dt.timedelta(minutes=12))
+        ai_access.used(db, key, at=now - dt.timedelta(hours=13))
+
+
 def seed_transcript(app):
     """Generate notes in the Calendar: the latest past meeting with guests has a long made-up transcript (2h 15m) and no
     notes yet."""
@@ -346,6 +370,7 @@ def main():
     app.summary_model = fake_summary
     seed_transcript(app)
     seed_summaries(app)
+    seed_ai(app)
     fixture = json.loads((HERE / 'fixture.json').read_text())
     net = None
     if load.groups(states):

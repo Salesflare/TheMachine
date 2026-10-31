@@ -513,13 +513,13 @@ def new_key(db, name, level, area, expiry):
     return {'id': cid, 'key': key}
 
 
-def log(db, connection_id, tool, outcome, detail=''):
+def log(db, connection_id, tool, outcome, detail='', at=None):
     db.execute('INSERT INTO ai_activity(connection_id,at,tool,outcome,detail) VALUES(?,?,?,?,?)',
-               (connection_id, stamp(), str(tool)[:40], outcome, str(detail or '')[:200]))
+               (connection_id, stamp(at), str(tool)[:40], outcome, str(detail or '')[:200]))
 
 
-def used(db, connection_id):
-    db.execute('UPDATE ai_connections SET used_at=? WHERE id=?', (stamp(), connection_id))
+def used(db, connection_id, at=None):
+    db.execute('UPDATE ai_connections SET used_at=? WHERE id=?', (stamp(at), connection_id))
 
 
 def created_today(db, connection_id):
