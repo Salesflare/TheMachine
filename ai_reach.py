@@ -654,6 +654,9 @@ class Reach:
         self.challenges, self.state, self.failures, self.next_try = {}, 'getting', 0, 0.0
         self.wait = wait
         self.cert_lock, self.ctx, self.ctx_for = threading.Lock(), None, None
+        # The ids being dialed now: the next mcp-wait can list one again before its stream is attached, and a second
+        # dial for it only gets "gone" (logged as "stream not opened").
+        self.dialing, self.dialing_lock = set(), threading.Lock()
 
     def host(self):
         name = self.app.name()
@@ -693,12 +696,22 @@ class Reach:
             self.state = 'getting'
         threading.Thread(target=work, name='mcp-cert', daemon=True).start()
 
+    def claim(self, conn_id):
+        with self.dialing_lock:
+            if conn_id in self.dialing:
+                return False
+            self.dialing.add(conn_id)
+            return True
+
     def connection(self, conn_id, host, token):
         try:
             sock, first = open_stream(self.base, token, conn_id)
         except (Refused, OSError) as error:
             LOG.info('mcp stream not opened error=%s', type(error).__name__)
             return
+        finally:
+            with self.dialing_lock:
+                self.dialing.discard(conn_id)
         try:
             serve(sock, first, host, lambda m, p, h, b: self.app.handle(m, p, h, b, host), self.challenges, self.cert_context)
         except (OSError, ValueError, ssl.SSLError) as error:
@@ -731,5 +744,5 @@ class Reach:
                 stop.wait(5 * 2 ** away)
                 continue
             for conn_id in (found.get('conns') or [])[:20]:
-                if isinstance(conn_id, str) and re.fullmatch(r'[0-9a-f]{16,64}', conn_id):
+                if isinstance(conn_id, str) and re.fullmatch(r'[0-9a-f]{16,64}', conn_id) and self.claim(conn_id):
                     threading.Thread(target=self.connection, args=(conn_id, host, token), name='mcp-conn', daemon=True).start()

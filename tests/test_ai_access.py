@@ -796,6 +796,32 @@ class Http(Base):
         self.assertEqual(status, 303)
         self.assertTrue(headers['Location'].startswith(CLAUDE + '?code='))
 
+    def test_connect_works_when_the_browser_sends_origin_null_and_refusals_are_pages(self):
+        port = self.serve()
+        _, client = self.register()
+        _, challenge = pkce()
+        query = urllib.parse.urlencode({'response_type': 'code', 'client_id': client['client_id'], 'redirect_uri': CLAUDE,
+                                        'code_challenge': challenge, 'code_challenge_method': 'S256'})
+        status, headers, page = self.request(port, 'GET', '/oauth/authorize?' + query, headers={'Host': HOST})
+        self.assertEqual((status, headers['Content-Type'].split(';')[0]), (403, 'text/html'))  # not signed in: a page, not JSON
+        self.assertNotIn(b'{"error"', page)
+        status, headers, page = self.request(port, 'GET', '/oauth/authorize?' + query, headers=OWNER)
+        self.assertEqual(headers['Referrer-Policy'], 'same-origin')  # so its form's POST carries the real Origin
+        self.assertIn(b'<meta name="referrer" content="same-origin">', page)
+        csrf = a.dashboard_csrf(TOKEN, 'owner@example.com')
+        form = urllib.parse.urlencode({'client_id': client['client_id'], 'redirect_uri': CLAUDE, 'code_challenge': challenge,
+                                       'level': 'read', 'area': 'both', 'expiry': '7d', 'choice': 'connect', 'csrf': csrf})
+        post = lambda h: self.request(port, 'POST', '/oauth/authorize', form, {**h, 'Content-Type': 'application/x-www-form-urlencoded'})
+        for refused in ({**OWNER, 'Origin': 'null', 'Sec-Fetch-Site': 'cross-site'}, {**OWNER, 'Origin': 'null'},
+                        {'Host': HOST, 'Origin': ISSUER}):
+            status, headers, page = post(refused)
+            self.assertEqual((status, headers['Content-Type'].split(';')[0]), (403, 'text/html'), refused)
+            self.assertNotIn(b'{"error"', page)
+        # A page served under no-referrer (an older release's, still open): Chrome posts it with Origin: null
+        status, headers, _ = post({**OWNER, 'Origin': 'null', 'Sec-Fetch-Site': 'same-origin'})
+        self.assertEqual(status, 303)
+        self.assertTrue(headers['Location'].startswith(CLAUDE + '?code='))
+
     def test_metadata_and_registration_need_no_sign_in(self):
         port = self.serve()
         status, _, data = self.request(port, 'GET', '/.well-known/oauth-authorization-server', headers={'Host': HOST})
