@@ -2,7 +2,7 @@
 title: Andere KIs verbinden
 area: connections
 summary: Lass Claude, ChatGPT, Cursor, Codex oder GBrain deine Aufgaben und deinen Graph über MCP lesen, jede mit eigenem Zugriff und Ablauf.
-covers: ai-connections
+covers: ai-connections, settings:ai
 code: ai_access.py, ai_app.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -26,6 +26,12 @@ Wähle, was sie darf, **Lesen** oder **Lesen und Entwürfe**. Mit Arbeits- und P
 Eine Verbindung sieht nur ihren Bereich. Arbeit umfasst Aufgaben und Versprechen deiner Arbeitskonten, Arbeitskontakte, Firmen, Projekte und das Team-Briefing deiner Work Fleet. Privat umfasst den Rest. Nachrichtentext bleibt auf deiner Machine: Eine KI sieht die Quellen einer Aufgabe nur mit Absender, Betreff und Datum.
 
 Team-Graph-Daten deiner Teammitglieder gehen nie an eine KI von außen.
+
+## In den Einstellungen
+
+Öffne **Einstellungen**, **KIs**, um jede verbundene KI zu sehen, mit letzter Nutzung und Anzahl der Aufrufe. Ändere dort ihren Zugriff, ihren Bereich oder die Dauer. Der nächste Aufruf nutzt es. **Jetzt ausschalten** beendet alle ihre Anmeldungen auf einmal. **Aktivität** zeigt jeden Aufruf, auch abgelehnte. **Entfernen** nimmt sie weg.
+
+Eine KI, die sich nicht selbst anmelden kann, kann einen Schlüssel nutzen. Gib ihm unter **Schlüssel hinzufügen** einen Namen, wähle Zugriff und Dauer und drücke **Schlüssel erstellen**. Kopiere den Schlüssel sofort: Er wird nur einmal gezeigt. Die KI sendet ihn als `Authorization: Bearer <key>`.
 
 ## Sicherheit
 

@@ -2,7 +2,7 @@
 title: Andere AI's koppelen
 area: connections
 summary: Laat Claude, ChatGPT, Cursor, Codex of GBrain je to-do's en Graph lezen via MCP, elk met eigen toegang en vervaldatum.
-covers: ai-connections
+covers: ai-connections, settings:ai
 code: ai_access.py, ai_app.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -26,6 +26,12 @@ Kies wat hij mag doen, **Lezen** of **Lezen en concepten**. Met zowel werk- als 
 Een koppeling ziet alleen haar gebied. Werk omvat de to-do's en beloftes van je werkaccounts, werkcontacten, bedrijven, projecten en de teambriefing van je Work Fleet. Privé omvat de rest. Berichttekst blijft op je Machine: een AI ziet de bronnen van een to-do alleen met afzender, onderwerp en datum.
 
 Team Graph-gegevens van teamgenoten gaan nooit naar een AI van buiten.
+
+## In Instellingen
+
+Open **Instellingen**, **AI's** om elke gekoppelde AI te zien, met wanneer hij het laatst werd gebruikt en hoeveel oproepen hij deed. Pas daar zijn toegang, zijn gebied of de duur aan. De volgende oproep gebruikt het meteen. **Nu uitzetten** beëindigt al zijn logins in één keer. **Activiteit** toont elke oproep, ook geweigerde. **Verwijderen** haalt hem weg.
+
+Een AI die niet zelf kan inloggen, kan een sleutel gebruiken. Geef hem onder **Sleutel toevoegen** een naam, kies de toegang en de duur en druk op **Sleutel maken**. Kopieer de sleutel meteen: hij wordt maar één keer getoond. De AI stuurt hem als `Authorization: Bearer <key>`.
 
 ## Veilig houden
 

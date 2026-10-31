@@ -2,7 +2,7 @@
 title: Collegare altre IA
 area: connections
 summary: Fai leggere a Claude, ChatGPT, Cursor, Codex o GBrain le tue attività e il tuo Graph via MCP, ognuna con accesso e scadenza propri.
-covers: ai-connections
+covers: ai-connections, settings:ai
 code: ai_access.py, ai_app.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -26,6 +26,12 @@ Scegli cosa può fare, **Leggi** o **Lettura e bozze**. Con account di lavoro e 
 Un collegamento vede solo la sua area. Lavoro copre attività e promesse dei tuoi account di lavoro, contatti di lavoro, aziende, progetti e il briefing del team della tua Work Fleet. Personale copre il resto. Il testo dei messaggi resta sulla tua Machine: un’IA vede le fonti di un’attività solo per mittente, oggetto e data.
 
 I dati Team Graph dei tuoi colleghi non vanno mai a un’IA esterna.
+
+## In Impostazioni
+
+Apri **Impostazioni**, **IA** per vedere ogni IA collegata, con l’ultimo uso e quante chiamate ha fatto. Cambia lì il suo accesso, la sua area o la durata. La chiamata successiva lo usa già. **Disattiva ora** chiude tutti i suoi accessi in una volta. **Movimenti** elenca ogni chiamata, anche quelle rifiutate. **Rimuovi** la toglie.
+
+Un’IA che non sa accedere da sola può usare una chiave. In **Aggiungi una chiave**, dalle un nome, scegli accesso e durata e premi **Crea chiave**. Copia subito la chiave: si vede una volta sola. L’IA la invia come `Authorization: Bearer <key>`.
 
 ## Sicurezza
 
