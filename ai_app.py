@@ -35,6 +35,7 @@ OPEN = ('pending', 'accepted', 'prepared', 'instructions')
 EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
 EXPIRY_LABEL = {'1d': '1 day', '7d': '7 days', '30d': '30 days', '1y': '1 year'}
 MCP_DOMAIN = 'mcp.themachine.computer'  # each Machine's address for AIs: https://<name>.<this>/mcp (docs/ai-connections.md)
+SHARED_ADDRESS = f'https://{MCP_DOMAIN}/mcp'  # the official app's one address for every Machine: the account signs in and routes
 NAME = re.compile(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?')
 REACH_FRESH = 60  # seconds the account's answer about this Machine's name is kept
 # What a connected AI may change in a record's details: never Work or Personal (side), the name, merges or sharing
@@ -101,14 +102,17 @@ class AiApp:
     def ai_reach(self, fresh=False):
         """Settings, AIs, top: this Machine's address for cloud AIs (https://<name>.mcp.themachine.computer/mcp), or what
         is missing for one. Hosted: the dashboard host's name. Self-hosted: paired with the account, and the account's
-        name (GET /api/fleet/ai-reach), kept REACH_FRESH. {'address', 'paired', 'hosted', 'name', 'pairing', 'away'}"""
+        name (GET /api/fleet/ai-reach), kept REACH_FRESH. {'address', 'shared', 'paired', 'hosted', 'name', 'pairing', 'away'}
+        shared: the official app's address (SHARED_ADDRESS), when the account can reach this Machine at its own address:
+        hosted with a name, or self-hosted with a name of its own and its certificate ready."""
         if self.config.get('manage_url'):
             label = str(self.config.get('dashboard_host') or '').split('.', 1)[0].lower()
+            named = bool(NAME.fullmatch(label or ''))
             return {'hosted': True, 'paired': True, 'name': label or None,
-                    'address': mcp_address(label) if NAME.fullmatch(label or '') else None}
+                    'address': mcp_address(label) if named else None, 'shared': SHARED_ADDRESS if named else None}
         pending = self.ai_pairing_view()
         if getattr(self, 'fleet', None) is None:
-            return {'hosted': False, 'paired': False, 'name': None, 'address': None, 'pairing': pending}
+            return {'hosted': False, 'paired': False, 'name': None, 'address': None, 'shared': None, 'pairing': pending}
         kept = self.__dict__.get('ai_reach_kept')
         if kept and not fresh and time.monotonic() - kept[0] < REACH_FRESH:
             found = kept[1]
@@ -122,9 +126,11 @@ class AiApp:
         name = found.get('name') if NAME.fullmatch(found.get('name') or '') else None
         loop = self.__dict__.get('ai_reach_loop')
         tls = 'missing' if not ai_reach.AVAILABLE else loop.state if loop else 'getting'
+        tls = tls if name and not found.get('other') else None
         return {'hosted': False, 'paired': True, 'name': name, 'address': mcp_address(name) if name else None,
+                'shared': SHARED_ADDRESS if tls == 'ready' else None,
                 'other': bool(found.get('other')), 'away': bool(found.get('away')), 'pairing': pending,
-                'account': fleet.account_url(self.config), 'tls': tls if name and not found.get('other') else None}
+                'account': fleet.account_url(self.config), 'tls': tls}
 
     def ai_reach_start(self, stop):
         """A paired self-hosted Machine's own address (ai_reach.py): the dial-back loop and its certificate, until stop

@@ -19,7 +19,9 @@ A draft waits in your Machine until you read it and press Send yourself. A conne
 
 ## Connect one
 
-Open **Settings**, **AIs**. At the top is your Machine's address for AIs, `https://<your name>.mcp.themachine.computer/mcp`, with **Copy**. On a Machine on your own computer, press **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart.
+Open **Settings**, **AIs**. There are two ways in. **Official app** comes first: one address for every Machine, `https://mcp.themachine.computer/mcp`, with **Copy**. Below it is your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`.
+
+On a Machine on your own computer, press **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
 
 It then gets its own certificate for the address, which takes a few minutes and needs the `cryptography` package for Python.
 
@@ -27,11 +29,21 @@ In ChatGPT, open chatgpt.com/plugins, press +, then Add custom MCP server. Name 
 
 In Claude, open Customize, Connectors, press + Add, then Add custom connector. Name it The Machine, paste the address, press Continue, then Add. On Team and Enterprise, an owner adds it in Organization settings.
 
+With the official app, the AI asks you to sign in with your The Machine account. Pick this Machine if you have more than one, then approve it on your Machine's own page. With the private address, the AI comes straight to your Machine.
+
 AIs on a device in your tailnet, like Claude Code or Cursor, can also use your dashboard's address followed by `/mcp`. **Unpair** takes a Machine on your own computer off your account again.
 
-The AI sends you to your Machine to sign in. Your Machine shows which AI it is. An AI it can't recognize shows the address it came from: connect only if you just started this yourself.
+Your Machine shows which AI it is. An AI it can't recognize shows the address it came from: connect only if you just started this yourself.
 
 Pick what it can do, **Read** or **Read & edit**. With both Work and Personal accounts, pick what it can see. Then pick for how long: **1 day**, **7 days**, **30 days** or **1 year**. Press **Connect**, or **Cancel** to send it back with nothing.
+
+## Official app or private address
+
+The official app is the easy way: one address for everyone, and your account finds your Machine. The cloud routes its requests on the way but stores nothing.
+
+With your private address, everything is encrypted all the way to your Machine. The cloud only passes it on and can't read it.
+
+Either way your Machine decides. Only an AI you approved on its page gets in, with the access you picked. In **Settings**, **AIs**, an AI that came through the official app shows **Official app**.
 
 ## What it sees
 

@@ -126,7 +126,7 @@ class App(Base):
 
     def test_not_paired_then_get_your_address_pairs_and_starts_the_fleet_live(self):
         self.app.fleet = None
-        self.assertEqual(self.app.ai_reach(), {'hosted': False, 'paired': False, 'name': None, 'address': None, 'pairing': None})
+        self.assertEqual(self.app.ai_reach(), {'hosted': False, 'paired': False, 'name': None, 'address': None, 'shared': None, 'pairing': None})
         with patch.object(pairing, '_post', self.post({'/pair-request': {'id': RID, 'url': PAGE, 'expires_in': 600},
                                                       '/pair-pickup': [{'state': 'waiting'}, {'state': 'paired', 'sealed': self.sealed()}]})), \
                 patch.object(a.threading, 'Thread', self.thread), patch('ai_app.threading.Thread', self.thread):

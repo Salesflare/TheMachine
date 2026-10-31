@@ -19,7 +19,9 @@ Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA c
 
 ## Conectar uma
 
-Abra **Configurações**, **IAs**. No topo fica o endereço da sua Machine para IAs, `https://<seu nome>.mcp.themachine.computer/mcp`, com **Copiar**. Numa Machine no seu próprio computador, toque antes em **Obter seu endereço**. Abre uma página da sua conta: confira se ela mostra o mesmo código, confirme e escolha um nome. Sua Machine se pareia sozinha, sem reiniciar.
+Abra **Configurações**, **IAs**. Há dois jeitos de entrar. Primeiro vem **App oficial**: um endereço para todas as Machines, `https://mcp.themachine.computer/mcp`, com **Copiar**. Abaixo fica seu **Endereço privado (ponta a ponta)**, `https://<seu nome>.mcp.themachine.computer/mcp`.
+
+Numa Machine no seu próprio computador, toque antes em **Obter seu endereço**. Abre uma página da sua conta: confira se ela mostra o mesmo código, confirme e escolha um nome. Sua Machine se pareia sozinha, sem reiniciar. Os dois jeitos precisam disso.
 
 Depois ela obtém o próprio certificado para o endereço. Leva alguns minutos e precisa do pacote `cryptography` para Python.
 
@@ -27,11 +29,21 @@ No ChatGPT, abra chatgpt.com/plugins, toque em + e depois em Add custom MCP serv
 
 No Claude, abra Customize, Connectors, toque em + Add e depois em Add custom connector. Chame de The Machine, cole o endereço, toque em Continue e depois em Add. No Team e no Enterprise, um proprietário adiciona em Organization settings.
 
+Com o app oficial, a IA pede que você entre com sua conta The Machine. Escolha esta Machine se tiver mais de uma e depois aprove a IA na página da sua Machine. Com o endereço privado, a IA vai direto para sua Machine.
+
 IAs num dispositivo da sua tailnet, como Claude Code ou Cursor, também podem usar o endereço do seu painel seguido de `/mcp`. **Desfazer pareamento** tira da sua conta uma Machine no seu próprio computador.
 
-A IA leva você à sua Machine para entrar. Sua Machine mostra qual IA é. Uma IA que ela não reconhece mostra o endereço de onde vem: conecte só se você acabou de iniciar isso.
+Sua Machine mostra qual IA é. Uma IA que ela não reconhece mostra o endereço de onde vem: conecte só se você acabou de iniciar isso.
 
 Escolha o que ela pode fazer, **Ler** ou **Ler e editar**. Com contas de trabalho e pessoais, escolha também o que ela pode ver. Depois escolha por quanto tempo: **1 dia**, **7 dias**, **30 dias** ou **1 ano**. Toque em **Conectar**, ou em **Cancelar** para devolvê-la sem nada.
+
+## App oficial ou endereço privado
+
+O app oficial é o jeito fácil: um endereço para todos, e sua conta encontra sua Machine. A nuvem encaminha as solicitações no caminho, mas não guarda nada.
+
+Com seu endereço privado, tudo é criptografado até sua Machine. A nuvem só repassa e não consegue ler.
+
+De qualquer jeito, quem decide é sua Machine. Só entra uma IA que você aprovou na página dela, com o acesso que você escolheu. Em **Configurações**, **IAs**, uma IA que veio pelo app oficial mostra **App oficial**.
 
 ## O que ela vê
 

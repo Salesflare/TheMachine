@@ -12,20 +12,27 @@ async function aiLoad(){if(aiBusy)return;aiBusy=true;try{aiView=await aiPost('ai
 function aiConnection(c){const both=(aiView.areas||[]).length>1,state=c.level==='off'?t('Off'):c.expired?t('Expired'):t('Until {}',aiDay(c.expires_at));
  const used=c.used_at?t('Last used {}',ago(c.used_at)):t('Not used yet'),calls=t(['{} call','{} calls'],c.calls)+(c.refused?', '+t(['{} refused','{} refused'],c.refused):'');
  const lines=aiLines[c.id],open=aiOpen===c.id;
- return `<div class="ai-conn" data-ai="${esc(c.id)}"><span class="grow"><strong translate="no">${esc(c.name)}</strong>${c.kind==='key'?' <span class="alpha">Key</span>':''}<small>${esc(state)} · ${esc(used)} · ${esc(calls)}</small></span>
+ return `<div class="ai-conn" data-ai="${esc(c.id)}"><span class="grow"><strong translate="no">${esc(c.name)}</strong>${c.kind==='key'?' <span class="alpha">Key</span>':''}${c.official?' <span class="alpha">Official app</span>':''}<small>${esc(state)} · ${esc(used)} · ${esc(calls)}</small></span>
 <span class="ai-controls"><select data-ai-level aria-label="Access">${aiOptions(AI_LEVELS,c.level)}</select>${both?`<select data-ai-area aria-label="What it can see">${aiOptions(AI_AREAS,c.area)}</select>`:''}<select data-ai-expiry aria-label="For how long"><option value="" selected>${esc(t(c.expired?'Renew for…':'Extend…'))}</option>${aiOptions(AI_EXPIRY,'')}</select>
 <button type="button" class="ghost" data-ai-activity aria-expanded="${open}">Activity</button>${c.level!=='off'?'<button type="button" class="ghost" data-ai-off>Turn off now</button>':''}<button type="button" class="ghost" data-ai-remove>Remove</button></span>
 <span class="ai-msg"><span class="grow"><strong>Messages</strong><small>Reads your email and chats. Its changes then wait for your OK.</small></span><button type="button" class="lookup-switch" role="switch" aria-checked="${!!c.messages}" aria-label="Messages" data-ai-messages></button></span></div>${open?`<div class="ai-activity">${!lines?`<p class="muted">${esc(t('Loading…'))}</p>`:lines.length?`<ol class="act-list">${actRows(lines)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`}</div>`:''}`}
 // After an Undo in an AI's own activity: its lines read again
 async function aiActivityReload(){const id=aiOpen;if(!id)return;try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err)}renderAi()}
 function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=aiView,list=v.connections||[],both=(v.areas||[]).length>1;
- $('#ai-address').innerHTML=aiAddress(v.reach||{});
+ const r=v.reach||{};$('#ai-official').innerHTML=aiOfficial(r);$('#ai-private').hidden=!r.address;$('#ai-address').innerHTML=r.address?aiAddress(r):'';
  $('#ai-list').innerHTML=list.length?list.map(aiConnection).join(''):'<div><span class="grow"><small>No AI connected yet.</small></span></div>';
  $('#ai-key-area').hidden=!both;if(!both)$('#ai-key-area').value='both';
  const made=$('#ai-made');made.hidden=!aiMade;made.innerHTML=aiMade?`<span class="grow"><strong>Your new key</strong><small>Copy it now. It won’t show again.</small><code class="ai-url" translate="no">${esc(aiMade)}</code></span><button type="button" class="ghost" data-copy-command="${esc(aiMade)}">Copy</button>`:''}
-// The address for cloud AIs (ai_app.ai_reach): https://<name>.mcp.themachine.computer/mcp with Copy; on a self-hosted
-// Machine not paired, or whose account has no name yet, Get your address instead (pairing.py: one page on the account,
-// then the Fleet starts here by itself); Unpair on a paired self-hosted one. The same button pairs from Connections.
+// Two ways in (ai_app.ai_reach, docs/ai-connections.md): the official app first, one shared address for every Machine
+// (r.shared) with Copy, the account signing in and routing; then this Machine's private address, end to end. Both need
+// this Machine on the account with a name: until then the official app's place shows Get your address (aiAddress).
+function aiOfficial(r){
+ if(r.shared)return `<div><span class="grow"><strong>Official app</strong><code class="ai-url" translate="no">${esc(r.shared)}</code></span><button type="button" class="ghost" data-copy-command="${esc(r.shared)}">Copy</button></div>`;
+ if(!r.address)return aiAddress(r);
+ return `<div><span class="grow"><strong>Official app</strong>${r.other?'<small>Set it up on your hosted Machine.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':'<small>Getting this address ready. It takes a few minutes.</small>'}</span></div>`}
+// The private address: https://<name>.mcp.themachine.computer/mcp with Copy; on a self-hosted Machine not paired, or
+// whose account has no name yet, Get your address instead (pairing.py: one page on the account, then the Fleet starts
+// here by itself); Unpair on a paired self-hosted one. The same button pairs from Connections.
 function aiAddress(r){const p=r.pairing;
  if(p&&p.state==='waiting')return `<div><span class="grow"><strong>Confirm on your account</strong><small>${esc(t('Check that the page in the new tab shows {}.',p.code||''))}</small></span>${p.url?`<a class="btn-link ghost" href="${esc(p.url)}" target="_blank" rel="noopener">Open it again</a>`:''}</div>`;
  if(r.address)return `<div><span class="grow"><strong>Your address</strong><code class="ai-url" translate="no">${esc(r.address)}</code>${r.other?'<small>Your hosted Machine answers at this address.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='getting'?'<small>Getting this address ready. It takes a few minutes.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':''}</span><button type="button" class="ghost" data-copy-command="${esc(r.address)}">Copy</button></div>`+(r.paired&&!r.hosted?aiPaired():'');
@@ -48,7 +55,7 @@ function aiPairPoll(done){clearTimeout(aiPairTimer);if(Date.now()>aiPairUntil)re
   if(done&&(r.state==='paired'||r.reach?.paired)){done(r);done=null}
   if(r.reach?.address)return notice(t('Your address is ready'));
   if(r.state!=='gone')aiPairPoll(done)},2500)}
-$('#ai-address').addEventListener('click',async e=>{
+for(const box of ['#ai-official','#ai-address'])$(box).addEventListener('click',async e=>{
  if(e.target.closest('[data-ai-get]'))aiPairGo();
  else if(e.target.closest('[data-ai-retry]'))try{const r=await aiPost('ai_pair_state',{fresh:true});aiView.reach=r.reach;renderAi()}catch(err){errCaught(err);notice(err.message,true)}
  else if(e.target.closest('[data-ai-unpair]')){if(confirm(t('Unpair this Machine? Your Fleet and sign-ins through your account stop until you pair it again.')))aiDo('ai_unpair',{},'Unpaired')}});

@@ -189,6 +189,32 @@ class Authorize(Base):
         self.assertIn('calls itself', page)
         self.assertIn('agent.example', page)
 
+    def test_the_official_app_shows_the_ai_the_account_checked(self):
+        for kind, name in (('claude', 'Claude'), ('chatgpt', 'ChatGPT')):
+            back = ai_access.OFFICIAL_CALLBACK + kind
+            _, client = self.register((back,), client_name='Someone else')
+            page = self.app.ai_consent_page(urllib.parse.urlencode(self.params(client, redirect_uri=back)), 'csrf')[1]
+            self.assertIn(f'{name} wants to connect', page)
+            self.assertIn(f'you go back to {name}.', page)
+            self.assertNotIn('can’t check who this is', page)
+        back = ai_access.OFFICIAL_CALLBACK + 'other'  # an AI the account couldn't check: its own name, unverified
+        _, client = self.register((back,), client_name='Desk agent')
+        page = self.app.ai_consent_page(urllib.parse.urlencode(self.params(client, redirect_uri=back)), 'csrf')[1]
+        self.assertIn('calls itself “Desk agent”', page)
+        self.assertIn('can’t check who this is', page)
+        self.assertIn('you go back to app.themachine.computer.', page)
+
+    def test_only_the_accounts_own_callback_is_the_official_app(self):
+        self.assertEqual(ai_access.OFFICIAL_CALLBACK, 'https://app.themachine.computer/mcp/connect/callback/')
+        self.assertEqual([ai_access.official(ai_access.OFFICIAL_CALLBACK + k) for k in ('claude', 'chatgpt', 'other')],
+                         ['claude', 'chatgpt', 'other'])
+        for uri in (ai_access.OFFICIAL_CALLBACK + 'claude/x', ai_access.OFFICIAL_CALLBACK + 'cursor', ai_access.OFFICIAL_CALLBACK,
+                    'https://app.themachine.computer.evil.example/mcp/connect/callback/claude',
+                    'http://app.themachine.computer/mcp/connect/callback/claude', 'https://evil.example/mcp/connect/callback/claude'):
+            self.assertIsNone(ai_access.official(uri), uri)
+            self.assertFalse(ai_access.label({'name': 'Claude'}, uri)[1], uri)
+        self.assertEqual(ai_access.label({'name': 'x'}, CLAUDE), ('Claude', True, 'claude.ai'))  # the private address: as before
+
     def test_cancel_goes_back_with_access_denied_and_makes_nothing(self):
         _, client = self.register()
         _, challenge = pkce()
@@ -405,6 +431,14 @@ class Calls(Base):
             shown = a.activity_log.page(db, self.app.config, kind='ai', actor=cid)['items']
         self.assertEqual([x['outcome'] for x in shown[:3]], ['refused', 'failed', 'done'])
         self.assertEqual((shown[0]['what'], shown[0]['where'], shown[0]['actor']), ('Asked to add an email draft', 'Claude', cid))
+
+    def test_settings_tags_the_official_apps_connections(self):
+        self.connect(uri=ai_access.OFFICIAL_CALLBACK + 'chatgpt')
+        self.connect()
+        with self.db() as db:
+            ai_access.new_key(db, 'Script', 'read', 'both', '7d')
+            found = {(c['name'], c['kind']): c['official'] for c in ai_access.connections(db)}
+        self.assertEqual(found, {('ChatGPT', 'oauth'): True, ('Claude', 'oauth'): False, ('Script', 'key'): False})
 
     def test_a_key_works_as_a_bearer_and_is_shown_once(self):
         view = self.app.action('ai_key', {'name': 'Script', 'level': 'read', 'area': 'work', 'expiry': '7d'}, owner_dashboard=True)
