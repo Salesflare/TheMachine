@@ -170,7 +170,22 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                 load_share(db)
                 load_owners(db, fixture, base)
         load_logins(directory, fixture)
+        load_recurring(store, config, base)
     return config, config_path
+
+
+def load_recurring(store, config, base):
+    """A to-do that repeats (recurring.py): the weekly numbers, every Monday, made the way New to-do makes one."""
+    import recurring
+    account = next((a['id'] for a in config['accounts'] if str(a.get('boundary') or '').startswith('work:')), None)
+    if not account:
+        return
+    today = base.date()
+    monday = today + dt.timedelta(days=(7 - today.weekday()) % 7)
+    saved = store.owner_card('Send the team the weekly numbers', account, work=True, due=monday.isoformat())
+    with store.connect() as db:
+        card = db.execute('SELECT * FROM suggestions WHERE id=?', (saved['id'],)).fetchone()
+        recurring.start(db, card, {'unit': 'week', 'n': 1}, monday, card['owner_words'] or card['title'], base.isoformat(), work=True)
 
 
 def load_owners(db, fixture, base):

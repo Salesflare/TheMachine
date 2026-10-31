@@ -99,6 +99,7 @@ import preparation_state
 import model_budget
 import follow_ups
 import bounces
+import recurring
 import pacing
 import portable
 import service
@@ -106,6 +107,7 @@ import dashboard_parts
 from agents_app import AgentsApp
 from calendar_app import CalendarApp
 from gbrain_app import GBrainApp
+from recurring_app import RecurringApp
 from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
 from support_app import SupportApp
@@ -885,6 +887,10 @@ CARD_ACTIONS = {
     'card_new',
     'card_project',
     'card_rename',
+    'card_repeat',
+    'card_repeat_skip',
+    'recurring_offer',
+    'repeat_read',
 }
 OWNER_ACTIONS |= CARD_ACTIONS
 # A card chat's Stop button and the files added to a message (chat_files.py): the owner's own, from the dashboard.
@@ -3997,6 +4003,7 @@ class Store:
             graph.ensure(db)
             follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
             bounces.ensure(db)  # addresses that bounce (bounces.py): new tables only
+            recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')
             # Who set a to-do's project: 'review' (or NULL, from before 2026-10-27), 'auto' (graph.link_cards: its thread or
@@ -8476,6 +8483,7 @@ class Store:
                 suggestion['latest_feedback'] = dict(feedback) if feedback else None
             for sid, files in chat_files.of_cards(db, [c['id'] for c in cards if c.get('origin') == 'owner']).items():
                 next(c for c in cards if c['id'] == sid)['files'] = files  # what the owner made it with (New to-do)
+            recurring.annotate(db, cards, dt.datetime.now(local_tz()).date())  # "Repeats monthly" (recurring.py)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
         found={r['suggestion_id']:dict(r) for r in db.execute('SELECT p.*,d.choice cause FROM preparations p LEFT JOIN decisions d ON d.id=p.decision_id'
@@ -8611,6 +8619,7 @@ class Store:
                     x['follow_up'] = following[x['id']]
             # Follow-ups going out spaced, per board: "Sending 3 of 8…", then "Sent 8" (follow_ups.progress)
             result['follow_up_progress'] = follow_ups.progress(db, now())
+            result['recurring_offer'] = recurring.offer_view(db)  # "Make this a recurring to-do?", once (recurring.py)
             counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events', (SET_ASIDE_AFTER,)).fetchone()
             result['review_health'] = {**dict(counts), 'last_completed': db.execute("SELECT max(finished_at) FROM analyses WHERE status='complete'").fetchone()[0]}
             result['review_runs'] = []
@@ -13823,7 +13832,7 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp)
 
 
 class App(*APP_MIXINS):
@@ -15135,7 +15144,7 @@ class App(*APP_MIXINS):
             if not owner_dashboard:
                 raise ValueError('Cards are added, renamed and merged by the owner, on the dashboard')
             if name == 'card_new':
-                return self.new_card(args)
+                return self.card_new_repeating(args)  # recurring_app.py: Repeats, or a rhythm in the words
             if name == 'card_project':  # the to-do's project, by hand ('' for none): graph.set_card_project
                 with self.store.connect() as db:
                     return {'id': str(args.get('suggestion_id') or ''), 'project': graph.set_card_project(db, args.get('suggestion_id'), args.get('project'))}
@@ -17689,6 +17698,10 @@ class App(*APP_MIXINS):
                     lines=self.follow_up_lines(job['suggestion_id'])+changing
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('follow-up lines error=%s',type(error).__name__)
+                try:  # a recurring to-do: how the previous one went (recurring.py)
+                    with self.store.connect() as db:lines=recurring.prep_lines(db,job['suggestion_id'])
+                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                except Exception as error:LOG.error('recurring lines error=%s',type(error).__name__)
                 try:  # a skill of the owner's that fits this follow-up: its instructions, ranked above the follow-up defaults
                     lines=self.follow_up_skill_lines(job['suggestion_id'],rules,PROMPT_LIMIT-1000-len(request['message']))
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
@@ -22122,6 +22135,7 @@ class App(*APP_MIXINS):
             threading.Thread(target=self.embedding_worker, daemon=True).start()
         # Always: photos and facts from the owner's own connections need no look-up service (its steps skip themselves).
         threading.Thread(target=self.enrichment_worker, daemon=True).start()
+        threading.Thread(target=self.recurring_worker, name='recurring', daemon=True).start()  # recurring to-dos (recurring_app.py)
         if getattr(self, 'protection_waits', False):
             threading.Thread(target=self.protection_waiter, daemon=True).start()
         server.timeout = 1

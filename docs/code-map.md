@@ -19,6 +19,7 @@ writes it; other modules call the owner's functions.
 | message sealing | `message_seal`, `message_keyring`, `network_crypto` | `event_search` |
 | graph and CRM | `graph`, `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures` | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*` |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
+| recurring to-dos | `recurring`, `recurring_app` | `recurring_series`, `recurring_cards`, `recurring_offers` |
 | do it and preparation | `next_actions`, `preparation_state`, `agent_jobs`, `agent_remote`, `agents_app`, `calendar_writes`, `calendar_app`, `doc_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
 | reviews and learning | `learning_loop`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
 | chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_fast_sessions`, `chat_files`, `talk_lines`, `voice_prefs` |
@@ -47,6 +48,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `agents_app.py` (`AgentsApp`): Hand to Claude Code / Codex (the hand-off actions and where agents run).
   - `gbrain_app.py` (`GBrainApp`): GBrain on and off, its view and its sync thread.
   - `shared_graph_app.py` (`SharedGraphApp`): the Shared Graph's controls (`GRAPH_SHARE_ACTIONS`).
+  - `recurring_app.py` (`RecurringApp`): recurring to-dos (Repeat, Skip this one, the one-time offer) and their worker.
 - **A new route:** `Handler.do_GET` or `do_POST` inside `App.serve`. JSON reads go through `App` methods; owner-only and
   CSP headers stay as the neighboring routes have them (`tests/test_owner_boundary.py`).
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in
