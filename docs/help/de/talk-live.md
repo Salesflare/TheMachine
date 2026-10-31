@@ -41,7 +41,8 @@ Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an w
 - Ist deine Antwort kein klares Ja, geht nichts raus und sie fragt erneut. „Nein“ sendet nichts.
 - Einen Entwurf, den du schon auf dem Bildschirm gesehen oder in diesem Gespräch gehört hast, liest sie nicht noch einmal vor: Sie fragt nur, etwa „An Nick senden?“.
 - Sag „beide senden“ oder „alle fertigen senden“, und sie nennt alle in einer Frage. Ein Ja sendet jeden davon.
-- Sprechen zeigt ein paar Sekunden lang **Rückgängig** mit dem Empfänger und einem Countdown, bevor er rausgeht, dann **An … gesendet** mit dem Namen. Tippe darauf oder sag „rückgängig“ oder „warte“.
+- Sprechen sagt, wie viele Sekunden du hast, und zeigt **Rückgängig** mit demselben Countdown. Tippe darauf oder sag „rückgängig“ oder „warte“.
+- Sobald die Machine sie gesendet hat, sagt Sprechen „Gesendet.“, und die Leiste und das To-do zeigen **An … gesendet** mit dem Namen und der Uhrzeit. Ging sie nicht raus, sagt Sprechen, warum. Frag jederzeit „Ist sie raus?“: Sprechen prüft nach und rät nie.
 
 Du kannst auch jederzeit auf **Freigeben** tippen.
 

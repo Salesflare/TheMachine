@@ -158,7 +158,7 @@ class Tools(unittest.TestCase):
     def test_reading_tools_the_chat_and_a_confirmed_send(self):
         names = [tool['name'] for tool in t.TOOLS]
         self.assertEqual(names, ['todo_details', 'find_todos', 'ask_chat', 'create_todo', 'todo_action', 'undo_last_action', 'read_draft', 'ask_to_send', 'send_answer',
-                                 'undo_send', 'report_bug', 'end_talk'])
+                                 'send_status', 'undo_send', 'report_bug', 'end_talk'])
         self.assertIn('never sends', [tool for tool in t.TOOLS if tool['name'] == 'ask_chat'][0]['description'])
         self.assertIn('a clear yes to your confirm question', t.ASK_NOTE)
 
@@ -218,7 +218,8 @@ class Tools(unittest.TestCase):
         self.assertIn('Speak Dutch', text)
         self.assertIn('call ask_to_send. If it says the owner has seen or heard this draft, only ask its question; otherwise '
                       'read the draft out in full first.', text)
-        self.assertIn('never say something was sent unless send_answer says so', text)
+        self.assertIn('call send_answer right away, without saying anything first', text)
+        self.assertIn('never say something was sent unless a tool says so', text)
         self.assertIn('Never read the same draft twice.', text)
         self.assertIn('call read_draft and read out what it gives you, word for word', text)
         self.assertIn('ask the question again in a few words, without reading the draft again', text)
@@ -414,10 +415,10 @@ class Api(unittest.TestCase):
         self.assertEqual([x['name'] for x in started['tools']],
                          ['list_todos', 'open_todo', 'todo_details', 'find_todos', 'search', 'open_record', 'calendar', 'machine_status',
                           'ask_chat', 'create_todo', 'do_it', 'todo_action', 'undo_last_action', 'ask_machine', 'read_draft',
-                          'ask_to_send', 'ask_to_send_all', 'send_answer', 'undo_send', 'report_bug', 'end_talk'])
+                          'ask_to_send', 'ask_to_send_all', 'send_answer', 'send_status', 'undo_send', 'report_bug', 'end_talk'])
         action = [x for x in started['tools'] if x['name'] == 'todo_action'][0]['parameters']['properties']['action']['enum']
         self.assertFalse([x for x in action if 'send' in x or 'approve' in x])   # a to-do's buttons, never a send
-        for words in ('Start with list_todos', 'One to-do at a time', 'never say something was sent unless send_answer says so',
+        for words in ('Start with list_todos', 'One to-do at a time', 'never say something was sent unless a tool says so',
                       'call ask_to_send. If it says the owner has seen or heard this draft', 'never poll', 'contractions'):
             self.assertIn(words, started['instructions'])
         self.assertIn('{title}', started['notes']['new'])
@@ -612,6 +613,62 @@ class Api(unittest.TestCase):
         talk.clock.now += t.MAIN_LIMIT_SECONDS
         with self.assertRaisesRegex(ValueError, 'ended'):
             talk.get(main)
+
+    def test_the_voice_and_the_undo_bar_count_the_same_seconds(self):
+        # Jeroen, live: the voice said "in ten seconds" while the bar counted "in 5 s". Both come from the outbox's own
+        # hold now (the job's retry_at): the seconds left when the yes went through, in the say and for the bar.
+        talk_id, _ = self.asked('Yes.')
+        sent = self.act('talk_send', {'id': talk_id})
+        with self.store.connect() as db:
+            held = db.execute('SELECT retry_at FROM action_jobs').fetchone()[0]
+        left = (dt.datetime.fromisoformat(held) - dt.datetime.fromisoformat(a.now())).total_seconds()
+        self.assertLessEqual(abs(sent['undo_ms'] / 1000 - left), 1.5)
+        self.assertLessEqual(sent['undo_ms'], t.UNDO_SECONDS * 1000)
+        self.assertIn('Say only: "Sending in %d seconds. Say undo to stop it."' % sent['undo_seconds'], sent['say'])
+        self.assertIn('not sent yet', sent['say'])
+
+    def test_is_it_sent_comes_from_the_outbox_never_a_guess(self):
+        # Jeroen, live: "Is it sent?" got "I can't confirm it's sent yet", then "Probably, yes... I can't say for sure
+        # from here". send_status reads the outbox row: waiting with the seconds left, going out, sent at a time, or not.
+        talk_id, _ = self.asked('Yes.')
+        tool = lambda **args: self.act('talk_tool', {'id': talk_id, 'name': 'send_status', 'args': args})['output']
+        self.assertEqual(tool()['state'], 'none')    # asked, not yet answered: nothing sent from this to-do
+        approval = self.act('talk_send', {'id': talk_id})['approval_id']
+        waiting = tool()
+        self.assertEqual(waiting['state'], 'waiting')
+        self.assertTrue(0 < waiting['seconds_left'] <= t.UNDO_SECONDS)
+        self.assertIn('Not sent yet: it goes out to Dana in %d seconds' % waiting['seconds_left'], waiting['say'])
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET retry_at='2000-01-01T00:00:00+00:00'")
+        self.assertEqual(tool()['state'], 'sending')
+        self.assertIn('hasn’t confirmed it yet', tool()['say'])
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET status='sent',updated_at='2026-10-31T11:42:00+00:00'")
+        with patch.object(a, 'local_tz', return_value=dt.timezone(dt.timedelta(hours=1))):
+            sent = tool(approval_id=approval)
+        self.assertEqual((sent['state'], sent['time'], sent['to']), ('sent', '12:42', 'Dana'))
+        self.assertEqual(sent['say'], 'Sent to Dana at 12:42. Say exactly that.')
+        self.assertEqual(tool(approval_id='voice:other')['state'], 'none')
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET status='failed',error='The mailbox refused it.'")
+        failed = tool()
+        self.assertEqual((failed['state'], failed['why']), ('failed', 'The mailbox refused it.'))
+        self.assertIn('It didn’t go out to Dana: The mailbox refused it.', failed['say'])
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET status='uncertain'")
+        self.assertIn('without guessing', tool()['say'])
+        # The voice is told to use it, and the page's notes say "Sent." once the outbox confirms it
+        for text in (t.instructions('Reply to Dana', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
+            self.assertIn('call send_status and say what it returns', text)
+            self.assertIn('Never guess ("probably", "I can’t say from here")', text)
+        notes = self.act('talk_start', {'main': True})['notes']
+        self.assertTrue(notes['sent'].endswith('Say only: "Sent."'))
+        self.assertIn('{why}', notes['not_sent'])
+
+    def test_talk_says_results_plainly_without_narration(self):
+        # Jeroen, live: "Got it, thanks for confirming. Let me finish that step now." before the send went through
+        for text in (t.instructions('Reply to Dana', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
+            self.assertIn('never "thanks for confirming", "let me finish that step"', text)
 
     def test_undo_is_too_late_once_the_wait_is_over(self):
         talk_id, _ = self.asked('Yes.')

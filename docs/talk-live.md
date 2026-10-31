@@ -73,7 +73,7 @@ At most one conversation per to-do and two in all. A session's secret is forgott
   browser sends the chat's new reply to the session as a system message (`talk_live.DONE_NOTE`, or `STOPPED_NOTE`)
   with `response.create`, so the voice says the answer at once. The voice says one short line while waiting and never
   polls. If the voice is speaking, the note waits for `response.done`.
-- `read_draft`, `ask_to_send`, `ask_to_send_all`, `send_answer` and `undo_send`: sending by voice, below. `do_it`,
+- `read_draft`, `ask_to_send`, `ask_to_send_all`, `send_answer`, `send_status` and `undo_send`: sending by voice, below. `do_it`,
   `undo_last_action` and `report_bug`: What Talk does itself, below.
 - A doc write (`doc_write`, a new doc or an edit) counts as a
   draft here: the voice reads the whole change (`doc_writes.spoken`, every change before and after) and asks "Save these
@@ -100,10 +100,10 @@ conversation that isn't tied to a to-do (`talk_start` with `main: true`, session
   yes can only send the draft the voice read out. All the rules in [Sending by voice](#sending-by-voice) hold as they are.
 - Talk's view (`#talk-view`, hash `#talk`): Talk opens its own page with one transcript for the whole conversation
   (kept in the page, `talkLog`), a small mark when it moves to another to-do, and a card on top with the to-do it's
-  about (**Talking about**, its title, its current draft and **Open the chat**). The card stays in sight while the
-  transcript scrolls. The draft shows whole, as a block that scrolls inside the card (up to `clamp(9.5em, 36dvh, 26em)`:
-  a normal email reads on a phone with room left for the transcript); a line clamp there laid later lines over earlier
-  ones. `open_todo` changes the card, never the page, so the owner isn't moved from chat to chat. The
+  about (**Talking about**, its title, its current draft and **Open the chat**). The card sits above the transcript
+  and scrolls with the page, so it never covers a line (as a sticky card it hid the latest lines on a phone). The draft
+  shows whole, from its first line; a line clamp there laid later lines over earlier ones. Once a send by voice went
+  out, the card shows **Sent to Sam · 11:42** instead of the draft. `open_todo` changes the card, never the page, so the owner isn't moved from chat to chat. The
   draft in the card, when it shows, is the one `ask_to_send` asks about, as in a chat (`.chat-draft.current`, its
   revision). `ask_chat`
   follows the chat in the background (`talkFollow`, `card_chat`) when it isn't open. After **End** the view keeps the
@@ -270,11 +270,18 @@ phone in a pocket, another page, or Talk's view without the card.
    (`talkEager`), so a lone "yes" ends the turn at once.
 4. **The send.** A yes for the pinned draft, unchanged, goes through `confirm_action` with source `voice` and its own
    approval `voice:<id>`, held `UNDO_SECONDS` (10) through the job's `retry_at`, so pacing and the outbox's checks
-   apply as for a tap. Talk's bar says who it goes to, **Sending to Sam in 10 s** (a batch: **Sending 3 emails in
-   10 s**) with **Undo**, then **Sent to Sam** (or **Canceled. It won’t be
-   sent.**); the chat shows **Approved by voice** with **Undo**. Both use `talk_undo` (`Store.undo_voice_send`). Saying
+   apply as for a tap. `talk_send` returns the seconds really left on that hold (`undo_ms`, from `retry_at`): the voice
+   says that number ("Sending in 10 seconds. Say undo to stop it.") and the bar counts down from it, so they agree.
+   Talk's bar says who it goes to, **Sending to Sam in 10 s** (a batch: **Sending 3 emails in 10 s**; "10 s" never
+   wraps) with **Undo**. After the window it shows **Sending…** and follows the outbox (`talkSentWatch`, `send_status`)
+   until the job settles: then **Sent to Sam · 11:42** on the bar and on Talk's card, and the voice is told once
+   (`talk_live.SENT_NOTE`: it says only "Sent."), or **Didn’t go out.** and the voice says why (`NOT_SENT_NOTE`). Undo
+   gives **Canceled. It won’t be sent.**; the chat shows **Approved by voice** with **Undo**. Both use `talk_undo` (`Store.undo_voice_send`). Saying
    "undo", "stop", "wait" or "don't send" calls `undo_send`, which cancels every send of that yes. A changed draft is
    refused (`changed`) and read out again; one never shown or read is refused too (`not_read`).
+5. **Is it sent?** `send_status` (both Talks; the main one takes a to-do `id`) reads the to-do's latest outbox job
+   (`Assistant.talk_send_status`): waiting (seconds left to undo), sending, sent (with the local time), failed,
+   blocked, canceled, unsure, or none. The voice says what it returns and never guesses.
 
 **Seen on screen** (`draftSeenTick` in `dashboard/todos-chat.js`): a draft on its to-do, in its chat or on Talk's card
 that showed in full for 1.5 s (top and end on screen, not cut short by Show more, its own scroll box scrolled to the end)

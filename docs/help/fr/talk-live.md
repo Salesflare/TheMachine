@@ -41,7 +41,8 @@ Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisan
 - Si votre réponse n’est pas un oui clair, rien ne part et elle redemande. « Non » n’envoie rien.
 - Un brouillon déjà vu à l’écran, ou entendu dans cette conversation, n’est pas relu : elle demande seulement, par exemple « L’envoyer à Nick ? ».
 - Dites « envoie les deux » ou « envoie tous ceux qui sont prêts », et elle nomme tout le monde en une question. Un oui les envoie chacun.
-- Parler affiche **Annuler** avec le destinataire et un compte à rebours pendant quelques secondes avant l’envoi, puis **Envoyé à** cette personne. Touchez-le, ou dites « annule » ou « attends ».
+- Parler dit combien de secondes il vous reste et affiche **Annuler** avec le même compte à rebours. Touchez-le, ou dites « annule » ou « attends ».
+- Une fois envoyé par la Machine, Parler dit « Envoyé. » et la barre et la tâche affichent **Envoyé à** cette personne avec l’heure. Si l’envoi a échoué, Parler dit pourquoi. Demandez « c’est parti ? » à tout moment : elle vérifie, elle ne devine jamais.
 
 Vous pouvez toujours appuyer sur **Approuver** à la place.
 
