@@ -3,7 +3,7 @@ title: Chat de la tarea
 area: cards
 summary: Pregunta sobre una tarea o cambia su borrador, en un chat propio de esa tarea.
 covers: card-chat
-code: dashboard.html, assistant.py, chat_files.py
+code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
 ---
 ## Ábrelo
@@ -22,6 +22,12 @@ Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita quedan plega
 Una pregunta recibe una respuesta y deja el borrador como está. Las aprobaciones siguen en los botones de la tarea: el chat nunca envía un borrador en la misma respuesta que lo escribió.
 
 En un ordenador, Enter o Ctrl+Enter (Cmd+Enter en un Mac) envía, y Mayús+Enter empieza una línea nueva. En un teléfono, usa el botón de enviar.
+
+## Cuando algo está mal
+
+Dilo en el chat, por ejemplo «No es la CEO» o «Ya no trabaja en la empresa». The Machine lo corrige donde se originó: un rol, una empresa, un cargo, la etapa de un proyecto, el proyecto de la tarea o una regla aprendida. El chat muestra entonces qué cambió, por ejemplo **Corregido: El rol de Ana es Head of Sales, según su firma de correo**, con **Deshacer**. Deshacer devuelve lo que había, salvo que haya cambiado desde entonces.
+
+En una página de GBrain solo cambia la sección propia de The Machine; lo que escribiste ahí sigue siendo tuyo. Si no encuentra de dónde vino algo, aprende de tu nota como antes.
 
 ## Modelo y razonamiento
 

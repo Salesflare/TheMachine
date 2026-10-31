@@ -67,7 +67,9 @@ def signals(db, since):
     decided = _rows(db, "SELECT d.created_at at,d.choice,d.feedback note,s.title,(SELECT kind FROM note_kinds k WHERE k.decision_id=d.id) note_kind "
                         "FROM decisions d JOIN suggestions s ON s.id=d.suggestion_id WHERE d.created_at>? AND d.source IN ('telegram','dashboard') "
                         "AND (d.choice IN ('reject','snooze','not_done') OR (d.choice='other' AND d.feedback!='')) "
-                        "AND d.id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY d.created_at DESC LIMIT ?", (since, MAX_SIGNALS))
+                        "AND d.id NOT IN (SELECT decision_id FROM decision_annotations) "
+                        "AND 'fix:'||d.id NOT IN (SELECT run_id FROM learning_changes WHERE kind='source' AND status='applied') "  # fixed at the source already
+                        "ORDER BY d.created_at DESC LIMIT ?", (since, MAX_SIGNALS))
     out = [{'what': 'answered it themselves' if e['source'] == 'elsewhere' else 'edited a draft', 'at': e['at'], 'channel': e['channel'],
             'to_do': clip(e['title'], 100), 'draft': clip(e['before']), 'theirs': clip(e['after'])} for e in edits]
     words = {'reject': 'dismissed', 'snooze': 'snoozed', 'other': 'corrected in chat', 'not_done': 'said it was not done after it looked done'}
@@ -140,8 +142,23 @@ def save_draft(db, run_id, profile):
 
 
 def _record(db, run_id, kind, target, before, after, why):
-    db.execute("INSERT INTO learning_changes(run_id,at,kind,target,before,after,why,status) VALUES(?,?,?,?,?,?,?,'applied')",
-               (run_id, now(), kind, str(target), before, after, why))
+    return db.execute("INSERT INTO learning_changes(run_id,at,kind,target,before,after,why,status) VALUES(?,?,?,?,?,?,?,'applied')",
+                      (run_id, now(), kind, str(target), before, after, why)).lastrowid
+
+
+def record(db, run_id, kind, target, before, after, why):
+    """Keep one applied change from elsewhere (a fix at the source, corrections.py) under Recent changes, with Undo."""
+    return _record(db, run_id, kind, target, before, after, why)
+
+
+def set_fact(db, fact_id, text, removed_at, ref):
+    """A learned fact or rule as the owner says it is (corrections.py, and its undo): its text, and removed or not. A
+    draft rule's change is logged like the loop's own."""
+    row = db.execute('SELECT kind,text FROM facts WHERE id=?', (int(fact_id),)).fetchone()
+    db.execute('UPDATE facts SET text=?,removed_at=? WHERE id=?', (text, removed_at, int(fact_id)))
+    if row and row['kind'] == 'draft':
+        said = 'Removed draft rule: ' + row['text'] if removed_at else 'Fixed draft rule: ' + text
+        db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), said, ref))
 
 
 def apply(db, run_id, voice_check):
@@ -196,7 +213,11 @@ def undo(db, change_id):
     if not row:
         raise ValueError('That change is already undone')
     before = json.loads(row['before']) if row['before'] else None
-    if row['kind'] == 'voice':
+    done = {'undone': change_id}
+    if row['kind'] == 'source':  # a fix where the wrong thing came from (corrections.py)
+        import corrections
+        done.update(corrections.undo(db, row))
+    elif row['kind'] == 'voice':
         current = db.execute('SELECT text,ref FROM voices WHERE channel=?', (row['target'],)).fetchone()
         if current and (current['text'] != row['after'] or current['ref'] != 'tune:' + row['run_id']):
             raise ValueError(f"The {row['target']} voice changed since. Edit it in Settings instead")
@@ -217,7 +238,7 @@ def undo(db, change_id):
         if row['kind'] == 'draft':
             db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Undid draft rule: ' + row['after'], row['target']))
     db.execute("UPDATE learning_changes SET status='undone',undone_at=? WHERE id=?", (now(), change_id))
-    return {'undone': change_id}
+    return done
 
 
 def recent(db, limit=RECENT):
@@ -227,5 +248,6 @@ def recent(db, limit=RECENT):
     for r in db.execute('SELECT * FROM learning_changes ORDER BY at DESC,id DESC LIMIT ?', (limit,)):
         before = json.loads(r['before']) if r['before'] else None
         out.append({'id': r['id'], 'at': r['at'], 'kind': r['kind'], 'channel': r['target'] if r['kind'] == 'voice' else None,
-                    'text': r['after'], 'before': (before or {}).get('text'), 'why': r['why'], 'undone': r['status'] == 'undone'})
+                    'text': r['after'], 'before': (before or {}).get('text'), 'why': r['why'], 'undone': r['status'] == 'undone',
+                    **({'line': json.loads(r['target']).get('line')} if r['kind'] == 'source' else {})})
     return out

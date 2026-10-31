@@ -3,7 +3,7 @@ title: Chat dell'attività
 area: cards
 summary: Fai domande su un'attività o cambia la sua bozza, in una chat che appartiene a quell'attività.
 covers: card-chat
-code: dashboard.html, assistant.py, chat_files.py
+code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
 ---
 ## Aprila
@@ -22,6 +22,12 @@ Ogni email mostra solo ciò che contiene di nuovo. I messaggi precedenti che cit
 Una domanda riceve una risposta e lascia la bozza com'è. Le approvazioni restano sui pulsanti dell'attività: la chat non invia mai una bozza nella stessa risposta che l'ha scritta.
 
 Su un computer, Invio o Ctrl+Invio (Cmd+Invio su Mac) invia e Maiusc+Invio va a capo. Su un telefono, usa il pulsante di invio.
+
+## Quando qualcosa è sbagliato
+
+Dillo nella chat, per esempio "Non è la CEO" o "Ha lasciato l'azienda". The Machine lo corregge dove è nato: un ruolo, un'azienda, una qualifica, la fase di un progetto, il progetto del to-do o una regola imparata. La chat mostra poi cosa è cambiato, per esempio **Corretto: Il ruolo di Ana è Head of Sales, da una sua firma email**, con **Annulla**. Annulla rimette ciò che c'era, a meno che non sia cambiato nel frattempo.
+
+Su una pagina GBrain cambia solo la sezione di The Machine; ciò che hai scritto tu resta tuo. Se non trova da dove viene qualcosa, impara dalla tua nota come prima.
 
 ## Modello e ragionamento
 

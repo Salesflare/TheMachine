@@ -114,7 +114,12 @@ const chatUndoVoice=(s,i)=>{clearTimeout(chatUndoTimer);chatUndoTimer=setTimeout
 const chatEventText=i=>String(i.mine&&CHAT_TAPS[i.text]||i.text||'').replace(/^You\s+(\S)/,(m,c)=>c.toUpperCase());
 const chatVia=v=>CHAT_VIA[v]||(v&&v!=='signal'?v[0].toUpperCase()+v.slice(1):'');
 // Whose side an item is on: the owner's messages and taps on the right, the Machine and the people it is about on the left.
-const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'?'mid':'them';
+const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'?'mid':'them';
+// A wrong thing fixed where it came from (corrections.py): what is right now and where the wrong one came from, in the
+// owner's words, with Undo while it holds; an undone one stays, marked.
+function chatFixed(i){const sep='<span class="learned-sep" aria-hidden="true">·</span>',what=Array.isArray(i.line)?window.t(...i.line):String(i.text||''),
+ line=i.from?window.t('Fixed: {}, from {}',what,i.from):window.t('Fixed: {}',what);
+ return `<div class="chat-event chat-learned chat-fixed${i.undone?' gone':''}"><span class="learned-acts"><span>${esc(line)}</span><span class="fixed-act">${sep}${i.undone?`<span>${esc(window.t('Undone'))}</span>`:`<button type="button" class="link" data-fixed-undo="${i.id}" aria-label="${esc(window.t('Undo: {}',line))}">${esc(window.t('Undo'))}</button>`}</span></span></div>`}
 // What a note on this card taught (from what was stored, never from what a reply says): a quiet line that opens it on
 // What I've learned, with Edit and Undo while it is there (a channel's voice has its own 'Saved to How you write' line).
 function chatLearned(i){const sep='<span class="learned-sep" aria-hidden="true">·</span>',q=i.text?`<q>${esc(i.text)}</q>`:'';
@@ -191,7 +196,8 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    push(i,`<div class="chat-event${i.mine?' mine':''}${i.retry_handoff?' failed':''}">${c>1?chatFold(k+':'+i.times[0],'',line+tm(i.at),`<ol>${i.times.map(t=>`<li>${esc(chatDayOf(t))} ${chatHM(t)}</li>`).join('')}</ol>`):line+(i.handoff?`<span class="chat-when"> · ${chatHM(i.at)}</span>`:tm(i.at))+retry}</div>`);
    if(i.handoff&&n===lastMachine&&s&&withTeammate(s))push({kind:'event',mine:i.mine},`<div class="chat-event chat-handoff-wait">${esc(window.t('No answer from {} yet',String(s.fleet_handoff.name||window.t('your teammate')).split(' ')[0]))}</div>`);
    if(i.handoff&&n===lastMachine&&options(n,false))push({kind:'event',mine:false},`<div class="chat-msg machine chat-handoff-options">${options(n,false)}</div>`)}
-  else if(i.kind==='learned')push(i,chatLearned(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
+  else if(i.kind==='learned')push(i,chatLearned(i));
+  else if(i.kind==='fixed')push(i,chatFixed(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
   else if(i.kind==='you'){const to=i.to||'',show=to&&to!==lastTo;lastTo=to;
    const att=chatAttHTML(i.files);
    push(i,`<div class="chat-msg you">${show?`<div class="chat-to">to ${esc(to)}</div>`:''}${att}${i.text?`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}
@@ -1063,6 +1069,7 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  if(e.target.closest('.chat-menu-list button'))setTimeout(()=>$('#chat-menu')?.removeAttribute('open'));
  const scope=e.target.closest('.chat-side [data-scope]');if(scope){e.stopPropagation();scopeSet(scope.dataset.scope);return}
  const lg=e.target.closest('[data-learned-go],[data-learned-edit]');if(lg){e.stopPropagation();const v=lg.dataset.learnedGo;lg.dataset.learnedEdit?learnedShow(Number(lg.dataset.learnedEdit),'fact',true):learnedShow(Number(v)||null,lg.dataset.what);return}
+ const fu=e.target.closest('[data-fixed-undo]');if(fu){e.stopPropagation();fu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'learning_undo',args:{id:Number(fu.dataset.fixedUndo)}})});toast(window.t('Undone.'));if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);fu.disabled=false;toast(err.message,true)}return}
  const lu=e.target.closest('[data-learned-undo]');if(lu){e.stopPropagation();lu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'forget_fact',args:{id:Number(lu.dataset.learnedUndo)}})});toast('Removed from what I’ve learned.');if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);lu.disabled=false;toast(err.message,true)}return}
  const un=e.target.closest('[data-unclamp]');if(un){e.stopPropagation();const k=un.dataset.unclamp;chatOpenSet.has(k)?chatOpenSet.delete(k):chatOpenSet.add(k);paintChat();return}
  const b=e.target.closest('button');const input=$('#chat-input');

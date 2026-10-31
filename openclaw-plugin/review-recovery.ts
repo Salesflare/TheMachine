@@ -142,7 +142,7 @@ function protectedOutput(stage: string[], cwd: string) {
 
 export function preparationReadOnly(event: any) {
   const name=plainToolName(event.toolName);
-  if (REVIEW_TOOLS.has(name)) return name!=='assistant_signals' || ['status','events','preparation_history'].includes(event.params?.action);
+  if (REVIEW_TOOLS.has(name)) return name!=='assistant_signals' || ['status','events','preparation_history','correction_sources'].includes(event.params?.action);
   return name==='web_search' || name==='web_fetch';
 }
 

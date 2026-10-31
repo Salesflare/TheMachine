@@ -14,8 +14,8 @@ const dashboard=await dashboardPage();
 const now=new Date().toISOString(),t0=Date.now()-60000;
 const card={id:'d1d1d1d1d1d1d1d1',title:'NDA signed, awaiting Sam',body:'Signed it; the confirmation page said it went through.',status:'prepared',scope:'work',created_at:now,event_ids:[1]};
 const rule='Browser tasks: after signing, submitting, paying or booking something, leave the confirmation page open in its tab so the owner can check it; do not close that tab.';
-let facts,removed;
-const reset=()=>{removed=new Set();facts=[{id:31,kind:'draft',text:rule,created_at:now,merged:0},
+let facts,removed,fixedUndone;
+const reset=()=>{removed=new Set();fixedUndone=false;facts=[{id:31,kind:'draft',text:rule,created_at:now,merged:0},
  ...[1,2,3,4,5,6].map(n=>({id:n,kind:'draft',text:`Older rule number ${n} about some other kind of task.`,created_at:new Date(Date.parse(now)-n*86400000).toISOString(),merged:0})),
  {id:7,kind:'fact',text:'The team meets on Mondays.',created_at:now,merged:0}]};
 const items=()=>[
@@ -23,7 +23,9 @@ const items=()=>[
  {kind:'you',text:'I hope it went well - next time keep it open in the browser for me',at:t0},
  {kind:'steps',steps:['Checking the page'],at:t0+1000},
  {kind:'reply',text:'Yes, it went through: the confirmation page said so.',at:t0+2000},
- {kind:'learned',what:'draft',id:31,text:rule,state:removed.has(31)?'removed':'saved',at:t0+2000}];
+ {kind:'learned',what:'draft',id:31,text:rule,state:removed.has(31)?'removed':'saved',at:t0+2000},
+ // A wrong thing fixed where it came from (corrections.py): what is right now, and where the wrong one came from.
+ {kind:'fixed',id:9,line:['{}’s role is {}','Sam Lee','Head of Sales'],from:'an old email signature',undone:fixedUndone,at:t0+2000}];
 const posts=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  const asset={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'}[url.pathname];
@@ -34,6 +36,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body);posts.push({action,args});
   if(action==='card_chat'){res.end(JSON.stringify({session:true,status:'ok',active:false,cursor:'k'+removed.size,items:items()}));return}
   if(action==='forget_fact'){removed.add(args.id);res.end(JSON.stringify({removed:true}));return}
+  if(action==='learning_undo'){fixedUndone=true;res.end(JSON.stringify({undone:true}));return}
   res.end('{}');return}
  res.statusCode=404;res.end('{}');
 });
@@ -61,7 +64,18 @@ try{
   await line.hover();
   assert.ok(await page.evaluate(()=>document.scrollingElement.scrollWidth<=document.scrollingElement.clientWidth),'no horizontal scroll at '+width);
   assert.ok(await log.evaluate(e=>e.scrollWidth<=e.clientWidth),'chat log does not overflow sideways at '+width);
+  const fixed=log.locator('.chat-fixed');
+  assert.equal((await fixed.innerText()).replace(/\s*·\s*/g,' · ').replace(/\s+/g,' ').trim(),'Fixed: Sam Lee’s role is Head of Sales, from an old email signature · Undo');
   if(shots){await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${shots}/chat-learned-${width}-${scheme}.png`})}
+  if(scheme==='light'){
+   // Undo puts back what was there (learning_undo, the owner's own); the line stays, marked Undone, with no button.
+   await fixed.locator('[data-fixed-undo="9"]').click();
+   await log.locator('.chat-fixed.gone').waitFor();
+   assert.deepEqual(posts.filter(p=>p.action==='learning_undo').at(-1),{action:'learning_undo',args:{id:9}});
+   assert.match(await log.locator('.chat-fixed.gone').innerText(),/Undone$/);
+   assert.equal(await log.locator('.chat-fixed.gone button').count(),0);
+   if(shots)await log.locator('.chat-fixed.gone').screenshot({path:`${shots}/chat-fixed-${width}-undone.png`});
+  }
   if(scheme==='dark'){
    // Undo removes it; the line then says so, with no buttons.
    await line.locator('[data-learned-undo="31"]').click();
