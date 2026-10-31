@@ -65,6 +65,7 @@ CA = 'https://acme-v02.api.letsencrypt.org/directory'  # the only CA: no account
 RENEW_DAYS = 30
 RETRY_FIRST, RETRY_MAX = 600, 86400                # seconds before another certificate try: doubles per failure
 RETRY_AFTER_MAX = 7 * 86400                        # the longest Retry-After from the CA that is honored
+CHUNK_LINE_MAX = 1024                              # bytes of one chunk-size line (with its extensions)
 KEY_FILE, CERT_FILE, ACCOUNT_FILE = 'mcp-tls-key.pem', 'mcp-tls-cert.pem', 'acme-accounts.json'
 
 
@@ -464,9 +465,85 @@ def allowed(method, path):
     return (method == 'GET' and path in ai_access.PUBLIC_GET) or (method == 'POST' and path in ai_access.PUBLIC_POST)
 
 
+class BadRequest(ValueError):
+    """A request body this server refuses: status is the answer (400, 413, 501), then the connection closes."""
+
+    def __init__(self, status):
+        super().__init__(status)
+        self.status = status
+
+
+def _more(stream, buffer):
+    data = stream.recv()
+    if not data:
+        raise EOFError
+    return buffer + data
+
+
+def read_line(stream, buffer, limit):
+    """(line without CRLF, rest). BadRequest(400) past limit bytes without one."""
+    while b'\r\n' not in buffer:
+        if len(buffer) > limit:
+            raise BadRequest(400)
+        buffer = _more(stream, buffer)
+    line, rest = buffer.split(b'\r\n', 1)
+    if len(line) > limit:
+        raise BadRequest(400)
+    return line, rest
+
+
+def read_chunked(stream, buffer, cap):
+    """(body, rest) for a chunked body (RFC 9112 7.1): hex sizes, extensions ignored, trailers read and dropped. Over
+    cap is 413 as soon as a chunk size says so, before its data is read; anything malformed is 400."""
+    body = b''
+    while True:
+        line, buffer = read_line(stream, buffer, CHUNK_LINE_MAX)
+        size = line.split(b';', 1)[0].strip(b' \t')
+        if not re.fullmatch(rb'[0-9A-Fa-f]{1,16}', size):
+            raise BadRequest(400)
+        size = int(size, 16)
+        if size == 0:
+            break
+        if len(body) + size > cap:
+            raise BadRequest(413)
+        while len(buffer) < size + 2:
+            buffer = _more(stream, buffer)
+        if buffer[size:size + 2] != b'\r\n':
+            raise BadRequest(400)
+        body, buffer = body + buffer[:size], buffer[size + 2:]
+    taken = 0
+    while True:  # trailers, up to the empty line: read and dropped
+        line, buffer = read_line(stream, buffer, HEAD_MAX)
+        taken += len(line) + 2
+        if taken > HEAD_MAX:
+            raise BadRequest(400)
+        if not line:
+            return body, buffer
+
+
+def read_body(stream, buffer, headers, cap):
+    """(body, rest) by Content-Length or chunked. Both at once is 400 (request smuggling), another coding 501."""
+    codings = [c.strip().lower() for v in headers.get_all('Transfer-Encoding') or [] for c in v.split(',')]
+    lengths = headers.get_all('Content-Length') or []
+    if codings and lengths:
+        raise BadRequest(400)
+    if codings:
+        if codings != ['chunked']:
+            raise BadRequest(501)
+        return read_chunked(stream, buffer, cap)
+    if len(lengths) > 1 or (lengths and not re.fullmatch(r'[0-9]{1,12}', lengths[0].strip())):
+        raise BadRequest(400)
+    length = int(lengths[0]) if lengths else 0
+    if length > cap:
+        raise BadRequest(413)
+    while len(buffer) < length:
+        buffer = _more(stream, buffer)
+    return buffer[:length], buffer[length:]
+
+
 def serve_http(stream, handle):
-    """HTTP/1.1 on the TLS stream, keep-alive, Content-Length bodies only. handle(method, path, headers, body) gives
-    (status, headers, bytes) for the public paths; anything else is 404 here, before it reaches the App."""
+    """HTTP/1.1 on the TLS stream, keep-alive, Content-Length or chunked bodies. handle(method, path, headers, body)
+    gives (status, headers, bytes) for the public paths; anything else is 404 here, before it reaches the App."""
     buffer = b''
     for _ in range(REQUESTS):
         head, buffer = read_head(stream, buffer)
@@ -479,20 +556,12 @@ def serve_http(stream, handle):
         method, target = parts[0], parts[1]
         headers = http.client.parse_headers(io.BytesIO(rest + b'\r\n\r\n'))
         close = (headers.get('Connection') or '').lower() == 'close' or parts[2] == 'HTTP/1.0'
-        if headers.get('Transfer-Encoding'):
-            return answer(stream, 411, {}, b'', True)
         try:
-            length = int(headers.get('Content-Length') or 0)
-        except ValueError:
-            return answer(stream, 400, {}, b'', True)
-        if not 0 <= length <= ai_access.BODY_MAX:
-            return answer(stream, 413, {}, b'', True)
-        while len(buffer) < length:
-            data = stream.recv()
-            if not data:
-                return
-            buffer += data
-        body, buffer = buffer[:length], buffer[length:]
+            body, buffer = read_body(stream, buffer, headers, ai_access.BODY_MAX)
+        except BadRequest as error:
+            return answer(stream, error.status, {}, b'', True)
+        except EOFError:
+            return
         path = urllib.parse.urlsplit(target).path
         if not allowed(method, path):
             answer(stream, 404, {'Content-Type': 'application/json'}, b'{"error":"Not found"}', close)
