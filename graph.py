@@ -2359,11 +2359,14 @@ def open_between(db, node_id, limit=6, skip_card=None):
                 f"SELECT id,title,status,due FROM suggestions WHERE status IN ({marks}) AND id IS NOT ? AND id IN ({','.join('?' * len(mine)) or 'NULL'}) "
                 "ORDER BY coalesce(due,created_at)", (*OPEN_CARD, skip_card, *mine)) if r['id'] not in have][:max(0, limit - len(out['cards']))]
         marks = ','.join('?' for _ in ids)
-        out['known'] = [{'id': r['id'], 'text': r['text']} for r in db.execute(
-            f"SELECT f.id,f.text FROM facts f WHERE f.removed_at IS NULL AND f.kind='fact' "
+        today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+        out['known'] = [{'id': r['id'], 'text': r['text'], **({'fact_kind': r['fact_kind']} if r['fact_kind'] else {}),
+                         **({'valid_until': r['valid_until']} if r['valid_until'] else {})} for r in db.execute(
+            f"SELECT f.id,f.text,f.fact_kind,f.valid_until FROM facts f WHERE f.removed_at IS NULL AND f.kind='fact' "
+            "AND (f.valid_until IS NULL OR f.valid_until>=?) "
             f"AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN ({marks})) "
             f"AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN ({marks})) "
-            "ORDER BY f.created_at DESC LIMIT ?", (*ids, *ids, limit))]
+            "ORDER BY f.created_at DESC LIMIT ?", (today, *ids, *ids, limit))]
     except sqlite3.OperationalError:
         pass  # a bare graph without the assistant's tables
     out['you_promised'], out['they_promised'] = out['you_promised'][:limit], out['they_promised'][:limit]

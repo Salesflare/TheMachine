@@ -3417,6 +3417,15 @@ FORWARD_SUBJECT = re.compile(r'(?i)^\s*(?:fwd?|tr|wg|doorst)\s*:')
 QUOTED_HISTORY_KEPT = 3000
 NOTE_KINDS = ('style', 'fact', 'continue', 'new_ask')
 FACT_KINDS = ('fact', 'draft')
+# What sort of fact one is, and how fast it fades (half-life in days, after GBrain's facts/decay.ts): a preparation
+# weighs each by exp(-age / half-life), age from when it was last said. An event left without an end date holds
+# EVENT_DAYS.
+FACT_SORTS = ('event', 'commitment', 'preference', 'fact')
+FACT_HALF_LIFE = {'event': 7, 'commitment': 90, 'preference': 90, 'fact': 365}
+EVENT_DAYS = 30
+FACTS_GENERAL_MAX = 80  # facts about no one in the graph (and draft rules); facts about someone don't count
+FACT_KIND_HINT = ('kind: preference (how the owner or someone likes things), commitment (something someone will do or keep doing), '
+                  'event (something that happens at a time) or fact (anything else); until=YYYY-MM-DD when it stops holding on a known day')
 # Text parts that only tell the reader to open the HTML version.
 PLAIN_PLACEHOLDER = re.compile(r'(?i)plain[- ]text version (?:is )?not available|requires an? html|'
                                r'view (?:this|the) (?:email|message) in (?:a|your) (?:web )?browser|use an html[- ]capable')
@@ -3860,6 +3869,13 @@ class Store:
                 db.execute("ALTER TABLE facts ADD COLUMN kind TEXT NOT NULL DEFAULT 'fact'")
             if 'merged_into' not in {r[1] for r in db.execute('PRAGMA table_info(facts)')}:  # condensed: 'fact:<id>' or 'voice:<channel>'
                 db.execute('ALTER TABLE facts ADD COLUMN merged_into TEXT')
+            # What sort of fact (FACT_SORTS: event, commitment, preference or fact; NULL on a draft rule and on older ones,
+            # read as fact), the day it stops holding (valid_until, YYYY-MM-DD, through that day) and when it was last said
+            # again (confirmed_at: its decay starts over). Past valid_until the condense pass retires it as 'expired:<id>'.
+            have_facts = {r[1] for r in db.execute('PRAGMA table_info(facts)')}
+            for column in ('fact_kind', 'valid_until', 'confirmed_at'):
+                if column not in have_facts:
+                    db.execute('ALTER TABLE facts ADD COLUMN ' + column + ' TEXT')
             # Who a fact is about: a person, organization or project in the graph (its node id), never the owner, who is no node.
             # A fact without one is about the owner or the world and shows on nobody's page. removed_at: the owner said it isn't about them.
             db.execute('CREATE TABLE IF NOT EXISTS fact_about(fact_id INTEGER NOT NULL,node_id TEXT NOT NULL,by TEXT NOT NULL,created_at TEXT NOT NULL,removed_at TEXT,PRIMARY KEY(fact_id,node_id))')
@@ -6712,16 +6728,23 @@ class Store:
             out.append(f"- {e['title']}{subject}\n  Your draft: {clip(e['before'])}\n  {changed}: {clip(e['after'])}")
         return '\n'.join(out)
 
-    def remember_fact(self, text, decision_id, kind='fact', replaces=None, about=None):
+    def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None):
         """Keep a lasting fact from one of the owner's own written notes, so later reviews and preparations use it.
-        With replaces (ids of facts and rules) it condenses: the new one says what those said, the newer winning where
-        they disagree, and they stay behind it as history the owner can restore (unmerge_fact). about: the graph node ids
-        of who the fact is about (fact_about); a condensed fact keeps who its originals were about."""
+        kind: event, commitment, preference or fact (FACT_SORTS, kept as a fact), or draft (a rule); until: the day it
+        stops holding (an event without one holds EVENT_DAYS). With replaces (ids of facts and rules) it condenses: the new
+        one says what those said, the newer winning where they disagree, and they stay behind it as history the owner can
+        restore (unmerge_fact). about: the graph node ids of who the fact is about (fact_about); a condensed fact keeps who
+        its originals were about. Saying a current one again starts its decay over (confirmed_at)."""
         text = ' '.join(str(text or '').split())
         if not 5 <= len(text) <= 240:
             raise ValueError('A fact is one short sentence (5-240 characters)')
-        if kind not in FACT_KINDS:
-            raise ValueError('kind is fact (true about the world), draft (how a kind of task is done) or voice (how the owner writes on one channel, with channel)')
+        kind = kind or 'fact'
+        storage, sort = ('fact', kind) if kind in FACT_SORTS else (kind, None)
+        if storage not in FACT_KINDS:
+            raise ValueError('kind is ' + ', '.join(FACT_SORTS) + ' (true about the world), draft (how a kind of task is done) '
+                             'or voice (how the owner writes on one channel, with channel)')
+        until = fact_until(until) if storage == 'fact' else None
+        explicit = kind != 'fact' or until is not None
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             originals = self.replaced_facts(db, replaces)
@@ -6737,28 +6760,41 @@ class Store:
                 tombstone = next((r for r in removed if ' '.join(r['text'].casefold().split()) == text.casefold()),None)
                 if tombstone:
                     return {'id':tombstone['id'],'suppressed':True}
+            if originals and not explicit:  # a condensed fact keeps the sort and end of what it stands for
+                facts_behind = [o for o in originals if o['kind'] == 'fact']
+                sort = (facts_behind[-1]['fact_kind'] if facts_behind else None) or sort
+                ends = [o['valid_until'] for o in facts_behind]
+                until = max(ends) if facts_behind and all(ends) else None
+            if sort == 'event' and not until:
+                until = (dt.date.fromisoformat(now()[:10]) + dt.timedelta(days=EVENT_DAYS)).isoformat()
             merging = {o['id'] for o in originals}
-            subjects = self.fact_subjects(db, about) if kind == 'fact' else []
-            existing = next((r for r in db.execute('SELECT id FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (kind, text)) if r['id'] not in merging), None)
+            subjects = self.fact_subjects(db, about) if storage == 'fact' else []
+            existing = next((r for r in db.execute('SELECT id FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (storage, text)) if r['id'] not in merging), None)
             if existing and not originals:
                 self.link_fact(db, existing['id'], subjects, 'review')
+                db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), existing['id']))  # said again: its decay starts over
                 return {'id': existing['id'], 'duplicate': True}
-            if not existing and db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL').fetchone()[0] - len(originals) >= 80:
+            general = lambda ids: db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL AND id IN (' + ','.join('?' for _ in ids) + ') '
+                                             'AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL)', sorted(ids)).fetchone()[0] if ids else 0
+            carried = [r[0] for r in db.execute('SELECT DISTINCT node_id FROM fact_about WHERE removed_at IS NULL AND fact_id IN (' +
+                                                ','.join('?' for _ in merging) + ')', sorted(merging))] if merging and storage == 'fact' else []
+            if not existing and not (subjects or carried) and db.execute(
+                    'SELECT count(*) FROM facts WHERE removed_at IS NULL AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL)'
+            ).fetchone()[0] - general(merging) >= FACTS_GENERAL_MAX:
                 raise ValueError('Too many facts; the owner can remove old ones on the dashboard')
             if existing:  # condensed into one that already says it
                 fact_id = existing['id']
             else:
-                fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,?,?,?)', (text, decision_id, note['suggestion_id'], now(), kind)).lastrowid
-                if kind == 'draft':
+                fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,valid_until) VALUES(?,?,?,?,?,?,?)',
+                                     (text, decision_id, note['suggestion_id'], now(), storage, sort, until)).lastrowid
+                if storage == 'draft':
                     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Draft rule: ' + text, str(fact_id)))
-            if kind == 'fact':
-                carried = [r[0] for r in db.execute('SELECT DISTINCT node_id FROM fact_about WHERE removed_at IS NULL AND fact_id IN (' +
-                                                    ','.join('?' for _ in merging) + ')', sorted(merging))] if merging else []
+            if storage == 'fact':
                 self.link_fact(db, fact_id, subjects + carried, 'review')
             if originals:
                 self.merge_originals(db, originals, 'fact:' + str(fact_id), text)
                 return {'id': fact_id, 'merged': len(originals)}
-            return {'id': fact_id, **({'about': subjects} if subjects else {})}
+            return {'id': fact_id, **({'kind': sort} if sort else {}), **({'until': until} if until else {}), **({'about': subjects} if subjects else {})}
 
     @staticmethod
     def fact_subjects(db, about):
@@ -6820,7 +6856,7 @@ class Store:
             ids = sorted({int(i) for i in replaces})
         except (TypeError, ValueError):
             raise ValueError('replaces is a list of fact ids') from None
-        rows = [dict(r) for r in db.execute('SELECT id,text,kind,decision_id,suggestion_id,created_at FROM facts WHERE removed_at IS NULL AND id IN (' +
+        rows = [dict(r) for r in db.execute('SELECT id,text,kind,fact_kind,valid_until,decision_id,suggestion_id,created_at FROM facts WHERE removed_at IS NULL AND id IN (' +
                                              ','.join('?' for _ in ids) + ') ORDER BY created_at,id', ids)]
         if len(rows) != len(ids):
             raise ValueError('replaces names a fact that is not current (removed or merged already)')
@@ -6832,9 +6868,18 @@ class Store:
         db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)",
                    (now(), f'Condensed {len(originals)} note' + ('' if len(originals) == 1 else 's') + ' into: ' + text[:200], into))
 
-    def unmerge_fact(self, fact_id=None, channel=None, skill=None):
+    def unmerge_fact(self, fact_id=None, channel=None, skill=None, expired=None):
         """Undo a condense: the notes behind a merged fact (or a channel's voice, or moved into a skill) come back as they
-        were; a merged fact goes (a skill stays as it is)."""
+        were; a merged fact goes (a skill stays as it is). expired: a fact retired past its end day comes back, without one."""
+        if expired is not None:
+            with self.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                ref = 'expired:' + str(int(expired))
+                if not db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL,valid_until=NULL,confirmed_at=? WHERE id=? AND merged_into=?',
+                                  (now(), int(expired), ref)).rowcount:
+                    raise ValueError('Nothing to bring back.')
+                db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)", (now(), 'Brought back a fact that ended', ref))
+            return {'restored': 1}
         into = 'skill:' + str(skill) if skill else 'voice:' + voice_channel(channel) if channel else 'fact:' + str(int(fact_id))
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -6896,40 +6941,58 @@ class Store:
             if db.execute('SELECT 1 FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?) AND id!=?', (row['kind'], text, int(fact_id))).fetchone():
                 raise ValueError('That is already in what I’ve learned')
             db.execute('UPDATE facts SET text=? WHERE id=?', (text, int(fact_id)))
+            db.execute('DELETE FROM fact_vectors WHERE fact_id=?', (int(fact_id),))  # it means something else now
             if row['kind'] == 'draft':
                 db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Edited draft rule: ' + text, str(fact_id)))
         return {'id': int(fact_id), 'text': text}
 
     def facts(self):
+        """What is learned now: past their end day they are left out (the condense pass retires them)."""
         with self.connect() as db:
-            return [dict(r) for r in db.execute('SELECT id,text,suggestion_id,created_at,kind FROM facts WHERE removed_at IS NULL ORDER BY created_at')]
+            rows = [dict(r) for r in db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until,confirmed_at FROM facts '
+                                                'WHERE removed_at IS NULL ORDER BY created_at')]
+        today = now()[:10]
+        return [f for f in rows if not fact_expired(f, today)]
+
+    @staticmethod
+    def fact_line(f):
+        """A fact for a prompt: its text, when it ends, and when an event was noted."""
+        bits = (['noted ' + str(f.get('confirmed_at') or f['created_at'])[:10]] if f.get('fact_kind') == 'event' else []) + \
+               (['until ' + f['valid_until']] if f.get('valid_until') else [])
+        return '- ' + f['text'] + (f" ({', '.join(bits)})" if bits else '')
 
     def facts_text(self, limit=3000, kind='fact'):
-        text = '\n'.join('- ' + f['text'] for f in self.facts() if f['kind'] == kind)
+        text = '\n'.join(self.fact_line(f) for f in self.facts() if f['kind'] == kind)
         return text if len(text) <= limit else text[:limit] + '\n…'
 
     def facts_for(self, suggestion_id, kind='fact', settings=None, limit=3000, all_under=FACTS_ALL_UNDER, top=FACTS_TOP, floor=FACTS_FLOOR):
         """The facts (or draft rules) a preparation needs, not everything learned: all of them while they are few;
-        else the ones learned on this card plus those closest in meaning to it (embeddings), else the newest."""
+        else the ones learned on this card plus those closest in meaning to it (embeddings), else those that count most.
+        Each counts by its decayed weight (fact_weight): an event fades in weeks, a preference or commitment in months, a
+        fact in a year; one past its end day is gone. Closeness picks (at least floor), the weight orders."""
+        at = now()
         facts = [f for f in self.facts() if f['kind'] == kind]
-        if sum(len(f['text']) + 3 for f in facts) <= all_under:
+        if sum(len(self.fact_line(f)) + 1 for f in facts) <= all_under:
             return self.facts_text(limit, kind)
         own = [f for f in facts if f['suggestion_id'] == suggestion_id]
+        weight = {f['id']: fact_weight(f, at) for f in facts}
         ranked = None
         if settings:
             try:
                 ranked = self.rank_facts(suggestion_id, facts, settings)
-            except Exception as error:  # the embedding server is down: the newest instead
+            except Exception as error:  # the embedding server is down: those that count most instead
                 LOG.error('fact ranking error=%s', type(error).__name__)
         if ranked is None:
-            picked = own + [f for f in reversed(facts) if f not in own]
+            picked = own + sorted((f for f in reversed(facts) if f not in own), key=lambda f: -weight[f['id']])
         else:
-            picked = own + [f for score, f in ranked if score >= floor and f not in own][:top]
+            close = sorted(((score * (0.5 + 0.5 * weight[f['id']]), f) for score, f in ranked if score >= floor and f not in own), key=lambda x: -x[0])
+            picked = own + [f for _, f in close][:top]
         out, size = [], 0
         for f in picked:
-            if size + len(f['text']) + 3 > limit:
+            line = self.fact_line(f)
+            if size + len(line) + 1 > limit:
                 break
-            out.append('- ' + f['text']); size += len(f['text']) + 3
+            out.append(line); size += len(line) + 1
         return '\n'.join(out)
 
     def rank_facts(self, suggestion_id, facts, settings, timeout=15):
@@ -6954,10 +7017,12 @@ class Store:
         return sorted(((embeddings.cosine(asked, stored[f['id']]), f) for f in facts), key=lambda x: -x[0])
 
     def condense_text(self, run_id=None, every_hours=20, least=6):
-        """Everything learned, with ids, for a review to condense once in a while: when the list changed since the last pass."""
+        """Everything learned, with ids, for a review to condense once in a while: when the list changed since the last pass.
+        First, facts past their end day retire (restorable: unmerge_fact expired=<id>), on every review."""
+        self.retire_expired()
         with self.connect() as db:
             last = db.execute("SELECT max(offered_at) FROM edits_offered WHERE edit_id LIKE 'condense:%'").fetchone()[0]
-            facts = [dict(r) for r in db.execute('SELECT id,kind,text,created_at FROM facts WHERE removed_at IS NULL ORDER BY kind,id')]
+            facts = [dict(r) for r in db.execute('SELECT id,kind,fact_kind,valid_until,text,created_at FROM facts WHERE removed_at IS NULL ORDER BY kind,id')]
             about = {}
             for r in db.execute('SELECT a.fact_id,coalesce(n.name,a.node_id) name FROM fact_about a LEFT JOIN graph_nodes n ON n.id=a.node_id WHERE a.removed_at IS NULL'):
                 about.setdefault(r['fact_id'], []).append(r['name'])
@@ -6967,8 +7032,20 @@ class Store:
             if run_id:
                 db.execute('INSERT OR REPLACE INTO edits_offered(edit_id,run_id,offered_at) VALUES(?,?,?)', ('condense:' + now()[:10], run_id, now()))
         label = {'fact': 'fact', 'draft': 'draft rule'}
-        return '\n'.join(f"- id {f['id']} ({label.get(f['kind'], f['kind'])}" + (f"; about {', '.join(about[f['id']])}" if f['id'] in about else '')
-                         + f"): {f['text']}" for f in facts)
+        return '\n'.join(f"- id {f['id']} ({(f['fact_kind'] if f['kind'] == 'fact' else None) or label.get(f['kind'], f['kind'])}"
+                         + (f"; until {f['valid_until']}" if f['valid_until'] else '')
+                         + (f"; about {', '.join(about[f['id']])}" if f['id'] in about else '') + f"): {f['text']}" for f in facts)
+
+    def retire_expired(self):
+        """Facts past their end day leave what is learned, each as 'expired:<id>' so the owner can bring one back."""
+        today = now()[:10]
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rows = db.execute('SELECT id,text FROM facts WHERE removed_at IS NULL AND valid_until IS NOT NULL AND valid_until<?', (today,)).fetchall()
+            for r in rows:
+                db.execute('UPDATE facts SET removed_at=?,merged_into=? WHERE id=?', (now(), 'expired:' + str(r['id']), r['id']))
+                db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)", (now(), 'Ended: ' + r['text'][:200], 'expired:' + str(r['id'])))
+        return len(rows)
 
     def style_notes_to_learn(self, run_id=None, days=30, limit=6, chars=300):
         """The owner's style notes (how a draft should have been written) that no fact, rule or voice came from yet, each offered once."""
@@ -8459,7 +8536,12 @@ class Store:
             # What was learned, newest first; a condensed one says how many notes it stands for (the owner can undo that).
             merged = {r['merged_into']: r['n'] for r in db.execute('SELECT merged_into,count(*) n FROM facts WHERE merged_into IS NOT NULL GROUP BY 1')}
             result['facts'] = [{**dict(r), 'merged': merged.get('fact:' + str(r['id']), 0)} for r in
-                               db.execute('SELECT id,text,suggestion_id,created_at,kind FROM facts WHERE removed_at IS NULL ORDER BY created_at DESC,id DESC')]
+                               db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until FROM facts WHERE removed_at IS NULL '
+                                          'ORDER BY created_at DESC,id DESC')]
+            # Facts that ended (past their end day) in the last 30 days, each the owner can bring back.
+            result['facts_ended'] = [dict(r) for r in db.execute(
+                "SELECT id,text,fact_kind,valid_until,removed_at FROM facts WHERE merged_into='expired:'||id AND removed_at>=? ORDER BY removed_at DESC LIMIT 20",
+                ((dt.datetime.fromisoformat(now()) - dt.timedelta(days=30)).isoformat(),))]
             result['voices'] = [{**v, 'merged': merged.get('voice:' + v['channel'], 0)} for v in self.voices(db)]
             result['learning_changes'] = learning_loop.recent(db)  # the learning loop's changes, each with Undo
             result['moved'] = [dict(r) for r in db.execute("SELECT substr(f.merged_into,7) skill_id,coalesce(k.name,'a skill') name,count(*) notes FROM facts f "
@@ -9753,6 +9835,37 @@ def awaiting_key(event, owner_slack_ids=()):
     if event['kind'] in ('whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm') and not m.get('from_me') and (m.get('chat_id') or m.get('conversation_id')):
         return {**key, 'conversation': m.get('chat_id') or m['conversation_id'], 'sender': m.get('sender_id') or m.get('from') or ''}
     return None
+
+
+def fact_until(value):
+    """A fact's end day (YYYY-MM-DD, through that day) from what a review gave: a date or a date-time, today or later."""
+    if value in (None, ''):
+        return None
+    try:
+        day = dt.date.fromisoformat(str(value).strip()[:10])
+    except ValueError:
+        raise ValueError('until is the day it stops holding, as YYYY-MM-DD') from None
+    if day.isoformat() < now()[:10]:
+        raise ValueError('until is today or later: a fact that already ended is not worth keeping')
+    return day.isoformat()
+
+
+def fact_expired(fact, today=None):
+    return bool(fact.get('valid_until')) and fact['valid_until'] < (today or now()[:10])
+
+
+def fact_weight(fact, at=None):
+    """How much a fact still counts, 0-1: nothing past its end day, else exp(-age / its sort's half-life), age from when
+    it was last said (GBrain's effectiveConfidence, with every fact starting at 1)."""
+    at = at or now()
+    if fact_expired(fact, at[:10]):
+        return 0.0
+    since = fact.get('confirmed_at') or fact.get('created_at') or at
+    try:
+        age = (dt.datetime.fromisoformat(at) - dt.datetime.fromisoformat(since)).total_seconds() / 86400
+    except (TypeError, ValueError):
+        return 1.0
+    return math.exp(-max(0.0, age) / FACT_HALF_LIFE.get(fact.get('fact_kind') or 'fact', FACT_HALF_LIFE['fact']))
 
 
 def voice_channel(name):
@@ -12899,7 +13012,7 @@ For this job:
 - When the result is a document, sheet, page or record you made or changed that has its own address (a Google Doc, a live page, a CRM record), add {{kind:open,label:'Open <what it is>',url:<its exact address>}} so the to-do opens it in one tap.
 - When a login code, a two-step code or a missing permission stops a step, record a blocker whose reason says exactly what is needed in one short line, with where to do it, e.g. "Enter the code Acme texted you in your Machine's browser, then tap Continue" or "Give this Machine edit access to the Q3 budget sheet, then tap Try again". Never stop without saying what is needed.
 - The title says what needs doing. Only when that changed after this result (a new ask or next step, not just the wording), add title=<a new short title, under 90 characters>; never to say it is done, sent or handled (the status line says that); otherwise leave title out.
-- When latest_feedback is a Change note, also give note_kind: style (how it was written), fact (something you didn't know), continue (keep going or finish the job) or new_ask (something else to do). A style note that holds beyond this card (how they write on a channel or with this kind of person: length, tone, greeting, sign-off, language, capitals, punctuation, links, formatting; "always…", "next time…", or what they asked on an earlier card) updates that channel's voice: assistant_signals remember_fact args kind=voice, channel=<the channel it is about: Email, Slack, WhatsApp, Telegram, LinkedIn, X DM, another channel's name, or All when it holds everywhere>, text=<that channel's whole voice block (up to {VOICE_LINES} short lines, at most {VOICE_CHARS} characters): the current block with the note worked in, everything else kept, only what it contradicts dropped>, decision_id=<that note's decision>. {VOICE_PRECISE} How a kind of task is done (what to include, where things go) is a draft rule instead: remember_fact kind=draft, text=<the rule, general>. A fact note that holds beyond this card goes in remember_fact as a fact. A note about how to do a kind of task next time ("next time keep it open for me") is a draft rule, also when it is not about writing. The card's chat shows what remember_fact saved, with Undo: the body never says you noted, saved or will remember something, and never claims it when nothing was saved.
+- When latest_feedback is a Change note, also give note_kind: style (how it was written), fact (something you didn't know), continue (keep going or finish the job) or new_ask (something else to do). A style note that holds beyond this card (how they write on a channel or with this kind of person: length, tone, greeting, sign-off, language, capitals, punctuation, links, formatting; "always…", "next time…", or what they asked on an earlier card) updates that channel's voice: assistant_signals remember_fact args kind=voice, channel=<the channel it is about: Email, Slack, WhatsApp, Telegram, LinkedIn, X DM, another channel's name, or All when it holds everywhere>, text=<that channel's whole voice block (up to {VOICE_LINES} short lines, at most {VOICE_CHARS} characters): the current block with the note worked in, everything else kept, only what it contradicts dropped>, decision_id=<that note's decision>. {VOICE_PRECISE} How a kind of task is done (what to include, where things go) is a draft rule instead: remember_fact kind=draft, text=<the rule, general>. A fact note that holds beyond this card goes in remember_fact as a fact, with {FACT_KIND_HINT}. A note about how to do a kind of task next time ("next time keep it open for me") is a draft rule, also when it is not about writing. The card's chat shows what remember_fact saved, with Undo: the body never says you noted, saved or will remember something, and never claims it when nothing was saved.
 - When the owner's note means they want this task itself back later (remind me about it next week, later, on Tuesday), that is this card's snooze, not a reminder: save with outcome:'snoozed' and snooze_until:<their local date and time, e.g. 2026-10-27T09:00, or a date alone for their morning>, and a one-line body. The card leaves their list and comes back then. Do not also add an automation, cron job or reminder for it. A separate reminder about something else, or a recurring one, stays an automation. Their time zone is {getattr(local_tz(),'key','UTC')}; it is now {dt.datetime.fromisoformat(now()).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')} there.
 - A first message to someone who doesn't know about it yet says what it is about before it asks.
 - Or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason=<one plain sentence>, details=<technical specifics>. Block only on what you truly can't know (their first-hand notes, a fact only they have, a call with no sensible default); a minor judgment call with an obvious sensible default you make yourself and name in one line of the result. When only the owner can unblock it, also give questions=[{{question:<one short plain question>, options:[<2-4 short choices, only when it is a clear choice>]}}] (at most 3). Each question must make sense on its own to someone who hasn't seen your work: plain words, what it is about and why it matters, no jargon or internal terms, e.g. {{question:'What did you notice when you tried OnePageCRM? A few lines on what you tried and what stood out are enough.'}}. The card shows them with quick picks and an Answer box. No paths, IDs or tool names in reason or questions.''' + owner_details(config) + (f'''
@@ -13550,7 +13663,7 @@ Boards: projects of one kind (partner listings, hires, onboardings), one project
 Team: when begin_analysis lists team (Work messages, shared with the owner's Work Fleet by default), add finish_analysis team ([{{"event_id", "share", "line", "group", "suggest"}}], group and suggest only for unsure ones; begin_analysis share_groups lists the groups already used) for each of those threads, judged by what the conversation is, never by words in it: {SHARE_VERDICTS} line is one short line of what happened, in your own words ("Lee asked for the renewal quote"), never quoted text. The owner's own Team or Only you always wins.
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
 Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. After they said Not done on it, only a newer signal counts. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
-When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
+When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id, {FACT_KIND_HINT}); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
 Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
 Meeting notes and transcripts (Zoom's, or added to the meeting: meeting.notes, meeting.transcript) are that meeting's own record: use them for follow-ups on it, its next steps and who took them on, with the notes and the calendar event as evidence.
 Promises: when a message in this batch commits the owner to doing something for someone, or someone to doing something for the owner, record it with promise (direction, event_id, who, what: the promised action alone, without who confirmed it or how, due when a date was said, owner_step as above). Judge what a message means between these people in its conversation, not its wording: most commitments are never spelled out (agreeing to a request, taking on something the owner asked, accepting a plan), and the same reply can commit one person and be politeness from another, depending on language, habits and the relationship. Read earlier_in_conversation for what was asked. It is not a card; the service checks it when due. When a signal shows an open promise below kept, canceled or moved, update it with promise and its id.
@@ -15039,7 +15152,8 @@ class App(*APP_MIXINS):
                 return self.store.save_voice(args.get('channel'), args.get('text'), 'assistant', args.get('decision_id'), args.get('edit_id'), args.get('replaces'))
             if args.get('id') is not None and not args.get('text'):  # who an existing fact is about
                 return self.store.fact_about(args['id'], args.get('about'))
-            return self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or 'fact', args.get('replaces'), args.get('about'))
+            return self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
+                                            args.get('until') or args.get('valid_until'))
         if name == 'graph_fact_unlink':
             if not owner_dashboard:
                 raise ValueError('Only the owner says who a fact is not about, on the dashboard')
@@ -15047,7 +15161,7 @@ class App(*APP_MIXINS):
         if name == 'unmerge_fact':
             if not owner_dashboard:
                 raise ValueError('Only the owner undoes a condense, on the dashboard')
-            return self.store.unmerge_fact(args.get('id'), args.get('channel'), args.get('skill'))
+            return self.store.unmerge_fact(args.get('id'), args.get('channel'), args.get('skill'), args.get('expired'))
         if name == 'learning_undo':
             if not owner_dashboard:
                 raise ValueError('Only the owner undoes a learned change, on the dashboard')
@@ -18827,7 +18941,7 @@ class App(*APP_MIXINS):
                     block = ("\n\nCondense what you've learned, conservatively. Everything current, with ids:\n" + lines
                              + (f"\nVoices (how the owner writes per channel):\n{voices}" if voices else '') +
                              "\nOnly merge notes that say the same thing, overlap, or contradict each other: remember_fact replaces=[their ids], "
-                             "text=<one sentence that keeps everything still true>, kind=fact or draft. Where they contradict, the newer one (higher id) wins. "
+                             "text=<one sentence that keeps everything still true>, kind=draft for rules, else " + FACT_KIND_HINT + ". Where they contradict, the newer one (higher id) wins. "
                              "A note about how the owner writes on one channel goes into that channel's voice: remember_fact kind=voice, channel, "
                              + VOICE_TEXT + ", replaces=[ids]. A note a newer one made outdated merges into the newer one. "
                              "Never drop something nothing else still says, and leave a note alone when unsure. The originals stay as history and the owner can undo a merge. "
