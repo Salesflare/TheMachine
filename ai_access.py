@@ -561,9 +561,13 @@ def new_key(db, name, level, area, expiry):
     return {'id': cid, 'key': key}
 
 
-def log(db, connection_id, tool, outcome, detail='', at=None):
-    return db.execute('INSERT INTO ai_activity(connection_id,at,tool,outcome,detail) VALUES(?,?,?,?,?)',
+def log(db, connection_id, tool, outcome, detail='', at=None, write=None):
+    """One line of a connection's activity; write: the Graph change (note_write) this call made, for its Undo."""
+    line = db.execute('INSERT INTO ai_activity(connection_id,at,tool,outcome,detail) VALUES(?,?,?,?,?)',
                       (connection_id, stamp(at), str(tool)[:40], outcome, str(detail or '')[:200])).lastrowid
+    if write:
+        db.execute('UPDATE ai_writes SET activity_id=? WHERE id=?', (line, write))
+    return line
 
 
 def note_write(db, connection_id, tool, node_id, changes):
@@ -748,9 +752,7 @@ def handle(db_open, message, connection, why, answer, limiter):
     except ValueError as error:
         result, summary, outcome = None, str(error)[:200], 'error'
     with db_open() as db:
-        line = log(db, connection['id'], name, outcome, said or summary)
-        if write_id:
-            db.execute('UPDATE ai_writes SET activity_id=? WHERE id=?', (line, write_id))
+        log(db, connection['id'], name, outcome, said or summary, write=write_id)
         used(db, connection['id'])
     if outcome != 'ok':
         return _ok(ident, {'content': [{'type': 'text', 'text': summary}], 'isError': True})
