@@ -39,6 +39,8 @@ Al massimo una volta al giorno, la tua Machine legge alcuni thread con i clienti
 - Solo ciò che vale per più clienti: un processo, uno strumento, uno stile di scrittura, o chi gestisce cosa. Mai qualcosa su un solo cliente, mai feedback sul tuo prodotto, e mai nomi, indirizzi, numeri o citazioni.
 - Ognuno ha un'etichetta: di che tipo è, che viene da conversazioni del team, e che è per questa Fleet. Quelli di cui non è sicura vengono scartati.
 
+Quando una persona impara, imparano tutti. Quando la tua Machine scrive o prepara un'attività di lavoro per questa azienda, usa gli apprendimenti del team adatti, dopo i tuoi fatti, regole e skill. Mai nelle attività personali. Un'attività che ne ha usato uno lo dice, per esempio "Usato un apprendimento del team: i rimborsi partono dalla casella del supporto." Premi **Rimuovi** lì per toglierlo a tutta la Fleet.
+
 Chiunque nella Fleet può premere **Rimuovi** su un apprendimento. Sparisce per tutti e non viene creato di nuovo. Per fermarli, disattiva **Proponi di condividere apprendimenti** in Impostazioni, Sicurezza. Le Fleet di lavoro Prudenti non ne ricevono.
 
 ## Richieste di brief

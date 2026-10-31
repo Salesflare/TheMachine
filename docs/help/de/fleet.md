@@ -39,6 +39,8 @@ Höchstens einmal am Tag liest deine Machine ein paar Kunden-Threads, die der Te
 - Nur, was über mehrere Kunden hinweg gilt: ein Ablauf, ein Tool, ein Schreibstil oder wer was bearbeitet. Nie etwas über einen einzelnen Kunden, nie Feedback zu deinem eigenen Produkt und nie Namen, Adressen, Zahlen oder Zitate.
 - Jede hat ein Label: welche Art es ist, dass sie aus Gesprächen im Team stammt und dass sie für diese Fleet ist. Solche, bei denen sie unsicher ist, fallen weg.
 
+Wenn eine Person etwas lernt, lernen es alle. Wenn deine Machine eine Work-Aufgabe für diese Firma entwirft oder vorbereitet, nutzt sie die passenden Erkenntnisse des Teams, nach deinen eigenen Fakten, Regeln und Skills. Nie bei persönlichen Aufgaben. Eine Aufgabe, die eine genutzt hat, sagt es, zum Beispiel „Eine Erkenntnis des Teams genutzt: Rückerstattungen gehen aus dem Support-Postfach raus.“ Tippe dort auf **Entfernen**, um sie für die ganze Fleet zu entfernen.
+
 Alle in der Fleet können eine Erkenntnis **Entfernen**. Dann ist sie für alle weg und wird nicht neu erstellt. Zum Stoppen schalte **Anbieten, Erkenntnisse zu teilen** in Einstellungen, Sicherheit aus. Work Fleets mit Vorsichtig bekommen keine.
 
 ## Brief-Anfragen

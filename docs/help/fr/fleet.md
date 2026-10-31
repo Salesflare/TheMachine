@@ -39,6 +39,8 @@ Au plus une fois par jour, votre Machine lit quelques fils clients que le Graph 
 - Seulement ce qui vaut pour plusieurs clients : un processus, un outil, un style d’écriture, ou qui gère quoi. Jamais quelque chose sur un seul client, jamais des retours sur votre propre produit, et jamais de noms, adresses, numéros ou citations.
 - Chacun porte une étiquette : son type, le fait qu’il vient de conversations d’équipe, et qu’il est pour cette Fleet. Ceux dont elle n’est pas sûre sont écartés.
 
+Quand une personne apprend, tout le monde apprend. Quand votre Machine rédige ou prépare une tâche de travail pour cette entreprise, elle utilise les apprentissages de l’équipe qui conviennent, après vos propres faits, règles et compétences. Jamais dans les tâches perso. Une tâche qui en a utilisé un le dit, par exemple « Apprentissage de l’équipe utilisé : les remboursements partent de la boîte support. » Touchez **Retirer** à cet endroit pour le retirer pour toute la Fleet.
+
 Tout membre de la Fleet peut **Retirer** un apprentissage. Il disparaît pour tout le monde et n’est pas recréé. Pour arrêter, désactivez **Proposer de partager des apprentissages** dans Paramètres, Sécurité. Les Fleets Travail Prudentes n’en ont aucun.
 
 ## Demandes de brief

@@ -39,6 +39,8 @@ Como mucho una vez al día, tu Machine lee unos cuantos hilos de clientes que el
 - Solo lo que se cumple con varios clientes: un proceso, una herramienta, un estilo de escritura o quién se ocupa de qué. Nunca algo sobre un solo cliente, nunca comentarios sobre tu propio producto, y nunca nombres, direcciones, números ni citas.
 - Cada uno lleva una etiqueta: de qué tipo es, que viene de conversaciones del equipo y que es para este Fleet. Los que no tiene claros se descartan.
 
+Cuando una persona aprende, aprenden todos. Cuando tu Machine redacta o prepara una tarea de trabajo para esta empresa, usa los aprendizajes del equipo que encajan, por debajo de tus propios datos, reglas y habilidades. Nunca en tareas personales. Una tarea que usó uno lo dice, por ejemplo "Se usó un aprendizaje del equipo: los reembolsos salen de la bandeja de soporte." Toca **Quitar** ahí para quitarlo para todo el Fleet.
+
 Cualquiera en el Fleet puede **Quitar** un aprendizaje. Desaparece para todos y no se vuelve a crear. Para pararlo, desactiva **Ofrecer compartir aprendizajes** en Ajustes, Seguridad. Los Work Fleets Prudentes no reciben ninguno.
 
 ## Solicitudes de resumen del equipo
