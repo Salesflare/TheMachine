@@ -451,6 +451,42 @@
  ],
  "events": [
   {
+   "key": "story:demo:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 23000,
+   "title": "Demo in two weeks?",
+   "body": "Hi Hanne,\n\nGood to meet you at the meetup. Would a 45 minute demo in two weeks work?\n\nAlex",
+   "metadata": {
+    "from": "Alex Morgan <alex@lumenlabs.example>",
+    "to": "hanne@brightpathlogistics.example",
+    "labels": [
+     "SENT"
+    ],
+    "thread_id": "t-demo",
+    "message-id": "<t-demo.0@lumenlabs.example>",
+    "source_url": "https://mail.example/#inbox/t-demo"
+   }
+  },
+  {
+   "key": "story:demo:1",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 21000,
+   "title": "Re: Demo in two weeks?",
+   "body": "Hi Alex,\n\nThursday at 14:00 works for us. I will bring Elif from operations. Could you show how reminders work for shared inboxes? That is our main pain.\n\nBest,\nHanne",
+   "metadata": {
+    "from": "Hanne Ashgrove <hanne@brightpathlogistics.example>",
+    "to": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX"
+    ],
+    "thread_id": "t-demo",
+    "message-id": "<t-demo.1@brightpathlogistics.example>",
+    "source_url": "https://mail.example/#inbox/t-demo"
+   }
+  },
+  {
    "key": "story:invoice:stripe",
    "account_id": "work-stripe",
    "kind": "stripe.event",
@@ -1360,24 +1396,6 @@
     "thread_id": "t801385255907",
     "message-id": "<t801385255907.25@orchardstreetbakery.example>",
     "source_url": "https://mail.example/#inbox/t801385255907"
-   }
-  },
-  {
-   "key": "story:demo:0",
-   "account_id": "work-gmail",
-   "kind": "gmail.message",
-   "minutes_ago": 4300,
-   "title": "Demo next week?",
-   "body": "Hi Hanne,\n\nGood to meet you at the meetup. Would a 45 minute demo next week work?\n\nAlex",
-   "metadata": {
-    "from": "Alex Morgan <alex@lumenlabs.example>",
-    "to": "hanne@brightpathlogistics.example",
-    "labels": [
-     "SENT"
-    ],
-    "thread_id": "t-demo",
-    "message-id": "<t-demo.0@lumenlabs.example>",
-    "source_url": "https://mail.example/#inbox/t-demo"
    }
   },
   {
@@ -5694,25 +5712,6 @@
     "status": "confirmed",
     "location": "https://meet.example/abc-defg-hij",
     "source_url": "https://calendar.example/event/10"
-   }
-  },
-  {
-   "key": "story:demo:1",
-   "account_id": "work-gmail",
-   "kind": "gmail.message",
-   "minutes_ago": 190,
-   "title": "Re: Demo next week?",
-   "body": "Hi Alex,\n\nThursday at 14:00 works for us. I will bring Elif from operations. Could you show how reminders work for shared inboxes? That is our main pain.\n\nBest,\nHanne",
-   "metadata": {
-    "from": "Hanne Ashgrove <hanne@brightpathlogistics.example>",
-    "to": "alex@lumenlabs.example",
-    "labels": [
-     "INBOX",
-     "UNREAD"
-    ],
-    "thread_id": "t-demo",
-    "message-id": "<t-demo.1@brightpathlogistics.example>",
-    "source_url": "https://mail.example/#inbox/t-demo"
    }
   },
   {

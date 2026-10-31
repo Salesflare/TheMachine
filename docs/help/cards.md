@@ -47,6 +47,8 @@ On your first to-dos, a short tip under the buttons shows the key moves: **Do it
 
 Each to-do starts with its title. The line under it says who it's about, their organization, the project, Work or Personal (under **All**) and when it came in, plus where it stands when its group doesn't say so. Tap a name to open its page in the Graph.
 
+Sometimes a quiet line under the text says what isn't known, like "Last contact 12 days ago by email; nothing since." It shows only when the last word with them is old or unanswered, and names channels they may have answered on that aren't connected, like WhatsApp. Your Machine prepares with the same facts, so it says what it doesn't know instead of guessing.
+
 A title says what needs doing. It changes only when that does, like a new ask. A done to-do keeps its title, with how it ended under it, like what went out or "Done: Sam signed it on Tuesday".
 
 **Details** shows the message it came from (tap it to read the thread), your last note and a coding agent's result. **Chat ›** at the end of that row opens the chat. A done to-do stays short: its title, one line and what went out.
