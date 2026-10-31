@@ -114,7 +114,7 @@ def fake_help(config, prompt, model=None, thinking=None):
 
 
 def seed_ai(app):
-    """Settings, AIs (ai_access.py): Claude connected for Work with Read & draft, and a key for a script that only
+    """Settings, AIs (ai_access.py): Claude connected for Work with Read & edit, and a key for a script that only
     reads, with a few calls each and one refused. Writes only through ai_access."""
     import ai_access
     now = dt.datetime.now(dt.timezone.utc)

@@ -314,9 +314,10 @@ def save(db, node_id, lines, evidence_at, account_sides, current=None):
     return 'written'
 
 
-def edit(db, node_id, texts, person_side=None, current=None):
+def edit(db, node_id, texts, person_side=None, current=None, by=None):
     """The owner's own summary: their lines, one per row. A line they kept as it was keeps its sources; one they wrote
-    is theirs ("You"), in the area of the person's own Type. Empty: back to The Machine's (reset)."""
+    is theirs ("You"), in the area of the person's own Type. Empty: back to The Machine's (reset). by: the connected AI
+    that wrote the new lines (add_line), shown with them; they are an owner's edit all the same, so a rewrite keeps them."""
     ensure(db)
     if not isinstance(texts, list) or len(texts) > MAX_LINES + 3 or not all(isinstance(t, str) for t in texts):
         raise ValueError(f'lines is a list of up to {MAX_LINES + 3} short lines')
@@ -326,7 +327,8 @@ def edit(db, node_id, texts, person_side=None, current=None):
     row = _row(db, node_id)
     before = {line['text']: line for line in json.loads(row['lines'])} if row else {}
     side = [person_side] if person_side in ('work', 'personal') else []
-    lines = [before[t] if t in before else {'kind': 'now', 'text': t, 'sources': ['owner'], 'sides': side} for t in texts]
+    lines = [before[t] if t in before else {'kind': 'now', 'text': t, 'sources': ['owner'], 'sides': side, **({'by': by} if by else {})}
+             for t in texts]
     stamp = current or now()
     if row and row['node_id'] != node_id:
         db.execute('DELETE FROM person_summaries WHERE node_id=?', (row['node_id'],))
@@ -334,6 +336,37 @@ def edit(db, node_id, texts, person_side=None, current=None):
                "lines=excluded.lines,by='owner',edited_at=excluded.edited_at,proposal=NULL,proposed_at=NULL",
                (node_id, json.dumps(lines, ensure_ascii=False), stamp, row['evidence_at'] if row else None, stamp))
     return {'edited': True}
+
+
+def add_line(db, node_id, text, person_side=None, by=None):
+    """One line added below the summary there is (a connected AI's, ai_app.py), as an owner's edit: a later rewrite keeps
+    it and becomes a proposal, like any edit of the owner's."""
+    ensure(db)
+    line = clean_line(text)
+    if len(line) < 3:
+        raise ValueError('A summary line is a few words, up to 180 characters')
+    row = _row(db, node_id)
+    texts = [x['text'] for x in json.loads(row['lines'] or '[]')] if row else []
+    if line in texts:
+        raise ValueError('The summary says that already')
+    if len(texts) >= MAX_LINES + 3:
+        raise ValueError('The summary is full')
+    return edit(db, node_id, [*texts, line], person_side, by=by)
+
+
+def state(db, node_id):
+    """A person's summary rows as kept now (under each of their identifiers), for an exact Undo (ai_app.py)."""
+    ensure(db)
+    ids = identifiers(db, node_id)
+    return {'ids': ids, 'rows': [dict(r) for r in db.execute(
+        f"SELECT * FROM person_summaries WHERE node_id IN ({','.join('?' for _ in ids)}) ORDER BY node_id", ids)]}
+
+
+def restore(db, kept):
+    """Put a person's summary back exactly as state() found it."""
+    db.executemany('DELETE FROM person_summaries WHERE node_id=?', [(i,) for i in kept['ids']])
+    for row in kept['rows']:
+        db.execute(f"INSERT INTO person_summaries({','.join(row)}) VALUES({','.join('?' for _ in row)})", tuple(row.values()))
 
 
 def use_proposal(db, node_id, current=None):
@@ -399,7 +432,7 @@ def _shown(db, lines):
     for line in lines:
         sources = [s for s in (_source(db, s) for s in line.get('sources') or ()) if s]
         if sources:  # a line whose every source is gone drops out
-            out.append({'kind': line.get('kind'), 'text': line['text'], 'sources': sources})
+            out.append({'kind': line.get('kind'), 'text': line['text'], 'sources': sources, **({'by': line['by']} if line.get('by') else {})})
     return out
 
 

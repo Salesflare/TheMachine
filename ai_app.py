@@ -2,8 +2,10 @@
 
 Settings, Connected AIs (AI_ACTIONS in assistant.py, the reviewed list: the owner's own, from the dashboard only), the
 HTTP side of /mcp and /oauth/* (Handler routes them here), and the tools: what a connected AI may read, filtered to
-its connection's area, and the to-dos it may add (App.ai_card, in assistant.py, which writes the evidence event).
-docs/ai-connections.md has the design; ai_access.py the sign-in, the checks and the log."""
+its connection's area, the to-dos it may add (App.ai_card, in assistant.py, which writes the evidence event), and the
+Graph changes it may make (facts, details, fields, tags, summary lines), each through the owner module's own path, with
+what it was before kept for Undo in Activity (ai_undo). docs/ai-connections.md has the design; ai_access.py the
+sign-in, the checks and the log."""
 from __future__ import annotations
 
 import datetime as dt
@@ -17,12 +19,14 @@ import urllib.parse
 
 import ai_access
 import ai_reach
+import crm_fields
 import fleet
 import graph
 import i18n
 import locale_prefs
 import next_actions
 import pairing
+import person_summary
 
 OPEN = ('pending', 'accepted', 'prepared', 'instructions')
 EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
@@ -30,6 +34,9 @@ EXPIRY_LABEL = {'1d': '1 day', '7d': '7 days', '30d': '30 days', '1y': '1 year'}
 MCP_DOMAIN = 'mcp.themachine.computer'  # each Machine's address for AIs: https://<name>.<this>/mcp (docs/ai-connections.md)
 NAME = re.compile(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?')
 REACH_FRESH = 60  # seconds the account's answer about this Machine's name is kept
+# What a connected AI may change in a record's details: never Work or Personal (side), the name, merges or sharing
+AI_DETAILS = {'person': ('title', 'location', 'linkedin_url', 'notes'), 'org': tuple(graph.ORG_FIELDS)}
+AI_SORTS = ('fact', 'preference', 'commitment', 'event')
 
 
 class AiApp:
@@ -42,6 +49,7 @@ class AiApp:
         'ai_pair_start',
         'ai_pair_state',
         'ai_remove',
+        'ai_undo',
         'ai_unpair',
     ), 'ai_dashboard_action')
     ai_limiter = ai_access.Limiter()
@@ -51,7 +59,7 @@ class AiApp:
     def ai_dashboard_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
             raise ValueError('Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)')
-        if name in ('ai_pair_start', 'ai_pair_state', 'ai_unpair'):
+        if name in ('ai_pair_start', 'ai_pair_state', 'ai_unpair', 'ai_undo'):
             return getattr(self, name)(args)
         cid = str(args.get('id') or '')
         with self.store.connect() as db:
@@ -570,6 +578,152 @@ class AiApp:
         return {'id': made, 'link': self.ai_link(made), 'sent': False,
                 'note': 'The draft waits in The Machine. Only the owner can send it, after reading it.'}, \
             i18n.t('Added a draft to {}: “{}”', ', '.join(to)[:80], subject[:80])
+
+
+    # ------------------------------------------------------------------ Graph changes, and their Undo
+
+    def ai_record(self, db, connection, node_id):
+        """The person or organization a write is about, when this connection may see it: (row, view). One outside its
+        area is refused and logged as such; the AI hears the same as for one that isn't there."""
+        _, want = self.ai_accounts(connection, None)
+        row = graph.resolve(db, str(node_id or ''))
+        view = graph.node_view(row) if row and row['kind'] in ('person', 'org') else None
+        if not view or view['id'] == graph.ME or str(view['id']).startswith('team:'):
+            raise ValueError('Not in the Graph here')
+        if not self.ai_node_ok(view, want):
+            raise ai_access.Refused('Not in the Graph here', i18n.t('Refused: outside this connection’s area'))
+        return row, view
+
+    def ai_tool_save_fact(self, connection, args):
+        kind = args.get('kind') or 'fact'
+        if kind not in AI_SORTS:
+            raise ValueError('kind is fact, preference, commitment or event')
+        text = ' '.join(str(args.get('text') or '').split())
+        with self.store.connect() as db:
+            row, view = self.ai_record(db, connection, args.get('id'))
+            same = db.execute("SELECT id FROM facts WHERE removed_at IS NULL AND kind='fact' AND lower(text)=lower(?)", (text,)).fetchone()
+            before = self.store.fact_state(db, same['id']) if same else None
+        made = self.store.remember_fact(text, 'ai:' + connection['id'], kind, about=[row['id']], until=args.get('until') or None,
+                                        source='ai:' + connection['name'])
+        if made.get('suppressed'):
+            raise ValueError('The owner took this fact out before, so it was not saved again')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            after = self.store.fact_state(db, made['id'])
+            before = before if before and before['id'] == after['id'] else None
+            write = ai_access.note_write(db, connection['id'], 'save_fact', row['id'], [
+                {'part': 'fact', 'before': before or {**after, 'fact': None, 'about': []}, 'after': after}])
+        if getattr(self, 'graph_dirty', None):
+            self.graph_dirty.set()
+        return {'id': made['id'], 'about': view['name'], 'note': 'Saved. The owner sees it and can undo it.'}, \
+            i18n.t('Saved about {}: “{}”', view['name'][:60], text[:80]), write
+
+    def ai_tool_update_record(self, connection, args):
+        details = args.get('details') if args.get('details') is not None else {}
+        fields = args.get('fields') if args.get('fields') is not None else {}
+        add, drop = args.get('add_tags') or [], args.get('remove_tags') or []
+        if not isinstance(details, dict) or not isinstance(fields, dict) or not isinstance(add, list) or not isinstance(drop, list):
+            raise ValueError('details and fields are objects, add_tags and remove_tags lists')
+        if not (details or fields or add or drop):
+            raise ValueError('Give details, fields or tags to change')
+        if len(add) > 10 or len(drop) > 10 or len(fields) > 30:
+            raise ValueError('Up to 10 tags and 30 fields at a time')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row, view = self.ai_record(db, connection, args.get('id'))
+            allowed = AI_DETAILS[row['kind']]
+            wrong = [k for k in details if k not in allowed]
+            if wrong:
+                raise ValueError(f"Can't change {', '.join(map(str, wrong))[:80]} here. Details are: {', '.join(allowed)}")
+            own = {f['name'].casefold(): f for f in crm_fields.fields(db, row['kind'])}
+            missing = [k for k in fields if str(k).casefold() not in own]
+            if missing:
+                raise ValueError(f"No field called {', '.join(map(str, missing))[:80]}. Fields are: {', '.join(f['name'] for f in own.values())[:300] or 'none'}")
+            changes = []
+            if details:
+                before = graph.edits_state(db, row['id'])
+                if row['kind'] == 'person':
+                    graph.person_edit(db, row['id'], details, ai_access.stamp())
+                else:
+                    graph.org_edit(db, row['id'], details, ai_access.stamp())
+                changes.append({'part': 'details', 'before': before, 'after': graph.edits_state(db, row['id'])})
+            if fields or add or drop:
+                before = crm_fields.state(db, row['id'])
+                for name, value in fields.items():
+                    crm_fields.set_value(db, row['id'], own[str(name).casefold()]['id'], value)
+                for label in add:
+                    crm_fields.tag(db, row['id'], label, True)
+                for label in drop:
+                    crm_fields.tag(db, row['id'], label, False)
+                changes.append({'part': 'crm', 'before': before, 'after': crm_fields.state(db, row['id'])})
+            changes = [c for c in changes if c['before'] != c['after']]
+            if not changes:
+                return {'id': row['id'], 'changed': False, 'note': 'It already said that. Nothing changed.'}, \
+                    i18n.t('Nothing to change on {}', view['name'][:60])
+            write = ai_access.note_write(db, connection['id'], 'update_record', row['id'], changes)
+        if getattr(self, 'graph_dirty', None):
+            self.graph_dirty.set()
+        said = [*details, *fields, *(f'+{t}' for t in add), *(f'-{t}' for t in drop)]
+        return {'id': row['id'], 'changed': True, 'note': 'Changed. The owner sees it in Activity and can undo it.'}, \
+            i18n.t('Changed {}: {}', view['name'][:60], ', '.join(map(str, said))[:120]), write
+
+    def ai_tool_add_summary_line(self, connection, args):
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row, view = self.ai_record(db, connection, args.get('id'))
+            if row['kind'] != 'person':
+                raise ValueError('Only a person has a summary')
+            before = person_summary.state(db, row['id'])
+            person_summary.add_line(db, row['id'], args.get('text'), json.loads(row['info'] or '{}').get('side'), by=connection['name'])
+            write = ai_access.note_write(db, connection['id'], 'add_summary_line', row['id'], [
+                {'part': 'summary', 'before': before, 'after': person_summary.state(db, row['id'])}])
+        line = person_summary.clean_line(args.get('text'))
+        return {'id': row['id'], 'note': 'Added. It stays when The Machine rewrites the summary; the owner can undo it.'}, \
+            i18n.t('Added to the summary of {}: “{}”', view['name'][:60], line[:80]), write
+
+    def ai_part_state(self, db, node_id, change):
+        part = change['part']
+        if part == 'fact':
+            return self.store.fact_state(db, change['after']['id'])
+        if part == 'details':
+            return graph.edits_state(db, node_id)
+        if part == 'crm':
+            return crm_fields.state(db, node_id)
+        return person_summary.state(db, node_id)
+
+    def ai_part_restore(self, db, node_id, change):
+        part, before = change['part'], change['before']
+        if part == 'fact':
+            self.store.fact_restore(db, before)
+        elif part == 'details':
+            graph.edits_restore(db, before)
+        elif part == 'crm':
+            crm_fields.restore(db, node_id, before)
+        else:
+            person_summary.restore(db, before)
+
+    def ai_undo(self, args):
+        """Undo in Activity on a connected AI's Graph change: what it changed goes back exactly as it was. Refused when
+        anything it changed was changed again since (by the owner, a review or another AI): Undo never overwrites that."""
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            done = ai_access.written(db, args.get('id'))
+            if not done:
+                raise ValueError(i18n.t('This change is gone'))
+            if done['undone_at']:
+                raise ValueError(i18n.t('This change was undone already'))
+            try:
+                now = [self.ai_part_state(db, done['node_id'], c) for c in done['changes']]
+            except ValueError:
+                now = None  # the record is gone (deleted or merged away): nothing left to put back
+            if now is None or json.loads(json.dumps(now, sort_keys=True)) != [c['after'] for c in done['changes']]:
+                raise ValueError(i18n.t('This changed again since, so Undo would overwrite that. Change it on the page instead.'))
+            for change in done['changes']:
+                self.ai_part_restore(db, done['node_id'], change)
+            ai_access.mark_undone(db, done['id'])
+        if getattr(self, 'graph_dirty', None):
+            self.graph_dirty.set()
+        return {'undone': True}
 
 
 class AiReachSide:

@@ -11,7 +11,9 @@ order: 95
 
 Outras IAs podem se conectar à sua Machine por MCP: Claude, ChatGPT, Cursor, Codex, GBrain e outras. Elas podem ler suas tarefas, promessas, resumos da equipe e as pessoas e empresas do seu Graph.
 
-No máximo elas adicionam uma tarefa, ou uma tarefa com um rascunho de e-mail. Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA conectada nunca envia nada e nunca age por você. O Do it e os agentes da sua Machine não fazem parte disso.
+Com **Ler e editar** elas também podem adicionar uma tarefa, ou uma tarefa com um rascunho de e-mail, e mudar seu Graph: salvar um fato sobre uma pessoa ou empresa, corrigir detalhes, campos e tags, ou adicionar uma linha ao resumo de uma pessoa.
+
+Cada mudança aparece em **Atividade** com **Desfazer**. Elas nunca mesclam, excluem nem compartilham registros. Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA conectada nunca envia nada e nunca age por você. O Do it e os agentes da sua Machine não fazem parte disso.
 
 ## Conectar uma
 
@@ -27,7 +29,7 @@ IAs num dispositivo da sua tailnet, como Claude Code ou Cursor, também podem us
 
 A IA leva você à sua Machine para entrar. Sua Machine mostra qual IA é. Uma IA que ela não reconhece mostra o endereço de onde vem: conecte só se você acabou de iniciar isso.
 
-Escolha o que ela pode fazer, **Ler** ou **Ler e rascunhos**. Com contas de trabalho e pessoais, escolha também o que ela pode ver. Depois escolha por quanto tempo: **1 dia**, **7 dias**, **30 dias** ou **1 ano**. Toque em **Conectar**, ou em **Cancelar** para devolvê-la sem nada.
+Escolha o que ela pode fazer, **Ler** ou **Ler e editar**. Com contas de trabalho e pessoais, escolha também o que ela pode ver. Depois escolha por quanto tempo: **1 dia**, **7 dias**, **30 dias** ou **1 ano**. Toque em **Conectar**, ou em **Cancelar** para devolvê-la sem nada.
 
 ## O que ela vê
 

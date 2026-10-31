@@ -223,6 +223,35 @@ def tags_for(db, row):
     return list(seen.values())[:MAX_TAGS]
 
 
+def state(db, node_id):
+    """A record's custom field values and tags as kept now, for an exact Undo of a connected AI's change (ai_app.py)."""
+    import crm
+    row = crm.node_row(db, node_id)
+    within = json.dumps(_ids(db, row))
+    return {'ids': json.loads(within),
+            'values': [list(r) for r in db.execute('SELECT node_id,field_id,value,set_at FROM crm_values WHERE node_id IN '
+                                                   '(SELECT value FROM json_each(?)) ORDER BY node_id,field_id', (within,))],
+            'tags': [list(r) for r in db.execute('SELECT node_id,tag,at FROM crm_tags WHERE node_id IN (SELECT value FROM json_each(?)) '
+                                                 'ORDER BY node_id,tag', (within,))]}
+
+
+def restore(db, node_id, kept):
+    """Put a record's values and tags back exactly as state() found them, and its node's tags with them."""
+    import crm
+    within = json.dumps(kept['ids'])
+    db.execute('DELETE FROM crm_values WHERE node_id IN (SELECT value FROM json_each(?))', (within,))
+    db.execute('DELETE FROM crm_tags WHERE node_id IN (SELECT value FROM json_each(?))', (within,))
+    db.executemany('INSERT INTO crm_values(node_id,field_id,value,set_at) VALUES(?,?,?,?)', [tuple(v) for v in kept['values']])
+    db.executemany('INSERT INTO crm_tags(node_id,tag,at) VALUES(?,?,?)', [tuple(v) for v in kept['tags']])
+    row = crm.node_row(db, node_id)
+    tags, info = tags_for(db, row), json.loads(row['info'] or '{}')
+    if tags:
+        info['tags'] = tags
+    else:
+        info.pop('tags', None)
+    db.execute('UPDATE graph_nodes SET info=? WHERE id=?', (json.dumps(info), row['id']))
+
+
 def tags_in_use(db, limit=60):
     """The tags on records, most used first, for the filter sheet."""
     return [{'tag': r[0], 'count': r[1]} for r in db.execute(

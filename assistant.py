@@ -1049,6 +1049,7 @@ AI_ACTIONS = {
     'ai_pair_start',
     'ai_pair_state',
     'ai_remove',
+    'ai_undo',
     'ai_unpair',
 }
 OWNER_ACTIONS |= AI_ACTIONS
@@ -3912,7 +3913,8 @@ class Store:
             # read as fact), the day it stops holding (valid_until, YYYY-MM-DD, through that day) and when it was last said
             # again (confirmed_at: its decay starts over). Past valid_until the condense pass retires it as 'expired:<id>'.
             have_facts = {r[1] for r in db.execute('PRAGMA table_info(facts)')}
-            for column in ('fact_kind', 'valid_until', 'confirmed_at'):
+            # source: who told it when it wasn't the owner's own note ('ai:<name>': a connected AI, ai_app.py); NULL: the owner
+            for column in ('fact_kind', 'valid_until', 'confirmed_at', 'source'):
                 if column not in have_facts:
                     db.execute('ALTER TABLE facts ADD COLUMN ' + column + ' TEXT')
             # Who a fact is about: a person, organization or project in the graph (its node id), never the owner, who is no node.
@@ -6785,14 +6787,19 @@ class Store:
             out.append(f"- {e['title']}{subject}\n  Your draft: {clip(e['before'])}\n  {changed}: {clip(e['after'])}")
         return '\n'.join(out)
 
-    def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None):
+    def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None, source=None):
         """Keep a lasting fact from one of the owner's own written notes, so later reviews and preparations use it.
         kind: event, commitment, preference or fact (FACT_SORTS, kept as a fact), or draft (a rule); until: the day it
         stops holding (an event without one holds EVENT_DAYS). With replaces (ids of facts and rules) it condenses: the new
         one says what those said, the newer winning where they disagree, and they stay behind it as history the owner can
         restore (unmerge_fact). about: the graph node ids of who the fact is about (fact_about); a condensed fact keeps who
-        its originals were about. Saying a current one again starts its decay over (confirmed_at)."""
+        its originals were about. Saying a current one again starts its decay over (confirmed_at). source: a connected AI
+        ('ai:<name>', ai_app.py) instead of a note: decision_id is then 'ai:<connection id>', it is about someone, and it
+        neither condenses nor makes a rule."""
         text = ' '.join(str(text or '').split())
+        if source is not None and (not str(source).startswith('ai:') or not str(decision_id).startswith('ai:') or replaces
+                                   or kind == 'draft' or not about):
+            raise ValueError('A fact from a connected AI is about someone, and is not a rule or a condense')
         if not 5 <= len(text) <= 240:
             raise ValueError('A fact is one short sentence (5-240 characters)')
         kind = kind or 'fact'
@@ -6808,6 +6815,8 @@ class Store:
             if originals:  # condensing: the merged fact comes from the newest note behind them
                 decision_id = originals[-1]['decision_id']
                 note = {'suggestion_id': originals[-1]['suggestion_id']}
+            elif source is not None:
+                note = {'suggestion_id': None}
             else:
                 note = db.execute("SELECT suggestion_id,feedback FROM decisions WHERE id=? AND source IN ('telegram','dashboard') AND feedback!='' AND id NOT IN (SELECT decision_id FROM decision_annotations)", (decision_id,)).fetchone()
             if not note:
@@ -6828,7 +6837,7 @@ class Store:
             subjects = self.fact_subjects(db, about) if storage == 'fact' else []
             existing = next((r for r in db.execute('SELECT id FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (storage, text)) if r['id'] not in merging), None)
             if existing and not originals:
-                self.link_fact(db, existing['id'], subjects, 'review')
+                self.link_fact(db, existing['id'], subjects, 'ai' if source else 'review')
                 db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), existing['id']))  # said again: its decay starts over
                 return {'id': existing['id'], 'duplicate': True}
             general = lambda ids: db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL AND id IN (' + ','.join('?' for _ in ids) + ') '
@@ -6842,16 +6851,39 @@ class Store:
             if existing:  # condensed into one that already says it
                 fact_id = existing['id']
             else:
-                fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,valid_until) VALUES(?,?,?,?,?,?,?)',
-                                     (text, decision_id, note['suggestion_id'], now(), storage, sort, until)).lastrowid
+                fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,valid_until,source) VALUES(?,?,?,?,?,?,?,?)',
+                                     (text, decision_id, note['suggestion_id'], now(), storage, sort, until, source)).lastrowid
                 if storage == 'draft':
                     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Draft rule: ' + text, str(fact_id)))
             if storage == 'fact':
-                self.link_fact(db, fact_id, subjects + carried, 'review')
+                self.link_fact(db, fact_id, subjects + carried, 'ai' if source else 'review')
             if originals:
                 self.merge_originals(db, originals, 'fact:' + str(fact_id), text)
                 return {'id': fact_id, 'merged': len(originals)}
             return {'id': fact_id, **({'kind': sort} if sort else {}), **({'until': until} if until else {}), **({'about': subjects} if subjects else {})}
+
+    @staticmethod
+    def fact_state(db, fact_id):
+        """A fact and who it is about as kept now, for an exact Undo of a connected AI's fact (ai_app.py); fact None: there
+        is no such fact."""
+        row = db.execute('SELECT text,kind,fact_kind,valid_until,confirmed_at,removed_at,merged_into FROM facts WHERE id=?', (int(fact_id),)).fetchone()
+        return {'id': int(fact_id), 'fact': dict(row) if row else None,
+                'about': [list(r) for r in db.execute('SELECT node_id,by,created_at,removed_at FROM fact_about WHERE fact_id=? ORDER BY node_id',
+                                                      (int(fact_id),))]}
+
+    @staticmethod
+    def fact_restore(db, kept):
+        """Put a fact back exactly as fact_state found it: one that wasn't there goes, with its links and its vector."""
+        fact_id = kept['id']
+        db.execute('DELETE FROM fact_about WHERE fact_id=?', (fact_id,))
+        if kept['fact'] is None:
+            db.execute('DELETE FROM fact_vectors WHERE fact_id=?', (fact_id,))
+            db.execute('DELETE FROM facts WHERE id=?', (fact_id,))
+            return
+        f = kept['fact']
+        db.execute('UPDATE facts SET text=?,kind=?,fact_kind=?,valid_until=?,confirmed_at=?,removed_at=?,merged_into=? WHERE id=?',
+                   (f['text'], f['kind'], f['fact_kind'], f['valid_until'], f['confirmed_at'], f['removed_at'], f['merged_into'], fact_id))
+        db.executemany('INSERT INTO fact_about(fact_id,node_id,by,created_at,removed_at) VALUES(?,?,?,?,?)', [(fact_id, *a) for a in kept['about']])
 
     @staticmethod
     def fact_subjects(db, about):
@@ -7006,7 +7038,7 @@ class Store:
     def facts(self):
         """What is learned now: past their end day they are left out (the condense pass retires them)."""
         with self.connect() as db:
-            rows = [dict(r) for r in db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until,confirmed_at FROM facts '
+            rows = [dict(r) for r in db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until,confirmed_at,source FROM facts '
                                                 'WHERE removed_at IS NULL ORDER BY created_at')]
         today = now()[:10]
         return [f for f in rows if not fact_expired(f, today)]

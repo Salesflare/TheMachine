@@ -19,7 +19,10 @@ Every line has one shape, the same for every source (and for sources other modul
      'actor': None,                  # optional: a stable id of who did it (an AI connection), for its own filtered view
      'todo': {'id': '…', 'title': '…'} or None,
      'detail': None,                 # an optional second line
-     'withdraw': None}               # {'id', 'n'} on a learning that can still be withdrawn (Fleet's Withdraw)
+     'withdraw': None,               # {'id', 'n'} on a learning that can still be withdrawn (Fleet's Withdraw)
+     'undo': None}                   # {'action', 'id'}: what still can be taken back, by that owner's dashboard action
+                                     # with {'id'} (a connected AI's Graph change: ai_undo). The source keeps what it was
+                                     # before and refuses when it changed since; this module only passes it on.
 
 What it reads:
 - messages, docs, calendar, web, fixes: the outbox (action_jobs), every step the owner approved or The Machine ran by

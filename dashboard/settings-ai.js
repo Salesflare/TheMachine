@@ -4,7 +4,7 @@
 // that can't sign in by itself (the key shows once). Loads when the tab opens; the owner's dashboard only (AI_ACTIONS).
 var aiView=null;let aiOpen='',aiLines={},aiMade=null,aiBusy=false,aiPairTimer=0,aiPairUntil=0;
 const aiPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
-const AI_LEVELS=[['off','Off'],['read','Read'],['draft','Read & draft']],AI_AREAS=[['both','Work and Personal'],['work','Work only'],['personal','Personal only']],AI_EXPIRY=[['1d','1 day'],['7d','7 days'],['30d','30 days'],['1y','1 year']];
+const AI_LEVELS=[['off','Off'],['read','Read'],['draft','Read & edit']],AI_AREAS=[['both','Work and Personal'],['work','Work only'],['personal','Personal only']],AI_EXPIRY=[['1d','1 day'],['7d','7 days'],['30d','30 days'],['1y','1 year']];
 const aiOptions=(list,now)=>list.map(([v,l])=>`<option value="${v}"${v===now?' selected':''}>${esc(t(l))}</option>`).join('');
 const aiDay=v=>new Date(v).toLocaleDateString(DL,{day:'numeric',month:'short',year:'numeric'});
 async function aiLoad(){if(aiBusy)return;aiBusy=true;try{aiView=await aiPost('ai_connections');renderAi()}catch(e){errCaught(e);notice(e.message,true)}finally{aiBusy=false}}
@@ -14,6 +14,8 @@ function aiConnection(c){const both=(aiView.areas||[]).length>1,state=c.level===
  return `<div class="ai-conn" data-ai="${esc(c.id)}"><span class="grow"><strong translate="no">${esc(c.name)}</strong>${c.kind==='key'?' <span class="alpha">Key</span>':''}<small>${esc(state)} · ${esc(used)} · ${esc(calls)}</small></span>
 <span class="ai-controls"><select data-ai-level aria-label="Access">${aiOptions(AI_LEVELS,c.level)}</select>${both?`<select data-ai-area aria-label="What it can see">${aiOptions(AI_AREAS,c.area)}</select>`:''}<select data-ai-expiry aria-label="For how long"><option value="" selected>${esc(t(c.expired?'Renew for…':'Extend…'))}</option>${aiOptions(AI_EXPIRY,'')}</select>
 <button type="button" class="ghost" data-ai-activity aria-expanded="${open}">Activity</button>${c.level!=='off'?'<button type="button" class="ghost" data-ai-off>Turn off now</button>':''}<button type="button" class="ghost" data-ai-remove>Remove</button></span></div>${open?`<div class="ai-activity">${!lines?`<p class="muted">${esc(t('Loading…'))}</p>`:lines.length?`<ol class="act-list">${actRows(lines)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`}</div>`:''}`}
+// After an Undo in an AI's own activity: its lines read again
+async function aiActivityReload(){const id=aiOpen;if(!id)return;try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err)}renderAi()}
 function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=aiView,list=v.connections||[],both=(v.areas||[]).length>1;
  $('#ai-address').innerHTML=aiAddress(v.reach||{});
  $('#ai-list').innerHTML=list.length?list.map(aiConnection).join(''):'<div><span class="grow"><small>No AI connected yet.</small></span></div>';

@@ -26,7 +26,7 @@ function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text
 // A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
 const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
 const factUntil=d=>new Date(d+'T12:00:00').toLocaleDateString(DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
-function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):''].filter(Boolean);return bits.length?`<small class="fact-meta">${esc(bits.join(' · '))}</small>`:''}
+function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):''].filter(Boolean);return bits.length?`<small class="fact-meta">${esc(bits.join(' · '))}</small>`:''}
 function learnedList(){
  const facts=state.facts||[],at=x=>x.updated_at||x.created_at||'',newest=(a,b)=>at(b).localeCompare(at(a));
  const mergedUndo=(n,attr,label)=>n?`<small>Merged from ${notesN(n)} · <button type="button" class="learn-link" ${attr} aria-label="Undo merge: ${esc(label)}">Undo merge</button></small>`:'';
