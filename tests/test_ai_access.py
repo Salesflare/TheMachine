@@ -889,6 +889,9 @@ class Messages(Base):
             self.assertIsNone(db.execute("SELECT 1 FROM facts WHERE text='Wants the renewal before March'").fetchone())
             line = a.activity_log.page(db, self.app.config, kind='ai')['items'][0]
         self.assertEqual((line['outcome'], line['status'], line['what']), ('pending', 'Waiting for your OK', 'Asked to save a fact'))
+        # each line's detail adds to its title, it doesn't repeat it
+        self.assertRegex(line['detail'], r'^[^:]+: “Wants the renewal before March”$')
+        self.assertEqual([x['detail'] for x in self.activity() if x['tool'] == 'connect'], ['Read & edit · Work only · 30 days · Messages: on'])
         self.assertNotIn('undo', line)
         with self.assertRaises(ValueError):
             self.app.action('ai_undo', {'id': line['decide']['id']}, owner_dashboard=True)
@@ -900,6 +903,7 @@ class Messages(Base):
             line = a.activity_log.page(db, self.app.config, kind='ai')['items'][0]
         self.assertEqual(fact['source'], 'ai:Claude')
         self.assertEqual((line['outcome'], line['what'], line['undo']['action']), ('done', 'Saved a fact', 'ai_undo'))
+        self.assertRegex(line['status'], r'^[^:]+: “Wants the renewal before March”$')
         with self.assertRaises(ValueError):
             self.app.action('ai_apply', {'id': line['undo']['id']}, owner_dashboard=True)  # once only
         self.assertEqual(self.app.action('ai_undo', {'id': line['undo']['id']}, owner_dashboard=True), {'undone': True})
