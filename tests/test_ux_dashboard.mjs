@@ -39,6 +39,10 @@ for(const width of [320,390]){await page.setViewportSize({width,height:650});ass
 await page.screenshot({path:'/tmp/261012-approval-mobile.png',fullPage:true});
 await page.setViewportSize({width:390,height:844});
 await page.goto('http://127.0.0.1:'+server.address().port);await page.getByText('Needs your decision',{exact:true}).last().waitFor();
+// A to-do held for later says where it will reach the owner (Settings, Notifications: New to-dos), never Telegram when that is off.
+{const said=await page.evaluate(at=>[{telegram:true,push:2},{telegram:false,push:2},{telegram:true,push:0},{telegram:false,push:0},undefined].map(ch=>deliveryLabel(at,ch)),suggestions[0].deliver_after);
+ assert.match(said[0],/^Telegram and notification Tomorrow · /);assert.match(said[1],/^Notification Tomorrow · /);assert.match(said[2],/^Telegram Tomorrow · /);assert.deepEqual(said.slice(3),['','']);
+ assert.equal(await page.locator('#task-'+ids[0]+' .chip.t-muted').filter({hasText:/Telegram|Notification/}).count(),0);}
 // Connected-source cards must fit a narrow phone after the design-system change.
 await navClick(page.locator('nav [data-tab="health"]'));
 await page.locator('.health article:not([hidden])').first().waitFor();

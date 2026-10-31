@@ -387,6 +387,18 @@ class Notifications(unittest.TestCase):
         self.app.action('notify_set', {'kind': 'reminder', 'channel': 'telegram', 'on': False}, owner_dashboard=True)
         self.assertEqual(say(), 'It’ll be back on the dashboard then.')
 
+    def test_a_held_to_do_names_the_channels_of_the_to_dos_row(self):
+        # The chip on a to-do held for later ("Telegram Mon 2 Nov · 08:30") follows New to-dos, not Reminders.
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        config = self.app.config = dict(self.config, telegram_owner='42')
+        channels = lambda: a.reminder_channels(self.store, config, 'todo')
+        self.assertEqual(channels(), {'telegram': True, 'push': 1})
+        self.app.action('notify_set', {'kind': 'todo', 'channel': 'telegram', 'on': False}, owner_dashboard=True)
+        self.assertEqual(channels(), {'telegram': False, 'push': 1})
+        self.assertEqual(a.reminder_channels(self.store, config), {'telegram': True, 'push': 1})  # Reminders keep their own row
+        self.app.action('notify_set', {'kind': 'todo', 'channel': 'push', 'on': False}, owner_dashboard=True)
+        self.assertEqual(channels(), {'telegram': False, 'push': 0})
+
     def test_digest_time(self):
         work_day = lambda local: local.isoweekday() <= 5
         at = lambda h, m=0, d=12: a.dt.datetime(2026, 10, d, h, m, tzinfo=UTC)

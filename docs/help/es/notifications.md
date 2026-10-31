@@ -26,6 +26,7 @@ Como Slack, mira si estás usando el panel, no solo si está abierto:
 - Fuera: el panel está en segundo plano, minimizado, cerrado o inactivo durante 10 minutos. Un push sale un minuto después de que lo dejes, salvo que vuelvas y lo veas antes.
 - Sin ver 15 minutos después: un solo correo con todo lo que aún te espera. Como mucho uno por hora. Lo que hayas resuelto mientras tanto, en Telegram o en otro sitio, queda fuera. Usar el panel después de que algo llegó cuenta como haberlo visto, así que un día en el panel puede no traer ningún correo.
 - Fuera de tu horario laboral: nada. El resumen matutino trae lo que llegó.
+- Una tarea nueva de trabajo que llega en un día libre espera a la hora del resumen de tu próximo día laborable. La tarea muestra dónde y cuándo te llegará, como Notificación lun, 2 nov · 08:30, según la fila **Tareas nuevas**. Con Push y Telegram apagados ahí, no dice nada.
 
 Solo avisa lo que te necesita. El progreso y los cambios no. Una ráfaga vibra una vez. El icono de la app muestra cuántas tareas te necesitan.
 
