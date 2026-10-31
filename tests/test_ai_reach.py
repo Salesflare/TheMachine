@@ -1,13 +1,15 @@
 """A self-hosted Machine's own address for AIs (ai_reach.py): the certificate from Let's Encrypt over ACME with
 TLS-ALPN-01 (a fake CA here that checks the challenge certificate through the Machine's own TLS) on an account with
-no contact, backoff after a failure or a rate limit, renewal timing, and the dial-back through a fake cloud: only the
-public paths answer, with the mcp host as issuer and no owner sign-in; a 401 stops the loop. Without `cryptography` Settings says so and nothing starts."""
+no contact, backoff after a failure or a rate limit, renewal timing, request bodies (Content-Length or chunked), and
+the dial-back through a fake cloud: only the public paths answer, with the mcp host as issuer and no owner sign-in;
+a 401 stops the loop. Without `cryptography` Settings says so and nothing starts."""
 import datetime as dt
 import hashlib
 import http.client
 import importlib.util
 import io
 import json
+import re
 import socket
 import ssl
 import stat
@@ -20,6 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 
+import ai_access
 import ai_app
 import ai_reach
 import fleet
@@ -304,6 +307,67 @@ class Certificate(Base):
         self.assertEqual(asked, [])  # its certificate never came out
 
 
+class Stream:
+    """A plain stream for serve_http: what the AI sent, in pieces, and what came back."""
+
+    def __init__(self, *pieces):
+        self.pieces, self.out = list(pieces), b''
+
+    def recv(self, size=65536):
+        return self.pieces.pop(0) if self.pieces else b''
+
+    def sendall(self, data):
+        self.out += data
+
+
+class Bodies(unittest.TestCase):
+    MESSAGE = b'{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+    def run_http(self, *pieces):
+        got = []
+
+        def handle(method, path, headers, body):
+            got.append(body)
+            return 200, {}, b'ok'
+        stream = Stream(*pieces)
+        ai_reach.serve_http(stream, handle)
+        return got, [int(x) for x in re.findall(rb'HTTP/1\.1 (\d{3}) ', stream.out)]
+
+    def test_chunked_bodies_decode_in_any_pieces(self):
+        head = b'POST /mcp HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n'
+        body = b'a;name=value\r\n' + self.MESSAGE[:10] + b'\r\n' + b'%X\r\n' % (len(self.MESSAGE) - 10) + self.MESSAGE[10:] + b'\r\n0\r\nX-Trailer: dropped\r\n\r\n'
+        raw = head + body + b'POST /mcp HTTP/1.1\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}'
+        got, statuses = self.run_http(*[raw[i:i + 7] for i in range(0, len(raw), 7)])
+        self.assertEqual((got, statuses), ([self.MESSAGE, b'{}'], [200, 200]))  # keep-alive after it: the trailer was read
+
+    def test_over_the_cap_is_413_before_the_data_is_read(self):
+        cap = ai_access.BODY_MAX
+        head = b'POST /mcp HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n'
+        stream = Stream(head + b'%x\r\n' % (cap // 2) + b'a' * (cap // 2) + b'\r\n' + b'%x\r\n' % (cap // 2 + 1), b'b' * cap)
+        ai_reach.serve_http(stream, lambda *a: self.fail('reached the App'))
+        self.assertTrue(stream.out.startswith(b'HTTP/1.1 413 '))
+        self.assertEqual(len(stream.pieces), 1)  # the over-cap chunk's data was never read
+        got, statuses = self.run_http(head + b'ffffffffffffffff\r\n')
+        self.assertEqual((got, statuses), ([], [413]))
+
+    def test_malformed_chunked_is_400(self):
+        head = b'POST /mcp HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n'
+        for bad in (b'zz\r\nab\r\n0\r\n\r\n', b'-1\r\n', b'\r\n', b'2\r\nabc\r\n0\r\n\r\n',
+                    b'0x2\r\nab\r\n0\r\n\r\n', b'1' * 17 + b'\r\n', b'1;' + b'x' * 2000 + b'\r\n'):
+            self.assertEqual(self.run_http(head + bad), ([], [400]), bad[:20])
+        self.assertEqual(self.run_http(b'POST /mcp HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\n\r\n'), ([], [501]))
+
+    def test_both_lengths_is_400(self):
+        for head in (b'Content-Length: 4\r\nTransfer-Encoding: chunked', b'Transfer-Encoding: chunked\r\nContent-Length: 4',
+                     b'Content-Length: 4\r\nContent-Length: 5', b'Content-Length: +4'):
+            got, statuses = self.run_http(b'POST /mcp HTTP/1.1\r\n' + head + b'\r\n\r\n4\r\nabcd\r\n0\r\n\r\n')
+            self.assertEqual((got, statuses), ([], [400]), head)
+
+    def test_content_length_still_works_and_its_cap_is_413(self):
+        self.assertEqual(self.run_http(b'POST /mcp HTTP/1.1\r\nContent-Length: 4\r\n\r\nab', b'cd'), ([b'abcd'], [200]))
+        self.assertEqual(self.run_http(b'POST /mcp HTTP/1.1\r\nContent-Length: %d\r\n\r\n' % (ai_access.BODY_MAX + 1)), ([], [413]))
+
+
 class FakeCloud:
     """mcp-wait announces one connection, then says 401; mcp-stream answers 101 and then plays the AI: TLS to the
     Machine's name (trusting only the fake CA) and a few requests on one connection."""
@@ -346,7 +410,10 @@ class FakeCloud:
         with ctx.wrap_socket(conn, server_hostname=HOST) as tls:
             for method, path, extra in self.requests:
                 body = b'{"jsonrpc":"2.0","id":1,"method":"tools/list"}' if method == 'POST' else b''
-                head = f'{method} {path} HTTP/1.1\r\nHost: {HOST}\r\nContent-Length: {len(body)}\r\n' + ''.join(f'{k}: {v}\r\n' for k, v in extra.items())
+                if extra.get('Transfer-Encoding') == 'chunked':  # in two chunks, with an extension and a trailer
+                    body = b'7;x=y\r\n' + body[:7] + b'\r\n' + b'%x\r\n' % (len(body) - 7) + body[7:] + b'\r\n0\r\nX-Done: 1\r\n\r\n'
+                length = '' if 'Transfer-Encoding' in extra else f'Content-Length: {len(body)}\r\n'
+                head = f'{method} {path} HTTP/1.1\r\nHost: {HOST}\r\n{length}' + ''.join(f'{k}: {v}\r\n' for k, v in extra.items())
                 tls.sendall(head.encode() + b'\r\n' + body)
                 response = http.client.HTTPResponse(tls)
                 response.begin()
@@ -370,10 +437,15 @@ class DialBack(Base):
         app.ai_reach_kept = (time.monotonic() + 3600, {'name': 'pat'})
         app.fleet = object.__new__(fleet.Fleet)
         app.fleet.relay = type('Relay', (), {'token': 'fd_' + 'd' * 30})()
+        app.ai_limiter = ai_access.Limiter()
+        with app.store.connect() as db:
+            ai_access.ensure(db)
+            key = ai_access.new_key(db, 'Test', 'read', 'both', '30d')['key']
         cloud = FakeCloud(ca.cert.public_bytes(serialization.Encoding.PEM), [
             ('GET', '/.well-known/oauth-authorization-server', {}),
             ('GET', '/.well-known/oauth-protected-resource/mcp', {}),
             ('POST', '/mcp', {'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream'}),
+            ('POST', '/mcp', {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'Transfer-Encoding': 'chunked'}),
             ('GET', '/oauth/authorize?client_id=x', {}),
             ('GET', '/api/status', {'Tailscale-User-Login': 'owner@example.com'}),
             ('GET', '/', {}),
@@ -389,13 +461,15 @@ class DialBack(Base):
         self.assertTrue(cloud.done.wait(30))
         self.assertEqual([w[1] for w in cloud.waits], ['Bearer fd_' + 'd' * 30] * 2)
         self.assertEqual(cloud.streams, [('/api/fleet/mcp-stream/' + 'ab' * 8, 'Bearer fd_' + 'd' * 30, 'tm-mcp-stream/1', 'Upgrade')])
-        meta, resource, mcp, authorize, status, root = cloud.answers
+        meta, resource, mcp, chunked, authorize, status, root = cloud.answers
         found = json.loads(meta[2])
         self.assertEqual((found['issuer'], found['authorization_endpoint']),
                          ('https://' + HOST, 'https://desk.tailnet.example/oauth/authorize'))
         self.assertEqual(json.loads(resource[2])['resource'], f'https://{HOST}/mcp')
         self.assertEqual(mcp[0], 401)
         self.assertIn(f'resource_metadata="https://{HOST}/.well-known/oauth-protected-resource/mcp"', mcp[1]['WWW-Authenticate'])
+        self.assertEqual(chunked[0], 200, chunked[2])  # a chunked tools/list, with a key
+        self.assertIn('list_todos', [t['name'] for t in json.loads(chunked[2])['result']['tools']])
         self.assertEqual([authorize[0], status[0], root[0]], [404, 404, 404])  # no sign-in, no dashboard, no owner
 
 

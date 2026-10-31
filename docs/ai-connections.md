@@ -126,6 +126,8 @@ self-hosted one, once paired, does it in `ai_reach.py`:
   day, or the CA's `Retry-After` when that is longer. Key and certificate stay next to the database (0600) and never
   leave the Machine; renewed with 30 days left; gone on Unpair. It needs the `cryptography` package: without it
   Settings, AIs says "Install the cryptography package to use this address" and nothing starts.
+- **Request bodies**: `Content-Length` or `Transfer-Encoding: chunked` (extensions ignored, trailers dropped), up to
+  64 KB (413 past it, before reading more). Both headers at once is 400.
 
 **The address goes live once the passthrough ships** in the cloud. Until then, AIs in the owner's tailnet (Claude
 Code, Claude Desktop, Cursor, Codex, a local GBrain) use the dashboard's own address with `/mcp`.
