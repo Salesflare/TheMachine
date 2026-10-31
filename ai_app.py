@@ -588,9 +588,6 @@ class AiReachSide:
     def handle(self, method, path, headers, body, host):
         return self.app.ai_http(method, path, headers, body, host)
 
-    def email(self):
-        return next((str(a.get('email')) for a in self.app.config.get('accounts', []) if '@' in str(a.get('email') or '')), None)
-
 
 def mcp_address(name):
     return f'https://{name}.{MCP_DOMAIN}/mcp'

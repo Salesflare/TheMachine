@@ -1,7 +1,7 @@
-"""A self-hosted Machine's own address for AIs (ai_reach.py): the certificate from a CA over ACME with TLS-ALPN-01
-(a fake CA here that checks the challenge certificate through the Machine's own TLS), ZeroSSL when the first CA
-fails, renewal timing, and the dial-back through a fake cloud: only the public paths answer, with the mcp host as
-issuer and no owner sign-in; a 401 stops the loop. Without `cryptography` Settings says so and nothing starts."""
+"""A self-hosted Machine's own address for AIs (ai_reach.py): the certificate from Let's Encrypt over ACME with
+TLS-ALPN-01 (a fake CA here that checks the challenge certificate through the Machine's own TLS) on an account with
+no contact, backoff after a failure or a rate limit, renewal timing, and the dial-back through a fake cloud: only the
+public paths answer, with the mcp host as issuer and no owner sign-in; a 401 stops the loop. Without `cryptography` Settings says so and nothing starts."""
 import datetime as dt
 import hashlib
 import http.client
@@ -54,8 +54,9 @@ def serve_then_close(sock, host, challenges, cert_context):
 class FakeCA:
     """An ACME server (RFC 8555) that validates TLS-ALPN-01 by a TLS handshake with the Machine's own serve()."""
 
-    def __init__(self, challenges, eab=None, refuse_orders=False, days=90):
-        self.challenges, self.eab, self.refuse_orders, self.days = challenges, eab, refuse_orders, days
+    def __init__(self, challenges, bound=False, refuse_orders=False, days=90, limited=None):
+        self.challenges, self.bound, self.refuse_orders, self.days, self.limited = challenges, bound, refuse_orders, days, limited
+        self.raw = []
         self.key = ec.generate_private_key(ec.SECP256R1())
         name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Fake CA')])
         now = dt.datetime.now(dt.timezone.utc)
@@ -91,10 +92,12 @@ class FakeCA:
             def do_GET(self):
                 base = ca.url
                 self.reply(200, {'newNonce': base + '/nonce', 'newAccount': base + '/acct', 'newOrder': base + '/order-new',
-                                 'meta': {'externalAccountRequired': bool(ca.eab)}})
+                                 'meta': {'externalAccountRequired': ca.bound}})
 
             def do_POST(self):
-                jws = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                raw = self.rfile.read(int(self.headers['Content-Length']))
+                ca.raw.append(raw)
+                jws = json.loads(raw)
                 protected = json.loads(unb64u(jws['protected']))
                 assert protected['nonce'] in ca.nonces, 'unknown nonce'
                 ca.nonces.discard(protected['nonce'])
@@ -121,18 +124,14 @@ class FakeCA:
 
     def route(self, h, path, payload, protected):
         if path == '/acct':
-            if self.eab:
-                binding = payload['externalAccountBinding']
-                head = json.loads(unb64u(binding['protected']))
-                import hmac
-                mac = hmac.new(unb64u(self.eab[1]), f"{binding['protected']}.{binding['payload']}".encode(), hashlib.sha256).digest()
-                assert head['kid'] == self.eab[0] and unb64u(binding['signature']) == mac
-                assert json.loads(unb64u(binding['payload'])) == protected['jwk']
             kid = self.url + '/acct/1'
             self.accounts[kid] = self.public(protected['jwk'])
             self.jwk = protected['jwk']
             return h.reply(201, {'status': 'valid'}, headers={'Location': kid})
         if path == '/order-new':
+            if self.limited:
+                return h.reply(429, {'type': 'urn:ietf:params:acme:error:rateLimited', 'detail': 'too many'},
+                               'application/problem+json', {'Retry-After': self.limited})
             if self.refuse_orders:
                 return h.reply(400, {'type': 'urn:ietf:params:acme:error:rejectedIdentifier', 'detail': 'no'}, 'application/problem+json')
             self.host = payload['identifiers'][0]['value']
@@ -198,7 +197,7 @@ class Certificate(Base):
         challenges = {}
         ca = FakeCA(challenges)
         self.addCleanup(ca.close)
-        self.assertEqual(ai_reach.obtain(self.config, HOST, challenges, cas=(('letsencrypt', ca.url),), wait=lambda s: None), 'letsencrypt')
+        self.assertEqual(ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None), 'letsencrypt')
         critical, value, names = ca.checked
         self.assertTrue(critical)
         self.assertEqual(names, [HOST])
@@ -211,24 +210,79 @@ class Certificate(Base):
         self.assertFalse(ai_reach.needs_cert(self.config, HOST))
         self.assertTrue(ai_reach.needs_cert(self.config, 'sam.mcp.themachine.computer'))  # a new name: a new certificate
 
-    def test_zerossl_when_the_first_ca_refuses_with_a_bound_account(self):
-        challenges, asked = {}, []
-        refusing = FakeCA(challenges, refuse_orders=True)
-        self.addCleanup(refusing.close)
-        binding = ('kid-1', ai_reach.b64u(b'k' * 32))
-        zerossl = FakeCA(challenges, eab=binding)
-        self.addCleanup(zerossl.close)
-        got = ai_reach.obtain(self.config, HOST, challenges, email='pat@example.com',
-                              cas=(('letsencrypt', refusing.url), ('zerossl', zerossl.url)),
-                              eab=lambda email: asked.append(email) or binding, wait=lambda s: None)
-        self.assertEqual((got, asked), ('zerossl', ['pat@example.com']))
-        self.assertEqual(set(json.loads((self.dir / ai_reach.ACCOUNT_FILE).read_text())), {'letsencrypt', 'zerossl'})
+    def test_no_email_address_goes_to_the_ca(self):
+        challenges = {}
+        ca = FakeCA(challenges)
+        self.addCleanup(ca.close)
+        ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None)
+        paths = [path for path, _ in ca.seen]
+        self.assertIn('/acct', paths)
+        for path, payload in ca.seen:
+            self.assertNotIn('contact', payload or {}, path)
+            self.assertNotIn('externalAccountBinding', payload or {}, path)
+        for raw in ca.raw:
+            self.assertNotIn(b'contact', raw)
+            self.assertNotIn(b'pat@example.com', raw)
+        self.assertEqual(set(json.loads((self.dir / ai_reach.ACCOUNT_FILE).read_text())), {'letsencrypt'})
+        self.assertFalse(hasattr(ai_reach, 'zerossl_eab'))
+        self.assertNotIn('zerossl', ai_reach.CA)
+
+    def test_a_ca_that_wants_an_account_binding_gets_no_account(self):
+        challenges = {}
+        ca = FakeCA(challenges, bound=True)
+        self.addCleanup(ca.close)
+        with self.assertRaisesRegex(ai_reach.AcmeError, 'binding'):
+            ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None)
+        self.assertEqual(ca.seen, [])
+
+    def test_a_rate_limit_says_how_long_to_wait(self):
+        challenges = {}
+        ca = FakeCA(challenges, limited='7200')
+        self.addCleanup(ca.close)
+        with self.assertRaises(ai_reach.AcmeError) as caught:
+            ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None)
+        self.assertEqual(caught.exception.retry_after, 7200)
+
+    def test_backoff_doubles_and_honors_retry_after(self):
+        first, top = ai_reach.RETRY_FIRST, ai_reach.RETRY_MAX
+        self.assertEqual([ai_reach.backoff(n) for n in (1, 2, 3)], [first, 2 * first, 4 * first])
+        self.assertEqual(ai_reach.backoff(30), top)
+        self.assertEqual(ai_reach.backoff(1, 7200), 7200)
+        self.assertEqual(ai_reach.backoff(1, 10 ** 9), ai_reach.RETRY_AFTER_MAX)
+        self.assertEqual(ai_reach.retry_after('120'), 120)
+        now = dt.datetime(2026, 10, 31, 12, tzinfo=dt.timezone.utc)
+        self.assertEqual(ai_reach.retry_after('Sat, 31 Oct 2026 13:00:00 GMT', now), 3600)
+        self.assertIsNone(ai_reach.retry_after('soon'))
+
+    def test_failed_tries_back_off(self):
+        side = type('Side', (), {'name': lambda s: 'pat', 'token': lambda s: None})()
+        loop = ai_reach.Reach(self.config, side)
+        tries = []
+
+        def failing(*args, **kwargs):
+            tries.append(1)
+            raise ai_reach.AcmeError('429 too many', retry_after=5000 if len(tries) == 2 else None)
+        with patch.object(ai_reach, 'obtain', failing), patch.object(ai_reach.threading, 'Thread') as thread:
+            thread.side_effect = lambda target, **kw: type('T', (), {'start': lambda s: target()})()
+            clock = [1000.0]
+            with patch.object(ai_reach.time, 'monotonic', lambda: clock[0]):
+                loop.certify(HOST)
+                self.assertEqual((loop.state, loop.next_try), ('failed', 1000.0 + ai_reach.RETRY_FIRST))
+                clock[0] += ai_reach.RETRY_FIRST - 1
+                loop.certify(HOST)  # too soon: no try
+                self.assertEqual(len(tries), 1)
+                clock[0] += 1
+                loop.certify(HOST)
+                self.assertEqual(loop.next_try, clock[0] + 5000)  # the CA's Retry-After, longer than 2 x RETRY_FIRST
+                clock[0] = loop.next_try
+                loop.certify(HOST)
+                self.assertEqual((len(tries), loop.next_try), (3, clock[0] + 4 * ai_reach.RETRY_FIRST))
 
     def test_renewal_with_thirty_days_left(self):
         challenges = {}
         ca = FakeCA(challenges, days=40)
         self.addCleanup(ca.close)
-        ai_reach.obtain(self.config, HOST, challenges, cas=(('letsencrypt', ca.url),), wait=lambda s: None)
+        ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None)
         now = dt.datetime.now(dt.timezone.utc)
         self.assertFalse(ai_reach.needs_cert(self.config, HOST, now + dt.timedelta(days=9)))
         self.assertTrue(ai_reach.needs_cert(self.config, HOST, now + dt.timedelta(days=11)))
@@ -309,7 +363,7 @@ class DialBack(Base):
         challenges = {}
         ca = FakeCA(challenges)
         self.addCleanup(ca.close)
-        ai_reach.obtain(self.config, HOST, challenges, cas=(('letsencrypt', ca.url),), wait=lambda s: None)
+        ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None)
         app = object.__new__(a.App)
         app.store = a.Store(self.config['database'])
         app.config, app.stop = self.config, threading.Event()
