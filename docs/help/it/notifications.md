@@ -26,6 +26,7 @@ Come Slack, guarda se stai usando la dashboard, non solo se è aperta:
 - Assente: la dashboard è in secondo piano, ridotta a icona, chiusa o inattiva da 10 minuti. Una push parte un minuto dopo che l'hai lasciata, a meno che tu non torni e la veda prima.
 - Ancora non vista dopo 15 minuti: una sola email con tutto ciò che ti aspetta ancora. Al massimo una all'ora. Ciò che hai gestito nel frattempo, su Telegram o altrove, resta fuori. Usare la dashboard dopo che qualcosa è arrivato conta come averlo visto: in una giornata passata sulla dashboard può non arrivare nessuna email.
 - Fuori dal tuo orario di lavoro: niente. Il riepilogo del mattino contiene ciò che è arrivato.
+- Una nuova attività di lavoro arrivata in un giorno libero aspetta l'ora del riepilogo del tuo prossimo giorno lavorativo. L'attività mostra dove e quando ti raggiungerà, come Notifica lun 2 nov · 08:30, secondo la riga **Nuove attività**. Con Push e Telegram entrambi spenti lì, non dice nulla.
 
 Notifica solo ciò che ha bisogno di te. Avanzamenti e modifiche no. Una raffica vibra una volta sola. L'icona dell'app mostra quante attività hanno bisogno di te.
 

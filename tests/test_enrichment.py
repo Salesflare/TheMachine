@@ -220,6 +220,26 @@ class Enrichment(unittest.TestCase):
         self.build()
         self.assertEqual(self.node('org:remy.be')['profile']['website'], 'https://remy-accountants.be')  # the owner's own wins
 
+    def test_a_senders_name_gives_the_organisation_its_real_name_and_an_address_reads_as_a_name(self):
+        self.assertEqual(graph.org_from_name('Robin from Blue Harbor', 'getblueharbor.com'), 'Blue Harbor')
+        self.assertEqual(graph.org_from_name('Bo | Northwind Robotics Inc.', 'northwindrobotics.com'), 'Northwind Robotics')
+        self.assertEqual(graph.org_from_name('Kim Lee (Initech)', 'initech.com'), 'Initech')
+        for name, domain in (('Sam via LinkedIn', 'linkedin.com'), ('Bob from Google', 'gmail.com'), ('Dana - Sales', 'acme.com'), ('Robin', 'getblueharbor.com')):
+            self.assertIsNone(graph.org_from_name(name, domain), name)
+        self.assertEqual([graph.address_shown('email:' + x) for x in ('kim.lv@initech.example', 'jane.doe@x.example', 'john_smith+news@x.example',
+                                                                      'info@x.example', 'x123@x.example', 'j@x.example')],
+                         ['Kim', 'Jane Doe', 'John Smith', None, None, None])
+        self.add(tg.mail(3, 'Robin from Blue Harbor <robin@getblueharbor.example>', 'sam@acme.com'),
+                 tg.mail(2, 'Sam <sam@acme.com>', 'Robin <robin@getblueharbor.example>', ('SENT',)),
+                 tg.mail(3, 'kim.lv@initech.example', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'kim.lv@initech.example', ('SENT',)))
+        self.build()
+        self.assertEqual(self.node('org:getblueharbor.example')['name'], 'Blue Harbor')  # not "Getblueharbor"
+        self.assertEqual(self.node('email:robin@getblueharbor.example')['name'], 'Robin')
+        with self.store.connect() as db:
+            ids = [r[0] for r in db.execute("SELECT event_id FROM graph_events WHERE node_id='email:kim.lv@initech.example'")]
+            people, _ = graph.card_people(db, ids)
+        self.assertEqual([(p['name'], p['org']['name']) for p in people], [('Kim', 'Initech')])  # not the raw address
+
     def test_paired_with_the_network_organisations_get_hosteds_budget(self):
         self.add(*[m for n in range(8) for m in (tg.mail(3, f'P{n} <p{n}@org{n}.example>', 'sam@acme.com'),
                                                  tg.mail(2, 'Sam <sam@acme.com>', f'P{n} <p{n}@org{n}.example>', ('SENT',)))])

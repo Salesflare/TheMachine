@@ -27,6 +27,7 @@ Like Slack, it looks at whether you're using the dashboard, not just whether it'
 - Still unseen 15 minutes later: one email with everything that still waits for you. At most one an hour. Anything you handled in the meantime, on Telegram or elsewhere, is left out. Using the dashboard after something came in counts as seeing it, so on a day spent at the dashboard there may be no email at all.
 - A teammate hands you a to-do and your Machine has no phone or Telegram to ping you on: one email for it, 15 minutes later if you still haven't seen it. Just its title and a link. **Email** for **Results and questions** turns it off.
 - Outside your work hours: nothing. The morning digest has what came in.
+- A new work to-do that comes in on a day off waits for your next work day's digest time. Its to-do shows where and when it will reach you, like Notification Mon 2 Nov · 08:30, following the **New to-dos** row. With Push and Telegram both off there, it says nothing.
 
 Only what needs you notifies. Progress and edits don't. A burst buzzes once. The app's icon shows how many to-dos need you.
 

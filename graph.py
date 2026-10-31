@@ -393,6 +393,42 @@ def handle_shown(name):
     return name.title() if isinstance(name, str) and HANDLE_NAME.fullmatch(name) else name
 
 
+def address_shown(identifier):
+    """A readable name for someone known only by their address: kim.lv@ is "Kim", jane.doe@ is "Jane Doe".
+    None for a team address (info@, sales@) or a local part that doesn't read as a name."""
+    if not str(identifier or '').startswith('email:') or ROLE.match(identifier[6:]):
+        return None
+    parts = [p for p in re.split(r'[._-]+', identifier[6:].split('@', 1)[0].split('+', 1)[0]) if p]
+    if not parts or not all(re.fullmatch(r'[^\W\d_]+', p) for p in parts) or len(parts[0]) < 2 or len(parts) > 3:
+        return None
+    words = [parts[0]] + ([parts[-1]] if len(parts) > 1 and len(parts[-1]) >= 3 else [])
+    if len(parts) == 1 and not 3 <= len(parts[0]) <= 12:
+        return None
+    return ' '.join(w[:1].upper() + w[1:].lower() for w in words)
+
+
+EMAIL_ONLY = re.compile(r'[^\s@]+@[^\s@]+\.[^\s@]+')
+ORG_SAID = re.compile(r'\s+(?:[|/\-–—•·:@]|from|at)\s+(.+)$|\(([^)]+)\)\s*$')  # "Robin from Blue Harbor", "Kim (Initech)"
+ORG_LEGAL = re.compile(r'(?i)[\s,]+(?:inc|ltd|llc|bv|nv|gmbh|sa|sas|srl|ag|corp|co|plc|hq)\.?$')
+DOMAIN_PREFIXES = ('get', 'try', 'use', 'join', 'hello', 'hey', 'go', 'meet', 'with', 'my', 'the')
+DOMAIN_SUFFIXES = ('hq', 'app', 'apps', 'inc', 'io', 'ai', 'team', 'group', 'labs', 'co', 'corp', 'global')
+
+
+def org_from_name(name, domain):
+    """The organization a sender's display name gives ("Robin from Blue Harbor" at getblueharbor.com is "Blue Harbor"),
+    only when it spells the address's domain (with get-, try-, -hq and the like around it). Else None."""
+    found = ORG_SAID.search(' '.join(str(name or '').split()))
+    said = ORG_LEGAL.sub('', (found.group(1) or found.group(2) or '').strip(' ,.;:')) if found else ''
+    if not said or len(said) > 60 or '@' in said or DOMAIN_NAME.fullmatch(said):
+        return None
+    letters = re.sub(r'[^a-z0-9]', '', unicodedata.normalize('NFKD', said).encode('ascii', 'ignore').decode().casefold())
+    label = re.sub(r'[^a-z0-9]', '', enrichment.registrable(str(domain or '').lower().removeprefix('www.')).split('.')[0])
+    if len(letters) < 2 or not label:
+        return None
+    fits = label == letters or any(label == p + letters for p in DOMAIN_PREFIXES) or any(label == letters + s for s in DOMAIN_SUFFIXES)
+    return said if fits else None
+
+
 def plain_name(name):
     """Comparable full name: accents, case, punctuation and extra spaces removed; None unless it
     looks like a person's full name (two or more words, no address)."""
@@ -1190,6 +1226,7 @@ def _build_in(db, config, now, team, kin, locked):
     seen_message_ids = set()
     per_event, names, x_names = {}, collections.defaultdict(collections.Counter), {}
     crm_names, paying_names = {}, {}
+    said_orgs = collections.defaultdict(collections.Counter)  # domain -> names its senders give it ("Robin from Blue Harbor")
     appears = collections.defaultdict(set)  # identifier -> where they show up: a hint for a review, never a role
     owner_events = set()
     headlines = set()  # LinkedIn conversations whose person has a headline (read at view time: it stays sealed in the signal)
@@ -1237,6 +1274,8 @@ def _build_in(db, config, now, team, kin, locked):
         for identifier, name, _, _ in found:
             if name and str(name).strip() and '@' not in str(name) and str(name).strip().casefold() not in GENERIC_NAMES:
                 names[identifier][person_name(name)] += 1
+                if identifier.startswith('email:') and (org := org_from_name(name, identifier.rsplit('@', 1)[1])):
+                    said_orgs[identifier.rsplit('@', 1)[1]][org] += 1
             if identifier.startswith('x:') and m.get('screen_name') and not m.get('from_me'):
                 x_names[identifier] = m['screen_name']
     merges = db.execute('SELECT a,b,same,source FROM graph_merges ORDER BY created_at').fetchall()
@@ -1592,7 +1631,8 @@ def _build_in(db, config, now, team, kin, locked):
         # A CRM or Stripe name that is only the domain says nothing; a looked-up or readable one reads better.
         said = [n for n in (crm_names.get(domain), paying_names.get(domain)) if n and str(n).strip().lower().removeprefix('www.') != domain]
         return (named.get('org:' + domain) or (said[0] if said else None)
-                or ({**(profiles.get(domain) or {}), **edits.get(domain, {})}).get('name') or enrichment.readable_name(domain))
+                or ({**(profiles.get(domain) or {}), **edits.get(domain, {})}).get('name')
+                or (said_orgs[domain].most_common(1)[0][0] if said_orgs.get(domain) else None) or enrichment.readable_name(domain))
     by_org_name = {}
     for domain in sorted(members):
         by_org_name.setdefault(folded_words(org_name(domain)), domain)
@@ -2539,7 +2579,7 @@ def card_people(db, event_ids, limit=3):
     rows = db.execute(f"SELECT DISTINCT n.id,n.name,n.strength,n.info,o.id org_id,o.name org_name,o.info org_info FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
                       f"LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({marks}) "
                       "ORDER BY n.strength DESC", ids).fetchall()
-    people = [{'id': r['id'], 'name': handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
+    people = [{'id': r['id'], 'name': (EMAIL_ONLY.fullmatch(r['name'] or '') and address_shown('email:' + r['name'].lower())) or handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
                'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
                **({'org': {'id': r['org_id'], 'name': r['org_name']}} if r['org_id'] and r['org_name'] else {})} for r in rows]
     weight = max((r['strength'] + (2 if p['paying'] else 0) for r, p in zip(rows, people)), default=0.0)

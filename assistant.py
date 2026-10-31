@@ -12591,14 +12591,15 @@ def push_notify(store, config, row, sender=None):
     return push_send(store, config, subscriptions, payload, 'suggestion=' + row['id'], sender, kind=notify.kind_of(row))
 
 
-def reminder_channels(store, config):
+def reminder_channels(store, config, kind='reminder'):
     """Where a reminder (a snooze ending, a result) reaches the owner, as deliver_one sends it: Telegram when it is on,
-    and a notification on every subscribed device (push_notify needs dashboard_host). `push` is the device count."""
+    and a notification on every subscribed device (push_notify needs dashboard_host). `push` is the device count.
+    kind 'todo': where a new to-do held for later (deliver_after) goes when its time comes."""
     push, telegram_pref = 0, True
     with store.connect() as db:
-        if config.get('dashboard_host') and notify.allowed(db, 'reminder', 'push'):  # Settings, Notifications: Reminders
+        if config.get('dashboard_host') and notify.allowed(db, kind, 'push'):  # Settings, Notifications, per kind
             push = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
-        telegram_pref = notify.allowed(db, 'reminder', 'telegram')
+        telegram_pref = notify.allowed(db, kind, 'telegram')
     return {'telegram': telegram_on(config) and telegram_pref, 'push': push}
 
 
@@ -14976,6 +14977,7 @@ class App(*APP_MIXINS):
             result['hours'] = self.hours()
             result['locale'] = self.locale_view()
             result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
+            result['todo_channels'] = reminder_channels(self.store, self.config, 'todo')  # where a to-do held for later goes (its deliver_after chip)
             result['notify'] = self.notify_view()
             result['agents_settings'] = self.agents_view()
             result['setup_hints'] = self.setup_hints_view()
