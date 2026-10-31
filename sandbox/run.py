@@ -129,7 +129,7 @@ def seed_ai(app):
         key = ai_access.new_key(db, 'Morning script', 'read', 'both', '7d')['id']
         lines = [(cid, 25, 'list_todos', 'ok', '6 to-dos'), (cid, 24, 'search_graph', 'ok', '2 found'),
                  (cid, 20, 'get_todo', 'ok', '“Send the renewal quote”'),
-                 (cid, 15, 'create_draft', 'ok', 'To buyer@example.com: “Renewal quote”'),
+                 (cid, 15, 'create_draft', 'ok', 'To buyer@client.example: “Renewal quote”'),
                  (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
         for connection, hours, tool, outcome, detail in lines:
             ai_access.log(db, connection, tool, outcome, detail, at=now - dt.timedelta(hours=hours))
