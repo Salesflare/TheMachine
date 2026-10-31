@@ -28,7 +28,7 @@ Um admin pode exigir o **E-mail de trabalho** e o **Calendário de trabalho** de
 
 - Conversas com clientes: e-mails com pessoas de fora da sua empresa sobre trabalho, com os anexos.
 - Pessoas, organizações e projetos de trabalho, com uma linha do tempo curta.
-- Em um quadro de Equipe, também as reuniões, as notas do Zoom, as conversas do Intercom e os chats de um projeto, por estarem no quadro. Os sensíveis, como negócios, ficam de fora.
+- Em um quadro de Equipe, também as reuniões, as notas do Zoom, as conversas do Intercom e os chats de um projeto, por estarem no quadro. Os sensíveis, como negócios, ficam de fora, assim como os chats só entre colegas.
 
 ## Fora do compartilhamento automático
 

@@ -10,6 +10,8 @@ site: Connect, More sources, Remove
 
 As conversas de que você participa: canais, canais privados, mensagens diretas e mensagens em grupo, dos últimos 7 dias quando você conecta, e depois tudo o que for novo. Ele nunca entra em um canal nem abre uma conversa sozinho.
 
+As pessoas aparecem pelo nome e os apps pelo deles, nunca por um ID do Slack. Alguém cuja conta do Slack não existe mais aparece como ex-usuário do Slack.
+
 ## O que ele pode enviar
 
 Uma mensagem direta para uma pessoa, em seu nome, e só depois que você aprova na tarefa. Ele nunca publica em um canal.

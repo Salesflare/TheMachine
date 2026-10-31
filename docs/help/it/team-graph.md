@@ -28,7 +28,7 @@ Un admin può rendere obbligatorie per tutti l'**Email di lavoro** e il **Calend
 
 - Conversazioni con i clienti: email di lavoro con persone esterne alla tua azienda, con i loro allegati.
 - Persone, organizzazioni e progetti di lavoro, con una breve cronologia.
-- Su una bacheca del team, anche le riunioni di un progetto, le note di Zoom, le conversazioni di Intercom e le chat, perché sono sulla bacheca. Quelle sensibili, come le trattative, restano fuori.
+- Su una bacheca del team, anche le riunioni di un progetto, le note di Zoom, le conversazioni di Intercom e le chat, perché sono sulla bacheca. Quelle sensibili, come le trattative, restano fuori, come le chat solo tra colleghi.
 
 ## Fuori dalla condivisione automatica
 

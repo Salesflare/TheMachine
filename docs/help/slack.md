@@ -10,6 +10,8 @@ site: Connect, More sources, Remove
 
 The conversations you're a member of: channels, private channels, direct messages and group messages, the last 7 days when you connect, then everything new. It never joins a channel or opens a conversation by itself.
 
+People show by their name and apps by theirs, never by a Slack ID. Someone whose Slack account is gone shows as a former Slack user.
+
 ## What it can send
 
 A direct message to one person, as you, and only after you approve it on the to-do. It never posts in a channel.

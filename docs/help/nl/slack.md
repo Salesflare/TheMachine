@@ -10,6 +10,8 @@ site: Connect, More sources, Remove
 
 De gesprekken waarvan je lid bent: kanalen, privékanalen, directe berichten en groepsberichten, de laatste 7 dagen als je koppelt, daarna alles wat nieuw is. Het sluit nooit zelf aan bij een kanaal en begint nooit zelf een gesprek.
 
+Mensen staan er met hun naam en apps met die van hen, nooit met een Slack-ID. Iemand van wie het Slack-account weg is, staat er als voormalige Slack-gebruiker.
+
 ## Wat het kan versturen
 
 Een direct bericht aan één persoon, als jou, en pas nadat je het goedkeurt op de to-do. Het plaatst nooit iets in een kanaal.

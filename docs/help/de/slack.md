@@ -10,6 +10,8 @@ site: Connect, More sources, Remove
 
 Die Unterhaltungen, in denen du Mitglied bist: Channels, private Channels, Direktnachrichten und Gruppennachrichten, die letzten 7 Tage beim Verbinden, danach alles Neue. Es tritt nie von selbst einem Channel bei und startet keine Unterhaltung.
 
+Personen erscheinen mit ihrem Namen und Apps mit ihrem, nie mit einer Slack-ID. Jemand, dessen Slack-Konto nicht mehr besteht, erscheint als ehemaliger Slack-Nutzer.
+
 ## Was es senden kann
 
 Eine Direktnachricht an eine Person, als du, und nur, nachdem du sie bei der Aufgabe freigegeben hast. Es postet nie in einem Channel.

@@ -28,7 +28,7 @@ Un administrador puede exigir el **Correo de trabajo** y el **Calendario de trab
 
 - Hilos con clientes: correos con personas de fuera de tu empresa sobre trabajo, con sus adjuntos.
 - Personas, organizaciones y proyectos de trabajo, con una cronología breve.
-- En un tablero de Equipo, también las reuniones de un proyecto, las notas de Zoom, las conversaciones de Intercom y los chats, por estar en el tablero. Los sensibles, como las operaciones, se quedan fuera.
+- En un tablero de Equipo, también las reuniones de un proyecto, las notas de Zoom, las conversaciones de Intercom y los chats, por estar en el tablero. Los sensibles, como las operaciones, se quedan fuera, igual que los chats solo entre compañeros.
 
 ## Fuera del uso compartido automático
 

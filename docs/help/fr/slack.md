@@ -10,6 +10,8 @@ site: Connect, More sources, Remove
 
 Les conversations dont vous êtes membre : canaux, canaux privés, messages directs et messages de groupe, les 7 derniers jours au moment de la connexion, puis tout ce qui est nouveau. Elle ne rejoint jamais un canal et n’ouvre jamais une conversation d’elle-même.
 
+Les personnes apparaissent sous leur nom et les apps sous le leur, jamais sous un ID Slack. Une personne dont le compte Slack n’existe plus apparaît comme ancien utilisateur de Slack.
+
 ## Ce qu’elle peut envoyer
 
 Un message direct à une personne, en votre nom, et seulement après votre accord sur la tâche. Elle ne publie jamais dans un canal.

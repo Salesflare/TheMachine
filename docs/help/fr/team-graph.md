@@ -28,7 +28,7 @@ Un admin peut exiger l’**E-mail pro** et l’**Agenda pro** de chacun sur le d
 
 - Les fils clients : les e-mails de travail avec des personnes extérieures à votre entreprise, avec leurs pièces jointes.
 - Les personnes, organisations et projets de travail, avec une courte chronologie.
-- Sur un tableau d’équipe, les réunions d’un projet, les notes Zoom, les conversations Intercom et les chats aussi, parce qu’ils sont sur le tableau. Les éléments sensibles, comme les deals, restent exclus.
+- Sur un tableau d’équipe, les réunions d’un projet, les notes Zoom, les conversations Intercom et les chats aussi, parce qu’ils sont sur le tableau. Les éléments sensibles, comme les deals, restent exclus, tout comme les chats entre collègues uniquement.
 
 ## Exclu du partage automatique
 

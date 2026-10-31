@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UN
 CREATE TABLE IF NOT EXISTS event_projects(event_id INTEGER NOT NULL,project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   source TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(event_id,project_id));
 CREATE TABLE IF NOT EXISTS identity_names(identifier TEXT PRIMARY KEY,name TEXT,email TEXT,checked_at TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS slack_members(user_id TEXT PRIMARY KEY,outside INTEGER NOT NULL,checked_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS slack_members(user_id TEXT PRIMARY KEY,outside INTEGER NOT NULL,checked_at TEXT NOT NULL,label TEXT);
 CREATE TABLE IF NOT EXISTS graph_merges(a TEXT NOT NULL,b TEXT NOT NULL,same INTEGER NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(a,b));
 CREATE TABLE IF NOT EXISTS graph_same(a TEXT NOT NULL,b TEXT NOT NULL,why TEXT NOT NULL,score REAL NOT NULL,PRIMARY KEY(a,b));
 CREATE TABLE IF NOT EXISTS graph_nodes(id TEXT PRIMARY KEY,kind TEXT NOT NULL,name TEXT NOT NULL,strength REAL NOT NULL,
@@ -221,6 +221,8 @@ def ensure(db):
         db.execute('ALTER TABLE graph_events ADD COLUMN direct INTEGER NOT NULL DEFAULT 0')
     if 'source' not in {r[1] for r in db.execute('PRAGMA table_info(graph_merges)')}:  # who said it (2026-10-23): the owner, or a review (older rows)
         db.execute('ALTER TABLE graph_merges ADD COLUMN source TEXT')
+    if 'label' not in {r[1] for r in db.execute('PRAGMA table_info(slack_members)')}:  # a member who is no person in the graph, by name (2026-10-31)
+        db.execute('ALTER TABLE slack_members ADD COLUMN label TEXT')
     have = {r[1] for r in db.execute('PRAGMA table_info(person_roles)')}
     for column in ('event_id INTEGER', 'quote TEXT', 'hints TEXT', 'checked_at TEXT'):  # a role's evidence and when it was last read
         if column.split()[0] not in have:
@@ -557,28 +559,46 @@ def slack_members_on(m):
 
 
 def slack_members_known(db, ids):
-    """The Slack members among these whose place (the company's own Slack, or outside it) is known."""
-    return {r[0] for r in db.execute('SELECT user_id FROM slack_members WHERE user_id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(ids)),))}
+    """The Slack members among these that Slack was asked about: their place (the company's own Slack, or outside it)
+    and a name to show are known. One looked up before names were kept for those who are no person (an app, the owner)
+    is asked again."""
+    return {r[0] for r in db.execute(
+        "SELECT m.user_id FROM slack_members m WHERE m.user_id IN (SELECT value FROM json_each(?)) AND (m.label>'' OR EXISTS("
+        "SELECT 1 FROM identity_names i WHERE i.identifier='slack:'||m.user_id AND i.name>''))", (json.dumps(sorted(ids)),))}
 
 
-def remember_slack_member(db, user_id, outside, at):
+def remember_slack_member(db, user_id, outside, at, label=None):
     """Whether a Slack member is outside the company's own Slack (another company's member through Slack Connect, or a
-    guest), as users.info said: what shared_graph.visibility shares on."""
-    db.execute('INSERT OR REPLACE INTO slack_members(user_id,outside,checked_at) VALUES(?,?,?)', (user_id, int(bool(outside)), at))
+    guest), as users.info said: what shared_graph.visibility shares on. label: the name to show for one who is no
+    person in the graph (an app or bot, the owner themselves, someone whose account is gone)."""
+    db.execute('INSERT OR REPLACE INTO slack_members(user_id,outside,checked_at,label) VALUES(?,?,?,?)',
+               (user_id, int(bool(outside)), at, (str(label).strip()[:200] or None) if label else None))
+
+
+# What a Slack member is called when Slack has no name for them at all: their account is gone (FORMER_SLACK_USER), or
+# they were not looked up yet (SOMEONE_ON_SLACK). Never their id, and never left blank.
+FORMER_SLACK_USER = 'a former Slack user'
+SOMEONE_ON_SLACK = 'someone on Slack'
 
 
 def slack_names(db, ids):
     """{Slack member id: name}: the name the people graph shows for them (the name from their mail over a lower-case
-    Slack handle), else the one Slack's users.info gave (identity_names). Unknown ones are left out."""
+    Slack handle; one matched by their email too), else the one Slack's users.info gave (identity_names), else the
+    name kept for one who is no person (slack_members.label: an app, the owner, a former member). Unknown ones are left
+    out."""
     ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
     if not ids:
         return {}
     marks = ','.join('?' * len(ids))
     try:
-        names = {r[0].split(':', 1)[1]: r[1] for r in db.execute(
-            f'SELECT identifier,name FROM identity_names WHERE name>\'\' AND identifier IN ({marks})', ['slack:' + i for i in ids])}
-        rows = db.execute("SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(ids)) + ')',
-                          ['%"slack:' + i + '"%' for i in ids]).fetchall()
+        found_rows = db.execute(f'SELECT identifier,name,email FROM identity_names WHERE identifier IN ({marks})',
+                                ['slack:' + i for i in ids]).fetchall()
+        names = {r[0].split(':', 1)[1]: r[1] for r in found_rows if r[1]}
+        emails = {r[0].split(':', 1)[1]: str(r[2]).lower() for r in found_rows if r[2]}
+        likes = ['%"slack:' + i + '"%' for i in ids] + ['%"email:' + e + '"%' for e in sorted(set(emails.values()))]
+        rows = db.execute("SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(likes)) + ')',
+                          likes).fetchall()
+        labels = {r[0]: r[1] for r in db.execute(f"SELECT user_id,label FROM slack_members WHERE label>'' AND user_id IN ({marks})", ids)}
     except sqlite3.OperationalError:
         return {}  # no graph tables yet
     for name, info in rows:
@@ -587,29 +607,66 @@ def slack_names(db, ids):
         except ValueError:
             continue
         if name and name != 'Slack' and not SLACK_MEMBER.fullmatch(name):
-            names.update({i: name for i in ids if 'slack:' + i in found})
-    return names
+            names.update({i: name for i in ids if 'slack:' + i in found or ('email:' + emails[i] if i in emails else None) in found})
+    return {**{i: label for i, label in labels.items() if label}, **names}
+
+
+def _mention(names, match):
+    return '@' + (names.get(match[1]) or (match[2] or '').strip() or SOMEONE_ON_SLACK)
+
+
+def slack_text_named(text, names, unknown=None):
+    """Text a model or a person reads with Slack members by name, never by id: a mention ("<@U02AB3CD4>") as "@Sam Lee",
+    "DM U02AB3CD4" as "DM Sam Lee", "Slack teammate U02AB3CD4" as "Sam Lee", and any other member id with a known name. A member no
+    name is known for: SOMEONE_ON_SLACK in a mention or after "DM"; a bare one is replaced only when `unknown` is
+    given (a code that merely looks like an id stays)."""
+    text = str(text or '')
+    if not text or not ('<@' in text or SLACK_MEMBER.search(text)):
+        return text
+    text = SLACK_MENTION.sub(lambda m: _mention(names, m), text)
+    text = re.sub(r'\b(DM|Slack (?:teammate|user|member|colleague|contact)) ([UW][A-Z0-9]{8,11})\b',
+                  lambda m: ('DM ' if m[1] == 'DM' else '') + (names.get(m[2]) or SOMEONE_ON_SLACK), text)
+    return SLACK_MEMBER.sub(lambda m: names.get(m[0]) or (unknown if unknown is not None else m[0]), text)
+
+
+def slack_ids_in(text):
+    """The Slack member ids a text names."""
+    return {m[1] for m in SLACK_MENTION.finditer(str(text or ''))} | set(SLACK_MEMBER.findall(str(text or '')))
 
 
 def slack_title(channel_name, text, names):
     """A Slack message's title: "#channel: first line", a direct message as "#DM <their name>: first line", mentions
-    ("<@U02AB3CD4>") as "@name". A member no name is known for yet is left out, never shown as an id: the title is
-    written again once their name is known (assistant.name_slack_titles)."""
+    ("<@U02AB3CD4>") as "@name". A member no name is known for yet is "someone on Slack", never an id or a blank: the
+    title is written again once their name is known (assistant.name_slack_titles)."""
     channel_name = str(channel_name or '')
     partner = slack_dm_user({'channel_name': channel_name})
-    head = ('#DM ' + names[partner] if names.get(partner) else '#DM') if partner else '#' + channel_name
+    head = '#DM ' + (names.get(partner) or SOMEONE_ON_SLACK) if partner else '#' + channel_name
     line = str(text or '').splitlines()[0] if str(text or '').strip() else '(message)'
-    line = SLACK_MENTION.sub(lambda m: '@' + (names.get(m[1]) or (m[2] or '').strip() or '…'), line)
-    line = SLACK_MEMBER.sub(lambda m: names.get(m[0], '…'), line)
+    line = SLACK_MENTION.sub(lambda m: _mention(names, m), line)
+    line = SLACK_MEMBER.sub(lambda m: names.get(m[0], SOMEONE_ON_SLACK), line)
     return (head + ': ' + line)[:1000]
 
 
-def slack_title_shown(title, names):
-    """A stored Slack title as people see it: "#DM <id>" and mentions by name; an id no name is known for left out."""
+def slack_title_unnamed(title):
+    """A stored Slack title still waiting for a name: an id in it, or "someone on Slack", or a blank DM from before."""
     title = str(title or '')
-    title = re.sub(r'^#DM ([UW][A-Z0-9]{8,11})\b', lambda m: '#DM ' + names[m[1]] if names.get(m[1]) else '#DM', title)
-    title = SLACK_MENTION.sub(lambda m: '@' + (names.get(m[1]) or (m[2] or '').strip() or '…'), title)
-    return SLACK_MEMBER.sub(lambda m: names.get(m[0], '…'), title)
+    return bool(SLACK_MEMBER.search(title)) or SOMEONE_ON_SLACK in title or title.startswith('#DM:') or '@…' in title
+
+
+def slack_title_lost(title):
+    """A stored Slack title that left a member out (no name was known when it was made): only the message can tell who."""
+    title = str(title or '')
+    return SOMEONE_ON_SLACK in title or title.startswith('#DM:') or '@…' in title
+
+
+def slack_title_shown(title, names):
+    """A stored Slack title as people see it: "#DM <id>" and mentions by name; an id no name is known for is "someone on
+    Slack", never shown."""
+    title = str(title or '')
+    title = re.sub(r'^#DM ([UW][A-Z0-9]{8,11})\b', lambda m: '#DM ' + (names.get(m[1]) or SOMEONE_ON_SLACK), title)
+    title = re.sub(r'^#DM:', '#DM ' + SOMEONE_ON_SLACK + ':', title)
+    title = SLACK_MENTION.sub(lambda m: _mention(names, m), title)
+    return SLACK_MEMBER.sub(lambda m: names.get(m[0], SOMEONE_ON_SLACK), title)
 
 
 def thread_key(kind, m):

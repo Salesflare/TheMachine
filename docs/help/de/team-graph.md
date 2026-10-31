@@ -28,7 +28,7 @@ Ein Admin kann unter **Von der Fleet verlangt** die **Arbeits-E-Mail** und den *
 
 - Kunden-Threads: E-Mails mit Personen außerhalb deiner Firma über Arbeit, mit ihren Anhängen.
 - Arbeitskontakte, Organisationen und Projekte, mit einem kurzen Verlauf.
-- Auf einem Team-Board auch die Meetings, Zoom-Notizen, Intercom-Unterhaltungen und Chats eines Projekts, weil sie auf dem Board sind. Sensible, etwa Deals, bleiben draußen.
+- Auf einem Team-Board auch die Meetings, Zoom-Notizen, Intercom-Unterhaltungen und Chats eines Projekts, weil sie auf dem Board sind. Sensible, etwa Deals, bleiben draußen, ebenso Chats nur unter Kollegen.
 
 ## Bleibt beim automatischen Teilen draußen
 
