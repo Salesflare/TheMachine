@@ -365,8 +365,8 @@ def approve(db, req, level, area, expiry, issuer, messages=False):
     db.execute('INSERT INTO ai_codes(hash,connection_id,client_id,redirect_uri,challenge,expires_at) VALUES(?,?,?,?,?,?)',
                (digest(code), cid, req['client_id'], req['redirect_uri'], req['challenge'], stamp(at + dt.timedelta(seconds=CODE_SECONDS))))
     db.execute('UPDATE ai_clients SET used_at=? WHERE id=?', (stamp(at), req['client_id']))
-    log(db, cid, 'connect', 'ok', i18n.t('Connected: {}, for {}', i18n.t(LEVEL_WORDS[level]), i18n.t(EXPIRY_WORDS[expiry]))
-        + (', ' + i18n.t('Messages: on') if messages else ''))
+    log(db, cid, 'connect', 'ok', ' · '.join(i18n.t(w) for w in (LEVEL_WORDS[level], AREA_WORDS[area], EXPIRY_WORDS[expiry])
+                                             + (('Messages: on',) if messages else ())))
     return _back(req, issuer, code=code)
 
 

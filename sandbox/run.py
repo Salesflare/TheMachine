@@ -127,9 +127,9 @@ def seed_ai(app):
         ai_access.approve(db, req, 'draft', 'work', '30d', 'http://127.0.0.1')
         cid = next(c['id'] for c in ai_access.connections(db) if c['kind'] == 'oauth')
         key = ai_access.new_key(db, 'Morning script', 'read', 'both', '7d')['id']
-        lines = [(cid, 25, 'list_todos', 'ok', '6 to-dos'), (cid, 24, 'search_graph', 'ok', 'Searched the Graph: 2 found'),
-                 (cid, 20, 'get_todo', 'ok', 'Read “Send the renewal quote”'),
-                 (cid, 15, 'create_draft', 'ok', 'Added a draft to buyer@example.com: “Renewal quote”'),
+        lines = [(cid, 25, 'list_todos', 'ok', '6 to-dos'), (cid, 24, 'search_graph', 'ok', '2 found'),
+                 (cid, 20, 'get_todo', 'ok', '“Send the renewal quote”'),
+                 (cid, 15, 'create_draft', 'ok', 'To buyer@example.com: “Renewal quote”'),
                  (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
         for connection, hours, tool, outcome, detail in lines:
             ai_access.log(db, connection, tool, outcome, detail, at=now - dt.timedelta(hours=hours))
