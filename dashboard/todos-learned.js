@@ -23,8 +23,8 @@ const VOICE_ICON={linkedin:'linkedin',whatsapp:'whatsapp',telegram:'telegram',sl
 const LEARN_WHAT={voice:c=>`${c.channel==='All'?'Everywhere':c.channel}: how you write`,draft:c=>c.before?'Rule changed':'Rule added',fact:c=>c.before?'Fact changed':'Fact added'};
 function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text=String(c.text||'').split('\n').map(l=>l.trim()).filter(Boolean).join(' · ');
  return `<div class="change-row${c.undone?' undone':''}"><span class="grow"><strong>${esc(what)}</strong><span class="change-text">${esc(text)}</span>${c.why?`<small>${esc(c.why)}</small>`:''}<small class="change-when">${esc(learnDay(new Date(c.at)))}${c.undone?' · Undone':''}</small></span>${c.undone?'':`<span class="learn-acts"><button type="button" class="quiet" data-learn-undo="${c.id}" aria-label="Undo: ${esc(what)}">Undo</button></span>`}</div>`}
-// A fact's sort and end day, quietly under it: "Event · Until Nov 14". A plain fact without an end shows nothing.
-const FACT_SORT={event:'Event',commitment:'Commitment',preference:'Preference'};
+// A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
+const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
 const factUntil=d=>new Date(d+'T12:00:00').toLocaleDateString(DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
 function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):''].filter(Boolean);return bits.length?`<small class="fact-meta">${esc(bits.join(' · '))}</small>`:''}
 function learnedList(){

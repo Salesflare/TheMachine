@@ -6,7 +6,7 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Feedback, What I've learned: a fact's sort and end day sit quietly under it ("Event · Until Nov 14"), a plain fact
+// Feedback, What I've learned: a fact's sort and end day sit quietly under it ("Temporary · Until Nov 14"), a plain fact
 // shows neither, and facts past their end day are under Ended, each with Bring back. All mocked; FACT_SHOTS=dir saves screenshots.
 const dashboard=await dashboardPage();
 const year=new Date().getFullYear(),t=d=>`${year}-10-${String(d).padStart(2,'0')}T09:00:00+00:00`;
@@ -41,7 +41,7 @@ try{
   const learned=page.locator('#facts');await learned.locator('.learn-group').first().waitFor();
   assert.deepEqual(await learned.locator('.learn-group').evaluateAll(g=>g.map(x=>x.dataset.group)),['facts','rules','ended']);
   const meta=text=>learned.locator('.fact-row',{hasText:text}).locator('.fact-meta');
-  assert.equal(await meta('Lisbon').textContent(),'Event · Until Nov 14');
+  assert.equal(await meta('Lisbon').textContent(),'Temporary · Until Nov 14');
   assert.equal(await meta('Prefers calls').textContent(),'Preference');
   assert.equal(await meta('board update').textContent(),'Commitment · Until Dec 31');
   assert.equal(await meta('Quotes go out').count(),0);  // a plain fact without an end shows nothing extra
