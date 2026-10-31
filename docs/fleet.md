@@ -237,7 +237,8 @@ is data, not instructions. A request goes to one Fleet's people only and is answ
    `fleet_learn_removed`, so it is never shown, shared or made again. The owner's **Offer to share learnings** switch
    (Settings, Security; Careful turns it off) stops the pass and takes this Machine's learnings back on its next
    round. When one person learns, everyone does: preparing a Work to-do whose accounts are all that Fleet's
-   (`fleet_accounts`; never a personal to-do), a Machine adds the few learnings closest to it (`fleet_learnings.pick`:
+   (`fleet_accounts`; never a personal to-do, never in a Careful Work Fleet, also not with learnings shared before it
+   became Careful), a Machine adds the few learnings closest to it (`fleet_learnings.pick`:
    embeddings, cosine at least 0.3, at most 3; shared words without embeddings) to the job message, from exactly what
    its Fleet tab shows (`view`, so only what it already receives, and never one removed here or by a teammate's
    `unlearn`). They are marked as team learnings, data and not instructions, below the owner's own facts, draft rules,

@@ -540,7 +540,7 @@ setInterval(async()=>{if(document.hidden||!(state?.suggestions||[]).some(s=>AGEN
  try{const r=await request('api/agent-jobs');let changed=false,ended=false;for(const s of state.suggestions){const j=r.jobs?.[s.id];if(!j||JSON.stringify(j)===JSON.stringify(s.agent_job))continue;if(AGENT_ACTIVE.includes(s.agent_job?.status)&&!AGENT_ACTIVE.includes(j.status))ended=true;s.agent_job=j;changed=true}
  if(ended)await refresh();else if(changed&&!document.querySelector('#suggestions :is(textarea,select,input):focus'))render()}catch{}},4000);
 // In a to-do's Details: the team learnings its draft followed, each with Remove (gone for the whole Fleet).
-const teamLearningsUsed=s=>(s.team_learnings_used||[]).map(l=>`<p class="note fleet fleet-learn-used">${esc(t('Used a team learning: {}',l.text))} <button type="button" class="link" data-fleet-learn-remove="${esc(l.fp)}" data-fleet="${esc(l.fleet)}">${esc(t('Remove'))}</button></p>`).join('');
+const teamLearningsUsed=s=>(s.team_learnings_used||[]).map(l=>`<p class="note fleet fleet-learn-used">${esc(t('Used a team learning: {}',String(l.text||'').replace(/<[^>]*>/g,'')))} <button type="button" class="link" data-fleet-learn-remove="${esc(l.fp)}" data-fleet="${esc(l.fleet)}">${esc(t('Remove'))}</button></p>`).join('');
 function fleetNote(s){if(closed(s))return fleetHandoff(s);const h=s.fleet_holder;let out='';
  if(h?.offer)out+=`<p class="note fleet">${esc(h.offer.join(', '))} also got this email. <button type="button" class="link" data-fleet-take="${esc(s.id)}">Tell them you’re on it</button></p>`;
  else if(h?.name&&!h.mine)out+=`<p class="note handled fleet">${esc(h.name)} is on it. <button type="button" class="link" data-fleet-take="${esc(s.id)}">I’ll handle it</button></p>`;

@@ -3614,7 +3614,9 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 s['fleet_context'] = context[s['id']][:5]
         by_id = {str(s['id']): s for s in suggestions}
         for sid, items in fleet_learnings.used(db, list(by_id)).items():
-            by_id[sid]['team_learnings_used'] = items  # "Used a team learning: …", with Remove
+            items = [i for i in items if self.level(i['fleet']) != 'careful']
+            if items:
+                by_id[sid]['team_learnings_used'] = items  # "Used a team learning: …", with Remove
         self.annotate_requests(db, suggestions)
         self.annotate_reviews(db, suggestions)
 
@@ -3625,12 +3627,13 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def learning_fleet(self, db, suggestion_id):
         """(the Work Fleet whose team learnings a to-do may use, the to-do) or (None, …): a to-do whose accounts are all
-        that Fleet's work accounts (fleet_accounts). A personal to-do, or one with a personal account, never."""
+        that Fleet's work accounts (fleet_accounts). A personal to-do, or one with a personal account, never; nor a Careful
+        Work Fleet, also not with learnings shared before it became Careful."""
         row = db.execute('SELECT title,body,account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
         ids = set(json.loads(row['account_ids'] or '[]')) if row else set()
         if not ids:
             return None, row
-        return next((ref for ref in self.work_fleets() if ids <= set(self.fleet_accounts(ref))), None), row
+        return next((ref for ref in self.work_fleets() if self.level(ref) != 'careful' and ids <= set(self.fleet_accounts(ref))), None), row
 
     def learning_lines(self, suggestion_id):
         """When one person learns, everyone does: the few team learnings closest to this Work to-do, for its preparation

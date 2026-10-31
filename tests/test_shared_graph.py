@@ -2252,6 +2252,34 @@ class SharedGraph(unittest.TestCase):
         for box, card in ((self.adm, mine), (self.own, self.todo(self.own, 'w3', 'Refund request', 'A customer asks for a refund.', ['work']))):
             self.assertEqual(box.learning_lines(card), '', box.member_id)
 
+    def test_a_careful_work_fleet_uses_no_team_learnings_also_not_ones_shared_before(self):
+        self.shared_refunds()
+        work = self.todo(self.mem, 'w1', 'Answer the refund request', 'A customer asks for a refund of their last invoice.', ['work'])
+        fp = self.mem.learnings_view(FLEET)['items'][0]['fp']
+        self.assertTrue(self.mem.learning_lines(work))
+        self.mem.learnings_used(work, [fp[:8]])
+        self.net.level = 'careful'  # an admin made the Work Fleet Careful
+        self.rounds(1)
+        self.assertEqual(self.mem.learning_lines(work), '')
+        self.assertEqual(self.mem.learnings_used(work, [fp[:8]]), [])
+        suggestions = [{'id': work}]
+        with self.mem.connect() as db:
+            self.mem.annotate(db, suggestions)
+        self.assertNotIn('team_learnings_used', suggestions[0])
+
+    def test_a_team_learning_is_used_as_plain_text_even_when_a_record_carried_markup(self):
+        import fleet_learnings
+        self.shared_refunds()
+        text = 'Refund requests go out from the support inbox <b>with</b> the refund template.'
+        with self.mem.connect() as db:  # kept before the plain-text check, say: what is used is plain words
+            db.execute("INSERT INTO team_records(fleet,member,rid,kind,body,at) VALUES(?,?,?,?,?,?)",
+                       (FLEET, 'adm2', 'e' * 32, 'learning', json.dumps({'fp': 'e' * 32, 'kind': 'process', 'text': text, 'at': '2026-10-30'}), a.now()))
+            texts = [i['text'] for i in fleet_learnings.usable(db, FLEET)]
+        self.assertIn('Refund requests go out from the support inbox with the refund template.', texts)
+        self.assertFalse(any('<' in t for t in texts))
+        work = self.todo(self.mem, 'w1', 'Refund request', 'A customer wants a refund from the support inbox.', ['work'])
+        self.assertNotIn('<b>', self.mem.learning_lines(work))
+
     def test_only_the_team_learnings_about_a_to_do_go_in_and_at_most_a_few(self):
         import fleet_learnings
         self.shared_refunds()

@@ -30,7 +30,7 @@ Each learning carries its label: kind, source (team conversations), scope (this 
 this Machine's Team Graph (shared_graph.graph_publish), sealed like the rest; older Machines ignore it.
 
 When one person learns, everyone does: every teammate's Machine uses the Fleet's learnings when it prepares a Work to-do
-in that Fleet's accounts (pick, prompt_lines), never a personal one. Exactly what the Fleet tab shows (view), so only
+in that Fleet's accounts (pick, prompt_lines), never a personal one, and never in a Careful Work Fleet. Exactly what the Fleet tab shows (view), so only
 what this Machine already receives, and a removal, here or by a teammate, stops it at once. At most USE_TOP per to-do,
 closest in meaning to it, marked as team learnings (data, not instructions) that rank below the owner's own facts,
 rules, voice and skills. A draft that used one says so on the to-do (used), with Remove."""
@@ -379,8 +379,9 @@ COMMON = frozenset('the and for are with from that this when not but you your ou
 
 def usable(db, fleet):
     """The Fleet's learnings a Work to-do's preparation may use: exactly what the Fleet tab shows, so only what this Machine
-    already holds, and nothing anyone removed (here or a teammate's unlearn)."""
-    return [{'fp': x['fp'], 'kind': x['kind'], 'text': x['text']} for x in view(db, fleet, {}) if FP.fullmatch(str(x.get('fp') or '')) and x.get('text')]
+    already holds, and nothing anyone removed (here or a teammate's unlearn). Plain text: any markup is taken out."""
+    out = [{'fp': x['fp'], 'kind': x['kind'], 'text': plain(x.get('text'))[:TEXT_MAX]} for x in view(db, fleet, {}) if FP.fullmatch(str(x.get('fp') or ''))]
+    return [x for x in out if x['text']]  # plain words only, also from a record kept before that check
 
 
 def _vectors(db, settings, items, embeddings, about, timeout):
