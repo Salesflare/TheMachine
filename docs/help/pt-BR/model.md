@@ -32,6 +32,10 @@ O trabalho em segundo plano nunca roda no GPT-6 Astra. Ele usa o GPT-6.1 Sol no 
 
 O topo do painel diz qual limite foi atingido e quando ele zera. O trabalho espera e depois continua de onde parou. Nada se perde. Alguns planos do ChatGPT vêm com redefinições: **Usar uma redefinição** zera os limites, depois de uma confirmação. Se não, **Ver redefinições no ChatGPT** abre a página do próprio ChatGPT.
 
+## Com um modelo reserva
+
+Se a sua Machine tem um modelo reserva em outro plano ou provedor, como uma chave de API, ele assume quando um limite é atingido. Enquanto o modelo reserva funciona, nada pausa nem espera pelos seus limites, e o topo do painel diz "Limite do ChatGPT atingido, usando seu modelo reserva." Se ele parar de funcionar, as pausas voltam.
+
 ## Mudar o modelo principal
 
 O modelo principal é o que o resto da The Machine usa. Em uma Machine hospedada, escolha outro na sua página de configuração, em Seu modelo. No seu próprio computador, mude no OpenClaw. Veja [ChatGPT](chatgpt.md) e o [guia de modelos](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

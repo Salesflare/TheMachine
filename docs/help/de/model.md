@@ -32,6 +32,10 @@ Hintergrundarbeit läuft nie auf GPT-6 Astra. Sie nutzt stattdessen GPT-6.1 Sol.
 
 Oben im Dashboard steht, welches Limit erreicht ist und wann es zurückgesetzt wird. Die Arbeit wartet und macht dann dort weiter, wo sie aufgehört hat. Nichts geht verloren. Manche ChatGPT-Tarife haben Resets: **Reset nutzen** setzt die Limits nach einer Bestätigung zurück. Sonst öffnet **Resets in ChatGPT ansehen** die Seite von ChatGPT selbst.
 
+## Mit einem Ersatzmodell
+
+Hat deine Machine ein Ersatzmodell mit einem anderen Tarif oder Anbieter, etwa einem API-Schlüssel, übernimmt es, wenn ein Limit erreicht ist. Solange das Ersatzmodell funktioniert, pausiert und wartet nichts wegen deiner Limits, und oben im Dashboard steht „ChatGPT-Limit erreicht, dein Ersatzmodell übernimmt.“ Funktioniert es nicht mehr, kommen die Pausen zurück.
+
 ## Das Hauptmodell ändern
 
 Das Hauptmodell nutzt der Rest von The Machine. Auf einer gehosteten Machine wählst du auf deiner Einrichtungsseite unter Dein Modell ein anderes. Auf deinem eigenen Computer änderst du es in OpenClaw. Siehe [ChatGPT](chatgpt.md) und den [Modell-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

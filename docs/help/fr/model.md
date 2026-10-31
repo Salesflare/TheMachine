@@ -32,6 +32,10 @@ Le travail en arrière-plan ne tourne jamais sur GPT-6 Astra. Il utilise GPT-6.1
 
 Le haut du tableau de bord indique quelle limite est atteinte et quand elle se réinitialise. Le travail attend, puis reprend là où il s’était arrêté. Rien n’est perdu. Certains forfaits ChatGPT incluent des réinitialisations : **Utiliser une réinitialisation** remet les limites à zéro, après confirmation. Sinon, **Voir les réinitialisations dans ChatGPT** ouvre la page de ChatGPT.
 
+## Avec un modèle de secours
+
+Si votre Machine a un modèle de secours sur un autre forfait ou fournisseur, comme une clé API, il prend le relais quand une limite est atteinte. Tant que ce modèle de secours fonctionne, rien ne se met en pause ni n’attend vos limites, et le haut du tableau de bord indique « Limite ChatGPT atteinte, votre modèle de secours prend le relais. » S’il cesse de fonctionner, les pauses reviennent.
+
 ## Changer le modèle principal
 
 Le modèle principal est celui qu’utilise le reste de The Machine. Sur une Machine hébergée, choisissez-en un autre sur votre page de configuration, sous Votre modèle. Sur votre propre ordinateur, changez-le dans OpenClaw. Voir [ChatGPT](chatgpt.md) et le [guide des modèles](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

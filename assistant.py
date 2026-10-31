@@ -97,6 +97,7 @@ import browser_login
 import browser_viewer
 import preparation_state
 import model_budget
+import model_fallback
 import follow_ups
 import bounces
 import recurring
@@ -17288,8 +17289,7 @@ class App(*APP_MIXINS):
         limited = self.background_pause(owner=True)
         if limited:
             return limited
-        model = openclaw_model(self.config)
-        return model_budget.follow_up_pause(model_budget.for_model(getattr(self, 'model_usage', None), model), time.time(), late)
+        return model_budget.follow_up_pause(self.paced_usage(), time.time(), late)
 
     def bounce_step(self):
         """Every five minutes, before follow-ups: reads newly collected mail for delivery reports (the first time, the
@@ -19261,7 +19261,7 @@ class App(*APP_MIXINS):
     def short_window(self):
         """The main model's 5-hour usage window as last read (model_usage): {'used', 'reset'}, or None (an API key, a
         sign-in that reports no windows, or nothing read yet)."""
-        usage = model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config))
+        usage = self.paced_usage()  # None while a working fallback carries work: the first review counts signals then
         found = [w for p in usage or [] for w in p.get('windows') or []
                  if model_budget.window_kind(w.get('label')) == 'short' and isinstance(w.get('used'), (int, float))]
         if not found:
@@ -19827,6 +19827,10 @@ class App(*APP_MIXINS):
         self.model_usage_wake = getattr(self, 'model_usage_wake', None) or threading.Event()
         while not self.stop.is_set():
             self.refresh_model_usage()
+            try:  # a fallback billed apart: checked while the main model's limits would hold work back (model_fallback.py)
+                self.check_fallback()
+            except Exception as error:  # noqa: BLE001 - never stops the worker
+                LOG.error('fallback check error=%s', type(error).__name__)
             try:  # the models a chat can pick (chat_model.py): read again every ten minutes
                 self.chat_models()
             except Exception as error:  # noqa: BLE001 - never stops the worker
@@ -20093,18 +20097,63 @@ class App(*APP_MIXINS):
         if not known or known['until'] < until:
             LOG.warning('usage limit reached until=%s', dt.datetime.fromtimestamp(until, dt.timezone.utc).isoformat(timespec='minutes'))
         self.usage_limit = {'until': until, 'at': int(time.time()), 'provider': model_budget.provider_of(model)}
+        self.fallback_health().doubt()  # the fallback didn't carry this run: the usage rules hold until a check passes
         getattr(self, 'model_usage_wake', threading.Event()).set()
         return until
+
+    def fallback_health(self):
+        health = getattr(self, '_fallback_health', None)
+        if health is None:
+            health = self._fallback_health = model_fallback.Health()
+        return health
+
+    def fallback_models(self):
+        """OpenClaw's fallbacks billed apart from the main model (model_fallback.separate)."""
+        primary, fallbacks = model_fallback.configured(self.config)
+        return model_fallback.separate(primary or openclaw_model(self.config), fallbacks)
+
+    def fallback_covers(self):
+        """The fallback that carries work past the main model's usage limits, when one is known to work
+        (model_fallback.py); None: the usage rules apply."""
+        try:
+            return self.fallback_health().working(self.fallback_models())
+        except Exception as error:  # noqa: BLE001 - the usage rules apply
+            LOG.error('fallback check error=%s', type(error).__name__)
+            return None
+
+    def paced_usage(self):
+        """The main model's usage windows the usage rules go by (model_budget.for_model); None (no rules) while a
+        working fallback carries work past them."""
+        if self.fallback_covers():
+            return None
+        return model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config))
+
+    def check_fallback(self):
+        """From the usage worker: checks the fallback (model_fallback.Health.refresh) only while the main model's
+        limits would hold work back (the earliest rule: follow-ups) or a usage limit holds it."""
+        models = self.fallback_models()
+        if not models:
+            return None
+        now_s = time.time()
+        usage = model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config))
+        limit = getattr(self, 'usage_limit', None)
+        if not (model_budget.follow_up_pause(usage, now_s) or (limit and limit['until'] > now_s)):
+            return None
+        found = self.fallback_health().refresh(self.config, models, now_s)
+        LOG.info('fallback check working=%s', bool(found))
+        return found
 
     def background_pause(self, first=False, owner=False, job=None, db=None, signals=False):
         """None when a turn the service starts may go now; else why it waits ({'window', 'until', 'limited'...}). A
         usage limit holds everything; the budget (model_budget.pause) holds background work only, `first` for the
-        first look and its first draft, `signals` for a review of new signals (the week holds it only at WEEK_CAP). A sign-in that reports no usage windows (an API key) is never paused here.
+        first look and its first draft, `signals` for a review of new signals (the week holds it only at WEEK_CAP). A sign-in that reports no usage windows (an API key) is never paused here,
+        nor one with a working fallback billed apart (fallback_covers): OpenClaw moves to it once the limit is reached.
         Each budget check is counted (pacing.py): how often background work paces, how long, how many jobs (`job`,
         an id that stays here) waited."""
         model = openclaw_model(self.config)
-        now_s, usage = time.time(), model_budget.for_model(getattr(self, 'model_usage', None), model)
-        limit = getattr(self, 'usage_limit', None)
+        covered = self.fallback_covers()  # a working fallback billed apart carries work past the limits: no rules
+        now_s, usage = time.time(), None if covered else model_budget.for_model(getattr(self, 'model_usage', None), model)
+        limit = None if covered else getattr(self, 'usage_limit', None)
         if limit and limit['until'] > now_s and limit.get('provider') in (None, model_budget.provider_of(model)):
             return {'window': 'limit', 'until': limit['until'], 'limited': True}
         full = [{'window': '5h' if model_budget.window_kind(w['label']) == 'short' else 'week', 'until': w.get('reset'), 'limited': True}
@@ -20133,9 +20182,16 @@ class App(*APP_MIXINS):
         """What the dashboard's limit banner shows: a usage limit reached (which one, when it resets), else None. The
         budget's own pauses are not shown: nothing is wrong then."""
         found = self.background_pause(owner=True)
-        if not found:
+        if found:
+            return {'window': found['window'], 'until': found.get('until'), 'name': self.model_name()}
+        if not self.fallback_covers():
             return None
-        return {'window': found['window'], 'until': found.get('until'), 'name': self.model_name()}
+        status = getattr(self, 'model_status', None) or {}
+        limit = getattr(self, 'usage_limit', None)
+        if status.get('limit_reached') or (limit and limit['until'] > time.time()):  # the fallback answers meanwhile
+            return {'window': 'limit', 'until': status.get('limit_resets_at') or (limit or {}).get('until'),
+                    'name': self.model_name(), 'fallback': True}
+        return None
 
     def model_name(self):
         """The sign-in's name for the owner: Claude, ChatGPT, or None when it is neither."""
@@ -20147,7 +20203,7 @@ class App(*APP_MIXINS):
         which window, until when, the sign-in's name. None when they don't wait, or a usage limit holds them (model_pause
         says that)."""
         found = getattr(self, 'review_paused', None)
-        if not found or found.get('limited') or not (self.config.get('review_worker') or {}).get('enabled'):
+        if not found or found.get('limited') or not (self.config.get('review_worker') or {}).get('enabled') or self.fallback_covers():
             return None
         if found.get('until') and found['until'] <= time.time():
             return None
@@ -20156,12 +20212,12 @@ class App(*APP_MIXINS):
     def history_paced(self):
         """A board's look through the history keeps the daily share of the week (model_budget.pause without `signals`),
         also when it rides along with a review of new signals. Not counted in pacing.py: the review's own check is."""
-        return bool(model_budget.pause(model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config))))
+        return bool(model_budget.pause(self.paced_usage()))
 
     def model_room(self, most=80):
         """The model's limits have room for extra work (a board's look through the history): no window the sign-in reports
         is past `most` percent used. Unknown usage counts as room."""
-        return all(w['used'] < most for p in model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config)) or [] for w in p.get('windows') or [])
+        return all(w['used'] < most for p in self.paced_usage() or [] for w in p.get('windows') or [])
 
     def backfill_scores(self, board, text):
         """How likely each counterpart belongs on the board by meaning, from local embeddings: its messages against the

@@ -32,6 +32,10 @@ Werk op de achtergrond draait nooit op GPT-6 Astra. Het gebruikt in plaats daarv
 
 Bovenaan het dashboard staat welke limiet bereikt is en wanneer die weer vrijkomt. Het werk wacht en gaat daarna verder waar het gebleven was. Er gaat niets verloren. Sommige ChatGPT-abonnementen hebben resets: **Een reset gebruiken** zet de limieten opnieuw op nul, na een bevestiging. Anders opent **Resets bekijken in ChatGPT** de eigen pagina van ChatGPT.
 
+## Met een reservemodel
+
+Heeft je Machine een reservemodel op een ander abonnement of bij een andere aanbieder, zoals een API-sleutel, dan neemt dat het over als een limiet bereikt is. Zolang het reservemodel werkt, pauzeert of wacht er niets voor je limieten, en bovenaan het dashboard staat "ChatGPT-limiet bereikt, je reservemodel neemt het over." Werkt het niet meer, dan komen de pauzes terug.
+
 ## Het hoofdmodel wijzigen
 
 Het hoofdmodel is wat de rest van The Machine gebruikt. Kies op een gehoste Machine een ander model op je setuppagina, onder Je model. Wijzig het op je eigen computer in OpenClaw. Zie [ChatGPT](chatgpt.md) en de [gids over modellen](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

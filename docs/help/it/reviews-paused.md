@@ -14,7 +14,7 @@ In cima a Suggerimenti compare "Le revisioni sono disattivate, quindi non arriva
 
 ## Il limite del tuo modello
 
-Le revisioni di quello che è arrivato si mettono in pausa a circa il 65% del limite di 5 ore del tuo piano e al 90% del limite settimanale, per lasciare spazio alle tue chat. Una bacheca che scorre la tua cronologia va più piano, a circa un settimo della settimana al giorno.
+Le revisioni di quello che è arrivato si mettono in pausa a circa il 65% del limite di 5 ore del tuo piano e al 90% del limite settimanale, per lasciare spazio alle tue chat. Una bacheca che scorre la tua cronologia va più piano, a circa un settimo della settimana al giorno. Con un modello di riserva funzionante, su un altro piano o fornitore, le revisioni non aspettano. Vedi [Modello](model.md).
 
 Mentre le revisioni aspettano, in cima alla dashboard compare fino a quando, per esempio "Le revisioni aspettano fino alle 07:15 per risparmiare la tua settimana di ChatGPT." **Rivedi ora** ne avvia una subito. Quando raggiungi un limite, in cima alla dashboard compare quale e quando si azzera. **Connessioni**, poi **Revisioni**, lo mostra accanto all’esecuzione. **Impostazioni**, **Modello** mostra i tuoi limiti. Vedi [Modello](model.md).
 
