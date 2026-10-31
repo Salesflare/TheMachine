@@ -43,7 +43,7 @@ try{
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
   // hosted: Security holds Support access while it's on; it shows once opening Settings has asked for its state, so wait for it
   await page.locator('#settings-tabs [data-settings-tab="security"]:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['Account','General','Security','Notifications','Writing','Skills','Model']);
+  assert.deepEqual(await tabs(page),['Account','General','Security','Activity','Notifications','Writing','Skills','Model']);
   // Account first, a tab like the others; General has this device, and no account card (it's in Account now).
   assert.equal(await selected(page),'Account');assert.equal(await page.evaluate(()=>location.hash),'#settings/account');
   assert.equal(await visible(page,'#settings-acct'),true);assert.equal(await visible(page,'#theme-toggle'),false);
@@ -76,7 +76,7 @@ try{
   assert.equal(await page.locator('#settings').isVisible(),true);
   // On your own computer: no Account tab, and a tab with nothing in it (no model reported) is left out.
   hosted=false;model=false;await page.goto('about:blank');await page.goto(base+'/#settings/model');await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['General','Notifications','Writing','Skills']);
+  assert.deepEqual(await tabs(page),['General','Activity','Notifications','Writing','Skills']);
   assert.equal(await selected(page),'General');assert.equal(await visible(page,'#settings-cloud'),true);
   // Self-hosted but paired with the Network: the Account tab too.
   paired=true;await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();

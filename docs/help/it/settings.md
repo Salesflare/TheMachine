@@ -11,6 +11,7 @@ Apri **Impostazioni** con l’ingranaggio in alto. Le sue schede:
 - **Account**: **I tuoi indirizzi**, quelli che contano come te, con la loro provenienza. Il tuo piano in breve, i pulsanti per le pagine del tuo account ed **Esci**. Vedi [Piani e fatturazione](plans-and-billing.md).
 - **Generale**: lingua e area geografica, questo dispositivo, il browser della tua Machine, la tua Fleet e il tuo account.
 - **Sicurezza**: Standard o Prudente, e le impostazioni che applicano. Vedi [Livelli di sicurezza](security-levels.md). C’è anche **Accesso per l’assistenza**, finché è attivo: vedi [Ricevi assistenza](get-support.md#support-access).
+- **Movimenti**: tutto ciò che The Machine ha fatto per te, dal più recente. Vedi [Movimenti](activity.md).
 - **Notifiche**: cosa ti arriva e dove, e il tuo orario di lavoro. Vedi [Notifiche](notifications.md) e [Orario di lavoro](work-hours.md).
 - **Scrittura**: firme e il tuo modo di scrivere. Vedi [Scrittura](writing.md).
 - **Skill**: istruzioni che la tua Machine segue. Vedi [Skill](skills.md).

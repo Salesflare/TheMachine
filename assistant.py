@@ -68,6 +68,7 @@ import agent_jobs
 import codex_signin
 import chat_model
 import activity
+import activity_log
 import error_feed
 import mimetypes
 import work_removal
@@ -3956,6 +3957,7 @@ class Store:
             team_learnings.ensure(db)  # learnings for The Machine team (team_learnings.py), with their use cases
             error_feed.ensure(db)  # error reports for The Machine team: signatures only (error_feed.py)
             activity.ensure(db)  # daily activity counts for the hosted health report (activity.py)
+            activity_log.ensure(db)  # Activity: the connections it has seen, for added and removed lines (activity_log.py)
             pacing.ensure(db)  # how often background work paced (pacing.py): made here, not inside someone's write
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             person_summary.ensure(db)  # the summary on top of a person's page (person_summary.py)
@@ -8529,14 +8531,14 @@ class Store:
         rows = self.done_rows(db)
         return {'all': len(rows), 'work': sum(r['scope'] == 'work' for r in rows), 'personal': sum(r['scope'] == 'personal' for r in rows)}
 
-    def done_page(self, cursor=0, limit=30, query='', scope=''):
+    def done_page(self, cursor=0, limit=30, query='', scope='', only=''):
         """A page of the Done list, the latest closed first, for the main pane and the sidebar; query matches card titles
-        (every done card, not only the ones loaded), scope is work or personal."""
+        (every done card, not only the ones loaded), scope is work or personal; only: that one card (a link from Activity)."""
         offset, limit = max(0, int(cursor or 0)), max(1, min(int(limit), 50))
         words = [w for w in str(query or '').casefold().split() if w]
         with self.connect() as db:
             rows = [r for r in self.done_rows(db, titles=bool(words)) if (scope not in ('work', 'personal') or r['scope'] == scope)
-                    and all(w in r['title'].casefold() for w in words)]
+                    and all(w in r['title'].casefold() for w in words) and (not only or r['id'] == only)]
             ids = [r['id'] for r in rows[offset:offset + limit]]
             by_id = {r['id']: dict(r) for r in db.execute('SELECT * FROM suggestions WHERE id IN (' + ','.join('?' for _ in ids) + ')', ids)} if ids else {}
             cards = [by_id[i] for i in ids if i in by_id]
@@ -13946,6 +13948,7 @@ class App(*APP_MIXINS):
         self.store.owner_user_ids = {a['user_id'] for a in config['accounts'] if a.get('service') == 'slack' and a.get('user_id')}
         self.store.accounts = config['accounts']
         self.store.config = config
+        self.note_connections()
         self.token = credential(config, 'api-token')
         self.owner_token = owner_credential(config)
         self.stop = threading.Event()
@@ -16873,7 +16876,9 @@ class App(*APP_MIXINS):
         except Exception as error:
             reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The doc could not be checked. Nothing was changed.' if action['kind']=='doc_write' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','telegram':'Telegram','intercom':'Intercom','doc_reply':'The doc'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
             with self.store.connect() as db:
-                db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id=? AND status='queued'",(reason,now(),job['id']))
+                stamp=now()
+                if db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id=? AND status='queued'",(reason,stamp,job['id'])).rowcount:
+                    activity_log.note_block(db,job['id'],reason,stamp)  # Activity keeps the block as history (activity_log.py)
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             return 'blocked'
         # An automated follow-up: the thread read again, right before it goes; anything new since the draft holds it (follow_ups.py)
@@ -20904,6 +20909,21 @@ class App(*APP_MIXINS):
             LOG.info('account summary unavailable error=%s', type(error).__name__)
             return {'on': True, 'error': 'Can’t reach your account right now.'}
 
+    def note_connections(self):
+        """Activity: remember the connections there are now, so one added or removed since shows (activity_log.py).
+        Never stops the service: a failed note only costs that line."""
+        try:
+            with self.store.connect() as db:
+                activity_log.note_accounts(db, self.config.get('accounts') or [], now())
+        except sqlite3.Error as error:
+            LOG.warning('activity connections not noted error=%s', type(error).__name__)
+
+    def activity_view(self, kind='', cursor=0, outcome='', actor=''):
+        """Settings, Activity: one page of everything The Machine did, newest first (activity_log.page). Read-only."""
+        self.note_connections()
+        with self.store.connect() as db:
+            return activity_log.page(db, self.config, kind, cursor, outcome=outcome, actor=actor)
+
     def fleet_view(self):
         """The Fleet tab, with each member who is in the graph linked to their person there."""
         view = self.fleet.view()
@@ -21903,6 +21923,12 @@ class App(*APP_MIXINS):
                         self.output(400, {'error': 'Select accounts and use a valid search'})
                 elif path.path == '/api/account':
                     self.output(200, app.account_view())
+                elif path.path == '/api/activity':  # Settings, Activity: everything The Machine did, a page at a time (activity_log.py)
+                    args = {k: v[0] for k, v in urllib.parse.parse_qs(path.query).items()}
+                    try:
+                        self.output(200, app.activity_view(args.get('kind', ''), args.get('cursor') or 0, args.get('outcome', ''), args.get('actor', '')))
+                    except (ValueError, sqlite3.OperationalError):
+                        self.output(400, {'error': 'Not an activity page'})
                 elif path.path == '/api/calendar':  # the Calendar tab: meetings in a window, and the calendars it can add to
                     args = urllib.parse.parse_qs(path.query)
                     try:
@@ -21963,7 +21989,7 @@ class App(*APP_MIXINS):
                     args = {k: v[0] for k, v in urllib.parse.parse_qs(path.query).items()}
                     try:
                         if path.path == '/api/cards/done':
-                            self.output(200, app.store.done_page(args.get('cursor') or 0, args.get('limit') or 30, args.get('q', ''), args.get('scope', '')))
+                            self.output(200, app.store.done_page(args.get('cursor') or 0, args.get('limit') or 30, args.get('q', ''), args.get('scope', ''), args.get('id', '')))
                         elif args.get('ids') == '1':  # the ids its filters keep, for the Projects board
                             self.output(200, app.graph_list_ids(args.get('list', ''), {k: args[k] for k in crm.FILTERS if k in args}))
                         else:

@@ -34,7 +34,7 @@ Ons team kan voor je naar je Machine kijken, maar alleen als je dat toestaat. Me
 
 - Alleen lezen: logboeken, instellingen, versies, hoe elke koppeling synct en recente fouten, opgeschoond zoals het supportrapport. Nooit je berichten, sleutels, wachtwoorden of wie je contacten zijn.
 - Het stopt vanzelf na 24 uur. Zolang het aanstaat, toont **Instellingen**, **Beveiliging** het: **Uitzetten** stopt het nu.
-- Elke keer dat er gekeken wordt, staat daar, met wanneer.
+- Elke blik van ons team staat in Instellingen, **Activiteit**, met wanneer. Zie [Activiteit](activity.md).
 
 ## Vanaf je eigen computer
 

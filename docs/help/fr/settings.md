@@ -11,6 +11,7 @@ Ouvrez **Paramètres** avec la roue dentée en haut. Ses onglets :
 - **Compte** : **Vos adresses**, celles qui comptent comme vous, avec leur provenance. Votre forfait en bref, des boutons vers les pages de votre compte, et **Se déconnecter**. Voir [Forfaits et facturation](plans-and-billing.md).
 - **Général** : langue et région, cet appareil, le navigateur de votre Machine, votre Fleet et votre compte.
 - **Sécurité** : Standard ou Prudent, et les paramètres qu’ils règlent. Voir [Niveaux de sécurité](security-levels.md). **Accès du support** aussi, tant qu’il est actif : voir [Obtenir de l’aide](get-support.md#support-access).
+- **Activité** : tout ce que The Machine a fait pour vous, le plus récent d’abord. Voir [Activité](activity.md).
 - **Notifications** : ce qui vous parvient et où, et vos heures de travail. Voir [Notifications](notifications.md) et [Heures de travail](work-hours.md).
 - **Rédaction** : signatures et votre façon d’écrire. Voir [Rédaction](writing.md).
 - **Compétences** : les modes d’emploi que suit votre Machine. Voir [Compétences](skills.md).

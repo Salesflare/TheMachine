@@ -34,7 +34,7 @@ Our team can look at your Machine for you, but only once you allow it. When you 
 
 - Read-only: logs, settings, versions, how each connection syncs and recent errors, scrubbed like the support report. Never your messages, keys, passwords or who your contacts are.
 - It ends by itself after 24 hours. While it's on, **Settings**, **Security** shows it: **Turn off** ends it now.
-- Every look is listed there, with when.
+- Every look is listed in Settings, **Activity**, with when. See [Activity](activity.md).
 
 ## From your own computer
 

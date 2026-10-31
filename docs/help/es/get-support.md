@@ -34,7 +34,7 @@ Nuestro equipo puede revisar tu Machine por ti, pero solo cuando lo permitas. Cu
 
 - Solo lectura: registros, ajustes, versiones, cómo se sincroniza cada conexión y errores recientes, limpiados como el informe de soporte. Nunca tus mensajes, claves, contraseñas ni quiénes son tus contactos.
 - Termina solo a las 24 horas. Mientras está activo, **Ajustes**, **Seguridad** lo muestra: **Desactivar** lo termina ahora.
-- Cada revisión aparece listada ahí, con la hora.
+- Cada revisión aparece en Ajustes, **Actividad**, con la hora. Consulta [Actividad](activity.md).
 
 ## Desde tu propio ordenador
 

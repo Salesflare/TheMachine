@@ -7,7 +7,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Support access on a self-hosted Machine: given where it's needed, with the support report in Report a bug (one box,
 // ticked by default; unticked gives nothing), through the app and only after Send; Settings, Security shows it only
-// while it's on, with each look and Turn off. Not offered when the Machine isn't paired (the app refuses).
+// while it's on, with Turn off, and each look in Settings, Activity. Not offered when the Machine isn't paired (the app refuses).
 const dashboard=await dashboardPage();
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 let paired=true,until=null;const actions=[];
@@ -57,11 +57,17 @@ try{
   await page.waitForSelector('#settings-support:not([hidden])');
   assert.equal(await page.textContent('#sa-toggle'),'Turn off');
   assert.ok((await page.textContent('#sa-state')).startsWith('On until'));
-  assert.ok((await page.textContent('#sa-log')).includes('The Machine team: read the settings'));
   await page.evaluate(()=>document.querySelector('#settings-support').scrollIntoView({block:'center'}));
   if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-${width}x${height}.png`});
   const box=await page.$eval('#settings-support',el=>{const r=el.getBoundingClientRect();return {right:r.right,scroll:document.documentElement.scrollWidth}});
   assert.ok(box.right<=width&&box.scroll<=width,`${width}: fits ${JSON.stringify(box)}`);
+  // Each look is a line of Settings, Activity: See each look in Activity opens it filtered to Support access
+  await page.click('#sa-activity');await page.waitForSelector('#settings-activity:not([hidden]) .act-row');
+  assert.equal(await page.inputValue('#act-filter'),'access');
+  assert.ok((await page.textContent('#act-list')).includes('The Machine team: read the settings'));
+  if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-activity-${width}x${height}.png`});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: Activity fits`);
+  await page.evaluate(()=>showSettings('security'));await page.waitForSelector('#settings-support:not([hidden])');
   await page.click('#sa-toggle');await page.waitForFunction(()=>document.querySelector('#settings-support').hidden);
   assert.equal(actions.at(-1).args.allow,false);
   // On again, then not paired after all: the app refuses, the section hides

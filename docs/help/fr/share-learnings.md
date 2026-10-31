@@ -32,7 +32,7 @@ D’autres Machines peuvent voter sur un apprentissage que vous avez partagé, s
 
 Cochez **Envoyer automatiquement désormais** à côté de **Envoyer**, ou activez **Envoyer les apprentissages automatiquement** dans Paramètres, Sécurité. Les nouveaux apprentissages partent alors sans demander, vérifiés de la même façon. Désactivé par défaut.
 
-Chaque apprentissage envoyé figure dans Fleet, **Activité**, exactement comme il est parti. Touchez **Retirer** et l’équipe ne le voit plus.
+Chaque apprentissage envoyé figure dans Paramètres, **Activité**, et dans Fleet, **Activité**, exactement comme il est parti. Touchez **Retirer** et l’équipe ne le voit plus.
 
 Votre e-mail et les journaux d’erreurs ne partent jamais tout seuls. **Prudent**, une Work Fleet Prudente, ou la désactivation de **Proposer de partager des apprentissages** l’arrête. Réactivé, elle demande à nouveau à chaque fois.
 

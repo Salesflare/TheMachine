@@ -3359,8 +3359,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             found = self.relay.call('POST', '/support-access', {'allow': bool(allow)}, timeout=20) or {}
         else:
             found = self.relay.call('GET', '/support-access', None, timeout=20) or {}
-        accesses = [{'at': str(a.get('at') or ''), 'what': str(a.get('what') or '')[:80]} for a in found.get('accesses') or []
-                    if isinstance(a, dict)][:50]
+        accesses = [{'at': str(a.get('at') or ''), 'what': str(a.get('what') or '')[:80], **({'refused': True} if a.get('refused') is True else {})}
+                    for a in found.get('accesses') or [] if isinstance(a, dict)][:50]  # refused: a look tried while it was off
         return {'until': self.support_until(), 'hours': self.SUPPORT_HOURS, 'accesses': accesses}
 
     def support_round(self):

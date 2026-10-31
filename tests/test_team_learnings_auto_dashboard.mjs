@@ -8,8 +8,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Send learnings automatically (team_learnings.set_auto, auto_send, shared, withdraw): the offer's "Send automatically
 // from now on" tick goes with Send, never the email; the Settings switch under Offer to share learnings, held off by a
-// Careful Work Fleet; and Fleet, Activity lists exactly what was sent, with Withdraw. All mocked, nothing leaves the
-// test. SHOTS=dir saves screenshots.
+// Careful Work Fleet; and Fleet, Activity (the activity list for the Fleet and learnings, api/activity) lists exactly
+// what was sent, with Withdraw. All mocked, nothing leaves the test. SHOTS=dir saves screenshots.
 const dashboard=await dashboardPage();
 const CASE={given:'a first reply to a customer who has not heard of the owner yet',when:'the owner opens the draft',then:'the draft says who the owner is before the ask'};
 const ask=()=>({id:'tl_1',created_at:'2026-10-27T09:00:00+00:00',error:null,items:[
@@ -23,6 +23,10 @@ const fleet={on:true,kinds:{},ask_meetings:false,kind_rules:{},no_details:[],bri
  fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',asks:[],people:[{member_id:'m',name:'Sam',role:'owner',me:true,email:'sam@acme.example'}],members:[],rules:{},exceptions:{},kind_rules:{}}],
  log:[{at:'2026-10-26T09:00:00+00:00',direction:'out',fleet:FL,name:'your Fleet',kind:'meeting',what:'Who is joining the Acme review?',outcome:'answered'}]};
 let view,posts;
+// api/activity as activity_log.py answers it: each learning sent, Withdraw on those not withdrawn, what went
+const line=s=>({id:`learnings:${s.id}:${s.n}`,kind:'learnings',at:s.at,what:'Learning shared: '+s.text,where:'The Machine team',
+ outcome:s.withdrawn_at?'undone':'done',status:s.withdrawn_at?'Withdrawn':'Sent',by:s.auto?'By itself':'After your OK',todo:null,detail:null,
+ withdraw:s.withdrawn_at?null:{id:s.id,n:s.n},sent:{example:s.example,log:s.log,use_cases:s.use_cases.map(c=>[c.given,c.when,c.then].join(' · '))}});
 const reset=(more={})=>{view={offer:true,vote:true,vote_mode:'on',network:true,auto:false,auto_careful:false,ask:ask(),last_shared:null,shared:SHARED.map(s=>({...s})),...more};posts=[]};
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -32,6 +36,7 @@ const server=createServer(async(req,res)=>{
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},connectors:[],review_runs:[],voices:[],
   facts:[],team_learnings:view,fleet:{on:true,waiting:0}}));return}
  if(url.pathname.startsWith('/api/fleet')){res.end(JSON.stringify(fleet));return}
+ if(url.pathname==='/api/activity'){res.end(JSON.stringify({items:view.shared.map(line),next:null,kinds:['learnings']}));return}
  if(url.pathname==='/api/action'){let body='';for await(const c of req)body+=c;const {action,args}=JSON.parse(body);posts.push({action,args});
   if(action==='learnings_share'){view={...view,ask:null,auto:!!args.auto,last_shared:{at:'2026-10-27T10:00:00+00:00',count:args.items.length}};res.end(JSON.stringify({status:'sent',count:args.items.length,team_learnings:view}));return}
   if(action==='set_learnings_auto'){view={...view,auto:args.on};res.end(JSON.stringify({auto:args.on,team_learnings:view}));return}
@@ -86,20 +91,26 @@ try{
   // Fleet, Activity: exactly what was sent, how, and Withdraw for those not withdrawn
   await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('#fleet-view .fleet-box').first().waitFor();
   await page.locator('[data-fleet-pane="activity"]').click();
-  const sent=page.locator('.tl-shared');await sent.waitFor();
-  assert.equal(await sent.locator('h3').textContent(),'Sent to The Machine team');
-  assert.equal(await sent.locator('article').count(),3);
-  assert.match(await sent.locator('article').nth(0).innerText(),/Sent after your OK/);
-  assert.match(await sent.locator('article').nth(1).innerText(),/Sent automatically/);
-  assert.match(await sent.locator('article').nth(2).innerText(),/Withdrawn Oct 26/);
+  const sent=page.locator('.act-embed');await sent.locator('.act-row').first().waitFor();
+  assert.equal(await sent.locator('h3').textContent(),'What your Machine asked, answered and shared');
+  assert.equal(await sent.locator('.act-row').count(),3);
+  assert.match(await sent.locator('.act-row').nth(0).innerText(),/After your OK/);
+  assert.match(await sent.locator('.act-row').nth(1).innerText(),/By itself/);
+  assert.match(await sent.locator('.act-row').nth(2).innerText(),/Withdrawn/);
+  await sent.locator('.act-row').nth(1).locator('summary').click();
+  assert.match(await sent.locator('.act-row').nth(1).locator('pre').textContent(),/KeyError: missing key/);
   assert.equal(await sent.locator('[data-tl-withdraw]').count(),2,'no Withdraw on one already withdrawn');
   await noScroll(page,width);
   await shot(sent,`activity-${width}-${scheme}`);
   if(scheme==='light'){
-   await sent.locator('article').nth(1).locator('[data-tl-withdraw]').click();
+   await sent.locator('.act-row').nth(1).locator('[data-tl-withdraw]').click();
    await page.locator('#toast',{hasText:'Withdrawn. The team no longer sees it.'}).waitFor({state:'attached'});
    assert.deepEqual(posts.at(-1),{action:'learnings_withdraw',args:{id:'tl_0',n:2}});
-   await page.locator('.tl-shared [data-tl-withdraw]').nth(1).waitFor({state:'detached'});
+   await page.locator('.act-embed [data-tl-withdraw]').nth(1).waitFor({state:'detached'});
+   // All activity: the same lines in Settings, Activity
+   await sent.locator('[data-act-all]').click();
+   await page.locator('#settings-activity .act-row').first().waitFor();
+   assert.equal(await page.locator('#settings-activity [data-tl-withdraw]').count(),1);
   }
   await context.close();
  }

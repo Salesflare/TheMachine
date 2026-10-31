@@ -32,7 +32,7 @@ Otras Machines pueden votar un aprendizaje que compartiste, sin saber quién lo 
 
 Marca **Enviar automáticamente a partir de ahora** junto a **Enviar**, o activa **Enviar aprendizajes automáticamente** en Ajustes, Seguridad. Los nuevos aprendizajes se envían entonces sin preguntar, revisados de la misma forma. Desactivado por defecto.
 
-Cada aprendizaje enviado aparece en Fleet, **Actividad**, tal como se envió. Toca **Retirar** y el equipo ya no lo ve.
+Cada aprendizaje enviado aparece en Ajustes, **Actividad**, y en Fleet, **Actividad**, tal como se envió. Toca **Retirar** y el equipo ya no lo ve.
 
 Tu correo y los registros de errores nunca se envían solos. **Prudente**, una Work Fleet Prudente, o desactivar **Ofrecer compartir aprendizajes** lo detiene. Si lo vuelves a activar, pregunta cada vez de nuevo.
 

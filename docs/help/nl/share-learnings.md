@@ -32,7 +32,7 @@ Andere Machines kunnen stemmen op een inzicht dat je deelde, zonder te weten wie
 
 Vink **Voortaan automatisch versturen** aan naast **Versturen**, of zet **Inzichten automatisch versturen** aan in Instellingen, Beveiliging. Nieuwe inzichten gaan dan zonder te vragen, op dezelfde manier gecontroleerd. Standaard uit.
 
-Elk verstuurd inzicht staat in Fleet, **Activiteit**, precies zoals het ging. Tik op **Intrekken** en het team ziet het niet meer.
+Elk verstuurd inzicht staat in Instellingen, **Activiteit**, en in Fleet, **Activiteit**, precies zoals het ging. Tik op **Intrekken** en het team ziet het niet meer.
 
 Je e-mail en foutlogs gaan nooit vanzelf mee. **Voorzichtig**, een Voorzichtige Work Fleet, of **Aanbieden om inzichten te delen** uitzetten stopt het. Zet je het weer aan, dan vraagt hij weer elke keer.
 

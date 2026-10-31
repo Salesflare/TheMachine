@@ -10,7 +10,7 @@ separately whether an item's error excerpt goes along (off by default). Only an 
 
 Send automatically (opt-in, in the offer or Settings, Security; the default asks each time): new distillations go
 without asking, as they are, never with an error excerpt or the owner's email. Every sent learning is listed under
-Fleet, Activity, exactly as it went, and can be withdrawn there (withdraw: the control plane deletes it for the team).
+Settings, Activity (and Fleet, Activity), exactly as it went, and can be withdrawn there (withdraw: the control plane deletes it for the team).
 Turning off the offer, Never ask, Careful, or a Careful Work Fleet stops it; turning the offer off also turns it off.
 
 What is stripped, twice:
@@ -557,7 +557,7 @@ def view(db, network=True):
 
 
 def shared(db, limit=SHARED):
-    """Under Fleet, Activity: every learning sent lately, exactly as it went, newest first, with whether it went by
+    """Fleet's view of what was sent: every learning sent lately, exactly as it went, newest first, with whether it went by
     itself and whether it was withdrawn since."""
     out = []
     for batch, at, record in db.execute("SELECT id,decided_at,sent FROM team_learnings WHERE status='sent' ORDER BY decided_at DESC LIMIT ?", (limit,)):

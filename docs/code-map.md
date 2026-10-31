@@ -27,7 +27,7 @@ writes it; other modules call the owner's functions.
 | skills, support | `skills`, `skills_app`, `support`, `support_app`, `bug_queue`, `error_feed`, `help_topics` | `skills`, `skill_hints`, `error_feed*`, `help_topics` |
 | notify, Telegram | `notify`, `telegram_mirror`, `telegram_store`, `pacing` | `notify_*`, `pacing_*`; `telegram_store` keeps its own database (`chats`, `messages`, `outbox`, ...) |
 | setup and upkeep | `onboarding`, `installer`, `cli`, `service`, `portable`, `moving`, `work_removal`, `retention`, `rollout_health` | `retention_runs`, `sync_daily` |
-| shared helpers | `i18n`, `locale_prefs`, `activity`, `authorship`, `model_budget`, `google_api`, `ms_graph`, `slack_api`, `mail_grants`, `mail_attachments` | `activity_seen` |
+| shared helpers | `i18n`, `locale_prefs`, `activity`, `activity_log` (Settings, Activity: reads the other tables, writes only its own), `authorship`, `model_budget`, `google_api`, `ms_graph`, `slack_api`, `mail_grants`, `mail_attachments` | `activity_seen`; `activity_accounts` (activity_log) |
 | connectors | `connectors/*.py`, `integrations/*.py` | none: they hand events to the service, never SQL |
 
 The full list, computed from the code: `python3 tests/test_architecture.py --owners`.

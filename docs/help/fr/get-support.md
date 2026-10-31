@@ -34,7 +34,7 @@ Notre équipe peut regarder votre Machine pour vous, mais seulement une fois que
 
 - Lecture seule : journaux, paramètres, versions, la synchro de chaque connexion et les erreurs récentes, nettoyés comme le rapport pour le support. Jamais vos messages, clés, mots de passe, ni qui sont vos contacts.
 - L’accès se termine de lui-même après 24 heures. Tant qu’il est actif, **Paramètres**, **Sécurité** l’affiche : **Désactiver** y met fin tout de suite.
-- Chaque consultation y est listée, avec sa date.
+- Chaque consultation figure dans Paramètres, **Activité**, avec sa date. Voir [Activité](activity.md).
 
 ## Depuis votre propre ordinateur
 

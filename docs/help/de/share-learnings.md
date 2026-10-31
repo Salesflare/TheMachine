@@ -32,7 +32,7 @@ Andere Machines können über eine Erkenntnis abstimmen, die du geteilt hast, oh
 
 Hake **Ab jetzt automatisch senden** neben **Senden** an, oder schalte **Erkenntnisse automatisch senden** in Einstellungen, Sicherheit ein. Neue Erkenntnisse gehen dann ohne Nachfrage, genauso geprüft. Standardmäßig aus.
 
-Jede gesendete Erkenntnis steht unter Fleet, **Aktivität**, genau so, wie sie ging. Tippe auf **Zurückziehen**, und das Team sieht sie nicht mehr.
+Jede gesendete Erkenntnis steht unter Einstellungen, **Aktivität**, und unter Fleet, **Aktivität**, genau so, wie sie ging. Tippe auf **Zurückziehen**, und das Team sieht sie nicht mehr.
 
 Deine E-Mail-Adresse und Fehlerprotokolle gehen nie von selbst mit. **Vorsichtig**, eine vorsichtige Work Fleet oder das Ausschalten von **Anbieten, Erkenntnisse zu teilen** stoppt es. Wieder eingeschaltet, fragt sie wieder jedes Mal.
 

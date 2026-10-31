@@ -100,6 +100,7 @@ import json
 import random
 import re
 
+import activity_log
 import bounces
 
 SCHEMA = '''
@@ -936,7 +937,8 @@ def hold(db, job_id, suggestion_id, why, news, now, line=None):
     (the thread couldn't be read) or 'bounced' (its To bounced since the draft). The outbox job waits, blocked, with
     the line the to-do shows; a new Send checks again."""
     line = line or (HELD if why == 'changed' else UNCHECKED)
-    db.execute("UPDATE action_jobs SET status='blocked',error=?,retry_at=NULL,updated_at=? WHERE id=? AND status='queued'", (line, now, job_id))
+    if db.execute("UPDATE action_jobs SET status='blocked',error=?,retry_at=NULL,updated_at=? WHERE id=? AND status='queued'", (line, now, job_id)).rowcount:
+        activity_log.note_block(db, job_id, line, now)  # Activity keeps the hold as history (activity_log.py)
     db.execute('INSERT OR REPLACE INTO follow_up_holds(job_id,suggestion_id,why,news,at) VALUES(?,?,?,?,?)',
                (job_id, suggestion_id, why, json.dumps(news) if news is not None else None, now))
     return line

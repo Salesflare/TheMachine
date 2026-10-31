@@ -32,7 +32,7 @@ Other Machines may vote on a learning you shared, without knowing who sent it. Y
 
 Tick **Send automatically from now on** next to **Send**, or turn on **Send learnings automatically** in Settings, Security. New learnings then go without asking, checked the same way. Off by default.
 
-Every learning sent is listed in Fleet, **Activity**, exactly as it went. Tap **Withdraw** and the team no longer sees it.
+Every learning sent is listed in Settings, **Activity**, and in Fleet, **Activity**, exactly as it went. Tap **Withdraw** and the team no longer sees it.
 
 Your email and error logs never go by themselves. **Careful**, a Careful Work Fleet, or turning off **Offer to share learnings** stops it. Turned back on, it asks each time again.
 

@@ -32,7 +32,7 @@ Altre Machine possono votare un apprendimento che hai condiviso, senza sapere ch
 
 Spunta **Invia in automatico d’ora in poi** accanto a **Invia**, oppure attiva **Invia apprendimenti in automatico** in Impostazioni, Sicurezza. I nuovi apprendimenti partono allora senza chiedere, controllati allo stesso modo. Disattivato di default.
 
-Ogni apprendimento inviato è elencato in Fleet, **Movimenti**, esattamente come è partito. Tocca **Ritira** e il team non lo vede più.
+Ogni apprendimento inviato è elencato in Impostazioni, **Movimenti**, e in Fleet, **Movimenti**, esattamente come è partito. Tocca **Ritira** e il team non lo vede più.
 
 La tua email e i log degli errori non partono mai da soli. **Prudente**, una Work Fleet Prudente, o disattivare **Proponi di condividere apprendimenti** lo ferma. Riattivato, chiede di nuovo ogni volta.
 

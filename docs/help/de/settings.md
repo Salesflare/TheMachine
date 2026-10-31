@@ -11,6 +11,7 @@ order: 1
 - **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft. Dein Tarif in Kürze, Buttons zu deinen Kontoseiten und **Abmelden**. Siehe [Tarife und Abrechnung](plans-and-billing.md).
 - **Allgemein**: Sprache und Region, dieses Gerät, der Browser deiner Machine, deine Fleet und dein Konto.
 - **Sicherheit**: Standard oder Vorsichtig und die Einstellungen, die sie festlegen. Siehe [Sicherheitsstufen](security-levels.md). Auch **Support-Zugriff**, solange er an ist: siehe [Support bekommen](get-support.md#support-access).
+- **Aktivität**: alles, was The Machine für dich getan hat, das Neueste zuerst. Siehe [Aktivität](activity.md).
 - **Benachrichtigungen**: was dich wo erreicht, und deine Arbeitszeiten. Siehe [Benachrichtigungen](notifications.md) und [Arbeitszeiten](work-hours.md).
 - **Schreiben**: Signaturen und wie du schreibst. Siehe [Schreiben](writing.md).
 - **Skills**: Anleitungen, denen deine Machine folgt. Siehe [Skills](skills.md).

@@ -104,20 +104,6 @@ function fleetBriefShare(f){const works=(f.fleets||[]).filter(x=>x.kind==='work'
  return works.map(w=>`<label class="fleet-option"><input type="checkbox" data-fleet-brief-share="${esc(w.id)}"${w.rules?.brief?.rule==='never'?'':' checked'}><span>${several?`${esc(w.name)}: `:''}Share my brief facts with the team<small class="muted">Counts and dates from what the Team Graph already shares. Private and personal threads never count.</small></span></label>`).join('')}
 // Team learnings from team conversations (fleet_learnings.py): shared by themselves, removable by anyone in the Fleet.
 const FLEET_LEARN_KIND={process:'Process',tool:'Tool',style:'Style',routing:'Who handles what'};
-// Fleet, Activity: every learning sent to The Machine team lately, exactly as it went (team_learnings.shared), with
-// Withdraw: the team no longer sees it. Sent automatically or after the owner's OK, with the email or log only if they went.
-function teamShared(){const list=state.team_learnings?.shared||[];if(!list.length)return'';
- const day=at=>at?esc(new Date(at).toLocaleDateString(DL,{month:'short',day:'numeric'})):'';
- const item=i=>`<article class="tl-sent${i.withdrawn_at?' withdrawn':''}"><p>${esc(i.text)}</p>${i.example?`<p class="muted">${esc(t('Example: {}',i.example))}</p>`:''}`
-  +(i.use_cases||[]).map(c=>`<p class="fine tl-case">${esc([c.given,c.when,c.then].filter(Boolean).join(' · '))}</p>`).join('')
-  +(i.log?`<details class="share-log-text"><summary>${esc(t('Error log'))}</summary><pre>${esc(i.log)}</pre></details>`:'')
-  +`<p class="fleet-learn-meta"><small class="muted">${[day(i.at),i.auto?t('Sent automatically'):t('Sent after your OK'),i.named?t('With your email'):'',i.withdrawn_at?t('Withdrawn {}',day(i.withdrawn_at)):''].filter(Boolean).map(x=>`<span>${x}</span>`).join(' · ')}</small>`
-  +(i.withdrawn_at?'':`<button type="button" class="ghost" data-tl-withdraw="${esc(i.id)}" data-n="${i.n}">${esc(t('Withdraw'))}</button>`)+'</p></article>';
- return `<div class="fleet-box tl-shared"><h3>${esc(t('Sent to The Machine team'))}</h3><p class="sub">${esc(t('Exactly what was sent. Withdraw one and the team no longer sees it.'))} <a class="learn" href="${HELP}share-learnings#send-automatically" target="_blank" rel="noopener">${esc(t('Learn more'))}</a></p><div class="list">${list.map(item).join('')}</div></div>`}
-$('#fleet-view').addEventListener('click',async e=>{const b=e.target.closest('[data-tl-withdraw]');if(!b)return;
- if(!confirm(t('Withdraw this learning? The team no longer sees it.')))return;b.disabled=true;
- try{const r=await sharePost('learnings_withdraw',{id:b.dataset.tlWithdraw,n:+b.dataset.n});if(r?.team_learnings)state.team_learnings=r.team_learnings;toast(t('Withdrawn. The team no longer sees it.'));fleetView(false,true)}
- catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 function fleetLearnings(work){const L=work.learnings;if(!L)return'';const items=L.items||[];
  const list=items.length?`<div class="list fleet-learnings">${items.map(i=>`<article><p><span class="chip"><span class="ct">${esc(FLEET_LEARN_KIND[i.kind]||i.kind)}</span></span> ${esc(i.text)}</p><p class="fleet-learn-meta"><small class="muted"><span>From team conversations</span> · <span>${i.mine?'Shared by your Machine':i.from?esc(i.from):'A teammate'}</span>${i.at?' · '+esc(new Date(i.at+'T12:00:00').toLocaleDateString(DL,{month:'short',day:'numeric'})):''}</small><button type="button" class="ghost" data-fleet-learn-remove="${esc(i.fp)}" data-fleet="${esc(work.id)}">Remove</button></p></article>`).join('')}</div>`
   :`<p class="muted">${L.on?'Nothing yet. Your Machine looks once a day.':'Off. Turn it on in Settings, Security.'}</p>`;
@@ -611,8 +597,8 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
   h+=box('Meetings and brief','',`<label class="fleet-option"><input type="checkbox" id="fleet-meetings"${f.ask_meetings?' checked':''}><span>${esc(rulesOf.length?t(several?(friendsToo?'Ask my Work Fleets, and a friend who is in the meeting, about the outside people in my meetings this week':'Ask my Work Fleets about the outside people in my meetings this week'):(friendsToo?'Ask my Work Fleet, and a friend who is in the meeting, about the outside people in my meetings this week':'Ask my Work Fleet about the outside people in my meetings this week')):t('Ask a friend who is in one of my meetings this week about the other people in it'))}<small class="muted">They see those email addresses.</small></span></label>${rulesOf.length?fleetBriefSettings(f):''}`,'fleet-settings');
   panes.push({id:'sharing',label:'Sharing',html:h})}
  panes.push({id:'activity',label:'Activity',html:(told.length?box('Lately','Who joined, asked for a hosted Machine, had one started, or left.',`<div class="list">${told.map(noticeCard).join('')}</div>`):'')
-  +teamShared()
-  +box('Log','Every question asked or answered, both ways.',`<ul class="fleet-log list">${f.log.map(l=>`<li><small class="mono">${esc(fmtDHM(l.at,{day:'numeric',month:'short'}))}</small> ${l.direction==='in'?'From':'To'} ${esc(l.name||'')}: ${esc(l.what)} · <span class="muted">${esc(l.outcome)}</span></li>`).join('')||'<li class="muted">Nothing yet.</li>'}</ul>`)});
+  // What the Machine asked, answered and shared: Settings, Activity's list for the Fleet and learnings (settings-activity.js)
+  +actEmbed()});
  const current=panes.some(p=>p.id===fleetPane)?fleetPane:panes[0].id;
  let html=f.off?pageNotice('The Network is off for now. Nothing is asked or answered.'):'';
  {const todo=fleetCardsOf(f).length;if(todo)html+=pageNotice(t(['One Fleet item waits for you under Suggestions.','{} Fleet items wait for you under Suggestions.'],todo),'Show',{'tab-go':'inbox'},'fleet-todo')}
@@ -621,9 +607,9 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
  html+='<div id="fleet-discover" class="fleet-discover"></div>';
  html+=panes.map(p=>`<div class="fleet-pane" role="tabpanel" data-pane="${esc(p.id)}"${p.id===current?'':' hidden'}>${p.html}</div>`).join('');
  // Leave unchanged forms in place: a completed background request must not swallow a click.
- if(view._fleetHTML===html)return;
+ if(view._fleetHTML===html){actEmbedFill();return}
  const drafts=[...view.querySelectorAll('form')].map(form=>({key:form.className+'|'+(form.dataset.fleet||''),values:[...form.elements].filter(e=>e.name&&['INPUT','TEXTAREA'].includes(e.tagName)).map(e=>[e.name,e.value])}));
- view.innerHTML=html;view._fleetHTML=html;
+ view.innerHTML=html;view._fleetHTML=html;actEmbedFill();
  if(/^shared-/.test(current))sharedLoad(current.slice(7),true);
  for(const draft of drafts){const form=[...view.querySelectorAll('form')].find(f=>f.className+'|'+(f.dataset.fleet||'')===draft.key);if(form)for(const [name,value]of draft.values){const input=form.elements.namedItem(name);if(input&&'value'in input)input.value=value}}
 }

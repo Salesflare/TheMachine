@@ -11,6 +11,7 @@ Open **Instellingen** met het tandwiel bovenaan. De tabbladen:
 - **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt. Je abonnement in het kort, knoppen naar je accountpagina's, en **Uitloggen**. Zie [Abonnementen en facturatie](plans-and-billing.md).
 - **Algemeen**: taal en regio, dit apparaat, de browser van je Machine, je Fleet en je account.
 - **Beveiliging**: Standaard of Voorzichtig, en de instellingen die ze bepalen. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang het aanstaat: zie [Hulp krijgen](get-support.md#support-access).
+- **Activiteit**: alles wat The Machine voor je deed, nieuwste eerst. Zie [Activiteit](activity.md).
 - **Meldingen**: wat je waar bereikt, en je werkuren. Zie [Meldingen](notifications.md) en [Werkuren](work-hours.md).
 - **Schrijven**: handtekeningen en hoe je schrijft. Zie [Schrijven](writing.md).
 - **Skills**: handleidingen die je Machine volgt. Zie [Skills](skills.md).
