@@ -3047,7 +3047,7 @@ class Slack:
             raise SourceError('invalid_json') from None
         if not isinstance(data, dict) or not data.get('ok'):
             label = data.get('error') if isinstance(data, dict) else None
-            known = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found',
+            known = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found', 'user_not_found', 'user_not_visible',
                      'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked', 'token_expired'}
             if label == 'ratelimited' and method in self.limited_reads:
                 self.read_went(True)
@@ -4927,6 +4927,14 @@ class Store:
             db.execute("UPDATE analyses SET last_error=CASE WHEN ? IN ('review_not_finished','run_interrupted') AND last_error IS NOT NULL THEN last_error ELSE ? END,error_at=?,status=CASE WHEN ? THEN 'retryable' ELSE status END WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
                        (reason, reason, now(), int(terminal), owner_session, owner_run))
         return {'recorded': True}
+
+    def slack_named_out(self, value):
+        """An action's result as an agent reads it, Slack members by name (slack_named_out)."""
+        try:
+            with self.connect() as db:
+                return slack_named_out(db, value)
+        except sqlite3.Error:
+            return value
 
     def names_to_check(self, identifiers, days=30):
         if not identifiers:
@@ -7088,7 +7096,7 @@ class Store:
                               "AND 'note:'||d.id NOT IN (SELECT edit_id FROM edits_offered) ORDER BY d.created_at DESC LIMIT ?", (since, limit)).fetchall()
             if run_id:
                 db.executemany('INSERT OR IGNORE INTO edits_offered(edit_id,run_id,offered_at) VALUES(?,?,?)', [('note:' + str(r['id']), run_id, now()) for r in rows])
-        return '\n'.join(f"- \"{r['title']}\". They wrote: \"{r['feedback'][:chars]}\" (decision_id {r['id']})" for r in rows)
+            return '\n'.join(f"- \"{r['title']}\". They wrote: \"{slack_ids_named(db, r['feedback'])[:chars]}\" (decision_id {r['id']})" for r in rows)
 
     # How the owner writes, per channel: a short block each, learned from their own messages, style notes and edits.
     def voices(self, db=None):
@@ -7202,13 +7210,14 @@ class Store:
                     roles = [r[0] for r in db.execute("SELECT DISTINCT json_extract(n.info,'$.role') FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
                                                       "WHERE g.event_id=? AND g.direct=1 AND n.kind='person' AND json_extract(n.info,'$.role') IS NOT NULL LIMIT 3",
                                                       (row['id'],))]
-                    item = {'channel': channel, 'date': row['occurred_at'][:10], 'text': clamp(text, 700 if kind == 'gmail.message' else 250)}
+                    item = {'channel': channel, 'date': row['occurred_at'][:10],
+                            'text': clamp(slack_ids_named(db, text) if kind == 'slack.message' else text, 700 if kind == 'gmail.message' else 250)}
                     if kind == 'gmail.message':
                         to = [(n, a) for n, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a and a.lower() not in own]
                         item['to'] = clamp(', '.join(n or a.split('@')[0] for n, a in to[:3]), 120)
                         item['same_domain'] = bool(to) and all(a.lower().rsplit('@', 1)[-1] in {o.rsplit('@', 1)[-1] for o in own} for _, a in to)
                     elif m.get('chat_name') or m.get('channel_name'):
-                        item['chat'] = clamp(str(m.get('chat_name') or m.get('channel_name')), 60)
+                        item['chat'] = clamp(slack_ids_named(db, str(m.get('chat_name') or m.get('channel_name'))), 60)  # "DM Sam Lee", never the id
                     if roles:
                         item['they_are'] = ', '.join(clamp(str(r), 60) for r in roles)
                     picked.append(item)
@@ -7216,7 +7225,7 @@ class Store:
                     picked = [picked[i * len(picked) // limit] for i in range(limit)]
                 if len(picked) >= VOICE_STUDY_MIN:
                     items += picked
-            notes = [{'decision_id': r['id'], 'date': r['created_at'][:10], 'note': clamp(r['feedback'], 300), 'card': clamp(r['title'], 100)}
+            notes = [{'decision_id': r['id'], 'date': r['created_at'][:10], 'note': clamp(slack_ids_named(db, r['feedback']), 300), 'card': clamp(r['title'], 100)}
                      for r in db.execute("SELECT d.id,d.feedback,d.created_at,s.title FROM note_kinds k JOIN decisions d ON d.id=k.decision_id "
                                          "JOIN suggestions s ON s.id=d.suggestion_id WHERE k.kind='style' AND d.feedback!='' "
                                          "AND d.source IN ('telegram','dashboard') AND d.id NOT IN (SELECT decision_id FROM decision_annotations) "
@@ -9241,7 +9250,7 @@ def name_slack_titles(store, account_id, ids=None):
             on = set(graph.slack_members_on(m)) | {x[0] for x in graph.SLACK_MENTION.findall(str(r['body'] or ''))}
             if ids is not None and not on & set(ids):
                 continue
-            if not graph.SLACK_MEMBER.search(str(r['title'] or '')) and not str(r['title'] or '').startswith('#DM:') and '@…' not in str(r['title'] or ''):
+            if not graph.slack_title_unnamed(r['title']):
                 continue
             found.append((r, m, on))
         names = graph.slack_names(db, {u for _, _, on in found for u in on})
@@ -9264,27 +9273,41 @@ def remember_slack_names(store, source, events, channels=(), per_page=3):
         m[0] for e in events for m in graph.SLACK_MENTION.findall(str(e.get('body') or ''))} | {
         m[1] for name in [e['metadata'].get('channel_name') for e in events] + [c.get('name') for c in channels]
         for m in [re.fullmatch(r'DM ([UW][A-Z0-9]+)', name or '')] if m}
-    users = {u for u in users if u and u not in (source.account.get('user_id'),)}
+    owner = source.account.get('user_id')
+    users = {u for u in users if u}
     with store.connect() as db:
         known = graph.slack_members_known(db, users)
-    wanted = sorted(set(store.names_to_check(['slack:' + u for u in users])) | {'slack:' + u for u in users - known})
+    wanted = sorted(set(store.names_to_check(['slack:' + u for u in users - {owner}])) | {'slack:' + u for u in users - known})
     named = []
     for identifier in wanted[:per_page]:
+        member = identifier.split(':', 1)[1]
         try:
-            user = source.get('users.info', {'user': identifier.split(':', 1)[1]}).get('user', {})
-        except SourceError:
-            return
+            user = source.get('users.info', {'user': member}).get('user', {})
+        except SourceError as error:
+            if not str(error).startswith(('slack_user_not_found', 'slack_user_not_visible')):
+                return  # away, or Slack's limit: the rest next page
+            user = {'id': member, 'deleted': True}  # an account Slack no longer has
         profile = user.get('profile') or {}
-        name = None if user.get('is_bot') else (profile.get('real_name') or profile.get('display_name') or user.get('real_name'))
-        store.remember_name(identifier, name and str(name)[:200], None if user.get('is_bot') else str(profile.get('email') or '').lower()[:320] or None)
+        shown = (profile.get('real_name') or profile.get('display_name') or user.get('real_name')
+                 or profile.get('real_name_normalized') or profile.get('display_name_normalized') or user.get('name'))
+        person = not user.get('is_bot') and member != owner and not user.get('deleted')
+        email = str(profile.get('email') or '').lower()[:320] or None
+        if member != owner:  # a person's name and email for the people graph (an app: none, checked once a month)
+            real = None if user.get('is_bot') else (profile.get('real_name') or profile.get('display_name') or user.get('real_name'))
+            store.remember_name(identifier, real and str(real)[:200], None if user.get('is_bot') else email)
+        # who is no person in the graph still has a name to show: an app by its name, the owner as themselves, someone
+        # whose account is gone by the name it had, else "a former Slack user"
+        label = None if person else (shown or (graph.FORMER_SLACK_USER if user.get('deleted') else None))
         team = source.account.get('team_id')
         outside = bool(user.get('is_stranger') or user.get('is_restricted') or user.get('is_ultra_restricted')
                        or (team and user.get('team_id') and user['team_id'] != team))
         with store.connect() as db:
-            graph.remember_slack_member(db, identifier.split(':', 1)[1], outside, now())
-        if name:
-            named.append(identifier.split(':', 1)[1])
-        user = {**user, 'id': user.get('id') or identifier.split(':', 1)[1]}
+            graph.remember_slack_member(db, member, outside, now(), label)
+        if shown or label:
+            named.append(member)
+        if member == owner or (user.get('deleted') and not profile):
+            continue  # the owner's own picture and facts aren't a contact's
+        user = {**user, 'id': user.get('id') or member}
         offer, facts = enrichment.slack_photo(user), enrichment.slack_facts(user)
         if offer or facts:
             with store.connect() as db:
@@ -11374,38 +11397,66 @@ SLACK_ID = re.compile(r'\b(?:Slack (?:teammate|user|member|colleague|contact) )?
 
 
 def slack_name_table(db, ids):
-    """{user id: name} for these Slack member ids, from what users.info said (identity_names). Unknown ones are left out."""
-    ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
-    if not ids:
-        return {}
-    try:
-        return {r[0].split(':', 1)[1]: r[1] for r in db.execute(
-            'SELECT identifier,name FROM identity_names WHERE name IS NOT NULL AND identifier IN (' + ','.join('?' * len(ids)) + ')',
-            ['slack:' + i for i in ids])}
-    except sqlite3.OperationalError:
-        return {}  # no graph tables yet
+    """{user id: name} for these Slack member ids (graph.slack_names: the people graph, users.info, or the name kept for
+    an app, the owner or a former member). Unknown ones are left out."""
+    return graph.slack_names(db, ids)
 
 
 def slack_ids_named(db, text, names=None):
-    """Text with each Slack member id it mentions ("Slack teammate U02AB3CD4", "DM U02AB3CD4") as that person's name."""
+    """Text with each Slack member id it mentions ("Slack teammate U02AB3CD4", "DM U02AB3CD4", "<@U02AB3CD4>") as that
+    person's name (graph.slack_text_named)."""
     text = str(text or '')
-    found = [m[1] for m in SLACK_ID.finditer(text)]
-    names = names if names is not None else slack_name_table(db, found)
-    return SLACK_ID.sub(lambda m: names.get(m[1], m[0]), text) if any(i in names for i in found) else text
+    found = graph.slack_ids_in(text)
+    if not found:
+        return text
+    return graph.slack_text_named(text, names if names is not None else slack_name_table(db, found))
+
+
+# Keys whose values are ids an agent passes back (event_id, channel_id, user_id, ...): kept as they are.
+SLACK_KEPT_KEY = re.compile(r'(^|_)(id|ids|ts|user|channel|cursor|url|key)$')
+
+
+def slack_named_out(db, value):
+    """An action's result as an agent reads it: every Slack member id in its text by name ("<@U02AB3CD4>",
+    "DM U02AB3CD4", "Slack teammate U02AB3CD4", a known bare id), whatever stored it (event bodies, earlier tool
+    results, profile evidence, notes). Values under id keys stay, so the agent can still act on them."""
+    try:
+        ids = graph.slack_ids_in(json.dumps(value, ensure_ascii=False, default=str))
+    except (TypeError, ValueError):
+        return value
+    if not ids:
+        return value
+    names = graph.slack_names(db, ids)
+
+    def walk(v, key=''):
+        if isinstance(v, str) and v[:1] in '{[' and v[-1:] in '}]':
+            try:
+                return json.dumps(walk(json.loads(v), key), ensure_ascii=False)  # metadata kept as JSON text: its id fields stay
+            except ValueError:
+                pass
+        if isinstance(v, str):
+            return v if SLACK_KEPT_KEY.search(key) else graph.slack_text_named(v, names)
+        if isinstance(v, dict):
+            return {k: walk(x, str(k)) for k, x in v.items()}
+        if isinstance(v, (list, tuple)):
+            return [walk(x, key) for x in v]
+        return v
+    return walk(value)
 
 
 def slack_named(db, rows):
-    """Slack messages with their sender's name (sender_display) and a DM's other person by name, as a WhatsApp message
-    carries its sender: for the review, its earlier-in-conversation lines and the dashboard. Other rows stay as they are."""
+    """Slack messages with their sender's name (sender_display), a DM's other person and everyone they mention by name
+    (title, body), as a WhatsApp message carries its sender: for the review, its earlier-in-conversation lines,
+    preparations and the dashboard. Never a member id: one no name is known for is "someone on Slack". Other rows stay
+    as they are."""
     slack = [r for r in rows if r.get('kind') == 'slack.message']
     if not slack:
         return rows
     meta = {id(r): (r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')) for r in slack}
     ids = {m.get('user_id') for m in meta.values()} | {i for r in slack for i in SLACK_ID.findall(str(r.get('title') or ''))} | {
-        i for m in meta.values() for i in SLACK_ID.findall(str(m.get('channel_name') or ''))}
+        i for m in meta.values() for i in SLACK_ID.findall(str(m.get('channel_name') or ''))} | {
+        i for r in slack for i in graph.slack_ids_in(r.get('body'))}
     names = slack_name_table(db, ids)
-    if not names:
-        return rows
     out = []
     for r in rows:
         if r.get('kind') != 'slack.message':
@@ -11415,9 +11466,15 @@ def slack_named(db, rows):
         if names.get(m.get('user_id')) and not m.get('sender_display'):
             m['sender_display'] = names[m['user_id']]
         if m.get('channel_name'):
-            m['channel_name'] = slack_ids_named(db, m['channel_name'], names)
-        out.append({**r, 'title': slack_ids_named(db, r.get('title'), names),
-                    'metadata': m if isinstance(r['metadata'], dict) else json.dumps(m)})
+            m['channel_name'] = graph.slack_text_named(m['channel_name'], names)
+        title = r.get('title')
+        if graph.slack_title_lost(title) and 'body' in r:  # stored before a name was known: made again from the message
+            title = graph.slack_title(meta[id(r)].get('channel_name'), html.unescape(str(r['body'] or '')), names)
+        named = {**r, 'title': graph.slack_text_named(title, names, graph.SOMEONE_ON_SLACK),
+                 'metadata': m if isinstance(r['metadata'], dict) else json.dumps(m)}
+        if 'body' in r:
+            named['body'] = graph.slack_text_named(r['body'], names)  # mentions by name, for the review and preparations
+        out.append(named)
     return out
 
 
@@ -22331,7 +22388,9 @@ class App(*APP_MIXINS):
                         return
                     if dashboard:
                         request.setdefault('args', {})['source'] = 'dashboard'
-                    self.output(200, app.action(request['action'], request.get('args', {}), owner_dashboard=bool(dashboard)))
+                    result = app.action(request['action'], request.get('args', {}), owner_dashboard=bool(dashboard))
+                    # what a review, preparation or other agent reads names Slack members, never their ids
+                    self.output(200, result if dashboard else app.store.slack_named_out(result))
                 except (ValueError, KeyError, TypeError, sqlite3.OperationalError, sqlite3.IntegrityError) as error:
                     if not isinstance(error, ValueError):
                         # A request this action can't read (a page from before, a button that sent the wrong action) or a

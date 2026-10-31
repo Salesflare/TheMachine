@@ -10,6 +10,8 @@ site: Connect, More sources, Remove
 
 Le conversazioni di cui fai parte: canali, canali privati, messaggi diretti e messaggi di gruppo, gli ultimi 7 giorni quando ti colleghi, poi tutto quello che arriva di nuovo. Non entra mai in un canale e non apre conversazioni da solo.
 
+Le persone compaiono con il loro nome e le app con il proprio, mai con un ID Slack. Chi non ha più un account Slack compare come ex utente di Slack.
+
 ## Cosa può inviare
 
 Un messaggio diretto a una persona, a nome tuo, e solo dopo che l’hai approvato nell’attività. Non pubblica mai in un canale.

@@ -24,6 +24,7 @@ import copy
 import datetime as dt
 import hashlib
 import hmac
+import html
 import json
 import logging
 import re
@@ -75,6 +76,9 @@ MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'salesflar
 # the team sees, or one shared with chosen teammates, they count as shared by being on it (visibility).
 ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript', 'intercom.conversation', 'whatsapp.message', 'slack.message',
               'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', *graph.DOC_KINDS)
+# A chat (not a meeting, its notes or a doc): one the review judged colleagues only stays with the owner, also on a
+# team board (the owner's choice, 2026-10-31): a chat carries no addresses to tell, so the review's call is what decides.
+CHAT_KINDS = ('whatsapp.message', 'slack.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')
 ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'email': 'Email', 'docs': 'Doc'}
 
 
@@ -704,7 +708,9 @@ def visibility(db, scope, event):
             return 'pending'  # a team board's: once the review looked, so nothing sensitive ever goes, not even for a while
         if verdict == 'sensitive':
             return 'sensitive'  # the whole team never gets deals, HR, legal, health or money
-        return 'wait' if thread in scope.fresh else 'team'  # client, other, internal or unsure: it is on the board
+        if verdict == 'internal' and event['kind'] in CHAT_KINDS:
+            return 'internal'  # a chat among colleagues: never the team's, also on a board (only by name or by hand)
+        return 'wait' if thread in scope.fresh else 'team'  # client, other or unsure: it is on the board
     if thread in scope.board_threads:  # on a board shared with these teammates by name: sensitive ones too
         if hand == 'private':
             return 'private'
@@ -1146,13 +1152,20 @@ def slack_names_of(db, events):
     for e in events:
         if e['kind'] == 'slack.message':
             m = e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')
-            ids |= set(graph.slack_members_on(m)) | set(graph.SLACK_MEMBER.findall(str(e['title'] or '')))
+            ids |= set(graph.slack_members_on(m)) | graph.slack_ids_in(e['title']) | (
+                graph.slack_ids_in(e['body']) if 'body' in e.keys() else set())
     return graph.slack_names(db, ids)
 
 
 def shown_title(e, names):
-    """An event's title as people see it: a Slack member by their name, never their id (graph.slack_title_shown)."""
-    return graph.slack_title_shown(e['title'], names) if e['kind'] == 'slack.message' else str(e['title'] or '')
+    """An event's title as people see it: a Slack member by their name, never their id (graph.slack_title_shown). One
+    stored before a name was known is made again from the message."""
+    if e['kind'] != 'slack.message':
+        return str(e['title'] or '')
+    if graph.slack_title_lost(e['title']) and 'body' in e.keys() and e['body']:
+        m = e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')
+        return graph.slack_title(m.get('channel_name'), html.unescape(str(e['body'])), names)
+    return graph.slack_title_shown(e['title'], names)
 
 
 def one_per_conversation(rows):

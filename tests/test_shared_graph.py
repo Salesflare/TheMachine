@@ -1885,7 +1885,7 @@ class SharedGraph(unittest.TestCase):
         self.assertNotIn('Sidecorp board', subjects)
         self.assertNotIn('Dinner with Bo', subjects)
 
-    def test_meetings_and_chats_of_a_team_board_go_once_judged_anything_but_sensitive_which_never_goes(self):
+    def test_meetings_and_chats_of_a_team_board_go_once_judged_anything_but_sensitive_or_a_chat_among_colleagues(self):
         self.olive_mail()
         self.own.config['accounts'] += [{'id': 'cal', 'email': 'own1@acme.example', 'service': 'calendar', 'boundary': 'work:Acme'},
                                         {'id': 'li', 'service': 'linkedin', 'boundary': 'work:Acme'},
@@ -1902,8 +1902,10 @@ class SharedGraph(unittest.TestCase):
                  meet('cal', 2, 'Lee check-in', 'Lee asked about the seats.'), meet('cal', 3, 'Unrelated call', 'Not on any board.'),
                  meet('cal', 4, 'Team sync', 'Only colleagues here.', 'adm2@acme.example'), chat(2, 'c-kept', 'Lee: a note to keep to me.'),
                  meet('cal', 5, 'Lee and family', 'Lee talked about his kids.'), meet('homecal', 1, 'Dinner with Lee', 'Dinner at home.'),
-                 zoom(1, 'Renewal pricing', 'Lee agreed the new seat price.'), zoom(2, 'Lee health', 'Lee is off for surgery next month.'))
-        self.board(self.own, 'Renewals', 'team', {'Renewal: Client': ['work-1', 'cal-1', 'li-1', 'cal-2', 'cal-4', 'li-2', 'cal-5', 'homecal-1', 'zm-1', 'zm-2']})
+                 zoom(1, 'Renewal pricing', 'Lee agreed the new seat price.'), zoom(2, 'Lee health', 'Lee is off for surgery next month.'),
+                 chat(3, 'c-form', 'Lee: send me the order form.'))
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Client': ['work-1', 'cal-1', 'li-1', 'cal-2', 'cal-4', 'li-2', 'cal-5', 'homecal-1', 'zm-1', 'zm-2',
+                                                                      'li-3']})
         with self.own.store.connect() as db:
             sg.set_hand(db, self.event_id(self.own, 'li-2'), 'private')
         self.add(self.own, meet('cal', 6, 'Lee raise', 'Lee asked about a raise for his team.'))
@@ -1921,16 +1923,22 @@ class SharedGraph(unittest.TestCase):
             self.assertNotIn('new seat price', everything)  # a Zoom summary waits to be judged like mail
             self.assertIn('about the seats', everything)  # judged (unsure): on the board, so it goes
         self.judge(self.own, ('cal-1', 'other', 'Renewal call with Lee'), ('li-1', 'internal', 'Lee on the renewal'),
-                   ('cal-6', 'sensitive', 'Lee and a raise'), ('zm-1', 'client', 'Lee agreed the price'), ('zm-2', 'sensitive', 'Lee and his health'))
+                   ('cal-6', 'sensitive', 'Lee and a raise'), ('zm-1', 'client', 'Lee agreed the price'), ('zm-2', 'sensitive', 'Lee and his health'),
+                   ('li-3', 'unsure', 'Lee asks for the form'))
         self.assertEqual([w for w in self.own.graph_unjudged() if w['subject'] in ('Renewal call', 'Lee raise', 'LinkedIn conversation')], [])
         self.rounds()
         for box in (self.adm, self.mem):
             everything = self.received(box) + json.dumps(self.team(box))
-            for text in ('Walk Lee through', 'renewal looks good', 'about the seats', 'new seat price'):
-                self.assertIn(text, everything)  # judged other, internal or unsure: on the team's board, so it goes
-            for text in ('Not on any board', 'Only colleagues here', 'a note to keep to me', 'his kids', 'Dinner at home', 'a raise for his team', 'surgery'):
-                self.assertNotIn(text, everything)  # no board, colleagues only, Keep private, personal, a personal account, sensitive (a meeting or a Zoom summary)
+            for text in ('Walk Lee through', 'about the seats', 'new seat price', 'the order form'):
+                self.assertIn(text, everything)  # judged other or unsure: on the team's board, so it goes
+            for text in ('renewal looks good', 'Not on any board', 'Only colleagues here', 'a note to keep to me', 'his kids', 'Dinner at home', 'a raise for his team', 'surgery'):
+                self.assertNotIn(text, everything)  # a chat judged internal, no board, colleagues only, Keep private, personal, a personal account, sensitive
         self.assertIn('Meeting: Renewal call', json.dumps(self.projects_of(self.mem)['Renewal: Client']['timeline']))
+        self.judge(self.own, ('li-3', 'internal', 'Lee asks for the form'))  # judged again: a chat among colleagues after all
+        self.rounds()
+        for box in (self.adm, self.mem):
+            self.assertNotIn('the order form', self.received(box))  # gone from the team's Machines again
+            self.assertIn('Walk Lee through', self.received(box))
 
     def slack(self, n, channel, name, user, text, connect=False):
         return {'account_id': 'sl', 'source_id': f'{channel}:{n}.000100', 'kind': 'slack.message', 'occurred_at': ago(1, n), 'deleted': False,

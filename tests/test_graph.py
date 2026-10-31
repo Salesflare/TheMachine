@@ -135,8 +135,12 @@ class Graph(unittest.TestCase):
         a.remember_slack_names(self.store, slack, events, channels, per_page=2)
         a.remember_slack_names(self.store, slack, events, channels, per_page=2)
         a.remember_slack_names(self.store, slack, events, channels, per_page=2)
-        self.assertEqual(calls, ['U0A', 'U0B', 'U0C'])
+        self.assertEqual(calls, ['U0A', 'U0B', 'U0C', 'U0OWNER'])  # the owner once too: their name for their mentions
+        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        self.assertEqual(len(calls), 4)
         with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT label FROM slack_members WHERE user_id='U0OWNER'").fetchone()[0], 'Name U0OWNER')
+            self.assertIsNone(db.execute("SELECT 1 FROM identity_names WHERE identifier='slack:U0OWNER' AND name>''").fetchone())  # no person in the graph
             self.assertEqual(db.execute("SELECT name,email FROM identity_names WHERE identifier='slack:U0A'").fetchone()[:], ('Name U0A', 'u0a@acme.com'))
             # Their own Slack picture is kept for their photo (Slack's generated one isn't), on this Machine only.
             self.assertEqual([tuple(r) for r in db.execute('SELECT identifier,url,chosen FROM contact_photo_links')], [('slack:U0A', 'https://avatars.slack-edge.com/U0A_192.png', 1)])

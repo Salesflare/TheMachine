@@ -28,7 +28,7 @@ Een beheerder kan ieders **Werkmail** en **Werkagenda** op het eigen domein van 
 
 - Threads met klanten: e-mail met mensen buiten je bedrijf over werk, met de bijlagen.
 - Werkpersonen, organisaties en projecten, met een korte tijdlijn.
-- Op een Teambord ook de afspraken, Zoom-notities, Intercom-gesprekken en chats van een project, omdat ze op het bord staan. Gevoelige, zoals deals, blijven erbuiten.
+- Op een Teambord ook de afspraken, Zoom-notities, Intercom-gesprekken en chats van een project, omdat ze op het bord staan. Gevoelige, zoals deals, blijven erbuiten, net als chats met alleen collega's.
 
 ## Buiten het automatisch delen
 
