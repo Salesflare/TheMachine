@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {menuPick} from './nav-click.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The Graph as a CRM on the dashboard: Filter on the lists (the filters go to the Machine), the filter sheet, no Mine
@@ -59,7 +60,8 @@ try{
   const context=await browser.newContext({viewport:{width,height:844},isMobile:mobile,hasTouch:mobile,locale:'en-GB'}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(tag+': '+e.message));page.on('dialog',d=>d.accept());await page.goto(base);await page.waitForFunction(()=>typeof people==='function');
-  const click=sel=>mobile?page.locator(sel).first().tap():page.locator(sel).first().click();
+  const press=l=>mobile?l.tap():l.click(),click=sel=>press(page.locator(sel).first());
+  const menu=item=>menuPick(page.locator('#people-view .org-actions .person-menu summary').first(),page.locator(item).first(),{open:press,act:press});
   await page.evaluate(()=>{localStorage.removeItem('graph-filters');sideStore.set('projects-view','list');document.querySelector('nav [data-tab="people"]').click()});
   await page.evaluate(()=>document.querySelector('[data-graph-sub="projects"]').click());
   // Projects list: Filter, no Mine button on the Mine tab
@@ -92,17 +94,17 @@ try{
   assert.equal(await page.locator('#people-view [data-board-mine]').count(),0);
   assert.equal(await page.locator('#people-view .tile[data-node="project:1"] .tile-owner').textContent(),'Kim Vale');
   await shot(page,`board-owners-${tag}`);
-  await page.evaluate(()=>crmSet('projects',{owner:'me'}));await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:1"]'));
-  assert.equal(lists.at(-1).ids,'1');assert.equal(lists.at(-1).owner,'me');
+  let asked=lists.length;await page.evaluate(()=>crmSet('projects',{owner:'me'}));await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:1"]'));
+  await until(()=>lists.slice(asked).some(l=>l.list==='projects'&&l.ids==='1'&&l.owner==='me'),'the board asks which projects Owner: you keeps');
   assert.match(await page.locator('#people-view .proj-board .board-active').textContent(),/Owner: you/);
   assert.equal(await page.locator('#people-view .proj-board [data-crm-filter="projects"] .badge').textContent(),'1');
   await click('#people-view .proj-board [data-board-filter-clear]');await page.locator('#people-view .tile[data-node="project:1"]').waitFor({state:'attached'});
   assert.deepEqual(await page.evaluate(()=>crmF('projects')),{});
   await page.locator('#people-view .lane-sum [data-crm-waiting]').first().waitFor({state:'attached'});
   assert.equal(await page.locator('#people-view .lane-sum [data-crm-waiting]').first().textContent(),'1 with no reply in 10+ days');
-  await page.evaluate(()=>document.querySelector('#people-view .lane-sum [data-crm-waiting]').click());
+  asked=lists.length;await page.evaluate(()=>document.querySelector('#people-view .lane-sum [data-crm-waiting]').click());
   await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:3"]')&&!document.querySelector('#people-view .tile[data-node="project:1"]'));
-  assert.equal(lists.at(-1).waiting,'1');assert.ok(await page.locator('#people-view .tile[data-node="project:2"]').count());
+  await until(()=>lists.slice(asked).some(l=>l.list==='projects'&&l.waiting==='1'),'the board asks for the ones with no reply');assert.ok(await page.locator('#people-view .tile[data-node="project:2"]').count());
   assert.match(await page.locator('#people-view .proj-board .board-active').textContent(),/No reply in 10\+ days/);await shot(page,`board-waiting-${tag}`);
   await page.evaluate(()=>projectsViewSet('list'));await page.waitForFunction(()=>/No reply in 10\+ days/.test(document.querySelector('[data-graph-panel="projects"] .proj-list .graph-active')?.textContent||''));
   await page.evaluate(()=>{crmSet('projects',{});projectsViewSet('board')});await page.locator('#people-view .tile[data-node="project:3"]').waitFor({state:'attached'});
@@ -120,10 +122,10 @@ try{
   await page.locator('#people-view [data-owner-pick]').selectOption('me');await until(()=>calls.some(c=>c.action==='graph_owner'),'owner set');
   assert.deepEqual(calls.find(c=>c.action==='graph_owner').args,{node_id:'org:globex.example',owner:'me'});
   await click('#people-view [data-org-split]');await until(()=>calls.some(c=>c.action==='graph_org_split'),'split');assert.deepEqual(calls.find(c=>c.action==='graph_org_split').args,{alias:'org:globex.io'});
-  await click('#people-view .org-actions .person-menu summary');await click('#people-view [data-org-site]');await page.locator('#crm-dialog[open]').waitFor();
+  await menu('#people-view [data-org-site]');await page.locator('#crm-dialog[open]').waitFor();
   await page.locator('#crm-form [name=website]').fill('globex.co.uk');await shot(page,`org-website-${tag}`);await click('#crm-form button.primary');
   await page.locator('#crm-dialog[open]').waitFor({state:'detached'});assert.deepEqual(calls.find(c=>c.action==='graph_org_merge'&&c.args.website).args,{node_id:'org:globex.example',website:'globex.co.uk'});
-  await click('#people-view .org-actions .person-menu summary');await click('#people-view [data-org-same]');await page.locator('#crm-dialog[open]').waitFor();
+  await menu('#people-view [data-org-same]');await page.locator('#crm-dialog[open]').waitFor();
   await page.locator('#crm-form [name=q]').fill('Umb');await page.waitForFunction(()=>document.querySelector('#crm-orgs option'));await page.locator('#crm-form [name=q]').fill('Umber');
   await click('#crm-form button.primary');await page.locator('#crm-dialog[open]').waitFor({state:'detached'});
   assert.deepEqual(calls.find(c=>c.action==='graph_org_merge'&&c.args.into==='org:umber.example').args,{node_id:'org:globex.example',into:'org:umber.example'});

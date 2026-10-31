@@ -3,6 +3,8 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {focusOn} from './nav-click.mjs';
+import {settled} from './page-calls.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The command palette and the keyboard shortcuts (made-up data). ⌘K on a Mac and Ctrl+K elsewhere open and close it;
@@ -17,7 +19,7 @@ const base0=()=>[
  {id:id(2),title:'Reply to Pat about the offsite',body:'Draft ready.',status:'prepared',scope:'work',created_at:now,event_ids:[2],
   next_actions:[{kind:'email',label:'Send reply',revision:'ab12cd34ef56',to:['pat@acme.example'],subject:'Offsite',body:'Hi Pat, Thursday works.'}]},
  {id:id(3),title:'Book the dentist',body:'',status:'pending',scope:'personal',created_at:now,event_ids:[3]}];
-let cards,actions,graphQueries;
+let cards,actions,graphQueries,lateAnswer;
 const reset=()=>{cards=base0();actions=[];graphQueries=[]};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const NODES=[{id:'email:pat@acme.example',kind:'person',name:'Pat Doe',ids:['pat@acme.example']},{id:'org:acme.example',kind:'org',name:'Acme',domain:'acme.example'},{id:'project:offsite',kind:'project',name:'Acme offsite'}];
@@ -25,8 +27,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/graph'){const q=url.searchParams.get('q');if(q==null){res.end(JSON.stringify({counts:{}}));return}graphQueries.push(q);
-  // "ac" answers late: its answer must not replace the newer "acme" one
-  if(q==='ac')await new Promise(r=>setTimeout(r,700));
+  // "ac" answers late (when the test lets it): its answer must not replace the newer "acme" one
+  if(q==='ac')await lateAnswer;
   res.end(JSON.stringify({found:NODES.filter(n=>n.name.toLowerCase().includes(q.toLowerCase())||(q==='ac'&&n.kind==='person'))}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body);if(r.action!=='card_chat')actions.push(r);
   if(r.action==='decide'){const c=cards.find(x=>x.id===r.args.suggestion_id);if(r.args.choice==='complete')c.status='completed';res.end(JSON.stringify({status:c.status}));return}
@@ -59,7 +61,7 @@ try{
  // Linux and Windows: Ctrl+K. ⌘ does nothing there. Labels say Ctrl K.
  {const {context,page}=await open(1440,900);
   assert.equal(await page.locator('#pal-open kbd').textContent(),'Ctrl K');
-  await page.locator('#side-find').focus();await page.keyboard.press('Meta+k');assert.ok(!(await isOpen(page)),'⌘K is not Linux’s key');
+  await focusOn(page.locator('#side-find'));await page.keyboard.press('Meta+k');assert.ok(!(await isOpen(page)),'⌘K is not Linux’s key');
   await page.keyboard.press('Control+k');await pal(page).waitFor();assert.equal(await page.evaluate(()=>document.activeElement.id),'pal-q');
   assert.deepEqual((await groups(page)).slice(0,2),['Actions','Go to']);
   // focus stays in the palette (Tab), Esc closes and focus goes back where it was
@@ -82,8 +84,11 @@ try{
   await page.keyboard.type('new');assert.equal((await labels(page))[0],'New to-do');await page.keyboard.press('Enter');await page.locator('#new-card').waitFor();
   await page.keyboard.press('Escape');await page.locator('#new-card').waitFor({state:'hidden'});
   // Cards from the list, People / Organizations / Projects from the Graph's search; the late "ac" answer is ignored
-  await page.keyboard.press('Control+k');await page.keyboard.type('ac');await page.waitForTimeout(250);await page.keyboard.type('me');
-  await page.locator('#pal-list .pal-group',{hasText:'Organizations'}).waitFor();await page.waitForTimeout(900);
+  let late;lateAnswer=new Promise(r=>late=r);
+  await page.keyboard.press('Control+k');await page.keyboard.type('ac');await settled(()=>graphQueries.includes('ac'),true,'"ac" is asked');await page.keyboard.type('me');
+  await page.locator('#pal-list .pal-group',{hasText:'Organizations'}).waitFor();
+  const lateIn=page.waitForResponse(r=>r.url().includes('/api/graph?q=ac')&&!r.url().includes('acme'));late();await (await lateIn).finished();
+  await page.evaluate(()=>new Promise(r=>setTimeout(r)));  // the page has had the late answer
   assert.deepEqual(await groups(page),['Organizations','Projects'],'no People from the stale answer');
   assert.ok(graphQueries.includes('acme'));
   await page.locator('#pal-q').fill('contract');await page.locator('#pal-list .pal-group',{hasText:'To-dos'}).waitFor();
@@ -102,9 +107,9 @@ try{
   await page.keyboard.press('g');await page.keyboard.press('p');assert.equal(await tab(page),'people');
   await page.keyboard.press('g');await page.keyboard.press('f');assert.equal(await tab(page),'people','no Fleet: g f does nothing');
   await page.keyboard.press('g');await page.keyboard.press('s');
-  await page.locator('#side-find').focus();await page.keyboard.type('gc');assert.equal(await tab(page),'inbox');assert.equal(await page.locator('#side-find').inputValue(),'gc');
+  await focusOn(page.locator('#side-find'));await page.keyboard.type('gc');assert.equal(await tab(page),'inbox');assert.equal(await page.locator('#side-find').inputValue(),'gc');
   await page.locator('#side-find').fill('');
-  await page.evaluate(()=>{const d=document.createElement('div');d.id='ce';d.contentEditable='true';document.body.append(d)});await page.locator('#ce').focus();
+  await page.evaluate(()=>{const d=document.createElement('div');d.id='ce';d.contentEditable='true';document.body.append(d)});await focusOn(page.locator('#ce'));
   for(const k of ['n','c','?','/','g','e','j','d'])await page.keyboard.press(k);
   assert.ok(!(await isOpen(page))&&!(await page.locator('#new-card').isVisible())&&!(await page.locator('#keys-sheet').count()),'nothing fired in contenteditable');
   await page.evaluate(()=>document.querySelector('#ce').remove());
@@ -117,23 +122,25 @@ try{
   // Hints: tooltips on the sidebar, a quiet key in the card's More menu
   assert.equal(await page.locator('nav [data-tab="calendar"]').getAttribute('title'),'Calendar (G then C)');
   assert.equal(await page.locator('#open-settings').getAttribute('aria-keyshortcuts'),'G Comma');
-  assert.equal(await page.locator(`#task-${id(1)} .more-menu [data-rename]`).evaluate(b=>getComputedStyle(b,'::after').content),'"E"');
+  await settled(()=>page.locator(`#task-${id(1)} .more-menu [data-rename]`).evaluate(b=>getComputedStyle(b,'::after').content),'"E"');  // the hints come with each redraw
   assert.equal(await page.locator(`#task-${id(1)} .more-menu [data-rename]`).textContent(),'Rename','the key is not part of its name');
   // J/K through the cards (and the heads of their lists); S opens the snooze picker for the picked one, E renames, D marks it done
   const order=await page.evaluate(()=>kbItems().map(a=>a.id));assert.ok(order[0].startsWith('section-'),'a list head is the first stop');
   await page.keyboard.press('j');assert.equal(await page.evaluate(()=>document.activeElement.id),order[0]);
   await page.keyboard.press('j');assert.equal(await page.evaluate(()=>document.activeElement.id),order[1]);
   await page.keyboard.press('k');assert.equal(await page.evaluate(()=>document.activeElement.id),order[0]);
-  assert.ok(await page.locator('#'+order[0]).evaluate(a=>a.classList.contains('kb-on')));
-  for(let i=0;i<8&&await page.evaluate(()=>document.activeElement.id)!=='task-'+id(1);i++)await page.keyboard.press('j');await page.keyboard.press('s');await page.locator('#snooze-dialog').waitFor();await page.keyboard.press('Escape');await page.locator('#snooze-dialog').waitFor({state:'hidden'});
+  await settled(()=>page.locator('#'+order[0]).evaluate(a=>a.classList.contains('kb-on')),true);
+  const jTo=async n=>{for(let i=0;i<8&&await page.evaluate(()=>document.activeElement.id)!=='task-'+id(n);i++)await page.keyboard.press('j');
+   assert.equal(await page.evaluate(()=>document.activeElement.id),'task-'+id(n),'J gets to the to-do')};
+  await jTo(1);await page.keyboard.press('s');await page.locator('#snooze-dialog').waitFor();await page.keyboard.press('Escape');await page.locator('#snooze-dialog').waitFor({state:'hidden'});
   assert.equal(sent('decide').length,0,'S only opens the picker');
-  await page.locator('#task-'+id(1)).focus();await page.keyboard.press('e');await page.locator('.rename-box input').waitFor();await page.keyboard.press('Escape');
+  await focusOn(page.locator('#task-'+id(1)));await page.keyboard.press('e');await page.locator('.rename-box input').waitFor();await page.keyboard.press('Escape');
   // the done to-do leaves the list before J walks on: from where it was, J only goes down and never reaches the one above
-  await page.locator('#task-'+id(1)).focus();await page.keyboard.press('d');await page.locator('#task-'+id(1)).waitFor({state:'hidden'});
+  await focusOn(page.locator('#task-'+id(1)));await page.keyboard.press('d');await page.locator('#task-'+id(1)).waitFor({state:'hidden'});
   assert.deepEqual([sent('decide')[0].args.suggestion_id,sent('decide')[0].args.choice],[id(1),'complete']);
   // Send-type actions: no key, and from the palette only the Send dialog opens; nothing is confirmed or sent
   await page.locator('#task-'+id(2)).waitFor();await page.locator('body').click({position:{x:700,y:5}});
-  for(let i=0;i<8&&await page.evaluate(()=>document.activeElement.id)!=='task-'+'02'.repeat(8);i++)await page.keyboard.press('j');
+  await jTo(2);
   assert.deepEqual(await page.evaluate(()=>ACTIONS.filter(a=>a.review&&a.keys).map(a=>a.id)),[],'no review action has a key');
   const before=actions.length;await page.keyboard.press('Control+k');await page.keyboard.type('review');
   assert.equal((await labels(page))[0],'Review the email…');await page.keyboard.press('Enter');await page.locator('#send-dialog').waitFor();
@@ -155,10 +162,10 @@ try{
  // Phone (390): no Search and commands row in the menu, no card search in it either; the top bar's search icon opens
  // the palette, and everything it held stays reachable (the menu still has New card and every page)
  {const {context,page}=await open(390,844);
-  await page.locator('#drawer-open').tap();await page.waitForTimeout(400);
+  await page.locator('#drawer-open').tap();await page.waitForFunction(()=>document.documentElement.dataset.drawer==='open'&&!document.querySelector('#app-side').getAnimations().length);
   assert.equal(await page.locator('#side-cmd').count(),0,'no Search and commands row');assert.ok(!(await page.locator('#app-side').innerText()).includes('Search and commands'));
   assert.ok(!(await page.locator('#side-find').isVisible()),'no card search in the menu');assert.ok(await page.locator('#side-new').isVisible(),'New card stays in the menu');
-  await page.keyboard.press('Escape');await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');await page.waitForFunction(()=>document.documentElement.dataset.drawer!=='open'&&!document.querySelector('#app-side').getAnimations().length);
   await page.locator('#find-open').tap();await pal(page).waitFor();
   assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or type a command');
   const all=await labels(page);for(const l of ['New to-do','Calendar','People','Settings','Keyboard shortcuts'])assert.ok(all.includes(l),'reachable from the palette: '+l);
@@ -168,7 +175,7 @@ try{
   const under=()=>page.evaluate(()=>{const t=document.querySelector('#topbar').getBoundingClientRect(),p=document.querySelector('#palette').getBoundingClientRect(),q=document.querySelector('#pal-q').getBoundingClientRect();
    return {bar:[t.top,t.bottom],top:p.top,bottom:p.bottom,field:q.top,h:innerHeight}});
   {const u=await under();assert.ok(u.bar[0]===0&&u.top>=u.bar[1]-1&&u.top<=u.bar[1]+2,'the sheet starts under the top bar '+JSON.stringify(u));assert.ok(u.bottom<=u.h,'and ends on the screen '+JSON.stringify(u))}
-  await page.setViewportSize({width:390,height:430});await page.waitForTimeout(300);
+  await page.setViewportSize({width:390,height:430});await page.waitForFunction(()=>innerHeight===430&&document.querySelector('#palette').getBoundingClientRect().bottom<=430);
   {const u=await under();assert.ok(u.bar[0]===0&&u.top>=u.bar[1]-1,'the top bar stays with the keyboard open '+JSON.stringify(u));assert.ok(u.bottom<=u.h,'the sheet fits above the keyboard '+JSON.stringify(u));assert.ok(u.field>=u.bar[1]&&u.field<u.bar[1]+60,'the field right under the bar '+JSON.stringify(u))}
   await page.setViewportSize({width:390,height:844});
   await page.locator('#pal-q').fill('cal');assert.equal((await labels(page))[0],'Calendar');await page.locator('#pal-list .pal-item').first().tap();assert.equal(await tab(page),'calendar');

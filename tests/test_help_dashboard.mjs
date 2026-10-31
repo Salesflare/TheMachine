@@ -10,7 +10,10 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // report (one box, ticked by default) without the owner waiting for it; nothing is lost when it is slow or fails. An
 // error toast opens it.
 const dashboard=await dashboardPage();
-const actions=[];let limit=false,queued=[],cpOk=false,previewMs=0,previewFails=false;  // limit: the control plane said 429, so the Machine keeps the report
+const actions=[];let limit=false,queued=[],cpOk=false,previewFails=false;  // limit: the control plane said 429, so the Machine keeps the report
+// An answer the test holds back (held()) goes out once it says so (open()): the page's state while it waits is checked, never timed
+const held=()=>{let open;const wait=new Promise(r=>open=r);return {wait,open}},answered={wait:Promise.resolve(),open(){}};
+let helpAnswer=answered,sendAnswer=answered,previewAnswer=answered;
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');let body='';
  req.on('data',c=>body+=c);req.on('end',()=>{
   if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -21,12 +24,12 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
    const later=Math.floor(Date.UTC(2030,0,1,10,55)/1000);
    if(action==='bug_later'||action==='bug_send'&&limit){queued=[{id:'bq_1',what:args.description,next_at:later}];res.end(JSON.stringify({sent:false,queued:true,at:later}));return}
    if(action==='help_ask'&&/comes back/.test(args.question)){res.end(JSON.stringify({answer:'Try a reload.',bug:'I snoozed a to-do until tomorrow.\nI expected it to stay away.\nIt came back within a minute.',sources:[]}));return}
-   if(action==='help_ask'){setTimeout(()=>res.end(JSON.stringify({answer:'Press **Snooze**, then pick a time.\n\n- See [Snooze](https://themachine.computer/help/snooze)\n- Not [this](https://evil.example/y)',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]})),300);return}
+   if(action==='help_ask'){helpAnswer.wait.then(()=>res.end(JSON.stringify({answer:'Press **Snooze**, then pick a time.\n\n- See [Snooze](https://themachine.computer/help/snooze)\n- Not [this](https://evil.example/y)',sources:[{kind:'help',title:'Snooze',url:'https://themachine.computer/help/snooze#snooze-a-to-do'},{kind:'help',title:'Bad',url:'https://evil.example/x'}]})));return}
    if(action==='help_article'){res.end(JSON.stringify(args.slug==='gmail'?{slug:'gmail',title:'Gmail',summary:'',body:'## Gmail koppelen\n\nOpen Koppelingen.',anchors:['connect-gmail'],lang:'nl'}
     :{slug:'snooze',title:'Snoozen',summary:'Zet een to-do weg.',body:'Intro.\n\n## Een to-do snoozen\n\nDruk op **Snoozen**. Zie [Gmail](gmail.md#connect-gmail) of [x](javascript:alert(1)).\n\n## Wanneer hij terugkomt\n\n- Op Telegram\n- Als melding',anchors:['snooze-a-to-do','when-it-comes-back'],lang:'nl'}));return}
    if(action==='bug_preview'&&previewFails){res.statusCode=500;res.end('{"error":"boom"}');return}
-   if(action==='bug_preview'){setTimeout(()=>res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true})),previewMs);return}
-   if(action==='bug_send'){res.end(JSON.stringify({sent:true,id:'s_1'}));return}}
+   if(action==='bug_preview'){previewAnswer.wait.then(()=>res.end(JSON.stringify({parts:{'service-log':['ERROR send failed token=[redacted]']},settings:{model:'openai/gpt-5'},paired:true})));return}
+   if(action==='bug_send'){sendAnswer.wait.then(()=>res.end(JSON.stringify({sent:true,id:'s_1'})));return}}
   if(url.pathname==='/api/status'){res.end(JSON.stringify({fleet:{on:false}}));return}  // paired with the Network
   res.end(url.pathname==='/api/events'?'[]':'{}')})});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -43,9 +46,9 @@ try{
   assert.equal(await page.isDisabled('#help-go'),true,'nothing to ask yet');
   await page.fill('#help-q','How do I');await page.press('#help-q','Shift+Enter');await page.type('#help-q','snooze a to-do?');
   assert.equal(await page.inputValue('#help-q'),'How do I\nsnooze a to-do?');assert.equal(actions.length,0,'Shift+Enter only adds a line');
-  await page.press('#help-q','Enter');
+  helpAnswer=held();await page.press('#help-q','Enter');
   // While it looks up: the typing dots in the answer's place, not a bordered box
-  await page.waitForSelector('#help-log .chat-msg.machine .typing[role=status]');
+  await page.waitForSelector('#help-log .chat-msg.machine .typing[role=status]');helpAnswer.open();
   await page.waitForSelector('.help-log .chat-files a');
   assert.equal(await page.$eval('#help-log .chat-msg.you .bubble',b=>b.textContent),'How do I\nsnooze a to-do?');
   // The answer as markdown; links in it only to the help pages, any other keeps its words
@@ -57,12 +60,12 @@ try{
   assert.equal(actions[0].action,'help_ask');
   // Asked while Help still answers: shows as sent at once, and is answered right after, in order, with the first answer as history
   actions.length=0;
-  await page.fill('#help-q','How do I snooze a to-do?');await page.press('#help-q','Enter');
+  helpAnswer=held();await page.fill('#help-q','How do I snooze a to-do?');await page.press('#help-q','Enter');
   await page.waitForSelector('#help-log .typing');
   await page.fill('#help-q','And how do I wake it early?');await page.press('#help-q','Enter');
   assert.equal(await page.inputValue('#help-q'),'','the second question left the box');
   assert.deepEqual(await page.$$eval('#help-log .chat-msg.you .bubble',b=>b.slice(-2).map(x=>x.textContent)),['How do I snooze a to-do?','And how do I wake it early?'],'shown as sent');
-  await page.waitForFunction(()=>document.querySelectorAll('#help-log .chat-msg.machine .bubble:not(.typing)').length===3&&!document.querySelector('#help-log .typing'));
+  helpAnswer.open();await page.waitForFunction(()=>document.querySelectorAll('#help-log .chat-msg.machine .bubble:not(.typing)').length===3&&!document.querySelector('#help-log .typing'));
   assert.deepEqual(actions.map(a=>a.args.question),['How do I snooze a to-do?','And how do I wake it early?'],'one at a time, in order');
   assert.equal(actions[1].args.history.at(-1).role,'assistant','the second gets the first answer as history');
   assert.deepEqual(await page.$$eval('#help-log .chat-msg',m=>m.slice(-4).map(x=>x.classList.contains('you')?'you':'machine')),['you','machine','you','machine'],'each answer under its question');
@@ -82,9 +85,10 @@ try{
   assert.equal(await page.isChecked('#bug-diag'),true);
   assert.match(await page.textContent('#bug-diag-fine'),/read-only logs for 24 hours/);
   // Send: the form closes at once and says Sent; the self-hosted Machine keeps it and adds the support report itself
-  await page.fill('#bug-what','The Calendar shows yesterday.');const t0=Date.now();await page.click('#bug-send');
-  await page.waitForSelector('#help-panel:not([open])',{state:'attached',timeout:1000});await page.waitForSelector('#toast.show');
-  assert.ok(Date.now()-t0<1000,'no waiting for the support report');
+  // (the Machine's answer is held back: the form closes before it comes)
+  sendAnswer=held();await page.fill('#bug-what','The Calendar shows yesterday.');await page.click('#bug-send');
+  await page.waitForSelector('#help-panel:not([open])',{state:'attached'});
+  assert.equal(await page.isVisible('#toast.show'),false,'no waiting for the support report');sendAnswer.open();sendAnswer=answered;await page.waitForSelector('#toast.show');
   assert.equal(await page.textContent('#toast'),'Sent, thanks. You’ll see it here when it’s fixed.');
   let sent=actions.find(a=>a.action==='bug_send');
   assert.equal(sent.action,'bug_send');assert.equal(sent.upload,'bug-report');
@@ -107,17 +111,18 @@ try{
   await page.evaluate(()=>toast('Saved.'));assert.equal(await page.$('#toast [data-bug-report]'),null,'only errors offer it');
   await page.fill('#bug-what','');
   // Hosted: kept on this device first; Sending shows before the slow support report, Sent only after the receipt
-  cpOk=true;previewMs=4000;actions.length=0;await page.evaluate(()=>{state.manage_url='https://app.example/setup';localStorage.removeItem('bug-later');bugPage=[];document.querySelector('#toast').classList.remove('show')});
-  await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Hosted report.');const t1=Date.now();await page.click('#bug-send');
+  cpOk=true;previewAnswer=held();actions.length=0;await page.evaluate(()=>{state.manage_url='https://app.example/setup';localStorage.removeItem('bug-later');bugPage=[];document.querySelector('#toast').classList.remove('show')});
+  await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Hosted report.');await page.click('#bug-send');
   await page.waitForFunction(()=>document.querySelector('#toast.show')?.textContent==='Saved. Sending…');
   assert.ok(!actions.some(a=>a.action==='cp'),'not called Sent before the report and provider receipt');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bug-later')).length),1,'kept on the device until it is out');
+  previewAnswer.open();previewAnswer=answered;
   await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('bug-later')||'[]').length);
   await page.waitForFunction(()=>document.querySelector('#toast')?.textContent==='Sent, thanks. You’ll see it here when it’s fixed.');
   sent=actions.find(a=>a.action==='cp');assert.equal(sent.args.description,'Hosted report.');assert.deepEqual(sent.args.report.settings,{model:'openai/gpt-5'});
   assert.equal(sent.args.diag,undefined);
   // The support report fails: what the owner wrote still goes, saying so
-  previewMs=0;previewFails=true;actions.length=0;
+  previewFails=true;actions.length=0;
   await page.evaluate(()=>document.querySelector('#open-help').click());await page.click('[data-help-tab="bug"]');await page.fill('#bug-what','Report without its report.');await page.click('#bug-send');
   await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('bug-later')||'[]').length);
   sent=actions.find(a=>a.action==='cp');assert.equal(sent.args.description,'Report without its report.');assert.deepEqual(sent.args.report,{parts:{report:['not built']}});

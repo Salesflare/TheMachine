@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {callAfter,settled} from './page-calls.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // First-use tips (firstTip): one quiet line under the buttons of the to-do it is about, one at a time. The ready draft's
@@ -10,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // work like the buttons themselves. Using a button or × closes the tip on the Machine (tip_done); an existing person
 // (first_tips empty) sees none.
 const dashboard=await dashboardPage();
-const now=new Date().toISOString();let tips=['change','send'];const posts=[];
+const now=new Date().toISOString();let tips=['change','send'];
 const cards=[{id:'p1',title:'Reply to Sam about pricing',body:'Sam asked for pricing.',status:'pending',scope:'work',created_at:now,event_ids:[1]},
  {id:'p2',title:'Book the venue',body:'Two options.',status:'pending',scope:'work',created_at:now,event_ids:[2]},
  {id:'r1',title:'Send Noor the contract',body:'Draft ready.',status:'prepared',scope:'work',created_at:now,preparation_status:'done',event_ids:[3],
@@ -21,7 +22,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname.startsWith('/brand/')){res.statusCode=404;res.end();return}
- if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
+ if(req.method==='POST'&&body){const b=JSON.parse(body);
   if(b.action==='tip_done'){tips=tips.filter(x=>x!==b.args.tip);res.end(JSON.stringify({first_tips:tips}));return}}
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -42,18 +43,16 @@ try{
   if(width>600)assert.ok(await page.locator('#task-r1 .first-tip').evaluate(e=>e.getBoundingClientRect().height<30));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // × closes it on the Machine; then the first open to-do in the list gets the other one, with that to-do's own labels
-  await page.locator('#task-r1 .tip-x').click();
-  assert.deepEqual(posts.at(-1),{action:'tip_done',tip:'send'});
-  assert.deepEqual(await shown(),[['task-r1','change','Not quite right? Ask for changes tells me what to change. Not needed clears it.']]);
+  assert.deepEqual(await callAfter(page,'tip_done',()=>page.locator('#task-r1 .tip-x').click()),{action:'tip_done',args:{tip:'send'}});
+  await settled(shown,[['task-r1','change','Not quite right? Ask for changes tells me what to change. Not needed clears it.']]);
   // A list of decisions only: the first one's tip says Do it differently
   cards.unshift(cards.pop());const ready=cards.shift();await page.evaluate(()=>refresh());
-  assert.deepEqual(await shown(),[['task-p1','change','Not quite right? Do it differently tells me what to change. Not needed clears it.']]);
+  await settled(shown,[['task-p1','change','Not quite right? Do it differently tells me what to change. Not needed clears it.']]);
   cards.push(ready);
   // Its button names work like the buttons: Do it differently opens the editor, and the tip is gone for good
-  await page.locator('#task-p1 .first-tip [data-choice="change"]').click();
+  assert.deepEqual(await callAfter(page,'tip_done',()=>page.locator('#task-p1 .first-tip [data-choice="change"]').click()),{action:'tip_done',args:{tip:'change'}});
   await page.locator('#feedback-p1').waitFor();
-  assert.deepEqual(posts.at(-1),{action:'tip_done',tip:'change'});
-  assert.deepEqual(await shown(),[]);
+  await settled(shown,[]);
   await page.locator('#task-p1 [data-choice="cancel-change"]').click();
   assert.deepEqual(await shown(),[]);
   await page.reload();await page.locator('#task-p1').waitFor();assert.deepEqual(await shown(),[]);
@@ -66,8 +65,7 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor();
   assert.equal(await page.locator('.first-tip').count(),0);
   tips=['send'];await page.reload();await page.locator('#task-r1 .first-tip').waitFor();
-  await page.locator('#task-r1 [data-smart="v1"]').click();
-  assert.deepEqual(posts.at(-1),{action:'tip_done',tip:'send'});
+  assert.deepEqual(await callAfter(page,'tip_done',()=>page.locator('#task-r1 [data-smart="v1"]').click()),{action:'tip_done',args:{tip:'send'}});
   await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
