@@ -10,7 +10,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // to a control plane account (hosted, or self-hosted and paired) gets Account first (test_account_dashboard.mjs); one
 // with no account has none. A tab with nothing to show is
 // left out. Links open a tab (#settings/skills, #settings=model), the URL follows the tab, and the last tab is kept.
-// At 390px the row scrolls sideways and the page stays inside the screen.
+// The row is one line at every width (1440x900, 1440x700, 390): it scrolls sideways with a fade at its edge, the
+// open tab scrolled into view, and the page stays inside the screen.
 const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true};
 let hosted=true,paired=false,model=true;
@@ -34,9 +35,9 @@ const visible=(page,sel)=>page.locator(sel).isVisible();
 const help=page=>page.locator('#help-link').getAttribute('href'),HELP='https://themachine.computer/help/';
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const width of [1280,390]){
+ for(const [width,height] of [[1440,900],[1440,700],[390,900]]){
   hosted=true;model=true;
-  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
@@ -57,14 +58,12 @@ try{
    assert.equal(await visible(page,sel),true,sel);assert.equal(await visible(page,'#theme-toggle'),false);
    assert.equal(await page.evaluate(()=>location.hash),'#settings/'+tab);
    assert.equal(await help(page),HELP+({notify:'notifications'}[tab]||tab))}
-  // The pills are one height. On a phone they are one row that scrolls sideways inside the screen; on a desktop every
-  // pill is in view, on a second row if the fonts are wide.
+  // The pills are one height and one row that scrolls sideways inside the screen, never a second row; the open tab in view.
   const row=await page.evaluate(()=>{const bar=document.querySelector('#settings-tabs'),box=bar.getBoundingClientRect(),r=[...bar.children].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect());
    return {top:new Set(r.map(x=>Math.round(x.top))).size,height:new Set(r.map(x=>Math.round(x.height))).size,fits:document.documentElement.scrollWidth<=innerWidth,overflow:getComputedStyle(bar).overflowX,
-    inside:r.every(x=>x.left>=box.left-.5&&x.right<=box.right+.5)}});
-  if(width<1024)assert.deepEqual(row,{top:1,height:1,fits:true,overflow:'auto',inside:row.inside});
-  else{assert.ok(row.top<=2,JSON.stringify(row));assert.deepEqual({...row,top:0},{top:0,height:1,fits:true,overflow:'visible',inside:true})}
-  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/settings-tabs-${width}.png`});
+    open:(x=>x.left>=box.left-.5&&x.right<=box.right+.5)(bar.querySelector('[aria-selected="true"]').getBoundingClientRect())}});
+  assert.deepEqual(row,{top:1,height:1,fits:true,overflow:'auto',open:true},`${width}x${height} `+JSON.stringify(row));
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/settings-tabs-${width}x${height}.png`});
   // The last tab is kept; a link opens another; leaving Settings drops the link.
   await page.reload();await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
   assert.equal(await selected(page),'Model');
