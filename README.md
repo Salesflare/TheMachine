@@ -50,6 +50,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 | Skills: write, approve and share them | [Skills](docs/skills.md) |
 | Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |
 | Optional GBrain agent memory | [GBrain](docs/gbrain.md) |
+| Let Claude, ChatGPT, Cursor, Codex or GBrain read to-dos and the Graph over MCP | [Connected AIs](docs/ai-connections.md) |
 | Voice input: the mic in message boxes, on the Machine or with OpenAI | [Voice input](docs/voice.md) |
 | Talk live: a spoken conversation about a to-do, with OpenAI's Realtime voice | [Talk live](docs/talk-live.md) |
 | Encryption, reliability and roadmap of the Network | [Network](docs/network.md) |

@@ -108,7 +108,9 @@ import pacing
 import portable
 import service
 import dashboard_parts
+import ai_access
 from agents_app import AgentsApp
+from ai_app import AiApp
 from calendar_app import CalendarApp
 from corrections_app import CorrectionsApp
 from gbrain_app import GBrainApp
@@ -1037,10 +1039,21 @@ GBRAIN_ACTIONS = {
     'gbrain_work',
 }
 OWNER_ACTIONS |= GBRAIN_ACTIONS
+# Connected AIs (ai_app.py, docs/ai-connections.md): which outside AIs reach this Machine over MCP, at what access,
+# for how long, Turn off now, and their activity. The owner's own, from the dashboard only; never the agent's.
+AI_ACTIONS = {
+    'ai_change',
+    'ai_connections',
+    'ai_key',
+    'ai_off',
+    'ai_remove',
+}
+OWNER_ACTIONS |= AI_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
 DASHBOARD_ACTIONS = frozenset({
     *AGENT_ACTIONS,
+    *AI_ACTIONS,
     *CARD_ACTIONS,
     *CHAT_ACTIONS,
     *CONNECT_ACTIONS,
@@ -3960,6 +3973,7 @@ class Store:
             error_feed.ensure(db)  # error reports for The Machine team: signatures only (error_feed.py)
             activity.ensure(db)  # daily activity counts for the hosted health report (activity.py)
             activity_log.ensure(db)  # Activity: the connections it has seen, for added and removed lines (activity_log.py)
+            ai_access.ensure(db)  # connected AIs: their connections, sign-ins and activity (ai_access.py)
             pacing.ensure(db)  # how often background work paced (pacing.py): made here, not inside someone's write
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             person_summary.ensure(db)  # the summary on top of a person's page (person_summary.py)
@@ -13981,7 +13995,7 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp)
 
 
 class App(*APP_MIXINS):
@@ -16378,6 +16392,38 @@ class App(*APP_MIXINS):
             self.store.prepare(card['id'], f"A double-opt-in email to {action['to'][0]}: it asks them first whether they want the "
                                            f"introduction. Read it, change it if you like, and send it yourself.", next_action=draft,
                                outcome={'state': 'needs_you', 'needs': 'read and send the intro email'})
+        return card['id']
+
+    def ai_card(self, who, text, area, due=None, draft=None):
+        """A to-do a connected AI added (ai_app.py, docs/ai-connections.md), made like a Fleet request's (fleet_card): its
+        first evidence is an event on one of the owner's accounts in that area, marked reviewed so no review or
+        preparation reads it by itself, and it says which AI it is from. With a draft, an email draft from one of the
+        owner's mail accounts in that area, which goes out only with the owner's own Send."""
+        accounts = [a for a in self.config.get('accounts', []) if area is None or graph.account_side(a) == area]
+        if draft:
+            accounts = [a for a in accounts if mail_account(a)]
+        if not accounts:
+            raise ValueError('No Gmail or Outlook account here to write it from' if draft else 'No account here for this')
+        account = accounts[0]['id']
+        stamp, key = now(), 'ai:' + uuid.uuid4().hex[:16]
+        name = ' '.join(str(who or 'AI').split())[:60]
+        title = owner_title(text)
+        body = text if not draft else i18n.t('{} wrote this email for you. Read it, change it if you like, and send it yourself.', name) + (
+            '\n\n' + text if text != draft['subject'] else '')
+        meta = {'sender_display': i18n.t('{} (connected AI)', name), 'ai_connection': name}
+        with self.store.connect() as db:
+            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
+                       "VALUES(?,?,'ai.request',?,?,?,?,0,?,1,1,?)",
+                       (account, key, stamp, title, text, json.dumps(meta), hashlib.sha256(text.encode()).hexdigest(), stamp))
+            event_id = db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, key)).fetchone()[0]
+        card = self.store.suggest(key, (i18n.t('Email to {}: {}', ', '.join(draft['to'])[:60], draft['subject']) if draft else title)[:90],
+                                  body[:700], [event_id], when='now', work=graph.account_side(accounts[0]) == 'work', due=due)
+        if draft and not card.get('duplicate'):
+            action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account, 'to': draft['to'],
+                                            'subject': draft['subject'], 'body': draft['body']}, self.config, [account])
+            with self.store.connect() as db:
+                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card['id'],))
+            self.store.prepare(card['id'], body[:1000], next_action=action, outcome={'state': 'needs_you', 'needs': 'read and send the email'})
         return card['id']
 
     def review_subject(self, card_id):
@@ -21907,10 +21953,48 @@ class App(*APP_MIXINS):
                     print(f"dashboard refused: host={self.headers.get('Host', '')!r} peer={peer!r} login={login!r} path={self.path.split('?')[0]!r}", file=sys.stderr, flush=True)
                 return ok
 
+            def ai(self, method):
+                """/mcp, /oauth/token, /oauth/register, /oauth/revoke and the OAuth metadata (ai_app.py): a connected AI's own
+                token or key, never the owner's sign-in or the service's token. Nothing about the request is logged."""
+                try:
+                    length = int(self.headers.get('Content-Length') or 0) if method == 'POST' else 0
+                except ValueError:
+                    length = -1
+                if not 0 <= length <= ai_access.BODY_MAX:
+                    self.close_connection = True
+                    self.output(413, {'error': 'Too big'})
+                    return
+                try:
+                    body = self.rfile.read(length) if length else b''
+                except OSError:
+                    self.close_connection = True
+                    return
+                status, headers, data = app.ai_http(method, urllib.parse.urlsplit(self.path).path, self.headers, body, self.headers.get('Host', ''))
+                self.send_response(status)
+                for name, value in headers.items():
+                    self.send_header(name, value)
+                self.send_header('Content-Length', str(len(data)))
+                self.send_header('X-Content-Type-Options', 'nosniff')
+                self.send_header('Referrer-Policy', 'no-referrer')
+                self.end_headers()
+                try:
+                    self.wfile.write(data)
+                except (BrokenPipeError, ConnectionResetError):
+                    self.close_connection = True
+
+            def do_DELETE(self):
+                if urllib.parse.urlsplit(self.path).path == '/mcp':
+                    self.ai('DELETE')
+                else:
+                    self.output(405, {'error': 'Not allowed'})
+
             def do_GET(self):
                 path = urllib.parse.urlsplit(self.path)
                 if path.path == '/health':
                     self.output(200, {'ok': True})
+                    return
+                if path.path in ai_access.PUBLIC_GET:
+                    self.ai('GET')
                     return
                 if not self.owner():
                     self.output(403, {'error': 'Use the owner-authenticated Tailscale dashboard'})
@@ -21932,6 +22016,16 @@ class App(*APP_MIXINS):
                         return
                     self.etag = etag
                     self.output(200, page, 'text/html', packed=coding and app.packed_page(etag, coding, page))
+                elif path.path == ai_access.AUTHORIZE:  # a connected AI's sign-in: the owner's own consent page (ai_app.py)
+                    status, page = app.ai_consent_page(path.query, dashboard_csrf(app.token, app.config['tailscale_owner']))
+                    if status == 303:
+                        self.send_response(303)
+                        self.send_header('Location', page)
+                        self.send_header('Cache-Control', 'no-store')
+                        self.send_header('Content-Length', '0')
+                        self.end_headers()
+                    else:
+                        self.output(status, page, 'text/html')
                 elif path.path == '/manifest.webmanifest':
                     self.output(200, (ROOT / 'manifest.webmanifest').read_text(), 'application/manifest+json')
                 elif path.path == '/sw.js':
@@ -22354,7 +22448,40 @@ class App(*APP_MIXINS):
                     except OSError:
                         pass
 
+            def consent(self):
+                """The owner's Connect or Cancel on the consent page: a plain form, so its CSRF token is a field; the
+                dashboard's own origin and the owner's sign-in, as for every owner change."""
+                csrf = dashboard_csrf(app.token, app.config['tailscale_owner'])
+                try:
+                    length = int(self.headers.get('Content-Length') or 0)
+                except ValueError:
+                    length = 0
+                if not (self.owner() and self.headers.get('Origin') == 'https://' + self.headers.get('Host', '')) or not 0 < length <= 8192:
+                    self.output(403, {'error': 'Unauthorized'})
+                    return
+                form = {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode('utf-8', 'replace')).items()}
+                if not hmac.compare_digest(str(form.get('csrf') or '').encode(), csrf.encode()):
+                    self.output(403, {'error': 'Unauthorized'})
+                    return
+                try:
+                    where = app.ai_consent_post(form)
+                except (ValueError, ai_access.OAuthError) as error:
+                    self.output(400, ai_access.error_page(str(error)), 'text/html')
+                    return
+                self.send_response(303)
+                self.send_header('Location', where)
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('Content-Length', '0')
+                self.end_headers()
+
             def do_POST(self):
+                route = urllib.parse.urlsplit(self.path).path
+                if route in ai_access.PUBLIC_POST:
+                    self.ai('POST')
+                    return
+                if route == ai_access.AUTHORIZE:
+                    self.consent()
+                    return
                 internal = self.internal()
                 csrf = dashboard_csrf(app.token, app.config['tailscale_owner'])
                 dashboard = (self.owner() and self.headers.get('Origin') == 'https://' + self.headers.get('Host', '') and
