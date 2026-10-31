@@ -3,7 +3,7 @@ title: Connect other AIs
 area: connections
 summary: Let Claude, ChatGPT, Cursor, Codex or GBrain read your to-dos and Graph over MCP, each with its own access and expiry.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py, pairing.py
+code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -16,6 +16,8 @@ At most they add a to-do, or a to-do with an email draft. A draft waits in your 
 ## Connect one
 
 Open **Settings**, **AIs**. At the top is your Machine's address for AIs, `https://<your name>.mcp.themachine.computer/mcp`, with **Copy**. On a Machine on your own computer, press **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart.
+
+It then gets its own certificate for the address, which takes a few minutes and needs the `cryptography` package for Python.
 
 In ChatGPT, open chatgpt.com/plugins, press +, then Add custom MCP server. Name it The Machine, paste the address and pick OAuth. Confirm the warning and press Create as a plugin. Your plan or workspace has to allow custom MCP servers.
 

@@ -3,7 +3,7 @@ title: Andere AI's koppelen
 area: connections
 summary: Laat Claude, ChatGPT, Cursor, Codex of GBrain je to-do's en Graph lezen via MCP, elk met eigen toegang en vervaldatum.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py, pairing.py
+code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -16,6 +16,8 @@ Hoogstens voegen ze een to-do toe, of een to-do met een e-mailconcept. Een conce
 ## Er een koppelen
 
 Open **Instellingen**, **AI's**. Bovenaan staat het adres van je Machine voor AI's, `https://<jouw naam>.mcp.themachine.computer/mcp`, met **Kopiëren**. Op een Machine op je eigen computer druk je eerst op **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart.
+
+Daarna haalt hij een eigen certificaat voor het adres. Dat duurt een paar minuten en vraagt het pakket `cryptography` voor Python.
 
 Open in ChatGPT chatgpt.com/plugins, druk op + en dan op Add custom MCP server. Noem hem The Machine, plak het adres en kies OAuth. Bevestig de waarschuwing en druk op Create as a plugin. Je abonnement of werkruimte moet eigen MCP-servers toestaan.
 

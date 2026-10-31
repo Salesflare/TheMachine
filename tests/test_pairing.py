@@ -137,7 +137,7 @@ class App(Base):
             guard.acquire()
             self.app.ai_pair_watch(guard, wait=lambda s: None)
         self.assertIsNotNone(self.app.fleet)  # live, no restart
-        self.assertEqual(self.started, ['pair-watch', 'fleet', 'bug-queue'])
+        self.assertEqual(self.started[:3], ['pair-watch', 'fleet', 'bug-queue'])  # and mcp-reach with cryptography (test_ai_reach)
         self.assertEqual(stat.S_IMODE((self.dir / 'fleet-token').stat().st_mode), 0o600)
         self.assertEqual(json.loads(self.config_path.read_text())['credentials']['fleet'], str(self.dir / 'fleet-token'))
         self.app.fleet.relay = FakeRelay({'username': 'pat', 'hosted': False})

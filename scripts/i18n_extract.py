@@ -441,7 +441,7 @@ def _unique(items):
 # modules only talk to a terminal, a model or another Machine, never to the dashboard.
 NOT_DASHBOARD = {'cli.py', 'installer.py', 'network_crypto.py', 'message_seal.py', 'message_keyring.py', 'openclaw_pin.py',
                  'wacli_release.py', 'service.py', 'portable.py', 'rollout_health.py', 'i18n.py', 'locale_prefs.py',
-                 'dashboard_parts.py'}
+                 'dashboard_parts.py', 'ai_reach.py'}  # ai_reach.py: errors go to the log; Settings shows its state
 # Functions whose strings are lines the dashboard shows as the server wrote them (a reason, a sync line, a hint).
 SERVER_TEXT = {
     'own_addresses.py': ['suggest_reason', 'classify', 'SENT_ONLY', 'NAMED_ONLY', 'LABELS'],
