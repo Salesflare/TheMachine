@@ -78,6 +78,7 @@ FEATURES = {
     'help-chat': ('dashboard.html', "helpBox.id='help-panel'"),
     'support-access': ('dashboard.html', 'Support access'),
     'chat-model': ('chat_model.py', 'def turn_args'),
+    'ai-connections': ('ai_access.py', 'def handle'),
     'gbrain': ('gbrain.py', 'def '),
     'voice-input': ('voice_input.py', 'def pcm'),
     'follow-ups': ('follow_ups.py', 'def schedule'),

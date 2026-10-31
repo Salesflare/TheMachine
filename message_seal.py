@@ -79,7 +79,8 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'crm_values': ('value',),  # custom field values the owner typed on a record (crm_fields.py)
            'projects': ('stage_reason', 'next_step', 'sort_note', 'notes', 'outcome_reason'), 'board_fits': ('why',), 'board_backfill_asks': ('why',), 'project_moves': ('reason',), 'board_suggestions': ('about', 'reason'), 'board_offers': ('answer',),
            'team_mail': ('body',), 'team_records': ('body',), 'team_files': ('data',), 'team_blobs': ('dk',), 'share_lines': ('line',),
-           'agent_jobs': ('brief', 'asks', 'progress', 'summary', 'diff', 'files', 'error', 'answers')}
+           'agent_jobs': ('brief', 'asks', 'progress', 'summary', 'diff', 'files', 'error', 'answers'),
+           'ai_activity': ('detail',)}  # what a connected AI asked for and got, in short (ai_access.py)
 DERIVED_JSON = (('action_jobs', 'payload', frozenset({'kind'})), ('suggestions', 'next_action', frozenset({'kind'})),
                 ('suggestions', 'outcome', frozenset({'state'})))
 # The phone's notifications reach the app through android_inbox, written by the Gateway's plugin
