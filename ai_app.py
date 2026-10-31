@@ -75,8 +75,8 @@ class AiApp:
             return self.ai_view(db)
 
     def ai_view(self, db):
-        base = self.ai_issuer()
-        return {'connections': ai_access.connections(db), 'areas': self.ai_areas(), 'mcp_url': base + '/mcp' if base else None,
+        """Settings, AIs. The address for AIs is reach['address'] (<name>.mcp.<domain>), not the dashboard's host."""
+        return {'connections': ai_access.connections(db), 'areas': self.ai_areas(),
                 'hosted': bool(self.config.get('manage_url')), 'reach': self.ai_reach()}
 
     # ------------------------------------------------------------------ the address for AIs, and pairing for it
