@@ -607,9 +607,9 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
  html+='<div id="fleet-discover" class="fleet-discover"></div>';
  html+=panes.map(p=>`<div class="fleet-pane" role="tabpanel" data-pane="${esc(p.id)}"${p.id===current?'':' hidden'}>${p.html}</div>`).join('');
  // Leave unchanged forms in place: a completed background request must not swallow a click.
- if(view._fleetHTML===html)return;
+ if(view._fleetHTML===html){actEmbedFill();return}
  const drafts=[...view.querySelectorAll('form')].map(form=>({key:form.className+'|'+(form.dataset.fleet||''),values:[...form.elements].filter(e=>e.name&&['INPUT','TEXTAREA'].includes(e.tagName)).map(e=>[e.name,e.value])}));
- view.innerHTML=html;view._fleetHTML=html;
+ view.innerHTML=html;view._fleetHTML=html;actEmbedFill();
  if(/^shared-/.test(current))sharedLoad(current.slice(7),true);
  for(const draft of drafts){const form=[...view.querySelectorAll('form')].find(f=>f.className+'|'+(f.dataset.fleet||'')===draft.key);if(form)for(const [name,value]of draft.values){const input=form.elements.namedItem(name);if(input&&'value'in input)input.value=value}}
 }

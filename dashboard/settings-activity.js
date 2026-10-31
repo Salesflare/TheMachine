@@ -48,11 +48,14 @@ async function actWithdraw(b){if(!confirm(t('Withdraw this learning? The team no
 function actChanged(){act.at=0;actFleet.at=0;if(settingsNow==='activity'&&!$('#settings').hidden)actLoad();if(!$('#fleet').hidden)actFleetLoad()}
 $('#settings-activity').addEventListener('click',e=>{const todo=e.target.closest('[data-act-todo]');if(todo){actOpenTodo(todo.dataset.actTodo);return}
  const w=e.target.closest('[data-tl-withdraw]');if(w)actWithdraw(w)});
-// Fleet, Activity: this list for the Fleet and learnings, drawn from what was read last (fleetView compares its HTML)
-function actEmbed(){if(Date.now()-actFleet.at>30000&&!actFleet.busy)actFleetLoad();const items=actFleet.items;
- return `<div class="fleet-box act-embed"><h3>${esc(t('What your Machine asked, answered and shared'))}</h3><p class="sub">${esc(t('Questions to and from teammates, and learnings sent to The Machine team.'))} <button type="button" class="link" data-act-all>${esc(t('All activity'))}</button></p>`
-  +(items==null?`<p class="muted">${esc(t('Loading…'))}</p>`:items.length?`<ol class="act-list">${actRows(items)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`)+'</div>'}
-async function actFleetLoad(){actFleet.busy=true;try{const r=await request('api/activity?kind=fleet,learnings'),was=JSON.stringify(actFleet.items);actFleet.items=r.items||[];actFleet.at=Date.now();if(was!==JSON.stringify(actFleet.items)&&!$('#fleet').hidden)fleetView(false,true)}
- catch(e){errCaught(e);if(actFleet.items==null){actFleet.items=[];actFleet.at=Date.now()}}finally{actFleet.busy=false}}
+// Fleet, Activity: this list for the Fleet and learnings. fleetView compares its HTML, so the box is a fixed shell and
+// its lines are filled in place (actEmbedFill), after each fleetView render and after each read.
+function actEmbed(){if(Date.now()-actFleet.at>30000&&!actFleet.busy)actFleetLoad();
+ return `<div class="fleet-box act-embed"><h3>${esc(t('What your Machine asked, answered and shared'))}</h3><p class="sub">${esc(t('Questions to and from teammates, and learnings sent to The Machine team.'))} <button type="button" class="link" data-act-all>${esc(t('All activity'))}</button></p><div class="act-embed-body"></div></div>`}
+function actEmbedFill(){const body=$('#fleet-view .act-embed-body');if(!body)return;const items=actFleet.items;
+ const html=items==null?`<p class="muted">${esc(t('Loading…'))}</p>`:items.length?`<ol class="act-list">${actRows(items)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`;
+ if(body._html!==html){body.innerHTML=html;body._html=html}}
+async function actFleetLoad(){actFleet.busy=true;try{const r=await request('api/activity?kind=fleet,learnings');actFleet.items=r.items||[];actFleet.at=Date.now()}
+ catch(e){errCaught(e);if(actFleet.items==null){actFleet.items=[];actFleet.at=Date.now()}}finally{actFleet.busy=false;actEmbedFill()}}
 $('#fleet-view').addEventListener('click',e=>{if(e.target.closest('[data-act-all]')){act.filter='';act.at=0;showSettings('activity');return}const todo=e.target.closest('.act-embed [data-act-todo]');if(todo){actOpenTodo(todo.dataset.actTodo);return}
  const w=e.target.closest('.act-embed [data-tl-withdraw]');if(w)actWithdraw(w)});
