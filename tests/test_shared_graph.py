@@ -1932,6 +1932,59 @@ class SharedGraph(unittest.TestCase):
                 self.assertNotIn(text, everything)  # no board, colleagues only, Keep private, personal, a personal account, sensitive (a meeting or a Zoom summary)
         self.assertIn('Meeting: Renewal call', json.dumps(self.projects_of(self.mem)['Renewal: Client']['timeline']))
 
+    def slack(self, n, channel, name, user, text, connect=False):
+        return {'account_id': 'sl', 'source_id': f'{channel}:{n}.000100', 'kind': 'slack.message', 'occurred_at': ago(1, n), 'deleted': False,
+                'title': f'#{name}: {text}', 'body': text,
+                'metadata': {'channel_id': channel, 'channel_name': name, 'conversation_type': 'dm' if name.startswith('DM ') else 'channel',
+                             'user_id': user, 'message_ts': f'{n}.000100', 'thread_ts': f'{n}.000100', **({'slack_connect': True} if connect else {})}}
+
+    def test_slack_among_colleagues_never_goes_whatever_the_review_said_and_slack_connect_can(self):
+        """The company's own Slack (DMs, groups, channels among its members) is colleagues only: never a client thread,
+        also on a team board and when the review called it client. Slack Connect, another company's member or a guest
+        can be. What went before is taken back from teammates' Machines. Never a raw member id in what is shown or sent."""
+        self.olive_mail()
+        self.own.config['accounts'] += [{'id': 'sl', 'email': 'own1@acme.example', 'service': 'slack', 'boundary': 'work:Acme',
+                                         'team_id': 'T0ACME0001', 'user_id': 'U0OLIVE001'}]
+        with self.own.store.connect() as db:
+            db.executemany('INSERT OR REPLACE INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)',
+                           [('slack:U0ADA00001', 'ada', 'adm2@acme.example', a.now()), ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', a.now())])
+            db.executemany('INSERT OR REPLACE INTO slack_members(user_id,outside,checked_at) VALUES(?,?,?)',
+                           [('U0ADA00001', 0, a.now()), ('U0LEE00001', 1, a.now())])
+        self.add(self.own, self.slack(1, 'D0ADA00001', 'DM U0ADA00001', 'U0ADA00001', 'Lee wants the renewal by Friday, can you call him?'),
+                 self.slack(2, 'D0ADA00001', 'DM U0ADA00001', 'U0OLIVE001', 'Sure, I will ping <@U0LEE00001> after lunch'),
+                 self.slack(3, 'C0SUPPORT1', 'support', 'U0ADA00001', 'Lee is asking about the renewal seats'),
+                 self.slack(4, 'D0LEE00001', 'DM U0LEE00001', 'U0LEE00001', 'Lee here: the renewal seats look right'))
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Client': ['work-1', 'D0ADA00001:1.000100', 'D0ADA00001:2.000100', 'C0SUPPORT1:3.000100', 'D0LEE00001:4.000100']})
+        for n in (1, 2, 3):
+            self.judge(self.own, (f'D0ADA00001:{n}.000100' if n < 3 else 'C0SUPPORT1:3.000100', 'client', 'Ada and Lee on the renewal'))
+        self.judge(self.own, ('D0LEE00001:4.000100', 'client', 'Lee confirmed the seats'))
+        with self.own.store.connect() as db:
+            scope = sg.Scope(db, ['work', 'sl'], {'acme.example'}, {'own1@acme.example'})
+            views = {r['source_id']: sg.visibility(db, scope, {**dict(r), 'metadata': json.loads(r['metadata'])})
+                     for r in db.execute("SELECT * FROM events WHERE kind='slack.message'")}
+            shown = sg.overview(db, scope)
+        self.assertEqual(views, {'D0ADA00001:1.000100': 'internal', 'D0ADA00001:2.000100': 'internal', 'C0SUPPORT1:3.000100': 'internal',
+                                 'D0LEE00001:4.000100': 'team'})
+        self.assertEqual(sg.why('internal'), 'Only colleagues: stays with the people on it')
+        connect = self.slack(5, 'C0SHARED01', 'acme-client', 'U0ADA00001', 'In the shared channel', connect=True)['metadata']
+        self.assertTrue(scope.slack_shared(connect))  # a Slack Connect channel: client checks as for mail
+        self.assertFalse(scope.slack_shared({**connect, 'slack_connect': None}))
+        listed = [x['title'] for x in shown['threads']]
+        self.assertIn('#DM Lee Park: Lee here: the renewal seats look right', listed)
+        self.assertFalse([t for t in listed if graph.SLACK_MEMBER.search(t)], listed)  # never a raw member id
+        self.rounds()
+        for box in (self.adm, self.mem):
+            everything = self.received(box) + json.dumps(self.team(box))
+            self.assertIn('the renewal seats look right', everything)  # Slack Connect, judged client: on the team's board
+            self.assertIn('#DM Lee Park', everything)
+            for text in ('can you call him', 'after lunch', 'asking about the renewal seats', 'U0ADA00001', 'U0LEE00001'):
+                self.assertNotIn(text, everything)  # colleagues only, and no member ids
+        with self.own.store.connect() as db:  # Lee turns out to be a member of the company's own Slack after all
+            db.execute("UPDATE slack_members SET outside=0 WHERE user_id='U0LEE00001'")
+        self.rounds()
+        for box in (self.adm, self.mem):
+            self.assertNotIn('the renewal seats look right', self.received(box))  # taken back from teammates' Machines
+
     def test_a_project_added_to_a_shared_board_goes_and_one_moved_off_is_taken_back(self):
         board = self.deal_board()
         self.add(self.own, mail('work', 30, 'Cy Ross <cy@fund.example>', 'own1@acme.example', 'Term sheet', 'Our term sheet for the round.', 1, 't-fund'))

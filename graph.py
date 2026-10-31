@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UN
 CREATE TABLE IF NOT EXISTS event_projects(event_id INTEGER NOT NULL,project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   source TEXT NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(event_id,project_id));
 CREATE TABLE IF NOT EXISTS identity_names(identifier TEXT PRIMARY KEY,name TEXT,email TEXT,checked_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS slack_members(user_id TEXT PRIMARY KEY,outside INTEGER NOT NULL,checked_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS graph_merges(a TEXT NOT NULL,b TEXT NOT NULL,same INTEGER NOT NULL,created_at TEXT NOT NULL,PRIMARY KEY(a,b));
 CREATE TABLE IF NOT EXISTS graph_same(a TEXT NOT NULL,b TEXT NOT NULL,why TEXT NOT NULL,score REAL NOT NULL,PRIMARY KEY(a,b));
 CREATE TABLE IF NOT EXISTS graph_nodes(id TEXT PRIMARY KEY,kind TEXT NOT NULL,name TEXT NOT NULL,strength REAL NOT NULL,
@@ -535,6 +536,80 @@ def _touches(kind, m, owner, wrote_to):
         return [('email:' + str(c['email']).lower(), c.get('name'), (WEIGHTS['met'] / math.sqrt(len(contacts))) if met else 0.05,
                  'met' if met else 'seen') for c in contacts if not owner.mine(str(c['email']).lower()) and not bulk(str(c['email']).lower())]
     return []
+
+
+# A Slack member id ("U02AB3CD4"): a message carries only this. People never see it: titles, lists and what goes to the
+# team name the person (slack_names), and sharing decides on who they are, not on the id (shared_graph.visibility).
+SLACK_MEMBER = re.compile(r'\b[UW](?=[A-Z0-9]*\d)[A-Z0-9]{8,11}\b')
+SLACK_MENTION = re.compile(r'<@([UW][A-Z0-9]{8,11})(?:\|([^>]*))?>')
+
+
+def slack_dm_user(m):
+    """A Slack direct message's other person (the channel is named "DM <their id>" when it is read)."""
+    found = re.fullmatch(r'DM ([UW][A-Z0-9]+)', str((m or {}).get('channel_name') or ''))
+    return found[1] if found else None
+
+
+def slack_members_on(m):
+    """The Slack members on a message: whoever wrote it and, in a direct message, the other person."""
+    found = {str((m or {}).get('user_id') or ''), slack_dm_user(m) or ''}
+    return sorted(u for u in found if re.fullmatch(r'[UW][A-Z0-9]{8,11}', u))
+
+
+def slack_members_known(db, ids):
+    """The Slack members among these whose place (the company's own Slack, or outside it) is known."""
+    return {r[0] for r in db.execute('SELECT user_id FROM slack_members WHERE user_id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(ids)),))}
+
+
+def remember_slack_member(db, user_id, outside, at):
+    """Whether a Slack member is outside the company's own Slack (another company's member through Slack Connect, or a
+    guest), as users.info said: what shared_graph.visibility shares on."""
+    db.execute('INSERT OR REPLACE INTO slack_members(user_id,outside,checked_at) VALUES(?,?,?)', (user_id, int(bool(outside)), at))
+
+
+def slack_names(db, ids):
+    """{Slack member id: name}: the name the people graph shows for them (the name from their mail over a lower-case
+    Slack handle), else the one Slack's users.info gave (identity_names). Unknown ones are left out."""
+    ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
+    if not ids:
+        return {}
+    marks = ','.join('?' * len(ids))
+    try:
+        names = {r[0].split(':', 1)[1]: r[1] for r in db.execute(
+            f'SELECT identifier,name FROM identity_names WHERE name>\'\' AND identifier IN ({marks})', ['slack:' + i for i in ids])}
+        rows = db.execute("SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(ids)) + ')',
+                          ['%"slack:' + i + '"%' for i in ids]).fetchall()
+    except sqlite3.OperationalError:
+        return {}  # no graph tables yet
+    for name, info in rows:
+        try:
+            found = set(json.loads(info or '{}').get('identifiers') or ())
+        except ValueError:
+            continue
+        if name and name != 'Slack' and not SLACK_MEMBER.fullmatch(name):
+            names.update({i: name for i in ids if 'slack:' + i in found})
+    return names
+
+
+def slack_title(channel_name, text, names):
+    """A Slack message's title: "#channel: first line", a direct message as "#DM <their name>: first line", mentions
+    ("<@U02AB3CD4>") as "@name". A member no name is known for yet is left out, never shown as an id: the title is
+    written again once their name is known (assistant.name_slack_titles)."""
+    channel_name = str(channel_name or '')
+    partner = slack_dm_user({'channel_name': channel_name})
+    head = ('#DM ' + names[partner] if names.get(partner) else '#DM') if partner else '#' + channel_name
+    line = str(text or '').splitlines()[0] if str(text or '').strip() else '(message)'
+    line = SLACK_MENTION.sub(lambda m: '@' + (names.get(m[1]) or (m[2] or '').strip() or '…'), line)
+    line = SLACK_MEMBER.sub(lambda m: names.get(m[0], '…'), line)
+    return (head + ': ' + line)[:1000]
+
+
+def slack_title_shown(title, names):
+    """A stored Slack title as people see it: "#DM <id>" and mentions by name; an id no name is known for left out."""
+    title = str(title or '')
+    title = re.sub(r'^#DM ([UW][A-Z0-9]{8,11})\b', lambda m: '#DM ' + names[m[1]] if names.get(m[1]) else '#DM', title)
+    title = SLACK_MENTION.sub(lambda m: '@' + (names.get(m[1]) or (m[2] or '').strip() or '…'), title)
+    return SLACK_MEMBER.sub(lambda m: names.get(m[0], '…'), title)
 
 
 def thread_key(kind, m):
