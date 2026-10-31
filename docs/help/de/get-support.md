@@ -34,7 +34,7 @@ Unser Team kann für dich auf deine Machine schauen, aber erst, wenn du es erlau
 
 - Nur lesend: Logs, Einstellungen, Versionen, wie jede Verbindung synchronisiert, und letzte Fehler, bereinigt wie der Supportbericht. Nie deine Nachrichten, Schlüssel, Passwörter oder wer deine Kontakte sind.
 - Es endet von selbst nach 24 Stunden. Solange es an ist, zeigt **Einstellungen**, **Sicherheit** es an: **Ausschalten** beendet es sofort.
-- Jeder Blick wird dort aufgelistet, mit Zeitpunkt.
+- Jeder Blick steht in Einstellungen, **Aktivität**, mit Zeitpunkt. Siehe [Aktivität](activity.md).
 
 ## Von deinem eigenen Computer
 

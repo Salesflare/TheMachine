@@ -2561,7 +2561,26 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .bug-sent img{max-height:140px;width:auto;align-self:flex-start}.bug-parts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}.bug-all summary{cursor:pointer;font-size:.85rem;color:var(--muted);margin:2px 0 6px}
 .bug-sent pre,#support-access pre{margin:0;max-height:260px;overflow:auto;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap;overflow-wrap:anywhere}
 #help-panel .actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}#bug-error:empty{display:none}#bug-error{margin:0;color:var(--red,#e07070)}
-.sa-log{list-style:none;margin:8px 0 0;padding:0;font-size:.85rem;color:var(--muted)}.sa-log li{padding:3px 0}
+.sa-log{margin:8px 0 0;font-size:.85rem}
+/* Settings, Activity: a day's heading, then one line per thing done (what and how it went, then when · where · who) */
+.act-bar{margin:0 0 10px}.act-bar select{max-width:100%}
+.act-list{list-style:none;margin:0;padding:0;max-width:640px}
+.act-day{margin:16px 0 4px;font-size:.8rem;font-weight:var(--fw-strong,600);color:var(--muted)}.act-day:first-child{margin-top:0}
+.act-row{padding:9px 0;border-bottom:1px solid var(--border);min-width:0}
+.act-top{display:flex;align-items:baseline;gap:10px;justify-content:space-between;min-width:0}
+.act-what{min-width:0;overflow-wrap:anywhere}
+.act-status{flex:none;max-width:50%;overflow:hidden;text-overflow:ellipsis;font-size:.78rem;color:var(--muted);white-space:nowrap}
+.act-refused .act-status,.act-failed .act-status{color:var(--red,#d05050);font-weight:600}
+.act-undone .act-what{color:var(--muted)}
+.act-meta{display:block;margin-top:2px;color:var(--faint);font-size:.8rem;overflow-wrap:anywhere}
+.act-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px;min-width:0}
+.act-acts .act-todo{min-height:0;margin:0;padding:2px 0;max-width:100%;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-size:.85rem;text-align:left;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+.act-acts .act-todo .ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act-acts .ghost{padding:2px 10px;font-size:.85rem;min-height:0}
+.act-sent{margin-top:4px;font-size:.85rem}.act-sent p{margin:4px 0 0}.act-sent pre{margin:4px 0 0;max-height:200px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap}
+.act-more{margin-top:10px;padding-left:0;padding-right:0}.act-empty{padding:8px 0}
+.act-embed .act-list{max-width:none}
+.sa-log button.link,.act-embed [data-act-all]{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
 @media(max-width:560px){.help-log{max-height:calc(100dvh - var(--nc-kb,0px) - 300px)}}
 /* A to-do reads in two seconds: its title first, then one quiet line (a state dot and word, due, who, their organization,
    the project, Work or Personal, when, Chat), a short body, the outcome, the draft and buttons when it needs you. The rest
@@ -2816,7 +2835,7 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><div id="settings-lookups" hidden><div class="section-head"><h2>Graph</h2></div><div class="list settings-list"><div><span class="grow"><strong>Look up work contacts</strong><small>Job title, photo and location of people with a company address. <a class="learn" href="https://themachine.computer/help/graph#job-title-and-photo" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="lookup-people" class="lookup-switch" role="switch" aria-checked="true" aria-label="Look up work contacts"></button></div></div></div
 ><div id="settings-share" hidden><div class="section-head"><h2>The Machine team</h2></div><div class="list settings-list"><div><span class="grow"><strong>Offer to share learnings</strong><small>Now and then I ask before sending a few general learnings. Nothing personal. <a class="learn" href="https://themachine.computer/help/share-learnings" target="_blank" rel="noopener">Learn more</a></small></span
-><button type="button" id="share-offer" class="lookup-switch" role="switch" aria-checked="true" aria-label="Offer to share learnings"></button></div><div id="share-auto-row" hidden><span class="grow"><strong>Send learnings automatically</strong><small id="share-auto-note">New learnings go without asking. See or withdraw them in Fleet, Activity. <a class="learn" href="https://themachine.computer/help/share-learnings#send-automatically" target="_blank" rel="noopener">Learn more</a></small></span
+><button type="button" id="share-offer" class="lookup-switch" role="switch" aria-checked="true" aria-label="Offer to share learnings"></button></div><div id="share-auto-row" hidden><span class="grow"><strong>Send learnings automatically</strong><small id="share-auto-note">New learnings go without asking. See or withdraw them in Settings, Activity. <a class="learn" href="https://themachine.computer/help/share-learnings#send-automatically" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="share-auto" class="lookup-switch" role="switch" aria-checked="false" aria-label="Send learnings automatically"></button></div><div class="share-vote-row"><span class="grow"><strong>Vote on learnings from other Machines</strong><small>Now and then I check if another Machine’s learning would help you, and send back only a vote. <a class="learn" href="https://themachine.computer/help/share-learnings#voting" target="_blank" rel="noopener">Learn more</a></small
 ><span class="seg share-vote-seg" id="share-vote" role="radiogroup" aria-label="Vote on learnings from other Machines"><label><input type="radio" name="share-vote" value="on" checked><span>On</span></label><label><input type="radio" name="share-vote" value="ask"><span>Ask first</span></label><label><input type="radio" name="share-vote" value="off"><span>Off</span></label></span
 ><small id="share-vote-note"></small></span></div><div><span class="grow"><strong>Share what Help is asked</strong><small>Only the topic of each question, like “snooze a to-do”. Never your words. <a class="learn" href="https://themachine.computer/help/help-chat#what-the-team-sees" target="_blank" rel="noopener">Learn more</a></small></span
@@ -3629,4 +3648,5 @@ $('#side-find').addEventListener('keydown',e=>{if(e.key==='Enter'&&ncAsked()){e.
 /*@include dashboard/todos-rows.js*/
 /*@include dashboard/shell-keys.js*/
 /*@include dashboard/help-panel.js*/
+/*@include dashboard/settings-activity.js*/
 </script></html>

@@ -34,7 +34,7 @@ Il nostro team può dare un’occhiata alla tua Machine per te, ma solo dopo che
 
 - Sola lettura: log, impostazioni, versioni, come si sincronizza ogni connessione ed errori recenti, ripuliti come il report per il supporto. Mai i tuoi messaggi, chiavi, password o chi sono i tuoi contatti.
 - Termina da solo dopo 24 ore. Finché è attivo, **Impostazioni**, **Sicurezza** lo mostra: **Disattiva** lo termina subito.
-- Ogni accesso è elencato lì, con data e ora.
+- Ogni accesso è elencato in Impostazioni, **Movimenti**, con data e ora. Vedi [Movimenti](activity.md).
 
 ## Dal tuo computer
 

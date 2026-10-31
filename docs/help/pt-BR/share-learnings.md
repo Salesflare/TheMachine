@@ -32,7 +32,7 @@ Outras Machines podem votar em um aprendizado que você compartilhou, sem saber 
 
 Marque **Enviar automaticamente daqui em diante** ao lado de **Enviar**, ou ative **Enviar aprendizados automaticamente** em Configurações, Segurança. Novos aprendizados vão então sem perguntar, verificados do mesmo jeito. Desligado por padrão.
 
-Cada aprendizado enviado aparece em Fleet, **Atividade**, exatamente como foi. Toque em **Retirar** e a equipe não o vê mais.
+Cada aprendizado enviado aparece em Configurações, **Atividade**, e em Fleet, **Atividade**, exatamente como foi. Toque em **Retirar** e a equipe não o vê mais.
 
 Seu e-mail e os logs de erros nunca vão sozinhos. **Cuidadoso**, uma Work Fleet Cuidadosa, ou desligar **Oferecer compartilhar aprendizados** interrompe isso. Ligado de novo, ela volta a perguntar toda vez.
 

@@ -11,6 +11,7 @@ Abre **Ajustes** con el engranaje de arriba. Sus pestañas:
 - **Cuenta**: **Tus direcciones**, las que cuentan como tú, con de dónde salió cada una. Tu plan en resumen, botones a las páginas de tu cuenta y **Cerrar sesión**. Consulta [Planes y facturación](plans-and-billing.md).
 - **General**: idioma y región, este dispositivo, el navegador de tu Machine, tu Fleet y tu cuenta.
 - **Seguridad**: Estándar o Prudente, y los ajustes que fijan. Consulta [Niveles de seguridad](security-levels.md). También **Acceso de soporte**, mientras está activo: consulta [Obtener ayuda](get-support.md#support-access).
+- **Actividad**: todo lo que The Machine hizo por ti, lo más reciente primero. Consulta [Actividad](activity.md).
 - **Notificaciones**: qué te llega y por dónde, y tu horario laboral. Consulta [Notificaciones](notifications.md) y [Horario laboral](work-hours.md).
 - **Redacción**: firmas y cómo escribes. Consulta [Redacción](writing.md).
 - **Habilidades**: guías que sigue tu Machine. Consulta [Habilidades](skills.md).

@@ -115,7 +115,9 @@ class Consent(unittest.TestCase):
             if (method, path) == ('GET', '/support'):
                 return {'requests': [{'id': f'sr_{n}', 'what': w} for n, w in enumerate(whats)]}
             if path == '/support-access':
-                return {'accesses': [{'at': '2026-10-27T08:00:00+00:00', 'what': 'The Machine team: read the settings'}]}
+                return {'accesses': [{'at': '2026-10-27T08:00:00+00:00', 'what': 'The Machine team: read the settings'},
+                                     {'at': '2026-10-27T07:00:00+00:00', 'what': 'The Machine team: tried to read the logs', 'refused': True},
+                                     {'at': '2026-10-27T06:00:00+00:00', 'what': 'The Machine team: read the logs', 'refused': 'no'}]}
             return {'ok': True}
         self.f.relay.call = call
         self.f.support_due = True
@@ -134,6 +136,7 @@ class Consent(unittest.TestCase):
         view = self.f.support_access(True)
         self.assertTrue(view['until'])
         self.assertEqual(view['accesses'][0]['what'], 'The Machine team: read the settings')
+        self.assertEqual([a.get('refused') for a in view['accesses']], [None, True, None], 'a refused look shows in Activity as refused')
         self.assertIn(('POST', '/support-access', {'allow': True}), self.f.relay.calls)
         self.waiting('settings', 'logs', 'shell')
         self.f.support_round()

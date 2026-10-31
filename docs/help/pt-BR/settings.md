@@ -11,6 +11,7 @@ Abra **Configurações** pela engrenagem no topo. As abas:
 - **Conta**: **Seus endereços**, os que contam como você, com a origem de cada um. Seu plano em resumo, botões para as páginas da sua conta e **Sair**. Veja [Planos e cobrança](plans-and-billing.md).
 - **Geral**: idioma e região, este dispositivo, o navegador da sua Machine, seu Fleet e sua conta.
 - **Segurança**: Padrão ou Cuidadoso, e as configurações que cada um define. Veja [Níveis de segurança](security-levels.md). Também **Acesso de suporte**, enquanto está ativo: veja [Obter suporte](get-support.md#support-access).
+- **Atividade**: tudo o que The Machine fez por você, o mais recente primeiro. Veja [Atividade](activity.md).
 - **Notificações**: o que chega até você e onde, e o seu horário de trabalho. Veja [Notificações](notifications.md) e [Horário de trabalho](work-hours.md).
 - **Escrita**: assinaturas e como você escreve. Veja [Escrita](writing.md).
 - **Habilidades**: instruções que a sua Machine segue. Veja [Habilidades](skills.md).

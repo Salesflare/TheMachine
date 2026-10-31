@@ -11,6 +11,7 @@ Open **Settings** with the gear at the top. Its tabs:
 - **Account**: **Your addresses**, the ones that count as you, with where each came from. Your plan in short, buttons to your account pages, and **Sign out**. See [Plans and billing](plans-and-billing.md).
 - **General**: language and region, this device, your Machine's browser, your Fleet and your account.
 - **Security**: Standard or Careful, and the settings they set. See [Security levels](security-levels.md). **Support access** too, while it's on: see [Get support](get-support.md#support-access).
+- **Activity**: everything The Machine did for you, newest first. See [Activity](activity.md).
 - **Notifications**: what reaches you where, and your work hours. See [Notifications](notifications.md) and [Work hours](work-hours.md).
 - **Writing**: signatures and how you write. See [Writing](writing.md).
 - **Skills**: how-tos your Machine follows. See [Skills](skills.md).

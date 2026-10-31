@@ -34,7 +34,7 @@ Nossa equipe pode olhar a sua Machine por você, mas só depois que você permit
 
 - Só leitura: logs, configurações, versões, como cada conexão sincroniza e erros recentes, limpos como no relatório de suporte. Nunca suas mensagens, chaves, senhas ou quem são seus contatos.
 - Termina sozinho depois de 24 horas. Enquanto está ativo, **Configurações**, **Segurança** mostra o acesso: **Desativar** termina agora.
-- Cada acesso aparece listado ali, com a hora.
+- Cada acesso aparece em Configurações, **Atividade**, com a hora. Veja [Atividade](activity.md).
 
 ## No seu próprio computador
 
