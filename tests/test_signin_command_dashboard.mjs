@@ -78,7 +78,7 @@ try{
  connection.sync_activity.unshift({at:new Date().toISOString(),status:'success',signals:1});
  connection.last_failure={at:failure.at,error:failure.error};
  const before=statusCalls;
- await page.evaluate(()=>{dispatchEvent(new Event('pageshow'));dispatchEvent(new Event('online'));document.dispatchEvent(new Event('visibilitychange'))});
+ await page.evaluate(()=>{dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));dispatchEvent(new Event('online'));document.dispatchEvent(new Event('visibilitychange'))});
  await page.waitForFunction(()=>document.querySelector('#connectors .connection-status')?.textContent==='Connected');
  assert.equal(statusCalls,before+1,'resume events share one status request');
  assert.equal(await page.locator('#connectors .signin-command').count(),0);
