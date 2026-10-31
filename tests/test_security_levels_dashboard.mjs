@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {callAfter} from './page-calls.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Settings, Security (security_levels.py): Standard or Careful as one switch, Custom after a change, the switches it
@@ -13,8 +14,8 @@ const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16);
 const STANDARD={notify_text:'on',save_logins:'on',learnings:'on',people_lookup:'on',help_topics:'on',keep_days:'90'};
 const CAREFUL={notify_text:'off',save_logins:'off',learnings:'off',people_lookup:'off',help_topics:'off',keep_days:'30'};
-let security,calls;
-const reset=()=>{calls=[];security={level:'standard',settings:{...STANDARD},standard:{...STANDARD},careful:{...CAREFUL},fleets:[{id:FL,name:'Acme',level:'careful'}],floor:true}};
+let security;
+const reset=()=>{security={level:'standard',settings:{...STANDARD},standard:{...STANDARD},careful:{...CAREFUL},fleets:[{id:FL,name:'Acme',level:'careful'}],floor:true}};
 const label=()=>['standard','careful'].find(l=>Object.keys(security.settings).every(k=>security.settings[k]===security[l][k]))||'custom';
 const rules={relationships:{rule:'always',details:true},meeting:{rule:'ask',details:false}};
 const fleet={on:true,kinds:{relationships:'who knows someone',meeting:'meeting context'},kind_rules:{relationships:['ask','always','never'],meeting:['ask','always','never']},
@@ -25,7 +26,7 @@ const server=createServer(async(req,res)=>{res.setHeader('Content-Type','applica
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],
   security,lookups:{people_available:true,people:security.settings.people_lookup==='on'&&!security.floor,required_off:security.floor},team_learnings:{offer:security.settings.learnings==='on',network:true},fleet:{on:true,waiting:0}}));return}
- if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
+ if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);
   if(call.action==='security_level')Object.assign(security.settings,security[call.args.level]);
   if(call.action==='security_setting')security.settings[call.args.key]=call.args.value;
   security.level=label();res.end(JSON.stringify({security,lookups:{people_available:true,people:false,required_off:true},team_learnings:{offer:security.settings.learnings==='on',network:true}}));return}
@@ -53,15 +54,13 @@ try{
   assert.equal(await page.locator('#share-offer').isVisible(),true);
   if(shots)await page.screenshot({path:`${shots}/security-standard-${width}.png`,fullPage:true});
   // One switch: Careful, after a confirm that says how many settings change.
-  await page.locator('.sec-pick label:has([value="careful"])').click();
+  assert.deepEqual(await callAfter(page,'security_level',()=>page.locator('.sec-pick label:has([value="careful"])').click()),{action:'security_level',args:{level:'careful'}});
   await page.locator('#sec-note',{hasText:/^Careful:/}).waitFor();
-  assert.deepEqual(calls.at(-1),{action:'security_level',args:{level:'careful'}});
   assert.equal(await page.locator('[data-sec="notify_text"]').getAttribute('aria-checked'),'false');
   if(shots)await page.screenshot({path:`${shots}/security-careful-${width}.png`,fullPage:true});
   // A change after: Custom.
-  await page.locator('[data-sec="save_logins"]').click();
+  assert.deepEqual(await callAfter(page,'security_setting',()=>page.locator('[data-sec="save_logins"]').click()),{action:'security_setting',args:{key:'save_logins',value:'on'}});
   await page.locator('#sec-note',{hasText:/^Custom:/}).waitFor();
-  assert.deepEqual(calls.at(-1),{action:'security_setting',args:{key:'save_logins',value:'on'}});
   assert.equal(await page.locator('[name="sec-level"]:checked').count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   if(shots)await page.screenshot({path:`${shots}/security-custom-${width}.png`,fullPage:true});

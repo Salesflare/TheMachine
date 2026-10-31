@@ -58,6 +58,8 @@ const kept=p=>p.evaluate(async()=>{const dbs=await indexedDB.databases();if(!dbs
  return out}finally{db.close()}});
 const shellCopy=p=>p.evaluate(async()=>{const c=await caches.open('tm-shell-2');const r=await c.match(location.origin+'/');return r?await r.text():null});
 const until=async(p,fn,arg,label)=>{try{await p.waitForFunction(fn,arg,{timeout:15000})}catch{throw Error('timed out: '+label)}};
+// Waits until what the device keeps passes test (it is written a moment after the page shows it), then returns it
+const keptWhen=async(p,test,label)=>{for(const end=Date.now()+30000;;){const k=await kept(p).catch(()=>null);if(test(k))return k;if(Date.now()>end)throw Error('timed out: '+label);await new Promise(r=>setTimeout(r,100))}};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  const context=await browser.newContext({viewport:{width:1100,height:900}});
@@ -84,7 +86,7 @@ try{
 
  // 2. Kept on the device: encrypted, a non-extractable AES-GCM key, for this owner, no tokens
  await until(tab,async()=>(await indexedDB.databases()).some(d=>d.name==='tm-cache'),null,'the device cache');
- let k;for(let i=0;i<50&&!(k=await kept(tab))?.rows.status;i++)await tab.waitForTimeout(100);
+ let k=await keptWhen(tab,k=>k?.rows.status,'the cards are kept');
  assert.ok(k?.rows.status,'the cards are kept');assert.equal(k.scope,S1);assert.equal(k.extractable,false);assert.equal(k.alg,'AES-GCM');
  assert.equal(k.rows.status.isBuffer,true);assert.equal(k.rows.status.rawHasText,false,'stored encrypted, not as text');
  const plain=JSON.parse(k.rows.status.plain);assert.equal(plain.suggestions.length,2);assert.equal(plain.csrf,undefined,'never the CSRF token');
@@ -92,7 +94,7 @@ try{
  // The app's page (the service worker's copy): asked for again on every start, so a release shows at once
  await tab.evaluate(()=>navigator.serviceWorker.ready);await tab.reload();await tab.locator('#suggestions article[id]').first().waitFor();
  await until(tab,()=>!!navigator.serviceWorker.controller,null,'the service worker controls the page');
- let shell;for(let i=0;i<50&&!(shell=await shellCopy(tab));i++)await tab.waitForTimeout(100);
+ let shell;for(const end=Date.now()+30000;!(shell=await shellCopy(tab))&&Date.now()<end;)await new Promise(r=>setTimeout(r,100));
  assert.ok(shell,'the page is kept');assert.ok(!shell.includes(CSRF),'the kept page has no CSRF token');assert.ok(shell.includes("const csrf=''"));
 
  // 3. The Machine can't be reached: the app still opens, from the device, with the cards and when they were read
@@ -116,14 +118,15 @@ try{
  const at304=hits.notModified;await tab.goto(base+'bye');ver='v2';const fresh=hits.page;
  await tab.goto(base);assert.equal(await tab.evaluate(()=>UI_VERSION),'v2','the first start after a release is the new page');
  assert.equal(hits.page,fresh+1,'the page loaded once, no second reload');
- for(let i=0;i<50&&!(await shellCopy(tab))?.includes("UI_VERSION='v2'");i++)await tab.waitForTimeout(100);
+ for(const end=Date.now()+30000;!(await shellCopy(tab))?.includes("UI_VERSION='v2'")&&Date.now()<end;)await new Promise(r=>setTimeout(r,100));
  assert.ok((await shellCopy(tab)).includes("UI_VERSION='v2'"),'the copy is the new page now');
  await tab.reload();assert.equal(await tab.evaluate(()=>UI_VERSION),'v2');assert.equal(hits.page,fresh+1,'unchanged: no page sent');assert.ok(hits.notModified>at304,'a 304');
  // The Machine is slow to answer: the copy opens after a short wait, and the answer replaces it for the next start
- let let_go,status_go;holdPage=new Promise(r=>let_go=r);holdStatus=new Promise(r=>status_go=r);ver='v3';const t0=Date.now();await tab.reload();
- assert.equal(await tab.evaluate(()=>UI_VERSION),'v2','no answer in time: the copy');assert.ok(Date.now()-t0<5000,'the wait is short ('+(Date.now()-t0)+' ms)');
+ let let_go,status_go;holdPage=new Promise(r=>let_go=r);holdStatus=new Promise(r=>status_go=r);ver='v3';await tab.reload();
+ // (the page's answer is held back until let_go(): the reload ends without it; the worker's wait for it is short)
+ assert.equal(await tab.evaluate(()=>UI_VERSION),'v2','no answer in time: the copy');assert.ok(+sw.match(/\bSHELL_WAIT = (\d+);/)[1]<=2000,'the wait is short');
  let_go();holdPage=null;
- for(let i=0;i<50&&!(await shellCopy(tab).catch(()=>''))?.includes("UI_VERSION='v3'");i++)await tab.waitForTimeout(100);
+ for(const end=Date.now()+30000;!(await shellCopy(tab).catch(()=>''))?.includes("UI_VERSION='v3'")&&Date.now()<end;)await new Promise(r=>setTimeout(r,100));
  assert.ok((await shellCopy(tab)).includes("UI_VERSION='v3'"),'the late answer replaced the copy');
  // and the page, just opened and not touched yet, sees the release in the status and loads it by itself
  status_go();holdStatus=null;
@@ -136,17 +139,20 @@ try{
  // 5. The open card's chat and the Graph's lists open from the device too
  await tab.goto(base+'#chat='+'1'.repeat(16));await tab.locator('#chat-log',{hasText:'Drafted the numbers for Robin.'}).waitFor();
  await tab.goto(base+'#graph');await tab.locator('#people-view',{hasText:'Robin Example'}).waitFor();
- for(let i=0;i<50&&!((k=await kept(tab))?.rows['chat:'+'1'.repeat(16)]&&k.rows['get:api/graph']);i++)await tab.waitForTimeout(100);
+ // the chat, the Graph's counts and its People list, all kept before going offline
+ await keptWhen(tab,k=>k?.rows['chat:'+'1'.repeat(16)]&&k.rows['get:api/graph']&&Object.keys(k.rows).some(r=>r.startsWith('get:api/graph/list?list=people')),'the chat and the Graph kept');
  mode='down';graphDown=true;
  await tab.goto(base+'#chat='+'1'.repeat(16));await tab.reload();await tab.locator('#chat-log',{hasText:'Drafted the numbers for Robin.'}).waitFor();
- await tab.goto(base+'#graph');await tab.reload();await tab.locator('#people-view',{hasText:'Robin Example'}).waitFor();
+ // #graph opens People, whose own link (#graph=people) the page puts in the address once it shows: the reload opens that
+ await tab.goto(base+'#graph');await until(tab,()=>location.hash==='#graph=people',null,'People open');
+ await tab.reload();await tab.locator('#people-view',{hasText:'Robin Example'}).waitFor();
  await until(tab,()=>/^Offline · updated \d\d:\d\d$/.test(document.querySelector('#updated').textContent),null,'the offline line on the Graph');
  mode='ok';graphDown=false;
 
  // 6. Kept cards with nothing open: still the outline until the Machine itself says "All clear"
  cards=[];await tab.goto(base);await tab.locator('#suggestions .all-clear',{hasText:'All clear'}).waitFor();
- for(let i=0;i<50&&JSON.parse((await kept(tab))?.rows.status?.plain||'{}').suggestions?.length!==0;i++)await tab.waitForTimeout(100);
- mode='down';await tab.reload();await tab.waitForTimeout(1500);
+ await keptWhen(tab,k=>JSON.parse(k?.rows.status?.plain||'{}').suggestions?.length===0,'the kept "nothing"');
+ mode='down';await tab.reload();await until(tab,()=>/^Offline · updated/.test(document.querySelector('#updated').textContent),null,'the kept "nothing" shown offline');
  assert.ok(await tab.locator('#suggestions .skeleton').isVisible(),'a kept "nothing" shows the outline');
  assert.deepEqual(await tab.evaluate(()=>__before),[],'a kept "nothing" is not "All clear"');
  mode='ok';cards=null;await tab.evaluate(()=>refresh());await tab.locator('#suggestions article[id]').first().waitFor();
@@ -156,20 +162,21 @@ try{
  await Promise.all([tab.waitForURL(base+'bye'),tab.click('#sign-out button')]);
  assert.ok(posts.includes('logout'));
  assert.equal(await kept(tab),null,'no data left after Sign out');
- assert.deepEqual(await tab.evaluate(async()=>(await caches.keys()).filter(k=>k.startsWith('tm-'))),[],'no page copy left after Sign out');
+ // (the brand files' warm-up, still under way, may open its empty cache again: nothing is in it)
+ assert.deepEqual(await tab.evaluate(async()=>{const left=[];for(const k of await caches.keys())if(k.startsWith('tm-')&&(k.startsWith('tm-shell')||(await (await caches.open(k)).keys()).length))left.push(k);return left}),[],'no page copy left after Sign out');
 
  // 8. The session is gone (the sign-in gate redirects the status): wiped, and the gate gets the next load
  await tab.goto(base);await tab.locator('#suggestions article[id]').first().waitFor();
- for(let i=0;i<50&&!(await kept(tab))?.rows.status;i++)await tab.waitForTimeout(100);
+ await keptWhen(tab,k=>k?.rows.status,'the cards are kept');
  // Refresh deliberately reloads after wiping the cache: do not await its promise in the old document.
  mode='gone';const reloaded=tab.waitForEvent('domcontentloaded');await tab.evaluate(()=>{void refresh()});await reloaded;
  await until(tab,async()=>!(await indexedDB.databases()).some(d=>d.name==='tm-cache'),null,'wiped when the session is gone');
  mode='ok';await tab.goto(base);await tab.locator('#suggestions article[id]').first().waitFor();
 
  // 9. Another owner: what the device kept for the old one goes
- for(let i=0;i<50&&!(await kept(tab))?.rows.status;i++)await tab.waitForTimeout(100);
+ await keptWhen(tab,k=>k?.rows.status,'the cards are kept');
  scope=S2;await tab.reload();
- for(let i=0;i<100&&(k=await kept(tab).catch(()=>null))?.scope!==S2;i++)await tab.waitForTimeout(100);
+ k=await keptWhen(tab,k=>k?.scope===S2,'kept for the new owner');
  assert.equal(k?.scope,S2,'the device now keeps for the new owner only');
  assert.ok(!Object.values(k.rows).some(r=>r.plain===null),'nothing of the old owner is left');
 

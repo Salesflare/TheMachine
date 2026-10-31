@@ -4,6 +4,8 @@ import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {scopeClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {callAfter} from './page-calls.mjs';
+const scopeSaved=c=>c.action==='set_locale'&&'todo_scope' in c.args;
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The To-dos filter (All, Work, Personal) lives on the Machine (locale_prefs todo_scope), so a phone and a computer show
@@ -60,9 +62,8 @@ try{
   // Greeting counts read in the owner's language.
   if(width>=1440)assert.equal(await page.locator('#page-head .page-sub').innerText(),lang==='nl'?'2 te beslissen':'2 to decide');
   // Show all: the Machine keeps All, and the line goes.
-  await note(page).locator('[data-scope="all"]').click();
-  await note(page).waitFor({state:'detached'});
-  assert.deepEqual(saved.at(-1),{todo_scope:'all'});assert.equal(await shown(page),3);
+  assert.deepEqual((await callAfter(page,scopeSaved,()=>note(page).locator('[data-scope="all"]').click())).args,{todo_scope:'all'});
+  await note(page).waitFor({state:'detached'});assert.equal(await shown(page),3);
   await shot(page,`${lang}-${width}x${height}-all`);
   await context.close();
   // A filter that hides everything says so, instead of All clear.
@@ -79,7 +80,7 @@ try{
  }
  // The sidebar's own filter saves on the Machine as well.
  locale=view('en','all');saved=[];
- {const [context,page]=await open();await scopeClick(page,'Work');await note(page).waitFor();
-  assert.deepEqual(saved.at(-1),{todo_scope:'work'});assert.equal(await page.evaluate(()=>localStorage.getItem('scope-filter')),null);await context.close()}
+ {const [context,page]=await open();assert.deepEqual((await callAfter(page,scopeSaved,()=>scopeClick(page,'Work'))).args,{todo_scope:'work'});await note(page).waitFor();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('scope-filter')),null);await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}

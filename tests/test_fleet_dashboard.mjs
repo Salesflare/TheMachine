@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {OPENCLAW} from '../openclaw-root.mjs';
-import {navClick} from './nav-click.mjs';
+import {navClick,menuPick} from './nav-click.mjs';
+import {callAfter} from './page-calls.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
@@ -24,11 +25,10 @@ const view={on:true,kinds:{relationships:'who knows someone',meeting:'meeting co
  waiting:[],asked:[],log:[],notices:[]};
 const reset=()=>{const w=view.fleets[0];w.rules=fresh();w.exceptions={relationships:[{member_id:'l',name:'Robin Vale',rule:'always',details:false,own_scope:false}]};
  view.scopes={[FL]:{'*':{relationships:{only:['acme.com'],never:['initech'],work_only:true}}}}};
-const calls=[];
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));return}
- if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);const a=call.args,w=view.fleets[0];
+ if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);const a=call.args,w=view.fleets[0];
   const list=w.exceptions[a.kind]=(w.exceptions[a.kind]||[]).filter(e=>e.member_id!==a.member_id||!a.clear);
   if(a.member_id==='*'){Object.assign(w.rules[a.kind],a.rule?{rule:a.rule}:{},a.details!==undefined?{details:a.details}:{})}
   else if(!a.clear){const e=list.find(x=>x.member_id===a.member_id);if(e)e.rule=a.rule;else list.push({member_id:a.member_id,name:members.find(m=>m.member_id===a.member_id).name,rule:a.rule,details:w.rules[a.kind].details,own_scope:false})}
@@ -86,24 +86,21 @@ try{
   for(const k of ['relationships','meeting','handling'])assert.ok((await ex(k)).length<=140,k+": "+await ex(k));
   // Exceptions: small pills, and a way to add one.
   assert.equal(await R('relationships').locator('.fleet-ex').innerText().then(t=>t.replace('×','').trim()),'Robin Vale: Always');
-  calls.length=0;await R('relationships').locator('.fleet-ex button').click();
+  assert.deepEqual((await callAfter(page,'fleet_rule',()=>R('relationships').locator('.fleet-ex button').click())).args,{fleet:FL,member_id:'l',kind:'relationships',clear:true});
   await page.waitForFunction(()=>!document.querySelector('.fleet-rule[data-member="*"][data-kind="relationships"] .fleet-ex'));
-  assert.deepEqual(calls[0].args,{fleet:FL,member_id:'l',kind:'relationships',clear:true});
   await R('meeting').locator('.fleet-ex-add summary').click();
   await R('meeting').locator('[data-fleet-ex-member]').selectOption('q');
   assert.deepEqual(await R('meeting').locator('[data-fleet-ex-rule]').allInnerTexts(),['Ask me first','Never']);  // not the Fleet's own choice
-  await R('meeting').locator('[data-fleet-ex-rule="never"]').click();
+  assert.deepEqual((await callAfter(page,'fleet_rule',()=>R('meeting').locator('[data-fleet-ex-rule="never"]').click())).args,{fleet:FL,member_id:'q',kind:'meeting',rule:'never'});
   await page.waitForFunction(()=>/Alexandra Longname-Whitfield: Never/.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="meeting"] .fleet-ex')?.textContent||''));
-  assert.deepEqual(calls[1].args,{fleet:FL,member_id:'q',kind:'meeting',rule:'never'});
   // The Fleet's own choice saves for everyone.
-  await R('handling').locator('[data-fleet-rule][value="always"]').check({force:true});
+  assert.deepEqual(await callAfter(page,'fleet_rule',()=>R('handling').locator('[data-fleet-rule][value="always"]').check({force:true})),{action:'fleet_rule',args:{fleet:FL,member_id:'*',kind:'handling',rule:'always'}});
   await page.waitForFunction(()=>/without asking you/.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="handling"] .fleet-preview').textContent));
-  assert.deepEqual(calls[2],{action:'fleet_rule',args:{fleet:FL,member_id:'*',kind:'handling',rule:'always'}});
-  await R('relationships').locator('summary').first().click();
-  await R('relationships').locator('[data-scope="never"]').fill('Globex, rival.example');
-  await R('relationships').locator('[data-scope="never"]').press('Tab');
+  // (that answer redraws the rules, which can fold this one again)
+  const never=R('relationships').locator('[data-scope="never"]');
+  assert.deepEqual((await callAfter(page,c=>c.action==='fleet_rule'&&!!c.args.scope,()=>menuPick(R('relationships').locator('summary').first(),never,{act:async l=>{await l.fill('Globex, rival.example');await l.press('Tab')}}))).args,
+   {fleet:FL,member_id:'*',kind:'relationships',scope:{only:'acme.com',never:'Globex, rival.example',work_only:true}});
   await page.waitForFunction(()=>/not globex/i.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="relationships"] .fleet-preview').textContent));
-  assert.deepEqual(calls[3].args,{fleet:FL,member_id:'*',kind:'relationships',scope:{only:'acme.com',never:'Globex, rival.example',work_only:true}});
   const layout=await page.evaluate(()=>{const r=document.querySelector('.fleet-rules');
    return {fits:document.documentElement.scrollWidth<=innerWidth,inside:[...r.querySelectorAll('.seg, .fleet-preview, .fleet-scope input, .fleet-ex, .fleet-ex-add')].every(s=>s.getBoundingClientRect().right<=innerWidth+.5),
     stacked:getComputedStyle(r.querySelector('.fleet-rule')).gridTemplateColumns.split(' ').length===1}});
