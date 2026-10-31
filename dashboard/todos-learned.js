@@ -20,8 +20,8 @@ const f=(state.facts||[]).find(x=>x.id===id);
 const learnDay=d=>d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})});  // Tue, Oct 20, as elsewhere
 const VOICE_ICON={linkedin:'linkedin',whatsapp:'whatsapp',telegram:'telegram',slack:'slack',email:'gmail',gmail:'gmail',outlook:'gmail',x:'x','x dm':'x',twitter:'x',github:'github'};
 // The learning loop's changes (learning_loop.py): what changed, why, and Undo; an undone one stays, marked.
-const LEARN_WHAT={voice:c=>`${c.channel==='All'?'Everywhere':c.channel}: how you write`,draft:c=>c.before?'Rule changed':'Rule added',fact:c=>c.before?'Fact changed':'Fact added'};
-function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text=String(c.text||'').split('\n').map(l=>l.trim()).filter(Boolean).join(' · ');
+const LEARN_WHAT={voice:c=>`${c.channel==='All'?'Everywhere':c.channel}: how you write`,source:()=>'Fixed at the source',draft:c=>c.before?'Rule changed':'Rule added',fact:c=>c.before?'Fact changed':'Fact added'};
+function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text=String((Array.isArray(c.line)?t(...c.line):c.text)||'').split('\n').map(l=>l.trim()).filter(Boolean).join(' · ');
  return `<div class="change-row${c.undone?' undone':''}"><span class="grow"><strong>${esc(what)}</strong><span class="change-text">${esc(text)}</span>${c.why?`<small>${esc(c.why)}</small>`:''}<small class="change-when">${esc(learnDay(new Date(c.at)))}${c.undone?' · Undone':''}</small></span>${c.undone?'':`<span class="learn-acts"><button type="button" class="quiet" data-learn-undo="${c.id}" aria-label="Undo: ${esc(what)}">Undo</button></span>`}</div>`}
 // A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
 const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};

@@ -3,7 +3,7 @@ title: Aufgaben-Chat
 area: cards
 summary: Frag etwas zu einer Aufgabe oder ändere ihren Entwurf, in einem Chat, der zu dieser Aufgabe gehört.
 covers: card-chat
-code: dashboard.html, assistant.py, chat_files.py
+code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
 ---
 ## Öffnen
@@ -22,6 +22,12 @@ Jede E-Mail zeigt nur, was neu darin ist. Die früheren Nachrichten, die sie zit
 Eine Frage bekommt eine Antwort und lässt den Entwurf, wie er ist. Freigaben bleiben bei den Buttons der Aufgabe: Der Chat sendet einen Entwurf nie in derselben Antwort, in der er ihn geschrieben hat.
 
 Auf einem Computer sendet Enter oder Strg+Enter (Cmd+Enter auf dem Mac), und Umschalt+Enter beginnt eine neue Zeile. Auf dem Handy nimm den Senden-Button.
+
+## Wenn etwas nicht stimmt
+
+Sag es im Chat, etwa „Sie ist nicht die CEO“ oder „Er hat die Firma verlassen“. The Machine korrigiert es dort, wo es herkam: eine Rolle, eine Firma, ein Titel, die Phase eines Projekts, das Projekt der To-do oder eine gelernte Regel. Der Chat zeigt dann, was sich geändert hat, etwa **Korrigiert: Die Rolle von Ana ist Head of Sales, aus ihrer E-Mail-Signatur**, mit **Rückgängig**. Das stellt wieder her, was vorher da war, außer es hat sich seitdem geändert.
+
+Auf einer GBrain-Seite ändert sich nur der eigene Abschnitt von The Machine; was du dort geschrieben hast, bleibt deins. Findet sie nicht, woher etwas kam, lernt sie wie bisher aus deiner Notiz.
 
 ## Modell und Nachdenken
 

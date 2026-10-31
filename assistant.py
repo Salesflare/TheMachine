@@ -83,6 +83,7 @@ import task_pages
 import help_topics
 import team_learnings
 import authorship
+import corrections
 import learning_loop
 import person_summary
 import fleet_learnings
@@ -109,6 +110,7 @@ import service
 import dashboard_parts
 from agents_app import AgentsApp
 from calendar_app import CalendarApp
+from corrections_app import CorrectionsApp
 from gbrain_app import GBrainApp
 from recurring_app import RecurringApp
 from shared_graph_app import SharedGraphApp
@@ -10878,7 +10880,7 @@ def chat_items(messages, owner, results=None):
     rank = {'source': 0, 'you': 1, 'event': 1, 'steps': 2}
     items = sorted(items, key=lambda i: (i['at'], rank.get(i['kind'], 3)))
     # What a run learned shows under its reply (the run saves it before it answers), unless the owner wrote in between
-    for learned in [i for i in items if i['kind'] == 'learned'][::-1]:
+    for learned in [i for i in items if i['kind'] in ('learned', 'fixed')][::-1]:
         n = items.index(learned)
         after = next((k for k in range(n + 1, len(items)) if items[k]['kind'] in ('reply', 'you')), None)
         if after is not None and items[after]['kind'] == 'reply' and items[after]['at'] - learned['at'] <= 1800000:
@@ -10958,7 +10960,8 @@ def chat_prompt(job, config=None):
     return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. {i18n.prompt_rule()} This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. Preparation job ID: {j}.
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{doc_write_prompt(config)}{meeting_notes_prompt(config)}
-- Save with assistant_signals prepare args suggestion_id={sid}, job_id={j}, reply=<your answer to their message, short; the chat shows it>, body=<the card's status after this: where the task stands and what is ready, about the task, never a reply to them; leave it out when only answered and the status didn't change>, next_actions=[...] (the current ones again when you only answered), outcome and note_kind as the earlier instructions say (outcome answered when you only answered and no draft is waiting); or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason, details, and questions when only the owner can unblock it. When they say they talk to this person on another channel (WhatsApp, Telegram), switch the draft to it as PREPARATION.md says; a limit of The Machine is never a question for them. When they say the person doesn't know about it yet, the message first says what it is about.'''
+- Save with assistant_signals prepare args suggestion_id={sid}, job_id={j}, reply=<your answer to their message, short; the chat shows it>, body=<the card's status after this: where the task stands and what is ready, about the task, never a reply to them; leave it out when only answered and the status didn't change>, next_actions=[...] (the current ones again when you only answered), outcome and note_kind as the earlier instructions say (outcome answered when you only answered and no draft is waiting); or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason, details, and questions when only the owner can unblock it. When they say they talk to this person on another channel (WhatsApp, Telegram), switch the draft to it as PREPARATION.md says; a limit of The Machine is never a question for them. When they say the person doesn't know about it yet, the message first says what it is about.
+- {corrections.PROMPT}'''
 
 
 # What a review's own tool calls say it is doing, in the owner's words. Only names and card titles (what a card already
@@ -13167,6 +13170,7 @@ For this job:
 - When a login code, a two-step code or a missing permission stops a step, record a blocker whose reason says exactly what is needed in one short line, with where to do it, e.g. "Enter the code Acme texted you in your Machine's browser, then tap Continue" or "Give this Machine edit access to the Q3 budget sheet, then tap Try again". Never stop without saying what is needed.
 - The title says what needs doing. Only when that changed after this result (a new ask or next step, not just the wording), add title=<a new short title, under 90 characters>; never to say it is done, sent or handled (the status line says that); otherwise leave title out.
 - When latest_feedback is a Change note, also give note_kind: style (how it was written), fact (something you didn't know), continue (keep going or finish the job) or new_ask (something else to do). A style note that holds beyond this card (how they write on a channel or with this kind of person: length, tone, greeting, sign-off, language, capitals, punctuation, links, formatting; "always…", "next time…", or what they asked on an earlier card) updates that channel's voice: assistant_signals remember_fact args kind=voice, channel=<the channel it is about: Email, Slack, WhatsApp, Telegram, LinkedIn, X DM, another channel's name, or All when it holds everywhere>, text=<that channel's whole voice block (up to {VOICE_LINES} short lines, at most {VOICE_CHARS} characters): the current block with the note worked in, everything else kept, only what it contradicts dropped>, decision_id=<that note's decision>. {VOICE_PRECISE} How a kind of task is done (what to include, where things go) is a draft rule instead: remember_fact kind=draft, text=<the rule, general>. A fact note that holds beyond this card goes in remember_fact as a fact, with {FACT_KIND_HINT}. A note about how to do a kind of task next time ("next time keep it open for me") is a draft rule, also when it is not about writing. The card's chat shows what remember_fact saved, with Undo: the body never says you noted, saved or will remember something, and never claims it when nothing was saved.
+- {corrections.PROMPT}
 - When the owner's note means they want this task itself back later (remind me about it next week, later, on Tuesday), that is this card's snooze, not a reminder: save with outcome:'snoozed' and snooze_until:<their local date and time, e.g. 2026-10-27T09:00, or a date alone for their morning>, and a one-line body. The card leaves their list and comes back then. Do not also add an automation, cron job or reminder for it. A separate reminder about something else, or a recurring one, stays an automation. Their time zone is {getattr(local_tz(),'key','UTC')}; it is now {dt.datetime.fromisoformat(now()).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')} there.
 - A first message to someone who doesn't know about it yet says what it is about before it asks.
 - Or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason=<one plain sentence>, details=<technical specifics>. Block only on what you truly can't know (their first-hand notes, a fact only they have, a call with no sensible default); a minor judgment call with an obvious sensible default you make yourself and name in one line of the result. When only the owner can unblock it, also give questions=[{{question:<one short plain question>, options:[<2-4 short choices, only when it is a clear choice>]}}] (at most 3). Each question must make sense on its own to someone who hasn't seen your work: plain words, what it is about and why it matters, no jargon or internal terms, e.g. {{question:'What did you notice when you tried OnePageCRM? A few lines on what you tried and what stood out are enough.'}}. The card shows them with quick picks and an Answer box. No paths, IDs or tool names in reason or questions.''' + owner_details(config) + (f'''
@@ -13977,7 +13981,7 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp)
 
 
 class App(*APP_MIXINS):
@@ -15327,7 +15331,10 @@ class App(*APP_MIXINS):
         if name == 'learning_undo':
             if not owner_dashboard:
                 raise ValueError('Only the owner undoes a learned change, on the dashboard')
-            return self.store.undo_learning(args.get('id'))
+            done = self.store.undo_learning(args.get('id'))
+            if done.pop('graph', False):  # a fix in the Graph put back (corrections.py)
+                self.correction_refresh()
+            return done
         if name == 'set_voice':
             if not owner_dashboard:
                 raise ValueError('Only the owner edits how they write, in Settings')
@@ -18551,6 +18558,7 @@ class App(*APP_MIXINS):
         owner.extend(card_chat_handoffs(db, suggestion_id))
         owner.extend({**x, 'at': chat_ms(x['at'])} for x in fleet_reviews.chat_lines(db, suggestion_id))
         owner.extend(self.card_chat_learned(db, suggestion_id))
+        owner.extend({**x, 'at': chat_ms(x['at'])} for x in corrections.chat_items(db, suggestion_id))  # fixed where it came from
         for r in db.execute('SELECT payload,status,source,created_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:
                 payload = json.loads(r['payload'])

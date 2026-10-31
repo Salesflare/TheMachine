@@ -3,7 +3,7 @@ title: To-do chat
 area: cards
 summary: Ask about a to-do or change its draft, in a chat that belongs to that to-do.
 covers: card-chat
-code: dashboard.html, assistant.py, chat_files.py
+code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
 ---
 ## Open it
@@ -22,6 +22,12 @@ Each email shows only what is new in it. The earlier messages it quotes are fold
 A question gets an answer and leaves the draft as it is. Approvals stay on the to-do's buttons: chat never sends a draft in the same reply that wrote it.
 
 On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter starts a new line. On a phone, use the send button.
+
+## When something is wrong
+
+Say so in the chat, like "She's not the CEO" or "He left the company". The Machine fixes it where it came from: a role, a company, a title, a project's stage, the to-do's project, or a rule it learned. The chat then shows what changed, like **Fixed: Ana's role is Head of Sales, from her email signature**, with **Undo**. Undo puts back what was there, unless it changed since.
+
+On a GBrain page, only The Machine's own section changes; what you wrote there stays yours. When it can't find where something came from, it learns from your note as before.
 
 ## Model and thinking
 

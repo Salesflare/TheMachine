@@ -3,7 +3,7 @@ title: Chat da tarefa
 area: cards
 summary: Pergunte sobre uma tarefa ou mude o rascunho dela, em um chat que pertence a essa tarefa.
 covers: card-chat
-code: dashboard.html, assistant.py, chat_files.py
+code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
 ---
 ## Abrir
@@ -22,6 +22,12 @@ Cada e-mail mostra só o que há de novo nele. As mensagens anteriores que ele c
 Uma pergunta recebe uma resposta e deixa o rascunho como está. As aprovações ficam nos botões da tarefa: o chat nunca envia um rascunho na mesma resposta que o escreveu.
 
 No computador, Enter ou Ctrl+Enter (Cmd+Enter no Mac) envia, e Shift+Enter começa uma nova linha. No celular, use o botão de enviar.
+
+## Quando algo está errado
+
+Diga no chat, como "Ela não é a CEO" ou "Ele saiu da empresa". The Machine corrige na origem: um cargo, uma empresa, um título, a etapa de um projeto, o projeto da tarefa ou uma regra aprendida. O chat mostra então o que mudou, como **Corrigido: O papel de Ana é Head of Sales, de uma assinatura de e-mail dela**, com **Desfazer**. Desfazer devolve o que havia, a menos que tenha mudado desde então.
+
+Em uma página do GBrain, só a seção da própria The Machine muda; o que você escreveu lá continua seu. Se não encontrar de onde algo veio, aprende com sua nota como antes.
 
 ## Modelo e raciocínio
 

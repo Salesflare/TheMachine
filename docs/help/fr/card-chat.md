@@ -3,7 +3,7 @@ title: Chat d’une tâche
 area: cards
 summary: Posez une question sur une tâche ou changez son brouillon, dans un chat propre à cette tâche.
 covers: card-chat
-code: dashboard.html, assistant.py, chat_files.py
+code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
 ---
 ## L’ouvrir
@@ -22,6 +22,12 @@ Chaque e-mail ne montre que ce qui est nouveau. Les messages précédents qu’i
 Une question reçoit une réponse et laisse le brouillon tel quel. Les approbations restent sur les boutons de la tâche : le chat n’envoie jamais un brouillon dans la réponse qui l’a rédigé.
 
 Sur ordinateur, Entrée ou Ctrl+Entrée (Cmd+Entrée sur Mac) envoie, et Maj+Entrée passe à la ligne. Sur un téléphone, utilisez le bouton d’envoi.
+
+## Quand quelque chose est faux
+
+Dites-le dans le chat, par exemple « Elle n'est pas CEO » ou « Il a quitté l'entreprise ». The Machine le corrige à la source : un rôle, une entreprise, un poste, l'étape d'un projet, le projet de la to-do ou une règle apprise. Le chat montre alors ce qui a changé, par exemple **Corrigé : Le rôle de Ana est Head of Sales, d’après sa signature d'e-mail**, avec **Annuler**. Annuler remet ce qui était là, sauf si cela a changé depuis.
+
+Sur une page GBrain, seule la section de The Machine change ; ce que vous y avez écrit reste à vous. S'il ne trouve pas d'où vient l'information, il apprend de votre note comme avant.
 
 ## Modèle et réflexion
 

@@ -5006,6 +5006,39 @@ def set_card_project(db, card_id, project):
     return card_project_view(db, name)
 
 
+# An owner's fix at the source, undone (corrections.py): what was there before, put back as it was.
+FIX_PUT_BACK = ('person_roles', 'person_orgs', 'person_edits')
+
+
+def put_back_person_rows(db, table, identifiers, rows):
+    """Put a person's rows in one of FIX_PUT_BACK back as they were (rows: column -> value dicts saved before the fix)."""
+    if table not in FIX_PUT_BACK:
+        raise ValueError('Not a table a fix puts back')
+    ids = [str(i) for i in identifiers]
+    db.execute(f"DELETE FROM {table} WHERE identifier IN ({','.join('?' for _ in ids)})", ids)
+    for row in rows:
+        db.execute(f"INSERT INTO {table}({','.join(row)}) VALUES({','.join('?' for _ in row)})", list(row.values()))
+
+
+def drop_role_corrections(db, identifier, after_id):
+    """Forget the role corrections a fix recorded (those after after_id), when it is undone."""
+    db.execute('DELETE FROM role_corrections WHERE id>? AND identifier=?', (int(after_id), str(identifier)))
+
+
+def put_back_stage(db, project_id, fields, after_move_id):
+    """A project's stage columns as they were before a fix, and the moves it recorded gone."""
+    allowed = {'board_id', 'stage', 'stage_reason', 'stage_event_id', 'stage_by', 'stage_at', 'outcome', 'outcome_reason'}
+    fields = {k: v for k, v in fields.items() if k in allowed}
+    if fields:
+        db.execute('UPDATE projects SET ' + ','.join(f'{k}=?' for k in fields) + ' WHERE id=?', (*fields.values(), int(project_id)))
+    db.execute('DELETE FROM project_moves WHERE project_id=? AND id>?', (int(project_id), int(after_move_id)))
+
+
+def put_back_card_project(db, card_id, project, project_by):
+    """A to-do's project and who chose it, as before a fix."""
+    db.execute('UPDATE suggestions SET project=?,project_by=? WHERE id=?', (project, project_by, str(card_id)))
+
+
 def card_project_view(db, name):
     """{'node_id', 'name'} of a to-do's project, or None (a project deleted since shows as none)."""
     if not name:

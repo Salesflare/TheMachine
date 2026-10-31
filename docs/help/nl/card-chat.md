@@ -3,7 +3,7 @@ title: Chat bij een to-do
 area: cards
 summary: Stel een vraag over een to-do of pas het concept aan, in een chat die bij die to-do hoort.
 covers: card-chat
-code: dashboard.html, assistant.py, chat_files.py
+code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
 ---
 ## Openen
@@ -22,6 +22,12 @@ Elke e-mail toont alleen wat er nieuw in staat. De eerdere berichten die erin ge
 Een vraag krijgt een antwoord en laat het concept zoals het is. Goedkeuren blijft bij de knoppen van de to-do: de chat verstuurt een concept nooit in hetzelfde antwoord dat het schreef.
 
 Op een computer verstuurt Enter of Ctrl+Enter (Cmd+Enter op een Mac) je bericht, en Shift+Enter begint een nieuwe regel. Gebruik op een telefoon de verstuurknop.
+
+## Als iets niet klopt
+
+Zeg het in de chat, zoals "Ze is niet de CEO" of "Hij werkt er niet meer". The Machine verbetert het waar het vandaan kwam: een rol, een bedrijf, een functie, de fase van een project, het project van de to-do, of een regel die het leerde. De chat toont dan wat er veranderde, zoals **Rechtgezet: De rol van Ana is Head of Sales, uit haar e-mailhandtekening**, met **Ongedaan maken**. Dat zet terug wat er stond, tenzij het intussen veranderde.
+
+Op een GBrain-pagina verandert alleen het eigen deel van The Machine; wat jij daar schreef, blijft van jou. Als het niet vindt waar iets vandaan kwam, leert het zoals voorheen van je notitie.
 
 ## Model en denkwerk
 
