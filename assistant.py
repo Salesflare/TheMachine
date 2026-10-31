@@ -48,6 +48,7 @@ from zoneinfo import ZoneInfo
 import bug_queue
 import embeddings
 import gbrain
+import gap_note
 import graph
 import own_addresses
 import crm
@@ -8376,6 +8377,15 @@ class Store:
                         suggestion['weight'] = weight
                 except (sqlite3.Error, ValueError, TypeError):
                     pass
+                if suggestion['status'] in gap_note.OPEN_STATUSES and suggestion.get('people'):
+                    try:  # one short line on what isn't known about them, only where it helps (gap_note.card_gap)
+                        gap = gap_note.card_gap(gap_note.for_card(db, json.loads(suggestion['event_ids'] or '[]'),
+                                                                  [a.get('service', 'gmail') for a in getattr(self, 'accounts', None) or []],
+                                                                  lambda e: own_message(e, self.owner_user_ids), now(), suggestion['id'], limit=1))
+                        if gap:
+                            suggestion['gap'] = gap
+                    except (sqlite3.Error, ValueError, TypeError, KeyError):
+                        pass
                 if suggestion.get('project'):  # its project's page, for the chip on the to-do
                     try:
                         suggestion['project_node'] = graph.card_project_view(db, suggestion['project'])
@@ -12859,7 +12869,7 @@ This step is one only the owner can do themselves, in person or offline (going s
     '''Save with outcome:'needs_you' and needs:<the step itself, in a few words>, and a body of one or two short lines about what you prepared.''')
 
 
-def preparation_prompt(job, facts='', config=None, edits='', rules='', style=''):
+def preparation_prompt(job, facts='', config=None, edits='', rules='', style='', gaps=''):
     # The standing rules live in PREPARATION.md, which the plugin prepends to every preparation
     # session (outside the runner's message limit); this message carries only the job itself.
     j,sid=job['job_id'],job['suggestion_id']
@@ -12895,7 +12905,7 @@ For this job:
 - Or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason=<one plain sentence>, details=<technical specifics>. Block only on what you truly can't know (their first-hand notes, a fact only they have, a call with no sensible default); a minor judgment call with an obvious sensible default you make yourself and name in one line of the result. When only the owner can unblock it, also give questions=[{{question:<one short plain question>, options:[<2-4 short choices, only when it is a clear choice>]}}] (at most 3). Each question must make sense on its own to someone who hasn't seen your work: plain words, what it is about and why it matters, no jargon or internal terms, e.g. {{question:'What did you notice when you tried OnePageCRM? A few lines on what you tried and what stood out are enough.'}}. The card shows them with quick picks and an Answer box. No paths, IDs or tool names in reason or questions.''' + owner_details(config) + (f'''
 
 Facts the owner told you earlier that bear on this card (true unless they say otherwise now):
-{facts}''' if facts else '') + (f'''
+{facts}''' if facts else '') + gaps + (f'''
 
 Draft rules from the owner's notes that fit this card (follow them unless their note on this card says otherwise):
 {rules}''' if rules else '') + (f'''
@@ -17536,8 +17546,10 @@ class App(*APP_MIXINS):
                     LOG.error('style context error=%s',type(error).__name__);style=''
                 known=embeddings.settings(self.config)  # what was learned that this card needs, not all of it
                 rules=self.store.facts_for(job['suggestion_id'],'draft',known)
+                try:gaps=self.gap_lines(job['suggestion_id'])  # what isn't known about the people on it (gap_note.py)
+                except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
                 request['message']=preparation_prompt(job,self.store.facts_for(job['suggestion_id'],'fact',known),self.config,'' if style else self.store.draft_edits_text(),
-                                                      rules,style)
+                                                      rules,style,gaps)
                 try:  # how to read the card's own sources (its accounts' notes only)
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
@@ -21284,6 +21296,15 @@ class App(*APP_MIXINS):
             return graph.fleet_marks(db, self.fleet.fleets())
         except (sqlite3.Error, ValueError, TypeError, KeyError, AttributeError):
             return {}
+
+    def gap_lines(self, suggestion_id):
+        """What isn't known about the people on a task, from synced signals only (gap_note.py), for a preparation."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            ids = json.loads(row['event_ids'] or '[]') if row else []
+            found = gap_note.for_card(db, ids, account_services(self.config), lambda e: own_message(e, self.store.owner_user_ids),
+                                      now(), skip_card=suggestion_id) if ids else []
+        return gap_note.prompt_lines(found)
 
     def graph_lines(self, suggestion_id):
         """Who the people on a task are to the owner, and the projects around them, for a preparation."""

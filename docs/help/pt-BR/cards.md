@@ -47,6 +47,8 @@ Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencia
 
 Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização, o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph.
 
+Às vezes uma linha discreta abaixo do texto diz o que não se sabe, como "Último contato há 12 dias por e-mail; nada desde então." Ela só aparece quando o último contato é antigo ou ainda está sem resposta, e cita canais não conectados por onde talvez tenham respondido, como o WhatsApp. Sua Machine prepara com os mesmos fatos, então ela diz o que não sabe em vez de adivinhar.
+
 Um título diz o que precisa ser feito. Ele só muda quando isso muda, como com um novo pedido. Uma tarefa feita mantém o título, com embaixo como ela terminou, como o que foi enviado ou "Feito: Sam assinou na terça".
 
 **Detalhes** mostra a mensagem de onde ela veio (toque para ler a conversa), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado.

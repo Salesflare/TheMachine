@@ -47,6 +47,8 @@ Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigs
 
 Jede Aufgabe beginnt mit ihrem Titel. Die Zeile darunter zeigt, um wen es geht, deren Organisation, das Projekt, Arbeit oder Privat (unter **Alle**) und wann sie kam, dazu ihren Stand, wenn ihre Gruppe ihn nicht schon nennt. Tippe auf einen Namen, um seine Seite im Graph zu öffnen.
 
+Manchmal sagt eine dezente Zeile unter dem Text, was nicht bekannt ist, etwa „Letzter Kontakt vor 12 Tagen per E-Mail; seitdem nichts.“ Sie erscheint nur, wenn der letzte Austausch alt oder noch unbeantwortet ist, und nennt nicht verbundene Kanäle, über die vielleicht eine Antwort kam, etwa WhatsApp. Deine Machine bereitet mit denselben Fakten vor, also sagt sie, was sie nicht weiß, statt zu raten.
+
 Ein Titel sagt, was zu tun ist. Er ändert sich nur, wenn sich das ändert, etwa bei einer neuen Bitte. Eine erledigte Aufgabe behält ihren Titel, darunter steht, wie sie ausging, etwa was rausging oder "Erledigt: Sam hat am Dienstag unterschrieben".
 
 **Details** zeigt die Nachricht, aus der sie stammt (tippe darauf, um den Verlauf zu lesen), deine letzte Notiz und das Ergebnis eines Coding-Agenten. **Chat ›** am Ende dieser Zeile öffnet den Chat. Eine erledigte Aufgabe bleibt kurz: ihr Titel, eine Zeile und was rausging.
