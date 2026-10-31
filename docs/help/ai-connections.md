@@ -1,7 +1,7 @@
 ---
 title: Connect other AIs
 area: connections
-summary: Let Claude, ChatGPT, Cursor, Codex or GBrain read your to-dos and Graph over MCP, each with its own access and expiry.
+summary: Let Claude, ChatGPT, Cursor, Codex or GBrain read your to-dos and Graph over MCP, and with Read & edit make changes you can undo.
 covers: ai-connections, settings:ai
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
@@ -11,7 +11,9 @@ order: 95
 
 Other AIs can connect to your Machine over MCP: Claude, ChatGPT, Cursor, Codex, GBrain and others. They can read your to-dos, promises, team briefs and the people and companies in your Graph.
 
-At most they add a to-do, or a to-do with an email draft. A draft waits in your Machine until you read it and press Send yourself. A connected AI never sends anything and never acts for you. Your Machine's own Do it and agents are not part of this.
+With **Read & edit** they can also add a to-do, or a to-do with an email draft, and change your Graph: save a fact about a person or company, fix their details, fields and tags, or add a line to a person's summary.
+
+Each change shows in **Activity** with **Undo**. They never merge, delete or share records. A draft waits in your Machine until you read it and press Send yourself. A connected AI never sends anything and never acts for you. Your Machine's own Do it and agents are not part of this.
 
 ## Connect one
 
@@ -27,7 +29,7 @@ AIs on a device in your tailnet, like Claude Code or Cursor, can also use your d
 
 The AI sends you to your Machine to sign in. Your Machine shows which AI it is. An AI it can't recognize shows the address it came from: connect only if you just started this yourself.
 
-Pick what it can do, **Read** or **Read & draft**. With both Work and Personal accounts, pick what it can see. Then pick for how long: **1 day**, **7 days**, **30 days** or **1 year**. Press **Connect**, or **Cancel** to send it back with nothing.
+Pick what it can do, **Read** or **Read & edit**. With both Work and Personal accounts, pick what it can see. Then pick for how long: **1 day**, **7 days**, **30 days** or **1 year**. Press **Connect**, or **Cancel** to send it back with nothing.
 
 ## What it sees
 

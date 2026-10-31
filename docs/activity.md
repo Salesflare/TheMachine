@@ -3,8 +3,12 @@
 One list of everything The Machine did for its owner, newest first: Settings, **Activity** (`activity_log.py`,
 `dashboard/settings-activity.js`, `GET /api/activity`). What the owner sees is in [the help article](help/activity.md).
 
-It is read-only. It reads what each part already keeps and adds no step, check or permission to any action. It never
-changes what The Machine or a coding agent may do.
+It reads what each part already keeps and adds no step, check or permission to any action. It never changes what
+The Machine or a coding agent may do.
+
+**Undo.** A line may carry `'undo': {'action', 'id'}`: an owner dashboard action that takes it back, posted with the
+id. The list shows Undo for actions it knows (today only `ai_undo`, an AI's Graph change) and reloads after. The
+source does the undo and its checks; Activity only shows the button.
 
 ## Where each line comes from
 
@@ -50,7 +54,7 @@ Every source returns lines of one shape (`activity_log` docstring):
  'where': the account or app, or None, 'outcome': 'done' | 'refused' | 'failed' | 'undone' | 'pending',
  'status': the outcome in a word or two, 'by': who started it, or None,
  'actor': optional stable id of who did it (an AI connection), 'todo': {'id', 'title'} or None,
- 'detail': an optional second line}
+ 'detail': an optional second line, 'undo': optional {'action', 'id'}}
 ```
 
 `outcome: 'refused'` is what the **Refused or blocked** filter shows: a send a check stopped, a Fleet question a rule

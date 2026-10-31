@@ -17,6 +17,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import ai_access
+import ai_app
 
 spec = importlib.util.spec_from_file_location('ai_access_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -425,6 +426,222 @@ class Calls(Base):
 
 def ai_access_actions():
     return sorted(a.AI_ACTIONS)
+
+
+WORK_PERSON, HOME_PERSON, ORG = 'email:sam@client.example', 'email:alex@home.example', 'org:client.example'
+
+
+class GraphWrites(Base):
+    """Graph changes from a connected AI (Read & edit): facts, details, fields, tags and summary lines, each through
+    the owner module's own path, each a line in Activity with an Undo that puts back exactly what was there, refused
+    once it changed again. Never merges, deletes, or changes sharing or Work and Personal; the area holds."""
+
+    def setUp(self):
+        super().setUp()
+        with self.db() as db:
+            a.crm.ensure(db)
+            for node, kind, name, info in ((WORK_PERSON, 'person', 'Sam Client', {'side': 'work', 'identifiers': [WORK_PERSON]}),
+                                           (HOME_PERSON, 'person', 'Alex Home', {'side': 'personal', 'identifiers': [HOME_PERSON]}),
+                                           (ORG, 'org', 'Client', {'domain': 'client.example'})):
+                db.execute('INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,?,?,?,?,?,?)',
+                           (node, kind, name, 1.0, a.now(), 3, json.dumps(info)))
+            self.budget = a.crm_fields.save_field(db, {'kind': 'person', 'name': 'Budget', 'type': 'number'})['id']
+            a.graph.person_edit(db, WORK_PERSON, {'location': 'Ghent'}, '2026-10-01T00:00:00+00:00')  # the owner's own, before
+            a.crm_fields.tag(db, WORK_PERSON, 'VIP', True, '2026-10-01T00:00:00+00:00')
+
+    def write_id(self):
+        with self.db() as db:
+            return db.execute('SELECT id FROM ai_writes ORDER BY id DESC LIMIT 1').fetchone()[0]
+
+    def line(self):
+        with self.db() as db:
+            return a.activity_log.page(db, self.app.config, kind='ai')['items'][0]
+
+    def undo(self, write_id=None):
+        return self.app.action('ai_undo', {'id': write_id or self.write_id()}, owner_dashboard=True)
+
+    def person_state(self):
+        with self.db() as db:
+            return (a.graph.edits_state(db, WORK_PERSON), a.crm_fields.state(db, WORK_PERSON),
+                    a.person_summary.state(db, WORK_PERSON))
+
+    # ---- save_fact
+
+    def test_a_fact_is_saved_from_the_ai_and_undo_takes_it_out(self):
+        _, tokens = self.signed_in('draft', area='work')
+        error, out = self.tool(tokens['access_token'], 'save_fact', id=WORK_PERSON, text='Prefers a call before 10', kind='preference')
+        self.assertFalse(error, out)
+        with self.db() as db:
+            fact = db.execute('SELECT * FROM facts WHERE id=?', (out['id'],)).fetchone()
+            about = [r[0] for r in db.execute('SELECT node_id FROM fact_about WHERE fact_id=?', (out['id'],))]
+        self.assertEqual((fact['source'], fact['fact_kind'], about), ('ai:Claude', 'preference', [WORK_PERSON]))
+        line = self.line()
+        self.assertEqual((line['what'], line['where'], line['undo']['action']), ('Saved a fact', 'Claude', 'ai_undo'))
+        self.assertEqual(self.undo(line['undo']['id']), {'undone': True})
+        with self.db() as db:
+            self.assertIsNone(db.execute('SELECT 1 FROM facts WHERE id=?', (out['id'],)).fetchone())
+            self.assertIsNone(db.execute('SELECT 1 FROM fact_about WHERE fact_id=?', (out['id'],)).fetchone())
+        line = self.line()
+        self.assertEqual((line['outcome'], line['status']), ('undone', 'Undone'))
+        self.assertNotIn('undo', line)
+        with self.assertRaises(ValueError):
+            self.undo()  # once only
+
+    def test_fact_undo_is_refused_after_the_owner_changed_it(self):
+        _, tokens = self.signed_in('draft')
+        _, out = self.tool(tokens['access_token'], 'save_fact', id=WORK_PERSON, text='Moves to Lisbon in spring', kind='event')
+        self.store.edit_fact(out['id'], 'Moves to Porto in spring')
+        with self.assertRaises(ValueError) as said:
+            self.undo()
+        self.assertIn('changed again', str(said.exception))
+        with self.db() as db:
+            self.assertEqual(db.execute('SELECT text FROM facts WHERE id=?', (out['id'],)).fetchone()[0], 'Moves to Porto in spring')
+
+    # ---- update_record
+
+    def test_details_fields_and_tags_change_and_undo_restores_exactly(self):
+        before = self.person_state()
+        _, tokens = self.signed_in('draft', area='work')
+        error, out = self.tool(tokens['access_token'], 'update_record', id=WORK_PERSON, details={'title': 'CFO'},
+                               fields={'budget': '12000'}, add_tags=['Renewal'], remove_tags=['VIP'])
+        self.assertFalse(error, out)
+        with self.db() as db:
+            self.assertEqual(json.loads(db.execute('SELECT fields FROM person_edits WHERE identifier=?', (WORK_PERSON,)).fetchone()[0]),
+                             {'location': 'Ghent', 'title': 'CFO'})
+            row = a.crm.node_row(db, WORK_PERSON)
+            self.assertEqual(a.crm_fields.tags_for(db, row), ['Renewal'])
+            self.assertEqual([v['value'] for v in a.crm_fields.values_for(db, row) if v['id'] == self.budget], ['12000'])
+        self.assertEqual(self.line()['what'], 'Changed a Graph record')
+        self.undo()
+        self.assertEqual(self.person_state(), before)
+        with self.db() as db:
+            self.assertEqual(json.loads(db.execute('SELECT info FROM graph_nodes WHERE id=?', (WORK_PERSON,)).fetchone()[0])['tags'], ['VIP'])
+
+    def test_an_organizations_details_change_and_undo(self):
+        _, tokens = self.signed_in('draft', area='work')
+        error, out = self.tool(tokens['access_token'], 'update_record', id=ORG, details={'industry': 'Logistics'})
+        self.assertFalse(error, out)
+        with self.db() as db:
+            self.assertEqual(json.loads(db.execute("SELECT fields FROM org_edits WHERE domain='client.example'").fetchone()[0]), {'industry': 'Logistics'})
+        self.undo()
+        with self.db() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM org_edits WHERE domain='client.example'").fetchone())
+
+    def test_record_undo_is_refused_after_a_later_change(self):
+        _, tokens = self.signed_in('draft')
+        self.tool(tokens['access_token'], 'update_record', id=WORK_PERSON, details={'title': 'CFO'}, add_tags=['Renewal'])
+        with self.db() as db:
+            a.crm_fields.tag(db, WORK_PERSON, 'Board', True)  # the owner, on the page
+        with self.assertRaises(ValueError) as said:
+            self.undo()
+        self.assertIn('changed again', str(said.exception))
+        with self.db() as db:
+            self.assertEqual(sorted(a.crm_fields.tags_for(db, a.crm.node_row(db, WORK_PERSON))), ['Board', 'Renewal', 'VIP'])
+            self.assertIn('CFO', db.execute('SELECT fields FROM person_edits WHERE identifier=?', (WORK_PERSON,)).fetchone()[0])
+
+    def test_never_work_or_personal_name_merge_delete_or_sharing(self):
+        _, tokens = self.signed_in('draft')
+        before = self.person_state()
+        for details in ({'side': 'personal'}, {'name': 'Someone else'}, {'owner': 'x'}):
+            error, text = self.tool(tokens['access_token'], 'update_record', id=WORK_PERSON, details=details)
+            self.assertTrue(error, details)
+            self.assertIn("Can't change", text)
+        self.assertEqual(self.person_state(), before)
+        self.assertFalse([n for n in ai_access.TOOLS if any(w in n for w in ('merge', 'delete', 'share', 'side', 'area', 'remove_'))])
+        props = ai_access.TOOLS['update_record'][2]['properties']
+        self.assertEqual(set(props), {'id', 'details', 'fields', 'add_tags', 'remove_tags'})
+        self.assertEqual(ai_app.AI_DETAILS['person'], ('title', 'location', 'linkedin_url', 'notes'))
+        with self.db() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM ai_writes').fetchone()[0], 0)
+
+    # ---- add_summary_line
+
+    def test_a_summary_line_is_an_owners_edit_a_rewrite_keeps_and_undo_restores(self):
+        with self.db() as db:
+            a.person_summary.save(db, WORK_PERSON, [{'kind': 'now', 'text': 'Waiting on the contract', 'sources': ['E1']}], a.now(), {'w': 'work'})
+            kept = a.person_summary.state(db, WORK_PERSON)
+        _, tokens = self.signed_in('draft', area='work')
+        error, out = self.tool(tokens['access_token'], 'add_summary_line', id=WORK_PERSON, text='Wants the renewal signed by December')
+        self.assertFalse(error, out)
+        with self.db() as db:
+            view = a.person_summary.view(db, WORK_PERSON)
+        self.assertEqual(view['by'], 'owner')
+        self.assertEqual([(x['text'], x.get('by')) for x in view['lines']],
+                         [('Waiting on the contract', None), ('Wants the renewal signed by December', 'Claude')])
+        self.undo()
+        with self.db() as db:
+            self.assertEqual(a.person_summary.state(db, WORK_PERSON), kept)
+            # and a rewrite after an AI's line keeps it: the new lines are a proposal
+            self.tool(tokens['access_token'], 'add_summary_line', id=WORK_PERSON, text='Wants the renewal signed by December')
+            self.assertEqual(a.person_summary.save(db, WORK_PERSON, [{'kind': 'now', 'text': 'Signed', 'sources': ['E1']}], a.now(), {}), 'proposed')
+        with self.assertRaises(ValueError):  # the rewrite came after it
+            self.undo()
+
+    def test_summary_undo_is_refused_after_the_owner_edited_it(self):
+        _, tokens = self.signed_in('draft')
+        self.tool(tokens['access_token'], 'add_summary_line', id=WORK_PERSON, text='Met at the trade fair')
+        self.app.action('graph_summary', {'node_id': WORK_PERSON, 'op': 'edit', 'lines': ['Met at the fair in Ghent']}, owner_dashboard=True)
+        with self.assertRaises(ValueError):
+            self.undo()
+        with self.db() as db:
+            self.assertEqual([x['text'] for x in a.person_summary.view(db, WORK_PERSON)['lines']], ['Met at the fair in Ghent'])
+
+    # ---- limits
+
+    def test_the_area_holds_for_every_write_and_refusals_are_logged(self):
+        before = self.person_state()
+        _, tokens = self.signed_in('draft', area='work')
+        for tool, args in (('save_fact', {'text': 'Likes long walks'}), ('update_record', {'details': {'title': 'Chef'}}),
+                           ('add_summary_line', {'text': 'Lives nearby'})):
+            error, text = self.tool(tokens['access_token'], tool, id=HOME_PERSON, **args)
+            self.assertTrue(error)
+            self.assertEqual(text, 'Not in the Graph here')
+            last = self.activity()[-1]
+            self.assertEqual((last['tool'], last['outcome']), (tool, 'refused'))
+            self.assertIn('outside', last['detail'])
+        _, tokens = self.signed_in('draft', area='personal')
+        for node in (WORK_PERSON, ORG):
+            error, _ = self.tool(tokens['access_token'], 'update_record', id=node, details={'location': 'Paris'} if node == ORG else {'title': 'X'})
+            self.assertTrue(error)
+            self.assertEqual(self.activity()[-1]['outcome'], 'refused')
+        error, text = self.tool(tokens['access_token'], 'save_fact', id='email:nobody@nowhere.example', text='Is not there at all')
+        self.assertEqual((error, text, self.activity()[-1]['outcome']), (True, 'Not in the Graph here', 'error'))
+        with self.db() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM ai_writes').fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT count(*) FROM facts WHERE source IS NOT NULL").fetchone()[0], 0)
+            self.assertIsNone(a.person_summary.view(db, HOME_PERSON))
+        self.assertEqual(self.person_state(), before)
+
+    def test_a_read_connection_cannot_write_and_it_is_logged(self):
+        _, tokens = self.signed_in('read')
+        for tool, args in (('save_fact', {'text': 'Prefers email'}), ('update_record', {'add_tags': ['X']}),
+                           ('add_summary_line', {'text': 'A line'})):
+            error, text = self.tool(tokens['access_token'], tool, id=WORK_PERSON, **args)
+            self.assertTrue(error)
+            self.assertIn('can only read', text)
+            self.assertEqual((self.activity()[-1]['tool'], self.activity()[-1]['outcome']), (tool, 'refused'))
+        with self.db() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM ai_writes').fetchone()[0], 0)
+
+    def test_graph_changes_are_limited_per_day(self):
+        _, tokens = self.signed_in('draft')
+        with patch.object(ai_access, 'WRITES_PER_DAY', 2):
+            self.assertFalse(self.tool(tokens['access_token'], 'update_record', id=WORK_PERSON, add_tags=['One'])[0])
+            self.assertFalse(self.tool(tokens['access_token'], 'update_record', id=WORK_PERSON, add_tags=['Two'])[0])
+            error, text = self.tool(tokens['access_token'], 'update_record', id=WORK_PERSON, add_tags=['Three'])
+            self.assertTrue(error)
+            self.assertIn('Graph changes', text)
+            self.assertFalse(self.tool(tokens['access_token'], 'create_todo', text='To-dos have their own cap')[0])
+
+    def test_only_the_owners_dashboard_undoes(self):
+        _, tokens = self.signed_in('draft')
+        self.tool(tokens['access_token'], 'update_record', id=WORK_PERSON, add_tags=['Renewal'])
+        self.assertIn('ai_undo', a.OWNER_ACTIONS)
+        self.assertIn('ai_undo', a.DASHBOARD_ACTIONS)
+        with self.assertRaises(ValueError):
+            self.app.action('ai_undo', {'id': self.write_id()}, owner_dashboard=False)
+        status, _, reply = self.call(tokens['access_token'], params={'name': 'ai_undo', 'arguments': {'id': self.write_id()}})
+        self.assertIn('error', reply)  # not a tool: an AI can't undo, or redo, anything itself
 
 
 class Http(Base):

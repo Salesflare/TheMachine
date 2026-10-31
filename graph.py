@@ -2505,8 +2505,9 @@ def open_between(db, node_id, limit=6, skip_card=None):
         marks = ','.join('?' for _ in ids)
         today = dt.datetime.now(dt.timezone.utc).date().isoformat()
         out['known'] = [{'id': r['id'], 'text': r['text'], **({'fact_kind': r['fact_kind']} if r['fact_kind'] else {}),
-                         **({'valid_until': r['valid_until']} if r['valid_until'] else {})} for r in db.execute(
-            f"SELECT f.id,f.text,f.fact_kind,f.valid_until FROM facts f WHERE f.removed_at IS NULL AND f.kind='fact' "
+                         **({'valid_until': r['valid_until']} if r['valid_until'] else {}), **({'source': r['source']} if r['source'] else {})}
+                        for r in db.execute(
+            f"SELECT f.id,f.text,f.fact_kind,f.valid_until,{'f.source' if 'source' in {c[1] for c in db.execute('PRAGMA table_info(facts)')} else 'NULL source'} FROM facts f WHERE f.removed_at IS NULL AND f.kind='fact' "
             "AND (f.valid_until IS NULL OR f.valid_until>=?) "
             f"AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN ({marks})) "
             f"AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN ({marks})) "
@@ -3290,6 +3291,34 @@ def person_edit(db, node_id, fields, now):
         else:
             db.execute('DELETE FROM person_edits WHERE identifier=?', (identifier,))
     return {'node_id': node_id, 'edited': sorted(mine)}
+
+
+def edits_state(db, node_id):
+    """The owner's own details on a person or organization as kept now (person_edits over the person's identities, or
+    the organization's org_edits row), for an exact Undo of a connected AI's change (ai_app.py): edits_restore puts
+    this back as it was."""
+    row = db.execute("SELECT kind,info FROM graph_nodes WHERE id=? AND kind IN ('person','org')", (str(node_id or ''),)).fetchone()
+    if not row:
+        raise ValueError('Edit a person or organization from graph results')
+    if row['kind'] == 'org':
+        domain = org_domain(db, node_id)
+        kept = db.execute('SELECT fields,updated_at FROM org_edits WHERE domain=?', (domain,)).fetchone()
+        return {'kind': 'org', 'domain': domain, 'rows': {domain: [kept['fields'], kept['updated_at']]} if kept else {}}
+    ids = sorted(set(json.loads(row['info']).get('identifiers') or ()) | {str(node_id)})
+    rows = db.execute(f"SELECT identifier,fields,updated_at FROM person_edits WHERE identifier IN ({','.join('?' for _ in ids)})", ids)
+    return {'kind': 'person', 'ids': ids, 'rows': {r['identifier']: [r['fields'], r['updated_at']] for r in rows}}
+
+
+def edits_restore(db, state):
+    """Put the owner's details back exactly as edits_state found them."""
+    if state['kind'] == 'org':
+        db.execute('DELETE FROM org_edits WHERE domain=?', (state['domain'],))
+        for domain, (fields, at) in state['rows'].items():
+            db.execute('INSERT INTO org_edits(domain,fields,updated_at) VALUES(?,?,?)', (domain, fields, at))
+        return
+    db.executemany('DELETE FROM person_edits WHERE identifier=?', [(i,) for i in state['ids']])
+    db.executemany('INSERT INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?)',
+                   [(i, fields, at) for i, (fields, at) in state['rows'].items()])
 
 
 # Writing labels and merges.

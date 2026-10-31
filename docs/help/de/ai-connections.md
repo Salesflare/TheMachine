@@ -11,7 +11,9 @@ order: 95
 
 Andere KIs können sich über MCP mit deiner Machine verbinden: Claude, ChatGPT, Cursor, Codex, GBrain und weitere. Sie können deine Aufgaben, Versprechen, Team-Briefings und die Personen und Firmen in deinem Graph lesen.
 
-Höchstens fügen sie eine Aufgabe hinzu, oder eine Aufgabe mit einem E-Mail-Entwurf. Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden** drückst. Eine verbundene KI sendet nie etwas und handelt nie für dich. Do it und die Agents deiner Machine gehören nicht dazu.
+Mit **Lesen und Bearbeiten** können sie auch eine Aufgabe hinzufügen, oder eine Aufgabe mit einem E-Mail-Entwurf, und deinen Graph ändern: einen Fakt zu einer Person oder Firma speichern, Details, Felder und Tags korrigieren oder eine Zeile zur Zusammenfassung einer Person hinzufügen.
+
+Jede Änderung steht unter **Aktivität** mit **Rückgängig**. Sie führen nie Einträge zusammen, löschen oder teilen sie nie. Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden** drückst. Eine verbundene KI sendet nie etwas und handelt nie für dich. Do it und die Agents deiner Machine gehören nicht dazu.
 
 ## Eine verbinden
 
@@ -27,7 +29,7 @@ KIs auf einem Gerät in deinem Tailnet, etwa Claude Code oder Cursor, können au
 
 Die KI schickt dich zur Anmeldung zu deiner Machine. Deine Machine zeigt, welche KI es ist. Eine KI, die sie nicht erkennt, zeigt die Adresse, von der sie kommt: Verbinde nur, wenn du das gerade selbst gestartet hast.
 
-Wähle, was sie darf, **Lesen** oder **Lesen und Entwürfe**. Mit Arbeits- und Privatkonten wählst du auch, was sie sehen darf. Dann wähle, wie lange: **1 Tag**, **7 Tage**, **30 Tage** oder **1 Jahr**. Drücke **Verbinden**, oder **Abbrechen**, um sie ohne etwas zurückzuschicken.
+Wähle, was sie darf, **Lesen** oder **Lesen und Bearbeiten**. Mit Arbeits- und Privatkonten wählst du auch, was sie sehen darf. Dann wähle, wie lange: **1 Tag**, **7 Tage**, **30 Tage** oder **1 Jahr**. Drücke **Verbinden**, oder **Abbrechen**, um sie ohne etwas zurückzuschicken.
 
 ## Was sie sieht
 

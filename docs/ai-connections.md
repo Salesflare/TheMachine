@@ -1,8 +1,9 @@
 # Connected AIs (MCP)
 
 Other AIs (Claude, ChatGPT, Cursor, Codex, GBrain and anything else that speaks MCP) can connect to a Machine. They can
-read to-dos, team briefs, people and companies in the Graph, and promises. At most they add a to-do, or a to-do with an
-email draft that waits for the owner. They never send and never act. This page is the design. What the owner sees is
+read to-dos, team briefs, people and companies in the Graph, and promises. With Read & edit they also add a to-do, or
+a to-do with an email draft that waits for the owner, and make Graph changes the owner can undo. They never send and
+never act. This page is the design. What the owner sees is
 in [the help article](help/ai-connections.md).
 
 This is about AIs from outside only. The Machine's own agent, Do it, coding agents and their permissions are not
@@ -18,13 +19,30 @@ touched by any of it.
 | `search_graph` | Read | People, organizations and projects in the Graph that match a name, email or company |
 | `get_graph_record` | Read | One person, organization or project: role, organization, closeness, last contact, open to-dos, promises |
 | `get_team_brief` | Read | The latest team brief of each Work Fleet, as the Fleet tab shows it |
-| `create_todo` | Read & draft | A new to-do with the AI's text, marked as coming from that AI |
-| `create_draft` | Read & draft | A new to-do with an email draft (to, subject, text) from one of the owner's mail accounts, waiting for the owner's Send |
+| `create_todo` | Read & edit | A new to-do with the AI's text, marked as coming from that AI |
+| `create_draft` | Read & edit | A new to-do with an email draft (to, subject, text) from one of the owner's mail accounts, waiting for the owner's Send |
+| `save_fact` | Read & edit | A fact about a person or organization (`id`, `text`, `kind`: fact, preference, commitment or event, optional `until`), through `Store.remember_fact`, with source "AI: <name>" |
+| `update_record` | Read & edit | A person's or organization's details (`details`: title, location, linkedin_url, notes; an organization's own fields), CRM fields by name (`fields`) and tags (`add_tags`, `remove_tags`), through the dashboard's own paths (`graph.person_edit`/`org_edit`, `crm_fields.set_value`/`tag`) |
+| `add_summary_line` | Read & edit | A line on a person's summary (`id`, `text`), kept like an owner's edit, so the summary writer keeps it (`person_summary.add_line`) |
 
-Nothing else: no send, no Do it, no calendar write, no change to an existing to-do, no Graph edit. A to-do an AI adds
+Nothing else: no send, no Do it, no calendar write, no change to an existing to-do. In the Graph never a merge, a
+delete, a name, an organization or role, a Work or Personal side, sharing or an owner: those tools do not exist and
+`update_record` refuses those keys. A to-do an AI adds
 is marked reviewed, like a Fleet request (`App.fleet_card`): no review or preparation reads it by itself, and the
 owner sees "From Claude" on it. A draft goes out only when the owner taps Send on it, as any draft. At most 20 new
-to-dos a day per connection.
+to-dos and 50 Graph changes a day per connection.
+
+### Graph changes and Undo
+
+A Graph change applies at once and is a line in Activity (kind `ai`, the AI's name as `where`) with **Undo**. Each
+change keeps the state of what it touched before and after (`ai_writes.changes`, sealed at rest like the activity
+detail): the fact, the record's edits (`graph.edits_state`), its CRM values and tags (`crm_fields.state`), or the
+summary (`person_summary.state`). Undo (`ai_undo`, an owner dashboard action, never an MCP tool) puts the before
+state back exactly, through each owner module's `restore`. When the current state differs from the stored after
+state, someone changed it since, and Undo is refused with a message to change it on the page instead. A change the
+area does not reach (a Personal person for a Work connection, a teammate's record, the owner) is refused and logged,
+as is any write from a Read connection. A fact from an AI shows "AI: <name>" in What I've learned; a summary line
+shows it too.
 
 Every tool is listed to every connection. A tool above its level is refused with what to change and where, and the
 refusal is logged; the AI cannot raise its own level.
@@ -33,7 +51,7 @@ refusal is logged; the AI cannot raise its own level.
 
 Each AI that connects is one connection, with:
 
-- **Access**: Off, Read, or Read & draft. Changed in Settings at any time; the next call uses it, nothing reconnects.
+- **Access**: Off, Read, or Read & edit (stored as `draft`, its old name). Changed in Settings at any time; the next call uses it, nothing reconnects.
 - **Area**: Work, Personal or both (the choice shows only when the Machine has both). Work and Personal follow the
   accounts, as on to-dos (`suggestion_scope`): to-dos and promises by their accounts, people by their side in the
   Graph, organizations and projects only with Work, team briefs only with Work.
