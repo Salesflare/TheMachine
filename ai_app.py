@@ -742,8 +742,16 @@ class AiReachSide:
         return self.app.ai_reach().get('name')
 
     def token(self):
-        found = getattr(self.app, 'fleet', None)
-        return getattr(getattr(found, 'relay', None), 'token', None)
+        """The Machine's device token as text. The Fleet's relay is the sealing wrapper (network.Sealing) around the
+        NetworkClient, whose token is a callable (the credential); unwrap and call it, or None."""
+        relay = getattr(getattr(self.app, 'fleet', None), 'relay', None)
+        found = getattr(relay, 'token', None) or getattr(getattr(relay, 'inner', None), 'token', None)
+        if callable(found):
+            try:
+                found = found()
+            except Exception:  # noqa: BLE001 - no credential right now: the loop waits and asks again
+                return None
+        return found if isinstance(found, str) and found else None
 
     def handle(self, method, path, headers, body, host):
         return self.app.ai_http(method, path, headers, body, host)
