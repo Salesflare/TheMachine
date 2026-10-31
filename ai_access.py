@@ -28,6 +28,7 @@ import time
 import urllib.parse
 
 import activity_log
+import fleet
 import i18n
 
 LEVELS = ('off', 'read', 'draft')
@@ -56,6 +57,11 @@ AUTHORIZE = '/oauth/authorize'
 KNOWN = (('claude.ai', 'Claude'), ('claude.com', 'Claude'), ('chatgpt.com', 'ChatGPT'), ('chat.openai.com', 'ChatGPT'),
          ('openai.com', 'ChatGPT'), ('gbrain.io', 'GBrain'), ('cursor.com', 'Cursor'))
 KNOWN_SCHEMES = (('cursor', 'Cursor'), ('vscode', 'VS Code'))
+# The official app (docs/ai-connections.md, Two ways in): the account signs the owner in at the shared address and then
+# connects to this Machine as an ordinary client, sending the owner back to OFFICIAL_CALLBACK + kind. The account checked
+# claude and chatgpt by the AI's own redirect; other is any AI it couldn't check, so it shows by its own name, unverified.
+OFFICIAL_CALLBACK = fleet.CONTROL + '/mcp/connect/callback/'
+OFFICIAL_KINDS = {'claude': 'Claude', 'chatgpt': 'ChatGPT', 'other': None}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS ai_clients(id TEXT PRIMARY KEY,name TEXT NOT NULL,redirect_uris TEXT NOT NULL,secret_hash TEXT,
@@ -271,8 +277,20 @@ def client(db, client_id):
     return {**dict(row), 'redirect_uris': json.loads(row['redirect_uris'])} if row else None
 
 
+def official(redirect_uri):
+    """The official app's kind (claude, chatgpt or other) when redirect_uri is its callback on the account, else None."""
+    uri = str(redirect_uri or '')
+    kind = uri[len(OFFICIAL_CALLBACK):] if uri.startswith(OFFICIAL_CALLBACK) else ''
+    return kind if kind in OFFICIAL_KINDS else None
+
+
 def label(found, redirect_uri):
-    """(name to show, verified, where it sends back): a known AI by its redirect, else the name it gave, unverified."""
+    """(name to show, verified, where it sends back): a known AI by its redirect, else the name it gave, unverified.
+    Through the official app: Claude or ChatGPT as the account checked them, else the name given, unverified."""
+    kind = official(redirect_uri)
+    if kind:
+        name = OFFICIAL_KINDS[kind]
+        return (name, True, name) if name else (found['name'], False, urllib.parse.urlsplit(OFFICIAL_CALLBACK).hostname)
     parts = urllib.parse.urlsplit(redirect_uri or '')
     host = (parts.hostname or '').lower()
     for domain, name in KNOWN:
@@ -486,10 +504,14 @@ def bearer(db, header):
 
 
 def connections(db):
-    rows = db.execute('SELECT * FROM ai_connections ORDER BY created_at DESC').fetchall()
+    """Settings, AIs: each connection. official: its AI connected through the official app (its client registered
+    the account's callback, OFFICIAL_CALLBACK)."""
+    rows = db.execute('SELECT c.*,k.redirect_uris FROM ai_connections c LEFT JOIN ai_clients k ON k.id=c.client_id '
+                      'ORDER BY c.created_at DESC').fetchall()
     at = stamp()
     return [{'id': r['id'], 'name': r['name'], 'kind': r['kind'], 'level': r['level'], 'area': r['area'], 'expires_at': r['expires_at'],
              'expired': r['expires_at'] <= at, 'created_at': r['created_at'], 'used_at': r['used_at'], 'messages': bool(r['messages']),
+             'official': r['kind'] == 'oauth' and any(official(u) for u in json.loads(r['redirect_uris'] or '[]')),
              'calls': db.execute("SELECT count(*) FROM ai_activity WHERE connection_id=? AND tool NOT IN ('connect','settings')", (r['id'],)).fetchone()[0],
              'refused': db.execute("SELECT count(*) FROM ai_activity WHERE connection_id=? AND outcome='refused'", (r['id'],)).fetchone()[0]}
             for r in rows]

@@ -526,5 +526,45 @@ class WithoutCryptography(Base):
         self.assertIsNone(self.app.ai_reach_start(threading.Event()))
 
 
+class SharedAddress(Base):
+    """The official app's shared address shows when the account can reach this Machine at its own address."""
+
+    def app(self, answer):
+        app = object.__new__(a.App)
+        app.store = a.Store(self.config['database'])
+        app.config, app.config_path, app.stop = self.config, None, threading.Event()
+        app.fleet = object.__new__(fleet.Fleet)
+        app.fleet.relay = type('Relay', (), {'call': lambda *args, **kwargs: answer})()
+        return app
+
+    def test_self_hosted_once_its_certificate_is_ready(self):
+        app = self.app({'username': 'pat', 'hosted': False})
+        with patch.object(ai_reach, 'AVAILABLE', True):
+            for state, shared in (('getting', None), ('failed', None), ('refused', None), ('ready', ai_app.SHARED_ADDRESS)):
+                app.ai_reach_loop = types.SimpleNamespace(state=state)
+                reach = app.ai_reach()
+                self.assertEqual((reach['shared'], reach['address']), (shared, f'https://{HOST}/mcp'), state)
+        self.assertEqual(ai_app.SHARED_ADDRESS, 'https://mcp.themachine.computer/mcp')
+        with patch.object(ai_reach, 'AVAILABLE', False):
+            self.assertIsNone(app.ai_reach()['shared'])
+
+    def test_not_without_a_name_of_its_own_or_a_pairing(self):
+        app = self.app({'username': 'pat', 'hosted': True})  # the account's name is its hosted Machine's
+        app.ai_reach_loop = types.SimpleNamespace(state='ready')
+        self.assertIsNone(app.ai_reach()['shared'])
+        app = self.app({'username': '', 'hosted': False})
+        app.ai_reach_loop = types.SimpleNamespace(state='ready')
+        self.assertIsNone(app.ai_reach()['shared'])
+        app.fleet = None
+        self.assertIsNone(app.ai_reach()['shared'])
+
+    def test_hosted_with_a_name(self):
+        app = self.app({})
+        self.config.update(manage_url='https://app.themachine.computer/setup', dashboard_host='pat.themachine.computer')
+        self.assertEqual(app.ai_reach()['shared'], ai_app.SHARED_ADDRESS)
+        self.config['dashboard_host'] = ''
+        self.assertIsNone(app.ai_reach()['shared'])
+
+
 if __name__ == '__main__':
     unittest.main()

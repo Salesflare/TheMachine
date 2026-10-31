@@ -19,7 +19,9 @@ Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden**
 
 ## Eine verbinden
 
-Öffne **Einstellungen**, **KIs**. Oben steht die Adresse deiner Machine für KIs, `https://<dein Name>.mcp.themachine.computer/mcp`, mit **Kopieren**. Bei einer Machine auf deinem eigenen Computer tippst du zuerst auf **Adresse holen**. Eine Seite in deinem Konto öffnet sich: Prüfe, ob sie denselben Code zeigt, bestätige und wähle einen Namen. Deine Machine verbindet sich selbst, ohne Neustart.
+Öffne **Einstellungen**, **KIs**. Es gibt zwei Wege. Zuerst kommt **Offizielle App**: eine Adresse für jede Machine, `https://mcp.themachine.computer/mcp`, mit **Kopieren**. Darunter steht deine **Private Adresse (Ende-zu-Ende)**, `https://<dein Name>.mcp.themachine.computer/mcp`.
+
+Bei einer Machine auf deinem eigenen Computer tippst du zuerst auf **Adresse holen**. Eine Seite in deinem Konto öffnet sich: Prüfe, ob sie denselben Code zeigt, bestätige und wähle einen Namen. Deine Machine verbindet sich selbst, ohne Neustart. Beide Wege brauchen das.
 
 Danach holt sie sich ein eigenes Zertifikat für die Adresse. Das dauert ein paar Minuten und braucht das Paket `cryptography` für Python.
 
@@ -27,11 +29,21 @@ Danach holt sie sich ein eigenes Zertifikat für die Adresse. Das dauert ein paa
 
 Öffne in Claude Customize, Connectors, tippe auf + Add und dann auf Add custom connector. Nenne ihn The Machine, füge die Adresse ein, tippe auf Continue und dann auf Add. Bei Team und Enterprise fügt ein Owner ihn in Organization settings hinzu.
 
+Mit der offiziellen App bittet dich die KI, dich mit deinem The Machine-Konto anzumelden. Wähle diese Machine, wenn du mehrere hast, und gib die KI dann auf der eigenen Seite deiner Machine frei. Mit der privaten Adresse kommt die KI direkt zu deiner Machine.
+
 KIs auf einem Gerät in deinem Tailnet, etwa Claude Code oder Cursor, können auch die Adresse deines Dashboards mit `/mcp` nutzen. **Trennen** nimmt eine Machine auf deinem eigenen Computer wieder aus deinem Konto.
 
-Die KI schickt dich zur Anmeldung zu deiner Machine. Deine Machine zeigt, welche KI es ist. Eine KI, die sie nicht erkennt, zeigt die Adresse, von der sie kommt: Verbinde nur, wenn du das gerade selbst gestartet hast.
+Deine Machine zeigt, welche KI es ist. Eine KI, die sie nicht erkennt, zeigt die Adresse, von der sie kommt: Verbinde nur, wenn du das gerade selbst gestartet hast.
 
 Wähle, was sie darf, **Lesen** oder **Lesen und Bearbeiten**. Mit Arbeits- und Privatkonten wählst du auch, was sie sehen darf. Dann wähle, wie lange: **1 Tag**, **7 Tage**, **30 Tage** oder **1 Jahr**. Drücke **Verbinden**, oder **Abbrechen**, um sie ohne etwas zurückzuschicken.
+
+## Offizielle App oder private Adresse
+
+Die offizielle App ist der einfache Weg: eine Adresse für alle, und dein Konto findet deine Machine. Die Cloud leitet die Anfragen unterwegs weiter, speichert aber nichts.
+
+Mit deiner privaten Adresse ist alles bis zu deiner Machine verschlüsselt. Die Cloud reicht es nur weiter und kann es nicht lesen.
+
+So oder so entscheidet deine Machine. Nur eine KI, die du auf ihrer Seite freigegeben hast, kommt hinein, mit dem Zugriff, den du gewählt hast. In **Einstellungen**, **KIs** zeigt eine KI, die über die offizielle App kam, **Offizielle App**.
 
 ## Was sie sieht
 
