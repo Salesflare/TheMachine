@@ -391,6 +391,9 @@ def add_line(db, node_id, text, side=None, by=None, current=None):
     return {'added': True}
 
 
+COLUMNS = ('node_id', 'lines', 'by', 'written_at', 'evidence_at', 'proposal', 'proposed_at', 'edited_at')  # restore(): fixed, never from data
+
+
 def state(db, node_id):
     """A person's summary rows as kept now (under each of their identifiers), for an exact Undo (ai_app.py)."""
     ensure(db)
@@ -402,8 +405,8 @@ def state(db, node_id):
 def restore(db, kept):
     """Put a person's summary back exactly as state() found it."""
     db.executemany('DELETE FROM person_summaries WHERE node_id=?', [(i,) for i in kept['ids']])
-    for row in kept['rows']:
-        db.execute(f"INSERT INTO person_summaries({','.join(row)}) VALUES({','.join('?' for _ in row)})", tuple(row.values()))
+    db.executemany('INSERT INTO person_summaries(node_id,lines,by,written_at,evidence_at,proposal,proposed_at,edited_at) '
+                   'VALUES(?,?,?,?,?,?,?,?)', [tuple(row.get(c) for c in COLUMNS) for row in kept['rows']])
 
 
 def use_proposal(db, node_id, current=None):
