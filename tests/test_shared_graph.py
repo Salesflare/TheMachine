@@ -1280,6 +1280,41 @@ class SharedGraph(unittest.TestCase):
         self.assertIn(BODY, self.received(self.mem))  # Olive started again: it goes again, from the start
         self.assertIn('One more order', self.received(self.mem))
 
+    def test_taking_a_thread_back_goes_first_and_never_waits_behind_new_shares(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        spent = [[int(time.time() // 60), sg.PER_HOUR]]
+        self.own.set_meta('graph_puts', spent)  # new shares spent this hour's budget
+        self.assertEqual(self.own._budget(), 0)
+        self.assertEqual(self.own._budget(gone=True), sg.GONE_HOUR)
+        with self.own.store.connect() as db:
+            sg.set_hand(db, self.event_id(self.own, 'work-1'), 'private')
+        self.own.set_meta('graph_gone_puts', [[int(time.time() // 60), sg.GONE_HOUR]])  # and taking back spent its own
+        self.own.graph_round(force=True)
+        self.assertEqual([h for h in self.mail_puts(self.own) if not self.net.blobs[h['id']]['ct']], [])
+        self.own.set_meta('graph_gone_puts', [])  # an hour later; new shares still out of budget
+        self.own.graph_round(force=True)
+        gone = [h for h in self.mail_puts(self.own) if not self.net.blobs[h['id']]['ct']]
+        self.assertEqual(len(gone), 1)
+        self.assertEqual(self.own._budget(gone=True), sg.GONE_HOUR - 1)  # counted on its own
+        self.assertEqual(self.own.meta('graph_puts'), spent)
+        for box in (self.adm, self.mem):
+            box.graph_round(force=True)
+        self.assertNotIn(BODY, self.received(self.mem))
+        self.assertLess(sg.PER_HOUR, 1200)  # under the Network's own limits (the cloud's fleet_graph.py)
+        self.assertLess(sg.GONE_HOUR, 1200)
+        self.assertLess(sg.PER_DAY, 20000)
+        self.assertLess(sg.GONE_DAY, 20000)
+
+    def test_put_counts_from_before_still_count(self):
+        stamp = time.time()
+        self.own.set_meta('graph_puts', [stamp - 10, stamp - 7200, stamp - 90000])  # times, as a Machine from before kept them
+        self.assertEqual(self.own._budget(), sg.PER_HOUR - 1)
+        self.own._spent()
+        self.assertEqual(self.own._budget(), sg.PER_HOUR - 2)
+        self.assertEqual(sum(n for _, n in self.own.meta('graph_puts')), 3)  # the day-old one dropped
+
     def test_an_unshared_thread_is_never_passed_on_from_an_old_copy(self):
         self.olive_mail()
         self.rounds()

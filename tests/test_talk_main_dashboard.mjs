@@ -111,9 +111,14 @@ try{
   // Another page: the bar floats there, with End; Talk in the sidebar goes back to the view (it doesn't end)
   await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());await live(dockBar);
   assert.notEqual(await page.evaluate(()=>location.hash),'#talk');
-  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));await page.waitForTimeout(200);
-  const gap=await page.evaluate(()=>{const cards=[...document.querySelectorAll('#inbox .card')].filter(c=>c.checkVisibility()),dock=document.querySelector('#talk-dock').getBoundingClientRect();
-   return [cards.at(-1),document.querySelector('.site-footer')].filter(Boolean).map(x=>dock.top-x.getBoundingClientRect().bottom)});
+  // Scrolled to the end once the page made room for the bar (a busy CI runner lays it out late): polled, not one fixed wait
+  let gap=[];
+  for(let i=0;i<25;i++){
+   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));await page.waitForTimeout(200);
+   gap=await page.evaluate(()=>{const cards=[...document.querySelectorAll('#inbox .card')].filter(c=>c.checkVisibility()),dock=document.querySelector('#talk-dock').getBoundingClientRect();
+    return [cards.at(-1),document.querySelector('.site-footer')].filter(Boolean).map(x=>dock.top-x.getBoundingClientRect().bottom)});
+   if(gap.every(g=>g>=12))break;
+  }
   for(const g of gap)assert.ok(g>=12,`the page ends ${g}px above the floating bar, under it`);
   await shot('m1b-talk-floating-scrolled');
   if(phone)await page.evaluate(()=>drawerOpen());
@@ -266,7 +271,8 @@ try{
 
   // Its own limit, on another page: a warning a minute before 30 minutes, then it ends
   await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());await live(dockBar);
-  await page.evaluate(()=>{window.__skew=1745000});
+  // 29:05 into this session, however long the steps above took on a busy runner
+  await page.evaluate(()=>{window.__skew=0;window.__skew=talk.t0+1745000-Date.now()});
   await page.waitForFunction(()=>document.querySelector('#talk-dock .talk-live.near'));
   await shot('m3-one-minute-left');
   await page.evaluate(()=>{window.__skew=1801000});

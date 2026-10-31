@@ -82,7 +82,7 @@ try{
   await page.locator('#task-'+P1+' .card-foot a.card-chat-link').click();const input=page.locator('#chat-input');await input.waitFor();
   const before=sent('card_repeat').length;await input.fill('repeat this every month');await input.press('Enter');
   await page.waitForFunction(n=>true,before);await page.getByText('Repeats monthly on day 2.').first().waitFor();
-  assert.equal(sent('card_repeat').at(-1).words,'repeat this every month');assert.deepEqual(posts.filter(p=>p.action!=='card_repeat'&&JSON.stringify(p).includes('every month')),[],'not sent on as a chat message');assert.equal(await input.inputValue(),'');
+  assert.equal(sent('card_repeat').at(-1).words,'repeat this every month');assert.deepEqual(posts.filter(p=>p.action!=='card_repeat'&&JSON.stringify(p).includes('every month')),[],'not sent on as a chat message');await page.waitForFunction(()=>document.querySelector('#chat-input').value==='',null,{timeout:5000}).catch(()=>{});assert.equal(await input.inputValue(),'');
   await context.close();
  }
  assert.deepEqual(errors,[]);
