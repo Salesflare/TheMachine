@@ -106,10 +106,31 @@ the owner approving that AI on the Machine's own consent page.
 
 **On its own host, with TLS passthrough.** `*.mcp.themachine.computer` goes to a router in the cloud that forwards
 the encrypted connection by its name (SNI) and never ends TLS: the Machine holds the certificate and key for its name
-and terminates TLS itself, so the cloud never sees what an AI and the Machine say. A hosted Machine does its own
-certificate in its Caddy; a self-hosted one needs to be paired. The router and the Machine's side of it are specified
-apart from this page: **the address goes live once the passthrough ships.** Until then, AIs in the owner's tailnet
-(Claude Code, Claude Desktop, Cursor, Codex, a local GBrain) use the dashboard's own address with `/mcp`.
+and terminates TLS itself, so the cloud never sees what an AI and the Machine say (docs/network.md, The cloud
+forwards, never reads). A hosted Machine does its certificate in its Caddy (Let's Encrypt only, no email address). A
+self-hosted one, once paired, does it in `ai_reach.py`:
+
+- **Dial-back.** It has no public port, so it asks: `GET /api/fleet/mcp-wait?wait=25` with its device token answers
+  `{conns: [id]}`. For each it opens `GET /api/fleet/mcp-stream/<id>` (`Connection: Upgrade`,
+  `Upgrade: tm-mcp-stream/1`); after `101` the AI's own TLS bytes follow, its hello first. A 401 stops the loop (the
+  token is gone). Unpair stops it too.
+- **TLS on the Machine.** It reads the hello's name and ALPN and answers with its own certificate for
+  `<name>.mcp.themachine.computer`, or, for a certificate authority checking it (ALPN `acme-tls/1`), with the
+  challenge certificate.
+- **Only the public paths**: `/mcp`, `/.well-known/oauth-*`, `/oauth/token`, `/oauth/register`, `/oauth/revoke`, into
+  the same handlers as the dashboard's, with no owner sign-in. Anything else is 404. On this host the issuer and the
+  resource are `https://<name>.mcp.themachine.computer` (and `/mcp`); the authorization endpoint stays on the
+  dashboard, behind the owner's own sign-in, and the consent page reports the issuer the AI asked (RFC 9207).
+- **The certificate**: ACME (RFC 8555) with TLS-ALPN-01 (RFC 8737), from Let's Encrypt only, on an ACME account with
+  no contact: no email address goes to a third party. A failed try or a rate limit waits 10 minutes, doubling up to a
+  day, or the CA's `Retry-After` when that is longer. Key and certificate stay next to the database (0600) and never
+  leave the Machine; renewed with 30 days left; gone on Unpair. It needs the `cryptography` package: without it
+  Settings, AIs says "Install the cryptography package to use this address" and nothing starts.
+- **Request bodies**: `Content-Length` or `Transfer-Encoding: chunked` (extensions ignored, trailers dropped), up to
+  64 KB (413 past it, before reading more). Both headers at once is 400.
+
+**The address goes live once the passthrough ships** in the cloud. Until then, AIs in the owner's tailnet (Claude
+Code, Claude Desktop, Cursor, Codex, a local GBrain) use the dashboard's own address with `/mcp`.
 
 **Pairing in one click** (`pairing.py`). A self-hosted Machine not paired yet shows **Get your address**:
 
@@ -127,7 +148,8 @@ apart from this page: **the address goes live once the passthrough ships.** Unti
    `GET /api/fleet/ai-reach` then gives the name for the address.
 
 The same button pairs from Connections, where a sign-in needs a paired Machine. **Unpair** in Settings, AIs removes the
-credential and its file and stops the Fleet; the account keeps the device until it is disconnected there.
+credential and its file, stops the Fleet and the dial-back, and drops the certificate; the account keeps the device
+until it is disconnected there.
 
 ## Decided, and open
 

@@ -16,6 +16,7 @@ import time
 import urllib.parse
 
 import ai_access
+import ai_reach
 import fleet
 import graph
 import i18n
@@ -94,9 +95,29 @@ class AiApp:
                 found = {'name': None, 'away': True}
             self.ai_reach_kept = (time.monotonic(), found)
         name = found.get('name') if NAME.fullmatch(found.get('name') or '') else None
+        loop = self.__dict__.get('ai_reach_loop')
+        tls = 'missing' if not ai_reach.AVAILABLE else loop.state if loop else 'getting'
         return {'hosted': False, 'paired': True, 'name': name, 'address': mcp_address(name) if name else None,
                 'other': bool(found.get('other')), 'away': bool(found.get('away')), 'pairing': pending,
-                'account': fleet.account_url(self.config)}
+                'account': fleet.account_url(self.config), 'tls': tls if name and not found.get('other') else None}
+
+    def ai_reach_start(self, stop):
+        """A paired self-hosted Machine's own address (ai_reach.py): the dial-back loop and its certificate, until stop
+        (Unpair). Not on a hosted Machine (its proxy has the certificate) and not without `cryptography`."""
+        if self.config.get('manage_url') or getattr(self, 'fleet', None) is None or not ai_reach.AVAILABLE:
+            return None
+        self.ai_reach_loop = ai_reach.Reach(self.config, AiReachSide(self))
+        threading.Thread(target=self.ai_reach_loop.run, args=(stop,), name='mcp-reach', daemon=True).start()
+        return self.ai_reach_loop
+
+    def ai_mcp_host(self):
+        """<name>.mcp.themachine.computer for this Machine, when known (no call to the account here)."""
+        if self.config.get('manage_url'):
+            name = str(self.config.get('dashboard_host') or '').split('.', 1)[0].lower()
+        else:
+            kept = self.__dict__.get('ai_reach_kept')
+            name = (kept[1].get('name') if kept and not kept[1].get('other') else None) or ''
+        return f'{name}.{MCP_DOMAIN}' if NAME.fullmatch(name) else None
 
     def ai_pairing_view(self):
         found = self.__dict__.get('ai_pairing')
@@ -177,6 +198,8 @@ class AiApp:
             pass
         pairing.forget(self.config, getattr(self, 'config_path', None))
         self.fleet_drop()
+        ai_reach.drop(self.config)
+        self.ai_reach_loop = None
         self.ai_pairing = None
         self.ai_reach_kept = None
         return self.ai_view_now()
@@ -205,9 +228,19 @@ class AiApp:
             return ''
         return 'https://' + host + str(self.config.get('dashboard_path', '/')).rstrip('/')
 
+    def ai_issuer_for(self, req):
+        """The issuer the AI saw (RFC 9207 iss): the mcp host's when it asked for that address, else the dashboard's."""
+        mcp = self.ai_mcp_host()
+        if mcp and req.get('resource') == f'https://{mcp}/mcp':
+            return f'https://{mcp}'
+        return self.ai_issuer()
+
     def ai_resources(self, host):
         """The /mcp addresses a token is for: the dashboard's, and the one this request came to when it is one of ours."""
         found = [self.ai_issuer() + '/mcp']
+        mcp = self.ai_mcp_host()
+        if mcp:
+            found.insert(0, f'https://{mcp}/mcp')
         aliases = [str(h) for h in self.config.get('dashboard_aliases', [])]
         if host in aliases:
             found.append('https://' + host + str(self.config.get('dashboard_alias_path', '/assistant/')).rstrip('/') + '/mcp')
@@ -225,10 +258,15 @@ class AiApp:
         resource = resources[-1]
         if not issuer:
             return self.ai_json(404, {'error': 'not_available', 'error_description': 'This Machine has no dashboard address'})
+        authorize = None
+        mcp = self.ai_mcp_host()
+        if mcp and str(host or '').split(':', 1)[0].lower() == mcp:  # the address for AIs: its own issuer, sign-in on the dashboard
+            authorize, issuer = issuer, f'https://{mcp}'
+            resource = issuer + '/mcp'
         if path.startswith('/.well-known/oauth-protected-resource'):
             return self.ai_json(200, ai_access.resource_metadata(issuer, resource), cache=True)
         if path.startswith('/.well-known/oauth-authorization-server'):
-            return self.ai_json(200, ai_access.metadata(issuer), cache=True)
+            return self.ai_json(200, ai_access.metadata(issuer, authorize), cache=True)
         if path == '/mcp' and method != 'POST':
             return 405, {'Allow': 'POST', 'Content-Type': 'application/json'}, b'{"error":"Use POST"}'
         if path == '/mcp':
@@ -293,6 +331,7 @@ class AiApp:
                 req = ai_access.authorize_request(db, urllib.parse.parse_qs(query), self.ai_resources(''))
             except ai_access.OAuthError as error:
                 return 400, ai_access.error_page(error.description)
+        issuer = self.ai_issuer_for(req)
         if req.get('error'):  # the client's own mistake: back to it, as OAuth says
             return 303, ai_access.deny(req, issuer)
         return 200, ai_access.consent_page(req, issuer, csrf, self.ai_areas() or ['both'], lang=i18n_lang())
@@ -304,6 +343,7 @@ class AiApp:
         params.update(response_type=['code'], code_challenge_method=['S256'])
         with self.store.connect() as db:
             req = ai_access.authorize_request(db, params, self.ai_resources(''))
+            issuer = self.ai_issuer_for(req)
             if form.get('choice') != 'connect':
                 return ai_access.deny(req, issuer)
             return ai_access.approve(db, req, form.get('level'), self.ai_area_given(form.get('area')), form.get('expiry'), issuer)
@@ -530,6 +570,23 @@ class AiApp:
         return {'id': made, 'link': self.ai_link(made), 'sent': False,
                 'note': 'The draft waits in The Machine. Only the owner can send it, after reading it.'}, \
             i18n.t('Added a draft to {}: “{}”', ', '.join(to)[:80], subject[:80])
+
+
+class AiReachSide:
+    """What ai_reach.Reach needs from the App."""
+
+    def __init__(self, app):
+        self.app = app
+
+    def name(self):
+        return self.app.ai_reach().get('name')
+
+    def token(self):
+        found = getattr(self.app, 'fleet', None)
+        return getattr(getattr(found, 'relay', None), 'token', None)
+
+    def handle(self, method, path, headers, body, host):
+        return self.app.ai_http(method, path, headers, body, host)
 
 
 def mcp_address(name):

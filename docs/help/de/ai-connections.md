@@ -3,7 +3,7 @@ title: Andere KIs verbinden
 area: connections
 summary: Lass Claude, ChatGPT, Cursor, Codex oder GBrain deine Aufgaben und deinen Graph über MCP lesen, jede mit eigenem Zugriff und Ablauf.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py, pairing.py
+code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -16,6 +16,8 @@ Höchstens fügen sie eine Aufgabe hinzu, oder eine Aufgabe mit einem E-Mail-Ent
 ## Eine verbinden
 
 Öffne **Einstellungen**, **KIs**. Oben steht die Adresse deiner Machine für KIs, `https://<dein Name>.mcp.themachine.computer/mcp`, mit **Kopieren**. Bei einer Machine auf deinem eigenen Computer tippst du zuerst auf **Adresse holen**. Eine Seite in deinem Konto öffnet sich: Prüfe, ob sie denselben Code zeigt, bestätige und wähle einen Namen. Deine Machine verbindet sich selbst, ohne Neustart.
+
+Danach holt sie sich ein eigenes Zertifikat für die Adresse. Das dauert ein paar Minuten und braucht das Paket `cryptography` für Python.
 
 Öffne in ChatGPT chatgpt.com/plugins, tippe auf + und dann auf Add custom MCP server. Nenne ihn The Machine, füge die Adresse ein und wähle OAuth. Bestätige die Warnung und tippe auf Create as a plugin. Dein Tarif oder Workspace muss eigene MCP-Server erlauben.
 

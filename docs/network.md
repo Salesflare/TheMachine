@@ -119,6 +119,16 @@ can't reverse. Someone who left gets nothing new and a new Fleet key goes round.
   that node is back), your Machine looks into both mailboxes, and a question that came through both is taken once.
   After 5 minutes it tries the main node first again.
 
+## The cloud forwards, never reads
+
+AIs such as ChatGPT and Claude reach a Machine at `https://<name>.mcp.themachine.computer/mcp`
+(docs/ai-connections.md). The cloud's router reads only the name in the AI's TLS hello and forwards the encrypted
+bytes; it never ends TLS. The Machine holds the certificate and its key for that name and terminates TLS itself, so
+the cloud can't read or change what an AI and the Machine say. A self-hosted Machine dials out for each connection
+(`mcp-wait`, then `mcp-stream`) with its device token, so it needs no open port; its key never leaves it. What the
+cloud sees: which Machine an AI connects to, when, and how many bytes go each way. The certificate comes from Let's
+Encrypt on an ACME account with no email address, so no owner's address goes to a third party.
+
 ## Addresses
 
 The Network lives at `network.themachine.computer`. Its old address, `relay.themachine.computer`, keeps working and is

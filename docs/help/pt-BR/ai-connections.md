@@ -3,7 +3,7 @@ title: Conectar outras IAs
 area: connections
 summary: Deixe Claude, ChatGPT, Cursor, Codex ou GBrain lerem suas tarefas e seu Graph por MCP, cada uma com seu acesso e prazo.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py, pairing.py
+code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -16,6 +16,8 @@ No máximo elas adicionam uma tarefa, ou uma tarefa com um rascunho de e-mail. U
 ## Conectar uma
 
 Abra **Configurações**, **IAs**. No topo fica o endereço da sua Machine para IAs, `https://<seu nome>.mcp.themachine.computer/mcp`, com **Copiar**. Numa Machine no seu próprio computador, toque antes em **Obter seu endereço**. Abre uma página da sua conta: confira se ela mostra o mesmo código, confirme e escolha um nome. Sua Machine se pareia sozinha, sem reiniciar.
+
+Depois ela obtém o próprio certificado para o endereço. Leva alguns minutos e precisa do pacote `cryptography` para Python.
 
 No ChatGPT, abra chatgpt.com/plugins, toque em + e depois em Add custom MCP server. Chame de The Machine, cole o endereço e escolha OAuth. Confirme o aviso e toque em Create as a plugin. Seu plano ou workspace precisa permitir servidores MCP personalizados.
 
