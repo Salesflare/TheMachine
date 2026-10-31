@@ -18,7 +18,7 @@ Un admin active **Partager le Graph dans cette Fleet** dans **Ce qui est partag�
 
 L’agenda d’une autre personne que vous lisez avec votre propre connexion apparaît sous son nom, comme une connexion perso.
 
-Dans une connexion activée, chaque fil est quand même trié. Les fils perso et ceux entre collègues uniquement restent exclus. Les e-mails sensibles et automatiques restent hors du partage automatique ; vos choix de partage explicites peuvent passer outre ces classements.
+Dans une connexion activée, chaque fil est quand même trié. Le Slack de votre propre entreprise compte comme entre collègues uniquement, messages directs compris : seule une conversation Slack Connect avec une autre entreprise peut être un fil client. Les fils perso et ceux entre collègues uniquement restent exclus. Les e-mails sensibles et automatiques restent hors du partage automatique ; vos choix de partage explicites peuvent passer outre ces classements.
 
 ## Exigé par la Fleet
 

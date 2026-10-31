@@ -18,7 +18,7 @@ Um admin ativa **Compartilhar o Graph neste Fleet** em **O que é compartilhado*
 
 A agenda de outra pessoa que você lê pelo seu próprio login aparece com o nome dela, como uma conexão pessoal.
 
-Dentro de uma conexão ligada, cada conversa ainda é separada. Conversas pessoais e só entre colegas ficam de fora. E-mails sensíveis e automáticos ficam fora do compartilhamento automático. Suas escolhas explícitas de compartilhamento podem passar por cima dessas classificações.
+Dentro de uma conexão ligada, cada conversa ainda é separada. O Slack da sua própria empresa conta como só entre colegas, mensagens diretas também: só uma conversa do Slack Connect com outra empresa pode ser uma conversa com cliente. Conversas pessoais e só entre colegas ficam de fora. E-mails sensíveis e automáticos ficam fora do compartilhamento automático. Suas escolhas explícitas de compartilhamento podem passar por cima dessas classificações.
 
 ## Exigido pelo Fleet
 

@@ -20,7 +20,7 @@ Requiring everyone's Work email or calendar turns it on too. Then nobody has to 
 
 Someone else's calendar that you read through your own sign-in shows under its own name, as a personal connection.
 
-Inside a connection that's on, each thread is still sorted. Personal and colleague-only threads stay out. Sensitive and automated mail stays out of automatic sharing; your explicit sharing choices can override those classifications.
+Inside a connection that's on, each thread is still sorted. Your company's own Slack counts as colleagues only, also direct messages: only a Slack Connect conversation with another company can be a client thread. Personal and colleague-only threads stay out. Sensitive and automated mail stays out of automatic sharing; your explicit sharing choices can override those classifications.
 
 ## Required by the Fleet
 

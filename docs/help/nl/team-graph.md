@@ -18,7 +18,7 @@ Een beheerder zet **De Graph delen in deze Fleet** aan op **Wat gedeeld wordt**,
 
 De agenda van iemand anders die je via je eigen login leest, staat onder zijn eigen naam, als privékoppeling.
 
-Binnen een koppeling die aanstaat, wordt elke thread nog steeds gesorteerd. Privéthreads en threads met alleen collega's blijven erbuiten. Gevoelige en automatische mail blijft buiten het automatisch delen; je eigen uitdrukkelijke keuzes om te delen kunnen die indeling overschrijven.
+Binnen een koppeling die aanstaat, wordt elke thread nog steeds gesorteerd. De eigen Slack van je bedrijf telt als alleen collega's, ook directe berichten: alleen een Slack Connect-gesprek met een ander bedrijf kan een klantthread zijn. Privéthreads en threads met alleen collega's blijven erbuiten. Gevoelige en automatische mail blijft buiten het automatisch delen; je eigen uitdrukkelijke keuzes om te delen kunnen die indeling overschrijven.
 
 ## Verplicht door de Fleet
 

@@ -28,6 +28,7 @@ import json
 import logging
 import re
 import secrets
+import sqlite3
 import time
 
 import crm_fields
@@ -347,11 +348,22 @@ def set_hand(db, event_id, choice):
     row = db.execute('SELECT id,kind,metadata FROM events WHERE id=?', (int(event_id),)).fetchone()
     if not row:
         raise ValueError('Unknown message')
-    thread = thread_of(row['kind'], json.loads(row['metadata'] or '{}'), row['id'])
-    if choice == 'team' and db.execute("SELECT 1 FROM share_threads WHERE thread=? AND verdict='personal'", (thread,)).fetchone():
+    metadata = json.loads(row['metadata'] or '{}')
+    thread = thread_of(row['kind'], metadata, row['id'])
+    todo = [(thread, row['id'])]
+    if row['kind'] == 'slack.message' and metadata.get('conversation_type') == 'dm' and metadata.get('channel_id'):
+        # a direct message is one row in What's shared: the choice is for the whole conversation
+        todo = {}
+        for e in db.execute("SELECT id,kind,metadata FROM events WHERE kind='slack.message' AND account_id=(SELECT account_id FROM events WHERE id=?) "
+                            "AND json_extract(metadata,'$.channel_id')=? AND deleted=0", (row['id'], metadata['channel_id'])):
+            todo.setdefault(thread_of(e['kind'], json.loads(e['metadata'] or '{}'), e['id']), e['id'])
+        todo = sorted(todo.items())
+    if choice == 'team' and db.execute("SELECT 1 FROM share_threads WHERE thread IN (SELECT value FROM json_each(?)) AND verdict='personal'",
+                                       (json.dumps([t for t, _ in todo]),)).fetchone():
         raise ValueError('Personal threads are never shared')
-    db.execute('INSERT INTO share_threads(thread,hand,hand_at,event_id,at) VALUES(?,?,?,?,?) ON CONFLICT(thread) DO UPDATE SET '
-               'hand=excluded.hand,hand_at=excluded.hand_at', (thread, choice, now() if choice else None, row['id'], now()))
+    for key, event_id in todo:
+        db.execute('INSERT INTO share_threads(thread,hand,hand_at,event_id,at) VALUES(?,?,?,?,?) ON CONFLICT(thread) DO UPDATE SET '
+                   'hand=excluded.hand,hand_at=excluded.hand_at', (key, choice, now() if choice else None, event_id, now()))
     return thread
 
 
@@ -496,6 +508,7 @@ class Scope:
         for key, choice in db.execute('SELECT key,choice FROM share_rules'):
             (self.private_ids if choice == 'private' else self.team_ids).add(key)
         self.org_of, self.org_names = {}, {}
+        self._slack_load(db)
         for row in db.execute("SELECT id,kind,name,info FROM graph_nodes WHERE kind IN ('person','org')"):
             info = json.loads(row['info'] or '{}')
             if row['kind'] == 'org':
@@ -513,6 +526,36 @@ class Scope:
                     self.private_ids |= {i[6:].lower() for i in ids if str(i).startswith('email:')}
             elif row['id'] in self.private and info.get('domain'):
                 self.private_ids.add('@' + info['domain'])
+
+    def _slack_load(self, db):
+        """Who is outside the company's own Slack: members of another company or guests (slack_members, from users.info),
+        and conversations shared with another company (Slack Connect, marked when the conversations are listed). With
+        each member's email, so a Slack Connect conversation goes through the same client checks as mail."""
+        self.slack_outside, self.slack_connect, self.slack_email = set(), set(), {}
+        try:
+            self.slack_outside = {r[0] for r in db.execute('SELECT user_id FROM slack_members WHERE outside=1')}
+            self.slack_email = {r[0][6:]: str(r[1]).lower() for r in db.execute(
+                "SELECT identifier,email FROM identity_names WHERE identifier LIKE 'slack:%' AND email LIKE '%@%'")}
+            for (state,) in db.execute('SELECT state FROM checkpoints WHERE account_id IN (SELECT value FROM json_each(?))',
+                                       (json.dumps(sorted(self.accounts)),)):
+                try:
+                    channels = (json.loads(state or '{}') or {}).get('channels') or []
+                except (ValueError, AttributeError):
+                    continue
+                self.slack_connect |= {str(c.get('id')) for c in channels if isinstance(c, dict) and c.get('external')}
+        except sqlite3.OperationalError:
+            pass  # no Slack read yet
+
+    def slack_shared(self, metadata):
+        """A Slack message in a conversation with someone outside the company's own Slack (Slack Connect, another
+        company's member or a guest). Everything else in the company's Slack is among colleagues: a direct message, a
+        group or a channel there never goes as a client thread, whatever the review called it."""
+        return (metadata.get('slack_connect') is True or str(metadata.get('channel_id') or '') in self.slack_connect
+                or any(u in self.slack_outside for u in graph.slack_members_on(metadata)))
+
+    def slack_people(self, metadata):
+        """The addresses of the Slack members on a message, as Slack gave them (users.info)."""
+        return [self.slack_email[u] for u in graph.slack_members_on(metadata) if self.slack_email.get(u)]
 
     def granted(self, projects, threads):
         """This scope for a teammate the owner shared boards or threads with by name (grants): those projects and their
@@ -625,11 +668,16 @@ def visibility(db, scope, event):
         return None  # a teammate's mail or notes seen through the CRM: theirs to share, not even on a board shared by name
     item = event['id'] in scope.board_items or (event['kind'] in ITEM_KINDS and event['id'] in scope.team_items)
     people = item_people(metadata) if item else addresses(metadata)
+    slack = event['kind'] == 'slack.message'
+    if slack:
+        people = sorted(set(people) | set(scope.slack_people(metadata)))  # a Slack message carries member ids, not addresses
     thread = thread_of(event['kind'], metadata, event['id'])
     verdict, hand = scope.calls.get(thread, (None, None))
     internal = bool(people) and not any(outside(a, scope.internal) and a not in scope.mine for a in people)
     if item:
         internal = internal and any(a not in scope.mine for a in people)  # notes with only their host on them are not colleagues only
+    if slack and not scope.slack_shared(metadata):
+        internal = True  # the company's own Slack: only colleagues are on it, whatever the review said
     if thread in scope.hand_threads and verdict != 'personal' and not internal and not any(scope.private_address(a) for a in people):
         return 'team'  # shared by hand with chosen teammates (only in their scope, Scope.granted)
     if event['id'] in scope.hidden_events:
@@ -755,6 +803,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     if held is not None:
         held.update(keyed(secret, 'thread|' + t) for t, seen in thread_views.items() if seen and seen <= {'pending', 'wait'})
     lines = {r['event_id']: r['line'] for r in db.execute('SELECT event_id,line FROM share_lines')}
+    names = slack_names_of(db, [e for items in threads.values() for e in items])
     titles = {}  # a line for what has none from the review: all of a board shared by name, and boards' meetings and chats
     on_boards = scope.item_events
     if scope.granted_projects or on_boards:
@@ -762,7 +811,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
             if views.get(e['id']) == 'team' and (scope.granted_projects or e['id'] in on_boards):
                 word = ('Meeting notes' if e['kind'] in ('zoom.summary', 'meeting.notes') else 'Meeting transcript' if e['kind'] == 'meeting.transcript'
                         else ITEM_WORDS.get(_source(e['kind']), 'Note'))
-                titles[e['id']] = _line(word + ': ' + str(e['title'] or '(no subject)'))
+                titles[e['id']] = _line(word + ': ' + (shown_title(dict(e), names) or '(no subject)'))
     out_threads, files = {}, {}
     newest = sorted(threads.items(), key=lambda t: t[1][-1]['occurred_at'], reverse=True)[:MAX_THREADS]
     for thread, items in newest:
@@ -772,7 +821,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
             continue
         last = items[-1]
         messages = [_message(e) for e in items[-MAX_MESSAGES:]]
-        out_threads[tag] = {'tag': tag, 'subject': str(items[0]['title'] or '')[:200], 'at': last['occurred_at'], 'messages': messages,
+        out_threads[tag] = {'tag': tag, 'subject': shown_title(items[0], names)[:200], 'at': last['occurred_at'], 'messages': messages,
                             **({} if last['kind'] in MAIL_KINDS and last['kind'] != 'intercom.conversation' else {'kind': _source(last['kind'])})}
         # attachments come with mail only (read from the mailbox)
         files[tag] = [(e['id'], e['account_id'], e['kind']) for e in items[-MAX_MESSAGES:]] if all(e['kind'] in MAIL_KINDS for e in items) else []
@@ -1091,6 +1140,37 @@ def threads_by_view(db, scope):
     return out
 
 
+def slack_names_of(db, events):
+    """{Slack member id: name} for everyone on these events and mentioned in their titles."""
+    ids = set()
+    for e in events:
+        if e['kind'] == 'slack.message':
+            m = e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')
+            ids |= set(graph.slack_members_on(m)) | set(graph.SLACK_MEMBER.findall(str(e['title'] or '')))
+    return graph.slack_names(db, ids)
+
+
+def shown_title(e, names):
+    """An event's title as people see it: a Slack member by their name, never their id (graph.slack_title_shown)."""
+    return graph.slack_title_shown(e['title'], names) if e['kind'] == 'slack.message' else str(e['title'] or '')
+
+
+def one_per_conversation(rows):
+    """(view, event, hand) rows, newest first, with a Slack direct message as one row: each of its messages is its own
+    thread (graph.thread_key), but it is one conversation with one person."""
+    seen, out = set(), []
+    for x in rows:
+        e = x[1]
+        m = e['metadata'] if isinstance(e['metadata'], dict) else {}
+        if e['kind'] == 'slack.message' and m.get('conversation_type') == 'dm' and m.get('channel_id'):
+            key = (x[0], m['channel_id'])
+            if key in seen:
+                continue
+            seen.add(key)
+        out.append(x)
+    return out
+
+
 COUNTED = ('client', 'sensitive', 'personal', 'internal', 'unsure', 'other')
 LISTED = 300  # threads per list in What's shared, newest first
 
@@ -1108,16 +1188,18 @@ def overview(db, scope, sent=0):
     calls = {t: v for t, (v, _) in scope.calls.items()}
     sorted_['other'] += sum(1 for t in found if t in scope.automated and calls.get(t) != 'other')  # automated mail, by rule
 
+    names = slack_names_of(db, [x[1] for x in found.values()])
+
     def item(view, e, hand):
         kept = view == 'private' and any(scope.private_address(a) for a in addresses(e['metadata']))
-        return {'event_id': e['id'], 'title': str(e['title'] or '')[:200], 'with': _who(e['metadata'], scope), 'company': scope.company(e['metadata']),
+        return {'event_id': e['id'], 'title': shown_title(e, names)[:200], 'with': _who(e['metadata'], scope), 'company': scope.company(e['metadata']),
                 'at': e['occurred_at'], 'view': view, 'share': label(view) or 'only_you', 'why': why(view, hand, scope.company(e['metadata']), kept)}
     newest = sorted(found.values(), key=lambda x: x[1]['occurred_at'], reverse=True)
-    shared = [item(*x) for x in newest if x[0] in ('team', 'wait')]
+    shared = [item(*x) for x in one_per_conversation(newest) if x[0] in ('team', 'wait')]
     kinds = {r[0]: (r[1] or '', r[2]) for r in db.execute("SELECT thread,grp,suggest FROM share_threads WHERE verdict='unsure'")}
     unsure = []
     for thread, x in sorted(found.items(), key=lambda kv: kv[1][1]['occurred_at'], reverse=True):
-        if x[0] == 'ask' and any(scope.client_address(a) for a in addresses(x[1]['metadata'])):
+        if x[0] == 'ask' and any(scope.client_address(a) for a in addresses(x[1]['metadata']) + scope.slack_people(x[1]['metadata'])):
             group, suggest = kinds.get(thread, ('', None))
             unsure.append({**item(*x), 'group': group, 'suggest': suggest})
     by_hand = []

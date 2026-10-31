@@ -18,7 +18,7 @@ Ein Admin schaltet **Graph in dieser Fleet teilen** unter **Was geteilt wird** e
 
 Der Kalender einer anderen Person, den du über deine eigene Anmeldung liest, erscheint unter eigenem Namen, als private Verbindung.
 
-Innerhalb einer eingeschalteten Verbindung wird jeder Thread trotzdem einsortiert. Private Threads und solche nur unter Kolleginnen und Kollegen bleiben draußen. Sensible und automatische Mails bleiben beim automatischen Teilen draußen. Deine ausdrücklichen Entscheidungen zum Teilen können diese Einstufungen überstimmen.
+Innerhalb einer eingeschalteten Verbindung wird jeder Thread trotzdem einsortiert. Das eigene Slack deiner Firma gilt als nur unter Kolleginnen und Kollegen, auch Direktnachrichten: Nur eine Slack-Connect-Unterhaltung mit einer anderen Firma kann ein Kunden-Thread sein. Private Threads und solche nur unter Kolleginnen und Kollegen bleiben draußen. Sensible und automatische Mails bleiben beim automatischen Teilen draußen. Deine ausdrücklichen Entscheidungen zum Teilen können diese Einstufungen überstimmen.
 
 ## Von der Fleet verlangt
 

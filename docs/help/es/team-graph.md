@@ -18,7 +18,7 @@ Un administrador activa **Compartir el Graph en este Fleet** en **Qué se compar
 
 El calendario de otra persona que lees con tu propio inicio de sesión aparece con su propio nombre, como conexión personal.
 
-Dentro de una conexión activada, cada hilo se sigue clasificando. Los hilos personales y los que son solo entre compañeros se quedan fuera. El correo sensible y el automático quedan fuera del uso compartido automático; tus decisiones explícitas de compartir pueden anular esas clasificaciones.
+Dentro de una conexión activada, cada hilo se sigue clasificando. El Slack de tu propia empresa cuenta como solo entre compañeros, también los mensajes directos: solo una conversación de Slack Connect con otra empresa puede ser un hilo con un cliente. Los hilos personales y los que son solo entre compañeros se quedan fuera. El correo sensible y el automático quedan fuera del uso compartido automático; tus decisiones explícitas de compartir pueden anular esas clasificaciones.
 
 ## Exigido por el Fleet
 

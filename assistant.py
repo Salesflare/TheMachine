@@ -3059,7 +3059,15 @@ class Slack:
         self.verified_until = time.monotonic() + 300
 
 
-def slack_event(account, channel, raw):
+def slack_raw_title(event):
+    """The title a Slack message had before members were named in it: what its content hash is taken over, so naming
+    someone (slack_event, name_slack_titles) never makes a message look new or edited."""
+    body = str(event.get('body') or '')
+    return ('#' + str(event['metadata'].get('channel_name') or '') + ': ' + (body.splitlines()[0] if body else '(message)'))[:1000]
+
+
+def slack_event(account, channel, raw, names=None):
+    """names: {Slack member id: name} (graph.slack_names): the title names people, never their member id."""
     stamp = raw.get('message', raw) if raw.get('subtype') == 'message_changed' else raw
     ts = stamp.get('ts')
     if not ts or not re.fullmatch(r'\d+\.\d+', ts):
@@ -3074,7 +3082,9 @@ def slack_event(account, channel, raw):
                 'source_url': 'https://' + account['slack_host'] + '/archives/' + channel['id'] +
                               '/p' + ts.replace('.', '').ljust(16, '0'),
                 'truncated': len(body) > 40000}
-    title = ('#' + channel['name'] + ': ' + (body.splitlines()[0] if body else '(message)'))[:1000]
+    if channel.get('external'):
+        metadata['slack_connect'] = True  # shared with another company (Slack Connect): may be a client conversation
+    title = graph.slack_title(channel['name'], body, names or {})
     return {'account_id': account['id'], 'source_id': channel['id'] + ':' + ts,
             'kind': 'slack.message', 'occurred_at': dt.datetime.fromtimestamp(float(ts), dt.timezone.utc).isoformat(),
             'title': title, 'body': body[:40000], 'metadata': metadata, 'deleted': False}
@@ -4512,11 +4522,17 @@ class Store:
                 if event['kind'] == 'android.notification' and event['metadata'].get('transport') == 'existing_openclaw_feed':
                     digest_event = {**event, 'metadata':{k:v for k,v in event['metadata'].items()
                         if k not in ('is_active','last_notification_event_ms','last_notification_event_id','updates_merged','snapshot_content_hash','snapshot_checked_at')}}
+                slack = event['kind'] == 'slack.message' and isinstance(event.get('metadata'), dict)
+                if slack:  # its title names people as they become known: the same message, not an edit (slack_raw_title)
+                    digest_event = {**event, 'title': slack_raw_title(event)}
                 digest = hashlib.sha256(encoded(digest_event).encode()).hexdigest()
-                old = db.execute('SELECT id,content_hash FROM events WHERE account_id=? AND source_id=?',
+                old = db.execute('SELECT id,content_hash' + (',title' if slack else '') + ' FROM events WHERE account_id=? AND source_id=?',
                                  (account, event['source_id'])).fetchone()
                 if old and old['content_hash'] == digest:
-                    if digest_event is not event:
+                    if slack:
+                        if old['title'] != event['title']:
+                            db.execute('UPDATE events SET title=? WHERE id=?', ((self.sealer.seal if self.protected else str)(event['title']), old['id']))
+                    elif digest_event is not event:
                         db.execute('UPDATE events SET metadata=? WHERE id=?', (encoded(event['metadata']),old['id']))
                     continue
                 changed.add(event['source_id'])
@@ -8815,6 +8831,11 @@ def sync_slack(store, config, account, source=None):
             channels.setdefault(c['id'], {'id': c['id'], 'name': c.get('name') or
                 ('My notes' if c.get('user') == account['user_id'] else 'DM ' + c.get('user', c['id'])),
                 'type': kind, 'threads': []})
+            # Slack Connect: shared with another company. Everything else is the company's own Slack, among colleagues.
+            if c.get('is_ext_shared') or c.get('is_pending_ext_shared'):
+                channels[c['id']]['external'] = True
+            else:
+                channels[c['id']].pop('external', None)
         state['channels'] = list(channels.values())
         cursor = page.get('response_metadata', {}).get('next_cursor')
         if cursor:
@@ -8949,11 +8970,12 @@ def sync_slack(store, config, account, source=None):
             store.commit_page(account['id'], state, [], record_sync=False)
         raise
     events = []
+    names = slack_page_names(store, channel, page.get('messages', []))
     for raw in page.get('messages', []):
         if raw.get('subtype') == 'message_deleted':
             e = store.tombstone(account['id'], channel['id'] + ':' + raw['deleted_ts'])
         else:
-            e = slack_event(account, channel, raw)
+            e = slack_event(account, channel, raw, names)
             ts = e['metadata']['message_ts']
             channel['last_activity'] = max(float(channel.get('last_activity') or 0), float(ts))
             if e['metadata']['reply_count'] and ts not in scan['threads']:
@@ -9024,6 +9046,9 @@ def sync_slack(store, config, account, source=None):
                 state.update(index=0, mode='incremental')
                 if time.time() >= state.get('next_discovery', 0):
                     state['phase'] = 'discover'
+    if not state.get('titles_named'):  # once: titles stored before members were named in them
+        name_slack_titles(store, account['id'])
+        state['titles_named'] = True
     store.commit_page(account['id'], state, events)
     if isinstance(source, Slack):
         remember_slack_names(store, source, events, state.get('channels') or ())
@@ -9173,14 +9198,61 @@ def slack_next_due(store, config, account, source, state):
     return False
 
 
+def slack_page_names(store, channel, messages):
+    """{Slack member id: name} for a page of messages: the DM's other person, the senders and whoever they mention."""
+    ids = set(graph.slack_members_on({'channel_name': channel.get('name')}))
+    for raw in messages:
+        stamp = raw.get('message', raw) if raw.get('subtype') == 'message_changed' else raw
+        ids.add(str(stamp.get('user') or ''))
+        ids |= {m[0] for m in graph.SLACK_MENTION.findall(str(stamp.get('text') or ''))}
+    try:
+        with store.connect() as db:
+            return graph.slack_names(db, ids)
+    except sqlite3.Error:
+        return {}
+
+
+def name_slack_titles(store, account_id, ids=None):
+    """Writes stored Slack titles again with people's names in place of member ids ("#DM U02AB3CD4: hi" becomes
+    "#DM Sam Lee: hi"): all of them, or those of the messages with these members (a name just learned). The content
+    hash stays (slack_raw_title): no message looks new or edited for it."""
+    changed = 0
+    with store.connect() as db:
+        rows = db.execute("SELECT id,title,body,metadata FROM events WHERE kind='slack.message' AND account_id=? AND deleted=0", (account_id,)).fetchall()
+        found = []
+        for r in rows:
+            m = json.loads(r['metadata'] or '{}')
+            on = set(graph.slack_members_on(m)) | {x[0] for x in graph.SLACK_MENTION.findall(str(r['body'] or ''))}
+            if ids is not None and not on & set(ids):
+                continue
+            if not graph.SLACK_MEMBER.search(str(r['title'] or '')) and not str(r['title'] or '').startswith('#DM:') and '@…' not in str(r['title'] or ''):
+                continue
+            found.append((r, m, on))
+        names = graph.slack_names(db, {u for _, _, on in found for u in on})
+        seal = store.sealer.seal if store.protected else (lambda value: value)
+        for r, m, _ in found:
+            title = graph.slack_title(m.get('channel_name'), html.unescape(str(r['body'] or '')), names)
+            if title != r['title']:
+                db.execute('UPDATE events SET title=? WHERE id=?', (seal(title), r['id']))
+                changed += 1
+    return changed
+
+
 def remember_slack_names(store, source, events, channels=(), per_page=3):
     """Names and emails for the people graph: Slack messages carry only user IDs. A few lookups per
-    page (new senders, then the people behind known DMs), each once a month; the email joins the
-    person to their mail. Best effort."""
+    page (new senders, people they mention, then the people behind known DMs), each once a month; the email joins the
+    person to their mail. Whether each is outside the company's own Slack (another company's member through Slack
+    Connect, or a guest) is kept too (slack_members): shared_graph.visibility shares on it. Titles with a member's id
+    are written again with the name once it is known. Best effort."""
     users = {e['metadata'].get('user_id') for e in events} | {
+        m[0] for e in events for m in graph.SLACK_MENTION.findall(str(e.get('body') or ''))} | {
         m[1] for name in [e['metadata'].get('channel_name') for e in events] + [c.get('name') for c in channels]
         for m in [re.fullmatch(r'DM ([UW][A-Z0-9]+)', name or '')] if m}
-    wanted = store.names_to_check(['slack:' + u for u in users if u and u not in (source.account.get('user_id'),)])
+    users = {u for u in users if u and u not in (source.account.get('user_id'),)}
+    with store.connect() as db:
+        known = graph.slack_members_known(db, users)
+    wanted = sorted(set(store.names_to_check(['slack:' + u for u in users])) | {'slack:' + u for u in users - known})
+    named = []
     for identifier in wanted[:per_page]:
         try:
             user = source.get('users.info', {'user': identifier.split(':', 1)[1]}).get('user', {})
@@ -9189,12 +9261,21 @@ def remember_slack_names(store, source, events, channels=(), per_page=3):
         profile = user.get('profile') or {}
         name = None if user.get('is_bot') else (profile.get('real_name') or profile.get('display_name') or user.get('real_name'))
         store.remember_name(identifier, name and str(name)[:200], None if user.get('is_bot') else str(profile.get('email') or '').lower()[:320] or None)
+        team = source.account.get('team_id')
+        outside = bool(user.get('is_stranger') or user.get('is_restricted') or user.get('is_ultra_restricted')
+                       or (team and user.get('team_id') and user['team_id'] != team))
+        with store.connect() as db:
+            graph.remember_slack_member(db, identifier.split(':', 1)[1], outside, now())
+        if name:
+            named.append(identifier.split(':', 1)[1])
         user = {**user, 'id': user.get('id') or identifier.split(':', 1)[1]}
         offer, facts = enrichment.slack_photo(user), enrichment.slack_facts(user)
         if offer or facts:
             with store.connect() as db:
                 enrichment.offer_photos(db, [offer], 'slack', now(), known_only=False) if offer else None
                 enrichment.offer_facts(db, [facts], 'slack', now()) if facts else None
+    if named and source.account.get('id'):
+        name_slack_titles(store, source.account['id'], named)
 
 
 GATEWAY_SIGNALS = (

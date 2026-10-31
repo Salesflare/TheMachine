@@ -18,7 +18,7 @@ Un admin attiva **Condividi il Graph in questo Fleet** in **Cosa è condiviso** 
 
 Il calendario di un'altra persona che leggi con il tuo accesso compare con il suo nome, come connessione personale.
 
-Dentro una connessione attiva, ogni conversazione viene comunque classificata. Le conversazioni personali e quelle solo tra colleghi restano fuori. La posta sensibile e quella automatica restano fuori dalla condivisione automatica; le tue scelte esplicite di condivisione possono prevalere su queste classificazioni.
+Dentro una connessione attiva, ogni conversazione viene comunque classificata. Lo Slack della tua azienda conta come solo tra colleghi, anche i messaggi diretti: solo una conversazione Slack Connect con un'altra azienda può essere una conversazione con un cliente. Le conversazioni personali e quelle solo tra colleghi restano fuori. La posta sensibile e quella automatica restano fuori dalla condivisione automatica; le tue scelte esplicite di condivisione possono prevalere su queste classificazioni.
 
 ## Richiesto dalla Fleet
 
