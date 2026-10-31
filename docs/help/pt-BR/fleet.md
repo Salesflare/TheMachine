@@ -39,6 +39,8 @@ No máximo uma vez por dia, sua Machine lê algumas conversas com clientes que o
 - Só o que vale para vários clientes: um processo, uma ferramenta, um estilo de escrita ou quem cuida do quê. Nunca algo sobre um só cliente, nunca feedback sobre o seu próprio produto, e nunca nomes, endereços, números ou citações.
 - Cada um tem um rótulo: que tipo é, que veio de conversas da equipe e que é para este Fleet. Os que ela não tem certeza são descartados.
 
+Quando uma pessoa aprende, todos aprendem. Quando sua Machine escreve ou prepara uma tarefa de trabalho para esta empresa, ela usa os aprendizados da equipe que se aplicam, abaixo dos seus próprios fatos, regras e habilidades. Nunca em tarefas pessoais. Uma tarefa que usou um diz isso, por exemplo "Usou um aprendizado da equipe: reembolsos saem da caixa de suporte." Toque em **Remover** ali para tirá-lo do Fleet inteiro.
+
 Qualquer pessoa no Fleet pode **Remover** um aprendizado. Ele some para todos e não é criado de novo. Para parar, desative **Oferecer compartilhar aprendizados** em Configurações, Segurança. Fleets de Trabalho Cuidadosos não recebem nenhum.
 
 ## Pedidos de resumo da equipe

@@ -2345,7 +2345,7 @@ class SharedGraph:
         for r in (records or [])[:MAX_RECORDS + fleet_learnings.MAX_ACTIVE + 200]:
             if not isinstance(r, dict) or not HEX.fullmatch(str(r.get('r'))):
                 continue
-            if r.get('t') in ('learning', 'unlearn'):  # team learnings (fleet_learnings.py): shown, never acted on
+            if r.get('t') in ('learning', 'unlearn'):  # team learnings (fleet_learnings.py): shown, and used as data in Work to-dos
                 learned = fleet_learnings.clean_record(r)
                 if learned:
                     db.execute('INSERT OR REPLACE INTO team_records(fleet,member,rid,kind,body,at) VALUES(?,?,?,?,?,?)',

@@ -39,6 +39,8 @@ Hooguit één keer per dag leest je Machine een paar klantthreads die de Team-Gr
 - Alleen wat geldt over meerdere klanten heen: een werkwijze, een tool, een schrijfstijl, of wie wat afhandelt. Nooit iets over één klant, nooit feedback op je eigen product, en nooit namen, adressen, nummers of citaten.
 - Elk ervan heeft een label: wat voor soort het is, dat het uit gesprekken van het team komt, en dat het voor deze Fleet is. Inzichten waar hij niet zeker van is, vallen weg.
 
+Als één persoon iets leert, leert iedereen het. Als je Machine een werk-to-do voor dit bedrijf opstelt of voorbereidt, gebruikt hij de inzichten van het team die passen, na je eigen feiten, regels en skills. Nooit bij persoonlijke to-do's. Een to-do die er een gebruikte, zegt dat, bijvoorbeeld "Een inzicht van het team gebruikt: terugbetalingen gaan uit vanuit de supportinbox." Tik daar op **Verwijderen** om het voor de hele Fleet weg te halen.
+
 Iedereen in de Fleet kan een inzicht **Verwijderen**. Het is dan weg voor iedereen en wordt niet opnieuw gemaakt. Om te stoppen, zet je **Aanbieden om inzichten te delen** uit in Instellingen, Beveiliging. Voorzichtige Werk-Fleets krijgen er geen.
 
 ## Briefverzoeken

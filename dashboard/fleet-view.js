@@ -539,6 +539,8 @@ $('#suggestions').addEventListener('toggle',async e=>{const d=e.target;if(!d.mat
 setInterval(async()=>{if(document.hidden||!(state?.suggestions||[]).some(s=>AGENT_ACTIVE.includes(s.agent_job?.status)))return;
  try{const r=await request('api/agent-jobs');let changed=false,ended=false;for(const s of state.suggestions){const j=r.jobs?.[s.id];if(!j||JSON.stringify(j)===JSON.stringify(s.agent_job))continue;if(AGENT_ACTIVE.includes(s.agent_job?.status)&&!AGENT_ACTIVE.includes(j.status))ended=true;s.agent_job=j;changed=true}
  if(ended)await refresh();else if(changed&&!document.querySelector('#suggestions :is(textarea,select,input):focus'))render()}catch{}},4000);
+// In a to-do's Details: the team learnings its draft followed, each with Remove (gone for the whole Fleet).
+const teamLearningsUsed=s=>(s.team_learnings_used||[]).map(l=>`<p class="note fleet fleet-learn-used">${esc(t('Used a team learning: {}',String(l.text||'').replace(/<[^>]*>/g,'')))} <button type="button" class="link" data-fleet-learn-remove="${esc(l.fp)}" data-fleet="${esc(l.fleet)}">${esc(t('Remove'))}</button></p>`).join('');
 function fleetNote(s){if(closed(s))return fleetHandoff(s);const h=s.fleet_holder;let out='';
  if(h?.offer)out+=`<p class="note fleet">${esc(h.offer.join(', '))} also got this email. <button type="button" class="link" data-fleet-take="${esc(s.id)}">Tell them you’re on it</button></p>`;
  else if(h?.name&&!h.mine)out+=`<p class="note handled fleet">${esc(h.name)} is on it. <button type="button" class="link" data-fleet-take="${esc(s.id)}">I’ll handle it</button></p>`;
@@ -705,7 +707,7 @@ fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-notice]');if(!b)
   const fr=/^friend/.test(fleetData?.notices?.find(n=>n.id===b.dataset.fleetNotice)?.kind||'');
   toast(r.status==='confirmed'?(fr?'Accepted. You are friends now.':'Confirmed. Their Machine is starting.'):r.status==='declined'?(fr?'Declined. They are not told.':'Declined. Nothing was started or charged.'):r.reason,r.status==='stale'||r.status==='changed');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-learn-remove]');if(!b)return;b.disabled=true;  // gone for the whole Fleet, for good
- try{await fleetPost('fleet_learning_remove',{fleet:b.dataset.fleet,fp:b.dataset.fleetLearnRemove});toast('Removed for the whole team.');await fleetView()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+ try{await fleetPost('fleet_learning_remove',{fleet:b.dataset.fleet,fp:b.dataset.fleetLearnRemove});toast(t('Removed for the whole team.'));if(b.closest('#suggestions'))await refresh();else await fleetView()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-ex-rule],[data-fleet-ex-clear]');if(!b)return;b.disabled=true;
  try{const member=b.dataset.fleetExClear||b.closest('.fleet-ex-pick').querySelector('[data-fleet-ex-member]').value;
   await fleetPost('fleet_rule',{fleet:b.dataset.fleet,member_id:member,kind:b.dataset.kind,...(b.dataset.fleetExClear?{clear:true}:{rule:b.dataset.fleetExRule})});toast(b.dataset.fleetExClear?'Back to the rule for everyone.':'Saved.');await fleetView()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});

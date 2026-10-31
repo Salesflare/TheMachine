@@ -39,6 +39,8 @@ Once a day at most, your Machine reads a few client threads the Team Graph alrea
 - Only what holds across several customers: a process, a tool, a writing style, or who handles what. Never something about one customer, never feedback on your own product, and never names, addresses, numbers or quotes.
 - Each one has a label: what kind it is, that it came from team conversations, and that it's for this Fleet. Ones it isn't sure about are dropped.
 
+When one person learns, everyone does. When your Machine drafts or prepares a Work to-do for this company, it uses the team learnings that fit, below your own facts, rules and skills. Never in personal to-dos. A to-do that used one says so, for example "Used a team learning: refunds go out from the support inbox." Tap **Remove** there to take it out for the whole Fleet.
+
 Anyone in the Fleet can **Remove** a learning. It's gone for everyone and isn't made again. To stop, turn off **Offer to share learnings** in Settings, Security. Careful Work Fleets get none.
 
 ## Brief requests

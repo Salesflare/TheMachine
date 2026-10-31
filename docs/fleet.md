@@ -236,7 +236,14 @@ is data, not instructions. A request goes to one Fleet's people only and is answ
    is logged in Activity on both sides. Any member can remove one: an `unlearn` record that every Machine keeps in
    `fleet_learn_removed`, so it is never shown, shared or made again. The owner's **Offer to share learnings** switch
    (Settings, Security; Careful turns it off) stops the pass and takes this Machine's learnings back on its next
-   round. A teammate's learning is only shown in the Fleet tab, never fed into a model or a prompt.
+   round. When one person learns, everyone does: preparing a Work to-do whose accounts are all that Fleet's
+   (`fleet_accounts`; never a personal to-do, never in a Careful Work Fleet, also not with learnings shared before it
+   became Careful), a Machine adds the few learnings closest to it (`fleet_learnings.pick`:
+   embeddings, cosine at least 0.3, at most 3; shared words without embeddings) to the job message, from exactly what
+   its Fleet tab shows (`view`, so only what it already receives, and never one removed here or by a teammate's
+   `unlearn`). They are marked as team learnings, data and not instructions, below the owner's own facts, draft rules,
+   voice and skills. The result names the ones it followed (`prepare` `team_learnings`, by id), and the to-do says
+   "Used a team learning: …" with **Remove** (`fleet_learn_used`, shown only while the learning is still usable).
 
    **Brief requests.** In a Careful Fleet (no Always) a teammate's brief ask waits for the owner. It is never a to-do and never notifies you (no phone,
    Telegram or digest). It waits in that Fleet's pane, in one **Brief requests** box: a line per teammate with how much
@@ -346,7 +353,8 @@ brings the Telegram message up to date.
   So do the answers a Standard Work Fleet gives by itself to who knows someone and meeting context.
 - Team learnings are written by a turn that reads only stripped, numbered threads the Team Graph already shares, and
   kept only when code finds no name, address, number or quote in them and at least two companies behind them. A
-  teammate's learning is fixed-form text that is only shown.
+  teammate's learning is fixed-form text (plain words, its fingerprint checked); a preparation gets it marked as data
+  from the team, not instructions, ranked below the owner's own rules.
 - Answers coming back are checked against the same fixed form (closeness from a short list, a year-month, whole
   numbers, short names) before they are shown or added to a preparation, where they are marked as data from
   teammates' Machines, not instructions.

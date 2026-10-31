@@ -15098,6 +15098,9 @@ class App(*APP_MIXINS):
                 if not any(a['kind'] in ('email',)+next_actions.TEXT_KINDS for a in next_actions.actions(action)):
                     raise ValueError("follow_up:'stop' still comes with the draft: write the follow-up, the owner decides")
             saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True)
+            if getattr(self,'fleet',None) and not saved.get('replayed') and 'team_learnings' in args:  # the team learnings it followed: shown on the to-do
+                try:self.fleet.learnings_used(args['suggestion_id'],args['team_learnings'])
+                except Exception as error:LOG.error('team learnings used error=%s',type(error).__name__)
             if following and not saved.get('replayed'):
                 with self.store.connect() as db:
                     follow_ups.advise(db,args['suggestion_id'],advice,now())

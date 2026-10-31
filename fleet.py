@@ -69,6 +69,7 @@ import shared_graph
 import skills
 import fleet_trust
 import fleet_learnings
+import embeddings
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -3611,12 +3612,53 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 s['fleet_holder'] = {'offer': json.loads(c['offer'])}
             if context.get(s['id']):
                 s['fleet_context'] = context[s['id']][:5]
+        by_id = {str(s['id']): s for s in suggestions}
+        for sid, items in fleet_learnings.used(db, list(by_id)).items():
+            items = [i for i in items if self.level(i['fleet']) != 'careful']
+            if items:
+                by_id[sid]['team_learnings_used'] = items  # "Used a team learning: …", with Remove
         self.annotate_requests(db, suggestions)
         self.annotate_reviews(db, suggestions)
 
     def lines(self, suggestion_id):
-        """What teammates' Machines said about this card's meeting, for a preparation; and who it can be handed to."""
-        return self.meeting_lines(suggestion_id) + self.teammate_lines(suggestion_id) + self.review_lines(suggestion_id)
+        """What teammates' Machines said about this card's meeting, for a preparation; who it can be handed to; and the
+        Work Fleet's team learnings that fit it."""
+        return self.meeting_lines(suggestion_id) + self.teammate_lines(suggestion_id) + self.review_lines(suggestion_id) + self.learning_lines(suggestion_id)
+
+    def learning_fleet(self, db, suggestion_id):
+        """(the Work Fleet whose team learnings a to-do may use, the to-do) or (None, …): a to-do whose accounts are all
+        that Fleet's work accounts (fleet_accounts). A personal to-do, or one with a personal account, never; nor a Careful
+        Work Fleet, also not with learnings shared before it became Careful."""
+        row = db.execute('SELECT title,body,account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        ids = set(json.loads(row['account_ids'] or '[]')) if row else set()
+        if not ids:
+            return None, row
+        return next((ref for ref in self.work_fleets() if self.level(ref) != 'careful' and ids <= set(self.fleet_accounts(ref))), None), row
+
+    def learning_lines(self, suggestion_id):
+        """When one person learns, everyone does: the few team learnings closest to this Work to-do, for its preparation
+        (fleet_learnings.pick). A preparation without any forgets what an earlier result used."""
+        try:
+            with self.connect() as db:
+                ref, row = self.learning_fleet(db, suggestion_id)
+                picked = fleet_learnings.pick(db, ref, row['title'], row['body'] or '', embeddings.settings(self.config)) if ref else []
+                if not picked:
+                    fleet_learnings.clear_used(db, suggestion_id)
+            return fleet_learnings.prompt_lines(picked)
+        except Exception as error:  # noqa: BLE001 - a preparation without them beats none
+            LOG.error('team learning lines error=%s', type(error).__name__)
+            return ''
+
+    def learnings_used(self, suggestion_id, ids):
+        """A saved preparation's team_learnings (the ids it followed): shown on the to-do. Left out: unchanged."""
+        if ids is None:
+            return []
+        with self.connect() as db:
+            ref, _ = self.learning_fleet(db, suggestion_id)
+            if not ref:
+                fleet_learnings.clear_used(db, suggestion_id)
+                return []
+            return fleet_learnings.mark_used(db, suggestion_id, ref, ids)
 
     def meeting_lines(self, suggestion_id):
         if self.request_lines(suggestion_id):

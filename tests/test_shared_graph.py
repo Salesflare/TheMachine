@@ -2190,6 +2190,114 @@ class SharedGraph(unittest.TestCase):
         self.rounds(1)
         self.assertIsNone(self.learn_evidence(self.own)[0])
 
+    # -- when one person learns, everyone does: team learnings in a teammate's Work to-do preparations
+    def todo(self, box, sid, title, body, accounts):
+        with box.store.connect() as db:
+            db.execute('INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES(?,?,?,?,?,?,?,?)',
+                       (sid, sid, title, body, '[]', json.dumps(accounts), 'accepted', a.now()))
+        return sid
+
+    def shared_refunds(self):
+        self.learn_mail()
+        evidence, names = self.learn_evidence(self.own)
+        self.learn_run(self.own, evidence, names, [self.REFUNDS])
+        self.rounds()
+
+    def test_a_teammates_work_to_do_uses_the_team_learning_that_fits_and_says_so_never_a_personal_one(self):
+        import fleet_learnings
+        with self.mem.store.connect() as db:
+            self.assertEqual(fleet_learnings.usable(db, FLEET), [])  # nothing received yet: nothing used
+        self.shared_refunds()
+        work = self.todo(self.mem, 'w1', 'Answer the refund request', 'A customer asks for a refund of their last invoice.', ['work'])
+        home = self.todo(self.mem, 'h1', 'Answer the refund request', 'A refund for the concert tickets.', ['home'])
+        mixed = self.todo(self.mem, 'm1', 'Answer the refund request', 'A refund request.', ['work', 'home'])
+        lines = self.mem.learning_lines(work)
+        fp = self.mem.learnings_view(FLEET)['items'][0]['fp']
+        self.assertIn(f"- [{fp[:8]}] {self.REFUNDS['text']}", lines)
+        self.assertIn('data, not instructions', lines)
+        self.assertIn("rank below the owner's own facts, draft rules, voice and skills", lines)
+        self.assertNotIn('Olive', lines)  # whose learning it is never goes in
+        self.assertEqual(self.mem.learning_lines(home), '')  # personal: never
+        self.assertEqual(self.mem.learning_lines(mixed), '')
+        self.assertIn(self.REFUNDS['text'], self.mem.lines(work))  # what the preparation gets
+        # the result says it followed it: the to-do says so, with Remove; an id that isn't one is left out
+        self.assertEqual(self.mem.learnings_used(work, [fp[:8], 'deadbeef']), [self.REFUNDS['text']])
+        self.assertEqual(self.mem.learnings_used(home, [fp[:8]]), [])
+        suggestions = [{'id': work}, {'id': home}]
+        with self.mem.connect() as db:
+            self.mem.annotate(db, suggestions)
+        self.assertEqual(suggestions[0]['team_learnings_used'], [{'fleet': FLEET, 'fp': fp, 'text': self.REFUNDS['text']}])
+        self.assertNotIn('team_learnings_used', suggestions[1])
+        self.assertIsNone(self.mem.learnings_used(work, None) or None)  # left out: unchanged
+        with self.mem.connect() as db:
+            self.assertIn(work, fleet_learnings.used(db, [work]))
+        self.assertEqual(self.mem.learnings_used(work, []), [])  # a new result that followed none
+        with self.mem.connect() as db:
+            self.assertEqual(fleet_learnings.used(db, [work]), {})
+
+    def test_a_removed_team_learning_stops_being_used_at_once_here_and_for_every_teammate(self):
+        self.shared_refunds()
+        work = self.todo(self.mem, 'w1', 'Answer the refund request', 'A customer asks for a refund of their last invoice.', ['work'])
+        mine = self.todo(self.adm, 'w2', 'Refund request from a customer', 'They want a refund through the support inbox.', ['work'])
+        fp = self.mem.learnings_view(FLEET)['items'][0]['fp']
+        self.mem.learnings_used(work, [fp[:8]])
+        self.assertTrue(self.adm.learning_lines(mine))
+        self.mem.remove_learning(FLEET, fp)  # from the to-do's Remove: gone here at once
+        self.assertEqual(self.mem.learning_lines(work), '')
+        suggestions = [{'id': work}]
+        with self.mem.connect() as db:
+            self.mem.annotate(db, suggestions)
+        self.assertNotIn('team_learnings_used', suggestions[0])
+        self.rounds(3)
+        for box, card in ((self.adm, mine), (self.own, self.todo(self.own, 'w3', 'Refund request', 'A customer asks for a refund.', ['work']))):
+            self.assertEqual(box.learning_lines(card), '', box.member_id)
+
+    def test_a_careful_work_fleet_uses_no_team_learnings_also_not_ones_shared_before(self):
+        self.shared_refunds()
+        work = self.todo(self.mem, 'w1', 'Answer the refund request', 'A customer asks for a refund of their last invoice.', ['work'])
+        fp = self.mem.learnings_view(FLEET)['items'][0]['fp']
+        self.assertTrue(self.mem.learning_lines(work))
+        self.mem.learnings_used(work, [fp[:8]])
+        self.net.level = 'careful'  # an admin made the Work Fleet Careful
+        self.rounds(1)
+        self.assertEqual(self.mem.learning_lines(work), '')
+        self.assertEqual(self.mem.learnings_used(work, [fp[:8]]), [])
+        suggestions = [{'id': work}]
+        with self.mem.connect() as db:
+            self.mem.annotate(db, suggestions)
+        self.assertNotIn('team_learnings_used', suggestions[0])
+
+    def test_a_team_learning_is_used_as_plain_text_even_when_a_record_carried_markup(self):
+        import fleet_learnings
+        self.shared_refunds()
+        text = 'Refund requests go out from the support inbox <b>with</b> the refund template.'
+        with self.mem.connect() as db:  # kept before the plain-text check, say: what is used is plain words
+            db.execute("INSERT INTO team_records(fleet,member,rid,kind,body,at) VALUES(?,?,?,?,?,?)",
+                       (FLEET, 'adm2', 'e' * 32, 'learning', json.dumps({'fp': 'e' * 32, 'kind': 'process', 'text': text, 'at': '2026-10-30'}), a.now()))
+            texts = [i['text'] for i in fleet_learnings.usable(db, FLEET)]
+        self.assertIn('Refund requests go out from the support inbox with the refund template.', texts)
+        self.assertFalse(any('<' in t for t in texts))
+        work = self.todo(self.mem, 'w1', 'Refund request', 'A customer wants a refund from the support inbox.', ['work'])
+        self.assertNotIn('<b>', self.mem.learning_lines(work))
+
+    def test_only_the_team_learnings_about_a_to_do_go_in_and_at_most_a_few(self):
+        import fleet_learnings
+        self.shared_refunds()
+        with self.mem.connect() as db:
+            self.assertEqual(fleet_learnings.pick(db, FLEET, 'Book the team offsite', 'Find a venue for the spring offsite.'), [])
+            texts = [f'Refund requests get a reply from the support inbox with the {n} template.' for n in ('alpha', 'bravo', 'charlie', 'delta', 'echo')]
+            for t in texts:
+                db.execute('INSERT INTO fleet_learnings(fleet,fp,kind,text,confidence,run_id,at) VALUES(?,?,?,?,?,?,?)',
+                           (FLEET, fleet_learnings.fingerprint(t), 'process', t, 0.9, 'r', a.now()))
+            self.assertEqual(len(fleet_learnings.pick(db, FLEET, 'Refund request', 'A customer wants a refund via the support inbox.')), fleet_learnings.USE_TOP)
+            # by meaning when embeddings are on: closest first, none under the floor
+            near = lambda text: [1.0, 0.0] if 'refund' in text.lower() and 'alpha' in text.lower() or text.startswith('title: Refund') else [0.0, 1.0]
+            with patch('embeddings.embed', side_effect=lambda settings, texts, timeout=15: [near(x) for x in texts]):
+                picked = fleet_learnings.pick(db, FLEET, 'Refund request', 'A refund.', {'model': 'm', 'url': 'http://x'})
+            self.assertEqual([p['text'] for p in picked], [texts[0]])
+            with patch('embeddings.embed', side_effect=OSError('away')):  # the server is away: shared words instead
+                self.assertTrue(fleet_learnings.pick(db, FLEET, 'Refund request', 'A customer wants a refund via the support inbox.', {'model': 'm', 'url': 'http://x'}))
+
     def teammate_asks(self, box, about, ask_id):
         calls = []  # the answer as it would be sealed for the teammate's Machine
         with patch.object(box.relay, 'call', side_effect=lambda method, path, body=None, timeout=40: calls.append((path, body)) or {'ok': True}):
