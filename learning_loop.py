@@ -173,7 +173,8 @@ def apply(db, run_id, voice_check):
                     continue
                 old = db.execute('SELECT id,text FROM facts WHERE id=? AND kind=? AND removed_at IS NULL', (change.get('replaces'), kind)).fetchone() \
                     if change.get('replaces') else None
-                if not old and db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL').fetchone()[0] >= FACTS_MAX:
+                if not old and db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL AND id NOT IN '  # facts about someone don't count
+                                          '(SELECT fact_id FROM fact_about WHERE removed_at IS NULL)').fetchone()[0] >= FACTS_MAX:
                     continue
                 fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,NULL,?,?)',
                                      (text, 'tune:' + run_id, now(), kind)).lastrowid
