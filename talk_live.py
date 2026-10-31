@@ -84,7 +84,8 @@ TOOLS = [
      'description': ('Add a new to-do to the owner’s list, the same as New to-do on the dashboard, only when the owner clearly '
                      'asks for something new ("remind me to…", "add a to-do to…"). Never for "ask again", "report a bug" or '
                      'anything about the to-do in focus. Nothing is sent; The Machine fills in the rest. The to-do in focus '
-                     'stays the same.'),
+                     'stays the same. A rhythm the owner gives ("every first Monday", "weekly") goes in note as said, and the '
+                     'to-do repeats.'),
      'parameters': {'type': 'object', 'properties': {
          'title': {'type': 'string', 'description': 'What needs doing, short, in the owner’s words and language.'},
          'note': {'type': 'string', 'description': 'Any details the owner gave, like a day or who it is about.'}},

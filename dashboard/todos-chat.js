@@ -1047,6 +1047,8 @@ $('#suggestions').addEventListener('keydown',e=>{if(e.target.id!=='chat-input'||
 // Sends what's in the message box (and its files): the bubble shows and the box empties once the Machine has it
 async function chatSubmit(){const b=$('[data-chat-send]'),input=$('#chat-input');if(!b||b.disabled)return;const s=chatOpen(),text=input?.value.trim(),sending=chatPending.filter(f=>f.state==='ok'&&f.sid===s?.id);
  if(!s||!text&&!sending.length||chatPending.some(f=>f.state==='up')){input?.focus();return}b.disabled=true;
+ // "repeat this every month", "stop repeating": set at once (todos-repeat.js), not a turn of the chat
+ if(!sending.length){const rp=await repeatFromChat(s,text);if(rp){b.disabled=false;if(rp===true){input.value='';chatGrow(input);chatDraftKeep(s.id,'')}chatSendState();return}}
  const decide=args=>decidePost(s.id,args);
  // Without files a message can wait on the device while offline (decideOrWait); with files it needs the Machine now
  const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID()}];

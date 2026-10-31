@@ -41,14 +41,14 @@ try{
   const menu=id=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.map(x=>x.textContent.trim()));
   // A decision: Do it, Snooze, Not needed; the rest under More, Hand off among them, never above the buttons
   assert.deepEqual(await shown('p1'),['Do it','Snooze','Not needed','More']);
-  assert.deepEqual(await menu('p1'),['Mark done','Do it differently','Hand off','Rename']);
+  assert.deepEqual(await menu('p1'),['Mark done','Do it differently','Hand off','Repeat','Rename']);
   assert.equal(await page.getByText('Hand off to a teammate').count(),0);
   // A ready draft: the button says it opens the preview first
   assert.deepEqual(await shown('r1'),['Review and send to Noor','Mark done','Snooze','More']);
-  assert.deepEqual(await menu('r1'),['Ask for changes','Not needed','Hand off','Rename']);
+  assert.deepEqual(await menu('r1'),['Ask for changes','Not needed','Hand off','Repeat','Rename']);
   // A step only the owner can do: Done leads, Plan it is the help around it, Snooze and Not needed stay in sight; never Do it
   assert.deepEqual(await shown('v1'),['Done','Plan it','Snooze','Not needed','More']);
-  assert.deepEqual(await menu('v1'),['Do it differently','Rename']);
+  assert.deepEqual(await menu('v1'),['Do it differently','Repeat','Rename']);
   assert.equal(await page.locator('#task-v1 .actions>button.primary').innerText(),'Done');
   assert.equal(await page.locator('#task-v1 [data-choice="complete"]').getAttribute('data-choice'),'complete');
   assert.ok(!(await shown('v2')).includes('Do it'));

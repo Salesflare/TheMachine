@@ -1108,6 +1108,17 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .project-picker select{box-sizing:border-box;display:block;width:100%;min-width:0;max-width:100%;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .project-picker .actions,.card .project-picker .actions:not(.result-actions){display:flex;flex-wrap:wrap;gap:8px;margin:0}
 .project-picker .actions>button,.card .project-picker .actions:not(.result-actions)>button{flex:1 1 0;min-width:0;margin:0;padding:8px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Recurring to-dos (todos-repeat.js): the to-do's one quiet line, the Repeat choices as pills, and the one-time offer. */
+.chip.repeat{display:inline-flex;align-items:center;gap:4px;cursor:pointer;min-height:0;box-shadow:none;max-width:100%}.chip.repeat span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.repeat svg,.rp-head svg,.repeat-offer svg{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+.chip.repeat:hover{color:var(--text)}.chip.repeat.missed{color:var(--amber-text,var(--text))}
+.rp-head{display:flex;align-items:center;gap:6px;margin:0;font-weight:600}
+.rp-list{display:flex;flex-wrap:wrap;gap:6px}.rp-list button{font:inherit;font-size:.88rem;min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:none;color:var(--text);cursor:pointer;box-shadow:none;max-width:100%;white-space:normal;text-align:left}
+.rp-list button[aria-pressed="true"]{border-color:var(--text);font-weight:600}
+.rp-custom{display:flex;flex-direction:column;gap:6px;margin-top:8px}.rp-custom input{margin:0;box-sizing:border-box;width:100%}.rp-custom .nc-read{margin:0}
+.repeat-offer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface,var(--bg))}
+.repeat-offer p{flex:1 1 16em;min-width:0;margin:0;display:flex;gap:8px;align-items:baseline}.repeat-offer p svg{align-self:center}
+.repeat-offer .actions{display:flex;gap:8px;margin:0}.repeat-offer .actions button{margin:0;min-height:36px;padding:6px 12px}
 /* While sending, the site's sliding bar; once sent, the note in mint. */
 .card .note.sent-ok{color:var(--mint);font-weight:600}
 :is(.card,.chat-agent) .agent-job .note{margin-top:10px}:is(.card,.chat-agent) .agent-job .note.failed{color:var(--orange);font-weight:600}:is(.card,.chat-agent) .agent-progress{margin:2px 0 0;font-size:.86rem;overflow-wrap:anywhere}
@@ -3140,6 +3151,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-revi
 function limitNote(m){if(!m?.limit_reached)return '';return `<p class="limit-note"><strong>${esc(t(m.chatgpt?'ChatGPT limit reached':'Model limit reached'))}</strong>${m.limit_resets_at?esc(t(', resets at {}',clockAt(m.limit_resets_at))):''}${resetAction(m)?' · '+resetAction(m):''}</p>`}
 /*@include dashboard/settings-models.js*/
 /*@include dashboard/todos-cards.js*/
+/*@include dashboard/todos-repeat.js*/
 /*@include dashboard/todos-docwrite.js*/
 /*@include dashboard/settings-general.js*/
 // A lost connection, a cut-off or garbled answer or a server hiccup (5xx) is "offline": quiet, retried. Only a clear refusal
@@ -3393,7 +3405,7 @@ $('#badge-inbox').textContent=(open.length-fuHidden+(fleetData?fleetCards.length
 if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)))}catch{}
 const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestions').toggleAttribute('aria-busy',loading);
 const foldsBack=foldsKeep($('#suggestions'));
-if(!chatOpen())$('#suggestions').innerHTML=scopeNote(!anyShown&&!loading)+(anyShown?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+fuSendingCards()+[[fuv.ready,'Ready for you','ready'],[fuv.needs,'Needs your decision','needs'],[fuv.preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
+if(!chatOpen())$('#suggestions').innerHTML=repeatOfferLine()+scopeNote(!anyShown&&!loading)+(anyShown?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+fuSendingCards()+[[fuv.ready,'Ready for you','ready'],[fuv.needs,'Needs your decision','needs'],[fuv.preparing,'Preparing','preparing']].filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes. Waiting on others too.
 +(waitingOn.length?`<details id="waiting-list" ${waitOpen?'open':''}><summary id="waiting-head"><span>${esc(t('Waiting on others'))}</span><span class="count">${waitingOn.length}</span></summary>${waitingOn.map(s=>suggestionCard(s,'Waiting on others')).join('')}</details>`:'')
 +(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary id="later-head"><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+lookDoneList(lookDone,lookOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary id="finished-head"><span>Done / dismissed</span><span class="count">${doneTotal}</span></summary>${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
