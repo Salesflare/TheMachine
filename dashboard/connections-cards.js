@@ -215,7 +215,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  // the control plane has no app for it (or refused to start it): no Sign in button, the other way open at once
  else if(s.off&&paired)body=`<p class="muted">${esc(copy.about||'')}</p><p class="note signin-off">${esc(t(s.own&&copy.other&&copy.off||'Sign in with {} isn’t available yet.',s.label))}</p>`;
  else body=`<p class="muted">${esc(copy.about||'')}</p>`+(paired?`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${esc(s.label)}</button>${back}</div>${msAdmin(s)}`
-  :`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><a class="btn-link primary" href="${esc(connectList.pair_url)}" target="_blank" rel="noopener">Pair this Machine first ↗</a>${back}</div>`);
+  :`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`);
  const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
  const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':`<details class="connect-other"${off?' open':''}><summary>${esc(copy.other||'')}</summary><p>${esc(copy.how||'')}</p><div class="actions"><button type="button"${off?' class="primary"':''} data-connect="${esc(s.source)}">${esc(copy.go||'')}</button>${off?back:''}</div></details>`;
  const html=`<div class="connect-run connect-signin"><h3>${esc(copy.title||s.label)}</h3>${body}${paste}${off&&!paste?`<div class="actions">${back}</div>`:''}</div>`;
@@ -301,6 +301,7 @@ $('#connect-add').addEventListener('click',async e=>{const t=e.target;
  if(t.closest('[data-codex-signin]')){connectSignin=signinOf(codexSource(),'intro');$('#connect-add').dataset.sig='';renderConnectSignin();return}
  const signin=t.closest('[data-connect-signin]');if(signin){const x=connectList.sources.find(v=>v.name===signin.dataset.connectSignin);connectSignin=signinOf(x,'intro');$('#connect-add').dataset.sig='';renderConnectSignin();return}
  if(t.closest('[data-signin-go]')){signinGo(t.closest('[data-signin-go]').dataset.way);return}
+ if(t.closest('[data-connect-pair]')){aiPairGo(()=>{if(connectList)connectList.paired=true;$('#connect-add').dataset.sig='';if(connectSignin)renderConnectSignin()});return}  // one-click pairing (settings-ai.js, pairing.py)
  const approve=t.closest('[data-phone-approve]');if(approve){phoneApprove(approve);return}
  const start=t.closest('[data-connect]');if(start){connectSignin=null;clearTimeout(signinTimer);
   if(!start.dataset.connectAccount&&connectList?.sources.some(v=>v.name===start.dataset.connect&&v.form)){connectRun=null;connectForm=start.dataset.connect;$('#connect-add').dataset.sig='';renderConnectForm();return}

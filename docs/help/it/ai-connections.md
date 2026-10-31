@@ -3,7 +3,7 @@ title: Collegare altre IA
 area: connections
 summary: Fai leggere a Claude, ChatGPT, Cursor, Codex o GBrain le tue attività e il tuo Graph via MCP, ognuna con accesso e scadenza propri.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py
+code: ai_access.py, ai_app.py, pairing.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -15,7 +15,13 @@ Al massimo aggiungono un’attività, o un’attività con una bozza di email. U
 
 ## Collegarne una
 
-Nell’altra IA, aggiungi un connettore personalizzato o un server MCP con l’indirizzo della tua Machine seguito da `/mcp`. Su una Machine ospitata è `https://<tuo nome>.app.themachine.computer/mcp`. Su una Machine sul tuo computer è l’indirizzo della tua dashboard, che raggiungono solo i dispositivi nella tua tailnet.
+Apri **Impostazioni**, **IA**. In alto c’è l’indirizzo della tua Machine per le IA, `https://<il tuo nome>.mcp.themachine.computer/mcp`, con **Copia**. Su una Machine sul tuo computer, premi prima **Ottieni il tuo indirizzo**. Si apre una pagina del tuo account: controlla che mostri lo stesso codice, conferma e scegli un nome. La tua Machine si abbina da sola, senza riavvio.
+
+In ChatGPT, apri chatgpt.com/plugins, premi + e poi Add custom MCP server. Chiamalo The Machine, incolla l’indirizzo e scegli OAuth. Conferma l’avviso e premi Create as a plugin. Il tuo piano o workspace deve consentire server MCP personalizzati.
+
+In Claude, apri Customize, Connectors, premi + Add e poi Add custom connector. Chiamalo The Machine, incolla l’indirizzo, premi Continue e poi Add. Su Team ed Enterprise, un owner lo aggiunge in Organization settings.
+
+Le IA su un dispositivo nella tua tailnet, come Claude Code o Cursor, possono usare anche l’indirizzo della tua dashboard seguito da `/mcp`. **Scollega** toglie dal tuo account una Machine sul tuo computer.
 
 L’IA ti manda alla tua Machine per accedere. La tua Machine mostra quale IA è. Un’IA che non riconosce mostra l’indirizzo da cui arriva: collega solo se l’hai appena avviato tu.
 

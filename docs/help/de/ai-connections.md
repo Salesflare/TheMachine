@@ -3,7 +3,7 @@ title: Andere KIs verbinden
 area: connections
 summary: Lass Claude, ChatGPT, Cursor, Codex oder GBrain deine Aufgaben und deinen Graph über MCP lesen, jede mit eigenem Zugriff und Ablauf.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py
+code: ai_access.py, ai_app.py, pairing.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -15,7 +15,13 @@ Höchstens fügen sie eine Aufgabe hinzu, oder eine Aufgabe mit einem E-Mail-Ent
 
 ## Eine verbinden
 
-Füge in der anderen KI einen eigenen Connector oder MCP-Server mit der Adresse deiner Machine und `/mcp` hinzu. Bei einer gehosteten Machine ist das `https://<dein Name>.app.themachine.computer/mcp`. Bei einer Machine auf deinem eigenen Computer ist es die Adresse deines Dashboards, die nur Geräte in deinem Tailnet erreichen.
+Öffne **Einstellungen**, **KIs**. Oben steht die Adresse deiner Machine für KIs, `https://<dein Name>.mcp.themachine.computer/mcp`, mit **Kopieren**. Bei einer Machine auf deinem eigenen Computer tippst du zuerst auf **Adresse holen**. Eine Seite in deinem Konto öffnet sich: Prüfe, ob sie denselben Code zeigt, bestätige und wähle einen Namen. Deine Machine verbindet sich selbst, ohne Neustart.
+
+Öffne in ChatGPT chatgpt.com/plugins, tippe auf + und dann auf Add custom MCP server. Nenne ihn The Machine, füge die Adresse ein und wähle OAuth. Bestätige die Warnung und tippe auf Create as a plugin. Dein Tarif oder Workspace muss eigene MCP-Server erlauben.
+
+Öffne in Claude Customize, Connectors, tippe auf + Add und dann auf Add custom connector. Nenne ihn The Machine, füge die Adresse ein, tippe auf Continue und dann auf Add. Bei Team und Enterprise fügt ein Owner ihn in Organization settings hinzu.
+
+KIs auf einem Gerät in deinem Tailnet, etwa Claude Code oder Cursor, können auch die Adresse deines Dashboards mit `/mcp` nutzen. **Trennen** nimmt eine Machine auf deinem eigenen Computer wieder aus deinem Konto.
 
 Die KI schickt dich zur Anmeldung zu deiner Machine. Deine Machine zeigt, welche KI es ist. Eine KI, die sie nicht erkennt, zeigt die Adresse, von der sie kommt: Verbinde nur, wenn du das gerade selbst gestartet hast.
 

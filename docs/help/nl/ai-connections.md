@@ -3,7 +3,7 @@ title: Andere AI's koppelen
 area: connections
 summary: Laat Claude, ChatGPT, Cursor, Codex of GBrain je to-do's en Graph lezen via MCP, elk met eigen toegang en vervaldatum.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py
+code: ai_access.py, ai_app.py, pairing.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -15,7 +15,13 @@ Hoogstens voegen ze een to-do toe, of een to-do met een e-mailconcept. Een conce
 
 ## Er een koppelen
 
-Voeg in de andere AI een eigen connector of MCP-server toe met het adres van je Machine plus `/mcp`. Op een gehoste Machine is dat `https://<jouw naam>.app.themachine.computer/mcp`. Op een Machine op je eigen computer is het het adres van je dashboard, dat alleen apparaten in je tailnet bereiken.
+Open **Instellingen**, **AI's**. Bovenaan staat het adres van je Machine voor AI's, `https://<jouw naam>.mcp.themachine.computer/mcp`, met **Kopiëren**. Op een Machine op je eigen computer druk je eerst op **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart.
+
+Open in ChatGPT chatgpt.com/plugins, druk op + en dan op Add custom MCP server. Noem hem The Machine, plak het adres en kies OAuth. Bevestig de waarschuwing en druk op Create as a plugin. Je abonnement of werkruimte moet eigen MCP-servers toestaan.
+
+Open in Claude Customize, Connectors, druk op + Add en dan op Add custom connector. Noem hem The Machine, plak het adres en druk op Continue en dan op Add. Bij Team en Enterprise voegt een eigenaar hem toe in Organization settings.
+
+AI's op een apparaat in je tailnet, zoals Claude Code of Cursor, kunnen ook het adres van je dashboard plus `/mcp` gebruiken. **Ontkoppelen** haalt een Machine op je eigen computer weer van je account.
 
 De AI stuurt je naar je Machine om in te loggen. Je Machine toont welke AI het is. Een AI die hij niet herkent, toont het adres waar hij vandaan komt: koppel alleen als je dit net zelf hebt gestart.
 

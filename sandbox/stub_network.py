@@ -224,6 +224,8 @@ class Network:
         if method == 'POST' and path == '/bug':  # Help, Report a bug: kept here, never sent on
             self.__dict__.setdefault('bugs', []).append(body)
             return {'id': 's_sandbox' + secrets.token_hex(4)}
+        if path == '/ai-reach':  # the account's name for the address for AIs (Settings, AIs; ai_app.ai_reach)
+            return {'username': self.net['owner']['username'], 'hosted': False} if method == 'GET' else {}
         if path == '/support-access':  # Support access: the switch is kept on the Machine; no team looks in the sandbox
             return {'accesses': []}
         return None

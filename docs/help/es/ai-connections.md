@@ -3,7 +3,7 @@ title: Conectar otras IA
 area: connections
 summary: Deja que Claude, ChatGPT, Cursor, Codex o GBrain lean tus tareas y tu Graph por MCP, cada una con su acceso y su caducidad.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py
+code: ai_access.py, ai_app.py, pairing.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -15,7 +15,13 @@ Como mucho añaden una tarea, o una tarea con un borrador de correo. Un borrador
 
 ## Conectar una
 
-En la otra IA, añade un conector personalizado o un servidor MCP con la dirección de tu Machine seguida de `/mcp`. En una Machine alojada es `https://<tu nombre>.app.themachine.computer/mcp`. En una Machine en tu propio ordenador es la dirección de tu panel, a la que solo llegan los dispositivos de tu tailnet.
+Abre **Ajustes**, **IA**. Arriba está la dirección de tu Machine para las IA, `https://<tu nombre>.mcp.themachine.computer/mcp`, con **Copiar**. En una Machine en tu propio ordenador, pulsa primero **Obtener tu dirección**. Se abre una página de tu cuenta: comprueba que muestra el mismo código, confirma y elige un nombre. Tu Machine se vincula sola, sin reiniciar.
+
+En ChatGPT, abre chatgpt.com/plugins, pulsa + y luego Add custom MCP server. Llámalo The Machine, pega la dirección y elige OAuth. Confirma el aviso y pulsa Create as a plugin. Tu plan o espacio de trabajo tiene que permitir servidores MCP personalizados.
+
+En Claude, abre Customize, Connectors, pulsa + Add y luego Add custom connector. Llámalo The Machine, pega la dirección, pulsa Continue y luego Add. En Team y Enterprise, un propietario lo añade en Organization settings.
+
+Las IA de un dispositivo en tu tailnet, como Claude Code o Cursor, también pueden usar la dirección de tu panel seguida de `/mcp`. **Desvincular** quita de tu cuenta una Machine en tu propio ordenador.
 
 La IA te lleva a tu Machine para iniciar sesión. Tu Machine muestra qué IA es. Una IA que no reconoce muestra la dirección de la que viene: conecta solo si acabas de iniciarlo tú.
 

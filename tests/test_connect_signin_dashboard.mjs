@@ -15,6 +15,7 @@ let paired=true,state='started',calls=[],refuse=false;
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
+ if(url.pathname==='/pair/'+'P'.repeat(22)){res.setHeader('Content-Type','text/html');res.end('<title>Pair</title>pair');return}
  if(url.pathname==='/connect/start/'+'A'.repeat(32)){res.setHeader('Content-Type','text/html');res.end('<title>Intercom</title>consent');return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action,args}=JSON.parse(body);calls.push(action);
@@ -30,6 +31,8 @@ const server=createServer(async(req,res)=>{
    {name:'github',service:'github',label:'GitHub',connected:0,broker:false}]}));return}
   if(action==='connect_signin'){assert.ok(['intercom','trello','gmail','docs'].includes(args.name));if(refuse){res.end(JSON.stringify({state:'unavailable'}));return}res.end(JSON.stringify({url:base+'/connect/start/'+'A'.repeat(32),state:'started'}));return}
   if(action==='connect_signin_state'){res.end(JSON.stringify(state==='done'?{state:'done',name:'Example Support',replies:true}:state==='done-google'?{state:'done',name:'dee@acme.example'}:state==='done-trello'?{state:'done',name:'Trello'}:{state}));return}
+  if(action==='ai_pair_start'){res.end(JSON.stringify({url:base+'/pair/'+'P'.repeat(22),code:'ABCD-EFGH',state:'waiting'}));return}
+  if(action==='ai_pair_state'){paired=true;res.end(JSON.stringify({state:'paired',reach:{paired:true,hosted:false,address:'https://pat.mcp.themachine.computer/mcp'}}));return}
   if(action==='connect_start'){res.end(JSON.stringify({session:'s1',state:'running',label:'Intercom',lines:[],question:{id:'q1',kind:'secret',prompt:'Intercom access token'}}));return}
   res.end('{}');return}
  res.end('{}');
@@ -89,14 +92,16 @@ try{
   paired=false;
   await page.goto('about:blank');await page.goto(base+'/#connections=add');
   await page.locator('#connect-add [data-connect-signin="intercom"]').click();
-  const pair=page.getByRole('link',{name:'Pair this Machine first ↗'});
+  // one click (pairing.py): the account's pair page in a new tab, then this Machine pairs by itself and Sign in shows
+  const pair=page.getByRole('button',{name:'Pair this Machine'});
   await pair.waitFor();
-  assert.equal(await pair.getAttribute('href'),'https://app.example.org/account?tab=fleet#devices');
-  assert.equal(await pair.getAttribute('target'),'_blank');
   assert.equal(await page.getByRole('button',{name:'Sign in with Intercom'}).count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
   assert.equal(await page.locator('#connect-add details.connect-other').count(),0);
   await shot(page,`add-intercom-not-paired-${tag}`);
+  const [pairTab]=await Promise.all([page.context().waitForEvent("page"),pair.click()]);
+  await pairTab.waitForURL(/\/pair\/P+$/);await pairTab.close();
+  await page.getByRole('button',{name:'Sign in with Intercom'}).waitFor({timeout:8000});
   // Google: Gmail and Calendar in one sign-in, with its own app folded away
   paired=true;state='started';
   await page.goto('about:blank');await page.goto(base+'/#connections=add');

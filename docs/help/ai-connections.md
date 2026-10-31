@@ -3,7 +3,7 @@ title: Connect other AIs
 area: connections
 summary: Let Claude, ChatGPT, Cursor, Codex or GBrain read your to-dos and Graph over MCP, each with its own access and expiry.
 covers: ai-connections, settings:ai
-code: ai_access.py, ai_app.py
+code: ai_access.py, ai_app.py, pairing.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
 ---
@@ -15,7 +15,13 @@ At most they add a to-do, or a to-do with an email draft. A draft waits in your 
 
 ## Connect one
 
-In the other AI, add a custom connector or MCP server with your Machine's address followed by `/mcp`. On a hosted Machine that is `https://<your name>.app.themachine.computer/mcp`. On a Machine on your own computer it is your dashboard's address, which only devices in your tailnet reach.
+Open **Settings**, **AIs**. At the top is your Machine's address for AIs, `https://<your name>.mcp.themachine.computer/mcp`, with **Copy**. On a Machine on your own computer, press **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart.
+
+In ChatGPT, open chatgpt.com/plugins, press +, then Add custom MCP server. Name it The Machine, paste the address and pick OAuth. Confirm the warning and press Create as a plugin. Your plan or workspace has to allow custom MCP servers.
+
+In Claude, open Customize, Connectors, press + Add, then Add custom connector. Name it The Machine, paste the address, press Continue, then Add. On Team and Enterprise, an owner adds it in Organization settings.
+
+AIs on a device in your tailnet, like Claude Code or Cursor, can also use your dashboard's address followed by `/mcp`. **Unpair** takes a Machine on your own computer off your account again.
 
 The AI sends you to your Machine to sign in. Your Machine shows which AI it is. An AI it can't recognize shows the address it came from: connect only if you just started this yourself.
 

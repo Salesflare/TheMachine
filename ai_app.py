@@ -9,18 +9,26 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import socket
 import sqlite3
+import threading
+import time
 import urllib.parse
 
 import ai_access
+import fleet
 import graph
 import i18n
 import locale_prefs
 import next_actions
+import pairing
 
 OPEN = ('pending', 'accepted', 'prepared', 'instructions')
 EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
 EXPIRY_LABEL = {'1d': '1 day', '7d': '7 days', '30d': '30 days', '1y': '1 year'}
+MCP_DOMAIN = 'mcp.themachine.computer'  # each Machine's address for AIs: https://<name>.<this>/mcp (docs/ai-connections.md)
+NAME = re.compile(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?')
+REACH_FRESH = 60  # seconds the account's answer about this Machine's name is kept
 
 
 class AiApp:
@@ -30,7 +38,10 @@ class AiApp:
         'ai_connections',
         'ai_key',
         'ai_off',
+        'ai_pair_start',
+        'ai_pair_state',
         'ai_remove',
+        'ai_unpair',
     ), 'ai_dashboard_action')
     ai_limiter = ai_access.Limiter()
 
@@ -39,6 +50,8 @@ class AiApp:
     def ai_dashboard_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
             raise ValueError('Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)')
+        if name in ('ai_pair_start', 'ai_pair_state', 'ai_unpair'):
+            return getattr(self, name)(args)
         cid = str(args.get('id') or '')
         with self.store.connect() as db:
             if name == 'ai_change':
@@ -55,7 +68,122 @@ class AiApp:
     def ai_view(self, db):
         base = self.ai_issuer()
         return {'connections': ai_access.connections(db), 'areas': self.ai_areas(), 'mcp_url': base + '/mcp' if base else None,
-                'hosted': bool(self.config.get('manage_url'))}
+                'hosted': bool(self.config.get('manage_url')), 'reach': self.ai_reach()}
+
+    # ------------------------------------------------------------------ the address for AIs, and pairing for it
+
+    def ai_reach(self, fresh=False):
+        """Settings, AIs, top: this Machine's address for cloud AIs (https://<name>.mcp.themachine.computer/mcp), or what
+        is missing for one. Hosted: the dashboard host's name. Self-hosted: paired with the account, and the account's
+        name (GET /api/fleet/ai-reach), kept REACH_FRESH. {'address', 'paired', 'hosted', 'name', 'pairing', 'away'}"""
+        if self.config.get('manage_url'):
+            label = str(self.config.get('dashboard_host') or '').split('.', 1)[0].lower()
+            return {'hosted': True, 'paired': True, 'name': label or None,
+                    'address': mcp_address(label) if NAME.fullmatch(label or '') else None}
+        pending = self.ai_pairing_view()
+        if getattr(self, 'fleet', None) is None:
+            return {'hosted': False, 'paired': False, 'name': None, 'address': None, 'pairing': pending}
+        kept = self.__dict__.get('ai_reach_kept')
+        if kept and not fresh and time.monotonic() - kept[0] < REACH_FRESH:
+            found = kept[1]
+        else:
+            try:
+                answer = self.fleet.relay.call('GET', '/ai-reach', timeout=10) or {}
+                found = {'name': str(answer.get('username') or '').lower() or None, 'other': bool(answer.get('hosted'))}
+            except (fleet.Off, fleet.Unavailable, OSError, ValueError):
+                found = {'name': None, 'away': True}
+            self.ai_reach_kept = (time.monotonic(), found)
+        name = found.get('name') if NAME.fullmatch(found.get('name') or '') else None
+        return {'hosted': False, 'paired': True, 'name': name, 'address': mcp_address(name) if name else None,
+                'other': bool(found.get('other')), 'away': bool(found.get('away')), 'pairing': pending,
+                'account': fleet.account_url(self.config)}
+
+    def ai_pairing_view(self):
+        found = self.__dict__.get('ai_pairing')
+        if not found:
+            return None
+        return {k: found[k] for k in ('url', 'code', 'state', 'error') if found.get(k)}
+
+    def ai_pair_start(self, args):
+        """Get your address: a self-hosted Machine not paired yet asks its account for a pair page (pairing.py) and the
+        dashboard opens it; one that is paired but whose account has no name yet goes to the Account page for it.
+        Either way the dashboard then follows ai_pair_state."""
+        if self.config.get('manage_url'):
+            raise ValueError(i18n.t('This Machine is on your account already'))
+        if getattr(self, 'fleet', None) is not None:
+            self.ai_reach_kept = None
+            return {'url': fleet.account_url(self.config) or fleet.CONTROL + '/account', 'state': 'name'}
+        label = str(args.get('label') or '').strip() or socket.gethostname().split('.')[0] or 'My Machine'
+        try:
+            made = pairing.start(self.config, label)
+        except fleet.Limited:
+            raise ValueError(i18n.t('Too many tries. Wait a few minutes.')) from None
+        made['state'] = 'waiting'
+        self.ai_pairing = made
+        guard = self.__dict__.setdefault('ai_pair_lock', threading.Lock())
+        if guard.acquire(blocking=False):
+            threading.Thread(target=self.ai_pair_watch, args=(guard,), name='pair-watch', daemon=True).start()
+        return {'url': made['url'], 'code': made['code'], 'state': 'waiting'}
+
+    def ai_pair_watch(self, guard, wait=None, clock=None):
+        """While a pair page waits: pick the token up every PICKUP_EVERY seconds; once paired, keep it and start the
+        Fleet now (App.fleet_live), no restart."""
+        wait, clock = wait or time.sleep, clock or time.time
+        try:
+            while True:
+                found = self.__dict__.get('ai_pairing')
+                if not found or found.get('state') != 'waiting':
+                    return
+                if clock() > found['until']:
+                    found['state'] = 'gone'
+                    return
+                try:
+                    got = pairing.pickup(self.config, found['id'])
+                except fleet.Limited:
+                    got = {'state': 'waiting'}
+                except ValueError as error:
+                    got = {'state': 'waiting'}
+                    found['error'] = str(error)[:200]
+                if got['state'] == 'paired':
+                    pairing.keep(self.config, getattr(self, 'config_path', None), got['token'])
+                    self.fleet_live()
+                    self.ai_reach_kept = None
+                    found['state'] = 'paired'
+                    return
+                if got['state'] == 'gone':
+                    found['state'] = 'gone'
+                    return
+                wait(pairing.PICKUP_EVERY)
+        finally:
+            guard.release()
+
+    def ai_pair_state(self, args):
+        """How Get your address is going: {'state': 'waiting'|'paired'|'gone'|'name'|'none', 'reach'}."""
+        pending = self.__dict__.get('ai_pairing')
+        reach = self.ai_reach(fresh=bool(args.get('fresh')))
+        state = (pending or {}).get('state') or ('name' if reach.get('paired') and not reach.get('address') else 'none')
+        return {'state': state, 'reach': reach}
+
+    def ai_unpair(self, args):
+        """Unpair (Settings, AIs): this Machine's token goes, the Fleet stops. The account keeps the device until it is
+        disconnected there."""
+        if self.config.get('manage_url'):
+            raise ValueError(i18n.t('A hosted Machine stays on your account'))
+        if getattr(self, 'fleet', None) is None:
+            return self.ai_view_now()
+        try:
+            self.fleet.relay.call('POST', '/ai-reach', {'on': False}, timeout=10)  # the account drops its address at once
+        except (fleet.Off, fleet.Unavailable, OSError, ValueError):
+            pass
+        pairing.forget(self.config, getattr(self, 'config_path', None))
+        self.fleet_drop()
+        self.ai_pairing = None
+        self.ai_reach_kept = None
+        return self.ai_view_now()
+
+    def ai_view_now(self):
+        with self.store.connect() as db:
+            return self.ai_view(db)
 
     def ai_areas(self):
         """The areas this Machine has accounts in: ['work', 'personal'], or one of them."""
@@ -402,6 +530,10 @@ class AiApp:
         return {'id': made, 'link': self.ai_link(made), 'sent': False,
                 'note': 'The draft waits in The Machine. Only the owner can send it, after reading it.'}, \
             i18n.t('Added a draft to {}: “{}”', ', '.join(to)[:80], subject[:80])
+
+
+def mcp_address(name):
+    return f'https://{name}.{MCP_DOMAIN}/mcp'
 
 
 def clamp_int(value, default, top):

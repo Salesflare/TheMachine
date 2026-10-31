@@ -1046,7 +1046,10 @@ AI_ACTIONS = {
     'ai_connections',
     'ai_key',
     'ai_off',
+    'ai_pair_start',
+    'ai_pair_state',
     'ai_remove',
+    'ai_unpair',
 }
 OWNER_ACTIONS |= AI_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
@@ -14031,6 +14034,24 @@ class App(*APP_MIXINS):
         self.model_usage = None
         self.chat_catalog = chat_model.Catalog()  # the models a chat can pick, from the Gateway (chat_model.py)
         # The Fleet (fleet.py): only when the control plane put this Machine in one.
+        self.fleet_attach()
+        # Skills (skills.py): the owner's how-tos, written to the OpenClaw workspace; shared ones come in through the Fleet.
+        self.skills = skills.Skills(self.store.connect, config.get('openclaw_workspace') or WORKSPACE, self.fleet, config=config)
+        self.skills.finder = self.skills_find_start
+        # Hand to Claude Code / Hand to Codex on a card (agent_jobs.py): only where the tool is there to hand to.
+        self.agents = agent_jobs.AgentJobs(self.store.connect, config, Path(config['database']).parent / 'agent-jobs',
+                                           card=self.agent_card, revise=self.agent_revise,
+                                           network=(lambda body: self.fleet.relay.call('POST', '/agent-results', body)) if self.fleet else None,
+                                           ) if agent_jobs.settings(config) is not None else None
+        if self.fleet:
+            self.fleet.skills = self.skills
+            self.fleet.graph_build = self.graph_build  # a shared contact the owner adds (contact_share.py)
+            self.fleet.about_you = self.about_you  # Share my contact: the owner's own addresses and numbers
+
+    def fleet_attach(self):
+        """Builds self.fleet with the App's hooks: at start, and again when the Machine pairs from its dashboard
+        (fleet_live). None while it isn't paired."""
+        config = self.config
         self.fleet = fleet.Fleet(self.store.connect, config, lambda: credential(config, 'fleet')) if fleet.settings(config) and config.get('credentials', {}).get('fleet') else None
         if self.fleet:
             self.fleet.notify = self.fleet_notify
@@ -14075,18 +14096,39 @@ class App(*APP_MIXINS):
             self.fleet.connect_delivered = self.fleet_connect_delivered  # Sign in with Intercom for this Machine (fleet.py)
             self.fleet.watch_connects = True  # and picked up a moment after consent, apart from the Fleet's loop (connects_watch)
             self.fleet.support_read = self.support_read  # Support access: the team's read, while the owner allows it (fleet.py)
-        # Skills (skills.py): the owner's how-tos, written to the OpenClaw workspace; shared ones come in through the Fleet.
-        self.skills = skills.Skills(self.store.connect, config.get('openclaw_workspace') or WORKSPACE, self.fleet, config=config)
-        self.skills.finder = self.skills_find_start
-        # Hand to Claude Code / Hand to Codex on a card (agent_jobs.py): only where the tool is there to hand to.
-        self.agents = agent_jobs.AgentJobs(self.store.connect, config, Path(config['database']).parent / 'agent-jobs',
-                                           card=self.agent_card, revise=self.agent_revise,
-                                           network=(lambda body: self.fleet.relay.call('POST', '/agent-results', body)) if self.fleet else None,
-                                           ) if agent_jobs.settings(config) is not None else None
-        if self.fleet:
+
+    def fleet_live(self):
+        """Paired just now from the dashboard (pairing.py): the Fleet starts without a restart, with everything that
+        hangs on it at start (skills, agent results, bug reports)."""
+        if getattr(self, 'fleet', None) is not None:
+            return self.fleet
+        self.fleet_attach()
+        if not self.fleet:
+            return None
+        if getattr(self, 'skills', None):
+            self.skills.fleet = self.fleet
             self.fleet.skills = self.skills
-            self.fleet.graph_build = self.graph_build  # a shared contact the owner adds (contact_share.py)
-            self.fleet.about_you = self.about_you  # Share my contact: the owner's own addresses and numbers
+        self.fleet.graph_build = self.graph_build
+        self.fleet.about_you = self.about_you
+        if getattr(self, 'agents', None) is not None:
+            self.agents._network = lambda body: self.fleet.relay.call('POST', '/agent-results', body)
+        stop = self.__dict__.setdefault('fleet_stop', threading.Event())
+        stop.clear()
+        threading.Thread(target=self.fleet.run, args=(stop,), name='fleet', daemon=True).start()
+        threading.Thread(target=self.bug_queue_worker, name='bug-queue', daemon=True).start()
+        LOG.info('fleet started after pairing')
+        return self.fleet
+
+    def fleet_drop(self):
+        """Unpaired from the dashboard: the Fleet's loop stops and nothing uses its token any more."""
+        stop = self.__dict__.get('fleet_stop')
+        if stop is not None:
+            stop.set()
+        self.fleet = None
+        if getattr(self, 'skills', None):
+            self.skills.fleet = None
+        if getattr(self, 'agents', None) is not None:
+            self.agents._network = None
 
     MESSAGE_CACHE = 40  # source emails kept in memory for the dashboard, newest used last
     MESSAGE_TTL = 600  # seconds
