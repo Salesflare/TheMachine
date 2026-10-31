@@ -55,7 +55,7 @@ class Activity(unittest.TestCase):
 
     def test_a_block_stays_history_when_the_send_is_canceled_or_sent_later(self):
         """A send a check stopped shows as Blocked, with its reason, under Refused or blocked, also after the to-do
-        cancels it or a new Send gets it out; canceling still means what it did (the outbox row says cancelled)."""
+        cancels it or a new Send gets it out; canceling still means what it did in the outbox."""
         email = {'kind': 'email', 'to': ['Robin <robin@globex.example>'], 'subject': 'Pricing', 'account_id': 'work'}
         self.job(1, email, 'queued', '2026-10-30T09:00:00+00:00')
         self.job(2, {'kind': 'whatsapp', 'to': 'Robin'}, 'queued', '2026-10-30T10:00:00+00:00')
