@@ -487,6 +487,16 @@ class DeviceToken(unittest.TestCase):
         self.assertIsNone(ai_app.AiReachSide(types.SimpleNamespace(fleet=None)).token())
 
 
+class Dialing(unittest.TestCase):
+    def test_an_id_already_being_dialed_is_not_dialed_again(self):
+        loop = ai_reach.Reach({}, None, base='http://127.0.0.1:1')
+        self.assertTrue(loop.claim('ab' * 8))
+        self.assertFalse(loop.claim('ab' * 8))  # the next mcp-wait listed it again before it attached
+        with patch.object(ai_reach, 'open_stream', side_effect=OSError('stream 404')):
+            loop.connection('ab' * 8, HOST, 'fd_x')
+        self.assertTrue(loop.claim('ab' * 8))  # done with it: a later listing may dial it
+
+
 class WithoutCryptography(Base):
     def setUp(self):
         super().setUp()

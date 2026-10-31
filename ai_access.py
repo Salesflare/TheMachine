@@ -787,7 +787,7 @@ def consent_page(req, issuer, csrf, areas, lang=None):
     expiries = ''.join(f'<option value="{k}"{" selected" if k == "30d" else ""}>{t(v)}</option>'
                        for k, v in (('1d', '1 day'), ('7d', '7 days'), ('30d', '30 days'), ('1y', '1 year')))
     return f"""<!doctype html><html lang="{html.escape(lang or 'en')}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{t('Connect an AI')}</title><style>
+<meta name="referrer" content="same-origin"><title>{t('Connect an AI')}</title><style>
 body{{font:16px/1.5 system-ui,-apple-system,sans-serif;margin:0;background:#f6f5f2;color:#1d1c1a}}
 main{{max-width:30em;margin:2em auto;padding:0 16px}}h1{{font-size:1.4em;line-height:1.25}}
 fieldset{{border:1px solid #d8d5ce;border-radius:10px;margin:1em 0;padding:.6em 1em}}legend{{font-weight:600;padding:0 .3em}}
@@ -795,7 +795,8 @@ label{{display:block;margin:.35em 0}}.warn{{background:#fff3d6;border-radius:8px
 .row{{display:flex;gap:.6em;margin-top:1.4em}}button{{font:inherit;padding:.6em 1.2em;border-radius:999px;border:1px solid #1d1c1a;background:#fff;cursor:pointer}}
 button.go{{background:#1d1c1a;color:#fff}}select{{font:inherit;padding:.3em}}
 @media (prefers-color-scheme:dark){{body{{background:#171614;color:#eeebe4}}fieldset{{border-color:#3a3833}}.where{{color:#aaa59b}}
-.warn{{background:#3b2f12}}button{{background:#24221f;color:#eeebe4;border-color:#eeebe4}}button.go{{background:#eeebe4;color:#171614}}}}
+.warn{{background:#3b2f12}}button{{background:#24221f;color:#eeebe4;border-color:#eeebe4}}button.go{{background:#eeebe4;color:#171614}}
+select{{background:#24221f;color:#eeebe4;border:1px solid #3a3833;border-radius:6px;color-scheme:dark}}}}
 </style><main><h1>{who}</h1><p class="where">{t('After you choose, you go back to {}.', where)}</p>{note}
 <p>{t('It can read your to-dos, promises, team briefs and the people in your Graph. It never sends anything and never acts for you.')}</p>
 <form method="post" action="{html.escape(AUTHORIZE)}">{hidden}
@@ -808,6 +809,15 @@ button.go{{background:#1d1c1a;color:#fff}}select{{font:inherit;padding:.3em}}
 </form></main></html>"""
 
 
+PAGE_REFUSED = {'signin': 'Open this in a browser where your Machine knows it’s you, then connect again from your AI.',
+           'expired': 'This page expired. Connect again from your AI.'}
+
+
+def refused_page(why, lang=None):
+    """The consent page's refusals, as a page: a person in a browser never sees raw JSON."""
+    return error_page(i18n.t(PAGE_REFUSED[why], lang=lang), lang)
+
+
 def error_page(text, lang=None):
-    return (f'<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>The Machine</title>'
+    return (f'<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light dark"><title>The Machine</title>'
             f'<p style="font:16px system-ui;max-width:32em;margin:3em auto;padding:0 16px">{html.escape(text)}</p>')

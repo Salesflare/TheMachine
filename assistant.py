@@ -22069,8 +22069,9 @@ class App(*APP_MIXINS):
                     return None
                 return next(iter(content_codings(self.headers.get('Accept-Encoding'))), None)
 
-            def output(self, status, value, content_type='application/json', packed=None):
-                """`packed`: the answer already compressed, as (coding, bytes), for the page (kept per release)."""
+            def output(self, status, value, content_type='application/json', packed=None, referrer='no-referrer'):
+                """`packed`: the answer already compressed, as (coding, bytes), for the page (kept per release). `referrer`:
+                the consent page's is same-origin, since under no-referrer Chrome sends its form's POST with `Origin: null`."""
                 data = value if isinstance(value, bytes) else encoded(value).encode() if content_type == 'application/json' else value.encode()
                 coding = packed[0] if packed else self.coding(data, content_type, status)
                 if coding:
@@ -22088,7 +22089,7 @@ class App(*APP_MIXINS):
                     self.send_header('ETag', self.etag[:-1] + '-' + coding + '"' if coding else self.etag)
                     self.etag = None
                 self.send_header('X-Content-Type-Options', 'nosniff')
-                self.send_header('Referrer-Policy', 'no-referrer')
+                self.send_header('Referrer-Policy', referrer)
                 self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' https: data:; frame-ancestors 'none'")
                 self.end_headers()
                 try:
@@ -22160,6 +22161,9 @@ class App(*APP_MIXINS):
                     self.ai('GET')
                     return
                 if not self.owner():
+                    if path.path == ai_access.AUTHORIZE:  # a person in a browser, mid sign-in: a page, never JSON
+                        self.output(403, ai_access.refused_page('signin', lang=locale_prefs.language()), 'text/html')
+                        return
                     self.output(403, {'error': 'Use the owner-authenticated Tailscale dashboard'})
                     return
                 if (path.path == '/browser' or path.path.startswith('/browser/')) and app.config.get('browser_vnc'):
@@ -22188,7 +22192,7 @@ class App(*APP_MIXINS):
                         self.send_header('Content-Length', '0')
                         self.end_headers()
                     else:
-                        self.output(status, page, 'text/html')
+                        self.output(status, page, 'text/html', referrer='same-origin')
                 elif path.path == '/manifest.webmanifest':
                     self.output(200, (ROOT / 'manifest.webmanifest').read_text(), 'application/manifest+json')
                 elif path.path == '/sw.js':
@@ -22619,12 +22623,20 @@ class App(*APP_MIXINS):
                     length = int(self.headers.get('Content-Length') or 0)
                 except ValueError:
                     length = 0
-                if not (self.owner() and self.headers.get('Origin') == 'https://' + self.headers.get('Host', '')) or not 0 < length <= 8192:
-                    self.output(403, {'error': 'Unauthorized'})
+                # A page that was served under no-referrer (an older release's, still open) posts with `Origin: null`;
+                # the browser's own Sec-Fetch-Site then says whether it came from this origin. The CSRF field stays required.
+                origin = self.headers.get('Origin')
+                same = (origin == 'https://' + self.headers.get('Host', '')
+                        or origin in (None, 'null') and self.headers.get('Sec-Fetch-Site') == 'same-origin')
+                if not self.owner():
+                    self.output(403, ai_access.refused_page('signin', lang=locale_prefs.language()), 'text/html')
+                    return
+                if not same or not 0 < length <= 8192:
+                    self.output(403, ai_access.refused_page('expired', lang=locale_prefs.language()), 'text/html')
                     return
                 form = {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode('utf-8', 'replace')).items()}
                 if not hmac.compare_digest(str(form.get('csrf') or '').encode(), csrf.encode()):
-                    self.output(403, {'error': 'Unauthorized'})
+                    self.output(403, ai_access.refused_page('expired', lang=locale_prefs.language()), 'text/html')
                     return
                 try:
                     where = app.ai_consent_post(form)
