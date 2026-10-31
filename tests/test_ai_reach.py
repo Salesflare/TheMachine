@@ -24,6 +24,7 @@ from unittest.mock import patch
 
 import ai_access
 import ai_app
+import types
 import ai_reach
 import fleet
 
@@ -471,6 +472,19 @@ class DialBack(Base):
         self.assertEqual(chunked[0], 200, chunked[2])  # a chunked tools/list, with a key
         self.assertIn('list_todos', [t['name'] for t in json.loads(chunked[2])['result']['tools']])
         self.assertEqual([authorize[0], status[0], root[0]], [404, 404, 404])  # no sign-in, no dashboard, no owner
+
+
+class DeviceToken(unittest.TestCase):
+    def test_the_token_comes_through_the_sealing_wrapper_and_a_credential_callable(self):
+        app = types.SimpleNamespace(fleet=types.SimpleNamespace(relay=types.SimpleNamespace(inner=types.SimpleNamespace(token=lambda: 'fd_' + 'e' * 30))))
+        self.assertEqual(ai_app.AiReachSide(app).token(), 'fd_' + 'e' * 30)
+        app.fleet.relay = types.SimpleNamespace(token='fd_' + 'f' * 30)
+        self.assertEqual(ai_app.AiReachSide(app).token(), 'fd_' + 'f' * 30)
+        def gone():
+            raise OSError('no credential')
+        app.fleet.relay = types.SimpleNamespace(inner=types.SimpleNamespace(token=gone))
+        self.assertIsNone(ai_app.AiReachSide(app).token())
+        self.assertIsNone(ai_app.AiReachSide(types.SimpleNamespace(fleet=None)).token())
 
 
 class WithoutCryptography(Base):
