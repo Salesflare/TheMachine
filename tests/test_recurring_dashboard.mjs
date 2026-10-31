@@ -24,7 +24,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(b.action==='card_repeat'){const rule=b.args.repeat==='none'||/stop/i.test(b.args.words||'')?null:b.args.repeat||{unit:'month',n:1};
    res.end(JSON.stringify({id:b.args.suggestion_id,repeats:rule&&{rule,anchor:'2026-11-02',due:'2026-11-02',missed:0}}));return}
   if(b.action==='card_repeat_skip'){res.end(JSON.stringify({id:b.args.suggestion_id,next:'2026-12-07'}));return}
-  if(b.action==='repeat_read'){res.end(JSON.stringify(/2 weeks/.test(b.args.text)?{rule:{unit:'week',n:2},anchor:'2026-11-02'}:{rule:null}));return}
+  if(b.action==='repeat_read'){res.end(JSON.stringify(/odd/.test(b.args.text)?{rule:{unit:'week',n:'<img src=x onerror="window.__xss=1">'},anchor:'2026-11-02'}:/2 weeks/.test(b.args.text)?{rule:{unit:'week',n:2},anchor:'2026-11-02'}:{rule:null}));return}
   if(b.action==='recurring_offer'){offer=null;res.end(JSON.stringify({key:b.args.key,made:null}));return}
   if(b.action==='card_chat'){res.end(JSON.stringify({session:false,active:false,status:null,items:[],cursor:null}));return}
   if(b.action==='card_new'){res.end(JSON.stringify({id:'n1',repeats:b.args.repeat?{rule:b.args.repeat,anchor:'2026-11-02'}:undefined}));return}}
@@ -58,6 +58,10 @@ try{
   // Repeat on a to-do: Custom… reads the words, Enter sets it
   await page.locator('#task-'+P1+' .more-actions summary').click();await page.locator('#task-'+P1+' .more-menu [data-repeat]').click();
   const pbox=page.locator('#task-'+P1+' .repeat-picker');await pbox.waitFor();await pbox.getByText('Custom…').click();
+  // What the Machine read is shown as text, never markup
+  await pbox.locator('.rp-custom input').fill('every odd week');await pbox.locator('[data-rp-set]').waitFor();
+  assert.equal(await pbox.locator('.nc-read img').count(),0);assert.match(await pbox.locator('[data-rp-set]').innerText(),/<img src=x/);
+  assert.equal(await page.evaluate(()=>window.__xss),undefined);
   await pbox.locator('.rp-custom input').fill('every 2 weeks');await pbox.getByText('Repeats every 2 weeks on Monday').waitFor();await pbox.locator('.rp-custom input').press('Enter');
   await pbox.waitFor({state:'detached'});assert.deepEqual(sent('card_repeat').at(-1).repeat,{unit:'week',n:2});
   // Skip this one

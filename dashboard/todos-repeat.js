@@ -33,7 +33,7 @@ function repeatCustom(box,set){const wrap=box.querySelector('.rp-custom'),input=
  wrap.hidden=false;input.focus();
  const look=async()=>{const q=input.value.trim();got=null;if(q.length<3){read.textContent='';return}
   try{const r=await repeatPost('repeat_read',{text:/^(every|each)\b/i.test(q)?q:'every '+q});if(input.value.trim()!==q)return;
-   if(r.rule){got=r;read.innerHTML=`<button type="button" class="link" data-rp-set>${esc(repeatText(r.rule,r.anchor))}</button> <small>${esc(t('Enter sets it'))}</small>`}
+   if(r.rule){got=r;const b=document.createElement('button'),k=document.createElement('small');b.type='button';b.className='link';b.dataset.rpSet='';b.textContent=repeatText(r.rule,r.anchor);k.textContent=t('Enter sets it');read.replaceChildren(b,' ',k)}
    else read.textContent=t('I can’t read that yet. Try every 2 weeks or every last Friday.')}catch(e){errCaught(e)}};
  input.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(look,250)});
  input.addEventListener('keydown',async e=>{if(e.key!=='Enter'||e.isComposing)return;e.preventDefault();clearTimeout(timer);if(!got)await look();if(got)set(got.rule,got.anchor)});
