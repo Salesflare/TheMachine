@@ -48,6 +48,7 @@ from zoneinfo import ZoneInfo
 import locale_prefs
 
 import enrichment
+import person_summary
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE,created_at TEXT NOT NULL,closed_at TEXT);
@@ -1832,8 +1833,9 @@ def short_date(value):
     return locale_prefs.day_text(dt.date.fromisoformat(str(value)[:10]))
 
 
-def context_lines(db, event_ids, limit_chars=1500, skip_card=None):
-    """A few lines for a preparation: who these people are to the owner, and the projects around them."""
+def context_lines(db, event_ids, limit_chars=1500, skip_card=None, sides=None):
+    """A few lines for a preparation: who these people are to the owner, and the projects around them. sides: the
+    to-do's areas (work, personal), for the lines of a person's summary it may use (person_summary.prep_lines)."""
     lines = []
     for row in for_events(db, event_ids)[:8]:
         view = node_view(row)
@@ -1860,6 +1862,12 @@ def context_lines(db, event_ids, limit_chars=1500, skip_card=None):
             between = open_line(open_between(db, row['id'], 2, skip_card))
             if between:
                 bits.append('open: ' + between)
+            try:
+                summary = person_summary.prep_lines(db, row['id'], sides)
+            except (sqlite3.Error, ValueError, KeyError, TypeError):
+                summary = []
+            if summary:
+                bits.append('summary: ' + ' '.join(summary))
             lines.append(f"- {view['name']} ({', '.join(view['ids'][:2])}): " + '; '.join(bits))
         elif row['kind'] == 'project':
             people = [n['name'] for n in neighbours(db, row['id'], 6) if n['kind'] == 'person'][:4]
@@ -2052,6 +2060,10 @@ def detail(db, node_id, events=12):
         if view.get('org'):
             org = db.execute('SELECT name FROM graph_nodes WHERE id=?', (view['org'],)).fetchone()
             view['org_name'] = org['name'] if org else None
+        try:  # the summary on top of their page, each line with its sources (person_summary.py)
+            view['summary'] = person_summary.view(db, node_id)
+        except (sqlite3.Error, ValueError, KeyError, TypeError):
+            view['summary'] = None
         if view.get('org_by') == 'review':
             ids = json.loads(row['info'] or '{}').get('identifiers') or [node_id]
             said_org = db.execute(f"SELECT quote FROM person_orgs WHERE identifier IN ({','.join('?' for _ in ids)}) AND event_id=?",
@@ -4815,6 +4827,7 @@ def delete_person(db, node_id, config, now):
             db.execute(f'DELETE FROM {table} WHERE identifier IN ({marks})', ids)
     if emails:
         db.executemany('DELETE FROM identity_names WHERE lower(email)=?', [(e,) for e in emails])
+    person_summary.forget(db, ids)
     if _table(db, 'network_people'):
         db.execute(f'DELETE FROM network_people WHERE node_id IN ({marks})', ids)
         db.executemany('DELETE FROM network_people WHERE lower(email)=?', [(e,) for e in emails])

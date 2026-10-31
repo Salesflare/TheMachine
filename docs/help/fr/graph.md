@@ -21,6 +21,12 @@ Les adresses et chats d’une personne sont réunis tout seuls quand il est clai
 
 Les onglets **Travail** et **Perso** n’affichent que ces contacts-là. **Télécharger le CSV**, dans le menu de tri, enregistre l’onglet ouvert sous forme de tableur, aussi pour Organisations et Projets.
 
+### Résumé
+
+Quelques lignes courtes en haut de la page d’une personne : qui elle est pour vous, où en sont les choses et ce qui reste ouvert des deux côtés. The Machine le réécrit en arrière-plan quand il y a du nouveau, seulement pour les personnes avec qui vous êtes vraiment en contact. Chaque ligne renvoie à sa source.
+
+**Modifier** pour le dire à votre façon. Vos mots restent : quand il y a du nouveau, The Machine propose une **Mise à jour suggérée** avec **L’utiliser** et **Garder la mienne**. **Laisser The Machine l’écrire** le lui rend. Les préparations de réunion l’utilisent, seulement les lignes du côté de cette tâche (Travail ou Perso). Il reste sur votre Machine ; votre équipe ne le voit jamais.
+
 ### Chronologie
 
 Chaque page de personne et d’organisation en a une, la plus récente d’abord : e-mails, réunions et leurs résumés Zoom, conversations Intercom (ouvertes ou fermées, avec **Ouvrir dans Intercom**), chats WhatsApp, Telegram, Slack, LinkedIn et X, tâches, promesses et changements de projet. Les filtres en haut montrent une source à la fois. **Afficher plus** charge les plus anciens.

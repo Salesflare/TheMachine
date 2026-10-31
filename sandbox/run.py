@@ -156,6 +156,36 @@ def fake_notes(config, prompt):
             '## Action items\n\n- **Alex Morgan**: send the rollout plan by Friday\n- **Unassigned**: answer the security questions from IT')
 
 
+def fake_summary(config, prompt):
+    """Person summaries' stand-in model (person_summary.py): a who, a now and an open line per person, each citing the
+    evidence it was given, in the shape the prompt asks for. No model runs."""
+    people = json.loads(prompt.split('\nPeople:\n', 1)[1])
+    out = []
+    for p in people:
+        signals, promises, facts = p.get('signals') or [], p.get('open_promises') or [], p.get('facts') or []
+        lines = []
+        if signals:
+            where = f" at {p['organization']}" if p.get('organization') else ''
+            lines.append({'kind': 'who', 'text': f"{(p.get('role') or 'A contact').capitalize()}{where}; you write regularly.",
+                          'sources': [signals[-1]['id']] + [f['id'] for f in facts[:1]]})
+            lines.append({'kind': 'now', 'text': f"Latest: {(signals[0].get('title') or 'a message').strip()[:120]}.", 'sources': [signals[0]['id']]})
+        for promise in promises[:2]:
+            who = 'You promised' if promise['who_promised'] == 'the owner' else 'They promised'
+            lines.append({'kind': 'open', 'text': f"{who}: {promise['what'][:140]}", 'sources': [promise['id']]})
+        out.append({'node_id': p['node_id'], 'lines': lines})
+    return json.dumps({'people': out})
+
+
+def seed_summaries(app):
+    """The person summaries on top of their pages, written once by the stand-in for everyone with real activity."""
+    import person_summary
+    with app.store.connect() as db:
+        people = person_summary.due(db, limit=40)
+    if people:
+        written = app.summary_run(people)
+        print(f'sandbox: {written} person summaries', flush=True)
+
+
 def proxy(public_port, app_port, config):
     """Signs each request in as the owner on the dashboard's own host (what Tailscale Serve does for real)."""
     host, owner = config['dashboard_host'], config['tailscale_owner']
@@ -310,7 +340,9 @@ def main():
     seed_model(app)
     app.help_model = fake_help
     app.notes_model = fake_notes
+    app.summary_model = fake_summary
     seed_transcript(app)
+    seed_summaries(app)
     fixture = json.loads((HERE / 'fixture.json').read_text())
     net = None
     if load.groups(states):

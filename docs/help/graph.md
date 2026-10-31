@@ -21,6 +21,12 @@ Someone's addresses and chats are joined by themselves when it's clear they're o
 
 The **Work** and **Personal** tabs list people by their Type, the one on their page. Your own pick (**Edit**) wins. Otherwise your Family and Friends, and family or friends to you (a wife, a father), are Personal, whatever address they write from. Your team never gets Personal contacts. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet, also for Organizations and Projects.
 
+### Summary
+
+A few short lines at the top of a person's page: who they are to you, where things stand and what's open both ways. The Machine rewrites it in the background when there's something new, only for people you're really in touch with. Each line links to where it came from.
+
+**Edit** it to say it your way. Your words stay: when there's news, The Machine shows a **Suggested update** with **Use it** and **Keep mine**. **Let The Machine write it** gives it back. Meeting preps use it, only the lines from that to-do's side (Work or Personal). It stays on your Machine; your team never sees it.
+
 ### Timeline
 
 Every person and organization page has one, newest first: email, meetings and their Zoom summaries, Intercom conversations (open or closed, with **Open in Intercom**), WhatsApp, Telegram, Slack, LinkedIn and X chats, to-dos, promises and project moves. The chips on top show one source at a time. **Show more** loads older ones.
