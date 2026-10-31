@@ -3603,7 +3603,8 @@ const refreshWhenReady=()=>{if(placeBusy()){clearTimeout(refreshWhenReady.t);ref
 // Return from another app, a suspended phone tab or an outage: update connection warnings immediately.
 document.addEventListener('visibilitychange',()=>{if(document.hidden)updateMaybe();else{lastInput=Date.now();refreshWhenReady()}});setInterval(updateMaybe,15e3);
 for(const b of document.querySelectorAll('[data-update-ready]'))b.addEventListener('click',()=>{updateWaiting=false;updateNow()});
-addEventListener('pageshow',refreshWhenReady);addEventListener('online',refreshWhenReady);
+addEventListener('pageshow',e=>{if(e.persisted)refreshWhenReady()});  // back from the page cache only: the first load has its own refresh, and a second one could undo a change made meanwhile
+addEventListener('online',refreshWhenReady);
 // Open with the cards this device kept last time (if any) while the live ones load; the live ones replace them in place.
 sessionCheck();
 if(localCache.on)localCache.read('status').then(hit=>{if(!hit||state.suggestions)return;state=wakeSnoozed(hit.value);shownCached=true;shownAt=hit.at;
