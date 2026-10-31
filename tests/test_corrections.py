@@ -118,6 +118,22 @@ class Corrections(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT role FROM person_roles WHERE identifier=?', (ANA,)).fetchone()[0], 'VP Sales')
 
+    def test_an_undo_puts_back_only_real_columns_never_stored_sql(self):
+        done = self.fix(kind='role', target=ANA, value='Head of Sales')
+        with self.store.connect() as db:
+            before = json.loads(db.execute('SELECT before FROM learning_changes WHERE id=?', (done['id'],)).fetchone()[0])
+            before['state']['rows'] = [{'identifier': ANA, 'role) VALUES(1);DROP TABLE facts;--': 'x'}]
+            db.execute('UPDATE learning_changes SET before=? WHERE id=?', (json.dumps(before), done['id']))
+        with self.assertRaisesRegex(ValueError, 'Not a table a fix puts back'):
+            self.undo(done['id'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT role FROM person_roles WHERE identifier=?', (ANA,)).fetchone()[0], 'Head of Sales')
+            self.assertEqual(db.execute('SELECT count(*) FROM facts').fetchone()[0], 1)
+            for table in ('facts', 'person_roles'):
+                with self.assertRaisesRegex(ValueError, 'Not a table a fix puts back'):
+                    graph.put_back_person_rows(db, table if table == 'facts' else 'person_roles', [ANA],
+                                               [{'identifier': ANA}] if table == 'facts' else [{'nope': 1}])
+
     def test_a_rule_the_owner_says_is_wrong_is_removed_and_comes_back_on_undo(self):
         done = self.fix(decision_id='d2', kind='fact', target=self.rule, value='', came_from='a note on another to-do')
         with self.store.connect() as db:

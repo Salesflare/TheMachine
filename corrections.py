@@ -73,16 +73,17 @@ def _node(db, node_id, kinds):
     return row, json.loads(row['info'] or '{}')
 
 
-def _snap(db, table, where, args):
-    return sorted(_rows(db, f'SELECT * FROM {table} WHERE {where}', args), key=lambda r: json.dumps(r, sort_keys=True, default=str))
+def _snap(db, table, identifiers):
+    """A person's rows in one of the tables a fix changes (graph.FIX_PUT_BACK), as they are now."""
+    if table not in graph.FIX_PUT_BACK:
+        raise ValueError('Not a table a fix puts back')
+    ids = [str(i) for i in identifiers]
+    rows = _rows(db, f"SELECT * FROM {table} WHERE identifier IN ({','.join('?' for _ in ids)})", ids)
+    return sorted(rows, key=lambda r: json.dumps(r, sort_keys=True, default=str))
 
 
 def _ids(row, info):
     return list(dict.fromkeys([row['id'], *(info.get('identifiers') or [])]))
-
-
-def _where_ids(ids):
-    return f"identifier IN ({','.join('?' for _ in ids)})"
 
 
 # What a fix says, as whole sentences the dashboard translates (window.t), slots filled in order.
@@ -196,11 +197,11 @@ def _state(db, kind, target):
         row = db.execute('SELECT text,removed_at IS NOT NULL removed FROM facts WHERE id=?', (int(target['id']),)).fetchone()
         return {'text': row['text'], 'removed': bool(row['removed'])} if row else None
     if kind == 'role':
-        return {'rows': _snap(db, 'person_roles', _where_ids(target['ids']), target['ids'])}
+        return {'rows': _snap(db, 'person_roles', target['ids'])}
     if kind == 'org':
-        return {'rows': _snap(db, 'person_orgs', 'identifier=?', (target['id'],))}
+        return {'rows': _snap(db, 'person_orgs', [target['id']])}
     if kind in ('title', 'location'):
-        return {'rows': _snap(db, 'person_edits', 'identifier=?', (target['id'],))}
+        return {'rows': _snap(db, 'person_edits', [target['id']])}
     if kind == 'stage':
         row = db.execute('SELECT board_id,stage,stage_reason,stage_event_id,stage_by,stage_at,outcome,outcome_reason FROM projects WHERE id=?',
                          (int(target['id'].split(':', 1)[1]),)).fetchone()

@@ -5014,10 +5014,14 @@ def put_back_person_rows(db, table, identifiers, rows):
     """Put a person's rows in one of FIX_PUT_BACK back as they were (rows: column -> value dicts saved before the fix)."""
     if table not in FIX_PUT_BACK:
         raise ValueError('Not a table a fix puts back')
+    columns = {r[1] for r in db.execute(f'PRAGMA table_info({table})')}
+    if any(not isinstance(row, dict) or not row or set(row) - columns for row in rows):
+        raise ValueError('Not a table a fix puts back')  # names come only from the table itself, never from stored text
     ids = [str(i) for i in identifiers]
     db.execute(f"DELETE FROM {table} WHERE identifier IN ({','.join('?' for _ in ids)})", ids)
     for row in rows:
-        db.execute(f"INSERT INTO {table}({','.join(row)}) VALUES({','.join('?' for _ in row)})", list(row.values()))
+        names = [c for c in row]
+        db.execute(f"INSERT INTO {table}({','.join(names)}) VALUES({','.join('?' for _ in names)})", [row[c] for c in names])
 
 
 def drop_role_corrections(db, identifier, after_id):
