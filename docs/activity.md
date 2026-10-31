@@ -10,7 +10,7 @@ changes what The Machine or a coding agent may do.
 
 | kind | what | source (owner) |
 |---|---|---|
-| `messages` | emails, replies and messages on every channel; auto follow-ups; blocked, failed, undone and canceled ones | `action_jobs` (assistant.py), `follow_up_sends` |
+| `messages` | emails, replies and messages on every channel; auto follow-ups; blocked, failed, undone and canceled ones | `action_jobs` (assistant.py), `follow_up_sends`, `activity_blocks` |
 | `docs` | docs created or edited | `action_jobs` (`doc_write`; a reply in a doc is a message) |
 | `calendar` | calendar changes | `action_jobs` (`calendar`) |
 | `web` | steps on the web (Do it's browser steps) | `action_jobs` (`finish`) |
@@ -25,6 +25,10 @@ changes what The Machine or a coding agent may do.
 | `ai` | calls from AIs connected over MCP, refused ones included | the MCP module, through `register('ai', read)` |
 
 Each source stays the owner of its table; `activity_log` only reads them (`tests/test_architecture.py`).
+
+A block is history: where the outbox blocks a send (a check before it goes, a held follow-up), it also calls
+`activity_log.note_block`, which keeps the moment and the reason in `activity_blocks`. Canceling or sending it again
+later changes `action_jobs` as before and never that, so the line stays **Blocked** under Refused or blocked.
 
 ## One list, not two
 

@@ -11,6 +11,7 @@ from unittest.mock import patch
 from test_assistant import assistant as a, event
 import activity_log
 import fleet
+import follow_ups
 
 GMAIL = {'id': 'work', 'service': 'gmail', 'email': 'sam@acme.example'}
 
@@ -51,6 +52,32 @@ class Activity(unittest.TestCase):
         self.assertEqual((items[0]['outcome'], items[0]['status']), ('undone', 'Undone'))
         for line in items:
             self.assertFalse(line['what'].startswith('You'))
+
+    def test_a_block_stays_history_when_the_send_is_canceled_or_sent_later(self):
+        """A send a check stopped shows as Blocked, with its reason, under Refused or blocked, also after the to-do
+        cancels it or a new Send gets it out; canceling still means what it did (the outbox row says cancelled)."""
+        email = {'kind': 'email', 'to': ['Robin <robin@globex.example>'], 'subject': 'Pricing', 'account_id': 'work'}
+        self.job(1, email, 'queued', '2026-10-30T09:00:00+00:00')
+        self.job(2, {'kind': 'whatsapp', 'to': 'Robin'}, 'queued', '2026-10-30T10:00:00+00:00')
+        with self.store.connect() as db:  # the outbox's own steps: blocked, then canceled / sent on a new Send
+            db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id='job2'", ('The number changed since the draft.', '2026-10-30T10:01:00+00:00'))
+            activity_log.note_block(db, 'job2', 'The number changed since the draft.', '2026-10-30T10:01:00+00:00')
+            db.execute("UPDATE action_jobs SET status='cancelled' WHERE id='job2'")
+            follow_ups.ensure(db)
+            follow_ups.hold(db, 'job1', self.card, 'changed', [], '2026-10-30T09:05:00+00:00')
+            self.assertEqual(db.execute("SELECT status FROM action_jobs WHERE id='job1'").fetchone()[0], 'blocked')
+            db.execute("UPDATE action_jobs SET status='sent' WHERE id='job1'")
+            self.assertEqual(db.execute("SELECT status FROM action_jobs WHERE id='job2'").fetchone()[0], 'cancelled')
+        refused = self.page(outcome='refused')['items']
+        self.assertEqual([(x['id'], x['status'], x['at']) for x in refused],
+                         [('messages:job2:blocked:1', 'Blocked', '2026-10-30T10:01:00+00:00'),
+                          ('messages:job1:blocked:1', 'Blocked', '2026-10-30T09:05:00+00:00')])
+        self.assertEqual(refused[0]['detail'], 'The number changed since the draft.')
+        self.assertEqual(refused[1]['detail'], follow_ups.HELD)
+        self.assertEqual((refused[1]['what'], refused[1]['todo']['id']), ('Email to Robin: Pricing', self.card))
+        everything = [(x['id'], x['status']) for x in self.page()['items']]
+        self.assertEqual(everything, [('messages:job2:blocked:1', 'Blocked'), ('messages:job1:blocked:1', 'Blocked'), ('messages:job1', 'Sent')],
+                         'a canceled send after a block is told by its block; one sent after it by both')
 
     def test_filters_by_kind_several_kinds_and_refused(self):
         self.job(1, {'kind': 'email', 'to': ['a@b.example']}, 'sent', '2026-10-30T09:00:00+00:00')

@@ -2,7 +2,9 @@
 
 Read-only. It changes nothing The Machine may do and adds no step to any action: it reads what each part already keeps
 and shows it in one place, newest first. Each source stays the owner of its own table; this module only reads them.
-The one table it owns, activity_accounts, remembers which connections it saw, so a connection added or removed shows.
+It owns two tables: activity_accounts remembers which connections it saw, so a connection added or removed shows, and
+activity_blocks keeps each send a check stopped (note_block, called where the outbox blocks it), so the block stays in
+the history as Blocked, with its reason, even when the send is canceled or tried again later.
 
 Every line has one shape, the same for every source (and for sources other modules add with register()):
 
@@ -51,6 +53,8 @@ PAGE = 50
 MAX_OFFSET = 2000
 SCHEMA = ('CREATE TABLE IF NOT EXISTS activity_accounts(account_id TEXT PRIMARY KEY,service TEXT NOT NULL,label TEXT NOT NULL,'
           'added_at TEXT,removed_at TEXT,seen INTEGER NOT NULL DEFAULT 1)')
+BLOCKS = ('CREATE TABLE IF NOT EXISTS activity_blocks(job_id TEXT NOT NULL,at TEXT NOT NULL,reason TEXT,'
+          'PRIMARY KEY(job_id,at))')
 SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar',
             'slack': 'Slack', 'salesflare': 'Salesflare', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram',
             'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom', 'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub',
@@ -77,6 +81,14 @@ def register(kind, read):
 
 def ensure(db):
     db.execute(SCHEMA)
+    db.execute(BLOCKS)
+
+
+def note_block(db, job_id, reason, at):
+    """A check stopped an outbox send (action_jobs status blocked): remember it as history. Canceling or retrying the
+    send later changes action_jobs, never this, so the line stays Blocked under Refused or blocked. Adds no check."""
+    db.execute(BLOCKS)
+    db.execute('INSERT OR IGNORE INTO activity_blocks(job_id,at,reason) VALUES(?,?,?)', (job_id, at, reason))
 
 
 def _tables(db):
@@ -160,11 +172,16 @@ def _job_status(kind, status):
 def _jobs(db, config, limit, tables, kinds):
     accounts = {a.get('id'): a for a in (config or {}).get('accounts') or [] if isinstance(a, dict)}
     follow_ups = 'follow_up_sends' in tables
-    rows = db.execute('SELECT j.id,j.suggestion_id,j.payload,j.status,j.source,j.created_at,j.updated_at,s.title,'
+    rows = db.execute('SELECT j.id,j.suggestion_id,j.payload,j.status,j.error,j.source,j.created_at,j.updated_at,s.title,'
                       + ('(SELECT 1 FROM follow_up_sends f WHERE f.job_id=j.id) fu ' if follow_ups else '0 fu ')
                       + 'FROM action_jobs j LEFT JOIN suggestions s ON s.id=j.suggestion_id '
                       "WHERE json_extract(j.payload,'$.kind') IN (" + ','.join('?' * len(kinds)) + ') '
-                      'ORDER BY j.created_at DESC LIMIT ?', (*kinds, limit))
+                      'ORDER BY j.created_at DESC LIMIT ?', (*kinds, limit)).fetchall()
+    blocks = {}
+    if 'activity_blocks' in tables and rows:
+        for b in db.execute('SELECT job_id,at,reason FROM activity_blocks WHERE job_id IN (SELECT value FROM json_each(?)) '
+                            'ORDER BY at', (json.dumps([r['id'] for r in rows]),)):
+            blocks.setdefault(b['job_id'], []).append(b)
     for r in rows:
         try:
             p = json.loads(r['payload'])
@@ -199,7 +216,16 @@ def _jobs(db, config, limit, tables, kinds):
         by = (i18n.t('Follow-up, sent by itself') if r['fu'] else i18n.t('By itself') if r['source'] == 'auto'
               else i18n.t('Approved by voice') if r['source'] == 'voice' else i18n.t('After your OK'))
         todo = {'id': r['suggestion_id'], 'title': _clip(r['title'], 120)} if r['title'] is not None else None
-        yield _line(kind, r['id'], r['created_at'], what, outcome, status, where, by, todo)
+        # Each time a check stopped it is its own line, at that moment; a send canceled or still held after a block
+        # is told by those lines, one sent after it by its own line too
+        held = blocks.get(r['id'], [])
+        for n, b in enumerate(held, 1):
+            yield _line(kind, f"{r['id']}:blocked:{n}", b['at'], what, 'refused', i18n.t('Blocked'), where, by, todo,
+                        _clip(b['reason'], 200) or None)
+        if held and r['status'] in ('blocked', 'cancelled'):
+            continue
+        detail = (_clip(r['error'], 200) or None) if r['status'] == 'blocked' else None
+        yield _line(kind, r['id'], r['created_at'], what, outcome, status, where, by, todo, detail)
 
 
 def _agents(db, limit, tables):
