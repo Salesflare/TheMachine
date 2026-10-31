@@ -35,9 +35,19 @@ Choisissez ce qu’elle peut faire, **Lire** ou **Lecture et modification**. Ave
 
 ## Ce qu’elle voit
 
-Une connexion ne voit que son domaine. Travail couvre les tâches et promesses de vos comptes de travail, les contacts de travail, les entreprises, les projets et le briefing d’équipe de votre Work Fleet. Personnel couvre le reste. Le texte des messages reste sur votre Machine : une IA voit les sources d’une tâche seulement par expéditeur, objet et date.
+Une connexion ne voit que son domaine. Travail couvre les tâches et promesses de vos comptes de travail, les contacts de travail, les entreprises, les projets et le briefing d’équipe de votre Work Fleet. Personnel couvre le reste. Le texte des messages reste sur votre Machine, sauf si vous activez **Messages** : sans cela, une IA voit les sources d’une tâche seulement par expéditeur, objet et date.
 
 Les données Team Graph de vos coéquipiers ne vont jamais à une IA extérieure.
+
+## Messages
+
+**Messages** permet à une IA de chercher et lire vos e-mails, Slack, WhatsApp et autres chats. C’est désactivé tant que vous ne l’activez pas, sur la page où vous la connectez ou plus tard dans **Paramètres**, **IA**. Elle lit seulement : elle n’envoie, ne supprime et ne marque jamais rien.
+
+Elle ne lit que les messages de son domaine. Certains ne sortent jamais : codes à usage unique et liens de connexion, messages d’un tableau ou projet **Vous seul**, conversations que The Machine a jugées sensibles (affaires, RH, juridique, santé, argent), conversations que vous avez gardées privées, et messages supprimés.
+
+Chaque lecture apparaît dans son **Activité**, avec le nombre de messages et les conversations, jamais le texte. Votre Machine transmet le texte marqué comme des données, pour que l’IA ne suive pas d’instructions écrites dans un message.
+
+Tant que Messages est activé, les modifications du Graph d’une IA en **Lecture et modification** attendent votre accord. Appuyez sur **Appliquer** ou **Ignorer** sur la modification dans **Activité**.
 
 ## Dans Paramètres
 

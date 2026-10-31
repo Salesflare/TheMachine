@@ -1,5 +1,6 @@
 // Settings, Connected AIs (ai_app.py, docs/ai-connections.md): each outside AI that reaches this Machine over MCP, with its
-// access, area and expiry, Turn off now, Remove and its activity (Settings, Activity filtered to it: every call,
+// access, area and expiry, its Messages switch (off unless turned on: then it reads messages and its changes wait for an
+// OK), Turn off now, Remove and its activity (Settings, Activity filtered to it: every call,
 // refused ones too); Add a key for an AI
 // that can't sign in by itself (the key shows once). Loads when the tab opens; the owner's dashboard only (AI_ACTIONS).
 var aiView=null;let aiOpen='',aiLines={},aiMade=null,aiBusy=false,aiPairTimer=0,aiPairUntil=0;
@@ -13,7 +14,8 @@ function aiConnection(c){const both=(aiView.areas||[]).length>1,state=c.level===
  const lines=aiLines[c.id],open=aiOpen===c.id;
  return `<div class="ai-conn" data-ai="${esc(c.id)}"><span class="grow"><strong translate="no">${esc(c.name)}</strong>${c.kind==='key'?' <span class="alpha">Key</span>':''}<small>${esc(state)} · ${esc(used)} · ${esc(calls)}</small></span>
 <span class="ai-controls"><select data-ai-level aria-label="Access">${aiOptions(AI_LEVELS,c.level)}</select>${both?`<select data-ai-area aria-label="What it can see">${aiOptions(AI_AREAS,c.area)}</select>`:''}<select data-ai-expiry aria-label="For how long"><option value="" selected>${esc(t(c.expired?'Renew for…':'Extend…'))}</option>${aiOptions(AI_EXPIRY,'')}</select>
-<button type="button" class="ghost" data-ai-activity aria-expanded="${open}">Activity</button>${c.level!=='off'?'<button type="button" class="ghost" data-ai-off>Turn off now</button>':''}<button type="button" class="ghost" data-ai-remove>Remove</button></span></div>${open?`<div class="ai-activity">${!lines?`<p class="muted">${esc(t('Loading…'))}</p>`:lines.length?`<ol class="act-list">${actRows(lines)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`}</div>`:''}`}
+<button type="button" class="ghost" data-ai-activity aria-expanded="${open}">Activity</button>${c.level!=='off'?'<button type="button" class="ghost" data-ai-off>Turn off now</button>':''}<button type="button" class="ghost" data-ai-remove>Remove</button></span>
+<span class="ai-msg"><span class="grow"><strong>Messages</strong><small>Reads your email and chats. Its changes then wait for your OK.</small></span><button type="button" class="lookup-switch" role="switch" aria-checked="${!!c.messages}" aria-label="Messages" data-ai-messages></button></span></div>${open?`<div class="ai-activity">${!lines?`<p class="muted">${esc(t('Loading…'))}</p>`:lines.length?`<ol class="act-list">${actRows(lines)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`}</div>`:''}`}
 // After an Undo in an AI's own activity: its lines read again
 async function aiActivityReload(){const id=aiOpen;if(!id)return;try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err)}renderAi()}
 function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=aiView,list=v.connections||[],both=(v.areas||[]).length>1;
@@ -56,6 +58,7 @@ $('#ai-list').addEventListener('change',e=>{const row=e.target.closest('[data-ai
  else if(e.target.matches('[data-ai-area]'))aiDo('ai_change',{id,area:e.target.value},'Saved');
  else if(e.target.matches('[data-ai-expiry]')&&e.target.value)aiDo('ai_change',{id,expiry:e.target.value},'Saved')});
 $('#ai-list').addEventListener('click',async e=>{const row=e.target.closest('[data-ai]');if(!row)return;const id=row.dataset.ai,name=row.querySelector('strong')?.textContent||'';
+ const sw=e.target.closest('[data-ai-messages]');if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.setAttribute('aria-checked',on);aiDo('ai_change',{id,messages:on},on?'Messages on':'Messages off');return}
  if(e.target.closest('[data-ai-off]'))aiDo('ai_off',{id},'Turned off now');
  else if(e.target.closest('[data-ai-remove]')){if(confirm(t('Remove {}? It can’t reach your Machine until it connects again.',name)))aiDo('ai_remove',{id},'Removed')}
  else if(e.target.closest('[data-ai-activity]')){aiOpen=aiOpen===id?'':id;renderAi();if(aiOpen){try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err);aiLines[id]=[]}renderAi()}}});

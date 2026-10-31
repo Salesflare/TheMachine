@@ -148,6 +148,16 @@ def seed_ai(app):
         with app.store.connect() as db:
             for (_, said, write), (tool, minutes) in zip(changes, (('save_fact', 9), ('add_summary_line', 8))):
                 ai_access.log(db, cid, tool, 'ok', said, at=now - dt.timedelta(minutes=minutes), write=write)
+        # Then Messages on: a read, logged by count and thread, and a change that waits for the owner's OK
+        with app.store.connect() as db:
+            ai_access.change(db, cid, messages=True, at=now - dt.timedelta(minutes=7))
+            ai_access.log(db, cid, 'read_thread', 'ok', '3 messages read, from “Renewal quote”', at=now - dt.timedelta(minutes=6))
+        try:
+            _, said, write = app.ai_tool({**claude, 'messages': 1}, 'save_fact', {'id': node, 'text': 'Wants the renewal signed before March'})
+        except ValueError:
+            break
+        with app.store.connect() as db:
+            ai_access.log(db, cid, 'save_fact', 'ok', said, at=now - dt.timedelta(minutes=5), write=write)
         break
 
 

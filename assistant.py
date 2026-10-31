@@ -1042,8 +1042,10 @@ OWNER_ACTIONS |= GBRAIN_ACTIONS
 # Connected AIs (ai_app.py, docs/ai-connections.md): which outside AIs reach this Machine over MCP, at what access,
 # for how long, Turn off now, and their activity. The owner's own, from the dashboard only; never the agent's.
 AI_ACTIONS = {
+    'ai_apply',
     'ai_change',
     'ai_connections',
+    'ai_dismiss',
     'ai_key',
     'ai_off',
     'ai_pair_start',

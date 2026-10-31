@@ -35,9 +35,19 @@ Wähle, was sie darf, **Lesen** oder **Lesen und Bearbeiten**. Mit Arbeits- und 
 
 ## Was sie sieht
 
-Eine Verbindung sieht nur ihren Bereich. Arbeit umfasst Aufgaben und Versprechen deiner Arbeitskonten, Arbeitskontakte, Firmen, Projekte und das Team-Briefing deiner Work Fleet. Privat umfasst den Rest. Nachrichtentext bleibt auf deiner Machine: Eine KI sieht die Quellen einer Aufgabe nur mit Absender, Betreff und Datum.
+Eine Verbindung sieht nur ihren Bereich. Arbeit umfasst Aufgaben und Versprechen deiner Arbeitskonten, Arbeitskontakte, Firmen, Projekte und das Team-Briefing deiner Work Fleet. Privat umfasst den Rest. Nachrichtentext bleibt auf deiner Machine, außer du schaltest **Nachrichten** ein: Ohne das sieht eine KI die Quellen einer Aufgabe nur mit Absender, Betreff und Datum.
 
 Team-Graph-Daten deiner Teammitglieder gehen nie an eine KI von außen.
+
+## Nachrichten
+
+Mit **Nachrichten** kann eine KI deine E-Mails, Slack, WhatsApp und andere Chats durchsuchen und lesen. Es ist aus, bis du es einschaltest, auf der Seite, auf der du sie verbindest, oder später in **Einstellungen**, **KIs**. Sie liest nur: Sie sendet, löscht oder markiert nie etwas.
+
+Sie liest nur Nachrichten in ihrem Bereich. Manche gehen nie hinaus: Einmalcodes und Anmeldelinks, Nachrichten eines Boards oder Projekts **Nur du**, Verläufe, die The Machine als heikel eingestuft hat (Deals, Personal, Recht, Gesundheit, Geld), Verläufe, die du privat gehalten hast, und gelöschte Nachrichten.
+
+Jedes Lesen steht in ihrer **Aktivität**, mit der Zahl der Nachrichten und den Verläufen, nie mit dem Text. Deine Machine gibt den Text als Daten markiert weiter, damit die KI keinen Anweisungen in einer Nachricht folgt.
+
+Solange Nachrichten an ist, warten die Graph-Änderungen einer KI mit **Lesen und Bearbeiten** auf dein OK. Tippe bei der Änderung in **Aktivität** auf **Übernehmen** oder **Verwerfen**.
 
 ## In den Einstellungen
 

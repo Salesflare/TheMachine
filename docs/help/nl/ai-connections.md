@@ -35,9 +35,19 @@ Kies wat hij mag doen, **Lezen** of **Lezen en bewerken**. Met zowel werk- als p
 
 ## Wat hij ziet
 
-Een koppeling ziet alleen haar gebied. Werk omvat de to-do's en beloftes van je werkaccounts, werkcontacten, bedrijven, projecten en de teambriefing van je Work Fleet. Privé omvat de rest. Berichttekst blijft op je Machine: een AI ziet de bronnen van een to-do alleen met afzender, onderwerp en datum.
+Een koppeling ziet alleen haar gebied. Werk omvat de to-do's en beloftes van je werkaccounts, werkcontacten, bedrijven, projecten en de teambriefing van je Work Fleet. Privé omvat de rest. Berichttekst blijft op je Machine, tenzij je **Berichten** aanzet: zonder dat ziet een AI de bronnen van een to-do alleen met afzender, onderwerp en datum.
 
 Team Graph-gegevens van teamgenoten gaan nooit naar een AI van buiten.
+
+## Berichten
+
+Met **Berichten** kan een AI je e-mail, Slack, WhatsApp en andere chats doorzoeken en lezen. Het staat uit tot je het aanzet, op de pagina waar je de AI koppelt of later in **Instellingen**, **AI's**. Het leest alleen: het verstuurt, verwijdert of markeert nooit iets.
+
+Het leest alleen berichten in zijn gebied. Sommige gaan nooit mee: eenmalige codes en inloglinks, berichten van een **Alleen jij**-bord of -project, gesprekken die The Machine gevoelig vond (deals, HR, juridisch, gezondheid, geld), gesprekken die je privé hield, en verwijderde berichten.
+
+Elke keer dat het leest, staat in zijn **Activiteit**: hoeveel berichten en welke gesprekken, nooit de tekst. Je Machine geeft de tekst door als gegevens, zodat de AI geen instructies volgt die in een bericht staan.
+
+Zolang Berichten aanstaat, wachten de Graph-wijzigingen van een AI met **Lezen en bewerken** op je oké. Tik op **Toepassen** of **Negeren** bij de wijziging in **Activiteit**.
 
 ## In Instellingen
 

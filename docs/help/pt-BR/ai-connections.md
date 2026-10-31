@@ -35,9 +35,19 @@ Escolha o que ela pode fazer, **Ler** ou **Ler e editar**. Com contas de trabalh
 
 ## O que ela vê
 
-Uma conexão só vê a sua área. Trabalho cobre as tarefas e promessas das suas contas de trabalho, contatos de trabalho, empresas, projetos e o resumo da equipe da sua Work Fleet. Pessoal cobre o resto. O texto das mensagens fica na sua Machine: uma IA vê as fontes de uma tarefa só por remetente, assunto e data.
+Uma conexão só vê a sua área. Trabalho cobre as tarefas e promessas das suas contas de trabalho, contatos de trabalho, empresas, projetos e o resumo da equipe da sua Work Fleet. Pessoal cobre o resto. O texto das mensagens fica na sua Machine, a não ser que você ative **Mensagens**: sem isso, uma IA vê as fontes de uma tarefa só por remetente, assunto e data.
 
 Os dados do Team Graph dos seus colegas nunca vão para uma IA de fora.
+
+## Mensagens
+
+**Mensagens** deixa uma IA buscar e ler seu e-mail, Slack, WhatsApp e outros chats. Fica desativado até você ativar, na página onde você a conecta ou depois em **Configurações**, **IAs**. Ela só lê: nunca envia, apaga ou marca nada.
+
+Ela só lê mensagens da sua área. Algumas nunca saem: códigos de uso único e links de login, mensagens de um quadro ou projeto **Só você**, conversas que The Machine considerou sensíveis (negócios, RH, jurídico, saúde, dinheiro), conversas que você manteve privadas e mensagens apagadas.
+
+Cada leitura aparece na **Atividade** dela, com quantas mensagens e quais conversas, nunca o texto. Sua Machine entrega o texto marcado como dados, para que a IA não siga instruções escritas em uma mensagem.
+
+Enquanto Mensagens estiver ativado, as mudanças no Graph de uma IA com **Ler e editar** esperam seu OK. Toque em **Aplicar** ou **Dispensar** na mudança em **Atividade**.
 
 ## Em Configurações
 

@@ -35,9 +35,19 @@ Pick what it can do, **Read** or **Read & edit**. With both Work and Personal ac
 
 ## What it sees
 
-A connection sees only its area. Work covers your work accounts' to-dos and promises, work people, companies, projects and your Work Fleet's team brief. Personal covers the rest. Message text stays on your Machine: an AI sees a to-do's sources by sender, subject and date only.
+A connection sees only its area. Work covers your work accounts' to-dos and promises, work people, companies, projects and your Work Fleet's team brief. Personal covers the rest. Message text stays on your Machine unless you turn on **Messages**: without it, an AI sees a to-do's sources by sender, subject and date only.
 
 Teammates' Team Graph records never go to an outside AI.
+
+## Messages
+
+**Messages** lets an AI search and read your email, Slack, WhatsApp and other chats. It is off until you turn it on, on the page where you connect it or later in **Settings**, **AIs**. It only reads: it never sends, deletes or marks anything.
+
+It reads only messages in its area. Some never go out: one-time codes and sign-in links, messages of an **Only you** board or project, threads The Machine judged sensitive (deals, HR, legal, health, money), threads you kept private, and deleted messages.
+
+Every read shows in its **Activity** with how many messages and which threads, never the text. Your Machine hands the text over marked as data, so the AI shouldn't follow instructions written in a message.
+
+While Messages is on, a **Read & edit** AI's Graph changes wait for your OK. Press **Apply** or **Dismiss** on the change in **Activity**.
 
 ## In Settings
 
