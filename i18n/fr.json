@@ -5409,6 +5409,7 @@
  },
  "{} left": "Encore {}",
  "{} left {}. Replace the {} access so it stops working on their Machine.": "{} a quitté {}. Remplacez l’accès à {} pour qu’il ne fonctionne plus sur sa Machine.",
+ "{} limit reached, using your fallback.": "Limite {} atteinte, votre modèle de secours prend le relais.",
  "{} lines": {
   "one": "{} ligne",
   "other": "{} lignes"

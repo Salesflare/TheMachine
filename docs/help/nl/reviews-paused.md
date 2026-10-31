@@ -14,7 +14,7 @@ Bovenaan Suggesties staat "Reviews staan uit, dus er komen nog geen suggesties."
 
 ## De limiet van je model
 
-Reviews van wat binnenkwam pauzeren bij ongeveer 65% van de 5-uurslimiet van je abonnement en bij 90% van de weeklimiet, zodat er ruimte blijft voor je eigen chats. Een bord dat je geschiedenis doorloopt, gaat trager, met ongeveer een zevende van de week per dag.
+Reviews van wat binnenkwam pauzeren bij ongeveer 65% van de 5-uurslimiet van je abonnement en bij 90% van de weeklimiet, zodat er ruimte blijft voor je eigen chats. Een bord dat je geschiedenis doorloopt, gaat trager, met ongeveer een zevende van de week per dag. Met een werkend reservemodel op een ander abonnement of bij een andere aanbieder wachten reviews niet. Zie [Model](model.md).
 
 Terwijl reviews wachten, staat bovenaan het dashboard tot wanneer, zoals "Reviews wachten tot 07:15 om je ChatGPT-week te sparen." **Nu reviewen** start er meteen een. Als een limiet bereikt is, staat bovenaan het dashboard welke en wanneer die weer vrijkomt. **Koppelingen**, dan **Reviews**, toont het naast de run. **Instellingen**, **Model** toont je limieten. Zie [Model](model.md).
 

@@ -5409,6 +5409,7 @@
  },
  "{} left": "Nog {}",
  "{} left {}. Replace the {} access so it stops working on their Machine.": "{} heeft {} verlaten. Vervang de toegang tot {} zodat die niet meer werkt op hun Machine.",
+ "{} limit reached, using your fallback.": "{}-limiet bereikt, je reservemodel neemt het over.",
  "{} lines": {
   "one": "{} regel",
   "other": "{} regels"

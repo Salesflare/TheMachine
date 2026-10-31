@@ -32,6 +32,10 @@ Background work never runs on GPT-6 Astra. It uses GPT-6.1 Sol instead.
 
 The top of the dashboard says which limit was reached and when it resets. Work waits, then picks up where it left off. Nothing is lost. Some ChatGPT plans come with resets: **Use a reset** starts the limits over, after a confirm. Otherwise **See resets in ChatGPT** opens ChatGPT's own page.
 
+## With a fallback
+
+If your Machine has a fallback model on another plan or provider, like an API key, it takes over when a limit is reached. While that fallback works, nothing pauses or waits for your limits, and the top of the dashboard says "ChatGPT limit reached, using your fallback." If the fallback stops working, the pauses come back.
+
 ## Change the main model
 
 The main model is what the rest of The Machine uses. On a hosted Machine, pick another one on your setup page, under Your AI. On your own computer, change it in OpenClaw. See [ChatGPT](chatgpt.md) and the [models guide](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

@@ -32,6 +32,10 @@ Il lavoro in background non gira mai su GPT-6 Astra. Usa invece GPT-6.1 Sol.
 
 In cima alla dashboard vedi quale limite è stato raggiunto e quando si azzera. Il lavoro aspetta, poi riprende da dove si era fermato. Non si perde nulla. Alcuni piani ChatGPT includono degli azzeramenti: **Usa un azzeramento** fa ripartire i limiti, dopo una conferma. Altrimenti **Vedi gli azzeramenti in ChatGPT** apre la pagina di ChatGPT.
 
+## Con un modello di riserva
+
+Se la tua Machine ha un modello di riserva su un altro piano o fornitore, come una chiave API, subentra quando raggiungi un limite. Finché il modello di riserva funziona, niente si mette in pausa né aspetta i tuoi limiti, e in alto nella dashboard compare «Limite di ChatGPT raggiunto, ora usa il tuo modello di riserva.» Se smette di funzionare, le pause tornano.
+
 ## Cambia il modello principale
 
 Il modello principale è quello che usa il resto di The Machine. Su una Machine in hosting, scegline un altro nella tua pagina di configurazione, sotto Il tuo modello. Sul tuo computer, cambialo in OpenClaw. Vedi [ChatGPT](chatgpt.md) e la [guida ai modelli](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

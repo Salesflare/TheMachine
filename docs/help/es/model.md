@@ -32,6 +32,10 @@ El trabajo en segundo plano nunca se ejecuta con GPT-6 Astra. Usa GPT-6.1 Sol en
 
 La parte superior del panel dice qué límite se alcanzó y cuándo se reinicia. El trabajo espera y luego sigue donde lo dejó. No se pierde nada. Algunos planes de ChatGPT incluyen reinicios: **Usar un reinicio** pone los límites a cero, tras una confirmación. Si no, **Ver reinicios en ChatGPT** abre la propia página de ChatGPT.
 
+## Con un modelo de respaldo
+
+Si tu Machine tiene un modelo de respaldo con otro plan o proveedor, como una clave de API, este toma el relevo cuando se alcanza un límite. Mientras el respaldo funcione, nada se pausa ni espera por tus límites, y arriba del panel dice «Límite de ChatGPT alcanzado, usando tu modelo de respaldo.» Si el respaldo deja de funcionar, las pausas vuelven.
+
 ## Cambia el modelo principal
 
 El modelo principal es el que usa el resto de The Machine. En una Machine alojada, elige otro en tu página de configuración, en Tu modelo. En tu propio ordenador, cámbialo en OpenClaw. Consulta [ChatGPT](chatgpt.md) y la [guía de modelos](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

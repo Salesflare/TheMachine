@@ -5409,6 +5409,7 @@
  },
  "{} left": "Quedan {}",
  "{} left {}. Replace the {} access so it stops working on their Machine.": "{} dejó {}. Sustituye el acceso a {} para que deje de funcionar en su Machine.",
+ "{} limit reached, using your fallback.": "Límite de {} alcanzado, usando tu modelo de respaldo.",
  "{} lines": {
   "one": "{} línea",
   "other": "{} líneas"

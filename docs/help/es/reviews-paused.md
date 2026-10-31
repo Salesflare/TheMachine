@@ -14,7 +14,7 @@ La parte superior de Sugerencias dice "Las revisiones están desactivadas, así 
 
 ## El límite de tu modelo
 
-Las revisiones de lo que llegó se pausan hacia el 65% del límite de 5 horas de tu plan y al 90% de su límite semanal, para dejar margen a tus propios chats. Un tablero que recorre tu historial va más despacio, a más o menos un séptimo de la semana al día.
+Las revisiones de lo que llegó se pausan hacia el 65% del límite de 5 horas de tu plan y al 90% de su límite semanal, para dejar margen a tus propios chats. Un tablero que recorre tu historial va más despacio, a más o menos un séptimo de la semana al día. Con un modelo de respaldo que funcione, con otro plan o proveedor, las revisiones no esperan. Consulta [Modelo](model.md).
 
 Mientras las revisiones esperan, la parte superior del panel dice hasta cuándo, como "Las revisiones esperan hasta las 07:15 para ahorrar tu semana de ChatGPT." **Revisar ahora** inicia una enseguida. Cuando se alcanza un límite, la parte superior del panel dice cuál y cuándo se reinicia. **Conexiones** y luego **Revisiones** lo muestra junto a la ejecución. **Ajustes**, **Modelo** muestra tus límites. Consulta [Modelo](model.md).
 

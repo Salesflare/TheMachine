@@ -8,7 +8,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // A usage limit reached (state.model_pause) shows one short line at the top of the dashboard: which limit, when it
 // resets in the viewer's time, and that nothing is lost. No reset known drops that sentence; null hides the line.
 // It fits a phone without a sideways scroll. Reviews waiting for the budget (state.review_pause) say until when, with
-// Review now, which posts the owner's review_now; a usage limit reached goes first.
+// Review now, which posts the owner's review_now; a usage limit reached goes first. With a working fallback answering
+// meanwhile, the line only says so.
 const dashboard=await dashboardPage();
 const posted=[];
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');
@@ -39,6 +40,9 @@ try{
   assert.equal(r.text,'AI usage limit reached. Nothing is lost: The Machine picks up where it left off.');
   r=await show({window:'5h',until:Date.now()/1000-60,name:'ChatGPT'});
   assert.ok(!/Resets/.test(r.text),'a reset in the past is not shown');
+  r=await show({window:'limit',until:soon,name:'ChatGPT',fallback:true});  // a working fallback answers meanwhile
+  assert.ok(r.shown&&!r.wide,`${width}: the fallback line fits`);
+  assert.equal(r.text,'ChatGPT limit reached, using your fallback.');
   r=await show(null);assert.ok(!r.shown,'gone when model_pause is null');
   const seven=await page.evaluate(()=>{const d=new Date();d.setHours(23,45,0,0);return d.getTime()/1000|0});
   r=await show(null,{window:'week',until:seven,name:'ChatGPT'});
