@@ -543,8 +543,8 @@ def _connection(db, connection_id):
     return row
 
 
-def change(db, connection_id, level=None, area=None, expiry=None, messages=None):
-    """The owner changes one: its access, its area, a new expiry from today, or Messages. The next call uses it."""
+def change(db, connection_id, level=None, area=None, expiry=None, messages=None, at=None):
+    """The owner changes one: its access, its area, a new expiry from today, or Messages. The next call uses it. at: when its line says it was (the sandbox's made-up past)."""
     row = _connection(db, connection_id)
     said = []
     if level is not None:
@@ -570,7 +570,7 @@ def change(db, connection_id, level=None, area=None, expiry=None, messages=None)
         db.execute('UPDATE ai_connections SET messages=? WHERE id=?', (int(messages), row['id']))
         said.append(i18n.t('Messages: on' if messages else 'Messages: off'))
     if said:
-        log(db, row['id'], 'settings', 'ok', ', '.join(said))
+        log(db, row['id'], 'settings', 'ok', ', '.join(said), at=at)
 
 
 def turn_off(db, connection_id):
@@ -631,6 +631,26 @@ def written(db, write_id):
     except (TypeError, ValueError):
         return None
     return {**dict(row), 'changes': json.loads(row['changes'])} if row else None
+
+
+def set_waiting(db, write_id, to, was=None):
+    """A waiting change's state (note_write waiting): 0 applied, 1 waits for the owner's OK, -1 dismissed. was: only
+    from that state. Returns whether it changed."""
+    sql, args = 'UPDATE ai_writes SET waiting=? WHERE id=?', [to, int(write_id)]
+    if was is not None:
+        sql, args = sql + ' AND waiting=?', args + [was]
+    return bool(db.execute(sql, args).rowcount)
+
+
+def settle(db, asked, write_id, detail):
+    """A waiting change once applied (ai_app.ai_apply): the change it made (write_id, None when there was nothing to
+    change) takes its place on its activity line, which now says what was done."""
+    if write_id:
+        db.execute('UPDATE ai_writes SET activity_id=? WHERE id=?', (asked['activity_id'], write_id))
+        db.execute('DELETE FROM ai_writes WHERE id=?', (asked['id'],))
+    else:
+        set_waiting(db, asked['id'], -1)
+    db.execute('UPDATE ai_activity SET detail=? WHERE id=?', (str(detail or '')[:200], asked['activity_id']))
 
 
 def mark_undone(db, write_id):

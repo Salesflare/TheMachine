@@ -840,21 +840,16 @@ class AiApp:
             connection = db.execute('SELECT * FROM ai_connections WHERE id=?', (asked['connection_id'],)).fetchone()
             if not connection:
                 raise ValueError(i18n.t('That connection is gone'))
-            db.execute('UPDATE ai_writes SET waiting=0 WHERE id=?', (asked['id'],))
+            ai_access.set_waiting(db, asked['id'], 0)
         try:
             _, said, *write = getattr(self, 'ai_tool_' + asked['tool'])({**dict(connection), 'messages': 0}, asked['changes'].get('args') or {})
         except ValueError:
             with self.store.connect() as db:
-                db.execute('UPDATE ai_writes SET waiting=1 WHERE id=?', (asked['id'],))
+                ai_access.set_waiting(db, asked['id'], 1)
             raise
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            if write:  # the change takes the waiting one's place on its line
-                db.execute('UPDATE ai_writes SET activity_id=? WHERE id=?', (asked['activity_id'], write[0]))
-                db.execute('DELETE FROM ai_writes WHERE id=?', (asked['id'],))
-            else:
-                db.execute('UPDATE ai_writes SET waiting=-1 WHERE id=?', (asked['id'],))  # nothing to change: it said that already
-            db.execute('UPDATE ai_activity SET detail=? WHERE id=?', (str(said)[:200], asked['activity_id']))
+            ai_access.settle(db, asked, write[0] if write else None, said)  # no write: nothing to change, it said that already
         return {'applied': True}
 
     def ai_dismiss(self, args):
@@ -863,7 +858,7 @@ class AiApp:
             asked = ai_access.written(db, args.get('id'))
             if not asked:
                 raise ValueError(i18n.t('This change is gone'))
-            if not db.execute('UPDATE ai_writes SET waiting=-1 WHERE id=? AND waiting=1', (asked['id'],)).rowcount:
+            if not ai_access.set_waiting(db, asked['id'], -1, was=1):
                 raise ValueError(i18n.t('This change was decided already'))
         return {'dismissed': True}
 
