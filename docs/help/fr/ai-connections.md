@@ -19,7 +19,9 @@ Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuy
 
 ## En connecter une
 
-Ouvrez **Paramètres**, **IA**. En haut se trouve l’adresse de votre Machine pour les IA, `https://<votre nom>.mcp.themachine.computer/mcp`, avec **Copier**. Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage.
+Ouvrez **Paramètres**, **IA**. Il y a deux façons de se connecter. **App officielle** vient en premier : une adresse pour toutes les Machines, `https://mcp.themachine.computer/mcp`, avec **Copier**. En dessous se trouve votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`.
+
+Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage. Les deux façons en ont besoin.
 
 Elle obtient ensuite son propre certificat pour l’adresse. Cela prend quelques minutes et demande le paquet `cryptography` pour Python.
 
@@ -27,11 +29,21 @@ Dans ChatGPT, ouvrez chatgpt.com/plugins, appuyez sur +, puis sur Add custom MCP
 
 Dans Claude, ouvrez Customize, Connectors, appuyez sur + Add, puis sur Add custom connector. Nommez-le The Machine, collez l’adresse, appuyez sur Continue, puis sur Add. Sur Team et Enterprise, un propriétaire l’ajoute dans Organization settings.
 
+Avec l’app officielle, l’IA vous demande de vous connecter avec votre compte The Machine. Choisissez cette Machine si vous en avez plusieurs, puis approuvez l’IA sur la page de votre Machine. Avec l’adresse privée, l’IA vient directement à votre Machine.
+
 Les IA d’un appareil de votre tailnet, comme Claude Code ou Cursor, peuvent aussi utiliser l’adresse de votre tableau de bord suivie de `/mcp`. **Dissocier** retire de votre compte une Machine installée sur votre ordinateur.
 
-L’IA vous envoie vers votre Machine pour vous connecter. Votre Machine montre de quelle IA il s’agit. Une IA qu’elle ne reconnaît pas montre l’adresse d’où elle vient : connectez seulement si vous venez de lancer cela vous-même.
+Votre Machine montre de quelle IA il s’agit. Une IA qu’elle ne reconnaît pas montre l’adresse d’où elle vient : connectez seulement si vous venez de lancer cela vous-même.
 
 Choisissez ce qu’elle peut faire, **Lire** ou **Lecture et modification**. Avec des comptes Travail et personnels, choisissez aussi ce qu’elle peut voir. Puis choisissez la durée : **1 jour**, **7 jours**, **30 jours** ou **1 an**. Appuyez sur **Se connecter**, ou sur **Annuler** pour la renvoyer sans rien.
+
+## App officielle ou adresse privée
+
+L’app officielle est la voie la plus simple : une adresse pour tout le monde, et votre compte trouve votre Machine. Le cloud achemine ses requêtes en chemin mais ne conserve rien.
+
+Avec votre adresse privée, tout est chiffré jusqu’à votre Machine. Le cloud ne fait que le transmettre et ne peut pas le lire.
+
+Dans tous les cas, c’est votre Machine qui décide. Seule une IA que vous avez approuvée sur sa page entre, avec l’accès que vous avez choisi. Dans **Paramètres**, **IA**, une IA venue par l’app officielle affiche **App officielle**.
 
 ## Ce qu’elle voit
 

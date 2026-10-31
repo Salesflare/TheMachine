@@ -76,6 +76,8 @@ def quiet_workers(app, sent):
     transport = FakeTransport(sent)
     original = app.action_step
     app.action_step = lambda transport_=None: original(transport)
+    # The address for AIs (ai_reach.py) as once its certificate is in: no dial-back and no CA from the sandbox
+    app.ai_reach_start = lambda stop: setattr(app, 'ai_reach_loop', type('Ready', (), {'state': 'ready'})())
     import onboarding
     onboarding.missing = lambda config, account: ''  # the made-up accounts count as set up; there is nothing to sign in to
     assistant.push_send = lambda store, config, subscriptions, payload, label, sender=None: sent.record('push', payload)
@@ -114,16 +116,16 @@ def fake_help(config, prompt, model=None, thinking=None):
 
 
 def seed_ai(app):
-    """Settings, AIs (ai_access.py): Claude connected for Work with Read & edit, and a key for a script that only
-    reads, with a few calls each and one refused. Writes only through ai_access."""
+    """Settings, AIs (ai_access.py): Claude connected through the official app for Work with Read & edit, and a key
+    for a script that only reads, with a few calls each and one refused. Writes only through ai_access."""
     import ai_access
     now = dt.datetime.now(dt.timezone.utc)
     with app.store.connect() as db:
         if ai_access.connections(db):
             return
-        client = ai_access.register(db, {'redirect_uris': ['https://claude.ai/api/mcp/auth_callback'], 'client_name': 'Claude'})
-        req = {'client_id': client['client_id'], 'redirect_uri': 'https://claude.ai/api/mcp/auth_callback', 'name': 'Claude',
-               'challenge': 'x' * 43, 'state': ''}
+        back = ai_access.OFFICIAL_CALLBACK + 'claude'
+        client = ai_access.register(db, {'redirect_uris': [back], 'client_name': 'Claude'})
+        req = {'client_id': client['client_id'], 'redirect_uri': back, 'name': 'Claude', 'challenge': 'x' * 43, 'state': ''}
         ai_access.approve(db, req, 'draft', 'work', '30d', 'http://127.0.0.1')
         cid = next(c['id'] for c in ai_access.connections(db) if c['kind'] == 'oauth')
         key = ai_access.new_key(db, 'Morning script', 'read', 'both', '7d')['id']

@@ -19,7 +19,9 @@ Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt.
 
 ## Er een koppelen
 
-Open **Instellingen**, **AI's**. Bovenaan staat het adres van je Machine voor AI's, `https://<jouw naam>.mcp.themachine.computer/mcp`, met **Kopiëren**. Op een Machine op je eigen computer druk je eerst op **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart.
+Open **Instellingen**, **AI's**. Je kunt op twee manieren binnen. Eerst **Officiële app**: één adres voor elke Machine, `https://mcp.themachine.computer/mcp`, met **Kopiëren**. Daaronder staat je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`.
+
+Op een Machine op je eigen computer druk je eerst op **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart. Beide manieren hebben dit nodig.
 
 Daarna haalt hij een eigen certificaat voor het adres. Dat duurt een paar minuten en vraagt het pakket `cryptography` voor Python.
 
@@ -27,11 +29,21 @@ Open in ChatGPT chatgpt.com/plugins, druk op + en dan op Add custom MCP server. 
 
 Open in Claude Customize, Connectors, druk op + Add en dan op Add custom connector. Noem hem The Machine, plak het adres en druk op Continue en dan op Add. Bij Team en Enterprise voegt een eigenaar hem toe in Organization settings.
 
+Met de officiële app vraagt de AI je in te loggen met je The Machine-account. Kies deze Machine als je er meer hebt en keur de AI dan goed op de eigen pagina van je Machine. Met het privéadres komt de AI rechtstreeks naar je Machine.
+
 AI's op een apparaat in je tailnet, zoals Claude Code of Cursor, kunnen ook het adres van je dashboard plus `/mcp` gebruiken. **Ontkoppelen** haalt een Machine op je eigen computer weer van je account.
 
-De AI stuurt je naar je Machine om in te loggen. Je Machine toont welke AI het is. Een AI die hij niet herkent, toont het adres waar hij vandaan komt: koppel alleen als je dit net zelf hebt gestart.
+Je Machine toont welke AI het is. Een AI die hij niet herkent, toont het adres waar hij vandaan komt: koppel alleen als je dit net zelf hebt gestart.
 
 Kies wat hij mag doen, **Lezen** of **Lezen en bewerken**. Met zowel werk- als privéaccounts kies je ook wat hij mag zien. Kies daarna hoe lang: **1 dag**, **7 dagen**, **30 dagen** of **1 jaar**. Druk op **Verbinden**, of op **Annuleren** om hem zonder iets terug te sturen.
+
+## Officiële app of privéadres
+
+De officiële app is de makkelijke weg: één adres voor iedereen, en je account vindt je Machine. De cloud stuurt de verzoeken onderweg door, maar bewaart niets.
+
+Met je privéadres is alles versleuteld tot op je Machine. De cloud geeft het alleen door en kan het niet lezen.
+
+Hoe dan ook beslist je Machine. Alleen een AI die je op zijn pagina hebt goedgekeurd komt binnen, met de toegang die je koos. In **Instellingen**, **AI's** toont een AI die via de officiële app kwam **Officiële app**.
 
 ## Wat hij ziet
 
