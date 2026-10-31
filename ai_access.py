@@ -255,7 +255,7 @@ def authorize_request(db, params, resource):
     if not redirect_matches(found['redirect_uris'], uri):
         raise OAuthError('invalid_request', i18n.t('This AI asked to go back to an address it did not register.'))
     req = {'client_id': found['id'], 'redirect_uri': uri, 'state': get('state')[:500], 'challenge': get('code_challenge'),
-           'scope': get('scope'), 'name': found['name']}
+           'scope': get('scope'), 'name': found['name'], 'resource': get('resource').rstrip('/')[:300]}
     if get('response_type') != 'code':
         req['error'] = ('unsupported_response_type', 'response_type must be code')
     elif not re.fullmatch(r'[A-Za-z0-9_-]{43}', req['challenge']) or get('code_challenge_method') != 'S256':
@@ -544,8 +544,10 @@ def prune(db):
 # ------------------------------------------------------------------ metadata
 
 
-def metadata(issuer):
-    return {'issuer': issuer, 'authorization_endpoint': issuer + AUTHORIZE, 'token_endpoint': issuer + '/oauth/token',
+def metadata(issuer, authorize=None):
+    """authorize: where the owner signs in when that is not the issuer (the dashboard, for the address on the mcp
+    host: ai_reach.py)."""
+    return {'issuer': issuer, 'authorization_endpoint': (authorize or issuer) + AUTHORIZE, 'token_endpoint': issuer + '/oauth/token',
             'registration_endpoint': issuer + '/oauth/register', 'revocation_endpoint': issuer + '/oauth/revoke',
             'response_types_supported': ['code'], 'grant_types_supported': ['authorization_code', 'refresh_token'],
             'code_challenge_methods_supported': ['S256'], 'scopes_supported': ['read', 'draft'],
@@ -686,7 +688,7 @@ def consent_page(req, issuer, csrf, areas, lang=None):
     level = 'draft' if 'draft' in (req.get('scope') or '').split() else 'read'
     hidden = ''.join(f'<input type="hidden" name="{k}" value="{html.escape(str(req.get(v) or ""))}">'
                      for k, v in (('client_id', 'client_id'), ('redirect_uri', 'redirect_uri'), ('state', 'state'),
-                                  ('code_challenge', 'challenge'), ('scope', 'scope')))
+                                  ('code_challenge', 'challenge'), ('scope', 'scope'), ('resource', 'resource')))
     hidden += f'<input type="hidden" name="csrf" value="{html.escape(csrf)}">'
     area = ''
     if len(areas) > 1:

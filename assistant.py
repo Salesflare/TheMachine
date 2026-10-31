@@ -14112,12 +14112,17 @@ class App(*APP_MIXINS):
         self.fleet.about_you = self.about_you
         if getattr(self, 'agents', None) is not None:
             self.agents._network = lambda body: self.fleet.relay.call('POST', '/agent-results', body)
-        stop = self.__dict__.setdefault('fleet_stop', threading.Event())
-        stop.clear()
+        self.fleet_stop = stop = threading.Event()  # a new one: a loop from before Unpair never wakes up again
         threading.Thread(target=self.fleet.run, args=(stop,), name='fleet', daemon=True).start()
         threading.Thread(target=self.bug_queue_worker, name='bug-queue', daemon=True).start()
+        self.ai_reach_start(stop)  # its own address for AIs (ai_reach.py)
         LOG.info('fleet started after pairing')
         return self.fleet
+
+    def stop_all(self):
+        self.stop.set()
+        if self.__dict__.get('fleet_stop') is not None:
+            self.fleet_stop.set()
 
     def fleet_drop(self):
         """Unpaired from the dashboard: the Fleet's loop stops and nothing uses its token any more."""
@@ -22591,8 +22596,8 @@ class App(*APP_MIXINS):
                 threading.Thread(target=agent_remote.serve, args=(self.agents, self.stop), daemon=True, name='agent-serve').start()
         if getattr(self, 'skills', None):
             self.skills.sync()  # the workspace has the skills that are on, also after edits made while this was off
-        signal.signal(signal.SIGTERM, lambda *_: self.stop.set())
-        signal.signal(signal.SIGINT, lambda *_: self.stop.set())
+        signal.signal(signal.SIGTERM, lambda *_: self.stop_all())
+        signal.signal(signal.SIGINT, lambda *_: self.stop_all())
         try:  # a work removal that was going on: what a sync stored meanwhile goes too; old safety copies go
             if work_removal.settle(self.config, self.store):
                 self.graph_dirty.set()
@@ -22608,7 +22613,9 @@ class App(*APP_MIXINS):
         threading.Thread(target=self.review_worker, daemon=True).start()
         threading.Thread(target=self.graph_worker, daemon=True).start()
         if getattr(self, 'fleet', None):
-            threading.Thread(target=self.fleet.run, args=(self.stop,), daemon=True).start()
+            self.fleet_stop = threading.Event()  # set by Unpair (fleet_drop) and when the service stops
+            threading.Thread(target=self.fleet.run, args=(self.fleet_stop,), daemon=True).start()
+            self.ai_reach_start(self.fleet_stop)
         threading.Thread(target=self.model_usage_worker, daemon=True).start()
         if getattr(self, 'fleet', None):
             threading.Thread(target=self.bug_queue_worker, name='bug-queue', daemon=True).start()

@@ -54,6 +54,8 @@ jobs:
       - name: Select Chromium
         run: |
           node --input-type=module -e 'const {chromium}=await import(process.env.OPENCLAW_PACKAGE_DIR+"/node_modules/playwright-core/index.mjs"); console.log("CHROMIUM_PATH="+chromium.executablePath())' >> "$GITHUB_ENV"
+      - name: Install cryptography (the address for AIs needs it; tests/test_ai_reach.py)
+        run: python -m pip install --quiet cryptography==46.0.3
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
           # 6 at a time on our runner: several PR jobs share it, and 8 browser tests each starve it into flaky timeouts
@@ -114,6 +116,8 @@ jobs:
       - name: Select Chromium
         run: |
           node --input-type=module -e 'import {pathToFileURL} from "node:url"; const {chromium}=await import(pathToFileURL(process.env.OPENCLAW_PACKAGE_DIR+"/node_modules/playwright-core/index.mjs").href); console.log("CHROMIUM_PATH="+chromium.executablePath())' >> "$GITHUB_ENV"
+      - name: Install cryptography (the address for AIs needs it; tests/test_ai_reach.py)
+        run: python -m pip install --quiet cryptography==46.0.3
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
           THE_MACHINE_TEST_TIMEOUT: ${{ runner.os == 'Windows' && '240' || '' }}
