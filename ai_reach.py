@@ -11,17 +11,18 @@ passes the bytes on, so TLS ends here, with this Machine's own certificate.
 3. Only the public paths: /mcp, /.well-known/oauth-*, /oauth/token, /oauth/register, /oauth/revoke (ai_access
    PUBLIC_GET and PUBLIC_POST) go to the same handlers as on the dashboard (AiApp.ai_http), with no owner sign-in at
    all; anything else is 404. The authorization endpoint stays on the dashboard, behind the owner's own sign-in.
-4. The certificate (ACME, RFC 8555, TLS-ALPN-01): Let's Encrypt, ZeroSSL when that fails (ZeroSSL needs an account
-   bound to an email address: the owner's first one). Key and certificate stay next to the database (0600) and never
-   leave the Machine; renewed with RENEW_DAYS left; gone on Unpair (drop).
+4. The certificate (ACME, RFC 8555, TLS-ALPN-01): Let's Encrypt only, on an account with no contact, so no email
+   address of the owner's goes to a third party. A failed try (or a rate limit) waits RETRY_FIRST, doubling up to
+   RETRY_MAX, or the CA's Retry-After when that is longer. Key and certificate stay next to the database (0600) and
+   never leave the Machine; renewed with RENEW_DAYS left; gone on Unpair (drop).
 
 Needs the `cryptography` package; without it Settings, AIs says so and nothing here starts."""
 from __future__ import annotations
 
 import base64
 import datetime as dt
+import email.utils
 import hashlib
-import hmac
 import http.client
 import io
 import json
@@ -60,11 +61,10 @@ HEAD_MAX = 16384                                   # bytes of request line and h
 UPGRADE = 'tm-mcp-stream/1'
 ALPN_ACME = 'acme-tls/1'
 OID_ACME_IDENTIFIER = '1.3.6.1.5.5.7.1.31'         # RFC 8737: the challenge certificate's critical extension
-CAS = (('letsencrypt', 'https://acme-v02.api.letsencrypt.org/directory'),
-       ('zerossl', 'https://acme.zerossl.com/v2/DV90'))
-ZEROSSL_EAB = 'https://api.zerossl.com/acme/eab-credentials-email'
+CA = 'https://acme-v02.api.letsencrypt.org/directory'  # the only CA: no account binding, no email address needed
 RENEW_DAYS = 30
-RETRY = 3600                                       # seconds before another certificate try after one failed
+RETRY_FIRST, RETRY_MAX = 600, 86400                # seconds before another certificate try: doubles per failure
+RETRY_AFTER_MAX = 7 * 86400                        # the longest Retry-After from the CA that is honored
 KEY_FILE, CERT_FILE, ACCOUNT_FILE = 'mcp-tls-key.pem', 'mcp-tls-cert.pem', 'acme-accounts.json'
 
 
@@ -73,7 +73,32 @@ class Refused(Exception):
 
 
 class AcmeError(Exception):
-    pass
+    """retry_after: seconds the CA asked to wait (a rate limit), else None."""
+
+    def __init__(self, message, retry_after=None):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+def retry_after(value, now=None):
+    """Seconds from a Retry-After header (delta-seconds or an HTTP date), else None."""
+    value = str(value or '').strip()
+    if value.isdigit():
+        return int(value)
+    try:
+        at = email.utils.parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+    if at is None:
+        return None
+    return max(0, int((at - (now or dt.datetime.now(dt.timezone.utc))).total_seconds()))
+
+
+def backoff(failures, asked=None):
+    """Seconds before the next certificate try after failures in a row: RETRY_FIRST doubling up to RETRY_MAX, or what
+    the CA asked (Retry-After, capped at RETRY_AFTER_MAX) when that is longer."""
+    wait = min(RETRY_FIRST * 2 ** max(failures - 1, 0), RETRY_MAX)
+    return max(wait, min(asked or 0, RETRY_AFTER_MAX))
 
 
 def b64u(data):
@@ -216,20 +241,15 @@ class Acme:
                 continue
             if status >= 400:
                 detail = found.get('detail') if isinstance(found, dict) else ''
-                raise AcmeError(f'{status} {str(detail)[:200]}')
+                limited = status == 429 or (isinstance(found, dict) and str(found.get('type', '')).endswith(':rateLimited'))
+                raise AcmeError(f'{status} {str(detail)[:200]}', retry_after(headers.get('Retry-After')) if limited else None)
             return status, headers, found
         raise AcmeError('bad nonce')
 
-    def account(self, eab=None):
-        """newAccount (finds the existing one too). eab: (kid, hmac key b64url) for a CA that binds accounts."""
+    def account(self):
+        """newAccount (finds the existing one too), with no contact: no email address of the owner's goes to the CA."""
         url = self.directory()['newAccount']
-        payload = {'termsOfServiceAgreed': True}
-        if eab:
-            protected = {'alg': 'HS256', 'kid': eab[0], 'url': url}
-            head, body = b64u(json.dumps(protected).encode()), b64u(json.dumps(jwk(self.key)).encode())
-            mac = hmac.new(base64.urlsafe_b64decode(eab[1] + '=' * (-len(eab[1]) % 4)), f'{head}.{body}'.encode(), hashlib.sha256).digest()
-            payload['externalAccountBinding'] = {'protected': head, 'payload': body, 'signature': b64u(mac)}
-        _, headers, _ = self.post(url, payload, use_jwk=True)
+        _, headers, _ = self.post(url, {'termsOfServiceAgreed': True}, use_jwk=True)
         self.kid = headers.get('Location')
         if not self.kid:
             raise AcmeError('no account')
@@ -281,16 +301,6 @@ class Acme:
         return key, chain
 
 
-def zerossl_eab(email, timeout=20):
-    """ZeroSSL binds ACME accounts to an email address: its API hands out the binding for one."""
-    data = urllib.parse.urlencode({'email': email}).encode()
-    with urllib.request.urlopen(urllib.request.Request(ZEROSSL_EAB, data=data, method='POST'), timeout=timeout) as response:
-        found = json.loads(response.read() or b'{}')
-    if not found.get('success') or not found.get('eab_kid') or not found.get('eab_hmac_key'):
-        raise AcmeError('no ZeroSSL account')
-    return found['eab_kid'], found['eab_hmac_key']
-
-
 def accounts(config):
     path = folder(config) / ACCOUNT_FILE
     try:
@@ -300,34 +310,28 @@ def accounts(config):
         return {}
 
 
-def obtain(config, host, challenges, email=None, cas=CAS, eab=zerossl_eab, wait=time.sleep):
-    """A certificate for host from the first CA that gives one (Let's Encrypt, then ZeroSSL), kept 0600. Raises
-    AcmeError when none did."""
+def obtain(config, host, challenges, ca=CA, wait=time.sleep):
+    """A certificate for host from Let's Encrypt, kept 0600. Raises AcmeError (with retry_after on a rate limit)."""
     kept = accounts(config)
-    last = None
-    for name, directory in cas:
-        try:
-            saved = kept.get(name) or {}
-            key = serialization.load_pem_private_key(saved['key'].encode(), None) if saved.get('key') else new_key()
-            client = Acme(directory, key, saved.get('kid'))
-            if not client.kid:
-                binding = None
-                if client.directory().get('meta', {}).get('externalAccountRequired'):
-                    if not email:
-                        raise AcmeError('needs an email address')
-                    binding = eab(email)
-                client.account(binding)
-                kept[name] = {'key': key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
-                                                       serialization.NoEncryption()).decode(), 'kid': client.kid}
-                onboarding.write_private(folder(config) / ACCOUNT_FILE, json.dumps(kept))
-            cert_key, chain = client.certificate(host, challenges, wait)
-            keep_cert(config, cert_key, chain)
-            LOG.info('mcp certificate ca=%s', name)
-            return name
-        except (AcmeError, OSError, ValueError, KeyError) as error:
-            LOG.warning('mcp certificate ca=%s error=%s', name, type(error).__name__)
-            last = error
-    raise AcmeError(str(last or 'no CA'))
+    try:
+        saved = kept.get('letsencrypt') or {}
+        key = serialization.load_pem_private_key(saved['key'].encode(), None) if saved.get('key') else new_key()
+        client = Acme(ca, key, saved.get('kid'))
+        if not client.kid:
+            if client.directory().get('meta', {}).get('externalAccountRequired'):
+                raise AcmeError('the CA wants an account binding')
+            client.account()
+            kept['letsencrypt'] = {'key': key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                                                            serialization.NoEncryption()).decode(), 'kid': client.kid}
+            onboarding.write_private(folder(config) / ACCOUNT_FILE, json.dumps(kept))
+        cert_key, chain = client.certificate(host, challenges, wait)
+        keep_cert(config, cert_key, chain)
+    except AcmeError:
+        raise
+    except (OSError, ValueError, KeyError) as error:
+        raise AcmeError(type(error).__name__) from error
+    LOG.info('mcp certificate ca=letsencrypt')
+    return 'letsencrypt'
 
 
 # ------------------------------------------------------------------ TLS here
@@ -574,11 +578,11 @@ def open_stream(base, token, conn_id, timeout=STREAM_FIRST):
 
 class Reach:
     """The dial-back loop and the certificate for one self-hosted Machine. app gives: name() (the account's name, or
-    None), token() (the device token, or None), handle(method, path, headers, body, host), email() (for ZeroSSL)."""
+    None), token() (the device token, or None), handle(method, path, headers, body, host)."""
 
-    def __init__(self, config, app, base=CLOUD, cas=CAS, eab=zerossl_eab, wait=None):
-        self.config, self.app, self.base, self.cas, self.eab = config, app, base, cas, eab
-        self.challenges, self.state, self.failed_at = {}, 'getting', 0.0
+    def __init__(self, config, app, base=CLOUD, ca=CA, wait=None):
+        self.config, self.app, self.base, self.ca = config, app, base, ca
+        self.challenges, self.state, self.failures, self.next_try = {}, 'getting', 0, 0.0
         self.wait = wait
         self.cert_lock, self.ctx, self.ctx_for = threading.Lock(), None, None
 
@@ -596,22 +600,24 @@ class Reach:
         return self.ctx
 
     def certify(self, host):
-        """Gets or renews the certificate in the background, at most one at a time, RETRY after a failure."""
+        """Gets or renews the certificate in the background, at most one at a time, with backoff after failures."""
         if not needs_cert(self.config, host):
             self.state = 'ready'
             return
-        if self.failed_at and time.monotonic() - self.failed_at < RETRY:
+        if time.monotonic() < self.next_try:
             return
         if not self.cert_lock.acquire(blocking=False):
             return
 
         def work():
             try:
-                obtain(self.config, host, self.challenges, self.app.email(), self.cas, self.eab, **({'wait': self.wait} if self.wait else {}))
-                self.state, self.failed_at = 'ready', 0.0
-            except Exception as error:  # noqa: BLE001 - tried again after RETRY
-                LOG.warning('mcp certificate failed error=%s', type(error).__name__)
-                self.state, self.failed_at = 'failed', time.monotonic()
+                obtain(self.config, host, self.challenges, self.ca, **({'wait': self.wait} if self.wait else {}))
+                self.state, self.failures, self.next_try = 'ready', 0, 0.0
+            except Exception as error:  # noqa: BLE001 - tried again after the backoff
+                self.failures += 1
+                pause = backoff(self.failures, getattr(error, 'retry_after', None))
+                LOG.warning('mcp certificate failed error=%s retry_in=%ds', type(error).__name__, pause)
+                self.state, self.next_try = 'failed', time.monotonic() + pause
             finally:
                 self.cert_lock.release()
         if load_cert(self.config)[0] is None:
