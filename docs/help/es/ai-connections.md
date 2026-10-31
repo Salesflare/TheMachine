@@ -13,7 +13,9 @@ Otras IA pueden conectarse a tu Machine por MCP: Claude, ChatGPT, Cursor, Codex,
 
 Con **Leer y editar** también pueden añadir una tarea, o una tarea con un borrador de correo, y cambiar tu Graph: guardar un dato sobre una persona o empresa, corregir sus detalles, campos y etiquetas, o añadir una línea al resumen de una persona.
 
-Cada cambio aparece en **Actividad** con **Deshacer**. Nunca fusionan, eliminan ni comparten fichas. Un borrador espera en tu Machine hasta que lo leas y pulses **Enviar** tú. Una IA conectada nunca envía nada ni actúa por ti. Do it y los agentes de tu Machine no forman parte de esto.
+Cada cambio aparece en **Actividad** con **Deshacer**. Nunca fusionan, eliminan ni comparten fichas. Lo que guardan muestra **IA:** y su nombre, en su área. Puedes editarlo o quitarlo, y The Machine puede reescribir una línea del resumen más adelante. Tu Machine lo trata como lo que dice esa IA, nunca como una instrucción tuya.
+
+Un borrador espera en tu Machine hasta que lo leas y pulses **Enviar** tú. Una IA conectada nunca envía nada ni actúa por ti. Do it y los agentes de tu Machine no forman parte de esto.
 
 ## Conectar una
 

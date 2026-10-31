@@ -410,6 +410,12 @@ def _rows(db, sql, args=()):
         return []
 
 
+def _owner_facts(db):
+    """Only what the owner taught: a fact a connected AI saved (source 'ai:…') is that AI's claim, not how they work."""
+    has = 'source' in {r[1] for r in db.execute('PRAGMA table_info(facts)')}
+    return "AND coalesce(source,'') NOT LIKE 'ai:%'" if has else ''
+
+
 def evidence(db, quality=None, current=None):
     """What the turn reads: private, so it stays in the sealed evidence of its run and goes only to the owner's own
     agent. Only the general patterns it writes from it come back."""
@@ -421,7 +427,7 @@ def evidence(db, quality=None, current=None):
                       "AND coalesce(d.feedback,'')!='' AND d.created_at>=? ORDER BY d.created_at DESC LIMIT 80", (start,))
     for n in notes:
         n['note'] = str(n['note'])[:400]
-    facts = [r['text'][:300] for r in _rows(db, "SELECT text FROM facts WHERE removed_at IS NULL AND created_at>=? ORDER BY created_at DESC LIMIT 40", (start,))]
+    facts = [r['text'][:300] for r in _rows(db, f"SELECT text FROM facts WHERE removed_at IS NULL AND created_at>=? {_owner_facts(db)} ORDER BY created_at DESC LIMIT 40", (start,))]
     rules = [r['text'][:300] for r in _rows(db, 'SELECT text FROM rule_changes WHERE at>=? ORDER BY at DESC LIMIT 40', (start,))]
     voices = [{'channel': r['channel'], 'text': r['text'][:400]} for r in _rows(db, 'SELECT channel,text FROM voices LIMIT 8')]
     edits = _rows(db, 'SELECT kind,count(*) n FROM draft_edits WHERE created_at>=? GROUP BY kind', (start,))
@@ -890,7 +896,7 @@ def vote_evidence(db):
     for r in rows:
         r['use_cases'] = json.loads(r['use_cases'] or '[]')
     rules = [r['text'][:200] for r in _rows(db, "SELECT text FROM facts WHERE removed_at IS NULL AND kind='draft' ORDER BY created_at DESC LIMIT ?", (VOTE_CONTEXT,))]
-    facts = [r['text'][:200] for r in _rows(db, "SELECT text FROM facts WHERE removed_at IS NULL AND kind='fact' ORDER BY created_at DESC LIMIT ?", (VOTE_CONTEXT,))]
+    facts = [r['text'][:200] for r in _rows(db, f"SELECT text FROM facts WHERE removed_at IS NULL AND kind='fact' {_owner_facts(db)} ORDER BY created_at DESC LIMIT ?", (VOTE_CONTEXT,))]
     channels = [r['channel'] for r in _rows(db, 'SELECT channel FROM voices')]
     week = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=VOTE_RECENT_DAYS)).isoformat(timespec='seconds')
     recent = [{'todo': str(r['title'] or '')[:120], 'choice': r['choice'], 'note': str(r['note'] or '')[:200]}

@@ -13,7 +13,9 @@ Other AIs can connect to your Machine over MCP: Claude, ChatGPT, Cursor, Codex, 
 
 With **Read & edit** they can also add a to-do, or a to-do with an email draft, and change your Graph: save a fact about a person or company, fix their details, fields and tags, or add a line to a person's summary.
 
-Each change shows in **Activity** with **Undo**. They never merge, delete or share records. A draft waits in your Machine until you read it and press Send yourself. A connected AI never sends anything and never acts for you. Your Machine's own Do it and agents are not part of this.
+Each change shows in **Activity** with **Undo**. They never merge, delete or share records. What they save shows **AI:** and their name, in their area. You can edit or remove it, and The Machine may revise a summary line later. Your Machine treats it as their claim, never as your instruction.
+
+A draft waits in your Machine until you read it and press Send yourself. A connected AI never sends anything and never acts for you. Your Machine's own Do it and agents are not part of this.
 
 ## Connect one
 

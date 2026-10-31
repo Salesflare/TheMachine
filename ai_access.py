@@ -120,8 +120,8 @@ TOOLS = {
             'add_tags': {'type': 'array', 'items': {'type': 'string'}, 'maxItems': 10},
             'remove_tags': {'type': 'array', 'items': {'type': 'string'}, 'maxItems': 10}},
         'required': ['id']}),
-    'add_summary_line': ('draft', "Add one line to the summary at the top of a person's page. It stays when The Machine rewrites the "
-                                  "summary, and the owner can undo it.", {
+    'add_summary_line': ('draft', "Add one line to the summary at the top of a person's page, labeled with this AI's name. The owner "
+                                  "can edit, remove or undo it, and The Machine's next rewrite may revise or drop it.", {
         'type': 'object', 'properties': {'id': _NODE, 'text': {'type': 'string', 'description': 'One short line, up to 180 characters'}},
         'required': ['id', 'text']}),
 }

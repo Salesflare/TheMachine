@@ -117,6 +117,7 @@
  "Now the rest of the week: {} of {} active conversations{}",
  "On",
  "Only Talk sends several at once.",
+ "Only a fact from a connected AI has an area",
  "Only a person has a summary",
  "Only an approved doc write uses the doc transport",
  "Open one with node_id for its links, recent signals and what is alive around it.",

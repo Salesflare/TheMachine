@@ -594,6 +594,11 @@ class AiApp:
             raise ai_access.Refused('Not in the Graph here', i18n.t('Refused: outside this connection’s area'))
         return row, view
 
+    def ai_side(self, connection, view):
+        """The area of what an AI saves: its own; with both Work and Personal, the record's (a person's side, else Work)."""
+        _, want = self.ai_accounts(connection, None)
+        return want or (view.get('side') if view['kind'] == 'person' and view.get('side') in ('work', 'personal') else 'work')
+
     def ai_tool_save_fact(self, connection, args):
         kind = args.get('kind') or 'fact'
         if kind not in AI_SORTS:
@@ -603,8 +608,9 @@ class AiApp:
             row, view = self.ai_record(db, connection, args.get('id'))
             same = db.execute("SELECT id FROM facts WHERE removed_at IS NULL AND kind='fact' AND lower(text)=lower(?)", (text,)).fetchone()
             before = self.store.fact_state(db, same['id']) if same else None
+        side = self.ai_side(connection, view)
         made = self.store.remember_fact(text, 'ai:' + connection['id'], kind, about=[row['id']], until=args.get('until') or None,
-                                        source='ai:' + connection['name'])
+                                        source='ai:' + connection['name'], side=side)
         if made.get('suppressed'):
             raise ValueError('The owner took this fact out before, so it was not saved again')
         with self.store.connect() as db:
@@ -615,7 +621,7 @@ class AiApp:
                 {'part': 'fact', 'before': before or {**after, 'fact': None, 'about': []}, 'after': after}])
         if getattr(self, 'graph_dirty', None):
             self.graph_dirty.set()
-        return {'id': made['id'], 'about': view['name'], 'note': 'Saved. The owner sees it and can undo it.'}, \
+        return {'id': made['id'], 'about': view['name'], 'area': side, 'note': 'Saved. The owner sees it and can undo it.'}, \
             i18n.t('Saved about {}: “{}”', view['name'][:60], text[:80]), write
 
     def ai_tool_update_record(self, connection, args):
@@ -674,11 +680,11 @@ class AiApp:
             if row['kind'] != 'person':
                 raise ValueError('Only a person has a summary')
             before = person_summary.state(db, row['id'])
-            person_summary.add_line(db, row['id'], args.get('text'), json.loads(row['info'] or '{}').get('side'), by=connection['name'])
+            person_summary.add_line(db, row['id'], args.get('text'), self.ai_side(connection, view), by=connection['name'])
             write = ai_access.note_write(db, connection['id'], 'add_summary_line', row['id'], [
                 {'part': 'summary', 'before': before, 'after': person_summary.state(db, row['id'])}])
         line = person_summary.clean_line(args.get('text'))
-        return {'id': row['id'], 'note': 'Added. It stays when The Machine rewrites the summary; the owner can undo it.'}, \
+        return {'id': row['id'], 'note': 'Added, labeled with your name. The owner can edit, remove or undo it, and a later rewrite may revise or drop it.'}, \
             i18n.t('Added to the summary of {}: “{}”', view['name'][:60], line[:80]), write
 
     def ai_part_state(self, db, node_id, change):

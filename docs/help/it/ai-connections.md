@@ -13,7 +13,9 @@ Altre IA possono collegarsi alla tua Machine via MCP: Claude, ChatGPT, Cursor, C
 
 Con **Lettura e modifica** possono anche aggiungere un’attività, o un’attività con una bozza di email, e modificare il tuo Graph: salvare un fatto su una persona o un’azienda, correggerne dettagli, campi e tag, o aggiungere una riga al riepilogo di una persona.
 
-Ogni modifica compare in **Attività** con **Annulla**. Non uniscono, eliminano né condividono mai schede. Una bozza aspetta nella tua Machine finché non la leggi e premi tu **Invia**. Un’IA collegata non invia mai nulla e non agisce mai al posto tuo. Do it e gli agenti della tua Machine non ne fanno parte.
+Ogni modifica compare in **Attività** con **Annulla**. Non uniscono, eliminano né condividono mai schede. Ciò che salvano mostra **IA:** e il loro nome, nella loro area. Puoi modificarlo o toglierlo, e The Machine può riscrivere una riga del riepilogo più avanti. La tua Machine lo tratta come una loro affermazione, mai come una tua istruzione.
+
+Una bozza aspetta nella tua Machine finché non la leggi e premi tu **Invia**. Un’IA collegata non invia mai nulla e non agisce mai al posto tuo. Do it e gli agenti della tua Machine non ne fanno parte.
 
 ## Collegarne una
 

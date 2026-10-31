@@ -13,7 +13,9 @@ Andere AI's kunnen via MCP met je Machine koppelen: Claude, ChatGPT, Cursor, Cod
 
 Met **Lezen en bewerken** kunnen ze ook een to-do toevoegen, of een to-do met een e-mailconcept, en je Graph aanpassen: een feit over een persoon of bedrijf bewaren, gegevens, velden en tags verbeteren, of een regel aan iemands samenvatting toevoegen.
 
-Elke wijziging staat in **Activiteit** met **Ongedaan maken**. Ze voegen nooit records samen, verwijderen of delen ze nooit. Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt. Een gekoppelde AI verstuurt nooit iets en doet nooit iets in jouw naam. Do it en de agents van je Machine zelf horen hier niet bij.
+Elke wijziging staat in **Activiteit** met **Ongedaan maken**. Ze voegen nooit records samen, verwijderen of delen ze nooit. Wat ze bewaren toont **AI:** en hun naam, in hun gebied. Je kunt het aanpassen of verwijderen, en The Machine kan een samenvattingsregel later herschrijven. Je Machine ziet het als hun bewering, nooit als jouw opdracht.
+
+Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt. Een gekoppelde AI verstuurt nooit iets en doet nooit iets in jouw naam. Do it en de agents van je Machine zelf horen hier niet bij.
 
 ## Er een koppelen
 

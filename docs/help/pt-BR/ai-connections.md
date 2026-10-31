@@ -13,7 +13,9 @@ Outras IAs podem se conectar à sua Machine por MCP: Claude, ChatGPT, Cursor, Co
 
 Com **Ler e editar** elas também podem adicionar uma tarefa, ou uma tarefa com um rascunho de e-mail, e mudar seu Graph: salvar um fato sobre uma pessoa ou empresa, corrigir detalhes, campos e tags, ou adicionar uma linha ao resumo de uma pessoa.
 
-Cada mudança aparece em **Atividade** com **Desfazer**. Elas nunca mesclam, excluem nem compartilham registros. Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA conectada nunca envia nada e nunca age por você. O Do it e os agentes da sua Machine não fazem parte disso.
+Cada mudança aparece em **Atividade** com **Desfazer**. Elas nunca mesclam, excluem nem compartilham registros. O que elas salvam mostra **IA:** e o nome delas, na área delas. Você pode editar ou remover, e The Machine pode reescrever uma linha do resumo depois. Sua Machine trata isso como afirmação delas, nunca como instrução sua.
+
+Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA conectada nunca envia nada e nunca age por você. O Do it e os agentes da sua Machine não fazem parte disso.
 
 ## Conectar uma
 

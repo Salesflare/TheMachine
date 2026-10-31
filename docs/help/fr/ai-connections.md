@@ -13,7 +13,9 @@ D’autres IA peuvent se connecter à votre Machine via MCP : Claude, ChatGPT, C
 
 Avec **Lecture et modification**, elles peuvent aussi ajouter une tâche, ou une tâche avec un brouillon d’e-mail, et modifier votre Graph : enregistrer un fait sur une personne ou une entreprise, corriger ses détails, champs et tags, ou ajouter une ligne au résumé d’une personne.
 
-Chaque modification apparaît dans **Activité** avec **Annuler**. Elles ne fusionnent, ne suppriment et ne partagent jamais de fiches. Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuyiez vous-même sur **Envoyer**. Une IA connectée n’envoie jamais rien et n’agit jamais à votre place. Do it et les agents de votre Machine n’en font pas partie.
+Chaque modification apparaît dans **Activité** avec **Annuler**. Elles ne fusionnent, ne suppriment et ne partagent jamais de fiches. Ce qu’elles enregistrent affiche **IA :** et leur nom, dans leur périmètre. Vous pouvez le modifier ou le retirer, et The Machine peut réécrire une ligne de résumé plus tard. Votre Machine le traite comme leur affirmation, jamais comme votre instruction.
+
+Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuyiez vous-même sur **Envoyer**. Une IA connectée n’envoie jamais rien et n’agit jamais à votre place. Do it et les agents de votre Machine n’en font pas partie.
 
 ## En connecter une
 

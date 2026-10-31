@@ -23,7 +23,7 @@ touched by any of it.
 | `create_draft` | Read & edit | A new to-do with an email draft (to, subject, text) from one of the owner's mail accounts, waiting for the owner's Send |
 | `save_fact` | Read & edit | A fact about a person or organization (`id`, `text`, `kind`: fact, preference, commitment or event, optional `until`), through `Store.remember_fact`, with source "AI: <name>" |
 | `update_record` | Read & edit | A person's or organization's details (`details`: title, location, linkedin_url, notes; an organization's own fields), CRM fields by name (`fields`) and tags (`add_tags`, `remove_tags`), through the dashboard's own paths (`graph.person_edit`/`org_edit`, `crm_fields.set_value`/`tag`) |
-| `add_summary_line` | Read & edit | A line on a person's summary (`id`, `text`), kept like an owner's edit, so the summary writer keeps it (`person_summary.add_line`) |
+| `add_summary_line` | Read & edit | A line on a person's summary (`id`, `text`), shown "AI: <name>" (`person_summary.add_line`). Not an owner's edit: the owner can edit or remove it, and the next summary pass gets it as data (`ai_lines`, ids A1…) and may keep, revise or drop it; a line citing it keeps the AI's name and area |
 
 Nothing else: no send, no Do it, no calendar write, no change to an existing to-do. In the Graph never a merge, a
 delete, a name, an organization or role, a Work or Personal side, sharing or an owner: those tools do not exist and
@@ -43,6 +43,16 @@ state, someone changed it since, and Undo is refused with a message to change it
 area does not reach (a Personal person for a Work connection, a teammate's record, the owner) is refused and logged,
 as is any write from a Read connection. A fact from an AI shows "AI: <name>" in What I've learned; a summary line
 shows it too.
+
+**Area.** What an AI saves is in its area: Work or Personal, and with both the record's (a person's side, else Work).
+A fact keeps it (`facts.side`): a preparation for a to-do in the other area leaves it out (`Store.facts_for`), and a
+summary line citing it is in that area.
+
+**Untrusted.** An AI's fact or summary line is that AI's claim, never the owner's word. In every prompt it goes as
+data with who saved it: preparations and reviews get AI facts after the owner's, inside a `<<<` `>>>` block under
+`AI_FACTS_HEAD` (`Store.facts_block`; its text can't close the block), the summary turn gets `saved_by` on facts and
+AI lines apart from the current summary, corrections and the Graph's open line say "saved by <name>", and team
+learnings leave AI facts out (they are not how the owner works).
 
 Every tool is listed to every connection. A tool above its level is refused with what to change and where, and the
 refusal is logged; the AI cannot raise its own level.

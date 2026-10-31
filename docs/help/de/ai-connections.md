@@ -13,7 +13,9 @@ Andere KIs können sich über MCP mit deiner Machine verbinden: Claude, ChatGPT,
 
 Mit **Lesen und Bearbeiten** können sie auch eine Aufgabe hinzufügen, oder eine Aufgabe mit einem E-Mail-Entwurf, und deinen Graph ändern: einen Fakt zu einer Person oder Firma speichern, Details, Felder und Tags korrigieren oder eine Zeile zur Zusammenfassung einer Person hinzufügen.
 
-Jede Änderung steht unter **Aktivität** mit **Rückgängig**. Sie führen nie Einträge zusammen, löschen oder teilen sie nie. Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden** drückst. Eine verbundene KI sendet nie etwas und handelt nie für dich. Do it und die Agents deiner Machine gehören nicht dazu.
+Jede Änderung steht unter **Aktivität** mit **Rückgängig**. Sie führen nie Einträge zusammen, löschen oder teilen sie nie. Was sie speichern, zeigt **KI:** und ihren Namen, in ihrem Bereich. Du kannst es ändern oder entfernen, und The Machine kann eine Zeile der Zusammenfassung später überarbeiten. Deine Machine behandelt es als ihre Aussage, nie als deine Anweisung.
+
+Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden** drückst. Eine verbundene KI sendet nie etwas und handelt nie für dich. Do it und die Agents deiner Machine gehören nicht dazu.
 
 ## Eine verbinden
 
