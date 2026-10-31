@@ -35,9 +35,19 @@ Scegli cosa può fare, **Leggi** o **Lettura e modifica**. Con account di lavoro
 
 ## Cosa vede
 
-Un collegamento vede solo la sua area. Lavoro copre attività e promesse dei tuoi account di lavoro, contatti di lavoro, aziende, progetti e il briefing del team della tua Work Fleet. Personale copre il resto. Il testo dei messaggi resta sulla tua Machine: un’IA vede le fonti di un’attività solo per mittente, oggetto e data.
+Un collegamento vede solo la sua area. Lavoro copre attività e promesse dei tuoi account di lavoro, contatti di lavoro, aziende, progetti e il briefing del team della tua Work Fleet. Personale copre il resto. Il testo dei messaggi resta sulla tua Machine, a meno che tu non attivi **Messaggi**: senza, un’IA vede le fonti di un’attività solo per mittente, oggetto e data.
 
 I dati Team Graph dei tuoi colleghi non vanno mai a un’IA esterna.
+
+## Messaggi
+
+**Messaggi** permette a un’IA di cercare e leggere la tua email, Slack, WhatsApp e altre chat. È disattivato finché non lo attivi, nella pagina dove la colleghi o dopo in **Impostazioni**, **IA**. Legge soltanto: non invia, non elimina e non segna mai nulla.
+
+Legge solo i messaggi della sua area. Alcuni non escono mai: codici monouso e link di accesso, messaggi di una bacheca o di un progetto **Solo tu**, conversazioni che The Machine ha giudicato delicate (trattative, HR, legale, salute, soldi), conversazioni che hai tenuto private e messaggi eliminati.
+
+Ogni lettura compare nei suoi **Movimenti**, con quanti messaggi e quali conversazioni, mai il testo. La tua Machine passa il testo segnato come dati, così l’IA non segue istruzioni scritte in un messaggio.
+
+Finché Messaggi è attivo, le modifiche al Graph di un’IA con **Lettura e modifica** aspettano il tuo ok. Tocca **Applica** o **Ignora** sulla modifica in **Movimenti**.
 
 ## In Impostazioni
 

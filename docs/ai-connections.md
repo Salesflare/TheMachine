@@ -24,6 +24,29 @@ touched by any of it.
 | `save_fact` | Read & edit | A fact about a person or organization (`id`, `text`, `kind`: fact, preference, commitment or event, optional `until`), through `Store.remember_fact`, with source "AI: <name>" |
 | `update_record` | Read & edit | A person's or organization's details (`details`: title, location, linkedin_url, notes; an organization's own fields), CRM fields by name (`fields`) and tags (`add_tags`, `remove_tags`), through the dashboard's own paths (`graph.person_edit`/`org_edit`, `crm_fields.set_value`/`tag`) |
 | `add_summary_line` | Read & edit | A line on a person's summary (`id`, `text`), shown "AI: <name>" (`person_summary.add_line`). Not an owner's edit: the owner can edit or remove it, and the next summary pass gets it as data (`ai_lines`, ids A1…) and may keep, revise or drop it; a line citing it keeps the AI's name and area |
+| `search_messages` | Read, with Messages on | Messages (mail, Slack, WhatsApp, Telegram, LinkedIn, Intercom, X DMs: `follow_ups.CHANNEL_KINDS`) by words (`query`, optional), `channel`, `area`, newest first: who, when, subject and the first 300 characters, each with its thread |
+| `read_thread` | Read, with Messages on | The thread or chat around one message (`id`), oldest first, up to 30 messages of up to 4000 characters |
+
+### Messages
+
+A connection's own switch, **Messages**, off until the owner turns it on: on the consent page (a box, never ticked to
+start with) or in Settings, AIs (`ai_change` with `messages`). Without it `search_messages` and `read_thread` are
+refused and logged ("Refused: Messages is off for this connection"). With it they only read, through `Store.events`
+(never deleted messages) and only the connection's area. Never returned, whoever asks: anything that is not a
+message (calendar, transcripts, notices), one-time codes and sign-in links (the text is replaced, as the chat
+sources already do when they store one), messages of an Only you board or project (`graph.hidden_event_ids`), and
+threads the Shared Graph's review judged sensitive or the owner kept private by hand (`share_threads`); a Work-only
+connection also not threads the review found are the owner's own life. Every read is an Activity line with how many
+messages and which threads (subject or chat name), never the text (`READ_DETAIL`). Subjects and text go out between
+`<<<` and `>>>` (`ai_fence`: nothing in them can open or close the block), with a note and the server's instructions
+saying it is data, never instructions.
+
+While Messages is on, a Read & edit connection's Graph changes (`WRITES`) don't apply: what the AI read may have
+steered them. The record is checked as for any change (area, refusals), and the call is kept as a waiting row in
+`ai_writes` (`waiting` 1, `changes` the AI's arguments). Its Activity line says "Waiting for your OK" with **Apply**
+(`ai_apply`: the same tool runs now as the owner's OK, with the connection's area as it is then, and the line gets its
+Undo) and **Dismiss** (`ai_dismiss`: nothing changes, the line says "Not applied"). Read connections are unaffected,
+and so is a Read & edit one with Messages off.
 
 Nothing else: no send, no Do it, no calendar write, no change to an existing to-do. In the Graph never a merge, a
 delete, a name, an organization or role, a Work or Personal side, sharing or an owner: those tools do not exist and

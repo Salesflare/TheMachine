@@ -1,6 +1,7 @@
 // Settings, Activity (activity_log.py, help: activity): one list of everything The Machine did, newest first, by day.
 // Read-only: each line says what, when, where and who started it, and links to its to-do; a learning sent to The Machine
-// team keeps its Withdraw, and a line with undo (a connected AI's Graph change) its Undo. The filter picks one kind, or what was refused or blocked. Fleet, Activity is this same list
+// team keeps its Withdraw, and a line with undo (a connected AI's Graph change) its Undo; one with decide (a change that
+// waits for the owner's OK: the AI's Messages is on) Apply and Dismiss. The filter picks one kind, or what was refused or blocked. Fleet, Activity is this same list
 // for the Fleet and learnings (actEmbed). Support access's looks come from Settings, Security (saData), added by time.
 const ACT_KINDS=[['messages','Messages'],['docs','Docs'],['calendar','Calendar'],['web','Steps on the web'],['fixes','Fixes'],['agents','Coding agents'],['fleet','Fleet'],['learnings','Learnings'],['skills','Skills'],['graph','Graph'],['connections','Connections'],['access','Support access'],['ai','Connected AIs']];
 const act={filter:'',items:[],next:null,kinds:[],busy:false,error:false,at:0,seq:0},actFleet={items:null,at:0,busy:false};
@@ -22,13 +23,18 @@ function actRow(x){const meta=[fmtHM(x.at),x.where,x.by].filter(Boolean).map(esc
  const what=[sent.example?`<p>${esc(t('Example: {}',sent.example))}</p>`:'',...(sent.use_cases||[]).map(c=>`<p class="fine">${esc(c)}</p>`),sent.log?`<pre>${esc(sent.log)}</pre>`:''].join('');
  return `<li class="act-row act-${esc(x.outcome||'done')}"><div class="act-top"><span class="act-what">${esc(x.what)}</span>${x.status?`<span class="act-status">${esc(x.status)}</span>`:''}</div><small class="act-meta">${meta}</small>`
   +(x.detail?`<small class="act-meta">${esc(x.detail)}</small>`:'')+(what?`<details class="act-sent"><summary>${esc(t('What was sent'))}</summary>${what}</details>`:'')
-  +(x.todo||x.withdraw||actUndoable(x)?`<div class="act-acts">${x.todo?`<button type="button" class="link act-todo" data-act-todo="${esc(x.todo.id)}"><span class="ell">${esc(t('To-do: {}',x.todo.title||t('(no title)')))}</span></button>`:''}${x.withdraw?`<button type="button" class="ghost" data-tl-withdraw="${esc(x.withdraw.id)}" data-n="${esc(x.withdraw.n)}">${esc(t('Withdraw'))}</button>`:''}${actUndoable(x)?`<button type="button" class="ghost" data-act-undo="${esc(x.undo.action)}" data-id="${esc(x.undo.id)}">${esc(t('Undo'))}</button>`:''}</div>`:'')+'</li>'}
+  +(x.todo||x.withdraw||actUndoable(x)||actDecidable(x)?`<div class="act-acts">${x.todo?`<button type="button" class="link act-todo" data-act-todo="${esc(x.todo.id)}"><span class="ell">${esc(t('To-do: {}',x.todo.title||t('(no title)')))}</span></button>`:''}${x.withdraw?`<button type="button" class="ghost" data-tl-withdraw="${esc(x.withdraw.id)}" data-n="${esc(x.withdraw.n)}">${esc(t('Withdraw'))}</button>`:''}${actUndoable(x)?`<button type="button" class="ghost" data-act-undo="${esc(x.undo.action)}" data-id="${esc(x.undo.id)}">${esc(t('Undo'))}</button>`:''}${actDecidable(x)?`<button type="button" class="primary" data-act-decide="${esc(x.decide.apply)}" data-id="${esc(x.decide.id)}">${esc(t('Apply'))}</button><button type="button" class="ghost" data-act-decide="${esc(x.decide.dismiss)}" data-id="${esc(x.decide.id)}">${esc(t('Dismiss'))}</button>`:''}</div>`:'')+'</li>'}
 // Undo on a line: the action it names takes it back (only the ones listed here, each an owner's dashboard action)
 const ACT_UNDO=new Set(['ai_undo']),actUndoable=x=>!!x.undo&&ACT_UNDO.has(x.undo.action);
 async function actUndo(b){if(!ACT_UNDO.has(b.dataset.actUndo))return;b.disabled=true;
  try{await sharePost(b.dataset.actUndo,{id:+b.dataset.id});toast(t('Undone.'));actChanged();if(typeof aiActivityReload==='function')aiActivityReload()}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}}
-document.addEventListener('click',e=>{const u=e.target.closest('[data-act-undo]');if(u)actUndo(u)});
+document.addEventListener('click',e=>{const u=e.target.closest('[data-act-undo]');if(u)actUndo(u);const d=e.target.closest('[data-act-decide]');if(d)actDecide(d)});
+// Apply or Dismiss on a connected AI's change that waits for the owner's OK (ai_apply, ai_dismiss)
+const ACT_DECIDE=new Set(['ai_apply','ai_dismiss']),actDecidable=x=>!!x.decide&&ACT_DECIDE.has(x.decide.apply)&&ACT_DECIDE.has(x.decide.dismiss);
+async function actDecide(b){const a=b.dataset.actDecide;if(!ACT_DECIDE.has(a))return;for(const x of b.parentElement.querySelectorAll('button'))x.disabled=true;
+ try{await sharePost(a,{id:+b.dataset.id});toast(t(a==='ai_apply'?'Applied.':'Not applied.'));actChanged();if(typeof aiActivityReload==='function')aiActivityReload()}
+ catch(err){errCaught(err);for(const x of b.parentElement.querySelectorAll('button'))x.disabled=false;toast(err.message,true)}}
 function actRows(items){let day='',h='';for(const x of items){const d=new Date(x.at);if(isNaN(d))continue;const k=localDay(d);if(k!==day){day=k;h+=`<li class="act-day">${esc(t(humanDay(d)))}</li>`}h+=actRow(x)}return h}
 // Lines by time: the page's own, and Support access's looks back to the oldest line loaded (all of them at the end)
 function actMerged(items,next,filter){const looks=['','access','refused'].includes(filter)?actLooks().filter(x=>filter!=='refused'||x.outcome==='refused'):[];
