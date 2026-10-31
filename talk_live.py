@@ -123,6 +123,11 @@ TOOLS = [
      'description': ('Call right after the owner answers your confirm question. The Machine checks their own words for a '
                      'clear yes and says what happened; tell the owner that, and never say something was sent otherwise.'),
      'parameters': NONE},
+    {'type': 'function', 'name': 'send_status',
+     'description': ('Whether this to-do’s send went out, from the Machine’s own outbox: waiting (with the seconds left to '
+                     'undo), going out, sent (with the time), or not sent and why. Call it whenever the owner asks if '
+                     'something was sent ("is it sent?", "did it go?"), and say what it returns. Never guess.'),
+     'parameters': NONE},
     {'type': 'function', 'name': 'undo_send',
      'description': ('While a send by voice still waits (Undo shows on screen), stop it: when the owner says "undo", "stop", '
                      '"wait", "don’t send" or the like. Cancels everything that is still waiting.'),
@@ -231,7 +236,9 @@ MAIN_TOOLS = [
      'parameters': {'type': 'object', 'properties': {
          'ids': {'type': 'array', 'items': {'type': 'string'}, 'description': 'The to-dos’ ids, at most 5.'}},
          'required': ['ids'], 'additionalProperties': False}},
-    TOOL['send_answer'], TOOL['undo_send'], TOOL['report_bug'], TOOL['end_talk'],
+    TOOL['send_answer'], {**TOOL['send_status'], 'parameters': {'type': 'object', 'properties': {
+        'id': {'type': 'string', 'description': 'The to-do’s id. Leave out for the one in focus.'}}, 'additionalProperties': False}},
+    TOOL['undo_send'], TOOL['report_bug'], TOOL['end_talk'],
 ]
 # Talk's read tools the Machine answers itself (talk_tool, main conversation only); machine_status and ask_machine are
 # the dashboard's own
@@ -255,6 +262,22 @@ READY_NOTE = ('A to-do that was preparing is ready now: "{title}" (from: {from})
               'short line, like "The one for Pieter is ready now. Want to hear it?", and only open it if they say so.')
 STOPPED_NOTE = ('The chat of the to-do "{title}" stopped before it answered "{request}". Tell the owner once, in a line, '
                 'and offer to ask again. If they say "ask again", call ask_chat with that same request; never create_todo.')
+# A send by voice settled (the dashboard follows it in the outbox after the Undo window): told once, by itself
+SENT_NOTE = 'The Machine’s outbox confirms it went out ({what}, at {at}). Say only: "Sent."'
+NOT_SENT_NOTE = ('The Machine’s outbox says it didn’t go out ({what}): {why} Tell the owner in one short sentence, and that '
+                 'the to-do shows it.')
+# What send_status answers, by the outbox's state (talk_send_status); {to}, {n}, {at} and {why} filled in
+STATUS_SAY = {
+    'waiting': 'Not sent yet: it goes out to {to} in {n} seconds unless the owner says undo. Say that in a few words.',
+    'sending': 'It is going out to {to} now; the outbox hasn’t confirmed it yet. Say exactly that, in a few words.',
+    'sent': 'Sent to {to} at {at}. Say exactly that.',
+    'failed': 'It didn’t go out to {to}: {why} Say that in a sentence.',
+    'blocked': 'It didn’t go out to {to}, it was stopped: {why} Say that in a sentence.',
+    'canceled': 'The send to {to} was canceled, nothing went out. Say that.',
+    'unsure': ('The outbox can’t confirm yet whether it reached {to}; The Machine is checking. Say that, without guessing '
+               'either way.'),
+    'none': 'Nothing has been sent from this to-do. Say that.',
+}
 # What the owner said didn't come through (a few words in a language they don't speak, or one odd word before an action)
 AGAIN_NOTE = 'The owner’s last words didn’t come through clearly. Say only: "Sorry, say that again?" and do nothing else.'
 # Their words didn't come through twice in a row, or the transcription failed: said once, plainly, instead of a loop of
@@ -282,8 +305,9 @@ SAY = {
     'seen': 'The owner has already seen or heard this exact draft, so don’t read it again. ',
     'read_some': ('Read out in full, word for word, only the drafts below that have a text (the owner hasn’t seen those), '
                   'saying who each goes to. Don’t read the others again. '),
-    'queued': ('Approved. It goes out in %d seconds. Say it’s on its way, and that they can say undo or tap Undo.' % UNDO_SECONDS),
-    'queued_all': ('Approved. They go out in %d seconds. Say they’re on their way, and that they can say undo or tap Undo.' % UNDO_SECONDS),
+    # {n}: the seconds the outbox still holds it (the same count the Undo bar shows), never a fixed number
+    'queued': 'Approved, not sent yet: it goes out in {n} seconds. Say only: "Sending in {n} seconds. Say undo to stop it."',
+    'queued_all': 'Approved, not sent yet: they go out in {n} seconds. Say only: "Sending in {n} seconds. Say undo to stop it."',
     'no': 'Not sent. Say so, and ask what they’d like instead.',
     'unclear': ('That wasn’t a clear yes, so nothing was sent. Don’t read the draft again: ask the same question once more, '
                 'short, like "Say yes to send it to {name}.", then call send_answer after their answer.'),
@@ -450,6 +474,8 @@ def instructions(title, language, now_text, languages=None):
         'sentence. Say one word at most, or nothing, and wait for them.',
         '- Before a tool call, say one short line at most ("One sec"), once. Don’t announce what you will do next, and '
         'don’t add another line while it runs.',
+        '- No narration about yourself or the conversation: never "thanks for confirming", "let me finish that step" or '
+        '"I’ll do that now". Do it, then say the result plainly.',
         '',
         '## Pacing',
         '- A natural, easy conversational pace: unhurried, with small pauses between ideas. Never rushed.',
@@ -486,8 +512,11 @@ def instructions(title, language, now_text, languages=None):
         'from anything else.',
         '- To send: only when the owner asks to send it, call ask_to_send. If it says the owner has seen or heard this '
         'draft, only ask its question; otherwise read the draft out in full first. It works without the screen. After '
-        'their answer, call send_answer and say what it returns; never say something was sent unless send_answer says so. '
-        'Never read the same draft twice.',
+        'their answer, call send_answer right away, without saying anything first, and say what it returns; never say '
+        'something was sent unless a tool says so. Never read the same draft twice.',
+        '- Whether a send went out ("is it sent?", "did it go?"): call send_status and say what it returns, with its time '
+        'or the seconds left. Never guess ("probably", "I can’t say from here"). When a send by voice goes out or fails, '
+        'you are told: then say what that note says, nothing more.',
         '- Only a clear yes sends. If send_answer says it wasn’t clear, ask the question again in a few words, without '
         'reading the draft again.',
         '- While a send waits, Undo shows on screen. If the owner says "undo", "stop", "wait" or "don’t send", call '
@@ -529,6 +558,8 @@ def main_instructions(language, now_text, languages=None):
         'sentence. Say one word at most, or nothing, and wait for them.',
         '- Before a tool call, say one short line at most ("One sec"), once. Don’t announce what you will do next, and '
         'don’t add another line while it runs.',
+        '- No narration about yourself or the conversation: never "thanks for confirming", "let me finish that step" or '
+        '"I’ll do that now". Do it, then say the result plainly.',
         '',
         '## Pacing',
         '- A natural, easy conversational pace: unhurried, with small pauses between ideas. Never rushed.',
@@ -588,8 +619,11 @@ def main_instructions(language, now_text, languages=None):
         'from anything else.',
         '- To send: only when the owner asks to send it, call ask_to_send. If it says the owner has seen or heard this '
         'draft, only ask its question; otherwise read the draft out in full first. It works without the screen. After '
-        'their answer, call send_answer and say what it returns; never say something was sent unless send_answer says so. '
-        'Never read the same draft twice.',
+        'their answer, call send_answer right away, without saying anything first, and say what it returns; never say '
+        'something was sent unless a tool says so. Never read the same draft twice.',
+        '- Whether a send went out ("is it sent?", "did it go?"): call send_status and say what it returns, with its time '
+        'or the seconds left. Never guess ("probably", "I can’t say from here"). When a send by voice goes out or fails, '
+        'you are told: then say what that note says, nothing more.',
         '- Only a clear yes sends. If send_answer says it wasn’t clear, ask the question again in a few words, without '
         'reading the draft again.',
         '- While a send waits, Undo shows on screen. If the owner says "undo", "stop", "wait" or "don’t send", call '

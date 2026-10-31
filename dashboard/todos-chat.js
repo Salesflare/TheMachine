@@ -473,13 +473,19 @@ function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).fin
  if(a.kind==='doc_write')return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span><div class="chat-draft-head"><span>${esc(docHead(a))}</span></div><div class="chat-clamp dw">${docWriteHtml(a)}</div></div>`;
  const to=a.to_name||(Array.isArray(a.to)?a.to.join(', '):a.to||''),mail=a.kind==='email';
  return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span>${to?`<div class="chat-draft-head"><span>${esc(t('To: {}',to))}</span></div>`:''}${a.subject&&!a.reply&&!/^re:/i.test(a.subject)?`<div class="chat-draft-subject">${esc(a.subject)}</div>`:''}<div class="chat-clamp${mail?' mail-text':''}">${mail?mailHtml(a.body):chatMarkdown(a.body)}</div></div>`}
+// Once its send went out (or didn't), Talk's card says so instead of showing the draft: "Sent to Sam · 11:42"
+function talkSentHtml(v,s){const sent=(s.next_actions||[]).find(a=>a.state?.status==='sent'),d=v?.done?.[s.id]||(sent?{state:'sent',at:sent.state.sent_at,to:sent.to_name||(Array.isArray(sent.to)?sent.to.join(', '):sent.to||'')}:null);if(!d)return '';
+ if(d.state==='sent'){const time=d.at?fmtHM(d.at):'';return `<p class="talk-about-sent" role="status">${esc(d.to&&time?t('Sent to {} · {}',d.to,time):time?t('Sent at {}',time):d.to?t('Sent to {}',d.to):t('Sent'))}</p>`}
+ return `<p class="talk-about-sent failed" role="alert">${esc(t('Didn’t go out.'))}${d.why?' '+esc(d.why):''}</p>`}
 function talkViewPaint(){const sec=$('#talk-view');if(!sec||sec.hidden)return;const v=talk,live=!!v?.main;
  if(!sec.firstElementChild)sec.innerHTML='<div class="talk-head"><h2></h2><span class="talk-again"></span></div><div class="talk-about-slot"></div><div class="chat-log talk-log" aria-live="polite"></div><div class="talk-foot"></div>';
  sec.querySelector('h2').textContent=t('Talk');
  const again=live||!talkOk()?'':`<button type="button" class="talk-again-btn" data-talk-main>${esc(t('Start again'))}</button>`,ag=sec.querySelector('.talk-again');if(ag.innerHTML!==again)ag.innerHTML=again;
- const s=live&&v.sid?state.suggestions?.find(x=>x.id===v.sid):null;
- const about=s?`<div class="talk-about" data-about="${esc(s.id)}"><div class="talk-about-top"><span>${esc(t('Talking about'))}</span><a href="#chat=${esc(s.id)}">${esc(t('Open the chat'))}</a></div><h3 translate="no">${esc(s.title)}</h3>${talkDraftHtml(s)}</div>`:'';
- const slot=sec.querySelector('.talk-about-slot');if(slot.dataset.k!==about){slot.dataset.k=about;slot.innerHTML=about}
+ const s=live&&v.sid?state.suggestions?.find(x=>x.id===v.sid)||(v.done?.[v.sid]?{id:v.sid,title:v.done[v.sid].title}:null):null;
+ const about=s?`<div class="talk-about" data-about="${esc(s.id)}"><div class="talk-about-top"><span>${esc(t('Talking about'))}</span><a href="#chat=${esc(s.id)}">${esc(t('Open the chat'))}</a></div><h3 translate="no">${esc(s.title)}</h3>${talkSentHtml(v,s)||talkDraftHtml(s)}</div>`:'';
+ // At the end of the transcript, it stays there when the card changes (a draft that became "Sent to…" is much shorter)
+ const slot=sec.querySelector('.talk-about-slot');if(slot.dataset.k!==about){const end=scrollY+innerHeight>=document.documentElement.scrollHeight-40;slot.dataset.k=about;slot.innerHTML=about;
+  if(end)requestAnimationFrame(()=>{document.body.style.minHeight='';scrollTo(0,document.documentElement.scrollHeight);if(typeof placeNote==='function')placeNote()})}
  const log=sec.querySelector('.talk-log'),key=talkLog.length+'|'+live;if(log.dataset.k===key)return;log.dataset.k=key;
  log.innerHTML=talkLog.map(x=>x.record?talkRecordHtml(x.record):x.made?`<p class="talk-mark talk-made">${esc(t('Added a to-do: {}',x.title))}</p>`:x.about?`<p class="talk-mark" translate="no">${esc(x.title)}</p>`:`<div class="chat-msg ${x.role==='user'?'you':'machine'}"><div class="bubble" translate="no">${esc(x.text)}</div></div>`).join('')
   +(!talkLog.length||!live?`<p class="talk-mark">${esc(live?t('Say something to start.'):t('Talk ended.'))}</p>`:'');
@@ -494,8 +500,24 @@ if(location.hash==='#talk')history.replaceState(null,'',location.pathname+locati
 // The bar sits above the chat's message box; Talk's own floats at the bottom of the page when no chat is open
 // Who Talk's yes sends to, on its Undo bar: "Sending to Sam in 10 s", then "Sent to Sam"; several, "Sending 3 emails in 10 s"
 function talkSendingText(x,wait){const items=x.items||[],n=items.length,mail=items.every(i=>i.kind==='email'),to=n===1?String(items[0].to||''):'';
- if(wait==null)return n>1?t(mail?'Sent {} emails':'Sent {} messages',n):to?t('Sent to {}',to):t('Sent');
- return n>1?t(mail?'Sending {} emails in {} s':'Sending {} messages in {} s',n,wait):to?t('Sending to {} in {} s',to,wait):t('Sending in {} s',wait)}
+ if(wait==null){const time=n===1&&x.results?.[0]?.at?fmtHM(x.results[0].at):'';
+  return n>1?t(mail?'Sent {} emails':'Sent {} messages',n):to&&time?t('Sent to {} · {}',to,time):to?t('Sent to {}',to):time?t('Sent at {}',time):t('Sent')}
+ return (n>1?t(mail?'Sending {} emails in {} s':'Sending {} messages in {} s',n,wait):to?t('Sending to {} in {} s',to,wait):t('Sending in {} s',wait)).replace(/(\S+) (\d+) s\b/,'$1\u00a0$2\u00a0s')}
+// A send by voice after its Undo window: followed in the Machine's outbox (send_status) until it went out or didn't,
+// then the bar and Talk's card say so, and the voice is told once ("Sent."). Never a guess from the clock.
+const TALK_SETTLED=['sent','failed','blocked','canceled','none'];
+async function talkSentWatch(v,x){if(x.watching)return;x.watching=true;
+ for(let n=0;n<80&&talk===v&&!x.undone;n++){
+  const out=await Promise.all(x.items.map(i=>micPost('talk_tool',{id:v.id,name:'send_status',args:{id:i.suggestion_id,approval_id:i.approval_id}}).then(r=>r.output||{}).catch(()=>({}))));
+  if(talk!==v||x.undone)return;
+  if(out.every(o=>TALK_SETTLED.includes(o.state))){x.results=out;x.settledAt=Date.now();
+   for(const [k,i] of x.items.entries())(v.done||={})[i.suggestion_id]={...out[k],title:String(state.suggestions?.find(s=>s.id===i.suggestion_id)?.title||v.done?.[i.suggestion_id]?.title||'')};
+   const bad=out.filter(o=>o.state!=='sent'),what=x.items.map(i=>i.to).filter(Boolean).join(', ')||'the draft';
+   const note=(bad.length?v.notes.not_sent:v.notes.sent)||'';   // the voice's words come from the Machine (talk_live.py)
+   if(note)talkTell(v,note.replace('{what}',what).replace('{at}',out[0].time||'').replace('{why}',bad.map(o=>o.why||o.say||'').join(' ').trim()));
+   talkPaint();talkViewPaint();refresh().catch(()=>{});if(chatOpen())chatPoll();return}
+  await new Promise(ok=>setTimeout(ok,n<10?1000:3000))}
+ x.watching=false}
 function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$('#talk-view .talk-foot'):document.querySelector('.chat-compose');
  if(!box&&!v.main){talkEnd();return}
  let host=box,bar=box?.querySelector(':scope>.talk');
@@ -514,11 +536,14 @@ function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$(
  bar.querySelector('.talk-time').textContent=near?t('{} left',micClock(Math.max(0,Math.ceil(left)))):v.state==='live'?micClock(v.secs):'';
  bar.querySelector('.talk-hint').textContent=v.muted?t('Muted'):v.state==='live'&&talkAsking(v)?t('Say yes to send it.'):'';
  // A send by voice waits UNDO_SECONDS with Undo here (tap, or say "undo"), then says Sent for a moment
- const x=v.sent,wait=x?Math.ceil((x.until-Date.now())/1000):0,kind=x&&!x.undone&&wait>0?'undo':x&&!x.undone&&wait>-3?'sent':x?.undone&&wait>-3?'undone':'';
+ const x=v.sent,wait=x?Math.ceil((x.until-Date.now())/1000):0,ok=x?.results?.every(o=>o.state==='sent'),
+  kind=x&&!x.undone&&wait>0?'undo':x&&!x.undone&&!x.results?'going':x?.results&&Date.now()-x.settledAt<6000?(ok?'sent':'failed'):x?.undone&&wait>-3?'undone':'';
+ if(kind==='going')talkSentWatch(v,x);
  let u=bar.querySelector('.talk-undo');if(!u){u=document.createElement('div');u.className='talk-undo';bar.querySelector('.talk-bar')?.after(u)}
  if(u.dataset.kind!==kind){u.dataset.kind=kind;  // the button stays the same element while the count goes down, so a tap never misses
   u.innerHTML=kind==='undo'?`<span class="talk-sending" role="status"></span><button type="button" class="talk-undo-btn" data-talk-undo>${esc(t('Undo'))}</button>`
-   :kind==='sent'?`<span class="talk-sending sent" role="status">${esc(talkSendingText(x))}</span>`:kind==='undone'?`<span class="talk-sending" role="status">${esc(t('Canceled. It won’t be sent.'))}</span>`:''}
+   :kind==='sent'?`<span class="talk-sending sent" role="status">${esc(talkSendingText(x))}</span>`:kind==='going'?`<span class="talk-sending" role="status">${esc(t('Sending…'))}</span>`
+   :kind==='failed'?`<span class="talk-sending failed" role="alert">${esc(t('Didn’t go out.'))}</span>`:kind==='undone'?`<span class="talk-sending" role="status">${esc(t('Canceled. It won’t be sent.'))}</span>`:''}
  if(kind==='undo'){const c=u.querySelector('.talk-sending'),text=talkSendingText(x,wait);if(c.textContent!==text)c.textContent=text}
  u.hidden=!kind;
  bar.querySelector('.talk-live').classList.toggle('near',near)}
@@ -854,7 +879,7 @@ async function talkAnswer(v){let r={status:'not_asked'};
  for(let i=0,tries=v.asked?14:1;i<tries&&talk===v;i++){  // the owner's words can still be on their way from OpenAI (up to ~10 s)
   await v.posting;try{r=await micPost('talk_send',{id:v.id})}catch(err){return {error:err.message}}
   if(!['no_answer','not_asked'].includes(r.status))break;await new Promise(ok=>setTimeout(ok,700))}
- if(r.status==='queued'){v.asked=null;v.sent={items:r.sent||[{suggestion_id:v.sid,approval_id:r.approval_id}],until:Date.now()+(r.undo_seconds||10)*1000};talkPaint();await refresh();if(chatOpen()?.id===v.sid)chatPoll()}
+ if(r.status==='queued'){v.asked=null;v.sent={items:r.sent||[{suggestion_id:v.sid,approval_id:r.approval_id}],until:Date.now()+(r.undo_ms??(r.undo_seconds||10)*1000)};talkPaint();await refresh();if(chatOpen()?.id===v.sid)chatPoll()}
  else if(!['no_answer','not_asked','unclear'].includes(r.status))v.asked=null;
  if(!v.asked)talkEager(v,false);
  return r}

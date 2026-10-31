@@ -26,19 +26,20 @@ const reset=()=>{cards=[
  {id:F,title:'Check the payroll export',body:'Export for October.',status:'pending',scope:'personal',created_at:now,event_ids:[6]},
  {id:G,title:'Find the insurance policy number',body:'For the claim.',status:'pending',scope:'personal',created_at:now,event_ids:[7]}]};
 const state=()=>({talk_ready:true,suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
-const actions=[];let focus=null,asked=null;const polls={};
+const actions=[],outbox=[];let focus=null,asked=null;const polls={};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body);actions.push(r);const a=r.args||{},card=cards.find(c=>c.id===a.suggestion_id);
   const answer={
    talk_start:()=>({id:'feedfeedfeedfeed',via:'signin',limit:1800,warn:1740,main:!!a.main,tools:[],instructions:'You are The Machine.',languages:['en','nl'],turn:{type:'semantic_vad',eagerness:'low',create_response:true,interrupt_response:true},
-    notes:{queued:'Joins.',done:'The chat of the to-do "{title}" finished what you asked. Its answer: "{answer}"',stopped:'The chat of the to-do "{title}" stopped before it answered "{request}".',again:'AGAIN: Say only: "Sorry, say that again?"'}}),
+    notes:{queued:'Joins.',done:'The chat of the to-do "{title}" finished what you asked. Its answer: "{answer}"',stopped:'The chat of the to-do "{title}" stopped before it answered "{request}".',again:'AGAIN: Say only: "Sorry, say that again?"',sent:'The Machine’s outbox confirms it went out ({what}, at {at}). Say only: "Sent."',not_sent:'Not sent ({what}): {why}'}}),
    talk_status:()=>({ready:true,limit:600,warn:540}),
    talk_offer:()=>({sdp:'v=0\r\nanswer\r\n'}),
    talk_focus:()=>{focus=a.suggestion_id;asked=null;return {ok:true}},
    talk_line:()=>({ok:true}),
-   talk_tool:()=>({output:{title:cards.find(c=>c.id===focus)?.title||'',drafts:[]}}),
+   // send_status: the Machine's outbox, here the send went out at 11:42 UTC (12:42 in Brussels)
+   talk_tool:()=>({output:a.name==='send_status'?(outbox.push(a.args),{state:'sent',to:'Dana',at:'2026-10-31T11:42:00+00:00',time:'12:42',say:'Sent to Dana at 12:42.'}):{title:cards.find(c=>c.id===focus)?.title||'',drafts:[]}}),
    talk_end:()=>({ok:true}),
    card_new:()=>{const id='c0c0c0c0c0c0c0c0';cards.push({id,title:a.text.split('\n')[0],body:a.text,status:'accepted',origin:'owner',scope:'personal',created_at:now,event_ids:[9]});return {id}},
    decide:()=>{if(!card)return {ok:true};const was=card.status;
@@ -52,7 +53,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    talk_ask_send:()=>{if(a.ids){asked='all';return {question:'Send both, to Dana and Sam?',revision:'all',say:'Ask exactly this.'}}
     asked='r1';return {question:'Send it to Dana?',revision:'r1',say:'Ask exactly this.'}},
    talk_send:()=>{if(!asked)return {status:'not_asked'};const all=asked==='all';asked=null;
-    return {status:'queued',approval_id:'voice:1',undo_seconds:10,sent:all?[{suggestion_id:A,approval_id:'voice:1',to:'Dana',kind:'email'},{suggestion_id:H,approval_id:'voice:2',to:'Sam',kind:'email'}]:[{suggestion_id:A,approval_id:'voice:1',to:'Dana',kind:'email'}],say:'Queued.'}},
+    return {status:'queued',approval_id:'voice:1',undo_ms:10000,undo_seconds:10,sent:all?[{suggestion_id:A,approval_id:'voice:1',to:'Dana',kind:'email'},{suggestion_id:H,approval_id:'voice:2',to:'Sam',kind:'email'}]:[{suggestion_id:A,approval_id:'voice:1',to:'Dana',kind:'email'}],say:'Queued.'}},
    talk_undo:()=>({ok:true}),
    bug_send:()=>({ok:true,sent:true}),
   }[r.action];
@@ -169,7 +170,7 @@ try{
   assert.ok(await page.evaluate(()=>window.__dc.sent.some(x=>x.type==='session.update'&&x.session?.audio?.input?.turn_detection?.eagerness==='high')),'a lone yes ends the turn sooner');
   const queued=await call('send_answer');assert.equal(queued.status,'queued',JSON.stringify(queued));
   await page.waitForSelector(viewBar+' .talk-undo-btn');
-  assert.match(await page.locator(viewBar+' .talk-sending').textContent(),/^Sending 2 emails in \d+ s$/,'a batch: how many');
+  assert.match(await page.locator(viewBar+' .talk-sending').textContent(),/^Sending 2 emails in\u00a0\d+\u00a0s$/,'a batch: how many');
   const box=await page.locator(viewBar+' .talk-undo-btn').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=w&&box.y>=0&&box.y+box.height<=h,'Undo on screen');
   assert.ok(box.height>=(phone?36:28),'a button to tap');
   await page.waitForTimeout(300);await shot('a1-talk-undo');
@@ -184,10 +185,15 @@ try{
    const u=await call('undo_send');assert.equal(u.canceled,1);assert.equal(actions.filter(x=>x.action==='talk_undo').length,3);
    assert.match((await call('undo_send')).error,/Nothing is waiting/);
    await call('ask_to_send');assert.equal((await call('send_answer')).status,'queued');
-   await page.waitForFunction(sel=>/^Sending to Dana in \d+ s$/.test(document.querySelector(sel+' .talk-sending')?.textContent||''),viewBar);
+   await page.waitForFunction(sel=>/^Sending to Dana in\u00a0\d+\u00a0s$/.test(document.querySelector(sel+' .talk-sending')?.textContent||''),viewBar);
    await shot('a4-talk-undo-one');
    await page.evaluate(()=>{window.__skew=11000});
-   await page.waitForFunction(sel=>document.querySelector(sel+' .talk-sending.sent')?.textContent==='Sent to Dana'&&!document.querySelector(sel+' .talk-undo-btn'),viewBar);
+   // After the window: Sending… until the outbox says it went out, then "Sent to Dana · 12:42" on the bar and the card,
+   // and the voice is told once to say "Sent." (never the clock's guess)
+   await page.waitForFunction(sel=>document.querySelector(sel+' .talk-sending.sent')?.textContent==='Sent to Dana · 12:42'&&!document.querySelector(sel+' .talk-undo-btn'),viewBar);
+   assert.deepEqual(outbox.at(-1),{id:A,approval_id:'voice:1'});
+   await page.waitForFunction(()=>document.querySelector('#talk-view .talk-about-sent')?.textContent==='Sent to Dana · 12:42');
+   await page.waitForFunction(()=>window.__dc.sent.some(x=>x.item?.type==='message'&&/outbox confirms it went out \(Dana, at 12:42\)\. Say only: "Sent\."/.test(x.item.content[0].text)));
    await shot('a3-talk-sent');
    assert.match((await call('undo_send')).error,/Nothing is waiting/);
    await page.evaluate(()=>{window.__skew=0});

@@ -21382,7 +21382,7 @@ class App(*APP_MIXINS):
                     'tools': talk_live.MAIN_TOOLS if main else talk_live.TOOLS, 'ask_note': talk_live.ASK_NOTE,
                     'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE,
                               'ready': talk_live.READY_NOTE, 'again': talk_live.AGAIN_NOTE,
-                              'unheard': talk_live.UNHEARD_NOTE},
+                              'unheard': talk_live.UNHEARD_NOTE, 'sent': talk_live.SENT_NOTE, 'not_sent': talk_live.NOT_SENT_NOTE},
                     'instructions': talk_live.main_instructions(language, now, spoken) if main else talk_live.instructions(card['title'], language, now, spoken),
                     'main': main, 'ready': view.get('ready')}
         if name == 'talk_focus':
@@ -21564,9 +21564,44 @@ class App(*APP_MIXINS):
         if not sent:
             return {'status': 'changed', 'say': talk_live.SAY['changed']}
         many = len(asked['items']) > 1
-        return {'status': 'queued', 'approval_id': sent[0]['approval_id'], 'sent': sent, 'undo_seconds': talk_live.UNDO_SECONDS,
+        # One count for the voice and the Undo bar: what the outbox still holds (its retry_at), not a number of our own
+        with self.store.connect() as db:
+            held = [r['retry_at'] for r in db.execute("SELECT retry_at FROM action_jobs WHERE source='voice' AND approval_id IN "
+                                                      "(SELECT value FROM json_each(?))", (json.dumps([x['approval_id'] for x in sent]),)) if r['retry_at']]
+        left = max(0, min((dt.datetime.fromisoformat(x) - dt.datetime.fromisoformat(now())).total_seconds() for x in held)) if held else talk_live.UNDO_SECONDS
+        return {'status': 'queued', 'approval_id': sent[0]['approval_id'], 'sent': sent, 'undo_ms': int(left * 1000), 'undo_seconds': int(left),
                 **({'not_sent': len(asked['items']) - len(sent)} if len(sent) < len(asked['items']) else {}),
-                'say': talk_live.SAY['queued_all' if many else 'queued']}
+                'say': talk_live.SAY['queued_all' if many else 'queued'].replace('{n}', str(int(left)))}
+
+    def talk_send_status(self, suggestion_id, approval_id=''):
+        """Whether a to-do's send went out, from its outbox row (action_jobs): the one approval_id names, else the latest.
+        For the voice (send_status) and the dashboard, which follows a send by voice until it settles. Never a guess."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT status,retry_at,updated_at,error,payload FROM action_jobs WHERE suggestion_id=? AND (?=\'\' OR approval_id=?) '
+                             'ORDER BY created_at DESC LIMIT 1', (suggestion_id, approval_id, approval_id)).fetchone()
+        if not row:
+            return {'state': 'none', 'say': talk_live.STATUS_SAY['none']}
+        try:
+            action = json.loads(row['payload'])
+        except ValueError:
+            action = {}
+        to = self.talk_who(action)[1] if isinstance(action, dict) else ''
+        status, out = row['status'], {}
+        if status == 'queued' and row['retry_at'] and row['retry_at'] > now():
+            left = int((dt.datetime.fromisoformat(row['retry_at']) - dt.datetime.fromisoformat(now())).total_seconds())
+            out = {'state': 'waiting', 'seconds_left': left, 'undo_ms': left * 1000}
+        elif status in ('sent', 'done'):
+            moment = dt.datetime.fromisoformat(row['updated_at']).astimezone(local_tz())
+            out = {'state': 'sent', 'at': row['updated_at'], 'time': moment.strftime('%H:%M')}
+        elif status in ('failed', 'blocked', 'cancelled'):
+            out = {'state': {'cancelled': 'canceled'}.get(status, status), 'why': clamp(str(row['error'] or ''), 300)}
+        elif status in ('uncertain', 'finish_uncertain'):
+            out = {'state': 'unsure'}
+        else:   # queued for the outbox, sending, a final step being prepared
+            out = {'state': 'sending'}
+        say = talk_live.STATUS_SAY[out['state']].replace('{to}', to or 'them').replace('{n}', str(out.get('seconds_left', ''))) \
+            .replace('{at}', out.get('time', '')).replace('{why}', out.get('why') or 'no reason was given.')
+        return {**out, 'to': to, 'kind': str(action.get('kind') or '') if isinstance(action, dict) else '', 'say': say}
 
     def talk_tool(self, suggestion_id, name, args, ids=False):
         """Talk live's tools that read (talk_live.TOOLS): this to-do, or finding others. Never anything that sends or
@@ -21624,6 +21659,11 @@ class App(*APP_MIXINS):
             # the main conversation opens one by its id (open_todo)
             return {'todos': [{**({'id': r['id']} if ids else {}), 'title': clamp(r['title'], 200), 'state': r['state']}
                               for r in found[:20]], 'count': len(found)}
+        if name == 'send_status':  # the main conversation may ask about any to-do by its id; a to-do's own Talk, that one
+            sid = str(args.get('id') or '') if ids and re.fullmatch(r'[a-f0-9]{16}', str(args.get('id') or '')) else suggestion_id
+            if not sid:
+                return {'error': 'No to-do is open. Call open_todo first.'}
+            return self.talk_send_status(sid, str(args.get('approval_id') or ''))
         if name in talk_live.MACHINE_TOOLS and ids:  # the main conversation's own: the rest of the Machine, read only
             return self.talk_machine_tool(name, args)
         raise ValueError('Unknown tool')
