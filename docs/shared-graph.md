@@ -284,8 +284,10 @@ sends what to whom. `h` is the hash of header and ciphertext, so a wrap can't be
 
 **History and batches.** At the start a Machine shares all the Work history it has, not only recent mail, through the
 same labels: a history pass (one model turn at a time, a batch of threads per turn) judges older Work threads no
-review saw. Threads go the newest first, at most 100 blobs an hour and 1,800 a day per Machine (under the CP's 120
-and 2,000). `share_out` keeps what went, so a backfill that stopped (a limit, the Machine off) goes on from there
+review saw. Threads go the newest first, at most 1,000 blobs an hour and 18,000 a day per Machine (under the CP's
+1,200 and 20,000). Taking a thread or file back (an empty blob) goes first in each round and has its own count
+(`GONE_HOUR`, `GONE_DAY`, also 1,000 and 18,000; the CP counts those on their own too), so it never waits behind new
+shares. `share_out` keeps what went, so a backfill that stopped (a limit, the Machine off) goes on from there
 next round. Someone who joins later gets what went before by catching up.
 
 Each Machine publishes every few minutes when something changed and fetches with a cursor. A receiver opens a blob

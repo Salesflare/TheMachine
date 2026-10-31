@@ -64,7 +64,10 @@ ROUND_EVERY = 300           # publish and fetch, at most this often
 SNAPSHOT_EVERY = 86400      # a full snapshot at least daily
 MAX_RECORDS = 3000
 MAX_THREADS = 20000         # all the Work history the Machine has, newest first
-PER_HOUR, PER_DAY = 100, 1800  # blobs this Machine puts, under the Network's own limits (120 and 2000): a backfill takes days
+PER_HOUR, PER_DAY = 1000, 18000  # blobs this Machine puts, under the Network's own limits (1200 and 20000): a long backfill takes a day or two
+# Taking a thread or file back (an empty blob): its own count, so it never waits behind new shares (the Network counts
+# them on their own too, at 1200 and 20000)
+GONE_HOUR, GONE_DAY = 1000, 18000
 MAX_FILE = 2560 * 1024     # bytes of one attachment that goes with a shared thread; bigger ones say "too large to share"
 MAX_MESSAGES = 30           # per thread
 MAX_BODY = 20000            # characters of one message
@@ -1364,21 +1367,35 @@ class SharedGraph:
         header = self._header(group, me, kind, recipients, **extra)
         blob, dk = make(self._private(), header, body, recipients)
         self.relay.call('POST', '/graph', {'op': 'put', 'fleet': group['id'], 'blob': blob}, timeout=120 if kind == 'file' else 60)
-        self._spent()
+        self._spent(gone=body is None and kind in ('mail', 'file'))
         with self.connect() as db:
             ensure(db)
             keep_blob(db, header, blob['ct'], blob['sig'], dk)  # this Machine passes on its own, too
         return header
 
-    def _spent(self):
+    def _puts(self, gone=False):
+        """[[minute, blobs]] this Machine put in the last day: per minute, so a day of 18000 stays small. Also reads the
+        list of times from before."""
         stamp = time.time()
-        self.set_meta('graph_puts', [t for t in (self.meta('graph_puts', []) or []) if t > stamp - 86400][-PER_DAY:] + [stamp])
+        out = collections.Counter()
+        for x in self.meta('graph_gone_puts' if gone else 'graph_puts', []) or []:
+            minute, n = (x if isinstance(x, list) else (int(x // 60), 1))
+            if minute * 60 > stamp - 86400:
+                out[int(minute)] += int(n)
+        return out
 
-    def _budget(self):
-        """How many more blobs may go now: PER_HOUR and PER_DAY over this Machine's own puts. A long history goes over days."""
-        stamp = time.time()
-        puts = [t for t in (self.meta('graph_puts', []) or []) if t > stamp - 86400]
-        return max(0, min(PER_HOUR - sum(1 for t in puts if t > stamp - 3600), PER_DAY - len(puts)))
+    def _spent(self, gone=False):
+        puts = self._puts(gone)
+        puts[int(time.time() // 60)] += 1
+        self.set_meta('graph_gone_puts' if gone else 'graph_puts', sorted([m, n] for m, n in puts.items()))
+
+    def _budget(self, gone=False):
+        """How many more blobs may go now: PER_HOUR and PER_DAY over this Machine's own puts. A long history goes over a
+        day or two. gone: what's left for taking things back (GONE_HOUR and GONE_DAY), counted on its own."""
+        hour = (time.time() - 3600) // 60
+        puts = self._puts(gone)
+        per_hour, per_day = (GONE_HOUR, GONE_DAY) if gone else (PER_HOUR, PER_DAY)
+        return max(0, min(per_hour - sum(n for m, n in puts.items() if m > hour), per_day - sum(puts.values())))
 
     # -- every round
     def graph_round(self, force=False):
@@ -2053,6 +2070,15 @@ class SharedGraph:
         only = lambda tag: tag not in threads
         mark = lambda tag: tag if not only(tag) else tag + ':' + hashlib.sha256(canon(recipients[tag])).hexdigest()[:16]
         thread_hashes = {tag: hashlib.sha256(canon(t)).hexdigest() + mark(tag)[len(tag):] for tag, t in bodies.items()}
+        # Taken back first, on their own budget: a withdrawal never waits behind new shares, also when those spent theirs
+        gone = self._budget(gone=True)
+        try:
+            for tag in [k for (kind, k) in before if kind == 'thread' and k not in bodies and k not in held]:  # no longer shared: gone from the team's Machines
+                if gone <= 0:
+                    break
+                gone -= self._unshare(group, me, to, tag, before)
+        except Exception as error:  # noqa: BLE001 - the Network's own limit, or away: the rest next round
+            LOG.info('shared graph take-backs paused fleet=%s error=%s', fleet, type(error).__name__)
         if self._budget() <= 0:
             return
         state = self.meta('graph_out:' + fleet, {}) or {}
@@ -2106,10 +2132,6 @@ class SharedGraph:
         self.set_meta('graph_chains:' + fleet, out)
         budget = self._budget()
         try:
-            for tag in [k for (kind, k) in before if kind == 'thread' and k not in bodies and k not in held]:  # no longer shared: gone from the team's Machines
-                if budget <= 0:
-                    break
-                budget -= self._unshare(group, me, to, tag, before)
             for tag in sorted(bodies, key=lambda t: bodies[t]['at'], reverse=True):  # the newest first
                 if budget <= 0:
                     break
