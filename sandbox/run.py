@@ -157,18 +157,21 @@ def fake_notes(config, prompt):
 
 
 def fake_summary(config, prompt):
-    """Person summaries' stand-in model (person_summary.py): a who, a now and an open line per person, each citing the
-    evidence it was given, in the shape the prompt asks for. No model runs."""
+    """Person summaries' stand-in model (person_summary.py): lines about substance, never what the page shows already
+    (role, organization, how often you talk), each citing the evidence it was given. Organizations by their display name
+    from the fixture. No model runs."""
     people = json.loads(prompt.split('\nPeople:\n', 1)[1])
+    names = {c['domain']: c['name'] for c in json.loads((HERE / 'fixture.json').read_text())['companies']}
     out = []
     for p in people:
         signals, promises, facts = p.get('signals') or [], p.get('open_promises') or [], p.get('facts') or []
+        org = names.get(p['node_id'].rpartition('@')[2]) or p.get('organization')
+        title = lambda m: (m.get('title') or 'a message').strip().rstrip('.')[:100]
         lines = []
         if signals:
-            where = f" at {p['organization']}" if p.get('organization') else ''
-            lines.append({'kind': 'who', 'text': f"{(p.get('role') or 'A contact').capitalize()}{where}; you write regularly.",
-                          'sources': [signals[-1]['id']] + [f['id'] for f in facts[:1]]})
-            lines.append({'kind': 'now', 'text': f"Latest: {(signals[0].get('title') or 'a message').strip()[:120]}.", 'sources': [signals[0]['id']]})
+            first, latest = signals[-1], signals[0]
+            lines.append({'kind': 'who', 'text': f"You first worked together on {title(first)}.", 'sources': [first['id']] + [f['id'] for f in facts[:1]]})
+            lines.append({'kind': 'now', 'text': f"Latest with {org}: {title(latest)}." if org else f"Latest: {title(latest)}.", 'sources': [latest['id']]})
         for promise in promises[:2]:
             who = 'You promised' if promise['who_promised'] == 'the owner' else 'They promised'
             lines.append({'kind': 'open', 'text': f"{who}: {promise['what'][:140]}", 'sources': [promise['id']]})

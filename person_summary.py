@@ -198,11 +198,29 @@ def evidence(db, owner, person, signals):
     return out
 
 
+# What the page shows above the summary already: their name, role, title, organization and how often you're in touch
+# ("Talk daily · last Fri"). A line made of only those (with the small words around them) repeats the page and is
+# dropped: "Customer at Acme.", "You write regularly." The prompt asks for substance; this catches what slips through.
+PAGE_WORDS = frozenset("""a an the at of for in on to and or with as is are was be by from their they them you your yours
+works work working worked contact contacts person someone who regularly regular often frequently daily weekly monthly
+every few days day weeks week months month talk talks talked write writes wrote email emails meet meets met speak speaks
+keep keeps stay stays touch close closely usually most last recently lately""".split())
+
+
+def repeats_page(text, page):
+    """Whether a line says only what the page shows already (name, role, title, organization, how often you talk)."""
+    shown = set(PAGE_WORDS)
+    for key in ('name', 'role', 'organization', 'title'):
+        shown.update(re.findall(r"\w+", str(page.get(key) or '').lower()))
+    return not [w for w in re.findall(r"\w+", text.lower()) if w not in shown and not w.isdigit()]
+
+
 def prompt(people, lang='en'):
     language = LANGUAGE_NAMES.get(lang) or LANGUAGE_NAMES.get(str(lang or '').split('-')[0]) or 'English'
     return f'''Write a short summary of each person below for the owner's page about them. This is a background task of the personal-assistant service, not a chat with the owner.
 For each person write at most {MAX_LINES} short lines, in {language}, in this order:
-- kind "who": who they are to the owner (one line: what they are to them, where they work, how they know each other).
+The page already shows their name, role, title, organization and how often the owner and they are in touch ("Talk daily"). Never repeat those: no line that only says what they are, where they work or how often you talk. Lines are only about substance.
+- kind "who": what they are to the owner beyond their role (one line: how they know each other, what they do together).
 - kind "now": where things stand between them (one or two lines: the latest that happened and what it is waiting on).
 - kind "open": what is open both ways (one line each for the most important: what the owner promised them, what they promised the owner, with the date when there is one).
 Rules:
@@ -225,6 +243,7 @@ def parse(answer, people):
     except ValueError:
         return {}
     given = {p['node_id']: {i['id'] for key in ('facts', 'open_promises', 'signals') for i in p.get(key) or ()} for p in people}
+    pages = {p['node_id']: p for p in people}
     out = {}
     for item in (found.get('people') if isinstance(found, dict) else None) or ():
         if not isinstance(item, dict) or item.get('node_id') not in given:
@@ -236,7 +255,7 @@ def parse(answer, people):
             sources = [s for s in dict.fromkeys(str(s).strip().upper() for s in raw.get('sources') or () if isinstance(s, (str, int)))
                        if s in given[item['node_id']]]
             line = clean_line(raw.get('text'))
-            if len(line) < 3 or not sources:
+            if len(line) < 3 or not sources or repeats_page(line, pages[item['node_id']]):
                 continue
             lines.append({'kind': raw.get('kind') if raw.get('kind') in KINDS else 'now', 'text': line, 'sources': sources[:6]})
         lines.sort(key=lambda x: KINDS.index(x['kind']))

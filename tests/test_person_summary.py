@@ -75,6 +75,21 @@ class PersonSummary(unittest.TestCase):
             {'kind': 'now', 'text': 'Invited you to a birthday party.', 'sources': [f'E{e[3]}']},
             {'kind': 'now', 'text': 'Made up without a source.', 'sources': []}, *extra]}]}
 
+    def test_a_line_that_only_repeats_the_page_is_dropped(self):
+        """The page shows their role, organization and how often you talk: a line saying only that adds nothing."""
+        page = {'node_id': ANN, 'name': 'Ann Example', 'role': 'customer', 'organization': 'Acme', 'title': 'Head of operations',
+                'facts': [], 'open_promises': [], 'signals': [{'id': 'E1'}, {'id': 'E2'}]}
+        answer = {'people': [{'node_id': ANN, 'lines': [
+            {'kind': 'who', 'text': 'A customer at Acme; you write regularly.', 'sources': ['E1']},  # role and cadence only
+            {'kind': 'who', 'text': 'Head of operations at Acme.', 'sources': ['E1']},  # the header's title and organization
+            {'kind': 'now', 'text': 'You talk every few days.', 'sources': ['E2']},  # the rhythm line
+            {'kind': 'who', 'text': 'Introduced you to their CFO in March.', 'sources': ['E1']},
+            {'kind': 'now', 'text': 'Waiting on their signed order form.', 'sources': ['E2']}]}]}
+        found = person_summary.parse(json.dumps(answer), [page])
+        self.assertEqual([line['text'] for line in found[ANN]], ['Introduced you to their CFO in March.', 'Waiting on their signed order form.'])
+        prompt = person_summary.prompt([page])
+        self.assertIn('Never repeat those', prompt)
+
     def run_pass(self):
         self.app.background_at = 0
         found = self.app.summary_step()
