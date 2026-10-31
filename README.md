@@ -1,6 +1,13 @@
 # The Machine
 
-A private assistant inbox for [OpenClaw](https://docs.openclaw.ai). It collects your email, calendar, chats and phone notifications, and lets your own agent find useful next steps. To-dos reach the dashboard app and, optionally, Telegram. Tap **Do it** and the agent carries out the offered task.
+Your proactive AI assistant. It reads your email, chats, calendar and phone, turns what matters into to-dos, prepares the work, and only sends what you approve. Open source, self-hosted or hosted.
+
+- **To-dos from everything that comes in:** Gmail, Outlook, Slack, WhatsApp, Telegram, LinkedIn, X, your calendar and phone notifications become one list of to-dos.
+- **The work, prepared:** reply drafts, new or edited docs and the lookups behind them are ready when you open a to-do.
+- **Nothing goes out unseen:** a draft is sent only after you've seen and approved it. Paying, booking or submitting waits for your yes.
+- **Talk:** a live spoken conversation about a to-do or anything else (with OpenAI), and dictation into any message box.
+- **People and projects:** the Graph keeps track of who you deal with and what's going on, with boards for deals, hiring and more.
+- **Work Fleet:** your teammates' Machines answer each other's questions, sharing only what the Team Graph allows.
 
 Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta); export and import move everything between the two.
 
@@ -53,10 +60,10 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 | Contribute or report a vulnerability | [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) |
 | Historical repair notes | [History](docs/history.md) |
 
-## What it does
+## How it works
 
 - Collects sources independently of OpenClaw into one persistent SQLite database.
-- Reviews pending signals in isolated sessions of your existing main agent; no separate reasoning model or agent.
+- Reviews new messages and events in isolated sessions of your existing main agent; no separate reasoning model or agent.
 - Remembers your decisions, written feedback, facts, people, projects and promises.
 - Prepares likely useful work ahead, without committing its consequential last step.
 - Carries out owner-requested work, with useful task-specific Send, Submit or Merge actions where appropriate.
@@ -67,7 +74,7 @@ Follow [Getting started](docs/getting-started.md). The installer can help set up
 
 ## The Machine and OpenClaw
 
-The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.openclaw.ai) as its agent runtime: OpenClaw's agent does the reading and thinking with the model you pick, and its Gateway carries Telegram and the Android node. The Machine adds the rest: the dashboard, the Graph, to-dos, connections, Fleet and the Network.
+The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.openclaw.ai) as its agent runtime: OpenClaw's agent does the reading and thinking with the model you pick, and its Gateway carries Telegram and the Android node. The Machine adds the rest: the dashboard, the Graph, to-dos, connections, Fleet and the Network. It also works with [GBrain](docs/gbrain.md), an optional agent memory.
 
 ## Requirements
 
