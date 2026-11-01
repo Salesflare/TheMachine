@@ -167,9 +167,11 @@ ends as **End** does.
 In the main conversation Talk reaches what the dashboard shows. Read tools answer from the stores and views the pages
 already read (`App.talk_machine_tool`, `talk_live.MACHINE_TOOLS`), short and with ids:
 
-- `search` (`words`, `kind`: anything, person, organization, project, message, meeting, promise): the Graph's search,
-  Events (meetings by `calendar.event`, messages by meaning) or open promises.
-- `open_record` (`id`): a person, organization or project (who, last contact, open to-dos, recent lines), a meeting (what
+- `search` (`words`, `kind`: anything, person, organization, project, message, meeting, promise): the Graph's search
+  (a name, address, handle or phone number however it is written), Events (meetings by `calendar.event`, messages by
+  meaning) or open promises (with someone, when the words name them).
+- `open_record` (`id`): a person, organization or project (who, the moment of the last contact, open to-dos and promises
+  both ways, an organization's people's too, recent lines), a meeting (what
   the Calendar shows, not the invite's notes), a message or a promise. The transcript shows it as a small card linking
   to its page. The to-do in focus stays.
 - `calendar` (`day`, `days` up to 14): meetings in the owner's time zone, at most 25.
@@ -178,7 +180,8 @@ already read (`App.talk_machine_tool`, `talk_live.MACHINE_TOOLS`), short and wit
 
 Messages with someone: `search` with `kind` message and `person` (a name or an id), or words that name someone in the
 Graph, gives that person's or organization's latest messages, newest first, from every address and number merged into
-them: the ones their Graph page's timeline shows (`graph.recent_messages`). `open_record` lists them too (`messages`),
+them: the ones their Graph page's timeline shows (`knowledge.latest_messages`, the same answer the chat, connected
+AIs and the Graph page get; see [Architecture](architecture.md), One brain). `open_record` lists them too (`messages`),
 and its recent lines put what already happened before meetings still ahead. A search that finds nothing says what it
 searched (`searched`) with `talk_live.NOTHING_NOTE`: the voice says that plainly and never guesses a cause.
 

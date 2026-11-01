@@ -14,16 +14,14 @@ sys.path.insert(0, str(ROOT))
 import knowledge_eval  # noqa: E402
 
 GAPS = {
-    ('who: by phone number "0470 00 01 02"', 'chat'), ('who: by phone number "0470 00 01 02"', 'talk'),
+    ('who: by phone number "0470 00 01 02"', 'chat'),
     ('who: by phone number "0470 00 01 02"', 'mcp'), ('who: by phone number "0470 00 01 02"', 'page'),
     ('who: by phone number "0470 00 01 02"', 'search'),
-    ('who: by phone number "0032470000102"', 'chat'), ('who: by phone number "0032470000102"', 'talk'),
+    ('who: by phone number "0032470000102"', 'chat'),
     ('who: by phone number "0032470000102"', 'mcp'), ('who: by phone number "0032470000102"', 'page'),
     ('who: by phone number "0032470000102"', 'search'),
-    ('open: promises both ways with a person', 'talk'),
-    ("open: an organization has its people's promises", 'chat'), ("open: an organization has its people's promises", 'talk'),
+    ("open: an organization has its people's promises", 'chat'),
     ("open: an organization has its people's promises", 'mcp'), ("open: an organization has its people's promises", 'page'),
-    ('last: Talk says the latest contact, never a meeting ahead', 'talk'),
 }
 
 

@@ -131,7 +131,7 @@ def named(db, words, caller=OWNER, kinds=NAMED, also=None):
     return None
 
 
-def record(db, ref, caller=OWNER, kinds=KINDS):
+def record(db, ref, caller=OWNER, kinds=KINDS, also=None):
     """One record by its id, by an identifier merged into a person (an old link), or by the name or number that names
     it; None when there is none this caller may see."""
     ref = ' '.join(str(ref or '').split())
@@ -144,7 +144,7 @@ def record(db, ref, caller=OWNER, kinds=KINDS):
             return None
         row = row if row and row['kind'] in kinds else None
     else:
-        row = named(db, ref, caller, tuple(k for k in kinds if k in NAMED) or NAMED)
+        row = named(db, ref, caller, tuple(k for k in kinds if k in NAMED) or NAMED, also)
     return row if row and visible(graph.node_view(row), caller) else None
 
 
