@@ -33,7 +33,7 @@ const detail={id:'project:5',kind:'project',name:'Ember labs',state:'active',str
  board:{board:'Alpha testers',stage:'Testing',next:null,visibility:null,board_visibility:'team',stages:['Invited','Testing','Live'],moves:[{stage:'Testing',reason:'they installed the build',source:'review',at:day(-6),event_id:105}]},
  follow_up:{on:true,source:'board',next_at:day(2),state:'waiting',n:2,max:3,ends:[],activity:[{n:1,of_max:3,channel:'email',state:'sent',auto:1,created_at:day(-3),closed_at:day(-3)}]}};
 const panel=(scope,id)=>scope==='board'?{scope:'board',id:1,name:'Alpha testers',stalled:true,careful:false,channels:['email','linkedin','whatsapp'],
-  stages:[{name:'Invited',open:true},{name:'Testing',open:true},{name:'Live',open:false}],settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null}}
+  stages:[{name:'Invited',open:true},{name:'Testing',open:true},{name:'Live',open:false}],workdays_default:true,settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null,workdays:null}}
  :{scope:'project',id:+String(id).replace('project:',''),name:'Ember labs',own:false,stalled:true,careful:true,channels:['email'],board:{id:1,name:'Alpha testers',on:true},
   settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null}};
 let calls=[];
@@ -129,16 +129,18 @@ try{
   assert.match(await fu.locator('.fu-row').first().textContent(),/^Wait\s+to\s+days without a reply$/);
   assert.deepEqual(await fu.locator('.fu-row input').evaluateAll(l=>l.map(i=>i.value)),['3','7','1','3']);
   assert.equal(await fu.locator('[name=auto][value=ask]').isChecked(),true);assert.equal(await fu.locator('[name=stall]').isChecked(),true);
+  assert.equal(await fu.locator('[name=workdays]').isChecked(),true);  // Only on workdays: on for a Work board until they choose
+  assert.equal((await fu.locator('label:has([name=workdays])').textContent()).trim(),'Only on workdays');
   await shot(page,'settings-board-1440-light',fu);
   await fu.locator('[data-fu-custom]').click();assert.equal(await fu.locator('[data-fu-stage]').count(),3);
   assert.deepEqual(await fu.locator('[data-fu-stage]').evaluateAll(l=>l.map(i=>i.checked)),[true,true,false]);
   await fu.locator('[data-fu-sdays="1"]').fill('5');await fu.locator('[name=max]').fill('2');await fu.locator('[name=ch][value=whatsapp]').uncheck();
-  await fu.locator('[name=switch]').check();await fu.locator('[name=auto][value=auto]').check();
+  await fu.locator('[name=switch]').check();await fu.locator('[name=auto][value=auto]').check();await fu.locator('[name=workdays]').uncheck();
   assert.equal((await fu.locator('.fu-send .fu-note').textContent()).trim(),'Anything unusual still waits for you.');
   await shot(page,'settings-board-custom-1440-light',fu);
   calls=[];await fu.locator('button.primary').click();await fu.waitFor({state:'hidden'});
   const save=calls.find(c=>c.action==='follow_up_save');
-  assert.deepEqual(save.args,{scope:'board',id:1,settings:{on:true,days:3,max_days:7,min:1,max:2,channels:['email','linkedin'],switch:true,auto:true,stall:true,
+  assert.deepEqual(save.args,{scope:'board',id:1,settings:{on:true,days:3,max_days:7,min:1,max:2,channels:['email','linkedin'],switch:true,auto:true,stall:true,workdays:false,
    stages:{Invited:{on:true},Testing:{on:true,days:5},Live:{on:false}}}});
   // A project's page: what went out by itself, and its own panel (Like its board; Careful asks always)
   await page.locator('.tile[data-node="project:5"]').click();await page.locator('.graph-fu').waitFor();

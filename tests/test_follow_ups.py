@@ -88,6 +88,46 @@ class Schedule(unittest.TestCase):
         found = follow_ups.schedule(msgs, s, '2026-10-22T09:00:00+00:00', paused=[p(18, 22)])
         self.assertEqual((found['state'], found['end_at'][:10]), ('last', '2026-10-24'))
 
+    def test_only_on_workdays_moves_what_comes_due_on_a_day_off_to_the_next_work_morning(self):
+        week = follow_ups.work_week(None, '08:00', ZoneInfo('Europe/Brussels'))  # none set: Monday to Friday
+        self.assertEqual(week['days'], [1, 2, 3, 4, 5])
+        msgs = [m(1, 15, mine=False), m(2, 21)]  # the owner wrote on Wednesday the 21st: 3 days is Saturday the 24th
+        self.assertEqual(follow_ups.schedule(msgs, self.rule(), '2026-10-24T10:00:00+00:00')['state'], 'due')  # off: any day
+        sat = follow_ups.schedule(msgs, self.rule(), '2026-10-24T10:00:00+00:00', work=week)
+        # Monday 08:00 in Brussels (winter time from the 25th): waits still count calendar days, it only moves
+        self.assertEqual((sat['state'], sat['next_at']), ('waiting', '2026-10-26T07:00:00+00:00'))
+        self.assertEqual(follow_ups.schedule(msgs, self.rule(), '2026-10-26T06:59:00+00:00', work=week)['state'], 'waiting')
+        self.assertEqual(follow_ups.schedule(msgs, self.rule(), '2026-10-26T07:00:00+00:00', work=week)['state'], 'due')
+        # Due on Friday but not drafted yet: Saturday and Sunday wait, Monday morning it comes
+        friday = [m(1, 15, mine=False), m(2, 20)]
+        self.assertEqual(follow_ups.schedule(friday, self.rule(), '2026-10-23T09:00:00+00:00', work=week)['state'], 'due')
+        sun = follow_ups.schedule(friday, self.rule(), '2026-10-25T12:00:00+00:00', work=week)
+        self.assertEqual((sun['state'], sun['next_at']), ('waiting', '2026-10-26T07:00:00+00:00'))
+        self.assertEqual(follow_ups.schedule(friday, self.rule(), '2026-10-26T01:00:00+00:00', work=week)['state'], 'waiting')  # not at night
+        # The longest wait (the latest it goes out) moves to the next work day too
+        sunday_latest = [m(1, 10, mine=False), m(2, 18)]  # 7 days: Sunday the 25th
+        self.assertTrue(follow_ups.schedule(sunday_latest, self.rule(), '2026-10-25T12:00:00+00:00')['late'])  # off: on Sunday
+        mon = follow_ups.schedule(sunday_latest, self.rule(), '2026-10-26T07:00:00+00:00', work=week)
+        self.assertEqual((mon['state'], mon['late'], mon['latest_at']), ('due', True, '2026-10-26T07:00:00+00:00'))
+
+    def test_only_on_workdays_follows_the_owners_own_work_days(self):
+        week = follow_ups.work_week([7, 1, 2, 3, 4], '09:30', ZoneInfo('Europe/Brussels'))  # Sunday to Thursday
+        msgs = [m(1, 15, mine=False), m(2, 20)]  # Tuesday the 20th: 3 days is Friday the 23rd, a day off
+        fri = follow_ups.schedule(msgs, self.rule(), '2026-10-23T10:00:00+00:00', work=week)
+        self.assertEqual((fri['state'], fri['next_at']), ('waiting', '2026-10-25T08:30:00+00:00'))  # Sunday 09:30 in Brussels
+        self.assertEqual(follow_ups.schedule(msgs, self.rule(), '2026-10-25T08:30:00+00:00', work=week)['state'], 'due')
+        self.assertTrue(follow_ups.is_workday('2026-10-25T12:00:00+00:00', week))
+        self.assertFalse(follow_ups.is_workday('2026-10-23T12:00:00+00:00', week))
+
+    def test_only_on_workdays_is_on_for_work_and_off_for_personal_unless_chosen(self):
+        self.assertIsNone(follow_ups.defaults()['workdays'])
+        self.assertTrue(follow_ups.workdays_on(follow_ups.defaults(), 'work'))
+        self.assertFalse(follow_ups.workdays_on(follow_ups.defaults(), 'personal'))
+        self.assertTrue(follow_ups.workdays_on({'workdays': True}, 'personal'))
+        self.assertFalse(follow_ups.workdays_on({'workdays': False}, 'work'))
+        self.assertIsNone(follow_ups.clean({'on': True, 'workdays': 'yes'})['workdays'])
+        self.assertFalse(follow_ups.clean({'on': True, 'workdays': False})['workdays'])
+
     def test_clean_checks_both_pairs(self):
         self.assertEqual(follow_ups.clean({'on': True, 'min': 2, 'max': 4, 'days': 2, 'max_days': 5})['max'], 4)
         with self.assertRaises(ValueError):
@@ -1231,7 +1271,7 @@ class FollowUps(unittest.TestCase):
 
     def states(self):
         with self.store.connect() as db:
-            return {x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, self.app().follow_up_mine())}
+            return {x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, self.app().follow_up_mine(), None, self.app().follow_up_work())}
 
     def test_pause_is_the_owners_and_only_where_follow_ups_are_on(self):
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
@@ -1576,6 +1616,103 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(follow_ups.news_kind(follow_ups.chat_since([{'MsgID': 'w2', 'Timestamp': '2026-10-14T09:00:00Z', 'FromMe': True}], chat)), 'own')
         self.assertIsNone(follow_ups.news_kind([]))
 
+    # ------------------------------------------------------------------ Only on workdays
+
+    def test_nothing_is_drafted_on_a_day_off_and_it_comes_the_next_work_morning(self):
+        panel = self.turn_on()
+        self.assertTrue(panel['workdays_default'])  # a board is Work: on unless the owner says otherwise
+        self.assertIsNone(panel['settings']['workdays'])
+        self.at('2026-10-24T09:00:00+00:00')  # Saturday
+        self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+        self.assertEqual(self.cards(), [])  # no to-do on the weekend
+        self.assertEqual(self.states(), {self.acme: 'waiting', self.kim: 'waiting'})
+        with self.store.connect() as db:
+            boards = graph.boards(db, a.now())
+            self.app().follow_up_annotate(db, boards)
+        self.assertEqual(boards[0]['follow_ups']['next_at'], '2026-10-26T07:00:00+00:00')  # "Follow-ups on, next Mon"
+        self.at('2026-10-25T20:00:00+00:00')  # Sunday evening
+        self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+        # Monday at the start of the owner's hours (08:00 in Brussels), within the usual pacing: one pass, at most `limit`
+        self.at('2026-10-26T07:00:00+00:00')
+        self.assertEqual(self.app().follow_up_step(limit=1)['drafted'], 1)
+        self.assertEqual(self.app().follow_up_step()['drafted'], 1)
+
+    def test_turned_off_it_drafts_on_any_day(self):
+        self.turn_on(workdays=False)
+        self.at('2026-10-24T09:00:00+00:00')  # Saturday
+        self.assertEqual(self.app().follow_up_step()['drafted'], 2)
+
+    def test_send_without_asking_waits_for_a_work_day_and_the_owners_send_goes(self):
+        self.turn_on(auto=True)
+        self.app().follow_up_step()
+        acme, kim = self.cards()
+        self.prepared(acme['suggestion_id'])
+        self.at('2026-10-24T09:00:00+00:00')  # Saturday
+        self.app().follow_up_step()
+        self.assertEqual(self.jobs(), [])
+        self.at('2026-10-26T07:30:00+00:00')  # Monday
+        self.app().follow_up_step()
+        self.assertEqual([j['source'] for j in self.jobs()], ['auto_follow_up'])
+        # One queued before the weekend waits in the outbox; a Send the owner gives goes on any day
+        self.at('2026-10-31T09:00:00+00:00')  # Saturday
+        draft = self.prepared(kim['suggestion_id'], body='Hi Kim, a short note on the trial.', to=['kim@other.example'])
+        self.store.confirm_action(kim['suggestion_id'], draft['revision'], 'tap', 'dashboard')
+        with self.store.connect() as db:
+            jobs = {r['source']: r['id'] for r in db.execute('SELECT id,source FROM action_jobs')}
+            work = self.app().follow_up_work()
+            self.assertEqual(follow_ups.off_day_send(db, jobs['auto_follow_up'], a.now(), work), '2026-11-02T07:00:00+00:00')
+            self.assertIsNone(follow_ups.off_day_send(db, jobs['dashboard'], a.now(), work))
+            self.at('2026-11-02T07:00:00+00:00')
+            self.assertIsNone(follow_ups.off_day_send(db, jobs['auto_follow_up'], a.now(), work))
+
+    def test_the_owners_work_days_decide(self):
+        self.turn_on()
+        with patch.object(a, 'WORK_HOURS', {**a.WORK_HOURS, 'days': [7, 1, 2, 3, 4], 'start': '10:00'}):
+            self.at('2026-10-23T09:00:00+00:00')  # Friday: a day off for them
+            self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+            self.at('2026-10-25T08:59:00+00:00')  # Sunday 09:59 in Brussels
+            self.assertEqual(self.app().follow_up_step()['drafted'], 0)
+            self.at('2026-10-25T09:00:00+00:00')  # Sunday 10:00, their first work day
+            self.assertEqual(self.app().follow_up_step()['drafted'], 2)
+
+    def test_a_personal_project_follows_up_any_day_unless_set(self):
+        home = {'id': 'home', 'email': 'me@home.example', 'service': 'gmail', 'transport': 'gog', 'boundary': 'personal:Home'}
+        self.store.commit_page('home', {}, [{**msg('h1', '2026-10-15T09:00:00+00:00', who='lee@friends.example', thread='h', title='Garden'), 'account_id': 'home'},
+                                            {**msg('h2', '2026-10-20T09:00:00+00:00', mine=True, who='lee@friends.example', thread='h', title='Garden'),
+                                             'account_id': 'home'}])
+        with self.store.connect() as db:
+            ids = [r[0] for r in db.execute("SELECT id FROM events WHERE source_id IN ('h1','h2')")]
+            garden = graph.label(db, ids, 'Garden plans', 'review', NOW)
+        app = lambda: self.app(accounts=[GMAIL, home])
+        panel = app().action('follow_up_save', {'scope': 'project', 'id': garden, 'settings': {'on': True}}, owner_dashboard=True)
+        self.assertFalse(panel['workdays_default'])  # Personal: off unless the owner turns it on
+        board = app().action('follow_up_settings', {'scope': 'project', 'id': 'project:%d' % self.kim}, owner_dashboard=True)
+        self.assertTrue(board['workdays_default'])  # on a board: Work
+        self.at('2026-10-24T09:00:00+00:00')  # Saturday
+        work = app().follow_up_work()
+        with self.store.connect() as db:
+            self.assertEqual({x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, app().follow_up_mine(), None, work)},
+                             {garden: 'due'})
+        app().action('follow_up_save', {'scope': 'project', 'id': garden, 'settings': {'on': True, 'workdays': True}}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual({x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, app().follow_up_mine(), None, work)},
+                             {garden: 'waiting'})
+        app().action('follow_up_save', {'scope': 'project', 'id': garden, 'settings': {'on': True}}, owner_dashboard=True)
+        self.assertEqual(app().follow_up_step()['drafted'], 1)
+        self.assertEqual([c['project_id'] for c in self.cards()], [garden])
+
+    def test_a_project_can_set_its_own_workdays_over_its_board(self):
+        self.turn_on()  # the board: Only on workdays (Work)
+        self.turn_on('project', self.kim, workdays=False)
+        self.at('2026-10-24T09:00:00+00:00')  # Saturday
+        self.assertEqual(self.states(), {self.acme: 'waiting', self.kim: 'due'})
+        # And the other way: the board off for it, a project on; back to the board's setting follows the board
+        self.turn_on(workdays=False)
+        self.turn_on('project', self.kim, workdays=True)
+        self.assertEqual(self.states(), {self.acme: 'due', self.kim: 'waiting'})
+        self.app().action('follow_up_save', {'scope': 'project', 'id': 'project:%d' % self.kim, 'settings': {'inherit': True}}, owner_dashboard=True)
+        self.assertEqual(self.states(), {self.acme: 'due', self.kim: 'due'})
+        self.assertEqual(self.app().follow_up_step()['drafted'], 2)
 
 class FakeMailbox:
     """Gmail threads as the fake source answers them: the collected messages of that thread, plus the ones a test adds

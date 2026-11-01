@@ -17,6 +17,7 @@ For one project, **Follow-ups…** in its card's **⋯** or on its page. **For t
 ## Settings
 
 - Wait 3 to 7 days without a reply. After the shortest wait a follow-up is drafted. The longest wait is the latest it goes out, even when your usage is tight.
+- **Only on workdays**: nothing is drafted or sent on your days off (from **Settings > Work hours**). What comes due then waits for your next work morning. On for Work, off for Personal.
 - Follow up at least 1 and at most 3 times. It always sends the minimum. Between the two, it still drafts each one. When it thinks you'd better stop, the draft says why ("The Machine would stop here: 9 unanswered emails since August") and isn't ticked: send it, skip it, or pick **Stop follow-ups here**. Ask for one anyway in a follow-up's chat and it writes one. Never more than the maximum.
 - **Stages**: **All open stages**, so not the board's last stage or Stalled or declined. **Customize** turns stages on or off and gives a stage its own wait.
 - **Channels**: the connected ones that can send. A follow-up goes out on the same channel as the last message. **Switch channel if there’s no reply** tries the next allowed one.

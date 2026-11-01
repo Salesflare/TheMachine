@@ -539,6 +539,7 @@ function fuDraw(){const f=$('#fu-form'),s=fu.s,proj=fu.scope==='project',on=proj
   +`<p class="fu-note">${esc(fu.careful?t('Careful mode is on, so it always asks.'):s.auto?t('Anything unusual still waits for you.'):t('Drafts wait in your to-dos.'))}</p></fieldset>`;
  f.innerHTML=`<div class="snooze-heading"><h2 id="fu-dialog-title">${esc(t('Follow-ups'))}</h2><button type="button" data-fu-close aria-label="${esc(t('Close'))}">×</button></div><p class="fu-for" title="${esc(fu.name)}">${esc(fu.name)}</p>${top}${pause}`
   +`<fieldset class="fu-body"${on?'':' disabled'}><p class="fu-row">${t('Wait {} to {} days without a reply',num('days',s.days,1,60,t('Shortest wait in days')),num('max_days',s.max_days,1,60,t('Longest wait in days')))}</p>`
+  +`<div><label class="fu-chk"><input type="checkbox" name="workdays"${s.workdays??fu.workdays_default??true?' checked':''}> ${esc(t('Only on workdays'))}</label><p class="fu-note">${esc(t('Days from Settings > Work hours.'))}</p></div>`
   +`<p class="fu-row">${t('Follow up at least {} and at most {} times',num('min',s.min,0,5,t('At least')),num('max',s.max,1,5,t('At most')))}</p><p class="fu-note">${esc(t('Past the minimum, it only follows up when that still makes sense.'))}</p>`
   +stages+channels+stall+send+`</fieldset><p class="ed-note warn" data-fu-error role="alert" hidden></p><div class="ed-actions"><span class="grow"></span><button type="button" class="ghost" data-fu-close>${esc(t('Cancel'))}</button><button class="primary">${esc(t('Save'))}</button></div>`}
 // Pause / Resume (follow_up_pause): only where follow-ups are on as saved. Applies at once, apart from Save; a project held
@@ -556,7 +557,7 @@ function fuRead(){const f=$('#fu-form'),s=fu.s,n=name=>{const v=f.elements[name]
  if(fu.scope==='project'){const m=f.querySelector('[name=mode]:checked');if(m)fu.mode=m.value}else s.on=!!f.elements.on?.checked;
  for(const k of ['days','max_days','min','max']){const v=n(k);if(v!==undefined)s[k]=v}
  const ch=[...f.querySelectorAll('[name=ch]')];if(ch.length)s.channels=ch.every(x=>x.checked)?null:ch.filter(x=>x.checked).map(x=>x.value);
- if(f.elements.switch)s.switch=f.elements.switch.checked;if(f.elements.stall)s.stall=f.elements.stall.checked;
+ if(f.elements.switch)s.switch=f.elements.switch.checked;if(f.elements.stall)s.stall=f.elements.stall.checked;if(f.elements.workdays)s.workdays=f.elements.workdays.checked;
  const a=f.querySelector('[name=auto]:checked');if(a)s.auto=a.value==='auto';
  for(const x of f.querySelectorAll('[data-fu-stage]')){const st=fu.stages[+x.dataset.fuStage],d=f.querySelector(`[data-fu-sdays="${x.dataset.fuStage}"]`)?.value;s.stages[st.name]={on:x.checked,...(d?{days:+d}:{})}}}
 $('#fu-form').addEventListener('change',e=>{if(!fu)return;fuRead();if(e.target.name==='mode'||e.target.name==='on'||e.target.name==='auto'||e.target.dataset.fuStage!=null)fuDraw()});
