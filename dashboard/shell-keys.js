@@ -120,8 +120,8 @@ function palDialog(){let d=$('#palette');if(d)return d;d=document.createElement(
  d.addEventListener('click',e=>{if(e.target===d){palClose();return}const o=e.target.closest('[data-pal]');if(o)palPick(+o.dataset.pal)});
  d.addEventListener('mousemove',e=>{const o=e.target.closest('[data-pal]');if(o&&+o.dataset.pal!==pal.sel){pal.sel=+o.dataset.pal;palPaint(false)}});
  return d}
-function palOpen(){const d=palDialog();if(d.open)return;for(const x of document.querySelectorAll('dialog[open]'))if(x!==d)return;
- pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.msgs=null;pal.done=[];pal.seq++;if(typeof drawerClose==='function')drawerClose();
+function palOpen(o){const d=palDialog();if(d.open)return;for(const x of document.querySelectorAll('dialog[open]'))if(x!==d)return;
+ pal.todos=!!o?.todos;pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.msgs=null;pal.done=[];pal.seq++;if(typeof drawerClose==='function')drawerClose();
  const q=d.querySelector('#pal-q');q.value='';d.showModal();q.focus();palRender()}
 function palClose(){const d=$('#palette');clearTimeout(pal.timer);pal.seq++;if(d?.open)d.close();if(d?.contains(document.activeElement))document.activeElement.blur();  /* never left in the closed field, or keys would think you type */
  const f=pal.from;pal.from=null;if(f?.isConnected&&f!==document.body)f.focus({preventScroll:true})}
@@ -143,6 +143,9 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
   // Messages: the top few of everything the Machine read (the results page's own search), then See all results
   if(q.length>=2)groups.push(['Messages',[...(pal.msgs||[]).map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||t('Message'),sub:msgSub(m)})),
    {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:pal.msgs===null?t('Looking…'):''}]])}
+ // From the sidebar's Search box: the to-dos first (before typing, the first open ones)
+ if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:s.scope==='work'?'Work':s.scope==='personal'?'Personal':''}))])}
+  else groups.sort((x,y)=>['To-dos','Done'].includes(y[0])-['To-dos','Done'].includes(x[0]))}
  return groups}
 function palRender(){const d=$('#palette');if(!d?.open)return;const groups=palRows(),list=d.querySelector('#pal-list');pal.items=[];let html='';
  for(const [g,xs] of groups){html+=`<div class="pal-group" role="presentation">${esc(g)}</div>`;
@@ -245,7 +248,12 @@ document.addEventListener('keydown',e=>{if(e.defaultPrevented||e.isComposing||e.
  if(e.shiftKey||key.length!==1)return;
  const ctx=kbCtx(),a=actsFor(ctx).find(a=>a.keys===key.toLowerCase()&&!a.review&&!a.bound);if(a){e.preventDefault();actRun(a,ctx)}});
 
-// Where the keys show: ⌘K / Ctrl K in Find a to-do (on a phone the top bar's search icon), and the quiet hints in tooltips and menus.
+// The sidebar's Search box has no filter of its own: a click, Enter or a typed letter opens the palette, the to-dos
+// first, and the letter starts the search there
+{const f=$('#side-find'),go=(text='')=>{palOpen({todos:true});if(text){const q=$('#pal-q');q.value=text;q.dispatchEvent(new Event('input'))}};
+ f.addEventListener('click',()=>go());
+ f.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing)return;if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();go()}else if(e.key.length===1&&e.key!==' '){e.preventDefault();e.stopImmediatePropagation();go(e.key)}},true)}
+// Where the keys show: ⌘K / Ctrl K in Search (on a phone the top bar's search icon), and the quiet hints in tooltips and menus.
 {const lab=$('#side-search'),b=document.createElement('button');b.type='button';b.className='kb-open';b.id='pal-open';b.title='Search and commands ('+KB_PAL+')';b.setAttribute('aria-label','Search and commands');b.setAttribute('aria-keyshortcuts',kbAria('mod+k'));
  b.innerHTML=`<kbd>${KB_PAL}</kbd>`;b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();palOpen()});lab.append(b);
 }

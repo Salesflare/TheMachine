@@ -30,16 +30,16 @@ function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]
 // Learning's sub-tabs, like the Graph's and the Fleet's: How it's going first, then what I learned, the learning loop's
 // changes, the decisions, and Team (sharing with The Machine team, votes waiting) only while something waits there. A
 // tab with nothing to show is left out; the last one opened is kept on this device. Links: #learning=<tab>, #feedback.
-const LEARN_PANES=[['going','How it’s going'],['learned','What I’ve learned'],['changes','Changes'],['decisions','Decisions'],['team','Team']];
-let learnPane=(()=>{try{return localStorage.getItem('learn-pane')||'going'}catch{return 'going'}})();
+const LEARN_PANES=[['learned','What I’ve learned'],['changes','Changes'],['decisions','Decisions'],['shared','Shared'],['going','How it’s going']];  // Shared: with The Machine team (share asks, votes); #learning=team is its old link
+let learnPane=(()=>{try{const v=localStorage.getItem('learn-pane');return v==='team'?'shared':v||'learned'}catch{return 'learned'}})();
 const learnTeamWaiting=()=>{const tl=state?.team_learnings;return (tl?.ask?1:0)+(tl?.vote_mode==='ask'?(tl.votes_waiting||[]).length:0)};
 function learnHas(id){const s=state||{};
  return id==='going'||id==='learned'&&!!((s.voices||[]).length||(s.facts||[]).length||(s.facts_ended||[]).length||(s.moved||[]).length)||id==='changes'&&!!(s.learning_changes||[]).length
-  ||id==='decisions'&&!!(s.decisions||[]).length||id==='team'&&learnTeamWaiting()>0}
-const learnShown=()=>{const ids=LEARN_PANES.map(([id])=>id).filter(learnHas);return ids.includes(learnPane)?learnPane:'going'};
+  ||id==='decisions'&&!!(s.decisions||[]).length||id==='shared'&&learnTeamWaiting()>0}
+const learnShown=()=>{const ids=LEARN_PANES.map(([id])=>id).filter(learnHas);return ids.includes(learnPane)?learnPane:ids[0]};
 // one pane only (a new Machine: How it's going) shows no pill row
 function learnTabs(){const box=$('#learn-tabs');if(!box)return;const cur=learnShown(),n=learnTeamWaiting();
- const html=LEARN_PANES.filter(([id])=>learnHas(id)).map(([id,label])=>`<button type="button" role="tab" id="learn-tab-${id}" aria-controls="learn-pane-${id}" data-learn-tab="${id}" aria-selected="${id===cur}"><span class="ell">${esc(t(label))}</span>${id==='team'&&n?` <span class="badge">${n}</span>`:''}</button>`).join('');
+ const html=LEARN_PANES.filter(([id])=>learnHas(id)).map(([id,label])=>`<button type="button" role="tab" id="learn-tab-${id}" aria-controls="learn-pane-${id}" data-learn-tab="${id}" aria-selected="${id===cur}"><span class="ell">${esc(t(label))}</span>${id==='shared'&&n?` <span class="badge">${n}</span>`:''}</button>`).join('');
  if(box.innerHTML!==html)box.innerHTML=html;box.hidden=box.childElementCount<2;for(const p of document.querySelectorAll('#feedback [data-learn-pane]'))p.hidden=p.dataset.learnPane!==cur}
 function showLearnPane(id){learnPane=id;try{localStorage.setItem('learn-pane',id)}catch{}learnTabs();tabsShow($('#learn-tabs'))}
 $('#learn-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-learn-tab]');if(b)showLearnPane(b.dataset.learnTab)});

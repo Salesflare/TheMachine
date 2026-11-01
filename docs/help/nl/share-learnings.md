@@ -22,7 +22,7 @@ Elk inzicht komt met 1 tot 3 use cases: een situatie, wat je doet, en wat er moe
 
 ## Niets zonder je OK
 
-Onder **Leren**, **Team** vraagt een korte melding "3 inzichten delen met het team van The Machine?" Tik op **Nakijken** om precies te zien wat er verstuurd zou worden. Bewerk of verwijder een inzicht of use case (elk inzicht houdt minstens één use case), en dan **Versturen**. Of kies **Niet nu** of **Nooit vragen**.
+Onder **Leren**, **Gedeeld** vraagt een korte melding "3 inzichten delen met het team van The Machine?" Tik op **Nakijken** om precies te zien wat er verstuurd zou worden. Bewerk of verwijder een inzicht of use case (elk inzicht houdt minstens één use case), en dan **Versturen**. Of kies **Niet nu** of **Nooit vragen**.
 
 Het is verzegeld voor het team en komt van een verzonnen naam, tenzij je **Voeg mijn e-mail toe zodat het team kan antwoorden** aanvinkt.
 
@@ -51,5 +51,5 @@ Het team ziet de inzichten gerangschikt op stemmen en kiest wat er voor iedereen
 **Stem op inzichten van andere Machines** in Instellingen, Beveiliging heeft drie keuzes:
 
 - **Aan**, de standaard: hij stemt zelf.
-- **Eerst vragen**: elke stem wacht op je in één vak onder **Leren**, **Team**, met het inzicht en de stem zoals die zou gaan. Verstuur of sla over, een voor een of allemaal tegelijk. Er komt geen to-do of melding voor. Een stem die je laat liggen, wordt na 14 dagen niet verstuurd.
+- **Eerst vragen**: elke stem wacht op je in één vak onder **Leren**, **Gedeeld**, met het inzicht en de stem zoals die zou gaan. Verstuur of sla over, een voor een of allemaal tegelijk. Er komt geen to-do of melding voor. Een stem die je laat liggen, wordt na 14 dagen niet verstuurd.
 - **Uit**: geen stemmen, en wat nog wacht, wordt niet verstuurd.

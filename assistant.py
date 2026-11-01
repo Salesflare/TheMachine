@@ -13663,9 +13663,9 @@ def weekly_recap_message(store, config, current=None):
         lines += ['', '**' + t('What changed') + '**', *changed]
     with store.connect() as db:
         share = team_learnings.waiting(db)
-    if share:  # only a pointer: they go out from Learning, Team, after the owner read them
+    if share:  # only a pointer: they go out from Learning, Shared, after the owner read them
         lines += ['', '**' + t('For The Machine team') + '**', '• ' + t('{} learnings to share, if you like: ', share)
-                  + (f"[{t('read them')}]({root}#learning=team)" if root else t('read them under Learning')) + '. ' + t('Nothing goes without your OK.')]
+                  + (f"[{t('read them')}]({root}#learning=shared)" if root else t('read them under Learning')) + '. ' + t('Nothing goes without your OK.')]
     alive = recap_graph_lines(store, since) + recap_share_lines(store, config)
     if alive:
         lines += ['', '**' + t('People and projects') + '**', *alive]

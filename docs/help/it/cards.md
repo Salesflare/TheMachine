@@ -57,7 +57,7 @@ Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo
 
 ## Creane una tu
 
-**Nuova attività** (sotto **Trova un’attività** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente.
+**Nuova attività** (sotto **Cerca** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente.
 
 - **Scadenza**: scrivi un giorno o un'ora, come "domani", "ven prossimo", "3 nov", "15:00", "2pm", "tra 2 ore" o "domani 9". Capisce anche altre lingue ("over 2 uur", "morgen 9u"). L'icona del calendario ha scelte rapide, come quando posticipi, e **Scegli una data**.
 - **Email**: allega l'email a cui si riferisce. Cerca solo nella tua email, per oggetto o mittente.

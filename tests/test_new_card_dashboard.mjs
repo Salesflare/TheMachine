@@ -98,13 +98,15 @@ try{
   // The fresh card shows like any other, with Added by you in quiet text
   const fresh=page.locator('#task-'+'ab'.repeat(8));await fresh.waitFor();assert.match(await fresh.locator('.meta-side').textContent(),/^Added by you/);
   assert.match(await fresh.locator('.actions').textContent(),/Do it/);
-  // N opens it (the row shows N), not while typing; C no longer does; Esc closes; "new" in Find a to-do or the palette opens it too
+  // N opens it (the row shows N), not while typing; C no longer does; Esc closes; "new" in Search (the palette) opens it too
   assert.equal(await page.locator('#side-new kbd').textContent(),'N');assert.equal(await page.locator('#side-new').getAttribute('title'),'New to-do (N)');
   await page.locator('body').press('c');await page.waitForTimeout(200);assert.ok(!(await dialog.isVisible()),'C is not New to-do any more');
   await page.locator('body').press('n');await dialog.waitFor();await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
-  await page.locator('#side-find').fill('n');assert.ok(!(await dialog.isVisible()),'N in a field types an n');await page.locator('#side-find').fill('');
-  await page.locator('#side-find').fill('new');assert.match(await page.locator('#side-new').getAttribute('class'),/hit/);await page.locator('#side-find').press('Enter');await dialog.waitFor();
-  assert.equal(await page.locator('#side-find').inputValue(),'');await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
+  await page.evaluate(()=>{const i=document.createElement('input');i.id='t-field';document.body.append(i)});
+  await page.locator('#t-field').press('n');assert.ok(!(await dialog.isVisible()),'N in a field types an n');assert.equal(await page.locator('#t-field').inputValue(),'n');
+  await page.evaluate(()=>document.querySelector('#t-field').remove());
+  await page.locator('#side-find').focus();await page.keyboard.type('new');await page.locator('#palette').waitFor();await page.keyboard.press('Enter');await dialog.waitFor();
+  await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
   await page.locator('body').press('ControlOrMeta+k');await page.locator('#palette').waitFor();await page.keyboard.type('new');await page.keyboard.press('Enter');await dialog.waitFor();
   // An empty field adds nothing
   await page.locator('#nc-text').press('Enter');assert.equal(sent('card_new').length,1);await page.keyboard.press('Escape');

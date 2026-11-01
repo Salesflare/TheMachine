@@ -40,7 +40,7 @@ try{
   await navClick(page.locator('[data-tab="feedback"]').first());
   // its own tab on Learning, between What I've learned and Decisions; What I've learned no longer lists them
   const block=page.locator('#learn-changes');await block.locator('.change-row').first().waitFor();
-  assert.deepEqual(await page.locator('#learn-tabs [role="tab"]').allTextContents(),['How it’s going','What I’ve learned','Changes']);
+  assert.deepEqual(await page.locator('#learn-tabs [role="tab"]').allTextContents(),['What I’ve learned','Changes','How it’s going']);
   assert.equal(await page.locator('#learn-tab-changes').getAttribute('aria-selected'),'true');
   assert.equal(await page.locator('#facts [data-group="changes"]').count(),0);
   assert.deepEqual(await block.locator('.change-row strong').allTextContents(),['Email: how you write','Fact changed','Rule added']);

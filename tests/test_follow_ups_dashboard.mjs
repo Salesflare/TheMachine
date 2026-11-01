@@ -536,9 +536,8 @@ try{
    assert.match(await sub.first().textContent(),/^Orbit ioTo person54@client\.example · Skipped$/);  // newest first
    assert.match(await sub.last().textContent(),/^Acme pilotTo person40@client\.example · \d{1,2}:\d\d/);assert.equal(await sub.last().getAttribute('href'),'#chat='+card(40,'','').id);
    await fits(page,`${width} done open`);await shot(page,`done-side-open-${width}-${scheme}`,width<600?null:page.locator('.app-side'));
-   if(width>600){await page.locator('#side-find').fill('kite');await page.waitForTimeout(50);
-    assert.deepEqual(await page.locator('#side-cards a').evaluateAll(l=>l.map(a=>a.textContent)),['Follow up with Kite labs']);
-    await page.locator('#side-find').fill('');await page.locator('#side-find').dispatchEvent('input')}
+   if(width>600){await page.locator('#side-find').click();await page.locator('#pal-q').fill('kite');
+    await page.locator('#pal-list .pal-item',{hasText:'Follow up with Kite labs'}).waitFor();await page.keyboard.press('Escape');await page.locator('#palette').waitFor({state:'hidden'})}
    if(width<600)await page.keyboard.press('Escape');
    if(width>600){await page.locator('#finished-head').click();const fold=page.locator('#suggestions .fu-done');await fold.first().waitFor();
     assert.deepEqual(await fold.locator('h3').evaluateAll(l=>l.map(h=>h.textContent)),['2 follow-ups sent','13 follow-ups sent for Alpha testers']);assert.equal(await fold.nth(1).locator('.done-fold-n').textContent(),'2 skipped');

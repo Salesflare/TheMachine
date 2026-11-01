@@ -142,7 +142,7 @@ function ncAddFiles(list){const problems=[],draft=nc.draft;$('#nc-error').textCo
     item.id=r.id;if(!nc.files.includes(item)){ncForget([item]);return}Object.assign(item,{name:r.name,type:r.type,state:'ok'})}
    catch(err){errCaught(err);nc.files=nc.files.filter(x=>x!==item);$('#nc-error').textContent=`${name}: ${(I18N.cat&&i18nLookup(err.message))||err.message}`}ncTray()})()}
  if(problems.length)$('#nc-error').textContent=problems.join(' ');ncTray();$('#nc-text')?.focus()}
-// Entry points: a row under Find a to-do on a computer, "+" in the top bar on a phone, C, and the palette (Ctrl/⌘K) then "new".
+// Entry points: a row under Search on a computer, "+" in the top bar on a phone, C, and the palette (Ctrl/⌘K) then "new".
 {const row=document.createElement('button');row.type='button';row.className='side-new';row.id='side-new';row.dataset.newCard='';row.title='New to-do (N)';row.setAttribute('aria-label','New to-do');
  row.innerHTML=`${NC_PLUS}<span>New to-do</span><kbd>N</kbd>`;$('#side-search').after(row);
  // Talk: the main live conversation, through what needs the owner (shows once this Machine can talk live)

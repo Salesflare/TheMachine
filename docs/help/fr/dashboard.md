@@ -15,7 +15,7 @@ order: 4
 - **Apprentissage** : comment se passent les tâches, et ce qu’elle a appris.
 - **Connexions** : vos sources et leur état. Voir [Connexions](connections.md).
 
-**Paramètres**, c’est la roue dentée en haut. **Trouver une tâche** cherche dans vos tâches par titre. Pour chercher dans vos messages, voir **Messages** plus bas.
+**Paramètres**, c’est la roue dentée en haut. **Rechercher**, en haut de la barre latérale, trouve d’abord les tâches, puis les personnes, les messages et plus encore.
 
 **Navigateur**, en bas de la barre latérale, montre le navigateur de votre Machine. Sur ordinateur, il s’ouvre à côté de la barre latérale, à la taille de l’espace disponible, tout comme **Voir dans le navigateur** sur une tâche et **Ouvrir le navigateur** quand un site demande une connexion. Sur un téléphone, il s’ouvre dans un nouvel onglet.
 
@@ -39,6 +39,11 @@ Ouvrez la recherche avec `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou ave
 
 Apprentissage a une rangée d’onglets. Un onglet encore vide n’est pas affiché.
 
+- **Ce que j’ai appris** : votre façon d’écrire, des faits et la façon dont vous aimez que les choses soient faites, à partir de vos notes. **Modifier** n’importe quel élément avec vos mots, et **Retirer** ce qui n’est plus vrai. Quand une note sur une tâche apprend un fait ou une règle, le chat de la tâche l’indique sous la réponse (**Ajouté à ce que j’ai appris**, avec **Modifier** et **Annuler**) ; cette ligne vient de ce qui a été enregistré, donc une réponse ne peut jamais simplement le prétendre.
+- Un fait peut dire ce qu’il est (**Temporaire**, **Engagement**, **Préférence**) et **Jusqu’au** quand il vaut. Un fait temporaire s’efface en quelques semaines, une préférence ou un engagement en quelques mois, les autres faits en un an. Les faits sur quelqu’un n’ont pas de limite ; les autres s’arrêtent à 80. Passé sa date, un fait va dans **Terminés**, où **Récupérer** le remet.
+- **Modifications** : ce qu’elle a retenu de vos retouches, de vos refus et de vos chats, chacun avec **Annuler**. Voir [Rédaction](writing.md#it-keeps-learning).
+- **Décisions** : une chronologie de vos choix sur les tâches.
+- **Partagé** : les apprentissages à partager avec l’équipe The Machine, et les votes qui vous attendent. Ne s’affiche que si quelque chose attend. Voir [Partager des apprentissages](share-learnings.md).
 - **Où on en est** : les 30 derniers jours, et plus c’est haut, mieux c’est.
   - **Utile** : parmi les tâches que vous avez tranchées, combien vous avez traitées (**Faire**, envoyée ou faite) au lieu de les écarter.
   - **Du premier coup** : parmi les tâches lancées avec **Faire**, combien n’ont demandé aucune correction ensuite.
@@ -46,8 +51,3 @@ Apprentissage a une rangée d’onglets. Un onglet encore vide n’est pas affic
   - **Envoyé tel quel** : parmi les brouillons envoyés, combien sont partis sans retouche ni **Modifier** avant.
   - Chaque chiffre se compare aux 30 jours précédents. **Utile, semaine par semaine** montre les 8 dernières semaines, une barre par semaine, dès que deux semaines ont des décisions ; une marque sous une semaine signale que les règles ont changé cette semaine-là.
   - **Utile par source** : d’où viennent les tâches, comme **E-mail**, **Ajouté par vous** (créées avec **Nouvelle tâche**), **Notifications sur le téléphone** ou **The Machine elle-même** (problèmes dans The Machine, comme une erreur), et combien vous en avez traitées.
-- **Ce que j’ai appris** : votre façon d’écrire, des faits et la façon dont vous aimez que les choses soient faites, à partir de vos notes. **Modifier** n’importe quel élément avec vos mots, et **Retirer** ce qui n’est plus vrai. Quand une note sur une tâche apprend un fait ou une règle, le chat de la tâche l’indique sous la réponse (**Ajouté à ce que j’ai appris**, avec **Modifier** et **Annuler**) ; cette ligne vient de ce qui a été enregistré, donc une réponse ne peut jamais simplement le prétendre.
-- Un fait peut dire ce qu’il est (**Temporaire**, **Engagement**, **Préférence**) et **Jusqu’au** quand il vaut. Un fait temporaire s’efface en quelques semaines, une préférence ou un engagement en quelques mois, les autres faits en un an. Les faits sur quelqu’un n’ont pas de limite ; les autres s’arrêtent à 80. Passé sa date, un fait va dans **Terminés**, où **Récupérer** le remet.
-- **Modifications** : ce qu’elle a retenu de vos retouches, de vos refus et de vos chats, chacun avec **Annuler**. Voir [Rédaction](writing.md#it-keeps-learning).
-- **Décisions** : une chronologie de vos choix sur les tâches.
-- **Équipe** : les apprentissages à partager avec l’équipe The Machine, et les votes qui vous attendent. Ne s’affiche que si quelque chose attend. Voir [Partager des apprentissages](share-learnings.md).

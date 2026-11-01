@@ -22,7 +22,7 @@ Cada aprendizado vem com 1 a 3 casos de uso: uma situação, o que você faz e o
 
 ## Nada sem o seu OK
 
-Em **Aprendizado**, **Equipe**, uma nota curta pergunta "Compartilhar 3 aprendizados com a equipe da The Machine?" Toque em **Revisar** para ver exatamente o que seria enviado. Edite ou remova qualquer aprendizado ou caso de uso (cada aprendizado fica com pelo menos um caso de uso), depois toque em **Enviar**. Ou escolha **Agora não** ou **Nunca perguntar**.
+Em **Aprendizado**, **Compartilhado**, uma nota curta pergunta "Compartilhar 3 aprendizados com a equipe da The Machine?" Toque em **Revisar** para ver exatamente o que seria enviado. Edite ou remova qualquer aprendizado ou caso de uso (cada aprendizado fica com pelo menos um caso de uso), depois toque em **Enviar**. Ou escolha **Agora não** ou **Nunca perguntar**.
 
 Tudo vai lacrado para a equipe e sai com um nome inventado, a não ser que você marque **Adicionar meu e-mail para a equipe poder responder**.
 
@@ -51,5 +51,5 @@ A equipe vê os aprendizados ordenados por votos e escolhe o que entra na The Ma
 **Votar em aprendizados de outras Machines** em Configurações, Segurança tem três opções:
 
 - **Ativado**, o padrão: ela vota sozinha.
-- **Perguntar antes**: cada voto espera por você em um único quadro em **Aprendizado**, **Equipe**, com o aprendizado e o voto como seriam enviados. Envie ou pule, um de cada vez ou todos de uma vez. Não há tarefa nem notificação para isso. Um voto que você deixar de lado não é enviado depois de 14 dias.
+- **Perguntar antes**: cada voto espera por você em um único quadro em **Aprendizado**, **Compartilhado**, com o aprendizado e o voto como seriam enviados. Envie ou pule, um de cada vez ou todos de uma vez. Não há tarefa nem notificação para isso. Um voto que você deixar de lado não é enviado depois de 14 dias.
 - **Desativado**: sem votos, e nada do que está esperando é enviado.

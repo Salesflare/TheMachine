@@ -15,7 +15,7 @@ order: 4
 - **Lernen**: wie es den Aufgaben geht und was sie gelernt hat.
 - **Verbindungen**: deine Quellen und wie es ihnen geht. Siehe [Verbindungen](connections.md).
 
-**Einstellungen** ist das Zahnrad oben. **Aufgabe finden** durchsucht deine Aufgaben nach Titel. Wie du deine Nachrichten durchsuchst, steht unten bei **Nachrichten**.
+**Einstellungen** ist das Zahnrad oben. **Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr.
 
 **Browser**, unten in der Seitenleiste, zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, in der Größe des verfügbaren Platzes. Das gilt auch für **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Auf dem Handy öffnet er sich in einem neuen Tab.
 
@@ -39,6 +39,11 @@ Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du 
 
 Lernen hat eine Reihe von Tabs. Ein Tab, in dem noch nichts steht, wird weggelassen.
 
+- **Was ich gelernt habe**: wie du schreibst, Fakten und wie du Dinge gern erledigt hast, aus deinen Notizen. **Bearbeite** alles davon in deinen eigenen Worten und **Entferne**, was nicht mehr stimmt. Wenn eine Notiz zu einer Aufgabe einen Fakt oder eine Regel beibringt, sagt der Chat der Aufgabe das unter der Antwort (**Im Gelernten gespeichert**, mit **Bearbeiten** und **Rückgängig**). Diese Zeile kommt aus dem, was gespeichert wurde, also behauptet eine Antwort das nie einfach so.
+- Ein Fakt kann sagen, was er ist (**Vorübergehend**, **Zusage**, **Vorliebe**), und **Bis** wann er gilt. Ein vorübergehender Fakt verblasst in Wochen, eine Vorliebe oder Zusage in Monaten, andere Fakten in einem Jahr. Fakten über jemanden haben kein Limit; andere enden bei 80. Nach dem Datum kommt ein Fakt zu **Abgelaufen**, wo **Zurückholen** ihn wiederherstellt.
+- **Änderungen**: was sie aus deinen Bearbeitungen, Ablehnungen und Chats übernommen hat, jeweils mit **Rückgängig**. Siehe [Schreiben](writing.md#it-keeps-learning).
+- **Entscheidungen**: ein Verlauf deiner Entscheidungen zu Aufgaben.
+- **Geteilt**: Erkenntnisse zum Teilen mit dem Team von The Machine und Stimmen, die auf dich warten. Erscheint nur, wenn etwas wartet. Siehe [Erkenntnisse teilen](share-learnings.md).
 - **Wie es läuft**: die letzten 30 Tage, und höher ist besser.
   - **Lohnend**: von den Aufgaben, über die du entschieden hast, wie viele du erledigt hast (**Ausführen**, gesendet oder erledigt), statt sie zu verwerfen.
   - **Beim ersten Mal**: von den Aufgaben, die du mit **Ausführen** gestartet hast, wie viele danach keine Korrektur brauchten.
@@ -46,8 +51,3 @@ Lernen hat eine Reihe von Tabs. Ein Tab, in dem noch nichts steht, wird weggelas
   - **Unverändert gesendet**: von den Entwürfen, die du gesendet hast, wie viele ohne Bearbeitung oder **Ändern** vorher rausgingen.
   - Jede Zahl zeigt den Vergleich mit den 30 Tagen davor. **Lohnend, Woche für Woche** zeigt die letzten 8 Wochen, ein Balken pro Woche, sobald es zwei Wochen mit Entscheidungen gibt. Eine Markierung unter einer Woche heißt, dass sich in dieser Woche Regeln geändert haben.
   - **Lohnend pro Quelle**: woher die Aufgaben kamen, etwa **E-Mail**, **Von dir hinzugefügt** (erstellt mit **Neue Aufgabe**), **Handy-Benachrichtigungen** oder **The Machine selbst** (Probleme in The Machine, etwa ein Fehler), und wie viele du erledigt hast.
-- **Was ich gelernt habe**: wie du schreibst, Fakten und wie du Dinge gern erledigt hast, aus deinen Notizen. **Bearbeite** alles davon in deinen eigenen Worten und **Entferne**, was nicht mehr stimmt. Wenn eine Notiz zu einer Aufgabe einen Fakt oder eine Regel beibringt, sagt der Chat der Aufgabe das unter der Antwort (**Im Gelernten gespeichert**, mit **Bearbeiten** und **Rückgängig**). Diese Zeile kommt aus dem, was gespeichert wurde, also behauptet eine Antwort das nie einfach so.
-- Ein Fakt kann sagen, was er ist (**Vorübergehend**, **Zusage**, **Vorliebe**), und **Bis** wann er gilt. Ein vorübergehender Fakt verblasst in Wochen, eine Vorliebe oder Zusage in Monaten, andere Fakten in einem Jahr. Fakten über jemanden haben kein Limit; andere enden bei 80. Nach dem Datum kommt ein Fakt zu **Abgelaufen**, wo **Zurückholen** ihn wiederherstellt.
-- **Änderungen**: was sie aus deinen Bearbeitungen, Ablehnungen und Chats übernommen hat, jeweils mit **Rückgängig**. Siehe [Schreiben](writing.md#it-keeps-learning).
-- **Entscheidungen**: ein Verlauf deiner Entscheidungen zu Aufgaben.
-- **Team**: Erkenntnisse zum Teilen mit dem Team von The Machine und Stimmen, die auf dich warten. Erscheint nur, wenn etwas wartet. Siehe [Erkenntnisse teilen](share-learnings.md).

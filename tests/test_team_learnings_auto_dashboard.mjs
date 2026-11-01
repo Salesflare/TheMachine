@@ -56,7 +56,7 @@ try{
   const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
   page.on('dialog',d=>d.accept());
-  await page.goto(base+'/#learning=team');
+  await page.goto(base+'/#learning=shared');
   await navClick(page.locator('[data-tab="feedback"]').first());
   const box=page.locator('#share-learnings');
   await box.locator('.share-ask [data-share="open"]').click();
@@ -118,7 +118,7 @@ try{
  reset({auto_careful:true});
  const context=await browser.newContext({viewport:{width:1440,height:900}}),page=await context.newPage();
  page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/#learning=team');await navClick(page.locator('[data-tab="feedback"]').first());
+ await page.goto(base+'/#learning=shared');await navClick(page.locator('[data-tab="feedback"]').first());
  await page.locator('#share-learnings [data-share="open"]').click();
  assert.equal(await page.locator('#share-auto-tick').count(),0);
  await security(page);

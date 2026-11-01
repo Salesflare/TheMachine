@@ -22,7 +22,7 @@ Jede Erkenntnis kommt mit 1 bis 3 Anwendungsfällen: eine Situation, was du tust
 
 ## Nichts ohne dein OK
 
-Unter **Lernen**, **Team** fragt ein kurzer Hinweis: „3 Erkenntnisse mit dem Team von The Machine teilen?“ Tippe auf **Prüfen**, um genau zu sehen, was gesendet würde. Bearbeite oder entferne jede Erkenntnis oder jeden Anwendungsfall (jede Erkenntnis behält mindestens einen Anwendungsfall) und dann **Senden**. Oder wähle **Nicht jetzt** oder **Nie fragen**.
+Unter **Lernen**, **Geteilt** fragt ein kurzer Hinweis: „3 Erkenntnisse mit dem Team von The Machine teilen?“ Tippe auf **Prüfen**, um genau zu sehen, was gesendet würde. Bearbeite oder entferne jede Erkenntnis oder jeden Anwendungsfall (jede Erkenntnis behält mindestens einen Anwendungsfall) und dann **Senden**. Oder wähle **Nicht jetzt** oder **Nie fragen**.
 
 Es ist für das Team versiegelt und kommt unter einem ausgedachten Namen, außer du hakst **Meine E-Mail-Adresse anhängen, damit das Team antworten kann** an.
 
@@ -53,5 +53,5 @@ Das Team sieht die Erkenntnisse nach Stimmen sortiert und wählt aus, was für a
 **Über Erkenntnisse anderer Machines abstimmen** in Einstellungen, Sicherheit hat drei Optionen:
 
 - **An**, die Standardeinstellung: Sie stimmt von selbst ab.
-- **Erst fragen**: Jede Stimme wartet in einem Feld unter **Lernen**, **Team** auf dich, mit der Erkenntnis und der Stimme, wie sie rausgehen würde. Sende sie oder überspringe sie, einzeln oder alle auf einmal. Dafür gibt es keine Aufgabe und keine Benachrichtigung. Eine Stimme, die du liegen lässt, wird nach 14 Tagen nicht gesendet.
+- **Erst fragen**: Jede Stimme wartet in einem Feld unter **Lernen**, **Geteilt** auf dich, mit der Erkenntnis und der Stimme, wie sie rausgehen würde. Sende sie oder überspringe sie, einzeln oder alle auf einmal. Dafür gibt es keine Aufgabe und keine Benachrichtigung. Eine Stimme, die du liegen lässt, wird nach 14 Tagen nicht gesendet.
 - **Aus**: keine Abstimmung, und nichts Wartendes geht raus.

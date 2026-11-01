@@ -22,7 +22,7 @@ Chaque apprentissage est accompagné de 1 à 3 cas d’usage : une situation, ce
 
 ## Rien sans votre accord
 
-Dans **Apprentissage**, **Équipe**, une courte note demande « Partager 3 apprentissages avec l’équipe The Machine ? ». Appuyez sur **Vérifier** pour voir exactement ce qui serait envoyé. Modifiez ou retirez un apprentissage ou un cas d’usage (chaque apprentissage garde au moins un cas d’usage), puis **Envoyer**. Ou choisissez **Pas maintenant** ou **Ne plus demander**.
+Dans **Apprentissage**, **Partagé**, une courte note demande « Partager 3 apprentissages avec l’équipe The Machine ? ». Appuyez sur **Vérifier** pour voir exactement ce qui serait envoyé. Modifiez ou retirez un apprentissage ou un cas d’usage (chaque apprentissage garde au moins un cas d’usage), puis **Envoyer**. Ou choisissez **Pas maintenant** ou **Ne plus demander**.
 
 C’est scellé pour l’équipe et envoyé sous un nom inventé, sauf si vous cochez **Ajouter mon e-mail pour que l’équipe puisse répondre**.
 
@@ -51,6 +51,6 @@ L’équipe voit les apprentissages classés par votes et choisit ce qui entre d
 **Voter sur les apprentissages d’autres Machines** dans Paramètres, Sécurité propose trois choix :
 
 - **Activé**, par défaut : elle vote toute seule.
-- **Demander d’abord** : chaque vote vous attend dans un seul encadré sous **Apprentissage**, **Équipe**, avec l’apprentissage et le vote tel qu’il partirait. Envoyez-le ou passez-le, un par un ou tous à la fois. Ni tâche ni notification pour cela. Un vote laissé de côté n’est pas envoyé après 14 jours.
+- **Demander d’abord** : chaque vote vous attend dans un seul encadré sous **Apprentissage**, **Partagé**, avec l’apprentissage et le vote tel qu’il partirait. Envoyez-le ou passez-le, un par un ou tous à la fois. Ni tâche ni notification pour cela. Un vote laissé de côté n’est pas envoyé après 14 jours.
 - **Désactivé** : pas de vote, et rien de ce qui attend ne part.
 

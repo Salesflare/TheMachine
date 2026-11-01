@@ -57,7 +57,7 @@ Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie
 
 ## En créer une vous-même
 
-**Nouvelle tâche** (sous **Trouver une tâche** sur ordinateur) ajoute une tâche pour n’importe quoi. La créer n’envoie rien.
+**Nouvelle tâche** (sous **Rechercher** sur ordinateur) ajoute une tâche pour n’importe quoi. La créer n’envoie rien.
 
 - **Échéance** : tapez un jour ou une heure, comme « demain », « ven. prochain », « 3 nov. », « 15:00 », « dans 2 heures » ou « demain 14h ». L’anglais marche aussi (« in 2 hours », « tomorrow 9 »). L’icône du calendrier propose des choix rapides, comme pour la mise en attente, et **Choisir une date**.
 - **E-mail** : joignez l’e-mail concerné. La recherche porte uniquement sur vos e-mails, par objet ou par expéditeur.

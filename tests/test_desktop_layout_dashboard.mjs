@@ -76,10 +76,14 @@ try{
   // Long titles fade at the edge and keep the full name as a tooltip
   const a=page.locator('#side-cards a').first();  // the fade is measured on the next frame, once the fonts are in (slower on macOS)
   await page.waitForFunction(()=>document.querySelector('#side-cards a')?.classList.contains('fade'));assert.match(await a.getAttribute('class')||'',/fade/);assert.match(await a.getAttribute('title'),/does not fit the sidebar/);
-  // The filter narrows the list; Work/Personal switches it
-  await page.locator('#side-find').fill('number 2');assert.ok((await page.locator('#side-cards a').allTextContents()).every(t=>t.includes('number 2')));
-  await page.locator('#side-find').fill('nothing like this');assert.equal(await page.locator('.side-empty').textContent(),'No to-dos match.');
-  await page.locator('#side-find').fill('');
+  // Search opens the palette with the to-dos first; a key typed into it starts the search there; Work/Personal switches the list
+  assert.equal(await page.locator('#side-find').getAttribute('placeholder'),'Search');
+  await page.locator('#side-find').click();await page.locator('#palette').waitFor();
+  assert.equal(await page.locator('#pal-list .pal-group').first().textContent(),'To-dos');
+  await page.keyboard.press('Escape');await page.locator('#palette').waitFor({state:'hidden'});
+  await page.locator('#side-find').focus();await page.keyboard.type('number 2');await page.locator('#palette').waitFor();
+  assert.equal(await page.locator('#pal-q').inputValue(),'number 2');assert.equal(await page.locator('#pal-list .pal-group').first().textContent(),'To-dos');
+  await page.keyboard.press('Escape');await page.locator('#palette').waitFor({state:'hidden'});
   await page.locator('#side-cards [data-scope="personal"]').click();assert.equal(await page.locator('#side-cards [data-scope="personal"]').getAttribute('aria-pressed'),'true');
   await page.locator('#side-cards [data-scope="all"]').click();
   // A card in the list opens its chat in the main area, from any tab; To-dos goes back to the overview
@@ -94,8 +98,9 @@ try{
   assert.ok(!(await page.locator('nav .nl').first().isVisible()));assert.ok(await page.locator('nav .ni').first().isVisible());assert.ok(!(await page.locator('#side-cards a').first().isVisible()));
   await page.reload();await page.locator('#task-'+cards[0].id).waitFor();assert.ok((await side(page)).w<=72,'the fold is remembered');
   for(const t of TABS){await tab(page,t);await scrolls(page,t+' folded at 1440')}
-  // The search icon of a folded sidebar opens it and puts the cursor in the filter
-  await page.locator('#side-search').click();assert.ok((await side(page)).w>=220);assert.equal(await page.evaluate(()=>document.activeElement.id),'side-find');
+  // The search icon of a folded sidebar opens the same search, and the sidebar stays folded
+  await page.locator('#side-search').click();await page.locator('#palette').waitFor();assert.ok((await side(page)).w<=72);
+  assert.equal(await page.locator('#pal-list .pal-group').first().textContent(),'To-dos');await page.keyboard.press('Escape');
   await context.close()}
  // Storage refused for the sidebar's keys: the page still works and the sidebar still folds (just not remembered)
  // In a Fleet the Fleet tab is a sidebar row like the others, and its page scrolls

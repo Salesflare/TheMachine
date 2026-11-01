@@ -71,7 +71,7 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
   content's gutters (☰ and + on the cards' edges, ‹ and ⋯ on the chat's text and bubbles), every glyph on the title's
   cap-height center line, and a long title ends in an ellipsis before the right button.
 - **Sidebar**: one component for every width. From 1024px it is a column on the left: the tabs as quiet rows with
-  icons (To-dos, Calendar, Graph, Fleet, Learning, Connections), Find a to-do, the to-dos by section (Done folded), and Browser, Settings and the status at the bottom; it folds
+  icons (To-dos, Calendar, Graph, Fleet, Learning, Connections), Search (opens the palette, to-dos first), the to-dos by section (Done folded), and Browser, Settings and the status at the bottom; it folds
   to icons (Ctrl/⌘+B). Graph has its own rows, People, Organizations and Projects, each a colored square and a count,
   under a fold that is remembered; a row opens that pane and the address keeps it (`#graph=orgs`). Below 1024px the
   same sidebar is a drawer under a slim top bar with a menu button: a swipe from the left edge or All tasks in a chat

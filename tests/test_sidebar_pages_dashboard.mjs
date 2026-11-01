@@ -82,9 +82,10 @@ try{
   await page.locator('#pal-list .pal-item',{hasText:'See all results for “invoice”'}).waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await context.close()}
- // Learning's tabs: a tab with nothing is left out; Team only while something waits; the last one opened comes back
+ // Learning's tabs: a tab with nothing is left out; Shared only while something waits; opens on What I've learned; the last one opened comes back
  {const {context,page}=await open(1440,900,'#learning');
-  assert.deepEqual(await learnTabs(page),['How it’s going','What I’ve learned']);assert.deepEqual(await learnPane(page),['going']);
+  assert.deepEqual(await learnTabs(page),['What I’ve learned','How it’s going']);assert.deepEqual(await learnPane(page),['learned']);
+  await page.locator('#learn-tab-going').click();assert.deepEqual(await learnPane(page),['going']);
   // How it's going: what each number means, compared with the 30 days before; the weekly bars once two weeks have decisions
   const going=await page.locator('#quality').innerText();
   assert.match(going,/Last 30 days\. Higher is better\./);
@@ -96,15 +97,19 @@ try{
   assert.match(going,/Rules changed that week/);
   assert.match(going,/Worth it per source\s+Where to-dos came from, and how many you acted on of those you decided\.\s+Source\s+Acted on\s+Email\s+8 of 10 80%/);
   assert.match(going,/WhatsApp\s+None decided yet/);
-  await page.locator('#learn-tab-learned').click();assert.deepEqual(await learnPane(page),['learned']);
   await page.reload();await page.locator('#task-'+'aa'.repeat(8)).waitFor({state:'attached'});
-  await page.locator('.app-side nav [data-tab="feedback"]').click();assert.deepEqual(await learnPane(page),['learned'],'the last tab opened');
+  await page.locator('.app-side nav [data-tab="feedback"]').click();assert.deepEqual(await learnPane(page),['going'],'the last tab opened');
+  // an old stored Team tab comes back as Shared, or the first tab when Shared is empty
+  await page.evaluate(()=>localStorage.setItem('learn-pane','team'));await page.reload();await page.locator('#task-'+'aa'.repeat(8)).waitFor({state:'attached'});
+  await page.locator('.app-side nav [data-tab="feedback"]').click();assert.deepEqual(await learnPane(page),['learned']);
   await context.close()}
  {const {context,page}=await open(1440,900,'#learning=team',{decisions:[{id:1,created_at:now,choice:'reject',title:'Newsletter',note:'not needed'}],
    learning_changes:[{id:3,at:now,kind:'fact',text:'Prefers calls after 10:00.',before:null,why:null,undone:false}],
    team_learnings:{offer:true,vote:true,vote_mode:'ask',network:true,ask:null,votes_waiting:[{id:'c1',text:'Group meeting prep into one to-do.',example:null,vote:'up',reason:'Fits.',use_case:null}],shared:[]}});
-  assert.deepEqual(await learnTabs(page),['How it’s going','What I’ve learned','Changes','Decisions','Team 1']);assert.deepEqual(await learnPane(page),['team']);
-  assert.equal(await page.locator('#learn-tab-team').getAttribute('aria-selected'),'true');
+  assert.deepEqual(await learnTabs(page),['What I’ve learned','Changes','Decisions','Shared 1','How it’s going']);assert.deepEqual(await learnPane(page),['shared'],'#learning=team is the old link');
+  assert.equal(await page.locator('#learn-tab-shared').getAttribute('aria-selected'),'true');
+  await page.evaluate(()=>{location.hash='#learning=decisions'});await page.waitForFunction(()=>!document.querySelector('#learn-pane-decisions').hidden);
+  await page.evaluate(()=>{location.hash='#learning=shared'});await page.waitForFunction(()=>!document.querySelector('#learn-pane-shared').hidden);
   await page.evaluate(()=>{location.hash='#learning=changes'});await page.waitForFunction(()=>!document.querySelector('#learn-pane-changes').hidden);
   assert.match(await page.locator('#learn-changes').innerText(),/Prefers calls after 10:00\./);
   await context.close()}

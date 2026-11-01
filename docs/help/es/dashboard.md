@@ -15,7 +15,7 @@ order: 4
 - **Aprendizaje**: cómo van las tareas y qué ha aprendido.
 - **Conexiones**: tus fuentes y cómo van. Consulta [Conexiones](connections.md).
 
-**Ajustes** es el engranaje de arriba. **Buscar una tarea** busca en tus tareas por título. Para buscar en tus mensajes, consulta **Mensajes** más abajo.
+**Ajustes** es el engranaje de arriba. **Buscar**, arriba en la barra lateral, encuentra primero tareas, luego personas, mensajes y más.
 
 **Navegador**, abajo en la barra lateral, muestra el navegador propio de tu Machine. En un ordenador se abre junto a la barra lateral, al tamaño del espacio que tiene, igual que **Ver en el navegador** en una tarea y **Abrir el navegador** cuando un sitio pide iniciar sesión. En un teléfono se abre en una pestaña nueva.
 
@@ -39,6 +39,11 @@ Abre la búsqueda con `⌘K` en un Mac o `Ctrl K` en Windows y Linux, o con el i
 
 Aprendizaje tiene una fila de pestañas. Una pestaña que aún no tiene nada no aparece.
 
+- **Lo que he aprendido**: cómo escribes, datos y cómo te gusta hacer las cosas, a partir de tus notas. **Editar** cualquier parte con tus propias palabras, y **Quitar** lo que ya no sea cierto. Cuando una nota en una tarea enseña un dato o una regla, el chat de la tarea lo dice debajo de la respuesta (**Guardado en lo aprendido**, con **Editar** y **Deshacer**); esa línea sale de lo que se guardó, así que una respuesta nunca lo afirma sin más.
+- Un dato puede decir qué es (**Temporal**, **Compromiso**, **Preferencia**) y **Hasta el** día en que vale. Un dato temporal se desvanece en semanas, una preferencia o un compromiso en meses, los demás datos en un año. Los datos sobre alguien no tienen límite; los demás paran en 80. Pasada su fecha, un dato pasa a **Terminados**, donde **Recuperar** lo devuelve.
+- **Cambios**: lo que aprendió de tus ediciones, descartes y chats, cada uno con **Deshacer**. Consulta [Redacción](writing.md#it-keeps-learning).
+- **Decisiones**: una cronología de tus decisiones sobre las tareas.
+- **Compartido**: aprendizajes para compartir con el equipo de The Machine, y votos que te esperan. Solo aparece cuando algo espera. Consulta [Compartir aprendizajes](share-learnings.md).
 - **Cómo va**: los últimos 30 días, y cuanto más alto, mejor.
   - **Valió la pena**: de las tareas que decidiste, en cuántas actuaste (**Hazlo**, enviada o hecha) en vez de descartarlas.
   - **A la primera**: de las tareas que empezaste con **Hazlo**, cuántas no necesitaron ninguna corrección después.
@@ -46,8 +51,3 @@ Aprendizaje tiene una fila de pestañas. Una pestaña que aún no tiene nada no 
   - **Enviado tal cual**: de los borradores que enviaste, cuántos salieron sin una edición ni **Cambiar** antes.
   - Cada número dice cómo se compara con los 30 días anteriores. **Valió la pena, semana a semana** muestra las últimas 8 semanas, una barra por semana, cuando hay dos semanas con decisiones; una marca bajo una semana indica que las reglas cambiaron esa semana.
   - **Valió la pena por origen**: de dónde vinieron las tareas, como **Correo**, **Añadido por ti** (creadas con **Nueva tarea**), **Notificaciones del teléfono** o **The Machine misma** (problemas en The Machine, como un error), y en cuántas actuaste.
-- **Lo que he aprendido**: cómo escribes, datos y cómo te gusta hacer las cosas, a partir de tus notas. **Editar** cualquier parte con tus propias palabras, y **Quitar** lo que ya no sea cierto. Cuando una nota en una tarea enseña un dato o una regla, el chat de la tarea lo dice debajo de la respuesta (**Guardado en lo aprendido**, con **Editar** y **Deshacer**); esa línea sale de lo que se guardó, así que una respuesta nunca lo afirma sin más.
-- Un dato puede decir qué es (**Temporal**, **Compromiso**, **Preferencia**) y **Hasta el** día en que vale. Un dato temporal se desvanece en semanas, una preferencia o un compromiso en meses, los demás datos en un año. Los datos sobre alguien no tienen límite; los demás paran en 80. Pasada su fecha, un dato pasa a **Terminados**, donde **Recuperar** lo devuelve.
-- **Cambios**: lo que aprendió de tus ediciones, descartes y chats, cada uno con **Deshacer**. Consulta [Redacción](writing.md#it-keeps-learning).
-- **Decisiones**: una cronología de tus decisiones sobre las tareas.
-- **Equipo**: aprendizajes para compartir con el equipo de The Machine, y votos que te esperan. Solo aparece cuando algo espera. Consulta [Compartir aprendizajes](share-learnings.md).

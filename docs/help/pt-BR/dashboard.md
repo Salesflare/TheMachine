@@ -15,7 +15,7 @@ order: 4
 - **Aprendizado**: como as tarefas estão indo e o que ela aprendeu.
 - **Conexões**: suas fontes e como elas estão. Veja [Conexões](connections.md).
 
-**Configurações** é a engrenagem no topo. **Encontrar uma tarefa** busca suas tarefas pelo título. Para pesquisar suas mensagens, veja **Mensagens** abaixo.
+**Configurações** é a engrenagem no topo. **Pesquisar**, no topo da barra lateral, encontra primeiro tarefas, depois pessoas, mensagens e mais.
 
 **Navegador**, na parte de baixo da barra lateral, mostra o navegador da própria Machine. No computador, ele abre ao lado da barra lateral, no tamanho do espaço disponível, e o mesmo vale para **Ver no navegador** em uma tarefa e **Abrir o navegador** quando um site precisa de login. No celular, ele abre em uma nova aba.
 
@@ -39,6 +39,11 @@ Abra a pesquisa com `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou com o í
 
 O Aprendizado tem uma fileira de abas. Uma aba ainda sem nada fica de fora.
 
+- **O que aprendi**: como você escreve, fatos e como você gosta que as coisas sejam feitas, a partir das suas notas. Use **Editar** para reescrever qualquer item com suas próprias palavras e **Remover** para tirar o que não for mais verdade. Quando uma nota em uma tarefa ensina um fato ou uma regra, o chat da tarefa avisa abaixo da resposta (**Salvo no que aprendi**, com **Editar** e **Desfazer**). Essa linha vem do que foi guardado, então uma resposta nunca só afirma isso.
+- Um fato pode dizer o que é (**Temporário**, **Compromisso**, **Preferência**) e **Até** quando vale. Um fato temporário perde peso em semanas, uma preferência ou um compromisso em meses, os outros fatos em um ano. Fatos sobre alguém não têm limite; os outros param em 80. Passada a data, um fato vai para **Encerrados**, onde **Trazer de volta** o restaura.
+- **Alterações**: o que ela aprendeu com suas edições, dispensas e chats, cada uma com **Desfazer**. Veja [Escrita](writing.md#it-keeps-learning).
+- **Decisões**: uma linha do tempo das suas escolhas nas tarefas.
+- **Compartilhado**: aprendizados para compartilhar com a equipe da The Machine, e votos esperando por você. Só aparece quando algo está esperando. Veja [Compartilhar aprendizados](share-learnings.md).
 - **Como está indo**: os últimos 30 dias, e quanto mais alto, melhor.
   - **Valeu a pena**: das tarefas que você decidiu, quantas você levou adiante (**Fazer**, enviada ou feita) em vez de dispensar.
   - **De primeira**: das tarefas que você começou com **Fazer**, quantas não precisaram de correção depois.
@@ -46,8 +51,3 @@ O Aprendizado tem uma fileira de abas. Uma aba ainda sem nada fica de fora.
   - **Enviado como está**: dos rascunhos que você enviou, quantos foram sem edição nem **Mudar** antes.
   - Cada número mostra como se compara com os 30 dias anteriores. **Valeu a pena, semana a semana** mostra as últimas 8 semanas, uma barra por semana, quando há duas semanas com decisões; uma marca sob uma semana quer dizer que as regras mudaram naquela semana.
   - **Valeu a pena por origem**: de onde vieram as tarefas, como **E-mail**, **Adicionado por você** (criadas com **Nova tarefa**), **Notificações no celular** ou **A própria The Machine** (problemas na The Machine, como um erro), e quantas você levou adiante.
-- **O que aprendi**: como você escreve, fatos e como você gosta que as coisas sejam feitas, a partir das suas notas. Use **Editar** para reescrever qualquer item com suas próprias palavras e **Remover** para tirar o que não for mais verdade. Quando uma nota em uma tarefa ensina um fato ou uma regra, o chat da tarefa avisa abaixo da resposta (**Salvo no que aprendi**, com **Editar** e **Desfazer**). Essa linha vem do que foi guardado, então uma resposta nunca só afirma isso.
-- Um fato pode dizer o que é (**Temporário**, **Compromisso**, **Preferência**) e **Até** quando vale. Um fato temporário perde peso em semanas, uma preferência ou um compromisso em meses, os outros fatos em um ano. Fatos sobre alguém não têm limite; os outros param em 80. Passada a data, um fato vai para **Encerrados**, onde **Trazer de volta** o restaura.
-- **Alterações**: o que ela aprendeu com suas edições, dispensas e chats, cada uma com **Desfazer**. Veja [Escrita](writing.md#it-keeps-learning).
-- **Decisões**: uma linha do tempo das suas escolhas nas tarefas.
-- **Equipe**: aprendizados para compartilhar com a equipe da The Machine, e votos esperando por você. Só aparece quando algo está esperando. Veja [Compartilhar aprendizados](share-learnings.md).

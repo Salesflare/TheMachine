@@ -6,7 +6,7 @@ const TAB_LINKS={inbox:'inbox',todos:'inbox',suggestions:'inbox',calendar:'calen
 function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.setItem('graph-pane',pane);const view=$('#people-view'),was=graphNode;graphNode='';$('#people-query').value='';
   if(view.querySelector(`[data-graph-panel="${CSS.escape(pane)}"]`)&&view.dataset.mode==='list'&&!was){showGraphPane(pane);graphSkip=!$('#people').hidden&&Date.now()-graphAt<60000}  /* the lists on screen are a minute old at most: no reload */
   else if(was&&!graphKept){view.dataset.mode='loading';view.innerHTML='<p class="pager-loading" role="status">Loading…</p>';$('#people').classList.remove('graph-on-node')}}
- if(tab==='health'&&pane){healthPane=pane==='phone'?'other':pane;healthPicked=true}if(tab==='feedback'&&LEARN_PANES.some(([id])=>id===pane)){learnPane=pane;try{localStorage.setItem('learn-pane',pane)}catch{}}
+ if(tab==='health'&&pane){healthPane=pane==='phone'?'other':pane;healthPicked=true}if(tab==='feedback'&&pane==='team')pane='shared';if(tab==='feedback'&&LEARN_PANES.some(([id])=>id===pane)){learnPane=pane;try{localStorage.setItem('learn-pane',pane)}catch{}}
  document.querySelector(`nav [data-tab="${tab}"]`)?.click();if(tab==='health')renderHealthTabs();if(tab==='feedback')learnTabs()}
 function openTabLink(){const st=/^#settings(?:[/=]([a-z]+))?$/.exec(location.hash);if(st){if($('#settings').hidden||st[1]&&st[1]!==settingsNow)showSettings(st[1]);return}const m=/^#([a-z]+)(?:=([a-z]+))?$/.exec(location.hash);if(!m||!TAB_LINKS[m[1]])return;
  const tab=TAB_LINKS[m[1]];if(tab==='people'&&GRAPH_PANES.includes(m[2])){if(!$('#people').hidden&&!graphNode&&graphShown===m[2])return;showTab(tab,m[2]);return}
@@ -34,9 +34,11 @@ function qualityHTML(q){if(!q||!q.cards)return `<p class="q-empty">${esc(t('Not 
 // Worth it week by week: one bar per week, its height and the number above it that week's %, the week under it and how
 // many to-dos were decided. Shown once two weeks have decided to-dos.
 function trendChart(trend){const rows=trend?.weekly||[];if(rows.filter(r=>r.worth_it+r.dismissed).length<2)return '';
- const wk=r=>new Date(r.start+'T12:00').toLocaleDateString(DL,{day:'numeric',month:'short'}),marks=rows.some(r=>r.changes?.length);
- const col=r=>{const n=r.worth_it+r.dismissed,label=n?t('Week of {}: {}% worth it, {} decided',wk(r),r.hit_rate,n):t('Week of {}: nothing decided',wk(r));
-  return `<div role="listitem" aria-label="${esc(label)}" title="${esc([label,...r.changes||[]].join('\n'))}"><small class="v">${n?r.hit_rate+'%':'–'}</small><span class="bar"><em${n?` style="height:${Math.max(2,r.hit_rate)}%"`:' class="none"'}></em></span><span class="w">${esc(wk(r))}${r.changes?.length?'<i class="mark" aria-hidden="true">◆</i>':''}</span><span class="n">${n?esc(t('{} decided',n)):''}</span></div>`};
+ const day=r=>new Date(r.start+'T12:00'),wk=r=>day(r).toLocaleDateString(DL,{day:'numeric',month:'short'}),marks=rows.some(r=>r.changes?.length);
+ // The label under a bar stays one short line: the month only where it starts or changes ("Sep 7", "14", "21", "Oct 5")
+ const short=(r,i)=>i&&day(rows[i-1]).getMonth()===day(r).getMonth()?day(r).toLocaleDateString(DL,{day:'numeric'}):wk(r);
+ const col=(r,i)=>{const n=r.worth_it+r.dismissed,label=n?t('Week of {}: {}% worth it, {} decided',wk(r),r.hit_rate,n):t('Week of {}: nothing decided',wk(r));
+  return `<div role="listitem" aria-label="${esc(label)}" title="${esc([label,...r.changes||[]].join('\n'))}"><small class="v">${n?r.hit_rate+'%':''}${r.changes?.length?'<i class="mark" aria-hidden="true">◆</i>':''}</small><span class="bar"><em${n?` style="height:${Math.max(2,r.hit_rate)}%"`:' class="none"'}></em></span><span class="w">${esc(short(r,i))}</span><span class="n${n?'':' zero'}">${esc(t('{} decided',n))}</span></div>`};
  return `<figure class="trend"><figcaption><strong>${esc(t('Worth it, week by week'))}</strong><small>${esc(t('Last 8 weeks. Each bar is that week’s Worth it.'))}</small></figcaption><div class="bars" role="list">${rows.map(col).join('')}</div>${marks?`<p class="trend-legend"><i class="mark" aria-hidden="true">◆</i>${esc(t('Rules changed that week'))}</p>`:''}</figure>`}
 let refreshes=0;
 // A redraw keeps the field someone is in: focus and caret back on the same field (by id) when the redraw replaced it
@@ -157,7 +159,7 @@ function sideSet(folded,save=true){document.documentElement.dataset.side=folded?
 const SIDE_MAC=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent),SIDE_KEY=SIDE_MAC?'⌘B':'Ctrl+B',SIDE_KEY_ARIA=SIDE_MAC?'Meta+B':'Control+B';
 const sideTip=document.createElement('div');sideTip.id='side-tip';sideTip.setAttribute('role','tooltip');sideTip.hidden=true;document.body.append(sideTip);
 let sideTipTimer=0,sideTipFor=null;
-function sideTipText(el){if(el.id==='side-toggle')return el.getAttribute('aria-label')+' · '+SIDE_KEY;if(el.id==='side-search')return 'Find a to-do';if(el.id==='live')return $('#updated').textContent.trim()||'Refresh';
+function sideTipText(el){if(el.id==='side-toggle')return el.getAttribute('aria-label')+' · '+SIDE_KEY;if(el.id==='side-search')return 'Search';if(el.id==='live')return $('#updated').textContent.trim()||'Refresh';
  if(el.matches('.app-side .head-side>.settings-link'))return (el.querySelector('.lbl')?.textContent.trim()||el.getAttribute('aria-label')||'')+(el.dataset.keys?' · '+el.dataset.keys:'');
  return (el.getAttribute('aria-label')||'')+(el.dataset.keys?' · '+el.dataset.keys:'')}
 function sideLabels(){for(const b of document.querySelectorAll('.app-side nav [data-tab]')){const name=b.querySelector('.nl')?.textContent.trim()||'',n=+(b.querySelector('.badge')?.textContent||0),t=b.dataset.tab,c=sideCounts||{};
@@ -178,7 +180,8 @@ addEventListener('keydown',e=>{if(e.key==='Escape')sideTipHide();if(!(e.ctrlKey|
 {const o=new MutationObserver(()=>sideLabels());o.observe($('.app-side nav'),{subtree:true,childList:true,characterData:true});o.observe($('#updated'),{subtree:true,childList:true,characterData:true})}
 sideSet(document.documentElement.dataset.side==='collapsed',false);
 $('#side-toggle').onclick=()=>sideSet(document.documentElement.dataset.side!=='collapsed');
-$('#side-search').addEventListener('click',()=>{if(document.documentElement.dataset.side==='collapsed'&&matchMedia('(min-width:1024px)').matches){sideSet(false);$('#side-find').focus()}});
+// Search, folded to its icon: opens the palette as the box does (shell-keys.js), the sidebar stays folded
+$('#side-search').addEventListener('click',e=>{if(document.documentElement.dataset.side==='collapsed'&&matchMedia('(min-width:1024px)').matches){e.preventDefault();palOpen({todos:true})}});
 // Below 1024px the sidebar is a drawer: the menu button, a swipe from the left edge or All tasks in a chat opens it; ✕,
 // the shade, Esc, a swipe to the left and the back button close it, and so does picking a row in it. While it is open
 // the rest of the page is inert, so focus stays in it.

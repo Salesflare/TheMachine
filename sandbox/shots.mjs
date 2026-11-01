@@ -20,7 +20,7 @@ const themes = (args.themes || 'light,dark').split(',');
 const PAGES = {
   todos: {tab: 'inbox'}, calendar: {tab: 'calendar'}, messages: {hash: '#messages'}, graph: {tab: 'people'}, projects: {tab: 'people', sub: 'projects'}, fleet: {tab: 'fleet'},
   learning: {hash: '#learning=going'}, 'learning-learned': {hash: '#learning=learned'}, 'learning-changes': {hash: '#learning=changes'},
-  'learning-decisions': {hash: '#learning=decisions'}, 'learning-team': {hash: '#learning=team'},
+  'learning-decisions': {hash: '#learning=decisions'}, 'learning-shared': {hash: '#learning=shared'},
   connections: {tab: 'health'}, settings: {click: '#open-settings'}, palette: {palette: 'invoice'},
 };
 const DEFAULT_PAGES = ['todos', 'calendar', 'messages', 'graph', 'projects', 'fleet', 'learning', 'connections', 'settings'];
