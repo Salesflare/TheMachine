@@ -24,9 +24,13 @@ Pessoas que você conhece e que estão na Network são sugeridas assim que você
 
 ## Agendar com outras Machines
 
-Quando alguém com uma Machine escreve "vamos nos ver semana que vem", sua Machine pede à dela os horários livres e acha um bom para os dois, dentro do seu horário de trabalho. Cada um recebe um só to-do, como "Reunião com Alex Example", com o horário embaixo. Toque em **Marcar**, **Outro horário** ou **Não precisa**. O convite só sai quando os dois tocaram em Marcar. Sem Machine ou sem resposta: o to-do mantém o rascunho de email com horários.
+Quando alguém com uma Machine escreve "vamos nos ver semana que vem", sua Machine pede à dela os horários livres e acha um bom para os dois, dentro do seu horário de trabalho. Cada um recebe um só to-do, como "Reunião com Alex Example", com o horário embaixo. Toque em **Marcar**, **Outro horário** ou **Não precisa**. O convite só sai quando os dois tocaram em Marcar.
 
 Só livre ou ocupado é enviado, com criptografia de ponta a ponta, para no máximo 14 dias e arredondado a 15 minutos. Eventos privados contam como ocupados. Uma Machine só pode perguntar se vocês trocaram emails nos dois sentidos. Configure no painel Network em **O que outras Machines podem perguntar à minha**: **Livre/ocupado para agendar** ou **Desativado**, com a duração, o intervalo e os horários preferidos. Cada pedido aparece em Atividade, em Calendário.
+
+Sem Machine ou sem resposta: o rascunho do email recebe um link onde a outra pessoa escolhe um dos seus horários livres. A escolha vira um to-do com **Marcar**; nada é marcado antes de você tocar.
+
+O link mostra só horários livres, pelas mesmas regras, e nada mais sobre você. Ele termina assim que a reunião é marcada, ou depois de 14 dias. No email, ele aparece como "Pick a time". Embaixo, a página diz que sua Machine encontrou estes horários, com "Get yours." e seu primeiro nome. Desligue isso em **Rodapé nos links de agendamento**. Cada link e escolha aparece em Atividade.
 
 ## Uma Machine no seu próprio computador
 

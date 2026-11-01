@@ -14,6 +14,8 @@ import calendar_writes
 import graph
 import i18n
 import meet
+import meet_link
+import next_actions
 
 LOG = logging.getLogger('personal-assistant')
 EMAIL = re.compile(r'[^@\s<>(),;:"\[\]]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+')
@@ -30,6 +32,7 @@ class MeetApp:
         """The Fleet's hooks for meet.py: on once this Machine is on the Network (fleet_attach)."""
         box = self.fleet
         box.meet_card, box.meet_book, box.meet_close = self.meet_card, self.meet_book, self.meet_close
+        box.meet_link_draft = self.meet_link_draft
         box.meet_hours, box.meet_tz = hours, tz
         box.meet_on = True
 
@@ -46,7 +49,7 @@ class MeetApp:
         """What other Machines may ask this one, and the meeting preferences. Read with no args; set from the dashboard."""
         if not getattr(self, 'fleet', None):
             raise ValueError('This Machine is not on The Machine Network')
-        change = {k: args[k] for k in ('allow', 'minutes', 'buffer', 'prefer') if args.get(k) is not None}
+        change = {k: args[k] for k in ('allow', 'minutes', 'buffer', 'prefer', 'brand') if args.get(k) is not None}
         if change and not owner_dashboard:
             raise ValueError('This setting is changed in the dashboard')
         return self.fleet.meet_set(**change) if change else self.fleet.meet_setting()
@@ -107,7 +110,7 @@ class MeetApp:
             raise ValueError('No account here for this')
         name = session.get('name') or session.get('email') or i18n.t('someone')
         key = 'meet:' + str(session['id'])
-        body = i18n.t('{}’s Machine found a time that suits you both. The invite goes out once you both tap Book it.', name)
+        body = session.get('body') or i18n.t('{}’s Machine found a time that suits you both. The invite goes out once you both tap Book it.', name)
         meta = {'sender_display': i18n.t('{} (The Machine Network)', name), 'meet_session': session['id']}
         event_id = self.store.reviewed_event(account['id'], key, 'meet.request', session['title'], body, meta)
         card = self.store.suggest(key, session['title'][:90], body[:700], [event_id], when='now', work=graph.account_side(account) == 'work')
@@ -128,6 +131,24 @@ class MeetApp:
         if video:
             args['notes'] = i18n.t('Video: {}', video)
         return self.calendar_write(args)
+
+    def meet_link_draft(self, card_id, email, lines):
+        """A booking link into the to-do's email draft to that address, while it is still a draft (meet_link.py): the
+        owner sees it before Send. False when there is no such draft (yet)."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT status,next_action FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
+        if not row or row['status'] != 'prepared' or not row['next_action']:
+            return False
+        current = json.loads(row['next_action'])
+        drafts = [a for a in (current.get('actions') if current.get('kind') == 'menu' else [current]) if a.get('kind') == 'email'
+                  and email in {f.group(0).lower() for x in a.get('to') or [] for f in EMAIL.finditer(str(x))}]
+        if not drafts:
+            return False
+        body = next_actions.draft_text(drafts[0]) or ''
+        revised = meet_link.with_lines(body, lines)
+        if revised != body:
+            self.store.revise_draft(str(card_id), drafts[0].get('revision'), 'agent', None, revised)
+        return True
 
     def meet_close(self, card_id, why):
         try:

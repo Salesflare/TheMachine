@@ -9,7 +9,7 @@ booked. Code: `meet.py` (protocol, the to-do's states) and `cloud/meet.py` in th
 1. Someone writes "let's meet next week". The review marks the to-do as a meeting request (`meet` on `suggest`) and,
    as today, prepares an email draft that proposes times.
 2. The owner's Machine looks up the other person's address on the Network. No Machine there: the to-do stays as it
-   is, with the email draft. That is the fallback for every step below.
+   is, with the email draft, which gets a booking link (below). That is the fallback for every step below.
 3. Their Machine is found: the owner's Machine asks it for free times in a window (the days the review saw, at most
    14). It waits up to 3 minutes. No answer, or a refusal: the email draft stays.
 4. The answer is free times only, within the other owner's work hours, after their buffer, rounded to 15 minutes.
@@ -77,6 +77,31 @@ All sealed, all with a session id (32 hex):
 Length (default 30 minutes), buffer around meetings (10), preferred part of the day (any, mornings, afternoons), from
 the same setting. Meetings stay within Work hours (Settings, Notifications) and end by 18:00. The video habit is read
 from the owner's own recent meetings (Zoom, Google Meet or Teams links); the to-do names it as a question.
+
+## No Machine: a link to pick a time
+
+When the ask falls back for lack of a Machine, an answer, a fitting time or rounds (not when the other side declined),
+the proposer's Machine makes a booking link (meet_link.py) and adds it to the to-do's email draft as one line,
+`[Pick a time](link)`: a link with those words in the HTML part, the words with the address on its own line in the plain
+text. The email carries no branding and stays the owner's own words; the page has the footer "<Name>'s Machine found
+these times. Get yours." (the setting **Footer on booking links**, on by default). Nothing goes out before the owner
+sends that draft.
+
+- The page is a task link of kind `schedule` on the cloud (`/t/<id>`, static/pick.js), so it works for hosted and
+  self-hosted Machines alike and the Machine never needs to be reachable. The Machine seals the page with a fresh key
+  that only travels in the link's #fragment: the cloud keeps a blob it can't open. The page holds the owner's first
+  name, the length, up to 40 free start times (6 a day, preferred times first, by the same rules as an answer to a
+  Machine: work hours, buffer, the 15-minute grid, at most 14 days) and the footer flag. No event, title or other detail.
+- The browser shows times from 07:00 to 21:00 in the person's time zone by default, with a time zone picker and Show
+  all times. No open call and no cookie: nothing is counted until they pick and tap Send.
+- The pick comes back sealed with a key derived from the link's, through the Network round, and is read only as one
+  of the offered start times that is still free on the owner's calendar. It becomes a to-do "Meet <name>" with **Book
+  it** and **Not needed**. Book it is the owner's calendar write with the invite to the address the email went to,
+  never one from the page. A later pick replaces the earlier to-do.
+- The link is revoked (deleted on the cloud) once booked or not needed, ends after 7 or 14 days, and ends after 3 days
+  when the email went without it. The page follows the calendar: re-sealed at most hourly when the free times change.
+- The cloud's task link limits apply (links a day, replies per link, a gap between replies). Activity, under Calendar:
+  Booking link made, Time picked (or no longer free), Meeting booked, Booking link ended.
 
 ## Not yet
 

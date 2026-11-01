@@ -24,9 +24,13 @@ Mensen die je kent en die op het Network zitten, worden meteen voorgesteld als j
 
 ## Afspreken met andere Machines
 
-Schrijft iemand met een Machine "laten we volgende week afspreken", dan vraagt je Machine de hunne naar vrije tijden en zoekt hij er een die jullie allebei past, binnen je werkuren. Jullie krijgen elk één to-do, zoals "Afspraak met Alex Example", met de tijd eronder. Tik op **Boek het**, **Andere tijd** of **Niet nodig**. De uitnodiging gaat pas weg als jullie allebei op Boek het tikten. Geen Machine of geen antwoord: de to-do houdt het concept van de e-mail met tijden.
+Schrijft iemand met een Machine "laten we volgende week afspreken", dan vraagt je Machine de hunne naar vrije tijden en zoekt hij er een die jullie allebei past, binnen je werkuren. Jullie krijgen elk één to-do, zoals "Afspraak met Alex Example", met de tijd eronder. Tik op **Boek het**, **Andere tijd** of **Niet nodig**. De uitnodiging gaat pas weg als jullie allebei op Boek het tikten.
 
 Alleen vrij of bezet gaat over, end-to-end versleuteld, voor hoogstens 14 dagen en afgerond op 15 minuten. Privé-afspraken tellen als bezet. Een Machine kan alleen vragen als jullie elkaar over en weer mailden. Stel het in in het paneel Network onder **Wat andere Machines de mijne mogen vragen**: **Vrij/bezet om af te spreken** of **Uit**, met de duur van een afspraak, je buffer en voorkeurstijden. Elke vraag staat in Activiteit, onder Agenda.
+
+Geen Machine of geen antwoord: het concept van de e-mail krijgt een link waar de ander een van je vrije tijden kiest. Die keuze wordt een to-do met **Boek het**; er wordt niets geboekt voor je erop tikt.
+
+De link toont alleen vrije tijden, volgens dezelfde regels, en verder niets over jou. Hij loopt af zodra de afspraak geboekt is, of na 14 dagen. In de e-mail staat hij als "Pick a time". Onderaan zegt de pagina dat je Machine deze tijden vond, met "Get yours." en je voornaam. Zet dat uit met **Voettekst bij boekingslinks**. Elke link en keuze staat in Activiteit.
 
 ## Een Machine op je eigen computer
 

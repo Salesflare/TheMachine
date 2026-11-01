@@ -70,7 +70,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'draft_edits': ('before_subject', 'before_body', 'after_subject', 'after_body'),
            'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
            'fleet_in': ('question', 'draft'), 'fleet_out': ('question', 'answer'), 'network_replies': ('body',),
-           'task_pages': ('record',), 'recaps': ('text',), 'chat_stops': ('text',),  # a stopped chat reply's partial text
+           'task_pages': ('record',), 'meet_links': ('record',), 'recaps': ('text',), 'chat_stops': ('text',),  # a stopped chat reply's partial text
            'chat_files': ('name',),  # a file's name the owner added to a chat message (chat_files.py)
            'talk_lines': ('text',),  # what the owner and The Machine said in Talk live (talk_live.py)
            'recurring_series': ('text',), 'recurring_offers': ('title', 'text'),  # a recurring to-do's words (recurring.py)

@@ -62,7 +62,7 @@
  {
   "body": "[<img src=x onerror=alert(1)>](https://example.com/x)",
   "html": "<div><a href=\"https://example.com/x\">&lt;img src=x onerror=alert(1)&gt;</a></div>",
-  "text": "<img src=x onerror=alert(1)> (https://example.com/x)"
+  "text": "<img src=x onerror=alert(1)>\nhttps://example.com/x"
  },
  {
   "body": "[words](javascript:alert(1)) [mail](mailto:a@example.com) [plain](http://example.com)",
@@ -118,5 +118,10 @@
   "body": "Hi Sam,\r\n\r\nFirst paragraph.\r\nSame paragraph.\r\n \r\nSecond paragraph.\n\t\nCheers,\n\nAlex",
   "html": "<div>Hi Sam,</div><div><br></div><div>First paragraph.</div><div>Same paragraph.</div><div><br></div><div>Second paragraph.</div><div><br></div><div>Cheers,</div><div><br></div><div>Alex</div>",
   "text": "Hi Sam,\n\nFirst paragraph.\nSame paragraph.\n\nSecond paragraph.\n\nCheers,\n\nAlex"
+ },
+ {
+  "body": "Hi Anna,\n\n[Pick a time](https://example.com/t/abc#k=xyz)\n\nBest,\nAlex",
+  "html": "<div>Hi Anna,</div><div><br></div><div><a href=\"https://example.com/t/abc#k=xyz\">Pick a time</a></div><div><br></div><div>Best,</div><div>Alex</div>",
+  "text": "Hi Anna,\n\nPick a time\nhttps://example.com/t/abc#k=xyz\n\nBest,\nAlex"
  }
 ]

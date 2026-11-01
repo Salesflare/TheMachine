@@ -982,11 +982,14 @@ def mail_html(body):
 
 
 def mail_text(body):
-    """The plain-text part of the same email: marks gone, links as "words (address)", list lines as written."""
+    """The plain-text part of the same email: marks gone, links as "words (address)", list lines as written. A line that
+    is only a link is its words, then the address on a line of its own (a long one stays whole and clickable)."""
     lines = []
     for block in mail_blocks(body):
         if block[0] == 'text':
-            lines.extend(mail_plain(line) for line in block[1])
+            for line in block[1]:
+                alone = MAIL_LINK.fullmatch(line.strip())
+                lines.extend([mail_plain(alone[1]), alone[2]] if alone and alone[1] else [mail_plain(line)])
         elif block[0] == 'ul':
             lines.extend('- ' + mail_plain(item) for item in block[1])
         else:

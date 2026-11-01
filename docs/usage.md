@@ -198,7 +198,7 @@ A row opens its to-do's chat, the promise's page, or the meeting in its own cale
 **Scheduling with other Machines**
 
 - When someone with a Machine asks to meet, your Machine asks theirs for free times over the Network and picks a slot within both your work hours (ending by 18:00), after your buffer and in your preferred times. Each of you gets one to-do, like "Meet Alex Example" with the time, length and video link below it. **Book it** on both sides adds the event to your own Google calendar and invites them; **Other time** tries the next slot (3 rounds); **Not needed** closes both to-dos.
-- No Machine there, no answer within 3 minutes, or no slot: the to-do keeps its email draft with times.
+- No Machine there, no answer within 3 minutes, or no slot: the to-do's email draft gets a booking link where they pick one of your free times (07:00 to 21:00 their time by default). Their pick is a to-do with **Book it** and **Not needed**; nothing is booked before your tap. The link ends once booked, or after 14 days. The email shows it as "Pick a time"; **Footer on booking links** (on by default) adds "<Name>'s Machine found these times. Get yours." to the page only.
 - The Network pane sets **What other Machines may ask mine** (**Free/busy for scheduling**, or **Off**; Off at the Careful level), the meeting length, buffer and preferred times. A Machine answers only people you emailed both ways, free or busy only, for at most 14 days, on a 15-minute grid. Each ask is a line in Activity, under Calendar. Design: [scheduling-between-machines.md](scheduling-between-machines.md).
 
 **Views**

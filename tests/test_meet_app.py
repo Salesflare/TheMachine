@@ -135,6 +135,28 @@ class MeetApp(unittest.TestCase):
         self.assertEqual(line['todo'], {'id': card, 'title': 'Meet Alex Tue 3 Nov 14:00, 30 min?'})
         self.assertNotIn('Zoom', json.dumps(line))
 
+    def test_a_booking_link_goes_only_into_the_to_dos_draft_to_that_address(self):
+        card = self.store.suggest('m1', 'Reply to Alex', 'Alex asked to meet.', [self.event], when='now')['id']
+        lines = ['[Pick a time](https://themachine.computer/t/' + 'A' * 22 + '#k=' + 'k' * 43 + ')']
+        self.assertFalse(self.app.meet_link_draft(card, 'alex@example.org', lines))  # no draft yet
+        draft = {'kind': 'email', 'account_id': 'mail', 'to': ['Alex Example <alex@example.org>'], 'subject': 'Re: Next week',
+                 'body': 'Hi Alex,\n\nHappy to meet.\n\nBest,\nSam', 'revision': 1}
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), card))
+        self.assertFalse(self.app.meet_link_draft(card, 'someone@example.com', lines))  # a draft to someone else
+        self.assertTrue(self.app.meet_link_draft(card, 'alex@example.org', lines))
+        self.assertTrue(self.app.meet_link_draft(card, 'alex@example.org', lines))  # once
+        with self.store.connect() as db:
+            action = json.loads(db.execute('SELECT next_action FROM suggestions WHERE id=?', (card,)).fetchone()[0])
+        self.assertTrue(action['body'].startswith('Hi Alex,\n\nHappy to meet.\n\n' + lines[0] + '\n\nBest,'))
+        self.assertEqual(action['body'].count(lines[0]), 1)
+        self.assertEqual(action['to'], draft['to'])
+        self.assertNotEqual(action['revision'], 1)  # a new revision: Send sends what the owner last saw
+
+    def test_the_footer_setting_is_changed_in_the_dashboard(self):
+        self.app.action('meet_setting', {'brand': False}, owner_dashboard=True)
+        self.assertEqual(self.app.fleet.set, [{'brand': False}])
+
     def test_closing_the_to_do_is_quiet_when_it_is_gone(self):
         self.app.meet_close('no-such-card', 'booked')
 

@@ -63,6 +63,7 @@ import contact_share
 import friends
 import discovery
 import meet
+import meet_link
 import network
 import security_levels
 import shared_connectors
@@ -1680,7 +1681,7 @@ def brief_text(view, today=None, hidden=()):
 # ---------------------------------------------------------------- the Fleet on this Machine
 
 class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
-            shared_graph.SharedGraph, meet.Meet):
+            shared_graph.SharedGraph, meet.Meet, meet_link.MeetLink):
     def __init__(self, connect, config, token, relay=None):
         self.connect, self.config = connect, config
         self.relay = relay or NetworkClient(settings(config)['url'], token, endpoints(config), connect=connect)
@@ -3625,6 +3626,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         self.annotate_requests(db, suggestions)
         self.annotate_reviews(db, suggestions)
         self.annotate_meet(db, suggestions)  # a time another Machine agreed: Book it (meet.py)
+        self.annotate_links(db, suggestions)  # a booking link in the email draft, a time picked on it (meet_link.py)
 
     def lines(self, suggestion_id):
         """What teammates' Machines said about this card's meeting, for a preparation; who it can be handed to; and the
