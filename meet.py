@@ -54,7 +54,7 @@ KEEP_DAYS = 30
 LENGTHS = (15, 30, 45, 60, 90)
 BUFFERS = (0, 5, 10, 15, 30)
 PREFER = ('any', 'morning', 'afternoon')
-DEFAULTS = {'minutes': 30, 'buffer': 10, 'prefer': 'any'}
+DEFAULTS = {'minutes': 30, 'buffer': 10, 'prefer': 'any', 'brand': True}  # brand: the footer line on booking links (meet_link.py)
 VIDEO = {'zoom': 'Zoom', 'meet': 'Google Meet', 'teams': 'Teams'}
 VIDEO_LINKS = {'zoom': ('zoom.us/',), 'meet': ('meet.google.com/',), 'teams': ('teams.microsoft.com/', 'teams.live.com/')}
 TYPES = {'asker': ('free', 'no', 'ok', 'other', 'cancel'), 'answerer': ('propose', 'booked', 'cancel')}
@@ -299,6 +299,9 @@ LINES = {
     'canceled': ('out', 'Meeting not needed with {}: {}'),
     'canceled_in': ('in', 'Meeting not needed for {}: {}'),
     'fallback': ('out', 'Email draft kept for {}: {}'),
+    'link': ('out', 'Booking link made for {}: {}'),  # no Machine there: a link to pick a time (meet_link.py)
+    'link_ended': ('out', 'Booking link ended for {}: {}'),
+    'picked_in': ('in', 'Time picked by {}: {}'),
 }
 OUTCOMES = {  # code -> (Activity outcome, status, detail)
     'answered': ('done', 'Answered', None),
@@ -318,6 +321,10 @@ OUTCOMES = {  # code -> (Activity outcome, status, detail)
     'passed': ('refused', 'Time passed', None),
     'failed': ('failed', 'Failed', None),
     'canceled': ('undone', 'Canceled', None),
+    'made': ('done', 'In the email draft', None),
+    'taken': ('refused', 'No longer free', 'That time is no longer free'),
+    'expired': ('undone', 'Link ended', None),
+    'unused': ('undone', 'Link ended', 'The email went without it'),
 }
 
 
@@ -378,9 +385,10 @@ class Meet:
             except ValueError:
                 pass
         out['prefer'] = prefs.get('prefer') if prefs.get('prefer') in PREFER else out['prefer']
+        out['brand'] = prefs.get('brand') != 'off'
         return {'allow': allow, **out}
 
-    def meet_set(self, allow=None, minutes=None, buffer=None, prefer=None):
+    def meet_set(self, allow=None, minutes=None, buffer=None, prefer=None, brand=None):
         """The owner's setting: who may ask (free/busy or off) and their meeting preferences."""
         with self.connect() as db:
             ensure(db)
@@ -394,6 +402,10 @@ class Meet:
                 if value not in choices:
                     raise ValueError('Pick one of the choices shown')
                 db.execute('INSERT INTO meet_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (key, str(value)))
+            if brand is not None:
+                if not isinstance(brand, bool):
+                    raise ValueError('Pick one of the choices shown')
+                db.execute("INSERT INTO meet_prefs(key,value) VALUES('brand',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", ('on' if brand else 'off',))
         if allow is not None:
             self.set_meta('meet_told', None)  # the cloud hears it on the next round
             try:
@@ -601,6 +613,9 @@ class Meet:
         """Book it, Other time or Not needed on a scheduling to-do."""
         if choice not in ('book', 'other', 'skip'):
             raise ValueError('Book it, Other time or Not needed')
+        linked = self.meet_link_decide(card_id, choice) if hasattr(self, 'meet_link_decide') else None
+        if linked is not None:  # a time picked on a booking link (meet_link.py)
+            return linked
         with self.connect() as db:
             ensure(db)
             row = db.execute("SELECT * FROM meet_sessions WHERE card_id=? AND state IN ('proposed','answered','waiting') ORDER BY updated_at DESC LIMIT 1",
@@ -684,6 +699,11 @@ class Meet:
                 except Exception as error:  # noqa: BLE001 - sent again and taken once (meet_seen)
                     LOG.info('meet ack error=%s', type(error).__name__)
         self.meet_timeouts()
+        if hasattr(self, 'meet_links_round'):  # booking links for asks with no Machine there (meet_link.py)
+            try:
+                taken += self.meet_links_round()
+            except Exception as error:  # noqa: BLE001 - next round
+                LOG.warning('meet links round error=%s', type(error).__name__)
         return taken
 
     def meet_timeouts(self):

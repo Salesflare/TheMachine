@@ -24,9 +24,13 @@ People you know who are on the Network are suggested right away when you turn it
 
 ## Scheduling with other Machines
 
-When someone with a Machine writes "let's meet next week", your Machine asks theirs for free times and finds one that suits you both, within your work hours. Each of you gets one to-do, like "Meet Alex Example", with the time below it. Tap **Book it**, **Other time** or **Not needed**. The invite goes out only once you both tapped Book it. No Machine there, or no answer: the to-do keeps its email draft with times.
+When someone with a Machine writes "let's meet next week", your Machine asks theirs for free times and finds one that suits you both, within your work hours. Each of you gets one to-do, like "Meet Alex Example", with the time below it. Tap **Book it**, **Other time** or **Not needed**. The invite goes out only once you both tapped Book it.
 
 Only free or busy goes over, sealed end to end, for at most 14 days and rounded to 15 minutes. Private events count as busy. A Machine can ask only when you emailed each other both ways. Set it in the Network pane under **What other Machines may ask mine**: **Free/busy for scheduling** or **Off**, with your meeting length, buffer and preferred times. Each ask shows in Activity, under Calendar.
+
+No Machine there, or no answer: the email draft gets a link where they pick one of your free times. Their pick is a to-do with **Book it**; nothing is booked before you tap it.
+
+The link shows only free times, by the same rules, and nothing else about you. It ends once the meeting is booked, or after 14 days. The email shows it as "Pick a time". At the bottom, the page says "Your Machine found these times. Get yours." with your first name. Turn that off with **Footer on booking links**. Each link and pick shows in Activity.
 
 ## A Machine on your own computer
 

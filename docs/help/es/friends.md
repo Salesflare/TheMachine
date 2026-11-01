@@ -24,9 +24,13 @@ La gente que conoces y está en la Network se te sugiere en cuanto la activas, y
 
 ## Agendar con otras Machines
 
-Cuando alguien con una Machine escribe «veámonos la semana que viene», tu Machine pide a la suya sus horas libres y encuentra una que os vaya bien a los dos, dentro de tu horario laboral. Cada uno recibe un solo to-do, como «Reunión con Alex Example», con la hora debajo. Toca **Reservar**, **Otra hora** o **No hace falta**. La invitación solo sale cuando los dos habéis tocado Reservar. Sin Machine o sin respuesta: el to-do conserva su borrador de email con horas.
+Cuando alguien con una Machine escribe «veámonos la semana que viene», tu Machine pide a la suya sus horas libres y encuentra una que os vaya bien a los dos, dentro de tu horario laboral. Cada uno recibe un solo to-do, como «Reunión con Alex Example», con la hora debajo. Toca **Reservar**, **Otra hora** o **No hace falta**. La invitación solo sale cuando los dos habéis tocado Reservar.
 
 Solo se envía libre u ocupado, cifrado de extremo a extremo, para 14 días como mucho y redondeado a 15 minutos. Los eventos privados cuentan como ocupados. Una Machine solo puede preguntar si os habéis escrito en ambos sentidos. Configúralo en el panel Network en **Qué pueden preguntar otras Machines a la mía**: **Libre/ocupado para agendar** o **Desactivado**, con la duración, el margen y las horas preferidas. Cada solicitud aparece en Actividad, en Calendario.
+
+Sin Machine o sin respuesta: el borrador del email recibe un enlace donde la otra persona elige una de tus horas libres. Su elección es un to-do con **Reservar**; no se reserva nada antes de que lo toques.
+
+El enlace solo muestra horas libres, con las mismas reglas, y nada más sobre ti. Termina en cuanto la reunión se reserva, o a los 14 días. En el email aparece como "Pick a time". Abajo, la página dice que tu Machine encontró estas horas, con "Get yours." y tu nombre. Desactívalo con **Pie en los enlaces de reserva**. Cada enlace y elección aparece en Actividad.
 
 ## Una Machine en tu propio ordenador
 

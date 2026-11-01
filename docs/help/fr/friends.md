@@ -24,9 +24,13 @@ Les personnes que vous connaissez et qui sont sur le Network sont suggérées d�
 
 ## Planifier avec d’autres Machines
 
-Quand une personne qui a une Machine écrit « voyons-nous la semaine prochaine », votre Machine demande ses disponibilités à la sienne et trouve un horaire qui vous convient à tous les deux, dans vos heures de travail. Chacun reçoit une seule to-do, comme « Rendez-vous avec Alex Example », avec l’horaire en dessous. Touchez **Réserver**, **Autre horaire** ou **Pas nécessaire**. L’invitation ne part que lorsque vous avez tous les deux touché Réserver. Pas de Machine ou pas de réponse : la to-do garde son brouillon d’e-mail avec des horaires.
+Quand une personne qui a une Machine écrit « voyons-nous la semaine prochaine », votre Machine demande ses disponibilités à la sienne et trouve un horaire qui vous convient à tous les deux, dans vos heures de travail. Chacun reçoit une seule to-do, comme « Rendez-vous avec Alex Example », avec l’horaire en dessous. Touchez **Réserver**, **Autre horaire** ou **Pas nécessaire**. L’invitation ne part que lorsque vous avez tous les deux touché Réserver.
 
 Seul libre ou occupé est transmis, chiffré de bout en bout, sur 14 jours au plus et arrondi à 15 minutes. Les événements privés comptent comme occupés. Une Machine ne peut demander que si vous vous êtes écrit dans les deux sens. Réglez-le dans le volet Network sous **Ce que d’autres Machines peuvent demander à la mienne** : **Libre/occupé pour planifier** ou **Désactivé**, avec la durée, la marge et les horaires préférés. Chaque demande apparaît dans Activité, sous Agenda.
+
+Pas de Machine ou pas de réponse : le brouillon d’e-mail reçoit un lien où l’autre choisit un de vos horaires libres. Ce choix devient une to-do avec **Réserver** ; rien n’est réservé avant que vous ne touchiez.
+
+Le lien ne montre que des horaires libres, selon les mêmes règles, et rien d’autre sur vous. Il prend fin dès que le rendez-vous est réservé, ou après 14 jours. Dans l’e-mail, il s’affiche comme "Pick a time". En bas, la page dit que votre Machine a trouvé ces horaires, avec "Get yours." et votre prénom. Désactivez cela avec **Pied de page des liens de réservation**. Chaque lien et chaque choix apparaît dans Activité.
 
 ## Une Machine sur votre propre ordinateur
 

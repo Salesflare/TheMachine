@@ -24,9 +24,13 @@ Le persone che conosci e che sono nel Network ti vengono suggerite appena lo att
 
 ## Pianificare con altre Machine
 
-Quando qualcuno con una Machine scrive «vediamoci la prossima settimana», la tua Machine chiede alla sua gli orari liberi e ne trova uno che vada bene a entrambi, nel tuo orario di lavoro. Ognuno riceve un solo to-do, come «Incontro con Alex Example», con l’orario sotto. Tocca **Prenota**, **Altro orario** o **Non serve**. L’invito parte solo quando avete toccato entrambi Prenota. Nessuna Machine o nessuna risposta: il to-do tiene la sua bozza email con gli orari.
+Quando qualcuno con una Machine scrive «vediamoci la prossima settimana», la tua Machine chiede alla sua gli orari liberi e ne trova uno che vada bene a entrambi, nel tuo orario di lavoro. Ognuno riceve un solo to-do, come «Incontro con Alex Example», con l’orario sotto. Tocca **Prenota**, **Altro orario** o **Non serve**. L’invito parte solo quando avete toccato entrambi Prenota.
 
 Passa solo libero o occupato, crittografato end-to-end, per al massimo 14 giorni e arrotondato a 15 minuti. Gli eventi privati contano come occupati. Una Machine può chiedere solo se vi siete scritti in entrambe le direzioni. Impostalo nel pannello Network in **Cosa possono chiedere altre Machine alla mia**: **Libero/occupato per pianificare** o **Disattivato**, con durata, margine e orari preferiti. Ogni richiesta compare in Attività, sotto Calendario.
+
+Nessuna Machine o nessuna risposta: la bozza email riceve un link dove l’altra persona sceglie uno dei tuoi orari liberi. La scelta diventa un to-do con **Prenota**; non si prenota nulla prima che tu tocchi.
+
+Il link mostra solo orari liberi, con le stesse regole, e nient’altro su di te. Scade appena l’incontro è prenotato, o dopo 14 giorni. Nell’email compare come "Pick a time". In fondo, la pagina dice che la tua Machine ha trovato questi orari, con "Get yours." e il tuo nome. Disattivalo con **Piè di pagina nei link di prenotazione**. Ogni link e scelta compare in Attività.
 
 ## Una Machine sul tuo computer
 

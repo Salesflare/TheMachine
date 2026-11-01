@@ -96,6 +96,7 @@ import calendar_writes
 import doc_writes
 import meeting_notes
 import meeting_writer
+import meet_link
 import places
 import browser_login
 import browser_viewer
@@ -4021,6 +4022,7 @@ class Store:
             db.execute('CREATE TABLE IF NOT EXISTS merge_effects(action_id TEXT NOT NULL,operation TEXT NOT NULL,receipt TEXT NOT NULL,status TEXT NOT NULL,'
                        'updated_at TEXT NOT NULL,PRIMARY KEY(action_id,operation))')
             db.execute(task_pages.SCHEMA)  # task pages offered or shared from handoffs by email (task_pages.py)
+            db.execute(meet_link.SCHEMA)  # booking links for meetings with someone without a Machine (meet_link.py), sealed at rest
             team_learnings.ensure(db)  # learnings for The Machine team (team_learnings.py), with their use cases
             error_feed.ensure(db)  # error reports for The Machine team: signatures only (error_feed.py)
             activity.ensure(db)  # daily activity counts for the hosted health report (activity.py)
