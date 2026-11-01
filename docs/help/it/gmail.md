@@ -29,7 +29,7 @@ Su una Machine in hosting:
 
 Oppure nella dashboard: **Connessioni**, **+ Aggiungi**, scegli Gmail e premi **Accedi con Google**. Quando hai finito, torni alla dashboard.
 
-Sul tuo computer, una volta [associato al tuo account](fleet.md):
+Sul tuo computer, una volta [associato al tuo account](friends.md#a-machine-on-your-own-computer):
 
 1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli Gmail.
 2. Premi **Accedi con Google** e accedi nella scheda che si apre. Gmail e Google Calendar si collegano insieme.

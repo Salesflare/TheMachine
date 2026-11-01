@@ -23,7 +23,7 @@ En tu propio calendario también puedes invitar a personas desde el formulario d
 
 En una Machine alojada se conecta junto con Gmail: en tu página de configuración, en **Correo y calendario**, pulsa **Conectar Google**.
 
-En tu propio ordenador, una vez [vinculado con tu cuenta](fleet.md): abre **Conexiones**, luego **+ Añadir**, elige Google Calendar y pulsa **Iniciar sesión con Google**. Se conecta junto con Gmail.
+En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **+ Añadir**, elige Google Calendar y pulsa **Iniciar sesión con Google**. Se conecta junto con Gmail.
 
 Con tu propia app: ejecuta `assistant connect calendar`, o abre ahí **Usar tu propia app**. Te pregunta qué calendario leer.
 

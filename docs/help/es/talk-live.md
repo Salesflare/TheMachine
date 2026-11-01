@@ -35,11 +35,11 @@ Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien
 
 El chat también puede buscar cosas, como el horario de una tienda en la web. Mientras tanto muestra **Trabajando en ello…**, y puedes seguir hablando. Cuando la respuesta está lista, The Machine te la dice, y dónde la encontró. Si pides otra cosa mientras tanto, espera su turno.
 
-Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Lotte por correo?". Primero lee el borrador entero en voz alta: a quién va, el asunto y el texto. Así funciona también con el teléfono en el bolsillo. Responde con un sí claro, como "sí, envíalo", y ese borrador se envía.
+Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Sam por correo?". Primero lee el borrador entero en voz alta: a quién va, el asunto y el texto. Así funciona también con el teléfono en el bolsillo. Responde con un sí claro, como "sí, envíalo", y ese borrador se envía.
 
 - Envía exactamente el borrador que leyó. Si cambia después de la pregunta, lo vuelve a leer y vuelve a preguntar. Una pregunta sin respuesta en 3 minutos caduca.
 - Si tu respuesta no es un sí claro, no se envía nada y vuelve a preguntar. "No" no envía nada.
-- Un borrador que ya viste en pantalla, o que oíste en esta conversación, no se vuelve a leer: solo pregunta, por ejemplo "¿Se lo envío a Nick?".
+- Un borrador que ya viste en pantalla, o que oíste en esta conversación, no se vuelve a leer: solo pregunta, por ejemplo "¿Se lo envío a Pat?".
 - Di "envía los dos" o "envía todos los listos" y nombra a todos en una pregunta. Un sí envía cada uno.
 - Hablar dice cuántos segundos tienes y muestra **Deshacer** con la misma cuenta atrás. Tócalo, o di "deshacer" o "espera".
 - Cuando la Machine lo envía, Hablar dice "Enviado." y la barra y la tarea muestran **Enviado a** esa persona con la hora. Si no salió, Hablar dice por qué. Pregunta "¿se envió?" cuando quieras: lo comprueba, nunca adivina.

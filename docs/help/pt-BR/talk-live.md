@@ -35,11 +35,11 @@ Quando você pede algo, como "escreva uma resposta dizendo que quinta está bom"
 
 O chat também pode procurar coisas, como o horário de uma loja na web. Enquanto isso, mostra **Trabalhando nisso…**, e você pode continuar falando. Quando a resposta fica pronta, a The Machine conta para você, e onde a encontrou. Se você pedir outra coisa enquanto isso, ela espera a vez.
 
-Para enviar um rascunho, diga isso. A The Machine pergunta antes, dizendo para quem e como, por exemplo "Enviar esta resposta para a Lotte por e-mail?". Antes, ela lê o rascunho inteiro em voz alta: para quem vai, o assunto e o texto. Assim funciona também com o celular no bolso. Responda com um sim claro, como "sim, envia", e esse rascunho é enviado.
+Para enviar um rascunho, diga isso. A The Machine pergunta antes, dizendo para quem e como, por exemplo "Enviar esta resposta para o Sam por e-mail?". Antes, ela lê o rascunho inteiro em voz alta: para quem vai, o assunto e o texto. Assim funciona também com o celular no bolso. Responda com um sim claro, como "sim, envia", e esse rascunho é enviado.
 
 - Ela envia exatamente o rascunho que leu. Se ele mudar depois da pergunta, ela lê de novo e pergunta de novo. Uma pergunta sem resposta em 3 minutos expira.
 - Se a resposta não for um sim claro, nada é enviado e ela pergunta de novo. "Não" não envia nada.
-- Um rascunho que você já viu na tela, ou ouviu nesta conversa, não é lido de novo: ela só pergunta, por exemplo "Enviar para o Nick?".
+- Um rascunho que você já viu na tela, ou ouviu nesta conversa, não é lido de novo: ela só pergunta, por exemplo "Enviar para o Pat?".
 - Diga "envie os dois" ou "envie todos os prontos" e ela cita todos em uma pergunta. Um sim envia cada um.
 - Falar diz quantos segundos você tem e mostra **Desfazer** com a mesma contagem regressiva. Toque nele, ou diga "desfazer" ou "espera".
 - Quando a Machine envia, Falar diz "Enviado." e a barra e a tarefa mostram **Enviado para** essa pessoa com o horário. Se não foi enviado, Falar diz por quê. Pergunte "foi enviado?" a qualquer momento: ela verifica, nunca chuta.

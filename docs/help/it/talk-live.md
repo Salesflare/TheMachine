@@ -35,11 +35,11 @@ Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" 
 
 La chat può anche cercare informazioni, come gli orari di un negozio sul web. Nel frattempo mostra **Ci sto lavorando…**, e puoi continuare a parlare. Quando la risposta è pronta, The Machine te la dice, e dove l’ha trovata. Se nel frattempo chiedi altro, aspetta il suo turno.
 
-Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Lotte per email?". Prima legge ad alta voce tutta la bozza: a chi va, l'oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, come "sì, invia", e quella bozza parte.
+Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Sam per email?". Prima legge ad alta voce tutta la bozza: a chi va, l'oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, come "sì, invia", e quella bozza parte.
 
 - Invia esattamente la bozza che ha letto. Se cambia dopo la domanda, la rilegge e chiede di nuovo. Una domanda senza risposta entro 3 minuti scade.
 - Se la risposta non è un sì chiaro, non parte niente e chiede di nuovo. "No" non invia niente.
-- Una bozza che hai già visto sullo schermo, o sentito in questa conversazione, non viene riletta: chiede solo, per esempio "La invio a Nick?".
+- Una bozza che hai già visto sullo schermo, o sentito in questa conversazione, non viene riletta: chiede solo, per esempio "La invio a Pat?".
 - Di' "invia entrambe" o "invia tutte quelle pronte" e nomina tutti in una domanda. Un sì le invia tutte.
 - Parla dice quanti secondi hai e mostra **Annulla** con lo stesso conto alla rovescia. Toccalo, o di' "annulla" o "aspetta".
 - Quando la Machine l’ha inviato, Parla dice "Inviato." e la barra e il to-do mostrano **Inviato a** quella persona con l’orario. Se non è partito, Parla dice perché. Chiedi "è partito?" quando vuoi: controlla, non tira mai a indovinare.

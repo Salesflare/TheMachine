@@ -29,7 +29,7 @@ Auf einer gehosteten Machine:
 
 Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Gmail und tippe auf **Mit Google anmelden**. Danach bist du zurück im Dashboard.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](fleet.md) ist:
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist:
 
 1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle Gmail.
 2. Tippe auf **Mit Google anmelden** und melde dich in dem Tab an, der sich öffnet. Gmail und Google Calendar werden zusammen verbunden.

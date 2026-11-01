@@ -29,7 +29,7 @@ Sur une Machine hébergée :
 
 Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Gmail et appuyez sur **Se connecter avec Google**. Une fois terminé, vous revenez au tableau de bord.
 
-Sur votre propre ordinateur, une fois [associé à votre compte](fleet.md) :
+Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) :
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Gmail.
 2. Appuyez sur **Se connecter avec Google** et connectez-vous dans l’onglet qui s’ouvre. Gmail et Google Agenda se connectent ensemble.

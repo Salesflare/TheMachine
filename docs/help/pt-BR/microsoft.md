@@ -32,7 +32,7 @@ Em uma Machine hospedada:
 
 Ou no painel: **Conexões**, **+ Adicionar**, escolha Outlook e clique em **Entrar com Microsoft**. Quando terminar, você volta para o painel. Precisa da aprovação do seu administrador? O mesmo link fica embaixo do botão, com **Copiar link**.
 
-No seu próprio computador, depois que ele estiver [pareado com sua conta](fleet.md): abra **Conexões**, depois **+ Adicionar**, escolha Outlook e clique em **Entrar com Microsoft**. E-mail e agenda se conectam juntos.
+No seu próprio computador, depois que ele estiver [pareado com sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões**, depois **+ Adicionar**, escolha Outlook e clique em **Entrar com Microsoft**. E-mail e agenda se conectam juntos.
 
 Com seu próprio app: abra **Usar seu próprio app** ali, ou execute `assistant connect outlook` ou `assistant connect outlook_calendar`. Ele usa seu próprio registro de app no Microsoft Entra e um código de login. Ele pergunta se também deve enviar o que você aprovar.
 

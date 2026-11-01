@@ -23,7 +23,7 @@ Dans votre propre agenda, vous pouvez aussi inviter des personnes depuis le form
 
 Sur une Machine hébergée, il se connecte avec Gmail : sur votre page de configuration, sous **E-mail et agenda**, appuyez sur **Connecter Google**.
 
-Sur votre propre ordinateur, une fois [associé à votre compte](fleet.md) : ouvrez **Connexions**, puis **+ Ajouter**, choisissez Google Agenda et appuyez sur **Se connecter avec Google**. Il se connecte avec Gmail.
+Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **+ Ajouter**, choisissez Google Agenda et appuyez sur **Se connecter avec Google**. Il se connecte avec Gmail.
 
 Avec votre propre app : lancez `assistant connect calendar`, ou ouvrez **Utiliser votre propre app** à cet endroit. Il demande quel agenda lire.
 

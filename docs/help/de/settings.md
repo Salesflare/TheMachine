@@ -9,12 +9,13 @@ order: 1
 Öffne **Einstellungen** über das Zahnrad oben. Die Tabs:
 
 - **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft. Dein Tarif in Kürze, Buttons zu deinen Kontoseiten und **Abmelden**. Siehe [Tarife und Abrechnung](plans-and-billing.md).
-- **Allgemein**: Sprache und Region, dieses Gerät, der Browser deiner Machine, deine Fleet und dein Konto.
+- **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet und dein Konto.
 - **Sicherheit**: Standard oder Vorsichtig und die Einstellungen, die sie festlegen. Siehe [Sicherheitsstufen](security-levels.md). Auch **Support-Zugriff**, solange er an ist: siehe [Support bekommen](get-support.md#support-access).
 - **Aktivität**: alles, was The Machine für dich getan hat, das Neueste zuerst. Siehe [Aktivität](activity.md).
 - **Benachrichtigungen**: was dich wo erreicht, und deine Arbeitszeiten. Siehe [Benachrichtigungen](notifications.md) und [Arbeitszeiten](work-hours.md).
 - **Schreiben**: Signaturen und wie du schreibst. Siehe [Schreiben](writing.md).
 - **Skills**: Anleitungen, denen deine Machine folgt. Siehe [Skills](skills.md).
+- **KIs**: Claude, ChatGPT und andere KIs, die du verbunden hast, und was jede darf. Siehe [Andere KIs verbinden](ai-connections.md).
 - **Modell**: was für dich antwortet, und seine Limits. Siehe [Modell](model.md). Auch **Codex und Claude Code**: siehe [An Claude Code oder Codex übergeben](hand-to-agent.md).
 
 Ein Tab ohne Inhalt wird ausgeblendet.
@@ -24,6 +25,7 @@ Ein Tab ohne Inhalt wird ausgeblendet.
 - **Sprache und Region**: Deine **Region** legt fest, wie Daten aussehen (24. Okt. oder Oct 24), und die übliche Uhr. **Zeitformat** wählt stattdessen 12 Stunden (2:05 PM) oder 24 Stunden (14:05). Aufgaben, Telegram, die Zusammenfassung und Nachrichten aus der Fleet folgen dem. Eine gehostete Machine startet mit dem Land der Zeitzone, die du bei der Registrierung gewählt hast. Angaben wie „vor 3 Stunden“ und Zahlen folgen dem ebenfalls.
 - **Sprache**: English, Nederlands, Français, Deutsch, Español, Italiano oder Português (Brasil). Beim ersten Öffnen des Dashboards wird die Sprache deines Browsers gewählt, wenn sie eine davon ist (Portugiesisch aus Portugal bekommt vorerst brasilianisches Portugiesisch). Das Dashboard, Datumsangaben, Telegram-Nachrichten, Benachrichtigungen, der Wochenrückblick sowie die Notizen und Aufgabentitel, die deine Machine für dich schreibt, folgen ihr ab dem Moment, in dem du sie wählst. Was schon geschrieben ist, bleibt, wie es war. Fragen aus Fleet und Familie erscheinen in der eigenen Sprache jedes Teammitglieds. Entwürfe an andere Personen bleiben in der Sprache ihrer Unterhaltung. Auch die Hilfe und ihre Seiten folgen ihr.
 - **Dieses Gerät**: die App (**App installieren**), **Benachrichtigungen** mit **Test senden** und **Heller Modus**, nur für diesen Browser oder dieses Handy. Siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
+- **Spracheingabe**: wie aus dem, was du sagst, Text wird, und die Stimme von Live sprechen. Siehe [Spracheingabe](voice-input.md) und [Live sprechen](talk-live.md).
 - **Browser der Machine öffnen ↗**: der Browser, den deine Machine für Websites wie LinkedIn nutzt.
 - **Fleet-Regeln**: siehe [Freigaberegeln](sharing-rules.md).
 - **Konto**: **Konto öffnen** und **Abmelden**, auf einer gehosteten Machine.

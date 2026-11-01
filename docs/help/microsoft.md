@@ -32,7 +32,7 @@ On a hosted Machine:
 
 Or in the dashboard: **Connections**, **+ Add**, pick Outlook and press **Sign in with Microsoft**. When you're done, you're back in the dashboard. Need your admin's approval? The same link is right under the button, with **Copy link**.
 
-On your own computer, once it's [paired with your account](fleet.md): open **Connections**, then **+ Add**, pick Outlook and press **Sign in with Microsoft**. Mail and calendar connect together.
+On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **+ Add**, pick Outlook and press **Sign in with Microsoft**. Mail and calendar connect together.
 
 With your own app: open **Use your own app** there, or run `assistant connect outlook` or `assistant connect outlook_calendar`. It uses your own app registration in Microsoft Entra and a sign-in code. It asks whether to also send what you approve.
 

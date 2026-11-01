@@ -23,7 +23,7 @@ On your own calendar you can also invite people from the [Calendar](calendar.md)
 
 On a hosted Machine it connects together with Gmail: on your setup page, under **Mail and Calendar**, press **Connect Google**.
 
-On your own computer, once it's [paired with your account](fleet.md): open **Connections**, then **+ Add**, pick Google Calendar and press **Sign in with Google**. It connects together with Gmail.
+On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **+ Add**, pick Google Calendar and press **Sign in with Google**. It connects together with Gmail.
 
 With your own app: run `assistant connect calendar`, or open **Use your own app** there. It asks which calendar to read.
 

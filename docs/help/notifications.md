@@ -37,6 +37,6 @@ It comes on work days at your **Morning digest** time, and is skipped when there
 
 ## Privacy
 
-Push goes from your Machine straight to your device, encrypted for that device. The control plane never sees it. Email is sent by The Machine's mail server to your account's address, so the text passes through it and the mail provider. When [Careful](security-levels.md) hides to-do text in notifications, emails only have counts. Turn off **Email** for a kind to keep it off email entirely.
+Push goes from your Machine straight to your device, encrypted for that device. Nothing in between can read it. Email is sent by The Machine's mail server to your account's address, so the text passes through it and the mail provider. When [Careful](security-levels.md) hides to-do text in notifications, emails only have counts. Turn off **Email** for a kind to keep it off email entirely.
 
 Turn on push for a device in **This device**, or see [Install the app](phone-app.md).

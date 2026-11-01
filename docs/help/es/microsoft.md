@@ -32,7 +32,7 @@ En una Machine alojada:
 
 O en el panel: **Conexiones**, **+ Añadir**, elige Outlook y pulsa **Iniciar sesión con Microsoft**. Cuando termines, vuelves al panel. ¿Necesitas la aprobación de tu administrador? El mismo enlace está debajo del botón, con **Copiar enlace**.
 
-En tu propio ordenador, una vez [vinculado con tu cuenta](fleet.md): abre **Conexiones**, luego **+ Añadir**, elige Outlook y pulsa **Iniciar sesión con Microsoft**. El correo y el calendario se conectan juntos.
+En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **+ Añadir**, elige Outlook y pulsa **Iniciar sesión con Microsoft**. El correo y el calendario se conectan juntos.
 
 Con tu propia app: abre ahí **Usar tu propia app**, o ejecuta `assistant connect outlook` o `assistant connect outlook_calendar`. Usa tu propio registro de app en Microsoft Entra y un código de inicio de sesión. Te pregunta si también debe enviar lo que apruebes.
 

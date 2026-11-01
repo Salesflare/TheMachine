@@ -11,7 +11,7 @@ The Machine is open source (AGPL). On your own computer it is free, and your dat
 ## What it needs
 
 - OpenClaw 2026.10.7 or newer. The installer offers to install it.
-- Python 3.12 or newer, and Node.js 24.22.1 or newer (or 26.12.1 or newer).
+- Python 3.12 or newer, and Node.js 24 (24.22.1 or newer) or 26.12.1 or newer, not 25.
 - Tailscale, to reach your dashboard from your phone.
 - Your own user account, not root.
 

@@ -29,7 +29,7 @@ Op een gehoste Machine:
 
 Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Gmail en druk op **Inloggen met Google**. Als je klaar bent, ben je terug in het dashboard.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](fleet.md):
+Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer):
 
 1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies Gmail.
 2. Druk op **Inloggen met Google** en log in in het tabblad dat opent. Gmail en Google Calendar worden samen gekoppeld.

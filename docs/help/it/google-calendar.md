@@ -23,7 +23,7 @@ Sul tuo calendario puoi anche invitare persone dal modulo del [Calendario](calen
 
 Su una Machine in hosting si collega insieme a Gmail: nella tua pagina di configurazione, in **Email e calendario**, premi **Collega Google**.
 
-Sul tuo computer, una volta [associato al tuo account](fleet.md): apri **Connessioni**, poi **+ Aggiungi**, scegli Google Calendar e premi **Accedi con Google**. Si collega insieme a Gmail.
+Sul tuo computer, una volta [associato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **+ Aggiungi**, scegli Google Calendar e premi **Accedi con Google**. Si collega insieme a Gmail.
 
 Con la tua app: esegui `assistant connect calendar`, oppure apri lì **Usa la tua app**. Ti chiede quale calendario leggere.
 

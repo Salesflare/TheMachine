@@ -29,7 +29,7 @@ En una Machine alojada:
 
 O en el panel: **Conexiones**, **+ Añadir**, elige Gmail y pulsa **Iniciar sesión con Google**. Cuando termines, vuelves al panel.
 
-En tu propio ordenador, una vez [vinculado con tu cuenta](fleet.md):
+En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer):
 
 1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige Gmail.
 2. Pulsa **Iniciar sesión con Google** e inicia sesión en la pestaña que se abre. Gmail y Google Calendar se conectan juntos.

@@ -31,7 +31,7 @@ On a hosted Machine:
 
 Or in the dashboard: **Connections**, **+ Add**, pick Gmail and press **Sign in with Google**. When you're done, you're back in the dashboard.
 
-On your own computer, once it's [paired with your account](fleet.md):
+On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer):
 
 1. In the dashboard, open **Connections**, then **+ Add**, and pick Gmail.
 2. Press **Sign in with Google** and sign in in the tab that opens. Gmail and Google Calendar connect together.

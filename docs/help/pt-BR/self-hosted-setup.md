@@ -11,7 +11,7 @@ A The Machine é de código aberto (AGPL). No seu próprio computador ela é gr�
 ## O que é preciso
 
 - OpenClaw 2026.10.7 ou mais recente. O instalador oferece para instalar.
-- Python 3.12 ou mais recente, e Node.js 24.22.1 ou mais recente (ou 26.12.1 ou mais recente).
+- Python 3.12 ou mais recente, e Node.js 24 (24.22.1 ou mais recente) ou 26.12.1 ou mais recente, não 25.
 - Tailscale, para acessar seu painel pelo celular.
 - Sua própria conta de usuário, não root.
 
