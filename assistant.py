@@ -50,6 +50,7 @@ import embeddings
 import gbrain
 import gap_note
 import graph
+import knowledge
 import own_addresses
 import crm
 import crm_fields
@@ -21752,7 +21753,7 @@ class App(*APP_MIXINS):
             person = ' '.join(str(args.get('person') or '').split())[:200]
             if not words and not person:
                 return {'error': 'Say what to look for.'}
-            if kind == 'message' and (person or self.talk_named(words)):
+            if kind == 'message' and (person or self.talk_named(words)):  # words that name someone: their messages
                 # Messages with someone: their latest, the same ones their Graph page shows, from every address and
                 # number merged into them; never a search by meaning that happens to mention their name
                 return self.talk_messages_with(person or words, accounts)
@@ -21767,13 +21768,21 @@ class App(*APP_MIXINS):
                 return {'found': found} if found else {'found': [], 'searched': '%ss matching "%s", in every connected account' % (kind, words),
                                                        'note': talk_live.NOTHING_NOTE}
             if kind == 'promise':
-                found = [x for x in self.store.promises() if x['state'] in ('open', 'card')
-                         and all(w in (str(x['who']) + ' ' + str(x['what'])).lower() for w in words.lower().split())][:8]
+                with self.store.connect() as db:   # promises with someone: what is open with them, as on their page
+                    hit = knowledge.named(db, words, also=self.talk_marks(db))
+                    mine = knowledge.open_with(self.store, self.config, hit['id']) if hit else None
+                ids = {p['id'] for k in ('you_promised', 'they_promised') for p in mine[k]} if mine else set()
+                found = [x for x in self.store.promises() if x['state'] in ('open', 'card') and (x['id'] in ids if mine else
+                         all(w in (str(x['who']) + ' ' + str(x['what'])).lower() for w in words.lower().split()))][:8]
                 return {'found': [{'id': 'promise:%d' % x['id'], 'kind': 'promise', 'who': clamp(str(x['who']), 80), 'what': clamp(str(x['what']), 200),
                                    'direction': 'the owner promised' if x['direction'] == 'mine' else 'promised to the owner',
                                    **({'due': x['due']} if x.get('due') else {})} for x in found]}
             want = {'person': 'person', 'organization': 'org', 'project': 'project'}.get(kind)
-            hits = [h for h in self.graph_find(words, 0, 20)['found'] if h['kind'] in ('person', 'org', 'project') and (not want or h['kind'] == want)][:8]
+            with self.store.connect() as db:   # by name, address, handle or phone number, however it is written
+                hits = [graph.node_view(r) for r in knowledge.find(db, words, kinds=(want,) if want else knowledge.KINDS, limit=8,
+                                                                    also=self.talk_marks(db))]
+            if not hits:
+                return {'found': [], 'searched': 'the Graph for "%s"' % words, 'note': talk_live.NOTHING_NOTE}
             return {'found': [{'id': h['id'], 'kind': TALK_KINDS[h['kind']], 'name': clamp(h['name'], 120),
                                **({'about': clamp(x, 160)} if (x := talk_about(h)) else {}),
                                **({'last': self.talk_when(h['last_at'])} if h.get('last_at') else {})} for h in hits]}
@@ -21782,29 +21791,23 @@ class App(*APP_MIXINS):
         raise ValueError('Unknown tool')
 
     def talk_named(self, words):
-        """The person or organization in the Graph these words name (every word in their name), strongest first; None."""
-        said = [w for w in re.findall(r'\w+', words.lower()) if len(w) > 1]
-        if not said or len(said) > 5:
-            return None
-        hits = [h for h in self.graph_find(words, 0, 10)['found'] if h['kind'] in ('person', 'org')]
-        return next((h for h in hits if set(said) <= set(re.findall(r'\w+', str(h.get('name') or '').lower()))), None)
+        """The person or organization in the Graph these words (or this phone number) name; None."""
+        with self.store.connect() as db:
+            return knowledge.named(db, words, also=self.talk_marks(db))
+
+    def talk_marks(self, db):
+        """Fleet members' names to match in the Graph (graph_find's also)."""
+        return {k: m['name'] for k, m in self.graph_fleet_marks(db).items() if m['name']}
 
     def talk_message_rows(self, node, accounts, limit=8):
         """A record's latest messages for the voice, newest first: the ones its Graph page's timeline shows."""
-        with self.store.connect() as db:
-            ids = graph.recent_messages(db, node, limit)
-        rows = {r['id']: r for r in self.store.events(accounts, event_ids=ids)} if ids and accounts else {}
-        return [{'id': 'event:%d' % r['id'], 'title': clamp(' '.join(str(r['title'] or '').split()), 160), 'what': source_text(r)}
-                for r in (rows[i] for i in ids if i in rows)]
+        rows = knowledge.latest_messages(self.store, self.config, node, limit=limit) if accounts else []
+        return [{'id': 'event:%d' % r['id'], 'title': clamp(' '.join(str(r['title'] or '').split()), 160), 'what': source_text(r)} for r in rows]
 
     def talk_messages_with(self, who, accounts):
-        """search kind message for a person or organization (a name or an id from search): their latest messages."""
-        hit = None
-        if re.fullmatch(r'[a-z]+:\S+', who):
-            with self.store.connect() as db:
-                row = graph.resolve(db, who)
-            hit = {'id': row['id'], 'kind': row['kind'], 'name': row['name']} if row and row['kind'] in ('person', 'org', 'project') else None
-        hit = hit or self.talk_named(who)
+        """search kind message for a person or organization (a name, a number or an id from search): their latest messages."""
+        with self.store.connect() as db:
+            hit = knowledge.record(db, who, also=self.talk_marks(db))
         if not hit:
             return {'found': [], 'searched': 'the Graph for someone named "%s"' % who, 'note': talk_live.NOTHING_NOTE}
         found = [{**m, 'kind': 'message'} for m in self.talk_message_rows(hit['id'], accounts)]
@@ -21852,14 +21855,23 @@ class App(*APP_MIXINS):
         for key, size in (('headline', 200), ('bio', 400), ('notes', 600), ('from_gbrain', 600), ('closeness', 40), ('state', 60)):
             if n.get(key):
                 out[key] = clamp(' '.join(str(n[key]).split()), size)
+        with self.store.connect() as db:   # the moment of the latest contact, never a meeting ahead (last_at is a day)
+            n = {**n, 'last_at': knowledge.last_contact(db, n['id']) or n.get('last_at')}
         for key in ('last_at', 'next_meeting'):
             moment = n[key].get('at') if isinstance(n.get(key), dict) else n.get(key)
             if moment and (said := self.talk_when(moment)):
                 out[{'last_at': 'last', 'next_meeting': 'next_meeting'}[key]] = said + (
                     ' · ' + clamp(n[key]['title'], 120) if isinstance(n.get(key), dict) and n[key].get('title') else '')
-        todos = [c for c in (n.get('todos') or (n.get('open') or {}).get('cards') or []) if isinstance(c, dict)]
+        # What is open with them, as their page has it: to-dos and promises both ways (an organization's people's too)
+        open_ = knowledge.open_with(self.store, self.config, n['id'], limit=5)
+        todos = [c for c in (n.get('todos') or open_['todos']) if isinstance(c, dict)]
         if todos:
             out['open_todos'] = [{'id': c.get('id'), 'title': clamp(str(c.get('title') or ''), 160)} for c in todos[:5]]
+        promises = [{'id': 'promise:%d' % p['id'], 'who': clamp(str(p['who']), 80), 'what': clamp(str(p['what']), 200),
+                     'direction': 'the owner promised' if k == 'you_promised' else 'promised to the owner', **({'due': p['due']} if p.get('due') else {})}
+                    for k in ('you_promised', 'they_promised') for p in open_[k]]
+        if promises:
+            out['promises'] = promises
         out['recent'] = [clamp(line.split(' ', 2)[-1], 200) for line in (n.get('recent') or [])[:8]]
         # Their latest messages, from every address and number merged into them (the page's timeline), each with an id
         # to read it: meetings ahead never crowd these out
