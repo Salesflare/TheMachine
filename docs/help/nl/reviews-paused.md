@@ -10,7 +10,7 @@ To-do's komen uit reviews: je Machine leest wat er binnenkwam, in kleine porties
 
 ## Reviews staan uit
 
-Bovenaan To-do's staat "Reviews staan uit, dus er komen nog geen suggesties." Druk op een gehoste Machine op **Reviews aanzetten**. Voer op je eigen computer `./install.sh --activate` uit.
+Bovenaan To-do's staat "Reviews staan uit, dus er komen nog geen to-do's." Druk op een gehoste Machine op **Reviews aanzetten**. Voer op je eigen computer `./install.sh --activate` uit.
 
 ## De limiet van je model
 

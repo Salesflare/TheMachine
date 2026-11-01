@@ -19744,7 +19744,7 @@ class App(*APP_MIXINS):
         week's signals, for a new install with reviews still off. Its cards are shown on the dashboard
         only (see Store.suggest); review_step monitors the run. Config stays as it is."""
         if (self.config.get('review_worker') or {}).get('enabled'):
-            raise ValueError('Reviews are already on: new suggestions arrive by themselves. See assistant tasks or the dashboard.')
+            raise ValueError('Reviews are already on: new to-dos arrive by themselves. See assistant tasks or the dashboard.')
         accounts = [a['id'] for a in self.config['accounts']]
         hours = QUICK_LOOK_HOURS if quick else PREVIEW_DAYS * 24
         # The first look by itself: after the quick one, it digs on with the most promising FIRST_LOOK_NEXT_SIGNALS of the week

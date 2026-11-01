@@ -239,9 +239,10 @@ function calRoute(){const m=/^#calendar\?(.*)$/.exec(location.hash);if(!m)return
  if($('#calendar').hidden){calRouting=true;try{showTab('calendar')}finally{calRouting=false}}
  calSetAll(d);calShowNow()}
 addEventListener('popstate',calRoute);addEventListener('hashchange',calRoute);setTimeout(calRoute);
-// The arrows move the period on a computer; t, k j, a, w and m are with the shared shortcuts (actionAdd, below)
+// ← → move the period on a computer, as k j do (t, k j, a, w and m are with the shared shortcuts in shell-keys.js), with
+// the same guards: not while typing in a field or editor, not with a modifier held (Shift too), not over a dialog
 const CAL_KEYS={arrowleft:()=>calGo(-1),arrowright:()=>calGo(1)};
-addEventListener('keydown',e=>{if($('#calendar').hidden||e.ctrlKey||e.metaKey||e.altKey||e.isComposing||e.defaultPrevented||drawerIs()||document.querySelector('dialog[open]')||e.target.closest?.('textarea,input,select,[contenteditable]'))return;
+addEventListener('keydown',e=>{if($('#calendar').hidden||e.ctrlKey||e.metaKey||e.altKey||e.shiftKey||e.isComposing||e.defaultPrevented||drawerIs()||document.querySelector('dialog[open]')||e.target.closest?.('textarea,input,select,[contenteditable]'))return;
  const f=CAL_KEYS[e.key.toLowerCase()];if(f){e.preventDefault();f()}});
 // A row opens its card's chat (back returns here), the promise's page, or the meeting in a new tab. In Month a day
 // opens in the agenda (a computer) or lists below (a phone). The view is remembered on this device, and the Calendar

@@ -19,7 +19,7 @@ Drück `?` für **Tastenkürzel**, die vollständige Liste für deinen Computer.
 - Zu einer Seite springen: `G`, dann `T` Aufgaben, `C` Kalender, `P` Personen, `O` Organisationen, `J` Projekte, `W` Wer ist wer (sobald es da ist), `F` Fleet, `L` Lernen, `N` Verbindungen, `,` Einstellungen. `G`, dann `E` öffnet die Ergebnisse der Nachrichtensuche. Die alten Kürzel `G`, dann `S` und `G`, dann `B` funktionieren weiter.
 - `N` legt eine neue Aufgabe an. `T` startet Sprechen oder beendet es, während es läuft. `J` und `K` (oder `↓` und `↑`) bewegen sich durch eine Liste, Enter öffnet.
 - Bei einer Aufgabe: `E` benennt sie um, `S` stellt sie zurück, `D` markiert sie als erledigt, `R` schreibt in ihren Chat.
-- Im Kalender: `T` springt zu heute, `J` und `K` zur nächsten oder vorherigen Woche oder zum nächsten oder vorherigen Monat. `A`, `W` und `M` wechseln zu Agenda, Woche und Monat.
+- Im Kalender: `T` springt zu heute, `J` und `K` (oder `→` und `←`) zur nächsten oder vorherigen Woche oder zum nächsten oder vorherigen Monat. `A`, `W` und `M` wechseln zu Agenda, Woche und Monat.
 - Am Computer klappt `⌘B` auf einem Mac oder `Ctrl B` unter Windows und Linux die Seitenleiste zu Symbolen ein und wieder aus.
 
 Tasten funktionieren nicht, während du in ein Feld tippst.
