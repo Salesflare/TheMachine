@@ -2,61 +2,443 @@
 
 [Documentation index](../README.md). Current reference; dated repair evidence lives in [History](history.md).
 
+This page covers how The Machine builds its picture of who you deal with ([People and projects](#people-and-projects)),
+the optional extras that add to it ([Related signals](#related-signals-optional-local-embeddings),
+[Organization data](#organization-data-optional-enrichment), [People data](#people-data)), and how it learns
+([How you write](#how-you-write), [Keeps learning](#keeps-learning), [Fixed at the source](#fixed-at-the-source),
+[Sharing learnings](#sharing-learnings)).
+
 ## People and projects
 
-A living map of who you deal with and what's going on, across every account. `graph.py` rebuilds it from scratch every ten minutes (and soon after a label or merge) as a pure function of the signals, your card decisions, project labels and merges, so a rule change also applies to the past. It needs no setup and nothing leaves the machine (unless you turn on [organization data](../README.md#organization-data-optional-enrichment)); a rebuild over 5,000 signals with probable links and unnamed work takes under half a second.
+A living map of who you deal with and what's going on, across every account.
 
-- **People** come from identifiers only: email addresses (Gmail, Calendar, Intercom, Salesflare contacts), WhatsApp numbers, Slack users, LinkedIn and X conversations, GitHub logins. Your own addresses ([below](#your-addresses), plus any address your sent mail comes from), shared role addresses at your domains (info@, support@), your own name on other channels, newsletters (Gmail Promotions/Updates/Social/Forums, no-reply and mailing senders, unless you ever wrote to them), bots and mass mailings (over 20 recipients) are left out. System and relay addresses never become people, even when you wrote to them: Intercom's Operator bot and its reply relays, no-reply and notification senders (Slack, Google Calendar, GitHub), GitHub's noreply addresses and reply+ relays (`graph.relay`). A support conversation the Operator bot opened counts for the customer who wrote in it.
-- <a id="your-addresses"></a>**Your addresses:** Who counts as you in timelines, participant lines, "You:" labels, boards and the Graph is every address of yours, not only the ones in config (`own_addresses.py`). Each graph build finds them in the sources already connected: your own mailboxes and calendars (never one shared from a Fleet, never someone else's calendar you can see), Gmail send-as aliases (read once a day with the `gmail.readonly` scope mail already has) or Outlook proxy addresses (`User.Read`), the `self` attendee on your own calendar, your Slack and Intercom profile address, and an address that mail from at least two people lands under in your mailbox at its own domain and that carries your own full name (a Google Workspace alias that was never added as a send-as address). A shared address never counts: one a teammate in any of your Fleets uses too, one mail comes from under several people's names (a Google Group), or one Gmail sends through someone else's account. When unsure it doesn't count either: a role-like address (info@, sales@, support@, team@), a send-as address that isn't set as an alias, one only seen in mail you sent, or one that only carries your name. Those are under **Maybe yours** in Settings, Account, with three choices and nothing picked for you: **Mine: I handle it** (it counts as yours), **The team's: others pick it up too** (it is never you: mail that only went to it, in a thread you didn't write in, gets a `team_inbox` note in the review and no card, so no draft either, and the Graph treats it as neither you nor a person, so its threads still fill in the Graph and Fleet sharing stays as it was) and **Not mine** (it never counts); **Change** on the row switches it later, and your own sign-in and config addresses can't be the team's or removed; **Your addresses** there lists the rest with where each came from, and **Remove** on any found one. `owner_emails` (top level or per account) always counts and `not_owner_emails` never does. The addresses found stay on your Machine: the Network still only hears your work accounts' addresses. **Sending from an alias:** a draft's From is the mailbox address, or one of your addresses (yours, not the team's) that Gmail lists as verified send-as for that mailbox and doesn't send through another account's server (`own_addresses.senders`). The review shows it as a picker; a reply to mail that came to such an alias, and not to the mailbox address, starts from it (`next_actions.pick_sender`), new mail from the mailbox address. The send check reads that send-as entry from Gmail again (`sendAs.get`, `gmail.readonly`) and sends nothing unless it is `accepted` right then. Outlook drafts only go from the mailbox address: Graph's proxy addresses say where mail arrives, not what the mailbox may send as.
-- **Who is who:** Slack users are looked up once a month (`users.info`, a few per Slack page); their email joins them to their mail. Names are only names (what people or their tools add is dropped: "Kim Lee (Initech)", "Ann Bell | Acme", "Sam at Globex", "via LinkedIn", emoji, a degree; "Doe, Jane" becomes Jane Doe). The same full name on two different channels is one person, unless two people on one channel carry it. The agent's `graph` `merge` or `different` (two person ids) overrides either way.
-- **Same person?** Identities join by themselves only on strong evidence: the same full name on two of them in one message or conversation (someone writing from work with their own address in CC), the same LinkedIn profile found for both by a lookup, their WhatsApp number in mail they wrote themselves (not in quoted mail) with a matching name, their Slack profile's address, or the same full name with one person carrying it per channel. A name alone never joins two identities on one channel. Weaker evidence is only a question: the same full name that two people on one channel carry, or a similar name ("Ann" and "Ann Lee", "Alex" and "Alexander Lee", a nameless jane.doe@ and Jane Doe) with something shared besides (the same company domain, people seen with both, a project, the same role). The person page asks it quietly ("Same person as …?") and People lists them under **Same person?**, each with **Merge** and **Not the same**; Not the same is remembered (`graph_merges` `same=0`). A merged person keeps every identity, signal, role, note, project and photo, since all of those hang on the identities and the graph is rebuilt from them. Their page lists why they are one (**Joined from N identities**), each join with **Undo**, which splits them for good; an old link to one of their identities opens the merged person. Someone deleted permanently is never merged or asked about again. **Merge all** on the list merges every listed pair in one go (`graph_same_all`), never one marked Not the same; one Undo splits that batch and asks again. The build keeps the questions in `graph_same`.
-- **Closeness** adds per day of contact, capped at 1 a day, so a burst of chat messages is one day: you writing 0.6 (split over recipients), them writing to you 0.3 (0.15 by email until you've written to them), a meeting 0.5 (split over attendees), present in a group or CC 0.05–0.15. Card decisions add once per card for the people it was directly about: Do it, Send or Mark done +1, a Change note +0.5, Not relevant or Wrong facts −0.5 ("Already handled" counts neither way). Everything fades by half every 60 days (`strength × ½^(days/60)`); below 0.01 it isn't stored. Labels: close (3+), regular (1+), occasional (0.3+).
-- **Rhythm:** a contact day is one with contact between you and them (a message either way, a meeting), counted in your timezone (`timezone` in config); signals they're merely on, like a teammate answering a customer, don't count, and "last contact" follows the same rule ("last seen" for someone never in direct contact). each person's usual gap is the median of their last eight gaps between contact days. Someone you wrote to on at least two days has **gone quiet** when the silence is longer than three times their usual gap and at least two weeks (and under a year). Future meetings show as "next meeting", on people and projects: a project's "last signal" is never in the future.
-- **Projects** are named by the review agent (`finish_analysis` `projects: {"name": [event_ids]}`, `suggest` `project`) and with `graph` `project` + `event_ids`; `begin_analysis` returns the live names to reuse. A label spreads to the rest of its thread (email thread, Slack thread, Intercom conversation, GitHub issue, recurring meeting; chats within two days). Heat is 0.2 per signal plus your card decisions, fading by half every 21 days; the state compares now with two weeks ago (heating up, active, cooling, dormant). `close_project` ends one; naming it again reopens it.
-- **Boards:** projects of one kind in stages (partner listings, onboarding, support escalations), shown on Graph › Projects as a board; Board is the default view and List is one click away, remembered on that device. A review moves a project with `finish_analysis` `stages: [{"project", "board", "stage", "reason", "event_id", "next", "org"}]` (`event_id` from that batch, `reason` one short clause, `next` the owner's next step, `org` a domain for the logo). Only the owner makes a board: from scratch (the board's ⋯ menu, New board) or by saving a suggestion. When at least three open projects on no board are clearly of one kind (every open project on no board is listed for one review a day under "Boards to suggest", with the organizations inside a project whose messages are with three or more, while fewer than three suggestions are open; that review answers in `finish_analysis` `boards`: "suggested" or "none: why"), a review suggests a board for each clear group, up to three open at once, each once, with `graph` `suggest_board: {name, stages, about, projects, reason, visibility}`. A project that holds several counterparts (one "acquisition" project with five buyers) is first split into one project per counterpart in one call: `graph` `split: [{project, event_ids}]` (up to 40, one graph build after). `visibility` is who sees the board: `only_you` for M&A, buyers, investors, legal, health and hiring a named person, `team` for customer, partner and other pipelines. Its stages fit that work and end at the good outcome (hiring: Sourced, Screening, Interviews, Offer, Hired; a lost or declined ending goes in the Stalled or declined row, never a stage), judged from what the projects are, not the words in their names. Projects shows each as a calm "Start a board for Hiring?" with its stages, Only you or Team, Save, Edit and Not now; a name dismissed with Not now is never suggested again; nothing is a board until saved (`board_suggestions`). The editor sets the name, stages (rename, reorder, add, remove, up to 8), the optional Stalled or declined row, a line on which projects belong (`about`), who sees it (Only you or Your team) and the projects on it. An Only-you board says "Only you" with a lock in its header. A project's page sets who sees that project: like its board, Only you or Your team (`project_visibility`, `projects.visibility`, empty follows the board). A saved board's projects are sorted within minutes: a review starts for them even without a full batch of new signals (`sort_gap_seconds`, default 60) and gets them at the top of its prompt as "Boards to sort", each with its latest message ids. It places each one with `graph` (stage, `event_id`, `reason`), the first stage too when nothing moved it further, or answers `finish_analysis` `sorted: [{"project", "why"}]` when no message shows where it stands; `finish_analysis` refuses until each one is answered. The tile says "Sorting from its messages…" only while that is due, then the reason and its message, or "Not sorted: why" with its latest message. A project with no messages says so at once. When the review that got it fails the tile says "Sorting failed, trying again", and after 3 reviews without a placement "Couldn't sort it in 3 reviews" (`sort_run`, `sort_tries`, `sort_note` on `projects`). Membership is checked, not left to chance: open projects on no board are listed for a review as "Projects that may fit a board" (up to 40 at a time, with their people, while a board changed in the last 30 minutes or any are unchecked) and that review places each one that fits with `graph` (board, stage, `event_id` and reason) or answers `finish_analysis` `fits: [{"project", "board", "fit": "maybe"|"no", "why"}]`; `finish_analysis` refuses until each one is answered (`board_fits`). A maybe shows on the board as "N projects could belong here" with Add and Leave out (`board_fit`); a project the owner left out is not asked about again. Each fit names its board: one without a board counts only for something asked about a single board in that run, so a maybe never spreads to the other boards, and each board is judged by its own purpose. A maybe that bundles several counterparts the board keeps apart carries `"split": true` (`board_fits.split`); its row says "Add as N", and Add makes one project per counterpart (by the organization, or person, each message is with outside the team; into the open project already with them when there is one, else "<project>: <counterpart>"), puts each in the first stage for the next review to sort and closes the emptied bundle. `board_fit` also takes `node_ids` (up to 200) for Add all, Leave out all or a ticked selection, skipping any that can't be decided, and every decision returns an `undo` token that `board_fit` `{undo}` takes back within a day (`board_fit_undo`, ids only). A new board (from scratch or a saved suggestion) also looks through the whole history once (`board_backfills`, one row per board; boards made before this get theirs on upgrade): every organization, or person without one, with messages or meetings in no project yet, leaving out colleagues and anyone an open project is with already, is checked against it. The candidates are ranked once, by meaning when the Machine has local embeddings (their messages against the board's `about` and the messages of projects on it), else by how many messages they have, at most 400 per board. Each review then gets the next 30 (about 14,000 characters, a few message lines each) as "Looking through the history for new boards" and makes each that clearly fits one project per organization on the board in one `graph` call (`project`, `event_ids`, `board`, `stage`, `event_id`, `reason`), or answers it in `finish_analysis` `fits` with its key (`org:<domain>` or a person id), maybe or no; `finish_analysis` refuses until each one is answered (`board_backfill_asks`, `why` sealed). Each candidate's line says how the owner and they talk (days the owner wrote, they wrote and met, from the graph's people), or "inbound only" when the owner never wrote to or met them: inbound work for the owner (a trial, a product question) can go on a board, but unsolicited outreach pitching the owner (a broker's buyer pitch, a cold sales or deliverability offer) is at most a maybe that says so, and talks like selling the company need the owner to have written or a real exchange. A maybe's `why` names who and what happened with a date ("Pitched them on Oct 12, no reply yet"), never a label. A maybe makes no project: it waits under "could belong here", and Add makes the project (named after the organization, its messages labeled into it) for the next review to sort. While a look runs, reviews start every `backfill_gap_seconds` (default 180) even without new signals, but only while no window of the model's limits is past 80% used; otherwise it waits and rides along with the usual reviews. It is done once every ranked candidate and every project on no board has an answer for the board (or after 7 days). The board header says "Looking through your history…", then for 3 days "N added from your history · M to review". Projects made for an Only-you board follow it, so nothing reaches the team that the board doesn't allow. The owner also runs projects by hand like deals in a CRM (`project_save`: name, board and stage, `org`, `value`, `notes`, `people`; `project_outcome` won or lost with why, won to the last stage and lost to Stalled or declined; `project_archive`; `project_delete`; `board_default`), from the board header, a lane's + Add, a tile's ⋯, the list, a project's, person's or organization's page and the command palette. A project the owner made stays in the graph even before it has messages (`made_by`). A removed stage's projects go to the nearest earlier stage, and the toast says so. Deleting a board keeps its projects. A review judges what a message means, never its wording, and never moves a project only because time passed. Each move keeps its reason and message (`project_moves`); the tile shows "Moved to In review: … · Fri, Oct 23" and opens that message. The owner drags a tile, or picks a stage from its ⋯ menu on a phone, and that move stands until a message newer than it moves the project again; an older message never undoes a newer move. A board can have a "Stalled or declined" row. A tile shows how long the other side hasn't answered since the owner wrote ("No reply in 14 days", from 10 days) and links an open card about it. The board only shows: it never sends anything. Tables: `boards` (with `about`, `side`, `visibility`; boards made before this are saved boards), `board_suggestions`, `project_moves`, and `board_id`, `stage`, `stage_reason`, `stage_event_id`, `stage_by`, `stage_at`, `next_step`, `org`, `value`, `notes`, `made_by`, `outcome`, `outcome_reason` on `projects`, `is_default` on `boards`, `project_people` (added on start; back up the database before upgrading).
-- **Links:** people seen together on a signal (2–8 people, half-life 45 days), a person's part in a project (0.3 per signal, 45 days), organizations by non-freemail domain (named from CRM accounts when known).
-- **Where someone works:** their work email domain, or what a source states plainly: their LinkedIn headline (kept on the person as `headline`, shown as is), an email signature, or them saying where they work in their own message. A review or the organizations pass reads it and sets `graph` with `node_id`, `org` (the name as stated, or an `org:…` node_id), `event_id` (their signal) and `quote` (the words that say it, copied from that message or from their headline on it); the service refuses a quote that isn't in either, and the owner's own messages. It is kept in `person_orgs` with where and when it was said (`via`: LinkedIn headline, email, LinkedIn…), and the person page shows "At Acme · from their LinkedIn headline, Oct 15" with the line and a link to the organization. A stated name joins the organization with that name or domain (Acme is acme.com), or stands as its own (`org:named:acme`, no domain, never looked up or hidden as warm-up); the owner's own company marks a colleague instead. A work address wins over a review's statement; your own word (Edit or Add on the person page) wins over both, and an empty one clears it. Nothing else is read from it: no seniority, no role. Reviews get up to five people with a headline and no organization, each once a month; one organizations pass (`profile_runs` kind `orgs`) runs once per install over the people already in the graph.
-- **Probably part of a project:** a signal no label reached that reads like a labeled one (local embedding cosine ≥ 0.72) and shares a person with it is shown as probably part of that project, at half weight (heat 0.1, a person's part 0.15). Meaning alone isn't enough, since it groups by genre (every partnership email reads like every other one). Meetings are left out (a bare calendar title reads like every other one with the same people), and so are closed projects. Review batches show the guess as `probably_project`; a review that agrees names it in `finish_analysis` `projects`, which makes it a normal label. The Graph tab marks those signals "probably part of it". It needs the local embeddings (see Related signals).
-- **Unnamed work:** threads from the last 45 days with no project that read alike (cosine ≥ 0.75 between thread averages) and share a person form a group when it spans three or more threads, at least two of them not meetings, and you wrote or met in one. Chats are left out: they read alike per person, whatever the topic. A person on more than 150 threads links nothing. Up to two groups go into a review prompt as "Possibly one piece of work nobody named", each once, again only after it has doubled; the review names it with `graph` `project` or skips it.
-- **Roles** (what someone is to you): only what you say on the dashboard (Graph tab, a person, Edit) or what a review reads in a message (`graph` with `node_id` and `role`, a few words: "accountant", "CFO at Globex"); your word stays until you change it. Sources don't set one: being in the CRM, paying through Stripe or sharing a surname says too little about what someone is to you. Instead each review gets up to five of the strongest people with no role (closeness 0.5 and up, strongest first, each asked again after 30 days) with those facts as hints, reads their messages and sets a role only when the messages show it; the dashboard marks those "a review read it in your messages". Onboarding does the same up front in its own turn: after the `USER.md` draft, `assistant profile` starts a roles run for the 15 closest people with no role. The service hands it each person's closeness, organization, projects, hints and their first and latest direct messages with you (long emails keep their start and end, where a signature is; meetings as titles), three people per page, and the turn sets roles with `graph`. `assistant roles` runs only that step, for example after connecting more sources. Stripe events add their customer as a faint contact and name the organization when the CRM doesn't. Roles show on people in the Graph tab, in preparation context, `graph` results and the recap's gone-quiet line.
-- **Roles, kept honest:**
-  - **Evidence and Who's who:** a review gives the message it read a role in (`event_id`, one of that person's own signals) and a short `quote` copied from it; the service refuses a quote that isn't in the message. The Graph tab's **Who's who** sub-tab (after People, Projects and Organizations, with the number waiting, also on the Graph tab itself) lists the review roles you haven't confirmed, closest first, with that line and Read: **✓ Right** makes it your word, Edit changes it. **✓ All N are right**, above the list, confirms every one of them at once after one check. The weekly recap counts the ones waiting.
-  - **Learning from corrections:** when you replace a review's role, `role_corrections` keeps the old and new one; the roles run and the review prompt get the latest eight as examples of what you mean by a role.
-  - **Just in time:** people on open cards with no role are asked first in reviews (even when faint); `suggest` answers with `no_role_yet` for the people on a new card, and a Do it job's context names them, so whoever has the evidence open can set it.
-  - **Organizations:** a role per organization too (`graph` `node_id` `org:…`: "accounting firm", "customer", "supplier", "possible acquirer"), set by the roles run, reviews or you on its page. People there carry it in preparation context ("at Globex (customer)"), and the roles run sees the roles of others at the same organization. Each review gets up to two organizations with no role, with their people's roles and their projects; one is asked again as soon as one of its people gets a role, or when its last ask didn't show its people's roles yet, not only after 30 days.
-  - **Rechecks:** a review's role is offered again (at most three per review) when it was read more than 90 days ago and there was contact since, when new hints showed up since (now billed through Stripe, say), or when it was saved without its line (roles from before this existed). The review sets it again, the same or a new one. Your own roles are never rechecked.
-  - **Relations:** `graph` with `node_id`, `related_to` and `relation` ("assistant of", "sister of", "introduced by", read "<node_id> is <relation> <related_to>") links two people (`graph_relations`, a `relation` link in the graph). Both people's pages show it with Remove; your word stays.
-  - **Email warm-up traffic:** when a review or roles pass reads that an organization's mail is only a warm-up tool's templated exchanges, it sets `graph` `warmup` on it (`hidden_domains`). That domain and its people leave the graph (Organizations, Who's who, the people on cards) and aren't looked up by enrichment. The Graph tab lists them in Organizations' **Warm up** tab with Undo; your undo stays.
-  - **Used:** preparations write to each person as you would to who they are; open cards on the dashboard sort by deadline, then by who they're about (closeness, +2 when their organization pays through Stripe), so a cofounder or a paying customer comes before a stranger; the recap's gone-quiet line falls back to the organization's role ("at Globex, customer").
-- **Names:** Edit on a person's or organization's page in the Graph tab, or Rename on a project's (owner only). A person's or organization's name is kept in `graph_names` and wins over the names in their messages; an empty one gives that back. A project is renamed in place (cards keep their project by name and follow); renaming it to another project's name joins the two.
-- **Fleet, Family and Friends:** someone in one of your [Fleets](fleet.md#in-your-graph), your Family or your Friends gets a small marker on their Graph row and page ("Has a Machine · Work Fleet (Acme) · Friend"), with **See in Fleet** and, for a Work Fleet, **Ask your Fleet**; the Fleet tab links each member back to them (**Profile**). A name from the messages that is only part of one ("kim", all lower case, an address) shows the name they share in that Fleet instead, with **Keep** to make it yours. It is matched on their verified addresses in the Network directory and read when the Graph is shown (`graph.fleet_marks`, `graph.with_fleet`), never asked of their Machine; when they leave, the marker and that name go, and a name you kept or gave stays.
-- **Open between you:** a person's or project's page (`graph` `node_id`, the Graph tab) lists open promises both ways (Done and Drop on the dashboard) and open cards on their signals (for a project also cards with its name). Preparation context adds one "open:" part per person and project, leaving out the task's own card.
-- **Summary:** a person's page starts with a few short lines on who they are to you, where things stand and what is open both ways (`person_summary.py`, GBrain's compiled truth above the timeline). It is rewritten in the background, never on every signal: every ten minutes the service checks for people with real activity (three or more direct signals in 90 days, closeness 0.3 and up) whose facts, promises or signals are newer than their summary, and at most once an hour hands up to six of them to one one-shot turn on the background model (at most eight passes a day, each person at most once every 20 hours, only when the budget allows). It never repeats what the page shows above it (name, role, title, organization, how often you talk): a line with only that is dropped. Each line must cite its sources (`E` a signal, `F` a fact, `P` a promise); a line without a known source is dropped, and the page shows each source as a link. Your edit wins: once you change it, a rewrite never overwrites it but shows a **Suggested update** with Use it and Keep mine; **Let The Machine write it** gives it back. A line whose source is deleted disappears and the person is rewritten. Preparations add a "summary:" part for each person, with only the lines whose sources are in the to-do's area (a personal line never reaches a Work to-do). It stays on your Machine: the Team Graph and Fleets never get it. Tables: `person_summaries` (`lines` and `proposal` sealed), `person_summary_runs`.
-- **Known about them:** a fact is about its subject, never about whoever sent the message it came up in. A fact has the graph nodes it is about (`fact_about`), set by a review with `remember_fact` `about` (node ids) or later with `remember_fact` `id` and `about`; you are never a node, so a fact about you stays in your own memory (Learning, What I've learned) and shows on nobody's page. A condensed fact keeps who its originals were about. The page lists them apart from what is open, each with **Not about them** (takes only that link away, for good) and **Forget** (deletes the fact everywhere).
-- **The page itself:** the dashboard's header and tabs stay, with a breadcrumb back (Graph › People › name). Each page has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first, each with its source, who wrote it, the time and the start of the text.
-- **Shared with your Work Fleet:** in a Work Fleet, Work records, short timelines and client threads are shared with the team (`shared_graph.py`). The review judges each Work thread on its own by what it is (client, sensitive, unsure, internal, personal; sensitive sticks) with `finish_analysis` `team`, and older Work threads in a history pass (`assistant profile_evidence` and `save_profile` with `team`, a batch per turn); a thread you set to Team or Only you keeps your choice. Graph has **Mine / Team**, a quiet "via <name>" on what teammates shared and **Ask <name>**. See [Shared Graph](shared-graph.md).
-- **Tables:** `projects`, `event_projects`, `identity_names`, `graph_merges` (with `source`: the owner, or a review), `graph_same` (recomputed), `person_roles` (with `event_id`, `quote`, a `hints` snapshot and `checked_at`), `role_corrections`, `graph_relations`, `graph_names`, `graph_offers` and `graph_role_asks` hold what was said, offered or asked; `graph_nodes`, `graph_links`, `graph_events` (complete retained membership with a `probable` flag; readers display at most 40 recent signals), `graph_unnamed` and `graph_state` are recomputed. `suggestions.project` keeps a card's project.
-- **Uses:** the agent's `graph` action (no args: overview; `query`; `node_id` with links, recent signals and spreading activation two hops out; `event_ids`), a "People and projects" block in each Do it job message (who the people on the task are, their rhythm, projects and who they're often with), the dashboard's Graph tab (`/api/graph`, `?q=` with `&cursor=`, `?node=`; its lists a page of 30 at a time from `/api/graph/list?list=people|quiet|new|orgs|warmup|projects|projects_done&sort=closest|last|name|stage&cursor=`, which answers `items`, `next` (the cursor for the next page, or null) and `total`; the overview's `list_counts` has each list's count), and the weekly recap.
+- `graph.py` rebuilds it from scratch every ten minutes (and soon after a label or merge), as a pure function of the
+  signals, your to-do decisions, project labels and merges. So a rule change also applies to the past.
+- It needs no setup, and nothing leaves the Machine (unless you turn on
+  [organization data](#organization-data-optional-enrichment)).
+- A rebuild over 5,000 signals with probable links and unnamed work takes under half a second.
 
+### People
+
+People come from identifiers only: email addresses (Gmail, Calendar, Intercom, Salesflare contacts), WhatsApp numbers,
+Slack users, LinkedIn and X conversations, GitHub logins.
+
+Left out:
+
+- your own addresses ([below](#your-addresses)) and your own name on other channels;
+- shared role addresses at your domains (info@, support@);
+- newsletters (Gmail Promotions, Updates, Social and Forums, no-reply and mailing senders, unless you ever wrote to
+  them), bots and mass mailings (over 20 recipients);
+- system and relay addresses, even when you wrote to them: Intercom's Operator bot and its reply relays, no-reply and
+  notification senders (Slack, Google Calendar, GitHub), GitHub's noreply addresses and reply+ relays (`graph.relay`).
+  A support conversation the Operator bot opened counts for the customer who wrote in it.
+
+<a id="your-addresses"></a>
+### Your addresses
+
+Who counts as you (in timelines, participant lines, "You:" labels, boards and the Graph) is every address of yours, not
+only the ones in config (`own_addresses.py`). Each graph build finds them in the sources already connected:
+
+- your own mailboxes and calendars (never one shared from a Fleet, never someone else's calendar you can see);
+- Gmail send-as aliases (read once a day with the `gmail.readonly` scope mail already has) or Outlook proxy addresses
+  (`User.Read`);
+- the `self` attendee on your own calendar, and your Slack and Intercom profile address;
+- an address at its own domain that mail from at least two people lands under in your mailbox, carrying your full name
+  (a Google Workspace alias never added as a send-as address).
+
+**Never yours:** a shared address (one a teammate in any of your Fleets uses too, one mail comes from under several
+people's names like a Google Group, or one Gmail sends through someone else's account).
+
+**Maybe yours.** When unsure it doesn't count either: a role-like address (info@, sales@, support@, team@), a send-as
+address that isn't set as an alias, one only seen in mail you sent, or one that only carries your name. Those are under
+**Maybe yours** in Settings, Account, with three choices and nothing picked for you:
+
+- **Mine: I handle it**: it counts as yours.
+- **The team's: others pick it up too**: it is never you. Mail that only went to it, in a thread you didn't write in,
+  gets a `team_inbox` note in the review and no to-do (so no draft). The Graph treats it as neither you nor a person, so
+  its threads still fill in the Graph and Fleet sharing stays as it was.
+- **Not mine**: it never counts.
+
+**Change** on the row switches it later. Your own sign-in and config addresses can't be the team's or removed. **Your
+addresses** lists the rest with where each came from, and **Remove** on any found one. `owner_emails` (top level or per
+account) always counts and `not_owner_emails` never does. The addresses found stay on your Machine: the Network still
+only hears your work accounts' addresses.
+
+**Sending from an alias.** A draft's From is the mailbox address, or one of your addresses (yours, not the team's) that
+Gmail lists as verified send-as for that mailbox and doesn't send through another account's server
+(`own_addresses.senders`).
+
+- The review shows it as a picker. A reply to mail that came to such an alias starts from it
+  (`next_actions.pick_sender`); new mail starts from the mailbox address.
+- The send check reads that send-as entry from Gmail again (`sendAs.get`) and sends nothing unless it is `accepted`
+  right then.
+- Outlook drafts only go from the mailbox address: Graph's proxy addresses say where mail arrives, not what the mailbox
+  may send as.
+
+### Who is who
+
+- **Slack users** are looked up once a month (`users.info`, a few per Slack page); their email joins them to their mail.
+- **Names are only names.** What people or their tools add is dropped: "Kim Lee (Initech)", "Ann Bell | Acme", "Sam at
+  Globex", "via LinkedIn", emoji, a degree. "Doe, Jane" becomes Jane Doe.
+- **One name, one person.** The same full name on two different channels is one person, unless two people on one
+  channel carry it. The agent's `graph` `merge` or `different` (two person ids) overrides either way.
+
+### Same person?
+
+Identities join by themselves only on strong evidence:
+
+- the same full name on two of them in one message or conversation (someone writing from work with their own address
+  in CC);
+- the same LinkedIn profile found for both by a lookup;
+- their WhatsApp number in mail they wrote themselves (not in quoted mail) with a matching name;
+- their Slack profile's address;
+- the same full name with one person carrying it per channel.
+
+A name alone never joins two identities on one channel. Weaker evidence is only a question: the same full name that two
+people on one channel carry, or a similar name ("Ann" and "Ann Lee", a nameless jane.doe@ and Jane Doe) with something
+shared besides (the same company domain, people seen with both, a project, the same role).
+
+- The person page asks it quietly ("Same person as …?"), and People lists them under **Same person?** with **Merge** and
+  **Not the same**. Not the same is remembered (`graph_merges` `same=0`).
+- **Merge all** merges every listed pair in one go (`graph_same_all`); one Undo splits that batch and asks again.
+- A merged person keeps every identity, signal, role, note, project and photo. Their page lists why they are one
+  (**Joined from N identities**), each join with **Undo**, which splits them for good. An old link to one of their
+  identities opens the merged person.
+- Someone deleted permanently is never merged or asked about again. The build keeps the questions in `graph_same`.
+
+### Closeness and rhythm
+
+**Closeness** adds per day of contact, capped at 1 a day, so a burst of chat messages is one day:
+
+| Signal | Adds |
+|---|---|
+| You writing | 0.6, split over recipients |
+| Them writing to you | 0.3 (0.15 by email until you've written to them) |
+| A meeting | 0.5, split over attendees |
+| Present in a group or CC | 0.05 to 0.15 |
+| Do it, Send or Mark done on a to-do about them | +1, once per to-do |
+| A Change note | +0.5 |
+| Not relevant or Wrong facts | −0.5 ("Already handled" counts neither way) |
+
+Everything fades by half every 60 days (`strength × ½^(days/60)`); below 0.01 it isn't stored. Labels: close (3+),
+regular (1+), occasional (0.3+).
+
+**Rhythm.** A contact day has contact between you and them (a message either way, a meeting), counted in your time zone
+(`timezone`). Signals they're merely on, like a teammate answering a customer, don't count, and "last contact" follows
+the same rule ("last seen" for someone never in direct contact).
+
+- Each person's usual gap is the median of their last eight gaps between contact days.
+- Someone you wrote to on at least two days has **gone quiet** when the silence is longer than three times their usual
+  gap and at least two weeks (and under a year).
+- Future meetings show as "next meeting" on people and projects. A project's "last signal" is never in the future.
+
+### Projects
+
+Projects are named by the review agent (`finish_analysis` `projects: {"name": [event_ids]}`, `suggest` `project`) and
+with `graph` `project` + `event_ids`. `begin_analysis` returns the live names to reuse.
+
+- A label spreads to the rest of its thread (email thread, Slack thread, Intercom conversation, GitHub issue, recurring
+  meeting; chats within two days).
+- Heat is 0.2 per signal plus your to-do decisions, fading by half every 21 days. The state compares now with two weeks
+  ago: heating up, active, cooling, dormant.
+- `close_project` ends one; naming it again reopens it.
+
+**Probably part of a project.** A signal no label reached that reads like a labeled one (local embedding cosine ≥ 0.72)
+and shares a person with it is shown as probably part of that project, at half weight (heat 0.1, a person's part 0.15).
+Meaning alone isn't enough, since it groups by genre. Meetings and closed projects are left out. Review batches show the
+guess as `probably_project`; a review that agrees names it in `finish_analysis` `projects`. The Graph tab marks those
+signals "probably part of it". It needs [local embeddings](#related-signals-optional-local-embeddings).
+
+**Unnamed work.** Threads from the last 45 days with no project that read alike (cosine ≥ 0.75 between thread averages)
+and share a person form a group when it spans three or more threads, at least two of them not meetings, and you wrote
+or met in one. Chats are left out, and a person on more than 150 threads links nothing. Up to two groups go into a
+review prompt as "Possibly one piece of work nobody named", each once (again only after it has doubled); the review
+names it with `graph` `project` or skips it.
+
+**Links.** People seen together on a signal (2 to 8 people, half-life 45 days), a person's part in a project (0.3 per
+signal, 45 days), organizations by non-freemail domain (named from CRM accounts when known).
+
+### Boards
+
+Projects of one kind in stages (partner listings, onboarding, support escalations), shown on Graph, Projects as a board.
+Board is the default view and List is one click away, remembered on that device. The board only shows: it never sends
+anything.
+
+**Making a board.** Only the owner makes one: from scratch (the board's ⋯ menu, New board) or by saving a suggestion.
+
+- **Suggestions.** When at least three open projects on no board are clearly of one kind, a review suggests a board for
+  each clear group, up to three open at once, each once, with `graph` `suggest_board: {name, stages, about, projects,
+  reason, visibility}`. Every open project on no board is listed for one review a day under "Boards to suggest"; that
+  review answers in `finish_analysis` `boards` ("suggested" or "none: why").
+- **Splitting first.** A project that holds several counterparts (one "acquisition" project with five buyers) is first
+  split into one project per counterpart: `graph` `split: [{project, event_ids}]` (up to 40, one graph build after).
+- **Stages** fit that work and end at the good outcome (hiring: Sourced, Screening, Interviews, Offer, Hired). A lost
+  or declined ending goes in the **Stalled or declined** row, never a stage. Judged from what the projects are, not
+  the words in their names.
+- **Who sees it** (`visibility`): `only_you` for M&A, buyers, investors, legal, health and hiring a named person; `team`
+  for customer, partner and other pipelines. An Only-you board says "Only you" with a lock. A project's page sets who
+  sees that project (`project_visibility`; empty follows the board).
+- Projects shows each suggestion as "Start a board for Hiring?" with its stages, Only you or Team, **Save**, **Edit**
+  and **Not now**. A name dismissed with Not now is never suggested again; nothing is a board until saved
+  (`board_suggestions`).
+- **The editor** sets the name, stages (rename, reorder, add, remove, up to 8), the optional Stalled or declined row, a
+  line on which projects belong (`about`), who sees it and the projects on it. A removed stage's projects go to the
+  nearest earlier stage, and the toast says so. Deleting a board keeps its projects.
+
+**Sorting.** A saved board's projects are sorted within minutes: a review starts for them even without a full batch of
+new signals (`sort_gap_seconds`, default 60) and gets them at the top of its prompt as "Boards to sort".
+
+- It places each one with `graph` (stage, `event_id`, `reason`), the first stage too when nothing moved it further, or
+  answers `finish_analysis` `sorted: [{"project", "why"}]` when no message shows where it stands. `finish_analysis`
+  refuses until each one is answered.
+- The tile says "Sorting from its messages…" while that is due, then the reason and its message, or "Not sorted: why".
+  When the review fails it says "Sorting failed, trying again", and after 3 reviews "Couldn't sort it in 3 reviews"
+  (`sort_run`, `sort_tries`, `sort_note`).
+
+**Moves.** A review moves a project with `finish_analysis` `stages: [{"project", "board", "stage", "reason",
+"event_id", "next", "org"}]`. It judges what a message means, never its wording, and never moves a project only because
+time passed.
+
+- Each move keeps its reason and message (`project_moves`); the tile shows "Moved to In review: … · Fri, Oct 23" and
+  opens that message.
+- The owner drags a tile, or picks a stage from its ⋯ menu on a phone. That move stands until a newer message moves the
+  project again; an older message never undoes a newer move.
+- A tile shows how long the other side hasn't answered since the owner wrote ("No reply in 14 days", from 10 days) and
+  links an open to-do about it.
+
+**Which projects belong.** Open projects on no board are listed for a review as "Projects that may fit a board" (up to
+40 at a time, while a board changed in the last 30 minutes or any are unchecked).
+
+- The review places each one that fits with `graph`, or answers `finish_analysis` `fits: [{"project", "board", "fit":
+  "maybe"|"no", "why"}]` (`board_fits`). Each fit names its board, and each board is judged by its own purpose.
+- A maybe shows on the board as "N projects could belong here" with **Add** and **Leave out** (`board_fit`). A project
+  left out is not asked about again.
+- A maybe that bundles several counterparts carries `"split": true`. Its row says "Add as N", and Add makes one project
+  per counterpart, puts each in the first stage and closes the emptied bundle.
+- `board_fit` also takes `node_ids` (up to 200) for Add all, Leave out all or a selection. Every decision returns an
+  `undo` token that `board_fit` `{undo}` takes back within a day.
+
+**Looking through the history.** A new board also looks through the whole history once (`board_backfills`).
+
+- Every organization, or person without one, with messages or meetings in no project yet (leaving out colleagues and
+  anyone an open project is with) is a candidate. They are ranked once, by meaning with local embeddings, else by how
+  many messages they have, at most 400 per board.
+- Each review gets the next 30 (about 14,000 characters) as "Looking through the history for new boards". It makes each
+  that clearly fits one project per organization on the board, or answers it in `finish_analysis` `fits` with its key
+  (`org:<domain>` or a person id).
+- Each candidate's line says how you and they talk, or "inbound only". Inbound work for you (a trial, a product
+  question) can go on a board; unsolicited outreach pitching you is at most a maybe that says so. A maybe's `why` names
+  who and what happened with a date ("Pitched them on Oct 12, no reply yet").
+- A maybe makes no project until **Add**.
+- While a look runs, reviews start every `backfill_gap_seconds` (default 180), but only while no window of the model's
+  limits is past 80% used. It is done once every candidate has an answer (or after 7 days). The board header says
+  "Looking through your history…", then for 3 days "N added from your history · M to review".
+- Projects made for an Only-you board follow it, so nothing reaches the team that the board doesn't allow.
+
+**By hand, like a CRM.** The owner runs projects like deals: `project_save` (name, board and stage, `org`, `value`,
+`notes`, `people`), `project_outcome` (won or lost with why: won to the last stage, lost to Stalled or declined),
+`project_archive`, `project_delete`, `board_default`. From the board header, a lane's + Add, a tile's ⋯, the list, a
+project's, person's or organization's page and the command palette. A project the owner made stays in the graph before
+it has messages (`made_by`).
+
+**Tables:** `boards` (with `about`, `side`, `visibility`, `is_default`), `board_suggestions`, `project_moves`,
+`project_people`, and on `projects`: `board_id`, `stage`, `stage_reason`, `stage_event_id`, `stage_by`, `stage_at`,
+`next_step`, `org`, `value`, `notes`, `made_by`, `outcome`, `outcome_reason`. They are added on start; back up the
+database before upgrading.
+
+### Where someone works
+
+Their work email domain, or what a source states plainly: their LinkedIn headline (kept as `headline`, shown as is), an
+email signature, or them saying where they work in their own message.
+
+- A review or the organizations pass sets `graph` with `node_id`, `org` (the name as stated, or an `org:…` node_id),
+  `event_id` and `quote` (the words that say it). The service refuses a quote that isn't in that message or headline,
+  and the owner's own messages.
+- It is kept in `person_orgs` with where and when it was said. The person page shows "At Acme · from their LinkedIn
+  headline, Oct 15" with a link to the organization.
+- A stated name joins the organization with that name or domain, or stands as its own (`org:named:acme`, never looked
+  up). The owner's own company marks a colleague instead.
+- A work address wins over a review's statement; your own word (Edit or Add on the person page) wins over both.
+- Nothing else is read from it: no seniority, no role. Reviews get up to five people with a headline and no
+  organization, each once a month; one organizations pass (`profile_runs` kind `orgs`) runs once per install.
+
+### Roles
+
+What someone is to you: only what you say on the dashboard (Graph tab, a person, Edit) or what a review reads in a
+message (`graph` with `node_id` and `role`, a few words: "accountant", "CFO at Globex"). Your word stays until you
+change it.
+
+Sources don't set one: being in the CRM, paying through Stripe or sharing a surname says too little. Instead:
+
+- Each review gets up to five of the strongest people with no role (closeness 0.5 and up, each asked again after 30
+  days) with those facts as hints, and sets a role only when the messages show it. The dashboard marks those "a review
+  read it in your messages".
+- Onboarding does the same up front: after the `USER.md` draft, `assistant profile` starts a roles run for the 15
+  closest people with no role, three per page with their closeness, organization, projects, hints and first and latest
+  direct messages. `assistant roles` runs only that step, for example after connecting more sources.
+- Stripe events add their customer as a faint contact and name the organization when the CRM doesn't.
+
+Roles show on people in the Graph tab, in preparation context, `graph` results and the recap's gone-quiet line.
+
+**Kept honest:**
+
+- **Evidence and Who's who.** A review gives the message it read a role in (`event_id`) and a short `quote` copied from
+  it; the service refuses a quote that isn't there. The Graph tab's **Who's who** lists the review roles you haven't
+  confirmed, closest first: **✓ Right** makes it your word, Edit changes it, **✓ All N are right** confirms them all
+  after one check. The weekly recap counts the ones waiting.
+- **Learning from corrections.** When you replace a review's role, `role_corrections` keeps the old and new one; the
+  roles run and the review prompt get the latest eight as examples.
+- **Just in time.** People on open to-dos with no role are asked first in reviews. `suggest` answers with `no_role_yet`
+  for the people on a new to-do, and a Do it job's context names them.
+- **Organizations** get a role too (`graph` `node_id` `org:…`: "accounting firm", "customer", "possible acquirer").
+  People there carry it in preparation context ("at Globex (customer)"). Each review gets up to two organizations with
+  no role; one is asked again as soon as one of its people gets a role.
+- **Rechecks.** A review's role is offered again (at most three per review) when it was read more than 90 days ago and
+  there was contact since, when new hints showed up, or when it was saved without its line. Your own roles are never
+  rechecked.
+- **Relations.** `graph` with `node_id`, `related_to` and `relation` ("assistant of", "sister of", "introduced by")
+  links two people (`graph_relations`). Both pages show it with Remove.
+- **Email warm-up traffic.** When a review reads that an organization's mail is only a warm-up tool's templated
+  exchanges, it sets `graph` `warmup` (`hidden_domains`). That domain and its people leave the graph and aren't looked
+  up. Organizations' **Warm up** tab lists them with Undo.
+
+**Used.** Preparations write to each person as you would to who they are. Open to-dos sort by deadline, then by who
+they're about (closeness, +2 when their organization pays through Stripe). The recap's gone-quiet line falls back to
+the organization's role.
+
+### On a person's page
+
+- **Names.** Edit on a person's or organization's page, or Rename on a project's (owner only). A name is kept in
+  `graph_names` and wins over the names in their messages; an empty one gives that back. Renaming a project to another
+  project's name joins the two.
+- **Fleet, Family and Friends.** Someone in one of your Fleets, your Family or your Friends gets a small marker ("Has a
+  Machine · Work Fleet (Acme) · Friend"). See [In your Graph](fleet.md#in-your-graph) (`graph.fleet_marks`,
+  `graph.with_fleet`).
+- **Open between you.** Open promises both ways (Done and Drop) and open to-dos on their signals (for a project also
+  to-dos with its name). Preparation context adds one "open:" part per person and project.
+- **Summary.** A few short lines on who they are to you, where things stand and what is open both ways
+  (`person_summary.py`). See [Summaries](#summaries).
+- **Known about them.** Facts about them, apart from what is open, each with **Not about them** and **Forget**. A fact
+  is about its subject, never about whoever sent the message (`fact_about`, set with `remember_fact` `about`). You are
+  never a node, so a fact about you stays in Learning, What I've learned.
+- **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). Each page
+  has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
+
+### Summaries
+
+`person_summary.py` rewrites summaries in the background, never on every signal:
+
+- Every ten minutes the service checks for people with real activity (three or more direct signals in 90 days,
+  closeness 0.3 and up) whose facts, promises or signals are newer than their summary.
+- At most once an hour, up to six of them go to one turn on the background model: at most eight passes a day, each
+  person at most once every 20 hours, only when the budget allows.
+- Each line must cite its sources (`E` a signal, `F` a fact, `P` a promise). A line without a known source, or one that
+  only repeats what the page shows above it, is dropped. A line whose source is deleted disappears.
+- Your edit wins: a rewrite then shows a **Suggested update** with Use it and Keep mine. **Let The Machine write it**
+  gives it back.
+- Preparations add a "summary:" part with only the lines whose sources are in the to-do's area (a personal line never
+  reaches a Work to-do). The Team Graph and Fleets never get it.
+
+Tables: `person_summaries` (`lines` and `proposal` sealed), `person_summary_runs`.
+
+### Shared with your Work Fleet
+
+In a Work Fleet, Work records, short timelines and client threads are shared with the team (`shared_graph.py`). The
+review judges each Work thread on its own (`finish_analysis` `team`), and older Work threads in a history pass
+(`assistant profile_evidence` and `save_profile` with `team`). A thread you set to Team or Only you keeps your choice.
+See [Shared Graph](shared-graph.md).
+
+### Tables and uses
+
+**Tables.** `projects`, `event_projects`, `identity_names`, `graph_merges` (with `source`), `graph_same` (recomputed),
+`person_roles` (with `event_id`, `quote`, a `hints` snapshot and `checked_at`), `role_corrections`, `graph_relations`,
+`graph_names`, `graph_offers` and `graph_role_asks` hold what was said, offered or asked. `graph_nodes`, `graph_links`,
+`graph_events` (with a `probable` flag; readers show at most 40 recent signals), `graph_unnamed` and `graph_state` are
+recomputed. `suggestions.project` keeps a to-do's project.
+
+**Uses.**
+
+- The agent's `graph` action: no args for an overview; `query`; `node_id` with links, recent signals and spreading
+  activation two hops out; `event_ids`.
+- A "People and projects" block in each Do it job message: who the people on the task are, their rhythm, projects and
+  who they're often with.
+- The Graph tab: `/api/graph` (`?q=` with `&cursor=`, `?node=`) and its lists, 30 at a time, from
+  `/api/graph/list?list=people|quiet|new|orgs|warmup|projects|projects_done&sort=closest|last|name|stage&cursor=`
+  (answers `items`, `next` and `total`; the overview's `list_counts` has each list's count).
+- The weekly recap.
 
 ## Related signals (optional, local embeddings)
 
-Off unless you set it up. Full-text search finds the same words; this finds the same *meaning*: a reply worded differently, the same topic in another source, an answer that already came in. Reviews and Do it runs get a `related` action that looks up signals by meaning, only within the accounts the call names (checked like every other read), and a Do it job message ends with a short "Possibly related" list from the task's own accounts when there are close matches. **Nothing leaves your machine:** signal text goes only to an embedding server you run on `127.0.0.1`, never to a model provider.
+Off unless you set it up. Full-text search finds the same words; this finds the same *meaning*: a reply worded
+differently, the same topic in another source, an answer that already came in.
 
-**Setup.**
+- Reviews and Do it runs get a `related` action that looks up signals by meaning, only within the accounts the call
+  names.
+- A Do it job message ends with a short "Possibly related" list from the task's own accounts when there are close
+  matches.
+- **Nothing leaves your Machine:** signal text goes only to an embedding server you run on `127.0.0.1`, never to a model
+  provider.
 
-1. Run an embedding server on loopback. Any OpenAI-compatible `/v1/embeddings` endpoint on this machine works (one that also lists its model in `/v1/models`); the tested one is llama.cpp's `llama-server --embedding` with an EmbeddingGemma GGUF, for example `embeddinggemma-300M-Q8_0.gguf` from [`ggml-org/embeddinggemma-300M-GGUF`](https://huggingface.co/ggml-org/embeddinggemma-300M-GGUF) (about 330 MB). If OpenClaw's local memory search is on, it already has both: the model file it uses (`memory.search.local.modelPath` in `openclaw.json`, often in `~/.cache/qmd/models/`) and a bundled `llama-server` under `~/.openclaw/tools/llama.cpp/`. Reuse them rather than downloading again.
-2. [`deploy/embeddinggemma.service`](../deploy/embeddinggemma.service) is an example systemd user unit: bound to `127.0.0.1:8792`, `Nice=10`, low CPU and IO priority, `MemoryMax=2G`. Set the binary, model path and name in it (or in `~/.config/embeddinggemma.env`), then `systemctl --user enable --now embeddinggemma`. Check it with `curl -s 127.0.0.1:8792/v1/models`.
-3. In `config.json`: `"embeddings": {"url": "http://127.0.0.1:8792", "model": "embeddinggemma-300m", "dims": 256}`. `model` must be the name the server reports (llama-server's `--alias`); the service refuses a server that serves another model. Optional `floor` (cosine for signal-to-signal matches, default 0.6) and `query_floor` (for a text query, default 0.4). The installer adds this block with `enabled: false`: set that to `true` (or drop it), then restart the service.
-4. Embed what you already have: `python3 assistant.py embed-backfill` (oldest first, with progress; `--batch` sets events per call). It's safe while the service runs; the service itself embeds new and changed signals in the background, newest first.
+### Setup
 
-**How it works.** `event_vectors` holds one normalized float32 vector per event version (Matryoshka-truncated to `dims`), deleted with its event; changing `model` or `dims` re-embeds. The embedded text is the title plus the first 2,000 characters of the body, without quoted earlier messages and invisible format characters (zero-width spaces, tag characters). Each input is cut to fit the server: at most `max_input_tokens` (2,048 by default, the -ub of the example unit and EmbeddingGemma's context; 8,191 for api.openai.com), counted as one token per UTF-8 byte, the worst case (`bytes_per_token` raises that for a tokenizer known to do better). A request holds up to `max_batch_tokens` (8,192; 300,000 for OpenAI) and `max_batch_inputs` (64; 2,048), and longer lists go in several requests. If the server still refuses one signal while it takes the others, that signal is set aside with the error class (`event_vector_skips`) and tried again after a day or when it changes, so one signal never holds back the rest. `assistant_signals related` takes explicit `account_ids` and `event_ids` and/or a `query`, `limit` up to 20 and optional `exclude_event_ids`, and returns the `events` shape plus a `similarity`; the given events themselves are never returned. With a query, the meaning ranking is fused with full-text ranking. `events` with `semantic:true` and a `query` uses the same fused ranking. `account_ids:["all"]` searches every configured account (for `events` and `related` only; reviews still name their accounts). The dashboard's message search covers All accounts by default, by meaning and words together, and labels each result with its account. If the embedding server is down, the service logs `embeddings error=<class>` and retries after five minutes; queries still get keyword matches (`semantic:false`), and nothing else is affected.
+1. Run an embedding server on loopback. Any OpenAI-compatible `/v1/embeddings` endpoint on this computer works (one that
+   also lists its model in `/v1/models`). The tested one is llama.cpp's `llama-server --embedding` with an
+   EmbeddingGemma GGUF, for example `embeddinggemma-300M-Q8_0.gguf` from
+   [`ggml-org/embeddinggemma-300M-GGUF`](https://huggingface.co/ggml-org/embeddinggemma-300M-GGUF) (about 330 MB). If
+   OpenClaw's local memory search is on, reuse its model file (`memory.search.local.modelPath` in `openclaw.json`,
+   often in `~/.cache/qmd/models/`) and its bundled `llama-server` under `~/.openclaw/tools/llama.cpp/`.
+2. [`deploy/embeddinggemma.service`](../deploy/embeddinggemma.service) is an example systemd user unit: bound to
+   `127.0.0.1:8792`, `Nice=10`, low CPU and IO priority, `MemoryMax=2G`. Set the binary, model path and name in it (or
+   in `~/.config/embeddinggemma.env`), then `systemctl --user enable --now embeddinggemma`. Check it with
+   `curl -s 127.0.0.1:8792/v1/models`.
+3. In `config.json`: `"embeddings": {"url": "http://127.0.0.1:8792", "model": "embeddinggemma-300m", "dims": 256}`.
+   `model` must be the name the server reports (llama-server's `--alias`); the service refuses a server that serves
+   another model. Optional: `floor` (cosine for signal-to-signal matches, default 0.6) and `query_floor` (for a text
+   query, default 0.4). The installer adds this block with `enabled: false`: set that to `true` (or drop it), then
+   restart the service.
+4. Embed what you already have: `python3 assistant.py embed-backfill` (oldest first, with progress; `--batch` sets
+   events per call). It's safe while the service runs; the service itself embeds new and changed signals in the
+   background, newest first.
 
-**What was learned, per task.** With embeddings on, the facts and draft rules you taught it get a vector each too (`fact_vectors`), and once there are more than a few, a Do it run gets the ones learned on its card plus up to 8 closest in meaning to it (cosine 0.3 or more), not the whole list. Without embeddings it gets the newest that fit.
+### How it works
 
-**Costs.** No GPU needed. On CPU the server embeds a few signals per second; a first backfill of 5,000 signals takes about 30–40 minutes on a 4-core desktop CPU, and each new signal well under a second. The model takes about 0.3–0.5 GB of RAM while the server runs and no CPU when idle. On a small 2-core arm64 server (October 2026) it was slower and bigger: about 130 tokens a second on one core (a few thousand signals take a few hours once), and 370 MB idle growing to 850 MB while embedding with `--no-repack`, or 300 MB more without it (llama.cpp repacks the weights on arm64 for speed). A first `openclaw memory index` (below) took another 940 MB while it ran. Next to OpenClaw and a browser that is tight on 4 GB of RAM; 8 GB is comfortable. Give the unit its own `MemoryMax` and `MemorySwapMax=0`, so when it grows too big the kernel ends it alone and systemd restarts it. Vectors are about 1 KB each at 256 dimensions (5 MB for 5,000 signals). Search is brute-force cosine in plain Python, about 0.1 s over 5,000 vectors.
+- **Vectors.** `event_vectors` holds one normalized float32 vector per event version (Matryoshka-truncated to `dims`),
+  deleted with its event. Changing `model` or `dims` re-embeds.
+- **What is embedded.** The title plus the first 2,000 characters of the body, without quoted earlier messages and
+  invisible format characters.
+- **Fitting the server.** Each input is cut to `max_input_tokens` (2,048 by default; 8,191 for api.openai.com), counted
+  as one token per UTF-8 byte, the worst case (`bytes_per_token` raises that). A request holds up to
+  `max_batch_tokens` (8,192; 300,000 for OpenAI) and `max_batch_inputs` (64; 2,048). A signal the server still refuses
+  is set aside (`event_vector_skips`) and tried again after a day or when it changes.
+- **Queries.** `assistant_signals related` takes explicit `account_ids` and `event_ids` and/or a `query`, `limit` up to
+  20 and optional `exclude_event_ids`, and returns the `events` shape plus a `similarity`. With a query, the meaning
+  ranking is fused with full-text ranking; `events` with `semantic:true` uses the same. `account_ids:["all"]` searches
+  every account (for `events` and `related` only).
+- **Search on the dashboard.** The Cmd+K search covers all accounts by default, by meaning and words together, and
+  labels each result with its account.
+- **When the server is down**, the service logs `embeddings error=<class>` and retries after five minutes. Queries still
+  get keyword matches, and nothing else is affected.
+- **What was learned, per task.** The facts and draft rules you taught it get a vector each too (`fact_vectors`). Once
+  there are more than a few, a Do it run gets the ones learned on its to-do plus up to 8 closest in meaning (cosine 0.3
+  or more), not the whole list. Without embeddings it gets the newest that fit.
 
-**OpenClaw's memory search on the same server.** One server can serve both. Point OpenClaw at it as a provider (the model name containing `embeddinggemma` makes OpenClaw add EmbeddingGemma's task prompts), then build its index once at low priority:
+### Costs
+
+- No GPU needed. On CPU the server embeds a few signals per second: a first backfill of 5,000 signals takes about 30 to
+  40 minutes on a 4-core desktop CPU, and each new signal well under a second.
+- The model takes about 0.3 to 0.5 GB of RAM while the server runs and no CPU when idle.
+- On a small 2-core arm64 server (October 2026) it was slower and bigger: about 130 tokens a second on one core (a few
+  thousand signals take a few hours once), and 370 MB idle growing to 850 MB while embedding with `--no-repack`, or
+  300 MB more without it. A first `openclaw memory index` (below) took another 940 MB. Next to OpenClaw and a browser
+  that is tight on 4 GB of RAM; 8 GB is comfortable. Give the unit its own `MemoryMax` and `MemorySwapMax=0`, so the
+  kernel ends it alone when it grows too big and systemd restarts it.
+- Vectors are about 1 KB each at 256 dimensions (5 MB for 5,000 signals). Search is brute-force cosine in plain Python,
+  about 0.1 s over 5,000 vectors.
+
+### OpenClaw's memory search on the same server
+
+One server can serve both. Point OpenClaw at it as a provider (a model name containing `embeddinggemma` makes OpenClaw
+add EmbeddingGemma's task prompts), then build its index once at low priority:
 
 ```bash
 openclaw config set --batch-json '[{"path":"models.providers.machine-embeddings","value":{"api":"openai-completions","baseUrl":"http://127.0.0.1:8792/v1","apiKey":"local","models":[]}},{"path":"memory.search","value":{"enabled":true,"provider":"machine-embeddings","model":"embeddinggemma-300m","sources":["memory","sessions"]}}]'
@@ -64,103 +446,403 @@ systemctl --user restart openclaw-gateway
 nice -n 19 openclaw memory index --agent main
 ```
 
-An explicit provider fails closed: while the server is down, `memory_search` answers "unavailable" instead of falling back to keywords, so keep the unit's `Restart=`.
+An explicit provider fails closed: while the server is down, `memory_search` answers "unavailable" instead of falling
+back to keywords, so keep the unit's `Restart=`.
 
-**Off again:** remove `embeddings` (or set `enabled: false`) and restart; the `event_vectors` table can stay or be dropped.
-
+**Off again:** remove `embeddings` (or set `enabled: false`) and restart. The `event_vectors` table can stay or be
+dropped.
 
 ## Organization data (optional, enrichment)
 
-Off unless you set it up. With a key for an enrichment service, The Machine looks up the organizations in the graph by domain and keeps a small profile of each: industry, size, location, founded, a short description, LinkedIn, website and logo. It describes the company, never what it is to you; that stays a role.
+Off unless you set it up. With a key for an enrichment service, The Machine looks up the organizations in the graph by
+domain and keeps a small profile of each: industry, size, location, founded, a short description, LinkedIn, website and
+logo. It describes the company, never what it is to you; that stays a role.
 
-**Setup.** Put the key in a file only you can read (`chmod 600`), then add to `config.json` and restart:
+### Setup
 
-- A preset: `"enrichment": {"provider": "apollo", "key_file": "~/.local/share/personal-assistant/enrichment.key"}`. Presets: `apollo`, `peopledatalabs`, `hunter`.
-- Any other service that answers a GET with JSON about a domain: `"enrichment": {"url": "https://api.example.com/companies?domain={domain}", "headers": {"Authorization": "Bearer {key}"}, "key_file": "…"}`. `{key}` can go in the url or the headers; `key_env` reads it from an environment variable instead. The key never goes in the config itself.
-- Common response shapes are understood: flat, or wrapped in `organization`, `company`, `data` or `result`, with the usual field names. If yours differs, `fields` adds paths of your own: `{"industry": ["category.sector"], "about": ["profile.text"]}`.
+Put the key in a file only you can read (`chmod 600`), then add to `config.json` and restart:
+
+- A preset: `"enrichment": {"provider": "apollo", "key_file": "~/.local/share/personal-assistant/enrichment.key"}`.
+  Presets: `apollo`, `peopledatalabs`, `hunter`.
+- Any other service that answers a GET with JSON about a domain:
+  `"enrichment": {"url": "https://api.example.com/companies?domain={domain}", "headers": {"Authorization": "Bearer {key}"}, "key_file": "…"}`.
+  `{key}` can go in the url or the headers; `key_env` reads it from an environment variable instead. The key never goes
+  in the config itself.
+- Common response shapes are understood: flat, or wrapped in `organization`, `company`, `data` or `result`. If yours
+  differs, `fields` adds paths of your own: `{"industry": ["category.sector"], "about": ["profile.text"]}`.
 
 Check it with `assistant enrich globex.com` (looks one up now) and `assistant enrich` (service and counts).
 
-**What is sent.** Only organization domains from the graph, never free-mail domains, your own domains, names, addresses or messages. Those whose people you deal with first: those you write with both ways or meet, then those you wrote to, then the rest (people who only wrote in or were only copied, no-reply senders), within the day's budget; never campaign sender domains (news., email., e. and the like); a paying customer always. Five per pass every ten minutes and at most 50 a day (`per_day`); paired with the Network, hosted's budget of 50 per pass and 1,000 a day. Each is looked up again after 90 days. After an error (rejected key, rate limit, unreachable) it waits an hour, and that domain a day; errors never contain the url or the key. Lookups count against your plan with that service.
+### What is sent
 
-**Where it shows.** The Graph tab (logo and industry in the organization list; a summary, the description and links on its page), `graph` results (`about`, `profile`), preparation context ("at Globex (customer; Manufacturing, 51-200 people, Springfield, founded 1989)") and the roles run. Profiles are kept in `org_profiles`. The logo is kept only as a plain `https` address and loads straight from the service's image host, with no referrer, lazily and at a fixed size; the initial shows until it loads and whenever it can't. When the lookup brought no logo (or there was none), the Machine asks the organization's own website for the icon its home page names (`apple-touch-icon` or `icon`, never SVG; else `/favicon.ico`), https only, to public addresses, a few redirects, up to 200 kB of PNG, JPEG, WebP or ICO, ten organizations a pass. It is saved here (`person_photos` as `logo:<domain>`, served as `api/person-photo`), so no logo service learns which organizations you deal with; a logo from the lookup or your own picture wins, and a site without one is asked again after 30 days (`org_logo_tries`). A lookup that found the organization without a logo (hosted lookups before 2026-10-23 never passed one on) is asked once more after `LOGO_RETRY_DAYS` (7), at most five a pass after everything else that is due (`org_logo_retries`); its logo then wins over the site's icon.
+Only organization domains from the graph: never free-mail domains, your own domains, names, addresses or messages.
 
-**Without a lookup.** An organization from an email domain always has that domain as its website (mail.remy.be is https://remy.be), and, until a lookup or you name it, a readable name from the domain: Remy for remy.be, Blue Fox for blue-fox.io, KBC for kbc.be. Many small companies aren't known to the lookup service at all; they keep just those.
+- **Order:** those whose people you deal with first (you write both ways or meet, then those you wrote to, then the
+  rest), within the day's budget. Never campaign sender domains (news., email., e. and the like); a paying customer
+  always.
+- **Budget:** five per pass every ten minutes and at most 50 a day (`per_day`); paired with the Network, hosted's budget
+  of 50 per pass and 1,000 a day. Each is looked up again after 90 days. Lookups count against your plan with that
+  service.
+- **Errors** (rejected key, rate limit, unreachable): it waits an hour, and that domain a day. Errors never contain the
+  url or the key.
 
-**When it's wrong.** Edit on an organization's page changes its name, website, LinkedIn, industry, size, location, founded and description. What you write is kept in `org_edits`, wins over every later look-up, and an emptied field gives the looked-up one back. While you edit, Cancel and Save sit where Edit was. Only the fields you changed are sent and checked, so a looked-up value longer than a field allows never blocks Save; a field the server refuses shows why under it. An answer about another company counts as not found: when its website isn't the domain's home page (a blog post, a form, a page on a hosting subdomain) and its name shares nothing with the domain. Services match by the website a company page lists, so a one-person page that links to an article on your partner's site would otherwise get your partner's domain. **Wrong company, clear details** drops a bad match and stops looking that domain up; **Look it up again** (or `assistant enrich <domain>`) undoes it.
+### Where it shows
+
+The Graph tab (logo and industry in the organization list; a summary, the description and links on its page), `graph`
+results (`about`, `profile`), preparation context ("at Globex (customer; Manufacturing, 51-200 people, Springfield,
+founded 1989)") and the roles run. Profiles are kept in `org_profiles`.
+
+**Logos.** A lookup's logo is kept only as a plain `https` address and loads straight from the service's image host,
+with no referrer, lazily and at a fixed size; the initial shows until it loads.
+
+- When the lookup brought no logo, the Machine asks the organization's own website for the icon its home page names
+  (`apple-touch-icon` or `icon`, never SVG; else `/favicon.ico`): https only, public addresses, up to 200 kB of PNG,
+  JPEG, WebP or ICO, ten organizations a pass. It is saved here (`person_photos` as `logo:<domain>`), so no logo
+  service learns which organizations you deal with.
+- A logo from the lookup or your own picture wins. A site without one is asked again after 30 days (`org_logo_tries`).
+- A lookup that found the organization without a logo is asked once more after `LOGO_RETRY_DAYS` (7), at most five a
+  pass (`org_logo_retries`).
+
+**Without a lookup.** An organization from an email domain always has that domain as its website (mail.remy.be is
+https://remy.be) and, until a lookup or you name it, a readable name from the domain: Remy for remy.be, Blue Fox for
+blue-fox.io, KBC for kbc.be. Many small companies aren't known to lookup services at all.
+
+### When it's wrong
+
+- **Edit** on an organization's page changes its name, website, LinkedIn, industry, size, location, founded and
+  description. What you write is kept in `org_edits` and wins over every later lookup; an emptied field gives the
+  looked-up one back. Only the fields you changed are sent and checked, and a refused field shows why under it.
+- **Another company.** An answer counts as not found when its website isn't the domain's home page (a blog post, a
+  form, a page on a hosting subdomain) and its name shares nothing with the domain.
+- **Wrong company, clear details** drops a bad match and stops looking that domain up. **Look it up again** (or
+  `assistant enrich <domain>`) undoes it.
 
 **Off again:** remove `enrichment` (or set `"enabled": false`) and restart.
 
 ## People data
 
-People with a company address get a job title, photo, company, LinkedIn and city and country, from the same service on its own budget. On a hosted Machine it is on, through the control plane like organizations. Self-hosted, it needs `people_url` in `enrichment`, with `{email}`, `{name}`, `{domain}`, `{first_name}`, `{last_name}` and `{key}`. The `peopledatalabs` and `hunter` presets have one (they look people up by address), and Salesflare's lead API gets `…/enrich/people?name={name}&domain={domain}` by itself. `people_fields` adds paths like `fields`. Turn it off in **Settings → Graph → Look up work contacts**.
+People with a company address get a job title, photo, company, LinkedIn and city and country, from the same service on
+its own budget.
 
-**Who is looked up.** Everyone in your graph with a full name and a company address, your own colleagues too (their company is yours). Only the technical skips, where a look-up can't work or would be wrong: no full name, only free mail (no company to look in), a shared inbox like info@ or a no-reply sender. A meeting or mail both ways goes first. Hosted, and self-hosted when paired with the Network: up to 3,000 a day (up to 200 per pass on a paired self-hosted Machine); other self-hosted Machines: five per pass every ten minutes, at most 50 a day (`people_per_day` sets your own). A budget of its own next to the one for organizations; hosted, with only their name and company domain sent (never their address). Each is looked up again after 90 days. Once, after this version arrives, everyone already looked up is looked up again, closest first, within the same daily limit (a few thousand people take a few hours); `enrich_prefs` marks it done so it never repeats.
+- On a hosted Machine it is on, through the control plane like organizations.
+- Self-hosted, it needs `people_url` in `enrichment`, with `{email}`, `{name}`, `{domain}`, `{first_name}`,
+  `{last_name}` and `{key}`. The `peopledatalabs` and `hunter` presets have one, and Salesflare's lead API gets
+  `…/enrich/people?name={name}&domain={domain}` by itself. `people_fields` adds paths like `fields`.
+- Turn it off in Settings, Security: **Look up work contacts** (also stops the Gravatar tries). Never in a Careful Work
+  Fleet.
 
-**What is sent and kept.** Salesflare's lead API gets their name and company domain (an address at eu.example.com asks for example.com); services that look up by address get their work address. Gravatar gets only a SHA-256 hash of their work address, for a photo. Only what the dashboard shows is kept, in `person_profiles` on this Machine: job title, company, a photo, a LinkedIn profile address and city and country.
+### Who is looked up
 
-**Photos.** A photo is saved once on this Machine (`person_photos`) and the dashboard shows it from there, so it never expires. Right after each lookup: the lookup's own photo link while it still works (not LinkedIn's stock silhouette), otherwise their Gravatar, if they have one. One try per lookup (`person_photo_tries`), so never more photo calls than the day's lookups. Only a JPEG, PNG or WebP image of at most 200 KB, checked by its own bytes, fetched over `https` from a public address, without redirects. With neither, initials show; when the lookup's link had expired, that person is looked up again after 30 days instead of 90. Look up work contacts off stops the Gravatar tries too.
+Everyone in your graph with a full name and a company address, your own colleagues too. Only technical skips: no full
+name, only free mail, a shared inbox like info@ or a no-reply sender. A meeting or mail both ways goes first.
 
-**Photos from your own contacts.** Anyone without a photo, personal contacts too, can get one from what the Machine is already connected to, with the permissions it already has: Google contacts, other contacts and the Workspace directory through a `gog` sign-in (once a day, read only, the Contacts and Directory scopes it was given; hosted Google sign-ins don't include Contacts, so they're never asked), and the picture on someone's Slack profile, from the profile lookup the Machine already does for their name. A photo the person chose themselves (their own Google or Slack profile) comes before one set on a contact, and generic ones (Google's letter, Slack's default) are skipped. Only links for people in your Graph are kept (`contact_photo_links`), each downloaded once into `person_photos` with the same checks; a link that didn't work is tried again after 30 days at most. These photos stay on this Machine and are never sent anywhere. Also from X and LinkedIn: the photo on someone's X profile (from the user objects in the mentions and DMs it reads; X's default picture is skipped) and on their LinkedIn profile (from the participant LinkedIn sends with each one-to-one conversation). Not used: Outlook contacts (the Microsoft sign-in has no Contacts permission), Intercom avatars (the connector reads conversations only) and Telegram (the owner's own bot, no contacts).
+- Hosted, and self-hosted when paired with the Network: up to 3,000 a day (up to 200 per pass on a paired self-hosted
+  Machine). Other self-hosted Machines: five per pass every ten minutes, at most 50 a day (`people_per_day`).
+- Each is looked up again after 90 days. After an upgrade that asks for it, everyone already looked up is looked up
+  again once, closest first, within the same limit (`enrich_prefs` marks it done).
 
-**WhatsApp pictures.** `wacli` keeps no pictures locally, and asking for one is a live request. The Machine's own WhatsApp reads stay `--read-only`; the one exception `wacli` makes there is `profile picture-info`, which it only passes on to your always-on `wacli sync --follow`, the process that holds the WhatsApp session, and only when that was started with `--profile-picture-budget N` (at most N a day, people only, never groups). Without it, nothing is asked. The Machine asks for people already in your Graph who have no photo yet and whose WhatsApp address it has seen in a chat, closest first, at most 50 a day (`whatsapp_photo_asks`). Each picture is downloaded once into `person_photos` with the same checks. Someone without one, or who hides it from you, is asked again after 30 days. When the mirror can't answer, the Machine waits 6 hours. Nothing is sent to them: no message, read receipt or presence. Needs a `wacli` with the picture budget (`wacli sync --help` lists `--profile-picture-budget`).
+### What is sent and kept
 
-**Telegram pictures.** The same rules through the Telegram mirror (`telegram_mirror.py`), the one process that holds the Telegram session: people already in your Graph without a photo whose Telegram user ID the Machine has seen in a chat it reads (their private chat, else a small group they wrote in), closest first, at most 50 asks a day (`telegram_photo_asks`). The ask waits in the mirror's store (`photo_asks`); the mirror fetches only the small profile photo (160 px), one at a time a few seconds apart, at most 50 a day, only for someone in a chat it reads, and keeps it sealed with the store's key until the next pass saves it once into `person_photos` (same checks) and removes it from the store. Someone without one, or who hides it from you, is asked again after 30 days, a photo that didn't download the next day. A Telegram flood wait pauses only the photos until it is over. When the mirror can't answer (logged out, stopped), the Machine waits 6 hours. Nothing is sent to them.
+- Salesflare's lead API gets their name and company domain (an address at eu.example.com asks for example.com); services
+  that look up by address get their work address. Hosted lookups send only name and company domain.
+- Gravatar gets only a SHA-256 hash of their work address, for a photo.
+- Only what the dashboard shows is kept, in `person_profiles`: job title, company, a photo, a LinkedIn profile address
+  and city and country.
+- **Misses.** An answer about someone else (a name with nothing in common, or a company at another domain) counts as not
+  found. The same name at another top-level domain (example.nl for example.com) is the same company. Self-hosted, a miss
+  keeps only why: `unknown`, `another person`, `another company` or `nothing to show`.
 
-**Facts from your connectors.** While they run, connectors keep what the pages they already fetch say about the people in them, with no extra request, scope or sign-in: from Slack, their own title, phone and time zone (the `users.info` lookup done for their name); from X, their bio, location, website and handle (the user objects in mentions and one-to-one DMs); from LinkedIn, their headline and profile link (the participant in each one-to-one conversation); from Google, job title, company and phone of your contacts and the Workspace directory (the same daily read as their photos, asking `organizations` too; other contacts don't have them); from Salesflare, the job title on the CRM contact. Each fact is kept in `person_facts` with where it came from and when, sealed like message contents, and never sent anywhere. What someone says about themselves (their own Slack, X, LinkedIn or Google profile) beats a record someone keeps about them (a contact, the directory, the CRM), which beats a look-up's guess; within one level the latest wins, and a field the same source now leaves empty goes. Once, after this version arrives, the facts already in stored messages (LinkedIn headlines, CRM job titles) are kept too. Job title, company, place, links, phone and time zone show on their page and in `graph` results (`profile.sources` says where each came from); their headline and bio are read when their page opens, never copied into the graph. Nothing from Outlook, Zoom, Intercom, Stripe, GitHub, WhatsApp or Telegram: what they read has no more than a name, an address or a number.
+### Photos
 
-**Misses.** An answer about someone else (a name with nothing in common, or a company at another domain; the same name at another top-level domain, like example.nl for example.com, is the same company) counts as not found. Self-hosted, a miss keeps only why in `person_profiles`: `unknown`, `another person`, `another company` or `nothing to show`.
+A photo is saved once on this Machine (`person_photos`), so it never expires. Each is only a JPEG, PNG or WebP image of
+at most 200 KB, checked by its own bytes, fetched over `https` from a public address.
 
-**Where it shows.** People rows (photo, or initials, and job title), their page (title, place, their local time, phone, LinkedIn, X, website, bio), `graph` results (`profile`) and preparation context ("job title Head of Sales").
+- **From a lookup:** right after each lookup, the lookup's own photo link while it still works (not LinkedIn's stock
+  silhouette), otherwise their Gravatar. One try per lookup (`person_photo_tries`). With neither, initials show; when
+  the lookup's link had expired, that person is looked up again after 30 days instead of 90.
+- **From your own contacts**, for anyone without a photo, personal contacts too, with the permissions the Machine
+  already has: Google contacts, other contacts and the Workspace directory through a `gog` sign-in (once a day, read
+  only; hosted Google sign-ins don't include Contacts), and someone's Slack profile picture. A photo the person chose
+  (their own Google or Slack profile) comes before one set on a contact, and generic ones are skipped. Only links for
+  people in your Graph are kept (`contact_photo_links`), each downloaded once. These photos are never sent anywhere.
+- **From X and LinkedIn:** the photo on someone's X profile (from the user objects in mentions and DMs; X's default
+  picture is skipped) and on their LinkedIn profile (from the participant in each one-to-one conversation).
+- **Not used:** Outlook contacts (no Contacts permission), Intercom avatars and Telegram's own bot.
 
-**The owner's own details.** Edit on a person's page (`graph_person_edit`, owner only, on the dashboard) saves their name (`graph_names`), what they are to you (`person_roles`), where they work (`person_orgs`), all as the owner's word, and title, location, LinkedIn, phones, emails and Work or Personal in `person_edits`. Those win over a look-up and later automatic updates: the build lays them over the looked-up profile and records which fields are the owner's (`edited`). Each field is kept on the identity whose page it was saved on, so a merged person carries it and an Undo leaves it with that identity. Phones and emails are kept as what the owner added and took off, so an address that turns up later still shows. Without the owner's word, Work or Personal comes from what the Machine knows of them (`graph.auto_side`): Work for someone with a work address or organization; else what their threads are about (the sharing review's call: client, sensitive or colleagues only is Work, personal is Personal) and the projects they're on (one on a board is Work); else the accounts their conversations came from (a Work LinkedIn is Work). Having no work address says nothing by itself. When the evidence is thin or points both ways, it stays unknown. Before any of that, someone only in the owner's Family or Friends (by a member's address, `graph.circles`, passed to the build), or whose role says they are family or a friend (`graph.personal_relation`: wife, father, friend from university; a closed list, so "family lawyer" or "sister company" is not), is Personal (`side_why` `network` or `relation`), whatever address they write from; only the owner marking them Work changes that. The Graph's Work and Personal lists, their counts and the CSV's Type all read this one stored side, and a change to Family, Friends or the Work Fleets rebuilds the graph within a minute. The first build under a new rule records each automatic side it changed, before and after, in `side_changes`. Sharing with a Work Fleet follows the same Type for the owner's own life (`graph.own_life`: the owner's Personal, Family and Friends, a family or friend relation): never shared. A side that only comes from what threads, projects or accounts say changes nothing there. Deleting someone permanently deletes their edits too.
+**WhatsApp pictures.** `wacli` keeps no pictures locally, and asking for one is a live request.
 
-## Sharing learnings
+- The Machine's own WhatsApp reads stay `--read-only`. The one exception, `profile picture-info`, is passed on only to
+  your always-on `wacli sync --follow`, and only when that was started with `--profile-picture-budget N` (at most N a
+  day, people only). Without it, nothing is asked.
+- It asks for people in your Graph with no photo whose WhatsApp address it has seen in a chat, closest first, at most 50
+  a day (`whatsapp_photo_asks`). Someone without one, or who hides it, is asked again after 30 days. When the mirror
+  can't answer, the Machine waits 6 hours.
+- Nothing is sent to them: no message, read receipt or presence.
 
-At most once a day (`DAYS = 1`), when there are at least three new notes, facts or rule changes (`MIN_MATERIAL`), one cheap background turn reads what this Machine learned since the last run that finished (the owner's notes on cards, facts, rule changes, voices, how drafts were edited and recent errors; the first run reads the last 30 days, `SINCE_DAYS`) and writes up to five general learnings for The Machine team, like "Drafts for people who don't know the context yet should introduce it first." Judged by what the notes mean, not by words. It runs in `team_learnings.py`, with the turn's evidence sealed like any other run's, and waits for the usage budget like every background turn. It is shown what was shared, removed before Send, withdrawn or in a Never ask batch, and a new learning whose words overlap one of those by 60% or more is dropped (`team_learnings.seen`, `repeats`), so the same learning is never offered twice. **Not now** holds the next offer for a week (`LATER_DAYS`).
+**Telegram pictures.** The same rules through the Telegram mirror (`telegram_mirror.py`), the process that holds the
+Telegram session.
 
-**What is taken out.** The turn is asked for general patterns with nothing personal, and the service then strips every learning itself (`team_learnings.strip`): email addresses, links, handles, phone numbers, dates, amounts and long numbers, then every name this Machine knows (people, organizations and projects in the Graph, their first and last names, and the owner's own accounts). Product names like Gmail or WhatsApp stay. Each learning says what was taken out. An error log is never written by the turn: the service adds an excerpt of the error itself (kind, where, how often, its message with anything private taken out), never message content.
+- People in your Graph without a photo whose Telegram user ID the Machine has seen in a chat it reads, closest first, at
+  most 50 asks a day (`telegram_photo_asks`).
+- The mirror fetches only the small profile photo (160 px), one at a time a few seconds apart, and keeps it sealed in
+  its store (`photo_asks`) until the next pass saves it into `person_photos` and removes it from the store.
+- Asked again after 30 days for someone without one. A Telegram flood wait pauses only the photos. When the mirror
+  can't answer, the Machine waits 6 hours. Nothing is sent to them.
 
-**Use cases.** Each learning carries 1 to 3 use cases (`use_cases`: `given`, the situation; `when`, what the owner does; `then`, what should happen), written by the turn from what actually happened, retold generically in English. They are what the team builds and checks a change against, so it stays true to what the Machines meant. They are stripped like the learning, then checked more strictly (`team_learnings.check_case`): no quoted text, and no capitalized word mid-sentence besides product, screen and button names, so a name the graph doesn't know yet doesn't go either. One that fails is left out (and counted in "Took out …"); a learning left without a use case is dropped. An owner's edit that fails the check is refused. They travel inside the sealed learning and the vote, so they go only where those already go: nothing new leaves a Machine.
+### Facts from your connectors
 
-**Asking.** A quiet card under Learning > Shared and a line in the weekly recap: "Share 3 learnings with The Machine team?" **Review** shows exactly what would be sent, item by item, to edit or remove. **Add the error log** is off by default, per learning. An edit that adds a name back is refused. **Send** sends only what is on screen; **Not now** asks again in a week; **Never ask** turns it off. Nothing goes without that Send, unless the owner chose to send automatically.
+While they run, connectors keep what the pages they already fetch say about the people in them, with no extra request,
+scope or sign-in:
 
-**Send automatically.** Opt-in: **Send automatically from now on** in the offer (sent with that Send) or **Settings → Security → Send learnings automatically** (the `auto` pref, off by default). A batch made while it is on (`team_learnings.auto` = 1) goes as it is, through the same `final_items` check, sealing and learnings key (`auto_send`), never with an error excerpt or the owner's email (`share` refuses `named` with `auto`). A batch the check would change, or one not through within 24 hours, waits for the owner under Learning > Shared instead. It only runs while the offer is on, the owner's level isn't Careful and no Work Fleet is Careful (`auto_on`); turning the offer off (also Never ask and Careful) turns it off, so turning the offer back on asks each time again.
+| Source | What it keeps |
+|---|---|
+| Slack | their title, phone and time zone (the `users.info` lookup done for their name) |
+| X | bio, location, website and handle (mentions and one-to-one DMs) |
+| LinkedIn | headline and profile link (the participant in each one-to-one conversation) |
+| Google | job title, company and phone of your contacts and the Workspace directory |
+| Salesflare | the job title on the CRM contact |
 
-**Activity and withdrawing.** **Fleet → Activity → Sent to The Machine team** lists every learning sent lately, exactly as it went (`team_learnings.shared`), sent automatically or after the owner's OK. **Withdraw** posts `{"action": "withdraw", "id", "n", "from", "sealed"}`: a small envelope signed with the same learnings key, so the control plane can tell it comes from the sender without knowing who that is. It deletes that learning for the team (its candidate, votes and pick; the whole batch once every learning in it is gone), and the Machine counts it as removed, so it isn't made again.
+- Each fact is kept in `person_facts` with where it came from and when, sealed like message contents, and never sent
+  anywhere.
+- What someone says about themselves beats a record someone keeps about them (a contact, the directory, the CRM), which
+  beats a lookup's guess. Within one level the latest wins.
+- Headline and bio are read when their page opens, never copied into the graph. `profile.sources` in `graph` results
+  says where each field came from.
+- Nothing from Outlook, Zoom, Intercom, Stripe, GitHub, WhatsApp or Telegram: what they read has no more than a name, an
+  address or a number.
 
-**Sending.** Over the Network to the control plane, sealed (`network_crypto`) for the team's key. Its fingerprint is pinned in the code (`team_learnings.TEAM_KEY_FINGERPRINT`): a Machine seals only for that key, and any other key the Network hands out sends nothing. Until it is filled in, no Machine is asked. Signed by a key made for learnings only (`learnings-keys.json`), not the Machine's Network identity, so the team sees a made-up name. **Add my email so the team can reply** adds the owner's account. On the control plane they land sealed in the team's Learnings inbox, where a person reads them, groups similar ones and decides; nothing changes the product by itself.
+### Where it shows
 
-Turn it off in **Settings → Security → Offer to share learnings**. It needs the Network: a Machine without it is never asked.
+People rows (photo or initials, and job title), their page (title, place, their local time, phone, LinkedIn, X, website,
+bio), `graph` results (`profile`) and preparation context ("job title Head of Sales").
 
-**Voting.** A learning one Machine shared goes, after the control plane's own scrub, to the other Machines as a candidate (text, example and area only; never its log or who sent it). Once a day a Machine with voting on fetches up to 20 (`{"action": "candidates"}` on the learnings route), skips its own (by batch id) and any the strip would change, and one small background turn (kind `team_votes`, at most five learnings, waiting for the usage budget like every background turn) answers one question for each: would this have changed something on this Machine in the past week? It reads the owner's rules, facts and channels and the past week's to-dos with what the owner did (`past_week`). **Useful** needs a concrete case from that week as the vote's use case (passing `check_case`); a useful vote without one goes as `not_relevant` ("Not relevant here"), checked again before it is sent, so agreeing with the idea is not a vote. Only the vote goes back (`{"action": "vote", "id", "vote": "useful" | "not_useful" | "not_relevant", "reason", "use_case"}`); a reason the strip would change is dropped. The judging turn sees the candidate's use cases (each checked again here; one that fails is left out) and may add one use case of its own, why it helps or gets in the way for this owner; one that fails `check_case` is dropped, and the vote counts without it. A learning is judged once at most. The control plane counts the votes per account without keeping the account, and ranks the learnings for the team, who pick what goes into the shipped defaults (AGENTS.md, a prompt, the docs) as a suggested change a person makes. **Settings → Vote on tips from other Machines** turns it off, and what waits is dropped.
+### The owner's own details
 
-Settings has voting **On** (the default, it votes by itself), **Ask first** or **Off** (`team_learnings.vote_mode`, the `vote` pref: `on`, `ask`, `off`; the old switch stored `on` and `off`, so those carry over). Under Ask first, a judged vote waits (`judged`) in one box under Learning > Shared (`votes_waiting`), never a to-do of its own and never a notification; the owner sends (`approved`, sent with the next send) or skips it (`learnings_votes_decide`), and one left 14 days goes unsent. Off skips everything waiting.
+**Edit** on a person's page (`graph_person_edit`, owner only) saves their name (`graph_names`), what they are to you
+(`person_roles`), where they work (`person_orgs`), and title, location, LinkedIn, phones, emails and Work or Personal in
+`person_edits`.
 
-### What Help is asked
+- Those win over a lookup and later automatic updates; the build records which fields are the owner's (`edited`).
+- Each field is kept on the identity whose page it was saved on, so a merged person carries it and an Undo leaves it
+  with that identity.
+- Phones and emails are kept as what the owner added and took off, so an address that turns up later still shows.
+- Deleting someone permanently deletes their edits too.
 
-Help (help_chat.py) ends each answer with a TOPIC: line, a few generic words for what the question was about. help_topics.py keeps it only when it passes team_learnings.strip with every name the Machine knows, the use-case check (no quotes, no unknown capitalized words) and uses only words from the public help pages; else it keeps "other" for an unanswered question, or nothing. Once a day the finished days go to the control plane as counts per topic, without the account, for /admin. Settings, Security, The Machine team, **Share what Help is asked** turns it off and deletes what waits.
+**Work or Personal without your word** (`graph.auto_side`):
 
-## Error reports
+1. Someone only in your Family or Friends (`graph.circles`), or whose role says they are family or a friend
+   (`graph.personal_relation`: wife, father, friend from university; a closed list, so "family lawyer" is not), is
+   Personal, whatever address they write from.
+2. Else Work for someone with a work address or organization.
+3. Else what their threads are about (the sharing review's call: client, sensitive or colleagues only is Work, personal
+   is Personal) and the projects they're on (one on a board is Work).
+4. Else the accounts their conversations came from. Having no work address says nothing by itself; with thin or mixed
+   evidence it stays unknown.
 
-Separate from learnings and on by default: when The Machine's own code fails, the Machine sends the team a signature of the error, never what caused it (`error_feed.py`). Sources: the service's logged errors and dead threads (`FaultLog`), the dashboard's uncaught errors and unhandled rejections (posted as `client_error`, normalized again by the service), failed reviews and coding-agent jobs (their error codes only) and failed syncs (the source's service and the error type; a transient one, which the sync waits out, only after 20 in a row: a rate limit, the service's own 500, 502, 503 or 504, or the network. A 429 or such a 5xx is retried once after 15 seconds, or its Retry-After when that is a minute or less. A sign-in or permission error such as 401 or 403 is reported at once). Each is deduplicated by type, place and normalized message; the line number is left out of that, so a release that moves the code keeps the same signature. At most 300 kept, a batch of 50 every 10 minutes and 500 a day, kept 30 days. Before a batch goes, every name the Machine knows is taken out once more and each message must pass a strict shape check (`error_feed.allowed`), or it never goes. **Settings → Security → Send error reports** turns it off: nothing is recorded or sent, and what waited is deleted.
-
-**Pacing.** Under the same switch, `pacing.py` counts how often background work has to pace (`model_budget.pause`): per stretch, when it started, the window (`5h` or `week`), the threshold (65, or 85 when even the first look waited; the day's share for the week), how long it lasted and how many distinct jobs waited. Once a day the finished days go over the Network (`POST /errors` with `{"action": "pacing", "day", "starts": [{"hour", "window", "threshold", "minutes", "jobs"}]}`) for a card on the control plane's /admin. Counts and minutes only; job ids stay on the Machine. The owner sees nothing new.
+The Graph's Work and Personal lists, their counts and the CSV's Type all read this one stored side. A change to Family,
+Friends or the Work Fleets rebuilds the graph within a minute, and the first build under a new rule records each side
+it changed in `side_changes`. Sharing with a Work Fleet never includes your own life (`graph.own_life`: your Personal,
+Family and Friends, a family or friend relation).
 
 ## How you write
 
-Voice and style learn only from what the owner wrote themselves (`authorship.py`). A draft sent from a to-do comes back in their Sent mail or chat with their name on it, so the profile, the voice study, the examples a draft matches and the "answered it themselves" lessons skip every message a send job (`action_jobs`, sent) produced: matched by the Message-ID the send set or the id the channel returned, or, when no id came back, by the sent text the message starts with (20 characters or more, so a short reply the owner typed still counts as theirs). A draft the owner changed before sending teaches only through that change (`draft_edits`, what they cut and added); an agent's rewrite (source `agent`) teaches nothing.
+Voice and style learn only from what the owner wrote themselves (`authorship.py`).
+
+- A draft sent from a to-do comes back in their Sent mail or chat with their name on it. The profile, the voice study,
+  the examples a draft matches and the "answered it themselves" lessons skip every message a send job (`action_jobs`)
+  produced: matched by the Message-ID the send set or the id the channel returned, or else by the sent text the message
+  starts with (20 characters or more, so a short reply the owner typed still counts as theirs).
+- A draft the owner changed before sending teaches only through that change (`draft_edits`, what they cut and added).
+- An agent's rewrite (source `agent`) teaches nothing.
 
 ## Keeps learning
 
-Reviews fold a note into a fact, rule or voice as it comes. The learning loop (`learning_loop.py`) looks at what piles up between them: the owner's own draft edits, dismissed and snoozed to-dos, and corrections in a to-do's chat. At most every 12 hours, with at least three new signals, one small background turn (kind `tune`, one evidence page of at most 30 signals plus the current voices, rules and facts) proposes at most three changes: a voice block reworded (keeping most of it), or a rule or fact added or replaced. It waits for the usage budget like every background turn. Each change is applied and kept in `learning_changes` with what it replaced and why; **Learning → Changes** lists them with **Undo**. A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact since.
+Reviews fold a note into a fact, rule or voice as it comes. The learning loop (`learning_loop.py`) looks at what piles up
+between them: the owner's own draft edits, dismissed and snoozed to-dos, and corrections in a to-do's chat.
 
-## Fixed where it came from
+- At most every 12 hours, with at least three new signals, one small background turn (kind `tune`, one page of at most
+  30 signals plus the current voices, rules and facts) proposes at most three changes: a voice block reworded (keeping
+  most of it), or a rule or fact added or replaced. It waits for the usage budget like every background turn.
+- Each change is applied and kept in `learning_changes` with what it replaced and why. **Learning, Changes** lists them
+  with **Undo**.
+- A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact
+  since.
 
-When the owner says in a to-do's chat that something is wrong ("she's not the CEO", "he left the company", "we don't use that template anymore"), the chat turn first asks where it came from (`correction_sources`, `corrections.py`): the people, organizations and projects on the to-do with their role, organization, title, place and stage and where each came from (a review and its quote, an email address, a look-up, the owner), the to-do's project, the facts and rules that mention it, The Machine's GBrain pages and matching skills. When one of those holds the wrong thing it fixes it there (`fix_source`), as the owner's word: a role (`graph.set_role`, so a later review keeps it), an organization or leaving one (`set_org`), a title or place (`person_edit`, which wins over enrichment), a project's stage (`set_stage`), the to-do's project, or a fact or rule reworded or removed. A skill changes only through a proposal the owner approves. A fix comes only from the owner's own note on that to-do, at most five per note.
+<a id="fixed-where-it-came-from"></a>
+## Fixed at the source
 
-Each fix is kept in `learning_changes` (kind `source`) with what it replaced and where the wrong one came from. The chat shows it as **Fixed: …, from …** with **Undo**, and so does **Recent changes**; an undo puts back exactly what was there, and is refused when that changed since. A fix in the Graph rebuilds it and wakes the GBrain sync, so The Machine's section on a page follows; the owner's own text on a page is never changed. A note fixed this way is no signal for the learning loop, so no rule is added on top. When no source holds it, the note is learned as before.
+When the owner says in a to-do's chat that something is wrong ("she's not the CEO", "he left the company", "we don't use
+that template anymore"), the chat turn first asks where it came from (`correction_sources`, `corrections.py`):
+
+- the people, organizations and projects on the to-do, with their role, organization, title, place and stage and where
+  each came from (a review and its quote, an email address, a lookup, the owner);
+- the to-do's project, the facts and rules that mention it, The Machine's GBrain pages and matching skills.
+
+When one of those holds the wrong thing it fixes it there (`fix_source`), as the owner's word:
+
+| What | Fixed with |
+|---|---|
+| A role | `graph.set_role`, so a later review keeps it |
+| An organization, or leaving one | `set_org` |
+| A title or place | `person_edit`, which wins over enrichment |
+| A project's stage | `set_stage` |
+| The to-do's project | `set_card_project` |
+| A fact or rule | reworded or removed |
+
+A skill changes only through an update the owner approves. A fix comes only from the owner's own note on that to-do, at
+most five per note.
+
+- Each fix is kept in `learning_changes` (kind `source`) with what it replaced and where the wrong one came from.
+- The chat shows it as **Fixed: …, from …** with **Undo**, and so does Learning, Changes. An undo puts back exactly what
+  was there, and is refused when that changed since.
+- A fix in the Graph rebuilds it and wakes the GBrain sync, so The Machine's section on a page follows. The owner's own
+  text on a page is never changed.
+- A note fixed this way is no signal for the learning loop, so no rule is added on top. When no source holds it, the
+  note is learned as before.
+
+## Sharing learnings
+
+Now and then your Machine offers to share a few general learnings with The Machine team, so the product gets better for
+everyone (`team_learnings.py`). Nothing goes without your Send, unless you chose to send automatically. For learnings
+shared within a Work Fleet, see [Team learnings](fleet.md#team-learnings).
+
+### What is written
+
+- At most once a day (`DAYS`), when there are at least three new notes, facts or rule changes (`MIN_MATERIAL`), one
+  cheap background turn reads what this Machine learned since the last run: the owner's notes on to-dos, facts, rule
+  changes, voices, how drafts were edited and recent errors. The first run reads the last 30 days (`SINCE_DAYS`).
+- It writes up to five general learnings, like "Drafts for people who don't know the context yet should introduce it
+  first." Judged by what the notes mean, not by words. The turn's evidence is sealed like any other run's, and it waits
+  for the usage budget.
+- A new learning whose words overlap one already shared, removed, withdrawn or in a Never ask batch by 60% or more is
+  dropped (`team_learnings.seen`, `repeats`), so the same one is never offered twice.
+
+### What is taken out
+
+The turn is asked for general patterns with nothing personal, and the service then strips every learning itself
+(`team_learnings.strip`):
+
+- email addresses, links, handles, phone numbers, dates, amounts and long numbers;
+- every name this Machine knows: people, organizations and projects in the Graph, their first and last names, and the
+  owner's own accounts. Product names like Gmail or WhatsApp stay.
+
+Each learning says what was taken out. An error log is never written by the turn: the service adds an excerpt of the
+error itself (kind, where, how often, its message with anything private taken out), never message content.
+
+### Use cases
+
+Each learning carries 1 to 3 use cases (`use_cases`: `given` the situation, `when` what the owner does, `then` what
+should happen), retold generically in English from what actually happened. The team builds and checks a change against
+them.
+
+- They are stripped like the learning, then checked more strictly (`team_learnings.check_case`): no quoted text, and no
+  capitalized word mid-sentence besides product, screen and button names.
+- One that fails is left out; a learning left without a use case is dropped. An owner's edit that fails is refused.
+- They travel inside the sealed learning and the vote, so nothing new leaves a Machine.
+
+### Asking
+
+A quiet offer under Learning, Shared and a line in the weekly recap: "Share 3 learnings with The Machine team?"
+
+- **Review** shows exactly what would be sent, item by item, to edit or remove. An edit that adds a name back is
+  refused.
+- **Add the error log** is off by default, per learning.
+- **Send** sends only what is on screen; **Not now** asks again in a week (`LATER_DAYS`); **Never ask** turns it off.
+
+**Send automatically.** Opt-in: **Send automatically from now on** in the offer, or Settings, Security, **Send learnings
+automatically** (off by default).
+
+- A batch made while it is on goes as it is, through the same `final_items` check and sealing (`auto_send`), never with
+  an error excerpt or the owner's email.
+- A batch the check would change, or one not through within 24 hours, waits for the owner under Learning, Shared.
+- It only runs while the offer is on, the owner's level isn't Careful and no Work Fleet is Careful (`auto_on`). Turning
+  the offer off (also Never ask and Careful) turns it off.
+
+### Activity and withdrawing
+
+Settings, Activity (Learnings) and Fleet, Activity list every learning sent lately, exactly as it went
+(`team_learnings.shared`). **Withdraw** posts a small envelope signed with the same learnings key, so the control plane
+can tell it comes from the sender without knowing who that is. It deletes that learning for the team (its candidate,
+votes and pick), and the Machine counts it as removed, so it isn't made again.
+
+### Sending
+
+- Over the Network to the control plane, sealed (`network_crypto`) for the team's key. Its fingerprint is pinned in the
+  code (`team_learnings.TEAM_KEY_FINGERPRINT`): any other key the Network hands out sends nothing.
+- Signed by a key made for learnings only (`learnings-keys.json`), not the Machine's Network identity, so the team sees
+  a made-up name. **Add my email so the team can reply** adds the owner's account.
+- On the control plane they land sealed in the team's Learnings inbox, where a person reads them, groups similar ones
+  and decides. Nothing changes the product by itself.
+
+Turn it off in Settings, Security: **Offer to share learnings**. It needs the Network: a Machine without it is never
+asked. What the Network sees: [The Machine Network](network.md#what-the-network-sees).
+
+### Voting
+
+A learning one Machine shared goes, after the control plane's own scrub, to the other Machines as a candidate (text,
+example and area only; never its log or who sent it).
+
+- Once a day a Machine with voting on fetches up to 20 candidates, skips its own and any the strip would change.
+- One small background turn (kind `team_votes`, at most five learnings) answers one question for each: would this have
+  changed something on this Machine in the past week? It reads the owner's rules, facts and channels and the past
+  week's to-dos with what the owner did.
+- **Useful** needs a concrete case from that week as the vote's use case (passing `check_case`); without one the vote
+  goes as `not_relevant`. Agreeing with the idea is not a vote.
+- Only the vote goes back: `useful`, `not_useful` or `not_relevant`, a reason and a use case, each dropped when the
+  strip or check would change it. A learning is judged once at most.
+- The control plane counts the votes per account without keeping the account, and ranks the learnings for the team,
+  who pick what goes into the shipped defaults (AGENTS.md, a prompt, the docs) as a change a person makes.
+
+Settings, Security, **Vote on learnings from other Machines**: **On** (the default, it votes by itself), **Ask first**
+or **Off** (`team_learnings.vote_mode`). Under Ask first, a judged vote waits in one box under Learning, Shared, never a
+to-do of its own and never a notification. The owner sends or skips it (`learnings_votes_decide`); one left 14 days goes
+unsent. Off skips everything waiting.
+
+### What Help is asked
+
+Help (`help_chat.py`) ends each answer with a TOPIC: line, a few generic words for what the question was about.
+`help_topics.py` keeps it only when it passes `team_learnings.strip` with every name the Machine knows, the use-case
+check and uses only words from the public help pages; else it keeps "other" for an unanswered question, or nothing.
+Once a day the finished days go to the control plane as counts per topic, without the account. Settings, Security,
+**Share what Help is asked** turns it off and deletes what waits.
+
+## Error reports
+
+Separate from learnings and on by default: when The Machine's own code fails, the Machine sends the team a signature of
+the error, never what caused it (`error_feed.py`). See also [Error reports](help/error-reports.md).
+
+**Sources:**
+
+- the service's logged errors and dead threads (`FaultLog`);
+- the dashboard's uncaught errors and unhandled rejections (posted as `client_error`, normalized again by the service);
+- failed reviews and coding-agent jobs (their error codes only);
+- failed syncs (the source's service and the error type). A transient one (a rate limit, the service's own 500, 502,
+  503 or 504, or the network) only after 20 in a row; a 429 or such a 5xx is retried once after 15 seconds, or its
+  Retry-After when that is a minute or less. A sign-in or permission error such as 401 or 403 is reported at once.
+
+**Limits.** Each is deduplicated by type, place and normalized message (without the line number, so a release that
+moves the code keeps the same signature). At most 300 kept, a batch of 50 every 10 minutes and 500 a day, kept 30 days.
+Before a batch goes, every name the Machine knows is taken out once more, and each message must pass a strict shape
+check (`error_feed.allowed`) or it never goes.
+
+Settings, Security, **Send error reports** turns it off: nothing is recorded or sent, and what waited is deleted.
+
+**Pacing.** Under the same switch, `pacing.py` counts how often background work has to pace (`model_budget.pause`): per
+stretch, when it started, the window (`5h` or `week`), the threshold, how long it lasted and how many distinct jobs
+waited. Once a day the finished days go over the Network (`POST /errors` with `{"action": "pacing", ...}`) for a card on
+the control plane's /admin. Counts and minutes only; job ids stay on the Machine. The owner sees nothing new.
 
 ## Deleting someone
 
-**Delete permanently…**, in the ⋯ menu on a person's page, removes them and everything The Machine knows about them: their graph entry, links, aliases and addresses, looked-up details and saved photo, relationship scores, the messages they sent or that were only between you and them, and the notes learned about them (also the lines in the agent's memory notes that name them). Cards that involve them stay, as your own work, with their name and addresses taken out. What stays is a keyed hash of their addresses and other identifiers, so they are not added, looked up or learned about again: new messages from them, or only to them, are not kept. Messages with other people that they were copied on stay. On a hosted Machine the control plane keeps nothing about people to delete.
+**Delete permanently…**, in the ⋯ menu on a person's page, removes them and everything The Machine knows about them:
+
+- their graph entry, links, aliases and addresses, looked-up details and saved photo, relationship scores;
+- the messages they sent or that were only between you and them;
+- the notes learned about them (also the lines in the agent's memory notes that name them).
+
+To-dos that involve them stay, as your own work, with their name and addresses taken out. Messages with other people
+that they were copied on stay.
+
+What stays is a keyed hash of their addresses and other identifiers, so they are not added, looked up or learned about
+again: new messages from them, or only to them, are not kept. On a hosted Machine the control plane keeps nothing about
+people to delete.
