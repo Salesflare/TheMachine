@@ -840,10 +840,17 @@ QUIET_OPENCLAW = {
 OPENCLAW_UPKEEP = {
     'mcp.sessionIdleTtlMs': 30 * 60 * 1000,
 }
+# Telegram's servers fetch a preview of the first link in a message as soon as it arrives, before anyone taps it. The
+# to-dos sent there and the assistant's replies carry text a model wrote from incoming messages, so a link it was talked
+# into writing (with something private in the address) would reach that site by itself. Previews off; links stay
+# tappable. Only once Telegram is set up (a channel with nothing in it would be a half-made one), and only where unset.
+TELEGRAM_NO_PREVIEWS = {
+    'channels.telegram.linkPreview': False,
+}
 
 
 def quiet_openclaw(facts, stamp):
-    """QUIET_OPENCLAW and OPENCLAW_UPKEEP into openclaw.json where nothing is set yet (OpenClaw reloads these without a restart). The keys
+    """QUIET_OPENCLAW, OPENCLAW_UPKEEP and TELEGRAM_NO_PREVIEWS into openclaw.json where nothing is set yet (OpenClaw reloads these without a restart). The keys
     set once are kept in `stamp`. Returns the keys set now."""
     openclaw = facts.get('openclaw')
     if not openclaw:
@@ -854,7 +861,8 @@ def quiet_openclaw(facts, stamp):
     except (OSError, ValueError, TypeError):
         done = set()
     changed = []
-    for key, value in {**QUIET_OPENCLAW, **OPENCLAW_UPKEEP}.items():
+    telegram = TELEGRAM_NO_PREVIEWS if has_telegram(settings) else {}  # set up later: the next install or update sets it
+    for key, value in {**QUIET_OPENCLAW, **OPENCLAW_UPKEEP, **telegram}.items():
         node = settings
         for part in key.split('.'):
             node = node.get(part, None) if isinstance(node, dict) else None
@@ -877,6 +885,8 @@ def quiet_openclaw(facts, stamp):
         say('OpenClaw background turns that only use your AI limits are off: ' + ', '.join(quiet))
     if any(key in OPENCLAW_UPKEEP for key in changed):
         say('Idle OpenClaw sessions release their tool connections after 30 minutes')
+    if any(key in TELEGRAM_NO_PREVIEWS for key in changed):
+        say('Telegram link previews are off, so no link in a message is opened before you tap it')
     return changed
 
 
