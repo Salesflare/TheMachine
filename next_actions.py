@@ -1797,7 +1797,9 @@ class SlackTransport:
         except Exception:
             return {'not_sent': True}  # nothing was posted yet; try again shortly
         try:
-            reply = self.call(action, 'chat.postMessage', {'channel': channel, 'text': slack_text(action['body']), 'unfurl_links': False})
+            # No unfurls, of pages or media: Slack would fetch a link in the text before anyone taps it
+            reply = self.call(action, 'chat.postMessage', {'channel': channel, 'text': slack_text(action['body']),
+                                                           'unfurl_links': False, 'unfurl_media': False})
         except urllib.error.HTTPError as error:
             if error.code == 429:
                 return {'not_sent': True}  # Slack refused it for now and posted nothing: send it again shortly

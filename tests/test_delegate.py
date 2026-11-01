@@ -192,6 +192,9 @@ class SlackSender(unittest.TestCase):
         self.assertEqual([c[:2] for c in calls], [('users.lookupByEmail', 'GET'), ('conversations.open', 'POST'), ('chat.postMessage', 'POST')])
         self.assertEqual(calls[2][2]['channel'], 'D0SAM1')
         self.assertEqual(calls[2][2]['text'], 'See <https://app.example.com/i?a=1&b=2|the invoice> &lt;now&gt;')
+        # Slack fetches nothing from the text by itself: no page or media previews of its links
+        self.assertIs(calls[2][2]['unfurl_links'], False)
+        self.assertIs(calls[2][2]['unfurl_media'], False)
 
     def test_wrong_person_is_refused_before_anything_is_posted(self):
         sender = n.SlackTransport({'accounts': [SLACK]}, lambda config, name: 'KEY=secret')
