@@ -412,6 +412,17 @@ class Calls(Base):
         self.assertTrue(error)
         self.assertIn('No Gmail or Outlook account', text)
 
+    def test_a_work_todo_added_on_a_weekend_is_on_the_list_at_once(self):
+        _, tokens = self.signed_in('draft')
+        with patch.object(a, 'is_work_day', return_value=False):
+            error, made = self.tool(tokens['access_token'], 'create_todo', text='Call Sam on Friday', area='work')
+        self.assertFalse(error, made)
+        with self.db() as db:
+            self.assertIsNone(db.execute('SELECT deliver_after FROM suggestions WHERE id=?', (made['id'],)).fetchone()[0])
+        error, found = self.tool(tokens['access_token'], 'list_todos', area='work')
+        self.assertFalse(error, found)
+        self.assertIn(made['id'], [t['id'] for t in found['todos']])
+
     def test_a_draft_waits_for_the_owner_and_nothing_is_sent(self):
         _, tokens = self.signed_in('draft', area='personal')
         with patch.object(a.next_actions, 'execute', side_effect=AssertionError('nothing sends')) if hasattr(a.next_actions, 'execute') else patch.object(a, 'now', a.now):

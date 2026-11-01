@@ -16666,6 +16666,9 @@ class App(*APP_MIXINS):
             event_id = db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, key)).fetchone()[0]
         card = self.store.suggest(key, (i18n.t('Email to {}: {}', ', '.join(draft['to'])[:60], draft['subject']) if draft else title)[:90],
                                   body[:700], [event_id], when='now', work=(graph.account_side(accounts[0]) or area) == 'work', due=due)
+        if not card.get('duplicate'):  # the owner asked for it, as with New card (owner_card): on their list now, not held for a work day
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET deliver_after=NULL WHERE id=?', (card['id'],))
         if draft and not card.get('duplicate'):
             action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account, 'to': draft['to'],
                                             'subject': draft['subject'], 'body': draft['body']}, self.config, [account])
