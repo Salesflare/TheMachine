@@ -35,11 +35,11 @@ Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past" of "snooze d
 
 De chat kan ook dingen opzoeken, zoals de openingsuren van een winkel op het web. Intussen toont hij **Ermee bezig…**, en je kan gewoon verder praten. Als het antwoord klaar is, zegt The Machine het je, en waar hij het vond. Vraag je intussen iets anders, dan wacht dat zijn beurt af.
 
-Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Lotte sturen?". Eerst leest hij het hele concept voor: naar wie het gaat, het onderwerp en de tekst. Zo werkt het ook met je telefoon in je zak. Antwoord met een duidelijke ja, zoals "ja, verstuur maar", en dat concept gaat weg.
+Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Sam sturen?". Eerst leest hij het hele concept voor: naar wie het gaat, het onderwerp en de tekst. Zo werkt het ook met je telefoon in je zak. Antwoord met een duidelijke ja, zoals "ja, verstuur maar", en dat concept gaat weg.
 
 - Hij verstuurt precies het concept dat hij voorlas. Verandert het na de vraag, dan leest hij het opnieuw voor en vraagt hij het opnieuw. Een vraag die je niet binnen 3 minuten beantwoordt, vervalt.
 - Is je antwoord geen duidelijke ja, dan gaat er niets weg en vraagt hij het opnieuw. "Nee" verstuurt niets.
-- Een concept dat je al op het scherm zag, of in dit gesprek hoorde, leest hij niet opnieuw voor: hij vraagt het alleen, zoals "Naar Nick sturen?".
+- Een concept dat je al op het scherm zag, of in dit gesprek hoorde, leest hij niet opnieuw voor: hij vraagt het alleen, zoals "Naar Pat sturen?".
 - Zeg "verstuur ze allebei" of "verstuur alle klare" en hij noemt iedereen in één vraag. Eén ja verstuurt ze allemaal.
 - Praten zegt hoeveel seconden je hebt en toont **Ongedaan maken** met dezelfde aftelling. Tik erop, of zeg "ongedaan maken" of "wacht".
 - Zodra de Machine het verstuurd heeft, zegt Praten "Verstuurd." en tonen de balk en de to-do **Verstuurd naar** die persoon met het uur. Ging het niet weg, dan zegt Praten waarom. Vraag gerust "is het verstuurd?": Praten kijkt het na en gokt nooit.

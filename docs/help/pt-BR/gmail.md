@@ -29,7 +29,7 @@ Em uma Machine hospedada:
 
 Ou no painel: **Conexões**, **+ Adicionar**, escolha Gmail e clique em **Entrar com Google**. Quando terminar, você volta para o painel.
 
-No seu próprio computador, depois de [pareado com a sua conta](fleet.md):
+No seu próprio computador, depois de [pareado com a sua conta](friends.md#a-machine-on-your-own-computer):
 
 1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha Gmail.
 2. Toque em **Entrar com o Google** e entre na aba que abrir. O Gmail e o Google Calendar se conectam juntos.

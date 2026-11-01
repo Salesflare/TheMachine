@@ -23,7 +23,7 @@ In je eigen agenda kun je ook mensen uitnodigen vanuit het formulier in de [Agen
 
 Op een gehoste Machine koppel je het samen met Gmail: druk op je setuppagina, onder **Mail en agenda**, op **Google koppelen**.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](fleet.md): open **Koppelingen**, dan **+ Toevoegen**, kies Google Calendar en druk op **Inloggen met Google**. Het koppelt samen met Gmail.
+Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **+ Toevoegen**, kies Google Calendar en druk op **Inloggen met Google**. Het koppelt samen met Gmail.
 
 Met je eigen app: voer `assistant connect calendar` uit, of open daar **Je eigen app gebruiken**. Hij vraagt welke agenda hij moet lezen.
 

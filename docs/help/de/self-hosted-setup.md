@@ -11,7 +11,7 @@ The Machine ist Open Source (AGPL). Auf deinem eigenen Computer ist sie kostenlo
 ## Was sie braucht
 
 - OpenClaw 2026.10.7 oder neuer. Der Installer bietet an, es zu installieren.
-- Python 3.12 oder neuer und Node.js 24.22.1 oder neuer (oder 26.12.1 oder neuer).
+- Python 3.12 oder neuer und Node.js 24 (24.22.1 oder neuer) oder 26.12.1 oder neuer, nicht 25.
 - Tailscale, um dein Dashboard von deinem Handy aus zu erreichen.
 - Dein eigenes Benutzerkonto, nicht root.
 

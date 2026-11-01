@@ -30,7 +30,7 @@ En una Machine alojada:
 
 O en el panel: **Conexiones**, **+ Añadir**, elige Zoom y pulsa **Iniciar sesión con Zoom**. Cuando termines, vuelves al panel.
 
-En tu propio ordenador, una vez [vinculado con tu cuenta](fleet.md): abre **Conexiones**, luego **+ Añadir**, elige Zoom y pulsa **Iniciar sesión con Zoom**.
+En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **+ Añadir**, elige Zoom y pulsa **Iniciar sesión con Zoom**.
 
 ## Quítalo
 

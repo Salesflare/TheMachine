@@ -27,8 +27,7 @@ On your own computer:
 2. Pick **Work** with its company, or **Personal**, type your handle without the @, and press **Connect**.
 3. Press **Sign in to X** and sign in in your Machine's browser. It connects by itself once you're in.
 
-Or run `assistant connect x`.
-3. Type your handle, and the handle the browser is normally signed in to.
+Or run `assistant connect x`, and type your handle and the handle the browser is normally signed in to.
 
 If X signs your Machine out, see [Signed out of a site](signed-out.md).
 

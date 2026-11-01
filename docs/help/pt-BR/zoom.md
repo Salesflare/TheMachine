@@ -30,7 +30,7 @@ Em uma Machine hospedada:
 
 Ou no painel: **Conexões**, **+ Adicionar**, escolha Zoom e clique em **Entrar com Zoom**. Quando terminar, você volta para o painel.
 
-No seu próprio computador, depois que ele estiver [pareado com sua conta](fleet.md): abra **Conexões**, depois **+ Adicionar**, escolha Zoom e clique em **Entrar com Zoom**.
+No seu próprio computador, depois que ele estiver [pareado com sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões**, depois **+ Adicionar**, escolha Zoom e clique em **Entrar com Zoom**.
 
 ## Remover
 

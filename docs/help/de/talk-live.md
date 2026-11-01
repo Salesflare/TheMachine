@@ -35,11 +35,11 @@ Wenn du um etwas bittest, etwa „schreib eine Antwort, dass Donnerstag passt“
 
 Der Chat kann auch Dinge nachschlagen, etwa die Öffnungszeiten eines Geschäfts im Web. Währenddessen zeigt er **Bin dran…**, und du kannst weiterreden. Wenn die Antwort da ist, sagt The Machine sie dir, und wo sie sie gefunden hat. Fragst du inzwischen etwas anderes, kommt das danach dran.
 
-Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Lotte senden?“. Vorher liest sie den ganzen Entwurf vor: an wen er geht, den Betreff und den Text. So klappt es auch mit dem Handy in der Tasche. Antworte mit einem klaren Ja, etwa „ja, senden“, und genau dieser Entwurf geht raus.
+Willst du einen Entwurf senden, sag es. The Machine fragt zuerst und nennt, an wen und wie, etwa „Diese Antwort per E-Mail an Sam senden?“. Vorher liest sie den ganzen Entwurf vor: an wen er geht, den Betreff und den Text. So klappt es auch mit dem Handy in der Tasche. Antworte mit einem klaren Ja, etwa „ja, senden“, und genau dieser Entwurf geht raus.
 
 - Sie sendet genau den Entwurf, den sie vorgelesen hat. Ändert er sich nach der Frage, liest sie ihn neu vor und fragt erneut. Eine Frage, die du nicht innerhalb von 3 Minuten beantwortest, verfällt.
 - Ist deine Antwort kein klares Ja, geht nichts raus und sie fragt erneut. „Nein“ sendet nichts.
-- Einen Entwurf, den du schon auf dem Bildschirm gesehen oder in diesem Gespräch gehört hast, liest sie nicht noch einmal vor: Sie fragt nur, etwa „An Nick senden?“.
+- Einen Entwurf, den du schon auf dem Bildschirm gesehen oder in diesem Gespräch gehört hast, liest sie nicht noch einmal vor: Sie fragt nur, etwa „An Pat senden?“.
 - Sag „beide senden“ oder „alle fertigen senden“, und sie nennt alle in einer Frage. Ein Ja sendet jeden davon.
 - Sprechen sagt, wie viele Sekunden du hast, und zeigt **Rückgängig** mit demselben Countdown. Tippe darauf oder sag „rückgängig“ oder „warte“.
 - Sobald die Machine sie gesendet hat, sagt Sprechen „Gesendet.“, und die Leiste und das To-do zeigen **An … gesendet** mit dem Namen und der Uhrzeit. Ging sie nicht raus, sagt Sprechen, warum. Frag jederzeit „Ist sie raus?“: Sprechen prüft nach und rät nie.

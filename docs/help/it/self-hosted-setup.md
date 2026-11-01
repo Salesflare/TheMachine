@@ -11,7 +11,7 @@ The Machine è open source (AGPL). Sul tuo computer è gratis, e i tuoi dati res
 ## Cosa serve
 
 - OpenClaw 2026.10.7 o più recente. Il programma di installazione si offre di installarlo.
-- Python 3.12 o più recente, e Node.js 24.22.1 o più recente (oppure 26.12.1 o più recente).
+- Python 3.12 o più recente, e Node.js 24 (24.22.1 o più recente) oppure 26.12.1 o più recente, non 25.
 - Tailscale, per raggiungere la dashboard dal telefono.
 - Il tuo account utente, non root.
 

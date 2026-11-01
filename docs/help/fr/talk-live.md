@@ -35,11 +35,11 @@ Quand vous demandez quelque chose, comme « écris une réponse pour dire que je
 
 Le chat peut aussi chercher des choses, comme les horaires d’un magasin sur le web. Pendant ce temps, il affiche **Je m’en occupe…**, et vous pouvez continuer à parler. Quand la réponse est prête, The Machine vous la dit, avec l’endroit où elle l’a trouvée. Si vous demandez autre chose entre-temps, cela attend son tour.
 
-Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Lotte par e-mail ? ». Elle lit d’abord tout le brouillon à voix haute : à qui il va, l’objet et le texte. Ça marche donc aussi avec le téléphone dans la poche. Répondez par un oui clair, comme « oui, envoie-le », et ce brouillon part.
+Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Sam par e-mail ? ». Elle lit d’abord tout le brouillon à voix haute : à qui il va, l’objet et le texte. Ça marche donc aussi avec le téléphone dans la poche. Répondez par un oui clair, comme « oui, envoie-le », et ce brouillon part.
 
 - Elle envoie exactement le brouillon qu’elle a lu. S’il change après la question, elle le relit et redemande. Une question sans réponse au bout de 3 minutes expire.
 - Si votre réponse n’est pas un oui clair, rien ne part et elle redemande. « Non » n’envoie rien.
-- Un brouillon déjà vu à l’écran, ou entendu dans cette conversation, n’est pas relu : elle demande seulement, par exemple « L’envoyer à Nick ? ».
+- Un brouillon déjà vu à l’écran, ou entendu dans cette conversation, n’est pas relu : elle demande seulement, par exemple « L’envoyer à Pat ? ».
 - Dites « envoie les deux » ou « envoie tous ceux qui sont prêts », et elle nomme tout le monde en une question. Un oui les envoie chacun.
 - Parler dit combien de secondes il vous reste et affiche **Annuler** avec le même compte à rebours. Touchez-le, ou dites « annule » ou « attends ».
 - Une fois envoyé par la Machine, Parler dit « Envoyé. » et la barre et la tâche affichent **Envoyé à** cette personne avec l’heure. Si l’envoi a échoué, Parler dit pourquoi. Demandez « c’est parti ? » à tout moment : elle vérifie, elle ne devine jamais.

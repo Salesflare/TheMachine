@@ -30,7 +30,7 @@ Auf einer gehosteten Machine:
 
 Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Zoom und tippe auf **Mit Zoom anmelden**. Danach bist du zurück im Dashboard.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](fleet.md) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Zoom und tippe auf **Mit Zoom anmelden**.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Zoom und tippe auf **Mit Zoom anmelden**.
 
 ## Entfernen
 

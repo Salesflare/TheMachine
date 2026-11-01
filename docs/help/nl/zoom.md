@@ -30,7 +30,7 @@ Op een gehoste Machine:
 
 Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Zoom en druk op **Inloggen met Zoom**. Als je klaar bent, ben je terug in het dashboard.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](fleet.md): open **Koppelingen**, dan **+ Toevoegen**, kies Zoom en druk op **Inloggen met Zoom**.
+Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **+ Toevoegen**, kies Zoom en druk op **Inloggen met Zoom**.
 
 ## Verwijderen
 

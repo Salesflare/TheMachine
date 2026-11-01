@@ -35,11 +35,11 @@ When you ask for something, like "write a reply saying Thursday works" or "snooz
 
 The chat can also look things up, like a store's opening hours on the web. It shows **Working on it…** meanwhile, and you can keep talking. When the answer is ready, The Machine tells you, and where it found it. Ask something else meanwhile and it waits its turn.
 
-To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Lotte by email?". It first reads the whole draft out: who it goes to, the subject and the text. So it works with your phone in your pocket, too. Answer with a clear yes, like "yes, send it", and that draft goes.
+To send a draft, say so. The Machine asks first, naming who it goes to and how, like "Send this reply to Sam by email?". It first reads the whole draft out: who it goes to, the subject and the text. So it works with your phone in your pocket, too. Answer with a clear yes, like "yes, send it", and that draft goes.
 
 - It sends exactly the draft it read out. If the draft changes after the question, it reads it again and asks again. A question you don't answer within 3 minutes expires.
 - If your answer isn't a clear yes, nothing is sent and it asks again. "No" sends nothing.
-- A draft you already saw on screen, or heard in this conversation, isn't read out again: it only asks, like "Send it to Nick?".
+- A draft you already saw on screen, or heard in this conversation, isn't read out again: it only asks, like "Send it to Pat?".
 - Say "send both" or "send all the ready ones" and it names everyone in one question. One yes sends each of them.
 - Talk says how many seconds you have and shows **Undo** with the same countdown. Tap it, or say "undo" or "wait".
 - Once the Machine has sent it, Talk says "Sent." and the bar and the to-do show **Sent to** that person with the time. If it didn't go out, Talk says why. Ask "is it sent?" any time: it checks, it never guesses.

@@ -23,7 +23,7 @@ Na sua própria agenda, você também pode convidar pessoas pelo formulário do 
 
 Em uma Machine hospedada, ela se conecta junto com o Gmail: na sua página de configuração, em **E-mail e agenda**, clique em **Conectar Google**.
 
-No seu próprio computador, depois de [pareado com sua conta](fleet.md): abra **Conexões**, depois **+ Adicionar**, escolha Google Calendar e clique em **Entrar com Google**. Ela se conecta junto com o Gmail.
+No seu próprio computador, depois de [pareado com sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões**, depois **+ Adicionar**, escolha Google Calendar e clique em **Entrar com Google**. Ela se conecta junto com o Gmail.
 
 Com seu próprio app: rode `assistant connect calendar` ou abra **Usar seu próprio app** ali. Ela pergunta qual agenda ler.
 

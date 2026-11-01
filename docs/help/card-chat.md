@@ -25,7 +25,7 @@ On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter st
 
 ## When something is wrong
 
-Say so in the chat, like "She's not the CEO" or "He left the company". The Machine fixes it where it came from: a role, a company, a title, a project's stage, the to-do's project, or a rule it learned. The chat then shows what changed, like **Fixed: Ana's role is Head of Sales, from her email signature**, with **Undo**. Undo puts back what was there, unless it changed since.
+Say so in the chat, like "They're not the CEO" or "They left the company". The Machine fixes it where it came from: a role, a company, a title, a project's stage, the to-do's project, or a rule it learned. The chat then shows what changed, like "Fixed: Sam's role is Head of Sales, from their email signature", with **Undo**. Undo puts back what was there, unless it changed since.
 
 On a GBrain page, only The Machine's own section changes; what you wrote there stays yours. When it can't find where something came from, it learns from your note as before.
 

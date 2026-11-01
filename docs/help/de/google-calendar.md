@@ -23,7 +23,7 @@ In deinem eigenen Kalender kannst du über das Formular im [Kalender](calendar.m
 
 Auf einer gehosteten Machine wird es zusammen mit Gmail verbunden: Tippe auf deiner Einrichtungsseite unter **Mail und Kalender** auf **Google verbinden**.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](fleet.md) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Google Calendar und tippe auf **Mit Google anmelden**. Es wird zusammen mit Gmail verbunden.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Google Calendar und tippe auf **Mit Google anmelden**. Es wird zusammen mit Gmail verbunden.
 
 Mit deiner eigenen App: Führe `assistant connect calendar` aus oder öffne dort **Eigene App nutzen**. Es fragt, welcher Kalender gelesen werden soll.
 

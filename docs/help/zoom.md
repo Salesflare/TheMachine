@@ -30,7 +30,7 @@ On a hosted Machine:
 
 Or in the dashboard: **Connections**, **+ Add**, pick Zoom and press **Sign in with Zoom**. When you're done, you're back in the dashboard.
 
-On your own computer, once it's [paired with your account](fleet.md): open **Connections**, then **+ Add**, pick Zoom and press **Sign in with Zoom**.
+On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **+ Add**, pick Zoom and press **Sign in with Zoom**.
 
 ## Remove it
 
