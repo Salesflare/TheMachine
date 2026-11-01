@@ -76,7 +76,8 @@ class DemoMachineTest(unittest.TestCase):
 
     def test_loads_sealed_without_accounts_and_only_once(self):
         with tempfile.TemporaryDirectory() as folder:
-            config = {'database': str(Path(folder) / 'events.sqlite'), 'accounts': [], 'owner_name': 'App review'}
+            config = {'database': str(Path(folder) / 'events.sqlite'), 'owner_name': 'App review',
+                      'accounts': [{'id': 'openclaw-gateway', 'service': 'gateway'}]}  # every Machine has its gateway
             path = Path(folder) / 'config.json'
             path.write_text(json.dumps(config))
             code = (f'import os,sys;os.environ["HOME"]={folder!r};sys.path.insert(0,".");import assistant,message_seal;'
@@ -97,6 +98,10 @@ class DemoMachineTest(unittest.TestCase):
             again = run()
             self.assertNotEqual(again.returncode, 0)
             self.assertIn('already has signals', again.stderr)
+            path.write_text(json.dumps({**config, 'accounts': config['accounts'] + [{'id': 'work-gmail', 'service': 'gmail'}]}))
+            mail = run()
+            self.assertNotEqual(mail.returncode, 0)
+            self.assertIn('accounts connected', mail.stderr)
 
 
 if __name__ == '__main__':

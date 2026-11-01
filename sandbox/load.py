@@ -194,7 +194,8 @@ def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):
     import assistant
     import graph
 
-    if config.get('accounts'):
+    # Every Machine has its own OpenClaw gateway as an account (its chat channel, with no bot of its own here)
+    if any(a.get('service') != 'gateway' for a in config.get('accounts', [])):
         raise SystemExit('This Machine has accounts connected: a demo Machine starts with none.')
     fixture = json.loads(Path(fixture_path).read_text())
     store = assistant.Store(config['database'])
