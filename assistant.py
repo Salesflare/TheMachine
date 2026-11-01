@@ -2092,13 +2092,29 @@ class Salesflare:
 
 
 def salesflare_time(value):
+    """A Salesflare date as UTC. Mostly ISO 8601 with Z, but some email dates come as epoch milliseconds
+    (a number, sometimes as text); epoch seconds are accepted too."""
+    if isinstance(value, str) and re.fullmatch(r'\s*\d{9,14}(\.\d+)?\s*', value):
+        value = float(value)
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        try:
+            return dt.datetime.fromtimestamp(value / 1000 if abs(value) >= 1e11 else value, dt.timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            raise SourceError('salesflare_invalid_timestamp') from None
     try:
-        stamp = dt.datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+        stamp = dt.datetime.fromisoformat(str(value).strip().replace('Z', '+00:00'))
     except ValueError:
         raise SourceError('salesflare_invalid_timestamp') from None
     if stamp.tzinfo is None:
         raise SourceError('salesflare_missing_timezone')
     return stamp.astimezone(dt.timezone.utc)
+
+
+def salesflare_time_or_none(value):
+    try:
+        return salesflare_time(value)
+    except SourceError:
+        return None
 
 
 def salesflare_context(account, crm):
@@ -2137,7 +2153,7 @@ def salesflare_email_event(account, info, contacts, item, config=None):
     header = '\n'.join(f"{field.title()}: {name} <{address}>" if name else f"{field.title()}: {address}" for field, name, address in people)
     involved = [c for c in contacts.values() if c['email'] and c['email'] in {a for _, _, a in people}]
     return {'account_id': account['id'], 'source_id': 'email:' + str(item['id']), 'kind': 'salesflare.email',
-            'occurred_at': salesflare_time(email.get('date') or item.get('time')).isoformat(),
+            'occurred_at': (salesflare_time_or_none(email.get('date')) or salesflare_time(item.get('time'))).isoformat(),
             'title': (email.get('subject') or '(no subject)')[:1000],
             'body': (header + '\n\n' + text)[:40000],
             'metadata': {'crm_account': info, 'contacts': involved, 'mailbox_user_id': email.get('user_id'),
@@ -2179,8 +2195,10 @@ def salesflare_recent_accounts(source, field, since, page=50, max_pages=40):
             raise SourceError('salesflare_invalid_page')
         for row in rows:
             stamp = row.get(field)
-            if not stamp or salesflare_time(stamp) < since:
+            parsed = salesflare_time_or_none(stamp) if stamp else None
+            if not stamp or (parsed and parsed < since):
                 return found
+            # An unreadable date still lists the account: reading it once too often beats missing it.
             found.append(row['id'])
         if len(rows) < page:
             return found
@@ -2196,7 +2214,10 @@ def salesflare_feed(source, crm_id, kind, since, until, page=100, max_pages=10):
         items.extend(rows)
         if len(rows) < page:
             return items
-        oldest = min(salesflare_time(r.get('time')) for r in rows)
+        stamps = [stamp for stamp in (salesflare_time_or_none(r.get('time')) for r in rows) if stamp]
+        if not stamps:
+            raise SourceError('salesflare_invalid_timestamp')
+        oldest = min(stamps)
         if oldest >= before:
             raise SourceError('salesflare_feed_not_advancing')
         before = oldest
@@ -2302,13 +2323,24 @@ def sync_salesflare(store, config, account, source=None):
             state['inaccessible_accounts'] = sorted(set(state.get('inaccessible_accounts', [])) | {crm_id})[-500:]
             continue
         for item in emails:
-            event = salesflare_email_event(account, info, contacts, item, config)
+            try:
+                event = salesflare_email_event(account, info, contacts, item, config)
+            except SourceError as error:
+                # One unreadable record is skipped and logged; it never holds up the round.
+                LOG.warning('salesflare skipped record account=%s crm_account=%s item=email:%s error=%s',
+                            account['id'], crm_id, item.get('id'), error.category)
+                continue
             events.append(event) if event else None
             skipped += event is None
             if event is None and email_subject_excluded(config, (item.get('email') or {}).get('subject')):
                 excluded.add('email:' + str(item['id']))
         for _, item in meetings:
-            event = salesflare_meeting_event(account, info, contacts, item)
+            try:
+                event = salesflare_meeting_event(account, info, contacts, item)
+            except SourceError as error:
+                LOG.warning('salesflare skipped record account=%s crm_account=%s item=meeting:%s error=%s',
+                            account['id'], crm_id, item.get('id'), error.category)
+                continue
             events.append(event) if event else None
     window['pending'] = window['pending'][len(batch):]
     if not window['pending']:
