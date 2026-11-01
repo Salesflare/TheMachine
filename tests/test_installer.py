@@ -112,6 +112,52 @@ class InstallerTest(unittest.TestCase):
                 self.assertNotIn('channels.telegram.linkPreview', installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp))
             self.assertNotIn(off, calls)
 
+    def test_daily_memory_rules_go_into_the_workspace_agents_md_once_and_the_owners_edits_stay(self):
+        # OpenClaw's own AGENTS.md names no single daily file and nothing about the session-memory hook's files
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'say'):
+            space, stamp = Path(tmp) / 'workspace', Path(tmp) / 'data' / 'memory-rules.json'
+            agents = space / 'AGENTS.md'
+            # No AGENTS.md yet (OpenClaw writes its own first): nothing written, and the next run tries again
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertFalse(agents.exists())
+            self.assertFalse(stamp.exists())
+            space.mkdir()
+            stock = '# AGENTS.md - Your Workspace\n\n## Memory\n\n- **Daily notes:** `memory/YYYY-MM-DD.md` holds raw logs.\n'
+            agents.write_text(stock)
+            agents.chmod(0o644)
+            self.assertTrue(installer.memory_rules(space, stamp))
+            text = agents.read_text()
+            self.assertTrue(text.startswith(stock))  # what was there stays, the rules come after it
+            self.assertEqual(text.count(installer.MEMORY_RULES_BEGIN), 1)
+            self.assertTrue(text.endswith(installer.MEMORY_RULES))
+            self.assertEqual(stat.S_IMODE(agents.stat().st_mode), 0o644)
+            for words in ('`memory/YYYY-MM-DD.md`', 'Append', 'session-memory', '`MEMORY.md`', '`memory/assistant/`'):
+                self.assertIn(words, installer.MEMORY_RULES)
+            self.assertNotIn('—', installer.MEMORY_RULES)
+            # Rerun (every update on a hosted Machine): not again
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_text(), text)
+            # The owner edits them, or removes them: theirs stays, nothing comes back
+            agents.write_text(text.replace('dated in the owner', 'dated in my'))
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertIn('dated in my', agents.read_text())
+            agents.write_text(stock)
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_text(), stock)
+            # Rules already there (a lost stamp): not twice
+            stamp.unlink()
+            agents.write_text(text)
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_text(), text)
+            # An owner with their own rules for the hook's files: left as it is
+            stamp.unlink()
+            own = '# AGENTS.md\n\n- Daily notes go to `memory/daily/YYYY-MM-DD.md`; merge the Session-Memory hook files there.\n'
+            agents.write_text(own)
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_text(), own)
+            self.assertTrue(stamp.exists())
+            self.assertEqual(sorted(p.name for p in space.iterdir()), ['AGENTS.md'])  # no temp file left
+
     def test_a_new_install_starts_at_thinking_low_only_where_unset_and_the_model_offers_it(self):
         listed = {'models': [{'provider': 'acme', 'id': 'lm-2', 'available': True, 'thinkingLevels': [{'id': 'low'}, {'id': 'medium'}]},
                              {'provider': 'acme', 'id': 'deep', 'available': True, 'thinkingLevels': [{'id': 'medium'}, {'id': 'high'}]},

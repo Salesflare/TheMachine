@@ -26,6 +26,7 @@ are only created when absent. OpenClaw's own configuration is only read (your ap
 Telegram ID, paired phones); the installer changes nothing there beyond `openclaw plugins
 install/enable/uninstall`, approving your own Telegram pairing request if you say yes, and
 OpenClaw's own setup commands when it offers them and you say yes.
+In your OpenClaw workspace it adds daily memory rules to AGENTS.md once (see memory_rules).
 """
 import argparse
 import hashlib
@@ -847,6 +848,20 @@ OPENCLAW_UPKEEP = {
 TELEGRAM_NO_PREVIEWS = {
     'channels.telegram.linkPreview': False,
 }
+# OpenClaw's own AGENTS.md in the workspace asks for daily notes but names no single file per day, and the
+# session-memory hook leaves a dated file of its own on every reset, so notes for one day end up spread over many.
+# These rules go at the end of it once (memory_rules); the path is the one OpenClaw loads at the start of a session.
+# The Machine's own results stay in memory/assistant/ (PREPARATION.md), which these rules leave alone.
+MEMORY_RULES_BEGIN, MEMORY_RULES_END = '<!-- the-machine:memory-rules -->', '<!-- /the-machine:memory-rules -->'
+MEMORY_RULES = f"""{MEMORY_RULES_BEGIN}
+## Daily memory
+
+- Keep one daily note per day at `memory/YYYY-MM-DD.md`, dated in the owner's time zone. Append to it; never rewrite or reorder what is already there.
+- The session-memory hook leaves `memory/YYYY-MM-DD-HHMM.md` files on a reset. Merge each into that day's note, keeping unique content and where it came from and skipping exact duplicates.
+- Durable decisions and facts go in `MEMORY.md` and lasting preferences in `USER.md`, never only in a daily note.
+- Results of to-dos stay in `memory/assistant/`; they are not daily notes.
+{MEMORY_RULES_END}
+"""
 
 
 def quiet_openclaw(facts, stamp):
@@ -888,6 +903,41 @@ def quiet_openclaw(facts, stamp):
     if any(key in TELEGRAM_NO_PREVIEWS for key in changed):
         say('Telegram link previews are off, so no link in a message is opened before you tap it')
     return changed
+
+
+def memory_rules(workspace, stamp):
+    """MEMORY_RULES at the end of the workspace's AGENTS.md, once. Not when the file isn't there yet (OpenClaw writes
+    its own first; the next install or update adds them), and not when it already has rules for the session-memory
+    hook's files (the owner's own). Once done it is kept in `stamp`, so rules the owner edits or removes stay that way.
+    True when added now."""
+    try:
+        if stamp.exists():
+            return False
+    except OSError:
+        return False
+    agents = Path(workspace) / 'AGENTS.md'
+    try:
+        text = agents.read_text()
+    except (OSError, UnicodeDecodeError):
+        return False
+    added = MEMORY_RULES_BEGIN not in text and 'session-memory' not in text.lower()
+    if added:
+        temp = agents.with_name('.AGENTS.md.the-machine.tmp')
+        try:
+            temp.write_text(text.rstrip('\n') + '\n\n' + MEMORY_RULES)
+            shutil.copymode(agents, temp)
+            os.replace(temp, agents)
+        except OSError as error:
+            temp.unlink(missing_ok=True)
+            say(f'  could not add the daily memory rules to {agents}: {error}')
+            return False
+        say(f'Daily memory rules added to {agents} (edit or remove them there; they are not added again)')
+    try:
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.write_text(json.dumps({'added': added, 'at': time.strftime('%Y-%m-%d')}) + '\n')
+    except OSError:
+        pass
+    return added
 
 
 # A new install starts at this thinking level for chats and work (agents.defaults.thinkingDefault), as a new hosted
@@ -1245,6 +1295,7 @@ def main(argv=None):
     if not plugin_ok:
         return 1
     quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
+    memory_rules(paths.workspace, paths.data / 'memory-rules.json')
     if fresh:
         start_thinking(facts)
     if args.activate:
