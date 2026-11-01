@@ -41,6 +41,7 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | `config.example.json` | Every configuration key with example values |
 | `embeddings.py` | Optional related signals by meaning, through a local embedding server |
 | `graph.py` | People and projects: a living graph rebuilt from signals, card decisions, project labels and merges |
+| `knowledge.py` | One brain behind every surface: who someone is, their latest messages, what is open with them and when you last talked, the same for the chat, Talk, connected AIs and the Graph pages, under each caller's rules (see below) |
 | `crm.py`, `crm_import.py`, `crm_fixes.py` | The Graph as a CRM: owners, change history, filters and sorts done on the Machine, merged organizations with several websites, and CSV import with undo, easy fixes shown before and after, and a check by the owner's model (an `import` agent run that sees headers, a few values and unclear cells) |
 | `voice_input.py`, `voice_worker.py`, `voice-requirements.txt` | [Voice input](voice.md): the mic in the dashboard's message boxes; speech to text with OpenAI when the Machine has it, else on the Machine (faster-whisper in its own virtualenv, prepared ahead of time once the Machine is live and quiet) |
 | `talk_live.py`, `talk-live-run.mjs` | [Talk live](talk-live.md): a spoken conversation in a to-do's chat with OpenAI's Realtime voice, started by the Gateway (ChatGPT sign-in or API key); read-only tools, requests to the to-do's chat, a send only after a confirm question and a clear yes (with Undo), the transcript kept in the chat |
@@ -51,6 +52,14 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 Python's standard library and SQLite are enough: no database server, queue, web framework or extra scheduler. Runtime data lives in `~/.local/share/personal-assistant/`: `config.json`, `events.sqlite`, tokens and receipts.
 
 **Data model.** The main tables are `events` (with an `event_search` full-text index), `checkpoints`, `sync_activity`, `analyses` (reviews), `review_runs`, `suggestions`, `decisions`, `deliveries` (the Telegram outbox), `preparations` and `action_jobs` (approved sends). Provider IDs deduplicate events per account; a changed event gets a new version and becomes reviewable again. Each source page commits its events and next cursor in one transaction, so a crash replays the page instead of losing or duplicating it.
+
+**One brain.** The chat's tools, Talk, connected AIs (MCP) and the dashboard ask the same questions about people,
+organizations and projects. `knowledge.py` answers them once: `find` and `record` (a name, address, handle or phone
+number however it is written), `latest_messages` (what the record's Graph page timeline shows: every merged identity,
+an organization's people, never a meeting ahead), `search_messages`, `open_with` (promises both ways and open to-dos,
+an organization's people's too) and `last_contact`. A `Caller` carries the rules: the owner sees everything; a
+connected AI its connection's area, never the owner's own record or a teammate's, and no message the app holds back.
+Surfaces only format the answers. `tests/knowledge_eval.py` asks every surface the same questions over the sandbox.
 
 **Boundaries.** Every account has an explicit ID and `boundary` (`work:Acme`, `personal:phone`, `owner:system`…). Every read names its accounts explicitly; app names and chat labels never decide which company an item belongs to.
 
