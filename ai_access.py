@@ -141,8 +141,10 @@ TOOLS = {
         'type': 'object', 'properties': {'id': _NODE, 'text': {'type': 'string', 'description': 'One short line, up to 180 characters'}},
         'required': ['id', 'text']}),
     'search_messages': ('read', "Search the owner's messages (email, Slack, WhatsApp and other chats) by words, newest first: who, "
-                                "when, the subject and the start of the text. Read-only.", {
+                                "when, the subject and the start of the text. With person: the messages with that person or "
+                                "organization, from every address and number they have, as their Graph page shows them. Read-only.", {
         'type': 'object', 'properties': {'query': {'type': 'string', 'description': 'Words to find; left out: the newest messages'},
+                                         'person': {**_NODE, 'description': 'Only messages with this person or organization (an id from search_graph)'},
                                          'channel': {'type': 'string', 'enum': list(CHANNELS)}, 'area': _AREA,
                                          'limit': {'type': 'integer', 'minimum': 1, 'maximum': 20}}}),
     'read_thread': ('read', 'Read a whole thread or chat around one message, oldest first. Read-only.', {

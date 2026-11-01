@@ -2139,10 +2139,14 @@ def detail(db, node_id, events=12):
         return None
     node_id = row['id']
     view = node_view(row, neighbours(db, node_id, 20))
-    rows = db.execute('SELECT event_id,probable FROM graph_events WHERE node_id=? ORDER BY at DESC LIMIT ?', (node_id, events)).fetchall()
+    # What already happened first, newest first; what is still to come (meetings ahead) only after it, soonest first.
+    # Newest by date alone, a person with a few meetings ahead had only those, and none of their latest messages.
+    current = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    order = 'ORDER BY at>? ASC, CASE WHEN at>? THEN at END ASC, at DESC LIMIT ?'
+    rows = db.execute(f'SELECT event_id,probable,at FROM graph_events WHERE node_id=? {order}', (node_id, current, current, events)).fetchall()
     if row['kind'] == 'org':  # an organization's timeline: the messages and meetings of the people in it
         rows = db.execute("SELECT g.event_id,MIN(g.probable) AS probable,MAX(g.at) AS at FROM graph_events g JOIN graph_links l ON l.a=g.node_id "
-                          "WHERE l.b=? AND l.kind='member' GROUP BY g.event_id ORDER BY at DESC LIMIT ?", (node_id, events)).fetchall()
+                          f"WHERE l.b=? AND l.kind='member' GROUP BY g.event_id {order}", (node_id, current, current, events)).fetchall()
     view['event_ids'] = [r[0] for r in rows]
     view['probable_ids'] = [r[0] for r in rows if r[1]]
     view['open'] = open_between(db, node_id)
@@ -2335,8 +2339,9 @@ def timeline(db, node_id, source='', cursor=0, limit=40, now=None):
     except sqlite3.OperationalError:
         pass  # an older database without these tables yet
     counts = collections.Counter(i['source'] for i in items)
-    if source and source != 'all':
-        items = [i for i in items if i['source'] == source]
+    if source and source != 'all':  # one group, or several (messages: email, chats and intercom)
+        wanted = {source} if isinstance(source, str) else set(source)
+        items = [i for i in items if i['source'] in wanted]
     # What is still to come is apart, soonest first; the timeline itself goes strictly back in time from now.
     current = parse_time(now) if now else dt.datetime.now(dt.timezone.utc)
 
@@ -2351,6 +2356,13 @@ def timeline(db, node_id, source='', cursor=0, limit=40, now=None):
     return {'items': items[offset:offset + limit], 'next': str(offset + limit) if len(items) > offset + limit else None,
             'upcoming': upcoming[:50] if not offset else [],
             'sources': {g: counts[g] for g in TIMELINE_GROUPS if counts[g]}, 'total': sum(counts.values())}
+
+
+def recent_messages(db, node_id, limit=10, now=None):
+    """The event ids of a person's, organization's or project's latest messages (mail, chats, Intercom), newest first:
+    the ones their Graph page's timeline shows, from every identity merged into them. Nothing still to come."""
+    found = timeline(db, node_id, ('email', 'chats', 'intercom', 'other'), 0, 100, now)  # Outlook mail is under other
+    return [i['id'] for i in (found or {}).get('items', ()) if i['type'] == 'event' and i.get('kind') in MESSAGE_KINDS][:max(1, int(limit))]
 
 
 def _meeting_copies(db, ids):

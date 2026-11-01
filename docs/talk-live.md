@@ -176,6 +176,12 @@ already read (`App.talk_machine_tool`, `talk_live.MACHINE_TOOLS`), short and wit
 - `machine_status` (the page's own): each connection's health as Connections shows it, the reviews, and what **Needs
   you** lists.
 
+Messages with someone: `search` with `kind` message and `person` (a name or an id), or words that name someone in the
+Graph, gives that person's or organization's latest messages, newest first, from every address and number merged into
+them: the ones their Graph page's timeline shows (`graph.recent_messages`). `open_record` lists them too (`messages`),
+and its recent lines put what already happened before meetings still ahead. A search that finds nothing says what it
+searched (`searched`) with `talk_live.NOTHING_NOTE`: the voice says that plainly and never guesses a cause.
+
 Doing things:
 
 - `todo_action` (the page's own, `talkDo`): what a to-do's buttons do, through the same actions and checks: `mark_done`,

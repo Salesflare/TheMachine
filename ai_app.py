@@ -680,7 +680,20 @@ class AiApp:
             raise ValueError('channel is ' + ', '.join(ai_access.CHANNELS))
         kinds = [k for k, c in CHANNEL_KINDS.items() if c == channel] if channel else None
         limit = clamp_int(args.get('limit'), 10, 20)
-        rows = self.ai_messages(connection, args.get('area'), query=query, limit=limit * 3, kinds=kinds)[:limit]
+        if args.get('person'):
+            # With someone: their messages as their Graph page's timeline has them (every address and number merged
+            # into them), then the same rules as any search: this connection's area, nothing held
+            _, want = self.ai_accounts(connection, None)
+            with self.store.connect() as db:
+                row = graph.resolve(db, str(args['person']))
+                view = graph.node_view(row) if row and row['kind'] in ('person', 'org') else None
+                if not view or not self.ai_node_ok(view, want):
+                    raise ValueError('Not in the Graph here')
+                ids = graph.recent_messages(db, row['id'], 100)
+            rows = self.ai_messages(connection, args.get('area'), query=query, kinds=kinds, event_ids=ids) if ids else []
+            rows = sorted(rows, key=lambda r: (str(r['occurred_at']), r['id']), reverse=True)[:limit]
+        else:
+            rows = self.ai_messages(connection, args.get('area'), query=query, limit=limit * 3, kinds=kinds)[:limit]
         found = [{**self.ai_message(r, SNIPPET_CHARS), 'thread': shared_graph.thread_of(r['kind'], r['metadata'], r['id'])} for r in rows]
         return {'messages': found, 'note': UNTRUSTED}, self.ai_read_line(rows)
 
