@@ -1,10 +1,18 @@
 # Adding a source
 
-A source (connector) reads one account of one service and stores what it finds as **events**. Reviews then decide what deserves a card. A new connector must not add AI interpretation or unrequested writes: no replies or marking as read. The existing opt-in Salesflare account-join exception is not permission to add writes to another source.
+A source (connector) reads one account of one service and stores what it finds as **events**. Reviews then decide what deserves a to-do.
+
+A connector only reads. It adds no AI interpretation and no writes nobody asked for: no replies, no marking as read. (The opt-in Salesflare account join is the one exception, and not a reason to add writes to another source.)
 
 There are two ways to add one:
 
-- **A connector plugin**: one Python file in `connectors/`, named after its service. No changes to `assistant.py`. This is the way for most sources. [`connectors/rss.py`](../connectors/rss.py) is a complete example; [`github.py`](../connectors/github.py) (a CLI) and [`stripe.py`](../connectors/stripe.py) (an API with a key, filtering what's worth storing) are two more, [`trello.py`](../connectors/trello.py) pages an API with cursors and an overlap window, [`intercom.py`](../connectors/intercom.py) reads a search API in frozen windows and allows only its read routes, and [`x.py`](../connectors/x.py) and [`linkedin.py`](../connectors/linkedin.py) read through the signed-in OpenClaw browser.
+- **A connector plugin**: one Python file in `connectors/`, named after its service. No changes to `assistant.py`. This is the way for most sources. Examples:
+  - [`rss.py`](../connectors/rss.py): a complete, small example.
+  - [`github.py`](../connectors/github.py): reads through a CLI.
+  - [`stripe.py`](../connectors/stripe.py): an API, filtering what's worth storing.
+  - [`trello.py`](../connectors/trello.py): pages an API with cursors and an overlap window.
+  - [`intercom.py`](../connectors/intercom.py): reads a search API in frozen windows and allows only its read routes.
+  - [`x.py`](../connectors/x.py) and [`linkedin.py`](../connectors/linkedin.py): read through the signed-in browser.
 - **A built-in source**: a branch in `sync_source` in `assistant.py`, for sources that need deeper integration (realtime threads, special review handling).
 
 This guide covers the plugin.
@@ -18,13 +26,13 @@ This guide covers the plugin.
 
 - `id` is the account's own ID. Its checkpoint, health and events are keyed by it.
 - `service` picks the connector: `rss` loads `connectors/rss.py`.
-- `boundary` (`work:<Company>` or `personal:<name>`) keeps signals apart in reviews and on the dashboard; only `work:` ones count as work (work cards wait for a work day). In `SETUP`, a bare `work` makes `assistant connect` ask which company.
+- `boundary` (`work:<Company>` or `personal:<name>`) keeps signals apart in reviews and on the dashboard; only `work:` ones count as work (work to-dos wait for a work day). In `SETUP`, a bare `work` makes `assistant connect` ask which company.
 - Any other keys (`url` here) are yours to read in the connector. Keep secrets out of `config.json`: name a credential (`"credential": "stripe"`) and read it with `helpers.credential`.
 
 ## 2. The module
 
 ```python
-KINDS = {'rss.item': 'feed'}          # event kind -> short label for cards and reviews
+KINDS = {'rss.item': 'feed'}          # event kind -> short label for to-dos and reviews
 
 def sync(store, config, account, helpers):
     state = store.checkpoint(account['id']) or {}
@@ -54,7 +62,11 @@ When the service offers OAuth, the connector signs in with it. Nobody pastes a t
 
 ### Setup: `assistant connect <service>`
 
-Setup verifies a real read before saving the account configuration. A plugin can define `check(config, account, helpers)`, returning `None` on success or raising `helpers.SourceError` with a content-free error label. The check must not write source data or advance checkpoints. Existing `Source.verify()` or `Source.profile()` methods are also supported. Without a supported read check, setup reports that verification is unavailable rather than calling the account connected. A source that answers it is busy or rate limited (`x_browser_busy`, `linkedin_browser_busy`, `x_rate_limited`) is saved anyway with a note; the first sync reads it.
+Setup verifies a real read before it saves the account:
+
+- A plugin can define `check(config, account, helpers)`, returning `None` on success or raising `helpers.SourceError` with a content-free label. The check must not write source data or move checkpoints. `Source.verify()` or `Source.profile()` work too.
+- Without a read check, setup says verification is unavailable instead of calling the account connected.
+- A source that answers it is busy or rate limited (`x_browser_busy`, `linkedin_browser_busy`, `x_rate_limited`) is saved anyway with a note; the first sync reads it.
 
 Declare `SETUP` so the owner can add an account without editing JSON:
 
@@ -74,7 +86,15 @@ SETUP = {'label': 'RSS feed',                          # name in prompts, doctor
          'maton': None}                                  # truthy offers reading through Maton instead; the connection is found with the key ('maton_app' names the Maton app if not the service)
 ```
 
-`assistant connect` adds the account from `account`, asks each `ask` key (empty answers stop it), stores the secret, verifies a real read, saves `config.json`, restarts the service and shows the first sync. With `credential_variable` in `account`, the secret is written as `VARIABLE=value`, and other lines in that file stay as they were. When the owner already has an account of this service, the new one starts from it instead of `account`, without the identity keys (`id`, `email`, `handle`, `login`, `url`, `connection_id`, … and your first `ask` key). `assistant doctor` treats a missing `ask` key or credential file as not set up. A test checks every connector has a complete `SETUP`, including its one-line `what` (short enough to fit a tile in two lines). A built-in source's line is in `WHAT` in `onboarding.py`. The Machine reports each line with its sources, so the dashboard's Add tab and a hosted setup page show it under the name.
+`assistant connect` then:
+
+1. adds the account from `account` and asks each `ask` key (an empty answer stops it);
+2. stores the secret (with `credential_variable` in `account`, as `VARIABLE=value`, leaving other lines in that file as they were);
+3. verifies a real read, saves `config.json`, restarts the service and shows the first sync.
+
+When the owner already has an account of this service, the new one starts from it instead of `account`, without the identity keys (`id`, `email`, `handle`, `login`, `url`, `connection_id`, … and your first `ask` key). `assistant doctor` treats a missing `ask` key or credential file as not set up.
+
+A test checks every connector has a complete `SETUP`, including its one-line `what` (short enough to fit a tile in two lines). A built-in source's line is in `WHAT` in `onboarding.py`. The dashboard's Add tab and a hosted setup page show the line under the name.
 
 ## 3. Events
 
@@ -106,8 +126,8 @@ When an item changes, send it again with the same `source_id`: the service store
 
 ## 5. Dashboard and noise rules
 
-- The account appears under Sources with its health, last read and errors. It gets a generic icon unless you add one to `ICONS` in `dashboard.html`.
-- `exclude` rules (`senders`, `titles`, `text`) work on plugin events too. See Noise rules in the README.
+- The account appears under Connections with its health, last read and errors. It gets a generic icon unless you add one to `ICONS` in `dashboard/todos-cards.js`.
+- `exclude` rules (`senders`, `titles`, `text`) work on plugin events too. See Noise rules in [Configuration](configuration.md).
 - Every event opens in the dashboard's reader with its title, sender (`sender_display` or `from`, "You" when `from_me`) and body, so a readable plain-text `body` is all it needs.
 - To tell reviews how to read your source (what is noise, when it needs the owner, how a reply goes out), add `source-notes/<service>.md`: one bullet like the others there. Reviews and Do it runs get it only on Machines that have that source connected; `AGENTS.md` keeps the rules for every source.
 - To put the people in your events on the Graph tab, add a branch for your `kind` to `touches()` in [`graph.py`](../graph.py): it returns who took part, with a stable identifier (`email:`, `wa:`, or your own prefix), a name and their role (you wrote to them, they wrote to you, a meeting, or just present). Without it the source works as before; it just adds no people.
