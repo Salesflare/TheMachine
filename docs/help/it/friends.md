@@ -3,7 +3,7 @@ title: Amici e il Network
 area: fleet
 summary: Aggiungi amici per nome utente, trova le persone che conosci che hanno una Machine e associa una Machine sul tuo computer.
 covers: friends
-code: friends.py, network.py, dashboard.html
+code: friends.py, network.py, meet.py, meet_app.py, dashboard.html
 site: Pair a self-hosted Machine
 order: 5
 ---
@@ -21,6 +21,12 @@ Nel pannello Network:
 Entrambi sono attivi per impostazione predefinita, e disattivati al livello di sicurezza Prudente. Puoi disattivarli quando vuoi; la tua scelta resta. Ti trovano tramite l’email di accesso e gli indirizzi collegati, tranne quelli condivisi come info@, che restano disattivati finché non li attivi.
 
 Le persone che conosci e che sono nel Network ti vengono suggerite appena lo attivi, e quando qualcuno si unisce più tardi. Ogni corrispondenza arriva con Collegati, Non ora o **Non suggerire mai**. **Esci dal Network** ti toglie dal Network.
+
+## Pianificare con altre Machine
+
+Quando qualcuno con una Machine scrive «vediamoci la prossima settimana», la tua Machine chiede alla sua gli orari liberi e ne trova uno che vada bene a entrambi, nel tuo orario di lavoro. Ognuno riceve un solo to-do, come «Incontro con Alex Example», con l’orario sotto. Tocca **Prenota**, **Altro orario** o **Non serve**. L’invito parte solo quando avete toccato entrambi Prenota. Nessuna Machine o nessuna risposta: il to-do tiene la sua bozza email con gli orari.
+
+Passa solo libero o occupato, crittografato end-to-end, per al massimo 14 giorni e arrotondato a 15 minuti. Gli eventi privati contano come occupati. Una Machine può chiedere solo se vi siete scritti in entrambe le direzioni. Impostalo nel pannello Network in **Cosa possono chiedere altre Machine alla mia**: **Libero/occupato per pianificare** o **Disattivato**, con durata, margine e orari preferiti. Ogni richiesta compare in Attività, sotto Calendario.
 
 ## Una Machine sul tuo computer
 

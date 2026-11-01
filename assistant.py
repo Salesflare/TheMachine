@@ -115,6 +115,7 @@ from ai_app import AiApp
 from calendar_app import CalendarApp
 from corrections_app import CorrectionsApp
 from gbrain_app import GBrainApp
+from meet_app import MeetApp
 from recurring_app import RecurringApp
 from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
@@ -1056,6 +1057,13 @@ AI_ACTIONS = {
     'ai_unpair',
 }
 OWNER_ACTIONS |= AI_ACTIONS
+# Scheduling between Machines (meet_app.py, docs/scheduling-between-machines.md): Book it, Other time or Not needed on
+# a time another Machine agreed, and what other Machines may ask this one. The owner's own, from the dashboard only.
+MEET_ACTIONS = {
+    'meet_decide',
+    'meet_setting',
+}
+OWNER_ACTIONS |= MEET_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
 DASHBOARD_ACTIONS = frozenset({
@@ -1072,6 +1080,7 @@ DASHBOARD_ACTIONS = frozenset({
     *GBRAIN_ACTIONS,
     *GRAPH_SHARE_ACTIONS,
     *LEARNING_ACTIONS,
+    *MEET_ACTIONS,
     *SHARE_ACTIONS,
     *SKILL_ACTIONS,
     *SUPPORT_ACTIONS,
@@ -5871,6 +5880,16 @@ class Store:
         return {'id': own['id'], 'status': own['status'], 'merge_offered': True,
                 'note': 'Not merged: the owner made this card, so they are asked whether it is the same as that one. '
                         'Other signals in this call were not saved; suggest them again without the owner\'s signal.'}
+
+    def reviewed_event(self, account_id, source_id, kind, title, body, meta):
+        """An event this Machine made itself (a time another Machine proposed, meet_app.py), marked reviewed so no
+        review or preparation reads it by itself. The same source id is the same event. Returns its id."""
+        stamp = now()
+        with self.connect() as db:
+            db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
+                       'VALUES(?,?,?,?,?,?,?,0,?,1,1,?)',
+                       (account_id, source_id, kind, stamp, title, body, json.dumps(meta), hashlib.sha256((title + body).encode()).hexdigest(), stamp))
+            return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()[0]
 
     def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with
@@ -14115,7 +14134,7 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp)
 
 
 class App(*APP_MIXINS):
@@ -14213,6 +14232,7 @@ class App(*APP_MIXINS):
             self.fleet.connect_delivered = self.fleet_connect_delivered  # Sign in with Intercom for this Machine (fleet.py)
             self.fleet.watch_connects = True  # and picked up a moment after consent, apart from the Fleet's loop (connects_watch)
             self.fleet.support_read = self.support_read  # Support access: the team's read, while the owner allows it (fleet.py)
+            self.meet_attach(lambda: dict(WORK_HOURS), local_tz)  # scheduling with Machines outside the Fleets (meet_app.py)
 
     def fleet_live(self):
         """Paired just now from the dashboard (pairing.py): the Fleet starts without a restart, with everything that
@@ -15287,6 +15307,8 @@ class App(*APP_MIXINS):
                                   'the weekday or date, never today, tomorrow or yesterday.')
             if isinstance(saved, dict) and saved.get('id') and args.get('skill_hint') and getattr(self, 'skills', None):
                 saved['skill_hint'] = self.skills.hint(saved['id'], args['skill_hint'])  # "There's a skill for this", if it clearly helps
+            if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and args.get('meet'):
+                saved['meet'] = self.meet_begin(saved['id'], args['meet'], args['event_ids'])  # their Machine, if any, agrees a time (meet_app.py)
             unknown = self.store.no_role_yet(args['event_ids'])
             if isinstance(saved, dict) and unknown:  # name them now, while the evidence is open
                 saved['no_role_yet'] = unknown
