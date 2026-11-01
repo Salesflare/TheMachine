@@ -29,44 +29,107 @@ What it does, in order:
 
 `--non-interactive` reads: `ASSISTANT_OWNER_NAME`, `ASSISTANT_TELEGRAM_OWNER` (empty: no Telegram), `ASSISTANT_TAILSCALE_OWNER` (required), `ASSISTANT_DASHBOARD_HOST` (required), `ASSISTANT_TIMEZONE`, `ASSISTANT_LOCALE` (like `en-GB`: date order and clock; default none, US dates and 24-hour times), `ASSISTANT_CONNECTORS` (comma list of `gmail,calendar,slack,crm,android,whatsapp,gateway`, or `none`; default: what is installed or linked here), `ASSISTANT_EMAIL`, `ASSISTANT_GOG_CLIENT`, `ASSISTANT_BOUNDARY` (a company name, `work:<Company>` or `personal`; default: the company in your email address), `ASSISTANT_ANDROID_NODE_ID`, `ASSISTANT_WHATSAPP_STORE`. Tailscale login and host default to what `tailscale status` reports, the Telegram ID to the one OpenClaw already trusts (`commands.ownerAllowFrom`, the Telegram `allowFrom`, or approved pairing senders), the email to the first Google account gog knows. A tagged machine has no Tailscale login of its own, so set `ASSISTANT_TAILSCALE_OWNER` to the login you use on your phone. Non-interactive installs skip the guided setup; run `assistant connect` afterwards.
 
-**Connecting a source:** `assistant connect <source>` (the installer runs the same steps). It asks only what it can't find, writes the account to `config.json` (keeping `config.json.bak`) and keys to their credential files (mode 600, typed without echo, never printed), reads the source once as the service would, and saves nothing if that read fails; it says what to fix instead. Then it restarts the service, only if that service reads this config, and shows the first sync.
+### Connecting a source
+
+`assistant connect <source>` runs the same steps as the installer:
+
+1. It asks only what it can't find.
+2. It writes the account to `config.json` (keeping `config.json.bak`) and keys to their credential files (mode 600, typed without echo, never printed).
+3. It reads the source once as the service would, and saves nothing if that read fails; it says what to fix instead.
+4. It restarts the service, only if that service reads this config, and shows the first sync.
 
 It fits setups that aren't the example:
 
 - **Several accounts per source** (two companies, a partner's calendar): `assistant connect gmail` asks whether to redo one or add another. A new account starts from the one you already have (same gog client, Maton key, Salesflare server, poll and active hours), never from its identity. It asks which boundary it belongs to (companies and people first, ones that source doesn't cover yet before ones it does) and follows your id naming (`globex-gmail` if yours look like `acme-gmail`).
 - **Keys you already saved** are offered by name (`MATON_WORK_KEY in maton.env`), so Stripe can use the Maton key Slack uses. A shared key file keeps its other lines: only the one `NAME=value` line changes, and a new key for one source never replaces a key another source still uses.
 - **Credential files anywhere** (outside the checkout, or systemd `LoadCredential`): paths in `credentials` are used as they are; doctor checks that the key name is in the file.
-- **Calendars:** after sign-in it lists the calendars the account can see, so you can read a shared one (`calendar_id`). Its events are someone else's: the Calendar shows them marked with that person's name, and they never become cards or prep, unless you organize one or are invited. When it is shared with "Make changes to events" (a child's calendar, say), set `"writable": true` on that account so you can add and change its events from the Calendar and from cards, each change on your tap. This needs a sign-in with Google's calendar write scope; `assistant connect` signs in read-only, so on such a sign-in nothing is offered, and a view-only share is refused before anything is written.
+- **Calendars:** after sign-in it lists the calendars the account can see, so you can read a shared one (`calendar_id`). Its events are someone else's: the Calendar shows them marked with that person's name, and they never become to-dos or prep, unless you organize one or are invited. When it is shared with "Make changes to events" (a child's calendar, say), set `"writable": true` on that account so you can add and change its events from the Calendar and from to-dos, each change on your tap. This needs a sign-in with Google's calendar write scope. `assistant connect` signs in read-only, so on such a sign-in nothing is offered, and a view-only share is refused before anything is written.
 - **Salesflare on another server** (staging, self-hosted): when the key is rejected it asks for the API address and derives the app address.
 - **Your own dashboard domain** (Caddy, another proxy): `dashboard_host` counts when it answers, so nothing offers `tailscale serve` on top.
 - **Another Gateway unit name:** the Gateway source finds it with `systemctl --user list-unit-files`.
-- **Only personal accounts:** answer "personal" for the company; plugin sources ask too (`work:<Company>` or `personal:<name>`; only `work:` counts as work).
-- **Several OpenClaw Telegram bots:** cards go out through `telegram_account` (default `default`); doctor says when you are approved on another one.
+- **Only personal accounts:** answer "personal" for the company. Plugin sources ask too (`work:<Company>` or `personal:<name>`; only `work:` counts as work).
+- **Several OpenClaw Telegram bots:** to-dos go out through `telegram_account` (default `default`); doctor says when you are approved on another one.
 - `assistant connect` on its own also lists what this machine has that no source reads yet: another Google account in gog, a `gh` login, a paired phone, a linked wacli store.
 
-- **Gmail and Calendar:** picks your gog OAuth client, or asks for a downloaded *Desktop app* client JSON (`gog auth setup` explains how to make one). Stores the gog file-keyring password in the `gog-password` credential: your `GOG_KEYRING_PASSWORD` when set, the password of the keyring you already have (never a new one over it), or for a new keyring one you type or a generated one. Signs in with `gog auth add --readonly` for Gmail and Calendar (browserless with `--manual` over SSH). Sending approved emails later needs `gmail.send`, and thread snoozes `gmail.modify`; connecting never asks for more than read access.
-- **Slack:** your Maton API key (or one you saved before); the Slack connection is found in Maton with it (you pick one if there are several), and `team_id`, `user_id`, `email` and `slack_host` come from Slack itself.
+Per source:
+
+- **Gmail and Calendar:** picks your gog OAuth client, or asks for a downloaded *Desktop app* client JSON (`gog auth setup` explains how to make one). It stores the gog file-keyring password in the `gog-password` credential: your `GOG_KEYRING_PASSWORD` when set, the password of the keyring you already have (never a new one over it), or for a new keyring one you type or a generated one. It signs in with `gog auth add --readonly` for Gmail and Calendar (browserless with `--manual` over SSH). Sending approved emails later needs `gmail.send`, and thread snoozes `gmail.modify`; connecting never asks for more than read access.
+- **Slack:** your Maton API key (or one you saved before). The Slack connection is found in Maton with it (you pick one if there are several), and `team_id`, `user_id`, `email` and `slack_host` come from Slack itself.
 - **Salesflare (`crm`):** an API key (or one you saved before); `user_id`, `team_id` and `email` come from `/me`.
-- **WhatsApp:** without wacli, offers the pinned build (`wacli-pin.json`: a [Salesflare/wacli](https://github.com/Salesflare/wacli) release, checked against its sha256, installed into the data directory's `bin`); then the wacli store; offers `wacli auth` (QR code) when it isn't linked, then records `identity_sha256` from `wacli auth status`. It then offers to keep the store synced with a user service (`the-machine-wacli-<account>.service`, `wacli sync --follow`), unless another wacli already holds the store. With a wacli that has it, the service runs with `--profile-picture-budget 50` for people's profile pictures. The daily `wacli pin` workflow opens a pull request when the fork releases (`python3 scripts/wacli_pin.py bump --verify` does the same by hand: checksums and build attestation); merge it and cut a release.
-- **Telegram chats (`telegram`):** unpacks the pinned Telethon and its pure-Python dependencies (`telegram-pin.json`, each file checked against its sha256 before anything is unpacked; `telegram-requirements.txt` lists them for scanners) into `<data>/telegram-lib`; uses the app ID file (`credentials.telegram_app`, else `<data>/telegram-app.env`, which a hosted Machine gets from its hosting) or asks for your own api_id and api_hash; logs in with a QR code (or a code sent to your Telegram app) and your cloud password if you have one, which is never stored; then runs `telegram_mirror.py follow` as a user service (`the-machine-<account>.service`, for example `the-machine-personal-telegram.service`). `assistant uninstall` and Disconnect log the device out at Telegram.
+- **WhatsApp:** without wacli, offers the pinned build (`wacli-pin.json`: a [Salesflare/wacli](https://github.com/Salesflare/wacli) release, checked against its sha256, installed into the data directory's `bin`). Then the wacli store; it offers `wacli auth` (QR code) when it isn't linked, then records `identity_sha256` from `wacli auth status`. It then offers to keep the store synced with a user service (`the-machine-wacli-<account>.service`, `wacli sync --follow`), unless another wacli already holds the store. With a wacli that has it, the service runs with `--profile-picture-budget 50` for people's profile pictures. The daily `wacli pin` workflow opens a pull request when the fork releases (`python3 scripts/wacli_pin.py bump --verify` does the same by hand: checksums and build attestation); merge it and cut a release.
+- **Telegram chats (`telegram`):** unpacks the pinned Telethon and its pure-Python dependencies (`telegram-pin.json`, each file checked against its sha256 before anything is unpacked; `telegram-requirements.txt` lists them for scanners) into `<data>/telegram-lib`. It uses the app ID file (`credentials.telegram_app`, else `<data>/telegram-app.env`, which a hosted Machine gets from its hosting) or asks for your own api_id and api_hash. It logs in with a QR code (or a code sent to your Telegram app) and your cloud password if you have one, which is never stored. Then it runs `telegram_mirror.py follow` as a user service (`the-machine-<account>.service`, for example `the-machine-personal-telegram.service`). `./install.sh --uninstall` and Disconnect log the device out at Telegram.
 - **Android:** picks your paired Android node from `openclaw nodes list`, then asks per connected source with a phone app whether to skip that app's notifications (default no).
-- **Plugins:** each connector declares what it asks in `SETUP` (see [Adding a source](../docs/adding-a-source.md)).
+- **Plugins:** each connector declares what it asks in `SETUP` (see [Adding a source](adding-a-source.md)).
 - **Telegram ID by hand:** message your bot; with DM pairing its reply shows your user ID. Approve yourself with `openclaw pairing approve telegram <code>`.
 - **Dashboard by hand:** `tailscale serve --bg --https=8443 --set-path / http://127.0.0.1:8787`, then open `https://<machine>.<tailnet>.ts.net:8443/`. Its own port makes it its own origin, so the dashboard installs as a phone app next to OpenClaw's web app on :443 (two apps on one origin claim each other's pages). A custom domain is optional: `deploy/Caddyfile` and `deploy/caddy-machine.service`. That Caddyfile waits out a service restart (up to 15 s) and then answers the dashboard with a JSON 503, never an empty 502.
-- **Preview and activation:** `./install.sh --preview` (or `assistant preview`) runs one regular review of the last 7 days and prints its cards, with progress while the agent works (usually a few minutes). The cards are real and stay on the dashboard, but they are never sent to Telegram, not even after activation, and nothing is prepared ahead; reviews and delivery stay off. `./install.sh --activate` turns them on.
-- **First look:** you don't have to ask for that preview. With reviews still off, once OpenClaw has a model and a source has sent its first signals, the service starts it by itself in two passes. First a quick one: the 20 signals of the last 7 days that most likely need you, whatever their age within the week, as soon as the first page of mail is in, so the first cards come within minutes. It takes what most likely needs you first, read from who wrote to whom, not from the words: people writing to you directly whom you haven't answered in that thread and direct messages (Slack, LinkedIn, X, WhatsApp), then your own mail and your appointments (the soonest first), then mail you were one of many on, automated mail last. Then it keeps digging, 20 of the most promising at a time and the next batch at once, until it has 3 to-dos, has looked through the whole week, or has used 60% of the 5-hour usage window (on an API key or a sign-in without usage windows: 200 signals). What one batch reviewed is not reviewed again, so no card comes twice. The health report says why it stopped (`dig`: `cards`, `covered`, `usage`, or `expired` a day after it started). It is the same read-only preview: its cards show on the dashboard (with "Taking a first look at your last 7 days: 12 of 40 signals" while it runs, and a waiting note instead of "All clear" before it starts), nothing is sent, nothing is prepared and nothing is done in your accounts; turning reviews on stays your choice. A card shows on the dashboard as soon as the review saves it, not when the review ends. Once reviews are on, a first-look card the review would have prepared ahead gets prepared then (a draft ready, nothing sent), while you haven't acted on it yet and within the daily limit for preparing ahead. A failed try comes back after 2 minutes, then 4, 8 and so on up to 30 (a rate limit waits 30 at once), and keeps coming back every 30 minutes at most; a usage limit holds it until the limit resets, with the limit shown on the dashboard. It never runs after a preview of your own or once reviews were on; `review_worker.first_look: false` turns it off. Reviews turned on before anything was reviewed start the same way: the first review is the quick one, at once, then it digs on the same way (a failed one comes back within 30 minutes); the regular reviews take the rest of the backlog after it.
-- **Activity counts:** a hosted Machine's health report also carries plain counts per local day for the last 7 days (`activity_report`, activity.py): to-dos shown and opened on the dashboard, Do it, Send, emails and messages the outbox sent, Mark done, Not needed, snoozed, chat messages, page loads and active hours. Numbers only, never a title, name, address or subject. The control plane keeps them to see how new owners keep using The Machine after setup.
-- **Time to the first card:** the service keeps when each setup step first happened (each source's first page and whole first import, each first-look pass with its status, reason and card count, the first card shown on the dashboard, and the first card you approved, sent, marked done or dismissed). Timestamps, counts and codes only, never content. A hosted Machine reports them to its setup page, which shows "First cards in about N min". A new hosted Machine turns reviews on by itself once mail and a calendar are connected and its model works; turned off on the setup page, they stay off.
+
+Also:
+
 - To start with one source, set `ASSISTANT_CONNECTORS=gateway ./install.sh` (Gateway failures only), or choose just `gmail` in the wizard.
 - Restart after config edits: `systemctl --user restart personal-assistant.service`.
+
+### Preview and activation
+
+`./install.sh --preview` (or `assistant preview`) runs one regular review of the last 7 days and prints its to-dos, with progress while the agent works (usually a few minutes).
+
+- The to-dos are real and stay on the dashboard, but they are never sent to Telegram, not even after activation, and nothing is prepared ahead.
+- Reviews and delivery stay off. `./install.sh --activate` turns them on.
+
+### First look
+
+You don't have to ask for that preview. With reviews still off, once OpenClaw has a model and a source has sent its first signals, the service starts it by itself, in two passes.
+
+**The quick pass:** the 20 signals of the last 7 days that most likely need you, whatever their age within the week, as soon as the first page of mail is in, so the first to-dos come within minutes. What most likely needs you is read from who wrote to whom, not from the words, in this order:
+
+1. people writing to you directly whom you haven't answered in that thread, and direct messages (Slack, LinkedIn, X, WhatsApp);
+2. your own mail and your appointments (the soonest first);
+3. mail you were one of many on;
+4. automated mail last.
+
+**Then it keeps digging**, 20 of the most promising at a time and the next batch at once, until it has 3 to-dos, has looked through the whole week, or has used 60% of the 5-hour usage window (on an API key or a sign-in without usage windows: 200 signals). What one batch reviewed is not reviewed again, so no to-do comes twice. The health report says why it stopped (`dig`: `cards`, `covered`, `usage`, or `expired` a day after it started).
+
+**It stays a read-only preview:**
+
+- Its to-dos show on the dashboard, with "Taking a first look at your last 7 days: 12 of 40 signals" while it runs, and a waiting note instead of "All clear" before it starts.
+- Nothing is sent, nothing is prepared and nothing is done in your accounts. Turning reviews on stays your choice.
+- A to-do shows on the dashboard as soon as the review saves it, not when the review ends.
+- Once reviews are on, a first-look to-do the review would have prepared ahead gets prepared then (a draft ready, nothing sent), while you haven't acted on it yet and within the daily limit for preparing ahead.
+
+**Retries:** a failed try comes back after 2 minutes, then 4, 8 and so on up to 30 (a rate limit waits 30 at once), and keeps coming back every 30 minutes at most. A usage limit holds it until the limit resets, with the limit shown on the dashboard.
+
+It never runs after a preview of your own or once reviews were on; `review_worker.first_look: false` turns it off. Reviews turned on before anything was reviewed start the same way: the first review is the quick one, at once, then it digs on the same way (a failed one comes back within 30 minutes). The regular reviews take the rest of the backlog after it.
+
+### Setup and activity counts
+
+- **Activity counts:** a hosted Machine's health report also carries plain counts per local day for the last 7 days (`activity_report`, activity.py): to-dos shown and opened on the dashboard, Do it, Send, emails and messages the outbox sent, Mark done, Not needed, snoozed, chat messages, page loads and active hours. Numbers only, never a title, name, address or subject. The control plane keeps them to see how new owners keep using The Machine after setup.
+- **Time to the first to-do:** the service keeps when each setup step first happened: each source's first page and whole first import, each first-look pass with its status, reason and to-do count, the first to-do shown on the dashboard, and the first to-do you approved, sent, marked done or dismissed. Timestamps, counts and codes only, never content. A hosted Machine reports them to its setup page, which shows about how many minutes until the first to-dos.
+- A new hosted Machine turns reviews on by itself once mail and a calendar are connected and its model works. Turned off on the setup page, they stay off.
 
 ### Your own instructions, USER.md and overlays
 
 `AGENTS.md` (reviews) and `PREPARATION.md` (Do it runs) are neutral templates about *how* the assistant works. Put *who you are* in `USER.md` in your OpenClaw workspace: your name, companies and their accounts, important people, tone of voice for emails, which tools you use and standing preferences. Review and preparation turns get it in their context.
 
-You don't have to write it all yourself. `assistant profile` has your agent read your own recent messages once (sent email counting double, and your own Slack, WhatsApp, LinkedIn and X messages; without quoted history, media placeholders, reactions, automated mail or more than two copies of one template), plus who you work with most and which senders you never answer. In one isolated turn (`agent:main:assistant-review-profile-<run>`, no messages, no file changes) it drafts your role, languages, your voice per channel (email reads nothing like WhatsApp: length, tone, greeting and sign-off for each), a few phrases that sound like you, what matters and what to leave alone. Right after, a second turn reads the first and latest messages with up to 15 of your closest people and, where they show it, notes in the graph what each is to you ("cofounder", "accountant", "customer at Globex"); the terminal lists them, and you can change them in the dashboard's Graph tab. `assistant roles` runs only that second step. You see the draft in the terminal; only on yes does it go into `USER.md`, as its own `## Observed from my messages` section. It replaces the empty starter lines it covers and leaves everything you wrote alone. Run it again later and it replaces only that section. Delete the section's marker line once you've edited it, and later runs leave it alone too. Confidential matters (deals, fundraising, legal, health, money, family) stay out. OpenClaw chat sessions load the first 4,000 characters of `USER.md`, so the draft is written for the room your file has left; what still doesn't fit is left out, least useful first, and listed (`--all` keeps it anyway). Set up without the guided setup (a hosted Machine, for example), there is no terminal to say yes in: once reviews are on and `USER.md` still doesn't say how you write, the service starts this draft by itself (up to three tries, six hours apart, while too few of your own messages are in) and adds it as that same marked section, then names your closest people. Edit or delete it like any other; `first_profile: false` in the config turns this off.
-
 If you want different house rules, edit your checkout's `AGENTS.md`/`PREPARATION.md` (keep `PREPARATION.md` under 30,000 characters; the plugin truncates beyond that, and a test checks it).
+
+#### Drafting USER.md from your messages
+
+You don't have to write it all yourself. `assistant profile` has your agent read your own recent messages once:
+
+- sent email (counting double), and your own Slack, WhatsApp, LinkedIn and X messages;
+- without quoted history, media placeholders, reactions, automated mail or more than two copies of one template;
+- plus who you work with most and which senders you never answer.
+
+In one isolated turn (`agent:main:assistant-review-profile-<run>`, no messages, no file changes) it drafts your role, languages, your voice per channel (email reads nothing like WhatsApp: length, tone, greeting and sign-off for each), a few phrases that sound like you, what matters and what to leave alone. Confidential matters (deals, fundraising, legal, health, money, family) stay out.
+
+Right after, a second turn reads the first and latest messages with up to 15 of your closest people and, where they show it, notes in the Graph what each is to you ("cofounder", "accountant", "customer at Globex"). The terminal lists them, and you can change them in the dashboard's Graph tab. `assistant roles` runs only that second step.
+
+**Saving it:**
+
+- You see the draft in the terminal. Only on yes does it go into `USER.md`, as its own `## Observed from my messages` section.
+- It replaces the empty starter lines it covers and leaves everything you wrote alone. Run it again later and it replaces only that section. Delete the section's marker line once you've edited it, and later runs leave it alone too.
+- OpenClaw chat sessions load the first 4,000 characters of `USER.md`, so the draft is written for the room your file has left. What still doesn't fit is left out, least useful first, and listed (`--all` keeps it anyway).
+
+**Without the guided setup** (a hosted Machine, for example) there is no terminal to say yes in. Once reviews are on and `USER.md` still doesn't say how you write, the service starts this draft by itself (up to three tries, six hours apart, while too few of your own messages are in) and adds it as that same marked section, then names your closest people. Edit or delete it like any other; `first_profile: false` in the config turns this off.
 
 ## Operations
 
@@ -74,17 +137,52 @@ If you want different house rules, edit your checkout's `AGENTS.md`/`PREPARATION
 - **Asking for help:** `assistant support-bundle` saves versions, `assistant doctor`, the service status and logs and the Gateway's warnings in one file, with keys, tokens, passwords and addresses taken out. Inside WSL it lands on your Windows Desktop.
 - **Plugin:** after editing `openclaw-plugin/`, run `openclaw plugins reload personal-assistant-bridge --wait`; no Gateway restart needed.
 - **One collector only:** don't run `assistant.py sync-once` while the service runs. Stop the service before manual syncs or migrations and resume from the existing checkpoints. Never reset a checkpoint to get past throttling.
-- **Google sign-in expired:** a Gmail or Calendar source whose stored sign-in Google revoked shows `google_signin_expired_run_gog_auth_add` and retries hourly. Press **Reconnect** on its card (it asks Google for the same access again), or run the command the card shows under **Or use a terminal**; the next retry picks it up.
+- **Google sign-in expired:** a Gmail or Calendar source whose stored sign-in Google revoked shows `google_signin_expired_run_gog_auth_add` and retries hourly. Press **Reconnect** on its connection (it asks Google for the same access again), or run the command it shows under **Or use a terminal**; the next retry picks it up.
 - **Backups:** use SQLite's backup API (`sqlite3 events.sqlite ".backup copy.sqlite"`); never copy the live file without its WAL. Keep `message-content.key` (next to the database) with it: message contents are encrypted and only that key opens them. With the key in your keyring (`assistant message-key status`), back up the keyring instead, or move the key back with `assistant message-key to-file` first.
-- **Retention:** once a day at a quiet hour (03:00-06:00 in your `timezone`, or at the first chance after three days without a run) the service deletes sync history older than 30 days (per source and day, the number of syncs, failures and signals stays in `sync_daily`) and the tool calls of preparations older than 90 days (not those of a card that is still open or a run that hasn't ended), and clears what a profile run read 90 days after it ended. Then it gives the free space back to the disk: once with a `VACUUM` (when no review, preparation or profile run is going on), which also turns on incremental vacuuming, and after that each night with `PRAGMA incremental_vacuum` in small steps. Deletes go in small batches, so the service keeps working. `retention_runs` holds what each run did, and the service log has a `retention` line.
-- **Local copies of the database:** the same run rotates copies next to the database: `events.sqlite.bak-*` and similar (`.backup`, `.before-`, dated `.pre-`), and SQLite files in any folder next to it with `backup` in its name (`backups/`, `backups-manual/`, `repair-backups/`, …). Every copy from the last 7 days stays; from 7 to 30 days old, the newest copy of each database per day; older ones go, with their `-wal` and `-shm`. Only database copies are removed, never notes or settings beside them; `work-removal-backups/` keeps its own 7-day rule and message protection's own copy is left alone. A script that makes a copy before it changes something can rotate right after: `python3 retention.py rotate-backups --data-dir ~/.local/share/personal-assistant` (`--dry-run --list` shows what would go). `python3 retention.py run` runs the whole nightly pass now.
 - **Rollback:** disable a source by removing its account from `config.json`; disable reviews with `review_worker.enabled: false`; stop delivery with `delivery_enabled: false`; disable the plugin with `openclaw plugins disable personal-assistant-bridge`. Keep the database.
+
+### Retention and local copies
+
+Once a day at a quiet hour (03:00 to 06:00 in your `timezone`, or at the first chance after three days without a run) the service cleans up:
+
+- sync history older than 30 days (per source and day, the number of syncs, failures and signals stays in `sync_daily`);
+- the tool calls of preparations older than 90 days (not those of a to-do that is still open or a run that hasn't ended);
+- what a profile run read, 90 days after it ended.
+
+Then it gives the free space back to the disk: once with a `VACUUM` (when no review, preparation or profile run is going on), which also turns on incremental vacuuming, and after that each night with `PRAGMA incremental_vacuum` in small steps. Deletes go in small batches, so the service keeps working. `retention_runs` holds what each run did, and the service log has a `retention` line.
+
+The same run rotates copies of the database next to it: `events.sqlite.bak-*` and similar (`.backup`, `.before-`, dated `.pre-`), and SQLite files in any folder next to it with `backup` in its name (`backups/`, `backups-manual/`, `repair-backups/`, …).
+
+- Every copy from the last 7 days stays. From 7 to 30 days old, the newest copy of each database per day. Older ones go, with their `-wal` and `-shm`.
+- Only database copies are removed, never notes or settings beside them. `work-removal-backups/` keeps its own 7-day rule, and message protection's own copy is left alone.
+- A script that makes a copy before it changes something can rotate right after: `python3 retention.py rotate-backups --data-dir ~/.local/share/personal-assistant` (`--dry-run --list` shows what would go).
+- `python3 retention.py run` runs the whole nightly pass now.
 
 ### Moving to another computer
 
-`assistant export` writes one archive with the databases (signals, suggestions, people and organizations with your own edits, promises), `config.json`, connectors you built yourself, your OpenClaw workspace files (`AGENTS.md`, `USER.md`, memory) and who may talk to your Telegram bot. Databases are copied with SQLite's backup API, so the service can keep running. The archive is always a `.tar.gz.enc`, encrypted as a whole (AES-256, stretched with PBKDF2 through `openssl`). Without `--keys` it gets an export code, shown once (like `ABCD-EFGH-JKMN-PQRS-TUVW`): save it, the import asks for it. Keys and tokens only come along with `--keys`, encrypted with a passphrase you pick. No unencrypted archive is written: it is packed straight into `openssl`, and the database copies it needs on the way sit in a private folder next to it and are overwritten before they are removed. OpenClaw's own chat history and model sign-in stay behind.
+`assistant export` writes one encrypted archive with:
 
-On the other computer, install The Machine first, then `assistant import the-machine-export-<date>.tar.gz.enc` (it asks the export code or passphrase; older `.zip` and `.tar.gz` exports import too). What it unpacks sits in a private folder next to the data folder and is overwritten once placed. It refuses to overwrite a setup that already has sources unless you pass `--force`, which keeps a copy of the current data folder first. A file you already have there (say `USER.md`) is kept, with the imported one next to it as `.from-export`. It ends with what to connect again: your model, Google (a hosted server's Google access does not move along), and without `--keys` every source's key and the Telegram bot token. Your Machine's Network keys (`network-keys.json`, its identity on [The Machine Network](network.md)) move only with `--keys`; without them the import makes a new identity and teammates and friends see a key-change notice once. Restart the service and check with `assistant doctor`.
+- the databases (signals, suggestions, people and organizations with your own edits, promises), copied with SQLite's backup API so the service can keep running;
+- `config.json` and connectors you built yourself;
+- your OpenClaw workspace files (`AGENTS.md`, `USER.md`, memory) and who may talk to your Telegram bot.
+
+OpenClaw's own chat history and model sign-in stay behind.
+
+**Encryption:** the archive is always a `.tar.gz.enc`, encrypted as a whole (AES-256, stretched with PBKDF2 through `openssl`).
+
+- Without `--keys` it gets an export code, shown once (like `ABCD-EFGH-JKMN-PQRS-TUVW`). Save it: the import asks for it.
+- Keys and tokens only come along with `--keys`, encrypted with a passphrase you pick.
+- No unencrypted archive is written. It is packed straight into `openssl`, and the database copies it needs on the way sit in a private folder next to it and are overwritten before they are removed.
+
+**On the other computer**, install The Machine first, then `assistant import the-machine-export-<date>.tar.gz.enc`. It asks the export code or passphrase; older `.zip` and `.tar.gz` exports import too.
+
+- What it unpacks sits in a private folder next to the data folder and is overwritten once placed.
+- It refuses to overwrite a setup that already has sources unless you pass `--force`, which keeps a copy of the current data folder first.
+- A file you already have there (say `USER.md`) is kept, with the imported one next to it as `.from-export`.
+- It ends with what to connect again: your model, Google (a hosted server's Google access does not move along), and without `--keys` every source's key and the Telegram bot token.
+- Your Machine's Network keys (`network-keys.json`, its identity on [The Machine Network](network.md)) move only with `--keys`. Without them the import makes a new identity, and teammates and friends see a key-change notice once.
+
+Restart the service and check with `assistant doctor`.
 
 The hosted version has the same export on its Account page.
 
@@ -105,7 +203,7 @@ These are collection/retrieval fixes, not additional approval requirements. Norm
 
 - **Change prompt and OpenClaw versions.** The native Telegram reply prompt (`openclaw-plugin/change-prompt.ts`) uses the Telegram extension API and a bridge for three client helpers. It resolves them from the installed build's export table, without a version pin or hardcoded content hashes, so it avoids a hardcoded build hash; compatibility still needs checking after updates. CI loads the real transport modules of 2026.10.7 and of the latest release. If a release removes or renames a helper, Change falls back to a plain prompt before sending (replies still work); an uncertain send never triggers that fallback. The Gateway SDK entry points used elsewhere (`plugin-sdk/gateway-runtime`, `system-event-runtime`, `plugin-entry`) are public but experimental; check them when upgrading OpenClaw.
 - **Telegram, dashboard push or notification email** for delivery (no SMS); the dashboard needs Tailscale (or your own reverse proxy that sets the same identity headers).
-- **Gmail and Calendar need `gog`** or a token broker you run, Slack needs Maton; Google setup invokes gog OAuth, or uses the configured broker. The app does not run a separate Google token issuer.
+- **Gmail and Calendar need `gog`** or a token broker you run, Slack needs Maton or Sign in with Slack; Google setup invokes gog OAuth, or uses the configured broker. The app does not run a separate Google token issuer.
 - **Not realtime.** Sources poll (five minutes by default; Slack can take hours on a large workspace), and reviews batch signals.
 - **Android and WhatsApp are best effort**: notifications cleared during a gap are lost; WhatsApp depends on `wacli` staying synced.
 - One owner per app installation. Fleet/Friends connects separate installations; it does not make one local database multi-user.
@@ -167,7 +265,7 @@ Sealed metadata is recognized by its encoded envelope, not by the word `mc1_seal
 
 Work-account removal saves a private pending-cleanup record before changing configuration. Startup completes that cleanup after interruptions, excluding accounts still configured. Do not clear `work-removal-pending.json` before it settles; it contains private account and credential-path references. The normal seven-day rollback backup remains. Preserve personal sources, shared credentials, message keys and newer owner feedback.
 
-Broker-token rotations replace only the exact login that made the request, never a later reconnect or a removed account. Hosted agent 98 records the exact encrypted mail handoff locally before acknowledging it; retries preserve that receipt across token rotation. These are recovery fixes, not new restrictions or approval requirements.
+Broker-token rotations replace only the exact login that made the request, never a later reconnect or a removed account. The hosted agent records the exact encrypted mail handoff locally before acknowledging it; retries preserve that receipt across token rotation. These are recovery fixes, not new restrictions or approval requirements.
 
 ## Bounded catch-up and delivery receipts
 
