@@ -25,7 +25,7 @@ Op een Machine op je eigen computer druk je eerst op **Krijg je adres**. Er open
 
 Daarna haalt hij een eigen certificaat voor het adres. Dat duurt een paar minuten en vraagt het pakket `cryptography` voor Python.
 
-Voor Claude druk je op **Toevoegen in Claude**, of open je [The Machine in de directory van Claude](https://claude.ai/directory/connectors/the-machine), en druk op Connect. Bij Team en Enterprise voegt een eigenaar hem toe in Organization settings.
+Voor Claude druk je op **Toevoegen in Claude**, of open je [The Machine in de directory van Claude](https://claude.ai/directory/the-machine), en druk op Connect. Bij Team en Enterprise voegt een eigenaar hem toe in Organization settings.
 
 Wil je in Claude liever een adres gebruiken, open dan Customize, Connectors, druk op + Add en dan op Add custom connector. Noem hem The Machine, plak het adres en druk op Continue en dan op Add.
 

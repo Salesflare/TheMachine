@@ -25,7 +25,7 @@ En una Machine en tu propio ordenador, pulsa primero **Obtener tu dirección**. 
 
 Después obtiene su propio certificado para la dirección. Tarda unos minutos y necesita el paquete `cryptography` para Python.
 
-Para Claude, pulsa **Añadir en Claude**, o abre [The Machine en el directorio de Claude](https://claude.ai/directory/connectors/the-machine), y pulsa Connect. En Team y Enterprise, un propietario lo añade en Organization settings.
+Para Claude, pulsa **Añadir en Claude**, o abre [The Machine en el directorio de Claude](https://claude.ai/directory/the-machine), y pulsa Connect. En Team y Enterprise, un propietario lo añade en Organization settings.
 
 Para usar una dirección en Claude, abre Customize, Connectors, pulsa + Add y luego Add custom connector. Llámalo The Machine, pega la dirección, pulsa Continue y luego Add.
 

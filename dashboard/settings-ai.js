@@ -27,7 +27,7 @@ function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=
 // Claude's connector directory, which uses the shared address) above one shared address for every Machine
 // (r.shared) with Copy, the account signing in and routing; then this Machine's private address, end to end. Both need
 // this Machine on the account with a name: until then the official app's place shows Get your address (aiAddress).
-const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/connectors/the-machine';
+const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/the-machine';
 function aiOfficial(r){
  if(r.shared)return `<div><span class="grow"><strong translate="no">Claude</strong><small>Add The Machine from Claude’s directory in one click.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div><div><span class="grow"><strong>Official app</strong><code class="ai-url" translate="no">${esc(r.shared)}</code></span><button type="button" class="ghost" data-copy-command="${esc(r.shared)}">Copy</button></div>`;
  if(!r.address)return aiAddress(r);

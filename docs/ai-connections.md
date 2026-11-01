@@ -15,7 +15,7 @@ first and is the default.
 ### Claude: the connector directory
 
 The official app is listed in Claude's connector directory:
-`https://claude.ai/directory/connectors/the-machine` (`AI_CLAUDE_DIRECTORY` in `dashboard/settings-ai.js`). That is the
+`https://claude.ai/directory/the-machine` (`AI_CLAUDE_DIRECTORY` in `dashboard/settings-ai.js`). That is the
 one-click way for Claude: **Add in Claude** opens the listing, Connect there starts the official app's sign-in below with
 the shared address, nothing to paste. It shows above the shared address once the official app is ready (`shared`).
 The shared address stays for a custom connector, other clients and ChatGPT, whose app isn't in its directory yet.
