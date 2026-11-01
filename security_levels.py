@@ -29,12 +29,13 @@ OWN = {
     'people_lookup': ('on', 'off'),     # Look up work contacts (enrichment.py)
     'help_topics': ('on', 'off'),       # Share what Help is asked (help_topics.py)
     'keep_days': ('90', '30'),          # Do it tool calls and run evidence kept this long (retention.py)
+    'meet_asks': ('freebusy', 'off'),   # What other Machines may ask mine: free/busy for scheduling (meet.py)
 }
 FAMILY = {'availability': ('always', 'ask')}   # family.DEFAULT_RULES: free/busy times
 FRIENDS = {'meeting': ('ask', 'never')}        # Friends: meeting context
 ALL = '*'  # fleet.ALL: the rule for everyone in a group
 SCHEMA = 'CREATE TABLE IF NOT EXISTS security_prefs(key TEXT PRIMARY KEY,value TEXT NOT NULL)'
-OWN_PREFS = ('notify_text', 'save_logins', 'keep_days')  # kept in security_prefs; the others where they always were
+OWN_PREFS = ('notify_text', 'save_logins', 'keep_days', 'meet_asks')  # kept in security_prefs; the others where they always were
 
 
 def _get(db, sql, args=()):

@@ -62,6 +62,7 @@ import family
 import contact_share
 import friends
 import discovery
+import meet
 import network
 import security_levels
 import shared_connectors
@@ -1679,7 +1680,7 @@ def brief_text(view, today=None, hidden=()):
 # ---------------------------------------------------------------- the Fleet on this Machine
 
 class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
-            shared_graph.SharedGraph):
+            shared_graph.SharedGraph, meet.Meet):
     def __init__(self, connect, config, token, relay=None):
         self.connect, self.config = connect, config
         self.relay = relay or NetworkClient(settings(config)['url'], token, endpoints(config), connect=connect)
@@ -3100,6 +3101,10 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                     self.task_pages()
                 except (ValueError, OSError) as error:
                     LOG.warning('task pages round error=%s', type(error).__name__)
+        try:  # scheduling with Machines outside the Fleets (meet.py): at once when the inbox says something waits
+            self.meet_round(hinted=bool(found.get('meet')))
+        except (ValueError, OSError, KeyError, TypeError, Unavailable, Off) as error:
+            LOG.error('meet round error=%s', type(error).__name__)
         if stamp - self.last.get('network', 0.0) > MEETINGS_EVERY or not wait:
             self.last['network'] = stamp
             self.discovery_step()
