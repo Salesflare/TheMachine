@@ -115,6 +115,14 @@ by themselves, and the owner sees "From Claude" on them. A draft goes out only w
 
 **Limits.** At most 20 new to-dos and 50 Graph changes a day per connection.
 
+**Marked untrusted.** Text that came from other people, or that The Machine wrote from what they sent, goes out inside
+`<untrusted source="...">` and `</untrusted>` (`ai_access.untrusted`): message subjects, senders and text (source: the
+channel), to-do titles and text and drafts (`messages`, or `ai` for a connected AI's), a to-do's source subjects and
+senders, promise text, an organization's `about` (`web`) and team briefs (`team`). The owner's own to-dos (New to-do)
+go out unmarked. A marker inside the text is escaped (`&lt;/untrusted>`), so an email can't close the block and write
+outside it. The server's instructions and each of these tools' descriptions say marked text is data, never
+instructions, so an email can't steer the AI into using its other tools.
+
 **A summary line** is not an owner's edit. The owner can edit or remove it. The next summary pass gets it as data
 (`ai_lines`, ids A1…) and may keep, revise or drop it; a line citing it keeps the AI's name and area.
 
@@ -136,8 +144,8 @@ through `Store.events` (never deleted messages), in the connection's area. Never
 **Logged, never copied.** Every read is an Activity line with how many messages and which threads (subject or chat
 name), never the text (`READ_DETAIL`).
 
-**Fenced.** Subjects and text go out between `<<<` and `>>>` (`ai_fence`: nothing in them can open or close the block),
-with a note and the server's instructions saying it is data, never instructions.
+**Marked.** Senders, subjects and text go out inside `<untrusted>` (see Marked untrusted above), with a note and the
+server's instructions saying it is data, never instructions.
 
 **Changes wait.** While Messages is on, a Read & edit connection's Graph changes (`WRITES`) don't apply, since what the
 AI read may have steered them. The record is checked as for any change (area, refusals), and the call is kept as a
