@@ -332,6 +332,9 @@ def _client_auth(db, form, basic):
 # ------------------------------------------------------------------ authorize (the owner's consent)
 
 
+STATE_MAX = 4096
+
+
 def authorize_request(db, params, resource):
     """The checked request behind the consent page. Errors before the redirect is known (raised as OAuthError with
     status 400) show on the page; ones after go back to the client (returned as 'error')."""
@@ -342,9 +345,12 @@ def authorize_request(db, params, resource):
     uri = get('redirect_uri') or (found['redirect_uris'][0] if len(found['redirect_uris']) == 1 else '')
     if not redirect_matches(found['redirect_uris'], uri):
         raise OAuthError('invalid_request', i18n.t('This AI asked to go back to an address it did not register.'))
-    req = {'client_id': found['id'], 'redirect_uri': uri, 'state': get('state')[:500], 'challenge': get('code_challenge'),
+    # The state goes back exactly as sent: cut short it breaks the AI's own check (OpenAI's platform sends 500+ characters)
+    req = {'client_id': found['id'], 'redirect_uri': uri, 'state': get('state')[:STATE_MAX], 'challenge': get('code_challenge'),
            'scope': get('scope'), 'name': found['name'], 'resource': get('resource').rstrip('/')[:300]}
-    if get('response_type') != 'code':
+    if len(get('state')) > STATE_MAX:
+        req.update(state='', error=('invalid_request', f'state is over {STATE_MAX} characters'))
+    elif get('response_type') != 'code':
         req['error'] = ('unsupported_response_type', 'response_type must be code')
     elif not re.fullmatch(r'[A-Za-z0-9_-]{43}', req['challenge']) or get('code_challenge_method') != 'S256':
         req['error'] = ('invalid_request', 'PKCE with S256 is required')
