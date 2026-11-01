@@ -17109,7 +17109,7 @@ class App(*APP_MIXINS):
             for found in db.execute("SELECT * FROM action_jobs WHERE status IN ('queued','sending','uncertain') AND (retry_at IS NULL OR retry_at<=?) ORDER BY created_at",(now(),)).fetchall():
                 # Automated follow-ups in a row: the next from the same account waits its gap (follow_ups.SEND_GAP); another account's goes
                 # A paused board or project: Send without asking and sends queued before the pause wait (follow_ups.paused_send)
-                # Only on workdays: Send without asking queued for a day off waits for the next work day (follow_ups.off_day_send)
+                # Only on work days: Send without asking queued for a day off waits for the next work day (follow_ups.off_day_send)
                 held=(follow_ups.held_until(db,found['id'],now()) or follow_ups.paused_send(db,found['id'],now()) or follow_ups.off_day_send(db,found['id'],now(),self.follow_up_work())) if found['status']=='queued' else None
                 if held:db.execute('UPDATE action_jobs SET retry_at=? WHERE id=?',(held,found['id']));continue
                 job=found;break
@@ -17563,7 +17563,7 @@ class App(*APP_MIXINS):
         return follow_ups.sendable(self.config.get('accounts') or [])
 
     def follow_up_work(self):
-        """The owner's work week for Only on workdays (follow_ups.work_week): the work days and start of their Work hours
+        """The owner's work week for Only on work days (follow_ups.work_week): the work days and start of their Work hours
         in their time zone, and the side of each account (a project on no board is Personal by its accounts)."""
         return follow_ups.work_week(WORK_HOURS.get('days'), WORK_HOURS.get('start'), local_tz(),
                                     {a.get('id'): graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')})
@@ -17698,7 +17698,7 @@ class App(*APP_MIXINS):
         self.follow_up_threads(mine, sendable, own)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            items = follow_ups.plan(db, now(), sendable, mine, own, self.follow_up_work())  # Only on workdays: nothing due on a day off
+            items = follow_ups.plan(db, now(), sendable, mine, own, self.follow_up_work())  # Only on work days: nothing due on a day off
             for item in items:
                 if item['state'] == 'end':
                     follow_ups.end(db, item, now())
@@ -17870,7 +17870,7 @@ class App(*APP_MIXINS):
                     continue  # paused: it waits for the owner's Send, or the resume
                 settings = follow_ups.effective(db, p)[0] if p else None
                 if p and follow_ups.off_day(db, p, settings, now(), work):
-                    continue  # Only on workdays and today is a day off: it waits for the next work day, or the owner's Send
+                    continue  # Only on work days and today is a day off: it waits for the next work day, or the owner's Send
                 drafts = [a for a in next_actions.actions(f['next_action']) if a.get('kind') in follow_ups.CHANNELS] if f['next_action'] else []
                 draft = drafts[0] if len(drafts) == 1 else None
                 attempt = db.execute('SELECT 1 FROM action_jobs WHERE suggestion_id=?', (f['suggestion_id'],)).fetchone()

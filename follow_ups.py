@@ -19,7 +19,7 @@ its own settings, or off). One setting holds:
   conversation already is, once a follow-up got no reply.
 - auto: Send without asking, an explicit standing approval for that board or project (off by default: every
   follow-up waits for the owner's Send). Careful (the owner's level, or a Careful Work Fleet) always asks.
-- workdays: Only on workdays (None: by the area, on for Work and off for Personal, workdays_on). The owner's work days
+- workdays: Only on work days (None: by the area, on for Work and off for Personal, workdays_on). The owner's work days
   come from their Work hours (work_week; Monday to Friday when none are set). On a day off nothing is drafted and
   nothing goes out by itself (Send without asking waits, off_day). Waits still count calendar days; what comes due on a
   day off (and the longest wait) moves to the next work day at the start of the owner's hours (next_workday), and is
@@ -255,7 +255,7 @@ def area(db, project, sides=None):
 
 
 def workdays_on(settings, project_area='work'):
-    """Only on workdays for a setting: the owner's choice, else on for Work and off for Personal."""
+    """Only on work days for a setting: the owner's choice, else on for Work and off for Personal."""
     chosen = (settings or {}).get('workdays')
     return chosen if isinstance(chosen, bool) else project_area != 'personal'
 
@@ -279,7 +279,7 @@ def next_workday(when, work):
 
 
 def work_for(db, project, settings, work):
-    """The work week this project's follow-ups keep to (Only on workdays), else None."""
+    """The work week this project's follow-ups keep to (Only on work days), else None."""
     work = work or work_week()
     return work if workdays_on(settings, area(db, project, work.get('sides'))) else None
 
@@ -392,7 +392,7 @@ def schedule(messages, settings, now, days=None, prior=0, since=None, paused=(),
     paused: the times follow-ups were paused for this project (pauses_of, merged): waits count only the time outside
     them, so a pause neither brings a follow-up closer nor ends a round, and a project paused long isn't stale for it.
 
-    work: the work week with Only on workdays (work_for), else None. Waits count calendar days; a date that lands on a
+    work: the work week with Only on work days (work_for), else None. Waits count calendar days; a date that lands on a
     day off (the shortest and the longest wait) moves to the next work day's start, and on a day off nothing is due."""
     days = int(days or settings['days'])
     longest = max(days, int(settings.get('max_days') or days))
@@ -680,7 +680,7 @@ def paused_send(db, job_id, now):
 
 
 def off_day_send(db, job_id, now, work):
-    """When a queued Send without asking may be looked at again on a day off with Only on workdays (the next work day's
+    """When a queued Send without asking may be looked at again on a day off with Only on work days (the next work day's
     start), else None. The owner's own Send goes on any day."""
     row = db.execute('SELECT j.source,p.* FROM action_jobs j JOIN follow_up_cards f ON f.suggestion_id=j.suggestion_id JOIN projects p '
                      'ON p.id=f.project_id WHERE j.id=?', (job_id,)).fetchone()
@@ -1111,7 +1111,7 @@ def plan(db, now, sendable, mine=mine_default, own=None, work=None):
     'next_at', 'n', 'after', 'after_at', 'channel', 'reason', 'pause'}]. state as schedule's, or 'off' with a reason, 'open'
     when a follow-up to-do is out for it already, or 'paused' (pause: the pause that holds it) instead of due, waiting or
     a round's end. own: the owner's {'emails', 'names'}, to read quoted history
-    (earlier_sends). work: the owner's work week (work_week), for Only on workdays."""
+    (earlier_sends). work: the owner's work week (work_week), for Only on work days."""
     if not any_on(db):
         return []
     boards = {b['id']: b for b in db.execute('SELECT * FROM boards').fetchall()}
@@ -1211,7 +1211,7 @@ def setting_view(settings, source=None):
 
 def panel(db, scope, ref, sendable, now, sides=None):
     """The settings panel: the setting, the board's stages (on by default or not), the channels that can send, Careful,
-    and whether Only on workdays is on when the owner didn't choose (workdays: by the area)."""
+    and whether Only on work days is on when the owner didn't choose (workdays: by the area)."""
     ref = int(ref or 0)
     if scope == 'board':
         board = db.execute('SELECT * FROM boards WHERE id=?', (ref,)).fetchone()

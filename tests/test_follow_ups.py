@@ -1616,7 +1616,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(follow_ups.news_kind(follow_ups.chat_since([{'MsgID': 'w2', 'Timestamp': '2026-10-14T09:00:00Z', 'FromMe': True}], chat)), 'own')
         self.assertIsNone(follow_ups.news_kind([]))
 
-    # ------------------------------------------------------------------ Only on workdays
+    # ------------------------------------------------------------------ Only on work days
 
     def test_nothing_is_drafted_on_a_day_off_and_it_comes_the_next_work_morning(self):
         panel = self.turn_on()
@@ -1702,7 +1702,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual([c['project_id'] for c in self.cards()], [garden])
 
     def test_a_project_can_set_its_own_workdays_over_its_board(self):
-        self.turn_on()  # the board: Only on workdays (Work)
+        self.turn_on()  # the board: Only on work days (Work)
         self.turn_on('project', self.kim, workdays=False)
         self.at('2026-10-24T09:00:00+00:00')  # Saturday
         self.assertEqual(self.states(), {self.acme: 'waiting', self.kim: 'due'})

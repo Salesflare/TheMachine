@@ -39,7 +39,7 @@ const panel=(scope,id)=>scope==='board'?{scope:'board',id:1,name:'Alpha testers'
 let calls=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,follow_up_progress:progress,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,follow_up_progress:progress,hours:{days:[1,2,3,4,5],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true},promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');res.end(JSON.stringify(n?detail:{projects:[],people:[],quiet:[],new:[],orgs:[],boards:boardsNow||boards}));return}
  if(req.method==='POST'&&url.pathname==='/api/action'){const c=JSON.parse(body||'{}');calls.push(c);const a=c.args||{};
   if(c.action==='follow_up_settings'||c.action==='follow_up_save'){const v=panel(a.scope,a.id);if(boardsNow&&a.scope==='board')v.settings.on=false;res.end(JSON.stringify(v));return}
@@ -129,8 +129,8 @@ try{
   assert.match(await fu.locator('.fu-row').first().textContent(),/^Wait\s+to\s+days without a reply$/);
   assert.deepEqual(await fu.locator('.fu-row input').evaluateAll(l=>l.map(i=>i.value)),['3','7','1','3']);
   assert.equal(await fu.locator('[name=auto][value=ask]').isChecked(),true);assert.equal(await fu.locator('[name=stall]').isChecked(),true);
-  assert.equal(await fu.locator('[name=workdays]').isChecked(),true);  // Only on workdays: on for a Work board until they choose
-  assert.equal((await fu.locator('label:has([name=workdays])').textContent()).trim(),'Only on workdays');
+  assert.equal(await fu.locator('[name=workdays]').isChecked(),true);  // Only on work days: on for a Work board until they choose
+  assert.equal((await fu.locator('label:has([name=workdays])').textContent()).trim(),'Only on work days');
   await shot(page,'settings-board-1440-light',fu);
   await fu.locator('[data-fu-custom]').click();assert.equal(await fu.locator('[data-fu-stage]').count(),3);
   assert.deepEqual(await fu.locator('[data-fu-stage]').evaluateAll(l=>l.map(i=>i.checked)),[true,true,false]);
@@ -155,6 +155,12 @@ try{
   await shot(page,'settings-project-1440-light',fu);
   calls=[];await fu.locator('[name=mode][value=board]').check();await fu.locator('button.primary').click();await fu.waitFor({state:'hidden'});
   assert.deepEqual(calls.find(c=>c.action==='follow_up_save').args,{scope:'project',id:5,settings:{inherit:true}});
+  // Work days from your work hours: Settings opens at Notifications, scrolled to Work hours
+  await page.locator('.graph-fu [data-fu-open]').click();await fu.locator('[data-fu-hours]').waitFor();
+  assert.equal(await fu.locator('[data-fu-hours]').textContent(),'Work days from your work hours');
+  await fu.locator('[data-fu-hours]').click();await fu.waitFor({state:'hidden'});await page.locator('#settings').waitFor();
+  await page.waitForFunction(()=>location.hash==='#settings/notify'&&document.querySelector('[data-settings-tab="notify"]').getAttribute('aria-selected')==='true');
+  await page.waitForFunction(()=>{const h=document.querySelector('#hours').previousElementSibling.getBoundingClientRect();return h.top>=0&&h.top<innerHeight/2});
   await context.close()}
  // Send all checked went out spaced (30-45 s per mailbox): the board's queued ones are one progress to-do, "Sending 3 of 8…",
  // also after a reload, then "Sent 8"; a project's own follow-up that's ready stays as it was, and nothing is wider than the screen
