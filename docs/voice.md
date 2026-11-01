@@ -29,7 +29,7 @@ Where a browser doesn't have it (Firefox) the clip waits for the Machine instead
 
 ## Engines
 
-Settings, Voice input, **Turned into text** (`voice_input.ENGINES`), with one short line saying which one is in use
+Settings, General, Voice input, **Turned into text** (`voice_input.ENGINES`), with one short line saying which one is in use
 (`voice_status`'s `in_use`):
 
 - **Automatic** (the default): OpenAI when the Machine has OpenAI access that can transcribe, else this Machine.
@@ -79,7 +79,7 @@ What the local engine downloads, once:
 That took 25 s on a desktop with a fast connection (packages 15 s, model 10 s); a small hosted server takes a few
 minutes. The 2 GB disk check runs before anything downloads, and the dashboard says so if there isn't enough.
 
-Settings, Accuracy picks the model. The default is **small** on Machines with 6 GB of memory or more (desktops,
+Settings, General, Voice input, **Accuracy** picks the model. The default is **small** on Machines with 6 GB of memory or more (desktops,
 Bigger servers) and **base** below that (Standard servers have 4 GB and 2 cores; see [On a Standard server](#on-a-standard-server)).
 
 Measured on a 4-core desktop CPU limited to 2 cores, under heavy load from other work (load average 10 to 27), int8:
