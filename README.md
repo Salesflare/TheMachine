@@ -1,17 +1,19 @@
 # The Machine
 
-Your proactive AI assistant. It reads your email, chats, calendar and phone, turns what matters into to-dos, prepares the work, and only sends what you approve. Open source, self-hosted or hosted.
+Your proactive AI assistant. It reads your email, chats, calendar and phone, turns what matters into to-dos, prepares the work, and only sends what you approve. Open source, on your own computer or hosted for you.
 
 - **To-dos from everything that comes in:** Gmail, Outlook, Slack, WhatsApp, Telegram, LinkedIn, X, your calendar and phone notifications become one list of to-dos.
 - **The work, prepared:** reply drafts, new or edited docs and the lookups behind them are ready when you open a to-do.
 - **Nothing goes out unseen:** a draft is sent only after you've seen and approved it. Paying, booking or submitting waits for your yes.
+- **Promises:** what you promised and what others promised you, tracked until it's kept.
 - **Talk:** a live spoken conversation about a to-do or anything else (with OpenAI), and dictation into any message box.
 - **People and projects:** the Graph keeps track of who you deal with and what's going on, with boards for deals, hiring and more.
-- **Work Fleet:** your teammates' Machines answer each other's questions, sharing only what the Team Graph allows.
+- **Fleets:** your teammates' Machines answer each other's questions, sharing only what the Team Graph allows. A Family Fleet shares free times, to-dos and plans.
+- **Connected AIs:** Claude, ChatGPT, Cursor and other AIs can read your to-dos and Graph over MCP, and add to-dos or Graph changes you can undo. They never send anything.
 
-Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta); export and import move everything between the two.
+Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta). Export and import move everything between the two.
 
-**Early release.** One owner per installation. Runs on Linux; macOS and Windows are in beta. Your core assistant needs no cloud account; the optional Fleet and Friends connections use The Machine Network.
+**Early release.** One owner per installation. Runs on Linux; macOS and Windows are in beta. The core assistant needs no cloud account. Fleets and Friends connect through The Machine Network.
 
 ## Quick start
 
@@ -29,53 +31,12 @@ cd ~/.openclaw/workspace/tools/personal-assistant
 irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex
 ```
 
-`./install.sh --dry-run` checks the prerequisites and shows what it would write, without changing anything.
+- `./install.sh --dry-run` checks the prerequisites and shows what it would write, without changing anything.
+- The installer sets up OpenClaw if needed, connects your sources and publishes your dashboard.
+- It starts with a read-only preview. Turn on recurring reviews when the to-dos look useful.
+- `assistant doctor` checks the setup without syncing your accounts.
 
-Follow [Getting started](docs/getting-started.md). The installer can help set up OpenClaw, connect sources and publish the owner-authenticated dashboard. Start with a preview; enable recurring reviews when ready. `assistant doctor` checks the installation without syncing your accounts.
-
-## Documentation
-
-| Topic | Guide |
-|---|---|
-| First installation, sources, phone and preview | [Getting started](docs/getting-started.md) |
-| Install flags, upgrades, backups, import and recovery | [Operations](docs/operations.md) |
-| Settings and defaults | [Configuration](docs/configuration.md), [example JSON](config.example.json) |
-| Sources, collection windows and limitations | [Sources](docs/sources.md) |
-| Storage, review selection and recovery | [Architecture](docs/architecture.md) |
-| To-dos, Change, snooze, work hours, sends and CLI | [Usage](docs/usage.md) |
-| Facts, people, projects, embeddings and enrichment | [Intelligence](docs/intelligence.md) |
-| Model/provider setup | [Models](docs/models.md) |
-| Work Fleets, Friends and the Network | [Fleet](docs/fleet.md) |
-| Family Fleets: free times, to-dos and plans | [Family](docs/family.md) |
-| Skills: write, approve and share them | [Skills](docs/skills.md) |
-| Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |
-| Optional GBrain agent memory | [GBrain](docs/gbrain.md) |
-| Let Claude, ChatGPT, Cursor, Codex or GBrain read to-dos and the Graph over MCP | [Connected AIs](docs/ai-connections.md) |
-| Voice input: the mic in message boxes, on the Machine or with OpenAI | [Voice input](docs/voice.md) |
-| Talk live: a spoken conversation about a to-do, with OpenAI's Realtime voice | [Talk live](docs/talk-live.md) |
-| Encryption, reliability and roadmap of the Network | [Network](docs/network.md) |
-| Add a connector | [Adding a source](docs/adding-a-source.md) |
-| Sandbox, screenshots and layout checks | [Development](docs/development.md) |
-| Which module owns what, where new code goes | [Code map](docs/code-map.md) |
-| Agent instructions | [AGENTS.md](AGENTS.md), [PREPARATION.md](PREPARATION.md) |
-| Contribute or report a vulnerability | [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) |
-| Historical repair notes | [History](docs/history.md) |
-
-## How it works
-
-- Collects sources independently of OpenClaw into one persistent SQLite database.
-- Reviews new messages and events in isolated sessions of your existing main agent; no separate reasoning model or agent.
-- Remembers your decisions, written feedback, facts, people, projects and promises.
-- Prepares likely useful work ahead, without committing its consequential last step.
-- Carries out owner-requested work, with useful task-specific Send, Submit or Merge actions where appropriate.
-- Shows health, review history and the same tasks on the dashboard and Telegram.
-- Hands a to-do to [Claude Code or Codex](docs/agents.md) when you ask; the job shows in their apps and never sends anything itself.
-- Lets you talk instead of type: [voice input](docs/voice.md) writes what you say into the box, turned into text by OpenAI or on your own Machine, and never sends it; with OpenAI set up, [talk live](docs/talk-live.md) with The Machine about a to-do, and send its draft with a spoken yes after it asks.
-- Follows your [skills](docs/skills.md): plain OpenClaw skills you write, approve or get from your Fleet or a friend; instructions only, never more permissions.
-
-## The Machine and OpenClaw
-
-The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.openclaw.ai) as its agent runtime: OpenClaw's agent does the reading and thinking with the model you pick, and its Gateway carries Telegram and the Android node. The Machine adds the rest: the dashboard, the Graph, to-dos, connections, Fleet and the Network. It also works with [GBrain](docs/gbrain.md), an optional agent memory.
+The full walkthrough: [Getting started](docs/getting-started.md).
 
 ## Requirements
 
@@ -86,144 +47,113 @@ The Machine is its own app, not a wrapper. It runs on [OpenClaw](https://docs.op
 | Logs | journald | `~/Library/Logs/TheMachine` | journald inside WSL |
 | Not there yet | | Browser viewer, Gateway log source | Browser viewer |
 
-`assistant service status|restart|stop|start|logs` works the same everywhere. `assistant support-bundle` saves versions, checks and recent logs in one file, without keys or tokens, to send when you need help. Beta means it is tested in CI but not yet run for long on a real computer.
-
 - Your own user account, not root.
-- **Python 3.12+** (standard library only; Telegram chats adds pinned pure-Python libraries of its own, below).
-- **Node.js 24.22.1+ within the 24.x series, or 26.12.1+** (`>=24.22.1 <25 || >=26.12.1`, OpenClaw's engine range since 2026.10.6). With an older OpenClaw already set up, The Machine still runs on Node 24.16+ or 26.1+; update Node.js before you update OpenClaw. Node 22 and 25 are unsupported. The installer resolves mise/asdf shims and the installed npm package.
-- **OpenClaw 2026.10.7 or later**, with the Gateway running. Its Telegram channel (your bot) is optional: without it, to-dos reach you through the dashboard app. Without it, `./install.sh` in a terminal offers to install and set it up (below). CI tests 2026.10.7 and the latest release every week; see [Known limitations](#known-limitations).
-- Optional, per feature:
-  - `gog` (Google Workspace CLI) for Gmail and Calendar (OAuth per account, file keyring on every OS, so the background service never waits on a Keychain prompt; `assistant connect gmail` signs you in).
-  - Your own Microsoft Entra app registration for Outlook mail and calendar (`assistant connect outlook` signs you in with a device code).
-  - **Tailscale** for dashboard access (the dashboard only serves your Tailscale identity).
-  - **Caddy** only if you want the dashboard on your own domain (`deploy/Caddyfile`). Not needed: `tailscale serve` gives it an HTTPS address on your tailnet.
-  - `wacli` for WhatsApp; for Telegram chats, a Telegram app ID of your own from [my.telegram.org](https://my.telegram.org) (hosted Machines get The Machine's), and `assistant connect telegram` unpacks the pinned Telethon (`telegram-pin.json`, checked against its sha256s); a Maton connection for Slack (allowed to post as you, to send Slack messages); a Salesflare API key.
-  - The `gh` CLI logged in as you for GitHub; a restricted read-only key (or a Maton connection) for Stripe.
-  - For LinkedIn and X: your accounts signed in to the OpenClaw browser (profile `openclaw`). To use another browser profile set `LINKEDIN_INBOX_BROWSER_PROFILE` / `X_INBOX_BROWSER_PROFILE`; to read through a browser's DevTools address directly instead of OpenClaw's browser commands (faster and steadier on a small, busy server) set `LINKEDIN_INBOX_BROWSER_CDP` / `X_INBOX_BROWSER_CDP`, e.g. `http://127.0.0.1:9222`. When a read finds the browser signed out, the Connections tab says "Signed out of LinkedIn" with what to do (on a hosted install: a Sign in again link to the server's browser).
-  - The OpenClaw Android app paired as a node for phone notifications ([pairing it, also from outside your network](docs/getting-started.md#pairing-your-android-phone)).
+- **Python 3.12 or newer.** The app uses the standard library only.
+- **Node.js** `>=24.22.1 <25` or `>=26.12.1` to install OpenClaw. An OpenClaw that is already set up keeps working on Node 24.16+ or 26.1+; update Node before you update OpenClaw. Node 22 and 25 are not supported.
+- **[OpenClaw](https://docs.openclaw.ai) 2026.10.7 or later**, The Machine's agent runtime. The installer offers to install and set it up. A Telegram bot on it is optional: without one, to-dos reach you in the dashboard app.
+- **Tailscale** to reach the dashboard (it serves only your Tailscale identity). Caddy only if you want it on your own domain (`deploy/Caddyfile`).
+- Per source, only what you connect: `gog` for Gmail and Calendar, your own Microsoft Entra app for Outlook, `wacli` for WhatsApp, and so on. See [Sources](docs/sources.md) and [Getting started](docs/getting-started.md).
 
-## Install
+`assistant service status|start|stop|restart|logs` works the same on every system. `assistant support-bundle` saves versions, checks and recent logs in one file, without keys or tokens, to send when you need help. Beta means tested in CI but not yet run for long on a real computer.
 
-[Installation steps](docs/getting-started.md), [flags and unattended setup](docs/operations.md#install), [your own instructions](docs/operations.md#your-own-instructions-usermd-and-overlays).
+## Documentation
 
-## Configuration
+| Topic | Guide |
+|---|---|
+| First install, sources, phone and preview | [Getting started](docs/getting-started.md) |
+| Install flags, updates, backups, moving and recovery | [Operations](docs/operations.md) |
+| Settings and defaults | [Configuration](docs/configuration.md), [example JSON](config.example.json) |
+| Sources and their limits | [Sources](docs/sources.md) |
+| Storage, reviews and promises | [Architecture](docs/architecture.md) |
+| To-dos, Do it, snooze, work hours, sends and the CLI | [Usage](docs/usage.md) |
+| Facts, people, projects, embeddings and enrichment | [Intelligence](docs/intelligence.md) |
+| Model and provider setup | [Models](docs/models.md) |
+| Work Fleets, Friends and The Machine Network | [Fleet](docs/fleet.md), [Network](docs/network.md), [Team Graph](docs/shared-graph.md) |
+| Family Fleets: free times, to-dos and plans | [Family](docs/family.md) |
+| Skills: write, approve and share them | [Skills](docs/skills.md) |
+| Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |
+| Let other AIs read your to-dos and Graph over MCP | [Connected AIs](docs/ai-connections.md) |
+| Dictation and Talk | [Voice input](docs/voice.md), [Talk](docs/talk-live.md) |
+| Optional GBrain agent memory | [GBrain](docs/gbrain.md) |
+| Add a connector | [Adding a source](docs/adding-a-source.md) |
+| Sandbox, screenshots and layout checks | [Development](docs/development.md), [Design](docs/design.md) |
+| Which module owns what | [Code map](docs/code-map.md) |
+| Instructions for The Machine's agent | [AGENTS.md](AGENTS.md), [PREPARATION.md](PREPARATION.md) |
+| What changed and why | [History](docs/history.md) |
 
-[All documented settings](docs/configuration.md). Restart after manual edits; dashboard Work hours apply immediately.
+Help for people using The Machine (not running it) is at [themachine.computer/help](https://themachine.computer/help), from the articles in [docs/help](docs/help).
 
-## Architecture
+## How it works
 
-[Components, data and account boundaries](docs/architecture.md).
+- Collects every source into one SQLite database on your Machine, on its own schedule.
+- Reviews new messages and events in isolated turns of your main agent, with the model you picked. No second agent or model.
+- Remembers your decisions, feedback, facts, people, projects and promises.
+- Prepares likely useful work ahead, but never the last step that commits something.
+- Does what you ask with **Do it**, and shows a **Send**, **Submit** or **Merge** button where something goes out.
+- Shows the same to-dos on the dashboard, in its phone app and on Telegram.
 
-## Sources
-
-[Supported sources](docs/sources.md). Collection is read-only by default, with an opt-in CRM account-join exception.
-
-## Reviews
-
-[Review batching and recovery](docs/architecture.md#reviews). Threshold 40 does not mean only 40 signals are eligible: each run can claim up to 120. Smaller quiet backlogs are reviewed after an hour. Deferred versions stay searchable; two deferrals set one aside until it changes.
-
-### Promises
-
-[Promises](docs/architecture.md#promises).
-
-## Telegram and the dashboard
-
-[Usage](docs/usage.md#telegram-and-the-dashboard). Telegram is optional; install the dashboard as a phone app for notifications.
+The Machine is its own app. [OpenClaw](https://docs.openclaw.ai) is its agent runtime: OpenClaw's agent reads and thinks with your model, and its Gateway carries Telegram and the Android node. The Machine adds the dashboard, the Graph, to-dos, connections, Fleets and the Network.
 
 ### Work hours
 
-[Work hours](docs/usage.md#work-hours).
+To-dos and reminders reach you only within your work hours (by default Monday to Friday, 08:00 to 23:00). Work to-dos wait for a work day; personal ones keep their timing. Set them in **Settings**, with `assistant hours` or in `config.json`. More in [Usage](docs/usage.md#work-hours).
 
-## Do it
+### Do it
 
-Do it authorizes the offered task end to end; verified written instructions authorize the exact requested action. Normal app actions do not need extra per-tool approvals. Message drafts use the supported Send route, or `send_now` where supported when explicitly requested. WhatsApp retains a to-do confirmation. Prepared-ahead work stops before its consequential last step. [Full rules](PREPARATION.md).
+**Do it** authorizes the offered task end to end. Verified written instructions authorize the exact action they ask for. Messages go out through the supported **Send** route; WhatsApp keeps a confirmation on the to-do. Full rules: [Usage](docs/usage.md#do-it) and [PREPARATION.md](PREPARATION.md).
 
-<a id="prepared-ahead"></a>
-[Prepared ahead](docs/usage.md#do-it) is not accepted work; see the different authority above.
+### Prepared ahead
 
-## The Machine fixes itself
+When a review is confident you'd say yes, the work starts before you tap anything. The to-do arrives done up to the one step that commits something: a draft with **Send**, a filled-in form with **Submit…**. That last step runs only on your confirm. Prepared work is not accepted work. More in [Usage](docs/usage.md#do-it).
 
-[Self-repair and tested merges](docs/usage.md#the-machine-fixes-itself).
+### Promises
 
-## People and projects
+Reviews notice promises in messages: ones you made, and ones made to you. Each has its own page, closes when it's kept, and shows on the Calendar and on the people involved. More in [Architecture](docs/architecture.md#promises).
 
-[Graph and learned context](docs/intelligence.md#people-and-projects).
+### The Machine fixes itself
 
-## Related signals (optional, local embeddings)
+The Machine records its own errors (never message content) and can fix them in a separate clone, with a test. Small proven fixes merge by themselves and can be undone for 24 hours; everything else waits for your **Merge fix**. More in [Usage](docs/usage.md#the-machine-fixes-itself).
 
-[Embedding setup and search](docs/intelligence.md#related-signals-optional-local-embeddings).
+### Optional extras
 
-## Organization data (optional, enrichment)
-
-[Company enrichment](docs/intelligence.md#organization-data-optional-enrichment), and [work contacts](docs/intelligence.md#people-data).
+<a id="related-signals-optional-local-embeddings"></a><a id="organization-data-optional-enrichment"></a>
+[Related signals with local embeddings](docs/intelligence.md#related-signals-optional-local-embeddings), [organization data from an enrichment service](docs/intelligence.md#organization-data-optional-enrichment) and [work contact details](docs/intelligence.md#people-data).
 
 ## Security model
 
-In plain words: [themachine.computer/security](https://themachine.computer/security). The details:
+In plain words: [themachine.computer/security](https://themachine.computer/security). The details are in [SECURITY.md](SECURITY.md). In short:
 
-- Keep the local API on loopback and the dashboard behind the owner identity check; authenticated cloud hosting uses its own gate (Google or Microsoft plus an authenticator code, or a passkey). A self-hosted dashboard has no sign-in of its own: your tailnet login is the identity, so a passkey goes on that account (Tailscale's identity provider).
-- The CLI/agent key cannot invent owner decisions. Telegram/dashboard owner controls share one store.
-- Reviews only read. Do it permits broad task execution; plugin guards are not an OS sandbox and differ by runtime.
-- Credentials must not enter model context; the owner's dashboard sign-in facility handles them separately.
-- Private evidence reaches your chosen reasoning provider; local embeddings do not make cloud model calls local.
-- Message contents are encrypted in the database by default, with a key next to it (`message-content.key`). Back it up with the database: without it the messages are lost ([configuration](docs/configuration.md#message-protection)).
-- Unknown sends/remote writes are reconciled, not blindly repeated. Cancellation cannot recall an already-admitted send.
+- The local API stays on loopback. The dashboard checks the owner's identity: on your own computer that's your Tailscale login, so put a passkey on that account. A hosted Machine signs in with Google or Microsoft plus an authenticator code, or a passkey.
+- The CLI and the agent can't make owner decisions. The dashboard and Telegram share one store of them.
+- Reviews only read. **Do it** allows broad work on the accepted task; the plugin's guards are not an OS sandbox.
+- Credentials never go into the model's context.
+- Private evidence goes to the model provider you chose. Local embeddings don't make model calls local.
+- Message contents are encrypted in the database by default, with a key next to it (`message-content.key`). Back the key up with the database: without it the messages are lost ([configuration](docs/configuration.md#message-protection)).
+- A send with an unknown outcome is checked, never blindly repeated. Cancel can't recall a send that already started.
 
-Read [SECURITY.md](SECURITY.md), [PREPARATION.md](PREPARATION.md) and [architecture](docs/architecture.md) before enabling accepted work. No new approval tiers are implied by this documentation.
-
-## Command line
-
-[CLI examples](docs/usage.md#command-line), or `assistant --help`. Owner decisions cannot be made through the CLI.
-
-## Operations
-
-[Maintenance runbook](docs/operations.md).
-
-### Moving to another computer
-
-[Export and import](docs/operations.md#moving-to-another-computer).
-
-### Catch-up and search guarantees
-
-[Checkpoint and version guarantees](docs/operations.md#catch-up-and-search-guarantees).
-
-## Adding a source
-
-[Connector development](docs/adding-a-source.md).
+Read [SECURITY.md](SECURITY.md) and [PREPARATION.md](PREPARATION.md) before you turn on accepted work.
 
 ## Known limitations
 
-Sources and model judgment are not complete or infallible. Phone notifications can be lost during gaps, Slack can take hours, browser query IDs can change, and a bounded successful sync is not complete catch-up. Latest OpenClaw compatibility is tested, not guaranteed for future releases. [Detailed limits](docs/operations.md#known-limitations).
+- Sources and model judgment are not complete or infallible.
+- Phone notifications can be lost during gaps, Slack can take hours, and browser-read sources (LinkedIn, X) can break when the site changes.
+- A successful sync with a limit is not a complete catch-up.
+- Newer OpenClaw releases are tested weekly, not guaranteed.
 
-## Tests
+More in [Operations](docs/operations.md#known-limitations).
+
+## Tests and contributing
 
 ```bash
 python3 scripts/test.py
 ```
 
-The suites live in `tests/`. The runner isolates HOME/config and uses synthetic providers and disposable databases/browser contexts. Offline tests do not prove real delivery, billing or reboot recovery. [Development prerequisites](CONTRIBUTING.md).
+The suites live in `tests/` and use synthetic data, a throwaway HOME and disposable databases and browsers. They don't prove real delivery, billing or reboot recovery. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Contributing and security
-
-[Contributing](CONTRIBUTING.md), [private security reports](SECURITY.md). Never publish real accounts, messages, customer records, credentials, raw logs or operational backups. A successful secret scan alone does not prove prose or images are public-safe.
-
-Report ordinary bugs through the dashboard's [GitHub issue link](https://github.com/Salesflare/TheMachine/issues/new), leaving out personal data. Keep sensitive reports private.
-
+Report bugs through a [GitHub issue](https://github.com/Salesflare/TheMachine/issues/new), without personal data. Report security issues privately: [SECURITY.md](SECURITY.md). Never publish real accounts, messages, customer records, credentials, raw logs or backups.
 
 ## License
 
 Copyright (C) 2026 Salesflare. Open source under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`): [LICENSE](LICENSE).
 
-OpenClaw and optional components: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Names, branding and the hosted service have separate terms: [TRADEMARKS.md](TRADEMARKS.md). Website: [themachine.computer](https://themachine.computer).
-
-## Outlook reliability
-
-Microsoft access and folder caches are isolated by account, connection and credential revision. Reconnecting invalidates old cache entries. Attachment lists follow every Graph page; responses over 40 MB fail clearly rather than creating partial files. Graph throttling preserves the requested retry wait. Signatures keep ordinary HTML after removed void tags. These are reliability checks, not new owner approvals.
-
-## Google sign-in recovery
-
-After an expired Google sign-in, use the exact reconnect command shown on Connections, on the computer that runs this collector. It pins the account/client and the same gog file keyring used by the service. The collector watches the renewed token every 15 seconds during authentication backoff; it does not sleep through the retry hour first. Ordinary throttling/network backoff remains unchanged. A successful committed sync clears the current warning, while the historical failure stays in Recent syncs/Details. Returning to the dashboard or regaining connectivity refreshes it immediately, without replacing an open form or overlapping its periodic status requests.
-
-### Automatic browser recovery
-
-An unresponsive managed browser is restarted only while The Machine holds its exclusive browser lease. If another job is using it, recovery waits for the next sync without consuming its fifteen-minute cooldown. It uses the configured lease helper and leaves the Gateway, attached CDP browsers and real-Chrome extension profiles alone. This adds no owner-approval step.
+OpenClaw and other components: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Names, branding and the hosted service have separate terms: [TRADEMARKS.md](TRADEMARKS.md).
