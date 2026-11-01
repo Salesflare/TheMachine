@@ -8,7 +8,7 @@ order: 1
 ---
 ## Cosa mostra
 
-I prossimi 7 giorni, con:
+I tuoi giorni da oggi in poi, con:
 
 - le riunioni dai calendari che hai collegato,
 - le attività in scadenza quel giorno, e le attività posticipate nel giorno in cui tornano,
@@ -21,11 +21,15 @@ Un piano fatto insieme è una sola promessa, segnata "Con" e il nome dell’altr
 
 **In ritardo** viene per primo. Una riunione con un’attività aperta la mostra: **Preparazione pronta**, **In preparazione** o **Attività**.
 
-## Agenda o settimana
+## Agenda, settimana o mese
 
-**Agenda** elenca ogni giorno. Su un computer, **Settimana** mostra una griglia. La tua scelta viene ricordata su quel dispositivo.
+- **Agenda** elenca ogni giorno. Scorri in basso per i giorni successivi, in alto (o **Mostra giorni precedenti**) per quelli precedenti.
+- **Settimana** mostra una griglia, da lunedì a domenica. Su un telefono mostra tre giorni.
+- **Mese** mostra il mese intero. Un computer mostra fino a tre elementi al giorno; un telefono mostra dei punti, e un tocco elenca quel giorno.
 
-Nella griglia, gli eventi alla stessa ora stanno affiancati finché restano leggibili. Gli altri compaiono come **+N**, che apre quel giorno nell’agenda.
+**Oggi**, ‹ e › in alto scorrono le settimane o i mesi. La vista scelta viene ricordata su quel dispositivo.
+
+Nella griglia della settimana, gli eventi alla stessa ora stanno affiancati finché restano leggibili. Gli altri compaiono come **+N**, che apre quel giorno nell’agenda.
 
 ## Apri qualcosa
 

@@ -21,7 +21,7 @@ Quando un’attività riguarda piani di famiglia con qualcuno che non è ancora 
 - **Invita** apre il modulo di invito nella tua pagina account, con il suo indirizzo già inserito. Vedi l’email che riceverebbe prima che parta qualcosa. Niente parte senza di te.
 - **Non ora** lo nasconde per 90 giorni.
 - Solo per persone che sono famiglia secondo il tuo Graph o le tue parole. Mai per contatti di lavoro, persone già nella tua Famiglia o chi ha un invito aperto. Al massimo una volta per persona.
-- Disattivalo in Impostazioni, Fleet: **Suggerisci di invitare la famiglia**.
+- Disattivalo in Impostazioni, Generale, sotto Fleet: **Suggerisci di invitare la famiglia**.
 
 ## Regole
 

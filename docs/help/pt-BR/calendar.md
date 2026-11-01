@@ -8,7 +8,7 @@ order: 1
 ---
 ## O que ele mostra
 
-Os próximos 7 dias, com:
+Seus dias a partir de hoje, com:
 
 - reuniões das agendas que você conectou,
 - tarefas que vencem naquele dia, e tarefas adiadas no dia em que voltam,
@@ -21,11 +21,15 @@ Um plano feito em conjunto é uma promessa só, marcada com "Com" e o nome da pe
 
 **Atrasada** vem primeiro. Uma reunião com uma tarefa em aberto mostra essa tarefa: **Preparação pronta**, **Preparando** ou **Tarefa**.
 
-## Agenda ou semana
+## Agenda, semana ou mês
 
-**Agenda** lista cada dia. No computador, **Semana** mostra uma grade. Sua escolha fica salva naquele dispositivo.
+- **Agenda** lista cada dia. Role para baixo para ver os dias seguintes, ou para cima (ou **Mostrar dias anteriores**) para os anteriores.
+- **Semana** mostra uma grade, de segunda a domingo. No celular ela mostra três dias.
+- **Mês** mostra o mês inteiro. No computador aparecem até três itens por dia; no celular aparecem pontos, e um toque lista aquele dia.
 
-Na grade, eventos no mesmo horário ficam lado a lado, e cada um continua legível. Os demais aparecem como **+N**, que abre aquele dia na agenda.
+**Hoje**, ‹ e › no topo passam pelas semanas ou meses. A visualização que você escolhe fica salva naquele dispositivo.
+
+Na grade da semana, eventos no mesmo horário ficam lado a lado, e cada um continua legível. Os demais aparecem como **+N**, que abre aquele dia na agenda.
 
 ## Abrir algo
 

@@ -16,6 +16,7 @@ La pagina **Attività** le raggruppa:
 - **Serve una tua decisione**: qualcosa che puoi decidere solo tu.
 - **In preparazione**: la tua Machine ci sta lavorando. Un'attività a cui hai appena detto **Fallo** resta dov'era mentre si prepara, poi passa in **Pronta per te**.
 - **Torna più tardi**: posticipate.
+- **Promesse**: quello che hai promesso e quello che altri hanno promesso a te. Vedi [Promesse](promises.md).
 - **Sembrano fatte**: attività che sembrano già concluse. Chiuse, subito sopra **Fatte / ignorate**.
 - **Fatte / ignorate**: tutte le attività concluse, dalla più recente, 30 alla volta mentre scorri.
 

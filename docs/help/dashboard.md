@@ -10,14 +10,14 @@ order: 4
 
 - **To-dos**: your to-dos and promises. See [To-dos](cards.md).
 - **Calendar**: the week ahead with your meetings, due to-dos and promises. See [Calendar](calendar.md).
-- **Graph**: the people, organizations and projects in your messages. See [Graph](graph.md).
+- **Graph**: the people, organizations and projects in your messages, and **Who's who** when roles wait for your word. See [Graph](graph.md).
 - **Fleet**: your team, family and friends on The Machine Network, once you have one. See [Fleet](fleet.md).
 - **Learning**: how the to-dos are doing, and what it learned.
 - **Connections**: your sources and how they're doing. See [Connections](connections.md).
 
-**Settings** is the gear at the top. **Search**, at the top of the sidebar, finds to-dos first, then people, messages and more.
+**Search**, at the top of the sidebar, finds to-dos first, then people, messages and more. **Browser**, **Help** and **Settings** are at the bottom of the sidebar. On a phone, the menu button in the top bar opens the sidebar.
 
-**Browser**, at the bottom of the sidebar, shows your Machine's own browser. On a computer it opens beside the sidebar, and so do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. A narrow window, like the app on half the screen, shows it under the top bar, not in a second window. On a phone it opens in a new tab.
+**Browser** shows your Machine's own browser. On a computer it opens beside the sidebar, and so do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. A narrow window, like the app on half the screen, shows it under the top bar, not in a second window. On a phone it opens in a new tab.
 
 The browser's front window shows in the middle and the rest of the screen is dark; a button in the corner shows the whole screen. The view fits again when the window changes size. **Full size** gives it the whole window; press it again to go back. The sign-in from a to-do has **Full size** too.
 

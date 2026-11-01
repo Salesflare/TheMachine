@@ -10,14 +10,14 @@ order: 4
 
 - **Aufgaben**: deine Aufgaben und Versprechen. Siehe [Aufgaben](cards.md).
 - **Kalender**: die kommende Woche mit deinen Meetings, fälligen Aufgaben und Versprechen. Siehe [Kalender](calendar.md).
-- **Graph**: die Personen, Organisationen und Projekte in deinen Nachrichten. Siehe [Graph](graph.md).
+- **Graph**: die Personen, Organisationen und Projekte in deinen Nachrichten, und **Wer ist wer**, wenn Rollen auf dein Wort warten. Siehe [Graph](graph.md).
 - **Fleet**: dein Team, deine Familie und deine Freunde in The Machine Network, sobald du eine hast. Siehe [Fleet](fleet.md).
 - **Lernen**: wie es den Aufgaben geht und was sie gelernt hat.
 - **Verbindungen**: deine Quellen und wie es ihnen geht. Siehe [Verbindungen](connections.md).
 
-**Einstellungen** ist das Zahnrad oben. **Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr.
+**Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr. **Browser**, **Hilfe** und **Einstellungen** sind unten in der Seitenleiste. Auf dem Handy öffnet die Menütaste in der oberen Leiste die Seitenleiste.
 
-**Browser**, unten in der Seitenleiste, zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, in der Größe des verfügbaren Platzes. Das gilt auch für **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Auf dem Handy öffnet er sich in einem neuen Tab.
+**Browser** zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, in der Größe des verfügbaren Platzes. Das gilt auch für **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Auf dem Handy öffnet er sich in einem neuen Tab.
 
 Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirms ist dunkel. Ein Button in der Ecke zeigt den ganzen Bildschirm. Auf einem niedrigen Bildschirm scrollt die ganze Seitenleiste als eine Spalte, Aufgaben eingeschlossen, wie das Menü auf dem Handy.
 

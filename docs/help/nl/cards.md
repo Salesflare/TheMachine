@@ -16,6 +16,7 @@ De pagina **To-do's** groepeert ze:
 - **Wacht op je beslissing**: iets wat alleen jij kunt beslissen.
 - **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en gaat dan naar **Klaar voor jou**.
 - **Komt later terug**: gesnoozed.
+- **Beloftes**: wat jij beloofde en wat anderen jou beloofden. Zie [Beloftes](promises.md).
 - **Lijken al gedaan**: to-do's die al af lijken. Ingeklapt, net boven **Gedaan / afgewezen**.
 - **Gedaan / afgewezen**: elke afgeronde to-do, nieuwste eerst, 30 tegelijk terwijl je scrolt.
 

@@ -16,9 +16,11 @@ Su un telefono, tocca l'icona di ricerca nella barra in alto.
 
 Premi `?` per **Scorciatoie da tastiera**, l'elenco completo per il tuo computer.
 
-- Vai a una pagina: `G` poi `T` Attività, `C` Calendario, `P` Persone, `O` Organizzazioni, `J` Progetti, `F` Fleet, `L` Apprendimento, `N` Connessioni, `,` Impostazioni. `G` poi `E` apre i risultati della ricerca tra i messaggi. I vecchi `G` poi `S` e `G` poi `B` funzionano ancora.
-- `N` aggiunge una nuova attività. `T` avvia Parla, o lo chiude mentre è in corso. Nel Calendario, `T` va a oggi. `J` e `K` (o `↓` e `↑`) si muovono in un elenco, Invio apre.
+- Vai a una pagina: `G` poi `T` Attività, `C` Calendario, `P` Persone, `O` Organizzazioni, `J` Progetti, `W` Chi è chi (quando compare), `F` Fleet, `L` Apprendimento, `N` Connessioni, `,` Impostazioni. `G` poi `E` apre i risultati della ricerca tra i messaggi. I vecchi `G` poi `S` e `G` poi `B` funzionano ancora.
+- `N` aggiunge una nuova attività. `T` avvia Parla, o lo chiude mentre è in corso. `J` e `K` (o `↓` e `↑`) si muovono in un elenco, Invio apre.
 - Su un'attività: `E` la rinomina, `S` la posticipa, `D` la segna come fatta, `R` scrive nella sua chat.
+- Nel Calendario: `T` va a oggi, `J` e `K` alla settimana o al mese successivo o precedente. `A`, `W` e `M` passano ad Agenda, Settimana e Mese.
+- Su un computer, `⌘B` su un Mac o `Ctrl B` su Windows e Linux riduce la barra laterale a icone e la riapre.
 
 I tasti non funzionano mentre scrivi in un campo.
 

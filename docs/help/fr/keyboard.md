@@ -16,9 +16,11 @@ Sur un téléphone, appuyez sur l’icône de recherche dans la barre du haut.
 
 Appuyez sur `?` pour **Raccourcis clavier**, la liste complète pour votre ordinateur.
 
-- Aller à une page : `G` puis `T` Tâches, `C` Agenda, `P` Personnes, `O` Organisations, `J` Projets, `F` Fleet, `L` Apprentissage, `N` Connexions, `,` Paramètres. `G` puis `E` ouvre les résultats de la recherche de messages. Les anciens `G` puis `S` et `G` puis `B` marchent toujours.
-- `N` ajoute une nouvelle tâche. `T` lance Parler, ou l’arrête pendant qu’il est en cours. Dans l’Agenda, `T` va à aujourd’hui. `J` et `K` (ou `↓` et `↑`) parcourent une liste, Entrée ouvre.
+- Aller à une page : `G` puis `T` Tâches, `C` Agenda, `P` Personnes, `O` Organisations, `J` Projets, `W` Qui est qui (dès qu’il apparaît), `F` Fleet, `L` Apprentissage, `N` Connexions, `,` Paramètres. `G` puis `E` ouvre les résultats de la recherche de messages. Les anciens `G` puis `S` et `G` puis `B` marchent toujours.
+- `N` ajoute une nouvelle tâche. `T` lance Parler, ou l’arrête pendant qu’il est en cours. `J` et `K` (ou `↓` et `↑`) parcourent une liste, Entrée ouvre.
 - Sur une tâche : `E` la renomme, `S` la met en attente, `D` la marque comme faite, `R` écrit dans son chat.
+- Dans l’Agenda : `T` va à aujourd’hui, `J` et `K` à la semaine ou au mois suivant ou précédent. `A`, `W` et `M` passent en vue Agenda, Semaine et Mois.
+- Sur un ordinateur, `⌘B` sur un Mac ou `Ctrl B` sous Windows et Linux replie la barre latérale en icônes et la rouvre.
 
 Les touches ne fonctionnent pas pendant la saisie dans un champ.
 

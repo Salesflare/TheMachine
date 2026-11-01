@@ -33,7 +33,7 @@ Subito prima dell’invio il thread viene ricontrollato, e se qualcuno ha scritt
 
 I ricontatti di una bacheca arrivano come un’unica attività, mai una per email. Mentre li scrive mostra “Scrittura di 3 ricontatti…”, poi “8 ricontatti pronti per Alpha testers”.
 
-**Rivedi** li mostra interi, uno sotto l’altro, così li leggi tutti scorrendo una volta. **Invia**, **Modifica** e **Salta** compaiono su quello attuale. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica, s salta e c cambia. **Invia tutti i selezionati** invia quelli ancora spuntati.
+**Rivedi** li mostra interi, uno sotto l’altro, così li leggi tutti scorrendo una volta. **Invia**, **Modifica** e **Salta** compaiono su quello attuale. Da tastiera, j e k (o le frecce) per spostarti, Invio invia, e modifica, s salta (di nuovo annulla), x spunta o toglie la spunta, e c cambia. **Invia tutti i selezionati** invia quelli ancora spuntati.
 
 **Salta** toglie la spunta a una bozza e la sposta in fondo, segnata come Saltata con **Annulla**; viene saltata davvero solo quando chiudi la revisione. Un ricontatto saltato torna con **Ripristina** nei ricontatti del progetto o sulla sua attività in Fatto, finché non ne arriva uno più recente. Il ricontatto di un singolo progetto è un’attività normale.
 

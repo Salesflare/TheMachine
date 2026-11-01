@@ -16,9 +16,11 @@ Tik op een telefoon op het zoekicoon in de bovenste balk.
 
 Druk op `?` voor **Sneltoetsen**, de volledige lijst voor je computer.
 
-- Naar een pagina gaan: `G` en dan `T` To-do's, `C` Agenda, `P` Personen, `O` Organisaties, `J` Projecten, `F` Fleet, `L` Leren, `N` Koppelingen, `,` Instellingen. `G` en dan `E` opent de zoekresultaten in je berichten. De oude `G` en dan `S` en `G` en dan `B` werken nog.
-- `N` voegt een nieuwe to-do toe. `T` start Praten, of stopt het terwijl het loopt. In de Agenda gaat `T` naar vandaag. `J` en `K` (of `↓` en `↑`) gaan door een lijst, Enter opent.
+- Naar een pagina gaan: `G` en dan `T` To-do's, `C` Agenda, `P` Personen, `O` Organisaties, `J` Projecten, `W` Wie is wie (zodra het er is), `F` Fleet, `L` Leren, `N` Koppelingen, `,` Instellingen. `G` en dan `E` opent de zoekresultaten in je berichten. De oude `G` en dan `S` en `G` en dan `B` werken nog.
+- `N` voegt een nieuwe to-do toe. `T` start Praten, of stopt het terwijl het loopt. `J` en `K` (of `↓` en `↑`) gaan door een lijst, Enter opent.
 - Op een to-do: `E` hernoemt hem, `S` snoozet hem, `D` markeert hem als gedaan, `R` schrijft in zijn chat.
+- In de Agenda: `T` gaat naar vandaag, `J` en `K` naar de volgende of vorige week of maand. `A`, `W` en `M` schakelen naar Agenda, Week en Maand.
+- Op een computer klapt `⌘B` op een Mac of `Ctrl B` op Windows en Linux de zijbalk in tot iconen, en weer uit.
 
 Toetsen werken niet terwijl je in een veld typt.
 

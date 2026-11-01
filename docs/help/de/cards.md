@@ -16,6 +16,7 @@ Die Seite **Aufgaben** gruppiert sie:
 - **Braucht deine Entscheidung**: etwas, das nur du entscheiden kannst.
 - **Wird vorbereitet**: Deine Machine arbeitet daran. Eine Aufgabe, zu der du gerade **Ausführen** gesagt hast, bleibt an ihrem Platz, während sie vorbereitet wird, und wandert dann zu **Bereit für dich**.
 - **Kommt später zurück**: zurückgestellt.
+- **Versprechen**: was du versprochen hast und was andere dir versprochen haben. Siehe [Versprechen](promises.md).
 - **Scheinbar erledigt**: Aufgaben, die schon fertig aussehen. Eingeklappt, direkt über **Erledigt / verworfen**.
 - **Erledigt / verworfen**: jede abgeschlossene Aufgabe, die neueste zuerst, 30 auf einmal beim Scrollen.
 

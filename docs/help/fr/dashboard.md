@@ -10,14 +10,14 @@ order: 4
 
 - **Tâches** : vos tâches et vos promesses. Voir [Tâches](cards.md).
 - **Agenda** : la semaine à venir avec vos réunions, vos tâches à échéance et vos promesses. Voir [Agenda](calendar.md).
-- **Graph** : les personnes, organisations et projets de vos messages. Voir [Graph](graph.md).
+- **Graph** : les personnes, organisations et projets de vos messages, et **Qui est qui** quand des rôles attendent votre avis. Voir [Graph](graph.md).
 - **Fleet** : votre équipe, votre famille et vos amis sur The Machine Network, une fois que vous en avez une. Voir [Fleet](fleet.md).
 - **Apprentissage** : comment se passent les tâches, et ce qu’elle a appris.
 - **Connexions** : vos sources et leur état. Voir [Connexions](connections.md).
 
-**Paramètres**, c’est la roue dentée en haut. **Rechercher**, en haut de la barre latérale, trouve d’abord les tâches, puis les personnes, les messages et plus encore.
+**Rechercher**, en haut de la barre latérale, trouve d’abord les tâches, puis les personnes, les messages et plus encore. **Navigateur**, **Aide** et **Paramètres** sont en bas de la barre latérale. Sur un téléphone, le bouton de menu de la barre du haut ouvre la barre latérale.
 
-**Navigateur**, en bas de la barre latérale, montre le navigateur de votre Machine. Sur ordinateur, il s’ouvre à côté de la barre latérale, à la taille de l’espace disponible, tout comme **Voir dans le navigateur** sur une tâche et **Ouvrir le navigateur** quand un site demande une connexion. Sur un téléphone, il s’ouvre dans un nouvel onglet.
+**Navigateur** montre le navigateur de votre Machine. Sur ordinateur, il s’ouvre à côté de la barre latérale, à la taille de l’espace disponible, tout comme **Voir dans le navigateur** sur une tâche et **Ouvrir le navigateur** quand un site demande une connexion. Sur un téléphone, il s’ouvre dans un nouvel onglet.
 
 La fenêtre au premier plan du navigateur s’affiche au milieu et le reste de l’écran est sombre ; un bouton dans le coin montre tout l’écran. Sur un petit écran, toute la barre latérale défile comme une seule colonne, tâches comprises, comme le menu sur un téléphone.
 

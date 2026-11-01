@@ -21,7 +21,7 @@ Gaat een to-do over gezinsplannen met iemand die nog niet in je Familie zit, zoa
 - **Uitnodigen** opent het uitnodigingsformulier op je accountpagina, met hun adres al ingevuld. Je ziet de e-mail die ze zouden krijgen voor er iets vertrekt. Niets gaat weg zonder jou.
 - **Niet nu** verbergt het 90 dagen.
 - Alleen voor mensen die familie zijn volgens je Graph of je eigen woorden. Nooit voor werkcontacten, mensen die al in je Familie zitten of iemand met een open uitnodiging. Hooguit één keer per persoon.
-- Zet het uit in Instellingen, Fleet: **Uitnodigen voor je familie voorstellen**.
+- Zet het uit in Instellingen, Algemeen, onder Fleet: **Uitnodigen voor je familie voorstellen**.
 
 ## Regels
 

@@ -8,7 +8,7 @@ order: 1
 ---
 ## Qué muestra
 
-Los próximos 7 días, con:
+Tus días a partir de hoy, con:
 
 - las reuniones de los calendarios que conectaste,
 - las tareas que vencen ese día, y las tareas pospuestas el día en que vuelven,
@@ -21,11 +21,15 @@ Un plan hecho en común es una sola promesa, marcada "Con" y su nombre. Una prom
 
 **Vencida** sale primero. Una reunión con una tarea abierta la muestra: **Preparación lista**, **Preparando** o **Tarea**.
 
-## Agenda o semana
+## Agenda, semana o mes
 
-**Agenda** lista cada día. En un ordenador, **Semana** muestra una cuadrícula. Tu elección se recuerda en ese dispositivo.
+- **Agenda** lista cada día. Desplázate hacia abajo para ver días posteriores, o hacia arriba (o **Mostrar días anteriores**) para los anteriores.
+- **Semana** muestra una cuadrícula, de lunes a domingo. En un móvil muestra tres días.
+- **Mes** muestra el mes entero. Un ordenador muestra hasta tres elementos por día; un móvil muestra puntos, y al tocar un día se lista.
 
-En la cuadrícula, los eventos a la misma hora se colocan uno al lado del otro y cada uno sigue siendo legible. El resto aparecen como **+N**, que abre ese día en la agenda.
+**Hoy**, ‹ y › arriba recorren las semanas o los meses. La vista que eliges se recuerda en ese dispositivo.
+
+En la cuadrícula de la semana, los eventos a la misma hora se colocan uno al lado del otro y cada uno sigue siendo legible. El resto aparecen como **+N**, que abre ese día en la agenda.
 
 ## Abre algo
 

@@ -33,7 +33,7 @@ Direkt vor dem Senden wird der Thread noch einmal geprüft, und wenn seit dem En
 
 Die Entwürfe eines Boards kommen als eine Aufgabe, nie eine pro E-Mail. Während sie geschrieben werden, steht dort „3 Nachfassen werden geschrieben…“, danach „8 Nachfassen bereit für Alpha testers“.
 
-**Prüfen** zeigt sie vollständig untereinander, du liest also alle in einem Durchlauf. **Senden**, **Bearbeiten** und **Überspringen** stehen bei der aktuellen. Auf der Tastatur bewegst du dich mit j und k (oder den Pfeiltasten), Enter sendet, e bearbeitet, s überspringt und c ändert. **Alle markierten senden** sendet die, die noch angehakt sind.
+**Prüfen** zeigt sie vollständig untereinander, du liest also alle in einem Durchlauf. **Senden**, **Bearbeiten** und **Überspringen** stehen bei der aktuellen. Auf der Tastatur bewegst du dich mit j und k (oder den Pfeiltasten), Enter sendet, e bearbeitet, s überspringt (noch einmal macht es rückgängig), x hakt an oder ab, und c ändert. **Alle markierten senden** sendet die, die noch angehakt sind.
 
 **Überspringen** nimmt den Haken weg und schiebt den Entwurf nach unten, markiert als Übersprungen mit **Rückgängig**; endgültig übersprungen ist er erst, wenn du die Prüfung schließt. Mit **Zurückholen** in den Nachfassen des Projekts oder an der Aufgabe unter Erledigt kommt er zurück, solange kein neueres Nachfassen da ist. Ein einzelnes Projekt bekommt eine normale Aufgabe.
 

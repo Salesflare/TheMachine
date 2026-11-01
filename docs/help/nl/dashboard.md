@@ -10,14 +10,14 @@ order: 4
 
 - **To-do's**: je to-do's en beloftes. Zie [To-do's](cards.md).
 - **Agenda**: de komende week met je afspraken, to-do's die moeten gebeuren en beloftes. Zie [Agenda](calendar.md).
-- **Graph**: de personen, organisaties en projecten in je berichten. Zie [Graph](graph.md).
+- **Graph**: de personen, organisaties en projecten in je berichten, en **Wie is wie** als er rollen op je bevestiging wachten. Zie [Graph](graph.md).
 - **Fleet**: je team, familie en vrienden op The Machine Network, zodra je er een hebt. Zie [Fleet](fleet.md).
 - **Leren**: hoe de to-do's het doen, en wat hij geleerd heeft.
 - **Koppelingen**: je bronnen en hoe het ermee gaat. Zie [Koppelingen](connections.md).
 
-**Instellingen** is het tandwiel bovenaan. **Zoeken**, bovenaan de zijbalk, vindt eerst to-do's, dan mensen, berichten en meer.
+**Zoeken**, bovenaan de zijbalk, vindt eerst to-do's, dan mensen, berichten en meer. **Browser**, **Help** en **Instellingen** staan onderaan de zijbalk. Op een telefoon opent de menuknop in de bovenbalk de zijbalk.
 
-**Browser**, onderaan de zijbalk, toont de eigen browser van je Machine. Op een computer opent hij naast de zijbalk, zo groot als de ruimte die er is, net als **Bekijken in browser** op een to-do en **Browser openen** als een site een login nodig heeft. Op een telefoon opent hij in een nieuw tabblad.
+**Browser** toont de eigen browser van je Machine. Op een computer opent hij naast de zijbalk, zo groot als de ruimte die er is, net als **Bekijken in browser** op een to-do en **Browser openen** als een site een login nodig heeft. Op een telefoon opent hij in een nieuw tabblad.
 
 Het voorste venster van de browser staat in het midden en de rest van het scherm is donker; een knop in de hoek toont het hele scherm. Op een laag scherm scrolt de hele zijbalk als één kolom, to-do's inbegrepen, zoals het menu op een telefoon.
 

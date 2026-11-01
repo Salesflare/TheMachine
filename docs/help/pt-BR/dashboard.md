@@ -10,14 +10,14 @@ order: 4
 
 - **Tarefas**: suas tarefas e promessas. Veja [Tarefas](cards.md).
 - **Calendário**: a semana que vem, com suas reuniões, tarefas com prazo e promessas. Veja [Calendário](calendar.md).
-- **Graph**: as pessoas, organizações e projetos nas suas mensagens. Veja [Graph](graph.md).
+- **Graph**: as pessoas, organizações e projetos nas suas mensagens, e **Quem é quem** quando há papéis esperando sua confirmação. Veja [Graph](graph.md).
 - **Fleet**: sua equipe, família e amigos na The Machine Network, quando você tiver um. Veja [Fleet](fleet.md).
 - **Aprendizado**: como as tarefas estão indo e o que ela aprendeu.
 - **Conexões**: suas fontes e como elas estão. Veja [Conexões](connections.md).
 
-**Configurações** é a engrenagem no topo. **Pesquisar**, no topo da barra lateral, encontra primeiro tarefas, depois pessoas, mensagens e mais.
+**Pesquisar**, no topo da barra lateral, encontra primeiro tarefas, depois pessoas, mensagens e mais. **Navegador**, **Ajuda** e **Configurações** ficam na parte de baixo da barra lateral. No celular, o botão de menu na barra superior abre a barra lateral.
 
-**Navegador**, na parte de baixo da barra lateral, mostra o navegador da própria Machine. No computador, ele abre ao lado da barra lateral, no tamanho do espaço disponível, e o mesmo vale para **Ver no navegador** em uma tarefa e **Abrir o navegador** quando um site precisa de login. No celular, ele abre em uma nova aba.
+**Navegador** mostra o navegador da própria Machine. No computador, ele abre ao lado da barra lateral, no tamanho do espaço disponível, e o mesmo vale para **Ver no navegador** em uma tarefa e **Abrir o navegador** quando um site precisa de login. No celular, ele abre em uma nova aba.
 
 A janela da frente do navegador aparece no meio e o resto da tela fica escuro. Um botão no canto mostra a tela inteira. Em uma tela baixa, a barra lateral inteira rola como uma coluna só, tarefas incluídas, como o menu no celular.
 

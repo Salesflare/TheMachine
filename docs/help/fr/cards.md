@@ -16,6 +16,7 @@ La page **Tâches** les regroupe :
 - **Attend votre décision** : quelque chose que vous seul pouvez décider.
 - **En préparation** : votre Machine y travaille. Une tâche à laquelle vous venez de dire **Faire** reste à sa place pendant la préparation, puis passe dans **Prêt pour vous**.
 - **Revient plus tard** : mise en attente.
+- **Promesses** : ce que vous avez promis et ce que d’autres vous ont promis. Voir [Promesses](promises.md).
 - **Semblent faites** : les tâches qui semblent déjà terminées. Repliées, juste au-dessus de **Fait / écarté**.
 - **Fait / écarté** : toutes les tâches terminées, les plus récentes d’abord, 30 à la fois quand vous faites défiler.
 

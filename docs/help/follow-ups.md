@@ -12,7 +12,7 @@ When a person on a board stops replying, your Machine drafts the follow-up for y
 
 **⋯** on a board, then **Follow-ups…**, and tick **Follow up when there’s no reply**. It covers every project on that board. Or tap **Follow-ups off** under the board's name, or **Follow them up** in a stage with projects that got no reply in 10+ days.
 
-For one project, **Follow-ups…** in its card's **⋯** or on its page. **For this project** picks **On**, **Off**, or the board's setting. A project's own setting wins over its board's.
+For one project, **Follow-ups…** in its **⋯** on the board or on its page. **For this project** picks **On**, **Off**, or the board's setting. A project's own setting wins over its board's.
 
 ## Settings
 
@@ -33,7 +33,7 @@ Right before one goes, the thread is checked again, and if anyone wrote since th
 
 A board's follow-ups come as one to-do, never one per email. While they're drafted it says "Writing 3 follow-ups…", then "8 follow-ups ready for Alpha testers".
 
-**Review** shows them one under the other, each in full, so one scroll reads them all. **Send**, **Edit** and **Skip** show on the current one. On a keyboard, j and k (or the arrows) move, Enter sends, e edits, s skips and c changes. **Send all checked** sends the ones still ticked.
+**Review** shows them one under the other, each in full, so one scroll reads them all. **Send**, **Edit** and **Skip** show on the current one. On a keyboard, j and k (or the arrows) move, Enter sends, e edits, s skips (again to undo), x ticks or unticks, and c changes. **Send all checked** sends the ones still ticked.
 
 **Skip** unticks a draft and moves it to the bottom, marked Skipped with an **Undo**; it's skipped for good when you close the review. A skipped one comes back with **Bring back** in the project's follow-ups or on its to-do in Done, as long as no newer follow-up came. A single project's follow-up is a normal to-do.
 
@@ -59,6 +59,6 @@ With no other address, follow-ups move to LinkedIn or WhatsApp when that's allow
 
 ## Where you see it
 
-The board header says "Follow-ups on, next Thu". A project's card shows its next follow-up, or that one is ready. The project's page lists what went out, including what was sent automatically.
+The board header says "Follow-ups on, next Thu". A project on the board shows its next follow-up, or that one is ready. The project's page lists what went out, including what was sent automatically.
 
 Follow-ups wait while your Machine is busy with your to-dos or close to its usage limit, and catch up later. On a shared board, only the project owner's own Machine follows up.

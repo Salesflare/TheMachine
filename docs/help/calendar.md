@@ -8,7 +8,7 @@ order: 1
 ---
 ## What it shows
 
-The next 7 days, with:
+Your days from today on, with:
 
 - meetings from the calendars you connected,
 - to-dos due that day, and snoozed to-dos on the day they come back,
@@ -21,11 +21,15 @@ A plan made together is one promise, marked "With" and their name. A promise abo
 
 **Overdue** comes first. A meeting with an open to-do shows it: **Prep ready**, **Preparing** or **To-do**.
 
-## Agenda or week
+## Agenda, week or month
 
-**Agenda** lists each day. On a computer, **Week** shows a grid. Your choice is remembered on that device.
+- **Agenda** lists each day. Scroll down for later days, or up (or **Show earlier days**) for earlier ones.
+- **Week** shows a grid, Monday to Sunday. On a phone it shows three days.
+- **Month** shows the whole month. A computer shows up to three items a day; a phone shows dots, and a tap lists that day.
 
-In the grid, events at the same time sit side by side while each stays readable. The rest show as **+N**, which opens that day in the agenda.
+**Today**, ‹ and › at the top move through the weeks or months. The view you pick is remembered on that device.
+
+In the week grid, events at the same time sit side by side while each stays readable. The rest show as **+N**, which opens that day in the agenda.
 
 ## Open something
 

@@ -8,7 +8,7 @@ order: 1
 ---
 ## Ce qu’il affiche
 
-Les 7 prochains jours, avec :
+Vos journées à partir d’aujourd’hui, avec :
 
 - les réunions des agendas que vous avez connectés,
 - les tâches dues ce jour-là, et les tâches en attente le jour où elles reviennent,
@@ -21,11 +21,15 @@ Un projet prévu ensemble est une seule promesse, marquée « Avec » et le nom 
 
 **En retard** vient en premier. Une réunion avec une tâche ouverte l’affiche : **Préparation prête**, **En préparation** ou **Tâche**.
 
-## Agenda ou semaine
+## Agenda, semaine ou mois
 
-**Agenda** liste chaque jour. Sur un ordinateur, **Semaine** affiche une grille. Votre choix est mémorisé sur cet appareil.
+- **Agenda** liste chaque jour. Faites défiler vers le bas pour les jours suivants, vers le haut (ou **Afficher les jours précédents**) pour les précédents.
+- **Semaine** affiche une grille, du lundi au dimanche. Sur un téléphone, elle affiche trois jours.
+- **Mois** affiche le mois entier. Un ordinateur affiche jusqu’à trois éléments par jour ; un téléphone affiche des points, et un appui liste ce jour.
 
-Dans la grille, les événements à la même heure se placent côte à côte tant que chacun reste lisible. Les autres s’affichent en **+N**, qui ouvre ce jour dans l’agenda.
+**Aujourd’hui**, ‹ et › en haut parcourent les semaines ou les mois. La vue choisie est mémorisée sur cet appareil.
+
+Dans la grille de la semaine, les événements à la même heure se placent côte à côte tant que chacun reste lisible. Les autres s’affichent en **+N**, qui ouvre ce jour dans l’agenda.
 
 ## Ouvrir un élément
 

@@ -8,7 +8,7 @@ order: 1
 ---
 ## Wat het toont
 
-De komende 7 dagen, met:
+Je dagen vanaf vandaag, met:
 
 - afspraken uit de agenda's die je gekoppeld hebt,
 - to-do's die die dag moeten gebeuren, en gesnoozede to-do's op de dag dat ze terugkomen,
@@ -21,11 +21,15 @@ Een plan dat jullie samen maakten, is één belofte, gemarkeerd met "Met" en de 
 
 **Te laat** komt eerst. Een afspraak met een open to-do toont die: **Voorbereiding klaar**, **Wordt voorbereid** of **To-do**.
 
-## Agenda of week
+## Agenda, week of maand
 
-**Agenda** toont elke dag als lijst. Op een computer toont **Week** een raster. Je keuze wordt onthouden op dat apparaat.
+- **Agenda** toont elke dag als lijst. Scrol omlaag voor latere dagen, omhoog (of **Eerdere dagen tonen**) voor eerdere.
+- **Week** toont een raster, maandag tot zondag. Op een telefoon toont het drie dagen.
+- **Maand** toont de hele maand. Een computer toont tot drie items per dag; een telefoon toont stippen, en een tik toont die dag als lijst.
 
-In het raster staan afspraken op hetzelfde tijdstip naast elkaar, zolang elke afspraak leesbaar blijft. De rest staat als **+N**, dat die dag opent in de agenda.
+**Vandaag**, ‹ en › bovenaan gaan door de weken of maanden. De weergave die je kiest wordt onthouden op dat apparaat.
+
+In het weekraster staan afspraken op hetzelfde tijdstip naast elkaar, zolang elke afspraak leesbaar blijft. De rest staat als **+N**, dat die dag opent in de agenda.
 
 ## Iets openen
 
