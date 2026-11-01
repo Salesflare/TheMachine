@@ -14,6 +14,15 @@ order: 6
 
 Por un Family Fleet no pasan preguntas de trabajo.
 
+## Sugerencias de invitación
+
+Cuando una tarea trata de planes familiares con alguien que aún no está en tu Familia, como «¿Quién recoge a los niños el miércoles?», puede preguntar: «¿Invitar a Sasha? Vuestras Machines pueden resolverlo sin que tengáis que preguntaros.»
+
+- **Invitar** abre el formulario de invitación en tu página de cuenta, con su dirección ya puesta. Verás el correo que recibiría antes de que salga nada. Nada se envía sin ti.
+- **Ahora no** lo oculta 90 días.
+- Solo para personas que son familia según tu Graph o tus propias palabras. Nunca para contactos de trabajo, personas que ya están en tu Familia ni alguien con una invitación abierta. Como mucho una vez por persona.
+- Desactívalo en Ajustes, Fleet: **Sugerir invitar a la familia**.
+
 ## Reglas
 
 Por defecto, las horas libres y ocupadas se comparten; las tareas y los planes preguntan antes. Cámbialo en el panel Compartir: consulta [Reglas para compartir](sharing-rules.md).

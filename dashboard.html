@@ -1302,6 +1302,7 @@ strong.nb{white-space:nowrap}
 .skills-list .skill-ready{color:var(--mint)}.skill-notes{margin:6px 0 10px;padding-left:18px;font-size:.88rem}.skill-notes li{margin:2px 0}.skill-notes .warn{color:var(--orange,#e8a33d)}
 .hub-search{max-width:560px;display:flex;gap:8px}.hub-search input{flex:1;min-width:0}
 .note.skill-hint button.link{margin-left:4px}
+.card .note.family-invite{color:var(--muted);font-size:.9rem}.card .note.family-invite :is(a,button).link{margin-left:6px;padding:0;min-height:0;border:0;background:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .card .note.handoff-contact{margin:4px 0 0;color:var(--faint);font-size:.88rem}.card .silent-note button.link{padding:0;min-height:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .skill-import fieldset{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem}.skill-import legend{color:var(--muted);font-size:.85rem;padding:0;margin-bottom:4px}
 .skill-import fieldset label{display:flex;align-items:center;gap:6px;color:var(--text)}.skill-import fieldset input{width:auto}
@@ -2873,7 +2874,9 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 ><div id="settings-fleet" hidden><div class="section-head"><h2>Fleet</h2></div><div class="list settings-list"><div><span class="grow">What your Machine answers each teammate.</span
 ><button type="button" class="ghost" id="settings-fleet-rules">Fleet rules</button></div
 ><div id="settings-shared-row" hidden><span class="grow">What goes to your team, and what stays with you.</span
-><button type="button" class="ghost" id="settings-shared">What's shared</button></div></div></div
+><button type="button" class="ghost" id="settings-shared">What's shared</button></div
+><div><span class="grow"><strong>Suggest inviting family</strong><small>On a family to-do with someone not in your Family yet. Nothing is sent without you. <a class="learn" href="https://themachine.computer/help/family#invite-suggestions" target="_blank" rel="noopener">Learn more</a></small></span
+><button type="button" id="family-invite-switch" class="lookup-switch" role="switch" aria-checked="true" aria-label="Suggest inviting family"></button></div></div></div
 ><div id="settings-account-block"><div class="section-head"><h2>Account</h2></div
 ><div class="list settings-list" id="settings-account"><div
 ><span class="grow" id="settings-more"></span
@@ -3571,6 +3574,7 @@ b.disabled=true;try{await saveDecision(id,choice,feedback,!!b.dataset.answer)}ca
 /*@include dashboard/graph-view.js*/
 /*@include dashboard/events-list.js*/
 /*@include dashboard/todos-snooze.js*/
+/*@include dashboard/family-invite.js*/
 function toast(text,error=false,undoId=null){const t=$('#toast');t.innerHTML=esc(text)+(undoId?` <button data-undo="${undoId}">Undo</button>`:error?' <button type="button" data-bug-report>Report a bug</button>':'');t.classList.toggle('error',error);t.classList.add('show');toastLift(t);clearTimeout(toastLiftTimer);toastLiftTimer=setTimeout(()=>{if(t.classList.contains('show'))toastLift(t)},700);  /* again once what the action changed has drawn */clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:error?6000:2500)}
 async function manualRefresh(){if(manualBusy)return;manualBusy=true;newTagline();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.add('busy'));const ok=await refresh();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.remove('busy'));manualBusy=false;toast(ok?'Up to date':'Couldn’t refresh. Try again in a moment.',!ok)}
 document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click',manualRefresh);e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();manualRefresh()}})});
