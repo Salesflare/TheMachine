@@ -186,6 +186,7 @@ function networkSection(f){const net=f.network;if(!net||!f.friends?.id)return'';
  if(net.find&&net.last)h+=`<p class="muted">${esc(t('Last checked {}. Checks every 15 minutes for new contacts and people who just joined.',netDay(net.last)))}</p>`;
  if(rest.length)h+=`<h3>Your contacts with a Machine</h3><ul class="fleet-people">${rest.map(p=>`<li class="fp-row"><span class="fp-who"><strong>${esc(p.name)}</strong> <small class="muted">@${esc(p.username)}</small></span><span class="actions">${p.hint==='colleague'?netBtn('Connect','connect',p.email,'colleague'):netBtn('Friend','connect',p.email,'friend')+netBtn('Family','connect',p.email,'family')}${netBtn('Never','never',p.email)}</span></li>`).join('')}</ul>`;
  if(waiting.length)h+=`<p class="muted">Waiting for ${waiting.map(p=>esc(p.name)).join(', ')} to accept.</p>`;
+ h+=meetSetting(f.meet);
  h+=`<p>${netBtn('Leave the Network','leave','','','ghost','Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.')}</p></div>`;
  return h}
 const fleetSig=()=>JSON.stringify(fleetCardsOf(fleetData));

@@ -281,13 +281,9 @@ def window_text(window):
     return locale_prefs.day_text(first, weekday=False) if window['days'] == 1 else locale_prefs.span_text(first, last)
 
 
-def todo_title(name, start, minutes, video, tz):
-    """'Meet Alex Tue 14:00, 30 min, Zoom?': what the to-do says on both sides."""
-    when = when_text(start, tz)
-    first = (name or '').split()[0] if name else ''
-    if video in VIDEO:
-        return t('Meet {} {}, {} min, {}?', first, when, minutes, VIDEO[video])
-    return t('Meet {} {}, {} min', first, when, minutes)
+def todo_title(name):
+    """'Meet Alex Example': what the to-do says on both sides. The time, length and video link are its line below."""
+    return t('Meet {}', ' '.join(str(name or '').split())[:80] or t('someone'))
 
 
 # -- the Activity lines, in the owner's language when read (no event details: a window, a slot, a name)
@@ -330,7 +326,10 @@ def activity_lines(db, limit):
     if not db.execute("SELECT 1 FROM sqlite_master WHERE name='meet_log'").fetchone():
         return []
     out = []
-    for r in db.execute('SELECT * FROM meet_log ORDER BY id DESC LIMIT ?', (limit,)):
+    titled = db.execute("SELECT 1 FROM sqlite_master WHERE name='suggestions'").fetchone()  # the to-do's title, for its link
+    query = ('SELECT l.*,s.title AS todo_title FROM meet_log l LEFT JOIN suggestions s ON s.id=l.card_id' if titled
+             else 'SELECT l.*,NULL AS todo_title FROM meet_log l')
+    for r in db.execute(query + ' ORDER BY l.id DESC LIMIT ?', (limit,)):
         line = LINES.get(r['what'])
         outcome, status, detail = OUTCOMES.get(r['outcome'], OUTCOMES['failed'])
         if not line:
@@ -338,7 +337,7 @@ def activity_lines(db, limit):
         args = json.loads(r['args'] or '[]')
         out.append({'id': f"meet:{r['id']}", 'kind': 'calendar', 'at': r['at'], 'what': t(line[1], r['name'] or t('someone'), *args[:1]),
                     'where': t('The Machine Network'), 'outcome': outcome, 'status': t(status), 'by': None,
-                    'todo': {'id': r['card_id'], 'title': ''} if r['card_id'] else None, 'detail': t(detail) if detail else None})
+                    'todo': {'id': r['card_id'], 'title': ' '.join(str(r['todo_title']).split())[:120]} if r['card_id'] and r['todo_title'] is not None else None, 'detail': t(detail) if detail else None})
     return out
 
 
@@ -848,7 +847,7 @@ class Meet:
             with self.connect() as db:
                 self._meet_log(db, 'proposed_in', row['name'], [when_text(a, tz)], 'waiting', row['peer'], row['card_id'])
             if not row['card_id'] and self.meet_card:
-                card_id = self.meet_card({**dict(row), 'title': todo_title(row['name'], a, row['minutes'], video, tz)})
+                card_id = self.meet_card({**dict(row), 'title': todo_title(row['name'] or row['email'])})
                 with self.connect() as db:
                     db.execute('UPDATE meet_sessions SET card_id=? WHERE id=? AND peer=?', (str(card_id), row['id'], row['peer']))
             return 'proposed'
@@ -889,7 +888,7 @@ class Meet:
             view = {'state': r['state'], 'role': r['role'], 'name': r['name'] or r['email'], 'minutes': r['minutes'],
                     'video': VIDEO.get(r['video']), 'mine_ok': bool(r['mine_ok']), 'their_ok': bool(r['their_ok']), 'note': r['note']}
             if start and r['state'] in ('proposed', 'waiting', 'booked'):
-                view.update(title=todo_title(r['name'] or r['email'], start, r['minutes'], r['video'], tz), when=when_text(start, tz), start=slot[0])
+                view.update(title=todo_title(r['name'] or r['email']), when=when_text(start, tz), start=slot[0])
                 if r['state'] == 'proposed':
                     s['title'] = view['title']
             s['meet'] = view

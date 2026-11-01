@@ -3553,7 +3553,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                                     for m in self.teammates(ref)],
                         'kind_rules': {k: list(self.kind_rules(ref, k)) for k in RULE_KINDS.get(kind, ())},
                         **({'learnings': self.learnings_view(ref)} if kind == 'work' else {})})
-        return {'on': True, 'off': self.off, 'fleets': out, 'friends': self.friends_view(), 'network': self.network_view(), 'family': self.family_view(), 'waiting': waiting, 'asked': asked, 'log': log, 'notices': notices,
+        return {'on': True, 'off': self.off, 'fleets': out, 'friends': self.friends_view(), 'network': self.network_view(), 'meet': self.meet_setting() if self.meet_on else None, 'family': self.family_view(), 'waiting': waiting, 'asked': asked, 'log': log, 'notices': notices,
                 **self.requests_view(), 'ask_meetings': self.meetings_on(), 'kinds': KIND_LABEL, 'free': free, 'briefs': self.briefs(), 'brief': self.brief_settings(),
                 'kind_rules': {k: list(KIND_RULES.get(k, RULES)) for k in KIND_LABEL}, 'no_details': list(NO_DETAILS),
                 'scoped': list(SCOPED), 'scopes': scopes, 'sealing': self.relay.view() if isinstance(self.relay, network.Sealing) else None}
@@ -3624,6 +3624,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 by_id[sid]['team_learnings_used'] = items  # "Used a team learning: …", with Remove
         self.annotate_requests(db, suggestions)
         self.annotate_reviews(db, suggestions)
+        self.annotate_meet(db, suggestions)  # a time another Machine agreed: Book it (meet.py)
 
     def lines(self, suggestion_id):
         """What teammates' Machines said about this card's meeting, for a preparation; who it can be handed to; and the

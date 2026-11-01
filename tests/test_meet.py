@@ -167,7 +167,7 @@ class Scheduling(unittest.TestCase):
         # after Ann's 9-12 (plus her 10-minute buffer) and Bob's dentist widened to 12:00-14:00 plus his buffer
         self.assertEqual(slot, ['2026-11-03T14:15Z', '2026-11-03T14:45Z'])
         self.assertEqual(mine['state'], 'proposed')
-        self.assertEqual([c.replace('\xa0', ' ') for c in self.bob.cards.values()], ['Meet Ann Tue 14:15, 30 min'])
+        self.assertEqual([c.replace('\xa0', ' ') for c in self.bob.cards.values()], ['Meet Ann'])
         # Nothing about either calendar crossed the Network in the clear
         wire = json.dumps(self.net.sent)
         for word in ('Secret', 'merger', 'Dentist', 'private', 'T14:15'):
@@ -272,6 +272,15 @@ class Scheduling(unittest.TestCase):
         finds = self.net.finds
         self.assertEqual(self.ann.box.meet_start('cx', 'bob@two.example', 'Bob'), 'fallback')
         self.assertEqual(self.net.finds, finds)
+
+    def test_free_busy_for_scheduling_is_the_default(self):
+        self.assertEqual(self.ann.box.meet_setting()['allow'], 'freebusy')  # a new Machine
+        with self.ann.connect() as db:  # one from before this setting: other security settings saved, this one not
+            db.execute(security_levels.SCHEMA)
+            db.execute("DELETE FROM security_prefs WHERE key='meet_asks'")
+            db.execute("INSERT OR REPLACE INTO security_prefs(key,value) VALUES('notify_text','off')")
+        self.assertEqual(self.ann.box.meet_setting()['allow'], 'freebusy')
+        self.assertEqual(self.net.people['ann']['allow'], 'freebusy')  # and the cloud was told so
 
     def test_setting_off_answers_nobody(self):
         self.bob.box.meet_set(allow='off')

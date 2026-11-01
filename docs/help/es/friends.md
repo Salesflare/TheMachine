@@ -3,7 +3,7 @@ title: Amigos y la Network
 area: fleet
 summary: Añade amigos por nombre de usuario, encuentra a gente que conoces que tiene una Machine y vincula una Machine en tu propio ordenador.
 covers: friends
-code: friends.py, network.py, dashboard.html
+code: friends.py, network.py, meet.py, meet_app.py, dashboard.html
 site: Pair a self-hosted Machine
 order: 5
 ---
@@ -21,6 +21,12 @@ En el panel Network:
 Los dos están activados por defecto, y desactivados en el nivel de seguridad Prudente. Desactiva cualquiera cuando quieras; tu elección se mantiene. Te pueden encontrar por el correo con el que inicias sesión y tus direcciones conectadas, salvo las compartidas como info@, que siguen desactivadas hasta que las actives.
 
 La gente que conoces y está en la Network se te sugiere en cuanto la activas, y cuando alguien se une más tarde. Cada coincidencia viene con Conectar, Ahora no o **No sugerir nunca**. **Salir de la Network** te saca de ella.
+
+## Agendar con otras Machines
+
+Cuando alguien con una Machine escribe «veámonos la semana que viene», tu Machine pide a la suya sus horas libres y encuentra una que os vaya bien a los dos, dentro de tu horario laboral. Cada uno recibe un solo to-do, como «Reunión con Alex Example», con la hora debajo. Toca **Reservar**, **Otra hora** o **No hace falta**. La invitación solo sale cuando los dos habéis tocado Reservar. Sin Machine o sin respuesta: el to-do conserva su borrador de email con horas.
+
+Solo se envía libre u ocupado, cifrado de extremo a extremo, para 14 días como mucho y redondeado a 15 minutos. Los eventos privados cuentan como ocupados. Una Machine solo puede preguntar si os habéis escrito en ambos sentidos. Configúralo en el panel Network en **Qué pueden preguntar otras Machines a la mía**: **Libre/ocupado para agendar** o **Desactivado**, con la duración, el margen y las horas preferidas. Cada solicitud aparece en Actividad, en Calendario.
 
 ## Una Machine en tu propio ordenador
 

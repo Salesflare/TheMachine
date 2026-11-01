@@ -3,7 +3,7 @@ title: Friends and the Network
 area: fleet
 summary: Add friends by username, find people you know who have a Machine, and pair a Machine on your own computer.
 covers: friends
-code: friends.py, network.py, dashboard.html
+code: friends.py, network.py, meet.py, meet_app.py, dashboard.html
 site: Pair a self-hosted Machine
 order: 5
 ---
@@ -21,6 +21,12 @@ On the Network pane:
 Both are on by default, and off at the Careful security level. Turn either off any time; your choice stays. People can find you by your sign-in email and your connected addresses, except shared ones like info@, which stay off until you turn them on.
 
 People you know who are on the Network are suggested right away when you turn it on, and when someone joins later. Your Machine checks every 15 minutes for new contacts and people who just joined, and goes through all your contacts once a day. A match comes with Connect, Not now or **Never suggest**. **Leave the Network** takes you off it.
+
+## Scheduling with other Machines
+
+When someone with a Machine writes "let's meet next week", your Machine asks theirs for free times and finds one that suits you both, within your work hours. Each of you gets one to-do, like "Meet Alex Example", with the time below it. Tap **Book it**, **Other time** or **Not needed**. The invite goes out only once you both tapped Book it. No Machine there, or no answer: the to-do keeps its email draft with times.
+
+Only free or busy goes over, sealed end to end, for at most 14 days and rounded to 15 minutes. Private events count as busy. A Machine can ask only when you emailed each other both ways. Set it in the Network pane under **What other Machines may ask mine**: **Free/busy for scheduling** or **Off**, with your meeting length, buffer and preferred times. Each ask shows in Activity, under Calendar.
 
 ## A Machine on your own computer
 

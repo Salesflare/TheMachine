@@ -54,6 +54,7 @@ class AppMixins(unittest.TestCase):
         self.assertEqual(set(a.AgentsApp.ACTIONS), a.AGENT_ACTIONS)
         self.assertEqual(set(a.GBrainApp.ACTIONS), a.GBRAIN_ACTIONS)
         self.assertEqual(set(a.SharedGraphApp.ACTIONS), a.GRAPH_SHARE_ACTIONS)
+        self.assertEqual(set(a.MeetApp.ACTIONS), a.MEET_ACTIONS)
 
     def test_every_reviewed_action_resolves(self):
         # each name the reviewed sets let a caller send reaches a mixin's handler or one of App.action's own branches

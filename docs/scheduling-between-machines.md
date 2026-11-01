@@ -15,7 +15,7 @@ booked. Code: `meet.py` (protocol, the to-do's states) and `cloud/meet.py` in th
 4. The answer is free times only, within the other owner's work hours, after their buffer, rounded to 15 minutes.
 5. The owner's Machine (the proposer) picks the first slot that fits both: its own free times, work hours, meeting
    length and buffer, both sides' preferred part of the day. It sends the slot to the other Machine.
-6. Each owner gets one to-do: "Meet Alex Tue 14:00, 30 min, Zoom?" with **Book it**, **Other time** and **Not needed**.
+6. Each owner gets one to-do: "Meet Alex Example", with "Tue 14:00 · 30 min · Zoom?" below it, with **Book it**, **Other time** and **Not needed**.
    The proposer's to-do is the one the email made; the other side gets a new one.
 7. **Book it** on both sides: the proposer's Machine adds the event to its owner's calendar and invites the other
    person (Google sends the invite). It tells the other Machine, which closes its to-do.
