@@ -82,37 +82,43 @@ When you ask for a skill in a to-do, its run proposes it with `--job <job id>`. 
 the before and after first). That tap is the same Approve as in Settings > Skills, and it marks the to-do done. A corrected
 proposal from the same to-do replaces its earlier one, so a renamed draft doesn't leave the old name waiting.
 
-It runs the same check as a suggestion from your notes (below): the agent has to say whether one of your skills already
-does that job (`--update <skill>`), is related but separate (`--related <skill> --relation "..."`), or neither (`--new`).
-An update first returns the skill's instructions; the agent sends the whole skill back rewritten with `--base`, and
-Settings > Skills shows it with **Update** and **Dismiss**. **Update** opens the before and after; only **Update skill**
-there changes it. The review check and application commit together, so an owner edit made at the same time is not
-overwritten. The workspace copy is kept in step too: a delayed sync cannot put older instructions back into the agent's
-`SKILL.md`.
+## Checked against your skills
+
+Before a new skill is proposed (by your agent, or from your notes below), it is checked against the skills you have, by
+name and what each is for. Judged by meaning, not shared words, and the agent has to say which it found:
+
+- **Same job** as one of your own skills (made here, approved or imported): `--update <skill>`. The agent gets the
+  skill's current instructions and sends the whole skill back rewritten with `--base`, with what is new merged into its
+  sections: one coherent skill, no repeated headings or steps. Its name and when to use it stay.
+- **Related but separate** (say the other direction of the same exchange): `--related <skill> --relation "..."`. The
+  proposal names that skill and how they relate in one line, and still offers **Create skill**.
+- **Neither**: `--new`.
+
+An update waits with **Update** and **Dismiss**. **Update** (or **Read the change** on a to-do) shows the instructions
+before and after with the changed lines highlighted; only **Update skill** there changes it, and only that skill. If
+the skill changed after you looked, you see the new before and after first. On Telegram the to-do links to it
+(**Review update**); there's no one-tap Update. A teammate's skill is never changed.
+
+The check and the change commit together, so an edit you make at the same time is not overwritten. The workspace copy
+is kept in step too: a delayed sync cannot put older instructions back into the agent's `SKILL.md`.
 
 ## From your notes
 
-What you teach on cards (facts and draft rules, under Learning > What I've learned) can pile up around one kind of task:
-listing exchanges, support handoffs. When a review sees 5 or more notes about one such scenario (judged by meaning, while it
-condenses the list), it suggests a skill on a normal card: the skill's name and when to use it, the notes it would take in,
-and **Create skill**, plus **Not now**. Before it suggests one it checks the skills you have, by name and what each is for
-(judged by meaning, not shared words; it has to say which it found):
+What you teach on to-dos (facts and draft rules, under Learning, What I've learned) can pile up around one kind of task:
+listing exchanges, support handoffs. When a review sees 5 or more notes about one such scenario (judged by meaning, while
+it condenses the list), it suggests a skill on a normal to-do: the skill's name and when to use it, the notes it would
+take in, and **Create skill** (or **Update <skill>**, after the [check](#checked-against-your-skills)), plus **Not now**.
 
-- **Same job** as one of your own skills (made here, approved or imported): the card offers **Update <skill>** instead, with
-  the skill rewritten so what the notes teach is merged into its sections: one coherent skill, no repeated headings or
-  steps. **Read the change** on the card shows the skill's instructions before and after with the changed lines
-  highlighted, and **Update <skill>** opens them again with **Update skill** and **Cancel**. Only that tap changes it, and
-  only that skill: its name and when to use it stay. If the skill changed after you looked, you
-  see the new before and after first. On Telegram the card links to it (**Review update**); there's no one-tap Update.
-  A teammate's skill is never changed.
-- **Related but separate** (say the other direction of the same exchange): the card names that skill and how they relate
-  in one line, and still offers **Create skill**.
-
-Open **Read skill instructions and notes** on the card to review the complete proposal; Telegram links to the same card.
-Nothing changes before your tap. A card offered before this check is brought up to date when the review suggests it again. Not now isn't asked again until 3 more notes joined
-the same ones. On yes the skill is written (instructions only, on, like any of yours) and the notes move into it: kept, listed
-under the skill as "From N of your notes", and no longer in the list every task gets, so a task that needs them gets the
-skill instead. The skill change, moved notes and completion receipt commit together; a restart retries the same offer without creating another skill or adding the instructions twice. What I've learned shows **Moved into skills** with **Put back**, which returns the notes (the skill stays).
+- **Read skill instructions and notes** on the to-do shows the complete proposal; Telegram links to the same to-do.
+  Nothing changes before your tap.
+- **Not now** isn't asked again until 3 more notes joined the same ones. A to-do offered before the check is brought up
+  to date when the review suggests it again.
+- **On yes** the skill is written (instructions only, on, like any of yours) and the notes move into it: kept, listed
+  under the skill as "From N of your notes", and no longer in the list every task gets, so a task that needs them gets
+  the skill instead.
+- The skill change, moved notes and completion commit together; a restart retries the same offer without making another
+  skill or adding the instructions twice.
+- What I've learned shows **Moved into skills** with **Put back**, which returns the notes (the skill stays).
 
 ## Sharing with your Fleet or a friend
 
@@ -157,10 +163,13 @@ Machine. **Read** shows the `SKILL.md` with notes on any scripts, install steps,
 still the `SKILL.md` you read. Such a skill is not limited to instructions like your own: it is OpenClaw's, with
 whatever it brings.
 
+The preview shows the complete `SKILL.md`. If a release's file list can't be fetched, try again: a missing list is never
+shown as "no scripts". Installing uses OpenClaw's normal version-pinned command; there is no extra approval step.
+
 ## There's a skill for this
 
-When your agent reviews or prepares a card and an installed skill that isn't ready yet, or one on ClawHub, fits what
-the card is about, it can add a quiet "There's a skill for this" line to the card (`skill_hint` on `suggest` or
+When your agent reviews or prepares a to-do and an installed skill that isn't ready yet, or one on ClawHub, fits what
+the to-do is about, it can add a quiet "There's a skill for this" line to the to-do (`skill_hint` on `suggest` or
 `prepare`). It also shows under Settings > Skills. **Look** opens it; **Not now** dismisses it for good. At most three
 a week, nothing is ever installed or turned on by itself.
 
@@ -168,7 +177,3 @@ a week, nothing is ever installed or turned on by itself.
 
 - `assistant skills` lists your skills and what waits for you.
 - `assistant skills-propose` proposes one (see above). Installing, importing, sharing and deciding are on the dashboard only.
-
-### Reading a ClawHub release
-
-The preview shows the complete SKILL.md. If its release file list cannot be fetched, try again: a missing list is not shown as “no scripts”. Installing uses OpenClaw’s normal version-pinned command after your existing Install choice. No extra approval tier is added.
