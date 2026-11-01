@@ -59,7 +59,7 @@ class TaskPages(unittest.TestCase):
     def handed(self, summary='Sam wants pricing for 40 seats.'):
         card = self.handed_card()
         self.app.action('fleet_handoff_email', {'suggestion_id': card, 'email': 'kim@other.example', 'title': 'Send Sam the pricing',
-                                                'summary': summary}, owner_dashboard=True)
+                                                'summary': summary, 'take': False}, owner_dashboard=True)  # the take line: test_handoff_mail.py
         return card
 
     def body(self, card):
@@ -210,7 +210,7 @@ class TaskPages(unittest.TestCase):
         self.app.action('task_page_dismiss', {'suggestion_id': card}, owner_dashboard=True)
         self.assertIsNone(self.status(card))
         card = self.handed_card('k-other')
-        self.app.action('fleet_handoff_email', {'suggestion_id': card, 'email': 'kim@other.example', 'title': 'Help', 'summary': 'Please help'},
+        self.app.action('fleet_handoff_email', {'suggestion_id': card, 'email': 'kim@other.example', 'title': 'Help', 'summary': 'Please help', 'take': False},
                         owner_dashboard=True)
         real = self.store.revise_draft
         self.store.revise_draft = lambda *a, **k: (_ for _ in ()).throw(RuntimeError('restart'))

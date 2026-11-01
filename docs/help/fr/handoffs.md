@@ -41,3 +41,7 @@ Elle peut dire pourquoi : ce n’est pas pour elle, c’est déjà fait, ou pas 
 ## Quelqu’un en dehors du Network
 
 Choisissez **Par e-mail** : votre Machine rédige un e-mail que vous envoyez. Pendant que vous tapez l’adresse, elle propose d’abord des collègues : les personnes de votre Fleet, puis celles du domaine de votre entreprise, puis ce que vous avez tapé avec ce domaine. Ajoutez une page de tâche pour qu’on puisse répondre en un geste : voir [Pages de tâche](task-pages.md).
+
+Uniquement pour les tâches Travail. Cochez ce qui va dans l’e-mail : quelques lignes sur la tâche, son brouillon prêt, ses liens et fichiers. Seul ce que votre Team Graph partage avec l’équipe est proposé : le contenu Perso et Vous seul reste en dehors. **Préparer l’e-mail** place l’e-mail sur la tâche : lisez-le, puis envoyez-le depuis votre propre boîte comme tout e-mail. Aucun pixel de suivi.
+
+La tâche indique alors "Transféré à <nom> par e-mail" et le suit comme une promesse jusqu’à ce que la personne réponde que c’est fait, ou que vous la marquiez faite. L’e-mail se termine par "Reprenez ceci dans votre propre Machine" : en s’inscrivant par ce lien, la personne peut rejoindre votre Fleet et la tâche passe sur sa Machine comme un transfert normal. Désactivez cette ligne dans **Paramètres**, sous Fleet.

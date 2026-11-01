@@ -172,7 +172,16 @@ already. What goes is always the message for them, never the to-do's own note of
 
 **Someone not on the Network.** Pick **Someone else, by email** and give their address. The to-do gets an ordinary email
 draft from its Gmail account instead, for you to read, change and send yourself. It says what you need from them, with
-no promotional line or signature.
+no signature.
+
+- Work to-dos only. The sheet lists what can go (a few lines of context, the ready draft, the to-do's links and draft
+  files), each ticked until you untick it, and only what the Team Graph shares with the team, never Personal or Only you.
+- The last line, "Take this on in your own Machine" (on by default, off in Settings > Fleet), links to the Network. Its
+  id is picked on your Machine and registered only after you sent the email, with a hash of their address and your Work
+  Fleet. If they sign up through it and join (at once from a Fleet admin to that address, else after an admin
+  approves), the to-do moves to their Machine as a normal handoff.
+- Once sent, the to-do waits under Later and a promise "<name> takes this on" tracks it (in Promises and Activity) until
+  their reply says it's done or you mark it done. No tracking pixels (`handoff_mail.py`).
 
 **Task page.** The to-do then offers **Add a task page**: a page they open from your email to see the status and answer
 (I'm on it, Done, Can't do this, with a short note), no account needed. See [Task pages](help/task-pages.md).

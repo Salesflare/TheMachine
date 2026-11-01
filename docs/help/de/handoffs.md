@@ -41,3 +41,7 @@ Die Person kann sagen, warum: nicht ihre Sache, schon erledigt oder keine Zeit d
 ## Jemand außerhalb des Network
 
 Wähle **Per E-Mail**: Deine Machine entwirft eine E-Mail, die du sendest. Während du die Adresse eingibst, schlägt sie zuerst Teammitglieder vor: Personen in deiner Fleet, dann Personen mit der Domain deiner Firma, dann das Getippte mit dieser Domain. Füge eine Aufgabenseite hinzu, damit die Person mit einem Tippen antworten kann: siehe [Aufgabenseiten](task-pages.md).
+
+Nur für Arbeit-Aufgaben. Hake an, was in die E-Mail kommt: ein paar Zeilen zur Aufgabe, ihr fertiger Entwurf, Links und Dateien. Angeboten wird nur, was dein Team Graph mit dem Team teilt, also bleiben Privat und Nur du draußen. **E-Mail vorbereiten** legt die E-Mail auf die Aufgabe: lies sie und sende sie dann aus deinem eigenen Postfach wie jede E-Mail. Keine Tracking-Pixel.
+
+Die Aufgabe zeigt dann "Per E-Mail an <Name> übergeben" und verfolgt es als Versprechen, bis die Person antwortet, dass es erledigt ist, oder du es als erledigt markierst. Am Ende steht "Übernimm das in deiner eigenen Machine": Wer sich über diesen Link anmeldet, kann deiner Fleet beitreten, und die Aufgabe geht als normale Übergabe in die eigene Machine. Schalte die Zeile in **Einstellungen** unter Fleet aus.
