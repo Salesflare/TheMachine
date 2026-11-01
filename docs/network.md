@@ -108,6 +108,13 @@ publishing Machine and sealed to each confirmed member's Machine. The Network on
 every Machine took it, or after 30 days; it can't read, change or add to them. The design is in
 [Shared Graph](shared-graph.md). Code: `shared_graph.py`.
 
+## Scheduling between Machines
+
+Two owners who are not in the same Fleet can find a meeting time: their Machines trade free/busy times (never what
+is on a calendar) sealed end to end, and each owner taps Book it before an invite goes out. Only Machines whose owners
+emailed each other both ways can ask. The design is in [Scheduling between Machines](scheduling-between-machines.md).
+Code: `meet.py`.
+
 ## Reliability
 
 - Every question has an id: a retry never asks twice, and your Machine never acts on the same question twice.
