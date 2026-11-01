@@ -41,3 +41,7 @@ A pessoa pode dizer por quê: não é dela, já foi feita, ou sem tempo esta sem
 ## Alguém fora da Network
 
 Escolha **Por e-mail**: sua Machine escreve um rascunho de e-mail para você enviar. Enquanto você digita o endereço, ela sugere colegas primeiro: pessoas no seu Fleet, depois pessoas no domínio da sua empresa, depois o que você digitou com esse domínio. Adicione uma página de tarefa para a pessoa responder com um toque: veja [Páginas de tarefa](task-pages.md).
+
+Só para tarefas de Trabalho. Marque o que vai no e-mail: algumas linhas sobre a tarefa, o rascunho pronto, links e arquivos. Só aparece o que seu Team Graph compartilha com a equipe, então o que é Pessoal e Só você fica de fora. **Preparar e-mail** deixa o e-mail na tarefa: leia e depois envie da sua própria caixa como qualquer e-mail. Sem pixels de rastreamento.
+
+A tarefa então mostra "Passada para <nome> por e-mail" e acompanha como uma promessa até a pessoa responder que está feito, ou até você marcar como feita. O e-mail termina com "Assuma isso na sua própria Machine": quem se cadastra por esse link pode entrar no seu Fleet e a tarefa vai para a Machine da pessoa como um repasse normal. Desligue essa linha em **Configurações**, em Fleet.

@@ -41,3 +41,7 @@ Pueden decir por qué: no es suya, ya está hecha o no tienen tiempo esta semana
 ## Alguien fuera de la Network
 
 Elige **Por correo**: tu Machine redacta un correo para que lo envíes tú. Mientras escribes su dirección, sugiere primero a compañeros: personas de tu Fleet, luego personas del dominio de tu empresa, y luego lo que escribiste con ese dominio. Añade una página de tarea para que puedan responder con un toque: consulta [Páginas de tarea](task-pages.md).
+
+Solo para tareas de Trabajo. Marca lo que va en el correo: unas líneas sobre la tarea, su borrador listo, enlaces y archivos. Solo se ofrece lo que tu Team Graph comparte con el equipo, así que lo Personal y Solo tú se queda fuera. **Preparar correo** deja el correo en la tarea: léelo y luego envíalo desde tu propio buzón como cualquier correo. Sin píxeles de seguimiento.
+
+La tarea muestra entonces "Pasada a <nombre> por correo" y lo sigue como una promesa hasta que respondan que está hecho, o hasta que la marques como hecha. El correo termina con "Encárgate de esto en tu propia Machine": si se registran con ese enlace, pueden unirse a tu Fleet y la tarea pasa a su Machine como un traspaso normal. Desactiva esa línea en **Ajustes**, en Fleet.

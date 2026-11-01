@@ -385,6 +385,7 @@ const noPing=s=>s.fleet_handoff?.no_ping&&!closed(s)?`<p class="note fleet no-pi
 function fleetHandoff(s){const contact=s.handoff_contact?`<p class="note handoff-contact">${esc(t('Contact: {}',s.handoff_contact))}</p>`:'';
  if(handoffFailed(s))return contact+handoffFailed(s);
  if(s.handoff_silent&&!s.fleet_handoff&&!closed(s))return contact+`<p class="note fleet silent-note">${esc(s.handoff_silent.line)} · <button type="button" class="link" data-handoff-not-mine="${esc(s.id)}">Not mine</button></p>`;  // theirs by what they did; one tap undoes it
+ if(s.handoff_mail&&!s.fleet_handoff)return contact+mailHandoff(s);
  if(contact&&!s.fleet_handoff)return contact;
  if(s.fleet_handoff)return`<p class="note${s.fleet_handoff.back?'':' handled'} fleet">${handoffLine(s.fleet_handoff,s)}</p>${noPing(s)}${s.handoff_wait&&s.snoozed_until?`<p class="checkin-line" title="${esc(date(s.snoozed_until))}">${esc(checkinLabel(s))}</p>`:''}`;  // also once it is done
  if(closed(s)||!state?.fleet?.on||s.scope!=='work')return'';
@@ -403,19 +404,31 @@ function handoffEditor(s){const d=handingOff.get(s.id);if(!d||closed(s))return''
  const had=!mail&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&(d.who.find(([f,m])=>f+'|'+m===d.to)||[])[2]!==s.fleet_handoff.name?[firstName(s.fleet_handoff.name),...(s.fleet_handoff.also||[])].join(' and '):'';
  const back=had?`<label class="handoff-back"><input type="checkbox" name="replace"${d.replace===false?'':' checked'}> Take it back from ${esc(had)}</label>`:'';
  return`<form class="fleet-handoff-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">Hand off to</span>${pick}</div><input type="hidden" name="title" value="${esc(d.title)}">
- ${mail?`<input name="email" type="email" class="handoff-email" maxlength="254" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="handoff-team-${id}" value="${esc(d.email||'')}" placeholder="Their email" aria-label="Their email" required><ul class="cal-sug handoff-sug" id="handoff-team-${id}" role="listbox" aria-label="Teammates" hidden></ul><p class="agent-what">You get an email draft on this to-do to send yourself, with a link that brings the task to a Machine of their own.</p>`:''}
- <textarea name="task" class="agent-note handoff-task" rows="1" maxlength="1000" aria-label="What they are asked to do">${esc(d.task??d.summary)}</textarea>${chips?`<div class="agent-gets" aria-label="Goes along">${chips}</div>`:''}
- <textarea name="note" class="agent-note" rows="1" maxlength="600" placeholder="${esc(t('Add a note for {}',name))}" aria-label="${esc(t('Add a note for {}',name))}">${esc(d.note||'')}</textarea>${back}
- <div class="agent-sheet-foot"><button type="button" class="ghost" data-handoff-cancel="${id}">Cancel</button><button class="primary">Hand off</button></div></form>`}
+ ${mail?`<input name="email" type="email" class="handoff-email" maxlength="254" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="handoff-team-${id}" value="${esc(d.email||'')}" placeholder="Their email" aria-label="Their email" required><ul class="cal-sug handoff-sug" id="handoff-team-${id}" role="listbox" aria-label="Teammates" hidden></ul>`:''}
+ <textarea name="task" class="agent-note handoff-task" rows="1" maxlength="1000" aria-label="What they are asked to do">${esc(d.task??d.summary)}</textarea>${!mail&&chips?`<div class="agent-gets" aria-label="Goes along">${chips}</div>`:''}
+ <textarea name="note" class="agent-note" rows="1" maxlength="600" placeholder="${esc(t('Add a note for {}',name))}" aria-label="${esc(t('Add a note for {}',name))}">${esc(d.note||'')}</textarea>${mail?mailParts(d):''}${back}
+ <div class="agent-sheet-foot"><button type="button" class="ghost" data-handoff-cancel="${id}">Cancel</button><button class="primary">${mail?'Prepare email':'Hand off'}</button></div></form>`}
+// By email: what goes in the email (handoff_mail.parts), each ticked until the owner unticks it. Only what the Team Graph
+// shares with the team is offered; the email then waits on the to-do for the owner to read and send.
+function mailParts(d){const p=d.parts,off=d.off||new Set();if(!p)return`<p class="agent-what">${esc(t('You read it on the to-do before it goes.'))}</p>`;
+ const row=(k,html)=>`<label class="handoff-part"><input type="checkbox" data-handoff-part="${esc(k)}"${off.has(k)?'':' checked'}><span>${html}</span></label>`;
+ const ico=k=>`<i class="via-ico via-${k}" aria-hidden="true"></i>`;
+ const rows=[...p.lines.map(x=>row(x.key,esc(x.key==='due'?t('Due {}',tpDay(x.due)):x.text))),...(p.draft?[row('draft',ico('mail')+esc(t('Draft ready to send: {}',p.draft.subject)))]:[]),
+  ...p.links.map(x=>row(x.key,ico('link')+esc(x.title||x.url))),...p.files.map(x=>row(x.key,ico('file')+esc(x.name))),row('take',esc(t('Take this on in your own Machine')))];
+ return`<fieldset class="handoff-parts"><legend>${esc(t('Goes in the email'))}</legend>${rows.join('')}</fieldset>${p.shared?'':`<p class="agent-what">${esc(t('Personal and Only you content stays out.'))}</p>`}<p class="agent-what">${esc(t('You read it on the to-do before it goes.'))}</p>`}
+// On the to-do once it went out: who has it, and the promise to track until it's done.
+function mailHandoff(s){const m=s.handoff_mail;if(!m)return'';const first=firstName(m.name),led=s.task_page?.lead&&s.task_page.state!=='offered';
+ return`${led?'':`<p class="note handled fleet">${esc(t('Handed to {} by email',m.name))}</p>`}${m.promise?`<p class="checkin-line handoff-promise">${esc(m.promise==='kept'?t('{} took this on',first):t('{} takes this on',first))}</p>`:''}`}
 // Hand off by email: teammates at the owner's company first (api/invitees team: the Graph's people on its domains,
 // then what is typed completed with each domain).
 {let timer=0,seq=0;const sugOf=t=>t.parentElement?.querySelector('.handoff-sug'),hide=t=>{const l=sugOf(t);if(l){l.hidden=true;l.innerHTML=''}t.setAttribute('aria-expanded','false')};
  document.addEventListener('input',e=>{const t=e.target;if(!t.matches?.('.handoff-email'))return;const list=sugOf(t),q=t.value.trim();clearTimeout(timer);const n=++seq;if(!list)return;if(q.length<2){hide(t);return}
   timer=setTimeout(async()=>{let found=[];try{found=(await request('api/invitees?team=1&q='+encodeURIComponent(q))).people||[]}catch{}if(n!==seq)return;found=found.filter(p=>p.email!==q.toLowerCase());
-   list.innerHTML=found.map(p=>`<li><button type="button" role="option" tabindex="-1" data-team-email="${esc(p.email)}">${p.name?`<span>${esc(p.name)}</span><small>${esc(p.email)}</small>`:`<span>${esc(p.email)}</span>`}</button></li>`).join('');
+   list.innerHTML=found.map(p=>`<li><button type="button" role="option" tabindex="-1" data-team-email="${esc(p.email)}" data-team-name="${esc(p.name||'')}">${p.name?`<span>${esc(p.name)}</span><small>${esc(p.email)}</small>`:`<span>${esc(p.email)}</span>`}</button></li>`).join('');
    list.hidden=!found.length;t.setAttribute('aria-expanded',String(!!found.length))},250)});
  document.addEventListener('pointerdown',e=>{if(e.target.closest?.('.handoff-sug'))e.preventDefault()});
- document.addEventListener('click',e=>{const b=e.target.closest?.('[data-team-email]');if(!b)return;const t=b.closest('form')?.querySelector('.handoff-email');if(!t)return;seq++;t.value=b.dataset.teamEmail;hide(t);t.focus()});
+ document.addEventListener('click',e=>{const b=e.target.closest?.('[data-team-email]');if(!b)return;const t=b.closest('form')?.querySelector('.handoff-email');if(!t)return;seq++;t.value=b.dataset.teamEmail;hide(t);t.focus();
+  const d=handingOff.get(t.form?.dataset.card);if(d)Object.assign(d,{email:t.value,picked:{email:t.value,name:b.dataset.teamName||''}})});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.matches?.('.handoff-email')&&!sugOf(e.target)?.hidden){e.preventDefault();e.stopPropagation();seq++;hide(e.target)}},true);
  document.addEventListener('focusout',e=>{const t=e.target;if(t.matches?.('.handoff-email'))setTimeout(()=>{if(document.activeElement!==t){seq++;hide(t)}},200)})}
 // Hand to Claude Code / Hand to Codex (agent_jobs.py): the owner reads and edits the brief; the card then follows the job:
@@ -748,15 +761,20 @@ $('#suggestions').addEventListener('click',async e=>{const c=e.target.closest('[
  const drop=e.target.closest('[data-handoff-drop]'),dd=drop&&handingOff.get(drop.closest('form').dataset.card);
  if(dd){const v=drop.dataset.handoffDrop;if(v==='contact')dd.with_contact=false;else dd.dropped=[...(dd.dropped||[]),+v];render();return}
  const b=e.target.closest('[data-fleet-handoff]');if(!b)return;b.disabled=true;
- try{const d=await fleetPost('fleet_handoff_draft',{suggestion_id:b.dataset.fleetHandoff});const who=d.fleets.flatMap(x=>x.members.map(m=>[x.id,m.member_id,d.fleets.length>1?`${m.name} (${x.name})`:m.name]));
+ try{const [d,parts]=await Promise.all([fleetPost('fleet_handoff_draft',{suggestion_id:b.dataset.fleetHandoff}),fleetPost('fleet_handoff_email_parts',{suggestion_id:b.dataset.fleetHandoff}).catch(()=>null)]);const who=d.fleets.flatMap(x=>x.members.map(m=>[x.id,m.member_id,d.fleets.length>1?`${m.name} (${x.name})`:m.name]));
   const card=(state?.suggestions||[]).find(x=>x.id===d.suggestion_id),h=card?.fleet_handoff,has=h&&['asked','waiting for them'].includes(h.stage)?[firstName(h.name),...(h.also||[])]:[];
   const pickFirst=who.find(([,,n])=>!has.includes(firstName(n)))||who[0];  // handing it on: someone who doesn't have it yet
-  handingOff.set(d.suggestion_id,{...d,who,to:pickFirst?pickFirst[0]+'|'+pickFirst[1]:'email'});render()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+  handingOff.set(d.suggestion_id,{...d,who,parts,off:new Set(parts&&!parts.take?['take']:[]),to:pickFirst?pickFirst[0]+'|'+pickFirst[1]:'email'});render()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 $('#suggestions').addEventListener('input',e=>{const t=e.target.closest('.fleet-handoff-form');const d=t&&handingOff.get(t.dataset.card);if(!d)return;
+ const part=e.target.dataset?.handoffPart;if(part){d.off=d.off||new Set();e.target.checked?d.off.delete(part):d.off.add(part);return}
  const moved=d.to!==t.elements.to.value||(t.elements.replace&&d.replace!==t.elements.replace.checked);Object.assign(d,{to:t.elements.to.value,email:t.elements.email?t.elements.email.value:d.email,task:t.elements.task.value,note:t.elements.note.value,...(t.elements.replace?{replace:t.elements.replace.checked}:{})});if(moved)render()});
 $('#suggestions').addEventListener('submit',async e=>{const t=e.target;if(!t.classList.contains('fleet-handoff-form'))return;e.preventDefault();const [fleet,member_id]=t.elements.to.value.split('|'),d=handingOff.get(t.dataset.card)||{};
  const parts=[t.elements.task.value.trim(),t.elements.note.value.trim()].filter(Boolean),summary=parts.map((x,n)=>n<parts.length-1&&!/[.!?…]$/.test(x)?x+'.':x).join(' ');  // as plain sentences
- if(t.elements.to.value==='email'){try{await fleetPost('fleet_handoff_email',{suggestion_id:t.dataset.card,email:t.elements.email.value.trim(),title:t.elements.title.value.trim(),summary});
+ if(t.elements.to.value==='email'){const p=d.parts,off=d.off||new Set(),keep=p?[...p.lines,...p.links,...p.files,...(p.draft?[p.draft]:[])].map(x=>x.key).filter(k=>!off.has(k)):null;
+  try{await fleetPost('fleet_handoff_email',{suggestion_id:t.dataset.card,email:t.elements.email.value.trim(),title:t.elements.title.value.trim(),summary,...(p?{keep,take:!off.has('take')}:{}),...(d.picked?.email===t.elements.email.value.trim()&&d.picked.name?{name:d.picked.name}:{})});
   handingOff.delete(t.dataset.card);toast('Your email is ready on the to-do. Read it, then send it yourself.');await refresh()}catch(err){errCaught(err);toast(err.message,true)}return}
  try{await fleetPost('fleet_handoff',{suggestion_id:t.dataset.card,fleet,member_id,title:t.elements.title.value.trim(),summary,contact:d.contact&&d.with_contact!==false?d.contact:'',sources:(d.sources||[]).map((_,n)=>n).filter(n=>!d.dropped?.includes(n)),...(t.elements.replace?{replace:t.elements.replace.checked}:{})});
   handingOff.delete(t.dataset.card);toast('Handed off. The to-do shows how it goes.');await refresh()}catch(err){errCaught(err);toast(err.message,true)}});
+// Settings > Fleet: the "Take this on in your own Machine" line in handoff emails (on by default)
+$('#settings-take-line').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
+ try{const r=await fleetPost('fleet_handoff_take_line',{on});if(state.fleet)state.fleet.take_line=r.take_line;b.setAttribute('aria-checked',String(r.take_line));notice(r.take_line?'Handoff emails offer their own Machine.':'Handoff emails leave out their own Machine.')}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=false}};

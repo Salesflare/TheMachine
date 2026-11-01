@@ -45,3 +45,7 @@ They can say why: not theirs, already done, or no time this week. Then pick **Do
 ## Someone outside the Network
 
 Pick **By email**: your Machine drafts an email for you to send. As you type their address, it suggests teammates first: people in your Fleet, then people at your company's domain, then what you typed with that domain. Add a task page so they can answer in one tap: see [Task pages](task-pages.md).
+
+Only for Work to-dos. Tick what goes in the email: a few lines about the to-do, its ready draft, links and files. Only what your Team Graph shares with the team is offered, so Personal and Only you content stays out. **Prepare email** puts the email on the to-do: read it, then send it from your own mailbox like any email. No tracking pixels.
+
+The to-do then says "Handed to <name> by email" and tracks it as a promise until they reply that it's done, or you mark it done. The email ends with "Take this on in your own Machine": if they sign up through that link, they can join your Fleet and the to-do moves to their Machine as a normal handoff. Turn that line off in **Settings**, under Fleet.

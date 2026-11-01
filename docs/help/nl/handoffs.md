@@ -41,3 +41,7 @@ Ze kunnen zeggen waarom: niet van hen, al gedaan, of geen tijd deze week. Kies d
 ## Iemand buiten het Network
 
 Kies **Per e-mail**: je Machine schrijft een e-mail die jij verstuurt. Terwijl je het adres typt, stelt hij eerst teamgenoten voor: mensen in je Fleet, dan mensen op het domein van je bedrijf, dan wat je typte met dat domein. Voeg een taakpagina toe zodat de ander met één tik kan antwoorden: zie [Taakpagina's](task-pages.md).
+
+Alleen voor Werk-to-do's. Vink aan wat in de e-mail gaat: een paar regels over de to-do, het klare concept, links en bestanden. Alleen wat je Team Graph met het team deelt, komt in aanmerking, dus Privé en Alleen jij blijven erbuiten. **E-mail klaarzetten** zet de e-mail bij de to-do: lees hem en verstuur hem dan vanuit je eigen mailbox, zoals elke e-mail. Geen trackingpixels.
+
+De to-do zegt dan "Per e-mail overgedragen aan <naam>" en volgt het als belofte tot de ander antwoordt dat het klaar is, of tot jij het afvinkt. Onderaan staat "Pak dit op in je eigen Machine": wie zich via die link aanmeldt, kan bij je Fleet komen en krijgt de to-do als gewone overdracht in de eigen Machine. Zet die regel uit in **Instellingen**, onder Fleet.

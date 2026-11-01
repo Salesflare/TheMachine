@@ -187,6 +187,12 @@ def draft(task, to_name, me, link=None):
     return subject, with_link(body, link) if link else body
 
 
+def hashed_email(email):
+    """What a take link tells the Network instead of the recipient's address (cloud task_invites.hashed_email): the
+    same hash on both sides, never the address."""
+    return _b64(hashlib.sha256(b'tm-take\n' + str(email or '').strip().lower().encode()).digest())
+
+
 def network_url(config, fleet_module):
     found = fleet_module.settings(config)
     return (found or {}).get('url') or getattr(fleet_module, 'NETWORK', fleet_module.RELAY) + '/api/fleet'

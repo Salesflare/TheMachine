@@ -41,3 +41,7 @@ Possono dire perché: non è loro, è già fatta, o non hanno tempo questa setti
 ## Qualcuno fuori dal Network
 
 Scegli **Via email**: la tua Machine scrive la bozza di un'email che invii tu. Mentre scrivi l'indirizzo, suggerisce prima i colleghi: le persone nella tua Fleet, poi le persone del dominio della tua azienda, poi ciò che hai scritto con quel dominio. Aggiungi una pagina dell'attività così possono rispondere con un tocco: vedi [Pagine delle attività](task-pages.md).
+
+Solo per le attività di Lavoro. Spunta cosa va nell'email: qualche riga sull'attività, la sua bozza pronta, link e file. Viene offerto solo ciò che il tuo Team Graph condivide con il team, quindi Personale e Solo tu restano fuori. **Prepara email** mette l'email sull'attività: leggila, poi inviala dalla tua casella come ogni email. Nessun pixel di tracciamento.
+
+L'attività mostra poi "Passata a <nome> via email" e la segue come una promessa finché non rispondono che è fatta, o finché non la segni come fatta. L'email finisce con "Occupatene nella tua Machine": chi si iscrive da quel link può unirsi alla tua Fleet e l'attività passa nella sua Machine come un passaggio normale. Disattiva quella riga in **Impostazioni**, sotto Fleet.

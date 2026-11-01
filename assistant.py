@@ -79,6 +79,7 @@ import talk_live
 import voice_input
 import security_levels
 import skills
+import handoff_mail
 import task_invites
 import task_pages
 import help_topics
@@ -821,6 +822,7 @@ OWNER_ACTIONS = {
 }
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {
+    *handoff_mail.ACTIONS,
     *task_pages.ACTIONS,
     'fleet_handoff',
     'fleet_handoff_draft',
@@ -4023,6 +4025,7 @@ class Store:
                        'updated_at TEXT NOT NULL,PRIMARY KEY(action_id,operation))')
             db.execute(task_pages.SCHEMA)  # task pages offered or shared from handoffs by email (task_pages.py)
             db.execute(meet_link.SCHEMA)  # booking links for meetings with someone without a Machine (meet_link.py), sealed at rest
+            handoff_mail.ensure(db)  # handoffs by email and their take links (handoff_mail.py)
             team_learnings.ensure(db)  # learnings for The Machine team (team_learnings.py), with their use cases
             error_feed.ensure(db)  # error reports for The Machine team: signatures only (error_feed.py)
             activity.ensure(db)  # daily activity counts for the hosted health report (activity.py)
@@ -14159,6 +14162,40 @@ class App(*APP_MIXINS):
         """Pages for tasks handed off by email (task_pages.py)."""
         return task_pages.TaskPages(self)
 
+    @functools.cached_property
+    def handoff_mail(self):
+        """Handoffs by email to a colleague who isn't on The Machine (handoff_mail.py)."""
+        return handoff_mail.HandoffMail(self, handoff_checkin, promise_check_at)
+
+    def handoff_mail_draft(self, card_id, body, next_action, outcome):
+        """The handoff email, ready on the to-do for the owner to read and send (a pending to-do counts as accepted)."""
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card_id,))
+        self.store.prepare(card_id, body, next_action=next_action, outcome=outcome)
+
+    def handoff_mail_wait(self, db, card_id, until):
+        """A handoff email went out: the to-do waits under Later until its check-in, then comes back as it was."""
+        db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='prepared',outcome=NULL,undo_until=NULL WHERE id=?",
+                   (until, card_id))
+
+    def handoff_mail_promise(self, db, card_id, event_ids, who, what, due, check_at, event):
+        """Their promise to take on a to-do handed off by email, from the sent email (watch NULL: only the review closes it
+        by meaning, or the to-do). The to-do then holds that email, so it is the promise's home. Returns its id."""
+        stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+        cursor = db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at) "
+                            "VALUES('theirs',?,?,?,?,?,?,NULL,'open',?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
+                            (who, what, due, check_at, event['id'], event['account_id'], stamp, stamp))
+        if event['id'] not in event_ids:
+            db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (json.dumps([*event_ids, event['id']]), card_id))
+        return cursor.lastrowid or None
+
+    def email_handoff_round(self):
+        """In the Fleet's round: answers from task pages, then handoffs by email (take links, promises, moves)."""
+        try:
+            self.task_pages.round()
+        finally:
+            self.handoff_mail.round()
+
     def __init__(self, config, config_path=None):
         set_timezone(config.get('timezone'))
         locale_prefs.configure(config)
@@ -14214,7 +14251,7 @@ class App(*APP_MIXINS):
             # (a new revision: Send stays theirs), and a review to-do closed once its reviewer answered
             self.fleet.review_subject, self.fleet.review_write = self.review_subject, self.review_write
             self.fleet.done_card = lambda card_id, choice, why, key: self.store.decide(card_id, choice, why, key, 'fleet')
-            self.fleet.task_pages = self.task_pages.round
+            self.fleet.task_pages = self.email_handoff_round
             self.fleet.mail_files = self.share_files  # a shared client thread's attachments, read-only (shared_graph.py)
             # A handoff the teammate accepted is theirs now: the owner's card is done, saying to whom (Undo brings it back).
             self.fleet.close_card = lambda card_id, why, key: self.store.decide_handoff(card_id, 'complete', why, key, key.removeprefix('fleet-handoff-'))
@@ -15176,6 +15213,9 @@ class App(*APP_MIXINS):
             try:
                 with self.store.connect() as db:
                     self.task_pages.annotate(db, result.get('suggestions', []))
+                    self.handoff_mail.annotate(db, result.get('suggestions', []))
+                if isinstance(result.get('fleet'), dict):
+                    result['fleet']['take_line'] = self.handoff_mail.take_line()
             except (sqlite3.Error, ValueError) as error:
                 LOG.error('task pages status error=%s', type(error).__name__)
             return result if args.get('full') else compact_status(result)
@@ -16721,41 +16761,14 @@ class App(*APP_MIXINS):
             self.graph_dirty.set()  # the card shows on their Graph page after the next build
         return saved
 
-    def handoff_email(self, card_id, email, title, summary):
-        """Hand a card to someone who is not on the Network: an ordinary email draft on the card, from the card's Gmail
-        account, for the owner to read and send. Nothing about the task leaves this Machine until the owner sends it,
-        or approves a task page for it (task_pages.py), which this offers on the card."""
-        email = email.strip()
-        if not task_invites.EMAIL.fullmatch(email) or len(email) > 254:
-            raise ValueError('Give their email address')
-        found = self.fleet.handoff_draft(card_id)
-        me = str(self.config.get('owner_name') or '').strip()
-        task = task_invites.clean({'kind': 'handoff', 'title': title.strip() or found['title'], 'summary': summary.strip() or found['summary'],
-                                   'due': found.get('due') or '', 'from_name': me})
-        with self.store.connect() as db:
-            row = db.execute('SELECT status,account_ids FROM suggestions WHERE id=?', (found['suggestion_id'],)).fetchone()
-        allowed = json.loads(row['account_ids'] or '[]')
-        gmail = [a for a in self.config.get('accounts', []) if mail_account(a)]
-        order = [a for a in gmail if a['id'] in allowed] + [a for a in gmail if a['id'] not in allowed]
-        if not any(a['id'] in allowed for a in order):
-            raise ValueError('This to-do has no Gmail or Outlook account to send from')
-        subject, body = task_invites.draft(task, '', me)
-        for account in order:
-            try:
-                action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account['id'], 'to': [email],
-                                                'subject': subject, 'body': body}, self.config, allowed)
-                break
-            except ValueError as error:
-                if 'Outlook account' not in str(error):
-                    raise
-        else:
-            raise ValueError('This to-do has no Gmail or Outlook account to send from')
-        with self.store.connect() as db:
-            db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (found['suggestion_id'],))
-        self.store.prepare(found['suggestion_id'], f'An email handing this to {email}. Read it, change it if you like, and send it yourself.',
-                           next_action=action, outcome={'state': 'needs_you', 'needs': 'read and send the handoff email'})
-        self.task_pages.offer(found['suggestion_id'], task)
-        return {'card_id': found['suggestion_id']}
+    def handoff_email(self, card_id, email, title, summary, keep=None, take=None, name=''):
+        """Hand a Work card to someone who is not on The Machine: an ordinary email draft on the card, from the card's
+        Gmail or Outlook account, built from what the owner ticked (handoff_mail.py), for the owner to read and send.
+        Nothing about the task leaves this Machine until the owner sends it, or approves a task page for it
+        (task_pages.py), which this offers on the card."""
+        made = self.handoff_mail.prepare(card_id, email, name, title, summary, keep, take)
+        self.task_pages.offer(made['card_id'], made['task'])
+        return {'card_id': made['card_id']}
 
     def task_import(self, link):
         """Add a task someone sent by email (task_invites.py) as a card, and say who sent it so the owner can connect
@@ -16849,7 +16862,10 @@ class App(*APP_MIXINS):
             return self.fleet.handoff_draft(str(args.get('suggestion_id') or ''))
         if name == 'fleet_handoff_email':  # someone not on the Network: an email draft on the card, sent by the owner
             return self.handoff_email(str(args.get('suggestion_id') or ''), str(args.get('email') or ''), str(args.get('title') or ''),
-                                      str(args.get('summary') or ''))
+                                      str(args.get('summary') or ''), keep=args['keep'] if isinstance(args.get('keep'), list) else None,
+                                      take=args.get('take') if isinstance(args.get('take'), bool) else None, name=str(args.get('name') or ''))
+        if name in handoff_mail.ACTIONS:  # By email in the Hand off sheet: what can go, and the take line's setting
+            return self.handoff_mail.action(name, args)
         if name == 'fleet_handoff':
             return self.fleet.hand_off(str(args.get('suggestion_id') or ''), str(args.get('fleet') or ''), str(args.get('member_id') or ''),
                                        str(args.get('title') or ''), str(args.get('summary') or ''), str(args.get('contact') or '') or None,
@@ -17176,7 +17192,7 @@ class App(*APP_MIXINS):
             with self.store.connect() as db:
                 if result.get('message_id'):
                     db.execute("UPDATE action_jobs SET status='sent',message_id=?,error=NULL,updated_at=? WHERE id=? AND status IN ('sending','uncertain')",(result['message_id'],now(),job['id']))
-                    queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result)
+                    queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result);self.handoff_mail.sent(db,action,job,result)
                     if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
                     elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
                     if action['kind']=='merge' and result.get('commit'):db.execute('INSERT OR IGNORE INTO merge_effects VALUES(?,?,?,?,?)',(job['id'],'merge',encoded(result),'pending',now()))
@@ -17258,7 +17274,7 @@ class App(*APP_MIXINS):
                 (status,result.get('message_id'),error,now(),None if status=='failed' else (dt.datetime.fromisoformat(now())+dt.timedelta(minutes=5)).isoformat(),
                  result.get('rfc_message_id') if status=='sent' else None,job['id']))
             if status=='sent':
-                queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result)
+                queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result);self.handoff_mail.sent(db,action,job,result)
                 if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
                 elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
             if status=='sent' and action['kind']=='merge' and result.get('commit'):db.execute('INSERT OR IGNORE INTO merge_effects VALUES(?,?,?,?,?)',(job['id'],'merge',encoded(result),'pending',now()))
