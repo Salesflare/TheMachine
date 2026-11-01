@@ -2,6 +2,8 @@
 
 [GBrain](https://github.com/garrytan/gbrain) is an open-source agent memory (MIT) that many OpenClaw users run. The Machine works with it as an optional add-on: off by default, no cost or background work when off.
 
+This page is about The Machine using GBrain. GBrain can also connect to a Machine as an AI over MCP, like Claude or ChatGPT: see [Connected AIs](ai-connections.md).
+
 ## Turning it on
 
 On a self-hosted Machine: **Connections**, **+ Add**, **GBrain**.

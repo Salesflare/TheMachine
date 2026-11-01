@@ -3,7 +3,7 @@
 The mic in the dashboard's message boxes (a to-do's chat, New to-do, Help, and changing a draft) writes what the owner
 says into the box. It never sends anything: the owner reads it, edits it and sends it. The help article is
 [docs/help/voice-input.md](help/voice-input.md); the code is `voice_input.py`, `voice_worker.py` and the `mic*`
-functions in `dashboard.html`.
+functions in `dashboard/todos-chat.js`. Spoken conversations are a different feature: [Talk live](talk-live.md).
 
 ## How a clip travels
 
@@ -12,18 +12,20 @@ functions in `dashboard.html`.
 2. The browser decodes the clip and turns it into 16 kHz mono 16-bit WAV (about 1.9 MB a minute after base64), then
    posts it as `voice_transcribe` with the `X-Upload: voice` header, which allows a larger body for that one action
    only.
-   While the owner talks, the browser also cuts the recording at pauses (`MIC_PART`: after 6 s, at a pause of 0.7 s,
+3. While the owner talks, the browser also cuts the recording at pauses (`MIC_PART`: after 6 s, at a pause of 0.7 s,
    by 25 s at the latest) and posts each part as `voice_transcribe` with `part`, so after the check mark only the last
    few seconds are left. The bar shows what was heard so far. The parts are joined in order; if one fails, the whole
    clip goes instead. Parts keep the first part's language when the owner didn't pick one.
-3. The service checks the WAV (`voice_input.pcm`) and turns it into text with the engine the owner picked, and the
+4. The service checks the WAV (`voice_input.pcm`) and turns it into text with the engine the owner picked, and the
    dashboard puts the text in the box at the cursor.
 
-The browser's own speech recognition (`SpeechRecognition`) is used in one case only: on **Automatic**, without OpenAI,
-while the Machine's own engine isn't ready yet (`voice_status`'s `use` is `browser`), and the box says so ("Your browser
-writes this one down."). In Chrome it sends the audio to Google, so it's never used with **On this Machine** picked, and
-where a browser doesn't have it (Firefox) the clip waits for the Machine instead. A clip is only in memory on the Machine (for the OpenAI engine, also in a private file for
-the seconds the call takes), never stored, and the log has only its length.
+**Never stored.** A clip is only in memory on the Machine (for the OpenAI engine, also in a private file for the seconds
+the call takes), and the log has only its length.
+
+**The browser's own recognition** (`SpeechRecognition`) is used in one case only: on **Automatic**, without OpenAI,
+while the Machine's own engine isn't ready yet (`voice_status`'s `use` is `browser`). The box then says "Your browser
+writes this one down.". In Chrome it sends the audio to Google, so it's never used with **On this Machine** picked.
+Where a browser doesn't have it (Firefox) the clip waits for the Machine instead.
 
 ## Engines
 
@@ -75,12 +77,12 @@ What the local engine downloads, once:
 | The model, from Hugging Face at a pinned revision, every file checked against its SHA-256 | small: 484 MB; base: 145 MB | the same |
 
 That took 25 s on a desktop with a fast connection (packages 15 s, model 10 s); a small hosted server takes a few
-minutes. A release that changes `voice-requirements.txt` prepares the packages again on the next use. It needs 2 GB of
-free disk space: that's checked before anything downloads, and the dashboard says so if there isn't enough.
+minutes. The 2 GB disk check runs before anything downloads, and the dashboard says so if there isn't enough.
 
 Settings, Accuracy picks the model. The default is **small** on Machines with 6 GB of memory or more (desktops,
-Bigger servers) and **base** below that (Standard servers have 4 GB and 2 cores; see the measurement below). Measured on a 4-core desktop CPU limited to 2 cores, under heavy load from other
-work (load average 10 to 27), int8:
+Bigger servers) and **base** below that (Standard servers have 4 GB and 2 cores; see [On a Standard server](#on-a-standard-server)).
+
+Measured on a 4-core desktop CPU limited to 2 cores, under heavy load from other work (load average 10 to 27), int8:
 
 | Model | 7 sentences in 7 languages (60 s of speech) | 34 s of Dutch | Peak memory | Quality |
 |---|---|---|---|---|
@@ -135,8 +137,12 @@ faster-whisper it is.
 
 ## Errors
 
-The dashboard says what to do when the microphone is blocked or missing, when the browser can't record, when the
-Machine can't be reached (the clip is kept in the page, the offline bar shows, and the clip is sent when the Machine is
-back or on the bar's **Try now**), when preparing fails (no `python3-venv`, no internet, not enough disk space, a
-download that doesn't match its hash), and when nothing was heard.
+The dashboard says what to do when:
+
+- the microphone is blocked or missing, or the browser can't record;
+- the Machine can't be reached: the clip is kept in the page, the offline bar shows, and the clip is sent when the
+  Machine is back or on the bar's **Try now**;
+- preparing fails: no `python3-venv`, no internet, not enough disk space, or a download that doesn't match its hash;
+- nothing was heard.
+
 At 2 minutes recording stops by itself and the clip is written down.

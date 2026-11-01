@@ -20,15 +20,16 @@ writes it; other modules call the owner's functions.
 | graph and CRM | `graph`, `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures`, `person_summary` | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*`; `person_summar*` (person_summary) |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
 | recurring to-dos | `recurring`, `recurring_app` | `recurring_series`, `recurring_cards`, `recurring_offers` |
-| do it and preparation | `next_actions`, `preparation_state`, `agent_jobs`, `agent_remote`, `agents_app`, `calendar_writes`, `calendar_app`, `doc_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
+| do it and preparation | `next_actions`, `preparation_state`, `gap_note` (what isn't known about a to-do's people, no table), `agent_jobs`, `agent_remote`, `agents_app`, `codex_signin` (Codex's device sign-in, no table), `calendar_writes`, `calendar_app`, `doc_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
 | reviews and learning | `learning_loop`, `corrections`, `corrections_app`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
-| chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_fast_sessions`, `chat_files`, `talk_lines`, `voice_prefs` |
+| chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_fast_sessions`, `chat_files`, `talk_lines`, `draft_seen` (talk_live), `voice_prefs` |
 | fleet and network | `fleet`, `fleet_requests`, `fleet_reviews`, `fleet_trust`, `shared_graph`, `shared_graph_app`, `shared_connectors`, `network`, `friends`, `family`, `contact_share`, `discovery`, `security_levels` | `fleet_*`, `network_request_nodes` (fleet); `fleet_reviews` (fleet_reviews); `share_*`, `team_*` (shared_graph); `network_*` (network, discovery); `contact_*`; `security_prefs` |
 | skills, support | `skills`, `skills_app`, `support`, `support_app`, `bug_queue`, `error_feed`, `help_topics` | `skills`, `skill_hints`, `error_feed*`, `help_topics` |
-| connected AIs (MCP) | `ai_access`, `ai_app`, `pairing` (one-click pairing, no table), `ai_reach` (the address's certificate and dial-back, no table) | `ai_clients`, `ai_connections`, `ai_codes`, `ai_tokens`, `ai_activity` |
+| connected AIs (MCP) | `ai_access`, `ai_app`, `pairing` (one-click pairing, no table), `ai_reach` (the address's certificate and dial-back, no table) | `ai_clients`, `ai_connections`, `ai_codes`, `ai_tokens`, `ai_activity`, `ai_writes` |
 | notify, Telegram | `notify`, `telegram_mirror`, `telegram_store`, `pacing` | `notify_*`, `pacing_*`; `telegram_store` keeps its own database (`chats`, `messages`, `outbox`, ...) |
-| setup and upkeep | `onboarding`, `installer`, `cli`, `service`, `portable`, `moving`, `work_removal`, `retention`, `rollout_health` | `retention_runs`, `sync_daily` |
-| shared helpers | `i18n`, `locale_prefs`, `activity`, `activity_log` (Settings, Activity: reads the other tables, writes only its own), `authorship`, `model_budget`, `google_api`, `ms_graph`, `slack_api`, `mail_grants`, `mail_attachments` | `activity_seen`; `activity_accounts` (activity_log) |
+| setup and upkeep | `onboarding`, `installer`, `cli`, `service`, `portable`, `moving`, `work_removal`, `retention`, `rollout_health`; pinned downloads checked by hash: `openclaw_pin`, `telegram_release`, `wacli_release` | `retention_runs`, `sync_daily` |
+| shared helpers | `i18n`, `locale_prefs`, `activity`, `activity_log` (Settings, Activity: reads the other tables, writes only its own), `authorship`, `model_budget`, `model_fallback`, `google_api`, `ms_graph`, `slack_api`, `mail_grants`, `mail_attachments` | `activity_seen`; `activity_accounts` (activity_log) |
+| dashboard source | `dashboard_parts` (assembles `dashboard.html` with its parts in `dashboard/`) | none |
 | connectors | `connectors/*.py`, `integrations/*.py` | none: they hand events to the service, never SQL |
 
 The full list, computed from the code: `python3 tests/test_architecture.py --owners`.
@@ -50,6 +51,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `gbrain_app.py` (`GBrainApp`): GBrain on and off, its view and its sync thread.
   - `shared_graph_app.py` (`SharedGraphApp`): the Shared Graph's controls (`GRAPH_SHARE_ACTIONS`).
   - `recurring_app.py` (`RecurringApp`): recurring to-dos (Repeat, Skip this one, the one-time offer) and their worker.
+  - `corrections_app.py` (`CorrectionsApp`): fix it where it came from (a chat turn finds where a wrong thing came from
+    and fixes it there).
   - `ai_app.py` (`AiApp`): connected AIs: `/mcp`, the OAuth endpoints, the consent page and its tools (`AI_ACTIONS`).
 - **A new route:** `Handler.do_GET` or `do_POST` inside `App.serve`. JSON reads go through `App` methods; owner-only and
   CSP headers stay as the neighboring routes have them (`tests/test_owner_boundary.py`).
