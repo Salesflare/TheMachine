@@ -71,5 +71,38 @@ class StatesTest(unittest.TestCase):
                 self.assertTrue(config['fleet']['url'].startswith('http://127.0.0.1:') if config.get('fleet') else True)
 
 
+class DemoMachineTest(unittest.TestCase):
+    """sandbox/load.py --machine: the made-up day in a real Machine's database, sealed, with no accounts added."""
+
+    def test_loads_sealed_without_accounts_and_only_once(self):
+        with tempfile.TemporaryDirectory() as folder:
+            config = {'database': str(Path(folder) / 'events.sqlite'), 'owner_name': 'App review',
+                      'accounts': [{'id': 'openclaw-gateway', 'service': 'gateway'}]}  # every Machine has its gateway
+            path = Path(folder) / 'config.json'
+            path.write_text(json.dumps(config))
+            code = (f'import os,sys;os.environ["HOME"]={folder!r};sys.path.insert(0,".");import assistant,message_seal;'
+                    f'message_seal.load_key({config["database"]!r}, create=True);assistant.Store({config["database"]!r}, protect=True)')
+            subprocess.run([sys.executable, '-c', code], cwd=ROOT, check=True, capture_output=True, timeout=60)
+            run = lambda: subprocess.run([sys.executable, 'sandbox/load.py', '--machine', str(path)], cwd=ROOT,
+                                         capture_output=True, text=True, timeout=120, env={'HOME': folder, 'PATH': '/usr/bin:/bin'})
+            done = run()
+            self.assertEqual(done.returncode, 0, done.stderr[-2000:])
+            counts = json.loads(done.stdout.strip().splitlines()[-1])
+            self.assertGreater(counts['todos'], 10)
+            self.assertGreater(counts['promises'], 3)
+            self.assertEqual(json.loads(path.read_text()), config)  # no accounts, nothing else changed
+            db = sqlite3.connect(config['database'])
+            self.assertEqual(db.execute('SELECT count(*) FROM checkpoints').fetchone()[0], 0)  # nothing to sync
+            titles = [r[0] for r in db.execute('SELECT title FROM events LIMIT 5')]
+            self.assertFalse(any(isinstance(t, str) and 'Demo' in t for t in titles))  # sealed at rest, as on any Machine
+            again = run()
+            self.assertNotEqual(again.returncode, 0)
+            self.assertIn('already has signals', again.stderr)
+            path.write_text(json.dumps({**config, 'accounts': config['accounts'] + [{'id': 'work-gmail', 'service': 'gmail'}]}))
+            mail = run()
+            self.assertNotEqual(mail.returncode, 0)
+            self.assertIn('accounts connected', mail.stderr)
+
+
 if __name__ == '__main__':
     unittest.main()
