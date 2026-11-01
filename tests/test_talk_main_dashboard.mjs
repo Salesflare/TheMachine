@@ -16,7 +16,7 @@ const DRAFT={kind:'email',label:'Reply to Lotte',to:['lotte@example.com'],to_nam
 let cards;
 const reset=()=>{cards=[{id:A,title:'Reply to Lotte about the paint order',body:'Lotte asked when the order can be picked up.',status:'prepared',scope:'personal',created_at:now,event_ids:[1],people:[{id:'p1',name:'Lotte'}],next_actions:[DRAFT]},
  {id:B,title:'Decide on the offsite venue',body:'Two venues offered.',status:'pending',scope:'personal',created_at:now,event_ids:[2]},
- {id:P,title:'Find a rug and table for the living room',body:'Looking at three shops.',status:'accepted',scope:'personal',created_at:now,event_ids:[4],people:[{id:'p3',name:'Juliana'}]},
+ {id:P,title:'Find a rug and table for the living room',body:'Looking at three shops.',status:'accepted',scope:'personal',created_at:now,event_ids:[4],people:[{id:'p3',name:'Sasha'}]},
  {id:D,title:'Pay the paint invoice',body:'Paid.',status:'completed',scope:'personal',created_at:now,event_ids:[6]},
  {id:Z,title:'Renew the parking permit',body:'Back on Monday.',status:'snoozed',snoozed_until:new Date(Date.now()+3*864e5).toISOString(),scope:'personal',created_at:now,event_ids:[5]}]};
 let talkReady=true;
@@ -185,7 +185,7 @@ try{
   await page.evaluate(()=>{__say({type:'response.created',response:{id:'told2'}});__say({type:'response.done',response:{id:'told2',status:'completed'}})});  // the voice told it
   cards.find(c=>c.id===P).status='prepared';await page.evaluate(()=>refresh());
   await page.waitForFunction(n=>window.__dc.sent.filter(x=>x.type==='conversation.item.create'&&x.item?.type==='message').length>n,toldBefore+1,{timeout:6000});
-  assert.deepEqual((await told()).slice(toldBefore+1),['A to-do that was preparing is ready now: "Find a rug and table for the living room" (from: Juliana).']);
+  assert.deepEqual((await told()).slice(toldBefore+1),['A to-do that was preparing is ready now: "Find a rug and table for the living room" (from: Sasha).']);
   await page.evaluate(()=>refresh());await page.waitForTimeout(800);assert.equal((await told()).length,toldBefore+2,'once');
 
   // Something new while a to-do is in focus: a new to-do (New to-do's own card_new), not that to-do's chat
