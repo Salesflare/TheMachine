@@ -19,15 +19,17 @@ A draft waits in your Machine until you read it and press Send yourself. A conne
 
 ## Connect one
 
-Open **Settings**, **AIs**. There are two ways in. **Official app** comes first: one address for every Machine, `https://mcp.themachine.computer/mcp`, with **Copy**. Below it is your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`.
+Open **Settings**, **AIs**. There are two ways in. **Official app** comes first: **Add in Claude**, and one address for every Machine, `https://mcp.themachine.computer/mcp`, with **Copy**. Below it is your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`.
 
 On a Machine on your own computer, press **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
 
 It then gets its own certificate for the address, which takes a few minutes and needs the `cryptography` package for Python.
 
-In ChatGPT, open chatgpt.com/plugins, press +, then Add custom MCP server. Name it The Machine, paste the address and pick OAuth. Confirm the warning and press Create as a plugin. Your plan or workspace has to allow custom MCP servers.
+For Claude, press **Add in Claude** or open [The Machine in Claude's directory](https://claude.ai/directory/connectors/the-machine), then press Connect. On Team and Enterprise, an owner adds it in Organization settings.
 
-In Claude, open Customize, Connectors, press + Add, then Add custom connector. Name it The Machine, paste the address, press Continue, then Add. On Team and Enterprise, an owner adds it in Organization settings.
+To use an address in Claude instead, open Customize, Connectors, press + Add, then Add custom connector. Name it The Machine, paste the address, press Continue, then Add.
+
+In ChatGPT, open chatgpt.com/plugins, press +, then Add custom MCP server. Name it The Machine, paste the address and pick OAuth. Confirm the warning and press Create as a plugin. Your plan or workspace has to allow custom MCP servers.
 
 With the official app, the AI asks you to sign in with your The Machine account. Pick this Machine if you have more than one, then approve it on your Machine's own page. With the private address, the AI comes straight to your Machine.
 

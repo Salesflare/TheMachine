@@ -19,15 +19,17 @@ Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuy
 
 ## En connecter une
 
-Ouvrez **Paramètres**, **IA**. Il y a deux façons de se connecter. **App officielle** vient en premier : une adresse pour toutes les Machines, `https://mcp.themachine.computer/mcp`, avec **Copier**. En dessous se trouve votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`.
+Ouvrez **Paramètres**, **IA**. Il y a deux façons de se connecter. **App officielle** vient en premier : **Ajouter dans Claude**, et une adresse pour toutes les Machines, `https://mcp.themachine.computer/mcp`, avec **Copier**. En dessous se trouve votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`.
 
 Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage. Les deux façons en ont besoin.
 
 Elle obtient ensuite son propre certificat pour l’adresse. Cela prend quelques minutes et demande le paquet `cryptography` pour Python.
 
-Dans ChatGPT, ouvrez chatgpt.com/plugins, appuyez sur +, puis sur Add custom MCP server. Nommez-le The Machine, collez l’adresse et choisissez OAuth. Confirmez l’avertissement et appuyez sur Create as a plugin. Votre forfait ou votre espace de travail doit autoriser les serveurs MCP personnalisés.
+Pour Claude, appuyez sur **Ajouter dans Claude**, ou ouvrez [The Machine dans l’annuaire de Claude](https://claude.ai/directory/connectors/the-machine), puis appuyez sur Connect. Sur Team et Enterprise, un propriétaire l’ajoute dans Organization settings.
 
-Dans Claude, ouvrez Customize, Connectors, appuyez sur + Add, puis sur Add custom connector. Nommez-le The Machine, collez l’adresse, appuyez sur Continue, puis sur Add. Sur Team et Enterprise, un propriétaire l’ajoute dans Organization settings.
+Pour utiliser plutôt une adresse dans Claude, ouvrez Customize, Connectors, appuyez sur + Add, puis sur Add custom connector. Nommez-le The Machine, collez l’adresse, appuyez sur Continue, puis sur Add.
+
+Dans ChatGPT, ouvrez chatgpt.com/plugins, appuyez sur +, puis sur Add custom MCP server. Nommez-le The Machine, collez l’adresse et choisissez OAuth. Confirmez l’avertissement et appuyez sur Create as a plugin. Votre forfait ou votre espace de travail doit autoriser les serveurs MCP personnalisés.
 
 Avec l’app officielle, l’IA vous demande de vous connecter avec votre compte The Machine. Choisissez cette Machine si vous en avez plusieurs, puis approuvez l’IA sur la page de votre Machine. Avec l’adresse privée, l’IA vient directement à votre Machine.
 

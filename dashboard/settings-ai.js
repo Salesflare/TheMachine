@@ -23,11 +23,13 @@ function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=
  $('#ai-list').innerHTML=list.length?list.map(aiConnection).join(''):'<div><span class="grow"><small>No AI connected yet.</small></span></div>';
  $('#ai-key-area').hidden=!both;if(!both)$('#ai-key-area').value='both';
  const made=$('#ai-made');made.hidden=!aiMade;made.innerHTML=aiMade?`<span class="grow"><strong>Your new key</strong><small>Copy it now. It won’t show again.</small><code class="ai-url" translate="no">${esc(aiMade)}</code></span><button type="button" class="ghost" data-copy-command="${esc(aiMade)}">Copy</button>`:''}
-// Two ways in (ai_app.ai_reach, docs/ai-connections.md): the official app first, one shared address for every Machine
+// Two ways in (ai_app.ai_reach, docs/ai-connections.md): the official app first, Add in Claude (The Machine's listing in
+// Claude's connector directory, which uses the shared address) above one shared address for every Machine
 // (r.shared) with Copy, the account signing in and routing; then this Machine's private address, end to end. Both need
 // this Machine on the account with a name: until then the official app's place shows Get your address (aiAddress).
+const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/connectors/the-machine';
 function aiOfficial(r){
- if(r.shared)return `<div><span class="grow"><strong>Official app</strong><code class="ai-url" translate="no">${esc(r.shared)}</code></span><button type="button" class="ghost" data-copy-command="${esc(r.shared)}">Copy</button></div>`;
+ if(r.shared)return `<div><span class="grow"><strong translate="no">Claude</strong><small>Add The Machine from Claude’s directory in one click.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div><div><span class="grow"><strong>Official app</strong><code class="ai-url" translate="no">${esc(r.shared)}</code></span><button type="button" class="ghost" data-copy-command="${esc(r.shared)}">Copy</button></div>`;
  if(!r.address)return aiAddress(r);
  return `<div><span class="grow"><strong>Official app</strong>${r.other?'<small>Set it up on your hosted Machine.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':'<small>Getting this address ready. It takes a few minutes.</small>'}</span></div>`}
 // The private address: https://<name>.mcp.themachine.computer/mcp with Copy; on a self-hosted Machine not paired, or
