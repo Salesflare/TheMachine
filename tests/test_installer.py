@@ -78,6 +78,40 @@ class InstallerTest(unittest.TestCase):
                 self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp), [])
                 self.assertEqual(calls, [])
 
+    def test_telegram_link_previews_go_off_once_telegram_is_set_up_and_only_where_unset(self):
+        # Telegram's servers open the first link of a message for its preview: a link a model was talked into writing
+        # (to-do text, an assistant reply) would reach that site with no tap. Off once Telegram is there.
+        calls = []
+        def run(command, **kwargs):
+            calls.append(command[1:])
+            return subprocess.CompletedProcess(command, 0, '', '')
+        off = ['config', 'set', 'channels.telegram.linkPreview', 'false', '--strict-json']
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say'):
+            config, stamp = Path(tmp) / 'openclaw.json', Path(tmp) / 'data' / 'openclaw-quiet.json'
+            config.write_text('{}')
+            with mock.patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(config)}):
+                # No Telegram yet: nothing written under channels (a half-made channel), and not marked done
+                self.assertNotIn('channels.telegram.linkPreview', installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp))
+                self.assertNotIn(off, calls)
+                # Telegram set up later: the next install or update turns previews off
+                config.write_text('{channels: {telegram: {botToken: "x"}}}')
+                calls.clear()
+                self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp), ['channels.telegram.linkPreview'])
+                self.assertIn(off, calls)
+                # Once only: an owner who turns them back on keeps them
+                config.write_text('{channels: {telegram: {botToken: "x", linkPreview: true}}}')
+                calls.clear()
+                self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp), [])
+                config.write_text('{channels: {telegram: {botToken: "x"}}}')
+                self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp), [])
+                self.assertEqual(calls, [])
+            # An owner who set it before any install: theirs stays
+            stamp.unlink()
+            config.write_text('{channels: {telegram: {botToken: "x", linkPreview: true}}}')
+            with mock.patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(config)}):
+                self.assertNotIn('channels.telegram.linkPreview', installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp))
+            self.assertNotIn(off, calls)
+
     def test_a_new_install_starts_at_thinking_low_only_where_unset_and_the_model_offers_it(self):
         listed = {'models': [{'provider': 'acme', 'id': 'lm-2', 'available': True, 'thinkingLevels': [{'id': 'low'}, {'id': 'medium'}]},
                              {'provider': 'acme', 'id': 'deep', 'available': True, 'thinkingLevels': [{'id': 'medium'}, {'id': 'high'}]},

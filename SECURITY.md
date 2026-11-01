@@ -57,6 +57,10 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - **Do it grants broad account and machine access for the accepted task.** The plugin's guards are not a sandbox.
   Source messages are untrusted and may contain prompt injection. Read the [README's security model](README.md#security-model)
   before turning on reviews or delivery.
+- Text a model wrote never loads anything by itself. The dashboard shows it escaped, with links only to tap (no
+  pictures, frames or previews from it), and the installer turns off Telegram's link previews
+  (`channels.telegram.linkPreview`), which Telegram's servers would otherwise fetch as a message arrives. An HTML email
+  you open shows its remote images, in a sandboxed frame with no referrer.
 - Fresh installs collect configured sources with recurring reviews and delivery off. One read-only first-look preview
   may run after setup; it sends no to-dos and takes no outside actions. `./install.sh --activate` turns both on.
 - Credentials a tool prints (provider tokens, JWTs, private keys, `password=` and `Authorization:` values, cookie
