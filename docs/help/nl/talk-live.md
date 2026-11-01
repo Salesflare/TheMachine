@@ -27,6 +27,8 @@ Vraag hem een concept voor te lezen, aan te passen, te snoozen, als klaar te mar
 
 Hij kan ook bij de rest van The Machine. Vraag naar een persoon, een organisatie, een project, een afspraak of een belofte, en hij zoekt het op en toont het. Hij kan een to-do snoozen, als klaar markeren, afwijzen, hernoemen of weer openen, ook een onder **Gedaan / afgewezen**. Voor al de rest maakt hij een to-do, laat de chat ervan het doen en zegt je het antwoord.
 
+Hij onthoudt ook jullie eerdere gesprekken. Vraag "wat had ik beslist over de offsite?" of "wat zei ik vorige week over Acme?" en hij vertelt het je, met wanneer je het zei. Alleen Praten in de zijbalk doet dit, niet Praten in de chat van een to-do.
+
 Je kunt intussen naar een andere pagina: de balk blijft onderaan, en **Praten** in de zijbalk brengt je terug. Dit gesprek duurt hoogstens 30 minuten. Op computers en Android loopt het door op de achtergrond. Op een iPhone stopt het als de app van het scherm gaat.
 
 ## Vraag dingen, en verstuur met een ja

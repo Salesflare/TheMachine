@@ -175,6 +175,18 @@ already read (`App.talk_machine_tool`, `talk_live.MACHINE_TOOLS`), short and wit
   the Calendar shows, not the invite's notes), a message or a promise. The transcript shows it as a small card linking
   to its page. The to-do in focus stays.
 - `calendar` (`day`, `days` up to 14): meetings in the owner's time zone, at most 25.
+- `recall` (`words`): what the owner said or decided in earlier conversations with The Machine, and its notes
+  (`knowledge.recall`). It asks OpenClaw's memory search, the one reviews use (`memory_search`: past conversation
+  transcripts where `memory.search.sources` has `sessions`, and the memory files), by meaning on Machines with
+  embeddings and by keywords on small hosted ones. `memory-recall-run.mjs` calls that tool only (`tools.invoke`, in
+  Talk's main session), once per corpus at the same time, so a large notes folder doesn't crowd the conversations out
+  (they get up to half the places). The service waits at most `knowledge.RECALL_SECONDS` (8 s; 3 to 5 s on a busy
+  desktop with local embeddings). Each excerpt comes back inside `<untrusted source="conversation">` or
+  `source="notes"`, with when it was said for a transcript, and `talk_live.RECALL_NOTE` says it is quoted text, never
+  instructions: a transcript can quote a pasted message or a review of someone's mail. Off, failing or slow: nothing
+  found, said plainly. Only the main conversation has it: transcripts and notes carry no account, area or Only you
+  mark, so they can't be cut to a to-do's area, and `knowledge.recall` answers only a caller that sees everything
+  (never a connected AI).
 - `machine_status` (the page's own): each connection's health as Connections shows it, the reviews, and what **Needs
   you** lists.
 

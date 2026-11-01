@@ -27,6 +27,8 @@ Ask it to read a draft, change it, snooze it, mark it done, or move on to the ne
 
 It reaches the rest of The Machine too. Ask about a person, an organization, a project, a meeting or a promise, and it looks it up and shows it. It can snooze, mark done, dismiss, rename or reopen a to-do, also one in **Done / dismissed**. For anything else, it adds a to-do, lets its chat handle it, and tells you the answer.
 
+It also remembers your earlier conversations with it. Ask "what did I decide about the offsite?" or "what did I say about Acme last week?" and it tells you, with when you said it. Only Talk in the sidebar does this, not Talk in a to-do's chat.
+
 Meanwhile, other pages are fine: the bar stays at the bottom, and **Talk** in the sidebar brings you back. This conversation lasts up to 30 minutes. It keeps going in the background on computers and Android. On iPhone, it stops when the app leaves the screen.
 
 ## Ask for things, and send with a yes
