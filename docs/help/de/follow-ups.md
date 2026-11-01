@@ -17,6 +17,7 @@ Für ein einzelnes Projekt: **Nachfassen…** im **⋯** seiner Karte oder auf s
 ## Einstellungen
 
 - 3 bis 7 Tage ohne Antwort warten. Nach der kürzesten Wartezeit entsteht ein Entwurf. Die längste ist der späteste Zeitpunkt, zu dem er rausgeht, auch wenn deine Nutzung knapp ist.
+- **Nur an Arbeitstagen**: An freien Tagen wird nichts entworfen oder gesendet (aus **Einstellungen** > **Benachrichtigungen** > **Arbeitszeiten**). Was dann fällig wird, wartet bis zum nächsten Arbeitsmorgen. An für Arbeit, aus für Privat.
 - Mindestens 1 und höchstens 3 Mal nachfassen. Das Minimum geht immer raus. Dazwischen schreibt sie trotzdem jedes Nachfassen. Meint sie, du hörst besser auf, steht beim Entwurf, warum („The Machine würde hier aufhören: 9 unbeantwortete E-Mails seit August“), und er ist nicht angehakt: senden, überspringen oder **Nachfassen hier beenden**. Bittest du im Chat eines Nachfassens trotzdem um eins, schreibt sie es. Nie mehr als das Maximum.
 - **Phasen**: **Alle offenen Phasen**, also weder die letzte Phase des Boards noch Ins Stocken geraten oder abgelehnt. **Anpassen** schaltet Phasen an oder aus und gibt einer Phase eine eigene Wartezeit.
 - **Kanäle**: die verbundenen, die senden können. Nachgefasst wird im selben Kanal wie die letzte Nachricht. **Kanal wechseln, wenn keine Antwort kommt** versucht den nächsten erlaubten.

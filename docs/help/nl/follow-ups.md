@@ -17,6 +17,7 @@ Voor één project: **Opvolging…** in de **⋯** van de kaart of op de project
 ## Instellingen
 
 - Wacht 3 tot 7 dagen zonder antwoord. Na de kortste wachttijd komt er een concept. De langste is het uiterste moment waarop de opvolging vertrekt, ook als je verbruik krap zit.
+- **Alleen op werkdagen**: op je vrije dagen wordt niets geschreven of verstuurd (uit **Instellingen** > **Meldingen** > **Werkuren**). Wat dan aan de beurt is, wacht tot je volgende werkochtend. Aan voor Werk, uit voor Privé.
 - Volg minstens 1 en hoogstens 3 keer op. Het minimum gaat altijd weg. Daartussen schrijft hij toch elke opvolging. Denkt hij dat je beter stopt, dan staat bij het concept waarom ("The Machine zou hier stoppen: 9 onbeantwoorde e-mails sinds augustus") en is het niet aangevinkt: verstuur het, sla het over of kies **Opvolgingen hier stoppen**. Vraag je er toch een in de chat van een opvolging, dan schrijft hij er een. Nooit meer dan het maximum.
 - **Fases**: **Alle open fases**, dus niet de laatste fase van het bord en niet Vastgelopen of afgewezen. **Aanpassen** zet fases aan of uit en geeft een fase een eigen wachttijd.
 - **Kanalen**: de gekoppelde kanalen die kunnen versturen. Een opvolging gaat via hetzelfde kanaal als het laatste bericht. **Ander kanaal als er geen antwoord komt** probeert het volgende toegestane.

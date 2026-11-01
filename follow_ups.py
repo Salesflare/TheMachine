@@ -19,6 +19,11 @@ its own settings, or off). One setting holds:
   conversation already is, once a follow-up got no reply.
 - auto: Send without asking, an explicit standing approval for that board or project (off by default: every
   follow-up waits for the owner's Send). Careful (the owner's level, or a Careful Work Fleet) always asks.
+- workdays: Only on work days (None: by the area, on for Work and off for Personal, workdays_on). The owner's work days
+  come from their Work hours (work_week; Monday to Friday when none are set). On a day off nothing is drafted and
+  nothing goes out by itself (Send without asking waits, off_day). Waits still count calendar days; what comes due on a
+  day off (and the longest wait) moves to the next work day at the start of the owner's hours (next_workday), and is
+  drafted there within the usual pacing (BATCH, DRAFTING, PER_DAY, the outbox's SEND_GAP).
 
 A project is due (schedule) when the owner wrote last, nobody answered for `days`, it had fewer than `max` follow-ups
 since their last reply, its stage is on, and it isn't won, lost, Stalled, archived or owned by a teammate (their own
@@ -170,7 +175,7 @@ def parse(value):
 
 def defaults():
     return {'on': False, 'days': DEFAULT_DAYS, 'max_days': DEFAULT_MAX_DAYS, 'min': DEFAULT_MIN, 'max': DEFAULT_MAX, 'stages': {},
-            'channels': None, 'switch': False, 'auto': False, 'stall': None}
+            'channels': None, 'switch': False, 'auto': False, 'stall': None, 'workdays': None}
 
 
 def _int(value, bounds, what):
@@ -219,7 +224,73 @@ def clean(raw, stage_names=()):
     out['switch'] = raw.get('switch') is True
     out['auto'] = raw.get('auto') is True
     out['stall'] = raw['stall'] if isinstance(raw.get('stall'), bool) else None
+    out['workdays'] = raw['workdays'] if isinstance(raw.get('workdays'), bool) else None
     return out
+
+
+# ------------------------------------------------------------------ work days
+
+WORK_DAYS = (1, 2, 3, 4, 5)  # ISO weekdays when the owner set none: Monday to Friday
+WORK_START = '08:00'         # the start of the owner's hours when they set none
+
+
+def work_week(days=None, start=None, zone=None, sides=None):
+    """The owner's work days for follow-ups, from their Work hours (assistant.WORK_HOURS, its time zone): {'days',
+    'start' (hour, minute), 'zone', 'sides'}. sides: {account_id: 'work' or 'personal'} (graph.account_side), for the
+    area of a project on no board."""
+    picked = sorted({int(d) for d in (days or ()) if str(d).isdigit() and 1 <= int(d) <= 7}) or list(WORK_DAYS)
+    match = re.fullmatch(r'\s*([01]?\d|2[0-3]):([0-5]\d)\s*', str(start or '')) or re.fullmatch(r'(\d\d):(\d\d)', WORK_START)
+    return {'days': picked, 'start': (int(match[1]), int(match[2])), 'zone': zone or dt.timezone.utc, 'sides': dict(sides or {})}
+
+
+def area(db, project, sides=None):
+    """'work' or 'personal' for a project: one on a board is work (a board is a pipeline kept like a CRM, as
+    graph.py has it); one on no board is the side of the accounts its messages came from, Personal only when all of
+    them are; unknown counts as work."""
+    if project['board_id'] is not None:
+        return 'work'
+    found = {(sides or {}).get(r[0]) for r in db.execute('SELECT DISTINCT e.account_id FROM events e JOIN event_projects ep ON ep.event_id=e.id '
+                                                       'WHERE ep.project_id=?', (project['id'],))} - {None}
+    return 'personal' if found == {'personal'} else 'work'
+
+
+def workdays_on(settings, project_area='work'):
+    """Only on work days for a setting: the owner's choice, else on for Work and off for Personal."""
+    chosen = (settings or {}).get('workdays')
+    return chosen if isinstance(chosen, bool) else project_area != 'personal'
+
+
+def is_workday(when, work):
+    return parse(when).astimezone(work['zone']).isoweekday() in work['days']
+
+
+def next_workday(when, work):
+    """The first moment from `when` on that is on a work day and past the start of the owner's hours (their time zone):
+    `when` itself on a work day after the start, else that start on the same or the next work day."""
+    when = parse(when)
+    local = when.astimezone(work['zone'])
+    day = local.date()
+    for _ in range(8):
+        if day.isoweekday() in work['days']:
+            start = dt.datetime.combine(day, dt.time(*work['start']), tzinfo=work['zone'])
+            return max(when, start.astimezone(when.tzinfo))
+        day += dt.timedelta(days=1)
+    return when
+
+
+def work_for(db, project, settings, work):
+    """The work week this project's follow-ups keep to (Only on work days), else None."""
+    work = work or work_week()
+    return work if workdays_on(settings, area(db, project, work.get('sides'))) else None
+
+
+def off_day(db, project, settings, now, work):
+    """When a follow-up for this project may go out by itself again: the next work day's start on a day off with Only
+    on workdays, else None (it may go now)."""
+    week = work_for(db, project, settings, work) if project is not None else None
+    if week is None or is_workday(now, week):
+        return None
+    return next_workday(now, week).isoformat()  # before the start of a work day it goes: the outbox keeps the owner's hours (in_hours)
 
 
 def stalls(settings, board):
@@ -304,7 +375,7 @@ def effective(db, project, boards=None):
 
 # ------------------------------------------------------------------ the schedule
 
-def schedule(messages, settings, now, days=None, prior=0, since=None, paused=()):
+def schedule(messages, settings, now, days=None, prior=0, since=None, paused=(), work=None):
     """Where a project's follow-ups stand, from its messages (oldest first, each {'id', 'at', 'mine', 'channel'}).
 
     Returns {'state', 'next_at', 'latest_at', 'end_at', 'n', 'judge', 'late', 'after', 'after_at', 'channel', 'tail'}:
@@ -319,7 +390,10 @@ def schedule(messages, settings, now, days=None, prior=0, since=None, paused=())
     starts there (round_at, the first unanswered message).
 
     paused: the times follow-ups were paused for this project (pauses_of, merged): waits count only the time outside
-    them, so a pause neither brings a follow-up closer nor ends a round, and a project paused long isn't stale for it."""
+    them, so a pause neither brings a follow-up closer nor ends a round, and a project paused long isn't stale for it.
+
+    work: the work week with Only on work days (work_for), else None. Waits count calendar days; a date that lands on a
+    day off (the shortest and the longest wait) moves to the next work day's start, and on a day off nothing is due."""
     days = int(days or settings['days'])
     longest = max(days, int(settings.get('max_days') or days))
     now = parse(now)
@@ -344,6 +418,11 @@ def schedule(messages, settings, now, days=None, prior=0, since=None, paused=())
         return {**base, 'state': 'ended', 'end_at': end_at.isoformat()}
     next_at = active_after(wait_from, dt.timedelta(days=days), paused)
     latest_at = active_after(wait_from, dt.timedelta(days=longest), paused)
+    if work is not None:
+        next_at, latest_at = next_workday(next_at, work), next_workday(latest_at, work)
+        if now >= next_at and next_workday(now, work) > now:
+            next_at = next_workday(now, work)  # due already, but today is a day off (or before its start): the next work morning
+            latest_at = max(latest_at, next_at)
     timing = {'next_at': next_at.isoformat(), 'latest_at': latest_at.isoformat(), 'judge': n > int(settings.get('min') or 0)}
     if now < next_at:
         return {**base, **timing, 'state': 'waiting'}
@@ -598,6 +677,16 @@ def paused_send(db, job_id, now):
         return None
     again = parse(now) + dt.timedelta(seconds=PAUSE_RECHECK)
     return min(again, parse(held['until'])).isoformat() if held['until'] else again.isoformat()
+
+
+def off_day_send(db, job_id, now, work):
+    """When a queued Send without asking may be looked at again on a day off with Only on work days (the next work day's
+    start), else None. The owner's own Send goes on any day."""
+    row = db.execute('SELECT j.source,p.* FROM action_jobs j JOIN follow_up_cards f ON f.suggestion_id=j.suggestion_id JOIN projects p '
+                     'ON p.id=f.project_id WHERE j.id=?', (job_id,)).fetchone()
+    if not row or row['source'] != 'auto_follow_up':
+        return None
+    return off_day(db, row, effective(db, row)[0], now, work)
 
 
 # ------------------------------------------------------------------ reading a project
@@ -1017,12 +1106,12 @@ def open_card(db, project_id):
                       'ORDER BY f.created_at DESC LIMIT 1', (project_id,)).fetchone()
 
 
-def plan(db, now, sendable, mine=mine_default, own=None):
+def plan(db, now, sendable, mine=mine_default, own=None, work=None):
     """Every project follow-ups are on for, with where it stands: [{'project', 'board', 'settings', 'source', 'state',
     'next_at', 'n', 'after', 'after_at', 'channel', 'reason', 'pause'}]. state as schedule's, or 'off' with a reason, 'open'
     when a follow-up to-do is out for it already, or 'paused' (pause: the pause that holds it) instead of due, waiting or
     a round's end. own: the owner's {'emails', 'names'}, to read quoted history
-    (earlier_sends)."""
+    (earlier_sends). work: the owner's work week (work_week), for Only on work days."""
     if not any_on(db):
         return []
     boards = {b['id']: b for b in db.execute('SELECT * FROM boards').fetchall()}
@@ -1048,7 +1137,7 @@ def plan(db, now, sendable, mine=mine_default, own=None):
         held = paused(db, p, now)
         if held:
             item['pause'] = held
-        found = {**schedule(msgs, settings, now, days, prior, since, pauses_of(db, p, now)), 'counted': counted}
+        found = {**schedule(msgs, settings, now, days, prior, since, pauses_of(db, p, now), work_for(db, p, settings, work)), 'counted': counted}
         if found['state'] in ('due', 'waiting') and found['after'] is not None:
             done = db.execute('SELECT state FROM follow_up_cards WHERE project_id=? AND after_event=?', (pid, found['after'])).fetchone()
             if done:  # this waiting point was followed up already (or skipped): the next one is the follow-up itself
@@ -1110,8 +1199,8 @@ def end(db, item, now, judged=False):
     return {'n': n, 'moved': moved}
 
 
-def due(db, now, sendable, mine=mine_default, own=None):
-    return [x for x in plan(db, now, sendable, mine, own) if x['state'] == 'due']
+def due(db, now, sendable, mine=mine_default, own=None, work=None):
+    return [x for x in plan(db, now, sendable, mine, own, work) if x['state'] == 'due']
 
 
 # ------------------------------------------------------------------ what the dashboard shows
@@ -1120,8 +1209,9 @@ def setting_view(settings, source=None):
     return {**(settings or defaults()), **({'source': source} if source else {})}
 
 
-def panel(db, scope, ref, sendable, now):
-    """The settings panel: the setting, the board's stages (on by default or not), the channels that can send, Careful."""
+def panel(db, scope, ref, sendable, now, sides=None):
+    """The settings panel: the setting, the board's stages (on by default or not), the channels that can send, Careful,
+    and whether Only on work days is on when the owner didn't choose (workdays: by the area)."""
     ref = int(ref or 0)
     if scope == 'board':
         board = db.execute('SELECT * FROM boards WHERE id=?', (ref,)).fetchone()
@@ -1129,7 +1219,8 @@ def panel(db, scope, ref, sendable, now):
             raise ValueError('That board is gone')
         own = rule(db, 'board', ref)
         view = {'scope': 'board', 'id': ref, 'name': board['name'], 'settings': setting_view(own), 'stalled': bool(board['side']),
-                'stages': [{'name': n, 'open': o} for n, o in board_stages(board) if n != STALLED], 'pause': current_pause(db, 'board', ref, now)}
+                'stages': [{'name': n, 'open': o} for n, o in board_stages(board) if n != STALLED], 'pause': current_pause(db, 'board', ref, now),
+                'workdays_default': True}  # a board is Work
     elif scope == 'project':
         p = db.execute('SELECT * FROM projects WHERE id=?', (ref,)).fetchone()
         if not p:
@@ -1140,14 +1231,15 @@ def panel(db, scope, ref, sendable, now):
         view = {'scope': 'project', 'id': ref, 'name': p['name'], 'settings': setting_view(own or board_rule), 'own': own is not None,
                 'stalled': bool(board and board['side']),
                 'board': {'id': board['id'], 'name': board['name'], 'on': bool(board_rule and board_rule.get('on'))} if board else None,
-                'pause': paused(db, p, now)}  # scope 'board': its board's pause holds it (resumed on the board)
+                'pause': paused(db, p, now),  # scope 'board': its board's pause holds it (resumed on the board)
+                'workdays_default': area(db, p, sides) != 'personal'}
     else:
         raise ValueError('Follow-ups are set for a board or a project')
     view.update(channels=[c for c in CHANNELS if c in sendable], careful=careful(db))
     return view
 
 
-def views(db, now, sendable, mine=mine_default, own=None):
+def views(db, now, sendable, mine=mine_default, own=None, work=None):
     """{'boards': {board_id: {'on', 'next_at', 'pause'}}, 'projects': {project_id: {'on', 'state', 'next_at', 'n', 'max', 'own',
     'end', 'pause'}}}: next_at the next follow-up's date (due or waiting), end the quiet note when a round ended without a
     reply, pause the pause that holds it (current_pause, paused) or None."""
@@ -1156,7 +1248,7 @@ def views(db, now, sendable, mine=mine_default, own=None):
         for r in db.execute("SELECT ref,settings FROM follow_up_rules WHERE scope='board'"):
             on = bool(json.loads(r[1]).get('on'))
             out['boards'][r[0]] = {'on': on, 'next_at': None, 'pause': current_pause(db, 'board', r[0], now) if on else None}
-        items = plan(db, now, sendable, mine, own)
+        items = plan(db, now, sendable, mine, own, work)
     except Exception:  # noqa: BLE001 - the board shows without it
         return out
     for x in items:

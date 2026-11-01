@@ -17,6 +17,7 @@ Pour un seul projet : **Relances…** dans le **⋯** de sa carte ou sur sa page
 ## Réglages
 
 - Attendre 3 à 7 jours sans réponse. Après l’attente la plus courte, une relance est rédigée. La plus longue est la limite à laquelle elle part, même quand votre utilisation est serrée.
+- **Seulement les jours de travail** : rien n’est rédigé ni envoyé vos jours de repos (selon **Paramètres** > **Notifications** > **Heures de travail**). Ce qui arrive à échéance ces jours-là attend votre prochain matin de travail. Activé pour Travail, désactivé pour Perso.
 - Relancer au moins 1 fois et au plus 3 fois. Le minimum part toujours. Entre les deux, elle rédige quand même chaque relance. Si elle pense qu’il vaut mieux arrêter, le brouillon dit pourquoi (« The Machine s’arrêterait ici : 9 e-mails sans réponse depuis août ») et n’est pas coché : envoyez-le, ignorez-le ou choisissez **Arrêter les relances ici**. Demandez-en une quand même dans le chat d’une relance et elle l’écrit. Jamais plus que le maximum.
 - **Étapes** : **Toutes les étapes ouvertes**, donc ni la dernière étape du tableau ni Au point mort ou refusé. **Personnaliser** active ou désactive des étapes et donne à une étape sa propre attente.
 - **Canaux** : ceux qui sont connectés et peuvent envoyer. Une relance part sur le même canal que le dernier message. **Changer de canal sans réponse** essaie le suivant autorisé.

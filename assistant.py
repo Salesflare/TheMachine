@@ -15631,7 +15631,7 @@ class App(*APP_MIXINS):
                     follow_ups.pause(db, scope, ref, args.get('until'), now())
                 else:
                     follow_ups.resume(db, scope, ref, now())
-                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now())
+                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now(), self.follow_up_work()['sides'])
         if name in ('follow_up_settings', 'follow_up_save'):
             # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
             if not owner_dashboard:
@@ -15647,7 +15647,7 @@ class App(*APP_MIXINS):
                 if name == 'follow_up_save':
                     follow_ups.save(db, scope, ref, args.get('settings'), now())
                     follow_ups.settle(db, now(), self.follow_up_mine())  # turned off, a stage off: open ones close now
-                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now())
+                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now(), self.follow_up_work()['sides'])
         if name in ('board_save', 'board_delete', 'board_dismiss'):
             if not owner_dashboard:
                 raise ValueError('Only the owner saves, deletes or dismisses a board, on the dashboard; reviews suggest one with graph suggest_board')
@@ -17109,7 +17109,8 @@ class App(*APP_MIXINS):
             for found in db.execute("SELECT * FROM action_jobs WHERE status IN ('queued','sending','uncertain') AND (retry_at IS NULL OR retry_at<=?) ORDER BY created_at",(now(),)).fetchall():
                 # Automated follow-ups in a row: the next from the same account waits its gap (follow_ups.SEND_GAP); another account's goes
                 # A paused board or project: Send without asking and sends queued before the pause wait (follow_ups.paused_send)
-                held=(follow_ups.held_until(db,found['id'],now()) or follow_ups.paused_send(db,found['id'],now())) if found['status']=='queued' else None
+                # Only on work days: Send without asking queued for a day off waits for the next work day (follow_ups.off_day_send)
+                held=(follow_ups.held_until(db,found['id'],now()) or follow_ups.paused_send(db,found['id'],now()) or follow_ups.off_day_send(db,found['id'],now(),self.follow_up_work())) if found['status']=='queued' else None
                 if held:db.execute('UPDATE action_jobs SET retry_at=? WHERE id=?',(held,found['id']));continue
                 job=found;break
             if not job:return
@@ -17526,7 +17527,8 @@ class App(*APP_MIXINS):
         """The board view's follow-up state: per board on and the next date, per project its next follow-up or the note."""
         try:
             follow_ups.ensure(db)
-            found = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db))
+            found = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db),
+                                   self.follow_up_work())
         except sqlite3.Error:
             return
         for b in boards:
@@ -17545,7 +17547,8 @@ class App(*APP_MIXINS):
         if not p:
             return None
         settings, source = follow_ups.effective(db, p)
-        view = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db))['projects'].get(pid) or {}
+        view = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db),
+                                   self.follow_up_work())['projects'].get(pid) or {}
         ends = [dict(r) for r in db.execute('SELECT n,moved,judged,at FROM follow_up_ends WHERE project_id=? ORDER BY at DESC LIMIT 4', (pid,))]
         return {'on': bool(settings and settings.get('on')), 'source': source, 'next_at': view.get('next_at'), 'state': view.get('state'),
                 'reason': view.get('reason'), 'n': view.get('n'), 'max': (settings or {}).get('max'), 'ends': ends,
@@ -17558,6 +17561,12 @@ class App(*APP_MIXINS):
 
     def follow_up_sendable(self):
         return follow_ups.sendable(self.config.get('accounts') or [])
+
+    def follow_up_work(self):
+        """The owner's work week for Only on work days (follow_ups.work_week): the work days and start of their Work hours
+        in their time zone, and the side of each account (a project on no board is Personal by its accounts)."""
+        return follow_ups.work_week(WORK_HOURS.get('days'), WORK_HOURS.get('start'), local_tz(),
+                                    {a.get('id'): graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')})
 
     def follow_up_own(self, db):
         """The owner's addresses and full name, to tell their quoted earlier emails from someone else's."""
@@ -17577,7 +17586,7 @@ class App(*APP_MIXINS):
             follow_ups.ensure(db)
             wanted = []
             # In the order they're drafted (follow_up_step), so the first ones drafted are the ones read first
-            for item in sorted((x for x in follow_ups.plan(db, now(), sendable, mine, own) if x['state'] == 'due'),
+            for item in sorted((x for x in follow_ups.plan(db, now(), sendable, mine, own, self.follow_up_work()) if x['state'] == 'due'),
                                key=lambda x: (not x['late'], x['next_at'])):
                 msgs = follow_ups.messages(db, item['project']['id'], mine)
                 theirs = max((i for i, m in enumerate(msgs) if not m['mine']), default=-1)
@@ -17689,7 +17698,7 @@ class App(*APP_MIXINS):
         self.follow_up_threads(mine, sendable, own)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            items = follow_ups.plan(db, now(), sendable, mine, own)
+            items = follow_ups.plan(db, now(), sendable, mine, own, self.follow_up_work())  # Only on work days: nothing due on a day off
             for item in items:
                 if item['state'] == 'end':
                     follow_ups.end(db, item, now())
@@ -17849,7 +17858,7 @@ class App(*APP_MIXINS):
         Anything else stays a to-do that asks."""
         if not in_hours(dt.datetime.fromisoformat(now()).astimezone(local_tz())):
             return []
-        sent = []
+        sent, work = [], self.follow_up_work()
         with self.store.connect() as db:
             is_careful = follow_ups.careful(db)
             rows = db.execute("SELECT f.*,s.next_action,s.status FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
@@ -17860,6 +17869,8 @@ class App(*APP_MIXINS):
                 if p and follow_ups.paused(db, p, now()):
                     continue  # paused: it waits for the owner's Send, or the resume
                 settings = follow_ups.effective(db, p)[0] if p else None
+                if p and follow_ups.off_day(db, p, settings, now(), work):
+                    continue  # Only on work days and today is a day off: it waits for the next work day, or the owner's Send
                 drafts = [a for a in next_actions.actions(f['next_action']) if a.get('kind') in follow_ups.CHANNELS] if f['next_action'] else []
                 draft = drafts[0] if len(drafts) == 1 else None
                 attempt = db.execute('SELECT 1 FROM action_jobs WHERE suggestion_id=?', (f['suggestion_id'],)).fetchone()

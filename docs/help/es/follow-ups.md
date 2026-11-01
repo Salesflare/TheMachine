@@ -17,6 +17,7 @@ Para un solo proyecto, **Seguimientos…** en el **⋯** de su tarjeta o en su p
 ## Ajustes
 
 - Espera de 3 a 7 días sin respuesta. Tras la espera más corta se redacta un seguimiento. La más larga es lo más tarde que sale, aunque tu uso vaya justo.
+- **Solo en días laborables**: en tus días libres no se redacta ni se envía nada (según **Ajustes** > **Notificaciones** > **Horario laboral**). Lo que toque entonces espera a tu siguiente mañana laboral. Activado para Trabajo, desactivado para Personal.
 - Haz seguimiento al menos 1 vez y como máximo 3. El mínimo siempre se envía. Entre ambos, igual redacta cada uno. Si cree que es mejor parar, el borrador dice por qué (“The Machine pararía aquí: 9 emails sin respuesta desde agosto”) y no queda marcado: envíalo, omítelo o elige **Parar los seguimientos aquí**. Si pides uno igual en el chat de un seguimiento, lo escribe. Nunca más del máximo.
 - **Etapas**: **Todas las etapas abiertas**, o sea, ni la última etapa del tablero ni Estancado o rechazado. **Personalizar** activa o desactiva etapas y le da a una etapa su propia espera.
 - **Canales**: los conectados que pueden enviar. Un seguimiento sale por el mismo canal que el último mensaje. **Cambiar de canal si no hay respuesta** prueba el siguiente permitido.

@@ -17,6 +17,7 @@ Per un solo progetto, **Ricontatti…** nel **⋯** della sua scheda o nella sua
 ## Impostazioni
 
 - Aspetta da 3 a 7 giorni senza risposta. Dopo l’attesa più breve viene scritta una bozza. La più lunga è il limite entro cui parte, anche quando sei vicino al limite di utilizzo.
+- **Solo nei giorni lavorativi**: nei giorni liberi non viene scritto né inviato nulla (da **Impostazioni** > **Notifiche** > **Orario di lavoro**). Quello che scade allora aspetta la tua prossima mattina lavorativa. Attivo per Lavoro, spento per Personale.
 - Ricontatta almeno 1 e al massimo 3 volte. Il minimo parte sempre. Nel mezzo, scrive comunque ogni ricontatto. Se pensa che sia meglio fermarsi, la bozza dice perché (“The Machine si fermerebbe qui: 9 email senza risposta da agosto”) e non è spuntata: inviala, saltala o scegli **Ferma i ricontatti qui**. Se ne chiedi uno comunque nella chat di un ricontatto, lo scrive. Mai oltre il massimo.
 - **Fasi**: **Tutte le fasi aperte**, quindi né l’ultima fase della bacheca né Fermi o rifiutati. **Personalizza** attiva o disattiva le fasi e dà a una fase la sua attesa.
 - **Canali**: quelli collegati che possono inviare. Un ricontatto parte sullo stesso canale dell’ultimo messaggio. **Cambia canale se non c’è risposta** prova il successivo consentito.

@@ -33,13 +33,13 @@ const detail={id:'project:5',kind:'project',name:'Ember labs',state:'active',str
  board:{board:'Alpha testers',stage:'Testing',next:null,visibility:null,board_visibility:'team',stages:['Invited','Testing','Live'],moves:[{stage:'Testing',reason:'they installed the build',source:'review',at:day(-6),event_id:105}]},
  follow_up:{on:true,source:'board',next_at:day(2),state:'waiting',n:2,max:3,ends:[],activity:[{n:1,of_max:3,channel:'email',state:'sent',auto:1,created_at:day(-3),closed_at:day(-3)}]}};
 const panel=(scope,id)=>scope==='board'?{scope:'board',id:1,name:'Alpha testers',stalled:true,careful:false,channels:['email','linkedin','whatsapp'],
-  stages:[{name:'Invited',open:true},{name:'Testing',open:true},{name:'Live',open:false}],settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null}}
+  stages:[{name:'Invited',open:true},{name:'Testing',open:true},{name:'Live',open:false}],workdays_default:true,settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null,workdays:null}}
  :{scope:'project',id:+String(id).replace('project:',''),name:'Ember labs',own:false,stalled:true,careful:true,channels:['email'],board:{id:1,name:'Alpha testers',on:true},
   settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null}};
 let calls=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,follow_up_progress:progress,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,follow_up_progress:progress,hours:{days:[1,2,3,4,5],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true},promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');res.end(JSON.stringify(n?detail:{projects:[],people:[],quiet:[],new:[],orgs:[],boards:boardsNow||boards}));return}
  if(req.method==='POST'&&url.pathname==='/api/action'){const c=JSON.parse(body||'{}');calls.push(c);const a=c.args||{};
   if(c.action==='follow_up_settings'||c.action==='follow_up_save'){const v=panel(a.scope,a.id);if(boardsNow&&a.scope==='board')v.settings.on=false;res.end(JSON.stringify(v));return}
@@ -129,16 +129,18 @@ try{
   assert.match(await fu.locator('.fu-row').first().textContent(),/^Wait\s+to\s+days without a reply$/);
   assert.deepEqual(await fu.locator('.fu-row input').evaluateAll(l=>l.map(i=>i.value)),['3','7','1','3']);
   assert.equal(await fu.locator('[name=auto][value=ask]').isChecked(),true);assert.equal(await fu.locator('[name=stall]').isChecked(),true);
+  assert.equal(await fu.locator('[name=workdays]').isChecked(),true);  // Only on work days: on for a Work board until they choose
+  assert.equal((await fu.locator('label:has([name=workdays])').textContent()).trim(),'Only on work days');
   await shot(page,'settings-board-1440-light',fu);
   await fu.locator('[data-fu-custom]').click();assert.equal(await fu.locator('[data-fu-stage]').count(),3);
   assert.deepEqual(await fu.locator('[data-fu-stage]').evaluateAll(l=>l.map(i=>i.checked)),[true,true,false]);
   await fu.locator('[data-fu-sdays="1"]').fill('5');await fu.locator('[name=max]').fill('2');await fu.locator('[name=ch][value=whatsapp]').uncheck();
-  await fu.locator('[name=switch]').check();await fu.locator('[name=auto][value=auto]').check();
+  await fu.locator('[name=switch]').check();await fu.locator('[name=auto][value=auto]').check();await fu.locator('[name=workdays]').uncheck();
   assert.equal((await fu.locator('.fu-send .fu-note').textContent()).trim(),'Anything unusual still waits for you.');
   await shot(page,'settings-board-custom-1440-light',fu);
   calls=[];await fu.locator('button.primary').click();await fu.waitFor({state:'hidden'});
   const save=calls.find(c=>c.action==='follow_up_save');
-  assert.deepEqual(save.args,{scope:'board',id:1,settings:{on:true,days:3,max_days:7,min:1,max:2,channels:['email','linkedin'],switch:true,auto:true,stall:true,
+  assert.deepEqual(save.args,{scope:'board',id:1,settings:{on:true,days:3,max_days:7,min:1,max:2,channels:['email','linkedin'],switch:true,auto:true,stall:true,workdays:false,
    stages:{Invited:{on:true},Testing:{on:true,days:5},Live:{on:false}}}});
   // A project's page: what went out by itself, and its own panel (Like its board; Careful asks always)
   await page.locator('.tile[data-node="project:5"]').click();await page.locator('.graph-fu').waitFor();
@@ -153,6 +155,12 @@ try{
   await shot(page,'settings-project-1440-light',fu);
   calls=[];await fu.locator('[name=mode][value=board]').check();await fu.locator('button.primary').click();await fu.waitFor({state:'hidden'});
   assert.deepEqual(calls.find(c=>c.action==='follow_up_save').args,{scope:'project',id:5,settings:{inherit:true}});
+  // Work days from your work hours: Settings opens at Notifications, scrolled to Work hours
+  await page.locator('.graph-fu [data-fu-open]').click();await fu.locator('[data-fu-hours]').waitFor();
+  assert.equal(await fu.locator('[data-fu-hours]').textContent(),'Work days from your work hours');
+  await fu.locator('[data-fu-hours]').click();await fu.waitFor({state:'hidden'});await page.locator('#settings').waitFor();
+  await page.waitForFunction(()=>location.hash==='#settings/notify'&&document.querySelector('[data-settings-tab="notify"]').getAttribute('aria-selected')==='true');
+  await page.waitForFunction(()=>{const h=document.querySelector('#hours').previousElementSibling.getBoundingClientRect();return h.top>=0&&h.top<innerHeight/2});
   await context.close()}
  // Send all checked went out spaced (30-45 s per mailbox): the board's queued ones are one progress to-do, "Sending 3 of 8…",
  // also after a reload, then "Sent 8"; a project's own follow-up that's ready stays as it was, and nothing is wider than the screen

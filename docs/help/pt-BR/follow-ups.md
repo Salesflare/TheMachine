@@ -17,6 +17,7 @@ Para um projeto só, **Follow-ups…** no **⋯** do cartão dele ou na página 
 ## Configurações
 
 - Espere de 3 a 7 dias sem resposta. Depois da espera mais curta, um follow-up é escrito. A mais longa é o prazo máximo para ele sair, mesmo com o seu uso apertado.
+- **Só em dias de trabalho**: nos seus dias de folga nada é escrito nem enviado (de **Configurações** > **Notificações** > **Horário de trabalho**). O que vencer nesses dias espera a sua próxima manhã de trabalho. Ligado para Trabalho, desligado para Pessoal.
 - Faça follow-up no mínimo 1 e no máximo 3 vezes. O mínimo sempre sai. Entre os dois, ela escreve cada um mesmo assim. Quando acha melhor parar, o rascunho diz por quê (“The Machine pararia aqui: 9 e-mails sem resposta desde agosto”) e não fica marcado: envie, pule ou escolha **Parar os follow-ups aqui**. Peça um mesmo assim no chat de um follow-up e ela escreve. Nunca mais que o máximo.
 - **Etapas**: **Todas as etapas abertas**, ou seja, nem a última etapa do quadro nem Parado ou recusado. **Personalizar** liga ou desliga etapas e dá a uma etapa sua própria espera.
 - **Canais**: os conectados que podem enviar. Um follow-up sai pelo mesmo canal da última mensagem. **Trocar de canal se não houver resposta** tenta o próximo permitido.
