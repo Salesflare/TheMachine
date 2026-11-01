@@ -167,6 +167,18 @@ class Authorize(Base):
             self.assertEqual(status, 303)
             self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlsplit(where).query)['error'], ['invalid_request'])
 
+    def test_a_long_state_comes_back_whole_and_too_long_is_refused(self):
+        _, client = self.register()
+        state = 'eyJ' + 'a1B2c3' * 200
+        verifier, challenge = pkce()
+        back = self.app.ai_consent_post({'client_id': client['client_id'], 'redirect_uri': CLAUDE, 'state': state, 'code_challenge': challenge,
+                                         'scope': 'read', 'level': 'read', 'area': 'both', 'expiry': '30d', 'choice': 'connect'})
+        self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlsplit(back).query)['state'], [state])
+        status, where = self.app.ai_consent_page(urllib.parse.urlencode(self.params(client, state='x' * 5000)), 'csrf')
+        query = urllib.parse.parse_qs(urllib.parse.urlsplit(where).query)
+        self.assertEqual((status, query['error']), (303, ['invalid_request']))
+        self.assertNotIn('state', query)
+
     def test_an_unregistered_redirect_is_never_followed(self):
         _, client = self.register()
         status, page = self.app.ai_consent_page(urllib.parse.urlencode(self.params(client, redirect_uri='https://evil.example/cb')), 'csrf')
