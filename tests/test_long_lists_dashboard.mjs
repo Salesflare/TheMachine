@@ -60,8 +60,9 @@ async function sidebar(page,label){
   await until(async()=>calls.some(c=>c.startsWith('/api/cards/done?limit=8&q=boat')),'asked of the Machine '+label);
   await page.keyboard.press('Escape');await page.locator('#drawer-open').click();await page.waitForTimeout(400)}
  // a search finds a done card that was never loaded in the list (on a phone, from the top bar's search)
- if(await page.locator('#side-find').isVisible()){await page.locator('#side-find').fill('boat');await until(async()=>await page.locator('#side-cards a',{hasText:'about the boat'}).count()===1,'search finds done card 150 '+label);
-  await page.locator('#side-find').fill('')}await until(async()=>await d.locator('a').count()===10,'back to 10 '+label);
+ if(await page.locator('#side-find').isVisible()){await page.locator('#side-find').click();await page.locator('#pal-q').fill('boat');
+  await until(async()=>await page.locator('#pal-list .pal-item',{hasText:'about the boat'}).count()===1,'search finds done card 150 '+label);
+  await page.keyboard.press('Escape')}await until(async()=>await d.locator('a').count()===10,'back to 10 '+label);
  for(const n of [30,50,70,90,110]){await d.locator('[data-side-more]').click();await until(async()=>await d.locator('a').count()===n,n+' done '+label)}
  assert.ok(calls.some(c=>c.startsWith('/api/cards/done?cursor=')),'older done cards come from the Machine '+label);
  for(const n of [130,150,160]){await d.locator('[data-side-more]').click();await until(async()=>await d.locator('a').count()===n,n+' done '+label)}

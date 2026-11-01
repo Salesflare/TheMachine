@@ -12,7 +12,7 @@ const notesN=n=>`${n} note${n===1?'':'s'}`;
 // Each block has a count and folds after 5 with Show all; a channel shows 2 lines with More. A condensed one says what it stands for, with Undo.
 const learnAll=new Set(),voiceOpen=new Set();let learnEdit=null,learnEditText=null;  // the fact being edited, and what was typed so far
 // Open one learning on What I've learned (from a card's chat): its block unfolded, the row in view and lit; with edit, its editor open.
-function learnedShow(id,what,edit){if(chatId){history.pushState(null,'',location.pathname+location.search);openChatLink()}showTab('feedback');  // Back returns to the chat
+function learnedShow(id,what,edit){if(chatId){history.pushState(null,'',location.pathname+location.search);openChatLink()}showTab('feedback','learned');  // Back returns to the chat
 const f=(state.facts||[]).find(x=>x.id===id);
  if(edit&&f){learnEdit=id;learnEditText=null}const group=f?(f.kind==='draft'?'rules':'facts'):null;if(group)learnAll.add(group);
  $('#facts').innerHTML=learnedList();const row=f?document.getElementById('learned-'+id):null;
@@ -27,6 +27,24 @@ function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text
 const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
 const factUntil=d=>new Date(d+'T12:00:00').toLocaleDateString(DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
 function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):''].filter(Boolean);return bits.length?`<small class="fact-meta">${esc(bits.join(' · '))}</small>`:''}
+// Learning's sub-tabs, like the Graph's and the Fleet's: How it's going first, then what I learned, the learning loop's
+// changes, the decisions, and Team (sharing with The Machine team, votes waiting) only while something waits there. A
+// tab with nothing to show is left out; the last one opened is kept on this device. Links: #learning=<tab>, #feedback.
+const LEARN_PANES=[['learned','What I’ve learned'],['changes','Changes'],['decisions','Decisions'],['shared','Shared'],['going','How it’s going']];  // Shared: with The Machine team (share asks, votes); #learning=team is its old link
+let learnPane=(()=>{try{const v=localStorage.getItem('learn-pane');return v==='team'?'shared':v||'learned'}catch{return 'learned'}})();
+const learnTeamWaiting=()=>{const tl=state?.team_learnings;return (tl?.ask?1:0)+(tl?.vote_mode==='ask'?(tl.votes_waiting||[]).length:0)};
+function learnHas(id){const s=state||{};
+ return id==='going'||id==='learned'&&!!((s.voices||[]).length||(s.facts||[]).length||(s.facts_ended||[]).length||(s.moved||[]).length)||id==='changes'&&!!(s.learning_changes||[]).length
+  ||id==='decisions'&&!!(s.decisions||[]).length||id==='shared'&&learnTeamWaiting()>0}
+const learnShown=()=>{const ids=LEARN_PANES.map(([id])=>id).filter(learnHas);return ids.includes(learnPane)?learnPane:ids[0]};
+// one pane only (a new Machine: How it's going) shows no pill row
+function learnTabs(){const box=$('#learn-tabs');if(!box)return;const cur=learnShown(),n=learnTeamWaiting();
+ const html=LEARN_PANES.filter(([id])=>learnHas(id)).map(([id,label])=>`<button type="button" role="tab" id="learn-tab-${id}" aria-controls="learn-pane-${id}" data-learn-tab="${id}" aria-selected="${id===cur}"><span class="ell">${esc(t(label))}</span>${id==='shared'&&n?` <span class="badge">${n}</span>`:''}</button>`).join('');
+ if(box.innerHTML!==html)box.innerHTML=html;box.hidden=box.childElementCount<2;for(const p of document.querySelectorAll('#feedback [data-learn-pane]'))p.hidden=p.dataset.learnPane!==cur}
+function showLearnPane(id){learnPane=id;try{localStorage.setItem('learn-pane',id)}catch{}learnTabs();tabsShow($('#learn-tabs'))}
+$('#learn-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-learn-tab]');if(b)showLearnPane(b.dataset.learnTab)});
+// Changes: the learning loop's recent changes, newest first, each with Undo; the first few, then Show more
+const learnChanges=()=>clipList('learn-changes',(state.learning_changes||[]).map(learnChange),'',8);
 function learnedList(){
  const facts=state.facts||[],at=x=>x.updated_at||x.created_at||'',newest=(a,b)=>at(b).localeCompare(at(a));
  const mergedUndo=(n,attr,label)=>n?`<small>Merged from ${notesN(n)} · <button type="button" class="learn-link" ${attr} aria-label="Undo merge: ${esc(label)}">Undo merge</button></small>`:'';
@@ -39,8 +57,6 @@ function learnedList(){
   ['rules','How to do things','Rules for a kind of task.',facts.filter(f=>f.kind==='draft').sort(newest).map(fact)],
   ['ended','Ended','Past their end date. Bring one back if it still holds.',(state.facts_ended||[]).map(f=>`<div class="fact-row"><span class="grow">${esc(f.text)}${factMeta(f)}</span><span class="learn-acts"><button type="button" class="quiet" data-fact-back="${f.id}" aria-label="${esc(t('Bring back: {}',f.text))}">${esc(t('Bring back'))}</button></span></div>`)],
   ['skills','Moved into skills','Notes that now live in a skill.',(state.moved||[]).map(m=>`<div><span class="grow"><strong>${esc(m.name)}</strong> ${notesN(m.notes)}</span><span class="learn-acts"><button type="button" class="quiet" data-unmerge-skill="${esc(m.skill_id)}" aria-label="Put back the notes in ${esc(m.name)}">Put back</button></span></div>`)]].filter(g=>g[3].length);
- const changes=state.learning_changes||[];
- if(changes.length)groups.unshift(['changes','Recent changes','What I picked up from your edits, dismissals and chats.',changes.map(learnChange)]);
  if(!groups.length)return'<div class="muted">Nothing yet. When a note on a to-do holds beyond it, I keep it here.</div>';
  const c=state.condensed;
  return (c&&c.notes?`<div class="muted learn-note">Condensed ${notesN(c.notes)} on ${esc(learnDay(new Date(c.at)))}.</div>`:'')+
@@ -119,12 +135,13 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-more]');if
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-promise]');if(!b)return;b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'promise_close',args:{id:Number(b.dataset.promise),status:b.dataset.close}})});toast(b.dataset.close==='kept'?'Marked done.':'Dropped.');refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 $('#facts').addEventListener('click',async e=>{const vm=e.target.closest('[data-voice-more]');if(vm){const ch=vm.dataset.voiceMore,open=!voiceOpen.has(ch);open?voiceOpen.add(ch):voiceOpen.delete(ch);$('#facts').innerHTML=learnedList();$(`#facts [data-voice-more="${CSS.escape(ch)}"]`)?.focus();return}
  const la=e.target.closest('[data-learn-all]');if(la){const k=la.dataset.learnAll;learnAll.has(k)?learnAll.delete(k):learnAll.add(k);$('#facts').innerHTML=learnedList();$(`#facts [data-learn-all="${k}"]`)?.focus();return}
- const lu=e.target.closest('[data-learn-undo]');if(lu){lu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'learning_undo',args:{id:Number(lu.dataset.learnUndo)}})});toast('Undone.');refresh()}catch(err){errCaught(err);lu.disabled=false;toast(err.message,true)}return}
  const fb=e.target.closest('[data-fact-back]');if(fb){fb.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'unmerge_fact',args:{expired:Number(fb.dataset.factBack)}})});toast(t('Brought back.'));refresh()}catch(err){errCaught(err);fb.disabled=false;toast(err.message,true)}return}
  const u=e.target.closest('[data-unmerge-fact],[data-unmerge-voice],[data-unmerge-skill]');if(u){u.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'unmerge_fact',args:u.dataset.unmergeSkill?{skill:u.dataset.unmergeSkill}:u.dataset.unmergeVoice?{channel:u.dataset.unmergeVoice}:{id:Number(u.dataset.unmergeFact)}})});toast('Notes restored.');refresh()}catch(err){errCaught(err);u.disabled=false;toast(err.message,true)}return}
  const ed=e.target.closest('[data-edit-fact]');if(ed){learnEdit=Number(ed.dataset.editFact);learnEditText=null;$('#facts').innerHTML=learnedList();const t=$(`#learned-${learnEdit} textarea`);t?.focus();t?.setSelectionRange(t.value.length,t.value.length);return}
  if(e.target.closest('[data-edit-cancel]')){const id=learnEdit;learnEdit=learnEditText=null;$('#facts').innerHTML=learnedList();$(`#facts [data-edit-fact="${id}"]`)?.focus();return}
  const b=e.target.closest('[data-forget]');if(!b)return;b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'forget_fact',args:{id:Number(b.dataset.forget)}})});if(learnEdit===Number(b.dataset.forget))learnEdit=learnEditText=null;toast('Removed.');refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+$('#learn-changes').addEventListener('click',async e=>{const lu=e.target.closest('[data-learn-undo]');if(!lu)return;lu.disabled=true;
+ try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'learning_undo',args:{id:Number(lu.dataset.learnUndo)}})});toast('Undone.');refresh()}catch(err){errCaught(err);lu.disabled=false;toast(err.message,true)}});
 $('#facts').addEventListener('input',e=>{if(e.target.closest('[data-fact-edit]'))learnEditText=e.target.value});
 $('#facts').addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.closest('[data-fact-edit]'))e.target.closest('form').querySelector('[data-edit-cancel]').click()});
 $('#facts').addEventListener('submit',async e=>{const form=e.target.closest('[data-fact-edit]');if(!form)return;e.preventDefault();const id=Number(form.dataset.factEdit),text=form.text.value.trim(),save=form.querySelector('[type=submit]');save.disabled=true;

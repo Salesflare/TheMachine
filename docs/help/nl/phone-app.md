@@ -8,7 +8,7 @@ order: 3
 ---
 Het dashboard installeer je als app op een telefoon of computer. Daarna stuurt het een melding voor elke to-do, elk resultaat en elke herinnering als je niet bij het dashboard bent, binnen je [werkuren](work-hours.md). Kies wat het stuurt bij [Meldingen](notifications.md).
 
-Een rustige melding bovenaan Suggesties biedt allebei aan, een voor een: eerst de app, dan meldingen. **Niet nu** verbergt hem 14 dagen, en een tweede **Niet nu** stopt hem op dat apparaat. Dezelfde knoppen blijven in **Instellingen**, **Algemeen**, **Dit apparaat**.
+Een rustige melding bovenaan To-do's biedt allebei aan, een voor een: eerst de app, dan meldingen. **Niet nu** verbergt hem 14 dagen, en een tweede **Niet nu** stopt hem op dat apparaat. Dezelfde knoppen blijven in **Instellingen**, **Algemeen**, **Dit apparaat**.
 
 ## Op een computer (Chrome of Edge)
 

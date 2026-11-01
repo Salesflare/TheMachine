@@ -10,7 +10,7 @@ Siti come LinkedIn e X vengono letti nel browser della tua Machine. A volte un s
 
 ## Accedi di nuovo
 
-La fonte in **Connessioni** e la parte alta dei tuoi Suggerimenti dicono che è disconnessa. Premi **Accedi di nuovo** e accedi, in una piccola finestra sulla dashboard.
+La fonte in **Connessioni** e la parte alta delle tue Attività dicono che è disconnessa. Premi **Accedi di nuovo** e accedi, in una piccola finestra sulla dashboard.
 
 Spunta **Salva per la prossima volta** quando accedi. La prossima volta che il sito disconnette la tua Machine, rientra con un tocco. La password resta crittografata sulla tua Machine; l'AI non la vede mai.
 

@@ -316,9 +316,9 @@ try{
   else{assert.equal(await page.locator('#side-talk kbd').textContent(),'T');assert.equal(await page.locator('#side-talk kbd').isVisible(),true)
    await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());
    const starts=()=>actions.filter(a=>a.action==='talk_start').length,n=starts();
-   await page.locator('#side-find').focus();await page.keyboard.press('t');await page.waitForTimeout(200);
-   assert.equal(starts(),n,'T while typing types a t');assert.equal(await page.locator('#side-find').inputValue(),'t');
-   await page.locator('#side-find').fill('');await page.evaluate(()=>document.activeElement.blur());
+   await page.evaluate(()=>{const i=document.createElement('input');i.id='t-field';i.style.cssText='position:fixed;top:0;left:300px;z-index:9';document.body.append(i)});await page.locator('#t-field').focus();await page.keyboard.press('t');await page.waitForTimeout(200);
+   assert.equal(starts(),n,'T while typing types a t');assert.equal(await page.locator('#t-field').inputValue(),'t');
+   await page.locator('#t-field').fill('');await page.evaluate(()=>document.activeElement.blur());
    for(const k of ['Control+t','Alt+t'])await page.keyboard.press(k);await page.waitForTimeout(200);assert.equal(starts(),n,'not with Ctrl or Alt held');
    // On the Calendar, T is Today there (the Calendar's own key comes first), not Talk; the ? sheet says so
    await page.evaluate(()=>document.querySelector('nav [data-tab="calendar"]').click());await page.locator('#calendar').waitFor();

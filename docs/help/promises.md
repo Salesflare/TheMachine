@@ -10,7 +10,7 @@ Your Machine notices promises in your messages, both ways, with nothing to set u
 
 ## Where they are
 
-Under **Promises** on the Suggestions tab:
+Under **Promises** on the To-dos page:
 
 - What you said you'd do, and for whom: **You promised**.
 - What others said they'd do: **Promised to you**.

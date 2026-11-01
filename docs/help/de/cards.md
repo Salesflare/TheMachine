@@ -10,7 +10,7 @@ Deine Machine liest alles Neue und erstellt nur dann eine Aufgabe, wenn etwas di
 
 ## Wo Aufgaben stehen
 
-Der Tab **Vorschläge** gruppiert sie:
+Die Seite **Aufgaben** gruppiert sie:
 
 - **Bereit für dich**: vorbereitet und wartet auf deine Freigabe.
 - **Braucht deine Entscheidung**: etwas, das nur du entscheiden kannst.
@@ -57,7 +57,7 @@ Eine „Wartet auf“-Aufgabe (jemand hat dir etwas versprochen) verlinkt deine 
 
 ## Selbst eine erstellen
 
-**Neue Aufgabe** (auf einem Computer unter **Aufgabe finden**) legt eine Aufgabe für alles an. Beim Erstellen wird nichts gesendet.
+**Neue Aufgabe** (auf einem Computer unter **Suchen**) legt eine Aufgabe für alles an. Beim Erstellen wird nichts gesendet.
 
 - **Fällig**: Gib einen Tag oder eine Uhrzeit ein, etwa „morgen“, „nächsten Fr“, „3. Nov“, „15:00“, „in 2 Stunden“ oder „morgen um 9 Uhr“. Englisch geht auch („in 2 hours“, „tomorrow 9“). Das Kalendersymbol hat Schnellauswahlen wie beim Zurückstellen und **Datum wählen**.
 - **E-Mail**: Häng die E-Mail an, um die es geht. Gesucht wird nur in deinen E-Mails, nach Betreff oder Absender.

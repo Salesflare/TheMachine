@@ -19,7 +19,7 @@ function kbCtx(){kbLive();const open=chatId&&!$('#inbox').hidden?cardOf(chatId):
  if(!card){const el=document.activeElement?.closest?.('#suggestions article.card')||(kbSel?.isConnected?kbSel:null);const id=el?.id?.startsWith('task-')?el.id.slice(5):'';card=id?cardOf(id)||null:null}
  return {card,id:card?.id||'',chat:!!open}}
 const kbBtn=(c,sel)=>c.id?document.querySelector(`#suggestions [data-id="${CSS.escape(c.id)}"]${sel}`):null;
-function actsFor(ctx){const out=[];for(const a of ACTIONS){try{if(a.each){for(const x of a.each(ctx)||[])out.push({group:a.group,...x})}else if(!a.when||a.when(ctx))out.push(a)}catch{}}return out}
+function actsFor(ctx,keyed){const out=[];for(const a of ACTIONS){if(a.alias&&!keyed)continue;try{if(a.each){for(const x of a.each(ctx)||[])out.push({group:a.group,...x})}else if(!a.when||a.when(ctx))out.push(a)}catch{}}return out}
 const actLabel=(a,ctx)=>typeof a.label==='function'?a.label(ctx):a.label;
 function actRun(a,ctx){if(typeof drawerClose==='function')drawerClose();try{const r=a.run(ctx);if(r?.catch)r.catch(e=>toast(e.message,true))}catch(e){errCaught(e);toast(e.message||'That didn’t work',true)}}
 // Go to
@@ -33,15 +33,17 @@ const kbNav=sel=>()=>{const el=$(sel);if(!el)return;if(chatId&&el.dataset.tab===
  {id:'cal-week',group:'Calendar',label:'Week',keywords:'calendar grid',keys:'w',when:onCal,run:()=>calSetMode('week')},
  {id:'cal-month',group:'Calendar',label:'Month',keywords:'calendar grid',keys:'m',when:onCal,run:()=>calSetMode('month')})}
 actionAdd(
- {id:'go-suggestions',group:'Go to',label:'Suggestions',keywords:'to-dos todos cards home inbox',keys:'g s',run:kbNav('nav [data-tab="inbox"]')},
+ {id:'go-todos',group:'Go to',label:'To-dos',keywords:'todos suggestions cards home inbox',keys:'g t',run:kbNav('nav [data-tab="inbox"]')},
+ {id:'go-suggestions',group:'Go to',alias:true,keys:'g s',run:kbNav('nav [data-tab="inbox"]')},  // the old key, still working, not listed
  {id:'go-calendar',group:'Go to',label:'Calendar',keywords:'meetings today agenda',keys:'g c',run:kbNav('nav [data-tab="calendar"]')},
- {id:'go-events',group:'Go to',label:'Events',keywords:'signals search messages mail',keys:'g e',run:kbNav('nav [data-tab="events"]')},
+ {id:'go-events',group:'Go to',label:'Messages',keywords:'events signals search mail emails everything read',keys:'g e',run:()=>msgSearch('')},
  {id:'go-people',group:'Go to',label:'People',keywords:'graph contacts',keys:'g p',run:kbNav('.side-sub a[data-graph-sub="people"]')},
  {id:'go-orgs',group:'Go to',label:'Organizations',keywords:'graph companies organizations',keys:'g o',run:kbNav('.side-sub a[data-graph-sub="orgs"]')},
  {id:'go-projects',group:'Go to',label:'Projects',keywords:'graph',keys:'g j',run:kbNav('.side-sub a[data-graph-sub="projects"]')},
  {id:'go-roles',group:'Go to',label:'Who’s who',keywords:'graph roles',keys:'g w',when:()=>kbHas($('.side-sub a[data-graph-sub="roles"]')),run:kbNav('.side-sub a[data-graph-sub="roles"]')},
  {id:'go-fleet',group:'Go to',label:'Fleet',keywords:'team teammates',keys:'g f',when:()=>kbHas($('#tab-fleet')),run:kbNav('#tab-fleet')},
- {id:'go-feedback',group:'Go to',label:'Feedback',keywords:'quality learned decided',keys:'g b',run:kbNav('nav [data-tab="feedback"]')},
+ {id:'go-learning',group:'Go to',label:'Learning',keywords:'feedback quality learned decided changes how it is going',keys:'g l',run:kbNav('nav [data-tab="feedback"]')},
+ {id:'go-feedback',group:'Go to',alias:true,keys:'g b',run:kbNav('nav [data-tab="feedback"]')},  // the old key, still working, not listed
  {id:'go-connections',group:'Go to',label:'Connections',keywords:'sources health accounts',keys:'g n',run:kbNav('nav [data-tab="health"]')},
  {id:'go-settings',group:'Go to',label:'Settings',keywords:'preferences',keys:'g ,',run:()=>showSettings()},
  {id:'go-settings-tabs',group:'Go to',each:()=>SETTINGS_TABS.filter(([t])=>{const b=document.querySelector(`[data-settings-tab="${t}"]`);return b&&!b.hidden}).map(([t,l])=>({id:'go-settings-'+t,label:window.t('Settings: {}',window.t(l)),keywords:'settings '+t,run:()=>showSettings(t)}))},
@@ -104,7 +106,7 @@ const PAL_RECENT='palette-recent';
 const palRecent=()=>{try{const v=JSON.parse(localStorage.getItem(PAL_RECENT)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,5):[]}catch{return []}};
 function palRemember(id){try{localStorage.setItem(PAL_RECENT,JSON.stringify([id,...palRecent().filter(x=>x!==id)].slice(0,5)))}catch{}}
 
-const pal={from:null,ctx:null,items:[],sel:0,q:'',seq:0,timer:0,found:null};
+const pal={from:null,ctx:null,items:[],sel:0,q:'',seq:0,timer:0,found:null,msgs:null};
 function palDialog(){let d=$('#palette');if(d)return d;d=document.createElement('dialog');d.id='palette';d.setAttribute('aria-label','Search and commands');
  d.innerHTML=`<div class="pal-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="pal-q" type="text" role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" placeholder="Search or type a command" autocomplete="off" spellcheck="false" enterkeyhint="go"></div><div class="pal-list" id="pal-list" role="listbox" aria-label="Results"></div><div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> run</span><span><kbd>Esc</kbd> close</span><span><kbd>?</kbd> shortcuts</span></div>`;
  document.body.append(d);const q=d.querySelector('#pal-q');
@@ -118,8 +120,8 @@ function palDialog(){let d=$('#palette');if(d)return d;d=document.createElement(
  d.addEventListener('click',e=>{if(e.target===d){palClose();return}const o=e.target.closest('[data-pal]');if(o)palPick(+o.dataset.pal)});
  d.addEventListener('mousemove',e=>{const o=e.target.closest('[data-pal]');if(o&&+o.dataset.pal!==pal.sel){pal.sel=+o.dataset.pal;palPaint(false)}});
  return d}
-function palOpen(){const d=palDialog();if(d.open)return;for(const x of document.querySelectorAll('dialog[open]'))if(x!==d)return;
- pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.done=[];pal.seq++;if(typeof drawerClose==='function')drawerClose();
+function palOpen(o){const d=palDialog();if(d.open)return;for(const x of document.querySelectorAll('dialog[open]'))if(x!==d)return;
+ pal.todos=!!o?.todos;pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.msgs=null;pal.done=[];pal.seq++;if(typeof drawerClose==='function')drawerClose();
  const q=d.querySelector('#pal-q');q.value='';d.showModal();q.focus();palRender()}
 function palClose(){const d=$('#palette');clearTimeout(pal.timer);pal.seq++;if(d?.open)d.close();if(d?.contains(document.activeElement))document.activeElement.blur();  /* never left in the closed field, or keys would think you type */
  const f=pal.from;pal.from=null;if(f?.isConnected&&f!==document.body)f.focus({preventScroll:true})}
@@ -137,7 +139,13 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
   {const seen=new Set(),done=[...(state.suggestions||[]).filter(closed),...pal.done||[]].filter(s=>!seen.has(s.id)&&seen.add(s.id)).map(s=>({s,score:palScore(q,s.title)})).filter(x=>x.score>=40).sort((x,y)=>y.score-x.score).slice(0,5);
    if(done.length)groups.push(['Done',done.map(({s})=>({a:{id:'card:'+s.id,run:()=>{doneExtra.set(s.id,s);cardsMerge();chatGo(s.id)},entity:true},label:s.title,sub:s.scope==='work'?'Work':s.scope==='personal'?'Personal':''}))])}
   for(const [kind,name] of [['person','People'],['org','Organizations'],['project','Projects']]){const xs=(pal.found||[]).filter(n=>n.kind===kind).slice(0,5);
-   if(xs.length)groups.push([name,xs.map(n=>({a:{id:'graph:'+n.id,run:()=>{location.hash=graphHash(n.id)},entity:true},label:n.name||n.id,sub:kind==='person'?(n.ids||[])[0]||'':kind==='org'&&n.domain!==n.name?n.domain||'':''}))])}}
+   if(xs.length)groups.push([name,xs.map(n=>({a:{id:'graph:'+n.id,run:()=>{location.hash=graphHash(n.id)},entity:true},label:n.name||n.id,sub:kind==='person'?(n.ids||[])[0]||'':kind==='org'&&n.domain!==n.name?n.domain||'':''}))])}
+  // Messages: the top few of everything the Machine read (the results page's own search), then See all results
+  if(q.length>=2)groups.push(['Messages',[...(pal.msgs||[]).map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||t('Message'),sub:msgSub(m)})),
+   {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:pal.msgs===null?t('Looking…'):''}]])}
+ // From the sidebar's Search box: the to-dos first (before typing, the first open ones)
+ if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:s.scope==='work'?'Work':s.scope==='personal'?'Personal':''}))])}
+  else groups.sort((x,y)=>['To-dos','Done'].includes(y[0])-['To-dos','Done'].includes(x[0]))}
  return groups}
 function palRender(){const d=$('#palette');if(!d?.open)return;const groups=palRows(),list=d.querySelector('#pal-list');pal.items=[];let html='';
  for(const [g,xs] of groups){html+=`<div class="pal-group" role="presentation">${esc(g)}</div>`;
@@ -150,8 +158,11 @@ function palPaint(scroll=true){const d=$('#palette');if(!d)return;const q=d.quer
  const on=d.querySelector(`#pal-o-${pal.sel}`);if(on){q.setAttribute('aria-activedescendant',on.id);if(scroll)on.scrollIntoView({block:'nearest'})}else q.removeAttribute('aria-activedescendant')}
 // People, organizations and projects come from the Graph's own search (api/graph?q=), a moment after typing stops;
 // an answer to an older query is dropped.
-function palFind(){clearTimeout(pal.timer);const q=pal.q.trim(),seq=++pal.seq;if(q.length<2){pal.found=[];return}pal.found=null;
+// Messages come from the results page's search (api/events: by meaning and words, every account) on their own, as
+// it can take longer: the rest shows first.
+function palFind(){clearTimeout(pal.timer);const q=pal.q.trim(),seq=++pal.seq;if(q.length<2){pal.found=[];pal.msgs=[];return}pal.found=null;pal.msgs=null;
  pal.timer=setTimeout(async()=>{let found=[],done=[];const e=encodeURIComponent(q);
+  request('api/events?account=all&q='+e).then(r=>Array.isArray(r)?r:[]).catch(()=>[]).then(rows=>{if(seq!==pal.seq||!$('#palette')?.open)return;pal.msgs=rows.slice(0,4);palRender()});
   await Promise.all([request('api/graph?q='+e).then(r=>{found=Array.isArray(r?.found)?r.found:[]}).catch(()=>{}),
    request('api/cards/done?limit=8&q='+e).then(r=>{done=Array.isArray(r?.cards)?r.cards:[]}).catch(()=>{})]);  /* done cards beyond the loaded ones */
   if(seq!==pal.seq||!$('#palette')?.open)return;pal.found=found;pal.done=done;palRender()},180)}
@@ -161,7 +172,7 @@ function palPick(i){const x=pal.items[i];if(!x)return;const ctx=pal.ctx;palClose
 function keysOpen(){let d=$('#keys-sheet');for(const x of document.querySelectorAll('dialog[open]'))if(x!==d)return;
  if(!d){d=document.createElement('dialog');d.id='keys-sheet';d.setAttribute('aria-labelledby','keys-title');document.body.append(d);d.addEventListener('click',e=>{if(e.target===d)d.close()})}
  const row=(keys,label,more='')=>`<p><span>${esc(label)}</span><span class="keys">${kbKeys(keys)}${more}</span></p>`,ctx={card:null,id:'',chat:false};
- const of=g=>ACTIONS.filter(a=>a.group===g&&a.keys&&!a.review&&!a.each&&(!a.when||(()=>{try{return a.when(ctx)}catch{return false}})()||g==='This to-do'||g==='Calendar')).map(a=>row(a.keys,a.id==='talk'?'Talk (not on the Calendar)':actLabel(a,ctx))).join('');  // on the Calendar, T is Today
+ const of=g=>ACTIONS.filter(a=>a.group===g&&a.keys&&!a.review&&!a.each&&!a.alias&&(!a.when||(()=>{try{return a.when(ctx)}catch{return false}})()||g==='This to-do'||g==='Calendar')).map(a=>row(a.keys,a.id==='talk'?'Talk (not on the Calendar)':actLabel(a,ctx))).join('');  // on the Calendar, T is Today
  d.innerHTML=`<form method="dialog"><div class="snooze-heading"><h2 id="keys-title">Keyboard shortcuts</h2><button aria-label="Close">×</button></div></form><div class="keys-sheet">
  <div><h3>General</h3>${row('mod+k','Search and commands','<span class="then">or</span><kbd>/</kbd>')}${of('Actions')}${row('esc','Close a chat or dialog')}</div>
  <div><h3>Go to</h3>${of('Go to')}</div>
@@ -222,7 +233,7 @@ document.addEventListener('keydown',e=>{if(e.defaultPrevented||e.isComposing||e.
  const mod=KB_MAC?e.metaKey&&!e.ctrlKey:e.ctrlKey&&!e.metaKey;
  if(mod&&!e.altKey&&!e.shiftKey&&key.toLowerCase()==='k'){e.preventDefault();palToggle();return}
  if(e.ctrlKey||e.metaKey||e.altKey||ncTyping(e.target)||document.querySelector('dialog[open]'))return;
- if(kbG&&Date.now()-kbG<1500){kbG=0;const a=actsFor(kbCtx()).find(a=>a.keys==='g '+key.toLowerCase()&&!a.review);if(a){e.preventDefault();actRun(a,kbCtx())}return}kbG=0;
+ if(kbG&&Date.now()-kbG<1500){kbG=0;const a=actsFor(kbCtx(),true).find(a=>a.keys==='g '+key.toLowerCase()&&!a.review);if(a){e.preventDefault();actRun(a,kbCtx())}return}kbG=0;
  if(key==='g'&&!e.shiftKey){kbG=Date.now();e.preventDefault();return}
  if(key==='/'){e.preventDefault();palOpen();return}
  if(key==='?'){e.preventDefault();keysOpen();return}
@@ -237,11 +248,16 @@ document.addEventListener('keydown',e=>{if(e.defaultPrevented||e.isComposing||e.
  if(e.shiftKey||key.length!==1)return;
  const ctx=kbCtx(),a=actsFor(ctx).find(a=>a.keys===key.toLowerCase()&&!a.review&&!a.bound);if(a){e.preventDefault();actRun(a,ctx)}});
 
-// Where the keys show: ⌘K / Ctrl K in Find a to-do (on a phone the top bar's search icon), and the quiet hints in tooltips and menus.
+// The sidebar's Search box has no filter of its own: a click, Enter or a typed letter opens the palette, the to-dos
+// first, and the letter starts the search there
+{const f=$('#side-find'),go=(text='')=>{palOpen({todos:true});if(text){const q=$('#pal-q');q.value=text;q.dispatchEvent(new Event('input'))}};
+ f.addEventListener('click',()=>go());
+ f.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing)return;if(e.key==='Enter'){e.preventDefault();e.stopImmediatePropagation();go()}else if(e.key.length===1&&e.key!==' '){e.preventDefault();e.stopImmediatePropagation();go(e.key)}},true)}
+// Where the keys show: ⌘K / Ctrl K in Search (on a phone the top bar's search icon), and the quiet hints in tooltips and menus.
 {const lab=$('#side-search'),b=document.createElement('button');b.type='button';b.className='kb-open';b.id='pal-open';b.title='Search and commands ('+KB_PAL+')';b.setAttribute('aria-label','Search and commands');b.setAttribute('aria-keyshortcuts',kbAria('mod+k'));
  b.innerHTML=`<kbd>${KB_PAL}</kbd>`;b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();palOpen()});lab.append(b);
 }
-const KB_TIPS=[['nav [data-tab="inbox"]','g s'],['nav [data-tab="calendar"]','g c'],['nav [data-tab="events"]','g e'],['.side-sub a[data-graph-sub="people"]','g p'],['.side-sub a[data-graph-sub="orgs"]','g o'],['.side-sub a[data-graph-sub="projects"]','g j'],['.side-sub a[data-graph-sub="roles"]','g w'],['#tab-fleet','g f'],['nav [data-tab="feedback"]','g b'],['nav [data-tab="health"]','g n'],['#open-settings','g ,']];
+const KB_TIPS=[['nav [data-tab="inbox"]','g t'],['nav [data-tab="calendar"]','g c'],['.side-sub a[data-graph-sub="people"]','g p'],['.side-sub a[data-graph-sub="orgs"]','g o'],['.side-sub a[data-graph-sub="projects"]','g j'],['.side-sub a[data-graph-sub="roles"]','g w'],['#tab-fleet','g f'],['nav [data-tab="feedback"]','g l'],['nav [data-tab="health"]','g n'],['#open-settings','g ,']];
 for(const [sel,keys] of KB_TIPS){const el=$(sel);if(!el)continue;const name=i18nEnglish(el.querySelector('.nl,.lbl'))||I18N.attrs.get(el)?.['aria-label']?.en||el.getAttribute('aria-label')||'';el.title=name+' ('+kbText(keys)+')';el.dataset.keys=kbText(keys);el.setAttribute('aria-keyshortcuts',kbAria(keys))}
 const KB_CARD=[['[data-choice="snooze"]','s'],['[data-choice="complete"]','d'],['[data-rename]','e']];
 function kbHints(){for(const [sel,keys] of KB_CARD)for(const b of document.querySelectorAll('#suggestions '+sel)){if(b.dataset.kb)continue;b.dataset.kb=keys;b.setAttribute('aria-keyshortcuts',kbAria(keys));

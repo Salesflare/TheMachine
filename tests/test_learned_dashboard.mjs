@@ -46,7 +46,7 @@ try{
   facts=structuredClone(original);
   const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:'+server.address().port+'/#feedback');
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#learning=learned');
   await navClick(page.locator('[data-tab="feedback"]').first());
   const learned=page.locator('#facts');await learned.locator('.learn-group').first().waitFor();
   // Separate blocks, each with its own heading, count, line and card.

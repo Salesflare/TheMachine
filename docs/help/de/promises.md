@@ -10,7 +10,7 @@ Deine Machine erkennt Versprechen in deinen Nachrichten, in beide Richtungen, oh
 
 ## Wo sie stehen
 
-Unter **Versprechen** im Tab Vorschläge:
+Unter **Versprechen** auf der Seite Aufgaben:
 
 - Was du zugesagt hast, und für wen: **Du hast versprochen**.
 - Was andere zugesagt haben: **Dir versprochen**.

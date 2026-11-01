@@ -7,7 +7,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The top of Fleet and its Handoffs box, at 390px and 1440px, light and dark:
-// - "One Fleet item waits for you under Suggestions." sits in a quiet notice card (pageNotice), its text centered with a
+// - "One Fleet item waits for you under To-dos." sits in a quiet notice card (pageNotice), its text centered with a
 //   Show button on the right, with room above the Fleet tabs; plural with two items; the Network off is the same card.
 // - Handoffs have their own box, not the "Who knows someone?" one: open ones first, accepted and done ones quieter with
 //   three shown and a Show more, the time leading two lines of summary, and the whole row opening its card where it is still there.
@@ -51,7 +51,7 @@ try{
   // The notice: one card, before the tabs, text and Show inside it, nothing past the screen's edge.
   const notice=page.locator('#fleet-view>.notice-card');
   assert.equal(await notice.count(),1,at_);
-  assert.equal(await notice.locator('span').innerText(),'One Fleet item waits for you under Suggestions.');
+  assert.equal(await notice.locator('span').innerText(),'One Fleet item waits for you under To-dos.');
   assert.equal(await page.locator('#fleet-view p.note').count(),0,'no bare notice line');
   const [card,text,show,tabs,title]=await Promise.all(['#fleet-view>.notice-card','#fleet-view>.notice-card>span','#fleet-view>.notice-card .head-link','.fleet-tabs','#page-head'].map(s=>box(page,s)));
   assert.equal(await notice.locator('.head-link').innerText(),'Show');
@@ -78,7 +78,7 @@ try{
   const rows=await hos.locator('.fleet-ho:not([hidden])').evaluateAll(li=>li.map(r=>{const t=r.querySelector('.fleet-ho-sum time'),s=r.querySelector('.fleet-ho-sum');
    return{inSum:!!t&&Math.abs(t.getBoundingClientRect().top-s.getBoundingClientRect().top)<=2,top:!r.querySelector('.fleet-ho-top time'),lines:Math.round(s.getBoundingClientRect().height/parseFloat(getComputedStyle(s).lineHeight))}}));
   for(const r of rows){assert.ok(r.inSum&&r.top,`${at_}: the time is on the summary line`);assert.ok(r.lines<=2,`${at_}: two lines of summary at most (${r.lines})`)}
-  // No Open button: a row whose card is still there is a tap row with a chevron (Kim's under Suggestions, the cards
+  // No Open button: a row whose card is still there is a tap row with a chevron (Kim's under To-dos, the cards
   // handed to Pat); the others are plain, not focusable.
   assert.equal(await hos.locator('a,button:not([data-ho-more])').count(),0);
   assert.deepEqual(await hos.locator('.fleet-ho:not([hidden])').evaluateAll(li=>li.map(r=>r.classList.contains('tap')?r.dataset.hoGo:'')),['#fleet=q_'+'0'.repeat(16),'#card='+hex(1),'','#card='+hex(3),'','']);
@@ -89,13 +89,13 @@ try{
   await hos.locator('[data-ho-more]').click();
   assert.equal(await hos.locator('.fleet-ho[hidden]').count(),0);
   assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.fleet-handoffs *')].every(e=>e.getBoundingClientRect().right<=innerWidth+.5)),`${at_}: Handoffs scroll sideways`);
-  // Tapping a row opens its card under Suggestions; Enter does too.
+  // Tapping a row opens its card under To-dos; Enter does too.
   if(width===390)await hos.locator(`[data-ho-go="#card=${hex(1)}"] .fleet-ho-sum`).click();
   else{await hos.locator(`[data-ho-go="#card=${hex(1)}"]`).focus();await page.keyboard.press('Enter')}
   await page.locator(`#task-${hex(1)}`).waitFor();
   // Two items: plural. The Network off: the same card, without a button.
   await open({...base,waiting:waitingIn(2)});
-  assert.equal(await page.locator('#fleet-view>.notice-card span').innerText(),'2 Fleet items wait for you under Suggestions.');
+  assert.equal(await page.locator('#fleet-view>.notice-card span').innerText(),'2 Fleet items wait for you under To-dos.');
   await page.locator('#fleet-view>.notice-card .head-link').click();
   await page.locator('#inbox:not([hidden])').waitFor();
   await open({...base,off:true});

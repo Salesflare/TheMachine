@@ -4,7 +4,7 @@ At most once a day, when there is new material, the Machine reads what it learne
 (their notes on cards, the facts and writing rules taken from them, how the cards did, its own errors) and distils it,
 in one cheap turn of the owner's own agent, into a few general suggestions for the product: "drafts for people who
 don't know the context yet should introduce it", not "Sam prefers calls". A learning that repeats one already sent,
-removed or withdrawn is dropped (seen). Then it asks, on the Feedback page and in the weekly recap, whether it may
+removed or withdrawn is dropped (seen). Then it asks, under Learning, Shared and in the weekly recap, whether it may
 send them to The Machine team. The owner sees each item exactly as it would go, can edit or remove it, and ticks
 separately whether an item's error excerpt goes along (off by default). Only an explicit Send sends.
 
@@ -107,7 +107,7 @@ ASK_DAYS = 14         # a vote waiting for the owner (Ask first) goes after this
 
 def vote_mode(db):
     """Settings, Vote on tips from other Machines: 'on' (the default: it votes by itself), 'ask' (each vote waits for
-    the owner on the Feedback page) or 'off'. The old switch stored 'on' and 'off', so those carry over as they are."""
+    the owner under Learning, Shared) or 'off'. The old switch stored 'on' and 'off', so those carry over as they are."""
     mode = pref(db, 'vote', 'on')
     return mode if mode in VOTE_MODES else 'on'
 
@@ -265,7 +265,7 @@ QUOTE = re.compile(r'["“”„«»][^"“”„«»]{2,}["“”„«»]')
 CAPITAL = re.compile(r"(?<![\w’'-])[A-ZÀ-ÖØ-Þ][\w’'-]*")
 # Capitalized words a generic use case may use mid-sentence: The Machine's own screens, buttons and terms, weekdays and
 # a few plain abbreviations. Anything else capitalized could be a name, so the use case doesn't go.
-PLAIN_CAPS = set("""I The OK AI CRM PDF CSV VAT UI API PR FAQ Machine Machines Network Fleet Graph Code Settings Feedback Help Connections
+PLAIN_CAPS = set("""I The OK AI CRM PDF CSV VAT UI API PR FAQ Machine Machines Network Fleet Graph Code Settings Feedback Learning Messages Help Connections
     Calendar Inbox Chat Send Snooze Snoozed Done Dismiss Dismissed Review Merge Undo Edit Save Not Now Ready Decide Needed To-do To-dos
     Do It Hand Suggestions Security General Account Work Family Friends Skills Promises Recap Monday Tuesday Wednesday Thursday Friday
     Saturday Sunday""".split())
@@ -762,7 +762,7 @@ def share(db_connect, config, batch_id, chosen, named, call, version=None, auto=
 def auto_send(db_connect, config, call, version=None):
     """Send automatically: the newest batch made while it was on goes as it is (no error excerpt, no email), while it
     is still on. A batch the check would change, or one that can't get through within AUTO_HOURS, waits for the owner
-    on Feedback instead. Returns the share result, or None."""
+    under Learning, Shared instead. Returns the share result, or None."""
     with db_connect() as db:
         ensure(db)
         if not auto_on(db):
@@ -994,7 +994,7 @@ def send_votes(db_connect, call):
     return sent
 
 
-# Ask first (Settings): a judged vote waits for the owner in one quiet box on the Feedback page, never a to-do of its
+# Ask first (Settings): a judged vote waits for the owner in one quiet box under Learning, Shared, never a to-do of its
 # own and never a notification. They see the tip and the vote as it would go, and Send it or Skip it.
 
 def votes_waiting(db, limit=VOTE_BATCH * 4):

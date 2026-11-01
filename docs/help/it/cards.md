@@ -10,7 +10,7 @@ La tua Machine legge tutto ciò che è nuovo e crea un'attività solo quando qua
 
 ## Dove stanno le attività
 
-La scheda **Suggerimenti** le raggruppa:
+La pagina **Attività** le raggruppa:
 
 - **Pronta per te**: preparata e in attesa della tua approvazione.
 - **Serve una tua decisione**: qualcosa che puoi decidere solo tu.
@@ -57,7 +57,7 @@ Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo
 
 ## Creane una tu
 
-**Nuova attività** (sotto **Trova un’attività** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente.
+**Nuova attività** (sotto **Cerca** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente.
 
 - **Scadenza**: scrivi un giorno o un'ora, come "domani", "ven prossimo", "3 nov", "15:00", "2pm", "tra 2 ore" o "domani 9". Capisce anche altre lingue ("over 2 uur", "morgen 9u"). L'icona del calendario ha scelte rapide, come quando posticipi, e **Scegli una data**.
 - **Email**: allega l'email a cui si riferisce. Cerca solo nella tua email, per oggetto o mittente.

@@ -14,7 +14,7 @@ Quasi tutto succede da sé. La tua Machine impara da quello che fai, quindi c'è
 - Cosa vuoi: dalle attività che concludi, ignori o posticipi, e dal perché.
 - Fatti e abitudini: da quello che dici nella chat di un'attività, come "il venerdì non prendo mai chiamate".
 
-Circa due volte al giorno fa qualche piccola modifica in base a questo. **Feedback**, **Cosa ho imparato** le mostra una per una, con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
+Circa due volte al giorno fa qualche piccola modifica in base a questo. **Apprendimento**, **Modifiche** le mostra una per una, con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
 
 ## Insegnale più in fretta
 

@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// A teammate's ask under Suggestions: Share once, Always share and Decline are visible buttons (Never under More). A brief
+// A teammate's ask under To-dos: Share once, Always share and Decline are visible buttons (Never under More). A brief
 // ask is never a to-do: it waits quietly in its Fleet's pane (Brief requests), the latest per teammate, with Share once first and no nudge toward Always.
 const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),Q=n=>'q_'+String(n).repeat(16);
@@ -39,7 +39,7 @@ try{
   assert.deepEqual(await labels(other),['Share once','Always share','Decline']);
   assert.deepEqual(await other.locator('.more-menu button').allTextContents(),['Never share']);
   assert.match(await other.innerText(),/Always and Never also cover their future asks like this\./);
-  // No brief card under Suggestions, and the badge doesn't count them
+  // No brief card under To-dos, and the badge doesn't count them
   assert.equal(await page.locator('#suggestions [id^="fleet-q_"]').count(),1);
   assert.doesNotMatch(await page.locator('#suggestions').innerText(),/brief facts/);
   assert.equal(await page.locator('#badge-inbox').textContent(),'1');

@@ -90,7 +90,7 @@ try{
  assert.equal(await page.locator('#hours-save').isDisabled(),true);
  assert.match(await page.locator('#hours-error').textContent(),/config\.json/);
  // Another tab clears the gear; the gear brings Settings back. Light mode reads well too.
- await navClick(page.locator('nav [data-tab="events"]'));
+ await navClick(page.locator('nav [data-tab="feedback"]'));
  assert.equal(await page.locator('#open-settings').getAttribute('aria-current'),'false');
  assert.equal(await page.locator('#settings').isHidden(),true);
  await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="general"]').click();const was=await page.evaluate(()=>document.documentElement.dataset.theme);

@@ -48,7 +48,7 @@ try{
   reset();
   const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/#feedback');
+  await page.goto(base+'/#learning=shared');
   await navClick(page.locator('[data-tab="feedback"]').first());
   const box=page.locator('#share-learnings'),card=box.locator('.share-ask');
   await card.waitFor();
@@ -105,10 +105,10 @@ try{
    const vote=page.locator('#share-vote');assert.equal(await vote.getAttribute('role'),'radiogroup');
    assert.equal(await vote.locator('input:checked').inputValue(),'on');
    assert.equal(await page.locator('#share-vote-note').isVisible(),false);
-   await vote.locator('label',{hasText:'Ask first'}).click();await page.locator('#share-vote-note',{hasText:'Each vote waits for you on the Feedback page.'}).waitFor();
+   await vote.locator('label',{hasText:'Ask first'}).click();await page.locator('#share-vote-note',{hasText:'Each vote waits for you under Learning, Shared.'}).waitFor();
    assert.deepEqual(posts.at(-1),{action:'set_learnings_vote',args:{mode:'ask'}});
    await shot(page.locator('#settings-share'),`settings-${width}-${scheme}`);
-   // Feedback: one quiet box for all the waiting votes, Review shows each as it would go; nothing goes without Send
+   // Learning, Shared: one quiet box for all the waiting votes, Review shows each as it would go; nothing goes without Send
    await navClick(page.locator('[data-tab="feedback"]').first());
    const votes=page.locator('#share-votes'),vcard=votes.locator('.share-ask');
    assert.equal(await vcard.locator('strong').textContent(),'2 votes wait for you');

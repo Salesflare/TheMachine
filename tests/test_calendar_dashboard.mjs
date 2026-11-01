@@ -74,7 +74,7 @@ const fits=(page,where)=>page.evaluate(()=>({page:document.documentElement.scrol
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  {const {context,page}=await open(1440,900);
-  // A sidebar row under Suggestions
+  // A sidebar row under To-dos
   const rows=await page.locator('nav button[data-tab]').evaluateAll(b=>b.map(x=>x.dataset.tab));assert.equal(rows[1],'calendar');
   await page.locator('nav [data-tab="calendar"]').click();await showCal(page);
   assert.equal(await page.locator('#page-head .page-title').textContent(),'Calendar');

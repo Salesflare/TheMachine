@@ -10,7 +10,7 @@ Je Machine leest alles wat nieuw is en maakt alleen een to-do als iets jou nodig
 
 ## Waar to-do's staan
 
-Het tabblad **Suggesties** groepeert ze:
+De pagina **To-do's** groepeert ze:
 
 - **Klaar voor jou**: voorbereid en wacht op je goedkeuring.
 - **Wacht op je beslissing**: iets wat alleen jij kunt beslissen.
@@ -57,7 +57,7 @@ Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste 
 
 ## Er zelf een maken
 
-**Nieuwe to-do** (onder **Zoek een to-do** op een computer) voegt een to-do toe voor wat dan ook. Aanmaken verstuurt niets.
+**Nieuwe to-do** (onder **Zoeken** op een computer) voegt een to-do toe voor wat dan ook. Aanmaken verstuurt niets.
 
 - **Deadline**: typ een dag of een tijd, zoals "morgen", "volgende vr", "3 nov", "15:00", "over 2 uur" of "morgen 9u". Engels werkt ook ("in 2 hours", "tomorrow 9"). Het agenda-icoon heeft snelle keuzes, zoals bij snoozen, en **Kies een datum**.
 - **E-mail**: voeg de e-mail toe waarover het gaat. Hij zoekt alleen in je e-mail, op onderwerp of afzender.

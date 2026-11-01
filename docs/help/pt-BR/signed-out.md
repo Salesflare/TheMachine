@@ -10,7 +10,7 @@ Sites como LinkedIn e X são lidos no navegador da própria Machine. Às vezes u
 
 ## Entrar de novo
 
-A fonte em **Conexões** e o topo das suas Sugestões mostram que ela está desconectada. Clique em **Entrar de novo** e faça login em uma pequena janela no painel.
+A fonte em **Conexões** e o topo das suas Tarefas mostram que ela está desconectada. Clique em **Entrar de novo** e faça login em uma pequena janela no painel.
 
 Marque **Salvar para a próxima vez** quando entrar. Na próxima vez que o site desconectar sua Machine, ela entra de novo com um toque. A senha fica criptografada na sua Machine. A IA nunca a vê.
 

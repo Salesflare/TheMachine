@@ -13682,9 +13682,9 @@ def weekly_recap_message(store, config, current=None):
         lines += ['', '**' + t('What changed') + '**', *changed]
     with store.connect() as db:
         share = team_learnings.waiting(db)
-    if share:  # only a pointer: they go out from the Feedback page, after the owner read them
+    if share:  # only a pointer: they go out from Learning, Shared, after the owner read them
         lines += ['', '**' + t('For The Machine team') + '**', '• ' + t('{} learnings to share, if you like: ', share)
-                  + (f"[{t('read them')}]({root}#feedback)" if root else t('read them under Feedback')) + '. ' + t('Nothing goes without your OK.')]
+                  + (f"[{t('read them')}]({root}#learning=shared)" if root else t('read them under Learning')) + '. ' + t('Nothing goes without your OK.')]
     alive = recap_graph_lines(store, since) + recap_share_lines(store, config)
     if alive:
         lines += ['', '**' + t('People and projects') + '**', *alive]
@@ -16776,7 +16776,7 @@ class App(*APP_MIXINS):
             push_send(self.store, self.config, subscriptions, {'title': i18n.t('Your Fleet'), 'body': text[:200], 'url': root, 'tag': 'fleet-' + anchor},
                       'fleet=' + anchor, kind='result')
         if telegram_on(self.config) and self.notify_on('result', 'telegram'):
-            fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open in Suggestions'), 'url': root}]] if root else []})
+            fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open in To-dos'), 'url': root}]] if root else []})
 
     def fleet_retell(self, message_id, message=None):
         try:

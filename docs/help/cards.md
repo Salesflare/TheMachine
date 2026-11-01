@@ -10,7 +10,7 @@ Your Machine reads everything new and makes a to-do only when something needs yo
 
 ## Where to-dos sit
 
-The **Suggestions** tab groups them:
+The **To-dos** page groups them:
 
 - **Ready for you**: prepared and waiting for your approval.
 - **Needs your decision**: something only you can decide.
@@ -57,7 +57,7 @@ A "Waiting on" to-do (someone promised you something) links your own last messag
 
 ## Make one yourself
 
-**New to-do** (under **Find a to-do** on a computer) adds a to-do for anything. Creating it sends nothing.
+**New to-do** (under **Search** on a computer) adds a to-do for anything. Creating it sends nothing.
 
 - **Due**: type a day or a time, like "tomorrow", "next Fri", "3 Nov", "15:00", "2pm", "in 2 hours" or "tomorrow 9". It reads your language too ("over 2 uur", "morgen 9u"). The calendar icon has quick picks, like Snooze, and **Choose date**.
 - **Email**: attach the email it's about. It searches your email only, by subject or sender.

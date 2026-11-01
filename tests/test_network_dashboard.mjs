@@ -6,7 +6,7 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Network discovery (discovery.py): a permission card once; a person card under Suggestions only with a concrete
+// Network discovery (discovery.py): a permission card once; a person card under To-dos only with a concrete
 // reason; colleague gets Connect, anyone else Friend or Family; the Fleet tab's Network block has the two switches,
 // the quiet list and Leave. Never scrolls sideways (390px and 1000px, dark and light).
 const dashboard=await dashboardPage();
@@ -72,7 +72,7 @@ try{
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'leave',email:'',relation:''}});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px Fleet tab scrolls sideways`);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/network-${scheme}-${width}.png`,fullPage:true});
-  // Turned on by default (Standard): one quiet line with Turn off, no card under Suggestions
+  // Turned on by default (Standard): one quiet line with Turn off, no card under To-dos
   shown={...found,network:{...found.network,asked:false,default_at:new Date().toISOString(),people:[]}};
   await page.reload();await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('[data-fleet-pane="network"]').click();
   const line=page.locator('#fleet-network .net-default');await line.waitFor();

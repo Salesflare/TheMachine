@@ -10,7 +10,7 @@ Tu Machine lee todo lo nuevo y solo crea una tarea cuando algo te necesita. Una 
 
 ## Dónde están las tareas
 
-La pestaña **Sugerencias** las agrupa:
+La página **Tareas** las agrupa:
 
 - **Lista para ti**: preparada y esperando tu aprobación.
 - **Necesita tu decisión**: algo que solo tú puedes decidir.
@@ -57,7 +57,7 @@ Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a 
 
 ## Crea una tú
 
-**Nueva tarea** (debajo de **Buscar una tarea** en un ordenador) añade una tarea para lo que sea. Crearla no envía nada.
+**Nueva tarea** (debajo de **Buscar** en un ordenador) añade una tarea para lo que sea. Crearla no envía nada.
 
 - **Vence**: escribe un día o una hora, como "mañana", "el viernes que viene", "3 nov", "15:00", "2pm", "en 2 horas" o "mañana 9". También entiende otros idiomas ("over 2 uur", "morgen 9u"). El icono del calendario tiene opciones rápidas, como al posponer, y **Elegir fecha**.
 - **Correo**: adjunta el correo del que trata. Solo busca en tu correo, por asunto o remitente.

@@ -8,7 +8,7 @@ order: 3
 ---
 La dashboard si installa come app su un telefono o un computer. Poi invia una notifica per ogni attività, risultato e promemoria quando non sei sulla dashboard, nel tuo [orario di lavoro](work-hours.md). Scegli cosa invia in [Notifiche](notifications.md).
 
-Una nota discreta in cima a Suggerimenti propone entrambe le cose, una alla volta: prima l’app, poi le notifiche. **Non ora** la nasconde per 14 giorni, e un secondo **Non ora** la toglie su quel dispositivo. Gli stessi comandi restano in **Impostazioni**, **Generale**, **Questo dispositivo**.
+Una nota discreta in cima ad Attività propone entrambe le cose, una alla volta: prima l’app, poi le notifiche. **Non ora** la nasconde per 14 giorni, e un secondo **Non ora** la toglie su quel dispositivo. Gli stessi comandi restano in **Impostazioni**, **Generale**, **Questo dispositivo**.
 
 ## Su un computer (Chrome o Edge)
 

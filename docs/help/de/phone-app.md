@@ -8,7 +8,7 @@ order: 3
 ---
 Das Dashboard lässt sich als App auf einem Handy oder Computer installieren. Dann schickt es für jede Aufgabe, jedes Ergebnis und jede Erinnerung eine Benachrichtigung, wenn du nicht am Dashboard bist, innerhalb deiner [Arbeitszeiten](work-hours.md). Was es schickt, wählst du unter [Benachrichtigungen](notifications.md).
 
-Ein dezenter Hinweis oben in Vorschläge bietet beides an, eins nach dem anderen: zuerst die App, dann Benachrichtigungen. **Nicht jetzt** blendet ihn 14 Tage aus, und ein zweites **Nicht jetzt** beendet ihn auf diesem Gerät. Dieselben Schalter bleiben in **Einstellungen**, **Allgemein**, **Dieses Gerät**.
+Ein dezenter Hinweis oben in Aufgaben bietet beides an, eins nach dem anderen: zuerst die App, dann Benachrichtigungen. **Nicht jetzt** blendet ihn 14 Tage aus, und ein zweites **Nicht jetzt** beendet ihn auf diesem Gerät. Dieselben Schalter bleiben in **Einstellungen**, **Allgemein**, **Dieses Gerät**.
 
 ## Auf einem Computer (Chrome oder Edge)
 

@@ -138,6 +138,7 @@ class TeamLearnings(unittest.TestCase):
         self.assertIn('graph.py:120', third['log'])
         self.assertEqual(self.network.sent, [])  # asked, never sent by itself
         self.assertIn('**For The Machine team**', a.weekly_recap_message(self.store, {'accounts': []})['text'])
+        self.assertIn('/#learning=shared)', a.weekly_recap_message(self.store, {'accounts': [], 'dashboard_host': 'm.example.test'})['text'])  # opens Learning, Shared
 
         # An edit that puts a name back in is refused, so what goes is always what the owner saw
         with self.assertRaisesRegex(ValueError, 'take out a name first'):

@@ -10,7 +10,7 @@ Sua Machine percebe promessas nas suas mensagens, nos dois sentidos, sem nada pa
 
 ## Onde elas ficam
 
-Em **Promessas**, na aba Sugestões:
+Em **Promessas**, na página Tarefas:
 
 - O que você disse que faria, e para quem: **Você prometeu**.
 - O que outras pessoas disseram que fariam: **Prometido a você**.

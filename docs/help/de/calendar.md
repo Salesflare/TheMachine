@@ -51,7 +51,7 @@ The Machine kann sie auch hinzufügen. Frag sie bei einer Aufgabe, etwa "füge d
 
 The Machine liest beides für die nächsten Schritte nach dem Termin. Sie sind Arbeit oder Privat wie der Termin und gehen nur an dein Team, wenn der Termin es tut.
 
-Ein Termin öffnet sich überall mit diesen Details: in einem Verlauf, unter Termine oder als Quelle eines To-dos. **Ursprüngliche Einladung** unten zeigt die Einladung, wie sie ankam.
+Ein Termin öffnet sich überall mit diesen Details: in einem Verlauf, in einer Nachrichtensuche oder als Quelle einer Aufgabe. **Ursprüngliche Einladung** unten zeigt die Einladung, wie sie ankam.
 
 ## Termin hinzufügen oder ändern
 

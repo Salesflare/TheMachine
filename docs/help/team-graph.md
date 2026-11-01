@@ -90,7 +90,7 @@ Only your teammates' Machines. Everything is encrypted end to end, sealed for ea
 
 ## Joining and new devices
 
-An admin lets each person into the Fleet once. After that, sharing with them needs no more OKs. The ask shows under **Suggestions** for each admin, and the first answer counts for the whole team. Members never get it.
+An admin lets each person into the Fleet once. After that, sharing with them needs no more OKs. The ask shows under **To-dos** for each admin, and the first answer counts for the whole team. Members never get it.
 
 A new Machine of someone already in gets the team's Graph after 24 hours. Admins see it in the meantime and can tap **Not theirs** to keep it out.
 

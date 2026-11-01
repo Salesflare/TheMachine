@@ -1,22 +1,21 @@
 ---
 title: Dich zurechtfinden
 area: getting-started
-summary: Wofür jeder Teil des Dashboards da ist, von Vorschläge bis Verbindungen.
+summary: Wofür jeder Teil des Dashboards da ist, von Aufgaben bis Verbindungen.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
 ---
 ## Die Tabs
 
-- **Vorschläge**: deine Aufgaben. Siehe [Aufgaben](cards.md).
+- **Aufgaben**: deine Aufgaben und Versprechen. Siehe [Aufgaben](cards.md).
 - **Kalender**: die kommende Woche mit deinen Meetings, fälligen Aufgaben und Versprechen. Siehe [Kalender](calendar.md).
-- **Termine**: alles, was deine Machine gelesen hat, zum Durchsuchen.
 - **Graph**: die Personen, Organisationen und Projekte in deinen Nachrichten. Siehe [Graph](graph.md).
 - **Fleet**: dein Team, deine Familie und deine Freunde in The Machine Network, sobald du eine hast. Siehe [Fleet](fleet.md).
-- **Feedback**: wie es den Aufgaben geht und was sie gelernt hat.
+- **Lernen**: wie es den Aufgaben geht und was sie gelernt hat.
 - **Verbindungen**: deine Quellen und wie es ihnen geht. Siehe [Verbindungen](connections.md).
 
-**Einstellungen** ist das Zahnrad oben. **Aufgabe finden** durchsucht deine Aufgaben nach Titel.
+**Einstellungen** ist das Zahnrad oben. **Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr.
 
 **Browser**, unten in der Seitenleiste, zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, in der Größe des verfügbaren Platzes. Das gilt auch für **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Auf dem Handy öffnet er sich in einem neuen Tab.
 
@@ -30,14 +29,25 @@ Nutzen mehrere Aufgaben den Browser, stoppt er die auf dem vorderen Tab. Auf dem
 
 Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, solange etwas Getipptes noch nicht gespeichert oder gesendet ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.
 
-## Termine
+## Nachrichten
 
-Durchsuche alles, was reingekommen ist, nach Bedeutung oder nach Wörtern, über alle Konten oder ein einzelnes. Jedes Ergebnis öffnet sich in einer Leseansicht, mit einem Link, um es dort zu öffnen, wo es herkommt.
+Öffne die Suche mit `⌘K` auf einem Mac oder `Ctrl K` unter Windows und Linux, oder auf dem Handy mit dem Suchsymbol oben. Tippe zwei Buchstaben oder mehr: **Nachrichten** zeigt die besten Treffer aus allem, was deine Machine gelesen hat, nach Bedeutung oder nach Wörtern.
 
-## Feedback
+**Alle Ergebnisse** öffnet die ganze Liste, für alle Konten oder ein einzelnes. Jedes Ergebnis öffnet sich in einer Leseansicht, mit einem Link dorthin, wo es herkommt. Eine leere Suche zeigt die neuesten Nachrichten.
 
-- **Wie es den Aufgaben geht**: in den letzten 30 Tagen, wie viele **Lohnend** waren, beim **Ersten Versuch** erledigt, **Abgeschlossen** und **Unverändert gesendet**.
-- Darunter dasselbe pro Quelle: woher die Aufgaben kamen, etwa **E-Mail**, **Von dir hinzugefügt** (erstellt mit **Neue Aufgabe**), **Handy-Benachrichtigungen** oder **The Machine selbst** (Probleme in The Machine, etwa ein Fehler).
+## Lernen
+
+Lernen hat eine Reihe von Tabs. Ein Tab, in dem noch nichts steht, wird weggelassen.
+
 - **Was ich gelernt habe**: wie du schreibst, Fakten und wie du Dinge gern erledigt hast, aus deinen Notizen. **Bearbeite** alles davon in deinen eigenen Worten und **Entferne**, was nicht mehr stimmt. Wenn eine Notiz zu einer Aufgabe einen Fakt oder eine Regel beibringt, sagt der Chat der Aufgabe das unter der Antwort (**Im Gelernten gespeichert**, mit **Bearbeiten** und **Rückgängig**). Diese Zeile kommt aus dem, was gespeichert wurde, also behauptet eine Antwort das nie einfach so.
 - Ein Fakt kann sagen, was er ist (**Vorübergehend**, **Zusage**, **Vorliebe**), und **Bis** wann er gilt. Ein vorübergehender Fakt verblasst in Wochen, eine Vorliebe oder Zusage in Monaten, andere Fakten in einem Jahr. Fakten über jemanden haben kein Limit; andere enden bei 80. Nach dem Datum kommt ein Fakt zu **Abgelaufen**, wo **Zurückholen** ihn wiederherstellt.
-- **Was du entschieden hast**: ein Verlauf deiner Entscheidungen zu Aufgaben.
+- **Änderungen**: was sie aus deinen Bearbeitungen, Ablehnungen und Chats übernommen hat, jeweils mit **Rückgängig**. Siehe [Schreiben](writing.md#it-keeps-learning).
+- **Entscheidungen**: ein Verlauf deiner Entscheidungen zu Aufgaben.
+- **Geteilt**: Erkenntnisse zum Teilen mit dem Team von The Machine und Stimmen, die auf dich warten. Erscheint nur, wenn etwas wartet. Siehe [Erkenntnisse teilen](share-learnings.md).
+- **Wie es läuft**: die letzten 30 Tage, und höher ist besser.
+  - **Lohnend**: von den Aufgaben, über die du entschieden hast, wie viele du erledigt hast (**Ausführen**, gesendet oder erledigt), statt sie zu verwerfen.
+  - **Beim ersten Mal**: von den Aufgaben, die du mit **Ausführen** gestartet hast, wie viele danach keine Korrektur brauchten.
+  - **Abgeschlossen**: von den Aufgaben, die du mit **Ausführen** gestartet hast, wie viele fertig wurden, ohne dass du sie weitermachen oder es erneut versuchen lassen musstest.
+  - **Unverändert gesendet**: von den Entwürfen, die du gesendet hast, wie viele ohne Bearbeitung oder **Ändern** vorher rausgingen.
+  - Jede Zahl zeigt den Vergleich mit den 30 Tagen davor. **Lohnend, Woche für Woche** zeigt die letzten 8 Wochen, ein Balken pro Woche, sobald es zwei Wochen mit Entscheidungen gibt. Eine Markierung unter einer Woche heißt, dass sich in dieser Woche Regeln geändert haben.
+  - **Lohnend pro Quelle**: woher die Aufgaben kamen, etwa **E-Mail**, **Von dir hinzugefügt** (erstellt mit **Neue Aufgabe**), **Handy-Benachrichtigungen** oder **The Machine selbst** (Probleme in The Machine, etwa ein Fehler), und wie viele du erledigt hast.

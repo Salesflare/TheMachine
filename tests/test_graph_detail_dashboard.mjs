@@ -173,7 +173,7 @@ try{
  await page.goBack();
  await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();
  // Another tab drops the link; a deep link opens the page straight away, with the tabs.
- await navClick(page.locator('nav [data-tab="events"]'));
+ await navClick(page.locator('nav [data-tab="feedback"]'));
  assert.equal(new URL(page.url()).hash,'');
  const fresh=await context.newPage();fresh.on('pageerror',e=>errors.push(e.message));
  await fresh.goto(base+'#graph/wa%3A3247000001');

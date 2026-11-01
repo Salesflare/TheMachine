@@ -10,7 +10,7 @@ To-dos come from reviews: your Machine reads what came in, in small batches, wit
 
 ## Reviews are off
 
-The top of Suggestions says "Reviews are off, so no suggestions arrive yet." On a hosted Machine, press **Turn on reviews**. On your own computer, run `./install.sh --activate`.
+The top of To-dos says "Reviews are off, so no suggestions arrive yet." On a hosted Machine, press **Turn on reviews**. On your own computer, run `./install.sh --activate`.
 
 ## Your model's limit
 

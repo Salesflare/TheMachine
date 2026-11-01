@@ -18,10 +18,13 @@ const out = args.out || '/tmp/machine-shots';
 const widths = (args.widths || '390,1280').split(',').map(Number);
 const themes = (args.themes || 'light,dark').split(',');
 const PAGES = {
-  suggestions: {tab: 'inbox'}, calendar: {tab: 'calendar'}, events: {tab: 'events'}, graph: {tab: 'people'}, projects: {tab: 'people', sub: 'projects'}, fleet: {tab: 'fleet'},
-  feedback: {tab: 'feedback'}, connections: {tab: 'health'}, settings: {click: '#open-settings'},
+  todos: {tab: 'inbox'}, calendar: {tab: 'calendar'}, messages: {hash: '#messages'}, graph: {tab: 'people'}, projects: {tab: 'people', sub: 'projects'}, fleet: {tab: 'fleet'},
+  learning: {hash: '#learning=going'}, 'learning-learned': {hash: '#learning=learned'}, 'learning-changes': {hash: '#learning=changes'},
+  'learning-decisions': {hash: '#learning=decisions'}, 'learning-shared': {hash: '#learning=shared'},
+  connections: {tab: 'health'}, settings: {click: '#open-settings'}, palette: {palette: 'invoice'},
 };
-const pages = (args.pages || Object.keys(PAGES).join(',')).split(',');
+const DEFAULT_PAGES = ['todos', 'calendar', 'messages', 'graph', 'projects', 'fleet', 'learning', 'connections', 'settings'];
+const pages = (args.pages || DEFAULT_PAGES.join(',')).split(',');
 
 async function playwright() {
   for (const from of [OPENCLAW + '/node_modules/playwright-core/index.mjs', 'playwright-core', 'playwright']) {
@@ -113,9 +116,21 @@ try {
     if (pages.some(k => !k.startsWith('/'))) await page.goto(url, {waitUntil: 'networkidle'});
     for (const key of pages) {
       const spec = PAGES[key];
+      await page.evaluate(() => document.querySelector('dialog[open]')?.close());  // the palette, from a page before
       if (key.startsWith('/')) await page.goto(new URL(key, url).href, {waitUntil: 'networkidle'});  // any page by path, e.g. the control plane's
       else if (!spec) { console.error(`unknown page ${key}; pages: ${Object.keys(PAGES).join(', ')}, or a path like /account`); continue; }
-      else {
+      else if (spec.hash) {
+        // A page by its link (#messages, #learning=<sub>): the Messages results aren't in the sidebar, Learning's panes are links.
+        await page.evaluate(h => { location.hash = ''; location.hash = h; }, spec.hash);
+        await page.waitForTimeout(300);
+        if (spec.hash.startsWith('#learning=') && await page.locator(`[data-learn-tab="${spec.hash.split('=')[1]}"]`).count() === 0) { report.push({page: key, width, theme, skipped: 'nothing to show in this state'}); continue; }
+      } else if (spec.palette) {
+        // The command palette (Ctrl+K) with a search: its Messages group and See all results.
+        await page.evaluate(() => { location.hash = ''; location.hash = '#todos'; });
+        await page.keyboard.press('Control+k');
+        await page.keyboard.type(spec.palette);
+        await page.waitForTimeout(900);
+      } else {
         const target = spec.tab ? page.locator(`nav [data-tab="${spec.tab}"]`) : page.locator(spec.click);
         if (!await target.isVisible()) { report.push({page: key, width, theme, skipped: 'not shown in this state'}); continue; }
         await target.click();

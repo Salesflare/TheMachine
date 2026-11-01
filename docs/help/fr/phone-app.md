@@ -8,7 +8,7 @@ order: 3
 ---
 Le tableau de bord s’installe comme une app sur un téléphone ou un ordinateur. Il envoie alors une notification pour chaque tâche, résultat et rappel quand vous n’êtes pas sur le tableau de bord, pendant vos [heures de travail](work-hours.md). Choisissez ce qu’il envoie dans [Notifications](notifications.md).
 
-Une note discrète en haut des Suggestions propose les deux, l’un après l’autre : d’abord l’app, puis les notifications. **Pas maintenant** la masque pendant 14 jours, et un second **Pas maintenant** l’arrête sur cet appareil. Les mêmes réglages restent dans **Paramètres**, **Général**, **Cet appareil**.
+Une note discrète en haut de Tâches propose les deux, l’un après l’autre : d’abord l’app, puis les notifications. **Pas maintenant** la masque pendant 14 jours, et un second **Pas maintenant** l’arrête sur cet appareil. Les mêmes réglages restent dans **Paramètres**, **Général**, **Cet appareil**.
 
 ## Sur un ordinateur (Chrome ou Edge)
 

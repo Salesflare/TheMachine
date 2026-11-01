@@ -10,7 +10,7 @@ Sua Machine lê tudo o que chega e cria uma tarefa só quando algo precisa de vo
 
 ## Onde ficam as tarefas
 
-A aba **Sugestões** agrupa as tarefas:
+A página **Tarefas** agrupa as tarefas:
 
 - **Pronta para você**: preparada e aguardando sua aprovação.
 - **Precisa da sua decisão**: algo que só você pode decidir.
@@ -57,7 +57,7 @@ Uma tarefa "Aguardando" (alguém prometeu algo a você) traz um link para a sua 
 
 ## Crie uma você mesmo
 
-**Nova tarefa** (abaixo de **Encontrar uma tarefa** no computador) adiciona uma tarefa para qualquer coisa. Criar a tarefa não envia nada.
+**Nova tarefa** (abaixo de **Pesquisar** no computador) adiciona uma tarefa para qualquer coisa. Criar a tarefa não envia nada.
 
 - **Vence**: digite um dia ou um horário, como "amanhã", "próxima sex", "3 nov", "15:00", "2pm", "em 2 horas" ou "amanhã 9". Ela entende outros idiomas também ("over 2 uur", "morgen 9u"). O ícone do calendário tem opções rápidas, como ao adiar, e **Escolher data**.
 - **E-mail**: anexe o e-mail de que ela trata. A busca é só nos seus e-mails, pelo assunto ou pelo remetente.

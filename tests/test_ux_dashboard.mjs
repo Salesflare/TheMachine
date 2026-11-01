@@ -97,7 +97,7 @@ assert.equal(await page.locator('#task-'+ids[0]).count(),0);
 await scopeClick(page,'All');
 await page.locator('#section-ready').click();
 assert.equal(await page.locator('#task-'+ids[2]).count(),0);
-await navClick(page.locator('nav [data-tab="events"]'));
+await navClick(page.locator('nav [data-tab="feedback"]'));
 await page.evaluate(id=>location.hash='#card='+id,ids[2]);
 await page.locator('#task-'+ids[2]).waitFor({state:'visible'});
 await page.waitForFunction(()=>location.hash==='');

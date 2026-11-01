@@ -61,17 +61,18 @@ try{
  // Linux and Windows: Ctrl+K. ⌘ does nothing there. Labels say Ctrl K.
  {const {context,page}=await open(1440,900);
   assert.equal(await page.locator('#pal-open kbd').textContent(),'Ctrl K');
-  await focusOn(page.locator('#side-find'));await page.keyboard.press('Meta+k');assert.ok(!(await isOpen(page)),'⌘K is not Linux’s key');
+  await page.evaluate(()=>{const i=document.createElement('input');i.id='t-field';i.style.cssText='position:fixed;top:0;left:300px;z-index:9';document.body.append(i)});
+  await focusOn(page.locator('#t-field'));await page.keyboard.press('Meta+k');assert.ok(!(await isOpen(page)),'⌘K is not Linux’s key');
   await page.keyboard.press('Control+k');await pal(page).waitFor();assert.equal(await page.evaluate(()=>document.activeElement.id),'pal-q');
   assert.deepEqual((await groups(page)).slice(0,2),['Actions','Go to']);
   // focus stays in the palette (Tab), Esc closes and focus goes back where it was
   await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.id),'pal-q');
-  await page.keyboard.press('Escape');assert.ok(!(await isOpen(page)));assert.equal(await page.evaluate(()=>document.activeElement.id),'side-find');
+  await page.keyboard.press('Escape');assert.ok(!(await isOpen(page)));assert.equal(await page.evaluate(()=>document.activeElement.id),'t-field');
   // Ctrl+K toggles it closed too
   await page.keyboard.press('Control+k');await pal(page).waitFor();await page.keyboard.press('Control+k');assert.ok(!(await isOpen(page)));
   // / opens it, but not in a field: there it types a /
-  await page.locator('#side-find').fill('');await page.locator('#side-find').press('/');assert.ok(!(await isOpen(page)));assert.equal(await page.locator('#side-find').inputValue(),'/');
-  await page.locator('#side-find').fill('');await page.locator('body').click({position:{x:700,y:5}});await page.keyboard.press('/');await pal(page).waitFor();
+  await page.locator('#t-field').fill('');await page.locator('#t-field').press('/');assert.ok(!(await isOpen(page)));assert.equal(await page.locator('#t-field').inputValue(),'/');
+  await page.locator('#t-field').fill('');await page.locator('body').click({position:{x:700,y:5}});await page.keyboard.press('/');await pal(page).waitFor();
   // Type, arrows, Enter runs: "conn" → Connections; Esc puts focus back
   await page.keyboard.type('conn');assert.equal((await labels(page))[0],'Connections');
   await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowUp');assert.equal(await page.locator('#pal-list [aria-selected="true"] .pal-label').textContent(),'Connections');
@@ -89,7 +90,7 @@ try{
   await page.locator('#pal-list .pal-group',{hasText:'Organizations'}).waitFor();
   const lateIn=page.waitForResponse(r=>r.url().includes('/api/graph?q=ac')&&!r.url().includes('acme'));late();await (await lateIn).finished();
   await page.evaluate(()=>new Promise(r=>setTimeout(r)));  // the page has had the late answer
-  assert.deepEqual(await groups(page),['Organizations','Projects'],'no People from the stale answer');
+  assert.deepEqual(await groups(page),['Organizations','Projects','Messages'],'no People from the stale answer');  // Messages: the message search, last
   assert.ok(graphQueries.includes('acme'));
   await page.locator('#pal-q').fill('contract');await page.locator('#pal-list .pal-group',{hasText:'To-dos'}).waitFor();
   assert.ok((await labels(page)).includes('Send Sam the signed contract'));
@@ -107,8 +108,8 @@ try{
   await page.keyboard.press('g');await page.keyboard.press('p');assert.equal(await tab(page),'people');
   await page.keyboard.press('g');await page.keyboard.press('f');assert.equal(await tab(page),'people','no Fleet: g f does nothing');
   await page.keyboard.press('g');await page.keyboard.press('s');
-  await focusOn(page.locator('#side-find'));await page.keyboard.type('gc');assert.equal(await tab(page),'inbox');assert.equal(await page.locator('#side-find').inputValue(),'gc');
-  await page.locator('#side-find').fill('');
+  await focusOn(page.locator('#t-field'));await page.keyboard.type('gc');assert.equal(await tab(page),'inbox');assert.equal(await page.locator('#t-field').inputValue(),'gc');
+  await page.locator('#t-field').fill('');
   await page.evaluate(()=>{const d=document.createElement('div');d.id='ce';d.contentEditable='true';document.body.append(d)});await focusOn(page.locator('#ce'));
   for(const k of ['n','c','?','/','g','e','j','d'])await page.keyboard.press(k);
   assert.ok(!(await isOpen(page))&&!(await page.locator('#new-card').isVisible())&&!(await page.locator('#keys-sheet').count()),'nothing fired in contenteditable');

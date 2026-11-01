@@ -51,7 +51,7 @@ Anche The Machine può aggiungerle. Chiediglielo su un’attività, come "aggiun
 
 The Machine le legge entrambe per i passi successivi della riunione. Sono Lavoro o Personali come la riunione, e vanno al tuo team solo quando ci va la riunione.
 
-Una riunione si apre con questi dettagli ovunque la trovi: in una cronologia, in Eventi o come fonte di un to-do. **Invito originale** in fondo mostra l’invito così come è arrivato.
+Una riunione si apre con questi dettagli ovunque la trovi: in una cronologia, in una ricerca tra i messaggi o come fonte di un to-do. **Invito originale** in fondo mostra l’invito così come è arrivato.
 
 ## Aggiungi o modifica un evento
 

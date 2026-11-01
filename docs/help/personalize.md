@@ -14,7 +14,7 @@ Most of it happens by itself. Your Machine learns from what you do, so there is 
 - What you want: from the to-dos you finish, dismiss or snooze, and why.
 - Facts and habits: from what you say in a to-do's chat, like "I never take calls on Fridays".
 
-About twice a day it makes a few small changes from this. **Feedback**, **What I've learned** shows each one, with **Undo**. See [Writing](writing.md#it-keeps-learning).
+About twice a day it makes a few small changes from this. **Learning**, **Changes** shows each one, with **Undo**. See [Writing](writing.md#it-keeps-learning).
 
 ## Teach it faster
 

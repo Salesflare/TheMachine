@@ -10,7 +10,7 @@ Les tâches viennent des revues : votre Machine lit ce qui est arrivé, par peti
 
 ## Les revues sont désactivées
 
-Le haut des Suggestions indique « Les revues sont désactivées, donc aucune suggestion n’arrive encore. » Sur une Machine hébergée, appuyez sur **Activer les revues**. Sur votre propre ordinateur, lancez `./install.sh --activate`.
+Le haut de Tâches indique « Les revues sont désactivées, donc aucune suggestion n’arrive encore. » Sur une Machine hébergée, appuyez sur **Activer les revues**. Sur votre propre ordinateur, lancez `./install.sh --activate`.
 
 ## La limite de votre modèle
 

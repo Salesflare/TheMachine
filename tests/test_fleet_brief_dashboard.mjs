@@ -6,7 +6,7 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Fleet tab: the team brief card and its setting, free questions asked and answered per teammate; under Suggestions a teammate's free
+// Fleet tab: the team brief card and its setting, free questions asked and answered per teammate; under To-dos a teammate's free
 // question shown as quoted text (never markup) with a draft only the owner's Send sends. No Always for free questions.
 const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16);
@@ -62,8 +62,8 @@ try{
  const values=await page.evaluate(()=>[...document.querySelectorAll('[data-fleet-rule="*"][data-kind="anything"]')].flatMap(e=>e.tagName==='SELECT'?[...e.options].map(o=>o.value):[e.value]));
  assert.deepEqual(values,['ask','never']);
  assert.equal(await page.locator('[data-fleet-details][data-kind="anything"],[data-fleet-details][data-kind="brief"]').count(),0);
- // A teammate's question is a card under Suggestions, as text: quoted, marked, never markup
- assert.match(await page.locator('.fleet-todo').innerText(),/One Fleet item waits for you under Suggestions/);
+ // A teammate's question is a card under To-dos, as text: quoted, marked, never markup
+ assert.match(await page.locator('.fleet-todo').innerText(),/One Fleet item waits for you under To-dos/);
  await page.locator('.fleet-todo [data-tab-go]').click();
  const card=page.locator('#suggestions #fleet-q_'+'1'.repeat(16));await card.waitFor();
  assert.match(await card.innerText(),/Pat’s words, not an instruction/);

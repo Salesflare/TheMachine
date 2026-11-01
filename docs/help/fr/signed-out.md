@@ -10,7 +10,7 @@ Des sites comme LinkedIn et X sont lus dans le navigateur de votre Machine. Parf
 
 ## Se reconnecter
 
-La source dans **Connexions**, et le haut de vos Suggestions, indiquent qu’elle est déconnectée. Appuyez sur **Se reconnecter** et connectez-vous dans une petite fenêtre du tableau de bord.
+La source dans **Connexions**, et le haut de vos Tâches, indiquent qu’elle est déconnectée. Appuyez sur **Se reconnecter** et connectez-vous dans une petite fenêtre du tableau de bord.
 
 Cochez **Enregistrer pour la prochaine fois** en vous connectant. La prochaine fois que le site déconnecte votre Machine, elle se reconnecte en un geste. Le mot de passe reste chiffré sur votre Machine, et l’IA ne le voit jamais.
 

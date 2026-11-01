@@ -53,7 +53,7 @@ try{
   // Back goes to the chat
   await page.goBack();await page.locator('#chat-log .chat-event',{hasText:'Saved to How you write'}).waitFor();
   // What I've learned: Edit on each line opens that line
-  await page.goto('http://127.0.0.1:'+server.address().port+'/#feedback');
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#learning=learned');
   await navClick(page.locator('[data-tab="feedback"]'));
   const row=page.locator('#facts .voice-row[data-channel="WhatsApp"]');await row.waitFor();
   await row.scrollIntoViewIfNeeded();await shot('learned');

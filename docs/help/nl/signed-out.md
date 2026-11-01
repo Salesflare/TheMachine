@@ -10,7 +10,7 @@ Sites zoals LinkedIn en X worden gelezen in de eigen browser van je Machine. Som
 
 ## Opnieuw inloggen
 
-De bron op **Koppelingen** en de bovenkant van je Suggesties melden dat hij is uitgelogd. Druk op **Opnieuw inloggen** en log in, in een klein venster op het dashboard.
+De bron op **Koppelingen** en de bovenkant van je To-do's melden dat hij is uitgelogd. Druk op **Opnieuw inloggen** en log in, in een klein venster op het dashboard.
 
 Vink **Bewaren voor de volgende keer** aan als je inlogt. De volgende keer dat de site je Machine uitlogt, logt hij met één tik opnieuw in. Het wachtwoord blijft versleuteld op je Machine; de AI ziet het nooit.
 

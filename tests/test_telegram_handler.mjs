@@ -168,7 +168,7 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
 // A Fleet question: the tap goes to the service with the tapped message id; the service's message replaces the old one.
 {const saved=globalThis.fixtureCall,calls=[];const q='q_'+'c'.repeat(16);
  globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);if(args.message_id!=='321'){throw Object.assign(new Error('That Telegram message is not the one sent for this question'),{status:400});}
-  return {status:'answered',message:{text:"Pat's Machine asks: Who knows someone at acme.example?\n   → Answered once",buttons:[[{text:'Open in Suggestions',url:'https://machine.example.ts.net/assistant/#fleet='+q}]]}};};
+  return {status:'answered',message:{text:"Pat's Machine asks: Who knows someone at acme.example?\n   → Answered once",buttons:[[{text:'Open in To-dos',url:'https://machine.example.ts.net/assistant/#fleet='+q}]]}};};
  const fleetCtx=(data,message='321')=>({...ctx('accept',message),callback:{data,chatId:'1000001',messageId:message}});
  const before=edits.length;await handler(fleetCtx(`assistant:fleet:${q}:once`));
  assert.deepEqual(calls.pop(),['fleet_decide',{id:q,choice:'once',source:'telegram',message_id:'321',decision_id:'telegram:unique'}]);

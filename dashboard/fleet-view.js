@@ -602,7 +602,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
   +actEmbed()});
  const current=panes.some(p=>p.id===fleetPane)?fleetPane:panes[0].id;
  let html=f.off?pageNotice('The Network is off for now. Nothing is asked or answered.'):'';
- {const todo=fleetCardsOf(f).length;if(todo)html+=pageNotice(t(['One Fleet item waits for you under Suggestions.','{} Fleet items wait for you under Suggestions.'],todo),'Show',{'tab-go':'inbox'},'fleet-todo')}
+ {const todo=fleetCardsOf(f).length;if(todo)html+=pageNotice(t(['One Fleet item waits for you under To-dos.','{} Fleet items wait for you under To-dos.'],todo),'Show',{'tab-go':'inbox'},'fleet-todo')}
  html+=`<div class="fleet-tabs" role="tablist" aria-label="Fleet">${panes.map(p=>`<button type="button" role="tab" data-fleet-pane="${esc(p.id)}" aria-selected="${p.id===current}"><span class="ell">${esc(p.label)}</span>${p.badge?` <span class="badge">${p.badge}</span>`:''}</button>`).join('')}</div>`;
  // A slot for suggested connections (people already on the Network you may know), filled by its own feature.
  html+='<div id="fleet-discover" class="fleet-discover"></div>';

@@ -51,7 +51,7 @@ The Machine también puede añadirlas. Pídeselo en una tarea, como "añade esta
 
 The Machine lee las dos para los siguientes pasos de la reunión. Son de Trabajo o Personales como la reunión, y solo van a tu equipo cuando la reunión va.
 
-Una reunión se abre con estos detalles dondequiera que la encuentres: en una cronología, en Eventos o como fuente de una tarea. **Invitación original** abajo muestra la invitación tal como llegó.
+Una reunión se abre con estos detalles dondequiera que la encuentres: en una cronología, en una búsqueda de mensajes o como fuente de una tarea. **Invitación original** abajo muestra la invitación tal como llegó.
 
 ## Añade o cambia un evento
 

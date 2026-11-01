@@ -8,7 +8,7 @@ order: 3
 ---
 O painel pode ser instalado como app no celular ou no computador. Depois ele envia uma notificação para cada tarefa, resultado e lembrete quando você não está no painel, dentro do seu [horário de trabalho](work-hours.md). Escolha o que ele envia em [Notificações](notifications.md).
 
-Um aviso discreto no topo de Sugestões oferece as duas coisas, uma de cada vez: primeiro o app, depois as notificações. **Agora não** esconde o aviso por 14 dias, e um segundo **Agora não** para de mostrar naquele dispositivo. Os mesmos controles ficam em **Configurações**, **Geral**, **Este dispositivo**.
+Um aviso discreto no topo de Tarefas oferece as duas coisas, uma de cada vez: primeiro o app, depois as notificações. **Agora não** esconde o aviso por 14 dias, e um segundo **Agora não** para de mostrar naquele dispositivo. Os mesmos controles ficam em **Configurações**, **Geral**, **Este dispositivo**.
 
 ## No computador (Chrome ou Edge)
 

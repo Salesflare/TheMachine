@@ -14,7 +14,7 @@ Quase tudo acontece sozinho. Sua Machine aprende com o que você faz, então há
 - O que você quer: pelas tarefas que você conclui, dispensa ou adia, e por quê.
 - Fatos e hábitos: pelo que você diz no chat de uma tarefa, como "nunca atendo ligações às sextas".
 
-Cerca de duas vezes por dia, ela faz algumas pequenas mudanças a partir disso. **Feedback**, **O que aprendi** mostra cada uma, com **Desfazer**. Veja [Escrita](writing.md#it-keeps-learning).
+Cerca de duas vezes por dia, ela faz algumas pequenas mudanças a partir disso. **Aprendizado**, **Alterações** mostra cada uma, com **Desfazer**. Veja [Escrita](writing.md#it-keeps-learning).
 
 ## Ensine mais rápido
 
