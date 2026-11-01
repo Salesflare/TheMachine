@@ -49,5 +49,5 @@ Apprentissage a une rangée d’onglets. Un onglet encore vide n’est pas affic
   - **Du premier coup** : parmi les tâches lancées avec **Faire**, combien n’ont demandé aucune correction ensuite.
   - **Terminée** : parmi les tâches lancées avec **Faire**, combien ont abouti sans que vous demandiez de continuer ou de réessayer.
   - **Envoyé tel quel** : parmi les brouillons envoyés, combien sont partis sans retouche ni **Modifier** avant.
-  - Chaque chiffre se compare aux 30 jours précédents. **Utile, semaine par semaine** montre les 8 dernières semaines, une barre par semaine, dès que deux semaines ont des décisions ; une marque sous une semaine signale que les règles ont changé cette semaine-là.
+  - Chaque chiffre se compare aux 30 jours précédents. Le graphique commence à votre première tâche décidée : une barre par jour les deux premières semaines, puis une par semaine, jusqu’aux 8 dernières semaines.
   - **Utile par source** : d’où viennent les tâches, comme **E-mail**, **Ajouté par vous** (créées avec **Nouvelle tâche**), **Notifications sur le téléphone** ou **The Machine elle-même** (problèmes dans The Machine, comme une erreur), et combien vous en avez traitées.

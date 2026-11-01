@@ -6802,17 +6802,24 @@ class Store:
 
     def quality_trend(self, days=14, weeks=8):
         """Hit rate per local day and per week (from Monday), oldest first, so progress shows.
-        A card counts in the day it was made, with how it was decided since."""
+        A card counts in the day it was made, with how it was decided since. `first` is the local day of the first
+        decided to-do (None before any), so the chart starts there and never with empty weeks from before the Machine.
+        Rule changes are not marked: drafting rules and PREPARATION.md change nearly every day, so a mark said nothing."""
         zone = local_tz()
         today = dt.datetime.fromisoformat(now()).astimezone(zone).date()
         def bucket(start, end):
             utc = lambda d: dt.datetime.combine(d, dt.time(), zone).astimezone(dt.timezone.utc).isoformat()
             q = self.quality(until=utc(end), since=utc(start))
-            changes = [c['text'] for c in self.rule_changes(utc(start)) if c['at'] < utc(end) and not c['text'].endswith(' tracked')]
-            return {'start': start.isoformat(), 'changes': changes,
-                    **{k: q[k] for k in ('worth_it', 'dismissed', 'open', 'hit_rate', 'do_it', 'first_time_rate', 'finished_rate')}}
+            return {'start': start.isoformat(), **{k: q[k] for k in ('worth_it', 'dismissed', 'open', 'hit_rate', 'do_it', 'first_time_rate', 'finished_rate')}}
         monday = today - dt.timedelta(days=today.weekday())
-        return {'daily': [bucket(today - dt.timedelta(days=i), today - dt.timedelta(days=i - 1)) for i in range(days - 1, -1, -1)],
+        with self.connect() as db:  # decided as quality() counts it: dismissed, done, or Do it or Send by the owner
+            first = db.execute(
+                "SELECT min(s.created_at) FROM suggestions s WHERE (s.status IN ('rejected','completed') OR EXISTS(SELECT 1 FROM decisions d "
+                "WHERE d.suggestion_id=s.id AND d.choice IN ('accept','send') AND d.source IN ('telegram','dashboard'))) "
+                "AND s.id NOT IN (SELECT suggestion_id FROM decisions WHERE id LIKE 'followed-up:%' OR id LIKE 'expired:%') "
+                "AND coalesce((SELECT e.kind FROM events e WHERE e.id=json_extract(s.event_ids,'$[0]')),'')!='assistant.test'").fetchone()[0]
+        return {'first': dt.datetime.fromisoformat(first).astimezone(zone).date().isoformat() if first else None,
+                'daily': [bucket(today - dt.timedelta(days=i), today - dt.timedelta(days=i - 1)) for i in range(days - 1, -1, -1)],
                 'weekly': [bucket(monday - dt.timedelta(weeks=i), monday - dt.timedelta(weeks=i - 1)) for i in range(weeks - 1, -1, -1)]}
 
     def quality_text(self, days=30):

@@ -31,15 +31,26 @@ function qualityHTML(q){if(!q||!q.cards)return `<p class="q-empty">${esc(t('Not 
  const srcRow=([k,n])=>{const d=n.worth_it+n.dismissed;return `<div${SOURCE_TIPS[k]?` title="${esc(SOURCE_TIPS[k])}"`:''}><span class="grow">${esc(k)}${SOURCE_TIPS[k]?`<small>${esc(SOURCE_TIPS[k])}</small>`:''}</span><span class="q-n">${d?esc(t('{} of {}',n.worth_it,d))+` <b>${qPct(n.worth_it,d)}%</b>`:esc(t('None decided yet'))}</span></div>`};
  return `<p class="learn-intro">${esc(t('Last 30 days. Higher is better.'))}</p><div class="q-tiles">${tiles.join('')}</div>${trendChart(q.trend)}${noteSplit(q.notes)}`
   +(src.length?`<h3 class="q-h">${esc(t('Worth it per source'))}</h3><p class="learn-intro">${esc(t('Where to-dos came from, and how many you acted on of those you decided.'))}</p><div class="list quality-sources"><div class="q-head"><span class="grow">${esc(t('Source'))}</span><span>${esc(t('Acted on'))}</span></div>${src.map(srcRow).join('')}</div>`:'')}
-// Worth it week by week: one bar per week, its height and the number above it that week's %, the week under it and how
-// many to-dos were decided. Shown once two weeks have decided to-dos.
-function trendChart(trend){const rows=trend?.weekly||[];if(rows.filter(r=>r.worth_it+r.dismissed).length<2)return '';
- const day=r=>new Date(r.start+'T12:00'),wk=r=>day(r).toLocaleDateString(DL,{day:'numeric',month:'short'}),marks=rows.some(r=>r.changes?.length);
- // The label under a bar stays one short line: the month only where it starts or changes ("Sep 7", "14", "21", "Oct 5")
- const short=(r,i)=>i&&day(rows[i-1]).getMonth()===day(r).getMonth()?day(r).toLocaleDateString(DL,{day:'numeric'}):wk(r);
- const col=(r,i)=>{const n=r.worth_it+r.dismissed,label=n?t('Week of {}: {}% worth it, {} decided',wk(r),r.hit_rate,n):t('Week of {}: nothing decided',wk(r));
-  return `<div role="listitem" aria-label="${esc(label)}" title="${esc([label,...r.changes||[]].join('\n'))}"><small class="v">${n?r.hit_rate+'%':''}${r.changes?.length?'<i class="mark" aria-hidden="true">◆</i>':''}</small><span class="bar"><em${n?` style="height:${Math.max(2,r.hit_rate)}%"`:' class="none"'}></em></span><span class="w">${esc(short(r,i))}</span><span class="n${n?'':' zero'}">${esc(t('{} decided',n))}</span></div>`};
- return `<figure class="trend"><figcaption><strong>${esc(t('Worth it, week by week'))}</strong><small>${esc(t('Last 8 weeks. Each bar is that week’s Worth it.'))}</small></figcaption><div class="bars" role="list">${rows.map(col).join('')}</div>${marks?`<p class="trend-legend"><i class="mark" aria-hidden="true">◆</i>${esc(t('Rules changed that week'))}</p>`:''}</figure>`}
+// Worth it over time, from the first decided to-do on, never empty periods before it: under 14 days one bar per day,
+// then one per week from the first week, at most the last 8. Each bar's height and the number above it are that period's %,
+// the day or week under it; how many were decided is under it on a computer, and always in the hover and aria label.
+// An empty period inside the range is a thin baseline. Fewer than two periods with decisions: one plain line instead.
+function trendChart(trend){const first=trend?.first,today=trend?.daily?.at(-1)?.start;if(!first||!today)return '';
+ const at=s=>new Date(s+'T12:00'),ymdOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,age=Math.round((at(today)-at(first))/864e5)+1,byDay=age<14;
+ const monday=ymdOf((d=>{d.setDate(d.getDate()-(d.getDay()+6)%7);return d})(at(first)));
+ const all=byDay?trend.daily:trend.weekly,rows=all.filter(r=>r.start>=(byDay?first:monday)),dated=n=>rows.filter(r=>r.worth_it+r.dismissed).length>=n;
+ if(!dated(2))return `<p class="trend-wait">${esc(t('The chart starts after a few more days.'))}</p>`;
+ const full=r=>at(r.start).toLocaleDateString(DL,byDay?{weekday:'short',day:'numeric',month:'short'}:{day:'numeric',month:'short'});
+ // The label under a bar stays on one line: a weekday and date ("Mon 26", stacked on a phone), or a week's date with its
+ // month only where it starts or changes ("Sep 7", "14", "21", "Oct 5")
+ // A first week that starts mid-week shows its first day, as "Since" says ("20 Sept", not "14 Sept")
+ const from=(r,i)=>at(!byDay&&!i&&r.start<first?first:r.start);
+ const label=(r,i)=>{const d=from(r,i);if(byDay)return `<span>${esc(d.toLocaleDateString(DL,{weekday:'short'}))}</span> <span>${esc(d.toLocaleDateString(DL,{day:'numeric'}))}</span>`;
+  return esc(i&&from(rows[i-1],i-1).getMonth()===d.getMonth()?d.toLocaleDateString(DL,{day:'numeric'}):d.toLocaleDateString(DL,{day:'numeric',month:'short'}))};
+ const col=(r,i)=>{const n=r.worth_it+r.dismissed,name=byDay?full(r):t('Week of {}',full({start:ymdOf(from(r,i))})),tip=n?t('{}: {}% worth it, {} decided',name,r.hit_rate,n):t('{}: nothing decided',name);
+  return `<div role="listitem" aria-label="${esc(tip)}" title="${esc(tip)}"><small class="v">${n?r.hit_rate+'%':''}</small><span class="bar"><em${n?` style="height:${Math.max(2,r.hit_rate)}%"`:' class="none"'}></em></span><span class="w">${label(r,i)}</span><span class="n">${n?esc(t('{} decided',n)):''}</span></div>`};
+ const since=rows[0].start<=first,sub=byDay?t('Since {}. Each bar is that day’s Worth it.',full({start:first})):since?t('Since {}. Each bar is that week’s Worth it.',at(first).toLocaleDateString(DL,{day:'numeric',month:'short'})):t('Last 8 weeks. Each bar is that week’s Worth it.');
+ return `<figure class="trend"><figcaption><strong>${esc(t(byDay?'Worth it, day by day':'Worth it, week by week'))}</strong><small>${esc(sub)}</small></figcaption><div class="bars${byDay?' days':''}" role="list">${rows.map(col).join('')}</div></figure>`}
 let refreshes=0;
 // A redraw keeps the field someone is in: focus and caret back on the same field (by id) when the redraw replaced it
 function focusKept(draw){const a=document.activeElement,id=a&&a!==document.body&&a.id,sel=id&&a.matches?.(TYPED)?[a.selectionStart,a.selectionEnd]:null;draw();

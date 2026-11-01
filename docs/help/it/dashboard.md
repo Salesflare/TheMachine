@@ -49,5 +49,5 @@ Apprendimento ha una fila di schede. Una scheda ancora vuota non compare.
   - **Al primo colpo**: delle attività avviate con **Fallo**, quante non hanno avuto bisogno di correzioni dopo.
   - **Completata**: delle attività avviate con **Fallo**, quante sono finite senza che tu le chiedessi di continuare o di riprovare.
   - **Inviata così com’è**: delle bozze che hai inviato, quante sono partite senza una modifica o un **Cambia** prima.
-  - Ogni numero dice come si confronta con i 30 giorni precedenti. **Utile, settimana per settimana** mostra le ultime 8 settimane, una barra per settimana, quando ci sono due settimane con decisioni; un segno sotto una settimana vuol dire che quella settimana sono cambiate delle regole.
+  - Ogni numero dice come si confronta con i 30 giorni precedenti. Il grafico parte dalla tua prima attività decisa: una barra al giorno nelle prime due settimane, poi una a settimana, fino alle ultime 8 settimane.
   - **Utile per origine**: da dove arrivano le attività, come **Email**, **Aggiunto da te** (create con **Nuova attività**), **Notifiche del telefono** o **The Machine stessa** (problemi in The Machine, come un errore), e su quante hai agito.

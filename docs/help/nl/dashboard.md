@@ -49,5 +49,5 @@ Leren heeft een rij tabbladen. Een tabblad waar nog niets in staat, valt weg.
   - **Meteen goed**: van de to-do's die je startte met **Doe het**, hoeveel er achteraf geen correctie nodig hadden.
   - **Afgerond**: van de to-do's die je startte met **Doe het**, hoeveel er klaar raakten zonder dat je vroeg om door te gaan of het opnieuw te proberen.
   - **Ongewijzigd verstuurd**: van de concepten die je verstuurde, hoeveel er gingen zonder bewerking of eerst **Wijzigen**.
-  - Elk getal zegt hoe het zich verhoudt tot de 30 dagen ervoor. **De moeite waard, week na week** toont de laatste 8 weken, één staaf per week, zodra er twee weken met beslissingen zijn; een streepje onder een week betekent dat de regels die week veranderden.
+  - Elk getal zegt hoe het zich verhoudt tot de 30 dagen ervoor. De grafiek begint bij je eerste besliste to-do: de eerste twee weken één staaf per dag, daarna één per week, tot de laatste 8 weken.
   - **De moeite waard per bron**: waar de to-do's vandaan kwamen, zoals **E-mail**, **Door jou toegevoegd** (gemaakt met **Nieuwe to-do**), **Telefoonmeldingen** of **The Machine zelf** (problemen in The Machine, zoals een fout), en hoeveel je er oppakte.
