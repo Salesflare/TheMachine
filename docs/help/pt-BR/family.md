@@ -21,7 +21,7 @@ Quando uma tarefa é sobre planos de família com alguém que ainda não está n
 - **Convidar** abre o formulário de convite na sua página da conta, com o endereço já preenchido. Você vê o e-mail que a pessoa receberia antes de qualquer envio. Nada é enviado sem você.
 - **Agora não** esconde por 90 dias.
 - Só para pessoas que são da família segundo seu Graph ou suas próprias palavras. Nunca para contatos de trabalho, quem já está na sua Família ou alguém com um convite aberto. No máximo uma vez por pessoa.
-- Desative em Configurações, Fleet: **Sugerir convidar a família**.
+- Desative em Configurações, Geral, em Fleet: **Sugerir convidar a família**.
 
 ## Regras
 

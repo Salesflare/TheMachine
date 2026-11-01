@@ -16,9 +16,11 @@ On a phone, tap the search icon in the top bar.
 
 Press `?` for **Keyboard shortcuts**, the full list for your computer.
 
-- Go to a page: `G` then `T` To-dos, `C` Calendar, `P` People, `O` Organizations, `J` Projects, `F` Fleet, `L` Learning, `N` Connections, `,` Settings. `G` then `E` opens the message search results. The old `G` then `S` and `G` then `B` still work.
-- `N` adds a new to-do. `T` starts Talk, or ends it while it's live. On the Calendar, `T` goes to today. `J` and `K` (or `↓` and `↑`) move through a list, Enter opens.
+- Go to a page: `G` then `T` To-dos, `C` Calendar, `P` People, `O` Organizations, `J` Projects, `W` Who's who (once it shows), `F` Fleet, `L` Learning, `N` Connections, `,` Settings. `G` then `E` opens the message search results. The old `G` then `S` and `G` then `B` still work.
+- `N` adds a new to-do. `T` starts Talk, or ends it while it's live. `J` and `K` (or `↓` and `↑`) move through a list, Enter opens.
 - On a to-do: `E` renames it, `S` snoozes it, `D` marks it done, `R` writes in its chat.
+- On the Calendar: `T` goes to today, `J` and `K` to the next or previous week or month. `A`, `W` and `M` switch to Agenda, Week and Month.
+- On a computer, `⌘B` on a Mac or `Ctrl B` on Windows and Linux folds the sidebar to icons and back.
 
 Keys don't work while typing in a field.
 

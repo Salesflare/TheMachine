@@ -21,7 +21,7 @@ Cuando una tarea trata de planes familiares con alguien que aún no está en tu 
 - **Invitar** abre el formulario de invitación en tu página de cuenta, con su dirección ya puesta. Verás el correo que recibiría antes de que salga nada. Nada se envía sin ti.
 - **Ahora no** lo oculta 90 días.
 - Solo para personas que son familia según tu Graph o tus propias palabras. Nunca para contactos de trabajo, personas que ya están en tu Familia ni alguien con una invitación abierta. Como mucho una vez por persona.
-- Desactívalo en Ajustes, Fleet: **Sugerir invitar a la familia**.
+- Desactívalo en Ajustes, General, en Fleet: **Sugerir invitar a la familia**.
 
 ## Reglas
 

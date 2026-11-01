@@ -33,7 +33,7 @@ Juste avant l’envoi, le fil est vérifié à nouveau, et si quelqu’un a écr
 
 Les relances d’un tableau arrivent en une seule tâche, jamais une par e-mail. Pendant la rédaction, elle indique « Rédaction de 3 relances… », puis « 8 relances prêtes pour Alpha testers ».
 
-**Vérifier** les affiche en entier, les unes sous les autres : un seul défilement suffit pour tout lire. **Envoyer**, **Modifier** et **Ignorer** apparaissent sur la relance en cours. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie, s ignore et c réécrit. **Envoyer tout ce qui est coché** envoie celles encore cochées.
+**Vérifier** les affiche en entier, les unes sous les autres : un seul défilement suffit pour tout lire. **Envoyer**, **Modifier** et **Ignorer** apparaissent sur la relance en cours. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie, s ignore (une seconde fois annule), x coche ou décoche, et c réécrit. **Envoyer tout ce qui est coché** envoie celles encore cochées.
 
 **Ignorer** décoche un brouillon et le place en bas, marqué Ignorée avec **Annuler** ; il n’est vraiment ignoré qu’à la fermeture de la vérification. Une relance ignorée revient avec **Récupérer** dans les relances du projet ou sur sa tâche dans Fait, tant qu’aucune relance plus récente n’est venue. La relance d’un seul projet est une tâche normale.
 

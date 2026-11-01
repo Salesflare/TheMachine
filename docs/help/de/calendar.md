@@ -8,7 +8,7 @@ order: 1
 ---
 ## Was er zeigt
 
-Die nächsten 7 Tage, mit:
+Deine Tage ab heute, mit:
 
 - Meetings aus den Kalendern, die du verbunden hast,
 - Aufgaben, die an dem Tag fällig sind, und zurückgestellten Aufgaben an dem Tag, an dem sie zurückkommen,
@@ -21,11 +21,15 @@ Ein gemeinsam gemachter Plan ist ein Versprechen, markiert mit „Mit“ und dem
 
 **Überfällig** kommt zuerst. Ein Meeting mit einer offenen Aufgabe zeigt sie an: **Vorbereitung bereit**, **Wird vorbereitet** oder **Aufgabe**.
 
-## Agenda oder Woche
+## Agenda, Woche oder Monat
 
-**Agenda** listet jeden Tag auf. Auf einem Computer zeigt **Woche** ein Raster. Deine Wahl wird auf diesem Gerät gespeichert.
+- **Agenda** listet jeden Tag auf. Scroll nach unten für spätere Tage, nach oben (oder **Frühere Tage anzeigen**) für frühere.
+- **Woche** zeigt ein Raster, Montag bis Sonntag. Auf dem Handy zeigt sie drei Tage.
+- **Monat** zeigt den ganzen Monat. Ein Computer zeigt bis zu drei Einträge pro Tag; ein Handy zeigt Punkte, und ein Tippen listet diesen Tag auf.
 
-Im Raster stehen Termine zur selben Zeit nebeneinander, solange jeder lesbar bleibt. Der Rest erscheint als **+N** und öffnet diesen Tag in der Agenda.
+**Heute**, ‹ und › oben blättern durch die Wochen oder Monate. Die gewählte Ansicht wird auf diesem Gerät gespeichert.
+
+Im Wochenraster stehen Termine zur selben Zeit nebeneinander, solange jeder lesbar bleibt. Der Rest erscheint als **+N** und öffnet diesen Tag in der Agenda.
 
 ## Etwas öffnen
 

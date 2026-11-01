@@ -16,6 +16,7 @@ La página **Tareas** las agrupa:
 - **Necesita tu decisión**: algo que solo tú puedes decidir.
 - **Preparando**: tu Machine está trabajando en ella. Una tarea a la que acabas de decir **Hazlo** se queda donde estaba mientras se prepara, y luego pasa a **Lista para ti**.
 - **Vuelve más tarde**: pospuesta.
+- **Promesas**: lo que prometiste y lo que otros te prometieron. Consulta [Promesas](promises.md).
 - **Parecen hechas**: tareas que ya parecen terminadas. Plegadas, justo encima de **Hecho / descartado**.
 - **Hecho / descartado**: cada tarea terminada, las más recientes primero, de 30 en 30 según te desplazas.
 

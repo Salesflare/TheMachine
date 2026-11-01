@@ -16,6 +16,7 @@ A página **Tarefas** agrupa as tarefas:
 - **Precisa da sua decisão**: algo que só você pode decidir.
 - **Preparando**: sua Machine está trabalhando nela. Uma tarefa em que você acabou de clicar em **Fazer** fica onde estava enquanto é preparada e depois vai para **Pronta para você**.
 - **Volta mais tarde**: adiada.
+- **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
 - **Parecem feitas**: tarefas que já parecem concluídas. Recolhidas, logo acima de **Feito / dispensado**.
 - **Feito / dispensado**: todas as tarefas concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola.
 

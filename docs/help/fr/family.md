@@ -21,7 +21,7 @@ Quand une tâche porte sur des projets de famille avec quelqu’un qui n’est p
 - **Inviter** ouvre le formulaire d’invitation sur votre page de compte, avec son adresse déjà remplie. L’e-mail qu’elle recevrait s’affiche avant tout envoi. Rien ne part sans vous.
 - **Pas maintenant** la masque pendant 90 jours.
 - Seulement pour les personnes de votre famille selon votre Graph ou vos propres mots. Jamais pour les contacts pro, les membres de votre Famille ni quelqu’un qui a une invitation en cours. Une fois par personne au plus.
-- Désactivez-la dans Paramètres, Fleet : **Suggérer d’inviter la famille**.
+- Désactivez-la dans Paramètres, Général, sous Fleet : **Suggérer d’inviter la famille**.
 
 ## Règles
 

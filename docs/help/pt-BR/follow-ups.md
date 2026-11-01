@@ -33,7 +33,7 @@ Logo antes do envio, a conversa é verificada de novo, e se alguém escreveu dep
 
 Os follow-ups de um quadro chegam como uma tarefa só, nunca uma por e-mail. Enquanto são escritos aparece “Escrevendo 3 follow-ups…”, depois “8 follow-ups prontos para Alpha testers”.
 
-**Revisar** mostra todos completos, um embaixo do outro, para você ler tudo rolando uma vez só. **Enviar**, **Editar** e **Pular** aparecem no atual. No teclado, j e k (ou as setas) navegam, Enter envia, e edita, s pula e c altera. **Enviar todos os marcados** envia os que continuam marcados.
+**Revisar** mostra todos completos, um embaixo do outro, para você ler tudo rolando uma vez só. **Enviar**, **Editar** e **Pular** aparecem no atual. No teclado, j e k (ou as setas) navegam, Enter envia, e edita, s pula (de novo desfaz), x marca ou desmarca, e c altera. **Enviar todos os marcados** envia os que continuam marcados.
 
 **Pular** desmarca um rascunho e o leva para o fim, marcado como Ignorada com **Desfazer**; ele só é pulado de vez quando você fecha a revisão. Um pulado volta com **Trazer de volta** nos follow-ups do projeto ou na tarefa em Feito, enquanto não houver um mais novo. O follow-up de um único projeto é uma tarefa normal.
 

@@ -10,14 +10,14 @@ order: 4
 
 - **Tareas**: tus tareas y promesas. Consulta [Tareas](cards.md).
 - **Calendario**: la semana que viene con tus reuniones, las tareas que vencen y las promesas. Consulta [Calendario](calendar.md).
-- **Graph**: las personas, organizaciones y proyectos de tus mensajes. Consulta [Graph](graph.md).
+- **Graph**: las personas, organizaciones y proyectos de tus mensajes, y **Quién es quién** cuando hay roles esperando tu confirmación. Consulta [Graph](graph.md).
 - **Fleet**: tu equipo, tu familia y tus amigos en The Machine Network, cuando tengas uno. Consulta [Fleet](fleet.md).
 - **Aprendizaje**: cómo van las tareas y qué ha aprendido.
 - **Conexiones**: tus fuentes y cómo van. Consulta [Conexiones](connections.md).
 
-**Ajustes** es el engranaje de arriba. **Buscar**, arriba en la barra lateral, encuentra primero tareas, luego personas, mensajes y más.
+**Buscar**, arriba en la barra lateral, encuentra primero tareas, luego personas, mensajes y más. **Navegador**, **Ayuda** y **Ajustes** están abajo en la barra lateral. En un teléfono, el botón de menú de la barra superior abre la barra lateral.
 
-**Navegador**, abajo en la barra lateral, muestra el navegador propio de tu Machine. En un ordenador se abre junto a la barra lateral, al tamaño del espacio que tiene, igual que **Ver en el navegador** en una tarea y **Abrir el navegador** cuando un sitio pide iniciar sesión. En un teléfono se abre en una pestaña nueva.
+**Navegador** muestra el navegador propio de tu Machine. En un ordenador se abre junto a la barra lateral, al tamaño del espacio que tiene, igual que **Ver en el navegador** en una tarea y **Abrir el navegador** cuando un sitio pide iniciar sesión. En un teléfono se abre en una pestaña nueva.
 
 La ventana delantera del navegador se muestra en el centro y el resto de la pantalla queda oscuro; un botón en la esquina muestra la pantalla entera. En una pantalla baja, toda la barra lateral se desplaza como una sola columna, tareas incluidas, como el menú en un teléfono.
 

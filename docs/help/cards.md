@@ -16,6 +16,7 @@ The **To-dos** page groups them:
 - **Needs your decision**: something only you can decide.
 - **Preparing**: your Machine is working on it. A to-do you just said **Do it** to stays where it was while it prepares, then moves to **Ready for you**.
 - **Coming back later**: snoozed.
+- **Promises**: what you promised and what others promised you. See [Promises](promises.md).
 - **Look done**: to-dos that seem finished already. Folded, right above **Done / dismissed**.
 - **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll.
 
