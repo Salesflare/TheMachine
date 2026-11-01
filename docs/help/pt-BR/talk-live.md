@@ -27,6 +27,8 @@ Peça para ler um rascunho, mudar, adiar, marcar como feita ou ir para a próxim
 
 Ela também alcança o resto da The Machine. Pergunte sobre uma pessoa, uma organização, um projeto, uma reunião ou uma promessa, e ela procura e mostra. Ela pode adiar uma tarefa, marcar como feita, dispensar, renomear ou reabrir, até uma em **Feito / dispensado**. Para todo o resto, ela cria uma tarefa, deixa o chat dela cuidar disso e conta a resposta.
 
+Ela também lembra das suas conversas anteriores com ela. Pergunte "o que eu decidi sobre o offsite?" ou "o que eu disse sobre a Acme semana passada?" e ela conta, com quando você disse. Só o Falar na barra lateral faz isso, não o Falar no chat de uma tarefa.
+
 Enquanto isso você pode ir para outra página: a barra fica embaixo, e **Falar** na barra lateral traz você de volta. Esta conversa dura até 30 minutos. Ela continua em segundo plano no computador e no Android. No iPhone, ela para quando o app sai da tela.
 
 ## Peça coisas e envie com um sim

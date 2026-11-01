@@ -21854,7 +21854,32 @@ class App(*APP_MIXINS):
                                **({'last': self.talk_when(h['last_at'])} if h.get('last_at') else {})} for h in hits]}
         if name == 'open_record':
             return self.talk_record(str(args.get('id') or ''), accounts)
+        if name == 'recall':
+            return self.talk_recall(' '.join(str(args.get('words') or '').split())[:200])
         raise ValueError('Unknown tool')
+
+    def talk_recall(self, words):
+        """recall: what the owner said or decided in earlier conversations and the notes (knowledge.recall, OpenClaw's
+        memory search). Each excerpt marked <untrusted>, since it can quote anyone; with RECALL_NOTE. Off, failing or
+        slow: nothing found, said plainly, never an error."""
+        if not words:
+            return {'error': 'Say what to look for.'}
+        found = knowledge.recall(self.memory_search, words)
+        if not found:
+            return {'found': [], 'searched': 'earlier conversations and notes for "%s"' % words, 'note': talk_live.NOTHING_NOTE}
+        mark = lambda r: ai_access.untrusted(clamp(' '.join(r['text'].split()), 600), 'conversation' if r['source'] == 'sessions' else 'notes')
+        return {'found': [{'from': r['from'], **({'when': self.talk_when(r['at'])} if r['at'] else {}), 'text': mark(r)} for r in found],
+                'note': talk_live.RECALL_NOTE}
+
+    def memory_search(self, request):
+        """OpenClaw's memory search, for knowledge.recall (memory-recall-run.mjs): one Gateway call with a short
+        timeout. None when Node or the Gateway is away or slow."""
+        try:
+            result = subprocess.run([node_bin(self.config), str(ROOT / 'memory-recall-run.mjs')], env=node_env(self.config),
+                                    input=json.dumps(request), capture_output=True, text=True, timeout=knowledge.RECALL_SECONDS)
+            return json.loads(result.stdout or 'null')
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            return None
 
     def talk_named(self, words):
         """The person or organization in the Graph these words (or this phone number) name; None."""

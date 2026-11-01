@@ -68,6 +68,8 @@ organizations and projects. `knowledge.py` answers them once:
   never a meeting ahead);
 - `search_messages`, `open_with` (promises both ways and open to-dos, an organization's people's too) and
   `last_contact`.
+- `recall`: what the owner said in earlier conversations and the notes, through OpenClaw's memory search
+  (`memory-recall-run.mjs`). Only for a caller that sees everything: transcripts carry no area to cut them to.
 
 A `Caller` carries the rules. The owner sees everything. A connected AI sees its connection's area, never the owner's
 own record or a teammate's, and no message the app holds back. Surfaces only format the answers.

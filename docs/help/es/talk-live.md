@@ -27,6 +27,8 @@ Pídele que lea un borrador, lo cambie, lo posponga, lo marque como hecho o pase
 
 También llega al resto de The Machine. Pregunta por una persona, una organización, un proyecto, una reunión o una promesa, y lo busca y te lo muestra. Puede posponer una tarea, marcarla como hecha, descartarla, cambiarle el nombre o reabrirla, también una de **Hecho / descartado**. Para todo lo demás, crea una tarea, deja que su chat se encargue y te dice la respuesta.
 
+También recuerda tus conversaciones anteriores con ella. Pregunta "¿qué decidí sobre el offsite?" o "¿qué dije de Acme la semana pasada?" y te lo dice, con cuándo lo dijiste. Solo lo hace Hablar en la barra lateral, no Hablar en el chat de una tarea.
+
 Mientras tanto puedes ir a otra página: la barra queda abajo, y **Hablar** en la barra lateral te trae de vuelta. Esta conversación dura hasta 30 minutos. Sigue en segundo plano en computadoras y Android. En iPhone, se detiene cuando la app sale de la pantalla.
 
 ## Pide cosas y envía con un sí

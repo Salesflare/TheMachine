@@ -265,3 +265,50 @@ def _card_visible(config, account_ids, caller):
         return True
     mine = json.loads(account_ids or '[]') if isinstance(account_ids, str) else list(account_ids or [])
     return card_area(config, mine) == caller.area and bool(set(mine) & set(caller.accounts or ()))
+
+
+# ------------------------------------------------------------------ earlier conversations
+
+RECALL_SECONDS = 8   # the most a recall waits for OpenClaw's memory search (Node, the Gateway, the search): Talk waits on it
+RECALL_LIMIT = 5
+RECALL_SOURCES = {'sessions': 'an earlier conversation', 'memory': 'the notes'}
+
+
+def recall_allowed(caller):
+    """Whether this caller may recall earlier conversations: only one that sees everything (the owner across Work and
+    Personal). Transcripts and memory notes carry no account, area or Only you mark, so they can't be cut to an area:
+    a connected AI, or anything asked for one area, gets nothing."""
+    return caller.accounts is None and caller.area is None and not caller.held and caller.me
+
+
+def recall(search, words, caller=OWNER, limit=RECALL_LIMIT):
+    """What the owner said or decided in earlier conversations with The Machine, and its notes: OpenClaw's memory
+    search (memory files, and past conversation transcripts where that is on), by meaning or by keywords as the Machine
+    has it. search(request) runs it (memory-recall-run.mjs) and answers {'results': [...]} or {'error'}.
+
+    [{'source': 'sessions' or 'memory', 'from': in words, 'text', 'at': ISO moment or None, 'origin'}], best first. The
+    text can quote anyone (a message pasted in a chat, a review of someone's mail): untrusted, for the surface to mark.
+    [] when the caller may not recall (recall_allowed), memory search is off, or it fails or is slow: never an error."""
+    words = ' '.join(str(words or '').split())[:300]
+    if not words or not recall_allowed(caller):
+        return []
+    try:
+        found = search({'query': words, 'max_results': max(1, min(int(limit), 8)), 'timeout_ms': (RECALL_SECONDS - 1) * 1000})
+    except Exception:  # noqa: BLE001 - recall is a nice-to-have: whatever breaks, the answer is nothing
+        return []
+    rows = found.get('results') if isinstance(found, dict) else None
+    out = []
+    for r in rows if isinstance(rows, list) else ():
+        if not isinstance(r, dict) or not str(r.get('text') or '').strip():
+            continue
+        source = 'sessions' if r.get('source') == 'sessions' else 'memory'
+        at = None
+        # When it was said: a transcript's moment. A note's is when it was indexed, not when it was written, so none.
+        if source == 'sessions' and isinstance(r.get('at'), (int, float)) and r['at'] > 0:
+            try:
+                at = dt.datetime.fromtimestamp(r['at'] / 1000, dt.timezone.utc).isoformat(timespec='seconds')
+            except (OverflowError, OSError, ValueError):
+                at = None
+        out.append({'source': source, 'from': RECALL_SOURCES[source], 'text': str(r['text']).strip()[:1200], 'at': at,
+                    'origin': r.get('origin') if r.get('origin') in ('owner', 'agent', 'untrusted') else 'unknown'})
+    return out[:max(1, int(limit))]

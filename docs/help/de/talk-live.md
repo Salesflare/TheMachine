@@ -27,6 +27,8 @@ Bitte sie, einen Entwurf vorzulesen, zu ändern, zu verschieben, als erledigt zu
 
 Sie erreicht auch den Rest von The Machine. Frag nach einer Person, einer Organisation, einem Projekt, einem Termin oder einem Versprechen, und sie schlägt es nach und zeigt es. Sie kann eine Aufgabe zurückstellen, als erledigt markieren, verwerfen, umbenennen oder wieder öffnen, auch eine unter **Erledigt / verworfen**. Für alles andere legt sie eine Aufgabe an, lässt deren Chat es erledigen und sagt dir die Antwort.
 
+Sie erinnert sich auch an eure früheren Gespräche. Frag „Was hatte ich zum Offsite entschieden?“ oder „Was habe ich letzte Woche über Acme gesagt?“, und sie sagt es dir, mit dem Zeitpunkt. Das kann nur Sprechen in der Seitenleiste, nicht Sprechen im Chat einer Aufgabe.
+
 Du kannst inzwischen auf eine andere Seite gehen: Die Leiste bleibt unten, und **Sprechen** in der Seitenleiste bringt dich zurück. Dieses Gespräch dauert höchstens 30 Minuten. Auf Computern und Android läuft es im Hintergrund weiter. Auf dem iPhone endet es, wenn die App den Bildschirm verlässt.
 
 ## Bitte um Dinge und sende mit einem Ja

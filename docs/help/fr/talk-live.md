@@ -27,6 +27,8 @@ Demandez-lui de lire un brouillon, de le modifier, de le reporter, de le marquer
 
 Elle accède aussi au reste de The Machine. Demandez une personne, une organisation, un projet, une réunion ou une promesse, et elle la cherche et l’affiche. Elle peut reporter une tâche, la marquer comme faite, l’écarter, la renommer ou la rouvrir, même une tâche dans **Fait / écarté**. Pour tout le reste, elle crée une tâche, laisse son chat s’en charger et vous donne la réponse.
 
+Elle se souvient aussi de vos conversations précédentes. Demandez « Qu’avais-je décidé pour le séminaire ? » ou « Qu’ai-je dit sur Acme la semaine dernière ? », et elle vous le dit, avec le moment où vous l’avez dit. Seul Parler dans la barre latérale le fait, pas Parler dans le chat d’une tâche.
+
 Vous pouvez aller sur une autre page entre-temps : la barre reste en bas, et **Parler** dans la barre latérale vous y ramène. Cette conversation dure 30 minutes au plus. Elle continue en arrière-plan sur ordinateur et sur Android. Sur iPhone, elle s’arrête quand l’app quitte l’écran.
 
 ## Demandez, et envoyez d’un oui

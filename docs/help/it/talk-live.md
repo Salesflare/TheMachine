@@ -27,6 +27,8 @@ Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o pass
 
 Arriva anche al resto di The Machine. Chiedi di una persona, un'organizzazione, un progetto, una riunione o una promessa, e la cerca e te la mostra. Può rimandare un'attività, segnarla come fatta, ignorarla, rinominarla o riaprirla, anche una in **Fatte / ignorate**. Per tutto il resto crea un'attività, lascia che se ne occupi la sua chat e ti dice la risposta.
 
+Ricorda anche le vostre conversazioni precedenti. Chiedi "cosa avevo deciso per l'offsite?" o "cosa ho detto di Acme la settimana scorsa?" e te lo dice, con quando l'hai detto. Lo fa solo Parla nella barra laterale, non Parla nella chat di un'attività.
+
 Intanto puoi andare su un'altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti. Continua in background su computer e Android. Su iPhone si ferma quando l'app lascia lo schermo.
 
 ## Chiedi le cose, e invia con un sì

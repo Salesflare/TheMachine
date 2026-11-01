@@ -1,5 +1,6 @@
 """The standing eval (tests/knowledge_eval.py): every surface answers "who is X", "latest messages with X", "what is
-open with X", "when did I last talk to X" and "what did we say about Y" with the same records, under the same rules.
+open with X", "when did I last talk to X", "what did we say about Y" and "what did I decide about Z before" with the same records,
+under the same rules.
 
 GAPS lists the answers a surface still gets wrong until it moves onto knowledge.py; each move removes its lines. A gap
 that starts passing fails here too, so the list only ever shrinks."""
@@ -31,7 +32,7 @@ class Eval(unittest.TestCase):
         cls.temp = tempfile.TemporaryDirectory()
         config, ids = knowledge_eval.sandbox(cls.temp.name)
         import assistant
-        cls.results = knowledge_eval.run(knowledge_eval.app_for(config, assistant), assistant, ids)
+        cls.results = knowledge_eval.run(knowledge_eval.with_memory(knowledge_eval.app_for(config, assistant)), assistant, ids)
 
     @classmethod
     def tearDownClass(cls):
