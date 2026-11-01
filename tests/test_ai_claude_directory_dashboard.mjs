@@ -9,7 +9,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // listing in Claude's connector directory (one click, nothing to paste) in a new tab, above the shared address with
 // Copy. The Claude steps start from it; the custom connector stays as the other way. Not ready yet: no Add in Claude,
 // Get your address instead. SHOTS=<folder> saves screenshots.
-const DIRECTORY='https://claude.ai/directory/connectors/the-machine',SHARED='https://mcp.themachine.computer/mcp';
+const DIRECTORY='https://claude.ai/directory/the-machine',SHARED='https://mcp.themachine.computer/mcp';
 const dashboard=await dashboardPage();
 let reach={};
 const server=createServer(async(req,res)=>{

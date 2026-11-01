@@ -25,7 +25,7 @@ On a Machine on your own computer, press **Get your address** first. A page on y
 
 It then gets its own certificate for the address, which takes a few minutes and needs the `cryptography` package for Python.
 
-For Claude, press **Add in Claude** or open [The Machine in Claude's directory](https://claude.ai/directory/connectors/the-machine), then press Connect. On Team and Enterprise, an owner adds it in Organization settings.
+For Claude, press **Add in Claude** or open [The Machine in Claude's directory](https://claude.ai/directory/the-machine), then press Connect. On Team and Enterprise, an owner adds it in Organization settings.
 
 To use an address in Claude instead, open Customize, Connectors, press + Add, then Add custom connector. Name it The Machine, paste the address, press Continue, then Add.
 
