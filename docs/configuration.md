@@ -11,7 +11,7 @@
 |---|---|---|
 | `owner_name` | none | Your name; preparations sign emails with your first name |
 | `owner_emails`, `not_owner_emails` | `[]` | Addresses that are always yours, and ones that never are. The Machine also finds your own addresses itself ([Your addresses](intelligence.md#your-addresses)); these override it |
-| `timezone` | `Europe/Amsterdam` (the installer sets this computer's) | IANA zone for your work hours, digests, snoozes and recaps (the dashboard's Work hours, or `assistant hours --timezone`) |
+| `timezone` | `Europe/Amsterdam` (the installer sets this computer's) | IANA zone for your work hours, digests, snoozes and recaps (Settings, Notifications, Work hours on the dashboard, or `assistant hours --timezone`) |
 | `telegram_owner` | empty | Your Telegram chat ID; the only chat that gets to-dos and whose taps count. Empty: Telegram off, to-dos go to the dashboard app's notifications |
 | `telegram_account` | `default` | The OpenClaw Telegram account (bot) that sends to-dos, when you run several; the installer sets it |
 | `tailscale_owner` | none (required) | The Tailscale login allowed to open the dashboard |
