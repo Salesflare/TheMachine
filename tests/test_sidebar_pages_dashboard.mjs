@@ -104,6 +104,9 @@ try{
   assert.match(await bars.first().getAttribute('aria-label'),/^Week of .+: \d+% worth it, \d+ decided$/);
   assert.match(await bars.nth(n-2).getAttribute('aria-label'),/^Week of .+: nothing decided$/);assert.equal((await bars.nth(n-2).innerText()).trim().split(/\s+/).length,1,'only its date');
   assert.doesNotMatch(going,/Rules changed|◆/);
+  // a first week that starts mid-week is labeled with the first day itself, as "Since" says
+  assert.equal(await bars.first().locator('.w').innerText(),await page.evaluate(f=>new Date(f+'T12:00').toLocaleDateString(DL,{day:'numeric',month:'short'}),QUALITY.trend.first));
+  assert.match(going,new RegExp('Since '+(await bars.first().locator('.w').innerText())+'\\.'));
   assert.match(going,/Worth it per source\s+Where to-dos came from, and how many you acted on of those you decided\.\s+Source\s+Acted on\s+Email\s+8 of 10 80%/);
   assert.match(going,/WhatsApp\s+None decided yet/);
   await page.reload();await page.locator('#task-'+'aa'.repeat(8)).waitFor({state:'attached'});

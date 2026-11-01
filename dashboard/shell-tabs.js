@@ -36,16 +36,18 @@ function qualityHTML(q){if(!q||!q.cards)return `<p class="q-empty">${esc(t('Not 
 // the day or week under it; how many were decided is under it on a computer, and always in the hover and aria label.
 // An empty period inside the range is a thin baseline. Fewer than two periods with decisions: one plain line instead.
 function trendChart(trend){const first=trend?.first,today=trend?.daily?.at(-1)?.start;if(!first||!today)return '';
- const at=s=>new Date(s+'T12:00'),age=Math.round((at(today)-at(first))/864e5)+1,byDay=age<14;
- const monday=(d=>{d.setDate(d.getDate()-(d.getDay()+6)%7);return d})(at(first)).toISOString().slice(0,10);
+ const at=s=>new Date(s+'T12:00'),ymdOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,age=Math.round((at(today)-at(first))/864e5)+1,byDay=age<14;
+ const monday=ymdOf((d=>{d.setDate(d.getDate()-(d.getDay()+6)%7);return d})(at(first)));
  const all=byDay?trend.daily:trend.weekly,rows=all.filter(r=>r.start>=(byDay?first:monday)),dated=n=>rows.filter(r=>r.worth_it+r.dismissed).length>=n;
  if(!dated(2))return `<p class="trend-wait">${esc(t('The chart starts after a few more days.'))}</p>`;
  const full=r=>at(r.start).toLocaleDateString(DL,byDay?{weekday:'short',day:'numeric',month:'short'}:{day:'numeric',month:'short'});
  // The label under a bar stays on one line: a weekday and date ("Mon 26", stacked on a phone), or a week's date with its
  // month only where it starts or changes ("Sep 7", "14", "21", "Oct 5")
- const label=(r,i)=>{const d=at(r.start);if(byDay)return `<span>${esc(d.toLocaleDateString(DL,{weekday:'short'}))}</span> <span>${esc(d.toLocaleDateString(DL,{day:'numeric'}))}</span>`;
-  return esc(i&&at(rows[i-1].start).getMonth()===d.getMonth()?d.toLocaleDateString(DL,{day:'numeric'}):d.toLocaleDateString(DL,{day:'numeric',month:'short'}))};
- const col=(r,i)=>{const n=r.worth_it+r.dismissed,name=byDay?full(r):t('Week of {}',full(r)),tip=n?t('{}: {}% worth it, {} decided',name,r.hit_rate,n):t('{}: nothing decided',name);
+ // A first week that starts mid-week shows its first day, as "Since" says ("20 Sept", not "14 Sept")
+ const from=(r,i)=>at(!byDay&&!i&&r.start<first?first:r.start);
+ const label=(r,i)=>{const d=from(r,i);if(byDay)return `<span>${esc(d.toLocaleDateString(DL,{weekday:'short'}))}</span> <span>${esc(d.toLocaleDateString(DL,{day:'numeric'}))}</span>`;
+  return esc(i&&from(rows[i-1],i-1).getMonth()===d.getMonth()?d.toLocaleDateString(DL,{day:'numeric'}):d.toLocaleDateString(DL,{day:'numeric',month:'short'}))};
+ const col=(r,i)=>{const n=r.worth_it+r.dismissed,name=byDay?full(r):t('Week of {}',full({start:ymdOf(from(r,i))})),tip=n?t('{}: {}% worth it, {} decided',name,r.hit_rate,n):t('{}: nothing decided',name);
   return `<div role="listitem" aria-label="${esc(tip)}" title="${esc(tip)}"><small class="v">${n?r.hit_rate+'%':''}</small><span class="bar"><em${n?` style="height:${Math.max(2,r.hit_rate)}%"`:' class="none"'}></em></span><span class="w">${label(r,i)}</span><span class="n">${n?esc(t('{} decided',n)):''}</span></div>`};
  const since=rows[0].start<=first,sub=byDay?t('Since {}. Each bar is that day’s Worth it.',full({start:first})):since?t('Since {}. Each bar is that week’s Worth it.',at(first).toLocaleDateString(DL,{day:'numeric',month:'short'})):t('Last 8 weeks. Each bar is that week’s Worth it.');
  return `<figure class="trend"><figcaption><strong>${esc(t(byDay?'Worth it, day by day':'Worth it, week by week'))}</strong><small>${esc(sub)}</small></figcaption><div class="bars${byDay?' days':''}" role="list">${rows.map(col).join('')}</div></figure>`}
