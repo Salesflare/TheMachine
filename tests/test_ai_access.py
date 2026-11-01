@@ -456,6 +456,12 @@ class Calls(Base):
         self.assertTrue(tools['list_todos']['annotations']['readOnlyHint'])
         self.assertFalse(tools['create_draft']['annotations']['readOnlyHint'])
         self.assertNotIn('send', ' '.join(tools))
+        for name, tool in tools.items():  # the directories' review: a title and every hint on each tool
+            hints = tool['annotations']
+            self.assertTrue(tool['title'] and hints['title'] == tool['title'], name)
+            self.assertEqual(hints['readOnlyHint'], ai_access.TOOLS[name][0] == 'read', name)
+            self.assertIs(hints['destructiveHint'], name == 'update_record', name)
+            self.assertIs(hints['openWorldHint'], False, name)
 
 
 def ai_access_actions():

@@ -151,6 +151,11 @@ TOOLS = {
         'type': 'object', 'properties': {'id': {'type': 'integer', 'description': 'A message id from search_messages'}},
         'required': ['id']}),
 }
+# Each tool's title, as the AI's app shows it (MCP tool title and annotations.title)
+TITLES = {'list_todos': 'List to-dos', 'get_todo': 'Get a to-do', 'list_promises': 'List promises', 'search_graph': 'Search the Graph',
+          'get_graph_record': 'Get a Graph record', 'get_team_brief': 'Get team briefs', 'create_todo': 'Add a to-do',
+          'create_draft': 'Add an email draft', 'save_fact': 'Save a fact', 'update_record': 'Update a Graph record',
+          'add_summary_line': 'Add a summary line', 'search_messages': 'Search messages', 'read_thread': 'Read a thread'}
 WRITES = ('save_fact', 'update_record', 'add_summary_line')  # Graph changes: each has Undo in Activity (ai_writes)
 MESSAGE_TOOLS = ('search_messages', 'read_thread')  # only with the connection's Messages on (ai_app.ai_tool_search_messages)
 INSTRUCTIONS = ("The Machine is the owner's assistant for email and work. Through this connection you can read their to-dos, "
@@ -768,8 +773,10 @@ def tool_list():
     for name, (level, description, schema) in TOOLS.items():
         read = level == 'read'
         needs = ' Needs Messages turned on.' if name in MESSAGE_TOOLS else '' if read else ' Needs Read & edit access.'
-        out.append({'name': name, 'description': description + needs, 'inputSchema': schema,
-                    'annotations': {'readOnlyHint': read, 'destructiveHint': name == 'update_record', 'idempotentHint': read,
+        # Only update_record changes or clears what is there (the directories count that as destructive, Undo or not); the
+        # others add something new, and nothing reaches anyone else
+        out.append({'name': name, 'title': TITLES[name], 'description': description + needs, 'inputSchema': schema,
+                    'annotations': {'title': TITLES[name], 'readOnlyHint': read, 'destructiveHint': name == 'update_record', 'idempotentHint': read,
                                     'openWorldHint': False}})
     return out
 
