@@ -10,9 +10,9 @@ self-hosted. Your Machines coordinate over the Network, under rules each of you 
   Your Machine works out the times everyone is free (between 8:00 and 21:00, at least an hour) and shows them as they
   answer.
 - **To-dos.** Ask one member to do something ("Pick up the groceries", with a due date if you like). It waits on their
-  Machine as a card under To-dos with **Accept** and **Decline**. Once accepted it is their card, and on its due
+  Machine as a to-do with **Accept** and **Decline**. Once accepted it is their to-do, and on its due
   day their Machine reminds them once (phone, and Telegram when that is on). You see asked, accepted, declined, and done
-  once they finish the card.
+  once they finish it.
 - **Plans.** Propose a plan to the whole Family ("Sunday lunch at grandma's", a time and a place). Each member says
   **I'm in** or **Can't make it** on their Machine; you see who is in, who can't and who hasn't answered yet.
   **Nothing is written to anyone's calendar.** The plan carries an **Add to my calendar** link each person opens
@@ -43,13 +43,13 @@ Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind f
 | To-dos | Ask me first | accepted, then done when you finish it |
 | Plans | Ask me first | "is in" or "can't make it"; never your calendar |
 
-**Always** on a to-do or plan accepts it by itself (it still only makes a card for you). **Never** answers "no".
+**Always** on a to-do or plan accepts it by itself (it still only makes a to-do for you). **Never** answers "no".
 
 ## Kept apart from work
 
 A Family never asks or answers work questions: who knows someone, meeting context, shared emails, intros, handoffs,
 follow-up splits, the team brief or free questions. The Network refuses them in a Family, and your Machine declines
-them there even if one arrives. A to-do or plan becomes a personal card, on a personal account when you have one.
+them there even if one arrives. A to-do or plan becomes a personal to-do, on a personal account when you have one.
 
 ## Ask to review
 

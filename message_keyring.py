@@ -1,5 +1,5 @@
-"""The message key in the desktop's keyring (Secret Service) instead of a file next to the data (docs/security.md,
-"Message contents at rest"). Opt-in, for a self-hosted Machine on a Linux desktop: `assistant message-key to-keyring`,
+"""The message key in the desktop's keyring (Secret Service) instead of a file next to the data (docs/configuration.md,
+"The key in your keyring"). Opt-in, for a self-hosted Machine on a Linux desktop: `assistant message-key to-keyring`,
 or `"message_key_store": "keyring"` in config.json, which moves it at a start once the keyring checks out.
 
 Once moved:

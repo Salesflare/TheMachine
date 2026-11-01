@@ -18,7 +18,13 @@ cd ~/.openclaw/workspace/tools/personal-assistant
 ./install.sh
 ```
 
-Without OpenClaw, the installer first offers to install it, then starts OpenClaw's own setup and tells you what to pick there: your model provider, yes to running the Gateway as a service, and, optionally, Telegram as a channel (skip it to use the dashboard app's notifications instead). For Telegram you make a bot first: message @BotFather, send /newbot, choose a name, then find a free username ending in "bot", and paste the token it gives you. Check: your bot answers you in Telegram.
+Without OpenClaw, the installer first offers to install it. Then it starts OpenClaw's own setup and tells you what to pick there:
+
+- your model provider;
+- yes to running the Gateway as a service;
+- optionally, Telegram as a channel. Skip it to use the dashboard app's notifications instead.
+
+For Telegram you make a bot first: message @BotFather, send /newbot, choose a name, find a free username ending in "bot", and paste the token it gives you. Check: your bot answers you in Telegram.
 
 The wizard fills in what it can find, so most questions only need Enter:
 
@@ -40,7 +46,14 @@ The Machine runs inside WSL2 (Linux), next to OpenClaw's Gateway, which OpenClaw
 irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex
 ```
 
-It installs WSL2 if needed (once as Administrator, then a restart), Ubuntu 24.04 (it asks for a new Linux user name and password), turns on systemd, installs Git, Python, Node.js 24 and Tailscale inside it (sign it in to your tailnet when it shows a link), gets The Machine and runs `./install.sh`, which continues as below. It also starts WSL when you sign in to Windows, so the service keeps running. Already use OpenClaw's Windows Hub with its own `OpenClawGateway` distro? It installs into that one. Run commands through WSL: `wsl -- bash -lc 'assistant doctor'`. Set `THE_MACHINE_DRY_RUN=1` first to only see what it would do.
+What it does:
+
+1. Installs WSL2 if needed (once as Administrator, then a restart) and Ubuntu 24.04 (it asks for a new Linux user name and password), and turns on systemd.
+2. Installs Git, Python, Node.js 24 and Tailscale inside it. Sign Tailscale in to your tailnet when it shows a link.
+3. Gets The Machine and runs `./install.sh`, which continues as below.
+4. Starts WSL when you sign in to Windows, so the service keeps running.
+
+Already use OpenClaw's Windows Hub with its own `OpenClawGateway` distro? It installs into that one. Run commands through WSL: `wsl -- bash -lc 'assistant doctor'`. Set `THE_MACHINE_DRY_RUN=1` first to only see what it would do.
 
 ## 2. Connect your sources
 
@@ -56,9 +69,9 @@ Right after the service starts, the installer walks through each source:
 | Telegram chats | Unpacks the pinned Telethon, asks for your Telegram app ID when the Machine has none, logs in with a QR code and keeps your chats read with a user service. |
 | Android | Picks your paired Android phone from OpenClaw. For each source you connect that also has a phone app (Gmail, Slack, WhatsApp, …) it asks whether to skip that app's notifications; the default keeps them, since the phone may show other inboxes too. |
 | Gateway log | Finds the Gateway's systemd unit. |
-| Plugins | `github`, `stripe`, `intercom`, `x`, `linkedin`, `trello`, `rss`: not part of the installer; `assistant connect github` (and so on) asks for the few fields each needs. |
+| Plugins | `github`, `stripe`, `intercom`, `x`, `linkedin`, `trello`, `rss`, `shortcut`: not part of the installer; `assistant connect github` (and so on) asks for the few fields each needs. Zoom, Google Meet and Google Docs sign in through The Machine's hosted sign-in: on a hosted Machine, or one paired with The Machine Network. |
 
-Setup verifies a supported read before reporting the account connected. A busy/rate-limited browser source can be saved for its first sync, explicitly unverified; saved configuration is not proof a read succeeded. Afterwards you see the first sync per source: how many signals came in and from how far back.
+Setup checks a real read before it calls the account connected. A busy or rate-limited browser source can be saved for its first sync, marked unverified: a saved setting is not proof a read worked. Afterwards you see the first sync per source: how many signals came in and from how far back.
 
 Skipped one? `assistant connect gmail` (or `slack`, `crm`, `whatsapp`, `telegram`, `android`, `github`, …) does the same any time, and so does the dashboard: Connections, **+ Add**. `assistant connect` on its own lists what is still missing.
 
@@ -96,7 +109,7 @@ The Android source reads your phone's notifications through the OpenClaw Android
    ```
 4. The official app is usually approved by the code itself. If it still waits, approve only your phone's request (platform `android`): `openclaw devices list`, `openclaw devices approve <requestId>`, then the same with `openclaw nodes list` and `openclaw nodes approve <requestId>` if a node request follows.
 5. On the phone, allow notification access when the app asks. In the app's settings, turn on **Forward Notification Events**: the source reads that live feed, with a direct read every 10 minutes to catch gaps.
-6. `assistant connect android` picks the paired phone. Check: `openclaw nodes list` shows it connected, and the dashboard's Sources show Android.
+6. `assistant connect android` picks the paired phone. Check: `openclaw nodes list` shows it connected, and the dashboard's Connections show Android.
 
 When it stops reading, the source says why: `android_offline` (the app is not connected; Android may have stopped it to save battery), `android_notifications_unavailable` (notification access was taken away), `android_feed_unavailable` (Forward Notification Events is off, or the bridge plugin is not loaded), `android_identity_mismatch` (the phone was unpaired: pair it again and run `assistant connect android`). WhatsApp, Telegram, Signal and Discord notifications never come through: OpenClaw leaves them out.
 
@@ -120,15 +133,29 @@ Turn Telegram off or on later with `assistant telegram off` / `assistant telegra
 
 The installer offers a starter `USER.md` in your OpenClaw workspace with your name, companies and email (added under OpenClaw's template if that is all it has). Reviews and drafts read it every time.
 
-Then it offers to fill in the rest from what you actually write: your agent reads your own recent messages once (nothing is sent) and drafts your role, languages, how you write on each channel (email, Slack, WhatsApp, …), what matters to you and what to leave alone. Then it reads your first and latest messages with your closest people and notes what each is to you ("cofounder", "accountant", "customer at Globex") and what their organizations are ("customer", "supplier", "possible acquirer"), where the messages show it, each with the line it read it in. Confirm them with ✓ (or all at once with **All N are right**) or change them in the Graph tab's Who's who (reviews learn from your changes), and `assistant roles` runs that step again later. You see the draft first; it's saved only if you say yes, and it never overwrites what you wrote. Redo it later with `assistant profile`, or edit `USER.md` yourself. Check: `USER.md` has an "Observed from my messages" section.
+Then it offers to fill in the rest from what you actually write. Your agent reads your own recent messages once (nothing is sent) and drafts:
+
+- your role, languages and what matters to you, and what to leave alone;
+- how you write on each channel (email, Slack, WhatsApp, …).
+
+You see the draft first. It's saved only if you say yes, and it never overwrites what you wrote. Redo it later with `assistant profile`, or edit `USER.md` yourself. Check: `USER.md` has an "Observed from my messages" section.
+
+It also reads your first and latest messages with your closest people and notes what each is to you ("cofounder", "accountant", "customer at Globex") and what their organizations are ("customer", "supplier"), where the messages show it, each with the line it read it in. Confirm them with ✓ (or all at once with **All N are right**), or change them in the Graph's Who's who; reviews learn from your changes. `assistant roles` runs that step again later.
 
 ## 5. Preview, then turn it on
 
-The installer offers a **preview**: your agent reviews the last 7 days once and shows the to-dos in the terminal and on the dashboard. Nothing is sent and nothing is done in your accounts. Skip it and the service starts that same preview by itself (the *first look*) once a source is connected and your main model can run (signed in or with a key): a quick pass over the week's mail that most likely needs you as soon as it starts coming in (people waiting on you first), then more of the week, a batch at a time, until it has a few to-dos or has looked through the week. The dashboard shows how far it is, and each to-do as soon as it is ready.
+The installer offers a **preview**: your agent reviews the last 7 days once and shows the to-dos in the terminal and on the dashboard. Nothing is sent and nothing is done in your accounts.
 
-If the to-dos look useful, say yes to **turning on reviews and to-do delivery** (Telegram and/or the dashboard app). Read [Security model](../README.md#security-model) first: **Do it** authorizes the offered task; prepare-ahead may start read-only preparation before a tap, but stops before its consequential final step. You can also do both later with `./install.sh --preview` and `./install.sh --activate`.
+Skip it and the service starts that same preview by itself (the *first look*) once a source is connected and your main model can run (signed in or with a key):
 
-On a server without a screen, `./install.sh --browser-viewer` gives the assistant a browser you can watch and use from your own (sign in to LinkedIn or X there, or help when a task waits on a sign-in). On a desktop you are not always at, the dashboard can show its screen live instead (`browser_vnc`), so you can take over from your phone. A short note in the viewer says what the browser is for, which task is using it, and when one waits there for you to sign in. See [README](../README.md#sources).
+1. a quick pass over the week's mail that most likely needs you, as soon as it starts coming in (people waiting on you first);
+2. then more of the week, a batch at a time, until it has a few to-dos or has looked through the week.
+
+The dashboard shows how far it is, and each to-do as soon as it is ready.
+
+If the to-dos look useful, say yes to **turning on reviews and to-do delivery** (Telegram and/or the dashboard app). Read the [security model](../README.md#security-model) first: **Do it** authorizes the offered task. Work prepared ahead may start before a tap, but stops before the final step that commits something. You can also do both later with `./install.sh --preview` and `./install.sh --activate`.
+
+On a server without a screen, `./install.sh --browser-viewer` gives the assistant a browser you can watch and use from your own (sign in to LinkedIn or X there, or help when a task waits on a sign-in). On a desktop you are not always at, the dashboard can show its screen live instead (`browser_vnc`), so you can take over from your phone. A short note in the viewer says what the browser is for, which task is using it, and when one waits there for you to sign in. See [The Machine's browser](sources.md#the-machines-browser).
 
 ## Check everything
 
@@ -142,16 +169,19 @@ One pass over the service, the OpenClaw bridge, your Telegram approval, every so
 
 - Add or redo a source: `assistant connect <source>`. With one already there it asks whether to redo it or add another (a second company, a partner's calendar); the new one reuses your client, keys and settings and follows your naming. `assistant connect` on its own also shows accounts this machine has that nothing reads yet.
 - Sending approved emails needs `gmail.send` on top of read-only access; add it with gog when you want it. Connecting never asks for more than read access.
-- Company facts next to each organization (industry, size, location): add a key for an enrichment service you use (Apollo, People Data Labs, Hunter or any that looks companies up by domain). Only domains are sent. When a look-up gets a company wrong, Edit on its page fixes the details or clears them. See [Organization data](../README.md#organization-data-optional-enrichment). With a service that knows people too, people with a company address get a job title, photo and location ([People data](intelligence.md#people-data)).
+- Company facts next to each organization (industry, size, location): add a key for an enrichment service you use (Apollo, People Data Labs, Hunter or any that looks companies up by domain). Only domains are sent. When a look-up gets a company wrong, Edit on its page fixes the details or clears them. See [Organization data](intelligence.md#organization-data-optional-enrichment). With a service that knows people too, people with a company address get a job title, photo and location ([People data](intelligence.md#people-data)).
 - Upgrade: inspect local changes, then `python3 scripts/release.py update` (it takes the newest signed release, and only if its signature checks out) and `./install.sh`. Preserve custom work; see [Operations](operations.md#update-and-rollback). Your config, data and secrets are kept.
-- Backups: on your own computer nothing backs up by itself. A nightly encrypted [restic](https://restic.net) backup of your home folder is enough: it holds `~/.openclaw` (workspace, memory, settings) and The Machine's data, including the message key `message-content.key` (without it, the messages can't be read; moved to your keyring with `assistant message-key to-keyring`, it is in your keyring instead, for GNOME in `~/.local/share/keyrings`). Leave out what an install makes again (`~/.npm`, `~/.cache`, `~/.local/lib`, `~/.openclaw/npm`, `node_modules`, model files such as `*.gguf`), and keep the repository password somewhere else. `assistant export --keys` makes a one-file copy too.
+- Backups: on your own computer nothing backs up by itself. A nightly encrypted [restic](https://restic.net) backup of your home folder is enough.
+  - It holds `~/.openclaw` (workspace, memory, settings) and The Machine's data, including the message key `message-content.key`. Without that key the messages can't be read. Moved to your keyring with `assistant message-key to-keyring`, the key is in your keyring instead (for GNOME in `~/.local/share/keyrings`).
+  - Leave out what an install makes again (`~/.npm`, `~/.cache`, `~/.local/lib`, `~/.openclaw/npm`, `node_modules`, model files such as `*.gguf`), and keep the repository password somewhere else.
+  - `assistant export --keys` makes a one-file copy too.
 
 ## Moving from hosted to your own computer
 
 Everything moves in one file: what The Machine knows, your settings, connectors you built, your workspace files (`AGENTS.md`, `USER.md`, memory) and who may talk to your Telegram bot.
 
 1. On the hosted Account page, click **Export everything**. The file is always encrypted. Pick a passphrase if your keys should come along; without one you get an export code to save, and you connect those sources again. Download the file; it is deleted from your server after 24 hours.
-2. On your own computer, follow steps 1 above to install The Machine.
+2. On your own computer, follow step 1 above to install The Machine.
 3. Stop the target service first: `systemctl --user stop personal-assistant.service`. Close other database readers, then
    put it back: `assistant import the-machine-export-<date>.tar.gz.enc` (it asks the export code or passphrase).
 4. Connect what the import lists. Always: your model, and Google or Microsoft (hosted access works through the hosting and does not move along: `assistant connect gmail --account <id>`, or `outlook`, and the same for the calendar). Without a passphrase also every source's key and your Telegram bot token.
