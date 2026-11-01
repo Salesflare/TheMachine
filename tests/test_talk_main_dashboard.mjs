@@ -25,9 +25,9 @@ const actions=[],lines=[],sends=[],replies=[],relayed=[],voiced=[];let askedQ=nu
 const MAIN_TOOLS=['list_todos','open_todo','todo_details','find_todos','search','open_record','calendar','machine_status','ask_chat','create_todo','todo_action','ask_machine','ask_to_send','send_answer'].map(name=>({type:'function',name}));
 // The Machine's read tools (talk_tool): what search, open_record and calendar answer
 const LOOKUP={
- search:x=>x.kind==='meeting'?{found:[{id:'event:7',kind:'meeting',title:'Pilot review with Dana',what:'Calendar'}]}:{found:[{id:'email:dana@client.example',kind:'person',name:'Dana Reyes',about:'Head of Events at Client Example',last:'Tue 27 Oct 15:00'}]},
+ search:x=>x.kind==='meeting'?{found:[{id:'event:7',kind:'meeting',title:'Pilot review with Dana',what:'Calendar'}]}:{found:[{id:'email:dana@client.example',kind:'person',name:'Dana Reyes',about:'Head of Events · Client Example',last:'Tue 27 Oct 15:00'}]},
  open_record:x=>x.id==='event:7'?{id:'event:7',kind:'meeting',title:'Pilot review with Dana',when:'Thu 29 Oct 14:30',until:'15:15',where:'Zoom',with:['Dana Reyes'],card:{kind:'meeting',title:'Pilot review with Dana',line:'Thu 29 Oct 14:30 · Zoom',event:7}}
-  :{id:x.id,kind:'person',name:'Dana Reyes',about:'Head of Events at Client Example',recent:['Asked about the offsite dates'],card:{kind:'person',title:'Dana Reyes',line:'Head of Events at Client Example',node:'email:dana@client.example'}},
+  :{id:x.id,kind:'person',name:'Dana Reyes',about:'Head of Events · Client Example',recent:['Asked about the offsite dates'],card:{kind:'person',title:'Dana Reyes',line:'Head of Events · Client Example',node:'email:dana@client.example'}},
  calendar:()=>({meetings:[{id:'event:7',title:'Pilot review with Dana',when:'Thu 29 Oct 14:30',until:'15:15',where:'Zoom',with:['Dana Reyes']}],from:'2026-10-29',days:1,count:1})};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}

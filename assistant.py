@@ -12841,14 +12841,21 @@ def todo_state(row):
     return 'ready' if row['status'] == 'prepared' else 'preparing'
 
 
-# Talk's records by kind, as the voice says them, and their one line ("CTO at Acme", "acme.com", "a project, active")
+# Talk's records by kind, as the voice says them, and their one line ("CTO · Acme", "acme.com", "a project, active")
 TALK_KINDS = {'person': 'person', 'org': 'organization', 'project': 'project'}
+
+
+def person_line(title, org):
+    """A person's title and organization as one line: "CTO · Acme", "Wife · Umicore", or just the one that's there.
+    Never "CTO at Acme": a title can be a relationship ("Wife"), and "at" reads wrong then. The dashboard's jobLine
+    is the same format."""
+    return ' · '.join(x for x in (' '.join(str(title or '').split()), ' '.join(str(org or '').split())) if x)
 
 
 def talk_about(node):
     if node.get('kind') == 'person':
         org = node.get('org_name') or (node['org'].split(':', 1)[-1] if isinstance(node.get('org'), str) else '')
-        return ' at '.join(x for x in (str(node.get('role') or ''), str(org or '')) if x)
+        return person_line(node.get('role'), org)
     if node.get('kind') == 'org':
         return ' · '.join(x for x in (str(node.get('role') or ''), str(node.get('domain') or ''), str(node.get('about') or '')) if x)
     return str(node.get('state') or '')
