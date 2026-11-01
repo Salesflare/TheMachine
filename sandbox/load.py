@@ -12,6 +12,14 @@ States (combine with commas, e.g. fleet,friends):
     family       busy, in a Family Fleet
     expired      busy, with the work Google sign-in expired (Gmail and Calendar)
     all          busy + fleet + friends + family
+
+A demo Machine (the app directories' review account) is a real, freshly installed Machine with the busy day loaded
+into its own database, run on it as its owner with the installed app on the path:
+
+    python3 sandbox/load.py --machine ~/.config/the-machine/config.json [--app /path/to/installed/app]
+
+It adds none of the fixture's mail, chat and calendar accounts and leaves the config as it is: nothing syncs, no
+account exists to send from, no saved logins, no Fleet, no friends. It refuses a database that already has signals.
 """
 import argparse
 import datetime as dt
@@ -132,17 +140,8 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
     events = [e for e in fixture['events'] if e['account_id'] in accounts]
     if fresh:  # the first sync: a day of mail and the week's meetings
         events = [e for e in events if e['minutes_ago'] < 24 * 60]
-    ids = {}
     with store.connect() as db:
-        for e in events:
-            meta = calendar_meta(e['metadata'], base) if e['kind'] == 'calendar.event' else e['metadata']
-            body = e['body']
-            at = meta['start']['dateTime'] if e['kind'] == 'calendar.event' else stamp(e['minutes_ago'], base)
-            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
-                       'VALUES(?,?,?,?,?,?,?,0,?,1,?,?)',
-                       (e['account_id'], 'sandbox:' + e['key'], e['kind'], at, e['title'], body, json.dumps(meta),
-                        hashlib.sha256((e['title'] + body).encode()).hexdigest(), 0 if fresh else 1, stamp(max(e['minutes_ago'], 0) - 1, base)))
-            ids[e['key']] = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+        ids = insert_events(db, events, base, 0 if fresh else 1)
         for account in config['accounts']:
             if 'expired' in states and account['id'] in ('work-gmail', 'work-calendar'):
                 error = f"{account['service']}:{EXPIRED}"
@@ -172,6 +171,51 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         load_logins(directory, fixture)
         load_recurring(store, config, base)
     return config, config_path
+
+
+def insert_events(db, events, base, analyzed=1):
+    """The fixture's signals into the open Store connection (sealed, when its database is); returns {key: event id}."""
+    ids = {}
+    for e in events:
+        meta = calendar_meta(e['metadata'], base) if e['kind'] == 'calendar.event' else e['metadata']
+        body = e['body']
+        at = meta['start']['dateTime'] if e['kind'] == 'calendar.event' else stamp(e['minutes_ago'], base)
+        db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
+                   'VALUES(?,?,?,?,?,?,?,0,?,1,?,?)',
+                   (e['account_id'], 'sandbox:' + e['key'], e['kind'], at, e['title'], body, json.dumps(meta),
+                    hashlib.sha256((e['title'] + body).encode()).hexdigest(), analyzed, stamp(max(e['minutes_ago'], 0) - 1, base)))
+        ids[e['key']] = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+    return ids
+
+
+def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):
+    """The busy day into a real Machine's own database (config['database']), through its Store, with none of the
+    fixture's accounts added. Returns how many signals, to-dos and promises it holds."""
+    import assistant
+    import graph
+
+    if config.get('accounts'):
+        raise SystemExit('This Machine has accounts connected: a demo Machine starts with none.')
+    fixture = json.loads(Path(fixture_path).read_text())
+    store = assistant.Store(config['database'])
+    base = base or dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+    with store.connect() as db:
+        if db.execute('SELECT 1 FROM events LIMIT 1').fetchone():
+            raise SystemExit('This Machine already has signals: a demo Machine starts empty.')
+        ids = insert_events(db, fixture['events'], base)
+        load_cards(db, fixture, ids, base)
+        load_reviews(db, ids, base, assistant)
+        load_boards(db, fixture, ids, base)
+    with store.connect() as db:
+        load_job(db, fixture, base)
+        db.commit()  # graph.build opens its own transaction
+        # The Graph is built as if the made-up accounts were there (which side each person is on); they are not saved
+        graph.build(db, {**config, 'accounts': fixture['accounts']}, base.isoformat())
+        load_roles(db, base)
+        load_fields(db, base)
+        load_skills(db, {'busy'}, fixture, base)
+        counts = [db.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('events', 'suggestions', 'promises')]
+    return dict(zip(('signals', 'todos', 'promises'), counts))
 
 
 def load_recurring(store, config, base):
@@ -392,7 +436,13 @@ def main():
     parser.add_argument('--dir', default='/tmp/machine-sandbox')
     parser.add_argument('--state', default='busy')
     parser.add_argument('--port', type=int, default=8870)
+    parser.add_argument('--machine', metavar='CONFIG', help="a demo Machine: its config.json (see above)")
+    parser.add_argument('--app', default=str(ROOT), help='with --machine: the installed app (default: this checkout)')
     args = parser.parse_args()
+    if args.machine:
+        sys.path.insert(0, args.app)
+        print(json.dumps(fill_machine(json.loads(Path(args.machine).expanduser().read_text()))))
+        return
     config, path = load(args.dir, parse_states(args.state), args.port, args.port + 1)
     print(path)
 

@@ -72,7 +72,7 @@ class StatesTest(unittest.TestCase):
 
 
 class DemoMachineTest(unittest.TestCase):
-    """sandbox/demo_machine.py: the made-up day in a real Machine's database, sealed, with no accounts added."""
+    """sandbox/load.py --machine: the made-up day in a real Machine's database, sealed, with no accounts added."""
 
     def test_loads_sealed_without_accounts_and_only_once(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -82,7 +82,7 @@ class DemoMachineTest(unittest.TestCase):
             code = (f'import os,sys;os.environ["HOME"]={folder!r};sys.path.insert(0,".");import assistant,message_seal;'
                     f'message_seal.load_key({config["database"]!r}, create=True);assistant.Store({config["database"]!r}, protect=True)')
             subprocess.run([sys.executable, '-c', code], cwd=ROOT, check=True, capture_output=True, timeout=60)
-            run = lambda: subprocess.run([sys.executable, 'sandbox/demo_machine.py', '--config', str(path)], cwd=ROOT,
+            run = lambda: subprocess.run([sys.executable, 'sandbox/load.py', '--machine', str(path)], cwd=ROOT,
                                          capture_output=True, text=True, timeout=120, env={'HOME': folder, 'PATH': '/usr/bin:/bin'})
             done = run()
             self.assertEqual(done.returncode, 0, done.stderr[-2000:])
