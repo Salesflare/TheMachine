@@ -170,16 +170,21 @@ MAIN_TOOLS = [
     # Connections show. The to-do in focus stays the same.
     {'type': 'function', 'name': 'search',
      'description': ('Look something up in the owner’s Machine: people, organizations and projects (their Graph), messages '
-                     'and meetings (Events), or promises. Each result has an id for open_record.'),
+                     'and meetings (Events), or promises. Each result has an id for open_record. For messages with or from '
+                     'someone ("did Ann text me?", "the latest from Acme"): kind message with person, and their latest '
+                     'messages come back, newest first, from every channel, the same ones their Graph page shows.'),
      'parameters': {'type': 'object', 'properties': {
          'words': {'type': 'string', 'description': 'A name or a few words to look for.'},
          'kind': {'type': 'string', 'enum': ['anything', 'person', 'organization', 'project', 'message', 'meeting', 'promise'],
-                  'description': 'What to look for. anything searches people, organizations and projects.'}},
-         'required': ['words'], 'additionalProperties': False}},
+                  'description': 'What to look for. anything searches people, organizations and projects.'},
+         'person': {'type': 'string', 'description': ('With kind message: the person or organization the messages are with, '
+                                                      'their name or their id from search.')}},
+         'additionalProperties': False}},
     {'type': 'function', 'name': 'open_record',
      'description': ('Read one person, organization, project, meeting, message or promise by its id from search or '
-                     'calendar: who they are, when you last talked, what is open with them, what was said. Talk shows it on '
-                     'screen. It doesn’t change the to-do in focus.'),
+                     'calendar: who they are, when you last talked, what is open with them, what was said, and their '
+                     'latest messages (messages, each with an id to read it). Talk shows it on screen. It doesn’t change '
+                     'the to-do in focus.'),
      'parameters': {'type': 'object', 'properties': {'id': {'type': 'string', 'description': 'The id from search or calendar.'}},
                     'required': ['id'], 'additionalProperties': False}},
     {'type': 'function', 'name': 'calendar',
@@ -240,6 +245,9 @@ MAIN_TOOLS = [
         'id': {'type': 'string', 'description': 'The to-do’s id. Leave out for the one in focus.'}}, 'additionalProperties': False}},
     TOOL['undo_send'], TOOL['report_bug'], TOOL['end_talk'],
 ]
+# What a read tool adds when it found nothing: say what was searched, never a guessed cause
+NOTHING_NOTE = ('Nothing came back. Tell the owner plainly what you searched (searched says it) and that it found nothing. '
+                'Don’t guess why (syncing, indexing, a display mismatch, a connection): offer to look another way instead.')
 # Talk's read tools the Machine answers itself (talk_tool, main conversation only); machine_status and ask_machine are
 # the dashboard's own
 MACHINE_TOOLS = ('search', 'open_record', 'calendar')
@@ -595,6 +603,11 @@ def main_instructions(language, now_text, languages=None):
         'people, organizations, projects, messages, meetings and promises; calendar for meetings on a day; machine_status '
         'for connections and reviews. They don’t change the to-do in focus.',
         '- Never guess about someone or something: look it up first. Say what matters in a sentence or two.',
+        '- Messages with someone ("did she text me?", "anything new from Acme?"): search with kind message and person. '
+        'Say what came back, newest first, with when.',
+        '- When a tool finds nothing or less than the owner expects, say plainly what you searched and what came back. '
+        'Never make up a cause (syncing, indexing, a display mismatch): try the other way (search, then open_record) or '
+        'say you didn’t find it.',
         '- Anything else they want done or answered that isn’t about the to-do in focus: ask_machine, never ask_chat. Say '
         'one short line, like "On it", and go on; its answer comes to you as a message.',
         '- When nothing that needs them is left, say so in a line and ask if there is anything else.',

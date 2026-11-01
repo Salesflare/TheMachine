@@ -100,7 +100,7 @@ brief their Fleet tab shows. Teammates' Team Graph records and threads never go 
 | `save_fact` | Read & edit | A fact about a person or organization (`id`, `text`, `kind`: fact, preference, commitment or event, optional `until`), through `Store.remember_fact`, source "AI: <name>" |
 | `update_record` | Read & edit | Details (`details`: a person's title, location, linkedin_url, notes; an organization's own fields), the owner's own fields by name (`fields`) and tags (`add_tags`, `remove_tags`), through the dashboard's own paths (`graph.person_edit`/`org_edit`, `crm_fields.set_value`/`tag`) |
 | `add_summary_line` | Read & edit | A line on a person's summary (`id`, `text`), shown "AI: <name>" (`person_summary.add_line`) |
-| `search_messages` | Read, with Messages on | Messages by words (`query`, optional), `channel`, `area`, newest first: who, when, subject and the first 300 characters, each with its thread |
+| `search_messages` | Read, with Messages on | Messages by words (`query`, optional), `channel`, `area`, newest first: who, when, subject and the first 300 characters, each with its thread. With `person` (an id from `search_graph`): only the messages with that person or organization, from every address and number merged into them, as their Graph page's timeline has them |
 | `read_thread` | Read, with Messages on | The thread or chat around one message (`id`), oldest first, up to 30 messages of up to 4000 characters |
 
 Every tool is listed to every connection. A tool above the connection's level is refused with what to change and where,

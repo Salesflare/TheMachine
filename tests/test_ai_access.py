@@ -882,6 +882,23 @@ class Messages(Base):
             db.execute("INSERT INTO share_threads(thread,verdict,hand,at) VALUES('gm:T1','client','private',?)", (a.now(),))
         self.assertEqual([m['id'] for m in self.found(token, query='renewal')['messages']], [self.ids['chat']])
 
+    def test_messages_with_a_person_are_their_graph_pages_under_the_same_rules(self):
+        # Sam's messages as his Graph page has them (linked to him in the Graph, whatever their words), newest first;
+        # what the app holds back stays out, and a connection that can't see Sam can't read them
+        with self.db() as db:
+            for sid in ('t1a', 't1b', 'deal', 'salary', 'gone', 'cal'):
+                at = db.execute('SELECT occurred_at FROM events WHERE id=?', (self.ids[sid],)).fetchone()[0]
+                db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (WORK_PERSON, self.ids[sid], at))
+        _, token = self.joined()
+        out = self.found(token, person=WORK_PERSON)
+        self.assertEqual([m['id'] for m in out['messages']], [self.ids['t1b'], self.ids['t1a']])
+        self.assertEqual([m['id'] for m in self.found(token, person=WORK_PERSON, query='here')['messages']], [self.ids['t1b']])
+        self.assertEqual(self.found(token, person=WORK_PERSON, channel='whatsapp')['messages'], [])
+        self.assertIn('Not in the Graph here', self.tool(token, 'search_messages', person='email:nobody@example.com')[1])
+        _, home = self.joined(area='personal')
+        self.assertIn('Not in the Graph here', self.tool(home, 'search_messages', person=WORK_PERSON)[1])
+        self.assertIn('person', {t['name']: t for t in ai_access.tool_list()}['search_messages']['inputSchema']['properties'])
+
     def test_a_thread_reads_oldest_first_as_data(self):
         _, token = self.joined(area='work')
         error, out = self.tool(token, 'read_thread', id=self.ids['t1b'])

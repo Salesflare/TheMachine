@@ -20640,12 +20640,14 @@ class App(*APP_MIXINS):
             LOG.error('backfill brief error=%s', type(error).__name__)
             return ''
 
-    def graph_event_lines(self, event_ids):
-        """One line per signal, newest first: "<id> (<account>) <what, from whom, when> · <title>". A signal that can't be
-        read is logged and left out, so one odd event never fails a whole page."""
-        rows = self.store.events([a['id'] for a in self.config['accounts']], event_ids=list(event_ids)) if event_ids else []
+    def graph_event_lines(self, event_ids, keep_order=False):
+        """One line per signal, newest first (keep_order: in the order given): "<id> (<account>) <what, from whom, when> ·
+        <title>". A signal that can't be read is logged and left out, so one odd event never fails a whole page."""
+        event_ids = list(event_ids)
+        rows = self.store.events([a['id'] for a in self.config['accounts']], event_ids=event_ids) if event_ids else []
         lines = []
-        for r in sorted(rows, key=lambda r: str(r['occurred_at'] or ''), reverse=True):
+        place = {e: i for i, e in enumerate(event_ids)}
+        for r in sorted(rows, key=lambda r: place.get(r['id'], 0)) if keep_order else sorted(rows, key=lambda r: str(r['occurred_at'] or ''), reverse=True):
             try:
                 lines.append(f"{r['id']} ({r['account_id']}) {source_text(r)} · {clamp(' '.join(str(r['title'] or '').split()), 100)}")
             except (ValueError, KeyError, TypeError, AttributeError) as error:
@@ -20765,7 +20767,7 @@ class App(*APP_MIXINS):
                     found['from_gbrain'] = note  # the owner's own notes on their GBrain page: data, not instructions
                 guessed = set(found['probable_ids'])
                 found['recent'] = [line + (' (probably part of it)' if int(line.split(' ', 1)[0]) in guessed else '')
-                                   for line in self.graph_event_lines(found.pop('event_ids'))]
+                                   for line in self.graph_event_lines(found.pop('event_ids'), keep_order=True)]  # graph.detail's: past first
                 if db.execute("SELECT 1 FROM sqlite_master WHERE name='share_threads'").fetchone() and db.execute('SELECT 1 FROM share_threads LIMIT 1').fetchone():
                     found['team_hint'] = ('When the owner asks: graph event_id + share (only_you, team or auto) for a thread, '
                                           'node_id + keep_private true to keep this out of the team\'s Graph.')
@@ -21740,16 +21742,23 @@ class App(*APP_MIXINS):
                     'from': day.isoformat(), 'days': days, 'count': len(rows)}
         if name == 'search':
             words, kind = ' '.join(str(args.get('words') or '').split())[:200], str(args.get('kind') or 'anything')
+            person = ' '.join(str(args.get('person') or '').split())[:200]
+            if not words and not person:
+                return {'error': 'Say what to look for.'}
+            if kind == 'message' and (person or self.talk_named(words)):
+                # Messages with someone: their latest, the same ones their Graph page shows, from every address and
+                # number merged into them; never a search by meaning that happens to mention their name
+                return self.talk_messages_with(person or words, accounts)
             if not words:
                 return {'error': 'Say what to look for.'}
             if kind in ('message', 'meeting'):
-                if not accounts:
-                    return {'found': []}
                 rows = self.action('events', {'account_ids': accounts, 'query': words, 'full': True, 'limit': 20,
-                                              **({'kinds': ['calendar.event']} if kind == 'meeting' else {'semantic': True})})
+                                              **({'kinds': ['calendar.event']} if kind == 'meeting' else {'semantic': True})}) if accounts else []
                 rows = [r for r in rows if (r['kind'] == 'calendar.event') == (kind == 'meeting')][:8]
-                return {'found': [{'id': 'event:%d' % r['id'], 'kind': kind, 'title': clamp(' '.join(str(r['title'] or '').split()), 160),
-                                   'what': source_text(r)} for r in rows]}
+                found = [{'id': 'event:%d' % r['id'], 'kind': kind, 'title': clamp(' '.join(str(r['title'] or '').split()), 160),
+                          'what': source_text(r)} for r in rows]
+                return {'found': found} if found else {'found': [], 'searched': '%ss matching "%s", in every connected account' % (kind, words),
+                                                       'note': talk_live.NOTHING_NOTE}
             if kind == 'promise':
                 found = [x for x in self.store.promises() if x['state'] in ('open', 'card')
                          and all(w in (str(x['who']) + ' ' + str(x['what'])).lower() for w in words.lower().split())][:8]
@@ -21764,6 +21773,38 @@ class App(*APP_MIXINS):
         if name == 'open_record':
             return self.talk_record(str(args.get('id') or ''), accounts)
         raise ValueError('Unknown tool')
+
+    def talk_named(self, words):
+        """The person or organization in the Graph these words name (every word in their name), strongest first; None."""
+        said = [w for w in re.findall(r'\w+', words.lower()) if len(w) > 1]
+        if not said or len(said) > 5:
+            return None
+        hits = [h for h in self.graph_find(words, 0, 10)['found'] if h['kind'] in ('person', 'org')]
+        return next((h for h in hits if set(said) <= set(re.findall(r'\w+', str(h.get('name') or '').lower()))), None)
+
+    def talk_message_rows(self, node, accounts, limit=8):
+        """A record's latest messages for the voice, newest first: the ones its Graph page's timeline shows."""
+        with self.store.connect() as db:
+            ids = graph.recent_messages(db, node, limit)
+        rows = {r['id']: r for r in self.store.events(accounts, event_ids=ids)} if ids and accounts else {}
+        return [{'id': 'event:%d' % r['id'], 'title': clamp(' '.join(str(r['title'] or '').split()), 160), 'what': source_text(r)}
+                for r in (rows[i] for i in ids if i in rows)]
+
+    def talk_messages_with(self, who, accounts):
+        """search kind message for a person or organization (a name or an id from search): their latest messages."""
+        hit = None
+        if re.fullmatch(r'[a-z]+:\S+', who):
+            with self.store.connect() as db:
+                row = graph.resolve(db, who)
+            hit = {'id': row['id'], 'kind': row['kind'], 'name': row['name']} if row and row['kind'] in ('person', 'org', 'project') else None
+        hit = hit or self.talk_named(who)
+        if not hit:
+            return {'found': [], 'searched': 'the Graph for someone named "%s"' % who, 'note': talk_live.NOTHING_NOTE}
+        found = [{**m, 'kind': 'message'} for m in self.talk_message_rows(hit['id'], accounts)]
+        record = {'id': hit['id'], 'kind': TALK_KINDS.get(hit['kind'], hit['kind']), 'name': clamp(hit['name'], 120)}
+        if not found:
+            return {'with': record, 'found': [], 'searched': 'the messages on the Graph page of %s' % record['name'], 'note': talk_live.NOTHING_NOTE}
+        return {'with': record, 'found': found}
 
     def talk_record(self, rid, accounts):
         """One record for the voice, from what its own page shows: a person, organization or project (the Graph's page),
@@ -21813,6 +21854,9 @@ class App(*APP_MIXINS):
         if todos:
             out['open_todos'] = [{'id': c.get('id'), 'title': clamp(str(c.get('title') or ''), 160)} for c in todos[:5]]
         out['recent'] = [clamp(line.split(' ', 2)[-1], 200) for line in (n.get('recent') or [])[:8]]
+        # Their latest messages, from every address and number merged into them (the page's timeline), each with an id
+        # to read it: meetings ahead never crowd these out
+        out['messages'] = self.talk_message_rows(n['id'], accounts, 6)
         around = [x for x in (n.get('around') or []) if isinstance(x, dict) and x.get('name')]
         if around:
             out['around'] = [clamp(x['name'], 80) for x in around[:6]]

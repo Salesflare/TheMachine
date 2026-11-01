@@ -502,6 +502,50 @@ class Api(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unknown tool'):
             self.act('talk_tool', {'id': own, 'name': 'search', 'args': {'words': 'dana'}})
 
+    def test_talk_finds_a_persons_latest_messages_as_their_graph_page_does(self):
+        # A person with many meetings ahead and their chats on a second identity (a WhatsApp number merged into them):
+        # Talk got only the meetings ahead and said her messages weren't there, while her Graph page showed them
+        self.app.config['accounts'] = [{'id': 'home', 'service': 'whatsapp'}, {'id': 'cal', 'service': 'calendar'}]
+        current = dt.datetime.now(dt.timezone.utc)
+        at = lambda hours: (current + dt.timedelta(hours=hours)).isoformat(timespec='seconds')
+        node = 'email:kim@home.example'
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,'person','Kim Vale',5,?,20,?)",
+                       (node, at(-1), json.dumps({'identifiers': [node, 'wa:32470000001'], 'side': 'personal'})))
+            def event(account, kind, hours, title, meta):
+                event_id = db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) "
+                                      "VALUES(?,?,?,?,?,'',?,'h',?)", (account, '%s%s' % (kind, hours), kind, at(hours), title,
+                                                                        json.dumps(meta), at(-1))).lastrowid
+                db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (node, event_id, at(hours)))
+                return event_id
+            ahead = [event('cal', 'calendar.event', 24 * d, 'Dinner %d' % d, {'attendees': [{'email': 'kim@home.example'}]}) for d in range(1, 11)]
+            chats = [event('home', 'whatsapp.message', -h, 'Kim', {'from': 'Kim Vale', 'sender_display': 'Kim Vale', 'chat_name': 'Kim'})
+                     for h in (1, 2, 30)]
+        talk_id = self.act('talk_start', {'main': True})['id']
+        tool = lambda name, **args: self.act('talk_tool', {'id': talk_id, 'name': name, 'args': args})['output']
+        latest = ['event:%d' % i for i in chats]
+        # By name, by id, and as plain words that name her: her latest messages, newest first, never meetings ahead
+        for found in (tool('search', kind='message', person='Kim Vale'), tool('search', kind='message', person=node),
+                      tool('search', words='kim', kind='message'), tool('search', words='Kim', kind='message', person='kim')):
+            self.assertEqual([x['id'] for x in found['found']], latest, found)
+            self.assertEqual(found['with'], {'id': node, 'kind': 'person', 'name': 'Kim Vale'})
+            self.assertTrue(all(x['kind'] == 'message' and 'WhatsApp' in x['what'] for x in found['found']), found)
+        # Her record: her latest messages, and what already happened before what is still to come
+        record = tool('open_record', id=node)
+        self.assertEqual([x['id'] for x in record['messages']], latest)
+        self.assertEqual(len(record['recent']), 8)
+        self.assertTrue(all('WhatsApp' in line for line in record['recent'][:3]), record['recent'])
+        with self.store.connect() as db:   # the chat's graph tool and the Graph page read the same order
+            self.assertEqual(a.graph.detail(db, node, 4)['event_ids'], [*chats, ahead[0]])
+            self.assertEqual(a.graph.recent_messages(db, node, 2), chats[:2])
+        # Nothing found: what was searched, and a note not to guess why
+        for empty in (tool('search', kind='message', person='Nobody Here'), tool('search', words='zebra quartz', kind='message')):
+            self.assertEqual(empty['found'], [])
+            self.assertTrue(empty['searched'], empty)
+            self.assertEqual(empty['note'], t.NOTHING_NOTE)
+        self.assertIn('Don’t guess why', t.NOTHING_NOTE)
+        self.assertIn('Never make up a cause', t.main_instructions('en', 'now'))
+
     def test_talk_reads_the_calendar_and_opens_a_meeting(self):
         cal = {'id': 'cal', 'email': 'owner@example.com', 'service': 'calendar', 'boundary': 'work:Example'}
         self.app.config['accounts'] = [cal]
