@@ -137,6 +137,12 @@ try{
   // › and ‹ open each week at its own first meeting again
   await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>!document.querySelector('.cal-today.now'));await opensAt(page,'next week');
   await page.keyboard.press('ArrowLeft');await page.locator('.cal-tg-col.today').waitFor();await opensAt(page,'back to this week');
+  // ← → keep J K's guards: nothing with Shift or Ctrl held, nor while typing in a field
+  const stays=async why=>{await page.waitForTimeout(150);assert.equal(await page.locator('.cal-tg-col.today').count(),1,why)};
+  for(const k of ['Shift+ArrowRight','Control+ArrowRight','Shift+ArrowLeft']){await page.keyboard.press(k);await stays(k+' leaves the week as it is')}
+  await page.evaluate(()=>{const i=document.createElement('input');i.id='kb-probe';document.body.append(i);i.focus()});
+  await page.keyboard.press('ArrowRight');await stays('an arrow in a field moves the caret, not the week');
+  await page.evaluate(()=>document.getElementById('kb-probe').remove());
   // m picks Month, on this month; the view is remembered on this device, and the Calendar opens on the current period
   await page.keyboard.press('m');await page.locator('.cal-mg').waitFor();assert.equal(await range(page),new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'}));
   await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>!document.querySelector('.cal-today.now'));

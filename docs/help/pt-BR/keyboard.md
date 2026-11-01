@@ -19,7 +19,7 @@ Aperte `?` para ver **Atalhos de teclado**, a lista completa para o seu computad
 - Ir para uma página: `G` e depois `T` Tarefas, `C` Calendário, `P` Pessoas, `O` Organizações, `J` Projetos, `W` Quem é quem (quando aparece), `F` Fleet, `L` Aprendizado, `N` Conexões, `,` Configurações. `G` e depois `E` abre os resultados da pesquisa de mensagens. Os antigos `G` e depois `S` e `G` e depois `B` continuam funcionando.
 - `N` adiciona uma nova tarefa. `T` inicia Falar, ou encerra enquanto está ao vivo. `J` e `K` (ou `↓` e `↑`) andam por uma lista, Enter abre.
 - Em uma tarefa: `E` renomeia, `S` adia, `D` marca como feita, `R` escreve no chat dela.
-- No Calendário: `T` vai para hoje, `J` e `K` para a semana ou o mês seguinte ou anterior. `A`, `W` e `M` mudam para Agenda, Semana e Mês.
+- No Calendário: `T` vai para hoje, `J` e `K` (ou `→` e `←`) para a semana ou o mês seguinte ou anterior. `A`, `W` e `M` mudam para Agenda, Semana e Mês.
 - Em um computador, `⌘B` no Mac ou `Ctrl B` no Windows e Linux recolhe a barra lateral em ícones e abre de novo.
 
 As teclas não funcionam enquanto você digita em um campo.

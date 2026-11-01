@@ -10,7 +10,7 @@ Aufgaben entstehen aus Prüfungen: Deine Machine liest, was reingekommen ist, in
 
 ## Prüfungen sind aus
 
-Oben in Aufgaben steht „Die Durchsicht ist aus, daher kommen noch keine Vorschläge.“ Auf einer gehosteten Machine tippst du auf **Prüfungen einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.
+Oben in Aufgaben steht „Die Durchsicht ist aus, daher kommen noch keine Aufgaben.“ Auf einer gehosteten Machine tippst du auf **Prüfungen einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.
 
 ## Das Limit deines Modells
 

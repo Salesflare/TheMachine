@@ -10,7 +10,7 @@ Le attività nascono dalle revisioni: la tua Machine legge quello che è arrivat
 
 ## Le revisioni sono disattivate
 
-In cima ad Attività compare "Le revisioni sono disattivate, quindi non arrivano ancora suggerimenti." Su una Machine in hosting, premi **Attiva le revisioni**. Sul tuo computer, esegui `./install.sh --activate`.
+In cima ad Attività compare "Le revisioni sono disattivate, quindi per ora non arrivano attività." Su una Machine in hosting, premi **Attiva le revisioni**. Sul tuo computer, esegui `./install.sh --activate`.
 
 ## Il limite del tuo modello
 

@@ -10,7 +10,7 @@ Las tareas salen de las revisiones: tu Machine lee lo que ha llegado, en lotes p
 
 ## Las revisiones están desactivadas
 
-La parte superior de Tareas dice "Las revisiones están desactivadas, así que aún no llegan sugerencias." En una Machine alojada, pulsa **Activar revisiones**. En tu propio ordenador, ejecuta `./install.sh --activate`.
+La parte superior de Tareas dice "Las revisiones están desactivadas, así que aún no llegan tareas." En una Machine alojada, pulsa **Activar revisiones**. En tu propio ordenador, ejecuta `./install.sh --activate`.
 
 ## El límite de tu modelo
 
