@@ -480,6 +480,15 @@ class Api(unittest.TestCase):
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:sam@other.example','person','Sam Lane',1,1,'{}')")
             db.execute("INSERT INTO graph_links(a,b,kind,strength) VALUES('email:dana@client.example','org:client.example','works_at',1)")
 
+    def test_a_persons_line_is_title_dot_organization(self):
+        # A title can be a relationship: "Wife at Umicore" read wrong, so it's "Wife · Umicore"; one alone stands alone
+        self.assertEqual(a.person_line('Wife', 'Umicore'), 'Wife · Umicore')
+        self.assertEqual(a.person_line('CEO', 'Acme'), 'CEO · Acme')
+        self.assertEqual(a.person_line('CEO', ''), 'CEO')
+        self.assertEqual(a.person_line(None, 'Acme'), 'Acme')
+        self.assertEqual(a.person_line(' ', None), '')
+        self.assertEqual(a.talk_about({'kind': 'person', 'role': 'Wife', 'org': 'org:named:umicore', 'org_name': 'Umicore'}), 'Wife · Umicore')
+
     def test_talk_looks_up_people_organizations_and_projects_in_the_graph(self):
         self.graph_people()
         talk_id = self.act('talk_start', {'main': True})['id']
@@ -493,6 +502,8 @@ class Api(unittest.TestCase):
         self.assertEqual((record['kind'], record['name']), ('person', 'Dana Reyes'))
         self.assertEqual(record['card'], {'kind': 'person', 'title': 'Dana Reyes', 'line': record.get('about') or record.get('headline') or '',
                                           'node': 'email:dana@client.example'})   # what Talk's transcript shows
+        self.assertEqual(found[0]['about'], 'Head of Events · client.example')   # title · organization, never "at"
+        self.assertEqual(record['card']['line'], 'Head of Events · Client Example')
         self.assertNotIn('info', record)
         for wrong in ('', 'team:x', 'email:nobody@example.com', 'promise:x'):
             self.assertIn('error', tool('open_record', id=wrong), wrong)
