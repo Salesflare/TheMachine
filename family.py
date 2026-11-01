@@ -25,6 +25,7 @@ import re
 import secrets
 import urllib.parse
 
+import family_invites
 import locale_prefs
 from i18n import t
 
@@ -277,6 +278,33 @@ class Family:
             except Exception:  # a reminder that can't go out now is not retried: the card still shows it
                 pass
         return told
+
+    # Inviting family at the right moment (family_invites.py): the owner's switch, the to-do's line, and their tap.
+    def family_invite_on(self):
+        return self.meta(family_invites.SETTING, True) is not False
+
+    def family_invite_set(self, on):
+        self.set_meta(family_invites.SETTING, bool(on))
+        return {'on': self.family_invite_on()}
+
+    def _family_invite_where(self):
+        import fleet
+        return self.fleets(), fleet.account_url(self.config)
+
+    def family_invite_offer(self, card_id, node_id, work=False):
+        """The review passed family_with on a to-do: put the suggestion on it when every check passes."""
+        fleets, account = self._family_invite_where()
+        with self.connect() as db:
+            return family_invites.offer(db, card_id, node_id, fleets, account, self.family_invite_on(), work, self.own_domains())
+
+    def family_invite_annotate(self, db, suggestions):
+        fleets, account = self._family_invite_where()
+        family_invites.annotate(db, suggestions, fleets, account, self.family_invite_on(), self.own_domains())
+
+    def family_invite(self, card_id, do):
+        fleets, account = self._family_invite_where()
+        with self.connect() as db:
+            return family_invites.act(db, card_id, do, account, fleets)
 
     def family_view(self):
         ref = self.family_ref()

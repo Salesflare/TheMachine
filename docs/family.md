@@ -18,7 +18,20 @@ self-hosted. Your Machines coordinate over the Network, under rules each of you 
   **Nothing is written to anyone's calendar.** The plan carries an **Add to my calendar** link each person opens
   themselves.
 
-## Rules
+## Invite suggestions
+
+Inviting someone used to be up to you. Now, when a to-do is about family plans with one person who isn't in your
+Family yet ("Who picks up the kids on Wednesday?", a back-and-forth about the weekend), it can say: "Invite Sasha?
+Your Machines can sort this out without you asking each other." **Invite** opens the invite form on your account page,
+prefilled with their address, where you see the email before it goes; **Not now** hides it for 90 days.
+
+- The review judges the moment by meaning and passes `family_with` (their Graph node) only when that person is family
+  as their Graph role or your own words say. Never guessed from a name or the topic.
+- At most once per person. Never for Work contacts (a Work to-do, the Graph's Work side, a Work Fleet member), people
+  already in your Family, or someone with an open invite. Only where you can invite to a Family Fleet (its owner or an
+  admin, or by starting one).
+- Each suggestion and tap is a line in Activity. Turn it off in Settings, Fleet: **Suggest inviting family**.
+
 
 Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind for all of them, with exceptions per person
 (rules set per person before were folded once, so nobody's rule changed):
@@ -56,5 +69,6 @@ it (see [Network](network.md)).
 
 `family.py` holds the shapes, the free-time arithmetic and the `Family` mixin of `fleet.Fleet`. To-dos and plans take
 the same path as Work requests (`fleet_requests.STAGED`). Dashboard operations: `family_free`, `family_todo`,
-`family_event`, from the owner's dashboard only. Tests: `test_family.py`, `test_family_dashboard.mjs`. Try it on
+`family_event`, `family_invite` and `family_invite_setting`, from the owner's dashboard only. `family_invites.py` decides
+the invite suggestions (`test_family_invites.py`). Tests: `test_family.py`, `test_family_dashboard.mjs`. Try it on
 made-up data with `scripts/sandbox.sh family`.

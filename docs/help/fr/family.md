@@ -14,6 +14,15 @@ order: 6
 
 Aucune question de travail ne passe par une Fleet Famille.
 
+## Suggestions d’invitation
+
+Quand une tâche porte sur des projets de famille avec quelqu’un qui n’est pas encore dans votre Famille, comme « Qui récupère les enfants mercredi ? », elle peut demander : « Inviter Sasha ? Vos Machines peuvent régler ça sans que vous ayez à vous demander. »
+
+- **Inviter** ouvre le formulaire d’invitation sur votre page de compte, avec son adresse déjà remplie. L’e-mail qu’elle recevrait s’affiche avant tout envoi. Rien ne part sans vous.
+- **Pas maintenant** la masque pendant 90 jours.
+- Seulement pour les personnes de votre famille selon votre Graph ou vos propres mots. Jamais pour les contacts pro, les membres de votre Famille ni quelqu’un qui a une invitation en cours. Une fois par personne au plus.
+- Désactivez-la dans Paramètres, Fleet : **Suggérer d’inviter la famille**.
+
 ## Règles
 
 Par défaut, les créneaux libres et occupés sont partagés ; les tâches et les projets demandent d’abord. Changez-le dans le volet Partage : voir [Règles de partage](sharing-rules.md).

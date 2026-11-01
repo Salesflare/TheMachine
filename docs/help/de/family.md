@@ -14,6 +14,15 @@ order: 6
 
 Über eine Family Fleet laufen keine Arbeitsfragen.
 
+## Einladungsvorschläge
+
+Geht es in einer Aufgabe um Familienpläne mit jemandem, der noch nicht in deiner Familie ist, etwa „Wer holt die Kinder am Mittwoch ab?“, kann sie fragen: „Sasha einladen? Eure Machines klären das, ohne dass ihr euch gegenseitig fragen müsst.“
+
+- **Einladen** öffnet das Einladungsformular auf deiner Kontoseite, mit der Adresse schon eingetragen. Du siehst die E-Mail, bevor etwas rausgeht. Nichts geht ohne dich raus.
+- **Nicht jetzt** blendet es 90 Tage aus.
+- Nur für Menschen, die laut deinem Graph oder deinen eigenen Worten Familie sind. Nie für Arbeitskontakte, Leute, die schon in deiner Familie sind, oder jemanden mit offener Einladung. Höchstens einmal pro Person.
+- Ausschalten in Einstellungen, Fleet: **Familie einladen vorschlagen**.
+
 ## Regeln
 
 Standardmäßig werden freie und belegte Zeiten geteilt. Bei Aufgaben und Plänen wird zuerst gefragt. Das änderst du im Bereich Teilen: siehe [Freigaberegeln](sharing-rules.md).

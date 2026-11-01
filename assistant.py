@@ -888,6 +888,8 @@ OWNER_ACTIONS |= CONTACT_ACTIONS
 FAMILY_ACTIONS = {
     'family_event',
     'family_free',
+    'family_invite',
+    'family_invite_setting',
     'family_todo',
 }
 OWNER_ACTIONS |= FAMILY_ACTIONS
@@ -13973,6 +13975,7 @@ Name the ongoing work: finish_analysis projects ({{"Project name": [event_ids fr
 Boards: projects of one kind (partner listings, hires, onboardings), one project per counterpart, stand in stages on boards the owner saved; begin_analysis boards lists them with each project's stage and the board's about (which projects belong). When a message in this batch moves one (they agreed, sent their edits, went live, declined, the address bounced), add it to finish_analysis stages ({{"project", "board", "stage", "reason", "event_id", "next"}}): judge what the message means between these people in its conversation, never its wording, and never move a project only because time passed. reason is a short clause that reads after "Moved to <stage>:" ("Sam signed the order form"); next is the owner's next step in a few words; org the counterpart's web domain when it isn't clear from the people. A new project that fits a board's about goes on it the same way. Projects the owner put on a board come as "Boards to sort" at the top. Only the owner makes boards; a review suggests them, each once, from the boards to suggest at the top with graph suggest_board {{"name", "stages", "about", "projects", "reason", "visibility"}}: stages that fit how that kind of work goes, in order, ending at the good outcome (partner listings: Contacted, Agreed, In review, Live; hiring: Sourced, Screening, Interviews, Offer, Hired); every board has its own Stalled or declined row, so an ending where it didn't happen (lost, declined, dropped) is never a stage. about one sentence on which projects belong. Judge the kind from what the projects are, not from words in their names. The owner's own move stands until a newer message changes things. A stage and its next step never replace a to-do: when the other side's reply asks the owner something or proposes terms (a price or fee, a counteroffer, a condition), move the project and also suggest a to-do with prepare_ahead:true so the answer comes drafted, on a board or not and whether follow-ups are on or not, also when you expect the owner to say no; terms not agreed yet keep the stage before agreement. finish_analysis refuses while such a reply on a board has no open to-do; one that needs no answer (a thanks, a confirmation, a decline that ends it) goes in finish_analysis replies [{{"event_id", "why"}}].
 Team: when begin_analysis lists team (Work messages, shared with the owner's Work Fleet by default), add finish_analysis team ([{{"event_id", "share", "line", "group", "suggest"}}], group and suggest only for unsure ones; begin_analysis share_groups lists the groups already used) for each of those threads, judged by what the conversation is, never by words in it: {SHARE_VERDICTS} line is one short line of what happened, in your own words ("Lee asked for the renewal quote"), never quoted text. The owner's own Team or Only you always wins.
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
+Family coordination: when a to-do is the owner arranging family life with one specific person (who picks up the kids, a plan, a schedule, a back-and-forth about the weekend), judged by what the conversation means, and that person is family (a partner, a child, a parent or another relative) as their graph role says or as the owner's own words say, add family_with: their person node_id to suggest. Never infer family from a name, a shared surname, an address or the topic alone, and never for someone the owner works with; when unsure, leave it out. The service decides whether the to-do suggests inviting them to the owner's Family.
 Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. After they said Not done on it, only a newer signal counts. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
 When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id, {FACT_KIND_HINT}); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
 Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
@@ -15155,9 +15158,10 @@ class App(*APP_MIXINS):
                     LOG.error('agent jobs status error=%s', type(error).__name__)
             if getattr(self, 'fleet', None):
                 try:
-                    result['fleet'] = self.fleet.summary()
+                    result['fleet'] = {**self.fleet.summary(), 'family_invites': self.fleet.family_invite_on()}
                     with self.store.connect() as db:
                         self.fleet.annotate(db, result.get('suggestions', []))
+                        self.fleet.family_invite_annotate(db, result.get('suggestions', []))
                 except (sqlite3.Error, ValueError) as error:
                     LOG.error('fleet status error=%s', type(error).__name__)
             try:
@@ -15309,6 +15313,12 @@ class App(*APP_MIXINS):
                 saved['skill_hint'] = self.skills.hint(saved['id'], args['skill_hint'])  # "There's a skill for this", if it clearly helps
             if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and args.get('meet'):
                 saved['meet'] = self.meet_begin(saved['id'], args['meet'], args['event_ids'])  # their Machine, if any, agrees a time (meet_app.py)
+            if isinstance(saved, dict) and saved.get('id') and args.get('family_with') and getattr(self, 'fleet', None):
+                # family coordination with someone the review knows is family: maybe a quiet "Invite them?" (family_invites.py)
+                try:
+                    saved['family_invite'] = self.fleet.family_invite_offer(saved['id'], str(args['family_with']), work)
+                except (sqlite3.Error, ValueError) as error:
+                    LOG.warning('family invite offer error=%s', type(error).__name__)
             unknown = self.store.no_role_yet(args['event_ids'])
             if isinstance(saved, dict) and unknown:  # name them now, while the evidence is open
                 saved['no_role_yet'] = unknown
@@ -16903,6 +16913,10 @@ class App(*APP_MIXINS):
         if name == 'family_todo':  # a to-do for one member, who accepts or declines it on their Machine
             return self.fleet.propose_todo(str(args.get('member_id') or ''), str(args.get('title') or ''), str(args.get('due') or '') or None,
                                            str(args.get('note') or ''))
+        if name == 'family_invite':  # Invite (the account page's form, prefilled; nothing is sent here) or Not now (family_invites.py)
+            return self.fleet.family_invite(str(args.get('suggestion_id') or ''), str(args.get('do') or ''))
+        if name == 'family_invite_setting':  # Settings, Fleet: Suggest inviting family
+            return self.fleet.family_invite_set(args.get('on') is True)
         if name == 'family_event':  # a plan for the Family (or some of it): each says yes or no; nothing is written to a calendar
             return self.fleet.propose_event(str(args.get('title') or ''), str(args.get('start') or ''), str(args.get('end') or '') or None,
                                             str(args.get('place') or ''), str(args.get('note') or ''),
