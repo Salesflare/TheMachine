@@ -16648,6 +16648,8 @@ class App(*APP_MIXINS):
         accounts = [a for a in self.config.get('accounts', []) if area is None or graph.account_side(a) == area]
         if draft:
             accounts = [a for a in accounts if mail_account(a)]
+        elif not accounts:  # nothing placed in that area yet: a to-do sends nothing, so it goes on the Machine's own account
+            accounts = self.config.get('accounts', [])[:1]
         if not accounts:
             raise ValueError('No Gmail or Outlook account here to write it from' if draft else 'No account here for this')
         account = accounts[0]['id']
@@ -16663,7 +16665,7 @@ class App(*APP_MIXINS):
                        (account, key, stamp, title, text, json.dumps(meta), hashlib.sha256(text.encode()).hexdigest(), stamp))
             event_id = db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, key)).fetchone()[0]
         card = self.store.suggest(key, (i18n.t('Email to {}: {}', ', '.join(draft['to'])[:60], draft['subject']) if draft else title)[:90],
-                                  body[:700], [event_id], when='now', work=graph.account_side(accounts[0]) == 'work', due=due)
+                                  body[:700], [event_id], when='now', work=(graph.account_side(accounts[0]) or area) == 'work', due=due)
         if draft and not card.get('duplicate'):
             action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account, 'to': draft['to'],
                                             'subject': draft['subject'], 'body': draft['body']}, self.config, [account])

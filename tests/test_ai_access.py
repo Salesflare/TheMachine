@@ -388,6 +388,18 @@ class Calls(Base):
         self.assertEqual((event['kind'], event['analyzed_version']), ('ai.request', 1))
         self.assertIn('Claude (connected AI)', event['metadata'])
 
+    def test_a_todo_in_an_area_with_no_account_placed_yet_still_lands(self):
+        self.app.config['accounts'] = [{'id': 'server', 'service': 'gateway', 'boundary': 'owner:system'}]
+        _, tokens = self.signed_in('draft')
+        error, made = self.tool(tokens['access_token'], 'create_todo', text='Call Sam on Friday', area='work')
+        self.assertFalse(error, made)
+        with self.db() as db:
+            card = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (made['id'],)).fetchone()
+        self.assertEqual(card['account_ids'], '["server"]')
+        error, text = self.tool(tokens['access_token'], 'create_draft', to=['sam@client.example'], subject='Hi', body='Hi Sam', area='work')
+        self.assertTrue(error)
+        self.assertIn('No Gmail or Outlook account', text)
+
     def test_a_draft_waits_for_the_owner_and_nothing_is_sent(self):
         _, tokens = self.signed_in('draft', area='personal')
         with patch.object(a.next_actions, 'execute', side_effect=AssertionError('nothing sends')) if hasattr(a.next_actions, 'execute') else patch.object(a, 'now', a.now):
