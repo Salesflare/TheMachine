@@ -41,18 +41,18 @@ try{
  const box=await page.locator('#bp-frame').boundingBox(),side=await page.locator('#app-side').boundingBox();
  assert.ok(box.x>=side.x+side.width-1&&box.height>800,'fills the main area beside the sidebar');
  // Another row leaves it; the viewer is not loaded again when it comes back
- await page.locator('nav [data-tab="events"]').click();
- assert.equal(await pane.isHidden(),true);assert.equal(await page.locator('#events').isHidden(),false);
+ await page.locator('nav [data-tab="feedback"]').click();
+ assert.equal(await pane.isHidden(),true);assert.equal(await page.locator('#feedback').isHidden(),false);
  assert.equal(await row.getAttribute('aria-current'),'false');assert.ok(!page.url().includes('#browser'));
  await row.click();await pane.waitFor();assert.deepEqual(loads,['/browser/']);
  // Back returns to the view before
- await page.goBack();await pane.waitFor({state:'hidden'});assert.equal(await page.locator('#events').isHidden(),false);
+ await page.goBack();await pane.waitFor({state:'hidden'});assert.equal(await page.locator('#feedback').isHidden(),false);
  // Close too
  await row.click();await pane.waitFor();await page.locator('#bp-close').click();await pane.waitFor({state:'hidden'});
- assert.equal(await page.locator('#events').isHidden(),false);assert.equal(await row.getAttribute('aria-current'),'false');
+ assert.equal(await page.locator('#feedback').isHidden(),false);assert.equal(await row.getAttribute('aria-current'),'false');
  // Leaving through another row spends no Back: the one before it leaves the dashboard
  const hist=await context.newPage();hist.on('pageerror',e=>errors.push(e.message));await hist.goto('about:blank');await hist.goto(base);await hist.locator('#open-browser').click();
- await hist.locator('#browser-pane').waitFor();await hist.locator('nav [data-tab="events"]').click();await hist.waitForFunction(()=>!location.hash);
+ await hist.locator('#browser-pane').waitFor();await hist.locator('nav [data-tab="feedback"]').click();await hist.waitForFunction(()=>!location.hash);
  await hist.goBack();assert.equal(hist.url(),'about:blank');
  // A computer's window made narrower while it is open: the pane stays, under the top bar, and fills what is left
  await hist.goto(base);await hist.locator('#open-browser').click();await hist.locator('#browser-pane').waitFor();

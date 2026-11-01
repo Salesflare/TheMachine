@@ -67,7 +67,7 @@ try{
   // The last tab is kept; a link opens another; leaving Settings drops the link.
   await page.reload();await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
   assert.equal(await selected(page),'Model');
-  await navClick(page.locator('nav [data-tab="events"]'));assert.equal(await page.evaluate(()=>location.hash),'');assert.equal(await help(page),HELP+'dashboard');
+  await navClick(page.locator('nav [data-tab="feedback"]'));assert.equal(await page.evaluate(()=>location.hash),'');assert.equal(await help(page),HELP+'dashboard');
   await navClick(page.locator('#open-settings'));assert.equal(await selected(page),'Model');
   await page.goto(base+'/#settings/skills');await page.locator('#settings-skills:visible').waitFor();assert.equal(await selected(page),'Skills');
   await page.goto(base+'/#settings=hours');await page.locator('#hours:visible').waitFor();assert.equal(await selected(page),'Notifications');  // an old Work hours link
