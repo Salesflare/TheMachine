@@ -25,6 +25,7 @@ import fleet
 import follow_ups
 import graph
 import i18n
+import knowledge
 import locale_prefs
 import next_actions
 import pairing
@@ -615,21 +616,9 @@ class AiApp:
         return sorted(ids), want
 
     def ai_held(self, db, rows, want):
-        """The messages among rows that stay out, whoever asks: those of an Only you board or project
-        (graph.hidden_event_ids), and threads the review judged sensitive (deals, HR, legal, health, money) or the owner
-        kept private (shared_graph's calls, share_threads); with Work only, also threads the review found are the
-        owner's own life."""
-        held = graph.hidden_event_ids(db)
-        try:
-            calls = {r[0]: (r[1], r[2]) for r in db.execute('SELECT thread,verdict,hand FROM share_threads')}
-        except sqlite3.OperationalError:
-            calls = {}  # no Shared Graph here
-        out = set(held) & {r['id'] for r in rows}
-        for r in rows:
-            verdict, hand = calls.get(shared_graph.thread_of(r['kind'], r['metadata'], r['id']), (None, None))
-            if verdict == 'sensitive' or hand == 'private' or (verdict == 'personal' and want == 'work'):
-                out.add(r['id'])
-        return out
+        """The messages among rows that stay out, whoever asks (knowledge.held): an Only you board's or project's,
+        threads judged sensitive or kept private, and with Work only, threads about the owner's own life."""
+        return knowledge.held(db, rows, want)
 
     def ai_messages(self, connection, area=None, **find):
         """Messages a call may read, as Store.events gives them (deleted ones never), less those held (ai_held)."""
