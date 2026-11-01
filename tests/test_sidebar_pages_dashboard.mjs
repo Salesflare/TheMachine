@@ -13,10 +13,16 @@ const now=new Date().toISOString();
 const ago=d=>new Date(Date.now()-d*864e5).toISOString();
 const ev=(id,title,from)=>({id,account_id:'mail',kind:'gmail.message',title,body:title,occurred_at:ago(id/10),metadata:{from}});
 const EVENTS=[ev(1,'Invoice 4821 overdue','Robin Example <robin@acme.example>'),ev(2,'Invoice paid','billing@acme.example'),ev(3,'Invoice copy','Pat Doe <pat@acme.example>'),ev(4,'Invoice question','Sam Roe <sam@acme.example>'),ev(5,'Invoice again','Kim <kim@acme.example>')];
-const week=(i,w,d)=>({start:ago(7*(7-i)).slice(0,10),worth_it:w,dismissed:d,open:0,hit_rate:w+d?Math.round(100*w/(w+d)):null,do_it:0,first_time_rate:null,finished_rate:null,changes:i===5?['Skip vendor newsletters']:[]});
+// A trend as the Machine sends it: 14 local days and 8 weeks from Monday, with decisions from `first` days ago on
+// (none before it), and one empty period inside the range
+const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const trendOf=firstAgo=>{const today=new Date();today.setHours(12,0,0,0);const shift=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+ const first=shift(today,-firstAgo),mon=shift(today,-((today.getDay()+6)%7));
+ const row=(start,end,i,gap)=>{const has=end>first&&i!==gap,w=has?3+i%4:0,d=has?2:0;return {start:ymd(start),worth_it:w,dismissed:d,open:0,hit_rate:w+d?Math.round(100*w/(w+d)):null,do_it:0,first_time_rate:null,finished_rate:null}};
+ return {first:ymd(first),daily:[...Array(14)].map((_,k)=>row(shift(today,k-13),shift(today,k-12),k,11)),weekly:[...Array(8)].map((_,k)=>row(shift(mon,7*(k-7)),shift(mon,7*(k-6)),k,6))}};
 const QUALITY={cards:12,worth_it:9,dismissed:3,open:2,hit_rate:75,do_it:4,first_time_rate:75,finished_rate:100,sent_as_written:3,sent_edited:1,
  previous:{hit_rate:60,first_time_rate:75,finished_rate:null},notes:{},by_source:{Email:{worth_it:8,dismissed:2},Slack:{worth_it:1,dismissed:1},WhatsApp:{worth_it:0,dismissed:0}},
- trend:{daily:[],weekly:[0,1,2,3,4,5,6,7].map(i=>i<5?week(i,0,0):week(i,3+i,2))}};
+ trend:trendOf(33)};
 let data,queries;
 const base0=()=>({suggestions:[{id:'aa'.repeat(8),title:'Send Sam the contract',body:'',status:'pending',scope:'work',created_at:now,event_ids:[1]}],promises:[],
  connectors:[{id:'mail',service:'gmail',display_name:'mail',email:'owner@example.org',boundary:'work',state:'{}'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],
@@ -92,9 +98,12 @@ try{
   assert.match(going,/Worth it\s+75%\s+Of 12 to-dos you decided: acted on, not dismissed\s+Up from 60% the 30 days before/);
   assert.match(going,/First try\s+75%\s+Of 4 to-dos started with Do it: no correction needed\s+Same as the 30 days before/);
   assert.match(going,/Sent as is\s+75%\s+Of 4 drafts sent: no edit or Change first/);
-  assert.match(going,/Worth it, week by week/);assert.equal(await page.locator('#quality .bars [role="listitem"]').count(),8);
-  assert.match(await page.locator('#quality .bars [role="listitem"]').nth(7).getAttribute('aria-label'),/^Week of .+: 83% worth it, 12 decided$/);
-  assert.match(going,/Rules changed that week/);
+  // the chart starts at the first decided to-do: no empty weeks before it; an empty week inside is a baseline, its count only in the label
+  const bars=page.locator('#quality .bars [role="listitem"]'),n=await bars.count();
+  assert.match(going,/Worth it, week by week\s+Since .+\. Each bar is that week’s Worth it\./);assert.ok(n>=5&&n<8,'weeks since the first: '+n);
+  assert.match(await bars.first().getAttribute('aria-label'),/^Week of .+: \d+% worth it, \d+ decided$/);
+  assert.match(await bars.nth(n-2).getAttribute('aria-label'),/^Week of .+: nothing decided$/);assert.equal((await bars.nth(n-2).innerText()).trim().split(/\s+/).length,1,'only its date');
+  assert.doesNotMatch(going,/Rules changed|◆/);
   assert.match(going,/Worth it per source\s+Where to-dos came from, and how many you acted on of those you decided\.\s+Source\s+Acted on\s+Email\s+8 of 10 80%/);
   assert.match(going,/WhatsApp\s+None decided yet/);
   await page.reload();await page.locator('#task-'+'aa'.repeat(8)).waitFor({state:'attached'});
@@ -112,6 +121,18 @@ try{
   await page.evaluate(()=>{location.hash='#learning=shared'});await page.waitForFunction(()=>!document.querySelector('#learn-pane-shared').hidden);
   await page.evaluate(()=>{location.hash='#learning=changes'});await page.waitForFunction(()=>!document.querySelector('#learn-pane-changes').hidden);
   assert.match(await page.locator('#learn-changes').innerText(),/Prefers calls after 10:00\./);
+  await context.close()}
+ // The chart follows how long the Machine has had decisions: days at first, then weeks since the first, then the last 8 weeks
+ for(const [firstAgo,head,bars] of [[4,/Worth it, day by day\s+Since .+\. Each bar is that day’s Worth it\./,5],[200,/Worth it, week by week\s+Last 8 weeks\. Each bar is that week’s Worth it\./,8]]){
+  const {context,page}=await open(390,844,'#learning=going',{quality:{...QUALITY,trend:trendOf(firstAgo)}});
+  assert.match(await page.locator('#quality').innerText(),head);assert.equal(await page.locator('#quality .bars [role="listitem"]').count(),bars);
+  if(firstAgo<14)assert.match(await page.locator('#quality .bars [role="listitem"]').first().getAttribute('aria-label'),/^\w{3}, .+: \d+% worth it, \d+ decided$|^\w{3} .+: \d+% worth it, \d+ decided$/);
+  // labels never wrap: each line of a label is one line high
+  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('#quality .bars .w')].every(w=>[...(w.children.length?w.children:[w])].every(s=>s.getClientRects().length===1))),'labels on one line');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await context.close()}
+ {const {context,page}=await open(1440,900,'#learning=going',{quality:{...QUALITY,trend:trendOf(0)}});
+  assert.match(await page.locator('#quality').innerText(),/The chart starts after a few more days\./);assert.equal(await page.locator('#quality .bars').count(),0);
   await context.close()}
  // Too little to show: one plain line and no tab row
  {const {context,page}=await open(390,844,'#learning',{quality:{cards:0,by_source:{},previous:{},trend:{daily:[],weekly:[]}},facts:[]});

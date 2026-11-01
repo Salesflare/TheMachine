@@ -289,5 +289,5 @@ remove them.
 - Five or more notes about one kind of task can become a skill, on a to-do you decide
   ([skills](skills.md#from-your-notes)).
 - Each Do it result says whether it's finished or what it needs from you, and the run sorts your Change notes (style,
-  missing fact, keep going, new ask). Learning → **How it's going** shows the split, Worth it per week, and markers
-  where the rules changed.
+  missing fact, keep going, new ask). Learning → **How it's going** shows the split and Worth it over time, from the
+  first decided to-do (per day for two weeks, then per week).

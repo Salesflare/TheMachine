@@ -51,5 +51,5 @@ Learning has a row of tabs. A tab with nothing in it yet is left out.
   - **First try**: of the to-dos you started with **Do it**, how many needed no correction afterward.
   - **Finished**: of the to-dos you started with **Do it**, how many finished without you asking it to keep going or try again.
   - **Sent as is**: of the drafts you sent, how many went without an edit or **Change** first.
-  - Each number says how it compares with the 30 days before. **Worth it, week by week** shows the last 8 weeks, one bar per week, once there are two weeks with decisions; a mark under a week means rules changed that week.
+  - Each number says how it compares with the 30 days before. The chart starts at your first decided to-do: one bar per day for the first two weeks, then one per week, up to the last 8 weeks.
   - **Worth it per source**: where the to-dos came from, like **Email**, **Added by you** (made with **New to-do**), **Phone notifications** or **The Machine itself** (problems in The Machine, like an error), and how many you acted on.

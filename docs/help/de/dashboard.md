@@ -49,5 +49,5 @@ Lernen hat eine Reihe von Tabs. Ein Tab, in dem noch nichts steht, wird weggelas
   - **Beim ersten Mal**: von den Aufgaben, die du mit **Ausführen** gestartet hast, wie viele danach keine Korrektur brauchten.
   - **Abgeschlossen**: von den Aufgaben, die du mit **Ausführen** gestartet hast, wie viele fertig wurden, ohne dass du sie weitermachen oder es erneut versuchen lassen musstest.
   - **Unverändert gesendet**: von den Entwürfen, die du gesendet hast, wie viele ohne Bearbeitung oder **Ändern** vorher rausgingen.
-  - Jede Zahl zeigt den Vergleich mit den 30 Tagen davor. **Lohnend, Woche für Woche** zeigt die letzten 8 Wochen, ein Balken pro Woche, sobald es zwei Wochen mit Entscheidungen gibt. Eine Markierung unter einer Woche heißt, dass sich in dieser Woche Regeln geändert haben.
+  - Jede Zahl zeigt den Vergleich mit den 30 Tagen davor. Das Diagramm beginnt bei deiner ersten entschiedenen Aufgabe: in den ersten zwei Wochen ein Balken pro Tag, danach einer pro Woche, bis zu den letzten 8 Wochen.
   - **Lohnend pro Quelle**: woher die Aufgaben kamen, etwa **E-Mail**, **Von dir hinzugefügt** (erstellt mit **Neue Aufgabe**), **Handy-Benachrichtigungen** oder **The Machine selbst** (Probleme in The Machine, etwa ein Fehler), und wie viele du erledigt hast.

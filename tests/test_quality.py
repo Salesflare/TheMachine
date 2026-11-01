@@ -143,6 +143,12 @@ class HitRate(Base):
         self.assertEqual((days['2026-10-14']['worth_it'], days['2026-10-14']['dismissed']), (1, 0))  # 23:30 local
         self.assertEqual((days['2026-10-15']['dismissed'], days['2026-10-15']['hit_rate']), (1, 0))  # 00:30 local
         self.assertEqual([(w['worth_it'], w['dismissed'], w['hit_rate']) for w in t['weekly'][-2:]], [(0, 1, 0), (2, 1, 67)])
+        self.assertEqual(t['first'], '2026-10-08')  # the first decided to-do, in local time: the chart starts there
+        with self.store.connect() as db:  # an open to-do made earlier doesn't move the start
+            db.execute("UPDATE suggestions SET status='pending' WHERE id=?", (ids['d'],))
+            db.execute('DELETE FROM decisions WHERE suggestion_id=?', (ids['d'],))
+        with patch.object(a, 'now', return_value='2026-10-15T10:00:00+00:00'):
+            self.assertEqual(self.store.quality_trend()['first'], '2026-10-12')
         self.assertIn('trend', self.store.quality_report())
 
 
@@ -280,8 +286,6 @@ class NotesRulesAndOutcome(Base):
         rules.write_text('two')
         self.store.note_rule_files([rules])
         self.assertEqual([c['text'] for c in self.store.rule_changes('2000-01-01')][2:], ['AGENTS.md tracked', 'AGENTS.md edited'])
-        today = self.store.quality_trend()['daily'][-1]
-        self.assertEqual(today['changes'], texts + ['AGENTS.md edited'])  # "tracked" is only the starting point
 
 
 if __name__ == '__main__':

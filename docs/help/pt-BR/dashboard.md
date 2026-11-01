@@ -49,5 +49,5 @@ O Aprendizado tem uma fileira de abas. Uma aba ainda sem nada fica de fora.
   - **De primeira**: das tarefas que você começou com **Fazer**, quantas não precisaram de correção depois.
   - **Concluída**: das tarefas que você começou com **Fazer**, quantas terminaram sem você pedir para continuar ou tentar de novo.
   - **Enviado como está**: dos rascunhos que você enviou, quantos foram sem edição nem **Mudar** antes.
-  - Cada número mostra como se compara com os 30 dias anteriores. **Valeu a pena, semana a semana** mostra as últimas 8 semanas, uma barra por semana, quando há duas semanas com decisões; uma marca sob uma semana quer dizer que as regras mudaram naquela semana.
+  - Cada número mostra como se compara com os 30 dias anteriores. O gráfico começa na sua primeira tarefa decidida: uma barra por dia nas duas primeiras semanas, depois uma por semana, até as últimas 8 semanas.
   - **Valeu a pena por origem**: de onde vieram as tarefas, como **E-mail**, **Adicionado por você** (criadas com **Nova tarefa**), **Notificações no celular** ou **A própria The Machine** (problemas na The Machine, como um erro), e quantas você levou adiante.

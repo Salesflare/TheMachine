@@ -49,5 +49,5 @@ Aprendizaje tiene una fila de pestañas. Una pestaña que aún no tiene nada no 
   - **A la primera**: de las tareas que empezaste con **Hazlo**, cuántas no necesitaron ninguna corrección después.
   - **Terminada**: de las tareas que empezaste con **Hazlo**, cuántas terminaron sin que le pidieras seguir o volver a intentarlo.
   - **Enviado tal cual**: de los borradores que enviaste, cuántos salieron sin una edición ni **Cambiar** antes.
-  - Cada número dice cómo se compara con los 30 días anteriores. **Valió la pena, semana a semana** muestra las últimas 8 semanas, una barra por semana, cuando hay dos semanas con decisiones; una marca bajo una semana indica que las reglas cambiaron esa semana.
+  - Cada número dice cómo se compara con los 30 días anteriores. El gráfico empieza en tu primera tarea decidida: una barra por día las dos primeras semanas, luego una por semana, hasta las últimas 8 semanas.
   - **Valió la pena por origen**: de dónde vinieron las tareas, como **Correo**, **Añadido por ti** (creadas con **Nueva tarea**), **Notificaciones del teléfono** o **The Machine misma** (problemas en The Machine, como un error), y en cuántas actuaste.
